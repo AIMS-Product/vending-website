@@ -80,21 +80,26 @@ untouched. Cutover is Slice 5; lead wiring is Slice 4.
 About Us, Terms, Privacy, partner landing pages (Marketplace, Leads, CPA,
 Financing, Insurance), Contact. MDX, same component library.
 
-### Slice 3 — Dynamic collections (Tier 3)
+### Slice 3 — Dynamic collections (Tier 2 — scope grew)
 
-Case Studies, News. **Decision needed:** file-based MDX vs. headless CMS
-(Sanity/Contentful/Payload). Recommend MDX-in-repo unless non-developers
-need to publish.
+Custom-built CMS for Case Studies + News (per Q6 decision). Implies:
+Supabase tables, admin auth, content authoring UI, image upload pipeline,
+draft/publish workflow. This pushes Slice 3 from Tier 3 → Tier 2.
+
+To plan in detail before starting: schema, auth model (single editor or
+multi-user?), publish workflow, preview URLs, image hosting.
 
 ### Slice 4 — Lead capture (Tier 1)
 
-Apply Now + Contact → server action → real destination (CRM/email/Slack).
+Apply Now + Contact → server action → Supabase `lead_submissions` table
+
+- Resend transactional email + optional Slack webhook (per Q1 decision).
 
 Required:
 
 - Server-side Zod validation, never trust client
 - Idempotency key per submission
-- Audit row per submission
+- Audit row per submission (the Supabase row IS the audit row)
 - Generic client errors, full server logs
 - Tests: duplicate submit, malformed payload, downstream 5xx, missing audit
 
@@ -127,3 +132,19 @@ Required:
   auto-deploys from `main`. Live preview at
   https://vending-website.vercel.app. No custom domain — Webflow remains
   authoritative until Slice 5 cutover.
+- **2026-05-01** — Q1: lead capture → new Supabase `lead_submissions` table
+  - Resend email + optional Slack webhook. (Slice 4)
+- **2026-05-01** — Q2: DNS owner unknown — investigate at Slice 5 via
+  `dig`/`whois` against the live domain.
+- **2026-05-01** — Q3: pull `https://vendingpreneurs.com/sitemap.xml` for
+  the Slice 5 redirect map. (User confirmed yes.)
+- **2026-05-01** — Q4: Cloudflare Stream for testimonial video hosting.
+- **2026-05-01** — Q5: Inter via `next/font` as the brand font.
+- **2026-05-01** — Q6: custom-built CMS for News + Case Studies (Supabase
+  - admin UI). Slice 3 scope grew from Tier 3 → Tier 2.
+- **2026-05-01** — Q7: testimonial likeness rights carry over to the new
+  domain (user confirmed).
+- **2026-05-01** — Q8: GA4 + Vercel Analytics for analytics.
+- **2026-05-01** — Q9: partner pages content shape — defer until Slice 2.
+- **2026-05-01** — Q10: net-new Sentry project `vending-website` under
+  AIMS Sentry org, set up via browser automation.
