@@ -1,10 +1,22 @@
 import type { Metadata } from "next";
-import { Stub } from "@/components/site/Stub";
+import { CaseStudiesHero } from "@/components/sections/CaseStudiesHero";
+import { CaseStudyVideos } from "@/components/sections/CaseStudyVideos";
+import { CaseStudyQuotes } from "@/components/sections/CaseStudyQuotes";
+import { FinalCta } from "@/components/sections/FinalCta";
 
 export const metadata: Metadata = {
   title: "Case Studies",
+  description:
+    "Vendingpreneurs members share how they went from zero vending experience to a working route — video stories and written testimonials in their own words.",
 };
 
 export default function CaseStudiesPage() {
-  return <Stub title="Case Studies" />;
+  return (
+    <>
+      <CaseStudiesHero />
+      <CaseStudyVideos />
+      <CaseStudyQuotes />
+      <FinalCta />
+    </>
+  );
 }

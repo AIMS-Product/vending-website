@@ -221,3 +221,26 @@ Required:
 - **2026-05-01** — Slice 2 scope narrowed: only About + Terms + Privacy.
   Case Studies and News deferred to Slice 3 (custom CMS). Contact
   deferred to Slice 4 (lead form rebuild).
+- **2026-05-01** — Slice 2 shipped. /about, /terms, /privacy render
+  real Webflow content via typed content modules and a shared
+  `LegalDocument` section that drives both Terms (21 sections) and
+  Privacy (18 sections). Per-page metadata exports. Stub component
+  dropped from these three routes. Commit `88005be`.
+- **2026-05-01** — Slice 3 split into 3a (Case Studies static, Tier 3)
+  and 3b (News CMS, Tier 2) after inspecting the live site —
+  `/case-studies` is a single landing page with ~13-15 testimonial
+  cards, not a CMS collection. See `docs/slice-3-brief.md`.
+- **2026-05-01** — Slice 3b decisions locked (Q-NEWS-1..8 in brief):
+  - Q-NEWS-1: Markdown editor (with live preview) — simple, durable.
+  - Q-NEWS-2: Owner-only auth via Supabase magic link, gated by an
+    `app_users` table.
+  - Q-NEWS-3: Manual rewrite migration of the ~35 articles (~3 hrs).
+  - Q-NEWS-4: Drafts admin-only — no public preview URL.
+  - Q-NEWS-5: No comments / share counts / engagement features.
+  - Q-NEWS-6: Single author (Mike) — `author` field is free text on
+    the post for now, no authors table.
+  - Q-NEWS-7: Flat list — no tags / categories.
+  - Q-NEWS-8: No in-site search — Google handles it post-cutover.
+- **2026-05-01** — Slice 3a Q-CS-1 locked: ship all ~13-15
+  testimonials currently on the live site; prune later if the page
+  feels long.
