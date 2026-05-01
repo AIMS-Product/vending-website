@@ -1,10 +1,19 @@
 import type { Metadata } from "next";
-import { Stub } from "@/components/site/Stub";
+import { LegalDocument } from "@/components/sections/LegalDocument";
+import { FinalCta } from "@/components/sections/FinalCta";
+import { terms } from "@/lib/content/terms";
 
 export const metadata: Metadata = {
-  title: "Terms",
+  title: "Terms of Service",
+  description:
+    "Terms of Service for Vendingpreneurs and the VENDInsights program — membership, data submission, refunds, intellectual property, and dispute resolution.",
 };
 
 export default function TermsPage() {
-  return <Stub title="Terms of Service" />;
+  return (
+    <>
+      <LegalDocument doc={terms} />
+      <FinalCta />
+    </>
+  );
 }
