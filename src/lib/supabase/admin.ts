@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { config } from "@/lib/config";
+import type { Database } from "@/types/database";
 
 /**
  * Service-role Supabase client. Bypasses RLS — only callable from
@@ -12,11 +13,12 @@ import { config } from "@/lib/config";
  * Component or Route Handler reachable from the browser without an auth
  * gate in front of it.
  */
-let adminClient: ReturnType<typeof createSupabaseClient> | null = null;
+let adminClient: ReturnType<typeof createSupabaseClient<Database>> | null =
+  null;
 
 export function createAdminClient() {
   if (adminClient) return adminClient;
-  adminClient = createSupabaseClient(
+  adminClient = createSupabaseClient<Database>(
     config.NEXT_PUBLIC_SUPABASE_URL,
     config.SUPABASE_SERVICE_ROLE_KEY,
     {

@@ -2,6 +2,7 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { config } from "@/lib/config";
+import type { Database } from "@/types/database";
 
 /**
  * Supabase client for Server Components, Server Actions, and Route Handlers.
@@ -11,7 +12,7 @@ import { config } from "@/lib/config";
  */
 export async function createClient() {
   const cookieStore = await cookies();
-  return createServerClient(
+  return createServerClient<Database>(
     config.NEXT_PUBLIC_SUPABASE_URL,
     config.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
