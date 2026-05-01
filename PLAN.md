@@ -244,3 +244,49 @@ Required:
 - **2026-05-01** — Slice 3a Q-CS-1 locked: ship all ~13-15
   testimonials currently on the live site; prune later if the page
   feels long.
+- **2026-05-01** — Slice 3a shipped. `/case-studies` renders the full
+  page from a typed `case-studies.ts` module: 4 video cards (4-up
+  grid) + 10 written quote cards (3-up grid) + shared `FinalCta`. All
+  assets reuse the `public/images/testimonials/` files pulled in 1b.
+  Commit `8c35636`.
+- **2026-05-01** — Slice 3b.1 shipped. Supabase project
+  `vending-website` (ref `aacisvhkmsaabqdvdmmf`, AIMS org, us-west-1
+  / N. California) provisioned via `supabase` CLI; legacy JWT keys +
+  service role key saved to `.env.local` (mode 600) and pushed to
+  Vercel for production + preview. `@supabase/ssr` +
+  `@supabase/supabase-js` installed; client factories live at
+  `src/lib/supabase/{server,client,admin}.ts`. Zod env extended for
+  the three new vars. Commit `a59d795`.
+- **2026-05-01** — Slice 3b.2 shipped. Schema migration
+  `20260501042413_init_news_cms.sql` applied to remote: `news_posts`
+  (status check + indexes), `app_users` (FK to `auth.users`,
+  cascade), `app_user_emails` (allowlist seeded with
+  `james@modernamenities.com` as admin), `on_auth_user_created`
+  trigger (security definer) auto-promotes matching signups,
+  `set_updated_at` trigger on `news_posts`. RLS: anon + authenticated
+  may select published rows; `app_users` membership grants admin
+  write; `app_user_emails` is service-role only. Verified via REST.
+  TS types generated; clients now generic over `Database`. Commit
+  `8bec59b`.
+- **2026-05-01** — Slice 3b.3 shipped. Sanitised markdown pipeline at
+  `src/lib/markdown.ts` (unified → remark-parse → remark-rehype →
+  rehype-sanitize → rehype-stringify) with tightened schema (img
+  src restricted to http(s) or root-relative; `<a>` rel/target
+  allowed). 10 vitest cases cover XSS strip
+  (`<script>`/onerror/`<iframe>`), URL scheme blocks
+  (`javascript:`/`data:`), and positive renders. Service layer at
+  `src/lib/services/news.ts` exposes public reads (cookie-aware
+  server client) and admin writes (service-role); `listPublishedSlugs`
+  uses a build-time anon client to avoid `cookies()` at static
+  generation. Vitest 4 added with one-line config. Commit `86f08d3`.
+- **2026-05-01** — Slice 3b.4 shipped. `/news` and `/news/[slug]`
+  read from Supabase: index is a 3-up card grid with empty state +
+  Apply CTA, detail page is SSG via `generateStaticParams` with
+  per-article `generateMetadata` and the markdown body rendered into
+  a `.news-prose` container styled in `globals.css`. Empty state is
+  visible at vending-website.vercel.app/news. `next.config.ts`
+  whitelists Supabase Storage and the Webflow CDN for `next/image`.
+  Commit `b32de09`.
+- **2026-05-01** — Slice 3b paused at the Tier 1 boundary. Auth
+  (3b.5) and beyond intentionally deferred to a fresh session for
+  focused review. Kickoff prompt and full state in `HANDOFF.md`.
