@@ -122,4 +122,8 @@ Required:
 
 ## Decisions Log
 
-_(Empty — append decisions here as questions get answered.)_
+- **2026-05-01** — GitHub repo: `AIMS-Product/vending-website` (private).
+- **2026-05-01** — Vercel project: `aimanagingservices/vending-website`,
+  auto-deploys from `main`. Live preview at
+  https://vending-website.vercel.app. No custom domain — Webflow remains
+  authoritative until Slice 5 cutover.
