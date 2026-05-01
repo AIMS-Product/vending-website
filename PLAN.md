@@ -45,7 +45,7 @@ their destination.
 - Sentry, analytics, `next/font`, husky + lint-staged + tsc on commit
 - Empty home page renders "Hello"
 
-### Slice 1 — Marketing shell + home page (Tier 3) — NEXT
+### Slice 1 — Marketing shell + home page (Tier 3) — Slice 1a SHIPPED
 
 Static, deployable home page rendering the five visible sections — Hero,
 Why Vendingpreneurs?, Accelerator Program, Real People/Real Results, Take
@@ -155,3 +155,9 @@ Required:
   partner logos, hero/section imagery — using drafted SVGs and
   placeholders; will swap to live assets in a Slice 1b pass once we have
   source files (or pulled from the live Webflow site).
+- **2026-05-01** — Slice 1a shipped to https://vending-website.vercel.app.
+  All 5 sections render server-side (verified via curl + visual screenshot).
+  16 routes statically generated. Slice 1b queued: pull live Webflow
+  imagery, partner SVG logos, headshots; upload testimonial videos to
+  Cloudflare Stream and wire `videoId` in
+  `src/lib/content/testimonials.ts`.
