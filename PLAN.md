@@ -114,14 +114,25 @@ Definition of done:
 - Content in typed modules under `src/lib/content/` (not inlined)
 - Build clean, visual screenshot vs live Webflow looks reasonable
 
-### Slice 3 — Dynamic collections (Tier 2 — scope grew)
+### Slice 3 — Dynamic collections (split into 3a + 3b)
 
-Custom-built CMS for Case Studies + News (per Q6 decision). Implies:
-Supabase tables, admin auth, content authoring UI, image upload pipeline,
-draft/publish workflow. This pushes Slice 3 from Tier 3 → Tier 2.
+Detailed brief: `docs/slice-3-brief.md` (drafted 2026-05-01).
 
-To plan in detail before starting: schema, auth model (single editor or
-multi-user?), publish workflow, preview URLs, image hosting.
+Key finding from inspecting the live site: only News is a real CMS
+collection (~35 articles). Case Studies is a single landing page with
+~13-15 testimonial cards — no detail pages. So Slice 3 splits:
+
+- **Slice 3a — Case Studies (Tier 3, small):** ship as a typed content
+  module like Slice 2, with video/written quote cards. No backend.
+- **Slice 3b — News CMS (Tier 2, deliberate):** Supabase
+  `news_posts` table, magic-link admin at `/admin/news`, markdown
+  editor (recommended), Supabase Storage for images, `/news` index +
+  `/news/[slug]` detail. ~35 article migration via manual rewrite or
+  Webflow export.
+
+Slice 3b is gated on 8 open questions (Q-NEWS-1..8 in the brief) —
+editor UX, auth model, migration path, draft visibility, etc. Stop and
+answer those before any 3b code.
 
 ### Slice 4 — Lead capture (Tier 1)
 
