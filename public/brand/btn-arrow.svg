@@ -1,0 +1,13 @@
+<svg width="37" height="23" viewBox="0 0 37 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 1">
+<rect id="Rectangle 6" width="37" height="23" rx="11.5" fill="url(#paint0_linear_124_95)"/>
+<path id="Arrow 1" d="M26.3536 12.3536C26.5488 12.1583 26.5488 11.8417 26.3536 11.6464L23.1716 8.46447C22.9763 8.2692 22.6597 8.2692 22.4645 8.46447C22.2692 8.65973 22.2692 8.97631 22.4645 9.17157L25.2929 12L22.4645 14.8284C22.2692 15.0237 22.2692 15.3403 22.4645 15.5355C22.6597 15.7308 22.9763 15.7308 23.1716 15.5355L26.3536 12.3536ZM12 12.5L26 12.5L26 11.5L12 11.5L12 12.5Z" fill="white"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_124_95" x1="0" y1="11.5" x2="37" y2="11.5" gradientUnits="userSpaceOnUse">
+<stop stop-color="#96E8F4"/>
+<stop offset="0.485" stop-color="#5BDAF9"/>
+<stop offset="1" stop-color="#C7F1E5"/>
+</linearGradient>
+</defs>
+</svg>

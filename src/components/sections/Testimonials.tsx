@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { testimonials, type Testimonial } from "@/lib/content/testimonials";
 
 export function Testimonials() {
@@ -30,7 +31,7 @@ export function Testimonials() {
 function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
   return (
     <article className="bg-brand-50/40 ring-brand-100/60 flex flex-col gap-4 rounded-3xl p-6 text-left shadow-sm ring-1">
-      <VideoPlaceholder testimonial={testimonial} />
+      <Media testimonial={testimonial} />
       <Stars />
       <header>
         <h3 className="text-brand-600 text-base font-semibold">
@@ -42,14 +43,37 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
   );
 }
 
-function VideoPlaceholder({ testimonial }: { testimonial: Testimonial }) {
-  // Slice 1b will swap this for the Cloudflare Stream <iframe>
-  // when testimonial.videoId becomes non-null.
+function Media({ testimonial }: { testimonial: Testimonial }) {
+  if (testimonial.videoUrl) {
+    return (
+      <video
+        controls
+        preload="none"
+        poster={testimonial.posterUrl ?? undefined}
+        className="aspect-[3/4] w-full rounded-2xl bg-slate-100 object-cover"
+        aria-label={`Video testimonial from ${testimonial.name}`}
+      >
+        <source src={testimonial.videoUrl} type="video/mp4" />
+      </video>
+    );
+  }
+
+  if (testimonial.avatarUrl) {
+    return (
+      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-white">
+        <Image
+          src={testimonial.avatarUrl}
+          alt={`${testimonial.name} headshot`}
+          fill
+          sizes="(max-width: 640px) 100vw, 33vw"
+          className="object-contain"
+        />
+      </div>
+    );
+  }
+
   return (
-    <div
-      aria-label={`Video testimonial from ${testimonial.name} — coming soon`}
-      className="from-brand-200 via-brand-300 to-brand-400 relative flex aspect-[3/4] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br"
-    >
+    <div className="from-brand-200 via-brand-300 to-brand-400 relative flex aspect-[3/4] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br">
       <span className="text-3xl font-semibold text-white drop-shadow">
         {testimonial.initials}
       </span>

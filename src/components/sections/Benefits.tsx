@@ -1,10 +1,19 @@
+import Image from "next/image";
 import { benefits, type Benefit } from "@/lib/content/home";
 
 export function Benefits() {
   return (
     <section className="px-6 py-24 lg:px-10 lg:py-32">
-      <div className="mx-auto grid max-w-[1400px] gap-12 lg:grid-cols-2 lg:gap-20">
-        <BenefitsImagePlaceholder />
+      <div className="mx-auto grid max-w-[1400px] items-center gap-12 lg:grid-cols-2 lg:gap-20">
+        <div className="relative aspect-square w-full overflow-hidden rounded-3xl shadow-lg">
+          <Image
+            src={benefits.image.src}
+            alt={benefits.image.alt}
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="object-cover"
+          />
+        </div>
 
         <div>
           <h2 className="text-brand-500 text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -124,20 +133,4 @@ function BenefitIcon({ icon }: { icon: Benefit["icon"] }) {
         </svg>
       );
   }
-}
-
-/** Slice 1b will swap in the live "watch tap on vending machine" image. */
-function BenefitsImagePlaceholder() {
-  return (
-    <div
-      aria-hidden
-      className="from-brand-200 via-brand-300 to-brand-400 aspect-square w-full overflow-hidden rounded-3xl bg-gradient-to-br shadow-lg"
-    >
-      <div className="flex h-full items-end p-8">
-        <p className="text-brand-700 rounded-xl bg-white/70 p-4 text-sm backdrop-blur">
-          Image placeholder — swap to live asset in Slice 1b.
-        </p>
-      </div>
-    </div>
-  );
 }

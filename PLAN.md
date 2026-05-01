@@ -145,7 +145,15 @@ Required:
 - **2026-05-01** — Q7: testimonial likeness rights carry over to the new
   domain (user confirmed).
 - **2026-05-01** — Q8: GA4 + Vercel Analytics for analytics.
-- **2026-05-01** — Q9: partner pages content shape — defer until Slice 2.
+- **2026-05-01** — Q9 (resolved while pulling assets): the five "partner"
+  pages (Marketplace, Leads, CPA Experts, Financing, Insurance) are NOT
+  internal pages on the live site — they're external links to
+  https://www.vendhub.ai/. Mirrored that in `nav.ts` (`external: true`)
+  and removed the corresponding stub pages.
+- **2026-05-01** — Q1 partial: the live site's Apply Now and Contact buttons
+  go to `https://www.vendingpreneurs.com/booking-website` (a separate
+  booking page). New site keeps `/apply` internal and will replace this
+  with the new lead capture in Slice 4.
 - **2026-05-01** — Q10: net-new Sentry project `vending-website` under
   AIMS Sentry org. **DEFERRED** — Chrome MCP not connected at setup time;
   wire once the extension is reachable, or via `/sentry-setup` skill.

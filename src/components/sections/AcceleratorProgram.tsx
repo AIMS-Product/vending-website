@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { accelerator } from "@/lib/content/home";
 
@@ -60,25 +61,17 @@ export function AcceleratorProgram() {
             {accelerator.bonus.body}
           </p>
 
-          <AcceleratorImagePlaceholder />
+          <div className="relative mt-8 aspect-[16/10] w-full overflow-hidden rounded-2xl shadow">
+            <Image
+              src={accelerator.image.src}
+              alt={accelerator.image.alt}
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover"
+            />
+          </div>
         </div>
       </div>
     </section>
-  );
-}
-
-/** Slice 1b will swap in the live image of an entrepreneur with a kiosk. */
-function AcceleratorImagePlaceholder() {
-  return (
-    <div
-      aria-hidden
-      className="from-brand-200 via-brand-300 to-brand-400 mt-8 aspect-[16/10] w-full overflow-hidden rounded-2xl bg-gradient-to-br shadow"
-    >
-      <div className="flex h-full items-end p-6">
-        <p className="text-brand-700 rounded-lg bg-white/70 p-3 text-xs backdrop-blur">
-          Image placeholder — swap to live asset in Slice 1b.
-        </p>
-      </div>
-    </div>
   );
 }

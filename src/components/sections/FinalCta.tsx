@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { finalCta } from "@/lib/content/home";
 
@@ -15,24 +16,16 @@ export function FinalCta() {
           </div>
         </div>
 
-        <FinalCtaImagePlaceholder />
+        <div className="relative aspect-[4/3] w-full lg:aspect-auto">
+          <Image
+            src={finalCta.image.src}
+            alt={finalCta.image.alt}
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="object-cover"
+          />
+        </div>
       </div>
     </section>
-  );
-}
-
-/** Slice 1b — replace with the live "tap to pay at vending machine" image. */
-function FinalCtaImagePlaceholder() {
-  return (
-    <div
-      aria-hidden
-      className="from-brand-300 via-brand-400 to-brand-500 aspect-[4/3] w-full bg-gradient-to-br lg:aspect-auto"
-    >
-      <div className="flex h-full items-end p-8">
-        <p className="text-brand-700 rounded-xl bg-white/70 p-3 text-xs backdrop-blur">
-          Image placeholder — swap to live asset in Slice 1b.
-        </p>
-      </div>
-    </div>
   );
 }

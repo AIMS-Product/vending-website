@@ -11,31 +11,86 @@ export type Benefit = {
 
 export type AcceleratorPoint = string;
 
+export type PartnerLogo = {
+  name: string;
+  src: string;
+  /** Intrinsic logo width in pixels (taller logos can rely on h-* utility). */
+  width: number;
+  height: number;
+};
+
 export const hero = {
-  eyebrow: undefined,
   title: ["Turn Vending", "Into Your Path", "to Financial Freedom"],
   body: [
     "Breaking free from the traditional job structure isn't just a dream—it's a real possibility with the right strategy.",
     "At Vendingpreneurs, we provide aspiring entrepreneurs with the mentorship, tools, and exclusive discounts they need to launch and scale a profitable vending machine business with minimal time investment.",
   ],
+  image: {
+    src: "/images/sections/hero.avif",
+    alt: "An entrepreneur stocking a smart vending machine",
+  },
   cta: { label: "Apply Now", href: "/apply" },
 } as const;
 
-export const partnerLogos: ReadonlyArray<{ name: string; src?: string }> = [
-  { name: "365 Markets" },
-  { name: "Alani Nu" },
-  { name: "Cantaloupe" },
-  { name: "Micromart" },
-  { name: "PepsiCo" },
-  { name: "Prime" },
-  { name: "Poppi" },
-  { name: "Doritos" },
+/** Order matches the live Webflow strip: 365, Alani, Cantaloupe, Micromart, PepsiCo, Prime, Poppi, Doritos. */
+export const partnerLogos: ReadonlyArray<PartnerLogo> = [
+  {
+    name: "365 Retail Markets",
+    src: "/images/partners/365-markets.png",
+    width: 200,
+    height: 80,
+  },
+  {
+    name: "Alani Nu",
+    src: "/images/partners/alani-nu.png",
+    width: 200,
+    height: 80,
+  },
+  {
+    name: "Cantaloupe",
+    src: "/images/partners/cantaloupe.png",
+    width: 200,
+    height: 80,
+  },
+  {
+    name: "Micromart",
+    src: "/images/partners/micromart.png",
+    width: 200,
+    height: 80,
+  },
+  {
+    name: "PepsiCo",
+    src: "/images/partners/pepsico.png",
+    width: 200,
+    height: 80,
+  },
+  {
+    name: "Prime",
+    src: "/images/partners/prime.png",
+    width: 200,
+    height: 80,
+  },
+  {
+    name: "Poppi",
+    src: "/images/partners/poppi.png",
+    width: 200,
+    height: 80,
+  },
+  {
+    name: "Doritos",
+    src: "/images/partners/doritos.png",
+    width: 200,
+    height: 80,
+  },
 ];
 
 export const benefits = {
-  eyebrow: undefined,
   title: "Why Vendingpreneurs?",
   body: "Building a vending machine business without expert guidance can lead to wasted time and costly mistakes. We eliminate the guesswork by providing a structured roadmap to success.",
+  image: {
+    src: "/images/sections/why.avif",
+    alt: "A customer paying at a smart vending machine with a smartwatch",
+  },
   items: [
     {
       title: "Proven Success Strategies",
@@ -63,6 +118,10 @@ export const benefits = {
 export const accelerator = {
   title: "The Vending Accelerator Program",
   body: "Our flagship Vending Accelerator Program is designed for both beginners and experienced entrepreneurs looking to optimize their vending routes.",
+  image: {
+    src: "/images/sections/accelerator.avif",
+    alt: "An entrepreneur using a Cantaloupe-branded vending kiosk",
+  },
   stats: [
     { value: "500+", label: "Entrepreneurs launched" },
     { value: "$3M+", label: "Snack/Drink sales in Vendingpreneur machines" },
@@ -85,5 +144,9 @@ export const accelerator = {
 export const finalCta = {
   title: "Take Action Today",
   body: "The vending industry is one of the most accessible ways to build passive income, but success doesn't happen by chance—it happens by taking the right steps with the right guidance.",
+  image: {
+    src: "/images/sections/cta.avif",
+    alt: "A customer tapping a phone to pay at a smart vending machine",
+  },
   cta: { label: "Apply Now", href: "/apply" },
 } as const;

@@ -16,7 +16,7 @@ export function Header() {
           className="hidden items-center gap-x-7 lg:flex"
         >
           {primaryNav.map((item) => (
-            <NavLink key={item.href} href={item.href}>
+            <NavLink key={item.label} href={item.href} external={item.external}>
               {item.label}
             </NavLink>
           ))}

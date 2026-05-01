@@ -1,43 +1,51 @@
 export type NavItem = {
   label: string;
   href: string;
+  external?: boolean;
 };
+
+/**
+ * The five "partner" pages on the live Webflow site (Marketplace, Leads,
+ * CPA Experts, Financing, Insurance) are external links to vendhub.ai.
+ * We mirror that here. If/when those become real internal pages we can
+ * flip `external` and add a route.
+ */
+const VENDHUB_URL = "https://www.vendhub.ai/";
 
 export const primaryNav: ReadonlyArray<NavItem> = [
   { label: "Home", href: "/" },
   { label: "About Us", href: "/about" },
   { label: "Case Studies", href: "/case-studies" },
-  { label: "Machine Marketplace", href: "/marketplace" },
-  { label: "Vending Leads", href: "/leads" },
-  { label: "Vending CPA Experts", href: "/cpa-experts" },
-  { label: "Machine Financing", href: "/financing" },
-  { label: "Vending Insurance", href: "/insurance" },
+  { label: "Machine Marketplace", href: VENDHUB_URL, external: true },
+  { label: "Vending Leads", href: VENDHUB_URL, external: true },
+  { label: "Vending CPA Experts", href: VENDHUB_URL, external: true },
+  { label: "Machine Financing", href: VENDHUB_URL, external: true },
+  { label: "Vending Insurance", href: VENDHUB_URL, external: true },
   { label: "Contact Us", href: "/contact" },
 ];
 
 export const footerColumns: ReadonlyArray<{
-  heading?: string;
   items: ReadonlyArray<NavItem>;
 }> = [
   {
     items: [
       { label: "Home", href: "/" },
       { label: "News", href: "/news" },
-      { label: "Vending CPA Experts", href: "/cpa-experts" },
+      { label: "Vending CPA Experts", href: VENDHUB_URL, external: true },
     ],
   },
   {
     items: [
       { label: "About Us", href: "/about" },
-      { label: "Vending Marketplace", href: "/marketplace" },
-      { label: "Machine Financing", href: "/financing" },
+      { label: "Vending Marketplace", href: VENDHUB_URL, external: true },
+      { label: "Machine Financing", href: VENDHUB_URL, external: true },
     ],
   },
   {
     items: [
       { label: "Case Studies", href: "/case-studies" },
-      { label: "Vending Leads", href: "/leads" },
-      { label: "Vending Insurance", href: "/insurance" },
+      { label: "Vending Leads", href: VENDHUB_URL, external: true },
+      { label: "Vending Insurance", href: VENDHUB_URL, external: true },
     ],
   },
   {
