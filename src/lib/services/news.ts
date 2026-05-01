@@ -1,7 +1,27 @@
 import "server-only";
+import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { config } from "@/lib/config";
 import type { Database } from "@/types/database";
+
+/**
+ * Build-time anon client. Same RLS surface as the server client used in
+ * Server Components, but does NOT read cookies — safe to call from
+ * `generateStaticParams`, which runs at build time without a request.
+ */
+let buildTimeClient: ReturnType<
+  typeof createSupabaseJsClient<Database>
+> | null = null;
+function getBuildTimeClient() {
+  if (buildTimeClient) return buildTimeClient;
+  buildTimeClient = createSupabaseJsClient<Database>(
+    config.NEXT_PUBLIC_SUPABASE_URL,
+    config.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
+  return buildTimeClient;
+}
 
 export type NewsPost = Database["public"]["Tables"]["news_posts"]["Row"];
 export type NewsPostInsert =
@@ -54,8 +74,12 @@ export async function getPublishedPostBySlug(slug: string) {
   return data;
 }
 
+/**
+ * Used by `generateStaticParams` at build time, so it must NOT use the
+ * cookie-aware server client. RLS still applies — we only see published rows.
+ */
 export async function listPublishedSlugs() {
-  const supabase = await createClient();
+  const supabase = getBuildTimeClient();
   const { data, error } = await supabase
     .from("news_posts")
     .select("slug")

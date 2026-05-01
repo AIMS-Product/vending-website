@@ -50,3 +50,88 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
+
+/* News article body. Rendered from sanitised markdown via
+   dangerouslySetInnerHTML, so we style with element selectors. */
+.news-prose {
+  color: #334155; /* slate-700 */
+  line-height: 1.7;
+  font-size: 1.0625rem;
+}
+.news-prose > * + * {
+  margin-top: 1.25rem;
+}
+.news-prose h2 {
+  margin-top: 2.5rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--brand-600);
+  letter-spacing: -0.01em;
+}
+.news-prose h3 {
+  margin-top: 2rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--brand-600);
+}
+.news-prose p {
+  color: inherit;
+}
+.news-prose a {
+  color: var(--brand-500);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.news-prose a:hover {
+  color: var(--brand-600);
+}
+.news-prose ul,
+.news-prose ol {
+  padding-left: 1.5rem;
+}
+.news-prose ul {
+  list-style: disc;
+}
+.news-prose ol {
+  list-style: decimal;
+}
+.news-prose ul li::marker,
+.news-prose ol li::marker {
+  color: var(--brand-400);
+}
+.news-prose li + li {
+  margin-top: 0.5rem;
+}
+.news-prose blockquote {
+  border-left: 3px solid var(--brand-300);
+  padding-left: 1rem;
+  font-style: italic;
+  color: #475569; /* slate-600 */
+}
+.news-prose code {
+  background: var(--brand-50);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+}
+.news-prose pre {
+  background: #0f172a; /* slate-900 */
+  color: #e2e8f0; /* slate-200 */
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+}
+.news-prose pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+.news-prose img {
+  border-radius: 1rem;
+  width: 100%;
+  height: auto;
+}
+.news-prose strong {
+  color: var(--brand-700);
+  font-weight: 600;
+}
