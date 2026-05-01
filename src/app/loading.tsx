@@ -1,6 +1,6 @@
 export default function Loading() {
   return (
-    <main
+    <div
       aria-busy="true"
       aria-live="polite"
       className="flex flex-1 items-center justify-center px-6 py-24"
@@ -12,6 +12,6 @@ export default function Loading() {
         />
         <span className="text-sm">Loading…</span>
       </div>
-    </main>
+    </div>
   );
 }

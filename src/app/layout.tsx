@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Header } from "@/components/site/Header";
+import { Footer } from "@/components/site/Footer";
 import "./globals.css";
 
 const inter = Inter({
@@ -26,7 +28,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        {children}
+        <Header />
+        <main className="flex-1">{children}</main>
+        <Footer />
         <Analytics />
         <SpeedInsights />
       </body>

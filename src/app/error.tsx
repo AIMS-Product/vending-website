@@ -14,7 +14,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-24 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-24 text-center">
       <h1 className="text-3xl font-semibold text-slate-900 sm:text-4xl">
         Something went wrong
       </h1>
@@ -31,6 +31,6 @@ export default function Error({
       >
         Try again
       </button>
-    </main>
+    </div>
   );
 }

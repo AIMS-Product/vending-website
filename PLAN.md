@@ -147,4 +147,11 @@ Required:
 - **2026-05-01** — Q8: GA4 + Vercel Analytics for analytics.
 - **2026-05-01** — Q9: partner pages content shape — defer until Slice 2.
 - **2026-05-01** — Q10: net-new Sentry project `vending-website` under
-  AIMS Sentry org, set up via browser automation.
+  AIMS Sentry org. **DEFERRED** — Chrome MCP not connected at setup time;
+  wire once the extension is reachable, or via `/sentry-setup` skill.
+- **2026-05-01** — GA4 measurement ID not yet provisioned; code wiring
+  deferred until the property is created. `@vercel/analytics` is live now.
+- **2026-05-01** — Slice 1 starting. Asset dependencies: V wordmark,
+  partner logos, hero/section imagery — using drafted SVGs and
+  placeholders; will swap to live assets in a Slice 1b pass once we have
+  source files (or pulled from the live Webflow site).
