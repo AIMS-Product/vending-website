@@ -37,48 +37,82 @@ their destination.
 
 ## Slice Plan
 
-### Slice 0 — Scaffold & preview deploy (Tier 3) — IN PROGRESS
+### Slice 0 — Scaffold & preview deploy (Tier 3) — SHIPPED (Sentry + GA4 deferred)
 
-- Next.js 14 App Router, TS strict, Tailwind, shadcn/ui
-- Repo under `AIMS-Product`, deployed to Vercel preview URL only
-- `lib/config.ts` Zod-validated env, `not-found/error/loading/global-error`
-- Sentry, analytics, `next/font`, husky + lint-staged + tsc on commit
-- Empty home page renders "Hello"
+- ✅ Next.js 16 (App Router), React 19, TS strict, Tailwind 4
+- ✅ Repo: `AIMS-Product/vending-website` (private)
+- ✅ Vercel: `aimanagingservices/vending-website`, auto-deploys from `main`,
+  live at https://vending-website.vercel.app
+- ✅ `src/lib/config.ts` Zod-validated env, `server-only` guard
+- ✅ Required app-router files: `not-found.tsx`, `error.tsx`, `loading.tsx`,
+  `global-error.tsx` (uses Next 16's `unstable_retry`, NOT the old `reset`)
+- ✅ `next/font` Inter wired through `@theme inline { --font-sans }`
+- ✅ Husky + lint-staged + prettier + tsc on every commit
+- ✅ `@vercel/analytics` + `@vercel/speed-insights` live
+- ⏸️ Sentry: deferred (Chrome MCP not reachable)
+- ⏸️ GA4 measurement ID: deferred (property not yet provisioned)
 
-### Slice 1 — Marketing shell + home page (Tier 3) — Slice 1a SHIPPED
+### Slice 1 — Marketing shell + home page (Tier 3) — SHIPPED
 
-Static, deployable home page rendering the five visible sections — Hero,
-Why Vendingpreneurs?, Accelerator Program, Real People/Real Results, Take
-Action Today — plus shared header/footer. Apply Now CTAs link to a
-placeholder `/apply` page. Copy hardcoded in a typed content module.
+Five visible sections: Hero, BrandStrip, Benefits ("Why Vendingpreneurs?"),
+AcceleratorProgram, Testimonials, FinalCta ("Take Action Today"), plus
+shared Header/Footer. Apply Now CTAs link to `/apply` (placeholder until
+Slice 4).
 
-**Scope (allowed file list):**
+**Slice 1a — component shells with placeholders (SHIPPED)**
 
-- `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/apply/page.tsx`
-- `src/components/site/{Header,Footer,NavLink}.tsx`
-- `src/components/sections/{Hero,BrandStrip,Benefits,AcceleratorProgram,Testimonials,FinalCta}.tsx`
-- `src/components/ui/Button.tsx` (pill CTA with arrow)
-- `src/lib/content/home.ts`, `src/lib/content/testimonials.ts` (typed)
-- `public/brand/*` (V wordmark SVG, partner logos)
-- `tailwind.config.ts` (brand tokens)
+- All five sections built with gradient placeholders for imagery
+- Pill `Button` primitive with arrow chip
+- 12 stub pages for nav links (later trimmed to 7 in Slice 1b)
+- Typed content modules: `src/lib/content/{home,nav,testimonials}.ts`
+- `.claude/rules/{components,pages}.md` scoping conventions
 
-**Invariant protected:** Home renders the same five messages with a
-working CTA path, deploys cleanly to a Vercel preview, no runtime errors.
+**Slice 1b — real assets pulled from live Webflow (SHIPPED)**
 
-**Integration risk:** None. Preview URL only — live domain and live form
-untouched. Cutover is Slice 5; lead wiring is Slice 4.
+- All imagery sourced from live Webflow CDN: hero, why, accelerator, cta
+  (AVIF), 8 partner logos (PNG), testimonial avatars + video posters
+- V wordmark PNG (909×274) replaces the drafted SVG
+- `<video>` tags for video testimonials (Bunny CDN URLs); `next/image`
+  for avatar testimonials
+- Q9 RESOLVED: 5 partner nav items are external links to vendhub.ai
+  (stub pages for Marketplace/Leads/CPA/Financing/Insurance deleted)
+- Q1 PARTIAL: live site's Apply Now goes to vendingpreneurs.com/
+  booking-website. New site keeps `/apply` internal until Slice 4.
 
-**Definition of done:**
+**Slice 1c — video migration (QUEUED, not urgent)**
 
-- Lighthouse ≥ 95 on the preview URL (perf/a11y/SEO)
-- Keyboard navigation works, alt text on every image, contrast passes WCAG AA
-- All header + footer nav links render (placeholder pages return a stub)
-- `tsc --noEmit` clean, no `any`, no `@ts-ignore`
+- Migrate 4 testimonial videos from Bunny CDN to Cloudflare Stream
+  (per Q4 decision)
+- Update `videoUrl` in `src/lib/content/testimonials.ts` to playback URLs
+- Bunny videos work fine right now — defer until convenient
 
-### Slice 2 — Secondary static pages (Tier 3)
+**Routes currently live:**
 
-About Us, Terms, Privacy, partner landing pages (Marketplace, Leads, CPA,
-Financing, Insurance), Contact. MDX, same component library.
+- `/` — full home page with real assets
+- `/apply` — Stub component (placeholder; Slice 4)
+- `/about`, `/case-studies`, `/news`, `/contact`, `/terms`, `/privacy`
+  — all use the shared Stub component (filled in Slice 2 / Slice 3)
+- All five `/marketplace`, `/leads`, `/cpa-experts`, `/financing`,
+  `/insurance` are now external nav items (no internal route)
+
+### Slice 2 — Secondary static pages (Tier 3) — NEXT, narrowed scope
+
+Pull About + Terms + Privacy real content from live Webflow site (we
+already have the pull pipeline working). Use the shared component library.
+
+Out of scope for Slice 2 (deferred):
+
+- Case Studies → needs the custom CMS (Slice 3)
+- News → needs the custom CMS (Slice 3)
+- Contact → pairs with the lead form, rebuilt in Slice 4
+- Marketplace/Leads/CPA/Financing/Insurance → already external (Q9)
+
+Definition of done:
+
+- `/about`, `/terms`, `/privacy` render real Webflow content (no Stub)
+- Each page has its own `metadata` export
+- Content in typed modules under `src/lib/content/` (not inlined)
+- Build clean, visual screenshot vs live Webflow looks reasonable
 
 ### Slice 3 — Dynamic collections (Tier 2 — scope grew)
 
@@ -110,20 +144,20 @@ Required:
 - DNS swap in a low-traffic window with rollback plan
 - Post-cutover smoke + Lighthouse pass
 
-## Open Questions (block specific slices)
+## Open Questions (status)
 
-| #   | Question                                                                                | Blocks  |
-| --- | --------------------------------------------------------------------------------------- | ------- |
-| 1   | Where do Apply Now submissions go today (and after)?                                    | Slice 4 |
-| 2   | Who owns DNS, and what is the cutover window?                                           | Slice 5 |
-| 3   | Full list of existing Webflow URLs (for redirect map)                                   | Slice 5 |
-| 4   | Testimonial video hosting plan — Webflow CDN, Mux, Cloudflare Stream, YouTube unlisted? | Slice 1 |
-| 5   | Brand font name + license source                                                        | Slice 1 |
-| 6   | CMS choice for News + Case Studies, or MDX-in-repo?                                     | Slice 3 |
-| 7   | Confirmed permission to keep named testimonial people on the new site?                  | Slice 1 |
-| 8   | Analytics stack to carry over (GA4? Other?)                                             | Slice 0 |
-| 9   | Are partner pages real content or off-site placeholders?                                | Slice 2 |
-| 10  | Sentry — net new project or existing?                                                   | Slice 0 |
+| #   | Question                                              | Status                                                               |
+| --- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| 1   | Where do Apply Now submissions go today (and after)?  | ✅ Supabase + Resend + Slack (new); current goes to /booking-website |
+| 2   | Who owns DNS, and what is the cutover window?         | ⏳ Investigate at Slice 5 via dig/whois                              |
+| 3   | Full list of existing Webflow URLs (for redirect map) | ✅ Pull sitemap.xml at Slice 5 (user OK'd)                           |
+| 4   | Testimonial video hosting plan                        | ✅ Cloudflare Stream — migrate from Bunny CDN in Slice 1c            |
+| 5   | Brand font                                            | ✅ Inter (Google Fonts via next/font)                                |
+| 6   | CMS for News + Case Studies                           | ✅ Custom-built (Supabase + admin UI) — Slice 3, Tier 2              |
+| 7   | Testimonial likeness rights                           | ✅ Carry over to new domain (user confirmed)                         |
+| 8   | Analytics                                             | ✅ GA4 + Vercel Analytics; GA4 measurement ID still pending          |
+| 9   | Partner pages — real content or off-site?             | ✅ External links to vendhub.ai (resolved during 1b asset pull)      |
+| 10  | Sentry — net new project or existing?                 | ✅ Net-new under AIMS Sentry org — DEFERRED on Chrome MCP            |
 
 ## Decisions Log
 
@@ -169,3 +203,10 @@ Required:
   imagery, partner SVG logos, headshots; upload testimonial videos to
   Cloudflare Stream and wire `videoId` in
   `src/lib/content/testimonials.ts`.
+- **2026-05-01** — Slice 1b shipped. Live Webflow assets pulled and wired
+  through next/image; partner nav externalized; visual screenshot of new
+  preview matches the original near-pixel-perfect on the hero. Bunny CDN
+  videos still in use (Cloudflare Stream migration → Slice 1c).
+- **2026-05-01** — Slice 2 scope narrowed: only About + Terms + Privacy.
+  Case Studies and News deferred to Slice 3 (custom CMS). Contact
+  deferred to Slice 4 (lead form rebuild).
