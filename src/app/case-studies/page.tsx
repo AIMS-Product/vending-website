@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: "Case Studies",
   description:
     "Vendingpreneurs members share how they went from zero vending experience to a working route — video stories and written testimonials in their own words.",
+  alternates: {
+    canonical: "/case-studies",
+  },
 };
 
 export default function CaseStudiesPage() {

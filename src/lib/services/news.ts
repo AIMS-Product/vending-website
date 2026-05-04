@@ -59,7 +59,7 @@ export async function listPublishedPosts({
 }
 
 export async function getPublishedPostBySlug(slug: string) {
-  const supabase = await createClient();
+  const supabase = getBuildTimeClient();
   const { data, error } = await supabase
     .from("news_posts")
     .select(PUBLIC_FIELDS)

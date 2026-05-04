@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: "Terms of Service",
   description:
     "Terms of Service for Vendingpreneurs and the VENDInsights program — membership, data submission, refunds, intellectual property, and dispute resolution.",
+  alternates: {
+    canonical: "/terms",
+  },
 };
 
 export default function TermsPage() {

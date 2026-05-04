@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -12,12 +13,21 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "Vendingpreneurs",
     template: "%s | Vendingpreneurs",
   },
   description:
     "Mentorship, tools, and exclusive discounts to launch and scale a profitable vending machine business.",
+  openGraph: {
+    title: "Vendingpreneurs",
+    description:
+      "Mentorship, tools, and exclusive discounts to launch and scale a profitable vending machine business.",
+    siteName: "Vendingpreneurs",
+    url: "/",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

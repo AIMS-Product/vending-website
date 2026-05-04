@@ -1,6 +1,11 @@
 import "server-only";
 import { z } from "zod";
 
+const optionalEnv = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z.string().optional(),
+);
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -9,6 +14,11 @@ const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
+  RESEND_API_KEY: optionalEnv,
+  LEAD_NOTIFICATION_TO: optionalEnv,
+  LEAD_NOTIFICATION_FROM: optionalEnv,
+  LEAD_NOTIFICATION_SUBJECT_PREFIX: optionalEnv,
+  SLACK_WEBHOOK_URL: optionalEnv,
 });
 
 const parsed = envSchema.safeParse({
@@ -17,6 +27,12 @@ const parsed = envSchema.safeParse({
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
+  LEAD_NOTIFICATION_TO: process.env.LEAD_NOTIFICATION_TO,
+  LEAD_NOTIFICATION_FROM: process.env.LEAD_NOTIFICATION_FROM,
+  LEAD_NOTIFICATION_SUBJECT_PREFIX:
+    process.env.LEAD_NOTIFICATION_SUBJECT_PREFIX,
+  SLACK_WEBHOOK_URL: process.env.SLACK_WEBHOOK_URL,
 });
 
 if (!parsed.success) {

@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: "News",
   description:
     "Vending industry insights, location strategies, and program updates from Vendingpreneurs.",
+  alternates: {
+    canonical: "/news",
+  },
 };
 
 /** Fall back to ISR every 60s in production so newly published posts appear without a redeploy. */
