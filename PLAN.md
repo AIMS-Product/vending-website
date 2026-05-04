@@ -287,6 +287,12 @@ Required:
   visible at vending-website.vercel.app/news. `next.config.ts`
   whitelists Supabase Storage and the Webflow CDN for `next/image`.
   Commit `b32de09`.
-- **2026-05-01** — Slice 3b paused at the Tier 1 boundary. Auth
-  (3b.5) and beyond intentionally deferred to a fresh session for
-  focused review. Kickoff prompt and full state in `HANDOFF.md`.
+- **2026-05-01** — Slice 3b.5 shipped. Magic-link login, `/auth/callback`,
+  Next 16 `src/proxy.ts` admin gating, `requireAdmin()` defence-in-depth,
+  sign-out, and auth tests landed in commit `f532957`.
+- **2026-05-04** — Slice 3b.6–3b.10 built locally. `/admin/news` is now a
+  gated post list with status filters; `/admin/news/new` and
+  `/admin/news/[id]` provide a markdown editor with live preview,
+  draft/publish/unpublish/archive actions, and signed cover-image upload.
+  Added Supabase Storage migration `20260504084000_news_images_storage.sql`,
+  RSS at `/news/feed.xml`, and `docs/news-cms/migration-handoff.md`.

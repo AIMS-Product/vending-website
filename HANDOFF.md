@@ -1,19 +1,23 @@
 # Handoff — Vendingpreneurs Webflow → Next.js Migration
 
-_Last updated 2026-05-01. Use this to start a fresh Claude Code session
+_Last updated 2026-05-04. Use this to start a fresh Claude Code session
 and pick up where we left off._
 
 ## TL;DR
 
 Migrating https://vendingpreneurs.com from Webflow to a Next.js 16 site
-on Vercel. Slices 0, 1a, 1b, 2, 3a, and **the public read path of Slice
-3b** are shipped. The Supabase project is provisioned, schema is up,
-and `/news` + `/news/[slug]` render from the database (empty state
-visible at https://vending-website.vercel.app/news).
+on Vercel. Slices 0, 1a, 1b, 2, 3a, and **Slice 3b News CMS** are
+implemented through the admin editor, signed image uploads, RSS, and
+migration handoff docs. The Supabase project is provisioned, schema is up,
+`/news` + `/news/[slug]` render from the database, and `/admin/news` is
+magic-link gated.
 
-**Next: Slice 3b.5 — auth (magic link + admin middleware).** This is
-Tier 1 — start it in a clean session with focused review. See
-`docs/slice-3b-plan.md` for the full design.
+**Next: resolve the real admin email deliverability/Auth issue before handing
+CMS access to Mike.** Browser testing showed Supabase Auth rejects
+`james@modernamenities.com` with `email_address_invalid`, even though the row is
+allowlisted in `app_user_emails`. A temporary Gmail-shaped test admin verified
+the app flow itself. After that, the next implementation slice is Slice 4 —
+lead capture — which is Tier 1 and needs its own brief before code.
 
 ## Project basics
 
@@ -42,26 +46,26 @@ Tier 1 — start it in a clean session with focused review. See
 
 ## What's shipped
 
-| Slice    | Scope                                                   | Status      |
-| -------- | ------------------------------------------------------- | ----------- |
-| 0        | Scaffold + preview deploy                               | ✅ shipped  |
-| 1a       | Marketing shell + home page (placeholders)              | ✅ shipped  |
-| 1b       | Real assets pulled from live Webflow                    | ✅ shipped  |
-| 1c       | Cloudflare Stream video migration                       | ⏳ queued   |
-| 2        | About + Terms + Privacy real content                    | ✅ shipped  |
-| 3a       | Case Studies static page (all 14 testimonials)          | ✅ shipped  |
-| 3b.1     | Supabase wiring + Zod env + client factories            | ✅ shipped  |
-| 3b.2     | Schema migrations + RLS + email allowlist               | ✅ shipped  |
-| 3b.3     | Service layer + sanitised markdown render + tests       | ✅ shipped  |
-| 3b.4     | Public /news index + /news/[slug] (empty state visible) | ✅ shipped  |
-| **3b.5** | **Auth — magic link + admin middleware (Tier 1)**       | ▶️ NEXT     |
-| 3b.6     | Admin shell + post list                                 | queued      |
-| 3b.7     | Markdown editor + draft/publish flow                    | queued      |
-| 3b.8     | Image upload via signed URLs (Tier 1, storage RLS)      | queued      |
-| 3b.9     | RSS feed at /news/feed.xml                              | queued      |
-| 3b.10    | Migration handoff for ~35 articles                      | queued      |
-| 4        | Lead capture (Apply Now / Contact)                      | needs brief |
-| 5        | SEO + DNS cutover                                       | gated on 4  |
+| Slice | Scope                                                   | Status      |
+| ----- | ------------------------------------------------------- | ----------- |
+| 0     | Scaffold + preview deploy                               | ✅ shipped  |
+| 1a    | Marketing shell + home page (placeholders)              | ✅ shipped  |
+| 1b    | Real assets pulled from live Webflow                    | ✅ shipped  |
+| 1c    | Cloudflare Stream video migration                       | ⏳ queued   |
+| 2     | About + Terms + Privacy real content                    | ✅ shipped  |
+| 3a    | Case Studies static page (all 14 testimonials)          | ✅ shipped  |
+| 3b.1  | Supabase wiring + Zod env + client factories            | ✅ shipped  |
+| 3b.2  | Schema migrations + RLS + email allowlist               | ✅ shipped  |
+| 3b.3  | Service layer + sanitised markdown render + tests       | ✅ shipped  |
+| 3b.4  | Public /news index + /news/[slug] (empty state visible) | ✅ shipped  |
+| 3b.5  | Auth — magic link + admin middleware (Tier 1)           | ✅ shipped  |
+| 3b.6  | Admin shell + post list                                 | ✅ built    |
+| 3b.7  | Markdown editor + draft/publish flow                    | ✅ built    |
+| 3b.8  | Image upload via signed URLs (Tier 1, storage RLS)      | ✅ built    |
+| 3b.9  | RSS feed at /news/feed.xml                              | ✅ built    |
+| 3b.10 | Migration handoff for ~35 articles                      | ✅ built    |
+| 4     | Lead capture (Apply Now / Contact)                      | needs brief |
+| 5     | SEO + DNS cutover                                       | gated on 4  |
 
 ## File map — what changed in Slice 3b
 
@@ -83,17 +87,25 @@ src/
   app/
     news/page.tsx             # ISR Server Component, calls listPublishedPosts
     news/[slug]/page.tsx      # SSG via generateStaticParams + generateMetadata
+    news/feed.xml/route.ts    # RSS feed
+    admin/news/page.tsx       # gated post list
+    admin/news/new/page.tsx   # new post editor
+    admin/news/[id]/page.tsx  # edit post editor
   components/sections/
     NewsHero.tsx, NewsList.tsx, NewsArticle.tsx
+  components/admin/
+    NewsEditorForm.tsx        # markdown editor + live preview + image upload
   types/
     database.ts               # Generated by `supabase gen types`
 supabase/
   config.toml                 # local CLI config (linked to remote)
   migrations/
     20260501042413_init_news_cms.sql
+    20260504084000_news_images_storage.sql
 docs/
   slice-3-brief.md            # static vs CMS split rationale
   slice-3b-plan.md            # 10-commit implementation plan
+  news-cms/migration-handoff.md
 next.config.ts                # remotePatterns for Supabase Storage + Webflow CDN
 vitest.config.ts              # node env, src/**/*.test.ts pattern
 .env.local                    # gitignored — Supabase URL + anon + service role
@@ -105,8 +117,8 @@ vitest.config.ts              # node env, src/**/*.test.ts pattern
 cd /Users/jamesaims/vending-website
 npm run typecheck
 npm run lint
-npm test                                      # 10 markdown tests should pass
-npm run build                                 # 11 routes, /news Dynamic, /news/[slug] SSG
+npm test                                      # markdown + auth tests should pass
+npm run build                                 # includes /admin/news, /news/feed.xml, /news/[slug]
 curl -sI https://vending-website.vercel.app/news | head -1   # expect 200
 ```
 
@@ -129,61 +141,28 @@ curl -s "https://aacisvhkmsaabqdvdmmf.supabase.co/rest/v1/app_user_emails?select
   -H "apikey: $SERVICE" -H "Authorization: Bearer $SERVICE"
 ```
 
-## Slice 3b.5 — kickoff prompt (paste into a new session)
+## Next kickoff prompt (paste into a new session)
 
 ```
 Working on the Vendingpreneurs migration in /Users/jamesaims/vending-website/.
 Read PLAN.md, HANDOFF.md, and docs/slice-3b-plan.md first to load context.
 
-Slices 0, 1a, 1b, 2, 3a, and 3b.1–3b.4 are shipped. /news + /news/[slug]
-read from Supabase and show the empty state at vending-website.vercel.app/news.
+Slices 0, 1a, 1b, 2, 3a, and 3b are implemented locally. First verify
+the News CMS deployment end to end:
 
-Start Slice 3b.5: auth — magic link login + admin middleware. This is
-Tier 1 (security-shaped). Steps:
+1. Use an admin email accepted by Supabase Auth, or fix
+   `james@modernamenities.com` deliverability/domain validation.
+2. Sign in at /admin/login.
+3. Create a draft post, upload a cover image, preview markdown, publish,
+   confirm it appears on /news and /news/<slug>, then unpublish/archive.
+4. Confirm /news/feed.xml returns valid RSS.
+5. Update any docs if verification finds drift.
 
-1. Add /admin/login page with a Server Action that calls
-   supabase.auth.signInWithOtp({ email, options: { emailRedirectTo:
-   '<site>/auth/callback' } }). Show a "check your email" confirmation.
-
-2. Add /auth/callback route handler that exchanges the OAuth code for
-   a session and redirects to /admin/news (or /admin/login on failure).
-
-3. Add src/middleware.ts + src/lib/supabase/middleware.ts. Matcher
-   covers /admin/:path* and /auth/:path* only — public marketing pages
-   bypass middleware entirely. The middleware:
-     a) refreshes the session via supabase.auth.getUser()
-     b) for /admin/* routes, redirects to /admin/login if there's no
-        user, OR if the user has no row in app_users.
-
-4. Add a requireAdmin() helper in src/lib/supabase/auth.ts that:
-     - calls supabase.auth.getUser() (NOT getSession — JWT can be spoofed)
-     - throws / redirects if not signed in
-     - looks up app_users via service role, throws if not present
-   Use it in every /admin/* Server Component and Server Action as
-   defence-in-depth on top of RLS.
-
-5. Confirm magic-link signup auto-promotes via the trigger:
-     - sign up at /admin/login with james@modernamenities.com
-     - check that auth.users got a row
-     - check that public.app_users got a matching row (auto-trigger)
-     - confirm /admin (placeholder /admin/news page) renders for that user
-     - sign out + try with a non-allowlisted email and confirm rejection.
-
-6. Tests: write a small Vitest suite that mocks the Supabase client and
-   verifies requireAdmin() rejects when:
-     - no user
-     - user not in app_users
-     - user in app_users (positive case)
-
-7. Verify build clean (npm run typecheck && lint && test && build).
-   Commit "feat: news cms — auth + admin middleware (3b.5)" and push.
-   Vercel auto-deploys. Visual-check by signing in.
-
-Stop and ask before starting 3b.6 (admin UI). 3b.6–3b.8 are connected;
-do them in one session if possible, with a checkpoint after 3b.7.
+Then draft the Slice 4 lead-capture brief before code. This is Tier 1:
+Apply Now and Contact cannot silently lose leads.
 ```
 
-## Open items (not blocking 3b.5)
+## Open items (not blocking 3b verification)
 
 - **Slice 1c** — migrate 4 testimonial videos from Bunny CDN to
   Cloudflare Stream. Bunny works fine for now.
@@ -193,9 +172,12 @@ do them in one session if possible, with a checkpoint after 3b.7.
 - **Q10** — Sentry setup deferred until Chrome MCP is reachable, or
   invoke `/sentry-setup` skill.
 - **GA4 measurement ID** — provision a property and add `NEXT_PUBLIC_GA_ID`.
-- **News CMS migration** — once 3b.7 ships, paste the ~35 articles
-  manually into the admin UI. Slice 3b.10 docs the exact process and
-  produces the slug map for the Slice 5 redirect set.
+- **News CMS migration** — paste the ~35 articles manually into the admin UI
+  using `docs/news-cms/migration-handoff.md`, producing the slug map for the
+  Slice 5 redirect set.
+- **Supabase Auth admin email** — `james@modernamenities.com` is allowlisted
+  locally/remotely in `app_user_emails`, but Supabase Auth currently rejects it
+  during `signInWithOtp` with `email_address_invalid`.
 
 ## Recent commit history
 

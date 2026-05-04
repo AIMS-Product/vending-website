@@ -1,13 +1,46 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { createClient } from "@/lib/supabase/client";
 import { requestMagicLink, type LoginState } from "./actions";
 
 const initialState: LoginState = { status: "idle" };
 
 export function LoginForm() {
   const [state, formAction] = useActionState(requestMagicLink, initialState);
+  const [hashError, setHashError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+    if (!accessToken || !refreshToken) return;
+
+    let cancelled = false;
+    // Hosted Supabase projects can send implicit-flow magic links unless the
+    // email template is customized for PKCE token_hash links. Recover those
+    // hash tokens here so either email-template style reaches the admin gate.
+    createClient()
+      .auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      })
+      .then(({ error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error("magic link hash session failed", error);
+          setHashError("That sign-in link could not be used. Try again.");
+          return;
+        }
+        window.history.replaceState(null, "", "/admin/login");
+        window.location.assign("/admin/news");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (state.status === "sent") {
     return (
@@ -47,6 +80,12 @@ export function LoginForm() {
       {state.status === "error" && (
         <p className="text-sm text-red-600" role="alert" aria-live="polite">
           {state.message}
+        </p>
+      )}
+
+      {hashError && (
+        <p className="text-sm text-red-600" role="alert" aria-live="polite">
+          {hashError}
         </p>
       )}
     </form>

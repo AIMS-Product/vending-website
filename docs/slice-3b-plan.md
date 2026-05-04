@@ -1,6 +1,7 @@
 # Slice 3b — News CMS Implementation Plan
 
 _Drafted 2026-05-01 by Claude (Opus 4.7) ahead of any code._
+_Implementation status updated 2026-05-04._
 _Tier 2: introduces auth, RLS, file uploads, and a real backend._
 
 ## Decisions already locked
@@ -63,6 +64,10 @@ checks (security, RLS, sanitisation tests).
 | 3b.8  | `feat: news cms — image upload via signed urls`                     | **1** | Storage bucket + RLS + upload component + alt-text required |
 | 3b.9  | `feat: news cms — rss feed at /news/feed.xml`                       | 3     | Cheap once data layer exists                                |
 | 3b.10 | `docs: news cms migration handoff (35 articles to rewrite)`         | 3     | Markdown export from Webflow + a one-page how-to            |
+
+Status: 3b.1–3b.5 are committed; 3b.6–3b.10 are implemented locally and
+await final verification/deploy. The storage migration has been applied to the
+remote Supabase project.
 
 ## Detailed designs
 
