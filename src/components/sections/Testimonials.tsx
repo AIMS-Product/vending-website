@@ -1,5 +1,9 @@
-import Image from "next/image";
-import { testimonials, type Testimonial } from "@/lib/content/testimonials";
+import {
+  caseStudyQuotes,
+  caseStudyVideos,
+  type CaseStudyQuote,
+  type CaseStudyVideo,
+} from "@/lib/content/case-studies";
 
 export function Testimonials() {
   return (
@@ -16,10 +20,18 @@ export function Testimonials() {
           coaching.
         </p>
 
-        <ul className="mx-auto mt-16 grid max-w-5xl gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((t) => (
-            <li key={t.id}>
-              <TestimonialCard testimonial={t} />
+        <ul className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {caseStudyVideos.map((video) => (
+            <li key={video.id}>
+              <VideoTestimonialCard video={video} />
+            </li>
+          ))}
+        </ul>
+
+        <ul className="mt-12 grid gap-6 text-left lg:grid-cols-2">
+          {caseStudyQuotes.map((quote) => (
+            <li key={quote.id}>
+              <QuoteTestimonialCard quote={quote} />
             </li>
           ))}
         </ul>
@@ -28,56 +40,40 @@ export function Testimonials() {
   );
 }
 
-function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
+function VideoTestimonialCard({ video }: { video: CaseStudyVideo }) {
   return (
-    <article className="bg-brand-50/40 ring-brand-100/60 flex flex-col gap-4 rounded-3xl p-6 text-left shadow-sm ring-1">
-      <Media testimonial={testimonial} />
-      <Stars />
+    <article className="bg-brand-50/40 ring-brand-100/60 flex h-full flex-col gap-4 rounded-3xl p-5 text-left shadow-sm ring-1">
+      <video
+        controls
+        preload="none"
+        poster={video.posterUrl}
+        className="aspect-[3/4] w-full rounded-2xl bg-slate-100 object-cover"
+        aria-label={`Video testimonial from ${video.name}`}
+      >
+        <source src={video.videoUrl} type="video/mp4" />
+      </video>
       <header>
-        <h3 className="text-brand-600 text-base font-semibold">
-          {testimonial.name}
-        </h3>
-        <p className="text-sm text-slate-500">{testimonial.role}</p>
+        <h3 className="text-brand-600 text-base font-semibold">{video.name}</h3>
+        <p className="text-sm text-slate-500">{video.role}</p>
       </header>
     </article>
   );
 }
 
-function Media({ testimonial }: { testimonial: Testimonial }) {
-  if (testimonial.videoUrl) {
-    return (
-      <video
-        controls
-        preload="none"
-        poster={testimonial.posterUrl ?? undefined}
-        className="aspect-[3/4] w-full rounded-2xl bg-slate-100 object-cover"
-        aria-label={`Video testimonial from ${testimonial.name}`}
-      >
-        <source src={testimonial.videoUrl} type="video/mp4" />
-      </video>
-    );
-  }
-
-  if (testimonial.avatarUrl) {
-    return (
-      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-white">
-        <Image
-          src={testimonial.avatarUrl}
-          alt={`${testimonial.name} headshot`}
-          fill
-          sizes="(max-width: 640px) 100vw, 33vw"
-          className="object-contain"
-        />
-      </div>
-    );
-  }
-
+function QuoteTestimonialCard({ quote }: { quote: CaseStudyQuote }) {
   return (
-    <div className="from-brand-200 via-brand-300 to-brand-400 relative flex aspect-[3/4] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br">
-      <span className="text-3xl font-semibold text-white drop-shadow">
-        {testimonial.initials}
-      </span>
-    </div>
+    <article className="ring-brand-100/60 flex h-full flex-col gap-4 rounded-3xl bg-white p-6 shadow-sm ring-1">
+      <header>
+        <h3 className="text-brand-600 text-base font-semibold">{quote.name}</h3>
+        <p className="text-sm text-slate-500">{quote.role}</p>
+      </header>
+      <Stars />
+      <div className="space-y-3 text-sm leading-relaxed text-slate-700">
+        {quote.body.map((paragraph, index) => (
+          <p key={index}>{paragraph}</p>
+        ))}
+      </div>
+    </article>
   );
 }
 

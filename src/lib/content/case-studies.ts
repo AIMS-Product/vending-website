@@ -49,8 +49,8 @@ export const caseStudyVideos: ReadonlyArray<CaseStudyVideo> = [
   },
   {
     id: "anthony",
-    name: "Anthony",
-    role: "CEO, H&H Vending",
+    name: "Anthony, CEO",
+    role: "H&H Vending",
     videoUrl:
       "https://siladigital.b-cdn.net/Websites%20Videos/Vendingprenuers/Anthony.mp4",
     posterUrl: "/images/testimonials/poster-anthony.png",
