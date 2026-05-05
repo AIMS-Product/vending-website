@@ -4,8 +4,8 @@ import { benefits, type Benefit } from "@/lib/content/home";
 export function Benefits() {
   return (
     <section className="px-6 py-24 lg:px-10 lg:py-32">
-      <div className="mx-auto grid max-w-[1400px] items-center gap-12 lg:grid-cols-2 lg:gap-20">
-        <div className="relative aspect-square w-full overflow-hidden rounded-3xl shadow-lg">
+      <div className="mx-auto grid max-w-[1400px] items-stretch gap-12 lg:grid-cols-2 lg:gap-20">
+        <div className="relative aspect-square w-full overflow-hidden rounded-3xl shadow-lg lg:aspect-auto lg:h-full">
           <Image
             src={benefits.image.src}
             alt={benefits.image.alt}
@@ -15,7 +15,7 @@ export function Benefits() {
           />
         </div>
 
-        <div>
+        <div className="flex h-full flex-col justify-center">
           <h2 className="text-brand-500 text-4xl font-semibold tracking-tight sm:text-5xl">
             {benefits.title}
           </h2>

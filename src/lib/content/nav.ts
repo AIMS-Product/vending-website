@@ -14,13 +14,9 @@ const VENDHUB_URL = "https://www.vendhub.ai/";
 
 export const primaryNav: ReadonlyArray<NavItem> = [
   { label: "Home", href: "/" },
-  { label: "About Us", href: "/about" },
   { label: "Case Studies", href: "/case-studies" },
-  { label: "Machine Marketplace", href: VENDHUB_URL, external: true },
-  { label: "Vending Leads", href: VENDHUB_URL, external: true },
-  { label: "Vending CPA Experts", href: VENDHUB_URL, external: true },
-  { label: "Machine Financing", href: VENDHUB_URL, external: true },
-  { label: "Vending Insurance", href: VENDHUB_URL, external: true },
+  { label: "About Us", href: "/about" },
+  { label: "Resources", href: "/pre-call-resources" },
   { label: "Contact Us", href: "/contact" },
 ];
 

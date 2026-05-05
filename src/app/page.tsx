@@ -17,8 +17,8 @@ export default function Home() {
     <>
       <Hero />
       <BrandStrip />
-      <Benefits />
       <AcceleratorProgram />
+      <Benefits />
       <Testimonials />
       <FinalCta />
     </>

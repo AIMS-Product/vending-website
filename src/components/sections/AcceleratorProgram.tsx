@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { AnimatedStatValue } from "@/components/sections/AnimatedStatValue";
 import { Button } from "@/components/ui/Button";
 import { accelerator } from "@/lib/content/home";
 
@@ -19,7 +20,7 @@ export function AcceleratorProgram() {
                 className="grid grid-cols-[auto_1fr] items-baseline gap-6 py-5"
               >
                 <dt className="text-brand-500 text-3xl font-bold sm:text-4xl">
-                  {stat.value}
+                  <AnimatedStatValue value={stat.value} />
                 </dt>
                 <dd className="text-brand-600 text-sm">{stat.label}</dd>
               </div>
@@ -32,14 +33,14 @@ export function AcceleratorProgram() {
         </div>
 
         <div className="bg-brand-50/70 rounded-3xl p-8 lg:p-10">
-          <ul className="space-y-5">
+          <ul className="space-y-3">
             {accelerator.points.map((point) => (
-              <li key={point} className="flex items-start gap-4">
+              <li key={point} className="flex items-start gap-3">
                 <span
                   aria-hidden
-                  className="text-brand-500 ring-brand-100 mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-white ring-1"
+                  className="text-brand-500 ring-brand-100 mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-white ring-1"
                 >
-                  <svg viewBox="0 0 16 16" className="size-3.5" fill="none">
+                  <svg viewBox="0 0 16 16" className="size-3" fill="none">
                     <path
                       d="M3 8.5l3 3 7-7"
                       stroke="currentColor"

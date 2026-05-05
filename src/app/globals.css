@@ -51,6 +51,25 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+@keyframes brand-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 2rem));
+  }
+}
+
+.brand-marquee {
+  animation: brand-marquee 28s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-marquee {
+    animation: none;
+  }
+}
+
 /* News article body. Rendered from sanitised markdown via
    dangerouslySetInnerHTML, so we style with element selectors. */
 .news-prose {

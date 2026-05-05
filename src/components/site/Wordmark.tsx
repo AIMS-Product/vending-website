@@ -19,7 +19,7 @@ export function Wordmark({ className, height = 36 }: WordmarkProps) {
       width={Math.round((909 / 274) * height)}
       height={height}
       priority
-      className={cn("h-9 w-auto", className)}
+      className={cn("h-auto w-auto", className)}
     />
   );
 }
