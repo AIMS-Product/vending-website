@@ -79,6 +79,11 @@ const leadInputSchema = z.object({
   sourcePath: optionalText("Source path", 500),
   landingPath: optionalText("Landing path", 500),
   referrer: optionalText("Referrer", 1000),
+  sourcePageId: optionalText("Source page ID", 80),
+  sourcePageSlug: optionalText("Source page slug", 160),
+  targetKeyword: optionalText("Target keyword", 180),
+  sourceBlockId: optionalText("Source block ID", 120),
+  sourceCtaTrackingName: optionalText("Source CTA tracking name", 160),
   userAgent: optionalText("User agent", 1000),
   utmSource: optionalText("UTM source", 160),
   utmMedium: optionalText("UTM medium", 160),
@@ -103,6 +108,11 @@ export type SubmitLeadInput = {
   sourcePath?: unknown;
   landingPath?: unknown;
   referrer?: unknown;
+  sourcePageId?: unknown;
+  sourcePageSlug?: unknown;
+  targetKeyword?: unknown;
+  sourceBlockId?: unknown;
+  sourceCtaTrackingName?: unknown;
   userAgent?: unknown;
   utmSource?: unknown;
   utmMedium?: unknown;
@@ -240,6 +250,11 @@ async function insertLead(
     source_path: lead.sourcePath,
     landing_path: lead.landingPath,
     referrer: lead.referrer,
+    source_page_id: lead.sourcePageId,
+    source_page_slug: lead.sourcePageSlug,
+    target_keyword: lead.targetKeyword,
+    source_block_id: lead.sourceBlockId,
+    source_cta_tracking_name: lead.sourceCtaTrackingName,
     user_agent: lead.userAgent,
     utm_source: lead.utmSource,
     utm_medium: lead.utmMedium,
@@ -408,6 +423,10 @@ function formatLeadText(lead: ValidLeadInput) {
     fieldLine("Budget", lead.budget),
     fieldLine("Timeline", lead.timeline),
     fieldLine("Source path", lead.sourcePath),
+    fieldLine("Source page", lead.sourcePageSlug),
+    fieldLine("Target keyword", lead.targetKeyword),
+    fieldLine("Source block", lead.sourceBlockId),
+    fieldLine("Source CTA", lead.sourceCtaTrackingName),
     fieldLine("Landing path", lead.landingPath),
     fieldLine("UTM source", lead.utmSource),
     fieldLine("UTM medium", lead.utmMedium),
@@ -428,6 +447,8 @@ function formatSlackText(lead: ValidLeadInput) {
     `${lead.fullName} <${lead.email}>`,
     fieldLine("Phone", lead.phone),
     fieldLine("Source", lead.sourcePath),
+    fieldLine("Resource", lead.sourcePageSlug),
+    fieldLine("CTA", lead.sourceCtaTrackingName),
   ]
     .filter((line) => line !== null)
     .join("\n");

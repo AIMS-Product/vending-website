@@ -1,4 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { resolveRedirectDestination } from "@/lib/redirects";
+import {
+  getBuilderRedirectBySourcePath,
+  hasPublishedSeoPageSlug,
+} from "@/lib/services/seo-page-public";
 import { updateSession } from "@/lib/supabase/middleware";
 
 const LOGIN_PATH = "/admin/login";
@@ -20,8 +25,31 @@ const LOGIN_PATH = "/admin/login";
  * any one of which would block an unauthorized read or write on its own.
  */
 export async function proxy(request: NextRequest) {
-  const { response, user, supabase } = await updateSession(request);
   const path = request.nextUrl.pathname;
+
+  if (path.startsWith("/resources/")) {
+    if (path.startsWith("/resources/preview/")) {
+      return NextResponse.next();
+    }
+
+    const redirect = await getBuilderRedirectBySourcePath(path);
+    if (redirect) {
+      return NextResponse.redirect(
+        resolveRedirectDestination(request, redirect.destination_path),
+        redirect.status_code,
+      );
+    }
+
+    const slug = decodeURIComponent(path.replace(/^\/resources\//, ""));
+    const exists = await hasPublishedSeoPageSlug(slug);
+    if (!exists) {
+      return new Response("Not found", { status: 404 });
+    }
+
+    return NextResponse.next();
+  }
+
+  const { response, user, supabase } = await updateSession(request);
 
   // The login page must remain reachable to anonymous users.
   if (path === LOGIN_PATH) return response;
@@ -49,5 +77,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/auth/:path*"],
+  matcher: ["/admin/:path*", "/auth/:path*", "/resources/:path*"],
 };

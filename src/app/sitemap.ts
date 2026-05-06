@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/site";
 import { listPublishedSlugs } from "@/lib/services/news";
+import { listSitemapSeoPages } from "@/lib/services/seo-page-public";
 
 const staticRoutes = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
@@ -13,11 +14,14 @@ const staticRoutes = [
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" },
 ] as const;
 
-export const revalidate = 3600;
+export const revalidate = 0;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
-  const slugs = await listPublishedSlugs();
+  const [slugs, resourcePages] = await Promise.all([
+    listPublishedSlugs(),
+    listSitemapSeoPages(),
+  ]);
 
   return [
     ...staticRoutes.map((route) => ({
@@ -31,6 +35,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.6,
+    })),
+    ...resourcePages.map((page) => ({
+      url: absoluteUrl(`/resources/${page.slug}`),
+      lastModified: new Date(page.updated_at),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
     })),
   ];
 }
