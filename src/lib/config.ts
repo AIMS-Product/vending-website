@@ -6,6 +6,12 @@ const optionalEnv = z.preprocess(
   z.string().optional(),
 );
 
+const optionalTrimmedEnv = (fallback: string) =>
+  z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().trim().min(1).default(fallback),
+  );
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -19,6 +25,14 @@ const envSchema = z.object({
   LEAD_NOTIFICATION_FROM: optionalEnv,
   LEAD_NOTIFICATION_SUBJECT_PREFIX: optionalEnv,
   SLACK_WEBHOOK_URL: optionalEnv,
+  OPENAI_API_KEY: optionalEnv,
+  OPENAI_SEO_MODEL: optionalTrimmedEnv("gpt-5.5"),
+  OPENAI_SEO_REASONING_EFFORT: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z
+      .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+      .default("medium"),
+  ),
 });
 
 const parsed = envSchema.safeParse({
@@ -33,6 +47,9 @@ const parsed = envSchema.safeParse({
   LEAD_NOTIFICATION_SUBJECT_PREFIX:
     process.env.LEAD_NOTIFICATION_SUBJECT_PREFIX,
   SLACK_WEBHOOK_URL: process.env.SLACK_WEBHOOK_URL,
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  OPENAI_SEO_MODEL: process.env.OPENAI_SEO_MODEL,
+  OPENAI_SEO_REASONING_EFFORT: process.env.OPENAI_SEO_REASONING_EFFORT,
 });
 
 if (!parsed.success) {

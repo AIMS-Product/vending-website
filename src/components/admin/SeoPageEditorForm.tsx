@@ -23,18 +23,32 @@ import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import {
   autosaveSeoPageDraft,
+  generateAiSeoPageProposal,
   saveSeoPage,
+  type PageAiProposalResult,
   type PageAutosaveResult,
   type PageEditorActionState,
 } from "@/app/admin/pages/actions";
 import {
   createEmptyPageContent,
   pageContentSchema,
+  richTextDocumentPlainText,
   type PageBlock,
   type PageColumn,
   type PageContent,
   type PageSection,
 } from "@/lib/page-builder/blocks";
+import {
+  assessSeoReadiness,
+  type SeoReadinessStatus,
+  type SeoReadinessSummary,
+} from "@/lib/page-builder/seo-readiness";
+import {
+  applyInternalLinkSuggestion,
+  suggestInternalLinks,
+  type InternalLinkSuggestion,
+  type InternalLinkSuggestionTarget,
+} from "@/lib/page-builder/internal-link-suggestions";
 import {
   createPageBlock,
   createPageColumn,
@@ -51,13 +65,16 @@ type Sensors = ReturnType<typeof useSensors>;
 
 type SeoPageEditorFormProps = {
   page?: SeoPage;
+  internalLinkTargets?: InternalLinkSuggestionTarget[];
   savedFromRedirect?: boolean;
   redirectError?: string;
 };
 
 const initialState: PageEditorActionState = { status: "idle" };
+const initialAiProposalState: PageAiProposalResult = { status: "idle" };
 export function SeoPageEditorForm({
   page,
+  internalLinkTargets = [],
   savedFromRedirect = false,
   redirectError,
 }: SeoPageEditorFormProps) {
@@ -82,7 +99,13 @@ export function SeoPageEditorForm({
     ensureEditablePageContent(initialContent),
   );
   const [autosave, setAutosave] = useState<PageAutosaveResult | null>(null);
+  const [aiProposalResult, setAiProposalResult] =
+    useState<PageAiProposalResult>(initialAiProposalState);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [isSeoPanelOpen, setIsSeoPanelOpen] = useState(false);
+  const [linkSuggestionMessage, setLinkSuggestionMessage] = useState<
+    string | null
+  >(null);
   const autosaveReady = useRef(false);
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -94,7 +117,42 @@ export function SeoPageEditorForm({
   );
   const visibleSlug = slugTouched ? slug : slugify(title);
   const draftContentJson = useMemo(() => JSON.stringify(content), [content]);
+  const seoReadiness = useMemo(
+    () =>
+      assessSeoReadiness(content, {
+        slug: visibleSlug,
+        title,
+        targetKeyword,
+        seoTitle,
+        metaDescription,
+        canonicalUrl,
+        noindex,
+        sitemapEnabled,
+      }),
+    [
+      canonicalUrl,
+      content,
+      metaDescription,
+      noindex,
+      seoTitle,
+      sitemapEnabled,
+      targetKeyword,
+      title,
+      visibleSlug,
+    ],
+  );
+  const internalLinkSuggestions = useMemo(
+    () =>
+      suggestInternalLinks({
+        content,
+        currentPageId: page?.id,
+        currentPath: visibleSlug ? `/resources/${visibleSlug}` : null,
+        targets: internalLinkTargets,
+      }),
+    [content, internalLinkTargets, page?.id, visibleSlug],
+  );
   const canPublish = Boolean(page?.id);
+  const publishDisabled = !canPublish || seoReadiness.blockers.length > 0;
   const saveMessage =
     redirectError ??
     state.message ??
@@ -175,10 +233,12 @@ export function SeoPageEditorForm({
             </span>
             <button
               type="button"
-              className={smallButtonClass}
+              className={`${smallButtonClass} ${readinessButtonClass(
+                seoReadiness.status,
+              )}`}
               onClick={() => setIsSeoPanelOpen(true)}
             >
-              SEO settings
+              SEO: {seoReadiness.label}
             </button>
             <button className={primaryButtonClass} name="intent" value="save">
               Save draft
@@ -187,7 +247,12 @@ export function SeoPageEditorForm({
               className={primaryButtonClass}
               name="intent"
               value="publish"
-              disabled={!canPublish}
+              disabled={publishDisabled}
+              title={
+                seoReadiness.blockers.length > 0
+                  ? "Resolve SEO blockers before publishing."
+                  : undefined
+              }
             >
               Publish
             </button>
@@ -235,6 +300,18 @@ export function SeoPageEditorForm({
             )}
           </div>
         )}
+
+        <SeoReadinessPanel
+          summary={seoReadiness}
+          aiProposalResult={aiProposalResult}
+          canRunAiAgent={Boolean(page?.id)}
+          isAiGenerating={isAiGenerating}
+          internalLinkSuggestions={internalLinkSuggestions}
+          linkSuggestionMessage={linkSuggestionMessage}
+          onApplyInternalLinkSuggestion={applyLinkSuggestion}
+          onRunAiAgent={runAiSeoAgent}
+          onOpenSettings={() => setIsSeoPanelOpen(true)}
+        />
 
         <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <header className="border-b border-slate-200 bg-slate-50">
@@ -365,6 +442,7 @@ export function SeoPageEditorForm({
           </button>
         </div>
         <div className="mt-5 space-y-4">
+          <SeoReadinessDetails summary={seoReadiness} />
           <label className="mt-4 block">
             <span className="text-sm font-medium text-slate-700">
               Target keyword
@@ -632,6 +710,323 @@ export function SeoPageEditorForm({
       })),
     );
   }
+
+  function applyLinkSuggestion(suggestion: InternalLinkSuggestion) {
+    const result = applyInternalLinkSuggestion(content, suggestion);
+    if (!result.applied) {
+      setLinkSuggestionMessage(result.reason);
+      return;
+    }
+
+    setContent(result.content);
+    setLinkSuggestionMessage(
+      `Linked "${suggestion.anchorText}" to ${suggestion.targetPath}.`,
+    );
+  }
+
+  async function runAiSeoAgent() {
+    if (!page?.id) {
+      setAiProposalResult({
+        status: "error",
+        message: "Save the draft before running AI.",
+      });
+      return;
+    }
+
+    setIsAiGenerating(true);
+    setAiProposalResult({ status: "idle" });
+    try {
+      setAiProposalResult(await generateAiSeoPageProposal(page.id));
+    } catch (error) {
+      console.error("AI SEO agent failed", error);
+      setAiProposalResult({
+        status: "error",
+        message: "Could not create an AI proposal.",
+      });
+    } finally {
+      setIsAiGenerating(false);
+    }
+  }
+}
+
+function SeoReadinessPanel({
+  summary,
+  aiProposalResult,
+  canRunAiAgent,
+  isAiGenerating,
+  internalLinkSuggestions,
+  linkSuggestionMessage,
+  onApplyInternalLinkSuggestion,
+  onRunAiAgent,
+  onOpenSettings,
+}: {
+  summary: SeoReadinessSummary;
+  aiProposalResult: PageAiProposalResult;
+  canRunAiAgent: boolean;
+  isAiGenerating: boolean;
+  internalLinkSuggestions: InternalLinkSuggestion[];
+  linkSuggestionMessage: string | null;
+  onApplyInternalLinkSuggestion: (suggestion: InternalLinkSuggestion) => void;
+  onRunAiAgent: () => void;
+  onOpenSettings: () => void;
+}) {
+  const topFindings = [
+    ...summary.blockers,
+    ...summary.warnings,
+    ...summary.opportunities,
+  ].slice(0, 4);
+
+  return (
+    <section className="mb-5 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            SEO readiness
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <span
+              className={`rounded-full px-3 py-1 text-sm font-semibold ${readinessPillClass(
+                summary.status,
+              )}`}
+            >
+              {summary.label}
+            </span>
+            <p className="text-sm text-slate-600">
+              {summary.blockers.length} blockers · {summary.warnings.length}{" "}
+              warnings · {summary.opportunities.length} opportunities
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          className={smallButtonClass}
+          onClick={onOpenSettings}
+        >
+          Review SEO
+        </button>
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {summary.categories.map((category) => (
+          <div
+            key={category.category}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-slate-600">
+                {category.label}
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${readinessPillClass(
+                  category.status,
+                )}`}
+              >
+                {labelForReadinessStatus(category.status)}
+              </span>
+            </div>
+            {category.findings[0] ? (
+              <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
+                {category.findings[0].message}
+              </p>
+            ) : (
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                Evidence looks clean.
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {topFindings.length > 0 && (
+        <ul className="mt-4 space-y-2">
+          {topFindings.map((finding, index) => (
+            <li
+              key={`${finding.code}-${finding.path}-${index}`}
+              className="flex gap-3 text-sm leading-6 text-slate-700"
+            >
+              <span
+                className={`mt-1 h-2 w-2 shrink-0 rounded-full ${findingDotClass(
+                  finding.severity,
+                )}`}
+              />
+              <span>
+                <span className="font-medium text-slate-950">
+                  {finding.message}
+                </span>
+                {finding.evidence && (
+                  <span className="text-slate-500"> {finding.evidence}</span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-5 rounded-xl border border-violet-100 bg-violet-50/60 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-950">SEO agent</h3>
+            <p className="mt-1 text-xs leading-5 text-slate-600">
+              Creates a source-backed proposal for review before anything is
+              inserted.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={miniButtonClass}
+            disabled={!canRunAiAgent || isAiGenerating}
+            onClick={onRunAiAgent}
+          >
+            {isAiGenerating
+              ? "Running..."
+              : canRunAiAgent
+                ? "Run SEO agent"
+                : "Save first"}
+          </button>
+        </div>
+        {aiProposalResult.status !== "idle" && aiProposalResult.message && (
+          <p
+            className={`mt-3 rounded-lg bg-white px-3 py-2 text-xs leading-5 ring-1 ${
+              aiProposalResult.status === "error"
+                ? "text-red-700 ring-red-100"
+                : "text-emerald-700 ring-emerald-100"
+            }`}
+          >
+            {aiProposalResult.message}
+            {aiProposalResult.status === "created" &&
+              aiProposalResult.proposalId && (
+                <span className="ml-2 font-mono text-[11px] text-slate-400">
+                  {aiProposalResult.proposalId}
+                </span>
+              )}
+          </p>
+        )}
+      </div>
+
+      {(internalLinkSuggestions.length > 0 || linkSuggestionMessage) && (
+        <div className="mt-5 rounded-xl border border-sky-100 bg-sky-50/60 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-950">
+                Internal link suggestions
+              </h3>
+              <p className="mt-1 text-xs leading-5 text-slate-600">
+                Add relevant links from the copy that already exists on this
+                page.
+              </p>
+            </div>
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-200">
+              {internalLinkSuggestions.length} available
+            </span>
+          </div>
+
+          {linkSuggestionMessage && (
+            <p className="mt-3 rounded-lg bg-white px-3 py-2 text-xs leading-5 text-slate-600 ring-1 ring-sky-100">
+              {linkSuggestionMessage}
+            </p>
+          )}
+
+          {internalLinkSuggestions.length > 0 && (
+            <div className="mt-3 grid gap-3 lg:grid-cols-2">
+              {internalLinkSuggestions.slice(0, 4).map((suggestion) => (
+                <div
+                  key={suggestion.id}
+                  className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-sky-100"
+                >
+                  <p className="text-sm font-semibold text-slate-950">
+                    Link {suggestion.anchorText}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    {suggestion.reason}
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs break-all text-sky-700">
+                      {suggestion.targetPath}
+                    </span>
+                    <button
+                      type="button"
+                      className={miniButtonClass}
+                      onClick={() => onApplyInternalLinkSuggestion(suggestion)}
+                    >
+                      Apply link
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function SeoReadinessDetails({ summary }: { summary: SeoReadinessSummary }) {
+  const findings = [
+    ...summary.blockers,
+    ...summary.warnings,
+    ...summary.opportunities,
+  ];
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold text-slate-500 uppercase">
+            Readiness
+          </p>
+          <p className="mt-2 text-sm font-semibold text-slate-950">
+            {summary.label}
+          </p>
+        </div>
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${readinessPillClass(
+            summary.status,
+          )}`}
+        >
+          {summary.blockers.length} / {summary.warnings.length} /{" "}
+          {summary.opportunities.length}
+        </span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-600">
+        <span>{summary.metrics.visibleWordCount} words</span>
+        <span>{summary.metrics.blockCount} blocks</span>
+        <span>{summary.metrics.internalLinkCount} links</span>
+        <span>{summary.metrics.faqItemCount} FAQs</span>
+      </div>
+
+      {findings.length > 0 ? (
+        <div className="mt-4 space-y-3">
+          {findings.map((finding, index) => (
+            <div
+              key={`${finding.code}-${finding.path}-${index}`}
+              className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-200"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-slate-500 uppercase">
+                  {finding.severity}
+                </span>
+                <span className="text-xs text-slate-400">{finding.path}</span>
+              </div>
+              <p className="mt-2 text-sm font-medium text-slate-900">
+                {finding.message}
+              </p>
+              {finding.evidence && (
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  {finding.evidence}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-lg bg-white p-3 text-sm text-slate-600 shadow-sm ring-1 ring-slate-200">
+          No SEO readiness findings on this draft.
+        </p>
+      )}
+    </div>
+  );
 }
 
 function SortableSectionEditor({
@@ -1855,12 +2250,7 @@ function makeBuilderId(prefix: "section" | "column" | "block") {
 }
 
 function bodyText(block: Extract<PageBlock, { type: "rich_text" }>) {
-  return block.props.body.nodes
-    .map((node) => {
-      if (node.type === "list") return node.items.join("\n");
-      return node.text;
-    })
-    .join("\n\n");
+  return richTextDocumentPlainText(block.props.body);
 }
 
 function blockLabel(type: PageBlock["type"]) {
@@ -1940,6 +2330,41 @@ function formatTime(iso: string) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function labelForReadinessStatus(status: SeoReadinessStatus) {
+  if (status === "blocked") return "Blocked";
+  if (status === "needs_work") return "Needs work";
+  if (status === "opportunities") return "Review";
+  return "Strong";
+}
+
+function readinessPillClass(status: SeoReadinessStatus) {
+  if (status === "blocked") return "bg-red-50 text-red-700 ring-1 ring-red-200";
+  if (status === "needs_work") {
+    return "bg-amber-50 text-amber-800 ring-1 ring-amber-200";
+  }
+  if (status === "opportunities") {
+    return "bg-sky-50 text-sky-700 ring-1 ring-sky-200";
+  }
+  return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
+}
+
+function readinessButtonClass(status: SeoReadinessStatus) {
+  if (status === "blocked") return "border-red-200 bg-red-50 text-red-700";
+  if (status === "needs_work") {
+    return "border-amber-200 bg-amber-50 text-amber-800";
+  }
+  if (status === "opportunities") {
+    return "border-sky-200 bg-sky-50 text-sky-700";
+  }
+  return "border-emerald-200 bg-emerald-50 text-emerald-700";
+}
+
+function findingDotClass(severity: "blocker" | "warning" | "opportunity") {
+  if (severity === "blocker") return "bg-red-500";
+  if (severity === "warning") return "bg-amber-500";
+  return "bg-sky-500";
 }
 
 const headlineInputClass =

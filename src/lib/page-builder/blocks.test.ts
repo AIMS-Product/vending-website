@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createEmptyPageContent,
   pageContentSchema,
+  richTextDocumentPlainText,
   validatePageForPublish,
   type PageContent,
 } from "./blocks";
@@ -93,6 +94,106 @@ describe("page builder block schemas", () => {
                     },
                   },
                 ],
+              },
+            ],
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it("accepts rich text paragraphs with inline links without breaking legacy paragraphs", () => {
+    const content = pageContentSchema.parse({
+      ...validContent,
+      sections: [
+        {
+          ...validContent.sections[0],
+          columns: [
+            {
+              ...validContent.sections[0].columns[0],
+              blocks: validContent.sections[0].columns[0].blocks.map((block) =>
+                block.type === "rich_text"
+                  ? {
+                      ...block,
+                      props: {
+                        ...block.props,
+                        body: {
+                          version: 1,
+                          nodes: [
+                            {
+                              type: "paragraph",
+                              text: "Legacy paragraph stays valid.",
+                            },
+                            {
+                              type: "paragraph",
+                              spans: [
+                                { text: "Read the " },
+                                {
+                                  text: "application guide",
+                                  href: "/apply",
+                                },
+                                { text: " before you start." },
+                              ],
+                            },
+                          ],
+                        },
+                      },
+                    }
+                  : block,
+              ),
+            },
+          ],
+        },
+      ],
+    });
+
+    const richTextBlock = content.sections[0]?.columns[0]?.blocks.find(
+      (block) => block.type === "rich_text",
+    );
+    if (!richTextBlock || richTextBlock.type !== "rich_text") {
+      throw new Error("Expected rich text block.");
+    }
+
+    expect(richTextDocumentPlainText(richTextBlock.props.body)).toContain(
+      "Legacy paragraph stays valid. Read the application guide before you start.",
+    );
+  });
+
+  it("rejects unsafe inline rich text links", () => {
+    expect(() =>
+      pageContentSchema.parse({
+        ...validContent,
+        sections: [
+          {
+            ...validContent.sections[0],
+            columns: [
+              {
+                ...validContent.sections[0].columns[0],
+                blocks: validContent.sections[0].columns[0].blocks.map(
+                  (block) =>
+                    block.type === "rich_text"
+                      ? {
+                          ...block,
+                          props: {
+                            ...block.props,
+                            body: {
+                              version: 1,
+                              nodes: [
+                                {
+                                  type: "paragraph",
+                                  spans: [
+                                    {
+                                      text: "Unsafe link",
+                                      href: "javascript:alert(1)",
+                                    },
+                                  ],
+                                },
+                              ],
+                            },
+                          },
+                        }
+                      : block,
+                ),
               },
             ],
           },
@@ -339,6 +440,63 @@ describe("page builder block schemas", () => {
                       props: {
                         ...block.props,
                         href: "/missing-internal-page",
+                      },
+                    }
+                  : block,
+              ),
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = validatePageForPublish(content, {
+      slug: "start-vending",
+      title: "Start Vending",
+      seoTitle: "Start Vending",
+      metaDescription: "Learn how to start vending.",
+      noindex: false,
+      sitemapEnabled: true,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("Expected publish validation to fail.");
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "broken_internal_link" }),
+      ]),
+    );
+  });
+
+  it("blocks publishing with unknown internal links inside rich text spans", () => {
+    const content = pageContentSchema.parse({
+      ...validContent,
+      sections: [
+        {
+          ...validContent.sections[0],
+          columns: [
+            {
+              ...validContent.sections[0].columns[0],
+              blocks: validContent.sections[0].columns[0].blocks.map((block) =>
+                block.type === "rich_text"
+                  ? {
+                      ...block,
+                      props: {
+                        ...block.props,
+                        body: {
+                          version: 1,
+                          nodes: [
+                            {
+                              type: "paragraph",
+                              spans: [
+                                {
+                                  text: "Read this unknown resource.",
+                                  href: "/missing-internal-page",
+                                },
+                              ],
+                            },
+                          ],
+                        },
                       },
                     }
                   : block,

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { AiProposalValidationError } from "@/lib/services/ai-page-proposals";
 import {
   SeoPageValidationError,
   adminCreateSeoPagePreviewToken,
@@ -15,6 +16,12 @@ import {
   adminSaveSeoPageDraft,
   adminUpdateSeoPageSlug,
 } from "@/lib/services/seo-pages";
+import {
+  SeoAgentConfigurationError,
+  SeoAgentGenerationError,
+  SeoAgentSourceError,
+  adminGenerateOpenAiSeoPageProposal,
+} from "@/lib/services/openai-seo-agent";
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
 import { requireAdmin } from "@/lib/supabase/auth";
 
@@ -27,6 +34,11 @@ export type PageAutosaveResult =
   | { status: "saved"; savedAt: string }
   | { status: "skipped"; message: string }
   | { status: "error"; message: string };
+
+export type PageAiProposalResult =
+  | { status: "idle"; message?: string; proposalId?: string }
+  | { status: "created"; message: string; proposalId: string }
+  | { status: "error"; message: string; proposalId?: string };
 
 export type PagePreviewLinkActionState =
   | { status: "idle"; message?: string; previewPath?: string }
@@ -214,6 +226,29 @@ export async function createSeoPagePreviewLink(
   }
 }
 
+export async function generateAiSeoPageProposal(
+  pageId: string,
+): Promise<PageAiProposalResult> {
+  const admin = await requireAdmin();
+  if (!pageId) {
+    return { status: "error", message: "Save the page before running AI." };
+  }
+
+  try {
+    const proposal = await adminGenerateOpenAiSeoPageProposal(pageId, {
+      actorId: admin.user.id,
+    });
+    revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
+    return {
+      status: "created",
+      message: "AI proposal created for review.",
+      proposalId: proposal.id,
+    };
+  } catch (error) {
+    return pageAiProposalActionError(error);
+  }
+}
+
 export async function revokeSeoPagePreviewLink(formData: FormData) {
   const admin = await requireAdmin();
   const pageId = String(formData.get("pageId") ?? "");
@@ -334,6 +369,45 @@ function pagePreviewActionError(error: unknown): PagePreviewLinkActionState {
   return {
     status: "error",
     message: "Could not create preview link.",
+  };
+}
+
+function pageAiProposalActionError(error: unknown): PageAiProposalResult {
+  console.error("seo page AI proposal action failed", error);
+  if (error instanceof SeoAgentConfigurationError) {
+    return {
+      status: "error",
+      message: "OpenAI is not configured for the SEO agent.",
+    };
+  }
+  if (error instanceof SeoAgentSourceError) {
+    return {
+      status: "error",
+      message: error.message,
+    };
+  }
+  if (error instanceof SeoAgentGenerationError) {
+    if (error.code === "insufficient_quota") {
+      return {
+        status: "error",
+        message: "OpenAI quota is not available. Add credits, then retry.",
+      };
+    }
+    return {
+      status: "error",
+      message: "OpenAI could not generate a valid source-bound proposal.",
+    };
+  }
+  if (error instanceof AiProposalValidationError) {
+    return {
+      status: "error",
+      message: error.issues[0]?.message ?? "AI proposal did not validate.",
+    };
+  }
+
+  return {
+    status: "error",
+    message: "Could not create an AI proposal.",
   };
 }
 

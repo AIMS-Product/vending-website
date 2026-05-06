@@ -5,6 +5,7 @@ import {
   flattenBlocks,
   type PageBlock,
   type PageContent,
+  type RichTextNode,
 } from "@/lib/page-builder/blocks";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import type { PublishedSeoPage } from "@/lib/services/seo-page-public";
@@ -167,7 +168,7 @@ function BlockRenderer({
                 </ListTag>
               );
             }
-            return <p key={index}>{node.text}</p>;
+            return <p key={index}>{renderRichTextParagraph(node)}</p>;
           })}
         </div>
       </div>
@@ -417,6 +418,28 @@ function emptyLeadAttribution(landingPath: string): LeadAttribution {
     utm_term: "",
     utm_content: "",
   };
+}
+
+function renderRichTextParagraph(
+  node: Extract<RichTextNode, { type: "paragraph" }>,
+) {
+  if (!("spans" in node)) return node.text;
+
+  return node.spans.map((span, index) => {
+    if (!span.href) return <span key={index}>{span.text}</span>;
+    if (span.href.startsWith("/")) {
+      return (
+        <Link key={index} href={span.href}>
+          {span.text}
+        </Link>
+      );
+    }
+    return (
+      <a key={index} href={span.href} rel="noopener noreferrer">
+        {span.text}
+      </a>
+    );
+  });
 }
 
 function sectionClass(background: string, spacing: string) {

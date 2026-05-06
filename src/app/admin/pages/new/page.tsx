@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SeoPageEditorForm } from "@/components/admin/SeoPageEditorForm";
+import { adminListInternalLinkTargets } from "@/lib/services/seo-internal-link-index";
 import { requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
 
 export default async function NewSeoPagePage() {
   await requireAdmin();
+  const internalLinkTargets = await adminListInternalLinkTargets();
 
   return (
     <section className="mx-auto w-full max-w-6xl px-6 py-12 lg:px-10">
@@ -18,7 +20,7 @@ export default async function NewSeoPagePage() {
           New resource page
         </h1>
       </div>
-      <SeoPageEditorForm />
+      <SeoPageEditorForm internalLinkTargets={internalLinkTargets} />
     </section>
   );
 }

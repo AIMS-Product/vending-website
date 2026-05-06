@@ -9,10 +9,10 @@ import {
   pageContentSchema,
   resourcePathForSlug,
   validatePageContent,
-  validatePageForPublish,
   type PageBuilderValidationIssue,
   type PageContent,
 } from "@/lib/page-builder/blocks";
+import { assessSeoReadiness } from "@/lib/page-builder/seo-readiness";
 import { config } from "@/lib/config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables, TablesInsert } from "@/types/database";
@@ -220,17 +220,24 @@ export async function adminPublishSeoPage(
     parseDraftContent(page.draft_content),
   );
 
-  const publishValidation = validatePageForPublish(draftContent, {
+  const readiness = assessSeoReadiness(draftContent, {
     slug: page.slug,
     title: page.title,
+    targetKeyword: page.target_keyword,
     seoTitle: page.seo_title,
     metaDescription: page.meta_description,
     canonicalUrl: page.canonical_url,
     noindex: page.noindex,
     sitemapEnabled: page.sitemap_enabled,
   });
-  if (!publishValidation.ok) {
-    throw new SeoPageValidationError(publishValidation.issues);
+  if (readiness.blockers.length > 0) {
+    throw new SeoPageValidationError(
+      readiness.blockers.map(({ code, path, message }) => ({
+        code,
+        path,
+        message,
+      })),
+    );
   }
 
   const issues: PageBuilderValidationIssue[] = [];

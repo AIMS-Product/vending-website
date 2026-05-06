@@ -7,6 +7,7 @@ import {
   adminListSeoPagePreviewTokens,
   adminListSeoPageRevisions,
 } from "@/lib/services/seo-pages";
+import { adminListInternalLinkTargets } from "@/lib/services/seo-internal-link-index";
 import { requireAdmin } from "@/lib/supabase/auth";
 
 type Params = { id: string };
@@ -26,11 +27,13 @@ export default async function EditSeoPagePage({
 }) {
   await requireAdmin();
   const [{ id }, query] = await Promise.all([params, searchParams]);
-  const [page, revisions, previewTokens] = await Promise.all([
-    adminGetSeoPageById(id),
-    adminListSeoPageRevisions(id),
-    adminListSeoPagePreviewTokens(id),
-  ]);
+  const [page, revisions, previewTokens, internalLinkTargets] =
+    await Promise.all([
+      adminGetSeoPageById(id),
+      adminListSeoPageRevisions(id),
+      adminListSeoPagePreviewTokens(id),
+      adminListInternalLinkTargets({ currentPageId: id }),
+    ]);
   if (!page) notFound();
 
   return (
@@ -43,6 +46,7 @@ export default async function EditSeoPagePage({
       </div>
       <SeoPageEditorForm
         page={page}
+        internalLinkTargets={internalLinkTargets}
         savedFromRedirect={query.saved === "1"}
         redirectError={pageActionErrorMessage(query.error)}
       />

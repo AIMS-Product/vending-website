@@ -6,6 +6,13 @@ export type PageBuilderValidationIssue = {
   message: string;
 };
 
+export type PageInternalLink = {
+  blockIndex: number;
+  href: string;
+  path: string;
+  label: string;
+};
+
 export type PagePublishMeta = {
   slug: string | null | undefined;
   title: string | null | undefined;
@@ -53,11 +60,24 @@ const optionalTrimmedText = (max: number) =>
     .optional()
     .transform((value) => value ?? "");
 
-const richTextNodeSchema = z.discriminatedUnion("type", [
+const richTextSpanSchema = z
+  .object({
+    text: z.string().max(1000),
+    href: safeHrefSchema.optional(),
+  })
+  .strict();
+
+const richTextNodeSchema = z.union([
   z
     .object({
       type: z.literal("paragraph"),
       text: z.string().trim().max(2000),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("paragraph"),
+      spans: z.array(richTextSpanSchema).max(40),
     })
     .strict(),
   z
@@ -293,6 +313,8 @@ export const pageContentSchema = z
   .strict();
 
 export type RichTextDocument = z.infer<typeof richTextDocumentSchema>;
+export type RichTextNode = z.infer<typeof richTextNodeSchema>;
+export type RichTextSpan = z.infer<typeof richTextSpanSchema>;
 export type PageBlock = z.infer<typeof pageBlockSchema>;
 export type PageColumn = z.infer<typeof pageColumnSchema>;
 export type PageSection = z.infer<typeof pageSectionSchema>;
@@ -597,7 +619,7 @@ export function validatePageForPublish(
     if (!isKnownInternalPath(link.href)) {
       issues.push({
         code: "broken_internal_link",
-        path: `blocks.${link.index}.href`,
+        path: link.path,
         message: "Internal links must point to an approved site route.",
       });
     }
@@ -611,6 +633,22 @@ export function flattenBlocks(content: PageContent): PageBlock[] {
   return content.sections.flatMap((section) =>
     section.columns.flatMap((column) => column.blocks),
   );
+}
+
+export function richTextNodePlainText(node: RichTextNode) {
+  if (node.type === "list") return node.items.join(" ");
+  if (node.type === "paragraph" && "spans" in node) {
+    return node.spans.map((span) => span.text).join("");
+  }
+  return node.text;
+}
+
+export function richTextDocumentPlainText(document: RichTextDocument) {
+  return document.nodes.map(richTextNodePlainText).join(" ");
+}
+
+export function collectPageInternalLinks(content: PageContent) {
+  return collectInternalLinks(flattenBlocks(content));
 }
 
 export function resourcePathForSlug(slug: string) {
@@ -636,18 +674,50 @@ function isSafeMediaSource(value: string) {
   return safeInternalPathSchema.safeParse(value).success || isSafeHref(value);
 }
 
-function collectInternalLinks(blocks: PageBlock[]) {
-  const links: Array<{ index: number; href: string }> = [];
+function collectInternalLinks(blocks: PageBlock[]): PageInternalLink[] {
+  const links: PageInternalLink[] = [];
   for (const [index, block] of blocks.entries()) {
     if (block.type === "cta" && block.props.href.startsWith("/")) {
-      links.push({ index, href: block.props.href });
+      links.push({
+        blockIndex: index,
+        href: block.props.href,
+        path: `blocks.${index}.props.href`,
+        label: block.props.label,
+      });
     }
     if (block.type === "hero" && block.props.ctaHref.startsWith("/")) {
-      links.push({ index, href: block.props.ctaHref });
+      links.push({
+        blockIndex: index,
+        href: block.props.ctaHref,
+        path: `blocks.${index}.props.ctaHref`,
+        label: block.props.ctaLabel,
+      });
     }
     if (block.type === "card_grid") {
-      for (const card of block.props.cards) {
-        if (card.href.startsWith("/")) links.push({ index, href: card.href });
+      for (const [cardIndex, card] of block.props.cards.entries()) {
+        if (card.href.startsWith("/")) {
+          links.push({
+            blockIndex: index,
+            href: card.href,
+            path: `blocks.${index}.props.cards.${cardIndex}.href`,
+            label: card.title,
+          });
+        }
+      }
+    }
+    if (block.type === "rich_text") {
+      for (const [nodeIndex, node] of block.props.body.nodes.entries()) {
+        if (node.type !== "paragraph" || !("spans" in node)) continue;
+        for (const [spanIndex, span] of node.spans.entries()) {
+          if (span.href?.startsWith("/")) {
+            links.push({
+              blockIndex: index,
+              href: span.href,
+              path: `blocks.${index}.props.body.nodes.${nodeIndex}.spans.${spanIndex}.href`,
+              label: span.text,
+            });
+          }
+        }
       }
     }
   }
