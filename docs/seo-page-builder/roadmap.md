@@ -6,10 +6,41 @@ Build a backend-powered visual page builder for SEO resource pages. Admins shoul
 
 This is not a one-off content batch. The goal is the structure that lets the team create high-quality SEO/conversion pages over time.
 
+## Current Alignment - 2026-05-06
+
+- This roadmap is the active source of truth for the SEO Page Builder.
+- `plans/cutover-readiness/slice-plan.md` is the older Webflow-copy/cutover track. Keep it for launch blockers and legacy URL evidence, but do not use it to size or sequence the builder.
+- The SEO Page Builder is a pre-ship requirement. Final public launch/cutover is blocked until the builder's public surface, lead attribution, SEO routing, and publish gates pass verification.
+- Codex owns implementation slice sizing and technical sequencing. The user owns product direction, approvals, and content/source decisions.
+- Lead attribution must support page, keyword, block, CTA, UTM, and referrer data before any builder `lead_form` block goes public.
+- Builder-managed redirects should be database-backed CMS redirects. Static `next.config.ts` redirects remain acceptable for legacy Webflow/canonical cutover rules only.
+- AI must run under a strict source-bound proposal contract. A system prompt is required, but not sufficient by itself; the app must also validate source references, schema shape, and admin approval before inserting anything into a draft.
+
+## Current Completion Status - 2026-05-06
+
+Use this table for Asana/leadership reporting. A slice is only marked done when
+the implementation, tests, browser evidence, and cleanup/verification gate are
+complete enough that it can be defended as shipped.
+
+| Done | Slice                                    | Status           | Evidence / completed scope                                                                                                                                 | Remaining gate                                                                                                                                                              |
+| ---- | ---------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [x]  | 1. Data model and block registry         | Done             | Supabase page/revision/media/redirect foundation, content schemas, publish snapshots, validation, and service tests.                                       | Keep schema changes migration-backed.                                                                                                                                       |
+| [x]  | 2. Admin CRUD and basic editor           | Done             | Admin page list/create/edit, inline editing, autosave, and draft persistence.                                                                              | Continue simplifying marketer-facing controls.                                                                                                                              |
+| [x]  | 3. Publish, renderer, sitemap, redirects | Done             | Public `/resources/[slug]` rendering, publish gates, sitemap support, and database-backed redirect lookup.                                                 | Recheck on deployed smoke pages after major changes.                                                                                                                        |
+| [ ]  | 4. Drag/drop ordering                    | Needs browser QA | Drag/drop editor island is implemented with keyboard reorder fallbacks for sections, columns, and blocks.                                                  | Browser-test drag/drop for sections, columns, and blocks; confirm saved order renders publicly.                                                                             |
+| [x]  | 5. Revision UI and preview links         | Done             | Revision panel, revision snapshots, rollback path, and secret draft preview tokens.                                                                        | Do not expose preview URLs to sitemap/indexing.                                                                                                                             |
+| [ ]  | 6. Media library                         | Partial          | Admin `/admin/media`, upload action, media asset service, metadata fields, storage migration, and tests exist.                                             | Add/verify marketer-friendly image picker in the page editor; browser-test upload, select, publish, and required alt/rights behavior.                                       |
+| [ ]  | 7. Full core blocks and lead attribution | Critical blocker | Hero, video, FAQ, card grid, proof, and lead form block types exist; lead attribution fields flow through forms and lead storage.                          | Pre-ship gate: browser-test every core block in the editor/public renderer and submit a deployed `lead_form` with page, keyword, block, CTA, UTM, and referrer attribution. |
+| [ ]  | 8. Reusable content libraries            | Partial          | Tables exist for proof items, CTA presets, source documents, source excerpts, and approved claims. Publish snapshots can resolve CTA/proof references.     | Build/admin-test library management screens, source/claim approval workflow, and intentional draft refresh controls.                                                        |
+| [x]  | 9. AI proposal workflow                  | Done             | Source-bound AI proposals, warnings for unsupported claims, proposal review, and accept-selected block insertion have been implemented and browser-tested. | Future AI chat helper should use the same proposal rules.                                                                                                                   |
+| [ ]  | 10. SEO hardening                        | In progress      | SEO readiness scoring, missing-field checks, internal link suggestion foundation, and editor warnings are in place.                                        | Finish redirect conflict UI, duplicate metadata checks, and deployed smoke verification. Cannot close until Slice 7 attribution acceptance passes.                          |
+| [ ]  | Launch readiness smoke test              | Next             | Local builder and deployed production builds are passing code checks.                                                                                      | Run only after Slice 7 and Slice 10 acceptance criteria pass: create, preview, publish, redirect-test, sitemap-test, attribution-test, then clean remote test data.         |
+
 ## Product Decisions
 
 | Area                 | Decision                                                                         |
 | -------------------- | -------------------------------------------------------------------------------- |
+| Ship timing          | Build before final public site launch/cutover                                    |
 | Page type            | Service/keyword resource pages first                                             |
 | Primary job          | Organic SEO that converts to applications/booked calls                           |
 | Creation model       | Create one page at a time in a visual builder                                    |
@@ -35,13 +66,15 @@ This is not a one-off content batch. The goal is the structure that lets the tea
 | Reusable content     | Selected blocks can reference library items                                      |
 | Source material      | Source documents, excerpts, and approved claims                                  |
 | AI insertion         | AI proposes blocks; admin approves before insertion                              |
+| AI enforcement       | Source-bound proposal contract plus programmatic validation                      |
 | AI SEO               | AI suggests metadata and schema; admin approves                                  |
 | Internal links       | AI suggests links; admin approves                                                |
 | Roles                | Existing admins can edit and publish                                             |
 | Archive behavior     | Admin chooses 404 or 301 redirect                                                |
+| Redirect engine      | Database-backed builder redirects                                                |
 | Library item changes | Published pages use snapshots; drafts refresh intentionally                      |
-| First build approach | End-to-end thin slice first                                                      |
-| First thin slice     | Text + image + CTA builder                                                       |
+| First build approach | Narrow verified slices toward an end-to-end builder                              |
+| First thin slice     | Schema + structured text/image/CTA page publish/render path                      |
 
 ## Architecture Principles
 
@@ -71,6 +104,7 @@ Recommended fields:
 - `template_key`
 - `draft_content`
 - `published_content`
+- `published_revision_id`
 - `seo_title`
 - `meta_description`
 - `canonical_url`
@@ -229,6 +263,10 @@ Existing lead submission storage should eventually capture:
 - UTM fields
 - referrer
 
+This is required before public `lead_form` blocks ship. Resource-page leads must
+be attributable to the exact page, keyword, source block, and CTA preset/block
+that generated the submission.
+
 ## Page Content Shape
 
 The page should be stored as a tree:
@@ -327,6 +365,23 @@ The editor may still need a lightweight inspector for settings that are awkward 
 
 AI should never publish directly.
 
+AI also should not be treated as a freeform writer. It must operate through a
+source-bound proposal contract:
+
+- Input is limited to selected source documents, excerpts, approved claims,
+  existing page context, target keyword, audience, and offer.
+- Output is structured proposal data, not arbitrary HTML.
+- Every proposed claim, statistic, FAQ answer, metadata recommendation, and
+  internal-link suggestion must include source IDs or approved-claim IDs.
+- Unsupported claims must be returned as warnings or `needs_source`; the AI
+  must not invent missing evidence.
+- Accepted proposal blocks must pass the same block registry validation as
+  manually authored blocks before insertion.
+- AI cannot publish, overwrite published content, create redirects, or mutate
+  reusable libraries directly.
+- Store proposal metadata: model, prompt version, selected source IDs, proposal
+  JSON, warnings, accepted block IDs, and accepting admin.
+
 Recommended flow:
 
 1. Admin starts or opens a page.
@@ -380,36 +435,87 @@ Rules:
 
 ## Implementation Slices
 
-### Slice 1: End-to-End Builder Foundation
+### Slice 1: Data Model And Block Registry Foundation
 
-Goal: prove the architecture with a minimal real page builder.
+Goal: prove the content contract before building editor complexity.
 
 Scope:
 
-- Supabase migrations for `seo_pages`, `page_revisions`, `media_assets`, and `redirects`.
-- TypeScript block schemas for `rich_text`, `image`, and `cta`.
-- Admin `/admin/pages` list.
-- Admin create page.
-- Admin edit route.
-- Rows/columns content model.
-- Inline editing basics for text and CTA fields.
-- Media asset selection for image block.
-- Drag/drop ordering for sections/blocks.
-- Autosave draft.
-- Manual publish.
-- Public `/resources/[slug]` renderer.
-- Sitemap integration.
-- Publish validation.
+- Supabase migrations for `seo_pages`, `page_revisions`, `media_assets`, and
+  `redirects`.
+- `draft_content`, `published_content`, and `published_revision_id` on
+  `seo_pages`.
+- Immutable publish revisions in `page_revisions`.
+- TypeScript content-tree schemas for sections, columns, `rich_text`, `image`,
+  and `cta`.
+- Validation helpers for block props, allowed presets, required fields, and
+  publish gates.
+- Service tests for create, save draft, publish snapshot, archive, slug change,
+  and redirect creation.
 
 Verification:
 
 - Unit tests for schema validation.
-- Service tests for create, autosave, publish, archive, slug changes, redirects.
+- Service tests prove publish creates an immutable revision and mirrors the
+  snapshot to `seo_pages.published_content`.
+- Service tests prove slug changes create database redirect rows.
+
+### Slice 2: Admin CRUD And Basic Editor
+
+Goal: create and edit a real draft without drag/drop or AI.
+
+Scope:
+
+- Admin `/admin/pages` list.
+- Admin create/edit routes.
+- Rows/columns content model.
+- Inline editing basics for text and CTA fields.
+- Image block can reference an existing asset or per-page upload path.
+- Add/remove/reorder controls can be simple buttons first; drag/drop is
+  deliberately deferred.
+- Autosave draft.
+
+Verification:
+
+- Browser test creates a draft with text, image, and CTA blocks.
+- Autosave persists reloads.
+- Invalid block data is rejected before save.
+
+### Slice 3: Publish, Public Renderer, Sitemap, And Redirects
+
+Goal: complete the first public end-to-end resource page.
+
+Scope:
+
+- Manual publish.
+- Public `/resources/[slug]` renderer.
+- Sitemap integration.
+- Publish validation.
+- Database-backed redirect lookup for builder-managed redirects.
+
+Verification:
+
 - Public render test for a published page.
 - Sitemap test.
+- Redirect test for a changed published slug.
 - Browser test of create/edit/publish/render flow.
 
-### Slice 2: Revision UI and Preview Links
+### Slice 4: Drag/Drop Ordering
+
+Scope:
+
+- Add drag/drop for sections, columns, and blocks using a client-only editor
+  island.
+- Default technical choice: `@dnd-kit/core` + `@dnd-kit/sortable`, verified
+  against the current React 19 / Next 16 app before installation.
+- Keep keyboard-accessible reorder buttons as a fallback.
+
+Verification:
+
+- Reorder sections/columns/blocks and prove saved order renders publicly.
+- Keyboard reorder remains usable without pointer drag.
+
+### Slice 5: Revision UI and Preview Links
 
 Scope:
 
@@ -418,6 +524,8 @@ Scope:
 - Rollback revision into draft.
 - Secret preview links.
 - Token revocation/expiry.
+- Preview tokens render the current draft; revision previews render frozen
+  revision snapshots.
 
 Verification:
 
@@ -425,7 +533,7 @@ Verification:
 - Confirm public page does not change until publish.
 - Confirm preview renders draft and is excluded from sitemap.
 
-### Slice 3: Media Library
+### Slice 6: Media Library
 
 Scope:
 
@@ -440,7 +548,7 @@ Verification:
 - Publish fails if used media lacks required metadata.
 - Published page snapshots resolved media content.
 
-### Slice 4: Full Core Blocks
+### Slice 7: Full Core Blocks And Lead Attribution
 
 Scope:
 
@@ -451,6 +559,8 @@ Scope:
 - `proof`
 - `lead_form`
 - Structured data support for FAQ and breadcrumbs.
+- Lead schema/extensions for `source_page_id`, `source_page_slug`,
+  `target_keyword`, `source_block_id`, and `source_cta_tracking_name`.
 
 Verification:
 
@@ -458,7 +568,7 @@ Verification:
 - FAQ schema output from FAQ blocks.
 - Lead form attribution from resource pages.
 
-### Slice 5: Reusable Content Libraries
+### Slice 8: Reusable Content Libraries
 
 Scope:
 
@@ -474,7 +584,7 @@ Verification:
 - Published snapshots do not silently change when a library item changes.
 - Draft can intentionally refresh referenced items.
 
-### Slice 6: AI Proposal Workflow
+### Slice 9: AI Proposal Workflow
 
 Scope:
 
@@ -490,8 +600,9 @@ Verification:
 - AI cannot insert content without admin approval.
 - Proposal references selected approved sources.
 - Accepted blocks validate before insertion.
+- Unsupported claims produce warnings instead of draft content.
 
-### Slice 7: SEO Hardening
+### Slice 10: SEO Hardening
 
 Scope:
 
@@ -515,11 +626,20 @@ Verification:
 - Published snapshots need careful design so library updates do not silently change live pages.
 - Secret preview links must be tokenized, revocable, and excluded from sitemap.
 
-## Open Technical Questions
+## Resolved Technical Direction
 
-- Should `draft_content` and `published_content` live on `seo_pages`, or should published content always resolve from latest publish revision?
-- What drag/drop library best fits the current React/Next version?
-- Should rich text be markdown, structured rich-text JSON, or a small inline formatting model?
-- Should video assets be uploaded to Supabase, embedded from external providers, or integrated with a video host later?
-- Should preview tokens render current draft live, or a frozen preview snapshot?
-- Should `redirects` be handled in middleware, dynamic route logic, or a generated static redirect config?
+- Published content source of truth: public rendering reads
+  `seo_pages.published_content` for fast, simple runtime reads. Every publish
+  also creates an immutable `page_revisions` row and stores its ID in
+  `published_revision_id`.
+- Drag/drop library: use `@dnd-kit/core` and `@dnd-kit/sortable` in a
+  client-only editor island after the schema/editor path is proven. Verify the
+  exact package version against React 19 / Next 16 before install.
+- Rich text format: use constrained structured rich-text JSON for builder
+  blocks, not arbitrary HTML. News CMS markdown remains separate.
+- Video assets: represent videos as `media_assets` with provider/external URL
+  metadata first. Do not upload large video files to Supabase in v1.
+- Preview tokens: live draft previews for active draft review; frozen snapshots
+  for revision previews.
+- Redirects: use database-backed builder redirects resolved by application
+  routing. Keep static Next redirects for legacy Webflow/canonical rules only.

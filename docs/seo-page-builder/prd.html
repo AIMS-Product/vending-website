@@ -397,12 +397,14 @@
         background: var(--surface);
       }
       .data-table,
-      .phase-table {
+      .phase-table,
+      .roadmap-table {
         width: 100%;
         border-collapse: collapse;
       }
       .data-table th,
-      .phase-table th {
+      .phase-table th,
+      .roadmap-table th {
         font-family: var(--mono);
         font-size: 10px;
         text-transform: uppercase;
@@ -415,7 +417,8 @@
         font-weight: 400;
       }
       .data-table td,
-      .phase-table td {
+      .phase-table td,
+      .roadmap-table td {
         padding: 13px 16px;
         border-bottom: 1px solid var(--border);
         font-size: 13.5px;
@@ -423,11 +426,13 @@
         color: var(--text2);
       }
       .data-table tr:last-child td,
-      .phase-table tr:last-child td {
+      .phase-table tr:last-child td,
+      .roadmap-table tr:last-child td {
         border-bottom: none;
       }
       .data-table tr:hover td,
-      .phase-table tr:hover td {
+      .phase-table tr:hover td,
+      .roadmap-table tr:hover td {
         background: var(--surface2);
       }
 
@@ -739,6 +744,46 @@
         background: var(--surface2);
         border-color: var(--border);
       }
+      .phase-badge-done {
+        color: var(--green);
+        background: var(--green-bg);
+        border-color: var(--green-border);
+      }
+      .phase-badge-progress {
+        color: var(--amber);
+        background: var(--amber-bg);
+        border-color: var(--amber-border);
+      }
+      .phase-badge-partial {
+        color: var(--purple);
+        background: var(--purple-bg);
+        border-color: var(--purple-border);
+      }
+      .phase-badge-verify {
+        color: var(--text2);
+        background: var(--surface2);
+        border-color: var(--border2);
+      }
+      .roadmap-check {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--green);
+      }
+      .roadmap-table td:first-child,
+      .roadmap-table th:first-child {
+        width: 44px;
+        text-align: center;
+      }
+      .roadmap-table td:nth-child(2) {
+        color: var(--text);
+        font-weight: 500;
+      }
+      .roadmap-note {
+        margin-top: 14px;
+        font-size: 12px;
+        color: var(--text3);
+        font-family: var(--mono);
+      }
       .verify-step {
         display: flex;
         gap: 14px;
@@ -840,8 +885,9 @@
       <a href="#success"><span class="n">07</span>Success Criteria</a>
       <a href="#questions"><span class="n">08</span>Open Questions</a>
       <a href="#phasing"><span class="n">09</span>Phasing</a>
-      <a href="#scope"><span class="n">10</span>Out of Scope</a>
-      <a href="#verification"><span class="n">11</span>Verification</a>
+      <a href="#roadmap"><span class="n">10</span>Roadmap</a>
+      <a href="#scope"><span class="n">11</span>Out of Scope</a>
+      <a href="#verification"><span class="n">12</span>Verification</a>
 
       <div class="nav-meta">
         <div class="nav-meta-row">
@@ -929,7 +975,9 @@
             <p>
               AI can assist with structure, copy, metadata, schema, and internal
               links, but it must only use approved internal source material and
-              must never publish directly.
+              must never publish directly. Prompt rules are required, but the
+              application must also validate source references, block schemas,
+              and admin approval before inserting AI output into a draft.
             </p>
           </div>
         </section>
@@ -1370,28 +1418,30 @@
             <h2>Open Questions</h2>
           </div>
 
-          <div class="question">
+          <div class="question resolved">
             <div class="q-n">Q1</div>
             <div class="q-body">
-              <strong>Published content source of truth</strong> Should
-              <code>published_content</code> live directly on
-              <code>seo_pages</code>, or should public rendering always resolve
-              from the latest publish revision?
+              <strong>Published content source of truth resolved</strong>
+              Public rendering reads <code>seo_pages.published_content</code>.
+              Each publish also creates an immutable revision and stores the
+              revision ID for rollback and audit.
             </div>
           </div>
-          <div class="question">
+          <div class="question resolved">
             <div class="q-n">Q2</div>
             <div class="q-body">
-              <strong>Drag/drop library</strong> Which library best fits the
-              current React and Next.js version without fighting server/client
-              component boundaries?
+              <strong>Drag/drop direction resolved</strong> Use a client-only
+              editor island with <code>@dnd-kit/core</code> and
+              <code>@dnd-kit/sortable</code> after the basic editor path is
+              proven; preserve keyboard reorder controls.
             </div>
           </div>
-          <div class="question">
+          <div class="question resolved">
             <div class="q-n">Q3</div>
             <div class="q-body">
-              <strong>Rich text format</strong> Should rich text be markdown,
-              structured rich-text JSON, or a small inline formatting model?
+              <strong>Rich text format resolved</strong> Builder rich text uses
+              constrained structured JSON, not arbitrary HTML. News CMS markdown
+              remains separate.
             </div>
           </div>
           <div class="question resolved">
@@ -1400,6 +1450,14 @@
               <strong>URL strategy resolved</strong> Use
               <code>/resources/[slug]</code> with descriptive slugs for SEO-safe
               organization and route collision avoidance.
+            </div>
+          </div>
+          <div class="question resolved">
+            <div class="q-n">Q5</div>
+            <div class="q-body">
+              <strong>Redirect engine resolved</strong> Builder-managed slug and
+              archive redirects are database-backed CMS redirects. Static Next
+              config redirects stay limited to legacy Webflow/canonical rules.
             </div>
           </div>
         </section>
@@ -1427,10 +1485,10 @@
                     >
                   </td>
                   <td>
-                    End-to-end builder foundation: migrations, page
-                    list/create/edit, rows/columns, rich text, image, CTA,
-                    autosave, publish, public render, sitemap, publish
-                    validation.
+                    Foundation is split into narrower verified slices: data
+                    model and block registry, admin CRUD/basic editor, then
+                    publish/public render/sitemap/redirects. Drag/drop comes
+                    after the model is proven.
                   </td>
                   <td>Existing admin/auth model and Supabase project.</td>
                 </tr>
@@ -1491,9 +1549,268 @@
           </div>
         </section>
 
-        <section class="section" id="scope">
+        <section class="section" id="roadmap">
           <div class="section-header">
             <span class="sec-num">10</span>
+            <h2>Roadmap Completion Schedule</h2>
+          </div>
+
+          <p style="margin-bottom: 16px">
+            Operational status for the active SEO Page Builder roadmap. This
+            table is the PRD-facing view; the implementation source of truth
+            remains <code>docs/seo-page-builder/roadmap.md</code>.
+          </p>
+
+          <div class="table-wrap">
+            <table class="roadmap-table">
+              <thead>
+                <tr>
+                  <th>Done</th>
+                  <th>Slice</th>
+                  <th>Status</th>
+                  <th>Target window</th>
+                  <th>Evidence / completed scope</th>
+                  <th>Remaining gate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <input
+                      class="roadmap-check"
+                      type="checkbox"
+                      checked
+                      disabled
+                    />
+                  </td>
+                  <td>1. Data model and block registry</td>
+                  <td>
+                    <span class="phase-badge phase-badge-done">done</span>
+                  </td>
+                  <td>Completed May 6, 2026</td>
+                  <td>
+                    Supabase page/revision/media/redirect foundation, content
+                    schemas, publish snapshots, validation, and service tests.
+                  </td>
+                  <td>Keep schema changes migration-backed.</td>
+                </tr>
+                <tr>
+                  <td>
+                    <input
+                      class="roadmap-check"
+                      type="checkbox"
+                      checked
+                      disabled
+                    />
+                  </td>
+                  <td>2. Admin CRUD and basic editor</td>
+                  <td>
+                    <span class="phase-badge phase-badge-done">done</span>
+                  </td>
+                  <td>Completed May 6, 2026</td>
+                  <td>
+                    Admin page list/create/edit, inline editing, autosave, and
+                    draft persistence.
+                  </td>
+                  <td>Continue simplifying marketer-facing controls.</td>
+                </tr>
+                <tr>
+                  <td>
+                    <input
+                      class="roadmap-check"
+                      type="checkbox"
+                      checked
+                      disabled
+                    />
+                  </td>
+                  <td>3. Publish, renderer, sitemap, redirects</td>
+                  <td>
+                    <span class="phase-badge phase-badge-done">done</span>
+                  </td>
+                  <td>Completed May 6, 2026</td>
+                  <td>
+                    Public <code>/resources/[slug]</code> rendering, publish
+                    gates, sitemap support, and database-backed redirect lookup.
+                  </td>
+                  <td>
+                    Recheck on deployed smoke pages after each major change.
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <input class="roadmap-check" type="checkbox" disabled />
+                  </td>
+                  <td>4. Drag/drop ordering</td>
+                  <td>
+                    <span class="phase-badge phase-badge-verify">needs QA</span>
+                  </td>
+                  <td>Target May 6-7, 2026</td>
+                  <td>
+                    Drag/drop editor island is implemented with keyboard reorder
+                    fallbacks for sections, columns, and blocks.
+                  </td>
+                  <td>
+                    Browser-test drag/drop for sections, columns, and blocks;
+                    confirm saved order renders publicly.
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <input
+                      class="roadmap-check"
+                      type="checkbox"
+                      checked
+                      disabled
+                    />
+                  </td>
+                  <td>5. Revision UI and preview links</td>
+                  <td>
+                    <span class="phase-badge phase-badge-done">done</span>
+                  </td>
+                  <td>Completed May 6, 2026</td>
+                  <td>
+                    Revision panel, revision snapshots, rollback path, and
+                    secret draft preview tokens.
+                  </td>
+                  <td>Do not expose preview URLs to sitemap/indexing.</td>
+                </tr>
+                <tr>
+                  <td>
+                    <input class="roadmap-check" type="checkbox" disabled />
+                  </td>
+                  <td>6. Media library</td>
+                  <td>
+                    <span class="phase-badge phase-badge-partial">partial</span>
+                  </td>
+                  <td>Target May 7, 2026</td>
+                  <td>
+                    Admin <code>/admin/media</code>, upload action, media asset
+                    service, metadata fields, storage migration, and tests
+                    exist.
+                  </td>
+                  <td>
+                    Add/verify marketer-friendly image picker in the page
+                    editor; browser-test upload, select, publish, and required
+                    alt/rights behavior.
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <input class="roadmap-check" type="checkbox" disabled />
+                  </td>
+                  <td>7. Full core blocks and lead attribution</td>
+                  <td>
+                    <span class="phase-badge phase-badge-blocked"
+                      >critical</span
+                    >
+                  </td>
+                  <td>Target May 7, 2026</td>
+                  <td>
+                    Hero, video, FAQ, card grid, proof, and lead form block
+                    types exist; lead attribution fields flow through forms and
+                    lead storage.
+                  </td>
+                  <td>
+                    Pre-ship gate: browser-test every core block in the
+                    editor/public renderer and submit a deployed
+                    <code>lead_form</code> with page, keyword, block, CTA, UTM,
+                    and referrer attribution.
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <input class="roadmap-check" type="checkbox" disabled />
+                  </td>
+                  <td>8. Reusable content libraries</td>
+                  <td>
+                    <span class="phase-badge phase-badge-partial">partial</span>
+                  </td>
+                  <td>Target May 7-8, 2026</td>
+                  <td>
+                    Tables exist for proof items, CTA presets, source documents,
+                    source excerpts, and approved claims. Publish snapshots can
+                    resolve CTA/proof references.
+                  </td>
+                  <td>
+                    Build/admin-test library management screens, source/claim
+                    approval workflow, and intentional draft refresh controls.
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <input
+                      class="roadmap-check"
+                      type="checkbox"
+                      checked
+                      disabled
+                    />
+                  </td>
+                  <td>9. AI proposal workflow</td>
+                  <td>
+                    <span class="phase-badge phase-badge-done">done</span>
+                  </td>
+                  <td>Completed May 6, 2026</td>
+                  <td>
+                    Source-bound AI proposals, warnings for unsupported claims,
+                    proposal review, and accept-selected block insertion.
+                  </td>
+                  <td>
+                    Future AI chat helper should use the same proposal rules.
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <input class="roadmap-check" type="checkbox" disabled />
+                  </td>
+                  <td>10. SEO hardening</td>
+                  <td>
+                    <span class="phase-badge phase-badge-progress"
+                      >in progress</span
+                    >
+                  </td>
+                  <td>Target May 6-7, 2026</td>
+                  <td>
+                    SEO readiness scoring, missing-field checks, internal link
+                    suggestion foundation, and editor warnings are in place.
+                  </td>
+                  <td>
+                    Finish redirect conflict UI, duplicate metadata checks, and
+                    deployed smoke verification. Cannot close until Slice 7
+                    attribution acceptance passes.
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <input class="roadmap-check" type="checkbox" disabled />
+                  </td>
+                  <td>Launch readiness smoke test</td>
+                  <td><span class="phase-badge">next</span></td>
+                  <td>Target May 7, 2026</td>
+                  <td>
+                    Local builder and deployed production builds are passing
+                    code checks.
+                  </td>
+                  <td>
+                    Run only after Slice 7 and Slice 10 acceptance criteria
+                    pass: create, preview, publish, redirect-test, sitemap-test,
+                    attribution-test, then clean remote test data.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="roadmap-note">
+            For Asana/leadership reporting, only checked rows should be treated
+            as complete. Unchecked rows may have real code in place, but still
+            need UX, browser, deployed, or workflow verification before they are
+            safe to call done.
+          </p>
+        </section>
+
+        <section class="section" id="scope">
+          <div class="section-header">
+            <span class="sec-num">11</span>
             <h2>Out of Scope</h2>
           </div>
 
@@ -1512,6 +1829,10 @@
                 changes.
               </li>
               <li>Live web research for AI-generated page claims in v1.</li>
+              <li>
+                Prompt-only AI enforcement without source-reference and schema
+                validation.
+              </li>
               <li>A/B testing infrastructure in the foundation slice.</li>
             </ul>
           </div>
@@ -1519,7 +1840,7 @@
 
         <section class="section" id="verification">
           <div class="section-header">
-            <span class="sec-num">11</span>
+            <span class="sec-num">12</span>
             <h2>Verification</h2>
           </div>
 
