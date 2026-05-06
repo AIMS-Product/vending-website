@@ -40,7 +40,12 @@ export async function proxy(request: NextRequest) {
       );
     }
 
-    const slug = decodeURIComponent(path.replace(/^\/resources\//, ""));
+    let slug: string;
+    try {
+      slug = decodeURIComponent(path.replace(/^\/resources\//, ""));
+    } catch {
+      return new Response("Not found", { status: 404 });
+    }
     const exists = await hasPublishedSeoPageSlug(slug);
     if (!exists) {
       return new Response("Not found", { status: 404 });

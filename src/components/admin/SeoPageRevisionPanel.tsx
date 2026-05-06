@@ -122,7 +122,7 @@ export function SeoPageRevisionPanel({
             {previewState.message}
           </p>
         )}
-        {previewState.previewPath && (
+        {previewState.status === "created" && previewState.previewPath && (
           <Link
             href={previewState.previewPath}
             target="_blank"

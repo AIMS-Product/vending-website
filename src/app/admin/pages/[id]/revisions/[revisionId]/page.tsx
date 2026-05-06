@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -66,7 +67,10 @@ export default async function AdminRevisionPreviewPage({
           </Link>
         </div>
       </div>
-      <ResourcePageRenderer page={previewPage} />
+      <ResourcePageRenderer
+        page={previewPage}
+        idempotencyKeyPrefix={randomUUID()}
+      />
     </main>
   );
 }

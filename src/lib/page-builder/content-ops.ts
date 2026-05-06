@@ -174,6 +174,7 @@ export function moveItem<T>(
   index: number,
   direction: MoveDirection,
 ) {
+  if (index < 0 || index >= items.length) return items;
   const target = direction === "up" ? index - 1 : index + 1;
   if (target < 0 || target >= items.length) return items;
   const next = [...items];

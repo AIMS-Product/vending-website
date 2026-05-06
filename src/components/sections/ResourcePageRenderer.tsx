@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { submitApplicationLead } from "@/app/apply/actions";
 import { PublicLeadForm } from "@/components/forms/PublicLeadForm";
@@ -13,11 +12,13 @@ import type { PublishedSeoPage } from "@/lib/services/seo-page-public";
 type ResourcePageRendererProps = {
   page: PublishedSeoPage;
   leadAttribution?: LeadAttribution;
+  idempotencyKeyPrefix: string;
 };
 
 export function ResourcePageRenderer({
   page,
   leadAttribution,
+  idempotencyKeyPrefix,
 }: ResourcePageRendererProps) {
   return (
     <article className="bg-white">
@@ -45,6 +46,7 @@ export function ResourcePageRenderer({
           content={page.published_content}
           page={page}
           leadAttribution={leadAttribution}
+          idempotencyKeyPrefix={idempotencyKeyPrefix}
         />
       </div>
     </article>
@@ -55,10 +57,12 @@ function PageContentRenderer({
   content,
   page,
   leadAttribution,
+  idempotencyKeyPrefix,
 }: {
   content: PageContent;
   page: PublishedSeoPage;
   leadAttribution?: LeadAttribution;
+  idempotencyKeyPrefix: string;
 }) {
   return (
     <div className="space-y-14">
@@ -76,6 +80,7 @@ function PageContentRenderer({
                     block={block}
                     page={page}
                     leadAttribution={leadAttribution}
+                    idempotencyKeyPrefix={idempotencyKeyPrefix}
                   />
                 ))}
               </div>
@@ -91,10 +96,12 @@ function BlockRenderer({
   block,
   page,
   leadAttribution,
+  idempotencyKeyPrefix,
 }: {
   block: PageBlock;
   page: PublishedSeoPage;
   leadAttribution?: LeadAttribution;
+  idempotencyKeyPrefix: string;
 }) {
   if (block.type === "hero") {
     return (
@@ -312,7 +319,7 @@ function BlockRenderer({
         <PublicLeadForm
           action={submitApplicationLead}
           attribution={attribution}
-          idempotencyKey={randomUUID()}
+          idempotencyKey={`${idempotencyKeyPrefix}:${block.id}`}
           intent="apply"
           submitLabel={block.props.submitLabel}
         />

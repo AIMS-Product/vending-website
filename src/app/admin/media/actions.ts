@@ -23,7 +23,13 @@ const mediaAssetSchema = z.object({
     .min(1, "Source and rights notes are required.")
     .max(500),
   caption: z.string().trim().max(240),
-  externalUrl: z.string().trim().max(1000),
+  externalUrl: z
+    .string()
+    .trim()
+    .max(1000)
+    .refine((value) => value === "" || isHttpUrl(value), {
+      message: "External URL must be a valid HTTP(S) URL.",
+    }),
   storageBucket: z.string().trim(),
   storagePath: z.string().trim(),
   tags: z.string().trim().max(240),
@@ -53,7 +59,7 @@ export async function createMediaAsset(
   }
 
   const media = parsed.data;
-  if (!media.externalUrl && !media.storagePath) {
+  if (!media.externalUrl && (!media.storageBucket || !media.storagePath)) {
     return {
       status: "error",
       message: "Upload an image or provide an external URL.",
@@ -100,7 +106,10 @@ export async function createSignedMediaUpload(formData: FormData) {
   const { data, error } = await supabase.storage
     .from(MEDIA_BUCKET)
     .createSignedUploadUrl(path);
-  if (error) throw error;
+  if (error) {
+    console.error("signed media upload creation failed", error);
+    throw new Error("Could not prepare upload. Please try again.");
+  }
 
   const { data: publicUrl } = supabase.storage
     .from(MEDIA_BUCKET)
@@ -117,6 +126,15 @@ export async function createSignedMediaUpload(formData: FormData) {
 
 function nullable(value: string) {
   return value.length > 0 ? value : null;
+}
+
+function isHttpUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function parseTags(value: string) {

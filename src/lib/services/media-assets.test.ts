@@ -95,6 +95,21 @@ describe("media asset service", () => {
         { client },
       ),
     ).rejects.toThrow("Alt text is required.");
+
+    await expect(
+      adminCreateMediaAsset(
+        {
+          title: "Missing bucket",
+          altText: "Operator beside vending machine",
+          sourceRightsNotes: "Owned campaign image.",
+          storagePath: "images/hero.webp",
+          externalUrl: null,
+        },
+        { client },
+      ),
+    ).rejects.toThrow(
+      "Storage bucket is required when storage path is provided.",
+    );
   });
 
   it("builds public URLs for stored media assets", () => {

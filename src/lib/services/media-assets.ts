@@ -98,7 +98,14 @@ function validateMediaAssetRow(row: TablesInsert<"media_assets">) {
   if (!row.source_rights_notes?.trim()) {
     return new Error("Source and rights notes are required.");
   }
-  if (!row.storage_path && !row.external_url) {
+  const hasStoredAsset = Boolean(row.storage_bucket && row.storage_path);
+  const hasExternalAsset = Boolean(row.external_url);
+  if (row.storage_path && !row.storage_bucket) {
+    return new Error(
+      "Storage bucket is required when storage path is provided.",
+    );
+  }
+  if (!hasStoredAsset && !hasExternalAsset) {
     return new Error("Upload an image or provide an external URL.");
   }
   return null;

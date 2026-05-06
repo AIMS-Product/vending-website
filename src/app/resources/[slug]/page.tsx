@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ResourcePageRenderer } from "@/components/sections/ResourcePageRenderer";
@@ -51,5 +52,11 @@ export default async function ResourcePage({
   const landingPath = `/resources/${page.slug}`;
   const attribution = buildLeadAttribution(query, landingPath);
 
-  return <ResourcePageRenderer page={page} leadAttribution={attribution} />;
+  return (
+    <ResourcePageRenderer
+      page={page}
+      leadAttribution={attribution}
+      idempotencyKeyPrefix={randomUUID()}
+    />
+  );
 }

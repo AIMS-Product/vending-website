@@ -185,9 +185,9 @@ export function MediaLibraryManager({ assets }: MediaLibraryManagerProps) {
                   </p>
                   {asset.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {asset.tags.map((tag) => (
+                      {asset.tags.map((tag, index) => (
                         <span
-                          key={tag}
+                          key={`${tag}-${index}`}
                           className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-600"
                         >
                           {tag}

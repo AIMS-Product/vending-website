@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ResourcePageRenderer } from "@/components/sections/ResourcePageRenderer";
@@ -21,5 +22,7 @@ export default async function ResourcePreviewPage({
   const page = await getSeoPagePreviewByToken(token);
   if (!page) notFound();
 
-  return <ResourcePageRenderer page={page} />;
+  return (
+    <ResourcePageRenderer page={page} idempotencyKeyPrefix={randomUUID()} />
+  );
 }

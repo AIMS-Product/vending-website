@@ -3,7 +3,7 @@ import { SeoPageEditorForm } from "@/components/admin/SeoPageEditorForm";
 import { requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
-  title: "New SEO page",
+  title: "New resource page",
   robots: { index: false, follow: false },
 };
 

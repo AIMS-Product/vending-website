@@ -12,7 +12,13 @@ import { ensureEditablePageContent } from "@/lib/page-builder/content-ops";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, TablesInsert } from "@/types/database";
 
-type ProposalClient = Pick<SupabaseClient<Database>, "from">;
+type ProposalClient = Pick<SupabaseClient<Database>, "from" | "rpc">;
+
+type AcceptAiProposalRpcResult = {
+  page: unknown;
+  proposal: unknown;
+  revision: unknown;
+};
 
 type ServiceDeps = {
   client?: ProposalClient;
@@ -151,56 +157,39 @@ export async function adminAcceptAiProposalBlocks(
     ),
   };
 
-  const { data: revision, error: revisionError } = await client
-    .from("page_revisions")
-    .insert({
-      page_id: pageId,
-      revision_type: "ai_insert",
-      label: `AI insert ${now().toISOString()}`,
-      content_snapshot: nextContent as unknown as Json,
-      seo_snapshot: {
-        slug: page.slug,
-        title: page.title,
-        target_keyword: page.target_keyword,
-        seo_title: page.seo_title,
-        meta_description: page.meta_description,
-      } satisfies Json,
-      created_by: options.actorId ?? null,
-    })
-    .select(
-      "id, page_id, revision_type, label, content_snapshot, seo_snapshot, created_by, created_at",
-    )
-    .single();
-  if (revisionError) throw new Error("Could not create AI insert revision.");
+  const acceptedAt = now().toISOString();
+  const { data, error } = await client.rpc("accept_ai_proposal_blocks", {
+    p_page_id: pageId,
+    p_proposal_id: proposalId,
+    p_next_content: nextContent as unknown as Json,
+    p_seo_snapshot: {
+      slug: page.slug,
+      title: page.title,
+      target_keyword: page.target_keyword,
+      seo_title: page.seo_title,
+      meta_description: page.meta_description,
+    } satisfies Json,
+    p_accepted_block_ids: acceptedBlocks.map((entry) => entry.block.id),
+    p_actor_id: options.actorId ?? null,
+    p_label: `AI insert ${acceptedAt}`,
+    p_accepted_at: acceptedAt,
+  });
+  if (error) {
+    if (String(error.message).includes("AI proposal is not available")) {
+      throw new Error("AI proposal is not available for insertion.");
+    }
+    throw new Error("Could not insert AI proposal blocks.");
+  }
 
-  const { data: updatedPage, error: pageError } = await client
-    .from("seo_pages")
-    .update({
-      draft_content: nextContent as unknown as Json,
-      updated_by: options.actorId ?? null,
-    })
-    .eq("id", pageId)
-    .select("id, draft_content, updated_by, updated_at")
-    .single();
-  if (pageError) throw new Error("Could not insert AI proposal blocks.");
-
-  const { data: updatedProposal, error: proposalError } = await client
-    .from("ai_page_proposals")
-    .update({
-      status: "accepted",
-      accepted_block_ids: acceptedBlocks.map((entry) => entry.block.id),
-      accepted_by: options.actorId ?? null,
-      accepted_at: now().toISOString(),
-    })
-    .eq("id", proposalId)
-    .select(AI_PROPOSAL_FIELDS)
-    .single();
-  if (proposalError) throw new Error("Could not mark AI proposal accepted.");
+  const result = data as AcceptAiProposalRpcResult | null;
+  if (!result?.page || !result.proposal || !result.revision) {
+    throw new Error("Could not insert AI proposal blocks.");
+  }
 
   return {
-    page: updatedPage,
-    proposal: updatedProposal,
-    revision,
+    page: result.page,
+    proposal: result.proposal,
+    revision: result.revision,
   };
 }
 

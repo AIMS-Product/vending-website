@@ -38,9 +38,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...resourcePages.map((page) => ({
       url: absoluteUrl(`/resources/${page.slug}`),
-      lastModified: new Date(page.updated_at),
+      lastModified: validDateOrFallback(page.updated_at, now),
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
   ];
+}
+
+function validDateOrFallback(value: string | null | undefined, fallback: Date) {
+  if (!value) return fallback;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? fallback : parsed;
 }

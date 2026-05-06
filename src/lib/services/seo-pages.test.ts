@@ -72,7 +72,7 @@ const validContent: PageContent = {
   ],
 };
 
-type SeoClient = Pick<SupabaseClient<Database>, "from">;
+type SeoClient = Pick<SupabaseClient<Database>, "from" | "rpc">;
 
 function singleSelect(data: unknown, error: unknown = null) {
   const single = vi.fn().mockResolvedValue({ data, error });
@@ -123,7 +123,14 @@ function buildClient(...tables: unknown[]) {
       if (!next) throw new Error("Unexpected Supabase table call");
       return next;
     }),
-  } as unknown as SeoClient & { from: ReturnType<typeof vi.fn> };
+    rpc: vi.fn().mockResolvedValue({
+      data: null,
+      error: { message: "Unexpected Supabase RPC call" },
+    }),
+  } as unknown as SeoClient & {
+    from: ReturnType<typeof vi.fn>;
+    rpc: ReturnType<typeof vi.fn>;
+  };
 }
 
 describe("seo page service", () => {
@@ -655,7 +662,7 @@ describe("seo page service", () => {
     );
   });
 
-  it("creates a database redirect when a published page slug changes", async () => {
+  it("updates published slugs and redirects in one RPC transaction", async () => {
     const existing = {
       id: "page_1",
       slug: "start-vending",
@@ -663,13 +670,8 @@ describe("seo page service", () => {
     };
     const updated = { ...existing, slug: "start-vending-machine-business" };
     const loadPage = singleSelect(existing);
-    const redirectInsert = insertSingle({ id: "redirect_1" });
-    const updatePage = updateSingle(updated);
-    const client = buildClient(
-      loadPage.table,
-      redirectInsert.table,
-      updatePage.table,
-    );
+    const client = buildClient(loadPage.table);
+    client.rpc.mockResolvedValue({ data: updated, error: null });
 
     const result = await adminUpdateSeoPageSlug(
       "page_1",
@@ -681,21 +683,13 @@ describe("seo page service", () => {
     );
 
     expect(result).toBe(updated);
-    expect(redirectInsert.mocks.insert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        source_path: "/resources/start-vending",
-        destination_path: "/resources/start-vending-machine-business",
-        status_code: 301,
-        page_id: "page_1",
-        created_reason: "slug_changed",
-        created_by: "admin-1",
-      }),
-    );
-    expect(updatePage.mocks.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        slug: "start-vending-machine-business",
-        updated_by: "admin-1",
-      }),
+    expect(client.rpc).toHaveBeenCalledWith(
+      "update_seo_page_slug_with_redirect",
+      {
+        p_page_id: "page_1",
+        p_next_slug: "start-vending-machine-business",
+        p_actor_id: "admin-1",
+      },
     );
   });
 

@@ -86,6 +86,7 @@ describe("page builder block schemas", () => {
                   {
                     id: "block_text",
                     type: "rich_text",
+                    variant: "default",
                     props: {
                       heading: "Unsafe",
                       body: "<script>alert('no')</script>",

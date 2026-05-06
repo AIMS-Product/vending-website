@@ -716,7 +716,31 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      accept_ai_proposal_blocks: {
+        Args: {
+          p_accepted_at: string;
+          p_accepted_block_ids: string[];
+          p_actor_id: string | null;
+          p_label: string;
+          p_next_content: Json;
+          p_page_id: string;
+          p_proposal_id: string;
+          p_seo_snapshot: Json;
+        };
+        Returns: Json;
+      };
+      is_app_admin: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      update_seo_page_slug_with_redirect: {
+        Args: {
+          p_actor_id: string | null;
+          p_next_slug: string;
+          p_page_id: string;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       [_ in never]: never;

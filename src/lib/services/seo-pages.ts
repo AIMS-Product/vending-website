@@ -23,7 +23,7 @@ type MediaAsset = Tables<"media_assets">;
 type CtaPreset = Tables<"cta_presets">;
 type ProofItem = Tables<"proof_items">;
 type RedirectInsert = TablesInsert<"redirects">;
-type SeoPageClient = Pick<SupabaseClient<Database>, "from">;
+type SeoPageClient = Pick<SupabaseClient<Database>, "from" | "rpc">;
 
 type ServiceDeps = {
   client?: SeoPageClient;
@@ -296,17 +296,16 @@ export async function adminUpdateSeoPageSlug(
   if (page.slug === nextSlug) return page;
 
   if (page.status === "published") {
-    await adminCreateBuilderRedirect(
+    const { data, error } = await client.rpc(
+      "update_seo_page_slug_with_redirect",
       {
-        sourcePath: resourcePathForSlug(page.slug),
-        destinationPath: resourcePathForSlug(nextSlug),
-        statusCode: 301,
-        pageId: page.id,
-        createdReason: "slug_changed",
-        createdBy: options.actorId ?? null,
+        p_page_id: pageId,
+        p_next_slug: nextSlug,
+        p_actor_id: options.actorId ?? null,
       },
-      { client },
     );
+    if (error || !data) throw new Error("Could not update SEO page slug.");
+    return data as SeoPage;
   }
 
   const { data, error } = await client

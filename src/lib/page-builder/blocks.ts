@@ -475,7 +475,7 @@ export function validatePageForPublish(
     issues.push({
       code: "missing_conversion_block",
       path: "sections",
-      message: "Publish requires at least one CTA block.",
+      message: "Publish requires at least one CTA or lead form block.",
     });
   }
 

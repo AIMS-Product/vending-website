@@ -215,14 +215,26 @@ export async function createSeoPagePreviewLink(
 }
 
 export async function revokeSeoPagePreviewLink(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const pageId = String(formData.get("pageId") ?? "");
   const tokenId = String(formData.get("tokenId") ?? "");
   if (!pageId || !tokenId) redirect(ADMIN_PAGES_PATH);
 
-  await adminRevokeSeoPagePreviewToken(tokenId);
-  revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
-  redirect(`${ADMIN_PAGES_PATH}/${pageId}`);
+  const pagePath = `${ADMIN_PAGES_PATH}/${pageId}`;
+  let redirectPath = pagePath;
+  try {
+    await adminRevokeSeoPagePreviewToken(tokenId);
+    revalidatePath(pagePath);
+  } catch (error) {
+    console.error("failed to revoke SEO page preview token", {
+      adminUserId: admin.user.id,
+      pageId,
+      tokenId,
+      error,
+    });
+    redirectPath = `${pagePath}?error=preview-revoke`;
+  }
+  redirect(redirectPath);
 }
 
 export async function rollbackSeoPageRevision(formData: FormData) {
@@ -231,11 +243,23 @@ export async function rollbackSeoPageRevision(formData: FormData) {
   const revisionId = String(formData.get("revisionId") ?? "");
   if (!pageId || !revisionId) redirect(ADMIN_PAGES_PATH);
 
-  await adminRollbackSeoPageRevision(pageId, revisionId, {
-    actorId: admin.user.id,
-  });
-  revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
-  redirect(`${ADMIN_PAGES_PATH}/${pageId}?saved=1`);
+  const pagePath = `${ADMIN_PAGES_PATH}/${pageId}`;
+  let redirectPath = `${pagePath}?saved=1`;
+  try {
+    await adminRollbackSeoPageRevision(pageId, revisionId, {
+      actorId: admin.user.id,
+    });
+    revalidatePath(pagePath);
+  } catch (error) {
+    console.error("failed to roll back SEO page revision", {
+      adminUserId: admin.user.id,
+      pageId,
+      revisionId,
+      error,
+    });
+    redirectPath = `${pagePath}?error=rollback`;
+  }
+  redirect(redirectPath);
 }
 
 export async function refreshSeoPageLibraryReferences(formData: FormData) {

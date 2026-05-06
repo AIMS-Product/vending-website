@@ -10,7 +10,7 @@ import {
 import { requireAdmin } from "@/lib/supabase/auth";
 
 type Params = { id: string };
-type SearchParams = { saved?: string };
+type SearchParams = { saved?: string; error?: string };
 
 export const metadata: Metadata = {
   title: "Edit SEO page",
@@ -41,7 +41,11 @@ export default async function EditSeoPagePage({
           Edit resource page
         </h1>
       </div>
-      <SeoPageEditorForm page={page} savedFromRedirect={query.saved === "1"} />
+      <SeoPageEditorForm
+        page={page}
+        savedFromRedirect={query.saved === "1"}
+        redirectError={pageActionErrorMessage(query.error)}
+      />
       <SeoPageRevisionPanel
         pageId={page.id}
         revisions={revisions}
@@ -49,4 +53,14 @@ export default async function EditSeoPagePage({
       />
     </section>
   );
+}
+
+function pageActionErrorMessage(code: string | undefined) {
+  if (code === "preview-revoke") {
+    return "Could not revoke the preview link. Please try again.";
+  }
+  if (code === "rollback") {
+    return "Could not roll back to that revision. Please try again.";
+  }
+  return undefined;
 }

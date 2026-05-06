@@ -8,7 +8,7 @@ import {
 import type { PageContent } from "@/lib/page-builder/blocks";
 import type { Database } from "@/types/database";
 
-type SeoClient = Pick<SupabaseClient<Database>, "from">;
+type SeoClient = Pick<SupabaseClient<Database>, "from" | "rpc">;
 
 const validContent: PageContent = {
   version: 1,
@@ -89,7 +89,14 @@ function buildClient(...tables: unknown[]) {
       if (!next) throw new Error("Unexpected Supabase table call");
       return next;
     }),
-  } as unknown as SeoClient & { from: ReturnType<typeof vi.fn> };
+    rpc: vi.fn().mockResolvedValue({
+      data: null,
+      error: { message: "Unexpected Supabase RPC call" },
+    }),
+  } as unknown as SeoClient & {
+    from: ReturnType<typeof vi.fn>;
+    rpc: ReturnType<typeof vi.fn>;
+  };
 }
 
 describe("seo page revisions and previews", () => {

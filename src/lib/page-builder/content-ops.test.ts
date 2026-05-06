@@ -41,6 +41,8 @@ describe("page builder content operations", () => {
     expect(moveItem(["a", "b", "c"], 1, "up")).toEqual(["b", "a", "c"]);
     expect(moveItem(["a", "b", "c"], 1, "down")).toEqual(["a", "c", "b"]);
     expect(moveItem(["a", "b", "c"], 0, "up")).toEqual(["a", "b", "c"]);
+    expect(moveItem(["a", "b", "c"], -1, "down")).toEqual(["a", "b", "c"]);
+    expect(moveItem(["a", "b", "c"], 3, "up")).toEqual(["a", "b", "c"]);
   });
 
   it("preserves saved section, column, and block order for publish rendering", () => {

@@ -6,7 +6,7 @@ import {
 } from "./ai-page-proposals";
 import type { Database } from "@/types/database";
 
-type ProposalClient = Pick<SupabaseClient<Database>, "from">;
+type ProposalClient = Pick<SupabaseClient<Database>, "from" | "rpc">;
 
 const proposal = {
   version: 1,
@@ -49,21 +49,6 @@ function singleByEq(data: unknown, error: unknown = null) {
   return { table: { select }, mocks: { select, eq, single } };
 }
 
-function insertSingle(data: unknown, error: unknown = null) {
-  const single = vi.fn().mockResolvedValue({ data, error });
-  const select = vi.fn().mockReturnValue({ single });
-  const insert = vi.fn().mockReturnValue({ select });
-  return { table: { insert }, mocks: { insert, select, single } };
-}
-
-function updateSingle(data: unknown, error: unknown = null) {
-  const single = vi.fn().mockResolvedValue({ data, error });
-  const select = vi.fn().mockReturnValue({ single });
-  const eq = vi.fn().mockReturnValue({ select });
-  const update = vi.fn().mockReturnValue({ eq });
-  return { table: { update }, mocks: { update, eq, select, single } };
-}
-
 function buildClient(...tables: unknown[]) {
   return {
     from: vi.fn().mockImplementation(() => {
@@ -71,7 +56,14 @@ function buildClient(...tables: unknown[]) {
       if (!next) throw new Error("Unexpected Supabase table call");
       return next;
     }),
-  } as unknown as ProposalClient & { from: ReturnType<typeof vi.fn> };
+    rpc: vi.fn().mockResolvedValue({
+      data: null,
+      error: { message: "Unexpected Supabase RPC call" },
+    }),
+  } as unknown as ProposalClient & {
+    from: ReturnType<typeof vi.fn>;
+    rpc: ReturnType<typeof vi.fn>;
+  };
 }
 
 describe("AI page proposals", () => {
@@ -121,42 +113,100 @@ describe("AI page proposals", () => {
       meta_description: "Meta",
       draft_content: { version: 1, sections: [] },
     });
-    const insertRevision = insertSingle({ id: "revision_1" });
-    const updatePage = updateSingle({ id: "page_1" });
-    const updateProposal = updateSingle({
-      id: "proposal_1",
-      status: "accepted",
-    });
-    const client = buildClient(
-      proposalLookup.table,
-      pageLookup.table,
-      insertRevision.table,
-      updatePage.table,
-      updateProposal.table,
-    );
-
-    await adminAcceptAiProposalBlocks("page_1", "proposal_1", ["block_ai"], {
-      client,
-      actorId: "admin_1",
-      now: () => new Date("2026-05-06T01:00:00.000Z"),
-    });
-
-    expect(insertRevision.mocks.insert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        revision_type: "ai_insert",
-        created_by: "admin_1",
-      }),
-    );
-    expect(
-      updatePage.mocks.update.mock.calls[0]?.[0].draft_content.sections[0]
-        .columns[0].blocks,
-    ).toHaveLength(1);
-    expect(updateProposal.mocks.update).toHaveBeenCalledWith(
-      expect.objectContaining({
+    const rpcResult = {
+      page: {
+        id: "page_1",
+        draft_content: {
+          version: 1,
+          sections: [
+            {
+              id: "section_1",
+              preset: "standard",
+              background: "default",
+              spacing: "standard",
+              columns: [
+                {
+                  id: "column_1",
+                  width: "1/1",
+                  blocks: [proposal.blocks[0]!.block],
+                },
+              ],
+            },
+          ],
+        },
+      },
+      proposal: {
+        id: "proposal_1",
         status: "accepted",
         accepted_block_ids: ["block_ai"],
         accepted_by: "admin_1",
-      }),
+      },
+      revision: { id: "revision_1", revision_type: "ai_insert" },
+    };
+    const client = buildClient(proposalLookup.table, pageLookup.table);
+    client.rpc.mockResolvedValue({
+      data: rpcResult,
+      error: null,
+    });
+
+    const result = await adminAcceptAiProposalBlocks(
+      "page_1",
+      "proposal_1",
+      ["block_ai"],
+      {
+        client,
+        actorId: "admin_1",
+        now: () => new Date("2026-05-06T01:00:00.000Z"),
+      },
     );
+
+    expect(result).toEqual(rpcResult);
+    expect(client.rpc).toHaveBeenCalledWith("accept_ai_proposal_blocks", {
+      p_page_id: "page_1",
+      p_proposal_id: "proposal_1",
+      p_next_content: expect.objectContaining({ version: 1 }),
+      p_seo_snapshot: {
+        slug: "start-vending",
+        title: "Start Vending",
+        target_keyword: "start vending",
+        seo_title: "Start Vending",
+        meta_description: "Meta",
+      },
+      p_accepted_block_ids: ["block_ai"],
+      p_actor_id: "admin_1",
+      p_label: "AI insert 2026-05-06T01:00:00.000Z",
+      p_accepted_at: "2026-05-06T01:00:00.000Z",
+    });
+  });
+
+  it("rejects stale concurrent proposal acceptance attempts", async () => {
+    const proposalLookup = maybeSingleByMatch({
+      id: "proposal_1",
+      page_id: "page_1",
+      status: "proposed",
+      proposal_json: proposal,
+    });
+    const pageLookup = singleByEq({
+      id: "page_1",
+      slug: "start-vending",
+      title: "Start Vending",
+      target_keyword: "start vending",
+      seo_title: "Start Vending",
+      meta_description: "Meta",
+      draft_content: { version: 1, sections: [] },
+    });
+    const client = buildClient(proposalLookup.table, pageLookup.table);
+    client.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "AI proposal is not available for insertion." },
+    });
+
+    await expect(
+      adminAcceptAiProposalBlocks("page_1", "proposal_1", ["block_ai"], {
+        client,
+        actorId: "admin_1",
+        now: () => new Date("2026-05-06T01:00:00.000Z"),
+      }),
+    ).rejects.toThrow("AI proposal is not available for insertion.");
   });
 });
