@@ -180,6 +180,7 @@ function formatDateTime(iso: string) {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "UTC",
   });
 }
 
