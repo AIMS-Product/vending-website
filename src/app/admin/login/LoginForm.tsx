@@ -3,19 +3,30 @@
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
+import {
+  ADMIN_AFTER_LOGIN_PATH,
+  buildCodeExchangeUrl,
+  extractMagicLinkHashTokens,
+  normalizeAdminNextPath,
+} from "@/lib/supabase/auth-redirects";
 import { requestMagicLink, type LoginState } from "./actions";
 
 const initialState: LoginState = { status: "idle" };
 
-export function LoginForm() {
+export function LoginForm({ initialError }: { initialError: string | null }) {
   const [state, formAction] = useActionState(requestMagicLink, initialState);
-  const [hashError, setHashError] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(initialError);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.hash.slice(1));
-    const accessToken = params.get("access_token");
-    const refreshToken = params.get("refresh_token");
-    if (!accessToken || !refreshToken) return;
+    const codeExchangeUrl = buildCodeExchangeUrl(window.location.href);
+    if (codeExchangeUrl) {
+      window.location.replace(codeExchangeUrl);
+      return;
+    }
+
+    const url = new URL(window.location.href);
+    const tokens = extractMagicLinkHashTokens(window.location.hash);
+    if (!tokens) return;
 
     let cancelled = false;
     // Hosted Supabase projects can send implicit-flow magic links unless the
@@ -23,18 +34,21 @@ export function LoginForm() {
     // hash tokens here so either email-template style reaches the admin gate.
     createClient()
       .auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
+        access_token: tokens.accessToken,
+        refresh_token: tokens.refreshToken,
       })
       .then(({ error }) => {
         if (cancelled) return;
         if (error) {
           console.error("magic link hash session failed", error);
-          setHashError("That sign-in link could not be used. Try again.");
+          setLinkError("That sign-in link could not be used. Try again.");
           return;
         }
         window.history.replaceState(null, "", "/admin/login");
-        window.location.assign("/admin/news");
+        window.location.assign(
+          normalizeAdminNextPath(url.searchParams.get("next")) ||
+            ADMIN_AFTER_LOGIN_PATH,
+        );
       });
 
     return () => {
@@ -83,9 +97,9 @@ export function LoginForm() {
         </p>
       )}
 
-      {hashError && (
+      {linkError && (
         <p className="text-sm text-red-600" role="alert" aria-live="polite">
-          {hashError}
+          {linkError}
         </p>
       )}
     </form>

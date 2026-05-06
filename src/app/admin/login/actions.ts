@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { z } from "zod";
+import { buildMagicLinkRedirectUrl } from "@/lib/supabase/auth-redirects";
 import { createClient } from "@/lib/supabase/server";
 
 export type LoginState =
@@ -61,7 +62,7 @@ export async function requestMagicLink(
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data,
     options: {
-      emailRedirectTo: `${origin}/auth/callback`,
+      emailRedirectTo: buildMagicLinkRedirectUrl(origin),
       shouldCreateUser: true,
     },
   });

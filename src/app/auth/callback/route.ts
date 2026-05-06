@@ -1,4 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  ADMIN_AFTER_LOGIN_PATH,
+  ADMIN_LOGIN_PATH,
+  normalizeAdminNextPath,
+} from "@/lib/supabase/auth-redirects";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -7,7 +12,7 @@ import { createClient } from "@/lib/supabase/server";
  * session, which writes the auth cookies via the SSR client's `setAll`
  * handler.
  *
- * On success we send the user to `/admin/news`. The proxy + `requireAdmin`
+ * On success we send the user to `/admin/pages`. The proxy + `requireAdmin`
  * still run there — if the email is authenticated but not in `app_users`
  * they bounce back to the login page (with a query flag the form can
  * surface). On failure we land them on the login page with `?error=...`
@@ -19,10 +24,12 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/admin/news";
+  const next = normalizeAdminNextPath(searchParams.get("next"));
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/admin/login?error=missing_code`);
+    return NextResponse.redirect(
+      `${origin}${ADMIN_LOGIN_PATH}?error=missing_code`,
+    );
   }
 
   const supabase = await createClient();
@@ -30,8 +37,10 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("auth/callback exchange failed", error);
-    return NextResponse.redirect(`${origin}/admin/login?error=exchange_failed`);
+    return NextResponse.redirect(
+      `${origin}${ADMIN_LOGIN_PATH}?error=exchange_failed`,
+    );
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  return NextResponse.redirect(`${origin}${next || ADMIN_AFTER_LOGIN_PATH}`);
 }

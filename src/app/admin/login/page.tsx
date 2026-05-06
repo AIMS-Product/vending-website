@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { authErrorMessage } from "@/lib/supabase/auth-redirects";
 import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = {
@@ -6,7 +7,15 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminLoginPage() {
+type SearchParams = { error?: string };
+
+export default async function AdminLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+
   return (
     <section className="mx-auto flex w-full max-w-md flex-col gap-6 px-6 py-16">
       <header className="space-y-2">
@@ -20,7 +29,7 @@ export default function AdminLoginPage() {
       </header>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <LoginForm />
+        <LoginForm initialError={authErrorMessage(params.error)} />
       </div>
     </section>
   );
