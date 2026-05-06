@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SeoPageEditorForm } from "@/components/admin/SeoPageEditorForm";
 import { SeoPageRevisionPanel } from "@/components/admin/SeoPageRevisionPanel";
+import { adminListAiPageProposals } from "@/lib/services/ai-page-proposals";
 import {
   adminGetSeoPageById,
   adminListSeoPagePreviewTokens,
@@ -27,12 +28,13 @@ export default async function EditSeoPagePage({
 }) {
   await requireAdmin();
   const [{ id }, query] = await Promise.all([params, searchParams]);
-  const [page, revisions, previewTokens, internalLinkTargets] =
+  const [page, revisions, previewTokens, internalLinkTargets, aiProposals] =
     await Promise.all([
       adminGetSeoPageById(id),
       adminListSeoPageRevisions(id),
       adminListSeoPagePreviewTokens(id),
       adminListInternalLinkTargets({ currentPageId: id }),
+      adminListAiPageProposals(id),
     ]);
   if (!page) notFound();
 
@@ -47,6 +49,7 @@ export default async function EditSeoPagePage({
       <SeoPageEditorForm
         page={page}
         internalLinkTargets={internalLinkTargets}
+        aiProposals={aiProposals}
         savedFromRedirect={query.saved === "1"}
         redirectError={pageActionErrorMessage(query.error)}
       />

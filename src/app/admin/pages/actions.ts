@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { AiProposalValidationError } from "@/lib/services/ai-page-proposals";
+import {
+  AiProposalValidationError,
+  adminAcceptAiProposalBlocks,
+} from "@/lib/services/ai-page-proposals";
 import {
   SeoPageValidationError,
   adminCreateSeoPagePreviewToken,
@@ -38,6 +41,17 @@ export type PageAutosaveResult =
 export type PageAiProposalResult =
   | { status: "idle"; message?: string; proposalId?: string }
   | { status: "created"; message: string; proposalId: string }
+  | { status: "error"; message: string; proposalId?: string };
+
+export type PageAiProposalInsertResult =
+  | { status: "idle"; message?: string; proposalId?: string }
+  | {
+      status: "inserted";
+      message: string;
+      proposalId: string;
+      insertedBlockIds: string[];
+      content: PageContent;
+    }
   | { status: "error"; message: string; proposalId?: string };
 
 export type PagePreviewLinkActionState =
@@ -249,6 +263,50 @@ export async function generateAiSeoPageProposal(
   }
 }
 
+export async function acceptAiSeoProposalBlocks(
+  pageId: string,
+  proposalId: string,
+  blockIds: string[],
+): Promise<PageAiProposalInsertResult> {
+  const admin = await requireAdmin();
+  const parsed = z
+    .object({
+      pageId: z.uuid(),
+      proposalId: z.uuid(),
+      blockIds: z.array(z.string().trim().min(1)).min(1),
+    })
+    .safeParse({ pageId, proposalId, blockIds });
+  if (!parsed.success) {
+    return {
+      status: "error",
+      proposalId,
+      message: firstIssue(parsed.error),
+    };
+  }
+
+  try {
+    const result = await adminAcceptAiProposalBlocks(
+      parsed.data.pageId,
+      parsed.data.proposalId,
+      parsed.data.blockIds,
+      { actorId: admin.user.id },
+    );
+    const content = parseAcceptedPageContent(result.page);
+    revalidatePath(`${ADMIN_PAGES_PATH}/${parsed.data.pageId}`);
+    return {
+      status: "inserted",
+      message: `${parsed.data.blockIds.length} AI block${
+        parsed.data.blockIds.length === 1 ? "" : "s"
+      } inserted into the draft.`,
+      proposalId: parsed.data.proposalId,
+      insertedBlockIds: parsed.data.blockIds,
+      content,
+    };
+  } catch (error) {
+    return pageAiProposalInsertActionError(error, proposalId);
+  }
+}
+
 export async function revokeSeoPagePreviewLink(formData: FormData) {
   const admin = await requireAdmin();
   const pageId = String(formData.get("pageId") ?? "");
@@ -409,6 +467,59 @@ function pageAiProposalActionError(error: unknown): PageAiProposalResult {
     status: "error",
     message: "Could not create an AI proposal.",
   };
+}
+
+function pageAiProposalInsertActionError(
+  error: unknown,
+  proposalId: string,
+): PageAiProposalInsertResult {
+  console.error("seo page AI proposal insert action failed", error);
+  if (error instanceof AiProposalValidationError) {
+    return {
+      status: "error",
+      proposalId,
+      message: error.issues[0]?.message ?? "AI proposal did not validate.",
+    };
+  }
+  if (error instanceof SeoPageValidationError) {
+    return {
+      status: "error",
+      proposalId,
+      message: error.issues[0]?.message ?? "Page did not pass validation.",
+    };
+  }
+  if (error instanceof Error) {
+    return {
+      status: "error",
+      proposalId,
+      message: error.message,
+    };
+  }
+
+  return {
+    status: "error",
+    proposalId,
+    message: "Could not insert AI proposal blocks.",
+  };
+}
+
+function parseAcceptedPageContent(page: unknown): PageContent {
+  const parsed = z
+    .object({
+      draft_content: pageContentSchema,
+    })
+    .passthrough()
+    .safeParse(page);
+  if (!parsed.success) {
+    throw new SeoPageValidationError([
+      {
+        code: "invalid_draft_content",
+        path: "draft_content",
+        message: "AI blocks were inserted but the updated draft is invalid.",
+      },
+    ]);
+  }
+  return parsed.data.draft_content;
 }
 
 function revalidatePagePaths(slug: string, previousSlug?: string) {

@@ -46,6 +46,22 @@ export type CreateAiPageProposalInput = {
   createdBy?: string | null;
 };
 
+export type AiPageProposalReview = {
+  id: string;
+  status: string;
+  model: string;
+  promptVersion: string;
+  selectedSourceDocumentIds: string[];
+  selectedSourceExcerptIds: string[];
+  selectedApprovedClaimIds: string[];
+  acceptedBlockIds: string[];
+  acceptedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  proposal: AiPageProposal;
+  warnings: AiPageProposal["warnings"];
+};
+
 const AI_PROPOSAL_FIELDS =
   "id, page_id, status, model, prompt_version, selected_source_document_ids, selected_source_excerpt_ids, selected_approved_claim_ids, proposal_json, warnings, accepted_block_ids, created_by, accepted_by, accepted_at, created_at, updated_at" as const;
 
@@ -82,6 +98,40 @@ export async function adminCreateAiPageProposal(
 
   if (error) throw new Error("Could not create AI page proposal.");
   return data;
+}
+
+export async function adminListAiPageProposals(
+  pageId: string,
+  deps: ServiceDeps = {},
+): Promise<AiPageProposalReview[]> {
+  const client = deps.client ?? createAdminClient();
+  const { data, error } = await client
+    .from("ai_page_proposals")
+    .select(AI_PROPOSAL_FIELDS)
+    .eq("page_id", pageId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (error) throw new Error("Could not load AI page proposals.");
+
+  return (data ?? []).map((row) => {
+    const proposal = parseProposal(row.proposal_json);
+    return {
+      id: row.id,
+      status: row.status,
+      model: row.model,
+      promptVersion: row.prompt_version,
+      selectedSourceDocumentIds: row.selected_source_document_ids,
+      selectedSourceExcerptIds: row.selected_source_excerpt_ids,
+      selectedApprovedClaimIds: row.selected_approved_claim_ids,
+      acceptedBlockIds: row.accepted_block_ids,
+      acceptedAt: row.accepted_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      proposal,
+      warnings: proposal.warnings,
+    };
+  });
 }
 
 export async function adminAcceptAiProposalBlocks(

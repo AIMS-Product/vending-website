@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   AiProposalValidationError,
   adminAcceptAiProposalBlocks,
+  adminListAiPageProposals,
 } from "./ai-page-proposals";
 import type { Database } from "@/types/database";
 
@@ -49,6 +50,14 @@ function singleByEq(data: unknown, error: unknown = null) {
   return { table: { select }, mocks: { select, eq, single } };
 }
 
+function listByPage(data: unknown, error: unknown = null) {
+  const limit = vi.fn().mockResolvedValue({ data, error });
+  const order = vi.fn().mockReturnValue({ limit });
+  const eq = vi.fn().mockReturnValue({ order });
+  const select = vi.fn().mockReturnValue({ eq });
+  return { table: { select }, mocks: { select, eq, order, limit } };
+}
+
 function buildClient(...tables: unknown[]) {
   return {
     from: vi.fn().mockImplementation(() => {
@@ -67,6 +76,48 @@ function buildClient(...tables: unknown[]) {
 }
 
 describe("AI page proposals", () => {
+  it("lists recent proposals with parsed source-bound proposal JSON", async () => {
+    const list = listByPage([
+      {
+        id: "proposal_1",
+        page_id: "page_1",
+        status: "proposed",
+        model: "gpt-5.5",
+        prompt_version: "seo-source-bound-proposal-v1",
+        selected_source_document_ids: [],
+        selected_source_excerpt_ids: ["11111111-1111-4111-8111-111111111111"],
+        selected_approved_claim_ids: [],
+        proposal_json: proposal,
+        warnings: [],
+        accepted_block_ids: [],
+        created_by: null,
+        accepted_by: null,
+        accepted_at: null,
+        created_at: "2026-05-06T01:00:00.000Z",
+        updated_at: "2026-05-06T01:00:00.000Z",
+      },
+    ]);
+    const client = buildClient(list.table);
+
+    const result = await adminListAiPageProposals("page_1", { client });
+
+    expect(result).toEqual([
+      expect.objectContaining({
+        id: "proposal_1",
+        status: "proposed",
+        model: "gpt-5.5",
+        promptVersion: "seo-source-bound-proposal-v1",
+        selectedSourceExcerptIds: ["11111111-1111-4111-8111-111111111111"],
+        proposal,
+      }),
+    ]);
+    expect(list.mocks.eq).toHaveBeenCalledWith("page_id", "page_1");
+    expect(list.mocks.order).toHaveBeenCalledWith("created_at", {
+      ascending: false,
+    });
+    expect(list.mocks.limit).toHaveBeenCalledWith(5);
+  });
+
   it("rejects insertion for selected blocks with unsupported warnings", async () => {
     const proposalLookup = maybeSingleByMatch({
       id: "proposal_1",

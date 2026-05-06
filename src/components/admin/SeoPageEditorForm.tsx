@@ -21,14 +21,18 @@ import { CSS } from "@dnd-kit/utilities";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
+  acceptAiSeoProposalBlocks,
   autosaveSeoPageDraft,
   generateAiSeoPageProposal,
   saveSeoPage,
+  type PageAiProposalInsertResult,
   type PageAiProposalResult,
   type PageAutosaveResult,
   type PageEditorActionState,
 } from "@/app/admin/pages/actions";
+import type { AiPageProposalReview } from "@/lib/services/ai-page-proposals";
 import {
   createEmptyPageContent,
   pageContentSchema,
@@ -66,18 +70,22 @@ type Sensors = ReturnType<typeof useSensors>;
 type SeoPageEditorFormProps = {
   page?: SeoPage;
   internalLinkTargets?: InternalLinkSuggestionTarget[];
+  aiProposals?: AiPageProposalReview[];
   savedFromRedirect?: boolean;
   redirectError?: string;
 };
 
 const initialState: PageEditorActionState = { status: "idle" };
 const initialAiProposalState: PageAiProposalResult = { status: "idle" };
+const initialAiInsertState: PageAiProposalInsertResult = { status: "idle" };
 export function SeoPageEditorForm({
   page,
   internalLinkTargets = [],
+  aiProposals = [],
   savedFromRedirect = false,
   redirectError,
 }: SeoPageEditorFormProps) {
+  const router = useRouter();
   const [state, formAction] = useActionState(saveSeoPage, initialState);
   const initialContent = useMemo(() => parseInitialContent(page), [page]);
   const [title, setTitle] = useState(page?.title ?? "");
@@ -101,7 +109,10 @@ export function SeoPageEditorForm({
   const [autosave, setAutosave] = useState<PageAutosaveResult | null>(null);
   const [aiProposalResult, setAiProposalResult] =
     useState<PageAiProposalResult>(initialAiProposalState);
+  const [aiInsertResult, setAiInsertResult] =
+    useState<PageAiProposalInsertResult>(initialAiInsertState);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [isAiInserting, setIsAiInserting] = useState(false);
   const [isSeoPanelOpen, setIsSeoPanelOpen] = useState(false);
   const [linkSuggestionMessage, setLinkSuggestionMessage] = useState<
     string | null
@@ -304,10 +315,14 @@ export function SeoPageEditorForm({
         <SeoReadinessPanel
           summary={seoReadiness}
           aiProposalResult={aiProposalResult}
+          aiInsertResult={aiInsertResult}
+          aiProposals={aiProposals}
           canRunAiAgent={Boolean(page?.id)}
           isAiGenerating={isAiGenerating}
+          isAiInserting={isAiInserting}
           internalLinkSuggestions={internalLinkSuggestions}
           linkSuggestionMessage={linkSuggestionMessage}
+          onInsertAiProposalBlocks={insertAiProposalBlocks}
           onApplyInternalLinkSuggestion={applyLinkSuggestion}
           onRunAiAgent={runAiSeoAgent}
           onOpenSettings={() => setIsSeoPanelOpen(true)}
@@ -736,7 +751,9 @@ export function SeoPageEditorForm({
     setIsAiGenerating(true);
     setAiProposalResult({ status: "idle" });
     try {
-      setAiProposalResult(await generateAiSeoPageProposal(page.id));
+      const result = await generateAiSeoPageProposal(page.id);
+      setAiProposalResult(result);
+      if (result.status === "created") router.refresh();
     } catch (error) {
       console.error("AI SEO agent failed", error);
       setAiProposalResult({
@@ -747,25 +764,71 @@ export function SeoPageEditorForm({
       setIsAiGenerating(false);
     }
   }
+
+  async function insertAiProposalBlocks(
+    proposalId: string,
+    blockIds: string[],
+  ) {
+    if (!page?.id) {
+      setAiInsertResult({
+        status: "error",
+        proposalId,
+        message: "Save the draft before inserting AI blocks.",
+      });
+      return;
+    }
+
+    setIsAiInserting(true);
+    setAiInsertResult({ status: "idle" });
+    try {
+      const result = await acceptAiSeoProposalBlocks(
+        page.id,
+        proposalId,
+        blockIds,
+      );
+      setAiInsertResult(result);
+      if (result.status === "inserted") {
+        setContent(ensureEditablePageContent(result.content));
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("AI SEO proposal insert failed", error);
+      setAiInsertResult({
+        status: "error",
+        proposalId,
+        message: "Could not insert AI proposal blocks.",
+      });
+    } finally {
+      setIsAiInserting(false);
+    }
+  }
 }
 
 function SeoReadinessPanel({
   summary,
   aiProposalResult,
+  aiInsertResult,
+  aiProposals,
   canRunAiAgent,
   isAiGenerating,
+  isAiInserting,
   internalLinkSuggestions,
   linkSuggestionMessage,
+  onInsertAiProposalBlocks,
   onApplyInternalLinkSuggestion,
   onRunAiAgent,
   onOpenSettings,
 }: {
   summary: SeoReadinessSummary;
   aiProposalResult: PageAiProposalResult;
+  aiInsertResult: PageAiProposalInsertResult;
+  aiProposals: AiPageProposalReview[];
   canRunAiAgent: boolean;
   isAiGenerating: boolean;
+  isAiInserting: boolean;
   internalLinkSuggestions: InternalLinkSuggestion[];
   linkSuggestionMessage: string | null;
+  onInsertAiProposalBlocks: (proposalId: string, blockIds: string[]) => void;
   onApplyInternalLinkSuggestion: (suggestion: InternalLinkSuggestion) => void;
   onRunAiAgent: () => void;
   onOpenSettings: () => void;
@@ -901,6 +964,12 @@ function SeoReadinessPanel({
               )}
           </p>
         )}
+        <AiProposalReviewList
+          proposals={aiProposals}
+          insertResult={aiInsertResult}
+          isInserting={isAiInserting}
+          onInsertBlocks={onInsertAiProposalBlocks}
+        />
       </div>
 
       {(internalLinkSuggestions.length > 0 || linkSuggestionMessage) && (
@@ -959,6 +1028,217 @@ function SeoReadinessPanel({
       )}
     </section>
   );
+}
+
+type AiReviewProposedBlock = AiPageProposalReview["proposal"]["blocks"][number];
+
+function AiProposalReviewList({
+  proposals,
+  insertResult,
+  isInserting,
+  onInsertBlocks,
+}: {
+  proposals: AiPageProposalReview[];
+  insertResult: PageAiProposalInsertResult;
+  isInserting: boolean;
+  onInsertBlocks: (proposalId: string, blockIds: string[]) => void;
+}) {
+  if (proposals.length === 0) return null;
+
+  return (
+    <div className="mt-4 space-y-3">
+      {proposals.slice(0, 3).map((proposal) => (
+        <AiProposalReviewCard
+          key={proposal.id}
+          proposal={proposal}
+          insertResult={insertResult}
+          isInserting={isInserting}
+          onInsertBlocks={onInsertBlocks}
+        />
+      ))}
+    </div>
+  );
+}
+
+function AiProposalReviewCard({
+  proposal,
+  insertResult,
+  isInserting,
+  onInsertBlocks,
+}: {
+  proposal: AiPageProposalReview;
+  insertResult: PageAiProposalInsertResult;
+  isInserting: boolean;
+  onInsertBlocks: (proposalId: string, blockIds: string[]) => void;
+}) {
+  const defaultSelectedBlockIds = useMemo(
+    () =>
+      proposal.proposal.blocks
+        .filter(canInsertAiProposedBlock)
+        .map((entry) => entry.block.id),
+    [proposal],
+  );
+  const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>(
+    defaultSelectedBlockIds,
+  );
+  const proposalResult =
+    insertResult.proposalId === proposal.id ? insertResult : null;
+  const isProposed = proposal.status === "proposed";
+
+  return (
+    <article className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-violet-100">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="text-sm font-semibold text-slate-950">
+              AI proposal review
+            </h4>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+              {isProposed ? "Ready" : proposal.status}
+            </span>
+          </div>
+          <p className="mt-1 font-mono text-[11px] text-slate-400">
+            {proposal.id}
+          </p>
+        </div>
+        {isProposed && (
+          <button
+            type="button"
+            className={miniButtonClass}
+            disabled={isInserting || selectedBlockIds.length === 0}
+            onClick={() => onInsertBlocks(proposal.id, selectedBlockIds)}
+          >
+            {isInserting ? "Inserting..." : "Insert selected blocks"}
+          </button>
+        )}
+      </div>
+
+      {proposal.proposal.metadata.seoTitle && (
+        <p className="mt-3 rounded-lg bg-violet-50 px-3 py-2 text-xs leading-5 text-slate-600">
+          Suggested SEO title:{" "}
+          <span className="font-semibold text-slate-800">
+            {proposal.proposal.metadata.seoTitle}
+          </span>
+        </p>
+      )}
+
+      {proposalResult?.message && (
+        <p
+          className={`mt-3 rounded-lg px-3 py-2 text-xs leading-5 ring-1 ${
+            proposalResult.status === "error"
+              ? "bg-red-50 text-red-700 ring-red-100"
+              : "bg-emerald-50 text-emerald-700 ring-emerald-100"
+          }`}
+        >
+          {proposalResult.message}
+        </p>
+      )}
+
+      <div className="mt-3 grid gap-2">
+        {proposal.proposal.blocks.map((entry) => {
+          const canInsert = canInsertAiProposedBlock(entry);
+          const checked = selectedBlockIds.includes(entry.block.id);
+          return (
+            <label
+              key={entry.block.id}
+              className={`flex gap-3 rounded-lg border p-3 text-left ${
+                canInsert && isProposed
+                  ? "border-slate-200 bg-slate-50"
+                  : "border-slate-100 bg-slate-50/60 text-slate-400"
+              }`}
+            >
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={checked}
+                disabled={!canInsert || !isProposed || isInserting}
+                onChange={(event) => {
+                  const nextChecked = event.target.checked;
+                  setSelectedBlockIds((current) =>
+                    nextChecked
+                      ? [...new Set([...current, entry.block.id])]
+                      : current.filter((id) => id !== entry.block.id),
+                  );
+                }}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold text-slate-900">
+                    {blockLabel(entry.block.type)}
+                  </span>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200">
+                    {aiSourceCount(entry)} source refs
+                  </span>
+                </span>
+                <span className="mt-1 block text-sm font-medium text-slate-800">
+                  {aiBlockReviewTitle(entry.block)}
+                </span>
+                {aiBlockReviewBody(entry.block) && (
+                  <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">
+                    {aiBlockReviewBody(entry.block)}
+                  </span>
+                )}
+                {entry.warnings.length > 0 && (
+                  <span className="mt-2 block text-xs leading-5 text-amber-700">
+                    {entry.warnings.map((warning) => warning.message).join(" ")}
+                  </span>
+                )}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+
+      {proposal.warnings.length > 0 && (
+        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100">
+          {proposal.warnings.map((warning) => warning.message).join(" ")}
+        </p>
+      )}
+    </article>
+  );
+}
+
+function canInsertAiProposedBlock(entry: AiReviewProposedBlock) {
+  return (
+    aiSourceCount(entry) > 0 &&
+    !entry.warnings.some(
+      (warning) =>
+        warning.code === "unsupported_claim" || warning.code === "needs_source",
+    )
+  );
+}
+
+function aiSourceCount(entry: AiReviewProposedBlock) {
+  return (
+    entry.sourceDocumentIds.length +
+    entry.sourceExcerptIds.length +
+    entry.approvedClaimIds.length
+  );
+}
+
+function aiBlockReviewTitle(block: PageBlock) {
+  if (block.type === "hero") return block.props.heading;
+  if (block.type === "rich_text") return block.props.heading;
+  if (block.type === "card_grid") return block.props.heading;
+  if (block.type === "faq") return block.props.heading;
+  if (block.type === "cta") return block.props.label;
+  if (block.type === "lead_form") return block.props.heading;
+  if (block.type === "proof") return block.props.body;
+  if (block.type === "image") return block.props.altText || "Image block";
+  return block.props.title;
+}
+
+function aiBlockReviewBody(block: PageBlock) {
+  if (block.type === "hero") return block.props.body;
+  if (block.type === "rich_text")
+    return richTextDocumentPlainText(block.props.body);
+  if (block.type === "card_grid") return block.props.cards[0]?.body ?? "";
+  if (block.type === "faq") return block.props.items[0]?.question ?? "";
+  if (block.type === "lead_form") return block.props.body;
+  if (block.type === "proof") return block.props.context;
+  if (block.type === "image") return block.props.caption;
+  if (block.type === "video") return block.props.caption;
+  return block.props.href;
 }
 
 function SeoReadinessDetails({ summary }: { summary: SeoReadinessSummary }) {
@@ -1522,6 +1802,8 @@ function BlockEditor({
   onMove: (direction: MoveDirection) => void;
   onRemove: () => void;
 }) {
+  const blockCompletionMessages = completionMessagesForBlock(block);
+
   return (
     <article
       className={`group/block hover:outline-brand-200 focus-within:outline-brand-300 relative rounded-2xl outline outline-1 outline-transparent transition ${
@@ -1917,56 +2199,140 @@ function BlockEditor({
               className={sectionHeadingInputClass}
             />
           </label>
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 p-5">
-              <TextInput
-                label="Card title"
-                value={block.props.cards[0]?.title ?? ""}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: {
-                      ...block.props,
-                      cards: updateFirstCard(block.props.cards, {
-                        title: value,
-                      }),
-                    },
-                  })
-                }
-              />
-              <TextAreaInput
-                label="Card body"
-                value={block.props.cards[0]?.body ?? ""}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: {
-                      ...block.props,
-                      cards: updateFirstCard(block.props.cards, {
-                        body: value,
-                      }),
-                    },
-                  })
-                }
-              />
-              <TextInput
-                label="Card href"
-                value={block.props.cards[0]?.href ?? ""}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: {
-                      ...block.props,
-                      cards: updateFirstCard(block.props.cards, {
-                        href: value,
-                      }),
-                    },
-                  })
-                }
-              />
-            </div>
-            <SkeletonCard />
-            <SkeletonCard />
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {block.props.cards.map((card, cardIndex) => (
+              <article
+                key={cardIndex}
+                className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+              >
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                    Card {cardIndex + 1}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className={miniButtonClass}
+                      disabled={cardIndex === 0}
+                      onClick={() =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            cards: moveItem(block.props.cards, cardIndex, "up"),
+                          },
+                        })
+                      }
+                    >
+                      Up
+                    </button>
+                    <button
+                      type="button"
+                      className={miniButtonClass}
+                      disabled={cardIndex === block.props.cards.length - 1}
+                      onClick={() =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            cards: moveItem(
+                              block.props.cards,
+                              cardIndex,
+                              "down",
+                            ),
+                          },
+                        })
+                      }
+                    >
+                      Down
+                    </button>
+                    <button
+                      type="button"
+                      className={dangerButtonClass}
+                      onClick={() =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            cards: removeCard(block.props.cards, cardIndex),
+                          },
+                        })
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+                <TextInput
+                  label="Card title"
+                  value={card.title}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        cards: updateCard(block.props.cards, cardIndex, {
+                          title: value,
+                        }),
+                      },
+                    })
+                  }
+                />
+                <TextAreaInput
+                  label="Card body"
+                  value={card.body}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        cards: updateCard(block.props.cards, cardIndex, {
+                          body: value,
+                        }),
+                      },
+                    })
+                  }
+                />
+                <TextInput
+                  label="Card link"
+                  value={card.href ?? ""}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        cards: updateCard(block.props.cards, cardIndex, {
+                          href: value,
+                        }),
+                      },
+                    })
+                  }
+                />
+                {cardCompletionMessages(card).length > 0 && (
+                  <div className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100">
+                    {cardCompletionMessages(card).map((message) => (
+                      <p key={message}>{message}</p>
+                    ))}
+                  </div>
+                )}
+              </article>
+            ))}
+            <button
+              type="button"
+              className="hover:border-brand-300 hover:bg-brand-50 focus-visible:ring-brand-400 min-h-40 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-left text-sm font-semibold text-slate-600 transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={block.props.cards.length >= 12}
+              onClick={() =>
+                onChange({
+                  ...block,
+                  props: {
+                    ...block.props,
+                    cards: [...block.props.cards, createBlankCard()],
+                  },
+                })
+              }
+            >
+              Add card
+            </button>
           </div>
         </div>
       )}
@@ -2094,7 +2460,21 @@ function BlockEditor({
           </div>
         </div>
       )}
+
+      {blockCompletionMessages.length > 0 && (
+        <CompletionHintPanel messages={blockCompletionMessages} />
+      )}
     </article>
+  );
+}
+
+function CompletionHintPanel({ messages }: { messages: string[] }) {
+  return (
+    <div className="mx-4 mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100">
+      {messages.map((message) => (
+        <p key={message}>{message}</p>
+      ))}
+    </div>
   );
 }
 
@@ -2299,22 +2679,123 @@ function updateFirstFaqItem(
   );
 }
 
-function updateFirstCard(
+function createBlankCard(): CardItem {
+  return { title: "", body: "", href: "" };
+}
+
+function updateCard(
   cards: CardItem[],
+  cardIndex: number,
   patch: Partial<CardItem>,
 ): CardItem[] {
-  if (cards.length === 0) {
-    return [
-      {
-        title: patch.title ?? "",
-        body: patch.body ?? "",
-        href: patch.href ?? "",
-      },
-    ];
-  }
   return cards.map((card, index) =>
-    index === 0 ? { ...card, ...patch } : card,
+    index === cardIndex ? { ...card, ...patch } : card,
   );
+}
+
+function removeCard(cards: CardItem[], cardIndex: number): CardItem[] {
+  return cards.filter((_, index) => index !== cardIndex);
+}
+
+function completionMessagesForBlock(block: PageBlock) {
+  const messages: string[] = [];
+
+  if (block.type === "hero") {
+    if (!hasEditorText(block.props.heading)) {
+      messages.push("Add a hero headline before publishing.");
+    }
+    if (!hasEditorText(block.props.body)) {
+      messages.push("Add a short hero summary so the page has a clear lead.");
+    }
+    if (
+      hasEditorText(block.props.ctaLabel) &&
+      !hasEditorText(block.props.ctaHref)
+    ) {
+      messages.push("The hero CTA has button text but no destination.");
+    }
+  }
+
+  if (block.type === "rich_text") {
+    if (!hasEditorText(block.props.heading)) {
+      messages.push("Add a section heading.");
+    }
+    if (!hasEditorText(richTextDocumentPlainText(block.props.body))) {
+      messages.push("Add body copy for this text section.");
+    }
+  }
+
+  if (block.type === "image") {
+    if (!block.props.assetId && !hasEditorText(block.props.src)) {
+      messages.push("Choose an image or remove this image block.");
+    }
+    if (!hasEditorText(block.props.altText)) {
+      messages.push("Add descriptive alt text for this image.");
+    }
+  }
+
+  if (block.type === "video" && !hasEditorText(block.props.url)) {
+    messages.push("Add a video URL or remove this video block.");
+  }
+
+  if (block.type === "cta" && !block.props.presetId) {
+    if (!hasEditorText(block.props.label)) {
+      messages.push("Add button text for this CTA.");
+    }
+    if (!hasEditorText(block.props.href)) {
+      messages.push("Add a destination for this CTA.");
+    }
+  }
+
+  if (block.type === "faq") {
+    if (block.props.items.length === 0) {
+      messages.push("Add at least one FAQ question and answer.");
+    }
+    for (const [itemIndex, item] of block.props.items.entries()) {
+      const itemNumber = itemIndex + 1;
+      if (!hasEditorText(item.question)) {
+        messages.push(`FAQ ${itemNumber} needs a question.`);
+      }
+      if (!hasEditorText(item.answer)) {
+        messages.push(`FAQ ${itemNumber} needs an answer.`);
+      }
+    }
+  }
+
+  if (block.type === "card_grid" && block.props.cards.length === 0) {
+    messages.push("Add at least one card or remove this card block.");
+  }
+
+  if (block.type === "proof" && !hasEditorText(block.props.body)) {
+    messages.push("Add the proof quote or stat text.");
+  }
+
+  if (block.type === "lead_form") {
+    if (!hasEditorText(block.props.heading)) {
+      messages.push("Add a lead form heading.");
+    }
+    if (!hasEditorText(block.props.body)) {
+      messages.push("Add lead form helper copy.");
+    }
+    if (!hasEditorText(block.props.submitLabel)) {
+      messages.push("Add submit button text for this form.");
+    }
+  }
+
+  return messages;
+}
+
+function cardCompletionMessages(card: CardItem) {
+  const messages: string[] = [];
+  if (!hasEditorText(card.title)) messages.push("Add a card title.");
+  if (!hasEditorText(card.body)) messages.push("Add a short card description.");
+  if (!hasEditorText(card.href)) {
+    messages.push("No link set; this card will not send visitors anywhere.");
+  }
+  return messages;
+}
+
+function hasEditorText(value: string | null | undefined) {
+  return Boolean(value && value.trim().length > 0);
 }
 
 function slugify(value: string) {

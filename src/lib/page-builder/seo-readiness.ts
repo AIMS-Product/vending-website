@@ -119,6 +119,7 @@ export function assessSeoReadiness(
       .reduce((count, block) => count + block.props.items.length, 0),
   };
 
+  findings.push(...completionFindings(blocks));
   findings.push(...softFindings(meta, visibleText, blocks, metrics));
 
   const blockers = findings.filter((finding) => finding.severity === "blocker");
@@ -295,6 +296,157 @@ function softFindings(
       message: "Consider adding a relevant image with descriptive alt text.",
       evidence: "No image blocks detected.",
     });
+  }
+
+  return findings;
+}
+
+function completionFindings(blocks: PageBlock[]): SeoReadinessFinding[] {
+  const findings: SeoReadinessFinding[] = [];
+
+  for (const [blockIndex, block] of blocks.entries()) {
+    const blockNumber = blockIndex + 1;
+
+    if (block.type === "card_grid") {
+      if (block.props.cards.length === 0) {
+        findings.push({
+          code: "empty_card_grid",
+          category: "content",
+          severity: "warning",
+          path: `blocks.${blockIndex}.props.cards`,
+          message: `Card grid block ${blockNumber} has no cards.`,
+          evidence: "Add at least one card or remove the block.",
+        });
+      }
+
+      for (const [cardIndex, card] of block.props.cards.entries()) {
+        const cardNumber = cardIndex + 1;
+        if (!hasText(card.title)) {
+          findings.push({
+            code: "incomplete_card_title",
+            category: "content",
+            severity: "warning",
+            path: `blocks.${blockIndex}.props.cards.${cardIndex}.title`,
+            message: `Card ${cardNumber} in block ${blockNumber} needs a title.`,
+            evidence: "Card grid cards should not publish with blank headings.",
+          });
+        }
+        if (!hasText(card.body)) {
+          findings.push({
+            code: "incomplete_card_body",
+            category: "content",
+            severity: "warning",
+            path: `blocks.${blockIndex}.props.cards.${cardIndex}.body`,
+            message: `Card ${cardNumber} in block ${blockNumber} needs body copy.`,
+            evidence: "Add a short explanation or remove the card.",
+          });
+        }
+        if (!hasText(card.href)) {
+          findings.push({
+            code: "missing_card_link",
+            category: "conversion",
+            severity: "opportunity",
+            path: `blocks.${blockIndex}.props.cards.${cardIndex}.href`,
+            message: `Card ${cardNumber} in block ${blockNumber} has no link.`,
+            evidence: "Add a destination if this card should drive action.",
+          });
+        }
+      }
+    }
+
+    if (block.type === "faq") {
+      if (block.props.items.length === 0) {
+        findings.push({
+          code: "empty_faq_block",
+          category: "schema",
+          severity: "warning",
+          path: `blocks.${blockIndex}.props.items`,
+          message: `FAQ block ${blockNumber} has no questions.`,
+          evidence: "Add at least one question and answer or remove the block.",
+        });
+      }
+
+      for (const [itemIndex, item] of block.props.items.entries()) {
+        const itemNumber = itemIndex + 1;
+        if (!hasText(item.question)) {
+          findings.push({
+            code: "incomplete_faq_question",
+            category: "schema",
+            severity: "warning",
+            path: `blocks.${blockIndex}.props.items.${itemIndex}.question`,
+            message: `FAQ ${itemNumber} in block ${blockNumber} needs a question.`,
+            evidence: "Visible FAQ schema should come from complete FAQs.",
+          });
+        }
+        if (!hasText(item.answer)) {
+          findings.push({
+            code: "incomplete_faq_answer",
+            category: "schema",
+            severity: "warning",
+            path: `blocks.${blockIndex}.props.items.${itemIndex}.answer`,
+            message: `FAQ ${itemNumber} in block ${blockNumber} needs an answer.`,
+            evidence: "Visible FAQ schema should come from complete FAQs.",
+          });
+        }
+      }
+    }
+
+    if (block.type === "image") {
+      if (!hasText(block.props.src) && !block.props.assetId) {
+        findings.push({
+          code: "empty_image_source",
+          category: "media",
+          severity: "warning",
+          path: `blocks.${blockIndex}.props.src`,
+          message: `Image block ${blockNumber} has no image selected.`,
+          evidence: "Choose a media asset or remove the image block.",
+        });
+      }
+      if (!hasText(block.props.altText)) {
+        findings.push({
+          code: "empty_image_alt_text",
+          category: "media",
+          severity: "warning",
+          path: `blocks.${blockIndex}.props.altText`,
+          message: `Image block ${blockNumber} needs descriptive alt text.`,
+          evidence: "Alt text helps accessibility and image search context.",
+        });
+      }
+    }
+
+    if (block.type === "cta") {
+      if (!block.props.presetId && !hasText(block.props.label)) {
+        findings.push({
+          code: "empty_cta_label",
+          category: "conversion",
+          severity: "warning",
+          path: `blocks.${blockIndex}.props.label`,
+          message: `CTA block ${blockNumber} needs button text.`,
+          evidence: "A CTA should tell visitors what action to take.",
+        });
+      }
+      if (!block.props.presetId && !hasText(block.props.href)) {
+        findings.push({
+          code: "empty_cta_link",
+          category: "conversion",
+          severity: "warning",
+          path: `blocks.${blockIndex}.props.href`,
+          message: `CTA block ${blockNumber} needs a destination.`,
+          evidence: "Set a URL or choose a CTA preset.",
+        });
+      }
+    }
+
+    if (block.type === "lead_form" && !hasText(block.props.submitLabel)) {
+      findings.push({
+        code: "empty_lead_form_submit_label",
+        category: "conversion",
+        severity: "warning",
+        path: `blocks.${blockIndex}.props.submitLabel`,
+        message: `Lead form block ${blockNumber} needs submit button text.`,
+        evidence: "The form button should make the next step clear.",
+      });
+    }
   }
 
   return findings;
@@ -496,6 +648,10 @@ function hasRichSubheading(blocks: PageBlock[]) {
 
 function normalizeText(value: string) {
   return value.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function hasText(value: string | null | undefined) {
+  return Boolean(value && value.trim().length > 0);
 }
 
 function wordCount(value: string) {

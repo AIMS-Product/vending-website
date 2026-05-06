@@ -256,4 +256,70 @@ describe("assessSeoReadiness", () => {
       ]),
     );
   });
+
+  it("flags incomplete block fields in the smart readiness checks", () => {
+    const content: PageContent = {
+      ...baseContent,
+      sections: [
+        {
+          ...baseContent.sections[0],
+          columns: [
+            {
+              ...baseContent.sections[0].columns[0],
+              blocks: [
+                ...baseContent.sections[0].columns[0].blocks,
+                {
+                  id: "block_cards",
+                  type: "card_grid",
+                  variant: "standard",
+                  props: {
+                    heading: "Common paths",
+                    cards: [
+                      {
+                        title: "Cash purchase",
+                        body: "",
+                        href: "",
+                      },
+                    ],
+                  },
+                },
+                {
+                  id: "block_empty_faq",
+                  type: "faq",
+                  variant: "standard",
+                  props: {
+                    heading: "Financing questions",
+                    items: [],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const summary = assessSeoReadiness(content, baseMeta);
+
+    expect(summary.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "incomplete_card_body",
+          message: "Card 1 in block 6 needs body copy.",
+        }),
+        expect.objectContaining({
+          code: "empty_faq_block",
+          message: "FAQ block 7 has no questions.",
+        }),
+      ]),
+    );
+    expect(summary.opportunities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "missing_card_link",
+          message: "Card 1 in block 6 has no link.",
+        }),
+      ]),
+    );
+  });
 });
