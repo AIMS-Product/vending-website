@@ -1,9 +1,11 @@
 "use server";
 
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 import { z } from "zod";
+import { config } from "@/lib/config";
 import { buildMagicLinkRedirectUrl } from "@/lib/supabase/auth-redirects";
-import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
 
 export type LoginState =
   | { status: "idle" }
@@ -57,7 +59,7 @@ export async function requestMagicLink(
     return { status: "error", message: "Enter a valid email address." };
   }
 
-  const supabase = await createClient();
+  const supabase = createMagicLinkClient();
   const origin = await originFromHeaders();
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data,
@@ -76,4 +78,23 @@ export async function requestMagicLink(
   }
 
   return { status: "sent", email: parsed.data };
+}
+
+function createMagicLinkClient() {
+  // Do not use the SSR client here: it always sends PKCE magic links, but a
+  // Server Action cannot reliably persist the code verifier for the later
+  // email-click request. The login page handles implicit hash-token links and
+  // writes the final SSR cookies after Supabase verifies the email link.
+  return createSupabaseClient<Database>(
+    config.NEXT_PUBLIC_SUPABASE_URL,
+    config.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        flowType: "implicit",
+        persistSession: false,
+      },
+    },
+  );
 }
