@@ -56,28 +56,37 @@ export default async function AdminPagesPage({
         <MetricCard label="Archived" value={pageCounts.archived} />
       </div>
 
-      <nav
-        className="mb-5 inline-flex flex-wrap gap-1 rounded-lg bg-[#e8e8ed] p-1"
-        aria-label="Page status filters"
-      >
-        {filters.map((filter) => (
-          <Link
-            key={filter.value}
-            href={
-              filter.value === "all"
-                ? "/admin/pages"
-                : `/admin/pages?status=${filter.value}`
-            }
-            className={`rounded-md px-4 py-2 text-sm font-medium transition ${
-              active === filter.value
-                ? "bg-white text-[#1d1d1f] shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
-                : "text-[#6e6e73] hover:text-[#1d1d1f]"
-            }`}
-          >
-            {filter.label}
-          </Link>
-        ))}
-      </nav>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <nav
+          className="inline-flex flex-wrap gap-1 rounded-lg bg-[#e8e8ed] p-1"
+          aria-label="Page status filters"
+        >
+          {filters.map((filter) => (
+            <Link
+              key={filter.value}
+              href={
+                filter.value === "all"
+                  ? "/admin/pages"
+                  : `/admin/pages?status=${filter.value}`
+              }
+              aria-current={active === filter.value ? "page" : undefined}
+              className={`rounded-md px-4 py-2 text-sm font-medium transition focus-visible:ring-2 focus-visible:ring-[#0071e3]/35 focus-visible:ring-offset-2 focus-visible:outline-none ${
+                active === filter.value
+                  ? "bg-white text-[#1d1d1f] shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+                  : "text-[#6e6e73] hover:text-[#1d1d1f]"
+              }`}
+            >
+              {filter.label}
+            </Link>
+          ))}
+        </nav>
+        <Link
+          href="/admin/pages/new"
+          className="inline-flex items-center justify-center rounded-full bg-[#0071e3] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0077ed] focus-visible:ring-2 focus-visible:ring-[#0071e3]/35 focus-visible:ring-offset-2 focus-visible:outline-none"
+        >
+          New page
+        </Link>
+      </div>
 
       <div className="overflow-hidden rounded-lg border border-black/10 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.06)]">
         {pages.length === 0 ? (
@@ -90,7 +99,7 @@ export default async function AdminPagesPage({
             </p>
             <Link
               href="/admin/pages/new"
-              className="mt-5 inline-flex rounded-full bg-[#0071e3] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0077ed]"
+              className="mt-5 inline-flex rounded-full bg-[#0071e3] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0077ed] focus-visible:ring-2 focus-visible:ring-[#0071e3]/35 focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               New page
             </Link>

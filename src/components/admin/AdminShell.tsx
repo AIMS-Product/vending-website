@@ -10,16 +10,7 @@ type AdminNavSection = {
   label: string;
   href: string;
   description: string;
-} & (
-  | {
-      createHref: string;
-      createLabel: string;
-    }
-  | {
-      createHref?: undefined;
-      createLabel?: undefined;
-    }
-);
+};
 
 const sections: AdminNavSection[] = [
   {
@@ -27,16 +18,12 @@ const sections: AdminNavSection[] = [
     label: "Resource pages",
     href: "/admin/pages",
     description: "SEO block pages",
-    createHref: "/admin/pages/new",
-    createLabel: "Resource page",
   },
   {
     id: "posts",
     label: "Blog and news",
     href: "/admin/news",
     description: "Articles and updates",
-    createHref: "/admin/news/new",
-    createLabel: "Blog post",
   },
   {
     id: "media",
@@ -133,15 +120,6 @@ export function AdminShell({
                         {section.description}
                       </span>
                     </Link>
-                    {section.createHref ? (
-                      <Link
-                        href={section.createHref}
-                        aria-label={`Create ${section.createLabel}`}
-                        className="mr-2 shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#0071e3] opacity-90 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition hover:bg-[#fbfbfd] focus-visible:ring-2 focus-visible:ring-[#0071e3]/30 focus-visible:outline-none"
-                      >
-                        New
-                      </Link>
-                    ) : null}
                   </div>
                 ))}
               </nav>
