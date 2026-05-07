@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AdminShell } from "@/components/admin/AdminShell";
 import {
   SeoPageEditorForm,
   type SeoPageEditorMediaAsset,
@@ -16,25 +17,26 @@ export const metadata: Metadata = {
 };
 
 export default async function NewSeoPagePage() {
-  await requireAdmin();
+  const { user, role } = await requireAdmin();
   const [internalLinkTargets, mediaAssets] = await Promise.all([
     adminListInternalLinkTargets(),
     adminListMediaAssets(),
   ]);
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 py-12 lg:px-10">
-      <div className="mb-8">
-        <p className="text-brand-500 text-sm font-medium">SEO Page Builder</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-          New resource page
-        </h1>
-      </div>
+    <AdminShell
+      activeSection="pages"
+      eyebrow="SEO Page Builder"
+      title="New resource page"
+      description="Create a structured page using the current resource-page contract."
+      userEmail={user.email}
+      userRole={role}
+    >
       <SeoPageEditorForm
         internalLinkTargets={internalLinkTargets}
         mediaAssets={mediaAssets.map(toEditorMediaAsset)}
       />
-    </section>
+    </AdminShell>
   );
 }
 

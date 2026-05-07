@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { getAuthorizedAdmin } from "./auth";
+import { getDevAdminContext, isDevAdminAuthBypassEnabled } from "./dev-auth";
 import type { Database } from "@/types/database";
 
 type AppUserRow = Database["public"]["Tables"]["app_users"]["Row"];
@@ -25,6 +26,40 @@ function buildAdminClient(row: AppUserRow | null) {
 }
 
 describe("getAuthorizedAdmin", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it("returns the fixed dev admin when the development bypass flag is enabled", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("ADMIN_DEV_AUTH_BYPASS", "1");
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const ctx = await getAuthorizedAdmin({
+      serverClient: {
+        auth: {
+          getUser: vi.fn().mockRejectedValue(new Error("should not be called")),
+        },
+      } as unknown as SupabaseClient<Database>,
+      adminClient: buildAdminClient(null),
+    });
+
+    expect(ctx).toEqual(getDevAdminContext());
+  });
+
+  it("refuses the dev admin bypass outside development", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("ADMIN_DEV_AUTH_BYPASS", "1");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    expect(isDevAdminAuthBypassEnabled()).toBe(false);
+    expect(getDevAdminContext()).toBeNull();
+    expect(warn).toHaveBeenCalledWith(
+      "ADMIN_DEV_AUTH_BYPASS is set outside development and has been ignored.",
+    );
+  });
+
   it("returns null when no user is signed in", async () => {
     const ctx = await getAuthorizedAdmin({
       serverClient: buildServerClient(null),

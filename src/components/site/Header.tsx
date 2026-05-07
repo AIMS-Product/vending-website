@@ -11,6 +11,8 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
 
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return null;
+
   return (
     <header className="sticky inset-x-0 top-0 z-30 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-8 px-6 py-6 lg:px-10">

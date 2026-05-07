@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { NewsEditorForm } from "@/components/admin/NewsEditorForm";
 
@@ -8,17 +9,18 @@ export const metadata: Metadata = {
 };
 
 export default async function NewPostPage() {
-  await requireAdmin();
+  const { user, role } = await requireAdmin();
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 py-12 lg:px-10">
-      <div className="mb-8">
-        <p className="text-brand-500 text-sm font-medium">News CMS</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-          New post
-        </h1>
-      </div>
+    <AdminShell
+      activeSection="posts"
+      eyebrow="Blog CMS"
+      title="New blog post"
+      description="Create an article or announcement from the shared CMS backend."
+      userEmail={user.email}
+      userRole={role}
+    >
       <NewsEditorForm />
-    </section>
+    </AdminShell>
   );
 }

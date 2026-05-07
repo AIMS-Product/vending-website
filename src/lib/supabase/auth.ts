@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient as createServerSupabase } from "./server";
 import { createAdminClient } from "./admin";
+import { getDevAdminContext } from "./dev-auth";
 import type { Database } from "@/types/database";
 
 export type AdminRole = "admin" | "editor";
@@ -36,6 +37,13 @@ type ResolveOptions = {
 export async function getAuthorizedAdmin(
   opts: ResolveOptions = {},
 ): Promise<AdminContext | null> {
+  if (process.env.NODE_ENV === "development") {
+    const devContext = getDevAdminContext();
+    if (devContext) {
+      return devContext;
+    }
+  }
+
   const supabase = opts.serverClient ?? (await createServerSupabase());
   const {
     data: { user },

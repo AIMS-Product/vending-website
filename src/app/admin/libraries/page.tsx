@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import Link from "next/link";
+import { AdminShell } from "@/components/admin/AdminShell";
 import {
   createApprovedClaim,
   createCtaPreset,
@@ -24,37 +24,21 @@ const buttonClass =
   "rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600";
 
 export default async function AdminLibrariesPage() {
-  await requireAdmin();
+  const { user, role } = await requireAdmin();
   const libraries = await adminListPageBuilderLibraries();
   const approvedExcerpts = libraries.sourceExcerpts.filter(
     (excerpt) => excerpt.approved,
   );
 
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-12 lg:px-10">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-brand-500 text-sm font-medium">SEO Page Builder</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-            Reusable content libraries
-          </h1>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/admin/media"
-            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-          >
-            Media
-          </Link>
-          <Link
-            href="/admin/pages"
-            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-          >
-            Resource pages
-          </Link>
-        </div>
-      </header>
-
+    <AdminShell
+      activeSection="libraries"
+      eyebrow="CMS Governance"
+      title="Reusable content libraries"
+      description="Manage approved claims, source excerpts, proof points, and CTAs before they are reused across page types."
+      userEmail={user.email}
+      userRole={role}
+    >
       <div className="grid gap-6 xl:grid-cols-2">
         <LibraryPanel title="CTA presets">
           <form action={createCtaPreset} className="grid gap-4">
@@ -222,7 +206,7 @@ export default async function AdminLibrariesPage() {
           />
         </LibraryPanel>
       </div>
-    </section>
+    </AdminShell>
   );
 }
 

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { AdminShell } from "@/components/admin/AdminShell";
 import {
   MediaLibraryManager,
   type MediaAssetListItem,
@@ -22,29 +22,19 @@ export default async function AdminMediaPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  await requireAdmin();
+  const { user, role } = await requireAdmin();
   const { q } = await searchParams;
   const assets = await adminListMediaAssets({ search: q });
 
   return (
-    <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-12 lg:px-10">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-brand-500 text-sm font-medium">SEO Page Builder</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-            Media library
-          </h1>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/admin/pages"
-            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-          >
-            Resource pages
-          </Link>
-        </div>
-      </header>
-
+    <AdminShell
+      activeSection="media"
+      eyebrow="CMS Assets"
+      title="Media library"
+      description="Keep image and source assets available for resource pages, blog posts, landing pages, and future campaign content."
+      userEmail={user.email}
+      userRole={role}
+    >
       <form className="flex max-w-lg gap-3">
         <input
           name="q"
@@ -58,7 +48,7 @@ export default async function AdminMediaPage({
       </form>
 
       <MediaLibraryManager assets={assets.map(toListItem)} />
-    </section>
+    </AdminShell>
   );
 }
 

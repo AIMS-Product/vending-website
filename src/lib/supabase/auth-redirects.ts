@@ -14,14 +14,27 @@ export function buildMagicLinkRedirectUrl(origin: string) {
 }
 
 export function normalizeAdminNextPath(value: string | null | undefined) {
+  const candidate = value?.trim();
+  if (!candidate || candidate.startsWith("//") || !candidate.startsWith("/")) {
+    return ADMIN_AFTER_LOGIN_PATH;
+  }
+
+  let url: URL;
+  try {
+    url = new URL(candidate, "http://admin.local");
+  } catch {
+    return ADMIN_AFTER_LOGIN_PATH;
+  }
+
   if (
-    !value ||
-    !safeAdminPathPattern.test(value) ||
-    value === ADMIN_LOGIN_PATH
+    url.origin !== "http://admin.local" ||
+    !safeAdminPathPattern.test(url.pathname) ||
+    url.pathname === ADMIN_LOGIN_PATH
   ) {
     return ADMIN_AFTER_LOGIN_PATH;
   }
-  return value;
+
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 export function extractMagicLinkHashTokens(

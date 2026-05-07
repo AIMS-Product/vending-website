@@ -51,6 +51,9 @@ describe("admin auth redirects", () => {
     expect(normalizeAdminNextPath("https://evil.example/admin")).toBe(
       ADMIN_AFTER_LOGIN_PATH,
     );
+    expect(normalizeAdminNextPath("//evil.example/admin")).toBe(
+      ADMIN_AFTER_LOGIN_PATH,
+    );
     expect(normalizeAdminNextPath("/resources/foo")).toBe(
       ADMIN_AFTER_LOGIN_PATH,
     );

@@ -4,9 +4,12 @@ import {
   getBuilderRedirectBySourcePath,
   hasPublishedSeoPageSlug,
 } from "@/lib/services/seo-page-public";
+import {
+  ADMIN_LOGIN_PATH,
+  normalizeAdminNextPath,
+} from "@/lib/supabase/auth-redirects";
+import { isDevAdminAuthBypassEnabled } from "@/lib/supabase/dev-auth";
 import { updateSession } from "@/lib/supabase/middleware";
-
-const LOGIN_PATH = "/admin/login";
 
 /**
  * Next 16 proxy (formerly `middleware.ts`). Two responsibilities:
@@ -54,10 +57,32 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (
+    path.startsWith("/admin") &&
+    process.env.NODE_ENV === "development" &&
+    isDevAdminAuthBypassEnabled()
+  ) {
+    if (path === ADMIN_LOGIN_PATH) {
+      const destination = normalizeAdminNextPath(
+        request.nextUrl.searchParams.get("next"),
+      );
+      const resolved = new URL(destination, request.url);
+      if (resolved.origin !== request.nextUrl.origin) {
+        return NextResponse.redirect(new URL(ADMIN_LOGIN_PATH, request.url));
+      }
+      if (!destination || resolved.pathname === ADMIN_LOGIN_PATH) {
+        return NextResponse.next();
+      }
+      return NextResponse.redirect(resolved);
+    }
+
+    return NextResponse.next();
+  }
+
   const { response, user, supabase } = await updateSession(request);
 
   // The login page must remain reachable to anonymous users.
-  if (path === LOGIN_PATH) return response;
+  if (path === ADMIN_LOGIN_PATH) return response;
 
   // Auth callback / sign-out / etc. — proxy just refreshed the cookie;
   // the route handler itself is responsible for whatever it does next.
@@ -65,7 +90,7 @@ export async function proxy(request: NextRequest) {
 
   // From here, we are inside /admin/* (other than /admin/login).
   if (!user) {
-    return NextResponse.redirect(new URL(LOGIN_PATH, request.url));
+    return NextResponse.redirect(new URL(ADMIN_LOGIN_PATH, request.url));
   }
 
   const { data: row } = await supabase
@@ -75,7 +100,7 @@ export async function proxy(request: NextRequest) {
     .maybeSingle();
 
   if (!row) {
-    return NextResponse.redirect(new URL(LOGIN_PATH, request.url));
+    return NextResponse.redirect(new URL(ADMIN_LOGIN_PATH, request.url));
   }
 
   return response;

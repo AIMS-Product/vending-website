@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { adminListPosts, type NewsPost } from "@/lib/services/news";
-import { signOut } from "./actions";
 
 export const metadata: Metadata = {
   title: "News admin",
@@ -27,43 +27,35 @@ export default async function AdminNewsPage({
   const { user, role } = await requireAdmin();
   const params = await searchParams;
   const active = normalizeStatus(params.status);
-  const posts = await adminListPosts(
-    active === "all" ? {} : { status: active },
-  );
+  const [allPosts, filteredPosts] = await Promise.all([
+    adminListPosts(),
+    active === "all"
+      ? Promise.resolve(null)
+      : adminListPosts({ status: active }),
+  ]);
+  const posts = filteredPosts ?? allPosts;
+  const postCounts = countPostsByStatus(allPosts);
 
   return (
-    <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-12 lg:px-10">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-brand-500 text-sm font-medium">News CMS</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-            Posts
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Signed in as{" "}
-            <span className="font-medium text-slate-900">{user.email}</span> (
-            {role}).
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-            >
-              Sign out
-            </button>
-          </form>
-          <Link
-            href="/admin/news/new"
-            className="bg-brand-500 hover:bg-brand-600 rounded-full px-5 py-2 text-sm font-semibold text-white shadow-sm transition"
-          >
-            New post
-          </Link>
-        </div>
-      </header>
+    <AdminShell
+      activeSection="posts"
+      eyebrow="Blog CMS"
+      title="Blog and news"
+      description="Create and manage articles from the same admin shell that will also cover landing pages and resource pages."
+      userEmail={user.email}
+      userRole={role}
+    >
+      <div className="mb-6 grid gap-3 sm:grid-cols-4">
+        <PostMetricCard label="Showing" value={posts.length} />
+        <PostMetricCard label="Drafts" value={postCounts.draft} />
+        <PostMetricCard label="Published" value={postCounts.published} />
+        <PostMetricCard label="Archived" value={postCounts.archived} />
+      </div>
 
-      <nav className="flex flex-wrap gap-2" aria-label="Post status filters">
+      <nav
+        className="mb-5 inline-flex flex-wrap gap-1 rounded-lg bg-[#e8e8ed] p-1"
+        aria-label="Post status filters"
+      >
         {filters.map((filter) => (
           <Link
             key={filter.value}
@@ -72,10 +64,10 @@ export default async function AdminNewsPage({
                 ? "/admin/news"
                 : `/admin/news?status=${filter.value}`
             }
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            className={`rounded-md px-4 py-2 text-sm font-medium transition ${
               active === filter.value
-                ? "bg-slate-950 text-white"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                ? "bg-white text-[#1d1d1f] shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+                : "text-[#6e6e73] hover:text-[#1d1d1f]"
             }`}
           >
             {filter.label}
@@ -83,25 +75,25 @@ export default async function AdminNewsPage({
         ))}
       </nav>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-black/10 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.06)]">
         {posts.length === 0 ? (
           <div className="p-10 text-center">
-            <h2 className="text-lg font-semibold text-slate-950">
+            <h2 className="text-lg font-semibold text-[#1d1d1f]">
               No posts here yet
             </h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-[#6e6e73]">
               Create a draft to start migrating the Webflow news archive.
             </p>
             <Link
               href="/admin/news/new"
-              className="bg-brand-500 hover:bg-brand-600 mt-5 inline-flex rounded-full px-5 py-2 text-sm font-semibold text-white shadow-sm transition"
+              className="mt-5 inline-flex rounded-full bg-[#0071e3] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0077ed]"
             >
               New post
             </Link>
           </div>
         ) : (
           <table className="w-full border-collapse text-left text-sm">
-            <thead className="bg-slate-50 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            <thead className="border-b border-black/10 bg-[#fbfbfd] text-xs font-semibold text-[#86868b] uppercase">
               <tr>
                 <th className="px-5 py-3">Title</th>
                 <th className="px-5 py-3">Status</th>
@@ -109,7 +101,7 @@ export default async function AdminNewsPage({
                 <th className="px-5 py-3">Published</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-black/5">
               {posts.map((post) => (
                 <PostRow key={post.id} post={post} />
               ))}
@@ -117,21 +109,32 @@ export default async function AdminNewsPage({
           </table>
         )}
       </div>
-    </section>
+    </AdminShell>
+  );
+}
+
+function PostMetricCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border border-black/10 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      <p className="text-xs font-medium text-[#86868b]">{label}</p>
+      <p className="mt-1 text-2xl font-semibold tracking-normal text-[#1d1d1f]">
+        {value}
+      </p>
+    </div>
   );
 }
 
 function PostRow({ post }: { post: NewsPost }) {
   return (
-    <tr className="align-top transition hover:bg-slate-50/70">
+    <tr className="align-top transition hover:bg-[#f5f5f7]">
       <td className="px-5 py-4">
         <Link
           href={`/admin/news/${post.id}`}
-          className="hover:text-brand-600 font-semibold text-slate-950"
+          className="font-semibold text-[#1d1d1f] hover:text-[#0071e3]"
         >
           {post.title}
         </Link>
-        <p className="mt-1 font-mono text-xs text-slate-500">/{post.slug}</p>
+        <p className="mt-1 font-mono text-xs text-[#86868b]">/{post.slug}</p>
       </td>
       <td className="px-5 py-4">
         <span
@@ -142,11 +145,11 @@ function PostRow({ post }: { post: NewsPost }) {
           {post.status}
         </span>
       </td>
-      <td className="px-5 py-4 text-slate-600">
+      <td className="px-5 py-4 text-[#6e6e73]">
         {formatDate(post.updated_at)}
       </td>
-      <td className="px-5 py-4 text-slate-600">
-        {post.published_at ? formatDate(post.published_at) : "—"}
+      <td className="px-5 py-4 text-[#6e6e73]">
+        {post.published_at ? formatDate(post.published_at) : "-"}
       </td>
     </tr>
   );
@@ -159,10 +162,22 @@ function normalizeStatus(value: string | undefined): StatusFilter {
   return "all";
 }
 
+function countPostsByStatus(posts: NewsPost[]) {
+  return posts.reduce(
+    (counts, post) => {
+      if (post.status === "draft") counts.draft += 1;
+      if (post.status === "published") counts.published += 1;
+      if (post.status === "archived") counts.archived += 1;
+      return counts;
+    },
+    { draft: 0, published: 0, archived: 0 },
+  );
+}
+
 function statusClass(status: string) {
-  if (status === "published") return "bg-emerald-50 text-emerald-700";
-  if (status === "archived") return "bg-slate-100 text-slate-600";
-  return "bg-amber-50 text-amber-700";
+  if (status === "published") return "bg-[#e4f7ec] text-[#0b6b35]";
+  if (status === "archived") return "bg-[#e8e8ed] text-[#6e6e73]";
+  return "bg-[#fff3d6] text-[#8a5a00]";
 }
 
 function formatDate(iso: string) {

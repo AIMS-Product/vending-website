@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AdminShell } from "@/components/admin/AdminShell";
 import {
   SeoPageEditorForm,
   type SeoPageEditorMediaAsset,
@@ -33,7 +34,7 @@ export default async function EditSeoPagePage({
   params: Promise<Params>;
   searchParams: Promise<SearchParams>;
 }) {
-  await requireAdmin();
+  const { user, role } = await requireAdmin();
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const [
     page,
@@ -53,13 +54,14 @@ export default async function EditSeoPagePage({
   if (!page) notFound();
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 py-12 lg:px-10">
-      <div className="mb-8">
-        <p className="text-brand-500 text-sm font-medium">SEO Page Builder</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-          Edit resource page
-        </h1>
-      </div>
+    <AdminShell
+      activeSection="pages"
+      eyebrow="SEO Page Builder"
+      title="Edit resource page"
+      description="Update the page contract, block content, publishing state, previews, and revisions."
+      userEmail={user.email}
+      userRole={role}
+    >
       <SeoPageEditorForm
         page={page}
         internalLinkTargets={internalLinkTargets}
@@ -73,7 +75,7 @@ export default async function EditSeoPagePage({
         revisions={revisions}
         previewTokens={previewTokens}
       />
-    </section>
+    </AdminShell>
   );
 }
 

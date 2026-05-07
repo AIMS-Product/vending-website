@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { NewsEditorForm } from "@/components/admin/NewsEditorForm";
 import { adminGetPostById } from "@/lib/services/news";
 import { requireAdmin } from "@/lib/supabase/auth";
@@ -19,20 +20,21 @@ export default async function EditPostPage({
   params: Promise<Params>;
   searchParams: Promise<SearchParams>;
 }) {
-  await requireAdmin();
+  const { user, role } = await requireAdmin();
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const post = await adminGetPostById(id);
   if (!post) notFound();
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 py-12 lg:px-10">
-      <div className="mb-8">
-        <p className="text-brand-500 text-sm font-medium">News CMS</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-          Edit post
-        </h1>
-      </div>
+    <AdminShell
+      activeSection="posts"
+      eyebrow="Blog CMS"
+      title="Edit blog post"
+      description="Update article content, cover metadata, and publishing state."
+      userEmail={user.email}
+      userRole={role}
+    >
       <NewsEditorForm post={post} savedFromRedirect={query.saved === "1"} />
-    </section>
+    </AdminShell>
   );
 }

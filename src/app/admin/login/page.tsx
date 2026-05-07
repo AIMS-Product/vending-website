@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { authErrorMessage } from "@/lib/supabase/auth-redirects";
+import { redirect } from "next/navigation";
+import {
+  ADMIN_AFTER_LOGIN_PATH,
+  authErrorMessage,
+} from "@/lib/supabase/auth-redirects";
+import { isDevAdminAuthBypassEnabled } from "@/lib/supabase/dev-auth";
 import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = {
@@ -14,6 +19,10 @@ export default async function AdminLoginPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  if (process.env.NODE_ENV === "development" && isDevAdminAuthBypassEnabled()) {
+    redirect(ADMIN_AFTER_LOGIN_PATH);
+  }
+
   const params = await searchParams;
 
   return (
