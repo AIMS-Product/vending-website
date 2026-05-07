@@ -373,8 +373,8 @@ export function SeoPageEditorForm({
             </div>
           </header>
 
-          <main className="mx-auto max-w-5xl px-6 py-14 lg:px-10">
-            <div className="mb-8 flex justify-end">
+          <main className="mx-auto max-w-5xl px-6 py-10 lg:px-10">
+            <div className="mb-6 flex justify-end">
               <button
                 type="button"
                 className={smallButtonClass}
@@ -394,7 +394,7 @@ export function SeoPageEditorForm({
                 items={content.sections.map((section) => section.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="space-y-14">
+                <div className="space-y-10">
                   {content.sections.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-sm text-slate-500">
                       Add a section to begin.
@@ -1381,11 +1381,11 @@ function SortableSectionEditor({
     <section
       ref={setNodeRef}
       style={style}
-      className={`group/section relative rounded-2xl border border-dashed border-transparent ${
+      className={`relative rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ${
         isDragging ? "relative z-10 shadow-lg" : ""
       }`}
     >
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-full bg-white/90 p-2 text-xs opacity-100 shadow-sm ring-1 ring-slate-200 transition lg:absolute lg:-top-5 lg:right-0 lg:z-10 lg:opacity-0 lg:group-hover/section:opacity-100 lg:focus-within:opacity-100">
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
         <div className="flex items-center gap-3">
           <DragHandle
             label={`Reorder section ${sectionIndex + 1}`}
@@ -1443,7 +1443,7 @@ function SortableSectionEditor({
         >
           <div className={columnGridClass(section.columns.length)}>
             {section.columns.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-sm text-slate-500">
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
                 Add a column before adding blocks.
               </div>
             ) : (
@@ -1524,11 +1524,11 @@ function SortableColumnEditor({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group/column relative min-w-0 ${
+      className={`relative min-w-0 rounded-xl border border-slate-200 bg-white p-3 ${
         isDragging ? "relative z-10 shadow-lg" : ""
       }`}
     >
-      <header className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-full bg-white/90 p-2 text-xs opacity-100 shadow-sm ring-1 ring-slate-200 transition lg:absolute lg:-top-5 lg:left-0 lg:z-10 lg:opacity-0 lg:group-hover/column:opacity-100 lg:focus-within:opacity-100">
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-xs ring-1 ring-slate-200">
         <div className="flex items-center gap-3">
           <DragHandle
             label={`Reorder column ${columnIndex + 1}`}
@@ -1576,7 +1576,7 @@ function SortableColumnEditor({
           items={column.blocks.map((block) => block.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="space-y-8">
+          <div className="space-y-6">
             {column.blocks.length === 0 ? (
               <BlockPicker onAddBlock={onAddBlock} />
             ) : (
@@ -1829,8 +1829,8 @@ function BlockEditor({
 
   return (
     <article
-      className={`group/block hover:outline-brand-200 focus-within:outline-brand-300 relative rounded-2xl outline outline-1 outline-transparent transition ${
-        isDragging ? "outline-brand-300 bg-white shadow-xl" : ""
+      className={`focus-within:border-brand-300 relative rounded-xl border border-slate-200 bg-white shadow-sm transition ${
+        isDragging ? "border-brand-300 shadow-xl" : ""
       }`}
     >
       <BlockToolbar
@@ -2107,26 +2107,18 @@ function BlockEditor({
       )}
 
       {block.type === "cta" && (
-        <div className="rounded-2xl px-4 py-4">
-          <label className={ctaClass(block.variant)}>
-            <span className="sr-only">Label</span>
-            <input
+        <div className="rounded-xl bg-white p-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <TextInput
+              label="CTA label"
               value={block.props.label}
-              placeholder="CTA label"
-              onChange={(event) =>
+              onChange={(value) =>
                 onChange({
                   ...block,
-                  props: { ...block.props, label: event.target.value },
+                  props: { ...block.props, label: value },
                 })
               }
-              className={`bg-transparent outline-none ${
-                block.variant === "primary"
-                  ? "text-white placeholder:text-white/70"
-                  : "text-inherit"
-              }`}
             />
-          </label>
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
             <TextInput
               label="Href"
               value={block.props.href}
@@ -2559,7 +2551,7 @@ function BlockToolbar({
   onRemove: () => void;
 }) {
   return (
-    <header className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-full bg-white/95 p-2 text-xs opacity-100 shadow-sm ring-1 ring-slate-200 transition lg:absolute lg:-top-5 lg:right-3 lg:z-10 lg:opacity-0 lg:group-hover/block:opacity-100 lg:focus-within:opacity-100">
+    <header className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs">
       <div className="flex items-center gap-2">
         {dragHandle}
         <span className="font-semibold text-slate-600">{label}</span>
@@ -2650,7 +2642,7 @@ function DragHandle({
       {...attributes}
       {...listeners}
     >
-      Drag
+      Move
     </button>
   );
 }
@@ -2730,18 +2722,6 @@ function blockLabel(type: PageBlock["type"]) {
 function columnGridClass(count: number) {
   if (count <= 1) return "grid gap-8";
   return "grid gap-8 md:grid-cols-2";
-}
-
-function ctaClass(variant: Extract<PageBlock, { type: "cta" }>["variant"]) {
-  const base =
-    "inline-flex rounded-full px-5 py-3 text-sm font-semibold shadow-sm transition focus-within:ring-2 focus-within:ring-brand-400 focus-within:ring-offset-2";
-  if (variant === "secondary") {
-    return `${base} border border-slate-300 bg-white text-slate-800`;
-  }
-  if (variant === "text") {
-    return "inline-flex text-sm font-semibold text-brand-600";
-  }
-  return `${base} bg-brand-500 text-white`;
 }
 
 type FaqBlock = Extract<PageBlock, { type: "faq" }>;
