@@ -67,9 +67,19 @@ import type { Tables } from "@/types/database";
 type SeoPage = Tables<"seo_pages">;
 type Sensors = ReturnType<typeof useSensors>;
 
+export type SeoPageEditorMediaAsset = {
+  id: string;
+  title: string;
+  altText: string;
+  caption: string | null;
+  sourceRightsNotes: string;
+  publicUrl: string;
+};
+
 type SeoPageEditorFormProps = {
   page?: SeoPage;
   internalLinkTargets?: InternalLinkSuggestionTarget[];
+  mediaAssets?: SeoPageEditorMediaAsset[];
   aiProposals?: AiPageProposalReview[];
   savedFromRedirect?: boolean;
   redirectError?: string;
@@ -81,6 +91,7 @@ const initialAiInsertState: PageAiProposalInsertResult = { status: "idle" };
 export function SeoPageEditorForm({
   page,
   internalLinkTargets = [],
+  mediaAssets = [],
   aiProposals = [],
   savedFromRedirect = false,
   redirectError,
@@ -396,6 +407,7 @@ export function SeoPageEditorForm({
                         sectionIndex={index}
                         sectionCount={content.sections.length}
                         sensors={sensors}
+                        mediaAssets={mediaAssets}
                         onSectionMove={(direction) =>
                           moveSection(section.id, direction)
                         }
@@ -1314,6 +1326,7 @@ function SortableSectionEditor({
   sectionIndex,
   sectionCount,
   sensors,
+  mediaAssets,
   onSectionMove,
   onSectionRemove,
   onColumnDragEnd,
@@ -1330,6 +1343,7 @@ function SortableSectionEditor({
   sectionIndex: number;
   sectionCount: number;
   sensors: Sensors;
+  mediaAssets: SeoPageEditorMediaAsset[];
   onSectionMove: (direction: MoveDirection) => void;
   onSectionRemove: () => void;
   onColumnDragEnd: (sectionId: string, event: DragEndEvent) => void;
@@ -1440,6 +1454,7 @@ function SortableSectionEditor({
                   columnIndex={columnIndex}
                   columnCount={section.columns.length}
                   sensors={sensors}
+                  mediaAssets={mediaAssets}
                   onBlockDragEnd={(event) =>
                     onBlockDragEnd(section.id, column.id, event)
                   }
@@ -1470,6 +1485,7 @@ function SortableColumnEditor({
   columnIndex,
   columnCount,
   sensors,
+  mediaAssets,
   onBlockDragEnd,
   onColumnMove,
   onColumnRemove,
@@ -1482,6 +1498,7 @@ function SortableColumnEditor({
   columnIndex: number;
   columnCount: number;
   sensors: Sensors;
+  mediaAssets: SeoPageEditorMediaAsset[];
   onBlockDragEnd: (event: DragEndEvent) => void;
   onColumnMove: (direction: MoveDirection) => void;
   onColumnRemove: () => void;
@@ -1570,6 +1587,7 @@ function SortableColumnEditor({
                     block={block}
                     index={blockIndex}
                     blockCount={column.blocks.length}
+                    mediaAssets={mediaAssets}
                     onChange={(next) => onBlockChange(block.id, next)}
                     onMove={(direction) => onBlockMove(block.id, direction)}
                     onRemove={() => onBlockRemove(block.id)}
@@ -1734,6 +1752,7 @@ function SortableBlockEditor({
   block,
   index,
   blockCount,
+  mediaAssets,
   onChange,
   onMove,
   onRemove,
@@ -1741,6 +1760,7 @@ function SortableBlockEditor({
   block: PageBlock;
   index: number;
   blockCount: number;
+  mediaAssets: SeoPageEditorMediaAsset[];
   onChange: (block: PageBlock) => void;
   onMove: (direction: MoveDirection) => void;
   onRemove: () => void;
@@ -1774,6 +1794,7 @@ function SortableBlockEditor({
           />
         }
         onChange={onChange}
+        mediaAssets={mediaAssets}
         onMove={onMove}
         onRemove={onRemove}
       />
@@ -1788,6 +1809,7 @@ function BlockEditor({
   isLast,
   isDragging,
   dragHandle,
+  mediaAssets,
   onChange,
   onMove,
   onRemove,
@@ -1798,6 +1820,7 @@ function BlockEditor({
   isLast: boolean;
   isDragging: boolean;
   dragHandle: ReactNode;
+  mediaAssets: SeoPageEditorMediaAsset[];
   onChange: (block: PageBlock) => void;
   onMove: (direction: MoveDirection) => void;
   onRemove: () => void;
@@ -1993,6 +2016,48 @@ function BlockEditor({
               Image settings
             </summary>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <label className="block md:col-span-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Media library asset
+                </span>
+                <select
+                  value={block.props.assetId ?? ""}
+                  onChange={(event) => {
+                    const asset = mediaAssets.find(
+                      (item) => item.id === event.target.value,
+                    );
+                    onChange(
+                      asset
+                        ? applyMediaAssetToImageBlock(block, asset)
+                        : {
+                            ...block,
+                            props: {
+                              ...block.props,
+                              assetId: undefined,
+                              src: "",
+                              altText: "",
+                              caption: "",
+                              sourceRightsNotes: "",
+                            },
+                          },
+                    );
+                  }}
+                  className={compactInputClass}
+                >
+                  <option value="">Choose from media library</option>
+                  {mediaAssets.map((asset) => (
+                    <option key={asset.id} value={asset.id}>
+                      {asset.title}
+                    </option>
+                  ))}
+                </select>
+                {mediaAssets.length === 0 && (
+                  <span className="mt-2 block text-xs leading-5 text-slate-500">
+                    Add image assets in the media library before selecting one
+                    here.
+                  </span>
+                )}
+              </label>
               <TextInput
                 label="Asset ID"
                 value={block.props.assetId ?? ""}
@@ -2588,6 +2653,23 @@ function DragHandle({
       Drag
     </button>
   );
+}
+
+function applyMediaAssetToImageBlock(
+  block: Extract<PageBlock, { type: "image" }>,
+  asset: SeoPageEditorMediaAsset,
+): Extract<PageBlock, { type: "image" }> {
+  return {
+    ...block,
+    props: {
+      ...block.props,
+      assetId: asset.id,
+      src: asset.publicUrl,
+      altText: asset.altText,
+      caption: asset.caption ?? block.props.caption,
+      sourceRightsNotes: asset.sourceRightsNotes,
+    },
+  };
 }
 
 function parseInitialContent(page: SeoPage | undefined): PageContent {

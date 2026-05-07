@@ -9,6 +9,7 @@ import {
 } from "@/lib/page-builder/blocks";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import type { PublishedSeoPage } from "@/lib/services/seo-page-public";
+import { buildResourceLeadFormAttribution } from "@/lib/page-builder/resource-lead-attribution";
 
 type ResourcePageRendererProps = {
   page: PublishedSeoPage;
@@ -293,14 +294,11 @@ function BlockRenderer({
   }
 
   if (block.type === "lead_form") {
-    const attribution = {
-      ...(leadAttribution ?? emptyLeadAttribution(`/resources/${page.slug}`)),
-      source_page_id: page.id,
-      source_page_slug: page.slug,
-      target_keyword: page.target_keyword ?? "",
-      source_block_id: block.id,
-      source_cta_tracking_name: block.props.trackingName,
-    };
+    const attribution = buildResourceLeadFormAttribution({
+      baseAttribution: leadAttribution,
+      page,
+      block,
+    });
     return (
       <div className="grid gap-6 rounded-xl border border-slate-200 bg-slate-50 p-6">
         {(block.props.heading || block.props.body) && (
@@ -400,24 +398,6 @@ function StructuredData({ page }: { page: PublishedSeoPage }) {
       ))}
     </>
   );
-}
-
-function emptyLeadAttribution(landingPath: string): LeadAttribution {
-  return {
-    source_path: landingPath,
-    landing_path: landingPath,
-    referrer: "",
-    source_page_id: "",
-    source_page_slug: "",
-    target_keyword: "",
-    source_block_id: "",
-    source_cta_tracking_name: "",
-    utm_source: "",
-    utm_medium: "",
-    utm_campaign: "",
-    utm_term: "",
-    utm_content: "",
-  };
 }
 
 function renderRichTextParagraph(

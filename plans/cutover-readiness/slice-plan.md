@@ -1,8 +1,20 @@
-# Vendingpreneurs Cutover Readiness Thin Slice Plan
+# Vendingpreneurs Legacy Cutover Readiness Thin Slice Plan
 
-Status: IN_PROGRESS
-Last updated: 2026-05-04
+Status: LEGACY/CUTOVER TRACK
+Last updated: 2026-05-06
 Owner: Codex
+
+## Scope Note
+
+This plan tracks the older Webflow-copy and cutover-readiness work from
+2026-05-04. It is still useful evidence for legacy URL handling, lead capture,
+news migration, admin auth, and DNS-cutover blockers, but it is **not** the
+implementation source of truth for the SEO Page Builder.
+
+The active SEO Page Builder source of truth is
+`docs/seo-page-builder/roadmap.md`. The builder is now a pre-ship requirement,
+so final launch planning must merge the remaining blockers in this cutover plan
+with the SEO Page Builder completion gates before DNS cutover.
 
 ## Working Brief
 

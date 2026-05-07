@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SeoPageEditorForm } from "@/components/admin/SeoPageEditorForm";
+import {
+  SeoPageEditorForm,
+  type SeoPageEditorMediaAsset,
+} from "@/components/admin/SeoPageEditorForm";
 import { SeoPageRevisionPanel } from "@/components/admin/SeoPageRevisionPanel";
 import { adminListAiPageProposals } from "@/lib/services/ai-page-proposals";
+import {
+  adminListMediaAssets,
+  publicMediaAssetUrl,
+} from "@/lib/services/media-assets";
 import {
   adminGetSeoPageById,
   adminListSeoPagePreviewTokens,
@@ -28,14 +35,21 @@ export default async function EditSeoPagePage({
 }) {
   await requireAdmin();
   const [{ id }, query] = await Promise.all([params, searchParams]);
-  const [page, revisions, previewTokens, internalLinkTargets, aiProposals] =
-    await Promise.all([
-      adminGetSeoPageById(id),
-      adminListSeoPageRevisions(id),
-      adminListSeoPagePreviewTokens(id),
-      adminListInternalLinkTargets({ currentPageId: id }),
-      adminListAiPageProposals(id),
-    ]);
+  const [
+    page,
+    revisions,
+    previewTokens,
+    internalLinkTargets,
+    aiProposals,
+    mediaAssets,
+  ] = await Promise.all([
+    adminGetSeoPageById(id),
+    adminListSeoPageRevisions(id),
+    adminListSeoPagePreviewTokens(id),
+    adminListInternalLinkTargets({ currentPageId: id }),
+    adminListAiPageProposals(id),
+    adminListMediaAssets(),
+  ]);
   if (!page) notFound();
 
   return (
@@ -49,6 +63,7 @@ export default async function EditSeoPagePage({
       <SeoPageEditorForm
         page={page}
         internalLinkTargets={internalLinkTargets}
+        mediaAssets={mediaAssets.map(toEditorMediaAsset)}
         aiProposals={aiProposals}
         savedFromRedirect={query.saved === "1"}
         redirectError={pageActionErrorMessage(query.error)}
@@ -60,6 +75,19 @@ export default async function EditSeoPagePage({
       />
     </section>
   );
+}
+
+function toEditorMediaAsset(
+  asset: Awaited<ReturnType<typeof adminListMediaAssets>>[number],
+): SeoPageEditorMediaAsset {
+  return {
+    id: asset.id,
+    title: asset.title,
+    altText: asset.alt_text ?? "",
+    caption: asset.caption,
+    sourceRightsNotes: asset.source_rights_notes ?? "",
+    publicUrl: publicMediaAssetUrl(asset),
+  };
 }
 
 function pageActionErrorMessage(code: string | undefined) {

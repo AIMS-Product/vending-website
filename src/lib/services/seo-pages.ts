@@ -253,6 +253,12 @@ export async function adminPublishSeoPage(
     });
   }
 
+  const duplicateMetadataIssues = await findDuplicateMetadataIssues(
+    client,
+    page,
+  );
+  issues.push(...duplicateMetadataIssues);
+
   const mediaValidation = await validateReferencedMedia(client, draftContent);
   issues.push(...mediaValidation.issues);
   if (issues.length > 0) throw new SeoPageValidationError(issues);
@@ -719,6 +725,79 @@ async function findRedirectBySourcePath(
 
   if (error) throw new Error("Could not check redirect conflicts.");
   return data;
+}
+
+async function findDuplicateMetadataIssues(
+  client: SeoPageClient,
+  page: Pick<SeoPage, "id" | "seo_title" | "meta_description">,
+): Promise<PageBuilderValidationIssue[]> {
+  const seoTitle = normalizeMetadataValue(page.seo_title);
+  const metaDescription = normalizeMetadataValue(page.meta_description);
+  if (!seoTitle && !metaDescription) return [];
+
+  const [titleConflict, descriptionConflict] = await Promise.all([
+    seoTitle
+      ? findMetadataConflict(client, page.id, "seo_title", seoTitle)
+      : Promise.resolve(null),
+    metaDescription
+      ? findMetadataConflict(
+          client,
+          page.id,
+          "meta_description",
+          metaDescription,
+        )
+      : Promise.resolve(null),
+  ]);
+
+  const issues: PageBuilderValidationIssue[] = [];
+  if (titleConflict) {
+    issues.push({
+      code: "duplicate_seo_title",
+      path: "seo_title",
+      message: `Another resource page already uses this SEO title: ${resourcePathForSlug(titleConflict.slug)}.`,
+    });
+  }
+  if (descriptionConflict) {
+    issues.push({
+      code: "duplicate_meta_description",
+      path: "meta_description",
+      message: `Another resource page already uses this meta description: ${resourcePathForSlug(descriptionConflict.slug)}.`,
+    });
+  }
+  return issues;
+}
+
+async function findMetadataConflict(
+  client: SeoPageClient,
+  pageId: string,
+  column: "seo_title" | "meta_description",
+  normalizedValue: string,
+) {
+  const { data, error } = await client
+    .from("seo_pages")
+    .select("id, slug, seo_title, meta_description, status")
+    .neq("id", pageId)
+    .neq("status", "archived")
+    .ilike(column, metadataIlikePattern(normalizedValue));
+
+  if (error) throw new Error("Could not check duplicate SEO metadata.");
+  const candidates = data ?? [];
+  return (
+    candidates.find(
+      (candidate) =>
+        normalizeMetadataValue(candidate[column]) === normalizedValue,
+    ) ?? null
+  );
+}
+
+function normalizeMetadataValue(value: string | null | undefined) {
+  return value?.trim().replace(/\s+/g, " ").toLowerCase() || "";
+}
+
+function metadataIlikePattern(normalizedValue: string) {
+  return normalizedValue
+    .replace(/[\\%_]/g, (match) => `\\${match}`)
+    .replace(/\s+/g, "%");
 }
 
 async function resolveReusableContent(

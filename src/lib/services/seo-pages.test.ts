@@ -108,6 +108,17 @@ function inSelect(data: unknown, error: unknown = null) {
   return { table: { select }, mocks: { select, in: inMock } };
 }
 
+function metadataConflictSelect(data: unknown, error: unknown = null) {
+  const ilike = vi.fn().mockResolvedValue({ data, error });
+  const neqStatus = vi.fn().mockReturnValue({ ilike });
+  const neqId = vi.fn().mockReturnValue({ neq: neqStatus });
+  const select = vi.fn().mockReturnValue({ neq: neqId });
+  return {
+    table: { select },
+    mocks: { select, neqId, neqStatus, ilike },
+  };
+}
+
 function updateSingle(data: unknown, error: unknown = null) {
   const single = vi.fn().mockResolvedValue({ data, error });
   const select = vi.fn().mockReturnValue({ single });
@@ -268,11 +279,15 @@ describe("seo page service", () => {
 
     const loadPage = singleSelect(page);
     const redirectConflict = maybeSingleSelect(null);
+    const duplicateTitle = metadataConflictSelect(null);
+    const duplicateDescription = metadataConflictSelect(null);
     const insertRevision = insertSingle(revision);
     const updatePage = updateSingle(published);
     const client = buildClient(
       loadPage.table,
       redirectConflict.table,
+      duplicateTitle.table,
+      duplicateDescription.table,
       insertRevision.table,
       updatePage.table,
     );
@@ -305,6 +320,79 @@ describe("seo page service", () => {
         published_at: "2026-05-06T01:00:00.000Z",
         updated_by: "admin-1",
       }),
+    );
+  });
+
+  it("blocks publish when another active page already owns the same metadata", async () => {
+    const parsedContent = pageContentSchema.parse(validContent);
+    const page = {
+      id: "page_1",
+      slug: "start-vending",
+      title: "Start Vending",
+      status: "draft",
+      draft_content: parsedContent,
+      seo_title: "Start a Vending Business",
+      meta_description: "Learn how to start a vending business safely.",
+      canonical_url: null,
+      noindex: false,
+      sitemap_enabled: true,
+      structured_data_settings: {},
+      target_keyword: "start vending business",
+    };
+    const loadPage = singleSelect(page);
+    const redirectConflict = maybeSingleSelect(null);
+    const duplicateTitle = metadataConflictSelect([
+      {
+        id: "page_false_positive",
+        slug: "near-match",
+        status: "published",
+        seo_title: "Start another vending business",
+        meta_description: "Learn how to start a vending business safely.",
+      },
+      {
+        id: "page_2",
+        slug: "existing-vending-guide",
+        status: "published",
+        seo_title: " start  a vending business ",
+        meta_description: "Learn how to start a vending business safely.",
+      },
+    ]);
+    const duplicateDescription = metadataConflictSelect([
+      {
+        id: "page_2",
+        slug: "existing-vending-guide",
+        status: "published",
+        seo_title: " start  a vending business ",
+        meta_description: "Learn how to start a vending business safely.",
+      },
+    ]);
+    const client = buildClient(
+      loadPage.table,
+      redirectConflict.table,
+      duplicateTitle.table,
+      duplicateDescription.table,
+    );
+
+    await expect(
+      adminPublishSeoPage("page_1", { client, actorId: "admin-1" }),
+    ).rejects.toMatchObject({
+      issues: expect.arrayContaining([
+        expect.objectContaining({ code: "duplicate_seo_title" }),
+        expect.objectContaining({ code: "duplicate_meta_description" }),
+      ]),
+    });
+    expect(duplicateTitle.mocks.neqId).toHaveBeenCalledWith("id", "page_1");
+    expect(duplicateTitle.mocks.neqStatus).toHaveBeenCalledWith(
+      "status",
+      "archived",
+    );
+    expect(duplicateTitle.mocks.ilike).toHaveBeenCalledWith(
+      "seo_title",
+      "start%a%vending%business",
+    );
+    expect(duplicateDescription.mocks.ilike).toHaveBeenCalledWith(
+      "meta_description",
+      "learn%how%to%start%a%vending%business%safely.",
     );
   });
 
@@ -380,6 +468,8 @@ describe("seo page service", () => {
 
     const loadPage = singleSelect(page);
     const redirectConflict = maybeSingleSelect(null);
+    const duplicateTitle = metadataConflictSelect(null);
+    const duplicateDescription = metadataConflictSelect(null);
     const mediaRows = inSelect([
       {
         id: assetId,
@@ -391,6 +481,8 @@ describe("seo page service", () => {
     const client = buildClient(
       loadPage.table,
       redirectConflict.table,
+      duplicateTitle.table,
+      duplicateDescription.table,
       mediaRows.table,
     );
 
@@ -483,6 +575,8 @@ describe("seo page service", () => {
 
     const loadPage = singleSelect(page);
     const redirectConflict = maybeSingleSelect(null);
+    const duplicateTitle = metadataConflictSelect(null);
+    const duplicateDescription = metadataConflictSelect(null);
     const mediaRows = inSelect([
       {
         id: assetId,
@@ -499,6 +593,8 @@ describe("seo page service", () => {
     const client = buildClient(
       loadPage.table,
       redirectConflict.table,
+      duplicateTitle.table,
+      duplicateDescription.table,
       mediaRows.table,
       insertRevision.table,
       updatePage.table,
@@ -633,6 +729,8 @@ describe("seo page service", () => {
       },
     ]);
     const redirectConflict = maybeSingleSelect(null);
+    const duplicateTitle = metadataConflictSelect(null);
+    const duplicateDescription = metadataConflictSelect(null);
     const insertRevision = insertSingle({ id: "revision_1" });
     const updatePage = updateSingle({
       ...page,
@@ -644,6 +742,8 @@ describe("seo page service", () => {
       ctaRows.table,
       proofRows.table,
       redirectConflict.table,
+      duplicateTitle.table,
+      duplicateDescription.table,
       insertRevision.table,
       updatePage.table,
     );
