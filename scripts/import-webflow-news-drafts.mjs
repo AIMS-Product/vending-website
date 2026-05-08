@@ -60,7 +60,7 @@ export async function readNewsPaths(inventoryPath = INVENTORY_PATH) {
   const markdown = await fs.readFile(inventoryPath, "utf8");
   return [
     ...markdown.matchAll(
-      /\| `([^`]+)`\s+\|\s+200\s+\| same path after CMS import \| draft import \|/g,
+      /\| `([^`]+)`\s+\|\s+200\s+\|\s+article\s+\| same path after CMS import \| copy\/publish candidate \|/g,
     ),
   ].map((match) => match[1]);
 }
@@ -76,8 +76,11 @@ export function extractNewsDraftFromHtml(html, newsPath) {
     slugToTitle(slug);
   const description =
     metaContent(html, "description") || metaContent(html, "og:description");
-  const coverUrl = metaContent(html, "og:image") || firstImageSrc(contentHtml);
-  const body = htmlToMarkdown(contentHtml, title);
+  const coverUrl =
+    firstArticleImageSrc(contentHtml) ||
+    firstArticleImageSrc(html) ||
+    metaContent(html, "og:image");
+  const body = cleanImportedNewsMarkdown(htmlToMarkdown(contentHtml, title));
   const excerpt = truncate(
     description || firstParagraph(body) || `Draft import for ${title}.`,
     235,
@@ -259,6 +262,71 @@ function htmlToMarkdown(html, title) {
   return content || `# ${title}\n\nDraft imported from Webflow.`;
 }
 
+export function cleanImportedNewsMarkdown(markdown) {
+  const lines = decodeEntities(markdown)
+    .replace(/\u200d/g, "")
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/[ \t]+/g, " ").trim());
+
+  const startIndex = lines.findIndex(
+    (line, index) => line && !isImportedChromeLine(line, index),
+  );
+  const contentLines = (startIndex >= 0 ? lines.slice(startIndex) : lines)
+    .filter((line, index) => !isImportedChromeLine(line, index))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return contentLines;
+}
+
+function isImportedChromeLine(line, index) {
+  if (!line) return false;
+  if (line === "[" || line === "](/)" || line === "[](/)") return true;
+  if (isNonArticleMarkdownImage(line)) return true;
+  if (index < 12 && isMarkdownImageLine(line)) return true;
+  if (index < 12 && isDateLine(line)) return true;
+  if (isNavigationLine(line)) return true;
+  return false;
+}
+
+function isMarkdownImageLine(line) {
+  return /^!\[[^\]]*\]\([^)]+\)$/.test(line);
+}
+
+function isNonArticleMarkdownImage(line) {
+  const match = line.match(/^!\[[^\]]*\]\(([^)]+)\)$/);
+  return match ? isNonArticleImage(match[1], line) : false;
+}
+
+function isNavigationLine(line) {
+  const linkCount = (line.match(/\]\(/g) ?? []).length;
+  if (linkCount < 3) return false;
+  const navLabels = [
+    "Home",
+    "About Us",
+    "Case Studies",
+    "News",
+    "Resources",
+    "Machine Marketplace",
+    "Vending Marketplace",
+    "Vending Leads",
+    "Vending CPA Experts",
+    "Machine Financing",
+    "Vending Insurance",
+    "Contact Us",
+  ];
+  const matches = navLabels.filter((label) => line.includes(`[${label}]`));
+  return matches.length >= 3;
+}
+
+function isDateLine(line) {
+  return /^(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}$/.test(
+    line,
+  );
+}
+
 function metaContent(html, name) {
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return decodeEntities(
@@ -272,8 +340,25 @@ function metaContent(html, name) {
   );
 }
 
-function firstImageSrc(html) {
-  return decodeEntities(firstMatch(html, /<img[^>]*src=\"([^\"]+)\"[^>]*>/i));
+function firstArticleImageSrc(html) {
+  for (const [, tag] of html.matchAll(/(<img[^>]*>)/gi)) {
+    const src = decodeEntities(firstMatch(tag, /\bsrc=["']([^"']+)["']/i));
+    const alt = decodeEntities(firstMatch(tag, /\balt=["']([^"']*)["']/i));
+    if (src && !isNonArticleImage(src, alt)) return src;
+  }
+  return "";
+}
+
+function isNonArticleImage(src, alt = "") {
+  const value = `${src} ${alt}`.toLowerCase();
+  return (
+    value.includes("facebook.com/tr") ||
+    value.includes("brand mark") ||
+    value.includes("logo") ||
+    value.includes("wordmark") ||
+    value.includes("favicon") ||
+    value.includes("removebg-preview")
+  );
 }
 
 function firstParagraph(markdown) {

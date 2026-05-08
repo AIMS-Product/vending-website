@@ -27,7 +27,7 @@ export function AboutHow() {
           fill
           sizes="(max-width: 1260px) 100vw, 1260px"
           loading="eager"
-          className="object-cover"
+          className="object-cover object-top"
         />
       </div>
     </section>

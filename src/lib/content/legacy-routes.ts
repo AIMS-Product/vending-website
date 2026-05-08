@@ -17,6 +17,7 @@ export type LegacyLeadRoute = {
   pageTitle: string;
   description: string;
   variant: LegacyLeadVariant;
+  indexable: boolean;
 };
 
 const advisoryHeadline =
@@ -36,9 +37,6 @@ const cashflowHeadline =
 const cashflowDescription =
   "Watch the path from first machine to route-building plan, then apply for the call that maps the next step.";
 
-const watchHeadline =
-  "How Regular People Are Building Profitable Vending Routes With Smart Machines, Real Support, and a Proven System";
-
 const journeyDescription =
   "Start with the 90-day blueprint and get the framework for locations, machines, products, and support.";
 
@@ -48,6 +46,7 @@ function route(
   pageTitle: string,
   description: string,
   variant: LegacyLeadVariant,
+  options: { indexable?: boolean } = {},
 ): LegacyLeadRoute {
   return {
     slug,
@@ -56,6 +55,7 @@ function route(
     pageTitle,
     description,
     variant,
+    indexable: options.indexable ?? false,
   };
 }
 
@@ -85,40 +85,34 @@ function market(
   );
 }
 
-function watch(slug: string, metadataTitle: string) {
-  return route(
-    slug,
-    metadataTitle,
-    watchHeadline,
-    "See how the Vendingpreneurs system combines smart machines, support, and a practical route-building plan.",
-    "watch",
-  );
-}
-
-function cashflow(slug: string, metadataTitle: string) {
+function cashflow(
+  slug: string,
+  metadataTitle: string,
+  options: { indexable?: boolean } = {},
+) {
   return route(
     slug,
     metadataTitle,
     cashflowHeadline,
     cashflowDescription,
     "cashflow",
+    options,
   );
 }
 
 export const legacyLeadRoutes = [
   advisory("booking-meta"),
-  market("booking-ltf", "booking/ltf"),
   advisory("booking-youtube"),
-  market("booking-website", "booking/website"),
-  market("booking-organicmisc", "booking/organicmisc"),
-  market("booking-podcast", "booking/podcast"),
   advisory("booking-reactivation-email"),
-  market("booking-reactivation-scraper", "booking/reactivation-scraper"),
   advisory("booking-ig"),
   advisory("booking-linkedin"),
   advisory("booking-x"),
   advisory("booking-internal-ltf"),
   advisory("booking-passivepreneurs"),
+  advisory(
+    "booking-modern-entrepreneur-newsletter",
+    "Modern Entrepreneur Newsletter",
+  ),
   advisory("booking-partner"),
   advisory("booking-tiktok"),
   market("booking-vendingpreneurs-training"),
@@ -137,45 +131,24 @@ export const legacyLeadRoutes = [
     "Turn the webinar into a concrete route plan with the next step, the right market, and the right support.",
     "webinar",
   ),
-  route(
-    "location-eligibility",
-    "Location Eligibility",
-    "Thanks for your interest!",
-    "Tell us where you want to operate so the team can review your location fit and follow up with the right next step.",
-    "eligibility",
-  ),
-  watch("vending-blueprint", "Vending Route Blueprint | Watch Now"),
   market(
     "start-your-route-ak-ig",
     "Start Your Vending Route | Vendingpreneurs",
   ),
   market("start-your-route-ak-tt", "Start Your Vending Route"),
   market("start-my-vending-business", "Book Your Vending Route Advisory Call"),
-  watch("build-income-with-vending", "Build Income With Vending | Watch Now"),
-  cashflow("vending-route-blueprint", "Vending Route Blueprint | Watch Now"),
-  route(
-    "test-leadscore-a",
-    "TEST",
-    "Are you located in the US or Canada?",
-    "Answer the core qualification questions and the team will point you toward the right call path.",
-    "quiz",
-  ),
+  cashflow("vending-route-blueprint", "Vending Route Blueprint | Watch Now", {
+    indexable: true,
+  }),
   route(
     "vending-business-blueprint",
     "90-Day Vending Machine Business Blueprint | VendingPreneurs",
     "Your Vendingpreneur Journey Starts Here",
     journeyDescription,
     "journey",
-  ),
-  route(
-    "join",
-    "Join Vendingpreneurs - Apply to Build Your Vending Route",
-    "For People Ready to Own a Real Income Stream",
-    "Apply to join the Vendingpreneurs community and start building a route with the right process and support.",
-    "join",
+    { indexable: true },
   ),
   advisory("apply-vendingpreneurs", "Book Your Free Vending Advisory Call"),
-  cashflow("vending-training", "Vending Training"),
 ] satisfies readonly LegacyLeadRoute[];
 
 const legacyLeadRouteBySlug: ReadonlyMap<string, LegacyLeadRoute> = new Map(

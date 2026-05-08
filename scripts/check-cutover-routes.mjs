@@ -9,16 +9,41 @@ const REPORT_PATH = "docs/cutover/redirect-matrix.md";
 const canonicalAliases = new Map([
   ["/about-us", "/about"],
   ["/privacy-policy", "/privacy"],
+]);
+
+const permanentRedirects = new Map([
   ["/business", "/about"],
+  ["/booking-website", "/apply?source_path=/booking-website"],
+  ["/booking-organicmisc", "/apply?source_path=/booking-organicmisc"],
+  ["/booking-ltf", "/apply?source_path=/booking-ltf"],
+  [
+    "/booking-reactivation-scraper",
+    "/apply?source_path=/booking-reactivation-scraper",
+  ],
+  ["/booking-podcast", "/apply?source_path=/booking-podcast"],
+  ["/location-eligibility", "/apply?source_path=/location-eligibility"],
+  [
+    "/build-income-with-vending",
+    "/apply?source_path=/build-income-with-vending",
+  ],
+  [
+    "/vending-blueprint",
+    "/vending-route-blueprint?source_path=/vending-blueprint",
+  ],
+  ["/join", "/apply?source_path=/join"],
+  ["/vending-training", "/apply?source_path=/vending-training"],
 ]);
 
 const advisoryHeadline =
   "How Everyday People Are Building $5k-$60k Per Month Vending Routes Without Quitting Their Job or Figuring It Out Alone";
 const marketHeadline = "Your Market May Still Be Open. Let's Find Out.";
-const watchHeadline =
-  "How Regular People Are Building Profitable Vending Routes With Smart Machines, Real Support, And A Proven System";
 const cashflowHeadline =
   "How Regular People Build Cash-Flowing Vending Businesses (With No Experience)";
+
+const indexableLegacyPaths = new Set([
+  "/vending-route-blueprint",
+  "/vending-business-blueprint",
+]);
 
 const legacyHeadlineExpectations = new Map([
   ...[
@@ -30,16 +55,12 @@ const legacyHeadlineExpectations = new Map([
     "/booking-x",
     "/booking-internal-ltf",
     "/booking-passivepreneurs",
+    "/booking-modern-entrepreneur-newsletter",
     "/booking-partner",
     "/booking-tiktok",
     "/apply-vendingpreneurs",
   ].map((path) => [path, advisoryHeadline]),
   ...[
-    "/booking-ltf",
-    "/booking-website",
-    "/booking-organicmisc",
-    "/booking-podcast",
-    "/booking-reactivation-scraper",
     "/booking-vendingpreneurs-training",
     "/book-your-call",
     "/start-your-route-ak-ig",
@@ -48,14 +69,8 @@ const legacyHeadlineExpectations = new Map([
   ].map((path) => [path, marketHeadline]),
   ["/schedule-your-call-ig", "You're In The Right Place."],
   ["/start", "You Saw How It Works. Now Let's Build Your Route."],
-  ["/location-eligibility", "Thanks For Your Interest!"],
-  ["/vending-blueprint", watchHeadline],
-  ["/build-income-with-vending", watchHeadline],
   ["/vending-route-blueprint", cashflowHeadline],
-  ["/test-leadscore-a", "Are You Located In The US Or Canada?"],
   ["/vending-business-blueprint", "Your Vendingpreneur Journey Starts Here"],
-  ["/join", "For People Ready To Own A Real Income Stream"],
-  ["/vending-training", cashflowHeadline],
 ]);
 
 export async function main(argv = process.argv.slice(2)) {
@@ -102,6 +117,10 @@ export async function readInventoryRows(inventoryPath) {
 }
 
 async function checkRow(baseUrl, row) {
+  if (row.decision.includes("permanent redirect")) {
+    return checkRedirect(baseUrl, row.path, permanentRedirects.get(row.path));
+  }
+
   if (canonicalAliases.has(row.path)) {
     return checkCanonicalAlias(
       baseUrl,
@@ -121,6 +140,33 @@ async function checkRow(baseUrl, row) {
   const response = await fetch(`${baseUrl}${row.path}`, { redirect: "manual" });
   const body = await response.text();
 
+  if (row.decision.includes("remove test route")) {
+    const isNotFound =
+      response.status === 404 ||
+      body.includes('name="next-error" content="not-found"');
+    return {
+      path: row.path,
+      expected: "removed route not-found fallback",
+      status: response.status,
+      signal: isNotFound
+        ? response.status === 404
+          ? "404"
+          : "next not-found fallback"
+        : "still active",
+      ok: isNotFound,
+    };
+  }
+
+  if (row.decision.includes("cody review")) {
+    return {
+      path: row.path,
+      expected: "Cody decision pending",
+      status: response.status,
+      signal: response.status < 500 ? "held pending review" : "server error",
+      ok: response.status < 500,
+    };
+  }
+
   if (row.decision.includes("preserve support page")) {
     const hasNoindex = /name="robots" content="[^"]*noindex/.test(body);
     return {
@@ -133,6 +179,31 @@ async function checkRow(baseUrl, row) {
   }
 
   if (row.path.startsWith("/news/")) {
+    if (row.decision.includes("copy/publish candidate")) {
+      const isNotFound = isNextNotFound(response, body);
+      return {
+        path: row.path,
+        expected: "news copy candidate public",
+        status: response.status,
+        signal:
+          response.status === 200 && !isNotFound
+            ? "published/rendered"
+            : "not published",
+        ok: response.status === 200 && !isNotFound,
+      };
+    }
+
+    if (row.decision.includes("archive/no public copy")) {
+      const isNotFound = isNextNotFound(response, body);
+      return {
+        path: row.path,
+        expected: "news archived or unpublished",
+        status: response.status,
+        signal: isNotFound ? "not public" : "still public",
+        ok: isNotFound,
+      };
+    }
+
     return {
       path: row.path,
       expected: "news article not 5xx",
@@ -150,6 +221,37 @@ async function checkRow(baseUrl, row) {
     status: response.status,
     signal: response.url,
     ok: response.status === 200,
+  };
+}
+
+async function checkRedirect(baseUrl, sourcePath, expectedDestination) {
+  if (!expectedDestination) {
+    return {
+      path: sourcePath,
+      expected: "configured permanent redirect",
+      status: 0,
+      signal: "missing redirect expectation",
+      ok: false,
+    };
+  }
+
+  const response = await fetch(`${baseUrl}${sourcePath}`, {
+    redirect: "manual",
+  });
+  const location = response.headers.get("location") ?? "";
+  const parsed = location ? new URL(location, baseUrl) : null;
+  const expected = new URL(expectedDestination, baseUrl);
+  const ok =
+    response.status === 308 &&
+    parsed?.pathname === expected.pathname &&
+    parsed?.search === expected.search;
+
+  return {
+    path: sourcePath,
+    expected: `308 ${expected.pathname}${expected.search}`,
+    status: response.status,
+    signal: location || "missing location",
+    ok,
   };
 }
 
@@ -177,6 +279,8 @@ async function checkLegacyApplyPage(baseUrl, sourcePath) {
   const hasLandingPath = hasHiddenInput(body, "landing_path", sourcePath);
   const hasUtm = hasHiddenInput(body, "utm_source", "matrix");
   const hasApplyForm = /name="business_stage"/.test(body);
+  const hasNoindex = /name="robots" content="[^"]*noindex/.test(body);
+  const expectsNoindex = !indexableLegacyPaths.has(sourcePath);
   const expectedHeadline = legacyHeadlineExpectations.get(sourcePath);
   const hasLegacyHeadline = expectedHeadline
     ? normalizeText(body).includes(normalizeText(expectedHeadline))
@@ -187,6 +291,7 @@ async function checkLegacyApplyPage(baseUrl, sourcePath) {
     hasLandingPath &&
     hasUtm &&
     hasApplyForm &&
+    (expectsNoindex ? hasNoindex : !hasNoindex) &&
     hasLegacyHeadline;
 
   return {
@@ -200,6 +305,7 @@ async function checkLegacyApplyPage(baseUrl, sourcePath) {
           landing_path: hasLandingPath,
           utm_source: hasUtm,
           form: hasApplyForm,
+          robots: expectsNoindex ? hasNoindex : !hasNoindex,
           headline: hasLegacyHeadline,
         }),
     ok,
@@ -242,6 +348,13 @@ function hasCanonicalHref(body, baseUrl, canonicalPath) {
       const href = tag.match(/\bhref="([^"]+)"/i)?.[1];
       return href ? new URL(href, baseUrl).pathname === canonicalPath : false;
     },
+  );
+}
+
+function isNextNotFound(response, body) {
+  return (
+    response.status === 404 ||
+    body.includes('name="next-error" content="not-found"')
   );
 }
 

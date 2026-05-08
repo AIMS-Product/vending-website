@@ -12,7 +12,7 @@ export function AboutApproach() {
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"
             loading="eager"
-            className="object-cover"
+            className="object-cover object-top"
           />
         </div>
 
