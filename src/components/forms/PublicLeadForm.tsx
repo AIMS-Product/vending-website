@@ -9,15 +9,17 @@ import type { LeadAttribution } from "@/lib/lead-attribution";
 import { cn } from "@/lib/utils";
 
 type PublicLeadFormProps = {
-  action: (
-    prev: PublicLeadActionState,
-    formData: FormData,
-  ) => Promise<PublicLeadActionState>;
+  action: PublicLeadFormAction;
   attribution: LeadAttribution;
   idempotencyKey: string;
   submitLabel: string;
   intent: "apply" | "contact";
 };
+
+export type PublicLeadFormAction = (
+  prev: PublicLeadActionState,
+  formData: FormData,
+) => Promise<PublicLeadActionState>;
 
 type FieldProps = {
   name: string;

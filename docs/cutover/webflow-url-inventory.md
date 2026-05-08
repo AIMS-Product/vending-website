@@ -6,79 +6,80 @@ Total URLs: 72
 
 This inventory is the cutover source of truth for old Webflow URLs. The safe
 default is to preserve canonical public pages directly, preserve news slugs via
-the CMS where possible, and route lead-intent campaign/booking URLs into the new
-`/apply` flow with source attribution instead of recreating old embedded form
-behavior.
+the CMS where possible, and render lead-intent campaign/booking URLs with the
+new `/apply` flow in place so source attribution is preserved without a
+client-visible redirect.
 
 ## Summary
 
 | Category                   | Count | Treatment                                                                  |
 | -------------------------- | ----: | -------------------------------------------------------------------------- |
-| Core public pages          |     6 | Keep canonical route or permanent redirect to the new canonical route.     |
-| Booking/call funnels       |    18 | Redirect to `/apply` with `source_path` unless explicitly cloned later.    |
-| Lead/landing funnels       |    14 | Redirect to `/apply` with `source_path` unless explicitly cloned later.    |
+| Core public pages          |     7 | Keep canonical route or preserve legacy alias with canonical metadata.     |
+| Booking/call funnels       |    18 | Render the apply flow on the old path with source attribution.             |
+| Lead/landing funnels       |    13 | Render the apply flow on the old path with source attribution.             |
 | Support/after-submit pages |     2 | Preserve as noindex static support pages or redirect after product review. |
 | News articles              |    32 | Import as draft CMS posts, preserving slugs where possible.                |
 
 ## Core Public Pages
 
-| Old path          | Live status | Live title                      | Intended destination | Decision           |
-| ----------------- | ----------: | ------------------------------- | -------------------- | ------------------ |
-| `/`               |         200 | Home \| Vendingprenuers         | `/`                  | keep               |
-| `/about-us`       |         200 | About Us \| Vendingprenuers     | `/about`             | permanent redirect |
-| `/case-studies`   |         200 | Case Studies \| Vendingprenuers | `/case-studies`      | keep               |
-| `/news`           |         200 | News \| Vendingprenuers         | `/news`              | keep               |
-| `/privacy-policy` |         200 | privacy policy                  | `/privacy`           | permanent redirect |
-| `/terms`          |         200 | terms                           | `/terms`             | keep               |
+| Old path          | Live status | Live title                      | Intended destination | Decision             |
+| ----------------- | ----------: | ------------------------------- | -------------------- | -------------------- |
+| `/`               |         200 | Home \| Vendingprenuers         | `/`                  | keep                 |
+| `/about-us`       |         200 | About Us \| Vendingprenuers     | `/about`             | preserve route alias |
+| `/business`       |         200 | About Us \| Vendingprenuers     | `/about`             | preserve route alias |
+| `/case-studies`   |         200 | Case Studies \| Vendingprenuers | `/case-studies`      | keep                 |
+| `/news`           |         200 | News \| Vendingprenuers         | `/news`              | keep                 |
+| `/privacy-policy` |         200 | privacy policy                  | `/privacy`           | preserve route alias |
+| `/terms`          |         200 | terms                           | `/terms`             | keep                 |
 
 ## Booking And Call Funnels
 
-These are lead-intent URLs. The safe launch treatment is redirecting them into
-the new audited lead-capture flow while preserving the original path in
-`source_path`.
+These are lead-intent URLs. The safe launch treatment is rendering the new
+audited lead-capture flow on the original path while preserving that path in
+`source_path` and `landing_path`.
 
-| Old path                            | Live status | Live title                   | Intended destination                                   | Decision                  |
-| ----------------------------------- | ----------: | ---------------------------- | ------------------------------------------------------ | ------------------------- |
-| `/booking-meta`                     |         200 | book-meta                    | `/apply?source_path=/booking-meta`                     | redirect with attribution |
-| `/booking-ltf`                      |         200 | booking/ltf                  | `/apply?source_path=/booking-ltf`                      | redirect with attribution |
-| `/booking-youtube`                  |         200 | booking/youtube              | `/apply?source_path=/booking-youtube`                  | redirect with attribution |
-| `/booking-website`                  |         200 | booking/website              | `/apply?source_path=/booking-website`                  | redirect with attribution |
-| `/booking-organicmisc`              |         200 | booking/organicmisc          | `/apply?source_path=/booking-organicmisc`              | redirect with attribution |
-| `/booking-podcast`                  |         200 | booking/podcast              | `/apply?source_path=/booking-podcast`                  | redirect with attribution |
-| `/booking-reactivation-email`       |         200 | booking/reactivation-email   | `/apply?source_path=/booking-reactivation-email`       | redirect with attribution |
-| `/booking-reactivation-scraper`     |         200 | booking/reactivation-scraper | `/apply?source_path=/booking-reactivation-scraper`     | redirect with attribution |
-| `/booking-ig`                       |         200 | booking/ig                   | `/apply?source_path=/booking-ig`                       | redirect with attribution |
-| `/booking-linkedin`                 |         200 | booking/linkedin             | `/apply?source_path=/booking-linkedin`                 | redirect with attribution |
-| `/booking-x`                        |         200 | booking/x                    | `/apply?source_path=/booking-x`                        | redirect with attribution |
-| `/booking-internal-ltf`             |         200 | booking/internal-ltf         | `/apply?source_path=/booking-internal-ltf`             | redirect with attribution |
-| `/booking-passivepreneurs`          |         200 | booking/passivepreneurs      | `/apply?source_path=/booking-passivepreneurs`          | redirect with attribution |
-| `/booking-partner`                  |         200 | Partner                      | `/apply?source_path=/booking-partner`                  | redirect with attribution |
-| `/booking-tiktok`                   |         200 | booking/tiktok               | `/apply?source_path=/booking-tiktok`                   | redirect with attribution |
-| `/booking-vendingpreneurs-training` |         200 | Vendingpreneurs Training     | `/apply?source_path=/booking-vendingpreneurs-training` | redirect with attribution |
-| `/schedule-your-call-ig`            |         200 | Schedule Your Call           | `/apply?source_path=/schedule-your-call-ig`            | redirect with attribution |
-| `/book-your-call`                   |         200 | Book Your Call               | `/apply?source_path=/book-your-call`                   | redirect with attribution |
+| Old path                            | Live status | Live title                   | Intended destination      | Decision            |
+| ----------------------------------- | ----------: | ---------------------------- | ------------------------- | ------------------- |
+| `/booking-meta`                     |         200 | book-meta                    | same path with apply flow | preserve apply page |
+| `/booking-ltf`                      |         200 | booking/ltf                  | same path with apply flow | preserve apply page |
+| `/booking-youtube`                  |         200 | booking/youtube              | same path with apply flow | preserve apply page |
+| `/booking-website`                  |         200 | booking/website              | same path with apply flow | preserve apply page |
+| `/booking-organicmisc`              |         200 | booking/organicmisc          | same path with apply flow | preserve apply page |
+| `/booking-podcast`                  |         200 | booking/podcast              | same path with apply flow | preserve apply page |
+| `/booking-reactivation-email`       |         200 | booking/reactivation-email   | same path with apply flow | preserve apply page |
+| `/booking-reactivation-scraper`     |         200 | booking/reactivation-scraper | same path with apply flow | preserve apply page |
+| `/booking-ig`                       |         200 | booking/ig                   | same path with apply flow | preserve apply page |
+| `/booking-linkedin`                 |         200 | booking/linkedin             | same path with apply flow | preserve apply page |
+| `/booking-x`                        |         200 | booking/x                    | same path with apply flow | preserve apply page |
+| `/booking-internal-ltf`             |         200 | booking/internal-ltf         | same path with apply flow | preserve apply page |
+| `/booking-passivepreneurs`          |         200 | booking/passivepreneurs      | same path with apply flow | preserve apply page |
+| `/booking-partner`                  |         200 | Partner                      | same path with apply flow | preserve apply page |
+| `/booking-tiktok`                   |         200 | booking/tiktok               | same path with apply flow | preserve apply page |
+| `/booking-vendingpreneurs-training` |         200 | Vendingpreneurs Training     | same path with apply flow | preserve apply page |
+| `/schedule-your-call-ig`            |         200 | Schedule Your Call           | same path with apply flow | preserve apply page |
+| `/book-your-call`                   |         200 | Book Your Call               | same path with apply flow | preserve apply page |
 
 ## Lead And Landing Funnels
 
 These are campaign, webinar, and application entry points. The safe launch
-treatment is the same audited `/apply` flow with source attribution.
+treatment is the same audited apply flow rendered on the old path with source
+attribution.
 
-| Old path                      | Live status | Live title                                                          | Intended destination                             | Decision                  |
-| ----------------------------- | ----------: | ------------------------------------------------------------------- | ------------------------------------------------ | ------------------------- |
-| `/start`                      |         200 | booking/vendingpreneurs-webinar                                     | `/apply?source_path=/start`                      | redirect with attribution |
-| `/location-eligibility`       |         200 | Location Eligibility                                                | `/apply?source_path=/location-eligibility`       | redirect with attribution |
-| `/business`                   |         200 | About Us \| Vendingprenuers                                         | `/about`                                         | permanent redirect        |
-| `/vending-blueprint`          |         200 | Vending Route Blueprint \| Watch Now                                | `/apply?source_path=/vending-blueprint`          | redirect with attribution |
-| `/start-your-route-ak-ig`     |         200 | Start Your Vending Route \| Vendingpreneurs                         | `/apply?source_path=/start-your-route-ak-ig`     | redirect with attribution |
-| `/start-your-route-ak-tt`     |         200 | Start Your Vending Route \| Vendingpreneurs                         | `/apply?source_path=/start-your-route-ak-tt`     | redirect with attribution |
-| `/start-my-vending-business`  |         200 | Start My Vending Business                                           | `/apply?source_path=/start-my-vending-business`  | redirect with attribution |
-| `/build-income-with-vending`  |         200 | Build Income With Vending \| Watch Now                              | `/apply?source_path=/build-income-with-vending`  | redirect with attribution |
-| `/vending-route-blueprint`    |         200 | Vending Route Blueprint \| Watch Now                                | `/apply?source_path=/vending-route-blueprint`    | redirect with attribution |
-| `/test-leadscore-a`           |         200 | TEST                                                                | `/apply?source_path=/test-leadscore-a`           | redirect with attribution |
-| `/vending-business-blueprint` |         200 | 90-Day Vending Machine Business Blueprint \| VendingPreneurs        | `/apply?source_path=/vending-business-blueprint` | redirect with attribution |
-| `/join`                       |         200 | Title tag: Join Vendingpreneurs — Apply to Build Your Vending Route | `/apply?source_path=/join`                       | redirect with attribution |
-| `/apply-vendingpreneurs`      |         200 | Apply Vendingpreneurs                                               | `/apply?source_path=/apply-vendingpreneurs`      | redirect with attribution |
-| `/vending-training`           |         200 | Vending Training                                                    | `/apply?source_path=/vending-training`           | redirect with attribution |
+| Old path                      | Live status | Live title                                                          | Intended destination      | Decision            |
+| ----------------------------- | ----------: | ------------------------------------------------------------------- | ------------------------- | ------------------- |
+| `/start`                      |         200 | booking/vendingpreneurs-webinar                                     | same path with apply flow | preserve apply page |
+| `/location-eligibility`       |         200 | Location Eligibility                                                | same path with apply flow | preserve apply page |
+| `/vending-blueprint`          |         200 | Vending Route Blueprint \| Watch Now                                | same path with apply flow | preserve apply page |
+| `/start-your-route-ak-ig`     |         200 | Start Your Vending Route \| Vendingpreneurs                         | same path with apply flow | preserve apply page |
+| `/start-your-route-ak-tt`     |         200 | Start Your Vending Route \| Vendingpreneurs                         | same path with apply flow | preserve apply page |
+| `/start-my-vending-business`  |         200 | Start My Vending Business                                           | same path with apply flow | preserve apply page |
+| `/build-income-with-vending`  |         200 | Build Income With Vending \| Watch Now                              | same path with apply flow | preserve apply page |
+| `/vending-route-blueprint`    |         200 | Vending Route Blueprint \| Watch Now                                | same path with apply flow | preserve apply page |
+| `/test-leadscore-a`           |         200 | TEST                                                                | same path with apply flow | preserve apply page |
+| `/vending-business-blueprint` |         200 | 90-Day Vending Machine Business Blueprint \| VendingPreneurs        | same path with apply flow | preserve apply page |
+| `/join`                       |         200 | Title tag: Join Vendingpreneurs — Apply to Build Your Vending Route | same path with apply flow | preserve apply page |
+| `/apply-vendingpreneurs`      |         200 | Apply Vendingpreneurs                                               | same path with apply flow | preserve apply page |
+| `/vending-training`           |         200 | Vending Training                                                    | same path with apply flow | preserve apply page |
 
 ## Support Pages
 

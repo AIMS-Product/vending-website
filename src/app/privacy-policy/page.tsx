@@ -10,6 +10,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PrivacyPage() {
+export default function PrivacyPolicyPage() {
   return <PrivacyPageContent />;
 }
