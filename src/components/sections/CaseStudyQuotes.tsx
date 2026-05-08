@@ -6,8 +6,8 @@ import {
 
 export function CaseStudyQuotes() {
   return (
-    <section className="px-6 py-16 lg:px-10 lg:py-20">
-      <ul className="mx-auto grid max-w-[1400px] gap-8 sm:grid-cols-2 lg:grid-cols-3">
+    <section className="bg-[#f5fbff] px-5 py-16 lg:px-10 lg:py-20">
+      <ul className="mx-auto grid max-w-[1500px] gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {caseStudyQuotes.map((quote) => (
           <li key={quote.id}>
             <QuoteCard quote={quote} />
@@ -20,9 +20,9 @@ export function CaseStudyQuotes() {
 
 function QuoteCard({ quote }: { quote: CaseStudyQuote }) {
   return (
-    <article className="ring-brand-100/60 flex h-full flex-col gap-5 rounded-3xl bg-white p-6 text-left shadow-sm ring-1">
+    <article className="flex h-full flex-col gap-5 rounded-[10px] border-2 border-[#111111] bg-white p-6 text-left shadow-[7px_7px_0_#55b8e8]">
       <header className="flex items-center gap-4">
-        <div className="bg-brand-50 relative size-14 shrink-0 overflow-hidden rounded-full">
+        <div className="relative size-14 shrink-0 overflow-hidden rounded-full border-2 border-[#111111] bg-[#eaf8ff]">
           <Image
             src={quote.avatarUrl}
             alt={`${quote.name} headshot`}
@@ -32,14 +32,16 @@ function QuoteCard({ quote }: { quote: CaseStudyQuote }) {
           />
         </div>
         <div className="min-w-0">
-          <h3 className="text-brand-600 truncate text-base font-semibold">
+          <h3 className="truncate text-base font-black text-[#111111] uppercase">
             {quote.name}
           </h3>
-          <p className="truncate text-sm text-slate-500">{quote.role}</p>
+          <p className="truncate text-sm font-semibold text-slate-600">
+            {quote.role}
+          </p>
         </div>
       </header>
       <Stars />
-      <div className="space-y-3 text-sm leading-relaxed text-slate-700">
+      <div className="space-y-3 text-sm leading-relaxed font-semibold text-slate-700">
         {quote.body.map((p, i) => (
           <p key={i}>{p}</p>
         ))}
@@ -53,7 +55,7 @@ function Stars() {
     <div
       aria-label="5 out of 5 stars"
       role="img"
-      className="text-brand-400 flex gap-0.5"
+      className="flex gap-0.5 text-[#f47b3b]"
     >
       {Array.from({ length: 5 }, (_, i) => (
         <svg

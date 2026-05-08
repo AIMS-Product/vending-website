@@ -3,23 +3,26 @@ import { benefits, type Benefit } from "@/lib/content/home";
 
 export function Benefits() {
   return (
-    <section className="px-6 py-24 lg:px-10 lg:py-32">
-      <div className="mx-auto grid max-w-[1400px] items-stretch gap-12 lg:grid-cols-2 lg:gap-20">
-        <div className="relative aspect-square w-full overflow-hidden rounded-3xl shadow-lg lg:aspect-auto lg:h-full">
+    <section className="bg-white px-5 py-24 lg:px-10 lg:py-32">
+      <div className="mx-auto grid max-w-[1500px] items-stretch gap-12 lg:grid-cols-2 lg:gap-20">
+        <div className="relative aspect-square w-full overflow-hidden rounded-[12px] border-2 border-[#111111] shadow-[10px_10px_0_#55b8e8] lg:aspect-auto lg:h-full">
           <Image
             src={benefits.image.src}
             alt={benefits.image.alt}
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"
+            loading="eager"
             className="object-cover"
           />
         </div>
 
         <div className="flex h-full flex-col justify-center">
-          <h2 className="text-brand-500 text-4xl font-semibold tracking-tight sm:text-5xl">
+          <h2 className="text-4xl leading-tight font-black text-[#111111] uppercase sm:text-5xl">
             {benefits.title}
           </h2>
-          <p className="mt-6 max-w-md text-slate-600">{benefits.body}</p>
+          <p className="mt-6 max-w-md text-lg leading-8 font-semibold text-slate-700">
+            {benefits.body}
+          </p>
 
           <ul className="mt-10 space-y-8">
             {benefits.items.map((item) => (
@@ -37,13 +40,15 @@ function BenefitRow({ item }: { item: Benefit }) {
     <li className="flex gap-5">
       <div
         aria-hidden
-        className="bg-brand-50 text-brand-500 flex size-12 shrink-0 items-center justify-center rounded-2xl"
+        className="flex size-12 shrink-0 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#eaf8ff] text-[#111111] shadow-[4px_4px_0_#55b8e8]"
       >
         <BenefitIcon icon={item.icon} />
       </div>
       <div>
-        <h3 className="text-brand-600 text-lg font-semibold">{item.title}</h3>
-        <p className="mt-1 text-slate-600">{item.body}</p>
+        <h3 className="text-lg font-black text-[#111111] uppercase">
+          {item.title}
+        </h3>
+        <p className="mt-2 font-semibold text-slate-700">{item.body}</p>
       </div>
     </li>
   );

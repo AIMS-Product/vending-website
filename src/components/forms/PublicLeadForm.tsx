@@ -31,7 +31,7 @@ type FieldProps = {
 };
 
 const inputClass =
-  "border-brand-100 focus:border-brand-400 focus:ring-brand-300 min-h-12 w-full rounded-lg border bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2";
+  "min-h-12 w-full rounded-[8px] border-2 border-[#111111] bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#2d9fd6] focus:ring-2 focus:ring-[#55b8e8]";
 
 export function PublicLeadForm({
   action,
@@ -50,7 +50,7 @@ export function PublicLeadForm({
   return (
     <form
       action={formAction}
-      className="grid gap-5 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-7"
+      className="grid gap-5 rounded-[12px] border-2 border-[#111111] bg-white p-5 shadow-[8px_8px_0_#55b8e8] sm:p-7"
     >
       <HiddenAttribution
         attribution={attribution}
@@ -209,7 +209,7 @@ export function PublicLeadForm({
         <button
           type="submit"
           disabled={pending}
-          className="bg-brand-500 hover:bg-brand-600 focus-visible:ring-brand-300 inline-flex min-h-12 items-center justify-center rounded-full px-7 py-3 text-sm font-semibold text-white shadow-sm transition focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
         >
           {pending ? "Submitting..." : submitLabel}
         </button>

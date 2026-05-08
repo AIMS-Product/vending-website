@@ -23,27 +23,27 @@ export function ResourcePageRenderer({
   idempotencyKeyPrefix,
 }: ResourcePageRendererProps) {
   return (
-    <article className="bg-white">
+    <article className="bg-[#f5fbff]">
       <StructuredData page={page} />
-      <header className="border-b border-slate-200 bg-slate-50">
-        <div className="mx-auto max-w-5xl px-6 py-16 lg:px-10">
+      <header className="border-b-2 border-[#111111] bg-[#f5fbff]">
+        <div className="mx-auto max-w-5xl px-5 py-16 lg:px-10">
           {page.target_keyword && (
-            <p className="text-brand-500 text-sm font-semibold tracking-wide uppercase">
+            <p className="inline-flex rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
               {page.target_keyword}
             </p>
           )}
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
+          <h1 className="mt-8 text-[clamp(3rem,6vw,5.5rem)] leading-[0.95] font-black text-[#111111] uppercase">
             {page.title}
           </h1>
           {page.meta_description && (
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+            <p className="mt-7 max-w-3xl text-xl leading-8 font-semibold text-slate-700">
               {page.meta_description}
             </p>
           )}
         </div>
       </header>
 
-      <div className="mx-auto max-w-5xl px-6 py-14 lg:px-10">
+      <div className="mx-auto max-w-5xl px-5 py-14 lg:px-10">
         <PageContentRenderer
           content={page.published_content}
           page={page}
@@ -109,15 +109,15 @@ function BlockRenderer({
     return (
       <div className="max-w-4xl py-8">
         {block.props.eyebrow && (
-          <p className="text-brand-500 text-sm font-semibold tracking-wide uppercase">
+          <p className="text-sm font-black text-[#55b8e8] uppercase">
             {block.props.eyebrow}
           </p>
         )}
-        <h2 className="mt-3 text-3xl font-semibold text-slate-950 md:text-4xl">
+        <h2 className="mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl">
           {block.props.heading}
         </h2>
         {block.props.body && (
-          <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+          <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
             {block.props.body}
           </p>
         )}
@@ -138,22 +138,22 @@ function BlockRenderer({
     return (
       <div className="max-w-3xl">
         {block.props.eyebrow && (
-          <p className="text-brand-500 text-sm font-semibold tracking-wide uppercase">
+          <p className="text-sm font-black text-[#55b8e8] uppercase">
             {block.props.eyebrow}
           </p>
         )}
         {block.props.heading && (
-          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
+          <h2 className="mt-4 text-2xl leading-tight font-black text-[#111111] uppercase md:text-3xl">
             {block.props.heading}
           </h2>
         )}
-        <div className="mt-4 space-y-4 text-base leading-8 text-slate-700">
+        <div className="mt-5 space-y-4 text-base leading-8 font-semibold text-slate-700">
           {block.props.body.nodes.map((node, index) => {
             if (node.type === "heading") {
               return (
                 <h3
                   key={index}
-                  className="pt-2 text-xl font-semibold text-slate-950"
+                  className="pt-2 text-xl font-black text-[#111111] uppercase"
                 >
                   {node.text}
                 </h3>
@@ -183,10 +183,10 @@ function BlockRenderer({
         <img
           src={block.props.src}
           alt={block.props.altText}
-          className="w-full rounded-xl border border-slate-200 object-cover shadow-sm"
+          className="w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]"
         />
         {block.props.caption && (
-          <figcaption className="mt-3 text-sm text-slate-500">
+          <figcaption className="mt-4 text-sm font-semibold text-slate-600">
             {block.props.caption}
           </figcaption>
         )}
@@ -196,20 +196,22 @@ function BlockRenderer({
 
   if (block.type === "video") {
     return (
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+      <div className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[7px_7px_0_#55b8e8]">
         {block.props.title && (
-          <h2 className="text-xl font-semibold text-slate-950">
+          <h2 className="text-xl font-black text-[#111111] uppercase">
             {block.props.title}
           </h2>
         )}
         <Link
           href={block.props.url}
-          className="text-brand-600 hover:text-brand-500 mt-3 inline-flex text-sm font-semibold"
+          className="mt-3 inline-flex text-sm font-black text-[#2d9fd6] uppercase hover:text-[#111111]"
         >
           Watch video
         </Link>
         {block.props.caption && (
-          <p className="mt-3 text-sm text-slate-500">{block.props.caption}</p>
+          <p className="mt-3 text-sm font-semibold text-slate-600">
+            {block.props.caption}
+          </p>
         )}
       </div>
     );
@@ -219,17 +221,17 @@ function BlockRenderer({
     return (
       <div className="max-w-3xl">
         {block.props.heading && (
-          <h2 className="text-2xl font-semibold text-slate-950">
+          <h2 className="text-2xl font-black text-[#111111] uppercase">
             {block.props.heading}
           </h2>
         )}
-        <div className="mt-5 divide-y divide-slate-200 rounded-xl border border-slate-200">
+        <div className="mt-5 divide-y-2 divide-[#bfeeff] rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8]">
           {block.props.items.map((item, index) => (
             <details key={index} className="group p-5">
-              <summary className="cursor-pointer text-sm font-semibold text-slate-950">
+              <summary className="cursor-pointer text-sm font-black text-[#111111] uppercase">
                 {item.question}
               </summary>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
+              <p className="mt-3 text-sm leading-7 font-semibold text-slate-700">
                 {item.answer}
               </p>
             </details>
@@ -243,23 +245,26 @@ function BlockRenderer({
     return (
       <div>
         {block.props.heading && (
-          <h2 className="text-2xl font-semibold text-slate-950">
+          <h2 className="text-2xl font-black text-[#111111] uppercase">
             {block.props.heading}
           </h2>
         )}
         <div className="mt-5 grid gap-4 md:grid-cols-3">
           {block.props.cards.map((card, index) => (
-            <div key={index} className="rounded-xl border border-slate-200 p-5">
-              <h3 className="text-base font-semibold text-slate-950">
+            <div
+              key={index}
+              className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8]"
+            >
+              <h3 className="text-base font-black text-[#111111] uppercase">
                 {card.title}
               </h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
+              <p className="mt-3 text-sm leading-7 font-semibold text-slate-700">
                 {card.body}
               </p>
               {card.href && (
                 <Link
                   href={card.href}
-                  className="text-brand-600 hover:text-brand-500 mt-4 inline-flex text-sm font-semibold"
+                  className="mt-4 inline-flex text-sm font-black text-[#2d9fd6] uppercase hover:text-[#111111]"
                 >
                   Learn more
                 </Link>
@@ -273,17 +278,17 @@ function BlockRenderer({
 
   if (block.type === "proof") {
     return (
-      <figure className="rounded-xl border border-slate-200 bg-slate-50 p-6">
+      <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
         {block.props.eyebrow && (
-          <p className="text-brand-500 text-sm font-semibold uppercase">
+          <p className="text-sm font-black text-[#55b8e8] uppercase">
             {block.props.eyebrow}
           </p>
         )}
-        <blockquote className="mt-3 text-xl leading-8 font-semibold text-slate-950">
+        <blockquote className="mt-3 text-xl leading-8 font-black text-[#111111]">
           {block.props.body}
         </blockquote>
         {(block.props.name || block.props.context) && (
-          <figcaption className="mt-4 text-sm text-slate-600">
+          <figcaption className="mt-4 text-sm font-semibold text-slate-600">
             {block.props.name}
             {block.props.name && block.props.context ? " - " : ""}
             {block.props.context}
@@ -300,16 +305,16 @@ function BlockRenderer({
       block,
     });
     return (
-      <div className="grid gap-6 rounded-xl border border-slate-200 bg-slate-50 p-6">
+      <div className="grid gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
         {(block.props.heading || block.props.body) && (
           <div>
             {block.props.heading && (
-              <h2 className="text-2xl font-semibold text-slate-950">
+              <h2 className="text-2xl font-black text-[#111111] uppercase">
                 {block.props.heading}
               </h2>
             )}
             {block.props.body && (
-              <p className="mt-3 text-sm leading-7 text-slate-600">
+              <p className="mt-3 text-sm leading-7 font-semibold text-slate-700">
                 {block.props.body}
               </p>
             )}
@@ -425,9 +430,9 @@ function renderRichTextParagraph(
 function sectionClass(background: string, spacing: string) {
   const bg =
     background === "muted"
-      ? "rounded-xl bg-slate-50"
+      ? "rounded-[12px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]"
       : background === "brand"
-        ? "rounded-xl bg-brand-50"
+        ? "rounded-[12px] border-2 border-[#111111] bg-[#eaf8ff] p-6 shadow-[7px_7px_0_#111111]"
         : "";
   const pad =
     spacing === "compact" ? "py-6" : spacing === "spacious" ? "py-12" : "py-8";
@@ -441,12 +446,12 @@ function columnGridClass(count: number) {
 
 function ctaClass(variant: PageBlock["variant"]) {
   const base =
-    "inline-flex rounded-full px-5 py-3 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2";
+    "inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] px-5 py-3 text-sm font-black uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2";
   if (variant === "secondary") {
-    return `${base} border border-slate-300 bg-white text-slate-800 hover:bg-slate-50`;
+    return `${base} bg-white text-[#111111] hover:bg-[#eaf8ff]`;
   }
   if (variant === "text") {
-    return "text-brand-600 hover:text-brand-500 text-sm font-semibold";
+    return "text-sm font-black uppercase text-[#2d9fd6] hover:text-[#111111]";
   }
-  return `${base} bg-brand-500 text-white hover:bg-brand-600`;
+  return `${base} bg-[#f47b3b] text-[#111111]`;
 }

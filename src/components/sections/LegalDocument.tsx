@@ -11,23 +11,23 @@ type LegalDocumentProps = {
 
 export function LegalDocument({ doc }: LegalDocumentProps) {
   return (
-    <article className="mx-auto max-w-[820px] px-6 pt-32 pb-20 lg:pt-40 lg:pb-24">
-      <header className="border-b border-slate-100 pb-10">
-        <h1 className="text-brand-500 text-4xl font-semibold tracking-tight sm:text-5xl">
-          {doc.title}
-        </h1>
-        <p className="mt-4 text-sm text-slate-500">
-          <strong className="text-brand-600 font-semibold">
-            Last Updated:
-          </strong>{" "}
-          {doc.lastUpdated}
-        </p>
-      </header>
+    <article className="bg-[#f5fbff] px-5 pt-28 pb-20 lg:px-10 lg:pt-32 lg:pb-24">
+      <div className="mx-auto max-w-[920px]">
+        <header className="border-b-2 border-[#bfeeff] pb-10">
+          <h1 className="text-4xl leading-tight font-black text-[#111111] uppercase sm:text-5xl">
+            {doc.title}
+          </h1>
+          <p className="mt-4 text-sm font-semibold text-slate-600">
+            <strong className="font-black text-[#111111]">Last Updated:</strong>{" "}
+            {doc.lastUpdated}
+          </p>
+        </header>
 
-      <div className="mt-12 space-y-12">
-        {doc.sections.map((section) => (
-          <LegalSectionView key={section.number} section={section} />
-        ))}
+        <div className="mt-12 space-y-12">
+          {doc.sections.map((section) => (
+            <LegalSectionView key={section.number} section={section} />
+          ))}
+        </div>
       </div>
     </article>
   );
@@ -36,10 +36,10 @@ export function LegalDocument({ doc }: LegalDocumentProps) {
 function LegalSectionView({ section }: { section: LegalSection }) {
   return (
     <section>
-      <h2 className="text-brand-600 text-2xl font-semibold tracking-tight sm:text-3xl">
+      <h2 className="text-2xl font-black text-[#111111] uppercase sm:text-3xl">
         {section.number}. {section.heading}
       </h2>
-      <div className="mt-5 space-y-4 leading-relaxed text-slate-700">
+      <div className="mt-5 space-y-4 leading-relaxed font-semibold text-slate-700">
         {section.blocks.map((block, i) => (
           <BlockView key={i} block={block} />
         ))}
@@ -53,16 +53,16 @@ function BlockView({ block }: { block: LegalBlock }) {
     case "p":
       return <p>{block.text}</p>;
     case "p-strong":
-      return <p className="text-brand-600 font-semibold">{block.text}</p>;
+      return <p className="font-black text-[#111111]">{block.text}</p>;
     case "h3":
       return (
-        <h3 className="text-brand-500 mt-6 text-base font-semibold">
+        <h3 className="mt-6 text-base font-black text-[#111111] uppercase">
           {block.text}
         </h3>
       );
     case "ul":
       return (
-        <ul className="marker:text-brand-400 ml-5 list-disc space-y-2">
+        <ul className="ml-5 list-disc space-y-2 marker:text-[#55b8e8]">
           {block.items.map((item, i) => (
             <ListItemView key={i} item={item} />
           ))}
@@ -75,7 +75,7 @@ function ListItemView({ item }: { item: LegalListItem }) {
   if (item.lead) {
     return (
       <li>
-        <strong className="text-brand-600 font-semibold">{item.lead}</strong>{" "}
+        <strong className="font-black text-[#111111]">{item.lead}</strong>{" "}
         {item.text}
       </li>
     );

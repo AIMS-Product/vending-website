@@ -23,15 +23,14 @@ type ButtonProps = CommonProps & {
 };
 
 export function Button(props: LinkProps | ButtonProps) {
-  const { variant = "primary", className, children, showArrow = true } = props;
+  const { variant = "primary", className, children, showArrow = false } = props;
 
   const base =
-    "group inline-flex items-center gap-3 rounded-full px-6 py-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2";
+    "group inline-flex min-h-12 items-center justify-center gap-3 rounded-[8px] border-2 border-[#111111] px-6 py-3 text-sm font-black uppercase text-[#111111] shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 active:translate-y-0 active:shadow-[3px_3px_0_#111111]";
 
   const styles: Record<Variant, string> = {
-    primary:
-      "bg-white text-brand-600 shadow ring-1 ring-brand-100 hover:shadow-md hover:ring-brand-200",
-    ghost: "text-brand-600 hover:bg-white/60",
+    primary: "bg-[#f47b3b]",
+    ghost: "bg-white hover:bg-[#eaf8ff]",
   };
 
   const inner = (
@@ -66,7 +65,7 @@ function Arrow() {
   return (
     <span
       aria-hidden
-      className="bg-brand-400 group-hover:bg-brand-500 inline-flex size-7 items-center justify-center rounded-full text-white transition group-hover:translate-x-0.5"
+      className="inline-flex size-7 items-center justify-center rounded-full bg-[#111111] text-white transition group-hover:translate-x-0.5"
     >
       <svg
         viewBox="0 0 16 16"

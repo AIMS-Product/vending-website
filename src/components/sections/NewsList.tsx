@@ -25,8 +25,8 @@ export function NewsList({ posts }: NewsListProps) {
   }
 
   return (
-    <section className="px-6 py-16 lg:px-10 lg:py-20">
-      <ul className="mx-auto grid max-w-[1400px] gap-8 sm:grid-cols-2 lg:grid-cols-3">
+    <section className="bg-[#f5fbff] px-5 py-16 lg:px-10 lg:py-20">
+      <ul className="mx-auto grid max-w-[1500px] gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {posts.map((post) => (
           <li key={post.id}>
             <NewsCard post={post} />
@@ -39,10 +39,10 @@ export function NewsList({ posts }: NewsListProps) {
 
 function NewsCard({ post }: { post: NewsListProps["posts"][number] }) {
   return (
-    <article className="ring-brand-100/60 group flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 transition hover:shadow-lg">
+    <article className="group flex h-full flex-col overflow-hidden rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8] transition hover:-translate-y-1 hover:shadow-[10px_10px_0_#55b8e8]">
       <Link href={`/news/${post.slug}`} className="flex h-full flex-col">
         {post.cover_url ? (
-          <div className="bg-brand-50 relative aspect-[16/9] w-full overflow-hidden">
+          <div className="relative aspect-[16/9] w-full overflow-hidden border-b-2 border-[#111111] bg-[#eaf8ff]">
             <Image
               src={post.cover_url}
               alt={post.cover_alt ?? post.title}
@@ -52,14 +52,16 @@ function NewsCard({ post }: { post: NewsListProps["posts"][number] }) {
             />
           </div>
         ) : (
-          <div className="from-brand-200 via-brand-300 to-brand-400 aspect-[16/9] w-full bg-gradient-to-br" />
+          <div className="aspect-[16/9] w-full border-b-2 border-[#111111] bg-[#55b8e8]" />
         )}
-        <div className="flex flex-1 flex-col gap-3 p-6">
-          <h2 className="text-brand-600 group-hover:text-brand-500 text-xl font-semibold tracking-tight transition-colors">
+        <div className="flex flex-1 flex-col gap-4 p-6">
+          <h2 className="text-2xl leading-tight font-black text-[#111111] uppercase transition-colors group-hover:text-[#2d9fd6]">
             {post.title}
           </h2>
           {post.excerpt && (
-            <p className="text-sm text-slate-600">{post.excerpt}</p>
+            <p className="text-base leading-7 font-semibold text-slate-700">
+              {post.excerpt}
+            </p>
           )}
           <Meta post={post} />
         </div>
@@ -74,7 +76,7 @@ function Meta({ post }: { post: NewsListProps["posts"][number] }) {
   if (post.published_at) parts.push(formatDate(post.published_at));
   if (parts.length === 0) return null;
   return (
-    <p className="mt-auto text-xs text-slate-500">
+    <p className="mt-auto border-t-2 border-[#bfeeff] pt-4 text-xs font-black text-[#55b8e8] uppercase">
       {parts.map((part, i) => (
         <span key={i}>
           {i > 0 && <span aria-hidden> · </span>}
@@ -87,15 +89,15 @@ function Meta({ post }: { post: NewsListProps["posts"][number] }) {
 
 function EmptyState() {
   return (
-    <section className="px-6 py-20 lg:px-10 lg:py-24">
+    <section className="bg-[#f5fbff] px-5 py-20 lg:px-10 lg:py-24">
       <div className="mx-auto max-w-xl text-center">
-        <p className="text-brand-400 text-sm font-medium tracking-wide uppercase">
+        <p className="text-sm font-black text-[#55b8e8] uppercase">
           More stories coming soon
         </p>
-        <h2 className="text-brand-500 mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+        <h2 className="mt-4 text-4xl leading-tight font-black text-[#111111] uppercase sm:text-5xl">
           We&rsquo;re publishing fresh insights here
         </h2>
-        <p className="mt-6 text-slate-600">
+        <p className="mt-6 text-lg leading-8 font-semibold text-slate-700">
           Want to skip the read and get straight to building? Apply to the
           program and we&rsquo;ll get you on the path.
         </p>

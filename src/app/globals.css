@@ -154,3 +154,110 @@ body {
   color: var(--brand-700);
   font-weight: 600;
 }
+
+.public-news-prose {
+  color: #1f2937;
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.8;
+}
+.public-news-prose > * + * {
+  margin-top: 1.35rem;
+}
+.public-news-prose h2 {
+  margin-top: 3.25rem;
+  border-top: 2px solid #bfeeff;
+  padding-top: 2rem;
+  color: #111111;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.public-news-prose h3 {
+  margin-top: 2.25rem;
+  color: #111111;
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.public-news-prose p {
+  max-width: 72ch;
+}
+.public-news-prose a {
+  color: #2d9fd6;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.public-news-prose a:hover {
+  color: #111111;
+}
+.public-news-prose ul,
+.public-news-prose ol {
+  max-width: 72ch;
+  padding-left: 1.5rem;
+}
+.public-news-prose ul {
+  list-style: disc;
+}
+.public-news-prose ol {
+  list-style: decimal;
+}
+.public-news-prose ul li::marker,
+.public-news-prose ol li::marker {
+  color: #55b8e8;
+  font-weight: 900;
+}
+.public-news-prose li + li {
+  margin-top: 0.65rem;
+}
+.public-news-prose blockquote {
+  max-width: 72ch;
+  border: 2px solid #111111;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 6px 6px 0 #55b8e8;
+  color: #111111;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.55;
+  padding: 1.5rem;
+}
+.public-news-prose code {
+  border: 1px solid #bfeeff;
+  border-radius: 5px;
+  background: #eaf8ff;
+  color: #111111;
+  font-size: 0.9em;
+  padding: 0.125rem 0.375rem;
+}
+.public-news-prose pre {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 2px solid #111111;
+  border-radius: 8px;
+  background: #111111;
+  box-shadow: 6px 6px 0 #55b8e8;
+  color: #f8fafc;
+  padding: 1rem 1.25rem;
+}
+.public-news-prose pre code {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+.public-news-prose img {
+  width: 100%;
+  height: auto;
+  border: 2px solid #111111;
+  border-radius: 8px;
+  box-shadow: 6px 6px 0 #55b8e8;
+}
+.public-news-prose strong {
+  color: #111111;
+  font-weight: 900;
+}

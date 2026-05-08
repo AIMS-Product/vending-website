@@ -13,11 +13,10 @@ export type NavItem = {
 const VENDHUB_URL = "https://www.vendhub.ai/";
 
 export const primaryNav: ReadonlyArray<NavItem> = [
-  { label: "Home", href: "/" },
-  { label: "Case Studies", href: "/case-studies" },
-  { label: "About Us", href: "/about" },
-  { label: "Resources", href: "/pre-call-resources" },
-  { label: "Contact Us", href: "/contact" },
+  { label: "How It Works", href: "/about" },
+  { label: "Solutions", href: "/pre-call-resources" },
+  { label: "Members", href: "/case-studies" },
+  { label: "Blog", href: "/news" },
 ];
 
 export const footerColumns: ReadonlyArray<{

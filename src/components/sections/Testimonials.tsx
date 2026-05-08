@@ -7,15 +7,15 @@ import {
 
 export function Testimonials() {
   return (
-    <section className="px-6 py-24 lg:px-10 lg:py-32">
-      <div className="mx-auto max-w-[1400px] text-center">
-        <p className="text-brand-400 text-sm font-medium tracking-wide uppercase">
+    <section className="bg-white px-5 py-24 lg:px-10 lg:py-32">
+      <div className="mx-auto max-w-[1500px] text-center">
+        <p className="text-sm font-black text-[#55b8e8] uppercase">
           Success Stories
         </p>
-        <h2 className="text-brand-500 mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
+        <h2 className="mt-4 text-4xl leading-tight font-black text-[#111111] uppercase sm:text-5xl">
           Real People, Real Results
         </h2>
-        <p className="mx-auto mt-6 max-w-xl text-slate-600">
+        <p className="mx-auto mt-6 max-w-xl text-lg leading-8 font-semibold text-slate-700">
           See how others have built profitable vending businesses with our
           coaching.
         </p>
@@ -42,19 +42,21 @@ export function Testimonials() {
 
 function VideoTestimonialCard({ video }: { video: CaseStudyVideo }) {
   return (
-    <article className="bg-brand-50/40 ring-brand-100/60 flex h-full flex-col gap-4 rounded-3xl p-5 text-left shadow-sm ring-1">
+    <article className="flex h-full flex-col gap-4 rounded-[10px] border-2 border-[#111111] bg-white p-5 text-left shadow-[7px_7px_0_#55b8e8]">
       <video
         controls
         preload="none"
         poster={video.posterUrl}
-        className="aspect-video w-full rounded-2xl bg-slate-100 object-contain"
+        className="aspect-video w-full rounded-[8px] border-2 border-[#111111] bg-slate-100 object-contain"
         aria-label={`Video testimonial from ${video.name}`}
       >
         <source src={video.videoUrl} type="video/mp4" />
       </video>
       <header>
-        <h3 className="text-brand-600 text-base font-semibold">{video.name}</h3>
-        <p className="text-sm text-slate-500">{video.role}</p>
+        <h3 className="text-base font-black text-[#111111] uppercase">
+          {video.name}
+        </h3>
+        <p className="text-sm font-semibold text-slate-600">{video.role}</p>
       </header>
     </article>
   );
@@ -62,13 +64,15 @@ function VideoTestimonialCard({ video }: { video: CaseStudyVideo }) {
 
 function QuoteTestimonialCard({ quote }: { quote: CaseStudyQuote }) {
   return (
-    <article className="ring-brand-100/60 flex h-full flex-col gap-4 rounded-3xl bg-white p-6 shadow-sm ring-1">
+    <article className="flex h-full flex-col gap-4 rounded-[10px] border-2 border-[#111111] bg-white p-6 text-left shadow-[7px_7px_0_#55b8e8]">
       <header>
-        <h3 className="text-brand-600 text-base font-semibold">{quote.name}</h3>
-        <p className="text-sm text-slate-500">{quote.role}</p>
+        <h3 className="text-base font-black text-[#111111] uppercase">
+          {quote.name}
+        </h3>
+        <p className="text-sm font-semibold text-slate-600">{quote.role}</p>
       </header>
       <Stars />
-      <div className="space-y-3 text-sm leading-relaxed text-slate-700">
+      <div className="space-y-3 text-sm leading-relaxed font-semibold text-slate-700">
         {quote.body.map((paragraph, index) => (
           <p key={index}>{paragraph}</p>
         ))}
@@ -82,7 +86,7 @@ function Stars() {
     <div
       aria-label="5 out of 5 stars"
       role="img"
-      className="text-brand-400 flex gap-0.5"
+      className="flex gap-0.5 text-[#f47b3b]"
     >
       {Array.from({ length: 5 }, (_, i) => (
         <svg

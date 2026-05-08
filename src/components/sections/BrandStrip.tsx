@@ -5,9 +5,9 @@ export function BrandStrip() {
   return (
     <section
       aria-label="Featured partners"
-      className="border-brand-100/60 bg-brand-50/40 overflow-hidden border-t py-10"
+      className="overflow-hidden border-y-2 border-[#111111] bg-[#eaf8ff] py-10"
     >
-      <div className="brand-marquee flex w-max items-center gap-16 px-6 lg:px-10">
+      <div className="brand-marquee flex w-max items-center gap-16 px-5 lg:px-10">
         {[...partnerLogos, ...partnerLogos].map((logo, index) => (
           <Image
             key={`${logo.name}-${index}`}

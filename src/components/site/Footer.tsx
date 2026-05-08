@@ -12,8 +12,8 @@ export function Footer() {
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return null;
 
   return (
-    <footer className="border-t border-slate-100 bg-white px-6 py-16 lg:px-10">
-      <div className="mx-auto grid max-w-[1400px] gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-20">
+    <footer className="border-t-2 border-[#111111] bg-[#f5fbff] px-5 py-14 lg:px-10">
+      <div className="mx-auto grid max-w-[1500px] gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-20">
         <Wordmark />
 
         <nav
@@ -45,8 +45,8 @@ function FooterItem({
   highlighted: boolean;
 }) {
   const className = cn(
-    "hover:text-brand-600 text-sm text-slate-700 transition",
-    highlighted && "text-brand-500",
+    "text-sm font-black text-[#111111] uppercase transition hover:text-[#55b8e8]",
+    highlighted && "text-[#2d9fd6]",
   );
 
   if (item.external) {

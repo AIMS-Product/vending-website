@@ -3,26 +3,24 @@ import { about } from "@/lib/content/about";
 
 export function AboutHero() {
   return (
-    <section className="relative isolate overflow-hidden">
-      <div className="absolute inset-0 -z-10 [background:var(--gradient-hero)]" />
-
-      <div className="mx-auto grid max-w-[1400px] items-center gap-10 px-6 pt-32 pb-20 lg:grid-cols-2 lg:gap-16 lg:px-10 lg:pt-40 lg:pb-28">
+    <section className="relative isolate overflow-hidden border-b-2 border-[#111111] bg-[#f5fbff]">
+      <div className="mx-auto grid max-w-[1500px] items-center gap-12 px-5 pt-28 pb-20 lg:grid-cols-2 lg:gap-16 lg:px-10 lg:pt-32 lg:pb-28">
         <div className="flex flex-col justify-center">
-          <p className="text-brand-500 text-sm font-medium tracking-wide uppercase">
+          <p className="inline-flex w-fit rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
             {about.hero.eyebrow}
           </p>
-          <h1 className="text-brand-500 mt-3 text-4xl leading-[1.05] font-semibold tracking-tight sm:text-5xl lg:text-6xl">
+          <h1 className="mt-8 text-[clamp(3rem,6vw,5.8rem)] leading-[0.95] font-black text-[#111111] uppercase">
             {about.hero.title}
           </h1>
 
-          <div className="mt-8 max-w-md space-y-5 text-base text-slate-600">
+          <div className="mt-8 max-w-xl space-y-5 text-xl leading-8 font-semibold text-slate-700">
             {about.hero.paragraphs.map((p, i) => (
               <p key={i}>{p}</p>
             ))}
           </div>
         </div>
 
-        <div className="relative aspect-square w-full overflow-hidden rounded-3xl shadow-xl ring-1 ring-white/40">
+        <div className="relative aspect-square w-full overflow-hidden rounded-[12px] border-2 border-[#111111] bg-white shadow-[10px_10px_0_#55b8e8]">
           <Image
             src={about.hero.image.src}
             alt={about.hero.image.alt}

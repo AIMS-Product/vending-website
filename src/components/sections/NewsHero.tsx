@@ -1,16 +1,14 @@
 export function NewsHero() {
   return (
-    <section className="relative isolate overflow-hidden">
-      <div className="absolute inset-0 -z-10 [background:var(--gradient-hero)]" />
-
-      <div className="mx-auto max-w-[1100px] px-6 pt-32 pb-16 text-center lg:px-10 lg:pt-40 lg:pb-20">
-        <p className="text-brand-500 text-sm font-medium tracking-wide uppercase">
-          Insights from the Route
+    <section className="relative isolate overflow-hidden border-b-2 border-[#111111] bg-[#f5fbff]">
+      <div className="mx-auto max-w-[1500px] px-5 pt-28 pb-16 lg:px-10 lg:pt-32 lg:pb-20">
+        <p className="inline-flex rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
+          Insights from the route
         </p>
-        <h1 className="text-brand-500 mt-3 text-4xl leading-[1.05] font-semibold tracking-tight sm:text-5xl lg:text-6xl">
-          News
+        <h1 className="mt-8 max-w-4xl text-[clamp(3.5rem,9vw,8rem)] leading-[0.9] font-black text-[#111111] uppercase">
+          Blog
         </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-slate-600">
+        <p className="mt-7 max-w-2xl text-xl leading-8 font-semibold text-slate-700">
           Strategies on locations, machine selection, products, and the
           back-office work that makes a vending route compound. New posts drop
           here as we publish them.
