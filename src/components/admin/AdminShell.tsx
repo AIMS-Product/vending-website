@@ -31,7 +31,7 @@ const sections: AdminNavSection[] = [
     id: "pages",
     label: "Resource pages",
     href: "/admin/pages",
-    description: "SEO block pages",
+    description: "SEO page content",
     icon: "file",
     createHref: "/admin/pages/new",
     createLabel: "Resource page",
@@ -82,6 +82,7 @@ export function AdminShell({
   userEmail,
   userRole,
   actions,
+  immersive = false,
   children,
 }: {
   activeSection: AdminSection;
@@ -91,6 +92,7 @@ export function AdminShell({
   userEmail?: string | null;
   userRole?: string | null;
   actions?: ReactNode;
+  immersive?: boolean;
   children: ReactNode;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -399,45 +401,51 @@ export function AdminShell({
         </aside>
 
         <section
-          aria-labelledby="admin-shell-title"
-          className="min-w-0 px-5 py-6 sm:px-8 lg:px-10"
+          aria-label={immersive ? title : undefined}
+          aria-labelledby={immersive ? undefined : "admin-shell-title"}
+          className={clsx(
+            "min-w-0",
+            immersive ? "p-0" : "px-5 py-6 sm:px-8 lg:px-10",
+          )}
         >
-          <header className="mb-7">
-            <div className="mb-6 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 text-sm font-semibold text-[#0b63f6]">
-                <span>{eyebrow}</span>
-                <span className="text-slate-400" aria-hidden="true">
-                  <AdminChevron />
-                </span>
+          {!immersive && (
+            <header className="mb-7">
+              <div className="mb-6 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 text-sm font-semibold text-[#0b63f6]">
+                  <span>{eyebrow}</span>
+                  <span className="text-slate-400" aria-hidden="true">
+                    <AdminChevron />
+                  </span>
+                </div>
+                <div className="flex w-fit items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm">
+                  <span className="text-slate-700" aria-hidden="true">
+                    <AdminIconGlyph icon="shield" />
+                  </span>
+                  {userRole ? `${userRole} access` : "Admin access"}
+                </div>
               </div>
-              <div className="flex w-fit items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm">
-                <span className="text-slate-700" aria-hidden="true">
-                  <AdminIconGlyph icon="shield" />
-                </span>
-                {userRole ? `${userRole} access` : "Admin access"}
-              </div>
-            </div>
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <div className="max-w-3xl">
-                <h1
-                  id="admin-shell-title"
-                  className="text-4xl font-semibold tracking-normal text-slate-950"
-                >
-                  {title}
-                </h1>
-                {description ? (
-                  <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                    {description}
-                  </p>
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                <div className="max-w-3xl">
+                  <h1
+                    id="admin-shell-title"
+                    className="text-4xl font-semibold tracking-normal text-slate-950"
+                  >
+                    {title}
+                  </h1>
+                  {description ? (
+                    <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+                      {description}
+                    </p>
+                  ) : null}
+                </div>
+                {actions ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    {actions}
+                  </div>
                 ) : null}
               </div>
-              {actions ? (
-                <div className="flex flex-wrap items-center gap-3">
-                  {actions}
-                </div>
-              ) : null}
-            </div>
-          </header>
+            </header>
+          )}
           {children}
         </section>
       </div>

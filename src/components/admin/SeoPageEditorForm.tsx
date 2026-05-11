@@ -22,6 +22,7 @@ import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Wordmark } from "@/components/site/Wordmark";
 import {
   acceptAiSeoProposalBlocks,
   autosaveSeoPageDraft,
@@ -64,6 +65,7 @@ import {
   type MoveDirection,
 } from "@/lib/page-builder/content-ops";
 import type { Tables } from "@/types/database";
+import { footerColumns, primaryNav } from "@/lib/content/nav";
 
 type SeoPage = Tables<"seo_pages">;
 type Sensors = ReturnType<typeof useSensors>;
@@ -86,7 +88,6 @@ type SeoPageEditorFormProps = {
   redirectError?: string;
 };
 
-type StarterTemplate = "service" | "location" | "comparison" | "faq";
 type BlockVariant = PageBlock["variant"];
 type BlockPickerVariantOption = {
   id: BlockVariant;
@@ -139,7 +140,10 @@ export function SeoPageEditorForm({
     useState<PageAiProposalInsertResult>(initialAiInsertState);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [isAiInserting, setIsAiInserting] = useState(false);
-  const [isSeoPanelOpen, setIsSeoPanelOpen] = useState(false);
+  const [isDetailsDrawerOpen, setIsDetailsDrawerOpen] = useState(true);
+  const [hasSelectedNewPageMode, setHasSelectedNewPageMode] = useState(
+    Boolean(page?.id),
+  );
   const [linkSuggestionMessage, setLinkSuggestionMessage] = useState<
     string | null
   >(null);
@@ -225,13 +229,7 @@ export function SeoPageEditorForm({
   const primaryColumn = primarySection?.columns[0] ?? null;
   const usesSimpleBlockStack =
     content.sections.length <= 1 && (primarySection?.columns.length ?? 0) <= 1;
-  const canUseStarterTemplates =
-    !page?.id &&
-    !hasEditorText(title) &&
-    !hasEditorText(metaDescription) &&
-    content.sections.every((section) =>
-      section.columns.every((column) => column.blocks.length === 0),
-    );
+  const showCreationChoiceModal = !page?.id && !hasSelectedNewPageMode;
   const saveMessage =
     redirectError ??
     state.message ??
@@ -278,665 +276,620 @@ export function SeoPageEditorForm({
   ]);
 
   return (
-    <form action={formAction}>
+    <form action={formAction} className="relative">
       {page?.id && <input type="hidden" name="id" value={page.id} />}
       <input type="hidden" name="draftContent" value={draftContentJson} />
+      {!isDetailsDrawerOpen && (
+        <input type="hidden" name="slug" value={visibleSlug} />
+      )}
 
-      <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 shadow-sm backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/admin/pages"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
-              title="Back to pages"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-              <span className="sr-only">Back to pages</span>
-            </Link>
-            <div className="flex items-center gap-1 rounded-lg border border-transparent px-2 py-1 transition-colors focus-within:border-slate-200 focus-within:bg-white focus-within:shadow-sm hover:border-slate-200 hover:bg-slate-50">
-              <span className="text-sm font-medium text-slate-400">
-                /resources/
-              </span>
-              <input
-                name="slug"
-                value={visibleSlug}
-                onChange={(event) => {
-                  setSlugTouched(true);
-                  setSlug(slugify(event.target.value));
-                }}
-                required
-                aria-label="Slug"
-                className="w-48 bg-transparent text-sm font-semibold text-slate-700 transition-all outline-none placeholder:text-slate-300 focus:w-64"
-                placeholder="page-slug"
-              />
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
-              <span className="flex items-center gap-1.5">
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${page?.status === "published" ? "bg-emerald-500" : "bg-amber-500"}`}
-                ></span>
-                {page?.status ?? "draft"}
-              </span>
-            </span>
-            <button
-              type="button"
-              className={`${smallButtonClass} ${readinessButtonClass(
-                seoReadiness.status,
-              )}`}
-              onClick={() => setIsSeoPanelOpen(true)}
-            >
-              <span className="flex items-center gap-1.5">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
-                  <path d="M22 12A10 10 0 0 0 12 2v10z" />
-                </svg>
-                SEO: {seoReadiness.label}
-              </span>
-            </button>
-            <button className={secondaryButtonClass} name="intent" value="save">
-              Save draft
-            </button>
-            <button
-              className={primaryButtonClass}
-              name="intent"
-              value="publish"
-              disabled={publishDisabled}
-              title={
-                seoReadiness.blockers.length > 0
-                  ? "Resolve SEO blockers before publishing."
-                  : undefined
-              }
-            >
-              Publish
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        {(state.status !== "idle" ||
-          savedFromRedirect ||
-          redirectError ||
-          autosave) && (
-          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
-            {(state.status !== "idle" ||
-              savedFromRedirect ||
-              redirectError) && (
-              <p
-                className={
-                  state.status === "error" || redirectError
-                    ? "text-red-700"
-                    : "text-emerald-700"
-                }
-              >
-                {saveMessage}
-              </p>
-            )}
-            {autosave && (
-              <p
-                className={
-                  autosave.status === "error"
-                    ? "text-red-700"
-                    : "text-slate-500"
-                }
-              >
-                {autosave.status === "saved"
-                  ? `Autosaved ${formatTime(autosave.savedAt)}`
-                  : autosave.message}
-              </p>
-            )}
-          </div>
-        )}
-
-        {canUseStarterTemplates && (
-          <StarterTemplatePanel onUseTemplate={applyStarterTemplate} />
-        )}
-
-        <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-black/5">
-          <header className="border-b border-slate-100 bg-white">
-            <div className="mx-auto max-w-5xl px-6 py-6 lg:px-10 lg:py-8">
-              {targetKeyword && (
-                <div className="bg-brand-50 text-brand-700 ring-brand-700/10 mb-4 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 2v20" />
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                  </svg>
-                  {targetKeyword}
-                </div>
-              )}
-              <label className="block">
-                <span className="sr-only">Title</span>
-                <textarea
-                  name="title"
-                  value={title}
-                  onChange={(event) => setTitle(event.target.value)}
-                  required
-                  rows={2}
-                  placeholder="Page headline"
-                  id="page-title-field"
-                  className={headlineInputClass}
-                />
-              </label>
-              <label className="mt-2 block max-w-3xl">
-                <span className="sr-only">Meta description</span>
-                <textarea
-                  name="metaDescription"
-                  value={metaDescription}
-                  onChange={(event) => setMetaDescription(event.target.value)}
-                  rows={3}
-                  placeholder="Opening summary shown at the top of the page."
-                  id="page-meta-description-field"
-                  className={leadInputClass}
-                />
-              </label>
-            </div>
-          </header>
-
-          <main className="mx-auto max-w-5xl px-6 py-10 lg:px-10">
-            <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-6">
-              <div>
-                <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-slate-400"
-                  >
-                    <path d="M12 3v18" />
-                    <rect width="18" height="18" x="3" y="3" rx="2" />
-                    <path d="M3 9h18" />
-                    <path d="M3 15h18" />
-                  </svg>
-                  Content Blocks
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Build your page by stacking and arranging content blocks.
-                </p>
-              </div>
-              <div className="relative" ref={layoutOptionsRef}>
-                <button
-                  type="button"
-                  className={`${smallButtonClass} inline-flex items-center gap-2`}
-                  onClick={() => setIsLayoutOptionsOpen(!isLayoutOptionsOpen)}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect width="18" height="18" x="3" y="3" rx="2" />
-                    <path d="M3 9h18" />
-                    <path d="M9 21V9" />
-                  </svg>
-                  Layout options
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={`transition-transform ${isLayoutOptionsOpen ? "rotate-180" : ""}`}
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
-                {isLayoutOptionsOpen && (
-                  <div className="absolute right-0 z-20 mt-2 w-80 origin-top-right rounded-xl border border-slate-200 bg-white p-2 shadow-xl ring-1 ring-black/5 focus:outline-none">
-                    <div className="px-3 py-2 text-xs font-medium tracking-wider text-slate-500 uppercase">
-                      Add Layout Preset
-                    </div>
-                    <div className="space-y-1">
-                      {layoutPresetOptions.map((preset) => (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          className="group flex w-full flex-col rounded-lg p-3 text-left transition-colors hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none"
-                          onClick={() => {
-                            addLayoutPreset(preset.id);
-                            setIsLayoutOptionsOpen(false);
-                          }}
-                        >
-                          <span className="text-sm font-medium text-slate-900 group-hover:text-[#0b63f6]">
-                            {preset.label}
-                          </span>
-                          <span className="mt-1 text-xs text-slate-500">
-                            {preset.description}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {usesSimpleBlockStack && primarySection && primaryColumn ? (
-              <SimpleBlockStackEditor
-                sectionId={primarySection.id}
-                column={primaryColumn}
-                sensors={sensors}
-                mediaAssets={mediaAssets}
-                blockOrdinalById={blockOrdinalById}
-                onBlockDragEnd={(event) =>
-                  handleBlockDragEnd(primarySection.id, primaryColumn.id, event)
-                }
-                onAddBlock={(type, variant) =>
-                  addBlock(primarySection.id, primaryColumn.id, type, variant)
-                }
-                onBlockChange={(blockId, next) =>
-                  replaceBlock(
-                    primarySection.id,
-                    primaryColumn.id,
-                    blockId,
-                    next,
-                  )
-                }
-                onBlockMove={(blockId, direction) =>
-                  moveBlock(
-                    primarySection.id,
-                    primaryColumn.id,
-                    blockId,
-                    direction,
-                  )
-                }
-                onBlockRemove={(blockId) =>
-                  removeBlock(primarySection.id, primaryColumn.id, blockId)
-                }
-              />
-            ) : (
-              <DndContext
-                id="seo-page-sections"
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleSectionDragEnd}
-              >
-                <SortableContext
-                  items={content.sections.map((section) => section.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-12">
-                    {content.sections.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50">
-                        <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-slate-400"
-                          >
-                            <rect width="18" height="18" x="3" y="3" rx="2" />
-                            <path d="M3 9h18" />
-                            <path d="M9 21V9" />
-                          </svg>
-                        </div>
-                        <h3 className="text-sm font-semibold text-slate-900">
-                          No content blocks
-                        </h3>
-                        <p className="mt-1 max-w-sm text-sm text-slate-500">
-                          Get started by adding a layout preset or a new content
-                          block to build your page.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => setIsLayoutOptionsOpen(true)}
-                          className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-300 ring-inset hover:bg-slate-50"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M5 12h14" />
-                            <path d="M12 5v14" />
-                          </svg>
-                          Add first block
-                        </button>
-                      </div>
-                    ) : (
-                      content.sections.map((section, index) => (
-                        <SortableSectionEditor
-                          key={section.id}
-                          section={section}
-                          sectionIndex={index}
-                          sectionCount={content.sections.length}
-                          sensors={sensors}
-                          mediaAssets={mediaAssets}
-                          blockOrdinalById={blockOrdinalById}
-                          onSectionMove={(direction) =>
-                            moveSection(section.id, direction)
-                          }
-                          onSectionRemove={() => removeSection(section.id)}
-                          onColumnDragEnd={handleColumnDragEnd}
-                          onBlockDragEnd={handleBlockDragEnd}
-                          onAddColumn={() => addColumn(section.id)}
-                          onColumnMove={(columnId, direction) =>
-                            moveColumn(section.id, columnId, direction)
-                          }
-                          onColumnRemove={(columnId) =>
-                            removeColumn(section.id, columnId)
-                          }
-                          onAddBlock={(columnId, type, variant) =>
-                            addBlock(section.id, columnId, type, variant)
-                          }
-                          onBlockChange={(columnId, blockId, next) =>
-                            replaceBlock(section.id, columnId, blockId, next)
-                          }
-                          onBlockMove={(columnId, blockId, direction) =>
-                            moveBlock(section.id, columnId, blockId, direction)
-                          }
-                          onBlockRemove={(columnId, blockId) =>
-                            removeBlock(section.id, columnId, blockId)
-                          }
-                        />
-                      ))
-                    )}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            )}
-          </main>
-        </article>
-      </div>
-
-      {isSeoPanelOpen && (
-        <button
-          type="button"
-          aria-label="Close SEO settings"
-          className="fixed inset-0 z-40 bg-slate-950/20"
-          onClick={() => setIsSeoPanelOpen(false)}
+      {showCreationChoiceModal && (
+        <NewPageChoiceModal
+          onCreateFromScratch={() => setHasSelectedNewPageMode(true)}
+          onClose={() => setHasSelectedNewPageMode(true)}
         />
       )}
-      <aside
-        inert={!isSeoPanelOpen ? true : undefined}
-        className={`fixed top-0 right-0 z-50 h-dvh w-full max-w-2xl bg-white shadow-2xl ring-1 ring-slate-900/5 transition-transform duration-300 ease-in-out ${
-          isSeoPanelOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-        aria-hidden={!isSeoPanelOpen}
-      >
-        <div className="flex h-full flex-col">
-          <div
-            className={`flex items-center justify-between gap-3 px-6 py-5 text-white ${
-              seoReadiness.status === "blocked"
-                ? "bg-red-600"
-                : seoReadiness.status === "needs_work"
-                  ? "bg-amber-600"
-                  : seoReadiness.status === "opportunities"
-                    ? "bg-sky-600"
-                    : "bg-emerald-600"
-            }`}
+
+      <div className="relative min-h-[calc(100dvh-4rem)] overflow-hidden border border-slate-200 bg-slate-100 lg:min-h-screen">
+        {!isDetailsDrawerOpen && (
+          <button
+            type="button"
+            aria-label="Open page details"
+            title="Open page details"
+            className="fixed top-1/2 right-4 z-40 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+            onClick={() => setIsDetailsDrawerOpen(true)}
           >
-            <h2 className="flex items-center gap-2 text-lg font-semibold">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
-                <path d="M22 12A10 10 0 0 0 12 2v10z" />
-              </svg>
-              SEO Command Centre
-            </h2>
-            <button
-              type="button"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/20 hover:text-white"
-              onClick={() => setIsSeoPanelOpen(false)}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </svg>
-              <span className="sr-only">Close</span>
-            </button>
-          </div>
-          <div className="flex-1 space-y-8 overflow-y-auto px-6 py-6">
-            <SeoReadinessPanel
-              summary={seoReadiness}
-              aiProposalResult={aiProposalResult}
-              aiInsertResult={aiInsertResult}
-              aiProposals={aiProposals}
-              canRunAiAgent={Boolean(page?.id)}
-              isAiGenerating={isAiGenerating}
-              isAiInserting={isAiInserting}
-              internalLinkSuggestions={internalLinkSuggestions}
-              linkSuggestionMessage={linkSuggestionMessage}
-              onInsertAiProposalBlocks={insertAiProposalBlocks}
-              onApplyInternalLinkSuggestion={applyLinkSuggestion}
-              onAddSuggestedBlock={addSuggestedBlock}
-              onRunAiAgent={runAiSeoAgent}
-              onOpenSettings={() => {
-                document.getElementById("seo-target-keyword-field")?.focus();
-              }}
-              mediaAssetCount={mediaAssets.length}
-            />
+            <ChevronIcon direction="left" />
+          </button>
+        )}
 
-            <div className="space-y-5 border-t border-slate-100 pt-8">
-              <h3 className="text-base font-semibold text-slate-900">
-                Page Meta Settings
-              </h3>
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-900">
-                  Target keyword
-                </span>
-                <input
-                  name="targetKeyword"
-                  value={targetKeyword}
-                  id="seo-target-keyword-field"
-                  onChange={(event) => setTargetKeyword(event.target.value)}
-                  className={compactInputClass}
-                  placeholder="e.g. vending machine business"
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-900">
-                  SEO title
-                </span>
-                <input
-                  name="seoTitle"
-                  value={seoTitle}
-                  id="seo-title-field"
-                  onChange={(event) => setSeoTitle(event.target.value)}
-                  className={compactInputClass}
-                  placeholder="Leave blank to use page headline"
-                />
-              </label>
-              <div className="block">
-                <span className="text-sm font-semibold text-slate-900">
-                  Meta description
-                </span>
-                <div className="mt-2 flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-600">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="mt-0.5 shrink-0 text-slate-400"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 16v-4" />
-                    <path d="M12 8h.01" />
-                  </svg>
-                  Edit this directly in the page header area.
+        <div
+          className={`grid min-h-[calc(100dvh-4rem)] transition-[grid-template-columns] duration-200 lg:min-h-screen ${
+            isDetailsDrawerOpen
+              ? "xl:grid-cols-[minmax(0,1fr)_400px]"
+              : "xl:grid-cols-[minmax(0,1fr)]"
+          }`}
+        >
+          <div className="min-w-0 overflow-y-auto bg-slate-100">
+            {(state.status !== "idle" ||
+              savedFromRedirect ||
+              redirectError ||
+              autosave) && (
+              <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 px-5 py-3 text-sm shadow-sm backdrop-blur">
+                <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-3">
+                  {(state.status !== "idle" ||
+                    savedFromRedirect ||
+                    redirectError) && (
+                    <p
+                      className={
+                        state.status === "error" || redirectError
+                          ? "text-red-700"
+                          : "text-emerald-700"
+                      }
+                    >
+                      {saveMessage}
+                    </p>
+                  )}
+                  {autosave && (
+                    <p
+                      className={
+                        autosave.status === "error"
+                          ? "text-red-700"
+                          : "text-slate-500"
+                      }
+                    >
+                      {autosave.status === "saved"
+                        ? `Autosaved ${formatTime(autosave.savedAt)}`
+                        : autosave.message}
+                    </p>
+                  )}
                 </div>
               </div>
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-900">
-                  Canonical URL
-                </span>
-                <input
-                  name="canonicalUrl"
-                  value={canonicalUrl}
-                  id="seo-canonical-url-field"
-                  onChange={(event) => setCanonicalUrl(event.target.value)}
-                  className={compactInputClass}
-                  placeholder="https://..."
-                />
-              </label>
+            )}
 
-              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
-                  <input
-                    name="noindex"
-                    type="checkbox"
-                    checked={noindex}
-                    onChange={(event) => {
-                      setNoindex(event.target.checked);
-                      if (event.target.checked) setSitemapEnabled(false);
-                    }}
-                    className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
-                  />
-                  <div>
-                    <span className="block text-slate-900">
-                      Noindex this page
-                    </span>
-                    <span className="mt-0.5 block text-xs font-normal text-slate-500">
-                      Hide from search engines
-                    </span>
+            <div className="mx-auto max-w-[1500px] bg-[#f5fbff] shadow-sm">
+              <EditorPublicHeader />
+              <article className="bg-[#f5fbff]">
+                <header className="border-b-2 border-[#111111] bg-[#f5fbff]">
+                  <div className="mx-auto max-w-5xl px-5 py-16 lg:px-10">
+                    {targetKeyword && (
+                      <p className="inline-flex rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
+                        {targetKeyword}
+                      </p>
+                    )}
+                    <label className="mt-8 block">
+                      <span className="sr-only">Title</span>
+                      <textarea
+                        name="title"
+                        value={title}
+                        onChange={(event) => setTitle(event.target.value)}
+                        required
+                        rows={2}
+                        placeholder="Page headline"
+                        id="page-title-field"
+                        className={headlineInputClass}
+                      />
+                    </label>
+                    <label className="mt-7 block max-w-3xl">
+                      <span className="sr-only">Meta description</span>
+                      <textarea
+                        name="metaDescription"
+                        value={metaDescription}
+                        onChange={(event) =>
+                          setMetaDescription(event.target.value)
+                        }
+                        rows={3}
+                        placeholder="Opening summary shown at the top of the page."
+                        id="page-meta-description-field"
+                        className={pageLeadInputClass}
+                      />
+                    </label>
                   </div>
-                </label>
-                <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
-                  <input
-                    name="sitemapEnabled"
-                    type="checkbox"
-                    checked={sitemapEnabled}
-                    disabled={noindex}
-                    onChange={(event) =>
-                      setSitemapEnabled(event.target.checked)
-                    }
-                    className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6] disabled:opacity-50"
-                  />
-                  <div className={noindex ? "opacity-50" : ""}>
-                    <span className="block text-slate-900">
-                      Include in sitemap
-                    </span>
-                    <span className="mt-0.5 block text-xs font-normal text-slate-500">
-                      Help search engines find this page
-                    </span>
-                  </div>
-                </label>
-              </div>
+                </header>
 
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
-                <div className="mb-4 flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-[#0b63f6]"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                  </svg>
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    Search Preview
-                  </h3>
-                </div>
-                <div className="space-y-1">
-                  <p className="cursor-pointer truncate text-lg font-medium text-[#1a0dab] hover:underline">
-                    {seoTitle || title || "Your Page Title Here"}
-                  </p>
-                  <p className="truncate text-sm text-[#006621]">
-                    www.vendingpreneurs.com/resources/
-                    {visibleSlug || "your-slug"}
-                  </p>
-                  <p className="line-clamp-2 text-sm text-[#545454]">
-                    {metaDescription ||
-                      "Your meta description will appear here. Make it compelling to encourage clicks from search results."}
-                  </p>
-                </div>
-              </div>
+                <main className="group/page-body relative mx-auto max-w-5xl px-5 py-14 lg:px-10">
+                  <div className="pointer-events-none absolute top-4 right-5 z-30 flex justify-end opacity-0 transition-opacity group-hover/page-body:opacity-100 focus-within:opacity-100 lg:right-10">
+                    <div
+                      className="pointer-events-auto relative"
+                      ref={layoutOptionsRef}
+                    >
+                      <button
+                        type="button"
+                        className={`${smallButtonClass} inline-flex items-center gap-2`}
+                        onClick={() =>
+                          setIsLayoutOptionsOpen(!isLayoutOptionsOpen)
+                        }
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <rect width="18" height="18" x="3" y="3" rx="2" />
+                          <path d="M3 9h18" />
+                          <path d="M9 21V9" />
+                        </svg>
+                        Add section
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={`transition-transform ${isLayoutOptionsOpen ? "rotate-180" : ""}`}
+                        >
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
+                      </button>
+                      {isLayoutOptionsOpen && (
+                        <div className="absolute right-0 z-40 mt-2 w-80 origin-top-right rounded-xl border border-slate-200 bg-white p-2 shadow-xl ring-1 ring-black/5 focus:outline-none">
+                          <div className="px-3 py-2 text-xs font-medium tracking-wider text-slate-500 uppercase">
+                            Add page section
+                          </div>
+                          <div className="space-y-1">
+                            {layoutPresetOptions.map((preset) => (
+                              <button
+                                key={preset.id}
+                                type="button"
+                                className="group flex w-full flex-col rounded-lg p-3 text-left transition-colors hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none"
+                                onClick={() => {
+                                  addLayoutPreset(preset.id);
+                                  setIsLayoutOptionsOpen(false);
+                                }}
+                              >
+                                <span className="text-sm font-medium text-slate-900 group-hover:text-[#0b63f6]">
+                                  {preset.label}
+                                </span>
+                                <span className="mt-1 text-xs text-slate-500">
+                                  {preset.description}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {usesSimpleBlockStack && primarySection && primaryColumn ? (
+                    <SimpleBlockStackEditor
+                      sectionId={primarySection.id}
+                      column={primaryColumn}
+                      sensors={sensors}
+                      mediaAssets={mediaAssets}
+                      blockOrdinalById={blockOrdinalById}
+                      onBlockDragEnd={(event) =>
+                        handleBlockDragEnd(
+                          primarySection.id,
+                          primaryColumn.id,
+                          event,
+                        )
+                      }
+                      onAddBlock={(type, variant) =>
+                        addBlock(
+                          primarySection.id,
+                          primaryColumn.id,
+                          type,
+                          variant,
+                        )
+                      }
+                      onBlockChange={(blockId, next) =>
+                        replaceBlock(
+                          primarySection.id,
+                          primaryColumn.id,
+                          blockId,
+                          next,
+                        )
+                      }
+                      onBlockMove={(blockId, direction) =>
+                        moveBlock(
+                          primarySection.id,
+                          primaryColumn.id,
+                          blockId,
+                          direction,
+                        )
+                      }
+                      onBlockRemove={(blockId) =>
+                        removeBlock(
+                          primarySection.id,
+                          primaryColumn.id,
+                          blockId,
+                        )
+                      }
+                    />
+                  ) : (
+                    <DndContext
+                      id="seo-page-sections"
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleSectionDragEnd}
+                    >
+                      <SortableContext
+                        items={content.sections.map((section) => section.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-14">
+                          {content.sections.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50">
+                              <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="24"
+                                  height="24"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="text-slate-400"
+                                >
+                                  <rect
+                                    width="18"
+                                    height="18"
+                                    x="3"
+                                    y="3"
+                                    rx="2"
+                                  />
+                                  <path d="M3 9h18" />
+                                  <path d="M9 21V9" />
+                                </svg>
+                              </div>
+                              <h3 className="text-sm font-semibold text-slate-900">
+                                Blank page body
+                              </h3>
+                              <p className="mt-1 max-w-sm text-sm text-slate-500">
+                                Add a section to start shaping the page.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => setIsLayoutOptionsOpen(true)}
+                                className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-300 ring-inset hover:bg-slate-50"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M5 12h14" />
+                                  <path d="M12 5v14" />
+                                </svg>
+                                Add first section
+                              </button>
+                            </div>
+                          ) : (
+                            content.sections.map((section, index) => (
+                              <SortableSectionEditor
+                                key={section.id}
+                                section={section}
+                                sectionIndex={index}
+                                sectionCount={content.sections.length}
+                                sensors={sensors}
+                                mediaAssets={mediaAssets}
+                                blockOrdinalById={blockOrdinalById}
+                                onSectionMove={(direction) =>
+                                  moveSection(section.id, direction)
+                                }
+                                onSectionRemove={() =>
+                                  removeSection(section.id)
+                                }
+                                onColumnDragEnd={handleColumnDragEnd}
+                                onBlockDragEnd={handleBlockDragEnd}
+                                onAddColumn={() => addColumn(section.id)}
+                                onColumnMove={(columnId, direction) =>
+                                  moveColumn(section.id, columnId, direction)
+                                }
+                                onColumnRemove={(columnId) =>
+                                  removeColumn(section.id, columnId)
+                                }
+                                onAddBlock={(columnId, type, variant) =>
+                                  addBlock(section.id, columnId, type, variant)
+                                }
+                                onBlockChange={(columnId, blockId, next) =>
+                                  replaceBlock(
+                                    section.id,
+                                    columnId,
+                                    blockId,
+                                    next,
+                                  )
+                                }
+                                onBlockMove={(columnId, blockId, direction) =>
+                                  moveBlock(
+                                    section.id,
+                                    columnId,
+                                    blockId,
+                                    direction,
+                                  )
+                                }
+                                onBlockRemove={(columnId, blockId) =>
+                                  removeBlock(section.id, columnId, blockId)
+                                }
+                              />
+                            ))
+                          )}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  )}
+                </main>
+              </article>
+              <EditorPublicFooter />
             </div>
           </div>
+
+          {isDetailsDrawerOpen && (
+            <aside className="sticky top-0 flex h-[calc(100dvh-12rem)] min-h-[720px] flex-col border-l border-slate-200 bg-white shadow-xl">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-950">
+                    Page details
+                  </h2>
+                  <p className="mt-1 text-xs font-medium text-slate-500">
+                    {page?.status ?? "draft"} · SEO {seoReadiness.label}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Collapse page details"
+                  title="Collapse page details"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+                  onClick={() => setIsDetailsDrawerOpen(false)}
+                >
+                  <ChevronIcon direction="right" />
+                </button>
+              </div>
+
+              <div className="flex-1 space-y-7 overflow-y-auto px-5 py-5">
+                <Link
+                  href="/admin/pages"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950"
+                >
+                  <ChevronIcon direction="left" />
+                  Back to pages
+                </Link>
+
+                <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                      Status
+                    </span>
+                    <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            page?.status === "published"
+                              ? "bg-emerald-500"
+                              : "bg-amber-500"
+                          }`}
+                        />
+                        {page?.status ?? "draft"}
+                      </span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className={`${smallButtonClass} ${readinessButtonClass(
+                      seoReadiness.status,
+                    )} justify-center`}
+                    onClick={() =>
+                      document
+                        .getElementById("seo-target-keyword-field")
+                        ?.focus()
+                    }
+                  >
+                    SEO: {seoReadiness.label}
+                  </button>
+                </div>
+
+                <div className="space-y-5">
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-900">
+                      Slug
+                    </span>
+                    <div className="mt-1.5 flex items-center rounded-lg border border-slate-200 bg-white shadow-sm transition focus-within:border-[#0b63f6] focus-within:ring-4 focus-within:ring-[#0b63f6]/10">
+                      <span className="border-r border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-400">
+                        /resources/
+                      </span>
+                      <input
+                        name="slug"
+                        value={visibleSlug}
+                        onChange={(event) => {
+                          setSlugTouched(true);
+                          setSlug(slugify(event.target.value));
+                        }}
+                        required
+                        aria-label="Slug"
+                        className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-300"
+                        placeholder="page-slug"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-900">
+                      Target keyword
+                    </span>
+                    <input
+                      name="targetKeyword"
+                      value={targetKeyword}
+                      id="seo-target-keyword-field"
+                      onChange={(event) => setTargetKeyword(event.target.value)}
+                      className={compactInputClass}
+                      placeholder="e.g. vending machine business"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-900">
+                      SEO title
+                    </span>
+                    <input
+                      name="seoTitle"
+                      value={seoTitle}
+                      id="seo-title-field"
+                      onChange={(event) => setSeoTitle(event.target.value)}
+                      className={compactInputClass}
+                      placeholder="Leave blank to use page headline"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-900">
+                      Canonical URL
+                    </span>
+                    <input
+                      name="canonicalUrl"
+                      value={canonicalUrl}
+                      id="seo-canonical-url-field"
+                      onChange={(event) => setCanonicalUrl(event.target.value)}
+                      className={compactInputClass}
+                      placeholder="https://..."
+                    />
+                  </label>
+
+                  <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
+                      <input
+                        name="noindex"
+                        type="checkbox"
+                        checked={noindex}
+                        onChange={(event) => {
+                          setNoindex(event.target.checked);
+                          if (event.target.checked) setSitemapEnabled(false);
+                        }}
+                        className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
+                      />
+                      <div>
+                        <span className="block text-slate-900">
+                          Noindex this page
+                        </span>
+                        <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                          Hide from search engines
+                        </span>
+                      </div>
+                    </label>
+                    <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
+                      <input
+                        name="sitemapEnabled"
+                        type="checkbox"
+                        checked={sitemapEnabled}
+                        disabled={noindex}
+                        onChange={(event) =>
+                          setSitemapEnabled(event.target.checked)
+                        }
+                        className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6] disabled:opacity-50"
+                      />
+                      <div className={noindex ? "opacity-50" : ""}>
+                        <span className="block text-slate-900">
+                          Include in sitemap
+                        </span>
+                        <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                          Help search engines find this page
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
+                    <div className="mb-4 flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-[#0b63f6]"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                      </svg>
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        Search Preview
+                      </h3>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="cursor-pointer truncate text-lg font-medium text-[#1a0dab] hover:underline">
+                        {seoTitle || title || "Your Page Title Here"}
+                      </p>
+                      <p className="truncate text-sm text-[#006621]">
+                        www.vendingpreneurs.com/resources/
+                        {visibleSlug || "your-slug"}
+                      </p>
+                      <p className="line-clamp-2 text-sm text-[#545454]">
+                        {metaDescription ||
+                          "Your meta description will appear here. Make it compelling to encourage clicks from search results."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <SeoReadinessPanel
+                  summary={seoReadiness}
+                  aiProposalResult={aiProposalResult}
+                  aiInsertResult={aiInsertResult}
+                  aiProposals={aiProposals}
+                  canRunAiAgent={Boolean(page?.id)}
+                  isAiGenerating={isAiGenerating}
+                  isAiInserting={isAiInserting}
+                  internalLinkSuggestions={internalLinkSuggestions}
+                  linkSuggestionMessage={linkSuggestionMessage}
+                  onInsertAiProposalBlocks={insertAiProposalBlocks}
+                  onApplyInternalLinkSuggestion={applyLinkSuggestion}
+                  onAddSuggestedBlock={addSuggestedBlock}
+                  onRunAiAgent={runAiSeoAgent}
+                  onOpenSettings={() => {
+                    document
+                      .getElementById("seo-target-keyword-field")
+                      ?.focus();
+                  }}
+                  mediaAssetCount={mediaAssets.length}
+                />
+              </div>
+
+              <div className="grid gap-3 border-t border-slate-200 bg-white px-5 py-4">
+                <button
+                  className={secondaryButtonClass}
+                  name="intent"
+                  value="save"
+                >
+                  Save draft
+                </button>
+                <button
+                  className={primaryButtonClass}
+                  name="intent"
+                  value="publish"
+                  disabled={publishDisabled}
+                  title={
+                    seoReadiness.blockers.length > 0
+                      ? "Resolve SEO blockers before publishing."
+                      : undefined
+                  }
+                >
+                  Publish
+                </button>
+              </div>
+            </aside>
+          )}
         </div>
-      </aside>
+      </div>
       <input type="hidden" name="seoTitle" value={seoTitle} />
       <input type="hidden" name="targetKeyword" value={targetKeyword} />
       <input type="hidden" name="canonicalUrl" value={canonicalUrl} />
@@ -1053,17 +1006,6 @@ export function SeoPageEditorForm({
         }),
       );
     });
-  }
-
-  function applyStarterTemplate(template: StarterTemplate) {
-    const starter = starterTemplateFor(template);
-    setTitle(starter.title);
-    setSlug(slugify(starter.title));
-    setSlugTouched(true);
-    setTargetKeyword(starter.targetKeyword);
-    setSeoTitle(starter.seoTitle);
-    setMetaDescription(starter.metaDescription);
-    setContent(starter.content);
   }
 
   function replaceBlock(
@@ -1245,7 +1187,7 @@ export function SeoPageEditorForm({
       setAiInsertResult({
         status: "error",
         proposalId,
-        message: "Save the draft before inserting AI blocks.",
+        message: "Save the draft before inserting AI content.",
       });
       return;
     }
@@ -1268,12 +1210,269 @@ export function SeoPageEditorForm({
       setAiInsertResult({
         status: "error",
         proposalId,
-        message: "Could not insert AI proposal blocks.",
+        message: "Could not insert AI proposal content.",
       });
     } finally {
       setIsAiInserting(false);
     }
   }
+}
+
+function NewPageChoiceModal({
+  onCreateFromScratch,
+  onClose,
+}: {
+  onCreateFromScratch: () => void;
+  onClose: () => void;
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    const previousFocus = document.activeElement as HTMLElement | null;
+
+    function getFocusableElements() {
+      if (!dialog) return [];
+      return Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter(
+        (element) =>
+          !element.hasAttribute("disabled") &&
+          element.getAttribute("aria-hidden") !== "true",
+      );
+    }
+
+    getFocusableElements()[0]?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusableElements = getFocusableElements();
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement?.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement?.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4 backdrop-blur-sm">
+      <div
+        ref={dialogRef}
+        className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl ring-1 ring-black/5"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="new-page-choice-title"
+      >
+        <div className="mb-6 flex items-start justify-between gap-5">
+          <div>
+            <p className="text-xs font-semibold tracking-wider text-[#0b63f6] uppercase">
+              SEO Page Builder
+            </p>
+            <h2
+              id="new-page-choice-title"
+              className="mt-2 text-2xl font-semibold tracking-tight text-slate-950"
+            >
+              Create page
+            </h2>
+          </div>
+          <button
+            type="button"
+            aria-label="Close create page choices"
+            title="Close"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+          >
+            <svg
+              aria-hidden="true"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18 18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            className="rounded-xl border-2 border-[#0b63f6] bg-[#f4f8ff] p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+            onClick={onCreateFromScratch}
+          >
+            <span className="block text-lg font-semibold text-slate-950">
+              From scratch
+            </span>
+            <span className="mt-2 block text-sm leading-6 text-slate-600">
+              Start with a blank editable page.
+            </span>
+          </button>
+          <button
+            type="button"
+            className="cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 p-5 text-left opacity-70"
+            disabled
+          >
+            <span className="flex items-center justify-between gap-3">
+              <span className="text-lg font-semibold text-slate-950">
+                From template
+              </span>
+              <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                Coming soon
+              </span>
+            </span>
+            <span className="mt-2 block text-sm leading-6 text-slate-500">
+              Use approved page patterns.
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditorPublicHeader() {
+  return (
+    <header className="sticky inset-x-0 top-0 z-20 border-b-2 border-[#111111] bg-[#f5fbff]/95 backdrop-blur-md">
+      <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-8 px-5 py-4 lg:px-10">
+        <Link
+          href="/"
+          aria-label="Vendingpreneurs home"
+          onClick={(event) => event.preventDefault()}
+        >
+          <Wordmark height={48} />
+        </Link>
+        <nav
+          aria-label="Primary"
+          className="hidden items-center gap-x-10 lg:flex"
+        >
+          {primaryNav.map((item) => (
+            <EditorPublicNavLink key={item.label} item={item} />
+          ))}
+        </nav>
+        <Link
+          href="/apply"
+          onClick={(event) => event.preventDefault()}
+          className="hidden min-h-12 items-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] lg:inline-flex"
+        >
+          Step inside
+        </Link>
+      </div>
+    </header>
+  );
+}
+
+function EditorPublicFooter() {
+  return (
+    <footer className="border-t-2 border-[#111111] bg-[#f5fbff] px-5 py-14 lg:px-10">
+      <div className="mx-auto grid max-w-[1500px] gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-20">
+        <Wordmark />
+        <nav
+          aria-label="Footer"
+          className="grid grid-cols-2 gap-8 sm:grid-cols-4"
+        >
+          {footerColumns.map((col, columnIndex) => (
+            <ul key={columnIndex} className="space-y-3">
+              {col.items.map((item) => (
+                <li key={item.label}>
+                  <EditorPublicNavLink
+                    item={item}
+                    highlighted={columnIndex === footerColumns.length - 1}
+                  />
+                </li>
+              ))}
+            </ul>
+          ))}
+        </nav>
+      </div>
+    </footer>
+  );
+}
+
+function EditorPublicNavLink({
+  item,
+  highlighted = false,
+}: {
+  item:
+    | (typeof primaryNav)[number]
+    | (typeof footerColumns)[number]["items"][number];
+  highlighted?: boolean;
+}) {
+  const className = `text-sm font-black uppercase transition hover:text-[#55b8e8] ${
+    highlighted ? "text-[#2d9fd6]" : "text-[#111111]"
+  }`;
+
+  if (item.external) {
+    return (
+      <a
+        href={item.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+        onClick={(event) => event.preventDefault()}
+      >
+        {item.label}
+      </a>
+    );
+  }
+
+  return (
+    <Link
+      href={item.href}
+      className={className}
+      onClick={(event) => event.preventDefault()}
+    >
+      {item.label}
+    </Link>
+  );
+}
+
+function ChevronIcon({ direction }: { direction: "left" | "right" }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      {direction === "left" ? (
+        <path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" />
+      ) : (
+        <path strokeLinecap="round" strokeLinejoin="round" d="m9 18 6-6-6-6" />
+      )}
+    </svg>
+  );
 }
 
 function SeoReadinessPanel({
@@ -1471,7 +1670,7 @@ function SeoReadinessPanel({
               </span>
               <span className="mt-1.5 block text-xs font-medium text-slate-500">
                 {mediaAssetCount > 0
-                  ? `${mediaAssetCount} assets available for image blocks`
+                  ? `${mediaAssetCount} assets available for page images`
                   : "No assets yet. Add images, alt text, and rights notes."}
               </span>
             </Link>
@@ -1524,7 +1723,7 @@ function SeoReadinessPanel({
                 SEO agent
               </h3>
               <p className="mt-1 text-xs text-violet-700">
-                Source-backed drafts stay separate until selected blocks are
+                Source-backed drafts stay separate until selected content is
                 inserted.
               </p>
             </div>
@@ -1633,38 +1832,6 @@ function SeoReadinessPanel({
   );
 }
 
-const starterTemplateOptions: Array<{
-  id: StarterTemplate;
-  label: string;
-  description: string;
-  blocks: string;
-}> = [
-  {
-    id: "service",
-    label: "Service page",
-    description: "A general offer page with proof, FAQ, and conversion CTA.",
-    blocks: "Hero · Text · FAQ · CTA",
-  },
-  {
-    id: "location",
-    label: "Location page",
-    description: "A local-market page with lead capture and service details.",
-    blocks: "Hero · Text · Cards · Form",
-  },
-  {
-    id: "comparison",
-    label: "Comparison page",
-    description: "A decision page for buyers comparing options.",
-    blocks: "Hero · Cards · Proof · CTA",
-  },
-  {
-    id: "faq",
-    label: "FAQ page",
-    description: "A support-heavy page for objections and search questions.",
-    blocks: "Text · FAQ · CTA",
-  },
-];
-
 const layoutPresetOptions: Array<{
   id: LayoutPreset;
   label: string;
@@ -1672,13 +1839,13 @@ const layoutPresetOptions: Array<{
 }> = [
   {
     id: "full_width_hero",
-    label: "Full-width hero",
-    description: "Add a single hero block across the page width.",
+    label: "Opening hero",
+    description: "Headline, intro copy, and one primary action.",
   },
   {
     id: "full_width_text",
-    label: "Full-width text",
-    description: "Add a single rich-text block for long-form copy.",
+    label: "Text section",
+    description: "Long-form copy across the page width.",
   },
   {
     id: "text_left_image_right",
@@ -1693,87 +1860,9 @@ const layoutPresetOptions: Array<{
   {
     id: "text_left_cta_right",
     label: "Text left, CTA right",
-    description: "Pair explanatory copy with a focused conversion block.",
+    description: "Pair explanatory copy with a focused conversion action.",
   },
 ];
-
-function StarterTemplatePanel({
-  onUseTemplate,
-}: {
-  onUseTemplate: (template: StarterTemplate) => void;
-}) {
-  return (
-    <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-black/5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="bg-brand-50 text-brand-700 inline-flex items-center gap-2 rounded-full px-2.5 py-0.5 text-xs font-semibold">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
-              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-              <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" />
-              <path d="M2 7h20" />
-              <path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7" />
-            </svg>
-            Starter Templates
-          </div>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
-            Pick a page shape to start
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            You can always edit the blocks later.
-          </p>
-        </div>
-      </div>
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {starterTemplateOptions.map((template) => (
-          <button
-            key={template.id}
-            type="button"
-            className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 text-left transition-all hover:border-[#0b63f6]/50 hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-            onClick={() => onUseTemplate(template.id)}
-          >
-            <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-50 text-slate-500 transition-colors group-hover:bg-[#0b63f6]/10 group-hover:text-[#0b63f6]">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect width="18" height="18" x="3" y="3" rx="2" />
-                <path d="M3 9h18" />
-                <path d="M9 21V9" />
-              </svg>
-            </div>
-            <span className="text-base font-semibold text-slate-900 transition-colors group-hover:text-[#0b63f6]">
-              {template.label}
-            </span>
-            <span className="mt-1 flex-1 text-sm text-slate-500">
-              {template.description}
-            </span>
-            <span className="mt-4 block rounded-md bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
-              {template.blocks}
-            </span>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 function ReadinessFindingAction({
   finding,
@@ -1898,20 +1987,20 @@ function suggestedBlockForFinding(
     finding.code === "empty_image_source" ||
     finding.code === "empty_image_alt_text"
   ) {
-    return { type: "image", label: "Add image block" };
+    return { type: "image", label: "Add image" };
   }
   if (
     finding.code === "missing_faq_opportunity" ||
     finding.code === "empty_faq_block"
   ) {
-    return { type: "faq", label: "Add FAQ block" };
+    return { type: "faq", label: "Add FAQ section" };
   }
   if (
     finding.code === "missing_conversion_block" ||
     finding.code === "empty_cta_label" ||
     finding.code === "empty_cta_link"
   ) {
-    return { type: "cta", label: "Add CTA block" };
+    return { type: "cta", label: "Add CTA" };
   }
   if (
     finding.code === "missing_supporting_subsections" ||
@@ -1959,11 +2048,11 @@ function friendlyFindingLocation(finding: SeoReadinessFinding) {
     const blockNumber = Number(blockIndex) + 1;
     const readableProp = friendlyFieldName(childField ?? propName);
     if (childIndex !== undefined && childField) {
-      return `Block ${blockNumber} · ${friendlyFieldName(propName)} ${
+      return `Content ${blockNumber} · ${friendlyFieldName(propName)} ${
         Number(childIndex) + 1
       } ${readableProp}`;
     }
-    return `Block ${blockNumber} · ${readableProp}`;
+    return `Content ${blockNumber} · ${readableProp}`;
   }
   return friendlyFieldName(finding.path);
 }
@@ -2070,7 +2159,7 @@ function AiProposalReviewCard({
           </div>
           <p className="mt-1 text-xs leading-5 text-slate-500">
             {isProposed
-              ? "Review selected blocks before inserting them into the page."
+              ? "Review selected content before inserting it into the page."
               : "Already accepted. Check the editor below for duplicate or outdated sections before publishing."}
           </p>
         </div>
@@ -2081,7 +2170,7 @@ function AiProposalReviewCard({
             disabled={isInserting || selectedBlockIds.length === 0}
             onClick={() => onInsertBlocks(proposal.id, selectedBlockIds)}
           >
-            {isInserting ? "Inserting..." : "Insert selected blocks"}
+            {isInserting ? "Inserting..." : "Insert selected content"}
           </button>
         )}
       </div>
@@ -2091,7 +2180,7 @@ function AiProposalReviewCard({
           <p className="text-lg font-semibold text-slate-950">
             {proposal.proposal.blocks.length}
           </p>
-          <p className="text-[11px] font-medium text-slate-500">Blocks</p>
+          <p className="text-[11px] font-medium text-slate-500">Items</p>
         </div>
         <div className="rounded-md bg-violet-50 px-2 py-2">
           <p className="text-lg font-semibold text-slate-950">
@@ -2128,7 +2217,7 @@ function AiProposalReviewCard({
 
       <details className="mt-3 rounded-md border border-violet-100 bg-violet-50/40">
         <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
-          Review block changes · {selectableCount} safe to insert
+          Review content changes · {selectableCount} safe to insert
         </summary>
         <div className="grid gap-2 border-t border-violet-100 p-2">
           {proposal.proposal.blocks.map((entry) => {
@@ -2231,7 +2320,7 @@ function aiBlockReviewTitle(block: PageBlock) {
   if (block.type === "cta") return block.props.label;
   if (block.type === "lead_form") return block.props.heading;
   if (block.type === "proof") return block.props.body;
-  if (block.type === "image") return block.props.altText || "Image block";
+  if (block.type === "image") return block.props.altText || "Image";
   return block.props.title;
 }
 
@@ -2314,13 +2403,16 @@ function SortableSectionEditor({
     <section
       ref={setNodeRef}
       style={style}
-      className={`relative rounded-2xl border-2 border-slate-200 bg-slate-50/50 p-6 transition-all ${
+      className={`group/section relative rounded-[12px] border border-transparent transition-all ${editorSectionClass(
+        section.background,
+        section.spacing,
+      )} ${
         isDragging
           ? "z-10 scale-[1.01] border-[#0b63f6] bg-white shadow-2xl"
           : "hover:border-slate-300"
       }`}
     >
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/60 pb-4">
+      <header className="absolute -top-5 right-3 left-3 z-20 flex flex-wrap items-center justify-between gap-3 rounded-full border border-slate-200 bg-white/95 px-3 py-2 opacity-0 shadow-sm ring-1 ring-black/5 backdrop-blur transition-opacity group-focus-within/section:opacity-100 group-hover/section:opacity-100">
         <div className="flex items-center gap-3">
           <DragHandle
             label={`Reorder section ${sectionIndex + 1}`}
@@ -2328,8 +2420,8 @@ function SortableSectionEditor({
             listeners={listeners}
           />
           <div className="flex items-center gap-3">
-            <h3 className="text-sm font-bold tracking-wider text-slate-500 uppercase">
-              Section {sectionIndex + 1}
+            <h3 className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              Page section {sectionIndex + 1}
             </h3>
             <span className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 ring-inset">
               {section.columns.length}{" "}
@@ -2382,7 +2474,7 @@ function SortableSectionEditor({
                 className={dangerButtonClass}
                 onClick={onSectionRemove}
               >
-                Remove section
+                Remove page section
               </button>
             </MoreActions>
           </div>
@@ -2424,8 +2516,7 @@ function SortableSectionEditor({
                   No columns
                 </h4>
                 <p className="mt-1 max-w-sm text-sm text-slate-500">
-                  Add a column to this section before you can add content
-                  blocks.
+                  Add a column before adding page content.
                 </p>
                 <button
                   type="button"
@@ -2520,7 +2611,7 @@ function SimpleBlockStackEditor({
         items={column.blocks.map((block) => block.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="space-y-6">
+        <div className="space-y-14">
           {column.blocks.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50">
               <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
@@ -2542,11 +2633,10 @@ function SimpleBlockStackEditor({
                 </svg>
               </div>
               <h3 className="text-sm font-semibold text-slate-900">
-                No content blocks
+                Blank page body
               </h3>
               <p className="mt-1 max-w-sm text-sm text-slate-500">
-                Get started by adding a layout preset or a new content block to
-                build your page.
+                Add the next piece of content for this page.
               </p>
               <div className="mt-6 w-full max-w-md text-left">
                 <BlockPicker onAddBlock={onAddBlock} />
@@ -2624,13 +2714,13 @@ function SortableColumnEditor({
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm ring-1 ring-black/5 transition-all ${
+      className={`group/column relative flex flex-col rounded-[12px] border border-dashed border-transparent bg-transparent transition-all ${
         isDragging
-          ? "z-20 scale-[1.02] border-[#0b63f6] shadow-xl"
-          : "hover:border-slate-300"
+          ? "z-20 scale-[1.02] border-[#0b63f6] bg-white shadow-xl"
+          : "hover:border-slate-300 hover:bg-white/50"
       }`}
     >
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/50 px-3 py-2">
+      <header className="absolute -top-5 right-2 left-2 z-20 flex flex-wrap items-center justify-between gap-2 rounded-full border border-slate-200 bg-white/95 px-3 py-2 opacity-0 shadow-sm ring-1 ring-black/5 transition-opacity group-focus-within/column:opacity-100 group-hover/column:opacity-100">
         <div className="flex items-center gap-2">
           <DragHandle
             label={`Reorder column ${columnIndex + 1}`}
@@ -2670,7 +2760,7 @@ function SortableColumnEditor({
         </div>
       </header>
 
-      <div className="flex-1 p-4">
+      <div className="flex-1">
         <DndContext
           id={`seo-page-${column.id}-blocks`}
           sensors={sensors}
@@ -2681,7 +2771,7 @@ function SortableColumnEditor({
             items={column.blocks.map((block) => block.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-6">
+            <div className="space-y-10">
               {column.blocks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-4 py-10 text-center">
                   <div className="mb-3 rounded-full bg-white p-2 shadow-sm ring-1 ring-slate-200">
@@ -2706,7 +2796,7 @@ function SortableColumnEditor({
                     Empty column
                   </p>
                   <p className="mt-1 mb-4 text-xs text-slate-500">
-                    Add a block below
+                    Add page content below
                   </p>
                   <div className="w-full text-left">
                     <BlockPicker onAddBlock={onAddBlock} />
@@ -3009,7 +3099,7 @@ function BlockPicker({
             <path d="M5 12h14" />
             <path d="M12 5v14" />
           </svg>
-          Add content block
+          Add page content
         </button>
       ) : (
         <div
@@ -3033,19 +3123,19 @@ function BlockPicker({
                   id="block-picker-title"
                   className="text-base font-semibold text-slate-950"
                 >
-                  Add content block
+                  Add page content
                 </h4>
                 <p
                   id="block-picker-description"
                   className="mt-1 text-sm text-slate-500"
                 >
-                  Pick a block type, preview the shape, then choose a layout.
+                  Choose what appears next on the page.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                aria-label="Close content block picker"
+                aria-label="Close page content picker"
                 className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
               >
                 <svg
@@ -3702,7 +3792,7 @@ function SortableBlockEditor({
         isDragging={isDragging}
         dragHandle={
           <DragHandle
-            label={`Reorder ${blockLabel(block.type)} block ${index + 1}`}
+            label={`Reorder ${blockLabel(block.type)} content ${index + 1}`}
             attributes={attributes}
             listeners={listeners}
           />
@@ -3746,14 +3836,14 @@ function BlockEditor({
   return (
     <article
       id={`builder-block-${blockNumber}`}
-      className={`relative scroll-mt-28 rounded-xl border border-slate-200 bg-white shadow-sm transition-all focus-within:border-[#0b63f6]/50 focus-within:ring-4 focus-within:ring-[#0b63f6]/5 ${
+      className={`group/editor relative scroll-mt-28 rounded-[12px] border border-transparent bg-transparent transition-all focus-within:border-[#0b63f6]/50 focus-within:bg-white/80 focus-within:ring-4 focus-within:ring-[#0b63f6]/5 ${
         isDragging
-          ? "z-10 scale-[1.01] border-[#0b63f6] shadow-2xl"
-          : "hover:border-slate-300 hover:shadow-md"
+          ? "z-10 scale-[1.01] border-[#0b63f6] bg-white shadow-2xl"
+          : "hover:border-slate-300 hover:bg-white/70"
       }`}
     >
       <BlockToolbar
-        label={`Block ${blockNumber}`}
+        label={`Page content ${blockNumber}`}
         typeLabel={blockLabel(block.type)}
         variantLabel={blockVariantLabel(block)}
         variant={block.variant}
@@ -3772,7 +3862,7 @@ function BlockEditor({
       />
 
       {block.type === "rich_text" && (
-        <div className="max-w-3xl rounded-2xl px-4 py-5">
+        <div className="max-w-3xl px-3 py-7 sm:px-4">
           <label className="block">
             <span className="sr-only">Eyebrow</span>
             <input
@@ -3826,7 +3916,7 @@ function BlockEditor({
       )}
 
       {block.type === "hero" && (
-        <div className="max-w-4xl rounded-2xl px-4 py-8">
+        <div className="max-w-4xl px-3 py-8 sm:px-4">
           <label className="block">
             <span className="sr-only">Eyebrow</span>
             <input
@@ -3872,7 +3962,7 @@ function BlockEditor({
             />
           </label>
           <div className="mt-7 grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)]">
-            <label className="bg-brand-500 inline-flex max-w-xs rounded-full px-5 py-3 text-sm font-semibold text-white shadow-sm">
+            <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
               <span className="sr-only">CTA label</span>
               <input
                 value={block.props.ctaLabel}
@@ -3883,7 +3973,7 @@ function BlockEditor({
                     props: { ...block.props, ctaLabel: event.target.value },
                   })
                 }
-                className="w-full min-w-24 bg-transparent text-white outline-none placeholder:text-white/70"
+                className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
               />
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -3913,13 +4003,13 @@ function BlockEditor({
       )}
 
       {block.type === "image" && (
-        <figure className="rounded-2xl px-4 py-4">
+        <figure className="px-3 py-4 sm:px-4">
           {block.props.src ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={block.props.src}
               alt={block.props.altText}
-              className="aspect-video w-full rounded-xl border border-slate-200 object-cover shadow-sm"
+              className="aspect-video w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]"
             />
           ) : (
             <div className="grid aspect-video place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
@@ -4036,57 +4126,66 @@ function BlockEditor({
       )}
 
       {block.type === "cta" && (
-        <div className="rounded-xl bg-white p-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <TextInput
-              label="CTA label"
+        <div className="px-3 py-4 sm:px-4">
+          <label className="inline-flex min-h-12 max-w-sm items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
+            <span className="sr-only">CTA label</span>
+            <input
               value={block.props.label}
-              onChange={(value) =>
+              placeholder="CTA label"
+              onChange={(event) =>
                 onChange({
                   ...block,
-                  props: { ...block.props, label: value },
+                  props: { ...block.props, label: event.target.value },
                 })
               }
+              className="w-full min-w-28 bg-transparent outline-none placeholder:text-[#111111]/55"
             />
-            <TextInput
-              label="Href"
-              value={block.props.href}
-              onChange={(value) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, href: value },
-                })
-              }
-            />
-            <TextInput
-              label="Tracking name"
-              value={block.props.trackingName}
-              onChange={(value) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, trackingName: value },
-                })
-              }
-            />
-            <TextInput
-              label="Preset ID"
-              value={block.props.presetId ?? ""}
-              onChange={(value) =>
-                onChange({
-                  ...block,
-                  props: {
-                    ...block.props,
-                    presetId: value || undefined,
-                  },
-                })
-              }
-            />
-          </div>
+          </label>
+          <details className="mt-4 rounded-xl border border-slate-200 bg-white/85 p-4 shadow-sm">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+              Button settings
+            </summary>
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              <TextInput
+                label="Href"
+                value={block.props.href}
+                onChange={(value) =>
+                  onChange({
+                    ...block,
+                    props: { ...block.props, href: value },
+                  })
+                }
+              />
+              <TextInput
+                label="Tracking name"
+                value={block.props.trackingName}
+                onChange={(value) =>
+                  onChange({
+                    ...block,
+                    props: { ...block.props, trackingName: value },
+                  })
+                }
+              />
+              <TextInput
+                label="Preset ID"
+                value={block.props.presetId ?? ""}
+                onChange={(value) =>
+                  onChange({
+                    ...block,
+                    props: {
+                      ...block.props,
+                      presetId: value || undefined,
+                    },
+                  })
+                }
+              />
+            </div>
+          </details>
         </div>
       )}
 
       {block.type === "video" && (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+        <div className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[7px_7px_0_#55b8e8]">
           <TextInput
             label="Title"
             value={block.props.title}
@@ -4117,7 +4216,7 @@ function BlockEditor({
       )}
 
       {block.type === "faq" && (
-        <div className="max-w-3xl rounded-2xl px-4 py-4">
+        <div className="max-w-3xl px-3 py-4 sm:px-4">
           <label className="block">
             <span className="sr-only">Heading</span>
             <input
@@ -4132,7 +4231,7 @@ function BlockEditor({
               className={sectionHeadingInputClass}
             />
           </label>
-          <div className="mt-5 divide-y divide-slate-200 rounded-xl border border-slate-200">
+          <div className="mt-5 divide-y-2 divide-[#bfeeff] rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8]">
             <div className="p-5">
               <TextInput
                 label="Question"
@@ -4170,7 +4269,7 @@ function BlockEditor({
       )}
 
       {block.type === "card_grid" && (
-        <div className="rounded-2xl px-4 py-4">
+        <div className="px-3 py-4 sm:px-4">
           <label className="block">
             <span className="sr-only">Heading</span>
             <input
@@ -4189,7 +4288,7 @@ function BlockEditor({
             {block.props.cards.map((card, cardIndex) => (
               <article
                 key={cardIndex}
-                className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8]"
               >
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
@@ -4324,7 +4423,7 @@ function BlockEditor({
       )}
 
       {block.type === "proof" && (
-        <figure className="rounded-xl border border-slate-200 bg-slate-50 p-6">
+        <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
           <TextInput
             label="Eyebrow"
             value={block.props.eyebrow}
@@ -4380,7 +4479,7 @@ function BlockEditor({
       )}
 
       {block.type === "lead_form" && (
-        <div className="grid gap-6 rounded-xl border border-slate-200 bg-slate-50 p-6">
+        <div className="grid gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
           <div>
             <label className="block">
               <span className="sr-only">Heading</span>
@@ -4419,7 +4518,7 @@ function BlockEditor({
             <div className={disabledLeadFieldClass}>Market</div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="bg-brand-500 inline-flex max-w-xs rounded-full px-5 py-3 text-sm font-semibold text-white shadow-sm">
+            <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
               <span className="sr-only">Submit label</span>
               <input
                 value={block.props.submitLabel}
@@ -4430,7 +4529,7 @@ function BlockEditor({
                     props: { ...block.props, submitLabel: event.target.value },
                   })
                 }
-                className="w-full min-w-24 bg-transparent text-white outline-none placeholder:text-white/70"
+                className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
               />
             </label>
             <TextInput
@@ -4496,28 +4595,28 @@ function BlockToolbar({
   onRemove: () => void;
 }) {
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3 rounded-t-xl border-b border-slate-100 bg-white px-4 py-3 text-xs">
+    <header
+      className="absolute -top-5 right-0 left-0 z-20 flex flex-wrap items-center justify-between gap-3 rounded-full border border-slate-200 bg-white/95 px-3 py-2 text-xs opacity-0 shadow-sm ring-1 ring-black/5 backdrop-blur transition-opacity group-focus-within/editor:opacity-100 group-hover/editor:opacity-100"
+      title={description}
+    >
       <div className="flex min-w-0 items-center gap-3">
         {dragHandle}
         <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-500 ring-1 ring-slate-200/50 ring-inset"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-500 ring-1 ring-slate-200/50 ring-inset"
           aria-hidden="true"
         >
           <BuilderGlyph name={icon} />
         </span>
         <span className="min-w-0">
           <span className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-              {label}
-            </span>
-            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
               {typeLabel}
             </span>
-            <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 ring-1 ring-indigo-100 ring-inset">
+            <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-medium text-indigo-700 ring-1 ring-indigo-100 ring-inset">
               {variantLabel}
             </span>
             <span
-              className={`rounded-md px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
+              className={`rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${
                 status === "Ready"
                   ? "bg-emerald-50 text-emerald-700 ring-emerald-200/50"
                   : "bg-amber-50 text-amber-700 ring-amber-200/50"
@@ -4525,9 +4624,6 @@ function BlockToolbar({
             >
               {status}
             </span>
-          </span>
-          <span className="mt-1.5 block truncate text-sm font-semibold text-slate-900">
-            {description}
           </span>
         </span>
       </div>
@@ -4571,7 +4667,7 @@ function BlockToolbar({
               className={dangerButtonClass}
               onClick={onRemove}
             >
-              Remove block
+              Remove content
             </button>
           </MoreActions>
         </div>
@@ -4988,7 +5084,7 @@ function layoutPresetSection(preset: LayoutPreset): PageSection {
   const rightColumnId = makeBuilderId("column");
   const textBlock = starterRichText(
     "Add a supporting section heading",
-    "Use this text block to explain the offer, objection, comparison point, or local context that supports the page goal.",
+    "Use this section to explain the offer, objection, comparison point, or local context that supports the page goal.",
     "intro",
   );
   const imageBlock = starterImage();
@@ -5050,182 +5146,6 @@ function layoutPresetSection(preset: LayoutPreset): PageSection {
   };
 }
 
-function starterTemplateFor(template: StarterTemplate): {
-  title: string;
-  targetKeyword: string;
-  seoTitle: string;
-  metaDescription: string;
-  content: PageContent;
-} {
-  if (template === "location") {
-    return {
-      title: "Vending Services in Your Market",
-      targetKeyword: "vending services",
-      seoTitle: "Vending Services for Local Businesses",
-      metaDescription:
-        "Build a local vending services page with market fit, service details, and a clear lead form for qualified enquiries.",
-      content: starterContent([
-        starterHero(
-          "Bring reliable vending services to your location",
-          "Use this page to explain the customer segment, service promise, and next step for local buyers.",
-          "Request local vending support",
-          "split",
-        ),
-        starterRichText(
-          "Who this vending service supports",
-          "Describe the site type, expected foot traffic, product needs, and how the vending offer helps the location.",
-          "intro",
-        ),
-        starterCards("Common location needs", [
-          {
-            title: "Staff convenience",
-            body: "Explain how the service supports employees, visitors, or students.",
-            href: "/contact",
-          },
-          {
-            title: "Product mix",
-            body: "Summarise the drinks, snacks, or healthy options that suit this market.",
-            href: "/apply",
-          },
-          {
-            title: "Service expectations",
-            body: "Set expectations for restocking, maintenance, and support.",
-            href: "/case-studies",
-          },
-        ]),
-        starterLeadForm(),
-      ]),
-    };
-  }
-
-  if (template === "comparison") {
-    return {
-      title: "Compare Vending Options Before You Buy",
-      targetKeyword: "vending machine options",
-      seoTitle: "Compare Vending Machine Options Before You Buy",
-      metaDescription:
-        "Create a comparison page that helps buyers weigh purchase paths, operating support, and next steps before choosing a vending option.",
-      content: starterContent([
-        starterHero(
-          "Compare vending options before you commit",
-          "Use this page to make the tradeoffs clear and help buyers choose a realistic next step.",
-          "Compare options",
-          "editorial",
-        ),
-        starterCards(
-          "What buyers should compare",
-          [
-            {
-              title: "Upfront cost",
-              body: "Explain the capital needed and what is included in each option.",
-              href: "/apply",
-            },
-            {
-              title: "Operating support",
-              body: "Clarify training, servicing, supplier access, and route planning support.",
-              href: "/contact",
-            },
-            {
-              title: "Growth flexibility",
-              body: "Show how each option supports starting small or expanding later.",
-              href: "/case-studies",
-            },
-          ],
-          "feature",
-        ),
-        starterProof("stat"),
-        starterCta("Get comparison guidance", "secondary"),
-      ]),
-    };
-  }
-
-  if (template === "faq") {
-    return {
-      title: "Vending Questions Answered",
-      targetKeyword: "vending questions",
-      seoTitle: "Common Vending Questions Answered",
-      metaDescription:
-        "Create a question-led resource page that answers search objections and gives readers a clear next step.",
-      content: starterContent([
-        starterRichText(
-          "Answers for common vending questions",
-          "Use this introduction to frame who the answers are for and what decision the page helps them make.",
-          "intro",
-        ),
-        starterFaq("Common vending questions", "accordion"),
-        starterCta("Talk to a vending specialist", "text"),
-      ]),
-    };
-  }
-
-  return {
-    title: "Vending Services for Growing Locations",
-    targetKeyword: "vending services",
-    seoTitle: "Vending Services for Growing Locations",
-    metaDescription:
-      "Create a service page with a clear offer, supporting detail, FAQs, and a conversion path for qualified vending enquiries.",
-    content: starterContent([
-      starterHero(
-        "Vending services built around your location",
-        "Use this page to explain the offer, qualify the customer, and guide them toward the next step.",
-        "Start a vending enquiry",
-      ),
-      starterRichText(
-        "What the service includes",
-        "Describe the setup process, product planning, servicing expectations, and what makes this page relevant to the target search.",
-        "checklist",
-      ),
-      starterFaq("Questions buyers usually ask"),
-      starterCta("Request vending guidance"),
-    ]),
-  };
-}
-
-function starterContent(blocks: PageBlock[]): PageContent {
-  const sectionId = makeBuilderId("section");
-  const columnId = makeBuilderId("column");
-
-  return {
-    version: 1,
-    sections: [
-      {
-        ...createPageSection(sectionId, columnId),
-        columns: [
-          {
-            ...createPageColumn(columnId),
-            blocks,
-          },
-        ],
-      },
-    ],
-  };
-}
-
-function starterHero(
-  heading: string,
-  body: string,
-  ctaLabel: string,
-  variant: Extract<PageBlock, { type: "hero" }>["variant"] = "standard",
-): PageBlock {
-  const block = createPageBlock("hero", makeBuilderId("block")) as Extract<
-    PageBlock,
-    { type: "hero" }
-  >;
-  return {
-    ...block,
-    variant,
-    props: {
-      ...block.props,
-      eyebrow: "Resource guide",
-      heading,
-      body,
-      ctaLabel,
-      ctaHref: "/apply",
-      ctaTrackingName: slugify(ctaLabel),
-    },
-  };
-}
-
 function starterRichText(
   heading: string,
   body: string,
@@ -5242,51 +5162,6 @@ function starterRichText(
       ...block.props,
       heading,
       body: { version: 1, nodes: [{ type: "paragraph", text: body }] },
-    },
-  };
-}
-
-function starterCards(
-  heading: string,
-  cards: Extract<PageBlock, { type: "card_grid" }>["props"]["cards"],
-  variant: Extract<PageBlock, { type: "card_grid" }>["variant"] = "standard",
-): PageBlock {
-  const block = createPageBlock("card_grid", makeBuilderId("block")) as Extract<
-    PageBlock,
-    { type: "card_grid" }
-  >;
-  return {
-    ...block,
-    variant,
-    props: {
-      ...block.props,
-      heading,
-      cards,
-    },
-  };
-}
-
-function starterFaq(
-  heading: string,
-  variant: Extract<PageBlock, { type: "faq" }>["variant"] = "standard",
-): PageBlock {
-  const block = createPageBlock("faq", makeBuilderId("block")) as Extract<
-    PageBlock,
-    { type: "faq" }
-  >;
-  return {
-    ...block,
-    variant,
-    props: {
-      ...block.props,
-      heading,
-      items: [
-        {
-          question: "What should this page answer first?",
-          answer:
-            "Replace this with the most important search objection or buyer question for this topic.",
-        },
-      ],
     },
   };
 }
@@ -5323,44 +5198,6 @@ function starterImage(): PageBlock {
       ...block.props,
       altText: "Describe the image before publishing",
       caption: "Choose a media asset and update the caption.",
-    },
-  };
-}
-
-function starterProof(
-  variant: Extract<PageBlock, { type: "proof" }>["variant"] = "quote",
-): PageBlock {
-  const block = createPageBlock("proof", makeBuilderId("block")) as Extract<
-    PageBlock,
-    { type: "proof" }
-  >;
-  return {
-    ...block,
-    variant,
-    props: {
-      ...block.props,
-      eyebrow: "Proof point",
-      body: "Replace this with an approved claim, testimonial, or source-backed stat.",
-      name: "Approved source",
-      context: "Content library",
-    },
-  };
-}
-
-function starterLeadForm(): PageBlock {
-  const block = createPageBlock("lead_form", makeBuilderId("block")) as Extract<
-    PageBlock,
-    { type: "lead_form" }
-  >;
-  return {
-    ...block,
-    variant: "standard",
-    props: {
-      ...block.props,
-      heading: "Request vending support",
-      body: "Share the market, location type, and timeline so the team can qualify the next step.",
-      submitLabel: "Request support",
-      trackingName: "request-support",
     },
   };
 }
@@ -5448,15 +5285,30 @@ function blockLabel(type: PageBlock["type"]) {
 function blockSummary(block: PageBlock) {
   const title = aiBlockReviewTitle(block);
   if (hasEditorText(title)) return title;
-  if (block.type === "hero") return "Hero block missing headline";
-  if (block.type === "rich_text") return "Text block missing heading";
-  if (block.type === "image") return "Image block missing media";
-  if (block.type === "cta") return "CTA block missing button copy";
-  if (block.type === "faq") return "FAQ block missing question";
+  if (block.type === "hero") return "Hero needs a headline";
+  if (block.type === "rich_text") return "Text section needs a heading";
+  if (block.type === "image") return "Image needs media";
+  if (block.type === "cta") return "CTA needs button copy";
+  if (block.type === "faq") return "FAQ needs a question";
   if (block.type === "card_grid") return "Card grid missing heading";
-  if (block.type === "proof") return "Proof block missing quote or stat";
-  if (block.type === "video") return "Video block missing title";
+  if (block.type === "proof") return "Proof needs a quote or stat";
+  if (block.type === "video") return "Video needs a title";
   return "Lead form missing heading";
+}
+
+function editorSectionClass(
+  background: PageSection["background"],
+  spacing: PageSection["spacing"],
+) {
+  const backgroundClass =
+    background === "muted"
+      ? "border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]"
+      : background === "brand"
+        ? "border-2 border-[#111111] bg-[#eaf8ff] p-6 shadow-[7px_7px_0_#111111]"
+        : "";
+  const spacingClass =
+    spacing === "compact" ? "py-6" : spacing === "spacious" ? "py-12" : "py-8";
+  return `${backgroundClass} ${spacingClass}`;
 }
 
 function columnGridClass(count: number) {
@@ -5528,7 +5380,7 @@ function completionMessagesForBlock(block: PageBlock) {
 
   if (block.type === "image") {
     if (!block.props.assetId && !hasEditorText(block.props.src)) {
-      messages.push("Choose an image or remove this image block.");
+      messages.push("Choose an image or remove this content.");
     }
     if (!hasEditorText(block.props.altText)) {
       messages.push("Add descriptive alt text for this image.");
@@ -5536,7 +5388,7 @@ function completionMessagesForBlock(block: PageBlock) {
   }
 
   if (block.type === "video" && !hasEditorText(block.props.url)) {
-    messages.push("Add a video URL or remove this video block.");
+    messages.push("Add a video URL or remove this content.");
   }
 
   if (block.type === "cta" && !block.props.presetId) {
@@ -5564,7 +5416,7 @@ function completionMessagesForBlock(block: PageBlock) {
   }
 
   if (block.type === "card_grid" && block.props.cards.length === 0) {
-    messages.push("Add at least one card or remove this card block.");
+    messages.push("Add at least one card or remove this content.");
   }
 
   if (block.type === "proof" && !hasEditorText(block.props.body)) {
@@ -5659,7 +5511,10 @@ function findingDotClass(severity: "blocker" | "warning" | "opportunity") {
 }
 
 const headlineInputClass =
-  "w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-1 text-3xl font-semibold tracking-tight text-slate-950 outline-none transition placeholder:text-slate-300 hover:bg-slate-50 focus:bg-white focus:border-[#0b63f6]/30 focus:ring-4 focus:ring-[#0b63f6]/10 md:text-4xl";
+  "w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-1 text-5xl leading-[0.95] font-black text-[#111111] uppercase outline-none transition placeholder:text-slate-300 hover:bg-white/55 focus:border-[#55b8e8] focus:bg-white focus:ring-4 focus:ring-[#55b8e8]/20 md:text-7xl";
+
+const pageLeadInputClass =
+  "w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-1 text-xl leading-8 font-semibold text-slate-700 outline-none transition placeholder:text-slate-300 hover:bg-white/55 focus:border-[#55b8e8] focus:bg-white focus:ring-4 focus:ring-[#55b8e8]/20";
 
 const leadInputClass =
   "w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-1 text-base leading-7 text-slate-600 outline-none transition placeholder:text-slate-300 hover:bg-slate-50 focus:bg-white focus:border-[#0b63f6]/30 focus:ring-4 focus:ring-[#0b63f6]/10";
