@@ -225,6 +225,10 @@ export function SeoPageEditorForm({
   }, [content]);
   const canPublish = Boolean(page?.id);
   const publishDisabled = !canPublish || seoReadiness.blockers.length > 0;
+  const nextPublishStep = nextRequiredPublishStep({
+    canPublish,
+    summary: seoReadiness,
+  });
   const primarySection = content.sections[0] ?? null;
   const primaryColumn = primarySection?.columns[0] ?? null;
   const usesSimpleBlockStack =
@@ -275,19 +279,20 @@ export function SeoPageEditorForm({
     visibleSlug,
   ]);
 
+  if (showCreationChoiceModal) {
+    return (
+      <NewPageChoiceGate
+        onCreateFromScratch={() => setHasSelectedNewPageMode(true)}
+      />
+    );
+  }
+
   return (
     <form action={formAction} className="relative">
       {page?.id && <input type="hidden" name="id" value={page.id} />}
       <input type="hidden" name="draftContent" value={draftContentJson} />
       {!isDetailsDrawerOpen && (
         <input type="hidden" name="slug" value={visibleSlug} />
-      )}
-
-      {showCreationChoiceModal && (
-        <NewPageChoiceModal
-          onCreateFromScratch={() => setHasSelectedNewPageMode(true)}
-          onClose={() => setHasSelectedNewPageMode(true)}
-        />
       )}
 
       <div className="relative min-h-[calc(100dvh-4rem)] overflow-hidden border border-slate-200 bg-slate-100 lg:min-h-screen">
@@ -697,6 +702,8 @@ export function SeoPageEditorForm({
                   </button>
                 </div>
 
+                <NextPublishStepCard step={nextPublishStep} />
+
                 <div className="space-y-5">
                   <label className="block">
                     <span className="text-sm font-semibold text-slate-900">
@@ -747,62 +754,78 @@ export function SeoPageEditorForm({
                       placeholder="Leave blank to use page headline"
                     />
                   </label>
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-900">
-                      Canonical URL
-                    </span>
-                    <input
-                      name="canonicalUrl"
-                      value={canonicalUrl}
-                      id="seo-canonical-url-field"
-                      onChange={(event) => setCanonicalUrl(event.target.value)}
-                      className={compactInputClass}
-                      placeholder="https://..."
-                    />
-                  </label>
 
-                  <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
-                      <input
-                        name="noindex"
-                        type="checkbox"
-                        checked={noindex}
-                        onChange={(event) => {
-                          setNoindex(event.target.checked);
-                          if (event.target.checked) setSitemapEnabled(false);
-                        }}
-                        className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
-                      />
-                      <div>
-                        <span className="block text-slate-900">
-                          Noindex this page
+                  <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <summary className="cursor-pointer text-sm font-semibold text-slate-900">
+                      Advanced SEO
+                    </summary>
+                    <div className="mt-4 space-y-4">
+                      <label className="block">
+                        <span className="text-sm font-semibold text-slate-900">
+                          Preferred URL
                         </span>
-                        <span className="mt-0.5 block text-xs font-normal text-slate-500">
-                          Hide from search engines
+                        <input
+                          name="canonicalUrl"
+                          value={canonicalUrl}
+                          id="seo-canonical-url-field"
+                          onChange={(event) =>
+                            setCanonicalUrl(event.target.value)
+                          }
+                          className={compactInputClass}
+                          placeholder="https://..."
+                        />
+                        <span className="mt-1.5 block text-xs leading-5 text-slate-500">
+                          Optional. Use only when this page should point search
+                          engines to a different preferred URL.
                         </span>
+                      </label>
+
+                      <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+                        <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
+                          <input
+                            name="noindex"
+                            type="checkbox"
+                            checked={noindex}
+                            onChange={(event) => {
+                              setNoindex(event.target.checked);
+                              if (event.target.checked)
+                                setSitemapEnabled(false);
+                            }}
+                            className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
+                          />
+                          <div>
+                            <span className="block text-slate-900">
+                              Hide from search engines
+                            </span>
+                            <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                              Use this only for pages that should not appear in
+                              search results.
+                            </span>
+                          </div>
+                        </label>
+                        <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
+                          <input
+                            name="sitemapEnabled"
+                            type="checkbox"
+                            checked={sitemapEnabled}
+                            disabled={noindex}
+                            onChange={(event) =>
+                              setSitemapEnabled(event.target.checked)
+                            }
+                            className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6] disabled:opacity-50"
+                          />
+                          <div className={noindex ? "opacity-50" : ""}>
+                            <span className="block text-slate-900">
+                              Include in sitemap
+                            </span>
+                            <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                              Help search engines discover this page.
+                            </span>
+                          </div>
+                        </label>
                       </div>
-                    </label>
-                    <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
-                      <input
-                        name="sitemapEnabled"
-                        type="checkbox"
-                        checked={sitemapEnabled}
-                        disabled={noindex}
-                        onChange={(event) =>
-                          setSitemapEnabled(event.target.checked)
-                        }
-                        className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6] disabled:opacity-50"
-                      />
-                      <div className={noindex ? "opacity-50" : ""}>
-                        <span className="block text-slate-900">
-                          Include in sitemap
-                        </span>
-                        <span className="mt-0.5 block text-xs font-normal text-slate-500">
-                          Help search engines find this page
-                        </span>
-                      </div>
-                    </label>
-                  </div>
+                    </div>
+                  </details>
 
                   <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
                     <div className="mb-4 flex items-center gap-2">
@@ -958,7 +981,10 @@ export function SeoPageEditorForm({
     setContent((current) => {
       const firstSection = current.sections[0];
       const firstColumn = firstSection?.columns[0];
-      const nextBlock = createPageBlock(type, makeBuilderId("block"));
+      const nextBlock = createPageBlockWithVariant(
+        type,
+        makeBuilderId("block"),
+      );
 
       if (!firstSection) {
         const columnId = makeBuilderId("column");
@@ -1218,111 +1244,32 @@ export function SeoPageEditorForm({
   }
 }
 
-function NewPageChoiceModal({
+function NewPageChoiceGate({
   onCreateFromScratch,
-  onClose,
 }: {
   onCreateFromScratch: () => void;
-  onClose: () => void;
 }) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    const previousFocus = document.activeElement as HTMLElement | null;
-
-    function getFocusableElements() {
-      if (!dialog) return [];
-      return Array.from(
-        dialog.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter(
-        (element) =>
-          !element.hasAttribute("disabled") &&
-          element.getAttribute("aria-hidden") !== "true",
-      );
-    }
-
-    getFocusableElements()[0]?.focus();
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-
-      if (event.key !== "Tab") return;
-
-      const focusableElements = getFocusableElements();
-      if (focusableElements.length === 0) {
-        event.preventDefault();
-        return;
-      }
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement?.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement?.focus();
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previousFocus?.focus();
-    };
-  }, [onClose]);
-
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4 backdrop-blur-sm">
+    <div className="grid min-h-[calc(100dvh-4rem)] place-items-center border border-slate-200 bg-slate-100 px-4 py-12">
       <div
-        ref={dialogRef}
-        className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl ring-1 ring-black/5"
-        role="dialog"
-        aria-modal="true"
+        className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-xl ring-1 ring-black/5 sm:p-7"
+        role="region"
         aria-labelledby="new-page-choice-title"
       >
-        <div className="mb-6 flex items-start justify-between gap-5">
-          <div>
-            <p className="text-xs font-semibold tracking-wider text-[#0b63f6] uppercase">
-              SEO Page Builder
-            </p>
-            <h2
-              id="new-page-choice-title"
-              className="mt-2 text-2xl font-semibold tracking-tight text-slate-950"
-            >
-              Create page
-            </h2>
-          </div>
-          <button
-            type="button"
-            aria-label="Close create page choices"
-            title="Close"
-            onClick={onClose}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+        <div className="mb-6">
+          <p className="text-xs font-semibold tracking-wider text-[#0b63f6] uppercase">
+            SEO Page Builder
+          </p>
+          <h2
+            id="new-page-choice-title"
+            className="mt-2 text-2xl font-semibold tracking-tight text-slate-950"
           >
-            <svg
-              aria-hidden="true"
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18 18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+            Create page
+          </h2>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
+            Start with a blank editable page. The SEO checklist, page canvas,
+            and publish controls appear after this choice.
+          </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <button
@@ -1475,6 +1422,31 @@ function ChevronIcon({ direction }: { direction: "left" | "right" }) {
   );
 }
 
+type NextPublishStep = {
+  title: string;
+  detail: string;
+  tone: "blocked" | "work" | "ready";
+};
+
+function NextPublishStepCard({ step }: { step: NextPublishStep }) {
+  const toneClass =
+    step.tone === "ready"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+      : step.tone === "blocked"
+        ? "border-amber-200 bg-amber-50 text-amber-950"
+        : "border-sky-200 bg-sky-50 text-sky-950";
+
+  return (
+    <section className={`rounded-xl border p-4 ${toneClass}`}>
+      <p className="text-xs font-semibold tracking-wider uppercase">
+        Next required step
+      </p>
+      <h3 className="mt-2 text-sm font-semibold">{step.title}</h3>
+      <p className="mt-1.5 text-sm leading-6 opacity-80">{step.detail}</p>
+    </section>
+  );
+}
+
 function SeoReadinessPanel({
   summary,
   aiProposalResult,
@@ -1526,7 +1498,7 @@ function SeoReadinessPanel({
           >
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm font-semibold text-slate-900">
-                {category.label}
+                {friendlyReadinessCategoryLabel(category.category)}
               </span>
               <span
                 className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${readinessPillClass(
@@ -1646,59 +1618,38 @@ function SeoReadinessPanel({
             Builder support
           </h3>
           <div className="mt-4 grid gap-3">
-            <Link
-              href="/admin/media"
-              className="group rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 transition-all hover:border-[#0b63f6]/30 hover:bg-white hover:shadow-sm"
-            >
-              <span className="flex items-center gap-2 transition-colors group-hover:text-[#0b63f6]">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect width="18" height="18" x="3" y="3" rx="2" />
-                  <circle cx="9" cy="9" r="2" />
-                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                </svg>
-                Media library
-              </span>
-              <span className="mt-1.5 block text-xs font-medium text-slate-500">
+            <details className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800">
+              <summary className="cursor-pointer font-semibold">
+                Media assets
+              </summary>
+              <p className="mt-2 text-xs leading-5 text-slate-500">
                 {mediaAssetCount > 0
-                  ? `${mediaAssetCount} assets available for page images`
-                  : "No assets yet. Add images, alt text, and rights notes."}
-              </span>
-            </Link>
-            <Link
-              href="/admin/libraries"
-              className="group rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 transition-all hover:border-[#0b63f6]/30 hover:bg-white hover:shadow-sm"
-            >
-              <span className="flex items-center gap-2 transition-colors group-hover:text-[#0b63f6]">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-                </svg>
-                Content libraries
-              </span>
-              <span className="mt-1.5 block text-xs font-medium text-slate-500">
-                Manage CTA presets, approved claims, source excerpts, and proof
-                items.
-              </span>
-            </Link>
+                  ? `${mediaAssetCount} approved assets are available from image blocks.`
+                  : "No assets yet. Add images, alt text, and rights notes before relying on image blocks."}
+              </p>
+              <Link
+                href="/admin/media"
+                className="mt-3 inline-flex text-xs font-semibold text-[#0b63f6] hover:text-slate-950"
+              >
+                Open full media library
+              </Link>
+            </details>
+            <details className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800">
+              <summary className="cursor-pointer font-semibold">
+                Approved claims and CTAs
+              </summary>
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                Use content libraries for approved source excerpts, proof
+                points, claims, and reusable CTA presets. Keep claims
+                source-backed before adding them to this draft.
+              </p>
+              <Link
+                href="/admin/libraries"
+                className="mt-3 inline-flex text-xs font-semibold text-[#0b63f6] hover:text-slate-950"
+              >
+                Open content libraries
+              </Link>
+            </details>
           </div>
         </div>
 
@@ -2057,6 +2008,63 @@ function friendlyFindingLocation(finding: SeoReadinessFinding) {
   return friendlyFieldName(finding.path);
 }
 
+function friendlyReadinessCategoryLabel(
+  category: SeoReadinessSummary["categories"][number]["category"],
+) {
+  if (category === "serp") return "Search result";
+  if (category === "schema") return "FAQ help";
+  return {
+    indexing: "Search visibility",
+    content: "Page content",
+    links: "Internal links",
+    media: "Images",
+    conversion: "Enquiries",
+    trust: "Trust proof",
+  }[category];
+}
+
+function nextRequiredPublishStep({
+  canPublish,
+  summary,
+}: {
+  canPublish: boolean;
+  summary: SeoReadinessSummary;
+}): NextPublishStep {
+  const blocker = summary.blockers[0];
+  if (blocker) {
+    return {
+      title: `Fix ${friendlyFindingLocation(blocker).toLowerCase()}`,
+      detail: blocker.message,
+      tone: "blocked",
+    };
+  }
+
+  if (!canPublish) {
+    return {
+      title: "Save this draft",
+      detail:
+        "Saving creates the page record, unlocks the SEO agent, and enables publishing after the checklist is clear.",
+      tone: "work",
+    };
+  }
+
+  const warning = summary.warnings[0];
+  if (warning) {
+    return {
+      title: `Improve ${friendlyFindingLocation(warning).toLowerCase()}`,
+      detail: warning.message,
+      tone: "work",
+    };
+  }
+
+  return {
+    title: "Ready to publish",
+    detail:
+      "No hard blockers remain. Review the public preview, then publish when the page is ready.",
+    tone: "ready",
+  };
+}
+
 function friendlyEvidenceText(finding: SeoReadinessFinding) {
   if (!finding.evidence) return null;
   if (finding.evidence.startsWith("Field: ")) {
@@ -2067,6 +2075,12 @@ function friendlyEvidenceText(finding: SeoReadinessFinding) {
 
 function friendlyFieldName(value: string | undefined) {
   if (!value) return "Field";
+  if (value === "trackingName" || value === "ctaTrackingName") {
+    return "Internal CTA label";
+  }
+  if (value === "canonical_url" || value === "canonicalUrl") {
+    return "Preferred URL";
+  }
   return value
     .replace(/_/g, " ")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
@@ -3967,12 +3981,22 @@ function BlockEditor({
               <input
                 value={block.props.ctaLabel}
                 placeholder="CTA label"
-                onChange={(event) =>
+                onChange={(event) => {
+                  const nextLabel = event.target.value;
                   onChange({
                     ...block,
-                    props: { ...block.props, ctaLabel: event.target.value },
-                  })
-                }
+                    props: {
+                      ...block.props,
+                      ctaLabel: nextLabel,
+                      ctaTrackingName: syncedTrackingName({
+                        currentTrackingName: block.props.ctaTrackingName,
+                        previousLabel: block.props.ctaLabel,
+                        nextLabel,
+                        fallback: "hero-cta",
+                      }),
+                    },
+                  });
+                }}
                 className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
               />
             </label>
@@ -3988,7 +4012,7 @@ function BlockEditor({
                 }
               />
               <TextInput
-                label="CTA tracking"
+                label="Internal CTA label"
                 value={block.props.ctaTrackingName}
                 onChange={(value) =>
                   onChange({
@@ -4132,12 +4156,22 @@ function BlockEditor({
             <input
               value={block.props.label}
               placeholder="CTA label"
-              onChange={(event) =>
+              onChange={(event) => {
+                const nextLabel = event.target.value;
                 onChange({
                   ...block,
-                  props: { ...block.props, label: event.target.value },
-                })
-              }
+                  props: {
+                    ...block.props,
+                    label: nextLabel,
+                    trackingName: syncedTrackingName({
+                      currentTrackingName: block.props.trackingName,
+                      previousLabel: block.props.label,
+                      nextLabel,
+                      fallback: "cta",
+                    }),
+                  },
+                });
+              }}
               className="w-full min-w-28 bg-transparent outline-none placeholder:text-[#111111]/55"
             />
           </label>
@@ -4157,7 +4191,7 @@ function BlockEditor({
                 }
               />
               <TextInput
-                label="Tracking name"
+                label="Internal CTA label"
                 value={block.props.trackingName}
                 onChange={(value) =>
                   onChange({
@@ -4523,17 +4557,27 @@ function BlockEditor({
               <input
                 value={block.props.submitLabel}
                 placeholder="Submit label"
-                onChange={(event) =>
+                onChange={(event) => {
+                  const nextLabel = event.target.value;
                   onChange({
                     ...block,
-                    props: { ...block.props, submitLabel: event.target.value },
-                  })
-                }
+                    props: {
+                      ...block.props,
+                      submitLabel: nextLabel,
+                      trackingName: syncedTrackingName({
+                        currentTrackingName: block.props.trackingName,
+                        previousLabel: block.props.submitLabel,
+                        nextLabel,
+                        fallback: "lead-form",
+                      }),
+                    },
+                  });
+                }}
                 className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
               />
             </label>
             <TextInput
-              label="Tracking name"
+              label="Internal form label"
               value={block.props.trackingName}
               onChange={(value) =>
                 onChange({
@@ -5239,12 +5283,70 @@ function createPageBlockWithVariant(
   variant?: BlockVariant,
 ) {
   const block = createPageBlock(type, id);
-  if (!variant) return block;
-  return withBlockVariant(block, variant);
+  const variantBlock = variant ? withBlockVariant(block, variant) : block;
+  return withEditorDefaultsForNewBlock(variantBlock);
 }
 
 function withBlockVariant(block: PageBlock, variant: BlockVariant): PageBlock {
   return { ...block, variant } as PageBlock;
+}
+
+function withEditorDefaultsForNewBlock(block: PageBlock): PageBlock {
+  if (block.type === "cta" && !block.props.presetId) {
+    const label = block.props.label || "Start an enquiry";
+    return {
+      ...block,
+      props: {
+        ...block.props,
+        label,
+        href: block.props.href || "/apply",
+        trackingName:
+          block.props.trackingName || trackingNameForLabel(label, "cta"),
+      },
+    };
+  }
+
+  if (block.type === "lead_form") {
+    return {
+      ...block,
+      props: {
+        ...block.props,
+        trackingName:
+          block.props.trackingName ||
+          trackingNameForLabel(block.props.submitLabel, "lead-form"),
+      },
+    };
+  }
+
+  return block;
+}
+
+function trackingNameForLabel(
+  label: string | null | undefined,
+  fallback: string,
+) {
+  return slugify(label ?? "") || fallback;
+}
+
+function syncedTrackingName({
+  currentTrackingName,
+  previousLabel,
+  nextLabel,
+  fallback,
+}: {
+  currentTrackingName: string;
+  previousLabel: string;
+  nextLabel: string;
+  fallback: string;
+}) {
+  const previousGenerated = trackingNameForLabel(previousLabel, fallback);
+  if (
+    !hasEditorText(currentTrackingName) ||
+    currentTrackingName === previousGenerated
+  ) {
+    return trackingNameForLabel(nextLabel, fallback);
+  }
+  return currentTrackingName;
 }
 
 function bodyText(block: Extract<PageBlock, { type: "rich_text" }>) {
