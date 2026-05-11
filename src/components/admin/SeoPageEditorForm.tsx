@@ -2974,6 +2974,19 @@ function BlockPicker({
     blockPickerOptions.find((option) => option.type === selectedType) ??
     blockPickerOptions[0];
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
   return (
     <div className="relative">
       {!isOpen ? (
@@ -2999,115 +3012,137 @@ function BlockPicker({
           Add content block
         </button>
       ) : (
-        <div className="animate-in fade-in slide-in-from-top-2 relative left-1/2 w-[min(90vw,56rem)] -translate-x-1/2 rounded-xl border border-slate-200 bg-white p-5 shadow-lg ring-1 ring-black/5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h4 className="text-sm font-semibold text-slate-900">
-                Add content block
-              </h4>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Pick a block type, preview the shape, then choose a variant.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/20 px-4 py-6 sm:px-6 lg:py-8"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsOpen(false);
+            }
+          }}
+        >
+          <div
+            className="animate-in fade-in slide-in-from-top-2 mx-auto w-full max-w-6xl rounded-xl border border-slate-200 bg-white p-4 shadow-2xl ring-1 ring-slate-900/5 sm:p-5"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="block-picker-title"
+            aria-describedby="block-picker-description"
+          >
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h4
+                  id="block-picker-title"
+                  className="text-base font-semibold text-slate-950"
+                >
+                  Add content block
+                </h4>
+                <p
+                  id="block-picker-description"
+                  className="mt-1 text-sm text-slate-500"
+                >
+                  Pick a block type, preview the shape, then choose a layout.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                aria-label="Close content block picker"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
               >
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </svg>
-            </button>
-          </div>
-          <div className="grid gap-5 lg:grid-cols-[230px_minmax(0,1fr)]">
-            <div className="grid gap-2 self-start">
-              {blockPickerOptions.map((option) => {
-                const isSelected = option.type === selectedOption.type;
-                return (
-                  <button
-                    key={option.type}
-                    type="button"
-                    className={`flex items-start gap-3 rounded-xl border px-3 py-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
-                      isSelected
-                        ? "border-[#0b63f6]/40 bg-[#f4f8ff] shadow-sm"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                    }`}
-                    onClick={() => setSelectedType(option.type)}
-                  >
-                    <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg shadow-sm ring-1 ring-inset ${
-                        isSelected
-                          ? "bg-white text-[#0b63f6] ring-[#0b63f6]/20"
-                          : "bg-slate-50 text-slate-500 ring-slate-200"
-                      }`}
-                      aria-hidden="true"
-                    >
-                      <BuilderGlyph name={option.type} />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-slate-900">
-                        {option.label}
-                      </span>
-                      <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-slate-500">
-                        {option.description}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
             </div>
-
-            {selectedOption && (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                      Preview
-                    </p>
-                    <h5 className="mt-1 text-lg font-semibold text-slate-950">
-                      {selectedOption.label}
-                    </h5>
-                    <p className="mt-1 max-w-xl text-sm leading-6 text-slate-600">
-                      {selectedOption.description}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-5">
-                  <BlockLargePreviewSkeleton type={selectedOption.type} />
-                </div>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {selectedOption.variants.map((variant) => (
+            <div className="grid gap-3 lg:grid-cols-[250px_minmax(0,1fr)]">
+              <div className="grid gap-2 self-start">
+                {blockPickerOptions.map((option) => {
+                  const isSelected = option.type === selectedOption.type;
+                  return (
                     <button
-                      key={`${selectedOption.type}-${variant.id}`}
+                      key={option.type}
                       type="button"
-                      className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-all hover:border-[#0b63f6]/50 hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-                      onClick={() => {
-                        onAddBlock(selectedOption.type, variant.id);
-                        setIsOpen(false);
-                      }}
+                      className={`flex min-h-16 items-start gap-3 rounded-lg border px-3 py-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+                        isSelected
+                          ? "border-[#0b63f6]/65 bg-[#f7faff] shadow-sm ring-1 ring-[#0b63f6]/20"
+                          : "border-slate-200 bg-white shadow-sm hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                      onClick={() => setSelectedType(option.type)}
                     >
-                      <span className="block text-sm font-semibold text-slate-900">
-                        {variant.label}
+                      <span
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md shadow-sm ring-1 ring-inset ${
+                          isSelected
+                            ? "bg-white text-[#0b63f6] ring-[#0b63f6]/20"
+                            : "bg-slate-50 text-slate-500 ring-slate-200"
+                        }`}
+                        aria-hidden="true"
+                      >
+                        <BuilderGlyph name={option.type} />
                       </span>
-                      <span className="mt-1 block text-xs leading-5 text-slate-500">
-                        {variant.description}
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-slate-900">
+                          {option.label}
+                        </span>
+                        <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-slate-500 sm:text-sm sm:leading-5">
+                          {option.description}
+                        </span>
                       </span>
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            )}
+
+              {selectedOption && (
+                <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
+                  <div className="mb-4">
+                    <h5 className="text-sm font-semibold text-slate-950 sm:text-base">
+                      Choose a {selectedOption.label.toLowerCase()} layout
+                    </h5>
+                  </div>
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    {selectedOption.variants.map((variant) => (
+                      <button
+                        key={`${selectedOption.type}-${variant.id}`}
+                        type="button"
+                        className="overflow-hidden rounded-lg border border-slate-200 bg-white text-left shadow-sm transition-all hover:border-[#0b63f6]/50 hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                        onClick={() => {
+                          onAddBlock(selectedOption.type, variant.id);
+                          setIsOpen(false);
+                        }}
+                      >
+                        <span
+                          className="block h-40 border-b border-slate-200 bg-white p-5 sm:h-48 sm:p-6"
+                          aria-hidden="true"
+                        >
+                          <BlockVariantPreviewSkeleton
+                            type={selectedOption.type}
+                            variant={variant.id}
+                          />
+                        </span>
+                        <span className="block px-4 py-3">
+                          <span className="block text-sm font-semibold text-slate-900">
+                            {variant.label}
+                          </span>
+                          <span className="mt-1 block text-sm leading-5 text-slate-500">
+                            {variant.description}
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -3115,166 +3150,513 @@ function BlockPicker({
   );
 }
 
-function BlockLargePreviewSkeleton({ type }: { type: PageBlock["type"] }) {
+function BlockVariantPreviewSkeleton({
+  type,
+  variant,
+}: {
+  type: PageBlock["type"];
+  variant: BlockVariant;
+}) {
   if (type === "hero") {
-    return (
-      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <div className="h-3 w-24 rounded bg-indigo-200" />
-        <div className="mt-4 h-7 w-4/5 rounded bg-slate-200" />
-        <div className="mt-3 h-4 w-2/3 rounded bg-slate-100" />
-        <div className="mt-6 h-9 w-32 rounded-full bg-[#0b63f6]/80" />
-      </div>
-    );
+    return <HeroLayoutPreview variant={variant} />;
   }
   if (type === "image") {
-    return (
-      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <div className="aspect-video rounded-xl border border-dashed border-slate-300 bg-slate-50" />
-        <div className="mt-3 h-3 w-2/5 rounded bg-slate-100" />
-      </div>
-    );
+    return <ImageLayoutPreview variant={variant} />;
   }
   if (type === "lead_form") {
-    return (
-      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <div className="h-5 w-3/5 rounded bg-slate-200" />
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="h-10 rounded-lg bg-slate-50 ring-1 ring-slate-200" />
-          <div className="h-10 rounded-lg bg-slate-50 ring-1 ring-slate-200" />
-          <div className="h-10 rounded-lg bg-slate-50 ring-1 ring-slate-200" />
-          <div className="h-10 rounded-lg bg-slate-50 ring-1 ring-slate-200" />
-        </div>
-        <div className="mt-4 h-9 w-32 rounded-full bg-[#0b63f6]/80" />
-      </div>
-    );
+    return <LeadFormLayoutPreview variant={variant} />;
   }
   if (type === "card_grid") {
-    return (
-      <div className="grid gap-3 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:grid-cols-3">
-        <SkeletonCard />
-        <SkeletonCard />
-        <SkeletonCard />
-      </div>
-    );
+    return <CardsLayoutPreview variant={variant} />;
   }
   if (type === "video") {
-    return (
-      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <div className="grid aspect-video place-items-center rounded-xl bg-slate-100">
-          <div className="h-12 w-12 rounded-full bg-white shadow-sm" />
-        </div>
-        <div className="mt-3 h-3 w-1/2 rounded bg-slate-100" />
-      </div>
-    );
-  }
-  return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-      <BlockPreviewSkeleton type={type} />
-    </div>
-  );
-}
-
-function BlockPreviewSkeleton({ type }: { type: PageBlock["type"] }) {
-  if (type === "hero") {
-    return (
-      <div className="space-y-2 rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
-        <div className="h-2 w-16 rounded bg-indigo-200" />
-        <div className="h-4 w-4/5 rounded bg-slate-200" />
-        <div className="h-3 w-2/3 rounded bg-slate-100" />
-        <div className="h-5 w-20 rounded-full bg-[#0b63f6] opacity-80" />
-      </div>
-    );
-  }
-  if (type === "image") {
-    return (
-      <div className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
-        <div className="aspect-video rounded-md border border-dashed border-slate-200 bg-slate-50" />
-        <div className="mt-2 h-2 w-1/2 rounded bg-slate-100" />
-      </div>
-    );
-  }
-  if (type === "lead_form") {
-    return (
-      <div className="space-y-2 rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
-        <div className="h-3 w-3/4 rounded bg-slate-200" />
-        <div className="grid grid-cols-2 gap-1.5">
-          <div className="h-5 rounded bg-slate-50 ring-1 ring-slate-100" />
-          <div className="h-5 rounded bg-slate-50 ring-1 ring-slate-100" />
-          <div className="h-5 rounded bg-slate-50 ring-1 ring-slate-100" />
-          <div className="h-5 rounded bg-slate-50 ring-1 ring-slate-100" />
-        </div>
-        <div className="h-5 w-20 rounded-full bg-[#0b63f6] opacity-80" />
-      </div>
-    );
-  }
-  if (type === "card_grid") {
-    return (
-      <div className="grid grid-cols-3 gap-1.5 rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
-        <SkeletonCard miniature />
-        <SkeletonCard miniature />
-        <SkeletonCard miniature />
-      </div>
-    );
+    return <VideoLayoutPreview variant={variant} />;
   }
   if (type === "faq") {
-    return (
-      <div className="space-y-2 rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
-        <div className="h-3 w-2/3 rounded bg-slate-200" />
-        <div className="h-5 rounded bg-slate-50 ring-1 ring-slate-100" />
-        <div className="h-5 rounded bg-slate-50 ring-1 ring-slate-100" />
-      </div>
-    );
+    return <FaqLayoutPreview variant={variant} />;
   }
   if (type === "proof") {
-    return (
-      <div className="space-y-2 rounded-lg bg-slate-50 p-3 shadow-sm ring-1 ring-slate-100">
-        <div className="h-3 w-16 rounded bg-indigo-200" />
-        <div className="h-3 w-4/5 rounded bg-slate-300" />
-        <div className="h-3 w-2/3 rounded bg-slate-200" />
-      </div>
-    );
-  }
-  if (type === "video") {
-    return (
-      <div className="space-y-2 rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
-        <div className="grid aspect-video place-items-center rounded-md bg-slate-100">
-          <div className="h-5 w-5 rounded-full bg-white shadow-sm" />
-        </div>
-        <div className="h-2 w-2/3 rounded bg-slate-100" />
-      </div>
-    );
+    return <ProofLayoutPreview variant={variant} />;
   }
   if (type === "cta") {
+    return <CtaLayoutPreview variant={variant} />;
+  }
+  return <TextLayoutPreview variant={variant} />;
+}
+
+function HeroLayoutPreview({ variant }: { variant: BlockVariant }) {
+  if (variant === "split") {
     return (
-      <div className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
-        <div className="h-6 w-24 rounded-full bg-[#0b63f6] opacity-80" />
-      </div>
+      <span className="grid h-full grid-cols-[minmax(0,1fr)_88px] items-center gap-6">
+        <span className="block">
+          <PreviewAccent className="w-16" />
+          <PreviewLine tone="dark" className="mt-5 h-4 w-full" />
+          <PreviewLine tone="dark" className="mt-2 h-4 w-3/4" />
+          <PreviewLine className="mt-4 h-2 w-full" />
+          <PreviewLine className="mt-2 h-2 w-4/5" />
+          <PreviewButton className="mt-5 w-20" />
+        </span>
+        <PreviewImage className="h-28" />
+      </span>
     );
   }
+
+  if (variant === "compact") {
+    return (
+      <span className="flex h-full flex-col items-center justify-center text-center">
+        <PreviewAccent className="w-20" />
+        <PreviewLine tone="dark" className="mt-5 h-4 w-48 max-w-full" />
+        <PreviewLine tone="dark" className="mt-2 h-4 w-36 max-w-full" />
+        <PreviewLine className="mt-5 h-2 w-40 max-w-full" />
+        <PreviewLine className="mt-2 h-2 w-36 max-w-full" />
+        <PreviewButton className="mt-6 w-24" />
+      </span>
+    );
+  }
+
+  if (variant === "editorial") {
+    return (
+      <span className="block h-full pt-2">
+        <PreviewAccent className="w-20" />
+        <PreviewLine tone="dark" className="mt-4 h-4 w-4/5" />
+        <PreviewLine tone="dark" className="mt-2 h-4 w-3/5" />
+        <span className="mt-4 flex items-center gap-3">
+          <span className="block h-3 w-3 rounded-full border border-slate-400" />
+          <PreviewLine className="h-2 w-16" />
+          <span className="block h-1 w-1 rounded-full bg-slate-400" />
+          <span className="block h-3 w-3 rounded-sm border border-slate-400" />
+          <PreviewLine className="h-2 w-20" />
+        </span>
+        <PreviewLine className="mt-5 h-2 w-4/5" />
+        <PreviewLine className="mt-2 h-2 w-3/4" />
+        <PreviewLine className="mt-2 h-2 w-2/3" />
+        <PreviewLine className="mt-2 h-2 w-1/2" />
+      </span>
+    );
+  }
+
   return (
-    <div className="space-y-2 rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
-      <div className="h-3 w-3/4 rounded bg-slate-200" />
-      <div className="h-2 w-full rounded bg-slate-100" />
-      <div className="h-2 w-2/3 rounded bg-slate-100" />
-    </div>
+    <span className="block h-full pt-2">
+      <PreviewAccent className="w-16" />
+      <PreviewLine tone="dark" className="mt-5 h-4 w-4/5" />
+      <PreviewLine tone="dark" className="mt-2 h-4 w-2/3" />
+      <PreviewLine className="mt-5 h-2 w-3/4" />
+      <PreviewLine className="mt-2 h-2 w-2/3" />
+      <PreviewButton className="mt-6 w-28" />
+    </span>
   );
 }
 
-function SkeletonCard({ miniature = false }: { miniature?: boolean }) {
+function TextLayoutPreview({ variant }: { variant: BlockVariant }) {
+  if (variant === "checklist") {
+    return (
+      <span className="block h-full pt-2">
+        <PreviewLine tone="dark" className="h-4 w-3/5" />
+        <PreviewLine className="mt-3 h-2 w-4/5" />
+        {[0, 1, 2].map((item) => (
+          <span key={item} className="mt-3 flex items-center gap-3">
+            <span className="block h-4 w-4 rounded-full bg-[#0b63f6]/80" />
+            <PreviewLine className={item === 2 ? "h-2 w-2/5" : "h-2 w-3/5"} />
+          </span>
+        ))}
+      </span>
+    );
+  }
+
+  if (variant === "intro") {
+    return (
+      <span className="flex h-full flex-col justify-center">
+        <PreviewAccent className="w-14" />
+        <PreviewLine tone="dark" className="mt-5 h-5 w-4/5" />
+        <PreviewLine className="mt-4 h-2 w-full" />
+        <PreviewLine className="mt-2 h-2 w-5/6" />
+        <PreviewLine className="mt-2 h-2 w-2/3" />
+      </span>
+    );
+  }
+
+  if (variant === "compact") {
+    return (
+      <span className="flex h-full flex-col justify-center">
+        <PreviewLine tone="dark" className="h-4 w-2/5" />
+        <PreviewLine className="mt-4 h-2 w-3/5" />
+        <PreviewLine className="mt-2 h-2 w-1/2" />
+      </span>
+    );
+  }
+
   return (
-    <div
-      className={`rounded-xl border border-slate-100 bg-white shadow-sm ${
-        miniature ? "h-12 p-2" : "p-5"
+    <span className="block h-full pt-3">
+      <PreviewLine tone="dark" className="h-4 w-2/3" />
+      <PreviewLine className="mt-5 h-2 w-full" />
+      <PreviewLine className="mt-2 h-2 w-5/6" />
+      <PreviewLine className="mt-2 h-2 w-4/5" />
+      <PreviewLine className="mt-5 h-2 w-2/3" />
+      <PreviewLine className="mt-2 h-2 w-3/5" />
+    </span>
+  );
+}
+
+function ImageLayoutPreview({ variant }: { variant: BlockVariant }) {
+  if (variant === "wide") {
+    return (
+      <span className="block h-full">
+        <PreviewImage className="h-28" />
+        <PreviewLine className="mt-4 h-2 w-2/5" />
+      </span>
+    );
+  }
+
+  if (variant === "inline") {
+    return (
+      <span className="grid h-full grid-cols-[96px_minmax(0,1fr)] items-center gap-5">
+        <PreviewImage className="h-24" />
+        <span className="block">
+          <PreviewLine tone="dark" className="h-4 w-2/3" />
+          <PreviewLine className="mt-4 h-2 w-full" />
+          <PreviewLine className="mt-2 h-2 w-4/5" />
+          <PreviewLine className="mt-2 h-2 w-3/5" />
+        </span>
+      </span>
+    );
+  }
+
+  if (variant === "feature") {
+    return (
+      <span className="grid h-full grid-cols-[minmax(0,1fr)_104px] items-center gap-5">
+        <span className="block">
+          <PreviewAccent className="w-14" />
+          <PreviewLine tone="dark" className="mt-4 h-4 w-4/5" />
+          <PreviewLine className="mt-4 h-2 w-3/4" />
+          <PreviewLine className="mt-2 h-2 w-2/3" />
+        </span>
+        <PreviewImage className="h-28" />
+      </span>
+    );
+  }
+
+  return (
+    <span className="block h-full">
+      <PreviewImage className="h-24" />
+      <PreviewLine className="mt-4 h-2 w-2/5" />
+      <PreviewLine className="mt-2 h-2 w-1/3" />
+    </span>
+  );
+}
+
+function CtaLayoutPreview({ variant }: { variant: BlockVariant }) {
+  if (variant === "text") {
+    return (
+      <span className="flex h-full flex-col justify-center">
+        <PreviewLine tone="dark" className="h-4 w-2/3" />
+        <PreviewLine className="mt-4 h-2 w-4/5" />
+        <PreviewLine className="mt-2 h-2 w-3/5" />
+        <span className="mt-5 block h-2 w-24 rounded-full bg-[#0b63f6]/85" />
+      </span>
+    );
+  }
+
+  return (
+    <span className="flex h-full flex-col justify-center">
+      <PreviewLine tone="dark" className="h-4 w-3/5" />
+      <PreviewLine className="mt-4 h-2 w-4/5" />
+      <PreviewLine className="mt-2 h-2 w-2/3" />
+      <PreviewButton className="mt-6 w-28" subtle={variant === "secondary"} />
+    </span>
+  );
+}
+
+function FaqLayoutPreview({ variant }: { variant: BlockVariant }) {
+  if (variant === "compact") {
+    return (
+      <span className="flex h-full flex-col justify-center">
+        <PreviewLine tone="dark" className="h-4 w-3/5" />
+        <PreviewQuestionRow className="mt-5" />
+        <PreviewQuestionRow className="mt-2" short />
+      </span>
+    );
+  }
+
+  if (variant === "accordion") {
+    return (
+      <span className="block h-full pt-2">
+        <PreviewLine tone="dark" className="h-4 w-2/3" />
+        {[0, 1, 2].map((item) => (
+          <span
+            key={item}
+            className="mt-3 flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 ring-1 ring-slate-200"
+          >
+            <PreviewLine className="h-2 w-3/5" />
+            <span className="block h-3 w-3 rounded-full border border-slate-400" />
+          </span>
+        ))}
+      </span>
+    );
+  }
+
+  return (
+    <span className="block h-full pt-2">
+      <PreviewLine tone="dark" className="h-4 w-2/3" />
+      <PreviewQuestionRow className="mt-5" />
+      <PreviewLine className="mt-3 h-2 w-5/6" />
+      <PreviewLine className="mt-2 h-2 w-2/3" />
+      <PreviewQuestionRow className="mt-4" short />
+    </span>
+  );
+}
+
+function CardsLayoutPreview({ variant }: { variant: BlockVariant }) {
+  if (variant === "compact") {
+    return (
+      <span className="grid h-full grid-cols-2 gap-2">
+        {[0, 1, 2, 3].map((item) => (
+          <PreviewCard key={item} compact />
+        ))}
+      </span>
+    );
+  }
+
+  if (variant === "feature") {
+    return (
+      <span className="grid h-full grid-cols-[1.1fr_0.9fr] gap-3">
+        <PreviewCard featured />
+        <span className="grid gap-3">
+          <PreviewCard compact />
+          <PreviewCard compact />
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <span className="grid h-full grid-cols-3 gap-3">
+      <PreviewCard />
+      <PreviewCard />
+      <PreviewCard />
+    </span>
+  );
+}
+
+function ProofLayoutPreview({ variant }: { variant: BlockVariant }) {
+  if (variant === "stat") {
+    return (
+      <span className="flex h-full flex-col justify-center">
+        <PreviewAccent className="w-14" />
+        <PreviewLine tone="dark" className="mt-5 h-8 w-24" />
+        <PreviewLine className="mt-4 h-2 w-4/5" />
+        <PreviewLine className="mt-2 h-2 w-2/3" />
+      </span>
+    );
+  }
+
+  if (variant === "logo") {
+    return (
+      <span className="flex h-full flex-col justify-center">
+        <PreviewLine tone="dark" className="h-4 w-3/5" />
+        <span className="mt-6 grid grid-cols-3 gap-3">
+          {[0, 1, 2].map((item) => (
+            <span
+              key={item}
+              className="block h-10 rounded-md bg-slate-50 ring-1 ring-slate-200"
+            />
+          ))}
+        </span>
+        <PreviewLine className="mt-5 h-2 w-2/3" />
+      </span>
+    );
+  }
+
+  return (
+    <span className="flex h-full flex-col justify-center">
+      <PreviewAccent className="w-14" />
+      <PreviewLine tone="dark" className="mt-5 h-3 w-4/5" />
+      <PreviewLine tone="dark" className="mt-2 h-3 w-2/3" />
+      <span className="mt-5 flex items-center gap-3">
+        <span className="block h-8 w-8 rounded-full bg-slate-200" />
+        <span className="block min-w-0 flex-1">
+          <PreviewLine className="h-2 w-1/2" />
+          <PreviewLine className="mt-2 h-2 w-2/5" />
+        </span>
+      </span>
+    </span>
+  );
+}
+
+function VideoLayoutPreview({ variant }: { variant: BlockVariant }) {
+  if (variant === "inline") {
+    return (
+      <span className="grid h-full grid-cols-[104px_minmax(0,1fr)] items-center gap-5">
+        <PreviewVideo className="h-24" />
+        <span className="block">
+          <PreviewLine tone="dark" className="h-4 w-3/5" />
+          <PreviewLine className="mt-4 h-2 w-full" />
+          <PreviewLine className="mt-2 h-2 w-3/4" />
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <span className="block h-full">
+      <PreviewVideo className={variant === "wide" ? "h-28" : "h-24"} />
+      <PreviewLine className="mt-4 h-2 w-2/5" />
+      {variant !== "wide" && <PreviewLine className="mt-2 h-2 w-1/3" />}
+    </span>
+  );
+}
+
+function LeadFormLayoutPreview({ variant }: { variant: BlockVariant }) {
+  if (variant === "sidebar") {
+    return (
+      <span className="grid h-full grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] items-center gap-5">
+        <span className="block">
+          <PreviewLine tone="dark" className="h-4 w-4/5" />
+          <PreviewLine className="mt-4 h-2 w-full" />
+          <PreviewLine className="mt-2 h-2 w-3/4" />
+        </span>
+        <span className="grid gap-2">
+          <PreviewField />
+          <PreviewField />
+          <PreviewButton className="w-24" />
+        </span>
+      </span>
+    );
+  }
+
+  if (variant === "compact") {
+    return (
+      <span className="flex h-full flex-col justify-center">
+        <PreviewLine tone="dark" className="h-4 w-3/5" />
+        <span className="mt-5 grid grid-cols-2 gap-2">
+          <PreviewField />
+          <PreviewField />
+        </span>
+        <PreviewButton className="mt-4 w-24" />
+      </span>
+    );
+  }
+
+  return (
+    <span className="block h-full pt-1">
+      <PreviewLine tone="dark" className="h-4 w-3/5" />
+      <span className="mt-5 grid grid-cols-2 gap-2">
+        <PreviewField />
+        <PreviewField />
+        <PreviewField />
+        <PreviewField />
+      </span>
+      <PreviewButton className="mt-4 w-28" />
+    </span>
+  );
+}
+
+function PreviewAccent({ className = "" }: { className?: string }) {
+  return (
+    <span className={`block h-1.5 rounded-full bg-[#0b63f6]/85 ${className}`} />
+  );
+}
+
+function PreviewLine({
+  className = "",
+  tone = "muted",
+}: {
+  className?: string;
+  tone?: "dark" | "muted";
+}) {
+  const toneClass =
+    tone === "dark"
+      ? "bg-gradient-to-r from-slate-700 to-slate-500"
+      : "bg-slate-200";
+
+  return <span className={`block rounded-full ${toneClass} ${className}`} />;
+}
+
+function PreviewButton({
+  className = "",
+  subtle = false,
+}: {
+  className?: string;
+  subtle?: boolean;
+}) {
+  return (
+    <span
+      className={`block h-8 rounded-full ${
+        subtle
+          ? "border border-[#0b63f6]/50 bg-white"
+          : "bg-[#0b63f6]/85 shadow-sm"
+      } ${className}`}
+    />
+  );
+}
+
+function PreviewImage({ className = "" }: { className?: string }) {
+  return (
+    <span
+      className={`relative block overflow-hidden rounded-md bg-gradient-to-br from-slate-100 to-slate-200 ring-1 ring-slate-200 ${className}`}
+    >
+      <span className="absolute top-4 right-4 block h-5 w-5 rounded-full bg-slate-300/70" />
+      <span className="absolute bottom-0 left-0 block h-3/5 w-3/5 rounded-tr-[28px] bg-slate-300/60" />
+      <span className="absolute right-0 bottom-0 block h-2/5 w-2/5 rounded-tl-[24px] bg-slate-300/50" />
+    </span>
+  );
+}
+
+function PreviewVideo({ className = "" }: { className?: string }) {
+  return (
+    <span
+      className={`grid place-items-center rounded-md bg-slate-100 ring-1 ring-slate-200 ${className}`}
+    >
+      <span className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
+        <span className="ml-0.5 block h-0 w-0 border-y-[6px] border-l-[9px] border-y-transparent border-l-slate-500" />
+      </span>
+    </span>
+  );
+}
+
+function PreviewField() {
+  return (
+    <span className="block h-8 rounded-md bg-slate-50 ring-1 ring-slate-200" />
+  );
+}
+
+function PreviewQuestionRow({
+  className = "",
+  short = false,
+}: {
+  className?: string;
+  short?: boolean;
+}) {
+  return (
+    <span className={`flex items-center gap-3 ${className}`}>
+      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500">
+        ?
+      </span>
+      <PreviewLine className={`h-2 ${short ? "w-2/5" : "w-3/5"}`} />
+    </span>
+  );
+}
+
+function PreviewCard({
+  compact = false,
+  featured = false,
+}: {
+  compact?: boolean;
+  featured?: boolean;
+}) {
+  return (
+    <span
+      className={`block rounded-md border border-slate-200 bg-white shadow-sm ${
+        compact ? "p-3" : "p-4"
       }`}
     >
-      <div className="h-3 w-3/4 rounded bg-slate-200" />
-      {!miniature && (
-        <>
-          <div className="mt-3 h-2 w-full rounded bg-slate-100" />
-          <div className="mt-2 h-2 w-2/3 rounded bg-slate-100" />
-        </>
-      )}
-    </div>
+      <PreviewLine
+        tone="dark"
+        className={`${featured ? "h-4 w-3/4" : "h-3 w-2/3"}`}
+      />
+      <PreviewLine className={`${compact ? "mt-3" : "mt-4"} h-2 w-full`} />
+      <PreviewLine className="mt-2 h-2 w-2/3" />
+      {featured && <PreviewButton className="mt-5 w-20" />}
+    </span>
   );
 }
 
