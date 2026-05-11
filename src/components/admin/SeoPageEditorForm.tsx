@@ -24,6 +24,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Wordmark } from "@/components/site/Wordmark";
 import {
+  ResourcePageBlockView,
+  resourceColumnGridClass,
+  resourceSectionClass,
+} from "@/components/sections/ResourcePageContent";
+import {
   acceptAiSeoProposalBlocks,
   autosaveSeoPageDraft,
   generateAiSeoPageProposal,
@@ -59,6 +64,7 @@ import {
   createPageBlock,
   createPageColumn,
   createPageSection,
+  duplicatePageBlock,
   ensureEditablePageContent,
   moveItem,
   reorderItemsById,
@@ -504,6 +510,13 @@ export function SeoPageEditorForm({
                           direction,
                         )
                       }
+                      onBlockDuplicate={(blockId) =>
+                        duplicateBlock(
+                          primarySection.id,
+                          primaryColumn.id,
+                          blockId,
+                        )
+                      }
                       onBlockRemove={(blockId) =>
                         removeBlock(
                           primarySection.id,
@@ -621,6 +634,9 @@ export function SeoPageEditorForm({
                                     blockId,
                                     direction,
                                   )
+                                }
+                                onBlockDuplicate={(columnId, blockId) =>
+                                  duplicateBlock(section.id, columnId, blockId)
                                 }
                                 onBlockRemove={(columnId, blockId) =>
                                   removeBlock(section.id, columnId, blockId)
@@ -1098,6 +1114,29 @@ export function SeoPageEditorForm({
       updateColumn(current, sectionId, columnId, (column) => {
         const index = column.blocks.findIndex((block) => block.id === blockId);
         return { ...column, blocks: moveItem(column.blocks, index, direction) };
+      }),
+    );
+  }
+
+  function duplicateBlock(
+    sectionId: string,
+    columnId: string,
+    blockId: string,
+  ) {
+    setContent((current) =>
+      updateColumn(current, sectionId, columnId, (column) => {
+        if (column.blocks.length >= 30) return column;
+        const index = column.blocks.findIndex((block) => block.id === blockId);
+        const block = column.blocks[index];
+        if (!block) return column;
+
+        const blocks = [...column.blocks];
+        blocks.splice(
+          index + 1,
+          0,
+          duplicatePageBlock(block, makeBuilderId("block")),
+        );
+        return { ...column, blocks };
       }),
     );
   }
@@ -2382,6 +2421,7 @@ function SortableSectionEditor({
   onAddBlock,
   onBlockChange,
   onBlockMove,
+  onBlockDuplicate,
   onBlockRemove,
 }: {
   section: PageSection;
@@ -2412,6 +2452,7 @@ function SortableSectionEditor({
     blockId: string,
     direction: MoveDirection,
   ) => void;
+  onBlockDuplicate: (columnId: string, blockId: string) => void;
   onBlockRemove: (columnId: string, blockId: string) => void;
 }) {
   const {
@@ -2594,6 +2635,9 @@ function SortableSectionEditor({
                   onBlockMove={(blockId, direction) =>
                     onBlockMove(column.id, blockId, direction)
                   }
+                  onBlockDuplicate={(blockId) =>
+                    onBlockDuplicate(column.id, blockId)
+                  }
                   onBlockRemove={(blockId) => onBlockRemove(column.id, blockId)}
                 />
               ))
@@ -2615,6 +2659,7 @@ function SimpleBlockStackEditor({
   onAddBlock,
   onBlockChange,
   onBlockMove,
+  onBlockDuplicate,
   onBlockRemove,
 }: {
   sectionId: string;
@@ -2626,6 +2671,7 @@ function SimpleBlockStackEditor({
   onAddBlock: (type: PageBlock["type"], variant?: BlockVariant) => void;
   onBlockChange: (blockId: string, next: PageBlock) => void;
   onBlockMove: (blockId: string, direction: MoveDirection) => void;
+  onBlockDuplicate: (blockId: string) => void;
   onBlockRemove: (blockId: string) => void;
 }) {
   return (
@@ -2684,6 +2730,7 @@ function SimpleBlockStackEditor({
                   mediaAssets={mediaAssets}
                   onChange={(next) => onBlockChange(block.id, next)}
                   onMove={(direction) => onBlockMove(block.id, direction)}
+                  onDuplicate={() => onBlockDuplicate(block.id)}
                   onRemove={() => onBlockRemove(block.id)}
                 />
               ))}
@@ -2709,6 +2756,7 @@ function SortableColumnEditor({
   onAddBlock,
   onBlockChange,
   onBlockMove,
+  onBlockDuplicate,
   onBlockRemove,
 }: {
   column: PageColumn;
@@ -2723,6 +2771,7 @@ function SortableColumnEditor({
   onAddBlock: (type: PageBlock["type"], variant?: BlockVariant) => void;
   onBlockChange: (blockId: string, next: PageBlock) => void;
   onBlockMove: (blockId: string, direction: MoveDirection) => void;
+  onBlockDuplicate: (blockId: string) => void;
   onBlockRemove: (blockId: string) => void;
 }) {
   const {
@@ -2844,6 +2893,7 @@ function SortableColumnEditor({
                       mediaAssets={mediaAssets}
                       onChange={(next) => onBlockChange(block.id, next)}
                       onMove={(direction) => onBlockMove(block.id, direction)}
+                      onDuplicate={() => onBlockDuplicate(block.id)}
                       onRemove={() => onBlockRemove(block.id)}
                     />
                   ))}
@@ -3786,6 +3836,7 @@ function SortableBlockEditor({
   mediaAssets,
   onChange,
   onMove,
+  onDuplicate,
   onRemove,
 }: {
   block: PageBlock;
@@ -3795,6 +3846,7 @@ function SortableBlockEditor({
   mediaAssets: SeoPageEditorMediaAsset[];
   onChange: (block: PageBlock) => void;
   onMove: (direction: MoveDirection) => void;
+  onDuplicate: () => void;
   onRemove: () => void;
 }) {
   const {
@@ -3828,6 +3880,7 @@ function SortableBlockEditor({
         onChange={onChange}
         mediaAssets={mediaAssets}
         onMove={onMove}
+        onDuplicate={onDuplicate}
         onRemove={onRemove}
       />
     </div>
@@ -3844,6 +3897,7 @@ function BlockEditor({
   mediaAssets,
   onChange,
   onMove,
+  onDuplicate,
   onRemove,
 }: {
   block: PageBlock;
@@ -3855,6 +3909,7 @@ function BlockEditor({
   mediaAssets: SeoPageEditorMediaAsset[];
   onChange: (block: PageBlock) => void;
   onMove: (direction: MoveDirection) => void;
+  onDuplicate: () => void;
   onRemove: () => void;
 }) {
   const blockCompletionMessages = completionMessagesForBlock(block);
@@ -3883,726 +3938,818 @@ function BlockEditor({
         isLast={isLast}
         dragHandle={dragHandle}
         onVariantChange={(variant) =>
-          onChange(withBlockVariant(block, variant))
+          onChange(
+            withEditorDefaultsForNewBlock(withBlockVariant(block, variant)),
+          )
         }
         onMove={onMove}
+        onDuplicate={onDuplicate}
         onRemove={onRemove}
       />
 
-      {block.type === "rich_text" && (
-        <div className="max-w-3xl px-3 py-7 sm:px-4">
-          <label className="block">
-            <span className="sr-only">Eyebrow</span>
-            <input
-              value={block.props.eyebrow}
-              placeholder="Eyebrow"
-              onChange={(event) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, eyebrow: event.target.value },
-                })
-              }
-              className={eyebrowInputClass}
-            />
-          </label>
-          <label className="mt-3 block">
-            <span className="sr-only">Heading</span>
-            <input
-              value={block.props.heading}
-              placeholder="Section heading"
-              onChange={(event) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, heading: event.target.value },
-                })
-              }
-              className={sectionHeadingInputClass}
-            />
-          </label>
-          <label className="mt-4 block">
-            <span className="sr-only">Body</span>
-            <textarea
-              value={bodyText(block)}
-              placeholder="Write the page copy here."
-              onChange={(event) =>
-                onChange({
-                  ...block,
-                  props: {
-                    ...block.props,
-                    body: {
-                      version: 1,
-                      nodes: [{ type: "paragraph", text: event.target.value }],
-                    },
-                  },
-                })
-              }
-              rows={5}
-              className={bodyTextareaClass}
-            />
-          </label>
-        </div>
-      )}
+      <div className="px-3 py-6 sm:px-4">
+        <ResourcePageBlockView
+          block={block}
+          renderMode="editor"
+          linkMode="disabled"
+        />
+      </div>
 
-      {block.type === "hero" && (
-        <div className="max-w-4xl px-3 py-8 sm:px-4">
-          <label className="block">
-            <span className="sr-only">Eyebrow</span>
-            <input
-              value={block.props.eyebrow}
-              placeholder="Eyebrow"
-              onChange={(event) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, eyebrow: event.target.value },
-                })
-              }
-              className={eyebrowInputClass}
-            />
-          </label>
-          <label className="mt-3 block">
-            <span className="sr-only">Heading</span>
-            <textarea
-              value={block.props.heading}
-              placeholder="Hero headline"
-              onChange={(event) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, heading: event.target.value },
-                })
-              }
-              rows={2}
-              className={heroHeadingInputClass}
-            />
-          </label>
-          <label className="mt-5 block max-w-3xl">
-            <span className="sr-only">Body</span>
-            <textarea
-              value={block.props.body}
-              placeholder="Hero body copy"
-              onChange={(event) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, body: event.target.value },
-                })
-              }
-              rows={3}
-              className={leadInputClass}
-            />
-          </label>
-          <div className="mt-7 grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)]">
-            <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
-              <span className="sr-only">CTA label</span>
-              <input
-                value={block.props.ctaLabel}
-                placeholder="CTA label"
-                onChange={(event) => {
-                  const nextLabel = event.target.value;
-                  onChange({
-                    ...block,
-                    props: {
-                      ...block.props,
-                      ctaLabel: nextLabel,
-                      ctaTrackingName: syncedTrackingName({
-                        currentTrackingName: block.props.ctaTrackingName,
-                        previousLabel: block.props.ctaLabel,
-                        nextLabel,
-                        fallback: "hero-cta",
-                      }),
-                    },
-                  });
-                }}
-                className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
-              />
-            </label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <TextInput
-                label="CTA href"
-                value={block.props.ctaHref}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: { ...block.props, ctaHref: value },
-                  })
-                }
-              />
-              <TextInput
-                label="Internal CTA label"
-                value={block.props.ctaTrackingName}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: { ...block.props, ctaTrackingName: value },
-                  })
-                }
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {block.type === "image" && (
-        <figure className="px-3 py-4 sm:px-4">
-          {block.props.src ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={block.props.src}
-              alt={block.props.altText}
-              className="aspect-video w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]"
-            />
-          ) : (
-            <div className="grid aspect-video place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
-              Image preview
+      <details className="mx-3 mb-4 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg ring-1 ring-black/5 backdrop-blur sm:mx-4">
+        <summary className="cursor-pointer text-sm font-semibold text-slate-800">
+          Block settings
+        </summary>
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          {block.type === "rich_text" && (
+            <div className="max-w-3xl px-3 py-7 sm:px-4">
+              <label className="block">
+                <span className="sr-only">Eyebrow</span>
+                <input
+                  value={block.props.eyebrow}
+                  placeholder="Eyebrow"
+                  onChange={(event) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, eyebrow: event.target.value },
+                    })
+                  }
+                  className={eyebrowInputClass}
+                />
+              </label>
+              <label className="mt-3 block">
+                <span className="sr-only">Heading</span>
+                <input
+                  value={block.props.heading}
+                  placeholder="Section heading"
+                  onChange={(event) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, heading: event.target.value },
+                    })
+                  }
+                  className={sectionHeadingInputClass}
+                />
+              </label>
+              <label className="mt-4 block">
+                <span className="sr-only">Body</span>
+                <textarea
+                  value={bodyText(block)}
+                  placeholder="Write the page copy here."
+                  onChange={(event) =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        body: {
+                          version: 1,
+                          nodes: [
+                            { type: "paragraph", text: event.target.value },
+                          ],
+                        },
+                      },
+                    })
+                  }
+                  rows={5}
+                  className={bodyTextareaClass}
+                />
+              </label>
             </div>
           )}
-          <label className="mt-3 block">
-            <span className="sr-only">Caption</span>
-            <input
-              value={block.props.caption}
-              placeholder="Caption"
-              onChange={(event) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, caption: event.target.value },
-                })
-              }
-              className="focus:ring-brand-100 w-full bg-transparent text-sm text-slate-500 outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
-            />
-          </label>
-          <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <summary className="cursor-pointer text-sm font-semibold text-slate-700">
-              Image settings
-            </summary>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="block md:col-span-2">
-                <span className="text-sm font-medium text-slate-700">
-                  Media library asset
-                </span>
-                <select
-                  value={block.props.assetId ?? ""}
-                  onChange={(event) => {
-                    const asset = mediaAssets.find(
-                      (item) => item.id === event.target.value,
-                    );
-                    onChange(
-                      asset
-                        ? applyMediaAssetToImageBlock(block, asset)
-                        : {
-                            ...block,
-                            props: {
-                              ...block.props,
-                              assetId: undefined,
-                              src: "",
-                              altText: "",
-                              caption: "",
-                              sourceRightsNotes: "",
-                            },
-                          },
-                    );
-                  }}
-                  className={compactInputClass}
-                >
-                  <option value="">Choose from media library</option>
-                  {mediaAssets.map((asset) => (
-                    <option key={asset.id} value={asset.id}>
-                      {asset.title}
-                    </option>
-                  ))}
-                </select>
-                {mediaAssets.length === 0 && (
-                  <span className="mt-2 block text-xs leading-5 text-slate-500">
-                    Add image assets in the media library before selecting one
-                    here.
-                  </span>
-                )}
+
+          {block.type === "hero" && (
+            <div className="max-w-4xl px-3 py-8 sm:px-4">
+              <label className="block">
+                <span className="sr-only">Eyebrow</span>
+                <input
+                  value={block.props.eyebrow}
+                  placeholder="Eyebrow"
+                  onChange={(event) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, eyebrow: event.target.value },
+                    })
+                  }
+                  className={eyebrowInputClass}
+                />
               </label>
-              <TextInput
-                label="Asset ID"
-                value={block.props.assetId ?? ""}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: {
-                      ...block.props,
-                      assetId: value || undefined,
-                    },
-                  })
-                }
-              />
-              <TextInput
-                label="Image path or URL"
-                value={block.props.src}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: { ...block.props, src: value },
-                  })
-                }
-              />
-              <TextInput
-                label="Alt text"
-                value={block.props.altText}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: { ...block.props, altText: value },
-                  })
-                }
-              />
-              <TextInput
-                label="Rights notes"
-                value={block.props.sourceRightsNotes}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: { ...block.props, sourceRightsNotes: value },
-                  })
-                }
-              />
-            </div>
-          </details>
-        </figure>
-      )}
-
-      {block.type === "cta" && (
-        <div className="px-3 py-4 sm:px-4">
-          <label className="inline-flex min-h-12 max-w-sm items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
-            <span className="sr-only">CTA label</span>
-            <input
-              value={block.props.label}
-              placeholder="CTA label"
-              onChange={(event) => {
-                const nextLabel = event.target.value;
-                onChange({
-                  ...block,
-                  props: {
-                    ...block.props,
-                    label: nextLabel,
-                    trackingName: syncedTrackingName({
-                      currentTrackingName: block.props.trackingName,
-                      previousLabel: block.props.label,
-                      nextLabel,
-                      fallback: "cta",
-                    }),
-                  },
-                });
-              }}
-              className="w-full min-w-28 bg-transparent outline-none placeholder:text-[#111111]/55"
-            />
-          </label>
-          <details className="mt-4 rounded-xl border border-slate-200 bg-white/85 p-4 shadow-sm">
-            <summary className="cursor-pointer text-sm font-semibold text-slate-700">
-              Button settings
-            </summary>
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
-              <TextInput
-                label="Href"
-                value={block.props.href}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: { ...block.props, href: value },
-                  })
-                }
-              />
-              <TextInput
-                label="Internal CTA label"
-                value={block.props.trackingName}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: { ...block.props, trackingName: value },
-                  })
-                }
-              />
-              <TextInput
-                label="Preset ID"
-                value={block.props.presetId ?? ""}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: {
-                      ...block.props,
-                      presetId: value || undefined,
-                    },
-                  })
-                }
-              />
-            </div>
-          </details>
-        </div>
-      )}
-
-      {block.type === "video" && (
-        <div className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[7px_7px_0_#55b8e8]">
-          <TextInput
-            label="Title"
-            value={block.props.title}
-            onChange={(value) =>
-              onChange({ ...block, props: { ...block.props, title: value } })
-            }
-          />
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <TextInput
-              label="URL"
-              value={block.props.url}
-              onChange={(value) =>
-                onChange({ ...block, props: { ...block.props, url: value } })
-              }
-            />
-            <TextInput
-              label="Caption"
-              value={block.props.caption}
-              onChange={(value) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, caption: value },
-                })
-              }
-            />
-          </div>
-        </div>
-      )}
-
-      {block.type === "faq" && (
-        <div className="max-w-3xl px-3 py-4 sm:px-4">
-          <label className="block">
-            <span className="sr-only">Heading</span>
-            <input
-              value={block.props.heading}
-              placeholder="FAQ heading"
-              onChange={(event) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, heading: event.target.value },
-                })
-              }
-              className={sectionHeadingInputClass}
-            />
-          </label>
-          <div className="mt-5 divide-y-2 divide-[#bfeeff] rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8]">
-            <div className="p-5">
-              <TextInput
-                label="Question"
-                value={block.props.items[0]?.question ?? ""}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: {
-                      ...block.props,
-                      items: updateFirstFaqItem(block.props.items, {
-                        question: value,
-                      }),
-                    },
-                  })
-                }
-              />
-              <TextAreaInput
-                label="Answer"
-                value={block.props.items[0]?.answer ?? ""}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: {
-                      ...block.props,
-                      items: updateFirstFaqItem(block.props.items, {
-                        answer: value,
-                      }),
-                    },
-                  })
-                }
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {block.type === "card_grid" && (
-        <div className="px-3 py-4 sm:px-4">
-          <label className="block">
-            <span className="sr-only">Heading</span>
-            <input
-              value={block.props.heading}
-              placeholder="Card grid heading"
-              onChange={(event) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, heading: event.target.value },
-                })
-              }
-              className={sectionHeadingInputClass}
-            />
-          </label>
-          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {block.props.cards.map((card, cardIndex) => (
-              <article
-                key={cardIndex}
-                className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8]"
-              >
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                    Card {cardIndex + 1}
+              <label className="mt-3 block">
+                <span className="sr-only">Heading</span>
+                <textarea
+                  value={block.props.heading}
+                  placeholder="Hero headline"
+                  onChange={(event) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, heading: event.target.value },
+                    })
+                  }
+                  rows={2}
+                  className={heroHeadingInputClass}
+                />
+              </label>
+              <label className="mt-5 block max-w-3xl">
+                <span className="sr-only">Body</span>
+                <textarea
+                  value={block.props.body}
+                  placeholder="Hero body copy"
+                  onChange={(event) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, body: event.target.value },
+                    })
+                  }
+                  rows={3}
+                  className={leadInputClass}
+                />
+              </label>
+              <div className="mt-7 grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)]">
+                <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
+                  <span className="sr-only">CTA label</span>
+                  <input
+                    value={block.props.ctaLabel}
+                    placeholder="CTA label"
+                    onChange={(event) => {
+                      const nextLabel = event.target.value;
+                      onChange({
+                        ...block,
+                        props: {
+                          ...block.props,
+                          ctaLabel: nextLabel,
+                          ctaTrackingName: syncedTrackingName({
+                            currentTrackingName: block.props.ctaTrackingName,
+                            previousLabel: block.props.ctaLabel,
+                            nextLabel,
+                            fallback: "hero-cta",
+                          }),
+                        },
+                      });
+                    }}
+                    className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
+                  />
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <TextInput
+                    label="CTA href"
+                    value={block.props.ctaHref}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, ctaHref: value },
+                      })
+                    }
+                  />
+                  <TextInput
+                    label="Internal CTA label"
+                    value={block.props.ctaTrackingName}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, ctaTrackingName: value },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+              {block.variant === "split" && (
+                <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <h4 className="text-sm font-semibold text-slate-900">
+                    Split hero media or proof
+                  </h4>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    The split layout renders this approved media/proof area on
+                    the right side of the hero.
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className={miniButtonClass}
-                      disabled={cardIndex === 0}
-                      onClick={() =>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <TextInput
+                      label="Media path or URL"
+                      value={block.props.mediaSrc ?? ""}
+                      onChange={(value) =>
                         onChange({
                           ...block,
-                          props: {
-                            ...block.props,
-                            cards: moveItem(block.props.cards, cardIndex, "up"),
-                          },
+                          props: { ...block.props, mediaSrc: value },
                         })
                       }
-                    >
-                      Up
-                    </button>
-                    <button
-                      type="button"
-                      className={miniButtonClass}
-                      disabled={cardIndex === block.props.cards.length - 1}
-                      onClick={() =>
+                    />
+                    <TextInput
+                      label="Media alt text"
+                      value={block.props.mediaAltText ?? ""}
+                      onChange={(value) =>
                         onChange({
                           ...block,
-                          props: {
-                            ...block.props,
-                            cards: moveItem(
-                              block.props.cards,
-                              cardIndex,
-                              "down",
-                            ),
-                          },
+                          props: { ...block.props, mediaAltText: value },
                         })
                       }
-                    >
-                      Down
-                    </button>
-                    <button
-                      type="button"
-                      className={dangerButtonClass}
-                      onClick={() =>
+                    />
+                    <TextInput
+                      label="Media caption"
+                      value={block.props.mediaCaption ?? ""}
+                      onChange={(value) =>
                         onChange({
                           ...block,
-                          props: {
-                            ...block.props,
-                            cards: removeCard(block.props.cards, cardIndex),
-                          },
+                          props: { ...block.props, mediaCaption: value },
                         })
                       }
-                    >
-                      Remove
-                    </button>
+                    />
+                    <TextInput
+                      label="Proof text"
+                      value={block.props.proofText ?? ""}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: { ...block.props, proofText: value },
+                        })
+                      }
+                    />
                   </div>
                 </div>
-                <TextInput
-                  label="Card title"
-                  value={card.title}
-                  onChange={(value) =>
-                    onChange({
-                      ...block,
-                      props: {
-                        ...block.props,
-                        cards: updateCard(block.props.cards, cardIndex, {
-                          title: value,
-                        }),
-                      },
-                    })
-                  }
-                />
-                <TextAreaInput
-                  label="Card body"
-                  value={card.body}
-                  onChange={(value) =>
-                    onChange({
-                      ...block,
-                      props: {
-                        ...block.props,
-                        cards: updateCard(block.props.cards, cardIndex, {
-                          body: value,
-                        }),
-                      },
-                    })
-                  }
-                />
-                <TextInput
-                  label="Card link"
-                  value={card.href ?? ""}
-                  onChange={(value) =>
-                    onChange({
-                      ...block,
-                      props: {
-                        ...block.props,
-                        cards: updateCard(block.props.cards, cardIndex, {
-                          href: value,
-                        }),
-                      },
-                    })
-                  }
-                />
-                {cardCompletionMessages(card).length > 0 && (
-                  <div className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100">
-                    {cardCompletionMessages(card).map((message) => (
-                      <p key={message}>{message}</p>
-                    ))}
-                  </div>
-                )}
-              </article>
-            ))}
-            <button
-              type="button"
-              className="hover:border-brand-300 hover:bg-brand-50 focus-visible:ring-brand-400 min-h-40 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-left text-sm font-semibold text-slate-600 transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={block.props.cards.length >= 12}
-              onClick={() =>
-                onChange({
-                  ...block,
-                  props: {
-                    ...block.props,
-                    cards: [...block.props.cards, createBlankCard()],
-                  },
-                })
-              }
-            >
-              Add card
-            </button>
-          </div>
-        </div>
-      )}
+              )}
+            </div>
+          )}
 
-      {block.type === "proof" && (
-        <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-          <TextInput
-            label="Eyebrow"
-            value={block.props.eyebrow}
-            onChange={(value) =>
-              onChange({ ...block, props: { ...block.props, eyebrow: value } })
-            }
-          />
-          <label className="mt-3 block">
-            <span className="sr-only">Body</span>
-            <textarea
-              value={block.props.body}
-              placeholder="Proof quote or stat"
-              onChange={(event) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, body: event.target.value },
-                })
-              }
-              rows={3}
-              className="focus:ring-brand-100 w-full bg-transparent text-xl leading-8 font-semibold text-slate-950 outline-none focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:ring-2"
-            />
-          </label>
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
-            <TextInput
-              label="Name"
-              value={block.props.name}
-              onChange={(value) =>
-                onChange({ ...block, props: { ...block.props, name: value } })
-              }
-            />
-            <TextInput
-              label="Context"
-              value={block.props.context}
-              onChange={(value) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, context: value },
-                })
-              }
-            />
-            <TextInput
-              label="Proof item ID"
-              value={block.props.proofItemId ?? ""}
-              onChange={(value) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, proofItemId: value || undefined },
-                })
-              }
-            />
-          </div>
-        </figure>
-      )}
+          {block.type === "image" && (
+            <figure className="px-3 py-4 sm:px-4">
+              {block.props.src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={block.props.src}
+                  alt={block.props.altText}
+                  className="aspect-video w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]"
+                />
+              ) : (
+                <div className="grid aspect-video place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
+                  Image preview
+                </div>
+              )}
+              <label className="mt-3 block">
+                <span className="sr-only">Caption</span>
+                <input
+                  value={block.props.caption}
+                  placeholder="Caption"
+                  onChange={(event) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, caption: event.target.value },
+                    })
+                  }
+                  className="focus:ring-brand-100 w-full bg-transparent text-sm text-slate-500 outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
+                />
+              </label>
+              <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+                  Image settings
+                </summary>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <label className="block md:col-span-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Media library asset
+                    </span>
+                    <select
+                      value={block.props.assetId ?? ""}
+                      onChange={(event) => {
+                        const asset = mediaAssets.find(
+                          (item) => item.id === event.target.value,
+                        );
+                        onChange(
+                          asset
+                            ? applyMediaAssetToImageBlock(block, asset)
+                            : {
+                                ...block,
+                                props: {
+                                  ...block.props,
+                                  assetId: undefined,
+                                  src: "",
+                                  altText: "",
+                                  caption: "",
+                                  sourceRightsNotes: "",
+                                },
+                              },
+                        );
+                      }}
+                      className={compactInputClass}
+                    >
+                      <option value="">Choose from media library</option>
+                      {mediaAssets.map((asset) => (
+                        <option key={asset.id} value={asset.id}>
+                          {asset.title}
+                        </option>
+                      ))}
+                    </select>
+                    {mediaAssets.length === 0 && (
+                      <span className="mt-2 block text-xs leading-5 text-slate-500">
+                        Add image assets in the media library before selecting
+                        one here.
+                      </span>
+                    )}
+                  </label>
+                  <TextInput
+                    label="Asset ID"
+                    value={block.props.assetId ?? ""}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: {
+                          ...block.props,
+                          assetId: value || undefined,
+                        },
+                      })
+                    }
+                  />
+                  <TextInput
+                    label="Image path or URL"
+                    value={block.props.src}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, src: value },
+                      })
+                    }
+                  />
+                  <TextInput
+                    label="Alt text"
+                    value={block.props.altText}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, altText: value },
+                      })
+                    }
+                  />
+                  <TextInput
+                    label="Rights notes"
+                    value={block.props.sourceRightsNotes}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, sourceRightsNotes: value },
+                      })
+                    }
+                  />
+                </div>
+              </details>
+            </figure>
+          )}
 
-      {block.type === "lead_form" && (
-        <div className="grid gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-          <div>
-            <label className="block">
-              <span className="sr-only">Heading</span>
-              <input
-                value={block.props.heading}
-                placeholder="Lead form heading"
-                onChange={(event) =>
+          {block.type === "cta" && (
+            <div className="px-3 py-4 sm:px-4">
+              <label className="inline-flex min-h-12 max-w-sm items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
+                <span className="sr-only">CTA label</span>
+                <input
+                  value={block.props.label}
+                  placeholder="CTA label"
+                  onChange={(event) => {
+                    const nextLabel = event.target.value;
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        label: nextLabel,
+                        trackingName: syncedTrackingName({
+                          currentTrackingName: block.props.trackingName,
+                          previousLabel: block.props.label,
+                          nextLabel,
+                          fallback: "cta",
+                        }),
+                      },
+                    });
+                  }}
+                  className="w-full min-w-28 bg-transparent outline-none placeholder:text-[#111111]/55"
+                />
+              </label>
+              <details className="mt-4 rounded-xl border border-slate-200 bg-white/85 p-4 shadow-sm">
+                <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+                  Button settings
+                </summary>
+                <div className="mt-4 grid gap-4 md:grid-cols-3">
+                  <TextInput
+                    label="Href"
+                    value={block.props.href}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, href: value },
+                      })
+                    }
+                  />
+                  <TextInput
+                    label="Internal CTA label"
+                    value={block.props.trackingName}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, trackingName: value },
+                      })
+                    }
+                  />
+                  <TextInput
+                    label="Preset ID"
+                    value={block.props.presetId ?? ""}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: {
+                          ...block.props,
+                          presetId: value || undefined,
+                        },
+                      })
+                    }
+                  />
+                </div>
+              </details>
+            </div>
+          )}
+
+          {block.type === "video" && (
+            <div className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[7px_7px_0_#55b8e8]">
+              <TextInput
+                label="Title"
+                value={block.props.title}
+                onChange={(value) =>
                   onChange({
                     ...block,
-                    props: { ...block.props, heading: event.target.value },
+                    props: { ...block.props, title: value },
                   })
                 }
-                className={sectionHeadingInputClass}
               />
-            </label>
-            <label className="mt-3 block">
-              <span className="sr-only">Body</span>
-              <textarea
-                value={block.props.body}
-                placeholder="Lead form copy"
-                onChange={(event) =>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <TextInput
+                  label="URL"
+                  value={block.props.url}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, url: value },
+                    })
+                  }
+                />
+                <TextInput
+                  label="Caption"
+                  value={block.props.caption}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, caption: value },
+                    })
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          {block.type === "faq" && (
+            <div className="max-w-3xl px-3 py-4 sm:px-4">
+              <label className="block">
+                <span className="sr-only">Heading</span>
+                <input
+                  value={block.props.heading}
+                  placeholder="FAQ heading"
+                  onChange={(event) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, heading: event.target.value },
+                    })
+                  }
+                  className={sectionHeadingInputClass}
+                />
+              </label>
+              <div className="mt-5 divide-y-2 divide-[#bfeeff] rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8]">
+                <div className="p-5">
+                  <TextInput
+                    label="Question"
+                    value={block.props.items[0]?.question ?? ""}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: {
+                          ...block.props,
+                          items: updateFirstFaqItem(block.props.items, {
+                            question: value,
+                          }),
+                        },
+                      })
+                    }
+                  />
+                  <TextAreaInput
+                    label="Answer"
+                    value={block.props.items[0]?.answer ?? ""}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: {
+                          ...block.props,
+                          items: updateFirstFaqItem(block.props.items, {
+                            answer: value,
+                          }),
+                        },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {block.type === "card_grid" && (
+            <div className="px-3 py-4 sm:px-4">
+              <label className="block">
+                <span className="sr-only">Heading</span>
+                <input
+                  value={block.props.heading}
+                  placeholder="Card grid heading"
+                  onChange={(event) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, heading: event.target.value },
+                    })
+                  }
+                  className={sectionHeadingInputClass}
+                />
+              </label>
+              <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {block.props.cards.map((card, cardIndex) => (
+                  <article
+                    key={cardIndex}
+                    className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8]"
+                  >
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                        Card {cardIndex + 1}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className={miniButtonClass}
+                          disabled={cardIndex === 0}
+                          onClick={() =>
+                            onChange({
+                              ...block,
+                              props: {
+                                ...block.props,
+                                cards: moveItem(
+                                  block.props.cards,
+                                  cardIndex,
+                                  "up",
+                                ),
+                              },
+                            })
+                          }
+                        >
+                          Up
+                        </button>
+                        <button
+                          type="button"
+                          className={miniButtonClass}
+                          disabled={cardIndex === block.props.cards.length - 1}
+                          onClick={() =>
+                            onChange({
+                              ...block,
+                              props: {
+                                ...block.props,
+                                cards: moveItem(
+                                  block.props.cards,
+                                  cardIndex,
+                                  "down",
+                                ),
+                              },
+                            })
+                          }
+                        >
+                          Down
+                        </button>
+                        <button
+                          type="button"
+                          className={dangerButtonClass}
+                          onClick={() =>
+                            onChange({
+                              ...block,
+                              props: {
+                                ...block.props,
+                                cards: removeCard(block.props.cards, cardIndex),
+                              },
+                            })
+                          }
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                    <TextInput
+                      label="Card title"
+                      value={card.title}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            cards: updateCard(block.props.cards, cardIndex, {
+                              title: value,
+                            }),
+                          },
+                        })
+                      }
+                    />
+                    <TextAreaInput
+                      label="Card body"
+                      value={card.body}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            cards: updateCard(block.props.cards, cardIndex, {
+                              body: value,
+                            }),
+                          },
+                        })
+                      }
+                    />
+                    <TextInput
+                      label="Card link"
+                      value={card.href ?? ""}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            cards: updateCard(block.props.cards, cardIndex, {
+                              href: value,
+                            }),
+                          },
+                        })
+                      }
+                    />
+                    {cardCompletionMessages(card).length > 0 && (
+                      <div className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100">
+                        {cardCompletionMessages(card).map((message) => (
+                          <p key={message}>{message}</p>
+                        ))}
+                      </div>
+                    )}
+                  </article>
+                ))}
+                <button
+                  type="button"
+                  className="hover:border-brand-300 hover:bg-brand-50 focus-visible:ring-brand-400 min-h-40 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-left text-sm font-semibold text-slate-600 transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={block.props.cards.length >= 12}
+                  onClick={() =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        cards: [...block.props.cards, createBlankCard()],
+                      },
+                    })
+                  }
+                >
+                  Add card
+                </button>
+              </div>
+            </div>
+          )}
+
+          {block.type === "proof" && (
+            <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
+              <TextInput
+                label="Eyebrow"
+                value={block.props.eyebrow}
+                onChange={(value) =>
                   onChange({
                     ...block,
-                    props: { ...block.props, body: event.target.value },
+                    props: { ...block.props, eyebrow: value },
                   })
                 }
-                rows={3}
-                className={bodyTextareaClass}
               />
-            </label>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className={disabledLeadFieldClass}>Full name</div>
-            <div className={disabledLeadFieldClass}>Email</div>
-            <div className={disabledLeadFieldClass}>Phone</div>
-            <div className={disabledLeadFieldClass}>Market</div>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
-              <span className="sr-only">Submit label</span>
-              <input
-                value={block.props.submitLabel}
-                placeholder="Submit label"
-                onChange={(event) => {
-                  const nextLabel = event.target.value;
-                  onChange({
-                    ...block,
-                    props: {
-                      ...block.props,
-                      submitLabel: nextLabel,
-                      trackingName: syncedTrackingName({
-                        currentTrackingName: block.props.trackingName,
-                        previousLabel: block.props.submitLabel,
-                        nextLabel,
-                        fallback: "lead-form",
-                      }),
-                    },
-                  });
-                }}
-                className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
-              />
-            </label>
-            <TextInput
-              label="Internal form label"
-              value={block.props.trackingName}
-              onChange={(value) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, trackingName: value },
-                })
-              }
-            />
-          </div>
+              <label className="mt-3 block">
+                <span className="sr-only">Body</span>
+                <textarea
+                  value={block.props.body}
+                  placeholder="Proof quote or stat"
+                  onChange={(event) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, body: event.target.value },
+                    })
+                  }
+                  rows={3}
+                  className="focus:ring-brand-100 w-full bg-transparent text-xl leading-8 font-semibold text-slate-950 outline-none focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:ring-2"
+                />
+              </label>
+              <div className="mt-4 grid gap-4 md:grid-cols-3">
+                <TextInput
+                  label="Name"
+                  value={block.props.name}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, name: value },
+                    })
+                  }
+                />
+                <TextInput
+                  label="Context"
+                  value={block.props.context}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, context: value },
+                    })
+                  }
+                />
+                <TextInput
+                  label="Proof item ID"
+                  value={block.props.proofItemId ?? ""}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        proofItemId: value || undefined,
+                      },
+                    })
+                  }
+                />
+              </div>
+            </figure>
+          )}
+
+          {block.type === "lead_form" && (
+            <div className="grid gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
+              <div>
+                <label className="block">
+                  <span className="sr-only">Heading</span>
+                  <input
+                    value={block.props.heading}
+                    placeholder="Lead form heading"
+                    onChange={(event) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, heading: event.target.value },
+                      })
+                    }
+                    className={sectionHeadingInputClass}
+                  />
+                </label>
+                <label className="mt-3 block">
+                  <span className="sr-only">Body</span>
+                  <textarea
+                    value={block.props.body}
+                    placeholder="Lead form copy"
+                    onChange={(event) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, body: event.target.value },
+                      })
+                    }
+                    rows={3}
+                    className={bodyTextareaClass}
+                  />
+                </label>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className={disabledLeadFieldClass}>Full name</div>
+                <div className={disabledLeadFieldClass}>Email</div>
+                <div className={disabledLeadFieldClass}>Phone</div>
+                <div className={disabledLeadFieldClass}>Market</div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
+                  <span className="sr-only">Submit label</span>
+                  <input
+                    value={block.props.submitLabel}
+                    placeholder="Submit label"
+                    onChange={(event) => {
+                      const nextLabel = event.target.value;
+                      onChange({
+                        ...block,
+                        props: {
+                          ...block.props,
+                          submitLabel: nextLabel,
+                          trackingName: syncedTrackingName({
+                            currentTrackingName: block.props.trackingName,
+                            previousLabel: block.props.submitLabel,
+                            nextLabel,
+                            fallback: "lead-form",
+                          }),
+                        },
+                      });
+                    }}
+                    className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
+                  />
+                </label>
+                <TextInput
+                  label="Internal form label"
+                  value={block.props.trackingName}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, trackingName: value },
+                    })
+                  }
+                />
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </details>
 
       {blockCompletionMessages.length > 0 && (
         <CompletionHintPanel messages={blockCompletionMessages} />
@@ -4635,6 +4782,7 @@ function BlockToolbar({
   dragHandle,
   onVariantChange,
   onMove,
+  onDuplicate,
   onRemove,
 }: {
   label: string;
@@ -4650,6 +4798,7 @@ function BlockToolbar({
   dragHandle: ReactNode;
   onVariantChange: (variant: BlockVariant) => void;
   onMove: (direction: MoveDirection) => void;
+  onDuplicate: () => void;
   onRemove: () => void;
 }) {
   return (
@@ -4720,6 +4869,13 @@ function BlockToolbar({
         </div>
         <div className="rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
           <MoreActions label={`${label} actions`}>
+            <button
+              type="button"
+              className={menuButtonClass}
+              onClick={onDuplicate}
+            >
+              Duplicate content
+            </button>
             <button
               type="button"
               className={dangerButtonClass}
@@ -5332,6 +5488,54 @@ function withEditorDefaultsForNewBlock(block: PageBlock): PageBlock {
     };
   }
 
+  if (
+    block.type === "rich_text" &&
+    block.variant === "checklist" &&
+    !hasEditorText(richTextDocumentPlainText(block.props.body))
+  ) {
+    return {
+      ...block,
+      props: {
+        ...block.props,
+        body: {
+          version: 1,
+          nodes: [{ type: "list", style: "bullet", items: ["", "", ""] }],
+        },
+      },
+    };
+  }
+
+  if (
+    block.type === "faq" &&
+    (block.props.items.length === 0 || block.props.items.every(isBlankFaqItem))
+  ) {
+    const itemCount = block.variant === "accordion" ? 3 : 2;
+    return {
+      ...block,
+      props: {
+        ...block.props,
+        items: Array.from({ length: itemCount }, () => ({
+          question: "",
+          answer: "",
+        })),
+      },
+    };
+  }
+
+  if (
+    block.type === "card_grid" &&
+    (block.props.cards.length === 0 || block.props.cards.every(isBlankCard))
+  ) {
+    const cardCount = block.variant === "compact" ? 4 : 3;
+    return {
+      ...block,
+      props: {
+        ...block.props,
+        cards: Array.from({ length: cardCount }, createBlankCard),
+      },
+    };
+  }
+
   return block;
 }
 
@@ -5416,20 +5620,11 @@ function editorSectionClass(
   background: PageSection["background"],
   spacing: PageSection["spacing"],
 ) {
-  const backgroundClass =
-    background === "muted"
-      ? "border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]"
-      : background === "brand"
-        ? "border-2 border-[#111111] bg-[#eaf8ff] p-6 shadow-[7px_7px_0_#111111]"
-        : "";
-  const spacingClass =
-    spacing === "compact" ? "py-6" : spacing === "spacious" ? "py-12" : "py-8";
-  return `${backgroundClass} ${spacingClass}`;
+  return resourceSectionClass(background, spacing);
 }
 
 function columnGridClass(count: number) {
-  if (count <= 1) return "grid gap-8";
-  return "grid gap-8 md:grid-cols-2";
+  return resourceColumnGridClass(count);
 }
 
 type FaqBlock = Extract<PageBlock, { type: "faq" }>;
@@ -5451,6 +5646,18 @@ function updateFirstFaqItem(
 
 function createBlankCard(): CardItem {
   return { title: "", body: "", href: "" };
+}
+
+function isBlankFaqItem(item: FaqItem) {
+  return !hasEditorText(item.question) && !hasEditorText(item.answer);
+}
+
+function isBlankCard(card: CardItem) {
+  return (
+    !hasEditorText(card.title) &&
+    !hasEditorText(card.body) &&
+    !hasEditorText(card.href)
+  );
 }
 
 function updateCard(
@@ -5482,6 +5689,13 @@ function completionMessagesForBlock(block: PageBlock) {
       !hasEditorText(block.props.ctaHref)
     ) {
       messages.push("The hero CTA has button text but no destination.");
+    }
+    if (
+      block.variant === "split" &&
+      !hasEditorText(block.props.mediaSrc) &&
+      !hasEditorText(block.props.proofText)
+    ) {
+      messages.push("Add split hero media or proof content.");
     }
   }
 
@@ -5667,6 +5881,9 @@ const smallButtonClass =
 
 const miniButtonClass =
   "rounded-lg bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 transition-all hover:bg-slate-50 hover:ring-slate-400 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+
+const menuButtonClass =
+  "w-full rounded-lg bg-white px-3 py-2 text-left text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none";
 
 const dangerButtonClass =
   "w-full rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-600 transition-all hover:bg-red-50 hover:text-red-700 focus-visible:ring-4 focus-visible:ring-red-100 focus-visible:outline-none text-left";

@@ -135,6 +135,16 @@ const heroBlockSchema = z
         ctaLabel: optionalTrimmedText(80),
         ctaHref: safeHrefSchema.optional().default(""),
         ctaTrackingName: optionalTrimmedText(120),
+        mediaSrc: z
+          .string()
+          .trim()
+          .refine((value) => value.length === 0 || isSafeMediaSource(value), {
+            message: "Use an internal path or an http(s) media URL.",
+          })
+          .optional(),
+        mediaAltText: z.string().trim().max(180).optional(),
+        mediaCaption: z.string().trim().max(240).optional(),
+        proofText: z.string().trim().max(240).optional(),
       })
       .strict(),
   })
@@ -337,6 +347,10 @@ export const blockRegistry = {
       ctaLabel: "",
       ctaHref: "",
       ctaTrackingName: "",
+      mediaSrc: "",
+      mediaAltText: "",
+      mediaCaption: "",
+      proofText: "",
     },
   },
   rich_text: {
@@ -557,6 +571,28 @@ export function validatePageForPublish(
           code: "missing_hero_heading",
           path: `blocks.${index}.props.heading`,
           message: "Hero blocks require a heading.",
+        });
+      }
+      if (
+        block.variant === "split" &&
+        !hasText(block.props.mediaSrc) &&
+        !hasText(block.props.proofText)
+      ) {
+        issues.push({
+          code: "missing_split_hero_media_or_proof",
+          path: `blocks.${index}.props.mediaSrc`,
+          message: "Split hero blocks require media or proof content.",
+        });
+      }
+      if (
+        block.variant === "split" &&
+        hasText(block.props.mediaSrc) &&
+        !hasText(block.props.mediaAltText)
+      ) {
+        issues.push({
+          code: "missing_split_hero_media_alt",
+          path: `blocks.${index}.props.mediaAltText`,
+          message: "Split hero media requires alt text.",
         });
       }
       if (hasText(block.props.ctaLabel) && !hasText(block.props.ctaHref)) {

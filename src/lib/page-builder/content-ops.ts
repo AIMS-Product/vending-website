@@ -4,6 +4,7 @@ import type {
   PageContent,
   PageSection,
 } from "@/lib/page-builder/blocks";
+import { pageBlockSchema } from "@/lib/page-builder/blocks";
 
 export type MoveDirection = "up" | "down";
 
@@ -59,6 +60,10 @@ export function createPageBlock(
         ctaLabel: "",
         ctaHref: "",
         ctaTrackingName: "",
+        mediaSrc: "",
+        mediaAltText: "",
+        mediaCaption: "",
+        proofText: "",
       },
     };
   }
@@ -169,6 +174,13 @@ export function createPageBlock(
   };
 }
 
+export function duplicatePageBlock(block: PageBlock, id: string): PageBlock {
+  return pageBlockSchema.parse({
+    ...cloneBlockValue(block),
+    id,
+  });
+}
+
 export function moveItem<T>(
   items: T[],
   index: number,
@@ -197,4 +209,8 @@ export function reorderItemsById<T extends { id: string }>(
   if (!moved) return items;
   next.splice(overIndex, 0, moved);
   return next;
+}
+
+function cloneBlockValue(block: PageBlock): PageBlock {
+  return JSON.parse(JSON.stringify(block)) as PageBlock;
 }

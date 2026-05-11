@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createEditablePageContent,
   createPageBlock,
+  duplicatePageBlock,
   ensureEditablePageContent,
   moveItem,
   reorderItemsById,
@@ -43,6 +44,38 @@ describe("page builder content operations", () => {
     expect(moveItem(["a", "b", "c"], 0, "up")).toEqual(["a", "b", "c"]);
     expect(moveItem(["a", "b", "c"], -1, "down")).toEqual(["a", "b", "c"]);
     expect(moveItem(["a", "b", "c"], 3, "up")).toEqual(["a", "b", "c"]);
+  });
+
+  it("duplicates a block with a fresh id without weakening the schema", () => {
+    const block = createPageBlock("card_grid", "block_a");
+    const duplicate = duplicatePageBlock(block, "block_b");
+
+    expect(duplicate).toEqual({
+      ...block,
+      id: "block_b",
+    });
+    expect(
+      pageContentSchema
+        .parse({
+          version: 1,
+          sections: [
+            {
+              id: "section_a",
+              preset: "standard",
+              background: "default",
+              spacing: "standard",
+              columns: [
+                {
+                  id: "column_a",
+                  width: "1/1",
+                  blocks: [block, duplicate],
+                },
+              ],
+            },
+          ],
+        })
+        .sections[0]?.columns[0]?.blocks.map((item) => item.id),
+    ).toEqual(["block_a", "block_b"]);
   });
 
   it("preserves saved section, column, and block order for publish rendering", () => {
