@@ -33,6 +33,7 @@ import {
   autosaveSeoPageDraft,
   createSeoPagePreviewLink,
   generateAiSeoPageProposal,
+  saveSeoPageDraftAndCreatePreviewLink,
   saveSeoPage,
   type PageAiProposalInsertResult,
   type PageAiProposalResult,
@@ -120,6 +121,7 @@ type BuilderBlockEntry = {
 const initialState: PageEditorActionState = { status: "idle" };
 const initialAiProposalState: PageAiProposalResult = { status: "idle" };
 const initialAiInsertState: PageAiProposalInsertResult = { status: "idle" };
+const previewSessionStorageKey = "seo-page-builder-preview-link";
 export function SeoPageEditorForm({
   page,
   internalLinkTargets = [],
@@ -160,6 +162,7 @@ export function SeoPageEditorForm({
   const [previewLinkMessage, setPreviewLinkMessage] = useState<string | null>(
     null,
   );
+  const [previewLinkPath, setPreviewLinkPath] = useState<string | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [isBlockSidebarCollapsed, setIsBlockSidebarCollapsed] = useState(false);
@@ -339,6 +342,33 @@ export function SeoPageEditorForm({
     visibleSlug,
   ]);
 
+  useEffect(() => {
+    const storedPreviewLink = window.sessionStorage.getItem(
+      previewSessionStorageKey,
+    );
+    if (!storedPreviewLink) return;
+
+    window.sessionStorage.removeItem(previewSessionStorageKey);
+    try {
+      const parsed = JSON.parse(storedPreviewLink) as {
+        path?: unknown;
+        message?: unknown;
+      };
+      if (typeof parsed.path === "string") {
+        window.setTimeout(() => {
+          setPreviewLinkPath(parsed.path as string);
+          setPreviewLinkMessage(
+            typeof parsed.message === "string"
+              ? parsed.message
+              : "Preview ready.",
+          );
+        }, 0);
+      }
+    } catch {
+      // Ignore stale preview state from older builds.
+    }
+  }, []);
+
   if (showCreationChoiceModal) {
     return (
       <NewPageChoiceGate
@@ -382,19 +412,46 @@ export function SeoPageEditorForm({
               </button>
             </div>
             <div className="flex flex-col items-center gap-1">
-              <button
-                type="button"
-                className="inline-flex min-h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-lg transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55"
-                disabled={!page?.id || isPreviewOpening}
-                title={
-                  page?.id
-                    ? "Open a live draft preview in a new tab"
-                    : "Save the page before opening a live preview"
-                }
-                onClick={openLivePreview}
-              >
-                {isPreviewOpening ? "Opening preview..." : "Live preview"}
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="submit"
+                  name="intent"
+                  value="save"
+                  className="inline-flex min-h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-lg transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+                  title="Save this page as a draft"
+                >
+                  Save draft
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex min-h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-lg transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55"
+                  disabled={isPreviewOpening}
+                  title={
+                    page?.id
+                      ? "Open a live draft preview in a new tab"
+                      : "Save this draft, then open a live preview"
+                  }
+                  onClick={openLivePreview}
+                >
+                  {isPreviewOpening
+                    ? page?.id
+                      ? "Opening preview..."
+                      : "Saving preview..."
+                    : page?.id
+                      ? "Live preview"
+                      : "Save & preview"}
+                </button>
+                {previewLinkPath && (
+                  <a
+                    href={previewLinkPath}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-10 items-center justify-center rounded-full border border-[#0b63f6]/20 bg-[#0b63f6] px-5 text-sm font-semibold text-white shadow-lg transition hover:bg-[#0756d6] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+                  >
+                    Open preview
+                  </a>
+                )}
+              </div>
               {previewLinkMessage && (
                 <p className="text-xs font-medium text-slate-500">
                   {previewLinkMessage}
@@ -1103,8 +1160,7 @@ export function SeoPageEditorForm({
   );
 
   async function openLivePreview() {
-    if (!page?.id || isPreviewOpening) {
-      setPreviewLinkMessage("Save the page before opening a live preview.");
+    if (isPreviewOpening) {
       return;
     }
 
@@ -1116,36 +1172,30 @@ export function SeoPageEditorForm({
     }
 
     try {
-      const autosaveResult = await autosaveSeoPageDraft(page.id, {
-        title,
-        slug: visibleSlug,
-        targetKeyword,
-        seoTitle,
-        metaDescription,
-        canonicalUrl,
-        noindex,
-        sitemapEnabled,
-        draftContent: content,
-      });
-
-      if (autosaveResult.status === "error") {
-        previewWindow?.close();
-        setPreviewLinkMessage(autosaveResult.message);
-        return;
-      }
-
-      const formData = new FormData();
-      formData.set("pageId", page.id);
-      const previewResult = await createSeoPagePreviewLink(
-        { status: "idle" },
-        formData,
-      );
+      const previewResult = page?.id
+        ? await createPreviewLinkForSavedPage()
+        : await saveSeoPageDraftAndCreatePreviewLink(
+            { status: "idle" },
+            buildPageFormData(),
+          );
 
       if (previewResult.status === "created") {
+        setPreviewLinkPath(previewResult.previewPath);
+        setPreviewLinkMessage(previewResult.message);
         if (previewWindow) {
           previewWindow.location.href = previewResult.previewPath;
         } else {
-          setPreviewLinkMessage("Preview created. Allow pop-ups to open it.");
+          setPreviewLinkMessage("Preview ready. Use Open preview.");
+        }
+        if (previewResult.editorPath && !page?.id) {
+          window.sessionStorage.setItem(
+            previewSessionStorageKey,
+            JSON.stringify({
+              path: previewResult.previewPath,
+              message: previewResult.message,
+            }),
+          );
+          router.replace(previewResult.editorPath);
         }
         return;
       }
@@ -1161,6 +1211,51 @@ export function SeoPageEditorForm({
     } finally {
       setIsPreviewOpening(false);
     }
+  }
+
+  async function createPreviewLinkForSavedPage() {
+    if (!page?.id) {
+      return saveSeoPageDraftAndCreatePreviewLink(
+        { status: "idle" },
+        buildPageFormData(),
+      );
+    }
+
+    const autosaveResult = await autosaveSeoPageDraft(page.id, {
+      title,
+      slug: visibleSlug,
+      targetKeyword,
+      seoTitle,
+      metaDescription,
+      canonicalUrl,
+      noindex,
+      sitemapEnabled,
+      draftContent: content,
+    });
+
+    if (autosaveResult.status === "error") {
+      return { status: "error" as const, message: autosaveResult.message };
+    }
+
+    const formData = new FormData();
+    formData.set("pageId", page.id);
+    return createSeoPagePreviewLink({ status: "idle" }, formData);
+  }
+
+  function buildPageFormData() {
+    const formData = new FormData();
+    if (page?.id) formData.set("id", page.id);
+    formData.set("title", title);
+    formData.set("slug", visibleSlug);
+    formData.set("targetKeyword", targetKeyword);
+    formData.set("seoTitle", seoTitle);
+    formData.set("metaDescription", metaDescription);
+    formData.set("canonicalUrl", canonicalUrl);
+    if (noindex) formData.set("noindex", "on");
+    if (sitemapEnabled && !noindex) formData.set("sitemapEnabled", "on");
+    formData.set("draftContent", draftContentJson);
+    formData.set("intent", "save");
+    return formData;
   }
 
   function addBlock(

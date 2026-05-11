@@ -56,7 +56,13 @@ export type PageAiProposalInsertResult =
 
 export type PagePreviewLinkActionState =
   | { status: "idle"; message?: string; previewPath?: string }
-  | { status: "created"; message: string; previewPath: string }
+  | {
+      status: "created";
+      message: string;
+      previewPath: string;
+      pageId?: string;
+      editorPath?: string;
+    }
   | { status: "error"; message: string; previewPath?: string };
 
 export type PageAutosavePayload = {
@@ -234,6 +240,84 @@ export async function createSeoPagePreviewLink(
       status: "created",
       message: "Preview link created.",
       previewPath: preview.previewPath,
+    };
+  } catch (error) {
+    return pagePreviewActionError(error);
+  }
+}
+
+export async function saveSeoPageDraftAndCreatePreviewLink(
+  _prev: PagePreviewLinkActionState,
+  formData: FormData,
+): Promise<PagePreviewLinkActionState> {
+  const admin = await requireAdmin();
+  const parsed = parsePageFormData(formData);
+  if (!parsed.success) {
+    return { status: "error", message: parsed.message };
+  }
+
+  const page = parsed.data;
+  let pageId = page.id;
+  let previousSlug: string | undefined;
+
+  try {
+    if (!pageId) {
+      const created = await adminCreateSeoPage({
+        slug: page.slug,
+        title: page.title,
+        targetKeyword: nullable(page.targetKeyword),
+        draftContent: page.draftContent,
+        createdBy: admin.user.id,
+      });
+
+      pageId = created.id;
+      await adminSaveSeoPageDraft(pageId, {
+        seoTitle: nullable(page.seoTitle),
+        metaDescription: nullable(page.metaDescription),
+        canonicalUrl: nullable(page.canonicalUrl),
+        noindex: page.noindex,
+        sitemapEnabled: page.sitemapEnabled,
+        updatedBy: admin.user.id,
+      });
+    } else {
+      const existing = await adminGetSeoPageById(pageId);
+      if (!existing) {
+        return { status: "error", message: "Page not found." };
+      }
+
+      previousSlug = existing.slug;
+      if (existing.slug !== page.slug) {
+        await adminUpdateSeoPageSlug(pageId, page.slug, {
+          actorId: admin.user.id,
+        });
+      }
+
+      await adminSaveSeoPageDraft(pageId, {
+        title: page.title,
+        targetKeyword: nullable(page.targetKeyword),
+        seoTitle: nullable(page.seoTitle),
+        metaDescription: nullable(page.metaDescription),
+        canonicalUrl: nullable(page.canonicalUrl),
+        noindex: page.noindex,
+        sitemapEnabled: page.sitemapEnabled,
+        draftContent: page.draftContent,
+        updatedBy: admin.user.id,
+      });
+    }
+
+    const preview = await adminCreateSeoPagePreviewToken(pageId, {
+      actorId: admin.user.id,
+    });
+    revalidatePagePaths(page.slug, previousSlug);
+    revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
+    return {
+      status: "created",
+      message: page.id
+        ? "Preview link created."
+        : "Draft saved and preview opened.",
+      previewPath: preview.previewPath,
+      pageId,
+      editorPath: `${ADMIN_PAGES_PATH}/${pageId}?saved=1`,
     };
   } catch (error) {
     return pagePreviewActionError(error);
