@@ -295,13 +295,13 @@ export function SeoPageEditorForm({
         <input type="hidden" name="slug" value={visibleSlug} />
       )}
 
-      <div className="relative min-h-[calc(100dvh-4rem)] overflow-hidden border border-slate-200 bg-slate-100 lg:min-h-screen">
+      <div className="relative min-h-[calc(100dvh-4rem)] overflow-x-hidden border border-slate-200 bg-slate-100 lg:min-h-screen">
         {!isDetailsDrawerOpen && (
           <button
             type="button"
             aria-label="Open page details"
             title="Open page details"
-            className="fixed top-1/2 right-4 z-40 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+            className="fixed right-4 bottom-5 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none sm:top-1/2 sm:bottom-auto sm:-translate-y-1/2"
             onClick={() => setIsDetailsDrawerOpen(true)}
           >
             <ChevronIcon direction="left" />
@@ -311,7 +311,7 @@ export function SeoPageEditorForm({
         <div
           className={`grid min-h-[calc(100dvh-4rem)] transition-[grid-template-columns] duration-200 lg:min-h-screen ${
             isDetailsDrawerOpen
-              ? "xl:grid-cols-[minmax(0,1fr)_400px]"
+              ? "xl:grid-cols-[minmax(0,1fr)_minmax(360px,400px)]"
               : "xl:grid-cols-[minmax(0,1fr)]"
           }`}
         >
@@ -639,277 +639,285 @@ export function SeoPageEditorForm({
           </div>
 
           {isDetailsDrawerOpen && (
-            <aside className="sticky top-0 flex h-[calc(100dvh-12rem)] min-h-[720px] flex-col border-l border-slate-200 bg-white shadow-xl">
-              <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
-                <div>
-                  <h2 className="text-base font-semibold text-slate-950">
-                    Page details
-                  </h2>
-                  <p className="mt-1 text-xs font-medium text-slate-500">
-                    {page?.status ?? "draft"} · SEO {seoReadiness.label}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  aria-label="Collapse page details"
-                  title="Collapse page details"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
-                  onClick={() => setIsDetailsDrawerOpen(false)}
-                >
-                  <ChevronIcon direction="right" />
-                </button>
-              </div>
-
-              <div className="flex-1 space-y-7 overflow-y-auto px-5 py-5">
-                <Link
-                  href="/admin/pages"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950"
-                >
-                  <ChevronIcon direction="left" />
-                  Back to pages
-                </Link>
-
-                <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
-                      Status
-                    </span>
-                    <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
-                      <span className="flex items-center gap-1.5">
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            page?.status === "published"
-                              ? "bg-emerald-500"
-                              : "bg-amber-500"
-                          }`}
-                        />
-                        {page?.status ?? "draft"}
-                      </span>
-                    </span>
+            <>
+              <div
+                className="fixed inset-0 z-40 bg-slate-100 xl:hidden"
+                aria-hidden="true"
+              />
+              <aside className="fixed inset-y-2 right-2 z-50 flex w-[calc(100vw-1rem)] max-w-[440px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl xl:sticky xl:inset-auto xl:top-0 xl:z-auto xl:h-screen xl:w-auto xl:max-w-none xl:rounded-none xl:border-y-0 xl:border-r-0 xl:shadow-xl">
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+                  <div>
+                    <h2 className="text-base font-semibold text-slate-950">
+                      Page details
+                    </h2>
+                    <p className="mt-1 text-xs font-medium text-slate-500">
+                      {page?.status ?? "draft"} · SEO {seoReadiness.label}
+                    </p>
                   </div>
                   <button
                     type="button"
-                    className={`${smallButtonClass} ${readinessButtonClass(
-                      seoReadiness.status,
-                    )} justify-center`}
-                    onClick={() =>
-                      document
-                        .getElementById("seo-target-keyword-field")
-                        ?.focus()
-                    }
+                    aria-label="Collapse page details"
+                    title="Collapse page details"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+                    onClick={() => setIsDetailsDrawerOpen(false)}
                   >
-                    SEO: {seoReadiness.label}
+                    <ChevronIcon direction="right" />
                   </button>
                 </div>
 
-                <NextPublishStepCard step={nextPublishStep} />
+                <div className="flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
+                  <Link
+                    href="/admin/pages"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950"
+                  >
+                    <ChevronIcon direction="left" />
+                    Back to pages
+                  </Link>
 
-                <div className="space-y-5">
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-900">
-                      Slug
-                    </span>
-                    <div className="mt-1.5 flex items-center rounded-lg border border-slate-200 bg-white shadow-sm transition focus-within:border-[#0b63f6] focus-within:ring-4 focus-within:ring-[#0b63f6]/10">
-                      <span className="border-r border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-400">
-                        /resources/
+                  <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                        Status
                       </span>
-                      <input
-                        name="slug"
-                        value={visibleSlug}
-                        onChange={(event) => {
-                          setSlugTouched(true);
-                          setSlug(slugify(event.target.value));
-                        }}
-                        required
-                        aria-label="Slug"
-                        className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-300"
-                        placeholder="page-slug"
-                      />
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
+                        <span className="flex items-center gap-1.5">
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              page?.status === "published"
+                                ? "bg-emerald-500"
+                                : "bg-amber-500"
+                            }`}
+                          />
+                          {page?.status ?? "draft"}
+                        </span>
+                      </span>
                     </div>
-                  </label>
+                    <button
+                      type="button"
+                      className={`${smallButtonClass} ${readinessButtonClass(
+                        seoReadiness.status,
+                      )} justify-center`}
+                      onClick={() =>
+                        document
+                          .getElementById("seo-target-keyword-field")
+                          ?.focus()
+                      }
+                    >
+                      SEO: {seoReadiness.label}
+                    </button>
+                  </div>
 
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-900">
-                      Target keyword
-                    </span>
-                    <input
-                      name="targetKeyword"
-                      value={targetKeyword}
-                      id="seo-target-keyword-field"
-                      onChange={(event) => setTargetKeyword(event.target.value)}
-                      className={compactInputClass}
-                      placeholder="e.g. vending machine business"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-900">
-                      SEO title
-                    </span>
-                    <input
-                      name="seoTitle"
-                      value={seoTitle}
-                      id="seo-title-field"
-                      onChange={(event) => setSeoTitle(event.target.value)}
-                      className={compactInputClass}
-                      placeholder="Leave blank to use page headline"
-                    />
-                  </label>
+                  <NextPublishStepCard step={nextPublishStep} />
 
-                  <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <summary className="cursor-pointer text-sm font-semibold text-slate-900">
-                      Advanced SEO
-                    </summary>
-                    <div className="mt-4 space-y-4">
-                      <label className="block">
-                        <span className="text-sm font-semibold text-slate-900">
-                          Preferred URL
+                  <div className="space-y-5">
+                    <label className="block">
+                      <span className="text-sm font-semibold text-slate-900">
+                        Slug
+                      </span>
+                      <div className="mt-1.5 flex items-center rounded-lg border border-slate-200 bg-white shadow-sm transition focus-within:border-[#0b63f6] focus-within:ring-4 focus-within:ring-[#0b63f6]/10">
+                        <span className="border-r border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-400">
+                          /resources/
                         </span>
                         <input
-                          name="canonicalUrl"
-                          value={canonicalUrl}
-                          id="seo-canonical-url-field"
-                          onChange={(event) =>
-                            setCanonicalUrl(event.target.value)
-                          }
-                          className={compactInputClass}
-                          placeholder="https://..."
+                          name="slug"
+                          value={visibleSlug}
+                          onChange={(event) => {
+                            setSlugTouched(true);
+                            setSlug(slugify(event.target.value));
+                          }}
+                          required
+                          aria-label="Slug"
+                          className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-300"
+                          placeholder="page-slug"
                         />
-                        <span className="mt-1.5 block text-xs leading-5 text-slate-500">
-                          Optional. Use only when this page should point search
-                          engines to a different preferred URL.
-                        </span>
-                      </label>
+                      </div>
+                    </label>
 
-                      <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-                        <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
+                    <label className="block">
+                      <span className="text-sm font-semibold text-slate-900">
+                        Target keyword
+                      </span>
+                      <input
+                        name="targetKeyword"
+                        value={targetKeyword}
+                        id="seo-target-keyword-field"
+                        onChange={(event) =>
+                          setTargetKeyword(event.target.value)
+                        }
+                        className={compactInputClass}
+                        placeholder="e.g. vending machine business"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-sm font-semibold text-slate-900">
+                        SEO title
+                      </span>
+                      <input
+                        name="seoTitle"
+                        value={seoTitle}
+                        id="seo-title-field"
+                        onChange={(event) => setSeoTitle(event.target.value)}
+                        className={compactInputClass}
+                        placeholder="Leave blank to use page headline"
+                      />
+                    </label>
+
+                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <summary className="cursor-pointer text-sm font-semibold text-slate-900">
+                        Advanced SEO
+                      </summary>
+                      <div className="mt-4 space-y-4">
+                        <label className="block">
+                          <span className="text-sm font-semibold text-slate-900">
+                            Preferred URL
+                          </span>
                           <input
-                            name="noindex"
-                            type="checkbox"
-                            checked={noindex}
-                            onChange={(event) => {
-                              setNoindex(event.target.checked);
-                              if (event.target.checked)
-                                setSitemapEnabled(false);
-                            }}
-                            className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
-                          />
-                          <div>
-                            <span className="block text-slate-900">
-                              Hide from search engines
-                            </span>
-                            <span className="mt-0.5 block text-xs font-normal text-slate-500">
-                              Use this only for pages that should not appear in
-                              search results.
-                            </span>
-                          </div>
-                        </label>
-                        <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
-                          <input
-                            name="sitemapEnabled"
-                            type="checkbox"
-                            checked={sitemapEnabled}
-                            disabled={noindex}
+                            name="canonicalUrl"
+                            value={canonicalUrl}
+                            id="seo-canonical-url-field"
                             onChange={(event) =>
-                              setSitemapEnabled(event.target.checked)
+                              setCanonicalUrl(event.target.value)
                             }
-                            className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6] disabled:opacity-50"
+                            className={compactInputClass}
+                            placeholder="https://..."
                           />
-                          <div className={noindex ? "opacity-50" : ""}>
-                            <span className="block text-slate-900">
-                              Include in sitemap
-                            </span>
-                            <span className="mt-0.5 block text-xs font-normal text-slate-500">
-                              Help search engines discover this page.
-                            </span>
-                          </div>
+                          <span className="mt-1.5 block text-xs leading-5 text-slate-500">
+                            Optional. Use only when this page should point
+                            search engines to a different preferred URL.
+                          </span>
                         </label>
+
+                        <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+                          <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
+                            <input
+                              name="noindex"
+                              type="checkbox"
+                              checked={noindex}
+                              onChange={(event) => {
+                                setNoindex(event.target.checked);
+                                if (event.target.checked)
+                                  setSitemapEnabled(false);
+                              }}
+                              className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
+                            />
+                            <div>
+                              <span className="block text-slate-900">
+                                Hide from search engines
+                              </span>
+                              <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                                Use this only for pages that should not appear
+                                in search results.
+                              </span>
+                            </div>
+                          </label>
+                          <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
+                            <input
+                              name="sitemapEnabled"
+                              type="checkbox"
+                              checked={sitemapEnabled}
+                              disabled={noindex}
+                              onChange={(event) =>
+                                setSitemapEnabled(event.target.checked)
+                              }
+                              className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6] disabled:opacity-50"
+                            />
+                            <div className={noindex ? "opacity-50" : ""}>
+                              <span className="block text-slate-900">
+                                Include in sitemap
+                              </span>
+                              <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                                Help search engines discover this page.
+                              </span>
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+                    </details>
+
+                    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
+                      <div className="mb-4 flex items-center gap-2">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-[#0b63f6]"
+                        >
+                          <circle cx="11" cy="11" r="8" />
+                          <path d="m21 21-4.3-4.3" />
+                        </svg>
+                        <h3 className="text-sm font-semibold text-slate-900">
+                          Search Preview
+                        </h3>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="cursor-pointer truncate text-lg font-medium text-[#1a0dab] hover:underline">
+                          {seoTitle || title || "Your Page Title Here"}
+                        </p>
+                        <p className="truncate text-sm text-[#006621]">
+                          www.vendingpreneurs.com/resources/
+                          {visibleSlug || "your-slug"}
+                        </p>
+                        <p className="line-clamp-2 text-sm text-[#545454]">
+                          {metaDescription ||
+                            "Your meta description will appear here. Make it compelling to encourage clicks from search results."}
+                        </p>
                       </div>
                     </div>
-                  </details>
-
-                  <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
-                    <div className="mb-4 flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-[#0b63f6]"
-                      >
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="m21 21-4.3-4.3" />
-                      </svg>
-                      <h3 className="text-sm font-semibold text-slate-900">
-                        Search Preview
-                      </h3>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="cursor-pointer truncate text-lg font-medium text-[#1a0dab] hover:underline">
-                        {seoTitle || title || "Your Page Title Here"}
-                      </p>
-                      <p className="truncate text-sm text-[#006621]">
-                        www.vendingpreneurs.com/resources/
-                        {visibleSlug || "your-slug"}
-                      </p>
-                      <p className="line-clamp-2 text-sm text-[#545454]">
-                        {metaDescription ||
-                          "Your meta description will appear here. Make it compelling to encourage clicks from search results."}
-                      </p>
-                    </div>
                   </div>
+
+                  <SeoReadinessPanel
+                    summary={seoReadiness}
+                    aiProposalResult={aiProposalResult}
+                    aiInsertResult={aiInsertResult}
+                    aiProposals={aiProposals}
+                    canRunAiAgent={Boolean(page?.id)}
+                    isAiGenerating={isAiGenerating}
+                    isAiInserting={isAiInserting}
+                    internalLinkSuggestions={internalLinkSuggestions}
+                    linkSuggestionMessage={linkSuggestionMessage}
+                    onInsertAiProposalBlocks={insertAiProposalBlocks}
+                    onApplyInternalLinkSuggestion={applyLinkSuggestion}
+                    onAddSuggestedBlock={addSuggestedBlock}
+                    onRunAiAgent={runAiSeoAgent}
+                    onOpenSettings={() => {
+                      document
+                        .getElementById("seo-target-keyword-field")
+                        ?.focus();
+                    }}
+                    mediaAssetCount={mediaAssets.length}
+                  />
                 </div>
 
-                <SeoReadinessPanel
-                  summary={seoReadiness}
-                  aiProposalResult={aiProposalResult}
-                  aiInsertResult={aiInsertResult}
-                  aiProposals={aiProposals}
-                  canRunAiAgent={Boolean(page?.id)}
-                  isAiGenerating={isAiGenerating}
-                  isAiInserting={isAiInserting}
-                  internalLinkSuggestions={internalLinkSuggestions}
-                  linkSuggestionMessage={linkSuggestionMessage}
-                  onInsertAiProposalBlocks={insertAiProposalBlocks}
-                  onApplyInternalLinkSuggestion={applyLinkSuggestion}
-                  onAddSuggestedBlock={addSuggestedBlock}
-                  onRunAiAgent={runAiSeoAgent}
-                  onOpenSettings={() => {
-                    document
-                      .getElementById("seo-target-keyword-field")
-                      ?.focus();
-                  }}
-                  mediaAssetCount={mediaAssets.length}
-                />
-              </div>
-
-              <div className="grid gap-3 border-t border-slate-200 bg-white px-5 py-4">
-                <button
-                  className={secondaryButtonClass}
-                  name="intent"
-                  value="save"
-                >
-                  Save draft
-                </button>
-                <button
-                  className={primaryButtonClass}
-                  name="intent"
-                  value="publish"
-                  disabled={publishDisabled}
-                  title={
-                    seoReadiness.blockers.length > 0
-                      ? "Resolve SEO blockers before publishing."
-                      : undefined
-                  }
-                >
-                  Publish
-                </button>
-              </div>
-            </aside>
+                <div className="grid shrink-0 gap-4 border-t border-slate-200 bg-white px-4 py-4 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] sm:px-5">
+                  <button
+                    className={secondaryButtonClass}
+                    name="intent"
+                    value="save"
+                  >
+                    Save draft
+                  </button>
+                  <button
+                    className={primaryButtonClass}
+                    name="intent"
+                    value="publish"
+                    disabled={publishDisabled}
+                    title={
+                      seoReadiness.blockers.length > 0
+                        ? "Resolve SEO blockers before publishing."
+                        : undefined
+                    }
+                  >
+                    Publish
+                  </button>
+                </div>
+              </aside>
+            </>
           )}
         </div>
       </div>
@@ -2033,7 +2041,7 @@ function nextRequiredPublishStep({
   const blocker = summary.blockers[0];
   if (blocker) {
     return {
-      title: `Fix ${friendlyFindingLocation(blocker).toLowerCase()}`,
+      title: `Fix ${friendlyActionLocation(blocker)}`,
       detail: blocker.message,
       tone: "blocked",
     };
@@ -2051,7 +2059,7 @@ function nextRequiredPublishStep({
   const warning = summary.warnings[0];
   if (warning) {
     return {
-      title: `Improve ${friendlyFindingLocation(warning).toLowerCase()}`,
+      title: `Improve ${friendlyActionLocation(warning)}`,
       detail: warning.message,
       tone: "work",
     };
@@ -2063,6 +2071,12 @@ function nextRequiredPublishStep({
       "No hard blockers remain. Review the public preview, then publish when the page is ready.",
     tone: "ready",
   };
+}
+
+function friendlyActionLocation(finding: SeoReadinessFinding) {
+  const location = friendlyFindingLocation(finding);
+  if (location.startsWith("URL")) return location;
+  return `${location.charAt(0).toLowerCase()}${location.slice(1)}`;
 }
 
 function friendlyEvidenceText(finding: SeoReadinessFinding) {

@@ -100,8 +100,8 @@ export function AdminShell({
     sections.find((section) => section.id === activeSection)?.label ?? "Studio";
 
   return (
-    <div className="min-h-screen bg-[#f7f8fb] text-[#0f172a]">
-      <div className="border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f7f8fb] text-[#0f172a]">
+      <div className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur xl:hidden">
         <details>
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-950 [&::-webkit-details-marker]:hidden">
             <span className="flex min-w-0 items-center gap-3">
@@ -181,13 +181,13 @@ export function AdminShell({
       </div>
       <div
         className={clsx(
-          "mx-auto grid w-full max-w-[1680px] transition-[grid-template-columns] duration-200 lg:min-h-screen",
+          "mx-auto grid w-full max-w-[1680px] transition-[grid-template-columns] duration-200 xl:min-h-screen",
           sidebarCollapsed
-            ? "lg:grid-cols-[84px_minmax(0,1fr)]"
-            : "lg:grid-cols-[292px_minmax(0,1fr)]",
+            ? "xl:grid-cols-[76px_minmax(0,1fr)]"
+            : "xl:grid-cols-[252px_minmax(0,1fr)] 2xl:grid-cols-[292px_minmax(0,1fr)]",
         )}
       >
-        <aside className="hidden overflow-y-auto border-b border-slate-200 bg-white/95 backdrop-blur lg:sticky lg:top-0 lg:block lg:h-screen lg:border-r lg:border-b-0">
+        <aside className="hidden overflow-y-auto border-b border-slate-200 bg-white/95 backdrop-blur xl:sticky xl:top-0 xl:block xl:h-screen xl:border-r xl:border-b-0">
           <div
             className={clsx(
               "flex h-full flex-col pt-6 pb-5 transition-[padding] duration-200",
@@ -405,7 +405,7 @@ export function AdminShell({
           aria-labelledby={immersive ? undefined : "admin-shell-title"}
           className={clsx(
             "min-w-0",
-            immersive ? "p-0" : "px-5 py-6 sm:px-8 lg:px-10",
+            immersive ? "p-0" : "px-5 py-6 sm:px-8 xl:px-10",
           )}
         >
           {!immersive && (
