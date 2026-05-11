@@ -282,7 +282,7 @@ export function SeoPageEditorForm({
       {page?.id && <input type="hidden" name="id" value={page.id} />}
       <input type="hidden" name="draftContent" value={draftContentJson} />
 
-      <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+      <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 shadow-sm backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <Link
@@ -305,8 +305,10 @@ export function SeoPageEditorForm({
               </svg>
               <span className="sr-only">Back to pages</span>
             </Link>
-            <div className="flex items-center gap-1 rounded-md border border-transparent px-2 py-1 transition-colors hover:border-slate-200 hover:bg-slate-50">
-              <span className="text-sm text-slate-400">/resources/</span>
+            <div className="flex items-center gap-1 rounded-lg border border-transparent px-2 py-1 transition-colors focus-within:border-slate-200 focus-within:bg-white focus-within:shadow-sm hover:border-slate-200 hover:bg-slate-50">
+              <span className="text-sm font-medium text-slate-400">
+                /resources/
+              </span>
               <input
                 name="slug"
                 value={visibleSlug}
@@ -316,14 +318,19 @@ export function SeoPageEditorForm({
                 }}
                 required
                 aria-label="Slug"
-                className="w-48 bg-transparent text-sm font-medium text-slate-700 transition-all outline-none placeholder:text-slate-300 focus:w-64"
+                className="w-48 bg-transparent text-sm font-semibold text-slate-700 transition-all outline-none placeholder:text-slate-300 focus:w-64"
                 placeholder="page-slug"
               />
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-3">
-            <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-              {page?.status ?? "draft"}
+            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
+              <span className="flex items-center gap-1.5">
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${page?.status === "published" ? "bg-emerald-500" : "bg-amber-500"}`}
+                ></span>
+                {page?.status ?? "draft"}
+              </span>
             </span>
             <button
               type="button"
@@ -332,7 +339,23 @@ export function SeoPageEditorForm({
               )}`}
               onClick={() => setIsSeoPanelOpen(true)}
             >
-              SEO: {seoReadiness.label}
+              <span className="flex items-center gap-1.5">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+                  <path d="M22 12A10 10 0 0 0 12 2v10z" />
+                </svg>
+                SEO: {seoReadiness.label}
+              </span>
             </button>
             <button className={secondaryButtonClass} name="intent" value="save">
               Save draft
@@ -358,8 +381,7 @@ export function SeoPageEditorForm({
         {(state.status !== "idle" ||
           savedFromRedirect ||
           redirectError ||
-          autosave ||
-          !canPublish) && (
+          autosave) && (
           <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
             {(state.status !== "idle" ||
               savedFromRedirect ||
@@ -387,11 +409,6 @@ export function SeoPageEditorForm({
                   : autosave.message}
               </p>
             )}
-            {!canPublish && (
-              <p className="text-slate-500">
-                Create the draft before publishing.
-              </p>
-            )}
           </div>
         )}
 
@@ -399,27 +416,9 @@ export function SeoPageEditorForm({
           <StarterTemplatePanel onUseTemplate={applyStarterTemplate} />
         )}
 
-        <SeoReadinessPanel
-          summary={seoReadiness}
-          aiProposalResult={aiProposalResult}
-          aiInsertResult={aiInsertResult}
-          aiProposals={aiProposals}
-          canRunAiAgent={Boolean(page?.id)}
-          isAiGenerating={isAiGenerating}
-          isAiInserting={isAiInserting}
-          internalLinkSuggestions={internalLinkSuggestions}
-          linkSuggestionMessage={linkSuggestionMessage}
-          onInsertAiProposalBlocks={insertAiProposalBlocks}
-          onApplyInternalLinkSuggestion={applyLinkSuggestion}
-          onAddSuggestedBlock={addSuggestedBlock}
-          onRunAiAgent={runAiSeoAgent}
-          onOpenSettings={() => setIsSeoPanelOpen(true)}
-          mediaAssetCount={mediaAssets.length}
-        />
-
-        <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-black/5">
           <header className="border-b border-slate-100 bg-white">
-            <div className="mx-auto max-w-5xl px-6 py-12 lg:px-10">
+            <div className="mx-auto max-w-5xl px-6 py-6 lg:px-10 lg:py-8">
               {targetKeyword && (
                 <div className="bg-brand-50 text-brand-700 ring-brand-700/10 mb-4 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset">
                   <svg
@@ -452,7 +451,7 @@ export function SeoPageEditorForm({
                   className={headlineInputClass}
                 />
               </label>
-              <label className="mt-4 block max-w-3xl">
+              <label className="mt-2 block max-w-3xl">
                 <span className="sr-only">Meta description</span>
                 <textarea
                   name="metaDescription"
@@ -470,12 +469,28 @@ export function SeoPageEditorForm({
           <main className="mx-auto max-w-5xl px-6 py-10 lg:px-10">
             <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-6">
               <div>
-                <h2 className="text-base font-semibold text-slate-900">
-                  Content blocks
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-slate-400"
+                  >
+                    <path d="M12 3v18" />
+                    <rect width="18" height="18" x="3" y="3" rx="2" />
+                    <path d="M3 9h18" />
+                    <path d="M3 15h18" />
+                  </svg>
+                  Content Blocks
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Add reusable content blocks in the order they should appear on
-                  the page.
+                  Build your page by stacking and arranging content blocks.
                 </p>
               </div>
               <div className="relative" ref={layoutOptionsRef}>
@@ -589,7 +604,7 @@ export function SeoPageEditorForm({
                   items={content.sections.map((section) => section.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="space-y-10">
+                  <div className="space-y-12">
                     {content.sections.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50">
                         <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
@@ -695,19 +710,43 @@ export function SeoPageEditorForm({
       )}
       <aside
         inert={!isSeoPanelOpen ? true : undefined}
-        className={`fixed top-0 right-0 z-50 h-dvh w-full max-w-md bg-white shadow-2xl ring-1 ring-slate-900/5 transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 z-50 h-dvh w-full max-w-2xl bg-white shadow-2xl ring-1 ring-slate-900/5 transition-transform duration-300 ease-in-out ${
           isSeoPanelOpen ? "translate-x-0" : "translate-x-full"
         }`}
         aria-hidden={!isSeoPanelOpen}
       >
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">
-              SEO Settings
+          <div
+            className={`flex items-center justify-between gap-3 px-6 py-5 text-white ${
+              seoReadiness.status === "blocked"
+                ? "bg-red-600"
+                : seoReadiness.status === "needs_work"
+                  ? "bg-amber-600"
+                  : seoReadiness.status === "opportunities"
+                    ? "bg-sky-600"
+                    : "bg-emerald-600"
+            }`}
+          >
+            <h2 className="flex items-center gap-2 text-lg font-semibold">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+                <path d="M22 12A10 10 0 0 0 12 2v10z" />
+              </svg>
+              SEO Command Centre
             </h2>
             <button
               type="button"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/20 hover:text-white"
               onClick={() => setIsSeoPanelOpen(false)}
             >
               <svg
@@ -727,10 +766,31 @@ export function SeoPageEditorForm({
               <span className="sr-only">Close</span>
             </button>
           </div>
-          <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
-            <SeoReadinessDetails summary={seoReadiness} />
+          <div className="flex-1 space-y-8 overflow-y-auto px-6 py-6">
+            <SeoReadinessPanel
+              summary={seoReadiness}
+              aiProposalResult={aiProposalResult}
+              aiInsertResult={aiInsertResult}
+              aiProposals={aiProposals}
+              canRunAiAgent={Boolean(page?.id)}
+              isAiGenerating={isAiGenerating}
+              isAiInserting={isAiInserting}
+              internalLinkSuggestions={internalLinkSuggestions}
+              linkSuggestionMessage={linkSuggestionMessage}
+              onInsertAiProposalBlocks={insertAiProposalBlocks}
+              onApplyInternalLinkSuggestion={applyLinkSuggestion}
+              onAddSuggestedBlock={addSuggestedBlock}
+              onRunAiAgent={runAiSeoAgent}
+              onOpenSettings={() => {
+                document.getElementById("seo-target-keyword-field")?.focus();
+              }}
+              mediaAssetCount={mediaAssets.length}
+            />
 
-            <div className="space-y-5 border-t border-slate-100 pt-6">
+            <div className="space-y-5 border-t border-slate-100 pt-8">
+              <h3 className="text-base font-semibold text-slate-900">
+                Page Meta Settings
+              </h3>
               <label className="block">
                 <span className="text-sm font-semibold text-slate-900">
                   Target keyword
@@ -838,7 +898,7 @@ export function SeoPageEditorForm({
                 </label>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
                 <div className="mb-4 flex items-center gap-2">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -1256,76 +1316,8 @@ function SeoReadinessPanel({
   ].slice(0, 6);
 
   return (
-    <section className="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-      <div className="flex flex-wrap items-start justify-between gap-4 p-6">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
-              <path d="M22 12A10 10 0 0 0 12 2v10z" />
-            </svg>
-            SEO Command Centre
-          </div>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span
-              className={`rounded-full px-3 py-1 text-sm font-semibold ${readinessPillClass(
-                summary.status,
-              )} ring-1 ring-black/5 ring-inset`}
-            >
-              {summary.label}
-            </span>
-            <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-red-500"></span>
-                {summary.blockers.length} blockers
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                {summary.warnings.length} warnings
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-sky-500"></span>
-                {summary.opportunities.length} opportunities
-              </span>
-            </div>
-          </div>
-        </div>
-        <div>
-          <button
-            type="button"
-            className={`${smallButtonClass} inline-flex items-center gap-2`}
-            onClick={onOpenSettings}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-            Review SEO settings
-          </button>
-        </div>
-      </div>
-
-      <div className="grid gap-px border-y border-slate-100 bg-slate-100 sm:grid-cols-2 lg:grid-cols-4">
+    <section className="flex flex-col gap-6">
+      <div className="grid gap-px overflow-hidden rounded-xl border border-slate-100 bg-slate-100 shadow-sm sm:grid-cols-2">
         {summary.categories.map((category) => (
           <div
             key={category.category}
@@ -1372,181 +1364,260 @@ function SeoReadinessPanel({
         ))}
       </div>
 
-      <div className="grid gap-8 p-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
-            <h3 className="text-base font-semibold text-slate-900">
-              Action Items
-            </h3>
-            <span className="text-sm font-medium text-slate-500">
-              Highest impact first
-            </span>
-          </div>
-
-          {topFindings.length > 0 ? (
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
-              {topFindings.map((finding, index) => (
-                <article
-                  key={`${finding.code}-${finding.path}-${index}`}
-                  className="group relative flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md"
-                >
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <span
-                      className={`h-2.5 w-2.5 rounded-full ${findingDotClass(
-                        finding.severity,
-                      )}`}
-                    />
-                    <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
-                      {findingSeverityLabel(finding.severity)}
-                    </span>
-                    <span className="rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200 ring-inset">
-                      {friendlyFindingLocation(finding)}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm leading-6 font-semibold text-slate-900">
-                    {finding.message}
-                  </p>
-                  {friendlyEvidenceText(finding) && (
-                    <p className="mt-1.5 text-sm text-slate-500">
-                      {friendlyEvidenceText(finding)}
-                    </p>
-                  )}
-                  <div className="mt-auto pt-4">
-                    <ReadinessFindingAction
-                      finding={finding}
-                      onAddSuggestedBlock={onAddSuggestedBlock}
-                      onOpenSettings={onOpenSettings}
-                    />
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
-              No readiness findings on this draft. Review the public preview
-              before publishing.
-            </div>
-          )}
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <h3 className="text-base font-semibold text-slate-900">
+            Action Items
+          </h3>
+          <span className="text-sm font-medium text-slate-500">
+            Highest impact first
+          </span>
         </div>
 
-        <aside className="space-y-3">
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-slate-950">
-              Builder support
-            </h3>
-            <div className="mt-3 grid gap-2">
-              <Link
-                href="/admin/media"
-                className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white"
+        {topFindings.length > 0 ? (
+          <div className="grid gap-4">
+            {topFindings.map((finding, index) => (
+              <article
+                key={`${finding.code}-${finding.path}-${index}`}
+                className="group relative flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md"
               >
-                Media library
-                <span className="mt-1 block text-xs leading-5 font-medium text-slate-500">
-                  {mediaAssetCount > 0
-                    ? `${mediaAssetCount} assets available for image blocks`
-                    : "No assets yet. Add images, alt text, and rights notes."}
-                </span>
-              </Link>
-              <Link
-                href="/admin/libraries"
-                className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white"
-              >
-                Content libraries
-                <span className="mt-1 block text-xs leading-5 font-medium text-slate-500">
-                  Manage CTA presets, approved claims, source excerpts, and
-                  proof items.
-                </span>
-              </Link>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-violet-100 bg-violet-50/70 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-slate-950">
-                  SEO agent
-                </h3>
-                <p className="mt-1 text-xs leading-5 text-slate-600">
-                  Source-backed drafts stay separate until selected blocks are
-                  inserted.
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full ${findingDotClass(
+                      finding.severity,
+                    )}`}
+                  />
+                  <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+                    {findingSeverityLabel(finding.severity)}
+                  </span>
+                  <span className="rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200 ring-inset">
+                    {friendlyFindingLocation(finding)}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-6 font-semibold text-slate-900">
+                  {finding.message}
                 </p>
-              </div>
-              <button
-                type="button"
-                className={miniButtonClass}
-                disabled={!canRunAiAgent || isAiGenerating}
-                onClick={onRunAiAgent}
-              >
-                {isAiGenerating
-                  ? "Running..."
-                  : canRunAiAgent
-                    ? "Run SEO agent"
-                    : "Save first"}
-              </button>
-            </div>
-            {aiProposalResult.status !== "idle" && aiProposalResult.message && (
-              <p
-                className={`mt-3 rounded-md bg-white px-3 py-2 text-xs leading-5 ring-1 ${
-                  aiProposalResult.status === "error"
-                    ? "text-red-700 ring-red-100"
-                    : "text-emerald-700 ring-emerald-100"
-                }`}
-              >
-                {aiProposalResult.message}
-              </p>
-            )}
-            <AiProposalReviewList
-              proposals={aiProposals}
-              insertResult={aiInsertResult}
-              isInserting={isAiInserting}
-              onInsertBlocks={onInsertAiProposalBlocks}
-            />
+                {friendlyEvidenceText(finding) && (
+                  <p className="mt-1.5 text-sm text-slate-500">
+                    {friendlyEvidenceText(finding)}
+                  </p>
+                )}
+                <div className="mt-auto pt-4">
+                  <ReadinessFindingAction
+                    finding={finding}
+                    onAddSuggestedBlock={onAddSuggestedBlock}
+                    onOpenSettings={onOpenSettings}
+                  />
+                </div>
+              </article>
+            ))}
           </div>
-        </aside>
+        ) : (
+          <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-8 text-center text-sm leading-6 text-emerald-800 shadow-sm">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <path d="m9 11 3 3L22 4" />
+              </svg>
+            </div>
+            <h4 className="text-sm font-semibold text-emerald-900">
+              All clear!
+            </h4>
+            <p className="mt-1 text-sm text-emerald-700">
+              No readiness findings on this draft. Review the public preview
+              before publishing.
+            </p>
+          </div>
+        )}
       </div>
 
-      {(internalLinkSuggestions.length > 0 || linkSuggestionMessage) && (
-        <div className="mx-4 mb-4 rounded-lg border border-sky-100 bg-sky-50/60 p-4">
+      <aside className="space-y-6">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+          <h3 className="text-sm font-semibold text-slate-900">
+            Builder support
+          </h3>
+          <div className="mt-4 grid gap-3">
+            <Link
+              href="/admin/media"
+              className="group rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 transition-all hover:border-[#0b63f6]/30 hover:bg-white hover:shadow-sm"
+            >
+              <span className="flex items-center gap-2 transition-colors group-hover:text-[#0b63f6]">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect width="18" height="18" x="3" y="3" rx="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                </svg>
+                Media library
+              </span>
+              <span className="mt-1.5 block text-xs font-medium text-slate-500">
+                {mediaAssetCount > 0
+                  ? `${mediaAssetCount} assets available for image blocks`
+                  : "No assets yet. Add images, alt text, and rights notes."}
+              </span>
+            </Link>
+            <Link
+              href="/admin/libraries"
+              className="group rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 transition-all hover:border-[#0b63f6]/30 hover:bg-white hover:shadow-sm"
+            >
+              <span className="flex items-center gap-2 transition-colors group-hover:text-[#0b63f6]">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                </svg>
+                Content libraries
+              </span>
+              <span className="mt-1.5 block text-xs font-medium text-slate-500">
+                Manage CTA presets, approved claims, source excerpts, and proof
+                items.
+              </span>
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-violet-200 bg-violet-50 p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-sm font-semibold text-slate-950">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-violet-900">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 2v20" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                SEO agent
+              </h3>
+              <p className="mt-1 text-xs text-violet-700">
+                Source-backed drafts stay separate until selected blocks are
+                inserted.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-violet-700 shadow-sm ring-1 ring-violet-300 transition-all ring-inset hover:bg-violet-50 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!canRunAiAgent || isAiGenerating}
+              onClick={onRunAiAgent}
+            >
+              {isAiGenerating
+                ? "Running..."
+                : canRunAiAgent
+                  ? "Run SEO agent"
+                  : "Save first"}
+            </button>
+          </div>
+          {aiProposalResult.status !== "idle" && aiProposalResult.message && (
+            <p
+              className={`mt-4 rounded-lg bg-white px-4 py-3 text-sm font-medium shadow-sm ring-1 ring-inset ${
+                aiProposalResult.status === "error"
+                  ? "text-red-700 ring-red-200"
+                  : "text-emerald-700 ring-emerald-200"
+              }`}
+            >
+              {aiProposalResult.message}
+            </p>
+          )}
+          <AiProposalReviewList
+            proposals={aiProposals}
+            insertResult={aiInsertResult}
+            isInserting={isAiInserting}
+            onInsertBlocks={onInsertAiProposalBlocks}
+          />
+        </div>
+      </aside>
+
+      {(internalLinkSuggestions.length > 0 || linkSuggestionMessage) && (
+        <div className="mb-6 rounded-xl border border-sky-200 bg-sky-50 p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-200/60 pb-4">
+            <div>
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-sky-900">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                </svg>
                 Internal link suggestions
               </h3>
-              <p className="mt-1 text-xs leading-5 text-slate-600">
+              <p className="mt-1 text-xs text-sky-700">
                 Add relevant links from the copy that already exists on this
                 page.
               </p>
             </div>
-            <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-200">
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-700 shadow-sm ring-1 ring-sky-200 ring-inset">
               {internalLinkSuggestions.length} available
             </span>
           </div>
 
           {linkSuggestionMessage && (
-            <p className="mt-3 rounded-lg bg-white px-3 py-2 text-xs leading-5 text-slate-600 ring-1 ring-sky-100">
+            <p className="mt-4 rounded-lg bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm ring-1 ring-sky-200 ring-inset">
               {linkSuggestionMessage}
             </p>
           )}
 
           {internalLinkSuggestions.length > 0 && (
-            <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
               {internalLinkSuggestions.slice(0, 4).map((suggestion) => (
                 <div
                   key={suggestion.id}
-                  className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-sky-100"
+                  className="group flex flex-col rounded-xl bg-white p-4 shadow-sm ring-1 ring-sky-200 transition-all ring-inset hover:shadow-md hover:ring-sky-300"
                 >
-                  <p className="text-sm font-semibold text-slate-950">
-                    Link {suggestion.anchorText}
+                  <p className="text-sm font-semibold text-slate-900">
+                    Link &quot;{suggestion.anchorText}&quot;
                   </p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                  <p className="mt-1.5 line-clamp-2 text-xs text-slate-500">
                     {suggestion.reason}
                   </p>
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-xs break-all text-sky-700">
+                  <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
+                    <span className="truncate text-xs font-medium text-sky-700">
                       {suggestion.targetPath}
                     </span>
                     <button
                       type="button"
-                      className={miniButtonClass}
+                      className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 shadow-sm ring-1 ring-sky-300 transition-all ring-inset hover:bg-sky-50 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none"
                       onClick={() => onApplyInternalLinkSuggestion(suggestion)}
                     >
                       Apply link
@@ -1632,7 +1703,7 @@ function StarterTemplatePanel({
   onUseTemplate: (template: StarterTemplate) => void;
 }) {
   return (
-    <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-black/5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="bg-brand-50 text-brand-700 inline-flex items-center gap-2 rounded-full px-2.5 py-0.5 text-xs font-semibold">
@@ -1720,10 +1791,26 @@ function ReadinessFindingAction({
     return (
       <button
         type="button"
-        className={miniButtonClass}
+        className={smallButtonClass}
         onClick={() => onAddSuggestedBlock(suggestedBlock.type)}
       >
-        {suggestedBlock.label}
+        <span className="flex items-center gap-1.5">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M5 12h14" />
+            <path d="M12 5v14" />
+          </svg>
+          {suggestedBlock.label}
+        </span>
       </button>
     );
   }
@@ -1732,25 +1819,73 @@ function ReadinessFindingAction({
     return (
       <button
         type="button"
-        className={miniButtonClass}
+        className={smallButtonClass}
         onClick={onOpenSettings}
       >
-        Open SEO settings
+        <span className="flex items-center gap-1.5">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          Open SEO settings
+        </span>
       </button>
     );
   }
 
   if (anchor) {
     return (
-      <a href={anchor} className={miniButtonClass}>
-        Go to field
+      <a href={anchor} className={smallButtonClass}>
+        <span className="flex items-center gap-1.5">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" x2="21" y1="14" y2="3" />
+          </svg>
+          Go to field
+        </span>
       </a>
     );
   }
 
   return (
-    <span className="text-xs font-medium text-slate-500">
-      Review the highlighted area in the editor.
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-200 ring-inset">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 16v-4" />
+        <path d="M12 8h.01" />
+      </svg>
+      Review the highlighted area in the editor
     </span>
   );
 }
@@ -2113,76 +2248,6 @@ function aiBlockReviewBody(block: PageBlock) {
   return block.props.href;
 }
 
-function SeoReadinessDetails({ summary }: { summary: SeoReadinessSummary }) {
-  const findings = [
-    ...summary.blockers,
-    ...summary.warnings,
-    ...summary.opportunities,
-  ];
-
-  return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold text-slate-500 uppercase">
-            Readiness
-          </p>
-          <p className="mt-2 text-sm font-semibold text-slate-950">
-            {summary.label}
-          </p>
-        </div>
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${readinessPillClass(
-            summary.status,
-          )}`}
-        >
-          {summary.blockers.length} / {summary.warnings.length} /{" "}
-          {summary.opportunities.length}
-        </span>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-600">
-        <span>{summary.metrics.visibleWordCount} words</span>
-        <span>{summary.metrics.blockCount} blocks</span>
-        <span>{summary.metrics.internalLinkCount} links</span>
-        <span>{summary.metrics.faqItemCount} FAQs</span>
-      </div>
-
-      {findings.length > 0 ? (
-        <div className="mt-4 space-y-3">
-          {findings.map((finding, index) => (
-            <div
-              key={`${finding.code}-${finding.path}-${index}`}
-              className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-200"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-slate-500 uppercase">
-                  {finding.severity}
-                </span>
-                <span className="text-xs text-slate-400">
-                  {friendlyFindingLocation(finding)}
-                </span>
-              </div>
-              <p className="mt-2 text-sm font-medium text-slate-900">
-                {finding.message}
-              </p>
-              {friendlyEvidenceText(finding) && (
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  {friendlyEvidenceText(finding)}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-4 rounded-lg bg-white p-3 text-sm text-slate-600 shadow-sm ring-1 ring-slate-200">
-          No SEO readiness findings on this draft.
-        </p>
-      )}
-    </div>
-  );
-}
-
 function SortableSectionEditor({
   section,
   sectionIndex,
@@ -2249,60 +2314,78 @@ function SortableSectionEditor({
     <section
       ref={setNodeRef}
       style={style}
-      className={`relative rounded-xl border border-slate-300 bg-slate-50/80 p-4 shadow-sm ${
-        isDragging ? "relative z-10 shadow-lg" : ""
+      className={`relative rounded-2xl border-2 border-slate-200 bg-slate-50/50 p-6 transition-all ${
+        isDragging
+          ? "z-10 scale-[1.01] border-[#0b63f6] bg-white shadow-2xl"
+          : "hover:border-slate-300"
       }`}
     >
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-300 bg-white px-3 py-3 text-xs shadow-[inset_4px_0_0_#0b63f6]">
-        <div className="flex min-w-0 items-center gap-3">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/60 pb-4">
+        <div className="flex items-center gap-3">
           <DragHandle
             label={`Reorder section ${sectionIndex + 1}`}
             attributes={attributes}
             listeners={listeners}
           />
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold tracking-wide text-[#0b63f6] uppercase">
-              Section
-            </p>
-            <h3 className="text-sm font-semibold text-slate-950">
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-bold tracking-wider text-slate-500 uppercase">
               Section {sectionIndex + 1}
             </h3>
-            <p className="mt-0.5 text-xs text-slate-500">
-              Page layout area · {section.columns.length}{" "}
+            <span className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 ring-inset">
+              {section.columns.length}{" "}
               {section.columns.length === 1 ? "column" : "columns"}
-            </p>
+            </span>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <IconButton
-            icon="up"
-            label={`Move section ${sectionIndex + 1} up`}
-            disabled={sectionIndex === 0}
-            onClick={() => onSectionMove("up")}
-          />
-          <IconButton
-            icon="down"
-            label={`Move section ${sectionIndex + 1} down`}
-            disabled={sectionIndex === sectionCount - 1}
-            onClick={() => onSectionMove("down")}
-          />
+          <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+            <IconButton
+              icon="up"
+              label={`Move section ${sectionIndex + 1} up`}
+              disabled={sectionIndex === 0}
+              onClick={() => onSectionMove("up")}
+            />
+            <IconButton
+              icon="down"
+              label={`Move section ${sectionIndex + 1} down`}
+              disabled={sectionIndex === sectionCount - 1}
+              onClick={() => onSectionMove("down")}
+            />
+          </div>
           <button
             type="button"
-            className={smallButtonClass}
+            className={`${smallButtonClass} inline-flex items-center gap-2`}
             disabled={section.columns.length >= 4}
             onClick={onAddColumn}
           >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect width="18" height="18" x="3" y="3" rx="2" />
+              <path d="M12 8v8" />
+              <path d="M8 12h8" />
+            </svg>
             Add column
           </button>
-          <MoreActions label={`Section ${sectionIndex + 1} actions`}>
-            <button
-              type="button"
-              className={dangerButtonClass}
-              onClick={onSectionRemove}
-            >
-              Remove section
-            </button>
-          </MoreActions>
+          <div className="rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+            <MoreActions label={`Section ${sectionIndex + 1} actions`}>
+              <button
+                type="button"
+                className={dangerButtonClass}
+                onClick={onSectionRemove}
+              >
+                Remove section
+              </button>
+            </MoreActions>
+          </div>
         </div>
       </header>
 
@@ -2318,8 +2401,53 @@ function SortableSectionEditor({
         >
           <div className={columnGridClass(section.columns.length)}>
             {section.columns.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
-                Add a column before adding blocks.
+              <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-6 py-12 text-center transition-colors hover:border-slate-400 hover:bg-slate-50">
+                <div className="mb-3 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-slate-400"
+                  >
+                    <rect width="18" height="18" x="3" y="3" rx="2" />
+                    <path d="M12 8v8" />
+                    <path d="M8 12h8" />
+                  </svg>
+                </div>
+                <h4 className="text-sm font-semibold text-slate-900">
+                  No columns
+                </h4>
+                <p className="mt-1 max-w-sm text-sm text-slate-500">
+                  Add a column to this section before you can add content
+                  blocks.
+                </p>
+                <button
+                  type="button"
+                  onClick={onAddColumn}
+                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-300 ring-inset hover:bg-slate-50"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="M12 5v14" />
+                  </svg>
+                  Add column
+                </button>
               </div>
             ) : (
               section.columns.map((column, columnIndex) => (
@@ -2392,9 +2520,38 @@ function SimpleBlockStackEditor({
         items={column.blocks.map((block) => block.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="space-y-6 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+        <div className="space-y-6">
           {column.blocks.length === 0 ? (
-            <BlockPicker onAddBlock={onAddBlock} />
+            <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50">
+              <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-slate-400"
+                >
+                  <rect width="18" height="18" x="3" y="3" rx="2" />
+                  <path d="M3 9h18" />
+                  <path d="M9 21V9" />
+                </svg>
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900">
+                No content blocks
+              </h3>
+              <p className="mt-1 max-w-sm text-sm text-slate-500">
+                Get started by adding a layout preset or a new content block to
+                build your page.
+              </p>
+              <div className="mt-6 w-full max-w-md text-left">
+                <BlockPicker onAddBlock={onAddBlock} />
+              </div>
+            </div>
           ) : (
             <>
               {column.blocks.map((block, blockIndex) => (
@@ -2467,91 +2624,118 @@ function SortableColumnEditor({
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative min-w-0 rounded-lg border border-slate-200 bg-white p-3 shadow-[inset_0_0_0_1px_#f1f5f9] ${
-        isDragging ? "relative z-10 shadow-lg" : ""
+      className={`relative flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm ring-1 ring-black/5 transition-all ${
+        isDragging
+          ? "z-20 scale-[1.02] border-[#0b63f6] shadow-xl"
+          : "hover:border-slate-300"
       }`}
     >
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-100/80 px-3 py-3 text-xs">
-        <div className="flex min-w-0 items-center gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/50 px-3 py-2">
+        <div className="flex items-center gap-2">
           <DragHandle
             label={`Reorder column ${columnIndex + 1}`}
             attributes={attributes}
             listeners={listeners}
           />
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
-              Column
-            </p>
-            <h4 className="text-sm font-semibold text-slate-900">
-              Column {columnIndex + 1}
-            </h4>
-            <p className="mt-0.5 text-xs text-slate-500">
-              Content lane · {column.blocks.length}{" "}
-              {column.blocks.length === 1 ? "block" : "blocks"}
-            </p>
-          </div>
+          <h4 className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+            Column {columnIndex + 1}
+          </h4>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <IconButton
-            icon="up"
-            label={`Move column ${columnIndex + 1} up`}
-            disabled={columnIndex === 0}
-            onClick={() => onColumnMove("up")}
-          />
-          <IconButton
-            icon="down"
-            label={`Move column ${columnIndex + 1} down`}
-            disabled={columnIndex === columnCount - 1}
-            onClick={() => onColumnMove("down")}
-          />
-          <MoreActions label={`Column ${columnIndex + 1} actions`}>
-            <button
-              type="button"
-              className={dangerButtonClass}
-              onClick={onColumnRemove}
-            >
-              Remove column
-            </button>
-          </MoreActions>
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 rounded-md border border-slate-200 bg-white p-0.5 shadow-sm">
+            <IconButton
+              icon="left"
+              label={`Move column ${columnIndex + 1} left`}
+              disabled={columnIndex === 0}
+              onClick={() => onColumnMove("up")}
+            />
+            <IconButton
+              icon="right"
+              label={`Move column ${columnIndex + 1} right`}
+              disabled={columnIndex === columnCount - 1}
+              onClick={() => onColumnMove("down")}
+            />
+          </div>
+          <div className="rounded-md border border-slate-200 bg-white p-0.5 shadow-sm">
+            <MoreActions label={`Column ${columnIndex + 1} actions`}>
+              <button
+                type="button"
+                className={dangerButtonClass}
+                onClick={onColumnRemove}
+              >
+                Remove column
+              </button>
+            </MoreActions>
+          </div>
         </div>
       </header>
 
-      <DndContext
-        id={`seo-page-${column.id}-blocks`}
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={onBlockDragEnd}
-      >
-        <SortableContext
-          items={column.blocks.map((block) => block.id)}
-          strategy={verticalListSortingStrategy}
+      <div className="flex-1 p-4">
+        <DndContext
+          id={`seo-page-${column.id}-blocks`}
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={onBlockDragEnd}
         >
-          <div className="space-y-6">
-            {column.blocks.length === 0 ? (
-              <BlockPicker onAddBlock={onAddBlock} />
-            ) : (
-              <>
-                {column.blocks.map((block, blockIndex) => (
-                  <SortableBlockEditor
-                    key={block.id}
-                    block={block}
-                    index={blockIndex}
-                    blockNumber={
-                      (blockOrdinalById.get(block.id) ?? blockIndex) + 1
-                    }
-                    blockCount={column.blocks.length}
-                    mediaAssets={mediaAssets}
-                    onChange={(next) => onBlockChange(block.id, next)}
-                    onMove={(direction) => onBlockMove(block.id, direction)}
-                    onRemove={() => onBlockRemove(block.id)}
-                  />
-                ))}
-                <BlockPicker onAddBlock={onAddBlock} />
-              </>
-            )}
-          </div>
-        </SortableContext>
-      </DndContext>
+          <SortableContext
+            items={column.blocks.map((block) => block.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-6">
+              {column.blocks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-4 py-10 text-center">
+                  <div className="mb-3 rounded-full bg-white p-2 shadow-sm ring-1 ring-slate-200">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-slate-400"
+                    >
+                      <rect width="18" height="18" x="3" y="3" rx="2" />
+                      <path d="M3 9h18" />
+                      <path d="M9 21V9" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    Empty column
+                  </p>
+                  <p className="mt-1 mb-4 text-xs text-slate-500">
+                    Add a block below
+                  </p>
+                  <div className="w-full text-left">
+                    <BlockPicker onAddBlock={onAddBlock} />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {column.blocks.map((block, blockIndex) => (
+                    <SortableBlockEditor
+                      key={block.id}
+                      block={block}
+                      index={blockIndex}
+                      blockNumber={
+                        (blockOrdinalById.get(block.id) ?? blockIndex) + 1
+                      }
+                      blockCount={column.blocks.length}
+                      mediaAssets={mediaAssets}
+                      onChange={(next) => onBlockChange(block.id, next)}
+                      onMove={(direction) => onBlockMove(block.id, direction)}
+                      onRemove={() => onBlockRemove(block.id)}
+                    />
+                  ))}
+                  <BlockPicker onAddBlock={onAddBlock} />
+                </>
+              )}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </div>
     </div>
   );
 }
@@ -2782,99 +2966,250 @@ function BlockPicker({
 }: {
   onAddBlock: (type: PageBlock["type"], variant?: BlockVariant) => void;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedType, setSelectedType] = useState<PageBlock["type"]>(
+    blockPickerOptions[0]?.type ?? "rich_text",
+  );
+  const selectedOption =
+    blockPickerOptions.find((option) => option.type === selectedType) ??
+    blockPickerOptions[0];
+
   return (
-    <details className="rounded-lg border border-dashed border-slate-300 bg-white p-4 shadow-[inset_0_0_0_1px_#f8fafc]">
-      <summary className="cursor-pointer text-sm font-semibold text-slate-800">
-        Add content block
-        <span className="ml-2 text-xs font-medium text-slate-500">
-          Choose the content type for this column.
-        </span>
-      </summary>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {blockPickerOptions.map((option) => (
-          <article
-            key={option.type}
-            className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+    <div className="relative">
+      {!isOpen ? (
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 bg-white p-4 text-sm font-medium text-slate-500 transition-all hover:border-[#0b63f6]/50 hover:bg-slate-50 hover:text-[#0b63f6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <span className="flex items-start gap-3">
-              <span
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white text-slate-700 ring-1 ring-slate-200"
-                aria-hidden="true"
+            <path d="M5 12h14" />
+            <path d="M12 5v14" />
+          </svg>
+          Add content block
+        </button>
+      ) : (
+        <div className="animate-in fade-in slide-in-from-top-2 relative left-1/2 w-[min(90vw,56rem)] -translate-x-1/2 rounded-xl border border-slate-200 bg-white p-5 shadow-lg ring-1 ring-black/5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-semibold text-slate-900">
+                Add content block
+              </h4>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Pick a block type, preview the shape, then choose a variant.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                <BuilderGlyph name={option.type} />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold text-slate-900">
-                  {option.label}
-                </span>
-                <span className="mt-1 block text-xs leading-5 text-slate-500">
-                  {option.description}
-                </span>
-              </span>
-            </span>
-            <div className="mt-3">
-              <BlockPreviewSkeleton type={option.type} />
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="grid gap-5 lg:grid-cols-[230px_minmax(0,1fr)]">
+            <div className="grid gap-2 self-start">
+              {blockPickerOptions.map((option) => {
+                const isSelected = option.type === selectedOption.type;
+                return (
+                  <button
+                    key={option.type}
+                    type="button"
+                    className={`flex items-start gap-3 rounded-xl border px-3 py-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+                      isSelected
+                        ? "border-[#0b63f6]/40 bg-[#f4f8ff] shadow-sm"
+                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                    }`}
+                    onClick={() => setSelectedType(option.type)}
+                  >
+                    <span
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg shadow-sm ring-1 ring-inset ${
+                        isSelected
+                          ? "bg-white text-[#0b63f6] ring-[#0b63f6]/20"
+                          : "bg-slate-50 text-slate-500 ring-slate-200"
+                      }`}
+                      aria-hidden="true"
+                    >
+                      <BuilderGlyph name={option.type} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-slate-900">
+                        {option.label}
+                      </span>
+                      <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-slate-500">
+                        {option.description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-            <div className="mt-3 grid gap-2">
-              {option.variants.map((variant) => (
-                <button
-                  key={`${option.type}-${variant.id}`}
-                  type="button"
-                  className="rounded-md border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-[#0b63f6]/30 hover:bg-[#f7fbff] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-                  onClick={() => onAddBlock(option.type, variant.id)}
-                >
-                  <span className="block text-xs font-semibold text-slate-900">
-                    {variant.label}
-                  </span>
-                  <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">
-                    {variant.description}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </article>
-        ))}
+
+            {selectedOption && (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                      Preview
+                    </p>
+                    <h5 className="mt-1 text-lg font-semibold text-slate-950">
+                      {selectedOption.label}
+                    </h5>
+                    <p className="mt-1 max-w-xl text-sm leading-6 text-slate-600">
+                      {selectedOption.description}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5">
+                  <BlockLargePreviewSkeleton type={selectedOption.type} />
+                </div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {selectedOption.variants.map((variant) => (
+                    <button
+                      key={`${selectedOption.type}-${variant.id}`}
+                      type="button"
+                      className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-all hover:border-[#0b63f6]/50 hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                      onClick={() => {
+                        onAddBlock(selectedOption.type, variant.id);
+                        setIsOpen(false);
+                      }}
+                    >
+                      <span className="block text-sm font-semibold text-slate-900">
+                        {variant.label}
+                      </span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-500">
+                        {variant.description}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BlockLargePreviewSkeleton({ type }: { type: PageBlock["type"] }) {
+  if (type === "hero") {
+    return (
+      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div className="h-3 w-24 rounded bg-indigo-200" />
+        <div className="mt-4 h-7 w-4/5 rounded bg-slate-200" />
+        <div className="mt-3 h-4 w-2/3 rounded bg-slate-100" />
+        <div className="mt-6 h-9 w-32 rounded-full bg-[#0b63f6]/80" />
       </div>
-    </details>
+    );
+  }
+  if (type === "image") {
+    return (
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <div className="aspect-video rounded-xl border border-dashed border-slate-300 bg-slate-50" />
+        <div className="mt-3 h-3 w-2/5 rounded bg-slate-100" />
+      </div>
+    );
+  }
+  if (type === "lead_form") {
+    return (
+      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div className="h-5 w-3/5 rounded bg-slate-200" />
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="h-10 rounded-lg bg-slate-50 ring-1 ring-slate-200" />
+          <div className="h-10 rounded-lg bg-slate-50 ring-1 ring-slate-200" />
+          <div className="h-10 rounded-lg bg-slate-50 ring-1 ring-slate-200" />
+          <div className="h-10 rounded-lg bg-slate-50 ring-1 ring-slate-200" />
+        </div>
+        <div className="mt-4 h-9 w-32 rounded-full bg-[#0b63f6]/80" />
+      </div>
+    );
+  }
+  if (type === "card_grid") {
+    return (
+      <div className="grid gap-3 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:grid-cols-3">
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
+    );
+  }
+  if (type === "video") {
+    return (
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <div className="grid aspect-video place-items-center rounded-xl bg-slate-100">
+          <div className="h-12 w-12 rounded-full bg-white shadow-sm" />
+        </div>
+        <div className="mt-3 h-3 w-1/2 rounded bg-slate-100" />
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <BlockPreviewSkeleton type={type} />
+    </div>
   );
 }
 
 function BlockPreviewSkeleton({ type }: { type: PageBlock["type"] }) {
   if (type === "hero") {
     return (
-      <div className="space-y-2 rounded-lg bg-slate-50 p-3">
-        <div className="bg-brand-200 h-2 w-16 rounded" />
-        <div className="h-4 w-4/5 rounded bg-slate-300" />
-        <div className="h-3 w-2/3 rounded bg-slate-200" />
-        <div className="bg-brand-400 h-5 w-20 rounded-full" />
+      <div className="space-y-2 rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
+        <div className="h-2 w-16 rounded bg-indigo-200" />
+        <div className="h-4 w-4/5 rounded bg-slate-200" />
+        <div className="h-3 w-2/3 rounded bg-slate-100" />
+        <div className="h-5 w-20 rounded-full bg-[#0b63f6] opacity-80" />
       </div>
     );
   }
   if (type === "image") {
     return (
-      <div className="rounded-lg bg-slate-50 p-3">
-        <div className="aspect-video rounded-md border border-dashed border-slate-300 bg-white" />
-        <div className="mt-2 h-2 w-1/2 rounded bg-slate-200" />
+      <div className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
+        <div className="aspect-video rounded-md border border-dashed border-slate-200 bg-slate-50" />
+        <div className="mt-2 h-2 w-1/2 rounded bg-slate-100" />
       </div>
     );
   }
   if (type === "lead_form") {
     return (
-      <div className="space-y-2 rounded-lg bg-slate-50 p-3">
-        <div className="h-3 w-3/4 rounded bg-slate-300" />
+      <div className="space-y-2 rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
+        <div className="h-3 w-3/4 rounded bg-slate-200" />
         <div className="grid grid-cols-2 gap-1.5">
-          <div className="h-5 rounded bg-white ring-1 ring-slate-200" />
-          <div className="h-5 rounded bg-white ring-1 ring-slate-200" />
-          <div className="h-5 rounded bg-white ring-1 ring-slate-200" />
-          <div className="h-5 rounded bg-white ring-1 ring-slate-200" />
+          <div className="h-5 rounded bg-slate-50 ring-1 ring-slate-100" />
+          <div className="h-5 rounded bg-slate-50 ring-1 ring-slate-100" />
+          <div className="h-5 rounded bg-slate-50 ring-1 ring-slate-100" />
+          <div className="h-5 rounded bg-slate-50 ring-1 ring-slate-100" />
         </div>
-        <div className="bg-brand-400 h-5 w-20 rounded-full" />
+        <div className="h-5 w-20 rounded-full bg-[#0b63f6] opacity-80" />
       </div>
     );
   }
   if (type === "card_grid") {
     return (
-      <div className="grid grid-cols-3 gap-1.5 rounded-lg bg-slate-50 p-3">
+      <div className="grid grid-cols-3 gap-1.5 rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
         <SkeletonCard miniature />
         <SkeletonCard miniature />
         <SkeletonCard miniature />
@@ -2883,44 +3218,44 @@ function BlockPreviewSkeleton({ type }: { type: PageBlock["type"] }) {
   }
   if (type === "faq") {
     return (
-      <div className="space-y-2 rounded-lg bg-slate-50 p-3">
-        <div className="h-3 w-2/3 rounded bg-slate-300" />
-        <div className="h-5 rounded bg-white ring-1 ring-slate-200" />
-        <div className="h-5 rounded bg-white ring-1 ring-slate-200" />
+      <div className="space-y-2 rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
+        <div className="h-3 w-2/3 rounded bg-slate-200" />
+        <div className="h-5 rounded bg-slate-50 ring-1 ring-slate-100" />
+        <div className="h-5 rounded bg-slate-50 ring-1 ring-slate-100" />
       </div>
     );
   }
   if (type === "proof") {
     return (
-      <div className="space-y-2 rounded-lg bg-slate-100 p-3">
-        <div className="bg-brand-200 h-3 w-16 rounded" />
-        <div className="h-3 w-4/5 rounded bg-slate-400" />
-        <div className="h-3 w-2/3 rounded bg-slate-300" />
+      <div className="space-y-2 rounded-lg bg-slate-50 p-3 shadow-sm ring-1 ring-slate-100">
+        <div className="h-3 w-16 rounded bg-indigo-200" />
+        <div className="h-3 w-4/5 rounded bg-slate-300" />
+        <div className="h-3 w-2/3 rounded bg-slate-200" />
       </div>
     );
   }
   if (type === "video") {
     return (
-      <div className="space-y-2 rounded-lg bg-slate-50 p-3">
-        <div className="grid aspect-video place-items-center rounded-md bg-slate-200">
-          <div className="h-5 w-5 rounded-full bg-white" />
+      <div className="space-y-2 rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
+        <div className="grid aspect-video place-items-center rounded-md bg-slate-100">
+          <div className="h-5 w-5 rounded-full bg-white shadow-sm" />
         </div>
-        <div className="h-2 w-2/3 rounded bg-slate-200" />
+        <div className="h-2 w-2/3 rounded bg-slate-100" />
       </div>
     );
   }
   if (type === "cta") {
     return (
-      <div className="rounded-lg bg-slate-50 p-3">
-        <div className="bg-brand-400 h-6 w-24 rounded-full" />
+      <div className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
+        <div className="h-6 w-24 rounded-full bg-[#0b63f6] opacity-80" />
       </div>
     );
   }
   return (
-    <div className="space-y-2 rounded-lg bg-slate-50 p-3">
-      <div className="h-3 w-3/4 rounded bg-slate-300" />
-      <div className="h-2 w-full rounded bg-slate-200" />
-      <div className="h-2 w-2/3 rounded bg-slate-200" />
+    <div className="space-y-2 rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-100">
+      <div className="h-3 w-3/4 rounded bg-slate-200" />
+      <div className="h-2 w-full rounded bg-slate-100" />
+      <div className="h-2 w-2/3 rounded bg-slate-100" />
     </div>
   );
 }
@@ -2928,7 +3263,7 @@ function BlockPreviewSkeleton({ type }: { type: PageBlock["type"] }) {
 function SkeletonCard({ miniature = false }: { miniature?: boolean }) {
   return (
     <div
-      className={`rounded-xl border border-slate-200 bg-white ${
+      className={`rounded-xl border border-slate-100 bg-white shadow-sm ${
         miniature ? "h-12 p-2" : "p-5"
       }`}
     >
@@ -3847,15 +4182,17 @@ function BlockToolbar({
             onClick={() => onMove("down")}
           />
         </div>
-        <MoreActions label={`${label} actions`}>
-          <button
-            type="button"
-            className={dangerButtonClass}
-            onClick={onRemove}
-          >
-            Remove block
-          </button>
-        </MoreActions>
+        <div className="rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+          <MoreActions label={`${label} actions`}>
+            <button
+              type="button"
+              className={dangerButtonClass}
+              onClick={onRemove}
+            >
+              Remove block
+            </button>
+          </MoreActions>
+        </div>
       </div>
     </header>
   );
@@ -3922,7 +4259,24 @@ function DragHandle({
       {...attributes}
       {...listeners}
     >
-      <BuilderGlyph name="grip" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="9" cy="12" r="1" />
+        <circle cx="9" cy="5" r="1" />
+        <circle cx="9" cy="19" r="1" />
+        <circle cx="15" cy="12" r="1" />
+        <circle cx="15" cy="5" r="1" />
+        <circle cx="15" cy="19" r="1" />
+      </svg>
     </button>
   );
 }
@@ -3933,7 +4287,7 @@ function IconButton({
   disabled = false,
   onClick,
 }: {
-  icon: "up" | "down" | "more";
+  icon: "up" | "down" | "left" | "right" | "more";
   label: string;
   disabled?: boolean;
   onClick: () => void;
@@ -3947,7 +4301,83 @@ function IconButton({
       disabled={disabled}
       onClick={onClick}
     >
-      <BuilderGlyph name={icon} />
+      {icon === "up" && (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m18 15-6-6-6 6" />
+        </svg>
+      )}
+      {icon === "down" && (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      )}
+      {icon === "left" && (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+      )}
+      {icon === "right" && (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      )}
+      {icon === "more" && (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="1" />
+          <circle cx="19" cy="12" r="1" />
+          <circle cx="5" cy="12" r="1" />
+        </svg>
+      )}
     </button>
   );
 }
@@ -3959,19 +4389,50 @@ function MoreActions({
   label: string;
   children: ReactNode;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
-    <details className="relative">
-      <summary
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
         aria-label={label}
         title={label}
-        className={`${iconButtonClass} list-none [&::-webkit-details-marker]:hidden`}
+        className={iconButtonClass}
+        onClick={() => setIsOpen(!isOpen)}
       >
-        <BuilderGlyph name="more" />
-      </summary>
-      <div className="absolute right-0 z-20 mt-2 rounded-md border border-slate-200 bg-white p-2 shadow-lg">
-        {children}
-      </div>
-    </details>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="1" />
+          <circle cx="19" cy="12" r="1" />
+          <circle cx="5" cy="12" r="1" />
+        </svg>
+      </button>
+      {isOpen && (
+        <div className="animate-in fade-in slide-in-from-top-2 absolute right-0 z-20 mt-2 min-w-[160px] rounded-xl border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5">
+          {children}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -4791,21 +5252,22 @@ function readinessPillClass(status: SeoReadinessStatus) {
 }
 
 function readinessButtonClass(status: SeoReadinessStatus) {
-  if (status === "blocked") return "border-red-200 bg-red-50 text-red-700";
+  if (status === "blocked")
+    return "border-red-200 bg-white text-red-700 hover:bg-red-50 ring-1 ring-inset ring-red-100";
   if (status === "needs_work") {
-    return "border-amber-200 bg-amber-50 text-amber-800";
+    return "border-amber-200 bg-white text-amber-700 hover:bg-amber-50 ring-1 ring-inset ring-amber-100";
   }
   if (status === "opportunities") {
-    return "border-sky-200 bg-sky-50 text-sky-700";
+    return "border-sky-200 bg-white text-sky-700 hover:bg-sky-50 ring-1 ring-inset ring-sky-100";
   }
-  return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  return "border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50 ring-1 ring-inset ring-emerald-100";
 }
 
 function readinessCategoryClass(status: SeoReadinessStatus) {
-  if (status === "blocked") return "shadow-[inset_3px_0_0_#dc2626]";
-  if (status === "needs_work") return "shadow-[inset_3px_0_0_#d97706]";
-  if (status === "opportunities") return "shadow-[inset_3px_0_0_#0284c7]";
-  return "shadow-[inset_3px_0_0_#059669]";
+  if (status === "blocked") return "border-l-4 border-l-red-500";
+  if (status === "needs_work") return "border-l-4 border-l-amber-500";
+  if (status === "opportunities") return "border-l-4 border-l-sky-500";
+  return "border-l-4 border-l-emerald-500";
 }
 
 function findingDotClass(severity: "blocker" | "warning" | "opportunity") {
@@ -4815,10 +5277,10 @@ function findingDotClass(severity: "blocker" | "warning" | "opportunity") {
 }
 
 const headlineInputClass =
-  "w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-2 text-4xl font-semibold tracking-tight text-slate-950 outline-none transition placeholder:text-slate-300 hover:bg-slate-50 focus:bg-white focus:border-[#0b63f6]/30 focus:ring-4 focus:ring-[#0b63f6]/10 md:text-5xl";
+  "w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-1 text-3xl font-semibold tracking-tight text-slate-950 outline-none transition placeholder:text-slate-300 hover:bg-slate-50 focus:bg-white focus:border-[#0b63f6]/30 focus:ring-4 focus:ring-[#0b63f6]/10 md:text-4xl";
 
 const leadInputClass =
-  "w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-2 text-lg leading-8 text-slate-600 outline-none transition placeholder:text-slate-300 hover:bg-slate-50 focus:bg-white focus:border-[#0b63f6]/30 focus:ring-4 focus:ring-[#0b63f6]/10";
+  "w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-1 text-base leading-7 text-slate-600 outline-none transition placeholder:text-slate-300 hover:bg-slate-50 focus:bg-white focus:border-[#0b63f6]/30 focus:ring-4 focus:ring-[#0b63f6]/10";
 
 const eyebrowInputClass =
   "w-full rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-sm font-bold tracking-wider text-indigo-600 uppercase outline-none transition-all placeholder:text-indigo-300 hover:bg-indigo-50/50 focus:bg-white focus:border-indigo-200 focus:ring-4 focus:ring-indigo-100";
@@ -4842,22 +5304,22 @@ const textareaClass =
   "mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm leading-6 text-slate-900 shadow-sm transition-all outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-[#0b63f6] focus:ring-4 focus:ring-[#0b63f6]/10";
 
 const primaryButtonClass =
-  "rounded-md bg-[#0b63f6] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0756d6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded-lg bg-[#0b63f6] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#0756d6] hover:shadow focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
 const secondaryButtonClass =
-  "rounded-md bg-white border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded-lg bg-white border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-300 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
 const smallButtonClass =
-  "rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 transition-all hover:bg-slate-50 hover:ring-slate-400 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
 const miniButtonClass =
-  "rounded-md border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded-lg bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 transition-all hover:bg-slate-50 hover:ring-slate-400 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
 const dangerButtonClass =
-  "rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:outline-none";
+  "w-full rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-600 transition-all hover:bg-red-50 hover:text-red-700 focus-visible:ring-4 focus-visible:ring-red-100 focus-visible:outline-none text-left";
 
 const dragHandleClass =
-  "inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none active:cursor-grabbing";
+  "inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none active:cursor-grabbing";
 
 const iconButtonClass =
-  "inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
