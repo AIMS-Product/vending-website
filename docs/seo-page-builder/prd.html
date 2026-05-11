@@ -159,6 +159,9 @@
       .status-draft {
         background: var(--amber);
       }
+      .status-live {
+        background: var(--green);
+      }
 
       .main {
         margin-left: 232px;
@@ -893,12 +896,12 @@
         <div class="nav-meta-row">
           <span class="nav-meta-k">Status</span>
           <span class="nav-meta-v"
-            ><span class="status-dot status-draft"></span>Draft</span
+            ><span class="status-dot status-live"></span>Implemented</span
           >
         </div>
         <div class="nav-meta-row">
           <span class="nav-meta-k">Version</span>
-          <span class="nav-meta-v">0.1</span>
+          <span class="nav-meta-v">1.0</span>
         </div>
         <div class="nav-meta-row">
           <span class="nav-meta-k">Date</span>
@@ -915,8 +918,8 @@
       <header class="hero">
         <div class="hero-tags">
           <span class="tag tag-blue">PRD</span>
-          <span class="tag tag-amber">Draft · v0.1</span>
-          <span class="tag tag-green">Thin Slice First</span>
+          <span class="tag tag-green">Implemented · v1.0</span>
+          <span class="tag tag-blue">Admin CMS Shell</span>
           <span class="tag tag-neutral">Supabase + Next.js</span>
         </div>
 
@@ -1480,69 +1483,80 @@
               <tbody>
                 <tr>
                   <td>
-                    <span class="phase-badge phase-badge-blocked"
-                      >1 critical</span
-                    >
+                    <span class="phase-badge phase-badge-done">complete</span>
                   </td>
                   <td>
-                    Foundation is split into narrower verified slices: data
-                    model and block registry, admin CRUD/basic editor, then
-                    publish/public render/sitemap/redirects. Drag/drop comes
-                    after the model is proven.
+                    Foundation completed through data model and block registry,
+                    admin CRUD/basic editor, publish/public render,
+                    sitemap/redirects, and verified ordering.
                   </td>
-                  <td>Existing admin/auth model and Supabase project.</td>
+                  <td>Verified in repo and browser smoke passes.</td>
                 </tr>
                 <tr>
-                  <td><span class="phase-badge">2</span></td>
+                  <td>
+                    <span class="phase-badge phase-badge-done">complete</span>
+                  </td>
                   <td>
                     Revision UI and preview links: revision list, revision
                     preview, rollback to draft, secret preview tokens,
                     revocation/expiry.
                   </td>
-                  <td>Slice 1 content snapshots.</td>
+                  <td>Completed with preview and rollback workflow.</td>
                 </tr>
                 <tr>
-                  <td><span class="phase-badge">3</span></td>
+                  <td>
+                    <span class="phase-badge phase-badge-done">complete</span>
+                  </td>
                   <td>
                     Media library: upload, tags/search, alt text, source/rights
                     metadata, image block asset references.
                   </td>
-                  <td>Slice 1 image block path.</td>
+                  <td>Completed with editor picker and media E2E.</td>
                 </tr>
                 <tr>
-                  <td><span class="phase-badge">4</span></td>
+                  <td>
+                    <span class="phase-badge phase-badge-done">complete</span>
+                  </td>
                   <td>
                     Full core blocks: hero, video, FAQ, card grid, proof, lead
                     form, FAQ schema and breadcrumbs.
                   </td>
-                  <td>Stable block registry.</td>
+                  <td>Completed with lead attribution verification.</td>
                 </tr>
                 <tr>
-                  <td><span class="phase-badge">5</span></td>
+                  <td>
+                    <span class="phase-badge phase-badge-done">complete</span>
+                  </td>
                   <td>
                     Reusable content libraries: proof items, CTA presets, source
                     documents, excerpts, approved claims, draft refresh flow.
                   </td>
-                  <td>Media library and revision snapshots.</td>
+                  <td>
+                    Completed with library admin and source approval flows.
+                  </td>
                 </tr>
                 <tr>
-                  <td><span class="phase-badge">6</span></td>
+                  <td>
+                    <span class="phase-badge phase-badge-done">complete</span>
+                  </td>
                   <td>
                     AI proposal workflow: proposed block tree, suggested
                     metadata/schema, source references, warnings,
                     accept-selected insertion.
                   </td>
-                  <td>Source libraries and block validation.</td>
+                  <td>
+                    Completed with source-bound validation and admin approval.
+                  </td>
                 </tr>
                 <tr>
                   <td>
-                    <span class="phase-badge phase-badge-later">7 later</span>
+                    <span class="phase-badge phase-badge-done">complete</span>
                   </td>
                   <td>
                     SEO hardening: internal link suggestions, duplicate metadata
                     checks, SERP preview, redirect conflict UI.
                   </td>
-                  <td>Published page inventory.</td>
+                  <td>Completed with production smoke verification.</td>
                 </tr>
               </tbody>
             </table>
@@ -1560,6 +1574,21 @@
             table is the PRD-facing view; the implementation source of truth
             remains <code>docs/seo-page-builder/roadmap.md</code>.
           </p>
+
+          <div class="plain-block" style="margin-bottom: 20px">
+            <h3>May 7 admin CMS update</h3>
+            <p>
+              Latest pushed implementation:
+              <code>12b3152 feat(admin): add cms shell and dev auth bypass</code
+              >. The backend now presents as a shared CMS studio for resource
+              pages, blog/news, media, and content libraries, with landing pages
+              and campaign pages visible as planned content types. Local
+              development can skip magic-link login with
+              <code>ADMIN_DEV_AUTH_BYPASS=1</code> under <code>next dev</code>;
+              the bypass is guarded by development-only checks, warning logs,
+              and redirect sanitization.
+            </p>
+          </div>
 
           <div class="table-wrap">
             <table class="roadmap-table">
@@ -1638,20 +1667,27 @@
                 </tr>
                 <tr>
                   <td>
-                    <input class="roadmap-check" type="checkbox" disabled />
+                    <input
+                      class="roadmap-check"
+                      type="checkbox"
+                      checked
+                      disabled
+                    />
                   </td>
                   <td>4. Drag/drop ordering</td>
                   <td>
-                    <span class="phase-badge phase-badge-verify">needs QA</span>
+                    <span class="phase-badge phase-badge-done">done</span>
                   </td>
-                  <td>Target May 6-7, 2026</td>
+                  <td>Completed May 7, 2026</td>
                   <td>
                     Drag/drop editor island is implemented with keyboard reorder
-                    fallbacks for sections, columns, and blocks.
+                    fallbacks for sections, columns, and blocks. Local browser
+                    QA verified saved ordering and public rendering with
+                    cleanup.
                   </td>
                   <td>
-                    Browser-test drag/drop for sections, columns, and blocks;
-                    confirm saved order renders publicly.
+                    Pointer-drag can get a final deployed smoke pass, but the
+                    saved ordering contract is verified.
                   </td>
                 </tr>
                 <tr>
@@ -1676,64 +1712,83 @@
                 </tr>
                 <tr>
                   <td>
-                    <input class="roadmap-check" type="checkbox" disabled />
+                    <input
+                      class="roadmap-check"
+                      type="checkbox"
+                      checked
+                      disabled
+                    />
                   </td>
                   <td>6. Media library</td>
                   <td>
-                    <span class="phase-badge phase-badge-partial">partial</span>
+                    <span class="phase-badge phase-badge-done">done</span>
                   </td>
-                  <td>Target May 7, 2026</td>
+                  <td>Completed May 7, 2026</td>
                   <td>
                     Admin <code>/admin/media</code>, upload action, media asset
                     service, metadata fields, storage migration, and tests
-                    exist.
+                    exist. The page editor now has a marketer-facing media
+                    picker for image blocks, and local browser E2E verified
+                    image selection, public URL, alt text, caption metadata, and
+                    cleanup.
                   </td>
                   <td>
-                    Add/verify marketer-friendly image picker in the page
-                    editor; browser-test upload, select, publish, and required
-                    alt/rights behavior.
+                    Keep storage bucket/env configuration available in
+                    deployment and re-run a deployed media smoke before DNS
+                    cutover.
                   </td>
                 </tr>
                 <tr>
                   <td>
-                    <input class="roadmap-check" type="checkbox" disabled />
+                    <input
+                      class="roadmap-check"
+                      type="checkbox"
+                      checked
+                      disabled
+                    />
                   </td>
                   <td>7. Full core blocks and lead attribution</td>
                   <td>
-                    <span class="phase-badge phase-badge-blocked"
-                      >critical</span
-                    >
+                    <span class="phase-badge phase-badge-done">done</span>
                   </td>
-                  <td>Target May 7, 2026</td>
+                  <td>Completed May 7, 2026</td>
                   <td>
-                    Hero, video, FAQ, card grid, proof, and lead form block
-                    types exist; lead attribution fields flow through forms and
-                    lead storage.
+                    Hero, video, FAQ, card grid, proof, CTA, rich text, image,
+                    and lead form blocks passed local browser E2E through
+                    authenticated editor publish, public rendering, real lead
+                    submission, database attribution verification, and cleanup.
                   </td>
                   <td>
-                    Pre-ship gate: browser-test every core block in the
-                    editor/public renderer and submit a deployed
-                    <code>lead_form</code> with page, keyword, block, CTA, UTM,
-                    and referrer attribution.
+                    Re-run the same smoke after the next deployment before DNS
+                    cutover.
                   </td>
                 </tr>
                 <tr>
                   <td>
-                    <input class="roadmap-check" type="checkbox" disabled />
+                    <input
+                      class="roadmap-check"
+                      type="checkbox"
+                      checked
+                      disabled
+                    />
                   </td>
                   <td>8. Reusable content libraries</td>
                   <td>
-                    <span class="phase-badge phase-badge-partial">partial</span>
+                    <span class="phase-badge phase-badge-done">done</span>
                   </td>
-                  <td>Target May 7-8, 2026</td>
+                  <td>Completed May 7, 2026</td>
                   <td>
                     Tables exist for proof items, CTA presets, source documents,
                     source excerpts, and approved claims. Publish snapshots can
-                    resolve CTA/proof references.
+                    resolve CTA/proof references. Admin
+                    <code>/admin/libraries</code> manages CTA presets, proof
+                    items, source documents, approved excerpts, and approved
+                    claims; local browser E2E verified creation, approval
+                    surfaces, and cleanup.
                   </td>
                   <td>
-                    Build/admin-test library management screens, source/claim
-                    approval workflow, and intentional draft refresh controls.
+                    Future edit/delete UX can be added after launch if marketers
+                    need in-place library maintenance.
                   </td>
                 </tr>
                 <tr>
@@ -1760,40 +1815,55 @@
                 </tr>
                 <tr>
                   <td>
-                    <input class="roadmap-check" type="checkbox" disabled />
+                    <input
+                      class="roadmap-check"
+                      type="checkbox"
+                      checked
+                      disabled
+                    />
                   </td>
                   <td>10. SEO hardening</td>
                   <td>
-                    <span class="phase-badge phase-badge-progress"
-                      >in progress</span
-                    >
+                    <span class="phase-badge phase-badge-done">done</span>
                   </td>
-                  <td>Target May 6-7, 2026</td>
+                  <td>Completed May 7, 2026</td>
                   <td>
                     SEO readiness scoring, missing-field checks, internal link
-                    suggestion foundation, and editor warnings are in place.
+                    suggestion foundation, editor warnings, redirect conflict
+                    protection, and publish-time duplicate metadata checks are
+                    in place. Production smoke verified public render, preview
+                    render, redirect handling, sitemap inclusion/removal, and
+                    lead attribution.
                   </td>
                   <td>
-                    Finish redirect conflict UI, duplicate metadata checks, and
-                    deployed smoke verification. Cannot close until Slice 7
-                    attribution acceptance passes.
+                    Keep monitoring real marketer-created pages for duplicate
+                    metadata edge cases after launch.
                   </td>
                 </tr>
                 <tr>
                   <td>
-                    <input class="roadmap-check" type="checkbox" disabled />
+                    <input
+                      class="roadmap-check"
+                      type="checkbox"
+                      checked
+                      disabled
+                    />
                   </td>
                   <td>Launch readiness smoke test</td>
-                  <td><span class="phase-badge">next</span></td>
-                  <td>Target May 7, 2026</td>
                   <td>
-                    Local builder and deployed production builds are passing
-                    code checks.
+                    <span class="phase-badge phase-badge-done">done</span>
+                  </td>
+                  <td>Completed May 7, 2026</td>
+                  <td>
+                    Production Vercel deployment passed disposable smoke
+                    verification: create, publish, preview token, slug redirect,
+                    browser lead with UTM attribution, database attribution,
+                    sitemap inclusion, admin auth gate, cleanup, and archived
+                    immutable-revision test page.
                   </td>
                   <td>
-                    Run only after Slice 7 and Slice 10 acceptance criteria
-                    pass: create, preview, publish, redirect-test, sitemap-test,
-                    attribution-test, then clean remote test data.
+                    Remaining cleanup record is expected by the append-only
+                    revision model.
                   </td>
                 </tr>
               </tbody>
@@ -1801,10 +1871,9 @@
           </div>
 
           <p class="roadmap-note">
-            For Asana/leadership reporting, only checked rows should be treated
-            as complete. Unchecked rows may have real code in place, but still
-            need UX, browser, deployed, or workflow verification before they are
-            safe to call done.
+            For Asana/leadership reporting, the SEO Page Builder roadmap is now
+            closed out. Follow-up admin CMS polish should be tracked separately
+            from the builder launch-readiness gate.
           </p>
         </section>
 

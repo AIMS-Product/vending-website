@@ -9,6 +9,13 @@ import {
   rollbackSeoPageRevision,
   type PagePreviewLinkActionState,
 } from "@/app/admin/pages/actions";
+import {
+  adminCardClass,
+  adminDangerButtonClass,
+  adminPanelClass,
+  adminPrimaryButtonClass,
+  adminSmallButtonClass,
+} from "@/components/admin/AdminUi";
 
 type RevisionRow = {
   id: string;
@@ -46,7 +53,7 @@ export function SeoPageRevisionPanel({
 
   return (
     <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <section className={adminPanelClass}>
         <header className="border-b border-slate-200 px-5 py-4">
           <h2 className="text-base font-semibold text-slate-950">
             Revision history
@@ -75,7 +82,7 @@ export function SeoPageRevisionPanel({
                 <div className="flex flex-wrap gap-2">
                   <Link
                     href={`/admin/pages/${pageId}/revisions/${revision.id}`}
-                    className={secondaryButtonClass}
+                    className={adminSmallButtonClass}
                   >
                     Preview
                   </Link>
@@ -86,7 +93,7 @@ export function SeoPageRevisionPanel({
                       name="revisionId"
                       value={revision.id}
                     />
-                    <button type="submit" className={secondaryButtonClass}>
+                    <button type="submit" className={adminSmallButtonClass}>
                       Roll back
                     </button>
                   </form>
@@ -97,17 +104,17 @@ export function SeoPageRevisionPanel({
         )}
       </section>
 
-      <aside className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <aside className={adminCardClass}>
         <h2 className="text-sm font-semibold text-slate-950">Draft preview</h2>
         <form action={refreshSeoPageLibraryReferences} className="mt-4">
           <input type="hidden" name="pageId" value={pageId} />
-          <button type="submit" className={secondaryButtonClass}>
+          <button type="submit" className={adminSmallButtonClass}>
             Refresh libraries
           </button>
         </form>
         <form action={previewAction} className="mt-4">
           <input type="hidden" name="pageId" value={pageId} />
-          <button type="submit" className={primaryButtonClass}>
+          <button type="submit" className={adminPrimaryButtonClass}>
             Create preview link
           </button>
         </form>
@@ -126,7 +133,7 @@ export function SeoPageRevisionPanel({
           <Link
             href={previewState.previewPath}
             target="_blank"
-            className="text-brand-600 hover:text-brand-500 mt-3 block text-sm font-medium break-all"
+            className="mt-3 block text-sm font-semibold break-all text-[#0b63f6] hover:text-[#0756d6]"
           >
             {previewState.previewPath}
           </Link>
@@ -153,7 +160,7 @@ export function SeoPageRevisionPanel({
                     <form action={revokeSeoPagePreviewLink}>
                       <input type="hidden" name="pageId" value={pageId} />
                       <input type="hidden" name="tokenId" value={token.id} />
-                      <button type="submit" className={dangerButtonClass}>
+                      <button type="submit" className={adminDangerButtonClass}>
                         Revoke
                       </button>
                     </form>
@@ -183,12 +190,3 @@ function formatDateTime(iso: string) {
     timeZone: "UTC",
   });
 }
-
-const primaryButtonClass =
-  "rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2";
-
-const secondaryButtonClass =
-  "inline-flex rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50";
-
-const dangerButtonClass =
-  "rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50";

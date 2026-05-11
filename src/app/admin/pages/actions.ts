@@ -499,7 +499,7 @@ function pageAiProposalInsertActionError(
   return {
     status: "error",
     proposalId,
-    message: "Could not insert AI proposal blocks.",
+    message: "Could not insert AI proposal content.",
   };
 }
 
@@ -515,7 +515,7 @@ function parseAcceptedPageContent(page: unknown): PageContent {
       {
         code: "invalid_draft_content",
         path: "draft_content",
-        message: "AI blocks were inserted but the updated draft is invalid.",
+        message: "AI content was inserted but the updated draft is invalid.",
       },
     ]);
   }

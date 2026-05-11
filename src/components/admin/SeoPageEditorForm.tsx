@@ -31,6 +31,7 @@ import {
 import {
   acceptAiSeoProposalBlocks,
   autosaveSeoPageDraft,
+  createSeoPagePreviewLink,
   generateAiSeoPageProposal,
   saveSeoPage,
   type PageAiProposalInsertResult,
@@ -107,6 +108,15 @@ type LayoutPreset =
   | "image_left_text_right"
   | "text_left_cta_right";
 
+type BuilderBlockEntry = {
+  sectionId: string;
+  columnId: string;
+  block: PageBlock;
+  blockNumber: number;
+  sectionNumber: number;
+  columnNumber: number;
+};
+
 const initialState: PageEditorActionState = { status: "idle" };
 const initialAiProposalState: PageAiProposalResult = { status: "idle" };
 const initialAiInsertState: PageAiProposalInsertResult = { status: "idle" };
@@ -146,7 +156,14 @@ export function SeoPageEditorForm({
     useState<PageAiProposalInsertResult>(initialAiInsertState);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [isAiInserting, setIsAiInserting] = useState(false);
-  const [isDetailsDrawerOpen, setIsDetailsDrawerOpen] = useState(true);
+  const [isPreviewOpening, setIsPreviewOpening] = useState(false);
+  const [previewLinkMessage, setPreviewLinkMessage] = useState<string | null>(
+    null,
+  );
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+  const [isBlockSidebarCollapsed, setIsBlockSidebarCollapsed] = useState(false);
+  const [isSeoSidebarCollapsed, setIsSeoSidebarCollapsed] = useState(false);
   const [hasSelectedNewPageMode, setHasSelectedNewPageMode] = useState(
     Boolean(page?.id),
   );
@@ -229,6 +246,34 @@ export function SeoPageEditorForm({
 
     return ordinals;
   }, [content]);
+  const builderBlockEntries = useMemo(
+    () => collectBuilderBlockEntries(content),
+    [content],
+  );
+  const selectedBlockEntry =
+    builderBlockEntries.find((entry) => entry.block.id === selectedBlockId) ??
+    builderBlockEntries[0] ??
+    null;
+  const editingBlockEntry =
+    builderBlockEntries.find((entry) => entry.block.id === editingBlockId) ??
+    null;
+  const blockCompletionIssueCount = builderBlockEntries.reduce(
+    (count, entry) => count + completionMessagesForBlock(entry.block).length,
+    0,
+  );
+  const blockSidebarStatus: SeoReadinessStatus =
+    builderBlockEntries.length === 0
+      ? "blocked"
+      : blockCompletionIssueCount > 0
+        ? "needs_work"
+        : "strong";
+  const blockSidebarExpandTitle =
+    builderBlockEntries.length === 0
+      ? "Expand blocks sidebar - no blocks yet"
+      : blockCompletionIssueCount > 0
+        ? `Expand blocks sidebar - ${blockCompletionIssueCount} content ${blockCompletionIssueCount === 1 ? "issue" : "issues"}`
+        : "Expand blocks sidebar - all blocks ready";
+  const seoSidebarExpandTitle = `Expand SEO sidebar - SEO ${seoReadiness.label}`;
   const canPublish = Boolean(page?.id);
   const publishDisabled = !canPublish || seoReadiness.blockers.length > 0;
   const nextPublishStep = nextRequiredPublishStep({
@@ -244,6 +289,15 @@ export function SeoPageEditorForm({
     redirectError ??
     state.message ??
     (state.status === "error" ? "Save failed." : "Draft saved.");
+  const builderShellGridClass = `grid min-h-[calc(100dvh-4rem)] gap-4 p-4 lg:min-h-screen ${
+    isBlockSidebarCollapsed && isSeoSidebarCollapsed
+      ? "xl:grid-cols-[minmax(0,1fr)]"
+      : isBlockSidebarCollapsed
+        ? "xl:grid-cols-[minmax(0,1fr)_minmax(380px,440px)]"
+        : isSeoSidebarCollapsed
+          ? "xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]"
+          : "xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)_minmax(380px,440px)]"
+  }`;
 
   useEffect(() => {
     if (!page?.id) return;
@@ -297,31 +351,136 @@ export function SeoPageEditorForm({
     <form action={formAction} className="relative">
       {page?.id && <input type="hidden" name="id" value={page.id} />}
       <input type="hidden" name="draftContent" value={draftContentJson} />
-      {!isDetailsDrawerOpen && (
+      {isSeoSidebarCollapsed && (
         <input type="hidden" name="slug" value={visibleSlug} />
       )}
 
       <div className="relative min-h-[calc(100dvh-4rem)] overflow-x-hidden border border-slate-200 bg-slate-100 lg:min-h-screen">
-        {!isDetailsDrawerOpen && (
-          <button
-            type="button"
-            aria-label="Open page details"
-            title="Open page details"
-            className="fixed right-4 bottom-5 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none sm:top-1/2 sm:bottom-auto sm:-translate-y-1/2"
-            onClick={() => setIsDetailsDrawerOpen(true)}
-          >
-            <ChevronIcon direction="left" />
-          </button>
-        )}
+        <div className="sticky top-0 z-50 border-b border-slate-200/70 bg-slate-100/95 px-4 pt-4 pb-3 backdrop-blur">
+          <div className="mx-auto grid max-w-[1500px] grid-cols-[3rem_minmax(0,1fr)_3rem] items-center gap-3">
+            <div className="flex justify-start">
+              <button
+                type="button"
+                className={floatingRailButtonClass(blockSidebarStatus)}
+                aria-label={
+                  isBlockSidebarCollapsed
+                    ? "Expand blocks sidebar"
+                    : "Collapse blocks sidebar"
+                }
+                title={
+                  isBlockSidebarCollapsed
+                    ? blockSidebarExpandTitle
+                    : "Collapse blocks sidebar"
+                }
+                onClick={() =>
+                  setIsBlockSidebarCollapsed((isCollapsed) => !isCollapsed)
+                }
+              >
+                <ChevronIcon
+                  direction={isBlockSidebarCollapsed ? "right" : "left"}
+                />
+              </button>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <button
+                type="button"
+                className="inline-flex min-h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-lg transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55"
+                disabled={!page?.id || isPreviewOpening}
+                title={
+                  page?.id
+                    ? "Open a live draft preview in a new tab"
+                    : "Save the page before opening a live preview"
+                }
+                onClick={openLivePreview}
+              >
+                {isPreviewOpening ? "Opening preview..." : "Live preview"}
+              </button>
+              {previewLinkMessage && (
+                <p className="text-xs font-medium text-slate-500">
+                  {previewLinkMessage}
+                </p>
+              )}
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className={floatingRailButtonClass(seoReadiness.status)}
+                aria-label={
+                  isSeoSidebarCollapsed
+                    ? "Expand SEO sidebar"
+                    : "Collapse SEO sidebar"
+                }
+                title={
+                  isSeoSidebarCollapsed
+                    ? seoSidebarExpandTitle
+                    : "Collapse SEO sidebar"
+                }
+                onClick={() =>
+                  setIsSeoSidebarCollapsed((isCollapsed) => !isCollapsed)
+                }
+              >
+                <ChevronIcon
+                  direction={isSeoSidebarCollapsed ? "left" : "right"}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className={builderShellGridClass}>
+          {!isBlockSidebarCollapsed && (
+            <aside className="order-2 flex min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:order-none xl:h-[calc(100dvh-2rem)] xl:min-h-0">
+              <div className="flex shrink-0 items-start border-b border-slate-200 px-5 py-4">
+                <div>
+                  <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                    Blocks
+                  </p>
+                  <h2 className="mt-1 text-base font-semibold text-slate-950">
+                    Page structure
+                  </h2>
+                  <p className="mt-1 text-xs font-medium text-slate-500">
+                    {builderBlockEntries.length}{" "}
+                    {builderBlockEntries.length === 1 ? "block" : "blocks"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
+                <BuilderBlockSidebar
+                  entries={builderBlockEntries}
+                  selectedEntry={selectedBlockEntry}
+                  onSelectBlock={(entry) => {
+                    setSelectedBlockId(entry.block.id);
+                    document
+                      .getElementById(`builder-block-${entry.blockNumber}`)
+                      ?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                  }}
+                  onEditBlock={(entry) => {
+                    setSelectedBlockId(entry.block.id);
+                    setEditingBlockId(entry.block.id);
+                    document
+                      .getElementById(`builder-block-${entry.blockNumber}`)
+                      ?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                  }}
+                />
+              </div>
+              <div className="shrink-0 border-t border-slate-200 p-4">
+                <Link
+                  href="/admin/pages"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+                >
+                  <ChevronIcon direction="left" />
+                  Go back to dashboard
+                </Link>
+              </div>
+            </aside>
+          )}
 
-        <div
-          className={`grid min-h-[calc(100dvh-4rem)] transition-[grid-template-columns] duration-200 lg:min-h-screen ${
-            isDetailsDrawerOpen
-              ? "xl:grid-cols-[minmax(0,1fr)_minmax(360px,400px)]"
-              : "xl:grid-cols-[minmax(0,1fr)]"
-          }`}
-        >
-          <div className="min-w-0 overflow-y-auto bg-slate-100">
+          <div className="order-1 min-w-0 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-100 shadow-sm xl:order-none xl:h-[calc(100dvh-2rem)]">
             {(state.status !== "idle" ||
               savedFromRedirect ||
               redirectError ||
@@ -654,289 +813,285 @@ export function SeoPageEditorForm({
             </div>
           </div>
 
-          {isDetailsDrawerOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-40 bg-slate-100 xl:hidden"
-                aria-hidden="true"
-              />
-              <aside className="fixed inset-y-2 right-2 z-50 flex w-[calc(100vw-1rem)] max-w-[440px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl xl:sticky xl:inset-auto xl:top-0 xl:z-auto xl:h-screen xl:w-auto xl:max-w-none xl:rounded-none xl:border-y-0 xl:border-r-0 xl:shadow-xl">
-                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
-                  <div>
-                    <h2 className="text-base font-semibold text-slate-950">
-                      Page details
-                    </h2>
-                    <p className="mt-1 text-xs font-medium text-slate-500">
-                      {page?.status ?? "draft"} · SEO {seoReadiness.label}
-                    </p>
+          {!isSeoSidebarCollapsed && (
+            <aside className="order-3 flex min-h-[640px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:order-none xl:h-[calc(100dvh-2rem)] xl:min-h-0">
+              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
+                <div>
+                  <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                    SEO
+                  </p>
+                  <h2 className="mt-1 text-base font-semibold text-slate-950">
+                    Readiness and publish
+                  </h2>
+                  <p className="mt-1 text-xs font-medium text-slate-500">
+                    {page?.status ?? "draft"} · SEO {seoReadiness.label}
+                  </p>
+                </div>
+                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 shadow-sm">
+                  {seoReadiness.label}
+                </span>
+              </div>
+
+              <div className="flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
+                <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                      Status
+                    </span>
+                    <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            page?.status === "published"
+                              ? "bg-emerald-500"
+                              : "bg-amber-500"
+                          }`}
+                        />
+                        {page?.status ?? "draft"}
+                      </span>
+                    </span>
                   </div>
                   <button
                     type="button"
-                    aria-label="Collapse page details"
-                    title="Collapse page details"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
-                    onClick={() => setIsDetailsDrawerOpen(false)}
-                  >
-                    <ChevronIcon direction="right" />
-                  </button>
-                </div>
-
-                <div className="flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
-                  <Link
-                    href="/admin/pages"
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950"
-                  >
-                    <ChevronIcon direction="left" />
-                    Back to pages
-                  </Link>
-
-                  <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
-                        Status
-                      </span>
-                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
-                        <span className="flex items-center gap-1.5">
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              page?.status === "published"
-                                ? "bg-emerald-500"
-                                : "bg-amber-500"
-                            }`}
-                          />
-                          {page?.status ?? "draft"}
-                        </span>
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      className={`${smallButtonClass} ${readinessButtonClass(
-                        seoReadiness.status,
-                      )} justify-center`}
-                      onClick={() =>
-                        document
-                          .getElementById("seo-target-keyword-field")
-                          ?.focus()
-                      }
-                    >
-                      SEO: {seoReadiness.label}
-                    </button>
-                  </div>
-
-                  <NextPublishStepCard step={nextPublishStep} />
-
-                  <div className="space-y-5">
-                    <label className="block">
-                      <span className="text-sm font-semibold text-slate-900">
-                        Slug
-                      </span>
-                      <div className="mt-1.5 flex items-center rounded-lg border border-slate-200 bg-white shadow-sm transition focus-within:border-[#0b63f6] focus-within:ring-4 focus-within:ring-[#0b63f6]/10">
-                        <span className="border-r border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-400">
-                          /resources/
-                        </span>
-                        <input
-                          name="slug"
-                          value={visibleSlug}
-                          onChange={(event) => {
-                            setSlugTouched(true);
-                            setSlug(slugify(event.target.value));
-                          }}
-                          required
-                          aria-label="Slug"
-                          className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-300"
-                          placeholder="page-slug"
-                        />
-                      </div>
-                    </label>
-
-                    <label className="block">
-                      <span className="text-sm font-semibold text-slate-900">
-                        Target keyword
-                      </span>
-                      <input
-                        name="targetKeyword"
-                        value={targetKeyword}
-                        id="seo-target-keyword-field"
-                        onChange={(event) =>
-                          setTargetKeyword(event.target.value)
-                        }
-                        className={compactInputClass}
-                        placeholder="e.g. vending machine business"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-sm font-semibold text-slate-900">
-                        SEO title
-                      </span>
-                      <input
-                        name="seoTitle"
-                        value={seoTitle}
-                        id="seo-title-field"
-                        onChange={(event) => setSeoTitle(event.target.value)}
-                        className={compactInputClass}
-                        placeholder="Leave blank to use page headline"
-                      />
-                    </label>
-
-                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <summary className="cursor-pointer text-sm font-semibold text-slate-900">
-                        Advanced SEO
-                      </summary>
-                      <div className="mt-4 space-y-4">
-                        <label className="block">
-                          <span className="text-sm font-semibold text-slate-900">
-                            Preferred URL
-                          </span>
-                          <input
-                            name="canonicalUrl"
-                            value={canonicalUrl}
-                            id="seo-canonical-url-field"
-                            onChange={(event) =>
-                              setCanonicalUrl(event.target.value)
-                            }
-                            className={compactInputClass}
-                            placeholder="https://..."
-                          />
-                          <span className="mt-1.5 block text-xs leading-5 text-slate-500">
-                            Optional. Use only when this page should point
-                            search engines to a different preferred URL.
-                          </span>
-                        </label>
-
-                        <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-                          <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
-                            <input
-                              name="noindex"
-                              type="checkbox"
-                              checked={noindex}
-                              onChange={(event) => {
-                                setNoindex(event.target.checked);
-                                if (event.target.checked)
-                                  setSitemapEnabled(false);
-                              }}
-                              className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
-                            />
-                            <div>
-                              <span className="block text-slate-900">
-                                Hide from search engines
-                              </span>
-                              <span className="mt-0.5 block text-xs font-normal text-slate-500">
-                                Use this only for pages that should not appear
-                                in search results.
-                              </span>
-                            </div>
-                          </label>
-                          <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
-                            <input
-                              name="sitemapEnabled"
-                              type="checkbox"
-                              checked={sitemapEnabled}
-                              disabled={noindex}
-                              onChange={(event) =>
-                                setSitemapEnabled(event.target.checked)
-                              }
-                              className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6] disabled:opacity-50"
-                            />
-                            <div className={noindex ? "opacity-50" : ""}>
-                              <span className="block text-slate-900">
-                                Include in sitemap
-                              </span>
-                              <span className="mt-0.5 block text-xs font-normal text-slate-500">
-                                Help search engines discover this page.
-                              </span>
-                            </div>
-                          </label>
-                        </div>
-                      </div>
-                    </details>
-
-                    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
-                      <div className="mb-4 flex items-center gap-2">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="text-[#0b63f6]"
-                        >
-                          <circle cx="11" cy="11" r="8" />
-                          <path d="m21 21-4.3-4.3" />
-                        </svg>
-                        <h3 className="text-sm font-semibold text-slate-900">
-                          Search Preview
-                        </h3>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="cursor-pointer truncate text-lg font-medium text-[#1a0dab] hover:underline">
-                          {seoTitle || title || "Your Page Title Here"}
-                        </p>
-                        <p className="truncate text-sm text-[#006621]">
-                          www.vendingpreneurs.com/resources/
-                          {visibleSlug || "your-slug"}
-                        </p>
-                        <p className="line-clamp-2 text-sm text-[#545454]">
-                          {metaDescription ||
-                            "Your meta description will appear here. Make it compelling to encourage clicks from search results."}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <SeoReadinessPanel
-                    summary={seoReadiness}
-                    aiProposalResult={aiProposalResult}
-                    aiInsertResult={aiInsertResult}
-                    aiProposals={aiProposals}
-                    canRunAiAgent={Boolean(page?.id)}
-                    isAiGenerating={isAiGenerating}
-                    isAiInserting={isAiInserting}
-                    internalLinkSuggestions={internalLinkSuggestions}
-                    linkSuggestionMessage={linkSuggestionMessage}
-                    onInsertAiProposalBlocks={insertAiProposalBlocks}
-                    onApplyInternalLinkSuggestion={applyLinkSuggestion}
-                    onAddSuggestedBlock={addSuggestedBlock}
-                    onRunAiAgent={runAiSeoAgent}
-                    onOpenSettings={() => {
+                    className={`${smallButtonClass} ${readinessButtonClass(
+                      seoReadiness.status,
+                    )} justify-center`}
+                    onClick={() =>
                       document
                         .getElementById("seo-target-keyword-field")
-                        ?.focus();
-                    }}
-                    mediaAssetCount={mediaAssets.length}
-                  />
-                </div>
-
-                <div className="grid shrink-0 gap-4 border-t border-slate-200 bg-white px-4 py-4 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] sm:px-5">
-                  <button
-                    className={secondaryButtonClass}
-                    name="intent"
-                    value="save"
-                  >
-                    Save draft
-                  </button>
-                  <button
-                    className={primaryButtonClass}
-                    name="intent"
-                    value="publish"
-                    disabled={publishDisabled}
-                    title={
-                      seoReadiness.blockers.length > 0
-                        ? "Resolve SEO blockers before publishing."
-                        : undefined
+                        ?.focus()
                     }
                   >
-                    Publish
+                    SEO: {seoReadiness.label}
                   </button>
                 </div>
-              </aside>
-            </>
+
+                <NextPublishStepCard step={nextPublishStep} />
+
+                <div className="space-y-5">
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-900">
+                      Slug
+                    </span>
+                    <div className="mt-1.5 flex items-center rounded-lg border border-slate-200 bg-white shadow-sm transition focus-within:border-[#0b63f6] focus-within:ring-4 focus-within:ring-[#0b63f6]/10">
+                      <span className="border-r border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-400">
+                        /resources/
+                      </span>
+                      <input
+                        name="slug"
+                        value={visibleSlug}
+                        onChange={(event) => {
+                          setSlugTouched(true);
+                          setSlug(slugify(event.target.value));
+                        }}
+                        required
+                        aria-label="Slug"
+                        className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-300"
+                        placeholder="page-slug"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-900">
+                      Target keyword
+                    </span>
+                    <input
+                      name="targetKeyword"
+                      value={targetKeyword}
+                      id="seo-target-keyword-field"
+                      onChange={(event) => setTargetKeyword(event.target.value)}
+                      className={compactInputClass}
+                      placeholder="e.g. vending machine business"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-900">
+                      SEO title
+                    </span>
+                    <input
+                      name="seoTitle"
+                      value={seoTitle}
+                      id="seo-title-field"
+                      onChange={(event) => setSeoTitle(event.target.value)}
+                      className={compactInputClass}
+                      placeholder="Leave blank to use page headline"
+                    />
+                  </label>
+
+                  <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <summary className="cursor-pointer text-sm font-semibold text-slate-900">
+                      Advanced SEO
+                    </summary>
+                    <div className="mt-4 space-y-4">
+                      <label className="block">
+                        <span className="text-sm font-semibold text-slate-900">
+                          Preferred URL
+                        </span>
+                        <input
+                          name="canonicalUrl"
+                          value={canonicalUrl}
+                          id="seo-canonical-url-field"
+                          onChange={(event) =>
+                            setCanonicalUrl(event.target.value)
+                          }
+                          className={compactInputClass}
+                          placeholder="https://..."
+                        />
+                        <span className="mt-1.5 block text-xs leading-5 text-slate-500">
+                          Optional. Use only when this page should point search
+                          engines to a different preferred URL.
+                        </span>
+                      </label>
+
+                      <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+                        <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
+                          <input
+                            name="noindex"
+                            type="checkbox"
+                            checked={noindex}
+                            onChange={(event) => {
+                              setNoindex(event.target.checked);
+                              if (event.target.checked)
+                                setSitemapEnabled(false);
+                            }}
+                            className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
+                          />
+                          <div>
+                            <span className="block text-slate-900">
+                              Hide from search engines
+                            </span>
+                            <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                              Use this only for pages that should not appear in
+                              search results.
+                            </span>
+                          </div>
+                        </label>
+                        <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
+                          <input
+                            name="sitemapEnabled"
+                            type="checkbox"
+                            checked={sitemapEnabled}
+                            disabled={noindex}
+                            onChange={(event) =>
+                              setSitemapEnabled(event.target.checked)
+                            }
+                            className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6] disabled:opacity-50"
+                          />
+                          <div className={noindex ? "opacity-50" : ""}>
+                            <span className="block text-slate-900">
+                              Include in sitemap
+                            </span>
+                            <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                              Help search engines discover this page.
+                            </span>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  </details>
+
+                  <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
+                    <div className="mb-4 flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-[#0b63f6]"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                      </svg>
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        Search Preview
+                      </h3>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="cursor-pointer truncate text-lg font-medium text-[#1a0dab] hover:underline">
+                        {seoTitle || title || "Your Page Title Here"}
+                      </p>
+                      <p className="truncate text-sm text-[#006621]">
+                        www.vendingpreneurs.com/resources/
+                        {visibleSlug || "your-slug"}
+                      </p>
+                      <p className="line-clamp-2 text-sm text-[#545454]">
+                        {metaDescription ||
+                          "Your meta description will appear here. Make it compelling to encourage clicks from search results."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <SeoReadinessPanel
+                  summary={seoReadiness}
+                  aiProposalResult={aiProposalResult}
+                  aiInsertResult={aiInsertResult}
+                  aiProposals={aiProposals}
+                  canRunAiAgent={Boolean(page?.id)}
+                  isAiGenerating={isAiGenerating}
+                  isAiInserting={isAiInserting}
+                  internalLinkSuggestions={internalLinkSuggestions}
+                  linkSuggestionMessage={linkSuggestionMessage}
+                  onInsertAiProposalBlocks={insertAiProposalBlocks}
+                  onApplyInternalLinkSuggestion={applyLinkSuggestion}
+                  onAddSuggestedBlock={addSuggestedBlock}
+                  onRunAiAgent={runAiSeoAgent}
+                  onOpenSettings={() => {
+                    document
+                      .getElementById("seo-target-keyword-field")
+                      ?.focus();
+                  }}
+                  mediaAssetCount={mediaAssets.length}
+                />
+              </div>
+
+              <div className="grid shrink-0 gap-4 border-t border-slate-200 bg-white px-4 py-4 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] sm:px-5">
+                <button
+                  className={secondaryButtonClass}
+                  name="intent"
+                  value="save"
+                >
+                  Save draft
+                </button>
+                <button
+                  className={primaryButtonClass}
+                  name="intent"
+                  value="publish"
+                  disabled={publishDisabled}
+                  title={
+                    seoReadiness.blockers.length > 0
+                      ? "Resolve SEO blockers before publishing."
+                      : undefined
+                  }
+                >
+                  Publish
+                </button>
+              </div>
+            </aside>
           )}
         </div>
       </div>
+      {editingBlockEntry && (
+        <BlockSettingsModal
+          entry={editingBlockEntry}
+          mediaAssets={mediaAssets}
+          onClose={() => setEditingBlockId(null)}
+          onChange={(next) =>
+            replaceBlock(
+              editingBlockEntry.sectionId,
+              editingBlockEntry.columnId,
+              editingBlockEntry.block.id,
+              next,
+            )
+          }
+        />
+      )}
       <input type="hidden" name="seoTitle" value={seoTitle} />
       <input type="hidden" name="targetKeyword" value={targetKeyword} />
       <input type="hidden" name="canonicalUrl" value={canonicalUrl} />
@@ -946,6 +1101,67 @@ export function SeoPageEditorForm({
       )}
     </form>
   );
+
+  async function openLivePreview() {
+    if (!page?.id || isPreviewOpening) {
+      setPreviewLinkMessage("Save the page before opening a live preview.");
+      return;
+    }
+
+    setIsPreviewOpening(true);
+    setPreviewLinkMessage(null);
+    const previewWindow = window.open("about:blank", "_blank");
+    if (previewWindow) {
+      previewWindow.opener = null;
+    }
+
+    try {
+      const autosaveResult = await autosaveSeoPageDraft(page.id, {
+        title,
+        slug: visibleSlug,
+        targetKeyword,
+        seoTitle,
+        metaDescription,
+        canonicalUrl,
+        noindex,
+        sitemapEnabled,
+        draftContent: content,
+      });
+
+      if (autosaveResult.status === "error") {
+        previewWindow?.close();
+        setPreviewLinkMessage(autosaveResult.message);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.set("pageId", page.id);
+      const previewResult = await createSeoPagePreviewLink(
+        { status: "idle" },
+        formData,
+      );
+
+      if (previewResult.status === "created") {
+        if (previewWindow) {
+          previewWindow.location.href = previewResult.previewPath;
+        } else {
+          setPreviewLinkMessage("Preview created. Allow pop-ups to open it.");
+        }
+        return;
+      }
+
+      previewWindow?.close();
+      setPreviewLinkMessage(
+        previewResult.message ?? "Could not open live preview.",
+      );
+    } catch (error) {
+      console.error("failed to open live preview", error);
+      previewWindow?.close();
+      setPreviewLinkMessage("Could not open live preview.");
+    } finally {
+      setIsPreviewOpening(false);
+    }
+  }
 
   function addBlock(
     sectionId: string,
@@ -1491,6 +1707,1033 @@ function NextPublishStepCard({ step }: { step: NextPublishStep }) {
       <h3 className="mt-2 text-sm font-semibold">{step.title}</h3>
       <p className="mt-1.5 text-sm leading-6 opacity-80">{step.detail}</p>
     </section>
+  );
+}
+
+function BuilderBlockSidebar({
+  entries,
+  selectedEntry,
+  onSelectBlock,
+  onEditBlock,
+}: {
+  entries: BuilderBlockEntry[];
+  selectedEntry: BuilderBlockEntry | null;
+  onSelectBlock: (entry: BuilderBlockEntry) => void;
+  onEditBlock: (entry: BuilderBlockEntry) => void;
+}) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-slate-900 bg-slate-950 text-white shadow-xl">
+      <div className="border-b border-white/10 px-4 py-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold tracking-wider text-sky-300 uppercase">
+              Page blocks
+            </p>
+            <h3 className="mt-1 text-base font-semibold">Builder outline</h3>
+          </div>
+          <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-semibold text-white/80 ring-1 ring-white/10 ring-inset">
+            {entries.length}
+          </span>
+        </div>
+        <p className="mt-2 text-xs leading-5 text-slate-300">
+          Select a block to locate it on the page. Use the settings button to
+          edit content in a pop-over.
+        </p>
+      </div>
+
+      <div className="grid gap-4 p-4">
+        {entries.length > 0 ? (
+          <div className="max-h-[calc(100dvh-18rem)] space-y-2 overflow-y-auto pr-1">
+            {entries.map((entry) => {
+              const isSelected = selectedEntry?.block.id === entry.block.id;
+              const hasWarnings =
+                completionMessagesForBlock(entry.block).length > 0;
+
+              return (
+                <div
+                  key={entry.block.id}
+                  className={`flex items-stretch gap-2 rounded-xl border p-1.5 transition ${
+                    isSelected
+                      ? "border-sky-300 bg-white text-slate-950 shadow-sm"
+                      : "border-white/10 bg-white/5 text-white hover:bg-white/10"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-start gap-3 rounded-lg px-2.5 py-2 text-left focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none"
+                    onClick={() => onSelectBlock(entry)}
+                  >
+                    <span
+                      className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                        isSelected
+                          ? "bg-sky-50 text-[#0b63f6] ring-1 ring-sky-100"
+                          : "bg-white/10 text-slate-200 ring-1 ring-white/10"
+                      }`}
+                      aria-hidden="true"
+                    >
+                      <BuilderGlyph name={entry.block.type} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="flex items-center gap-2">
+                        <span className="text-sm font-semibold">
+                          {blockLabel(entry.block.type)}
+                        </span>
+                        {hasWarnings && (
+                          <span className="h-2 w-2 rounded-full bg-amber-400" />
+                        )}
+                      </span>
+                      <span
+                        className={`mt-1 line-clamp-2 block text-xs leading-5 ${
+                          isSelected ? "text-slate-500" : "text-slate-300"
+                        }`}
+                      >
+                        {entry.blockNumber}. {blockSummary(entry.block)}
+                      </span>
+                      <span
+                        className={`mt-1 block text-[11px] font-medium ${
+                          isSelected ? "text-slate-400" : "text-slate-400"
+                        }`}
+                      >
+                        Section {entry.sectionNumber}, column{" "}
+                        {entry.columnNumber}
+                      </span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Edit ${blockLabel(entry.block.type)} settings`}
+                    title={`Edit ${blockLabel(entry.block.type)} settings`}
+                    aria-pressed={isSelected}
+                    className={`my-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none ${
+                      isSelected
+                        ? "bg-[#0b63f6] text-white"
+                        : "bg-white/10 text-slate-200 hover:bg-white/20"
+                    }`}
+                    onClick={() => onEditBlock(entry)}
+                  >
+                    <SettingsGlyph />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-white/20 bg-white/5 px-4 py-6 text-center">
+            <p className="text-sm font-semibold">No blocks yet</p>
+            <p className="mt-1 text-xs leading-5 text-slate-300">
+              Use the page canvas to add the first content block.
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function BlockSettingsModal({
+  entry,
+  mediaAssets,
+  onClose,
+  onChange,
+}: {
+  entry: BuilderBlockEntry;
+  mediaAssets: SeoPageEditorMediaAsset[];
+  onClose: () => void;
+  onChange: (block: PageBlock) => void;
+}) {
+  const messages = completionMessagesForBlock(entry.block);
+  const dialogRef = useRef<HTMLElement | null>(null);
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    previouslyFocusedElementRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+    const focusableSelector =
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    const focusableElements = () => {
+      const dialog = dialogRef.current;
+      if (!dialog) return [];
+      return Array.from(
+        dialog.querySelectorAll<HTMLElement>(focusableSelector),
+      );
+    };
+
+    window.setTimeout(() => {
+      const dialog = dialogRef.current;
+      const firstFocusable = focusableElements()[0];
+      (firstFocusable ?? dialog)?.focus();
+    }, 0);
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+
+      const items = focusableElements();
+      if (items.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const first = items[0];
+      const last = items[items.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+        return;
+      }
+
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocusedElementRef.current?.focus();
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <section
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="block-settings-modal-title"
+        tabIndex={-1}
+        className="flex max-h-[min(760px,calc(100dvh-2rem))] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl focus:outline-none"
+      >
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div>
+            <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+              Block settings
+            </p>
+            <h3
+              id="block-settings-modal-title"
+              className="mt-1 text-lg font-semibold text-slate-950"
+            >
+              {blockLabel(entry.block.type)} {entry.blockNumber}
+            </h3>
+            <p className="mt-1 text-xs font-medium text-slate-500">
+              Section {entry.sectionNumber}, column {entry.columnNumber}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                messages.length > 0
+                  ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+                  : "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+              }`}
+            >
+              {messages.length > 0 ? "Needs content" : "Ready"}
+            </span>
+            <button
+              type="button"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+              aria-label="Close block settings"
+              title="Close block settings"
+              onClick={onClose}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+          <BlockSidebarSettingsPanel
+            block={entry.block}
+            mediaAssets={mediaAssets}
+            onChange={onChange}
+          />
+          {messages.length > 0 && (
+            <div className="mt-5 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100">
+              {messages.map((message) => (
+                <p key={message}>{message}</p>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex shrink-0 justify-end border-t border-slate-200 bg-slate-50 px-5 py-4">
+          <button
+            type="button"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+            onClick={onClose}
+          >
+            Done
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function BlockSidebarSettingsPanel({
+  block,
+  mediaAssets,
+  onChange,
+}: {
+  block: PageBlock;
+  mediaAssets: SeoPageEditorMediaAsset[];
+  onChange: (block: PageBlock) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <label className="block">
+        <span className="text-sm font-medium text-slate-700">
+          Layout variant
+        </span>
+        <select
+          value={block.variant}
+          onChange={(event) =>
+            onChange(
+              withEditorDefaultsForNewBlock(
+                withBlockVariant(block, event.target.value as BlockVariant),
+              ),
+            )
+          }
+          className={compactInputClass}
+        >
+          {blockVariantOptions(block.type).map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {block.type === "rich_text" && (
+        <>
+          <TextInput
+            label="Eyebrow"
+            value={block.props.eyebrow}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, eyebrow: value },
+              })
+            }
+          />
+          <TextInput
+            label="Heading"
+            value={block.props.heading}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, heading: value },
+              })
+            }
+          />
+          <TextAreaInput
+            label="Body"
+            value={editableRichTextBodyText(block)}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: {
+                  ...block.props,
+                  body: richTextBodyFromEditableText(block, value),
+                },
+              })
+            }
+          />
+        </>
+      )}
+
+      {block.type === "hero" && (
+        <>
+          <TextInput
+            label="Eyebrow"
+            value={block.props.eyebrow}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, eyebrow: value },
+              })
+            }
+          />
+          <TextAreaInput
+            label="Headline"
+            value={block.props.heading}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, heading: value },
+              })
+            }
+          />
+          <TextAreaInput
+            label="Body"
+            value={block.props.body}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, body: value },
+              })
+            }
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextInput
+              label="CTA label"
+              value={block.props.ctaLabel}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: {
+                    ...block.props,
+                    ctaLabel: value,
+                    ctaTrackingName: syncedTrackingName({
+                      currentTrackingName: block.props.ctaTrackingName,
+                      previousLabel: block.props.ctaLabel,
+                      nextLabel: value,
+                      fallback: "hero-cta",
+                    }),
+                  },
+                })
+              }
+            />
+            <TextInput
+              label="CTA href"
+              value={block.props.ctaHref}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, ctaHref: value },
+                })
+              }
+            />
+            <TextInput
+              label="Internal CTA label"
+              value={block.props.ctaTrackingName}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, ctaTrackingName: value },
+                })
+              }
+            />
+          </div>
+          {block.variant === "split" && (
+            <div className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
+              <TextInput
+                label="Media path or URL"
+                value={block.props.mediaSrc ?? ""}
+                onChange={(value) =>
+                  onChange({
+                    ...block,
+                    props: { ...block.props, mediaSrc: value },
+                  })
+                }
+              />
+              <TextInput
+                label="Media alt text"
+                value={block.props.mediaAltText ?? ""}
+                onChange={(value) =>
+                  onChange({
+                    ...block,
+                    props: { ...block.props, mediaAltText: value },
+                  })
+                }
+              />
+              <TextInput
+                label="Media caption"
+                value={block.props.mediaCaption ?? ""}
+                onChange={(value) =>
+                  onChange({
+                    ...block,
+                    props: { ...block.props, mediaCaption: value },
+                  })
+                }
+              />
+              <TextInput
+                label="Proof text"
+                value={block.props.proofText ?? ""}
+                onChange={(value) =>
+                  onChange({
+                    ...block,
+                    props: { ...block.props, proofText: value },
+                  })
+                }
+              />
+            </div>
+          )}
+        </>
+      )}
+
+      {block.type === "image" && (
+        <>
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">
+              Media library asset
+            </span>
+            <select
+              value={block.props.assetId ?? ""}
+              onChange={(event) => {
+                const asset = mediaAssets.find(
+                  (item) => item.id === event.target.value,
+                );
+                onChange(
+                  asset
+                    ? applyMediaAssetToImageBlock(block, asset)
+                    : {
+                        ...block,
+                        props: {
+                          ...block.props,
+                          assetId: undefined,
+                          src: "",
+                          altText: "",
+                          caption: "",
+                          sourceRightsNotes: "",
+                        },
+                      },
+                );
+              }}
+              className={compactInputClass}
+            >
+              <option value="">Choose from media library</option>
+              {mediaAssets.map((asset) => (
+                <option key={asset.id} value={asset.id}>
+                  {asset.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <TextInput
+            label="Image path or URL"
+            value={block.props.src}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, src: value },
+              })
+            }
+          />
+          <TextInput
+            label="Alt text"
+            value={block.props.altText}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, altText: value },
+              })
+            }
+          />
+          <TextInput
+            label="Caption"
+            value={block.props.caption}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, caption: value },
+              })
+            }
+          />
+          <TextInput
+            label="Rights notes"
+            value={block.props.sourceRightsNotes}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, sourceRightsNotes: value },
+              })
+            }
+          />
+        </>
+      )}
+
+      {block.type === "cta" && (
+        <>
+          <TextInput
+            label="Button text"
+            value={block.props.label}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: {
+                  ...block.props,
+                  label: value,
+                  trackingName: syncedTrackingName({
+                    currentTrackingName: block.props.trackingName,
+                    previousLabel: block.props.label,
+                    nextLabel: value,
+                    fallback: "cta",
+                  }),
+                },
+              })
+            }
+          />
+          <TextInput
+            label="Href"
+            value={block.props.href}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, href: value },
+              })
+            }
+          />
+          <TextInput
+            label="Internal CTA label"
+            value={block.props.trackingName}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, trackingName: value },
+              })
+            }
+          />
+          <TextInput
+            label="Preset ID"
+            value={block.props.presetId ?? ""}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, presetId: value || undefined },
+              })
+            }
+          />
+        </>
+      )}
+
+      {block.type === "video" && (
+        <>
+          <TextInput
+            label="Title"
+            value={block.props.title}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, title: value },
+              })
+            }
+          />
+          <TextInput
+            label="URL"
+            value={block.props.url}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, url: value },
+              })
+            }
+          />
+          <TextInput
+            label="Caption"
+            value={block.props.caption}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, caption: value },
+              })
+            }
+          />
+        </>
+      )}
+
+      {block.type === "faq" && (
+        <>
+          <TextInput
+            label="Heading"
+            value={block.props.heading}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, heading: value },
+              })
+            }
+          />
+          <div className="space-y-3">
+            {block.props.items.map((item, itemIndex) => (
+              <div
+                key={itemIndex}
+                className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+              >
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                    FAQ {itemIndex + 1}
+                  </p>
+                  <button
+                    type="button"
+                    className={dangerButtonClass}
+                    onClick={() =>
+                      onChange({
+                        ...block,
+                        props: {
+                          ...block.props,
+                          items: block.props.items.filter(
+                            (_, index) => index !== itemIndex,
+                          ),
+                        },
+                      })
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+                <TextInput
+                  label="Question"
+                  value={item.question}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        items: block.props.items.map((current, index) =>
+                          index === itemIndex
+                            ? { ...current, question: value }
+                            : current,
+                        ),
+                      },
+                    })
+                  }
+                />
+                <TextAreaInput
+                  label="Answer"
+                  value={item.answer}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        items: block.props.items.map((current, index) =>
+                          index === itemIndex
+                            ? { ...current, answer: value }
+                            : current,
+                        ),
+                      },
+                    })
+                  }
+                />
+              </div>
+            ))}
+            <button
+              type="button"
+              className={miniButtonClass}
+              onClick={() =>
+                onChange({
+                  ...block,
+                  props: {
+                    ...block.props,
+                    items: [...block.props.items, { question: "", answer: "" }],
+                  },
+                })
+              }
+            >
+              Add FAQ
+            </button>
+          </div>
+        </>
+      )}
+
+      {block.type === "card_grid" && (
+        <>
+          <TextInput
+            label="Heading"
+            value={block.props.heading}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, heading: value },
+              })
+            }
+          />
+          <div className="space-y-3">
+            {block.props.cards.map((card, cardIndex) => (
+              <div
+                key={cardIndex}
+                className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+              >
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                    Card {cardIndex + 1}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className={miniButtonClass}
+                      disabled={cardIndex === 0}
+                      onClick={() =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            cards: moveItem(block.props.cards, cardIndex, "up"),
+                          },
+                        })
+                      }
+                    >
+                      Up
+                    </button>
+                    <button
+                      type="button"
+                      className={miniButtonClass}
+                      disabled={cardIndex === block.props.cards.length - 1}
+                      onClick={() =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            cards: moveItem(
+                              block.props.cards,
+                              cardIndex,
+                              "down",
+                            ),
+                          },
+                        })
+                      }
+                    >
+                      Down
+                    </button>
+                    <button
+                      type="button"
+                      className={dangerButtonClass}
+                      onClick={() =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            cards: removeCard(block.props.cards, cardIndex),
+                          },
+                        })
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+                <TextInput
+                  label="Card title"
+                  value={card.title}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        cards: updateCard(block.props.cards, cardIndex, {
+                          title: value,
+                        }),
+                      },
+                    })
+                  }
+                />
+                <TextAreaInput
+                  label="Card body"
+                  value={card.body}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        cards: updateCard(block.props.cards, cardIndex, {
+                          body: value,
+                        }),
+                      },
+                    })
+                  }
+                />
+                <TextInput
+                  label="Card link"
+                  value={card.href ?? ""}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        cards: updateCard(block.props.cards, cardIndex, {
+                          href: value,
+                        }),
+                      },
+                    })
+                  }
+                />
+              </div>
+            ))}
+            <button
+              type="button"
+              className={miniButtonClass}
+              disabled={block.props.cards.length >= 12}
+              onClick={() =>
+                onChange({
+                  ...block,
+                  props: {
+                    ...block.props,
+                    cards: [...block.props.cards, createBlankCard()],
+                  },
+                })
+              }
+            >
+              Add card
+            </button>
+          </div>
+        </>
+      )}
+
+      {block.type === "proof" && (
+        <>
+          <TextInput
+            label="Eyebrow"
+            value={block.props.eyebrow}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, eyebrow: value },
+              })
+            }
+          />
+          <TextAreaInput
+            label="Quote or stat"
+            value={block.props.body}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, body: value },
+              })
+            }
+          />
+          <TextInput
+            label="Name"
+            value={block.props.name}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, name: value },
+              })
+            }
+          />
+          <TextInput
+            label="Context"
+            value={block.props.context}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, context: value },
+              })
+            }
+          />
+          <TextInput
+            label="Proof item ID"
+            value={block.props.proofItemId ?? ""}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, proofItemId: value || undefined },
+              })
+            }
+          />
+        </>
+      )}
+
+      {block.type === "lead_form" && (
+        <>
+          <TextInput
+            label="Heading"
+            value={block.props.heading}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, heading: value },
+              })
+            }
+          />
+          <TextAreaInput
+            label="Helper copy"
+            value={block.props.body}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, body: value },
+              })
+            }
+          />
+          <TextInput
+            label="Submit label"
+            value={block.props.submitLabel}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: {
+                  ...block.props,
+                  submitLabel: value,
+                  trackingName: syncedTrackingName({
+                    currentTrackingName: block.props.trackingName,
+                    previousLabel: block.props.submitLabel,
+                    nextLabel: value,
+                    fallback: "lead-form",
+                  }),
+                },
+              })
+            }
+          />
+          <TextInput
+            label="Internal form label"
+            value={block.props.trackingName}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, trackingName: value },
+              })
+            }
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+function SettingsGlyph() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12.2 2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.4.2a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7l.2.1a2 2 0 0 1 1 1.7v.5a2 2 0 0 1-1 1.7l-.2.1a2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.4.2a2 2 0 0 1 1 1.7v.2a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.4-.2a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7l-.2-.1a2 2 0 0 1-1-1.7v-.5a2 2 0 0 1 1-1.7l.2-.1a2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.4-.2a2 2 0 0 1-1-1.7V4a2 2 0 0 0-2-2Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
   );
 }
 
@@ -3915,6 +5158,7 @@ function BlockEditor({
   const blockCompletionMessages = completionMessagesForBlock(block);
   const completionStatus =
     blockCompletionMessages.length > 0 ? "Needs content" : "Ready";
+  const renderLegacyInlineSettings = false;
 
   return (
     <article
@@ -3955,730 +5199,33 @@ function BlockEditor({
         />
       </div>
 
-      <details className="mx-3 mb-4 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg ring-1 ring-black/5 backdrop-blur sm:mx-4">
-        <summary className="cursor-pointer text-sm font-semibold text-slate-800">
-          Block settings
-        </summary>
-        <div className="mt-4 border-t border-slate-100 pt-4">
-          {block.type === "rich_text" && (
-            <div className="max-w-3xl px-3 py-7 sm:px-4">
-              <label className="block">
-                <span className="sr-only">Eyebrow</span>
-                <input
-                  value={block.props.eyebrow}
-                  placeholder="Eyebrow"
-                  onChange={(event) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, eyebrow: event.target.value },
-                    })
-                  }
-                  className={eyebrowInputClass}
-                />
-              </label>
-              <label className="mt-3 block">
-                <span className="sr-only">Heading</span>
-                <input
-                  value={block.props.heading}
-                  placeholder="Section heading"
-                  onChange={(event) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, heading: event.target.value },
-                    })
-                  }
-                  className={sectionHeadingInputClass}
-                />
-              </label>
-              <label className="mt-4 block">
-                <span className="sr-only">Body</span>
-                <textarea
-                  value={bodyText(block)}
-                  placeholder="Write the page copy here."
-                  onChange={(event) =>
-                    onChange({
-                      ...block,
-                      props: {
-                        ...block.props,
-                        body: {
-                          version: 1,
-                          nodes: [
-                            { type: "paragraph", text: event.target.value },
-                          ],
-                        },
-                      },
-                    })
-                  }
-                  rows={5}
-                  className={bodyTextareaClass}
-                />
-              </label>
-            </div>
-          )}
-
-          {block.type === "hero" && (
-            <div className="max-w-4xl px-3 py-8 sm:px-4">
-              <label className="block">
-                <span className="sr-only">Eyebrow</span>
-                <input
-                  value={block.props.eyebrow}
-                  placeholder="Eyebrow"
-                  onChange={(event) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, eyebrow: event.target.value },
-                    })
-                  }
-                  className={eyebrowInputClass}
-                />
-              </label>
-              <label className="mt-3 block">
-                <span className="sr-only">Heading</span>
-                <textarea
-                  value={block.props.heading}
-                  placeholder="Hero headline"
-                  onChange={(event) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, heading: event.target.value },
-                    })
-                  }
-                  rows={2}
-                  className={heroHeadingInputClass}
-                />
-              </label>
-              <label className="mt-5 block max-w-3xl">
-                <span className="sr-only">Body</span>
-                <textarea
-                  value={block.props.body}
-                  placeholder="Hero body copy"
-                  onChange={(event) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, body: event.target.value },
-                    })
-                  }
-                  rows={3}
-                  className={leadInputClass}
-                />
-              </label>
-              <div className="mt-7 grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)]">
-                <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
-                  <span className="sr-only">CTA label</span>
+      {renderLegacyInlineSettings && (
+        <details className="hidden">
+          <summary className="cursor-pointer text-sm font-semibold text-slate-800">
+            Block settings
+          </summary>
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            {block.type === "rich_text" && (
+              <div className="max-w-3xl px-3 py-7 sm:px-4">
+                <label className="block">
+                  <span className="sr-only">Eyebrow</span>
                   <input
-                    value={block.props.ctaLabel}
-                    placeholder="CTA label"
-                    onChange={(event) => {
-                      const nextLabel = event.target.value;
+                    value={block.props.eyebrow}
+                    placeholder="Eyebrow"
+                    onChange={(event) =>
                       onChange({
                         ...block,
-                        props: {
-                          ...block.props,
-                          ctaLabel: nextLabel,
-                          ctaTrackingName: syncedTrackingName({
-                            currentTrackingName: block.props.ctaTrackingName,
-                            previousLabel: block.props.ctaLabel,
-                            nextLabel,
-                            fallback: "hero-cta",
-                          }),
-                        },
-                      });
-                    }}
-                    className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
+                        props: { ...block.props, eyebrow: event.target.value },
+                      })
+                    }
+                    className={eyebrowInputClass}
                   />
                 </label>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <TextInput
-                    label="CTA href"
-                    value={block.props.ctaHref}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, ctaHref: value },
-                      })
-                    }
-                  />
-                  <TextInput
-                    label="Internal CTA label"
-                    value={block.props.ctaTrackingName}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, ctaTrackingName: value },
-                      })
-                    }
-                  />
-                </div>
-              </div>
-              {block.variant === "split" && (
-                <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <h4 className="text-sm font-semibold text-slate-900">
-                    Split hero media or proof
-                  </h4>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">
-                    The split layout renders this approved media/proof area on
-                    the right side of the hero.
-                  </p>
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <TextInput
-                      label="Media path or URL"
-                      value={block.props.mediaSrc ?? ""}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: { ...block.props, mediaSrc: value },
-                        })
-                      }
-                    />
-                    <TextInput
-                      label="Media alt text"
-                      value={block.props.mediaAltText ?? ""}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: { ...block.props, mediaAltText: value },
-                        })
-                      }
-                    />
-                    <TextInput
-                      label="Media caption"
-                      value={block.props.mediaCaption ?? ""}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: { ...block.props, mediaCaption: value },
-                        })
-                      }
-                    />
-                    <TextInput
-                      label="Proof text"
-                      value={block.props.proofText ?? ""}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: { ...block.props, proofText: value },
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {block.type === "image" && (
-            <figure className="px-3 py-4 sm:px-4">
-              {block.props.src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={block.props.src}
-                  alt={block.props.altText}
-                  className="aspect-video w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]"
-                />
-              ) : (
-                <div className="grid aspect-video place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
-                  Image preview
-                </div>
-              )}
-              <label className="mt-3 block">
-                <span className="sr-only">Caption</span>
-                <input
-                  value={block.props.caption}
-                  placeholder="Caption"
-                  onChange={(event) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, caption: event.target.value },
-                    })
-                  }
-                  className="focus:ring-brand-100 w-full bg-transparent text-sm text-slate-500 outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
-                />
-              </label>
-              <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <summary className="cursor-pointer text-sm font-semibold text-slate-700">
-                  Image settings
-                </summary>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <label className="block md:col-span-2">
-                    <span className="text-sm font-medium text-slate-700">
-                      Media library asset
-                    </span>
-                    <select
-                      value={block.props.assetId ?? ""}
-                      onChange={(event) => {
-                        const asset = mediaAssets.find(
-                          (item) => item.id === event.target.value,
-                        );
-                        onChange(
-                          asset
-                            ? applyMediaAssetToImageBlock(block, asset)
-                            : {
-                                ...block,
-                                props: {
-                                  ...block.props,
-                                  assetId: undefined,
-                                  src: "",
-                                  altText: "",
-                                  caption: "",
-                                  sourceRightsNotes: "",
-                                },
-                              },
-                        );
-                      }}
-                      className={compactInputClass}
-                    >
-                      <option value="">Choose from media library</option>
-                      {mediaAssets.map((asset) => (
-                        <option key={asset.id} value={asset.id}>
-                          {asset.title}
-                        </option>
-                      ))}
-                    </select>
-                    {mediaAssets.length === 0 && (
-                      <span className="mt-2 block text-xs leading-5 text-slate-500">
-                        Add image assets in the media library before selecting
-                        one here.
-                      </span>
-                    )}
-                  </label>
-                  <TextInput
-                    label="Asset ID"
-                    value={block.props.assetId ?? ""}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: {
-                          ...block.props,
-                          assetId: value || undefined,
-                        },
-                      })
-                    }
-                  />
-                  <TextInput
-                    label="Image path or URL"
-                    value={block.props.src}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, src: value },
-                      })
-                    }
-                  />
-                  <TextInput
-                    label="Alt text"
-                    value={block.props.altText}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, altText: value },
-                      })
-                    }
-                  />
-                  <TextInput
-                    label="Rights notes"
-                    value={block.props.sourceRightsNotes}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, sourceRightsNotes: value },
-                      })
-                    }
-                  />
-                </div>
-              </details>
-            </figure>
-          )}
-
-          {block.type === "cta" && (
-            <div className="px-3 py-4 sm:px-4">
-              <label className="inline-flex min-h-12 max-w-sm items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
-                <span className="sr-only">CTA label</span>
-                <input
-                  value={block.props.label}
-                  placeholder="CTA label"
-                  onChange={(event) => {
-                    const nextLabel = event.target.value;
-                    onChange({
-                      ...block,
-                      props: {
-                        ...block.props,
-                        label: nextLabel,
-                        trackingName: syncedTrackingName({
-                          currentTrackingName: block.props.trackingName,
-                          previousLabel: block.props.label,
-                          nextLabel,
-                          fallback: "cta",
-                        }),
-                      },
-                    });
-                  }}
-                  className="w-full min-w-28 bg-transparent outline-none placeholder:text-[#111111]/55"
-                />
-              </label>
-              <details className="mt-4 rounded-xl border border-slate-200 bg-white/85 p-4 shadow-sm">
-                <summary className="cursor-pointer text-sm font-semibold text-slate-700">
-                  Button settings
-                </summary>
-                <div className="mt-4 grid gap-4 md:grid-cols-3">
-                  <TextInput
-                    label="Href"
-                    value={block.props.href}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, href: value },
-                      })
-                    }
-                  />
-                  <TextInput
-                    label="Internal CTA label"
-                    value={block.props.trackingName}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, trackingName: value },
-                      })
-                    }
-                  />
-                  <TextInput
-                    label="Preset ID"
-                    value={block.props.presetId ?? ""}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: {
-                          ...block.props,
-                          presetId: value || undefined,
-                        },
-                      })
-                    }
-                  />
-                </div>
-              </details>
-            </div>
-          )}
-
-          {block.type === "video" && (
-            <div className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[7px_7px_0_#55b8e8]">
-              <TextInput
-                label="Title"
-                value={block.props.title}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: { ...block.props, title: value },
-                  })
-                }
-              />
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <TextInput
-                  label="URL"
-                  value={block.props.url}
-                  onChange={(value) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, url: value },
-                    })
-                  }
-                />
-                <TextInput
-                  label="Caption"
-                  value={block.props.caption}
-                  onChange={(value) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, caption: value },
-                    })
-                  }
-                />
-              </div>
-            </div>
-          )}
-
-          {block.type === "faq" && (
-            <div className="max-w-3xl px-3 py-4 sm:px-4">
-              <label className="block">
-                <span className="sr-only">Heading</span>
-                <input
-                  value={block.props.heading}
-                  placeholder="FAQ heading"
-                  onChange={(event) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, heading: event.target.value },
-                    })
-                  }
-                  className={sectionHeadingInputClass}
-                />
-              </label>
-              <div className="mt-5 divide-y-2 divide-[#bfeeff] rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8]">
-                <div className="p-5">
-                  <TextInput
-                    label="Question"
-                    value={block.props.items[0]?.question ?? ""}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: {
-                          ...block.props,
-                          items: updateFirstFaqItem(block.props.items, {
-                            question: value,
-                          }),
-                        },
-                      })
-                    }
-                  />
-                  <TextAreaInput
-                    label="Answer"
-                    value={block.props.items[0]?.answer ?? ""}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: {
-                          ...block.props,
-                          items: updateFirstFaqItem(block.props.items, {
-                            answer: value,
-                          }),
-                        },
-                      })
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {block.type === "card_grid" && (
-            <div className="px-3 py-4 sm:px-4">
-              <label className="block">
-                <span className="sr-only">Heading</span>
-                <input
-                  value={block.props.heading}
-                  placeholder="Card grid heading"
-                  onChange={(event) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, heading: event.target.value },
-                    })
-                  }
-                  className={sectionHeadingInputClass}
-                />
-              </label>
-              <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {block.props.cards.map((card, cardIndex) => (
-                  <article
-                    key={cardIndex}
-                    className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8]"
-                  >
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Card {cardIndex + 1}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          className={miniButtonClass}
-                          disabled={cardIndex === 0}
-                          onClick={() =>
-                            onChange({
-                              ...block,
-                              props: {
-                                ...block.props,
-                                cards: moveItem(
-                                  block.props.cards,
-                                  cardIndex,
-                                  "up",
-                                ),
-                              },
-                            })
-                          }
-                        >
-                          Up
-                        </button>
-                        <button
-                          type="button"
-                          className={miniButtonClass}
-                          disabled={cardIndex === block.props.cards.length - 1}
-                          onClick={() =>
-                            onChange({
-                              ...block,
-                              props: {
-                                ...block.props,
-                                cards: moveItem(
-                                  block.props.cards,
-                                  cardIndex,
-                                  "down",
-                                ),
-                              },
-                            })
-                          }
-                        >
-                          Down
-                        </button>
-                        <button
-                          type="button"
-                          className={dangerButtonClass}
-                          onClick={() =>
-                            onChange({
-                              ...block,
-                              props: {
-                                ...block.props,
-                                cards: removeCard(block.props.cards, cardIndex),
-                              },
-                            })
-                          }
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                    <TextInput
-                      label="Card title"
-                      value={card.title}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: {
-                            ...block.props,
-                            cards: updateCard(block.props.cards, cardIndex, {
-                              title: value,
-                            }),
-                          },
-                        })
-                      }
-                    />
-                    <TextAreaInput
-                      label="Card body"
-                      value={card.body}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: {
-                            ...block.props,
-                            cards: updateCard(block.props.cards, cardIndex, {
-                              body: value,
-                            }),
-                          },
-                        })
-                      }
-                    />
-                    <TextInput
-                      label="Card link"
-                      value={card.href ?? ""}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: {
-                            ...block.props,
-                            cards: updateCard(block.props.cards, cardIndex, {
-                              href: value,
-                            }),
-                          },
-                        })
-                      }
-                    />
-                    {cardCompletionMessages(card).length > 0 && (
-                      <div className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100">
-                        {cardCompletionMessages(card).map((message) => (
-                          <p key={message}>{message}</p>
-                        ))}
-                      </div>
-                    )}
-                  </article>
-                ))}
-                <button
-                  type="button"
-                  className="hover:border-brand-300 hover:bg-brand-50 focus-visible:ring-brand-400 min-h-40 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-left text-sm font-semibold text-slate-600 transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={block.props.cards.length >= 12}
-                  onClick={() =>
-                    onChange({
-                      ...block,
-                      props: {
-                        ...block.props,
-                        cards: [...block.props.cards, createBlankCard()],
-                      },
-                    })
-                  }
-                >
-                  Add card
-                </button>
-              </div>
-            </div>
-          )}
-
-          {block.type === "proof" && (
-            <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-              <TextInput
-                label="Eyebrow"
-                value={block.props.eyebrow}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: { ...block.props, eyebrow: value },
-                  })
-                }
-              />
-              <label className="mt-3 block">
-                <span className="sr-only">Body</span>
-                <textarea
-                  value={block.props.body}
-                  placeholder="Proof quote or stat"
-                  onChange={(event) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, body: event.target.value },
-                    })
-                  }
-                  rows={3}
-                  className="focus:ring-brand-100 w-full bg-transparent text-xl leading-8 font-semibold text-slate-950 outline-none focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:ring-2"
-                />
-              </label>
-              <div className="mt-4 grid gap-4 md:grid-cols-3">
-                <TextInput
-                  label="Name"
-                  value={block.props.name}
-                  onChange={(value) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, name: value },
-                    })
-                  }
-                />
-                <TextInput
-                  label="Context"
-                  value={block.props.context}
-                  onChange={(value) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, context: value },
-                    })
-                  }
-                />
-                <TextInput
-                  label="Proof item ID"
-                  value={block.props.proofItemId ?? ""}
-                  onChange={(value) =>
-                    onChange({
-                      ...block,
-                      props: {
-                        ...block.props,
-                        proofItemId: value || undefined,
-                      },
-                    })
-                  }
-                />
-              </div>
-            </figure>
-          )}
-
-          {block.type === "lead_form" && (
-            <div className="grid gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-              <div>
-                <label className="block">
+                <label className="mt-3 block">
                   <span className="sr-only">Heading</span>
                   <input
                     value={block.props.heading}
-                    placeholder="Lead form heading"
+                    placeholder="Section heading"
                     onChange={(event) =>
                       onChange({
                         ...block,
@@ -4688,11 +5235,66 @@ function BlockEditor({
                     className={sectionHeadingInputClass}
                   />
                 </label>
+                <label className="mt-4 block">
+                  <span className="sr-only">Body</span>
+                  <textarea
+                    value={editableRichTextBodyText(block)}
+                    placeholder="Write the page copy here."
+                    onChange={(event) =>
+                      onChange({
+                        ...block,
+                        props: {
+                          ...block.props,
+                          body: richTextBodyFromEditableText(
+                            block,
+                            event.target.value,
+                          ),
+                        },
+                      })
+                    }
+                    rows={5}
+                    className={bodyTextareaClass}
+                  />
+                </label>
+              </div>
+            )}
+
+            {block.type === "hero" && (
+              <div className="max-w-4xl px-3 py-8 sm:px-4">
+                <label className="block">
+                  <span className="sr-only">Eyebrow</span>
+                  <input
+                    value={block.props.eyebrow}
+                    placeholder="Eyebrow"
+                    onChange={(event) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, eyebrow: event.target.value },
+                      })
+                    }
+                    className={eyebrowInputClass}
+                  />
+                </label>
                 <label className="mt-3 block">
+                  <span className="sr-only">Heading</span>
+                  <textarea
+                    value={block.props.heading}
+                    placeholder="Hero headline"
+                    onChange={(event) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, heading: event.target.value },
+                      })
+                    }
+                    rows={2}
+                    className={heroHeadingInputClass}
+                  />
+                </label>
+                <label className="mt-5 block max-w-3xl">
                   <span className="sr-only">Body</span>
                   <textarea
                     value={block.props.body}
-                    placeholder="Lead form copy"
+                    placeholder="Hero body copy"
                     onChange={(event) =>
                       onChange({
                         ...block,
@@ -4700,56 +5302,706 @@ function BlockEditor({
                       })
                     }
                     rows={3}
-                    className={bodyTextareaClass}
+                    className={leadInputClass}
                   />
                 </label>
+                <div className="mt-7 grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)]">
+                  <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
+                    <span className="sr-only">CTA label</span>
+                    <input
+                      value={block.props.ctaLabel}
+                      placeholder="CTA label"
+                      onChange={(event) => {
+                        const nextLabel = event.target.value;
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            ctaLabel: nextLabel,
+                            ctaTrackingName: syncedTrackingName({
+                              currentTrackingName: block.props.ctaTrackingName,
+                              previousLabel: block.props.ctaLabel,
+                              nextLabel,
+                              fallback: "hero-cta",
+                            }),
+                          },
+                        });
+                      }}
+                      className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
+                    />
+                  </label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <TextInput
+                      label="CTA href"
+                      value={block.props.ctaHref}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: { ...block.props, ctaHref: value },
+                        })
+                      }
+                    />
+                    <TextInput
+                      label="Internal CTA label"
+                      value={block.props.ctaTrackingName}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: { ...block.props, ctaTrackingName: value },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                {block.variant === "split" && (
+                  <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <h4 className="text-sm font-semibold text-slate-900">
+                      Split hero media or proof
+                    </h4>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      The split layout renders this approved media/proof area on
+                      the right side of the hero.
+                    </p>
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                      <TextInput
+                        label="Media path or URL"
+                        value={block.props.mediaSrc ?? ""}
+                        onChange={(value) =>
+                          onChange({
+                            ...block,
+                            props: { ...block.props, mediaSrc: value },
+                          })
+                        }
+                      />
+                      <TextInput
+                        label="Media alt text"
+                        value={block.props.mediaAltText ?? ""}
+                        onChange={(value) =>
+                          onChange({
+                            ...block,
+                            props: { ...block.props, mediaAltText: value },
+                          })
+                        }
+                      />
+                      <TextInput
+                        label="Media caption"
+                        value={block.props.mediaCaption ?? ""}
+                        onChange={(value) =>
+                          onChange({
+                            ...block,
+                            props: { ...block.props, mediaCaption: value },
+                          })
+                        }
+                      />
+                      <TextInput
+                        label="Proof text"
+                        value={block.props.proofText ?? ""}
+                        onChange={(value) =>
+                          onChange({
+                            ...block,
+                            props: { ...block.props, proofText: value },
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className={disabledLeadFieldClass}>Full name</div>
-                <div className={disabledLeadFieldClass}>Email</div>
-                <div className={disabledLeadFieldClass}>Phone</div>
-                <div className={disabledLeadFieldClass}>Market</div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
-                  <span className="sr-only">Submit label</span>
+            )}
+
+            {block.type === "image" && (
+              <figure className="px-3 py-4 sm:px-4">
+                {block.props.src ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={block.props.src}
+                    alt={block.props.altText}
+                    className="aspect-video w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]"
+                  />
+                ) : (
+                  <div className="grid aspect-video place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
+                    Image preview
+                  </div>
+                )}
+                <label className="mt-3 block">
+                  <span className="sr-only">Caption</span>
                   <input
-                    value={block.props.submitLabel}
-                    placeholder="Submit label"
+                    value={block.props.caption}
+                    placeholder="Caption"
+                    onChange={(event) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, caption: event.target.value },
+                      })
+                    }
+                    className="focus:ring-brand-100 w-full bg-transparent text-sm text-slate-500 outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
+                  />
+                </label>
+                <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+                    Image settings
+                  </summary>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <label className="block md:col-span-2">
+                      <span className="text-sm font-medium text-slate-700">
+                        Media library asset
+                      </span>
+                      <select
+                        value={block.props.assetId ?? ""}
+                        onChange={(event) => {
+                          const asset = mediaAssets.find(
+                            (item) => item.id === event.target.value,
+                          );
+                          onChange(
+                            asset
+                              ? applyMediaAssetToImageBlock(block, asset)
+                              : {
+                                  ...block,
+                                  props: {
+                                    ...block.props,
+                                    assetId: undefined,
+                                    src: "",
+                                    altText: "",
+                                    caption: "",
+                                    sourceRightsNotes: "",
+                                  },
+                                },
+                          );
+                        }}
+                        className={compactInputClass}
+                      >
+                        <option value="">Choose from media library</option>
+                        {mediaAssets.map((asset) => (
+                          <option key={asset.id} value={asset.id}>
+                            {asset.title}
+                          </option>
+                        ))}
+                      </select>
+                      {mediaAssets.length === 0 && (
+                        <span className="mt-2 block text-xs leading-5 text-slate-500">
+                          Add image assets in the media library before selecting
+                          one here.
+                        </span>
+                      )}
+                    </label>
+                    <TextInput
+                      label="Asset ID"
+                      value={block.props.assetId ?? ""}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            assetId: value || undefined,
+                          },
+                        })
+                      }
+                    />
+                    <TextInput
+                      label="Image path or URL"
+                      value={block.props.src}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: { ...block.props, src: value },
+                        })
+                      }
+                    />
+                    <TextInput
+                      label="Alt text"
+                      value={block.props.altText}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: { ...block.props, altText: value },
+                        })
+                      }
+                    />
+                    <TextInput
+                      label="Rights notes"
+                      value={block.props.sourceRightsNotes}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: { ...block.props, sourceRightsNotes: value },
+                        })
+                      }
+                    />
+                  </div>
+                </details>
+              </figure>
+            )}
+
+            {block.type === "cta" && (
+              <div className="px-3 py-4 sm:px-4">
+                <label className="inline-flex min-h-12 max-w-sm items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
+                  <span className="sr-only">CTA label</span>
+                  <input
+                    value={block.props.label}
+                    placeholder="CTA label"
                     onChange={(event) => {
                       const nextLabel = event.target.value;
                       onChange({
                         ...block,
                         props: {
                           ...block.props,
-                          submitLabel: nextLabel,
+                          label: nextLabel,
                           trackingName: syncedTrackingName({
                             currentTrackingName: block.props.trackingName,
-                            previousLabel: block.props.submitLabel,
+                            previousLabel: block.props.label,
                             nextLabel,
-                            fallback: "lead-form",
+                            fallback: "cta",
                           }),
                         },
                       });
                     }}
-                    className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
+                    className="w-full min-w-28 bg-transparent outline-none placeholder:text-[#111111]/55"
                   />
                 </label>
+                <details className="mt-4 rounded-xl border border-slate-200 bg-white/85 p-4 shadow-sm">
+                  <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+                    Button settings
+                  </summary>
+                  <div className="mt-4 grid gap-4 md:grid-cols-3">
+                    <TextInput
+                      label="Href"
+                      value={block.props.href}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: { ...block.props, href: value },
+                        })
+                      }
+                    />
+                    <TextInput
+                      label="Internal CTA label"
+                      value={block.props.trackingName}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: { ...block.props, trackingName: value },
+                        })
+                      }
+                    />
+                    <TextInput
+                      label="Preset ID"
+                      value={block.props.presetId ?? ""}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            presetId: value || undefined,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </details>
+              </div>
+            )}
+
+            {block.type === "video" && (
+              <div className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[7px_7px_0_#55b8e8]">
                 <TextInput
-                  label="Internal form label"
-                  value={block.props.trackingName}
+                  label="Title"
+                  value={block.props.title}
                   onChange={(value) =>
                     onChange({
                       ...block,
-                      props: { ...block.props, trackingName: value },
+                      props: { ...block.props, title: value },
                     })
                   }
                 />
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <TextInput
+                    label="URL"
+                    value={block.props.url}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, url: value },
+                      })
+                    }
+                  />
+                  <TextInput
+                    label="Caption"
+                    value={block.props.caption}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, caption: value },
+                      })
+                    }
+                  />
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </details>
+            )}
+
+            {block.type === "faq" && (
+              <div className="max-w-3xl px-3 py-4 sm:px-4">
+                <label className="block">
+                  <span className="sr-only">Heading</span>
+                  <input
+                    value={block.props.heading}
+                    placeholder="FAQ heading"
+                    onChange={(event) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, heading: event.target.value },
+                      })
+                    }
+                    className={sectionHeadingInputClass}
+                  />
+                </label>
+                <div className="mt-5 divide-y-2 divide-[#bfeeff] rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8]">
+                  <div className="p-5">
+                    <TextInput
+                      label="Question"
+                      value={block.props.items[0]?.question ?? ""}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            items: updateFirstFaqItem(block.props.items, {
+                              question: value,
+                            }),
+                          },
+                        })
+                      }
+                    />
+                    <TextAreaInput
+                      label="Answer"
+                      value={block.props.items[0]?.answer ?? ""}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            items: updateFirstFaqItem(block.props.items, {
+                              answer: value,
+                            }),
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {block.type === "card_grid" && (
+              <div className="px-3 py-4 sm:px-4">
+                <label className="block">
+                  <span className="sr-only">Heading</span>
+                  <input
+                    value={block.props.heading}
+                    placeholder="Card grid heading"
+                    onChange={(event) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, heading: event.target.value },
+                      })
+                    }
+                    className={sectionHeadingInputClass}
+                  />
+                </label>
+                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {block.props.cards.map((card, cardIndex) => (
+                    <article
+                      key={cardIndex}
+                      className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8]"
+                    >
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                          Card {cardIndex + 1}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            className={miniButtonClass}
+                            disabled={cardIndex === 0}
+                            onClick={() =>
+                              onChange({
+                                ...block,
+                                props: {
+                                  ...block.props,
+                                  cards: moveItem(
+                                    block.props.cards,
+                                    cardIndex,
+                                    "up",
+                                  ),
+                                },
+                              })
+                            }
+                          >
+                            Up
+                          </button>
+                          <button
+                            type="button"
+                            className={miniButtonClass}
+                            disabled={
+                              cardIndex === block.props.cards.length - 1
+                            }
+                            onClick={() =>
+                              onChange({
+                                ...block,
+                                props: {
+                                  ...block.props,
+                                  cards: moveItem(
+                                    block.props.cards,
+                                    cardIndex,
+                                    "down",
+                                  ),
+                                },
+                              })
+                            }
+                          >
+                            Down
+                          </button>
+                          <button
+                            type="button"
+                            className={dangerButtonClass}
+                            onClick={() =>
+                              onChange({
+                                ...block,
+                                props: {
+                                  ...block.props,
+                                  cards: removeCard(
+                                    block.props.cards,
+                                    cardIndex,
+                                  ),
+                                },
+                              })
+                            }
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                      <TextInput
+                        label="Card title"
+                        value={card.title}
+                        onChange={(value) =>
+                          onChange({
+                            ...block,
+                            props: {
+                              ...block.props,
+                              cards: updateCard(block.props.cards, cardIndex, {
+                                title: value,
+                              }),
+                            },
+                          })
+                        }
+                      />
+                      <TextAreaInput
+                        label="Card body"
+                        value={card.body}
+                        onChange={(value) =>
+                          onChange({
+                            ...block,
+                            props: {
+                              ...block.props,
+                              cards: updateCard(block.props.cards, cardIndex, {
+                                body: value,
+                              }),
+                            },
+                          })
+                        }
+                      />
+                      <TextInput
+                        label="Card link"
+                        value={card.href ?? ""}
+                        onChange={(value) =>
+                          onChange({
+                            ...block,
+                            props: {
+                              ...block.props,
+                              cards: updateCard(block.props.cards, cardIndex, {
+                                href: value,
+                              }),
+                            },
+                          })
+                        }
+                      />
+                      {cardCompletionMessages(card).length > 0 && (
+                        <div className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100">
+                          {cardCompletionMessages(card).map((message) => (
+                            <p key={message}>{message}</p>
+                          ))}
+                        </div>
+                      )}
+                    </article>
+                  ))}
+                  <button
+                    type="button"
+                    className="hover:border-brand-300 hover:bg-brand-50 focus-visible:ring-brand-400 min-h-40 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-left text-sm font-semibold text-slate-600 transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={block.props.cards.length >= 12}
+                    onClick={() =>
+                      onChange({
+                        ...block,
+                        props: {
+                          ...block.props,
+                          cards: [...block.props.cards, createBlankCard()],
+                        },
+                      })
+                    }
+                  >
+                    Add card
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {block.type === "proof" && (
+              <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
+                <TextInput
+                  label="Eyebrow"
+                  value={block.props.eyebrow}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, eyebrow: value },
+                    })
+                  }
+                />
+                <label className="mt-3 block">
+                  <span className="sr-only">Body</span>
+                  <textarea
+                    value={block.props.body}
+                    placeholder="Proof quote or stat"
+                    onChange={(event) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, body: event.target.value },
+                      })
+                    }
+                    rows={3}
+                    className="focus:ring-brand-100 w-full bg-transparent text-xl leading-8 font-semibold text-slate-950 outline-none focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:ring-2"
+                  />
+                </label>
+                <div className="mt-4 grid gap-4 md:grid-cols-3">
+                  <TextInput
+                    label="Name"
+                    value={block.props.name}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, name: value },
+                      })
+                    }
+                  />
+                  <TextInput
+                    label="Context"
+                    value={block.props.context}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, context: value },
+                      })
+                    }
+                  />
+                  <TextInput
+                    label="Proof item ID"
+                    value={block.props.proofItemId ?? ""}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: {
+                          ...block.props,
+                          proofItemId: value || undefined,
+                        },
+                      })
+                    }
+                  />
+                </div>
+              </figure>
+            )}
+
+            {block.type === "lead_form" && (
+              <div className="grid gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
+                <div>
+                  <label className="block">
+                    <span className="sr-only">Heading</span>
+                    <input
+                      value={block.props.heading}
+                      placeholder="Lead form heading"
+                      onChange={(event) =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            heading: event.target.value,
+                          },
+                        })
+                      }
+                      className={sectionHeadingInputClass}
+                    />
+                  </label>
+                  <label className="mt-3 block">
+                    <span className="sr-only">Body</span>
+                    <textarea
+                      value={block.props.body}
+                      placeholder="Lead form copy"
+                      onChange={(event) =>
+                        onChange({
+                          ...block,
+                          props: { ...block.props, body: event.target.value },
+                        })
+                      }
+                      rows={3}
+                      className={bodyTextareaClass}
+                    />
+                  </label>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className={disabledLeadFieldClass}>Full name</div>
+                  <div className={disabledLeadFieldClass}>Email</div>
+                  <div className={disabledLeadFieldClass}>Phone</div>
+                  <div className={disabledLeadFieldClass}>Market</div>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
+                    <span className="sr-only">Submit label</span>
+                    <input
+                      value={block.props.submitLabel}
+                      placeholder="Submit label"
+                      onChange={(event) => {
+                        const nextLabel = event.target.value;
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            submitLabel: nextLabel,
+                            trackingName: syncedTrackingName({
+                              currentTrackingName: block.props.trackingName,
+                              previousLabel: block.props.submitLabel,
+                              nextLabel,
+                              fallback: "lead-form",
+                            }),
+                          },
+                        });
+                      }}
+                      className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
+                    />
+                  </label>
+                  <TextInput
+                    label="Internal form label"
+                    value={block.props.trackingName}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, trackingName: value },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </details>
+      )}
 
       {blockCompletionMessages.length > 0 && (
         <CompletionHintPanel messages={blockCompletionMessages} />
@@ -5283,6 +6535,29 @@ function parseInitialContent(page: SeoPage | undefined): PageContent {
   return parsed.data;
 }
 
+function collectBuilderBlockEntries(content: PageContent): BuilderBlockEntry[] {
+  const entries: BuilderBlockEntry[] = [];
+  let blockNumber = 1;
+
+  for (const [sectionIndex, section] of content.sections.entries()) {
+    for (const [columnIndex, column] of section.columns.entries()) {
+      for (const block of column.blocks) {
+        entries.push({
+          sectionId: section.id,
+          columnId: column.id,
+          block,
+          blockNumber,
+          sectionNumber: sectionIndex + 1,
+          columnNumber: columnIndex + 1,
+        });
+        blockNumber += 1;
+      }
+    }
+  }
+
+  return entries;
+}
+
 function isEmptyBuilderContent(content: PageContent) {
   return (
     content.sections.length === 0 ||
@@ -5571,6 +6846,71 @@ function bodyText(block: Extract<PageBlock, { type: "rich_text" }>) {
   return richTextDocumentPlainText(block.props.body);
 }
 
+function editableRichTextBodyText(
+  block: Extract<PageBlock, { type: "rich_text" }>,
+) {
+  if (!shouldEditRichTextAsList(block)) {
+    return bodyText(block);
+  }
+
+  return block.props.body.nodes
+    .map((node) => {
+      if (node.type === "list") return node.items.join("\n");
+      if (node.type === "paragraph" && "spans" in node) {
+        return node.spans.map((span) => span.text).join("");
+      }
+      return node.text;
+    })
+    .filter((value) => value.length > 0)
+    .join("\n");
+}
+
+function richTextBodyFromEditableText(
+  block: Extract<PageBlock, { type: "rich_text" }>,
+  value: string,
+) {
+  if (!shouldEditRichTextAsList(block)) {
+    return {
+      version: 1 as const,
+      nodes: [{ type: "paragraph" as const, text: value }],
+    };
+  }
+
+  const lines = value
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*(?:[-*]|\d+[.)])\s+/, "").trim());
+  const items = lines.filter((line) => line.length > 0 || lines.length === 1);
+  const listItems = items.length > 0 ? items : [""];
+  const hasListNode = block.props.body.nodes.some(
+    (node) => node.type === "list",
+  );
+
+  if (!hasListNode) {
+    return {
+      version: 1 as const,
+      nodes: [
+        { type: "list" as const, style: "bullet" as const, items: listItems },
+      ],
+    };
+  }
+
+  return {
+    version: 1 as const,
+    nodes: block.props.body.nodes.map((node) =>
+      node.type === "list" ? { ...node, items: listItems } : node,
+    ),
+  };
+}
+
+function shouldEditRichTextAsList(
+  block: Extract<PageBlock, { type: "rich_text" }>,
+) {
+  return (
+    block.variant === "checklist" ||
+    block.props.body.nodes.some((node) => node.type === "list")
+  );
+}
+
 function blockVariantOptions(type: PageBlock["type"]) {
   return (
     blockPickerOptions.find((option) => option.type === type)?.variants ?? []
@@ -5825,6 +7165,22 @@ function readinessButtonClass(status: SeoReadinessStatus) {
     return "border-sky-200 bg-white text-sky-700 hover:bg-sky-50 ring-1 ring-inset ring-sky-100";
   }
   return "border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50 ring-1 ring-inset ring-emerald-100";
+}
+
+function floatingRailButtonClass(status: SeoReadinessStatus) {
+  const base =
+    "inline-flex h-10 w-10 items-center justify-center rounded-full border bg-white shadow-lg transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none";
+
+  if (status === "blocked") {
+    return `${base} border-red-300 text-red-700 ring-4 ring-red-100 shadow-red-200/80`;
+  }
+  if (status === "needs_work") {
+    return `${base} border-amber-300 text-amber-700 ring-4 ring-amber-100 shadow-amber-200/80`;
+  }
+  if (status === "opportunities") {
+    return `${base} border-sky-300 text-sky-700 ring-4 ring-sky-100 shadow-sky-200/80`;
+  }
+  return `${base} border-emerald-300 text-emerald-700 ring-4 ring-emerald-100 shadow-emerald-200/80`;
 }
 
 function readinessCategoryClass(status: SeoReadinessStatus) {

@@ -6,7 +6,7 @@ Build a backend-powered visual page builder for SEO resource pages. Admins shoul
 
 This is not a one-off content batch. The goal is the structure that lets the team create high-quality SEO/conversion pages over time.
 
-## Current Alignment - 2026-05-06
+## Current Alignment - 2026-05-07
 
 - This roadmap is the active source of truth for the SEO Page Builder.
 - `plans/cutover-readiness/slice-plan.md` is the older Webflow-copy/cutover track. Keep it for launch blockers and legacy URL evidence, but do not use it to size or sequence the builder.
@@ -15,6 +15,7 @@ This is not a one-off content batch. The goal is the structure that lets the tea
 - Lead attribution must support page, keyword, block, CTA, UTM, and referrer data before any builder `lead_form` block goes public.
 - Builder-managed redirects should be database-backed CMS redirects. Static `next.config.ts` redirects remain acceptable for legacy Webflow/canonical cutover rules only.
 - AI must run under a strict source-bound proposal contract. A system prompt is required, but not sufficient by itself; the app must also validate source references, schema shape, and admin approval before inserting anything into a draft.
+- The admin backend is now treated as a shared CMS studio, not a resource-page-only tool. Resource pages, blog/news, media, and content libraries are active sidebar destinations; landing pages and campaign pages are visible as planned content types.
 
 ## Current Completion Status - 2026-05-07
 
@@ -35,6 +36,19 @@ complete enough that it can be defended as shipped.
 | [x]  | 9. AI proposal workflow                  | Done   | Source-bound AI proposals, warnings for unsupported claims, proposal review, and accept-selected block insertion have been implemented and browser-tested.                                                                                                                                                                                                                                            | Future AI chat helper should use the same proposal rules.                                                                        |
 | [x]  | 10. SEO hardening                        | Done   | SEO readiness scoring, missing-field checks, internal link suggestion foundation, editor warnings, redirect conflict protection, and publish-time duplicate SEO title/meta-description checks are in place. Production smoke on Vercel verified public render, preview render, redirect handling, sitemap inclusion/removal, and lead attribution.                                                    | Keep monitoring real marketer-created pages for duplicate metadata edge cases after launch.                                      |
 | [x]  | Launch readiness smoke test              | Done   | Production Vercel deployment passed disposable smoke verification: created and published a resource page, created a preview token, moved the slug to create a redirect, submitted a browser lead with UTM attribution, verified database attribution, checked sitemap inclusion, verified admin auth gate, then removed lead/preview/redirect records and archived the immutable-revision test page.  | Remaining cleanup record is an archived smoke page plus immutable revision snapshot, which is expected by the append-only model. |
+
+## Admin CMS Platform Update - 2026-05-07
+
+Latest pushed implementation commit: `12b3152 feat(admin): add cms shell and dev auth bypass`.
+
+- A shared `AdminShell` now wraps resource pages, blog/news, media library, and content libraries.
+- Sidebar duplication was removed. Creation actions now live inline beside the active content types, while landing pages and campaign pages are clearly marked as planned.
+- Resource pages and blog/news list views now use the same Apple-style admin treatment: compact metrics, segmented status filters, restrained table chrome, and a shared admin header.
+- The public marketing header/footer are suppressed on `/admin` routes so backend pages render as a true admin application surface.
+- Local development can skip magic-link login with `ADMIN_DEV_AUTH_BYPASS=1` under `next dev`. The bypass is guarded by `NODE_ENV === "development"`, warning logs, login/proxy checks, and redirect sanitization.
+- Verification for the pushed update passed: CodeRabbit advisory review, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run format:check`, `npm run build`, local admin route smoke, and Vercel production deployment readiness.
+
+Remaining admin UX polish is not a launch blocker for the builder: media, library, and editor forms are usable, but their inner controls can receive a future visual pass to fully match the new shell.
 
 ## Product Decisions
 

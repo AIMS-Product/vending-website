@@ -9,6 +9,10 @@ import {
   extractMagicLinkHashTokens,
   normalizeAdminNextPath,
 } from "@/lib/supabase/auth-redirects";
+import {
+  adminInputClass,
+  adminPrimaryButtonClass,
+} from "@/components/admin/AdminUi";
 import { requestMagicLink, type LoginState } from "./actions";
 
 const initialState: LoginState = { status: "idle" };
@@ -85,7 +89,7 @@ export function LoginForm({ initialError }: { initialError: string | null }) {
           autoComplete="email"
           inputMode="email"
           placeholder="you@vendingpreneurs.com"
-          className="focus:border-brand-400 focus:ring-brand-200 mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:ring-2 focus:outline-none"
+          className={adminInputClass}
         />
       </label>
 
@@ -112,7 +116,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="bg-brand-500 hover:bg-brand-600 inline-flex w-full items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium text-white shadow transition disabled:cursor-not-allowed disabled:opacity-60"
+      className={`${adminPrimaryButtonClass} w-full`}
     >
       {pending ? "Sending link…" : "Send sign-in link"}
     </button>

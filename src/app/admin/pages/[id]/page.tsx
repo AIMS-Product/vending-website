@@ -58,7 +58,7 @@ export default async function EditSeoPagePage({
       activeSection="pages"
       eyebrow="SEO Page Builder"
       title="Edit resource page"
-      description="Update the page contract, block content, publishing state, previews, and revisions."
+      description="Update the page contract, page content, publishing state, previews, and revisions."
       userEmail={user.email}
       userRole={role}
     >

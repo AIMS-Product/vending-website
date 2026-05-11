@@ -1,6 +1,19 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
+import {
+  AdminIcon,
+  AdminMetricPanel,
+  AdminMetricStrip,
+  AdminStatusBadge,
+  adminCardClass,
+  adminInputClass,
+  adminLabelClass,
+  adminPrimaryButtonClass,
+  adminSecondaryButtonClass,
+  adminTextareaClass,
+} from "@/components/admin/AdminUi";
 import {
   createApprovedClaim,
   createCtaPreset,
@@ -15,13 +28,6 @@ export const metadata: Metadata = {
   title: "Reusable content libraries",
   robots: { index: false, follow: false },
 };
-
-const cardClass = "rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200";
-const labelClass = "text-sm font-medium text-slate-700";
-const inputClass =
-  "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm transition outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100";
-const buttonClass =
-  "rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600";
 
 export default async function AdminLibrariesPage() {
   const { user, role } = await requireAdmin();
@@ -38,7 +44,54 @@ export default async function AdminLibrariesPage() {
       description="Manage approved claims, source excerpts, proof points, and CTAs before they are reused across page types."
       userEmail={user.email}
       userRole={role}
+      actions={
+        <>
+          <Link href="/admin/media" className={adminSecondaryButtonClass}>
+            <span aria-hidden="true">
+              <AdminIcon icon="image" />
+            </span>
+            Media library
+          </Link>
+          <Link href="/admin/pages/new" className={adminPrimaryButtonClass}>
+            <span aria-hidden="true">
+              <AdminIcon icon="plus" />
+            </span>
+            New resource page
+          </Link>
+        </>
+      }
     >
+      <AdminMetricStrip>
+        <AdminMetricPanel
+          icon="layers"
+          tone="blue"
+          label="CTA presets"
+          value={libraries.ctaPresets.length}
+          caption="reusable actions"
+        />
+        <AdminMetricPanel
+          icon="check"
+          tone="green"
+          label="Proof"
+          value={libraries.proofItems.filter((item) => item.approved).length}
+          caption="approved items"
+        />
+        <AdminMetricPanel
+          icon="file"
+          tone="slate"
+          label="Sources"
+          value={libraries.sourceDocuments.length}
+          caption="documents"
+        />
+        <AdminMetricPanel
+          icon="pencil"
+          tone="amber"
+          label="Claims"
+          value={libraries.approvedClaims.length}
+          caption="governed copy"
+        />
+      </AdminMetricStrip>
+
       <div className="grid gap-6 xl:grid-cols-2">
         <LibraryPanel title="CTA presets">
           <form action={createCtaPreset} className="grid gap-4">
@@ -50,7 +103,7 @@ export default async function AdminLibrariesPage() {
               options={["primary", "secondary", "text"]}
             />
             <TextInput name="trackingName" label="Tracking name" />
-            <button className={buttonClass}>Save CTA preset</button>
+            <button className={adminPrimaryButtonClass}>Save CTA preset</button>
           </form>
           <ItemList
             items={libraries.ctaPresets}
@@ -85,7 +138,7 @@ export default async function AdminLibrariesPage() {
               <input name="approved" type="checkbox" />
               Approved for publishing
             </label>
-            <button className={buttonClass}>Save proof item</button>
+            <button className={adminPrimaryButtonClass}>Save proof item</button>
           </form>
           <ItemList
             items={libraries.proofItems}
@@ -94,7 +147,11 @@ export default async function AdminLibrariesPage() {
               <>
                 <strong>{item.name || item.kind}</strong>
                 <span>{item.body}</span>
-                <span>{item.approved ? "Approved" : "Draft"}</span>
+                <span>
+                  <AdminStatusBadge
+                    status={item.approved ? "approved" : "draft"}
+                  />
+                </span>
               </>
             )}
           />
@@ -115,7 +172,9 @@ export default async function AdminLibrariesPage() {
             />
             <TextAreaInput name="body" label="Body" rows={5} />
             <TextInput name="tags" label="Tags" placeholder="seo, vending" />
-            <button className={buttonClass}>Save source document</button>
+            <button className={adminPrimaryButtonClass}>
+              Save source document
+            </button>
           </form>
           <ItemList
             items={libraries.sourceDocuments}
@@ -133,8 +192,8 @@ export default async function AdminLibrariesPage() {
         <LibraryPanel title="Source excerpts">
           <form action={createSourceExcerpt} className="grid gap-4">
             <label>
-              <span className={labelClass}>Source document</span>
-              <select name="sourceDocumentId" className={inputClass}>
+              <span className={adminLabelClass}>Source document</span>
+              <select name="sourceDocumentId" className={adminInputClass}>
                 <option value="">Choose a source document</option>
                 {libraries.sourceDocuments.map((document) => (
                   <option key={document.id} value={document.id}>
@@ -153,14 +212,20 @@ export default async function AdminLibrariesPage() {
               <input name="approved" type="checkbox" />
               Approved source excerpt
             </label>
-            <button className={buttonClass}>Save source excerpt</button>
+            <button className={adminPrimaryButtonClass}>
+              Save source excerpt
+            </button>
           </form>
           <ItemList
             items={libraries.sourceExcerpts}
             empty="No source excerpts yet."
             render={(item) => (
               <>
-                <strong>{item.approved ? "Approved" : "Draft"}</strong>
+                <strong>
+                  <AdminStatusBadge
+                    status={item.approved ? "approved" : "draft"}
+                  />
+                </strong>
                 <span>{item.excerpt}</span>
                 <span>{item.topic_tags.join(", ") || "No tags"}</span>
               </>
@@ -171,8 +236,8 @@ export default async function AdminLibrariesPage() {
         <LibraryPanel title="Approved claims">
           <form action={createApprovedClaim} className="grid gap-4">
             <label>
-              <span className={labelClass}>Approved excerpt</span>
-              <select name="sourceExcerptId" className={inputClass}>
+              <span className={adminLabelClass}>Approved excerpt</span>
+              <select name="sourceExcerptId" className={adminInputClass}>
                 <option value="">Choose an approved excerpt</option>
                 {approvedExcerpts.map((excerpt) => (
                   <option key={excerpt.id} value={excerpt.id}>
@@ -191,7 +256,9 @@ export default async function AdminLibrariesPage() {
               />
             </div>
             <TextAreaInput name="usageNotes" label="Usage notes" rows={3} />
-            <button className={buttonClass}>Save approved claim</button>
+            <button className={adminPrimaryButtonClass}>
+              Save approved claim
+            </button>
           </form>
           <ItemList
             items={libraries.approvedClaims}
@@ -200,7 +267,9 @@ export default async function AdminLibrariesPage() {
               <>
                 <strong>{item.claim_type}</strong>
                 <span>{item.claim}</span>
-                <span>{item.risk_level} risk</span>
+                <span>
+                  <AdminStatusBadge status={item.risk_level} />
+                </span>
               </>
             )}
           />
@@ -218,7 +287,7 @@ function LibraryPanel({
   children: ReactNode;
 }) {
   return (
-    <section className={cardClass}>
+    <section className={adminCardClass}>
       <h2 className="text-base font-semibold text-slate-950">{title}</h2>
       <div className="mt-4 grid gap-5">{children}</div>
     </section>
@@ -236,8 +305,12 @@ function TextInput({
 }) {
   return (
     <label>
-      <span className={labelClass}>{label}</span>
-      <input name={name} placeholder={placeholder} className={inputClass} />
+      <span className={adminLabelClass}>{label}</span>
+      <input
+        name={name}
+        placeholder={placeholder}
+        className={adminInputClass}
+      />
     </label>
   );
 }
@@ -253,8 +326,8 @@ function TextAreaInput({
 }) {
   return (
     <label>
-      <span className={labelClass}>{label}</span>
-      <textarea name={name} rows={rows} className={inputClass} />
+      <span className={adminLabelClass}>{label}</span>
+      <textarea name={name} rows={rows} className={adminTextareaClass} />
     </label>
   );
 }
@@ -270,8 +343,8 @@ function SelectInput({
 }) {
   return (
     <label>
-      <span className={labelClass}>{label}</span>
-      <select name={name} className={inputClass}>
+      <span className={adminLabelClass}>{label}</span>
+      <select name={name} className={adminInputClass}>
         {options.map((option) => (
           <option key={option} value={option}>
             {option}
@@ -300,7 +373,7 @@ function ItemList<T extends { id: string | number }>({
       {items.slice(0, 8).map((item) => (
         <article
           key={item.id}
-          className="grid gap-1 rounded-lg bg-slate-50 p-3 text-sm text-slate-600 ring-1 ring-slate-200"
+          className="grid gap-2 rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-600"
         >
           {render(item)}
         </article>

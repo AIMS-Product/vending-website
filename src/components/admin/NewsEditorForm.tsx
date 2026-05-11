@@ -9,6 +9,13 @@ import {
   savePost,
   type EditorActionState,
 } from "@/app/admin/news/actions";
+import {
+  adminCardClass,
+  adminInputClass,
+  adminPrimaryButtonClass,
+  adminSecondaryButtonClass,
+  adminTextareaClass,
+} from "@/components/admin/AdminUi";
 import type { NewsPost } from "@/lib/services/news";
 
 type NewsEditorFormProps = {
@@ -104,11 +111,11 @@ export function NewsEditorForm({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/admin/news"
-            className="text-brand-600 hover:text-brand-500 text-sm font-medium"
+            className="text-sm font-semibold text-[#0b63f6] hover:text-[#0756d6]"
           >
             Back to posts
           </Link>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
             {statusLabel}
           </span>
         </div>
@@ -120,7 +127,7 @@ export function NewsEditorForm({
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             required
-            className="focus:border-brand-400 focus:ring-brand-100 mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-2xl font-semibold text-slate-950 shadow-sm transition outline-none focus:ring-2"
+            className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-2xl font-semibold text-slate-950 shadow-sm transition outline-none focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15"
           />
         </label>
 
@@ -134,7 +141,7 @@ export function NewsEditorForm({
               setSlug(slugify(event.target.value));
             }}
             required
-            className="focus:border-brand-400 focus:ring-brand-100 mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm text-slate-800 shadow-sm transition outline-none focus:ring-2"
+            className={`${adminInputClass} font-mono`}
           />
         </label>
 
@@ -145,11 +152,11 @@ export function NewsEditorForm({
             defaultValue={post?.excerpt ?? ""}
             rows={3}
             maxLength={240}
-            className="focus:border-brand-400 focus:ring-brand-100 mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm transition outline-none focus:ring-2"
+            className={adminTextareaClass}
           />
         </label>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="flex border-b border-slate-200 bg-slate-50">
             <button
               type="button"
@@ -192,7 +199,7 @@ export function NewsEditorForm({
       </div>
 
       <aside className="space-y-5">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className={adminCardClass}>
           <h2 className="text-sm font-semibold text-slate-950">Publish</h2>
           {(state.status !== "idle" || savedFromRedirect) && (
             <p
@@ -206,11 +213,15 @@ export function NewsEditorForm({
             </p>
           )}
           <div className="mt-5 grid gap-2">
-            <button className={primaryButtonClass} name="intent" value="save">
+            <button
+              className={adminPrimaryButtonClass}
+              name="intent"
+              value="save"
+            >
               Save draft
             </button>
             <button
-              className={primaryButtonClass}
+              className={adminPrimaryButtonClass}
               name="intent"
               value="publish"
             >
@@ -218,7 +229,7 @@ export function NewsEditorForm({
             </button>
             {canUnpublish && (
               <button
-                className={secondaryButtonClass}
+                className={adminSecondaryButtonClass}
                 name="intent"
                 value="unpublish"
               >
@@ -227,7 +238,7 @@ export function NewsEditorForm({
             )}
             {canArchive && (
               <button
-                className={secondaryButtonClass}
+                className={adminSecondaryButtonClass}
                 name="intent"
                 value="archive"
               >
@@ -237,7 +248,7 @@ export function NewsEditorForm({
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className={adminCardClass}>
           <h2 className="text-sm font-semibold text-slate-950">Cover</h2>
           <label className="mt-4 block">
             <span className="text-sm font-medium text-slate-700">
@@ -247,7 +258,7 @@ export function NewsEditorForm({
               name="cover_url"
               value={coverUrl}
               onChange={(event) => setCoverUrl(event.target.value)}
-              className="focus:border-brand-400 focus:ring-brand-100 mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm transition outline-none focus:ring-2"
+              className={adminInputClass}
             />
           </label>
           <label className="mt-4 block">
@@ -259,7 +270,7 @@ export function NewsEditorForm({
                 handleFileChange(event.target.files?.[0] ?? null)
               }
               disabled={isUploading}
-              className="file:bg-brand-50 file:text-brand-600 hover:file:bg-brand-100 mt-2 block w-full text-sm text-slate-700 file:mr-3 file:rounded-full file:border-0 file:px-4 file:py-2 file:text-sm file:font-medium"
+              className="mt-2 block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#e9f1ff] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#0b63f6] hover:file:bg-[#dceaff]"
             />
           </label>
           {uploadMessage && (
@@ -270,17 +281,17 @@ export function NewsEditorForm({
             <input
               name="cover_alt"
               defaultValue={post?.cover_alt ?? ""}
-              className="focus:border-brand-400 focus:ring-brand-100 mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm transition outline-none focus:ring-2"
+              className={adminInputClass}
             />
           </label>
         </div>
 
-        <label className="block rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <label className={`block ${adminCardClass}`}>
           <span className="text-sm font-semibold text-slate-950">Author</span>
           <input
             name="author"
             defaultValue={post?.author ?? "Mike"}
-            className="focus:border-brand-400 focus:ring-brand-100 mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm transition outline-none focus:ring-2"
+            className={adminInputClass}
           />
         </label>
       </aside>
@@ -299,7 +310,7 @@ function slugify(value: string) {
 function tabClass(active: boolean) {
   return `px-4 py-3 text-sm font-medium transition ${
     active
-      ? "bg-white text-brand-600"
+      ? "bg-white text-[#0b63f6]"
       : "text-slate-600 hover:bg-white/70 hover:text-slate-950"
   }`;
 }
@@ -311,9 +322,3 @@ function formatDate(iso: string) {
     year: "numeric",
   });
 }
-
-const primaryButtonClass =
-  "rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2";
-
-const secondaryButtonClass =
-  "rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2";
