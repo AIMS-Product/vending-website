@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  blockRegistry,
   createEmptyPageContent,
   pageContentSchema,
   richTextDocumentPlainText,
@@ -67,6 +68,19 @@ const validContent: PageContent = {
 };
 
 describe("page builder block schemas", () => {
+  it("keeps every block type on three to four supported variants", () => {
+    for (const [type, config] of Object.entries(blockRegistry)) {
+      expect(
+        config.allowedVariants.length,
+        `${type} should expose a small variant set`,
+      ).toBeGreaterThanOrEqual(3);
+      expect(
+        config.allowedVariants.length,
+        `${type} should stay scannable in the editor`,
+      ).toBeLessThanOrEqual(4);
+    }
+  });
+
   it("accepts the first-slice rich text, image, and CTA content tree", () => {
     const parsed = pageContentSchema.parse(validContent);
 
