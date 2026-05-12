@@ -8,6 +8,7 @@ import {
   adminListSeoPages,
   adminPublishSeoPage,
   adminSaveSeoPageDraft,
+  adminUnpublishSeoPage,
   adminUpdateSeoPageSlug,
 } from "./seo-pages";
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
@@ -125,6 +126,15 @@ function updateSingle(data: unknown, error: unknown = null) {
   const eq = vi.fn().mockReturnValue({ select });
   const update = vi.fn().mockReturnValue({ eq });
   return { table: { update }, mocks: { update, eq, select, single } };
+}
+
+function deleteMatch(error: unknown = null) {
+  const match = vi.fn().mockResolvedValue({ error });
+  const deleteMock = vi.fn().mockReturnValue({ match });
+  return {
+    table: { delete: deleteMock },
+    mocks: { delete: deleteMock, match },
+  };
 }
 
 function buildClient(...tables: unknown[]) {
@@ -321,6 +331,41 @@ describe("seo page service", () => {
         updated_by: "admin-1",
       }),
     );
+  });
+
+  it("moves a published page back to draft", async () => {
+    const draftPage = {
+      id: "page_1",
+      slug: "start-vending",
+      status: "draft",
+      published_at: null,
+      archived_at: null,
+    };
+    const updatePage = updateSingle(draftPage);
+    const deleteRedirects = deleteMatch();
+    const client = buildClient(updatePage.table, deleteRedirects.table);
+
+    const result = await adminUnpublishSeoPage("page_1", {
+      client,
+      actorId: "admin-1",
+    });
+
+    expect(result).toEqual(draftPage);
+    expect(updatePage.mocks.update).toHaveBeenCalledWith({
+      status: "draft",
+      published_at: null,
+      published_content: null,
+      published_revision_id: null,
+      archived_at: null,
+      archive_behavior: "not_found",
+      archive_redirect_url: null,
+      updated_by: "admin-1",
+    });
+    expect(updatePage.mocks.eq).toHaveBeenCalledWith("id", "page_1");
+    expect(deleteRedirects.mocks.match).toHaveBeenCalledWith({
+      page_id: "page_1",
+      created_reason: "page_archived",
+    });
   });
 
   it("blocks publish when another active page already owns the same metadata", async () => {

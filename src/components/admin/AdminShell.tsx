@@ -22,8 +22,6 @@ type AdminNavSection = {
   href: string;
   description: string;
   icon: AdminIcon;
-  createHref?: string;
-  createLabel?: string;
 };
 
 const sections: AdminNavSection[] = [
@@ -33,8 +31,6 @@ const sections: AdminNavSection[] = [
     href: "/admin/pages",
     description: "SEO page content",
     icon: "file",
-    createHref: "/admin/pages/new",
-    createLabel: "Resource page",
   },
   {
     id: "posts",
@@ -42,8 +38,6 @@ const sections: AdminNavSection[] = [
     href: "/admin/news",
     description: "Articles and updates",
     icon: "book",
-    createHref: "/admin/news/new",
-    createLabel: "Blog post",
   },
   {
     id: "media",
@@ -86,7 +80,7 @@ export function AdminShell({
   children,
 }: {
   activeSection: AdminSection;
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   description?: string;
   userEmail?: string | null;
@@ -154,15 +148,6 @@ export function AdminShell({
                         </span>
                       </span>
                     </Link>
-                    {section.createHref ? (
-                      <Link
-                        href={section.createHref}
-                        aria-label={`Create ${section.createLabel}`}
-                        className="mr-3 rounded-full border border-[#d8e6ff] bg-white px-2.5 py-1 text-xs font-semibold text-[#0b63f6]"
-                      >
-                        New
-                      </Link>
-                    ) : null}
                   </div>
                 ))}
               </nav>
@@ -312,15 +297,6 @@ export function AdminShell({
                           </span>
                         </span>
                       </Link>
-                      {section.createHref && !sidebarCollapsed ? (
-                        <Link
-                          href={section.createHref}
-                          aria-label={`Create ${section.createLabel}`}
-                          className="mr-3 shrink-0 rounded-full border border-[#d8e6ff] bg-white px-2.5 py-1 text-xs font-semibold text-[#0b63f6] transition hover:bg-[#edf4ff] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-                        >
-                          New
-                        </Link>
-                      ) : null}
                     </div>
                   ))}
                 </nav>
@@ -422,13 +398,20 @@ export function AdminShell({
         >
           {!immersive && (
             <header className="mb-7">
-              <div className="mb-6 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 text-sm font-semibold text-[#0b63f6]">
-                  <span>{eyebrow}</span>
-                  <span className="text-slate-400" aria-hidden="true">
-                    <AdminChevron />
-                  </span>
-                </div>
+              <div
+                className={clsx(
+                  "mb-6 flex items-center gap-4",
+                  eyebrow ? "justify-between" : "justify-end",
+                )}
+              >
+                {eyebrow ? (
+                  <div className="flex items-center gap-3 text-sm font-semibold text-[#0b63f6]">
+                    <span>{eyebrow}</span>
+                    <span className="text-slate-400" aria-hidden="true">
+                      <AdminChevron />
+                    </span>
+                  </div>
+                ) : null}
                 <div className="flex w-fit items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm">
                   <span className="text-slate-700" aria-hidden="true">
                     <AdminIconGlyph icon="shield" />

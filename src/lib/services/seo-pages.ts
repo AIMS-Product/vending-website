@@ -297,6 +297,32 @@ export async function adminPublishSeoPage(
   return { page: data, revision };
 }
 
+export async function adminUnpublishSeoPage(
+  pageId: string,
+  options: ServiceDeps & { actorId?: string | null } = {},
+) {
+  const client = options.client ?? createAdminClient();
+  const { data, error } = await client
+    .from("seo_pages")
+    .update({
+      status: "draft",
+      published_at: null,
+      published_content: null,
+      published_revision_id: null,
+      archived_at: null,
+      archive_behavior: "not_found",
+      archive_redirect_url: null,
+      updated_by: options.actorId ?? null,
+    })
+    .eq("id", pageId)
+    .select(SEO_PAGE_FIELDS)
+    .single();
+
+  if (error) throw new Error("Could not move SEO page to draft.");
+  await deleteArchivedPageRedirects(client, pageId);
+  return data;
+}
+
 export async function adminUpdateSeoPageSlug(
   pageId: string,
   slug: string,
@@ -711,6 +737,18 @@ async function insertPageRevision(
 
   if (error) throw new Error("Could not create SEO page revision.");
   return data;
+}
+
+async function deleteArchivedPageRedirects(
+  client: SeoPageClient,
+  pageId: string,
+) {
+  const { error } = await client
+    .from("redirects")
+    .delete()
+    .match({ page_id: pageId, created_reason: "page_archived" });
+
+  if (error) throw new Error("Could not clear archived SEO page redirect.");
 }
 
 async function findRedirectBySourcePath(
