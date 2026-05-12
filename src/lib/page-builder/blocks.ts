@@ -321,9 +321,17 @@ export const pageSectionSchema = z
   })
   .strict();
 
+const pageChromeSchema = z
+  .object({
+    showHeader: z.boolean().default(true),
+    showFooter: z.boolean().default(true),
+  })
+  .strict();
+
 export const pageContentSchema = z
   .object({
     version: z.literal(1),
+    chrome: pageChromeSchema.optional(),
     sections: z.array(pageSectionSchema).max(40),
   })
   .strict();
@@ -334,7 +342,17 @@ export type RichTextSpan = z.infer<typeof richTextSpanSchema>;
 export type PageBlock = z.infer<typeof pageBlockSchema>;
 export type PageColumn = z.infer<typeof pageColumnSchema>;
 export type PageSection = z.infer<typeof pageSectionSchema>;
+export type PageChromeSettings = z.infer<typeof pageChromeSchema>;
 export type PageContent = z.infer<typeof pageContentSchema>;
+
+export const defaultPageChromeSettings: PageChromeSettings = {
+  showHeader: true,
+  showFooter: true,
+};
+
+export function pageChromeSettings(content: PageContent): PageChromeSettings {
+  return { ...defaultPageChromeSettings, ...content.chrome };
+}
 
 export const blockRegistry = {
   hero: {

@@ -1,7 +1,7 @@
 import { submitApplicationLead } from "@/app/apply/actions";
 import { PublicLeadForm } from "@/components/forms/PublicLeadForm";
 import { ResourcePageContentView } from "@/components/sections/ResourcePageContent";
-import { flattenBlocks } from "@/lib/page-builder/blocks";
+import { flattenBlocks, pageChromeSettings } from "@/lib/page-builder/blocks";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import type { PublishedSeoPage } from "@/lib/services/seo-page-public";
 import { buildResourceLeadFormAttribution } from "@/lib/page-builder/resource-lead-attribution";
@@ -17,8 +17,11 @@ export function ResourcePageRenderer({
   leadAttribution,
   idempotencyKeyPrefix,
 }: ResourcePageRendererProps) {
+  const chromeSettings = pageChromeSettings(page.published_content);
+
   return (
     <article className="bg-[#f5fbff]">
+      <PageChromeVisibilityMarker settings={chromeSettings} />
       <StructuredData page={page} />
       <div className="mx-auto max-w-5xl px-5 py-14 lg:px-10">
         <ResourcePageContentView
@@ -48,6 +51,23 @@ export function ResourcePageRenderer({
         />
       </div>
     </article>
+  );
+}
+
+function PageChromeVisibilityMarker({
+  settings,
+}: {
+  settings: ReturnType<typeof pageChromeSettings>;
+}) {
+  if (settings.showHeader && settings.showFooter) return null;
+
+  return (
+    <span
+      hidden
+      aria-hidden="true"
+      data-hide-site-header={settings.showHeader ? undefined : "true"}
+      data-hide-site-footer={settings.showFooter ? undefined : "true"}
+    />
   );
 }
 

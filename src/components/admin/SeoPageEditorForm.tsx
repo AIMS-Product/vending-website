@@ -43,7 +43,9 @@ import type { AiPageProposalReview } from "@/lib/services/ai-page-proposals";
 import {
   createEmptyPageContent,
   pageContentSchema,
+  pageChromeSettings,
   richTextDocumentPlainText,
+  type PageChromeSettings,
   type PageBlock,
   type PageColumn,
   type PageContent,
@@ -177,6 +179,7 @@ export function SeoPageEditorForm({
   );
   const visibleSlug = slugTouched ? slug : slugify(title);
   const draftContentJson = useMemo(() => JSON.stringify(content), [content]);
+  const chromeSettings = pageChromeSettings(content);
   const seoReadiness = useMemo(
     () =>
       assessSeoReadiness(content, {
@@ -481,6 +484,7 @@ export function SeoPageEditorForm({
                 <BuilderBlockSidebar
                   entries={builderBlockEntries}
                   selectedEntry={selectedBlockEntry}
+                  chromeSettings={chromeSettings}
                   onSelectBlock={(entry) => {
                     setSelectedBlockId(entry.block.id);
                     document
@@ -500,6 +504,7 @@ export function SeoPageEditorForm({
                         block: "center",
                       });
                   }}
+                  onChromeSettingsChange={updateChromeSettings}
                 />
               </div>
               <div className="shrink-0 border-t border-slate-200 p-4">
@@ -552,7 +557,7 @@ export function SeoPageEditorForm({
             )}
 
             <div className="mx-auto max-w-[1500px] bg-[#f5fbff] shadow-sm">
-              <EditorPublicHeader />
+              {chromeSettings.showHeader ? <EditorPublicHeader /> : null}
               <article className="bg-[#f5fbff]">
                 <main className="group/page-body relative mx-auto max-w-5xl px-5 py-14 lg:px-10">
                   {usesSimpleBlockStack && primarySection && primaryColumn ? (
@@ -739,7 +744,7 @@ export function SeoPageEditorForm({
                   )}
                 </main>
               </article>
-              <EditorPublicFooter />
+              {chromeSettings.showFooter ? <EditorPublicFooter /> : null}
             </div>
           </div>
 
@@ -1169,6 +1174,13 @@ export function SeoPageEditorForm({
     formData.set("draftContent", draftContentJson);
     formData.set("intent", "save");
     return formData;
+  }
+
+  function updateChromeSettings(next: Partial<PageChromeSettings>) {
+    setContent((current) => ({
+      ...current,
+      chrome: { ...pageChromeSettings(current), ...next },
+    }));
   }
 
   function addBlock(
@@ -1702,13 +1714,17 @@ function NextPublishStepCard({ step }: { step: NextPublishStep }) {
 function BuilderBlockSidebar({
   entries,
   selectedEntry,
+  chromeSettings,
   onSelectBlock,
   onEditBlock,
+  onChromeSettingsChange,
 }: {
   entries: BuilderBlockEntry[];
   selectedEntry: BuilderBlockEntry | null;
+  chromeSettings: PageChromeSettings;
   onSelectBlock: (entry: BuilderBlockEntry) => void;
   onEditBlock: (entry: BuilderBlockEntry) => void;
+  onChromeSettingsChange: (settings: Partial<PageChromeSettings>) => void;
 }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-900 bg-slate-950 text-white shadow-xl">
@@ -1727,6 +1743,10 @@ function BuilderBlockSidebar({
       </div>
 
       <div className="grid gap-4 p-4">
+        <PageChromeControls
+          settings={chromeSettings}
+          onChange={onChromeSettingsChange}
+        />
         {entries.length > 0 ? (
           <div className="max-h-[calc(100dvh-18rem)] space-y-2 overflow-y-auto pr-1">
             {entries.map((entry) => {
@@ -1812,6 +1832,68 @@ function BuilderBlockSidebar({
         )}
       </div>
     </section>
+  );
+}
+
+function PageChromeControls({
+  settings,
+  onChange,
+}: {
+  settings: PageChromeSettings;
+  onChange: (settings: Partial<PageChromeSettings>) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+      <p className="mb-3 text-xs font-semibold tracking-wider text-slate-300 uppercase">
+        Page chrome
+      </p>
+      <div className="grid gap-2">
+        <ChromeToggle
+          label="Show header"
+          checked={settings.showHeader}
+          onChange={(checked) => onChange({ showHeader: checked })}
+        />
+        <ChromeToggle
+          label="Show footer"
+          checked={settings.showFooter}
+          onChange={(checked) => onChange({ showFooter: checked })}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ChromeToggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm font-semibold text-white transition hover:bg-white/10">
+      <span>{label}</span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="peer sr-only"
+      />
+      <span
+        className={`flex h-6 w-10 items-center rounded-full p-1 ring-1 ring-white/15 transition peer-focus-visible:ring-2 peer-focus-visible:ring-sky-200 ${
+          checked ? "bg-sky-400" : "bg-white/20"
+        }`}
+        aria-hidden="true"
+      >
+        <span
+          className={`h-4 w-4 rounded-full bg-white shadow-sm transition ${
+            checked ? "translate-x-4" : ""
+          }`}
+        />
+      </span>
+    </label>
   );
 }
 
