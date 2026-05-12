@@ -20,24 +20,6 @@ export function ResourcePageRenderer({
   return (
     <article className="bg-[#f5fbff]">
       <StructuredData page={page} />
-      <header className="border-b-2 border-[#111111] bg-[#f5fbff]">
-        <div className="mx-auto max-w-5xl px-5 py-16 lg:px-10">
-          {page.target_keyword && (
-            <p className="inline-flex rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
-              {page.target_keyword}
-            </p>
-          )}
-          <h1 className="mt-8 text-[clamp(3rem,6vw,5.5rem)] leading-[0.95] font-black text-[#111111] uppercase">
-            {page.title}
-          </h1>
-          {page.meta_description && (
-            <p className="mt-7 max-w-3xl text-xl leading-8 font-semibold text-slate-700">
-              {page.meta_description}
-            </p>
-          )}
-        </div>
-      </header>
-
       <div className="mx-auto max-w-5xl px-5 py-14 lg:px-10">
         <ResourcePageContentView
           content={page.published_content}

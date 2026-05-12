@@ -23,6 +23,7 @@ type ResourcePageBlockViewProps = {
   renderLeadForm?: (block: LeadFormBlock) => ReactNode;
   renderMode?: ResourcePageRenderMode;
   linkMode?: ResourcePageLinkMode;
+  isPrimaryHero?: boolean;
 };
 
 export function ResourcePageContentView({
@@ -31,6 +32,11 @@ export function ResourcePageContentView({
   renderMode = "public",
   linkMode = "live",
 }: ResourcePageContentViewProps) {
+  const primaryHeroId = content.sections
+    .flatMap((section) => section.columns)
+    .flatMap((column) => column.blocks)
+    .find((block) => block.type === "hero")?.id;
+
   return (
     <div className="space-y-14">
       {content.sections.map((section) => (
@@ -48,6 +54,7 @@ export function ResourcePageContentView({
                     renderLeadForm={renderLeadForm}
                     renderMode={renderMode}
                     linkMode={linkMode}
+                    isPrimaryHero={block.id === primaryHeroId}
                   />
                 ))}
               </div>
@@ -64,8 +71,11 @@ export function ResourcePageBlockView({
   renderLeadForm,
   renderMode = "public",
   linkMode = "live",
+  isPrimaryHero = false,
 }: ResourcePageBlockViewProps) {
   if (block.type === "hero") {
+    const HeadingTag = isPrimaryHero ? "h1" : "h2";
+
     if (block.variant === "split") {
       return (
         <div className="grid items-center gap-10 py-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
@@ -75,9 +85,9 @@ export function ResourcePageBlockView({
                 {block.props.eyebrow}
               </p>
             )}
-            <h2 className="mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl">
+            <HeadingTag className="mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl">
               {editorFallback(block.props.heading, "Hero headline", renderMode)}
-            </h2>
+            </HeadingTag>
             {(block.props.body || renderMode === "editor") && (
               <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
                 {editorFallback(block.props.body, "Hero body copy", renderMode)}
@@ -108,9 +118,9 @@ export function ResourcePageBlockView({
               {block.props.eyebrow}
             </p>
           )}
-          <h2 className="mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl">
+          <HeadingTag className="mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl">
             {editorFallback(block.props.heading, "Hero headline", renderMode)}
-          </h2>
+          </HeadingTag>
           {(block.props.body || renderMode === "editor") && (
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 font-semibold text-slate-700">
               {editorFallback(block.props.body, "Hero body copy", renderMode)}
@@ -139,9 +149,9 @@ export function ResourcePageBlockView({
               {block.props.eyebrow}
             </p>
           )}
-          <h2 className="mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl">
+          <HeadingTag className="mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl">
             {editorFallback(block.props.heading, "Hero headline", renderMode)}
-          </h2>
+          </HeadingTag>
           <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-black text-slate-500 uppercase">
             <span>Resource guide</span>
             <span className="h-1 w-1 rounded-full bg-slate-400" />
@@ -163,9 +173,9 @@ export function ResourcePageBlockView({
             {block.props.eyebrow}
           </p>
         )}
-        <h2 className="mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl">
+        <HeadingTag className="mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl">
           {editorFallback(block.props.heading, "Hero headline", renderMode)}
-        </h2>
+        </HeadingTag>
         {(block.props.body || renderMode === "editor") && (
           <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
             {editorFallback(block.props.body, "Hero body copy", renderMode)}
