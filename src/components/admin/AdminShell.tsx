@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { signOut } from "@/app/admin/actions";
@@ -331,9 +332,6 @@ export function AdminShell({
                           {section.description}
                         </span>
                       </span>
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">
-                        Later
-                      </span>
                     </div>
                   ))}
                 </div>
@@ -445,6 +443,38 @@ export function AdminShell({
         </section>
       </div>
     </div>
+  );
+}
+
+export function AdminPageActionButton({
+  label,
+  tone = "default",
+  confirmMessage,
+}: {
+  label: string;
+  tone?: "default" | "danger";
+  confirmMessage?: string;
+}) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      onClick={(event) => {
+        if (confirmMessage && !window.confirm(confirmMessage)) {
+          event.preventDefault();
+        }
+      }}
+      className={clsx(
+        "block w-full rounded-md px-3 py-2 text-left text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+        tone === "danger"
+          ? "text-red-700 hover:bg-red-50"
+          : "text-slate-700 hover:bg-slate-50 hover:text-slate-950",
+      )}
+    >
+      {pending ? "Working..." : label}
+    </button>
   );
 }
 
