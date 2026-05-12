@@ -61,6 +61,7 @@ export default async function EditSeoPagePage({
       description="Update the page contract, page content, publishing state, previews, and revisions."
       userEmail={user.email}
       userRole={role}
+      immersive
     >
       <SeoPageEditorForm
         page={page}
