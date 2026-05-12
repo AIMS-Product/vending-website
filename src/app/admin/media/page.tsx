@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
+import {
+  AdminIcon,
+  AdminMetricPanel,
+  AdminMetricStrip,
+  adminPrimaryButtonClass,
+} from "@/components/admin/AdminUi";
 import {
   MediaLibraryManager,
   type MediaAssetListItem,
@@ -10,7 +17,7 @@ import {
 } from "@/lib/services/media-assets";
 import { requireAdmin } from "@/lib/supabase/auth";
 
-type SearchParams = { q?: string };
+type SearchParams = { q?: string | string[] };
 
 export const metadata: Metadata = {
   title: "Media library admin",
@@ -23,8 +30,13 @@ export default async function AdminMediaPage({
   searchParams: Promise<SearchParams>;
 }) {
   const { user, role } = await requireAdmin();
-  const { q } = await searchParams;
-  const assets = await adminListMediaAssets({ search: q });
+  const params = await searchParams;
+  const searchQuery = normalizeSearch(firstParam(params.q));
+  const [allAssets, assets] = await Promise.all([
+    adminListMediaAssets(),
+    adminListMediaAssets({ search: searchQuery }),
+  ]);
+  const assetCounts = countAssets(allAssets);
 
   return (
     <AdminShell
@@ -34,21 +46,98 @@ export default async function AdminMediaPage({
       description="Keep image and source assets available for resource pages, blog posts, landing pages, and future campaign content."
       userEmail={user.email}
       userRole={role}
+      actions={
+        <>
+          <Link href="/admin/libraries" className={adminPrimaryButtonClass}>
+            <span aria-hidden="true">
+              <AdminIcon icon="layers" />
+            </span>
+            Content libraries
+          </Link>
+        </>
+      }
     >
-      <form className="flex max-w-lg gap-3">
-        <input
-          name="q"
-          defaultValue={q ?? ""}
-          placeholder="Search titles"
-          className="focus:border-brand-400 focus:ring-brand-100 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm transition outline-none focus:ring-2"
+      <AdminMetricStrip>
+        <AdminMetricPanel
+          icon="image"
+          tone="blue"
+          label="Total"
+          value={allAssets.length}
+          caption="all assets"
         />
-        <button className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
-          Search
-        </button>
-      </form>
+        <AdminMetricPanel
+          icon="upload"
+          tone="green"
+          label="Stored"
+          value={assetCounts.stored}
+          caption="uploaded"
+        />
+        <AdminMetricPanel
+          icon="file"
+          tone="slate"
+          label="External"
+          value={assetCounts.external}
+          caption="linked"
+        />
+        <AdminMetricPanel
+          icon="layers"
+          tone="purple"
+          label="Tagged"
+          value={assetCounts.tagged}
+          caption="organized"
+        />
+      </AdminMetricStrip>
+
+      <div className="mb-7 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <form
+          action="/admin/media"
+          className="flex h-12 w-full items-center gap-3 rounded-md border border-slate-200 bg-white px-4 shadow-sm lg:w-96"
+        >
+          <span className="text-slate-500" aria-hidden="true">
+            <AdminIcon icon="search" />
+          </span>
+          <label className="sr-only" htmlFor="admin-media-search">
+            Search media assets
+          </label>
+          <input
+            id="admin-media-search"
+            name="q"
+            defaultValue={searchQuery}
+            placeholder="Search title"
+            className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-500"
+          />
+          <button type="submit" className="sr-only">
+            Search
+          </button>
+        </form>
+        <p className="text-sm text-slate-600">
+          Showing {assets.length} media{" "}
+          {assets.length === 1 ? "asset" : "assets"}
+        </p>
+      </div>
 
       <MediaLibraryManager assets={assets.map(toListItem)} />
     </AdminShell>
+  );
+}
+
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function normalizeSearch(value: string | undefined) {
+  return value?.trim().slice(0, 120) ?? "";
+}
+
+function countAssets(assets: Awaited<ReturnType<typeof adminListMediaAssets>>) {
+  return assets.reduce(
+    (counts, asset) => {
+      if (asset.storage_path) counts.stored += 1;
+      if (asset.external_url) counts.external += 1;
+      if (asset.tags.length > 0) counts.tagged += 1;
+      return counts;
+    },
+    { stored: 0, external: 0, tagged: 0 },
   );
 }
 

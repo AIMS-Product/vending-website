@@ -14,6 +14,7 @@ type PublicLeadFormProps = {
   idempotencyKey: string;
   submitLabel: string;
   intent: "apply" | "contact";
+  layout?: "standard" | "compact";
 };
 
 export type PublicLeadFormAction = (
@@ -41,6 +42,7 @@ export function PublicLeadForm({
   idempotencyKey,
   submitLabel,
   intent,
+  layout = "standard",
 }: PublicLeadFormProps) {
   const [state, formAction, pending] = useActionState(
     action,
@@ -48,11 +50,15 @@ export function PublicLeadForm({
   );
   const errors = state.status === "error" ? state.fieldErrors : undefined;
   const isApply = intent === "apply";
+  const isCompact = layout === "compact";
 
   return (
     <form
       action={formAction}
-      className="grid gap-5 rounded-[12px] border-2 border-[#111111] bg-white p-5 shadow-[8px_8px_0_#55b8e8] sm:p-7"
+      className={cn(
+        "grid gap-5 rounded-[12px] border-2 border-[#111111] bg-white p-5 shadow-[8px_8px_0_#55b8e8]",
+        !isCompact && "sm:p-7",
+      )}
     >
       <HiddenAttribution
         attribution={attribution}
@@ -77,135 +83,141 @@ export function PublicLeadForm({
           required
           errors={errors}
         />
-        <TextField
-          name="phone"
-          errorKey="phone"
-          label="Phone"
-          type="tel"
-          autoComplete="tel"
-          errors={errors}
-        />
-        <TextField
-          name="city"
-          errorKey="city"
-          label="City"
-          autoComplete="address-level2"
-          errors={errors}
-        />
-        {isApply ? (
+        {!isCompact && (
           <>
-            <SelectField
-              name="state_region"
-              errorKey="stateRegion"
-              label="State"
-              required
+            <TextField
+              name="phone"
+              errorKey="phone"
+              label="Phone"
+              type="tel"
+              autoComplete="tel"
               errors={errors}
-              options={[
-                "Alabama",
-                "Alaska",
-                "Arizona",
-                "Arkansas",
-                "California",
-                "Colorado",
-                "Connecticut",
-                "Delaware",
-                "Florida",
-                "Georgia",
-                "Hawaii",
-                "Idaho",
-                "Illinois",
-                "Indiana",
-                "Iowa",
-                "Kansas",
-                "Kentucky",
-                "Louisiana",
-                "Maine",
-                "Maryland",
-                "Massachusetts",
-                "Michigan",
-                "Minnesota",
-                "Mississippi",
-                "Missouri",
-                "Montana",
-                "Nebraska",
-                "Nevada",
-                "New Hampshire",
-                "New Jersey",
-                "New Mexico",
-                "New York",
-                "North Carolina",
-                "North Dakota",
-                "Ohio",
-                "Oklahoma",
-                "Oregon",
-                "Pennsylvania",
-                "Rhode Island",
-                "South Carolina",
-                "South Dakota",
-                "Tennessee",
-                "Texas",
-                "Utah",
-                "Vermont",
-                "Virginia",
-                "Washington",
-                "West Virginia",
-                "Wisconsin",
-                "Wyoming",
-              ]}
             />
-            <SelectField
-              name="business_stage"
-              errorKey="businessStage"
-              label="Business stage"
-              required
+            <TextField
+              name="city"
+              errorKey="city"
+              label="City"
+              autoComplete="address-level2"
               errors={errors}
-              options={[
-                "Researching vending",
-                "Buying first machine",
-                "Already operating",
-                "Scaling locations",
-              ]}
             />
-            <SelectField
-              name="budget"
-              errorKey="budget"
-              label="Available startup budget"
-              required
-              errors={errors}
-              options={["Under $5k", "$5k-$10k", "$10k-$25k", "$25k+"]}
-            />
-            <SelectField
-              name="timeline"
-              errorKey="timeline"
-              label="Launch timeline"
-              required
-              errors={errors}
-              options={[
-                "Immediately",
-                "Next 30 days",
-                "Next 90 days",
-                "Still deciding",
-              ]}
-            />
+            {isApply ? (
+              <>
+                <SelectField
+                  name="state_region"
+                  errorKey="stateRegion"
+                  label="State"
+                  required
+                  errors={errors}
+                  options={[
+                    "Alabama",
+                    "Alaska",
+                    "Arizona",
+                    "Arkansas",
+                    "California",
+                    "Colorado",
+                    "Connecticut",
+                    "Delaware",
+                    "Florida",
+                    "Georgia",
+                    "Hawaii",
+                    "Idaho",
+                    "Illinois",
+                    "Indiana",
+                    "Iowa",
+                    "Kansas",
+                    "Kentucky",
+                    "Louisiana",
+                    "Maine",
+                    "Maryland",
+                    "Massachusetts",
+                    "Michigan",
+                    "Minnesota",
+                    "Mississippi",
+                    "Missouri",
+                    "Montana",
+                    "Nebraska",
+                    "Nevada",
+                    "New Hampshire",
+                    "New Jersey",
+                    "New Mexico",
+                    "New York",
+                    "North Carolina",
+                    "North Dakota",
+                    "Ohio",
+                    "Oklahoma",
+                    "Oregon",
+                    "Pennsylvania",
+                    "Rhode Island",
+                    "South Carolina",
+                    "South Dakota",
+                    "Tennessee",
+                    "Texas",
+                    "Utah",
+                    "Vermont",
+                    "Virginia",
+                    "Washington",
+                    "West Virginia",
+                    "Wisconsin",
+                    "Wyoming",
+                  ]}
+                />
+                <SelectField
+                  name="business_stage"
+                  errorKey="businessStage"
+                  label="Business stage"
+                  required
+                  errors={errors}
+                  options={[
+                    "Researching vending",
+                    "Buying first machine",
+                    "Already operating",
+                    "Scaling locations",
+                  ]}
+                />
+                <SelectField
+                  name="budget"
+                  errorKey="budget"
+                  label="Available startup budget"
+                  required
+                  errors={errors}
+                  options={["Under $5k", "$5k-$10k", "$10k-$25k", "$25k+"]}
+                />
+                <SelectField
+                  name="timeline"
+                  errorKey="timeline"
+                  label="Launch timeline"
+                  required
+                  errors={errors}
+                  options={[
+                    "Immediately",
+                    "Next 30 days",
+                    "Next 90 days",
+                    "Still deciding",
+                  ]}
+                />
+              </>
+            ) : (
+              <TextField
+                name="state_region"
+                errorKey="stateRegion"
+                label="State"
+                autoComplete="address-level1"
+                errors={errors}
+              />
+            )}
           </>
-        ) : (
-          <TextField
-            name="state_region"
-            errorKey="stateRegion"
-            label="State"
-            autoComplete="address-level1"
-            errors={errors}
-          />
         )}
       </div>
 
-      <TextareaField
-        name="message"
-        errorKey="message"
-        label={isApply ? "What are you trying to build?" : "Message"}
-        required={!isApply}
-        errors={errors}
-      />
+      {!isCompact && (
+        <TextareaField
+          name="message"
+          errorKey="message"
+          label={isApply ? "What are you trying to build?" : "Message"}
+          required={!isApply}
+          errors={errors}
+        />
+      )}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <button

@@ -31,6 +31,7 @@ export default async function NewSeoPagePage() {
       description="Create a structured page using the current resource-page contract."
       userEmail={user.email}
       userRole={role}
+      immersive
     >
       <SeoPageEditorForm
         internalLinkTargets={internalLinkTargets}

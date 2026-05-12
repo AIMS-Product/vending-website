@@ -613,7 +613,10 @@ const heroBlockSchema = {
   properties: {
     ...blockIdProperty,
     type: { type: "string", enum: ["hero"] },
-    variant: { type: "string", enum: ["standard", "split", "compact"] },
+    variant: {
+      type: "string",
+      enum: ["standard", "split", "compact", "editorial"],
+    },
     props: {
       type: "object",
       additionalProperties: false,
@@ -694,7 +697,10 @@ const richTextBlockSchema = {
   properties: {
     ...blockIdProperty,
     type: { type: "string", enum: ["rich_text"] },
-    variant: { type: "string", enum: ["default", "intro", "compact"] },
+    variant: {
+      type: "string",
+      enum: ["default", "intro", "compact", "checklist"],
+    },
     props: {
       type: "object",
       additionalProperties: false,
@@ -715,7 +721,7 @@ const faqBlockSchema = {
   properties: {
     ...blockIdProperty,
     type: { type: "string", enum: ["faq"] },
-    variant: { type: "string", enum: ["standard", "compact"] },
+    variant: { type: "string", enum: ["standard", "compact", "accordion"] },
     props: {
       type: "object",
       additionalProperties: false,
@@ -747,7 +753,7 @@ const cardGridBlockSchema = {
   properties: {
     ...blockIdProperty,
     type: { type: "string", enum: ["card_grid"] },
-    variant: { type: "string", enum: ["standard", "compact"] },
+    variant: { type: "string", enum: ["standard", "compact", "feature"] },
     props: {
       type: "object",
       additionalProperties: false,

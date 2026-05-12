@@ -8,6 +8,7 @@ import {
   adminAcceptAiProposalBlocks,
 } from "@/lib/services/ai-page-proposals";
 import {
+  adminArchiveSeoPage,
   SeoPageValidationError,
   adminCreateSeoPagePreviewToken,
   adminCreateSeoPage,
@@ -17,6 +18,7 @@ import {
   adminRevokeSeoPagePreviewToken,
   adminRollbackSeoPageRevision,
   adminSaveSeoPageDraft,
+  adminUnpublishSeoPage,
   adminUpdateSeoPageSlug,
 } from "@/lib/services/seo-pages";
 import {
@@ -56,7 +58,13 @@ export type PageAiProposalInsertResult =
 
 export type PagePreviewLinkActionState =
   | { status: "idle"; message?: string; previewPath?: string }
-  | { status: "created"; message: string; previewPath: string }
+  | {
+      status: "created";
+      message: string;
+      previewPath: string;
+      pageId?: string;
+      editorPath?: string;
+    }
   | { status: "error"; message: string; previewPath?: string };
 
 export type PageAutosavePayload = {
@@ -240,6 +248,84 @@ export async function createSeoPagePreviewLink(
   }
 }
 
+export async function saveSeoPageDraftAndCreatePreviewLink(
+  _prev: PagePreviewLinkActionState,
+  formData: FormData,
+): Promise<PagePreviewLinkActionState> {
+  const admin = await requireAdmin();
+  const parsed = parsePageFormData(formData);
+  if (!parsed.success) {
+    return { status: "error", message: parsed.message };
+  }
+
+  const page = parsed.data;
+  let pageId = page.id;
+  let previousSlug: string | undefined;
+
+  try {
+    if (!pageId) {
+      const created = await adminCreateSeoPage({
+        slug: page.slug,
+        title: page.title,
+        targetKeyword: nullable(page.targetKeyword),
+        draftContent: page.draftContent,
+        createdBy: admin.user.id,
+      });
+
+      pageId = created.id;
+      await adminSaveSeoPageDraft(pageId, {
+        seoTitle: nullable(page.seoTitle),
+        metaDescription: nullable(page.metaDescription),
+        canonicalUrl: nullable(page.canonicalUrl),
+        noindex: page.noindex,
+        sitemapEnabled: page.sitemapEnabled,
+        updatedBy: admin.user.id,
+      });
+    } else {
+      const existing = await adminGetSeoPageById(pageId);
+      if (!existing) {
+        return { status: "error", message: "Page not found." };
+      }
+
+      previousSlug = existing.slug;
+      if (existing.slug !== page.slug) {
+        await adminUpdateSeoPageSlug(pageId, page.slug, {
+          actorId: admin.user.id,
+        });
+      }
+
+      await adminSaveSeoPageDraft(pageId, {
+        title: page.title,
+        targetKeyword: nullable(page.targetKeyword),
+        seoTitle: nullable(page.seoTitle),
+        metaDescription: nullable(page.metaDescription),
+        canonicalUrl: nullable(page.canonicalUrl),
+        noindex: page.noindex,
+        sitemapEnabled: page.sitemapEnabled,
+        draftContent: page.draftContent,
+        updatedBy: admin.user.id,
+      });
+    }
+
+    const preview = await adminCreateSeoPagePreviewToken(pageId, {
+      actorId: admin.user.id,
+    });
+    revalidatePagePaths(page.slug, previousSlug);
+    revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
+    return {
+      status: "created",
+      message: page.id
+        ? "Preview link created."
+        : "Draft saved and preview opened.",
+      previewPath: preview.previewPath,
+      pageId,
+      editorPath: `${ADMIN_PAGES_PATH}/${pageId}?saved=1`,
+    };
+  } catch (error) {
+    return pagePreviewActionError(error);
+  }
+}
+
 export async function generateAiSeoPageProposal(
   pageId: string,
 ): Promise<PageAiProposalResult> {
@@ -365,6 +451,75 @@ export async function refreshSeoPageLibraryReferences(formData: FormData) {
   });
   revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
   redirect(`${ADMIN_PAGES_PATH}/${pageId}?saved=1`);
+}
+
+export async function publishSeoPageFromList(formData: FormData) {
+  const admin = await requireAdmin();
+  const pageId = parseListPageId(formData, "publish");
+  const returnTo = adminPageListReturnPath(formData);
+  let redirectPath = returnTo;
+
+  try {
+    const { page } = await adminPublishSeoPage(pageId, {
+      actorId: admin.user.id,
+    });
+    revalidatePagePaths(page.slug);
+  } catch (error) {
+    console.error("failed to publish SEO page from list", {
+      adminUserId: admin.user.id,
+      pageId,
+      error,
+    });
+    redirectPath = `${ADMIN_PAGES_PATH}/${pageId}?error=publish`;
+  }
+
+  redirect(redirectPath);
+}
+
+export async function moveSeoPageToDraftFromList(formData: FormData) {
+  const admin = await requireAdmin();
+  const pageId = parseListPageId(formData, "move to draft");
+  const returnTo = adminPageListReturnPath(formData);
+  let redirectPath = returnTo;
+
+  try {
+    const page = await adminUnpublishSeoPage(pageId, {
+      actorId: admin.user.id,
+    });
+    revalidatePagePaths(page.slug);
+  } catch (error) {
+    console.error("failed to move SEO page to draft from list", {
+      adminUserId: admin.user.id,
+      pageId,
+      error,
+    });
+    redirectPath = `${ADMIN_PAGES_PATH}/${pageId}?error=unpublish`;
+  }
+
+  redirect(redirectPath);
+}
+
+export async function archiveSeoPageFromList(formData: FormData) {
+  const admin = await requireAdmin();
+  const pageId = parseListPageId(formData, "archive");
+  const returnTo = adminPageListReturnPath(formData);
+  let redirectPath = returnTo;
+
+  try {
+    const page = await adminArchiveSeoPage(pageId, {
+      actorId: admin.user.id,
+    });
+    revalidatePagePaths(page.slug);
+  } catch (error) {
+    console.error("failed to archive SEO page from list", {
+      adminUserId: admin.user.id,
+      pageId,
+      error,
+    });
+    redirectPath = `${ADMIN_PAGES_PATH}/${pageId}?error=archive`;
+  }
+
+  redirect(redirectPath);
 }
 
 function parsePageFormData(formData: FormData) {
@@ -499,7 +654,7 @@ function pageAiProposalInsertActionError(
   return {
     status: "error",
     proposalId,
-    message: "Could not insert AI proposal blocks.",
+    message: "Could not insert AI proposal content.",
   };
 }
 
@@ -515,7 +670,7 @@ function parseAcceptedPageContent(page: unknown): PageContent {
       {
         code: "invalid_draft_content",
         path: "draft_content",
-        message: "AI blocks were inserted but the updated draft is invalid.",
+        message: "AI content was inserted but the updated draft is invalid.",
       },
     ]);
   }
@@ -529,6 +684,26 @@ function revalidatePagePaths(slug: string, previousSlug?: string) {
   if (previousSlug && previousSlug !== slug) {
     revalidatePath(`${PUBLIC_RESOURCES_PATH}/${previousSlug}`);
   }
+}
+
+function adminPageListReturnPath(formData: FormData) {
+  const returnTo = String(formData.get("returnTo") ?? ADMIN_PAGES_PATH);
+  if (returnTo === ADMIN_PAGES_PATH) return returnTo;
+  if (returnTo.startsWith(`${ADMIN_PAGES_PATH}?`)) return returnTo;
+  return ADMIN_PAGES_PATH;
+}
+
+function parseListPageId(formData: FormData, action: string) {
+  const rawPageId = String(formData.get("id") ?? "");
+  const parsed = z.uuid().safeParse(rawPageId);
+  if (!parsed.success) {
+    console.error("invalid SEO page id from list action", {
+      action,
+      rawPageId,
+    });
+    redirect(`${ADMIN_PAGES_PATH}?error=invalid-id`);
+  }
+  return parsed.data;
 }
 
 function nullable(value: string) {

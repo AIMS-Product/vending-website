@@ -107,7 +107,9 @@ const richTextBlockSchema = z
   .object({
     id: blockIdSchema,
     type: z.literal("rich_text"),
-    variant: z.enum(["default", "intro", "compact"]).default("default"),
+    variant: z
+      .enum(["default", "intro", "compact", "checklist"])
+      .default("default"),
     props: z
       .object({
         eyebrow: optionalTrimmedText(80),
@@ -122,7 +124,9 @@ const heroBlockSchema = z
   .object({
     id: blockIdSchema,
     type: z.literal("hero"),
-    variant: z.enum(["standard", "split", "compact"]).default("standard"),
+    variant: z
+      .enum(["standard", "split", "compact", "editorial"])
+      .default("standard"),
     props: z
       .object({
         eyebrow: optionalTrimmedText(80),
@@ -131,6 +135,16 @@ const heroBlockSchema = z
         ctaLabel: optionalTrimmedText(80),
         ctaHref: safeHrefSchema.optional().default(""),
         ctaTrackingName: optionalTrimmedText(120),
+        mediaSrc: z
+          .string()
+          .trim()
+          .refine((value) => value.length === 0 || isSafeMediaSource(value), {
+            message: "Use an internal path or an http(s) media URL.",
+          })
+          .optional(),
+        mediaAltText: z.string().trim().max(180).optional(),
+        mediaCaption: z.string().trim().max(240).optional(),
+        proofText: z.string().trim().max(240).optional(),
       })
       .strict(),
   })
@@ -140,7 +154,9 @@ const imageBlockSchema = z
   .object({
     id: blockIdSchema,
     type: z.literal("image"),
-    variant: z.enum(["standard", "wide", "inline"]).default("standard"),
+    variant: z
+      .enum(["standard", "wide", "inline", "feature"])
+      .default("standard"),
     props: z
       .object({
         assetId: z.uuid().optional(),
@@ -168,7 +184,7 @@ const videoBlockSchema = z
   .object({
     id: blockIdSchema,
     type: z.literal("video"),
-    variant: z.enum(["standard", "wide"]).default("standard"),
+    variant: z.enum(["standard", "wide", "inline"]).default("standard"),
     props: z
       .object({
         title: optionalTrimmedText(140),
@@ -199,7 +215,7 @@ const faqBlockSchema = z
   .object({
     id: blockIdSchema,
     type: z.literal("faq"),
-    variant: z.enum(["standard", "compact"]).default("standard"),
+    variant: z.enum(["standard", "compact", "accordion"]).default("standard"),
     props: z
       .object({
         heading: optionalTrimmedText(160),
@@ -222,7 +238,7 @@ const cardGridBlockSchema = z
   .object({
     id: blockIdSchema,
     type: z.literal("card_grid"),
-    variant: z.enum(["standard", "compact"]).default("standard"),
+    variant: z.enum(["standard", "compact", "feature"]).default("standard"),
     props: z
       .object({
         heading: optionalTrimmedText(160),
@@ -246,7 +262,7 @@ const proofBlockSchema = z
   .object({
     id: blockIdSchema,
     type: z.literal("proof"),
-    variant: z.enum(["quote", "stat"]).default("quote"),
+    variant: z.enum(["quote", "stat", "logo"]).default("quote"),
     props: z
       .object({
         proofItemId: z.uuid().optional(),
@@ -263,7 +279,7 @@ const leadFormBlockSchema = z
   .object({
     id: blockIdSchema,
     type: z.literal("lead_form"),
-    variant: z.enum(["standard", "compact"]).default("standard"),
+    variant: z.enum(["standard", "compact", "sidebar"]).default("standard"),
     props: z
       .object({
         heading: optionalTrimmedText(160),
@@ -323,7 +339,7 @@ export type PageContent = z.infer<typeof pageContentSchema>;
 export const blockRegistry = {
   hero: {
     type: "hero",
-    allowedVariants: ["standard", "split", "compact"],
+    allowedVariants: ["standard", "split", "compact", "editorial"],
     defaultProps: {
       eyebrow: "",
       heading: "",
@@ -331,11 +347,15 @@ export const blockRegistry = {
       ctaLabel: "",
       ctaHref: "",
       ctaTrackingName: "",
+      mediaSrc: "",
+      mediaAltText: "",
+      mediaCaption: "",
+      proofText: "",
     },
   },
   rich_text: {
     type: "rich_text",
-    allowedVariants: ["default", "intro", "compact"],
+    allowedVariants: ["default", "intro", "compact", "checklist"],
     defaultProps: {
       eyebrow: "",
       heading: "",
@@ -344,7 +364,7 @@ export const blockRegistry = {
   },
   image: {
     type: "image",
-    allowedVariants: ["standard", "wide", "inline"],
+    allowedVariants: ["standard", "wide", "inline", "feature"],
     defaultProps: {
       src: "",
       altText: "",
@@ -354,7 +374,7 @@ export const blockRegistry = {
   },
   video: {
     type: "video",
-    allowedVariants: ["standard", "wide"],
+    allowedVariants: ["standard", "wide", "inline"],
     defaultProps: {
       title: "",
       url: "",
@@ -373,7 +393,7 @@ export const blockRegistry = {
   },
   faq: {
     type: "faq",
-    allowedVariants: ["standard", "compact"],
+    allowedVariants: ["standard", "compact", "accordion"],
     defaultProps: {
       heading: "",
       items: [],
@@ -381,7 +401,7 @@ export const blockRegistry = {
   },
   card_grid: {
     type: "card_grid",
-    allowedVariants: ["standard", "compact"],
+    allowedVariants: ["standard", "compact", "feature"],
     defaultProps: {
       heading: "",
       cards: [],
@@ -389,7 +409,7 @@ export const blockRegistry = {
   },
   proof: {
     type: "proof",
-    allowedVariants: ["quote", "stat"],
+    allowedVariants: ["quote", "stat", "logo"],
     defaultProps: {
       proofItemId: undefined,
       eyebrow: "",
@@ -400,7 +420,7 @@ export const blockRegistry = {
   },
   lead_form: {
     type: "lead_form",
-    allowedVariants: ["standard", "compact"],
+    allowedVariants: ["standard", "compact", "sidebar"],
     defaultProps: {
       heading: "",
       body: "",
@@ -551,6 +571,28 @@ export function validatePageForPublish(
           code: "missing_hero_heading",
           path: `blocks.${index}.props.heading`,
           message: "Hero blocks require a heading.",
+        });
+      }
+      if (
+        block.variant === "split" &&
+        !hasText(block.props.mediaSrc) &&
+        !hasText(block.props.proofText)
+      ) {
+        issues.push({
+          code: "missing_split_hero_media_or_proof",
+          path: `blocks.${index}.props.mediaSrc`,
+          message: "Split hero blocks require media or proof content.",
+        });
+      }
+      if (
+        block.variant === "split" &&
+        hasText(block.props.mediaSrc) &&
+        !hasText(block.props.mediaAltText)
+      ) {
+        issues.push({
+          code: "missing_split_hero_media_alt",
+          path: `blocks.${index}.props.mediaAltText`,
+          message: "Split hero media requires alt text.",
         });
       }
       if (hasText(block.props.ctaLabel) && !hasText(block.props.ctaHref)) {

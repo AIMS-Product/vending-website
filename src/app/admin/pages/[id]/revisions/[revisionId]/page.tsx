@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { adminSecondaryButtonClass } from "@/components/admin/AdminUi";
 import { ResourcePageRenderer } from "@/components/sections/ResourcePageRenderer";
 import { seoPageDraftContentSchema } from "@/lib/services/seo-pages";
 import {
@@ -51,17 +52,19 @@ export default async function AdminRevisionPreviewPage({
 
   return (
     <main>
-      <div className="border-b border-slate-200 bg-slate-950 px-6 py-4 text-white lg:px-10">
+      <div className="border-b border-slate-200 bg-white px-6 py-4 text-slate-950 shadow-sm lg:px-10">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold">Revision preview</p>
-            <p className="mt-1 text-xs text-slate-300">
+            <p className="text-sm font-semibold text-[#0b63f6]">
+              Revision preview
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
               {revision.revision_type} - {formatDateTime(revision.created_at)}
             </p>
           </div>
           <Link
             href={`/admin/pages/${page.id}`}
-            className="rounded-full border border-white/30 px-4 py-2 text-sm font-semibold transition hover:bg-white/10"
+            className={adminSecondaryButtonClass}
           >
             Back to editor
           </Link>
