@@ -51,6 +51,14 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+body:has([data-hide-site-header="true"]) > header {
+  display: none !important;
+}
+
+body:has([data-hide-site-footer="true"]) > footer {
+  display: none !important;
+}
+
 @keyframes brand-marquee {
   from {
     transform: translateX(0);

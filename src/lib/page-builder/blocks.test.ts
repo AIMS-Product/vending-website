@@ -3,6 +3,7 @@ import {
   blockRegistry,
   createEmptyPageContent,
   pageContentSchema,
+  pageChromeSettings,
   richTextDocumentPlainText,
   validatePageForPublish,
   type PageContent,
@@ -85,6 +86,22 @@ describe("page builder block schemas", () => {
     const parsed = pageContentSchema.parse(validContent);
 
     expect(parsed.sections[0]?.columns[0]?.blocks).toHaveLength(3);
+  });
+
+  it("keeps page chrome optional and defaults header/footer on", () => {
+    const parsed = pageContentSchema.parse({
+      ...validContent,
+      chrome: { showHeader: false },
+    });
+
+    expect(pageChromeSettings(validContent)).toEqual({
+      showHeader: true,
+      showFooter: true,
+    });
+    expect(pageChromeSettings(parsed)).toEqual({
+      showHeader: false,
+      showFooter: true,
+    });
   });
 
   it("rejects arbitrary HTML rich text", () => {

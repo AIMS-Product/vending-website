@@ -43,7 +43,9 @@ import type { AiPageProposalReview } from "@/lib/services/ai-page-proposals";
 import {
   createEmptyPageContent,
   pageContentSchema,
+  pageChromeSettings,
   richTextDocumentPlainText,
+  type PageChromeSettings,
   type PageBlock,
   type PageColumn,
   type PageContent,
@@ -177,6 +179,7 @@ export function SeoPageEditorForm({
   );
   const visibleSlug = slugTouched ? slug : slugify(title);
   const draftContentJson = useMemo(() => JSON.stringify(content), [content]);
+  const chromeSettings = pageChromeSettings(content);
   const seoReadiness = useMemo(
     () =>
       assessSeoReadiness(content, {
@@ -481,6 +484,7 @@ export function SeoPageEditorForm({
                 <BuilderBlockSidebar
                   entries={builderBlockEntries}
                   selectedEntry={selectedBlockEntry}
+                  chromeSettings={chromeSettings}
                   onSelectBlock={(entry) => {
                     setSelectedBlockId(entry.block.id);
                     document
@@ -500,6 +504,7 @@ export function SeoPageEditorForm({
                         block: "center",
                       });
                   }}
+                  onChromeSettingsChange={updateChromeSettings}
                 />
               </div>
               <div className="shrink-0 border-t border-slate-200 p-4">
@@ -552,7 +557,7 @@ export function SeoPageEditorForm({
             )}
 
             <div className="mx-auto max-w-[1500px] bg-[#f5fbff] shadow-sm">
-              <EditorPublicHeader />
+              {chromeSettings.showHeader ? <EditorPublicHeader /> : null}
               <article className="bg-[#f5fbff]">
                 <main className="group/page-body relative mx-auto max-w-5xl px-5 py-14 lg:px-10">
                   {usesSimpleBlockStack && primarySection && primaryColumn ? (
@@ -560,7 +565,6 @@ export function SeoPageEditorForm({
                       sectionId={primarySection.id}
                       column={primaryColumn}
                       sensors={sensors}
-                      mediaAssets={mediaAssets}
                       blockOrdinalById={blockOrdinalById}
                       onBlockDragEnd={(event) =>
                         handleBlockDragEnd(
@@ -607,6 +611,10 @@ export function SeoPageEditorForm({
                           blockId,
                         )
                       }
+                      onEditBlockSettings={(blockId) => {
+                        setSelectedBlockId(blockId);
+                        setEditingBlockId(blockId);
+                      }}
                     />
                   ) : (
                     <DndContext
@@ -682,7 +690,6 @@ export function SeoPageEditorForm({
                                 sectionIndex={index}
                                 sectionCount={content.sections.length}
                                 sensors={sensors}
-                                mediaAssets={mediaAssets}
                                 blockOrdinalById={blockOrdinalById}
                                 onSectionMove={(direction) =>
                                   moveSection(section.id, direction)
@@ -724,6 +731,10 @@ export function SeoPageEditorForm({
                                 onBlockRemove={(columnId, blockId) =>
                                   removeBlock(section.id, columnId, blockId)
                                 }
+                                onEditBlockSettings={(blockId) => {
+                                  setSelectedBlockId(blockId);
+                                  setEditingBlockId(blockId);
+                                }}
                               />
                             ))
                           )}
@@ -733,7 +744,7 @@ export function SeoPageEditorForm({
                   )}
                 </main>
               </article>
-              <EditorPublicFooter />
+              {chromeSettings.showFooter ? <EditorPublicFooter /> : null}
             </div>
           </div>
 
@@ -1163,6 +1174,13 @@ export function SeoPageEditorForm({
     formData.set("draftContent", draftContentJson);
     formData.set("intent", "save");
     return formData;
+  }
+
+  function updateChromeSettings(next: Partial<PageChromeSettings>) {
+    setContent((current) => ({
+      ...current,
+      chrome: { ...pageChromeSettings(current), ...next },
+    }));
   }
 
   function addBlock(
@@ -1696,13 +1714,17 @@ function NextPublishStepCard({ step }: { step: NextPublishStep }) {
 function BuilderBlockSidebar({
   entries,
   selectedEntry,
+  chromeSettings,
   onSelectBlock,
   onEditBlock,
+  onChromeSettingsChange,
 }: {
   entries: BuilderBlockEntry[];
   selectedEntry: BuilderBlockEntry | null;
+  chromeSettings: PageChromeSettings;
   onSelectBlock: (entry: BuilderBlockEntry) => void;
   onEditBlock: (entry: BuilderBlockEntry) => void;
+  onChromeSettingsChange: (settings: Partial<PageChromeSettings>) => void;
 }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-900 bg-slate-950 text-white shadow-xl">
@@ -1721,6 +1743,10 @@ function BuilderBlockSidebar({
       </div>
 
       <div className="grid gap-4 p-4">
+        <PageChromeControls
+          settings={chromeSettings}
+          onChange={onChromeSettingsChange}
+        />
         {entries.length > 0 ? (
           <div className="max-h-[calc(100dvh-18rem)] space-y-2 overflow-y-auto pr-1">
             {entries.map((entry) => {
@@ -1806,6 +1832,68 @@ function BuilderBlockSidebar({
         )}
       </div>
     </section>
+  );
+}
+
+function PageChromeControls({
+  settings,
+  onChange,
+}: {
+  settings: PageChromeSettings;
+  onChange: (settings: Partial<PageChromeSettings>) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+      <p className="mb-3 text-xs font-semibold tracking-wider text-slate-300 uppercase">
+        Page chrome
+      </p>
+      <div className="grid gap-2">
+        <ChromeToggle
+          label="Show header"
+          checked={settings.showHeader}
+          onChange={(checked) => onChange({ showHeader: checked })}
+        />
+        <ChromeToggle
+          label="Show footer"
+          checked={settings.showFooter}
+          onChange={(checked) => onChange({ showFooter: checked })}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ChromeToggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm font-semibold text-white transition hover:bg-white/10">
+      <span>{label}</span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="peer sr-only"
+      />
+      <span
+        className={`flex h-6 w-10 items-center rounded-full p-1 ring-1 ring-white/15 transition peer-focus-visible:ring-2 peer-focus-visible:ring-sky-200 ${
+          checked ? "bg-sky-400" : "bg-white/20"
+        }`}
+        aria-hidden="true"
+      >
+        <span
+          className={`h-4 w-4 rounded-full bg-white shadow-sm transition ${
+            checked ? "translate-x-4" : ""
+          }`}
+        />
+      </span>
+    </label>
   );
 }
 
@@ -3184,6 +3272,10 @@ function anchorForFinding(finding: SeoReadinessFinding) {
     const blockIndex = Number(finding.path.split(".")[1]);
     if (Number.isFinite(blockIndex)) return `#builder-block-${blockIndex + 1}`;
   }
+  const nestedBlockIndex = nestedBlockIndexFromPath(finding.path);
+  if (nestedBlockIndex !== null) {
+    return `#builder-block-${nestedBlockIndex + 1}`;
+  }
   return null;
 }
 
@@ -3219,7 +3311,32 @@ function friendlyFindingLocation(finding: SeoReadinessFinding) {
     }
     return `Content ${blockNumber} · ${readableProp}`;
   }
+  const nestedBlockLocation = friendlyNestedBlockLocation(finding.path);
+  if (nestedBlockLocation) return nestedBlockLocation;
   return friendlyFieldName(finding.path);
+}
+
+function nestedBlockIndexFromPath(path: string) {
+  const match = path.match(/^sections\.\d+\.columns\.\d+\.blocks\.(\d+)\./);
+  if (!match) return null;
+  const blockIndex = Number(match[1]);
+  return Number.isFinite(blockIndex) ? blockIndex : null;
+}
+
+function friendlyNestedBlockLocation(path: string) {
+  const match = path.match(
+    /^sections\.\d+\.columns\.\d+\.blocks\.(\d+)\.props\.([^.]+)(?:\.(\d+)\.([^.]+))?/,
+  );
+  if (!match) return null;
+  const [, blockIndex, propName, childIndex, childField] = match;
+  const blockNumber = Number(blockIndex) + 1;
+  const readableProp = friendlyFieldName(childField ?? propName);
+  if (childIndex !== undefined && childField) {
+    return `Content ${blockNumber} · ${friendlyFieldName(propName)} ${
+      Number(childIndex) + 1
+    } ${readableProp}`;
+  }
+  return `Content ${blockNumber} · ${readableProp}`;
 }
 
 function friendlyReadinessCategoryLabel(
@@ -3301,6 +3418,10 @@ function friendlyFieldName(value: string | undefined) {
   if (value === "canonical_url" || value === "canonicalUrl") {
     return "Preferred URL";
   }
+  if (value === "src") return "Image";
+  if (value === "altText") return "Alt text";
+  if (value === "sourceRightsNotes") return "Rights notes";
+  if (value === "assetId") return "Media asset";
   return value
     .replace(/_/g, " ")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
@@ -3576,7 +3697,6 @@ function SortableSectionEditor({
   sectionIndex,
   sectionCount,
   sensors,
-  mediaAssets,
   blockOrdinalById,
   onSectionMove,
   onSectionRemove,
@@ -3590,12 +3710,12 @@ function SortableSectionEditor({
   onBlockMove,
   onBlockDuplicate,
   onBlockRemove,
+  onEditBlockSettings,
 }: {
   section: PageSection;
   sectionIndex: number;
   sectionCount: number;
   sensors: Sensors;
-  mediaAssets: SeoPageEditorMediaAsset[];
   blockOrdinalById: Map<string, number>;
   onSectionMove: (direction: MoveDirection) => void;
   onSectionRemove: () => void;
@@ -3621,6 +3741,7 @@ function SortableSectionEditor({
   ) => void;
   onBlockDuplicate: (columnId: string, blockId: string) => void;
   onBlockRemove: (columnId: string, blockId: string) => void;
+  onEditBlockSettings: (blockId: string) => void;
 }) {
   const {
     attributes,
@@ -3784,7 +3905,6 @@ function SortableSectionEditor({
                   columnIndex={columnIndex}
                   columnCount={section.columns.length}
                   sensors={sensors}
-                  mediaAssets={mediaAssets}
                   blockOrdinalById={blockOrdinalById}
                   onBlockDragEnd={(event) =>
                     onBlockDragEnd(section.id, column.id, event)
@@ -3806,6 +3926,7 @@ function SortableSectionEditor({
                     onBlockDuplicate(column.id, blockId)
                   }
                   onBlockRemove={(blockId) => onBlockRemove(column.id, blockId)}
+                  onEditBlockSettings={onEditBlockSettings}
                 />
               ))
             )}
@@ -3820,7 +3941,6 @@ function SimpleBlockStackEditor({
   sectionId,
   column,
   sensors,
-  mediaAssets,
   blockOrdinalById,
   onBlockDragEnd,
   onAddBlock,
@@ -3828,11 +3948,11 @@ function SimpleBlockStackEditor({
   onBlockMove,
   onBlockDuplicate,
   onBlockRemove,
+  onEditBlockSettings,
 }: {
   sectionId: string;
   column: PageColumn;
   sensors: Sensors;
-  mediaAssets: SeoPageEditorMediaAsset[];
   blockOrdinalById: Map<string, number>;
   onBlockDragEnd: (event: DragEndEvent) => void;
   onAddBlock: (type: PageBlock["type"], variant?: BlockVariant) => void;
@@ -3840,6 +3960,7 @@ function SimpleBlockStackEditor({
   onBlockMove: (blockId: string, direction: MoveDirection) => void;
   onBlockDuplicate: (blockId: string) => void;
   onBlockRemove: (blockId: string) => void;
+  onEditBlockSettings: (blockId: string) => void;
 }) {
   return (
     <DndContext
@@ -3894,11 +4015,11 @@ function SimpleBlockStackEditor({
                     (blockOrdinalById.get(block.id) ?? blockIndex) + 1
                   }
                   blockCount={column.blocks.length}
-                  mediaAssets={mediaAssets}
                   onChange={(next) => onBlockChange(block.id, next)}
                   onMove={(direction) => onBlockMove(block.id, direction)}
                   onDuplicate={() => onBlockDuplicate(block.id)}
                   onRemove={() => onBlockRemove(block.id)}
+                  onEditSettings={() => onEditBlockSettings(block.id)}
                 />
               ))}
               <BlockPicker onAddBlock={onAddBlock} />
@@ -3915,7 +4036,6 @@ function SortableColumnEditor({
   columnIndex,
   columnCount,
   sensors,
-  mediaAssets,
   blockOrdinalById,
   onBlockDragEnd,
   onColumnMove,
@@ -3925,12 +4045,12 @@ function SortableColumnEditor({
   onBlockMove,
   onBlockDuplicate,
   onBlockRemove,
+  onEditBlockSettings,
 }: {
   column: PageColumn;
   columnIndex: number;
   columnCount: number;
   sensors: Sensors;
-  mediaAssets: SeoPageEditorMediaAsset[];
   blockOrdinalById: Map<string, number>;
   onBlockDragEnd: (event: DragEndEvent) => void;
   onColumnMove: (direction: MoveDirection) => void;
@@ -3940,6 +4060,7 @@ function SortableColumnEditor({
   onBlockMove: (blockId: string, direction: MoveDirection) => void;
   onBlockDuplicate: (blockId: string) => void;
   onBlockRemove: (blockId: string) => void;
+  onEditBlockSettings: (blockId: string) => void;
 }) {
   const {
     attributes,
@@ -4057,11 +4178,11 @@ function SortableColumnEditor({
                         (blockOrdinalById.get(block.id) ?? blockIndex) + 1
                       }
                       blockCount={column.blocks.length}
-                      mediaAssets={mediaAssets}
                       onChange={(next) => onBlockChange(block.id, next)}
                       onMove={(direction) => onBlockMove(block.id, direction)}
                       onDuplicate={() => onBlockDuplicate(block.id)}
                       onRemove={() => onBlockRemove(block.id)}
+                      onEditSettings={() => onEditBlockSettings(block.id)}
                     />
                   ))}
                   <BlockPicker onAddBlock={onAddBlock} />
@@ -4441,7 +4562,8 @@ function BlockPicker({
                 <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
                   <div className="mb-4">
                     <h5 className="text-sm font-semibold text-slate-950 sm:text-base">
-                      Choose a {selectedOption.label.toLowerCase()} layout
+                      Choose {articleFor(selectedOption.label)}{" "}
+                      {selectedOption.label.toLowerCase()} layout
                     </h5>
                   </div>
                   <div className="grid gap-4 lg:grid-cols-2">
@@ -5000,21 +5122,21 @@ function SortableBlockEditor({
   index,
   blockNumber,
   blockCount,
-  mediaAssets,
   onChange,
   onMove,
   onDuplicate,
   onRemove,
+  onEditSettings,
 }: {
   block: PageBlock;
   index: number;
   blockNumber: number;
   blockCount: number;
-  mediaAssets: SeoPageEditorMediaAsset[];
   onChange: (block: PageBlock) => void;
   onMove: (direction: MoveDirection) => void;
   onDuplicate: () => void;
   onRemove: () => void;
+  onEditSettings: () => void;
 }) {
   const {
     attributes,
@@ -5045,10 +5167,10 @@ function SortableBlockEditor({
           />
         }
         onChange={onChange}
-        mediaAssets={mediaAssets}
         onMove={onMove}
         onDuplicate={onDuplicate}
         onRemove={onRemove}
+        onEditSettings={onEditSettings}
       />
     </div>
   );
@@ -5061,11 +5183,11 @@ function BlockEditor({
   isLast,
   isDragging,
   dragHandle,
-  mediaAssets,
   onChange,
   onMove,
   onDuplicate,
   onRemove,
+  onEditSettings,
 }: {
   block: PageBlock;
   blockNumber: number;
@@ -5073,11 +5195,11 @@ function BlockEditor({
   isLast: boolean;
   isDragging: boolean;
   dragHandle: ReactNode;
-  mediaAssets: SeoPageEditorMediaAsset[];
   onChange: (block: PageBlock) => void;
   onMove: (direction: MoveDirection) => void;
   onDuplicate: () => void;
   onRemove: () => void;
+  onEditSettings: () => void;
 }) {
   const blockCompletionMessages = completionMessagesForBlock(block);
   const completionStatus =
@@ -5106,6 +5228,7 @@ function BlockEditor({
         onMove={onMove}
         onDuplicate={onDuplicate}
         onRemove={onRemove}
+        onEditSettings={onEditSettings}
       />
 
       {renderInlineContentEditor && (
@@ -5240,183 +5363,15 @@ function BlockEditor({
                     />
                   </label>
                 </div>
-                {block.variant === "split" && (
-                  <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <h4 className="text-sm font-semibold text-slate-900">
-                      Split hero media or proof
-                    </h4>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">
-                      The split layout renders this approved media/proof area on
-                      the right side of the hero.
-                    </p>
-                    <div className="mt-4 grid gap-4 md:grid-cols-2">
-                      <TextInput
-                        label="Media path or URL"
-                        value={block.props.mediaSrc ?? ""}
-                        onChange={(value) =>
-                          onChange({
-                            ...block,
-                            props: { ...block.props, mediaSrc: value },
-                          })
-                        }
-                      />
-                      <TextInput
-                        label="Media alt text"
-                        value={block.props.mediaAltText ?? ""}
-                        onChange={(value) =>
-                          onChange({
-                            ...block,
-                            props: { ...block.props, mediaAltText: value },
-                          })
-                        }
-                      />
-                      <TextInput
-                        label="Media caption"
-                        value={block.props.mediaCaption ?? ""}
-                        onChange={(value) =>
-                          onChange({
-                            ...block,
-                            props: { ...block.props, mediaCaption: value },
-                          })
-                        }
-                      />
-                      <TextInput
-                        label="Proof text"
-                        value={block.props.proofText ?? ""}
-                        onChange={(value) =>
-                          onChange({
-                            ...block,
-                            props: { ...block.props, proofText: value },
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
             {block.type === "image" && (
-              <figure className="px-3 py-4 sm:px-4">
-                {block.props.src ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={block.props.src}
-                    alt={block.props.altText}
-                    className="aspect-video w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]"
-                  />
-                ) : (
-                  <div className="grid aspect-video place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
-                    Image preview
-                  </div>
-                )}
-                <label className="mt-3 block">
-                  <span className="sr-only">Caption</span>
-                  <input
-                    value={block.props.caption}
-                    placeholder="Caption"
-                    onChange={(event) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, caption: event.target.value },
-                      })
-                    }
-                    className="focus:ring-brand-100 w-full bg-transparent text-sm text-slate-500 outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
-                  />
-                </label>
-                <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <summary className="cursor-pointer text-sm font-semibold text-slate-700">
-                    Image settings
-                  </summary>
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <label className="block md:col-span-2">
-                      <span className="text-sm font-medium text-slate-700">
-                        Media library asset
-                      </span>
-                      <select
-                        value={block.props.assetId ?? ""}
-                        onChange={(event) => {
-                          const asset = mediaAssets.find(
-                            (item) => item.id === event.target.value,
-                          );
-                          onChange(
-                            asset
-                              ? applyMediaAssetToImageBlock(block, asset)
-                              : {
-                                  ...block,
-                                  props: {
-                                    ...block.props,
-                                    assetId: undefined,
-                                    src: "",
-                                    altText: "",
-                                    caption: "",
-                                    sourceRightsNotes: "",
-                                  },
-                                },
-                          );
-                        }}
-                        className={compactInputClass}
-                      >
-                        <option value="">Choose from media library</option>
-                        {mediaAssets.map((asset) => (
-                          <option key={asset.id} value={asset.id}>
-                            {asset.title}
-                          </option>
-                        ))}
-                      </select>
-                      {mediaAssets.length === 0 && (
-                        <span className="mt-2 block text-xs leading-5 text-slate-500">
-                          Add image assets in the media library before selecting
-                          one here.
-                        </span>
-                      )}
-                    </label>
-                    <TextInput
-                      label="Asset ID"
-                      value={block.props.assetId ?? ""}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: {
-                            ...block.props,
-                            assetId: value || undefined,
-                          },
-                        })
-                      }
-                    />
-                    <TextInput
-                      label="Image path or URL"
-                      value={block.props.src}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: { ...block.props, src: value },
-                        })
-                      }
-                    />
-                    <TextInput
-                      label="Alt text"
-                      value={block.props.altText}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: { ...block.props, altText: value },
-                        })
-                      }
-                    />
-                    <TextInput
-                      label="Rights notes"
-                      value={block.props.sourceRightsNotes}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: { ...block.props, sourceRightsNotes: value },
-                        })
-                      }
-                    />
-                  </div>
-                </details>
-              </figure>
+              <ImageBlockCanvas
+                block={block}
+                onChange={onChange}
+                onEditSettings={onEditSettings}
+              />
             )}
 
             {block.type === "cta" && (
@@ -5445,84 +5400,15 @@ function BlockEditor({
                     className="w-full min-w-28 bg-transparent outline-none placeholder:text-[#111111]/55"
                   />
                 </label>
-                <details className="mt-4 rounded-xl border border-slate-200 bg-white/85 p-4 shadow-sm">
-                  <summary className="cursor-pointer text-sm font-semibold text-slate-700">
-                    Button settings
-                  </summary>
-                  <div className="mt-4 grid gap-4 md:grid-cols-3">
-                    <TextInput
-                      label="Href"
-                      value={block.props.href}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: { ...block.props, href: value },
-                        })
-                      }
-                    />
-                    <TextInput
-                      label="Internal CTA label"
-                      value={block.props.trackingName}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: { ...block.props, trackingName: value },
-                        })
-                      }
-                    />
-                    <TextInput
-                      label="Preset ID"
-                      value={block.props.presetId ?? ""}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: {
-                            ...block.props,
-                            presetId: value || undefined,
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                </details>
               </div>
             )}
 
             {block.type === "video" && (
-              <div className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[7px_7px_0_#55b8e8]">
-                <TextInput
-                  label="Title"
-                  value={block.props.title}
-                  onChange={(value) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, title: value },
-                    })
-                  }
-                />
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <TextInput
-                    label="URL"
-                    value={block.props.url}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, url: value },
-                      })
-                    }
-                  />
-                  <TextInput
-                    label="Caption"
-                    value={block.props.caption}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, caption: value },
-                      })
-                    }
-                  />
-                </div>
-              </div>
+              <VideoBlockCanvas
+                block={block}
+                onChange={onChange}
+                onEditSettings={onEditSettings}
+              />
             )}
 
             {block.type === "faq" && (
@@ -5697,27 +5583,14 @@ function BlockEditor({
                           })
                         }
                       />
-                      <TextInput
-                        label="Card link"
-                        value={card.href ?? ""}
-                        onChange={(value) =>
-                          onChange({
-                            ...block,
-                            props: {
-                              ...block.props,
-                              cards: updateCard(block.props.cards, cardIndex, {
-                                href: value,
-                              }),
-                            },
-                          })
-                        }
-                      />
-                      {cardCompletionMessages(card).length > 0 && (
-                        <div className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100">
-                          {cardCompletionMessages(card).map((message) => (
-                            <p key={message}>{message}</p>
-                          ))}
-                        </div>
+                      {(card.href || block.props.cards.length > 0) && (
+                        <button
+                          type="button"
+                          onClick={onEditSettings}
+                          className="mt-4 inline-flex text-sm font-black text-[#2d9fd6] uppercase hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/30 focus-visible:outline-none"
+                        >
+                          Learn more
+                        </button>
                       )}
                     </article>
                   ))}
@@ -5768,7 +5641,7 @@ function BlockEditor({
                     className="focus:ring-brand-100 w-full bg-transparent text-xl leading-8 font-semibold text-slate-950 outline-none focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:ring-2"
                   />
                 </label>
-                <div className="mt-4 grid gap-4 md:grid-cols-3">
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <TextInput
                     label="Name"
                     value={block.props.name}
@@ -5786,19 +5659,6 @@ function BlockEditor({
                       onChange({
                         ...block,
                         props: { ...block.props, context: value },
-                      })
-                    }
-                  />
-                  <TextInput
-                    label="Proof item ID"
-                    value={block.props.proofItemId ?? ""}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: {
-                          ...block.props,
-                          proofItemId: value || undefined,
-                        },
                       })
                     }
                   />
@@ -5848,7 +5708,7 @@ function BlockEditor({
                   <div className={disabledLeadFieldClass}>Phone</div>
                   <div className={disabledLeadFieldClass}>Market</div>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
+                <div>
                   <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
                     <span className="sr-only">Submit label</span>
                     <input
@@ -5873,36 +5733,197 @@ function BlockEditor({
                       className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
                     />
                   </label>
-                  <TextInput
-                    label="Internal form label"
-                    value={block.props.trackingName}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, trackingName: value },
-                      })
-                    }
-                  />
                 </div>
               </div>
             )}
           </div>
         </details>
       )}
-
-      {blockCompletionMessages.length > 0 && (
-        <CompletionHintPanel messages={blockCompletionMessages} />
-      )}
     </article>
   );
 }
 
-function CompletionHintPanel({ messages }: { messages: string[] }) {
+function ImageBlockCanvas({
+  block,
+  onChange,
+  onEditSettings,
+}: {
+  block: Extract<PageBlock, { type: "image" }>;
+  onChange: (block: PageBlock) => void;
+  onEditSettings: () => void;
+}) {
+  const imageFrameClass =
+    block.variant === "inline"
+      ? "grid items-center gap-6 md:grid-cols-[minmax(160px,0.75fr)_minmax(0,1fr)]"
+      : block.variant === "feature"
+        ? "grid items-center gap-6 md:grid-cols-[minmax(0,1fr)_minmax(180px,0.75fr)]"
+        : "";
+  const imageClass =
+    block.variant === "wide"
+      ? "aspect-[16/7] w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]"
+      : block.variant === "inline"
+        ? "aspect-square w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]"
+        : block.variant === "feature"
+          ? "aspect-[4/3] w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[9px_9px_0_#55b8e8]"
+          : "aspect-video w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]";
+  const mediaNode = block.props.src ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={block.props.src}
+      alt={block.props.altText}
+      className={imageClass}
+    />
+  ) : (
+    <button
+      type="button"
+      onClick={onEditSettings}
+      className={`${imageClass} grid place-items-center border-dashed bg-slate-50 text-center text-sm text-slate-500 transition hover:border-[#0b63f6]/40 hover:bg-white focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none`}
+    >
+      <span>
+        <span className="block font-semibold text-slate-600">Choose image</span>
+        <span className="mt-1 block text-xs text-slate-500">
+          Add approved media before publishing.
+        </span>
+      </span>
+    </button>
+  );
+  const captionInput = (
+    <input
+      value={block.props.caption}
+      placeholder="Caption"
+      onChange={(event) =>
+        onChange({
+          ...block,
+          props: { ...block.props, caption: event.target.value },
+        })
+      }
+      className="focus:ring-brand-100 w-full bg-transparent text-sm text-slate-500 outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
+    />
+  );
+
+  if (block.variant === "feature") {
+    return (
+      <figure className={`px-3 py-4 sm:px-4 ${imageFrameClass}`}>
+        <figcaption className="text-base leading-7 font-semibold text-slate-600">
+          <p className="text-sm font-black text-[#55b8e8] uppercase">
+            Featured media
+          </p>
+          <label className="mt-3 block">
+            <span className="sr-only">Caption</span>
+            {captionInput}
+          </label>
+        </figcaption>
+        <div className="md:order-2">{mediaNode}</div>
+      </figure>
+    );
+  }
+
   return (
-    <div className="mx-4 mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100">
-      {messages.map((message) => (
-        <p key={message}>{message}</p>
-      ))}
+    <figure className={`px-3 py-4 sm:px-4 ${imageFrameClass}`}>
+      {mediaNode}
+      <label className={block.variant === "inline" ? "block" : "mt-3 block"}>
+        <span className="sr-only">Caption</span>
+        {captionInput}
+      </label>
+    </figure>
+  );
+}
+
+function VideoBlockCanvas({
+  block,
+  onChange,
+  onEditSettings,
+}: {
+  block: Extract<PageBlock, { type: "video" }>;
+  onChange: (block: PageBlock) => void;
+  onEditSettings: () => void;
+}) {
+  const videoPanel = (
+    <button
+      type="button"
+      onClick={onEditSettings}
+      className={`grid place-items-center rounded-[10px] border-2 border-[#111111] bg-[#f5fbff] transition hover:bg-white focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none ${
+        block.variant === "wide" ? "aspect-[16/7]" : "aspect-video"
+      }`}
+    >
+      <span className="grid h-14 w-14 place-items-center rounded-full border-2 border-[#111111] bg-white shadow-[4px_4px_0_#55b8e8]">
+        <span className="sr-only">Edit video settings</span>
+        <span className="ml-1 h-0 w-0 border-y-[9px] border-l-[14px] border-y-transparent border-l-[#111111]" />
+      </span>
+    </button>
+  );
+  const titleInput = (
+    <input
+      value={block.props.title}
+      placeholder="Video title"
+      onChange={(event) =>
+        onChange({
+          ...block,
+          props: { ...block.props, title: event.target.value },
+        })
+      }
+      className="w-full bg-transparent text-xl font-black text-[#111111] uppercase outline-none placeholder:text-slate-400 focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2 focus:ring-[#0b63f6]/20"
+    />
+  );
+  const captionInput = (
+    <textarea
+      value={block.props.caption}
+      placeholder="Video caption"
+      rows={block.variant === "inline" ? 3 : 2}
+      onChange={(event) =>
+        onChange({
+          ...block,
+          props: { ...block.props, caption: event.target.value },
+        })
+      }
+      className="mt-3 w-full resize-y bg-transparent text-sm leading-7 font-semibold text-slate-600 outline-none placeholder:text-slate-400 focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2 focus:ring-[#0b63f6]/20"
+    />
+  );
+  const watchButton = (
+    <button
+      type="button"
+      onClick={onEditSettings}
+      className="mt-3 inline-flex text-sm font-black text-[#2d9fd6] uppercase hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/30 focus-visible:outline-none"
+    >
+      Watch video
+    </button>
+  );
+
+  if (block.variant === "inline") {
+    return (
+      <div className="grid items-center gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[7px_7px_0_#55b8e8] md:grid-cols-[180px_minmax(0,1fr)]">
+        {videoPanel}
+        <div>
+          <label className="block">
+            <span className="sr-only">Video title</span>
+            {titleInput}
+          </label>
+          <label className="block">
+            <span className="sr-only">Video caption</span>
+            {captionInput}
+          </label>
+          {watchButton}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8] ${
+        block.variant === "wide" ? "p-6" : "p-5"
+      }`}
+    >
+      {videoPanel}
+      <label className="mt-5 block">
+        <span className="sr-only">Video title</span>
+        {titleInput}
+      </label>
+      {watchButton}
+      <label className="block">
+        <span className="sr-only">Video caption</span>
+        {captionInput}
+      </label>
     </div>
   );
 }
@@ -5920,6 +5941,7 @@ function BlockToolbar({
   onMove,
   onDuplicate,
   onRemove,
+  onEditSettings,
 }: {
   label: string;
   typeLabel: string;
@@ -5933,6 +5955,7 @@ function BlockToolbar({
   onMove: (direction: MoveDirection) => void;
   onDuplicate: () => void;
   onRemove: () => void;
+  onEditSettings: () => void;
 }) {
   return (
     <header
@@ -5984,6 +6007,13 @@ function BlockToolbar({
         </div>
         <div className="rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
           <MoreActions label={`${label} actions`}>
+            <button
+              type="button"
+              className={menuButtonClass}
+              onClick={onEditSettings}
+            >
+              Edit settings
+            </button>
             <button
               type="button"
               className={menuButtonClass}
@@ -6551,6 +6581,10 @@ function trackingNameForLabel(
   return slugify(label ?? "") || fallback;
 }
 
+function articleFor(label: string) {
+  return /^[aeiou]/i.test(label) ? "an" : "a";
+}
+
 function syncedTrackingName({
   currentTrackingName,
   previousLabel,
@@ -6815,8 +6849,16 @@ function completionMessagesForBlock(block: PageBlock) {
     }
   }
 
-  if (block.type === "card_grid" && block.props.cards.length === 0) {
-    messages.push("Add at least one card or remove this content.");
+  if (block.type === "card_grid") {
+    if (block.props.cards.length === 0) {
+      messages.push("Add at least one card or remove this content.");
+    }
+    for (const [cardIndex, card] of block.props.cards.entries()) {
+      const cardNumber = cardIndex + 1;
+      for (const message of cardCompletionMessages(card)) {
+        messages.push(`Card ${cardNumber}: ${message}`);
+      }
+    }
   }
 
   if (block.type === "proof" && !hasEditorText(block.props.body)) {
