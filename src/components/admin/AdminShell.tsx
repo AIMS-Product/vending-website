@@ -101,7 +101,7 @@ export function AdminShell({
           <details>
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-950 [&::-webkit-details-marker]:hidden">
               <span className="flex min-w-0 items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#0b63f6] text-sm font-semibold text-white">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#0b63f6] text-sm font-semibold text-white">
                   S
                 </span>
                 <span className="min-w-0">
@@ -129,13 +129,13 @@ export function AdminShell({
                   >
                     <Link
                       href={section.href}
-                      className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3"
+                      className="flex min-w-0 flex-1 items-center gap-3 p-3"
                       aria-current={
                         activeSection === section.id ? "page" : undefined
                       }
                     >
                       <span
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#0b63f6]"
+                        className="flex size-7 shrink-0 items-center justify-center rounded-md text-[#0b63f6]"
                         aria-hidden="true"
                       >
                         <AdminIconGlyph icon={section.icon} />
@@ -192,7 +192,7 @@ export function AdminShell({
                     sidebarCollapsed && "justify-center",
                   )}
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#0b63f6] text-lg font-semibold text-white shadow-sm">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[#0b63f6] text-lg font-semibold text-white shadow-sm">
                     S
                   </div>
                   <div
@@ -213,7 +213,7 @@ export function AdminShell({
                     sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
                   }
                   onClick={() => setSidebarCollapsed((current) => !current)}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
                 >
                   <span
                     className={clsx(
@@ -275,7 +275,7 @@ export function AdminShell({
                       >
                         <span
                           className={clsx(
-                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
+                            "flex size-7 shrink-0 items-center justify-center rounded-md",
                             activeSection === section.id
                               ? "text-[#0b63f6]"
                               : "text-slate-500",
@@ -316,10 +316,10 @@ export function AdminShell({
                   {plannedSections.map((section) => (
                     <div
                       key={section.label}
-                      className="flex items-center gap-3 rounded-md px-3 py-3 text-sm text-slate-500"
+                      className="flex items-center gap-3 rounded-md p-3 text-sm text-slate-500"
                     >
                       <span
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500"
+                        className="flex size-7 shrink-0 items-center justify-center rounded-md text-slate-500"
                         aria-hidden="true"
                       >
                         <AdminIconGlyph icon={section.icon} />
@@ -345,7 +345,7 @@ export function AdminShell({
                       sidebarCollapsed && "justify-center",
                     )}
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-800">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-800">
                       {adminInitials(userEmail)}
                     </div>
                     <p
@@ -492,7 +492,7 @@ function AdminChevron() {
   return (
     <svg
       aria-hidden="true"
-      className="h-4 w-4"
+      className="size-4"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -509,7 +509,7 @@ function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
     viewBox: "0 0 24 24",
     stroke: "currentColor",
     strokeWidth: 1.8,
-    className: "h-5 w-5",
+    className: "size-5",
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
   };

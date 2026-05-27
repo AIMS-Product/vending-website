@@ -414,7 +414,7 @@ export async function adminArchiveSeoPage(
   return data;
 }
 
-export async function adminCreateBuilderRedirect(
+async function adminCreateBuilderRedirect(
   input: {
     sourcePath: string;
     destinationPath: string;
@@ -845,26 +845,32 @@ async function resolveReusableContent(
   const blocks = flattenBlocks(content);
   const ctaPresetIds = [
     ...new Set(
-      blocks
-        .filter((block) => block.type === "cta" && block.props.presetId)
-        .map((block) => (block.type === "cta" ? block.props.presetId : null))
-        .filter((value): value is string => Boolean(value)),
+      blocks.flatMap((block) =>
+        block.type === "cta" && block.props.presetId
+          ? [block.props.presetId]
+          : [],
+      ),
     ),
   ];
   const proofItemIds = [
     ...new Set(
-      blocks
-        .filter((block) => block.type === "proof" && block.props.proofItemId)
-        .map((block) =>
-          block.type === "proof" ? block.props.proofItemId : null,
-        )
-        .filter((value): value is string => Boolean(value)),
+      blocks.flatMap((block) =>
+        block.type === "proof" && block.props.proofItemId
+          ? [block.props.proofItemId]
+          : [],
+      ),
     ),
   ];
 
+  if (ctaPresetIds.length === 0 && proofItemIds.length === 0) {
+    return content;
+  }
+
   const issues: PageBuilderValidationIssue[] = [];
-  const ctaPresets = await loadCtaPresets(client, ctaPresetIds, issues);
-  const proofItems = await loadProofItems(client, proofItemIds, issues);
+  const [ctaPresets, proofItems] = await Promise.all([
+    loadCtaPresets(client, ctaPresetIds, issues),
+    loadProofItems(client, proofItemIds, issues),
+  ]);
   if (issues.length > 0) throw new SeoPageValidationError(issues);
 
   return {
@@ -993,10 +999,11 @@ async function validateReferencedMedia(
 }> {
   const assetIds = [
     ...new Set(
-      flattenBlocks(content)
-        .filter((block) => block.type === "image" && block.props.assetId)
-        .map((block) => (block.type === "image" ? block.props.assetId : null))
-        .filter((value): value is string => Boolean(value)),
+      flattenBlocks(content).flatMap((block) =>
+        block.type === "image" && block.props.assetId
+          ? [block.props.assetId]
+          : [],
+      ),
     ),
   ];
 

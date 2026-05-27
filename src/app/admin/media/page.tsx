@@ -29,8 +29,10 @@ export default async function AdminMediaPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { user, role } = await requireAdmin();
-  const params = await searchParams;
+  const [{ user, role }, params] = await Promise.all([
+    requireAdmin(),
+    searchParams,
+  ]);
   const searchQuery = normalizeSearch(firstParam(params.q));
   const [allAssets, assets] = await Promise.all([
     adminListMediaAssets(),
@@ -102,6 +104,7 @@ export default async function AdminMediaPage({
           <input
             id="admin-media-search"
             name="q"
+            aria-label="Search media assets"
             defaultValue={searchQuery}
             placeholder="Search title"
             className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-500"

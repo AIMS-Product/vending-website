@@ -28,7 +28,7 @@ const blockIdSchema = z
   .trim()
   .regex(/^[A-Za-z][A-Za-z0-9_-]{1,79}$/, "Use a stable block id.");
 
-export const slugSchema = z
+const slugSchema = z
   .string()
   .trim()
   .min(1, "Slug is required.")
@@ -303,7 +303,7 @@ export const pageBlockSchema = z.discriminatedUnion("type", [
   leadFormBlockSchema,
 ]);
 
-export const pageColumnSchema = z
+const pageColumnSchema = z
   .object({
     id: blockIdSchema,
     width: z.enum(["1/1", "1/2", "1/3", "2/3"]).default("1/1"),
@@ -311,7 +311,7 @@ export const pageColumnSchema = z
   })
   .strict();
 
-export const pageSectionSchema = z
+const pageSectionSchema = z
   .object({
     id: blockIdSchema,
     preset: z.enum(["standard", "narrow", "feature"]).default("standard"),
@@ -345,7 +345,7 @@ export type PageSection = z.infer<typeof pageSectionSchema>;
 export type PageChromeSettings = z.infer<typeof pageChromeSchema>;
 export type PageContent = z.infer<typeof pageContentSchema>;
 
-export const defaultPageChromeSettings: PageChromeSettings = {
+const defaultPageChromeSettings: PageChromeSettings = {
   showHeader: true,
   showFooter: true,
 };

@@ -11,7 +11,7 @@ import {
   adminUnpublishPost,
   adminUpdatePost,
 } from "@/lib/services/news";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type EditorActionState =
@@ -62,7 +62,7 @@ export async function savePost(
   _prev: EditorActionState,
   formData: FormData,
 ): Promise<EditorActionState> {
-  await requireAdmin();
+  await requireAuth();
 
   const parsed = postSchema.safeParse({
     id: String(formData.get("id") ?? "") || undefined,
@@ -152,7 +152,7 @@ export async function savePost(
 }
 
 export async function publishPost(formData: FormData) {
-  await requireAdmin();
+  await requireAuth();
   const id = z.uuid().parse(String(formData.get("id") ?? ""));
   const post = await adminPublishPost(id);
   revalidateNewsPaths(post.slug);
@@ -160,7 +160,7 @@ export async function publishPost(formData: FormData) {
 }
 
 export async function unpublishPost(formData: FormData) {
-  await requireAdmin();
+  await requireAuth();
   const id = z.uuid().parse(String(formData.get("id") ?? ""));
   const post = await adminUnpublishPost(id);
   revalidateNewsPaths(post.slug);
@@ -168,7 +168,7 @@ export async function unpublishPost(formData: FormData) {
 }
 
 export async function archivePost(formData: FormData) {
-  await requireAdmin();
+  await requireAuth();
   const id = z.uuid().parse(String(formData.get("id") ?? ""));
   const post = await adminArchivePost(id);
   revalidateNewsPaths(post.slug);
@@ -176,7 +176,7 @@ export async function archivePost(formData: FormData) {
 }
 
 export async function createSignedImageUpload(formData: FormData) {
-  await requireAdmin();
+  await requireAuth();
 
   const rawName = String(formData.get("filename") ?? "cover").toLowerCase();
   const extension = rawName.match(/\.(avif|webp|png|jpe?g)$/)?.[1] ?? "jpg";

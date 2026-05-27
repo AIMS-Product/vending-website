@@ -24,8 +24,7 @@ export default async function AdminRevisionPreviewPage({
 }: {
   params: Promise<Params>;
 }) {
-  await requireAdmin();
-  const { id, revisionId } = await params;
+  const [, { id, revisionId }] = await Promise.all([requireAdmin(), params]);
   const [page, revision] = await Promise.all([
     adminGetSeoPageById(id),
     adminGetSeoPageRevision(id, revisionId),

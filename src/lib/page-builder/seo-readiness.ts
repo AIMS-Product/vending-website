@@ -563,54 +563,46 @@ function collectVisibleText(content: PageContent) {
   const parts: string[] = [];
   for (const block of flattenBlocks(content)) {
     if (block.type === "hero") {
-      parts.push(
-        block.props.eyebrow,
-        block.props.heading,
-        block.props.body,
-        block.props.ctaLabel,
-      );
+      const { eyebrow, heading, body, ctaLabel } = block.props;
+      parts.push(eyebrow, heading, body, ctaLabel);
     }
     if (block.type === "rich_text") {
-      parts.push(block.props.eyebrow, block.props.heading);
-      for (const node of block.props.body.nodes) {
+      const { eyebrow, heading, body } = block.props;
+      parts.push(eyebrow, heading);
+      for (const node of body.nodes) {
         parts.push(richTextNodePlainText(node));
       }
     }
     if (block.type === "image") {
-      parts.push(block.props.altText, block.props.caption);
+      const { altText, caption } = block.props;
+      parts.push(altText, caption);
     }
     if (block.type === "video") {
-      parts.push(block.props.title, block.props.caption);
+      const { title, caption } = block.props;
+      parts.push(title, caption);
     }
     if (block.type === "cta") {
-      parts.push(block.props.label);
+      const { label } = block.props;
+      parts.push(label);
     }
     if (block.type === "faq") {
+      const { heading, items } = block.props;
       parts.push(
-        block.props.heading,
-        ...block.props.items.flatMap((item) => [item.question, item.answer]),
+        heading,
+        ...items.flatMap((item) => [item.question, item.answer]),
       );
     }
     if (block.type === "card_grid") {
-      parts.push(
-        block.props.heading,
-        ...block.props.cards.flatMap((card) => [card.title, card.body]),
-      );
+      const { heading, cards } = block.props;
+      parts.push(heading, ...cards.flatMap((card) => [card.title, card.body]));
     }
     if (block.type === "proof") {
-      parts.push(
-        block.props.eyebrow,
-        block.props.body,
-        block.props.name,
-        block.props.context,
-      );
+      const { eyebrow, body, name, context } = block.props;
+      parts.push(eyebrow, body, name, context);
     }
     if (block.type === "lead_form") {
-      parts.push(
-        block.props.heading,
-        block.props.body,
-        block.props.submitLabel,
-      );
+      const { heading, body, submitLabel } = block.props;
+      parts.push(heading, body, submitLabel);
     }
   }
   return parts.filter(Boolean).join(" ");

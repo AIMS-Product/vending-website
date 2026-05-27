@@ -1,11 +1,15 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { MouseEvent, ReactNode } from "react";
 import {
   type PageBlock,
   type PageContent,
-  type PageSection,
   type RichTextNode,
 } from "@/lib/page-builder/blocks";
+import {
+  resourceColumnGridClass,
+  resourceSectionClass,
+} from "@/components/sections/resource-page-content-classes";
 
 export type ResourcePageRenderMode = "public" | "editor";
 export type ResourcePageLinkMode = "live" | "disabled";
@@ -32,10 +36,7 @@ export function ResourcePageContentView({
   renderMode = "public",
   linkMode = "live",
 }: ResourcePageContentViewProps) {
-  const primaryHeroId = content.sections
-    .flatMap((section) => section.columns)
-    .flatMap((column) => column.blocks)
-    .find((block) => block.type === "hero")?.id;
+  const primaryHeroId = findPrimaryHeroId(content);
 
   return (
     <div className="space-y-14">
@@ -66,7 +67,7 @@ export function ResourcePageContentView({
   );
 }
 
-export function ResourcePageBlockView({
+function ResourcePageBlockView({
   block,
   renderLeadForm,
   renderMode = "public",
@@ -143,7 +144,7 @@ export function ResourcePageBlockView({
 
     if (block.variant === "editorial") {
       return (
-        <div className="max-w-4xl border-l-4 border-[#55b8e8] py-8 pl-6">
+        <div className="max-w-4xl rounded-[12px] bg-[#eaf8ff] px-6 py-8 shadow-[inset_4px_0_0_#55b8e8]">
           {block.props.eyebrow && (
             <p className="text-sm font-black text-[#55b8e8] uppercase">
               {block.props.eyebrow}
@@ -154,7 +155,7 @@ export function ResourcePageBlockView({
           </HeadingTag>
           <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-black text-slate-500 uppercase">
             <span>Resource guide</span>
-            <span className="h-1 w-1 rounded-full bg-slate-400" />
+            <span className="size-1 rounded-full bg-slate-400" />
             <span>Editor approved block</span>
           </div>
           {(block.props.body || renderMode === "editor") && (
@@ -232,11 +233,11 @@ export function ResourcePageBlockView({
           ) : block.props.body.nodes.length === 0 && renderMode === "editor" ? (
             <p className="text-slate-400">Write the page copy here.</p>
           ) : (
-            block.props.body.nodes.map((node, index) => {
+            block.props.body.nodes.map((node) => {
               if (node.type === "heading") {
                 return (
                   <h3
-                    key={index}
+                    key={richTextNodeKey(node)}
                     className="pt-2 text-xl font-black text-[#111111] uppercase"
                   >
                     {editorFallback(node.text, "Subheading", renderMode)}
@@ -247,19 +248,19 @@ export function ResourcePageBlockView({
                 const ListTag = node.style === "numbered" ? "ol" : "ul";
                 return (
                   <ListTag
-                    key={index}
+                    key={richTextNodeKey(node)}
                     className={
                       block.variant === "checklist"
                         ? "ml-0 list-none space-y-3"
                         : "ml-5 list-outside space-y-2"
                     }
                   >
-                    {node.items.map((item, itemIndex) => (
+                    {node.items.map((item) => (
                       <li
-                        key={itemIndex}
+                        key={item}
                         className={
                           block.variant === "checklist"
-                            ? "flex gap-3 before:mt-1 before:block before:h-5 before:w-5 before:shrink-0 before:rounded-full before:border-2 before:border-[#111111] before:bg-[#55b8e8] before:content-['']"
+                            ? "flex gap-3 before:mt-1 before:block before:size-5 before:shrink-0 before:rounded-full before:border-2 before:border-[#111111] before:bg-[#55b8e8] before:content-['']"
                             : undefined
                         }
                       >
@@ -270,8 +271,12 @@ export function ResourcePageBlockView({
                 );
               }
               return (
-                <p key={index}>
-                  {renderRichTextParagraph(node, linkMode, renderMode)}
+                <p key={richTextNodeKey(node)}>
+                  <RichTextParagraphContent
+                    node={node}
+                    linkMode={linkMode}
+                    renderMode={renderMode}
+                  />
                 </p>
               );
             })
@@ -297,10 +302,12 @@ export function ResourcePageBlockView({
             ? "aspect-[4/3] w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[9px_9px_0_#55b8e8]"
             : "w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]";
     const mediaNode = block.props.src ? (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={block.props.src}
         alt={block.props.altText}
+        width={1600}
+        height={900}
+        sizes="(max-width: 1024px) 100vw, 900px"
         className={imageClass}
       />
     ) : (
@@ -439,7 +446,7 @@ export function ResourcePageBlockView({
           ) : (
             block.props.items.map((item, index) => (
               <details
-                key={index}
+                key={faqItemKey(item)}
                 className="group p-5"
                 open={block.variant === "standard" && index === 0}
               >
@@ -485,7 +492,7 @@ export function ResourcePageBlockView({
           ) : (
             block.props.cards.map((card, index) => (
               <div
-                key={index}
+                key={cardKey(card)}
                 className={`rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8] ${
                   block.variant === "feature" && index === 0
                     ? "md:row-span-2 md:min-h-64"
@@ -556,9 +563,9 @@ export function ResourcePageBlockView({
             {[block.props.name, block.props.context, block.props.body]
               .filter((item) => item || renderMode === "editor")
               .slice(0, 3)
-              .map((item, index) => (
+              .map((item) => (
                 <div
-                  key={index}
+                  key={item || "proof-placeholder"}
                   className="grid min-h-20 place-items-center rounded-[8px] border-2 border-[#111111] bg-[#f5fbff] px-4 text-center text-sm font-black text-[#111111] uppercase"
                 >
                   {editorFallback(item, "Proof", renderMode)}
@@ -679,7 +686,7 @@ export function ResourcePageBlockView({
   );
 }
 
-export function ResourceLeadFormPreview({
+function ResourceLeadFormPreview({
   submitLabel,
   compact = false,
 }: {
@@ -740,13 +747,13 @@ export function ResourceLeadFormPreview({
 function ChecklistPlaceholder() {
   return (
     <ul className="space-y-3">
-      {["Checklist item", "Checklist item", "Checklist item"].map(
-        (item, index) => (
+      {["Checklist item 1", "Checklist item 2", "Checklist item 3"].map(
+        (item) => (
           <li
-            key={index}
-            className="flex gap-3 text-slate-400 before:mt-1 before:block before:h-5 before:w-5 before:shrink-0 before:rounded-full before:border-2 before:border-[#111111] before:bg-[#55b8e8] before:content-['']"
+            key={item}
+            className="flex gap-3 text-slate-400 before:mt-1 before:block before:size-5 before:shrink-0 before:rounded-full before:border-2 before:border-[#111111] before:bg-[#55b8e8] before:content-['']"
           >
-            {item}
+            Checklist item
           </li>
         ),
       )}
@@ -761,8 +768,8 @@ function VideoPanel({ wide = false }: { wide?: boolean }) {
         wide ? "aspect-[16/7]" : "aspect-video"
       }`}
     >
-      <span className="grid h-14 w-14 place-items-center rounded-full border-2 border-[#111111] bg-white shadow-[4px_4px_0_#55b8e8]">
-        <span className="ml-1 h-0 w-0 border-y-[9px] border-l-[14px] border-y-transparent border-l-[#111111]" />
+      <span className="grid size-14 place-items-center rounded-full border-2 border-[#111111] bg-white shadow-[4px_4px_0_#55b8e8]">
+        <span className="ml-1 size-0 border-y-[9px] border-l-[14px] border-y-transparent border-l-[#111111]" />
       </span>
     </div>
   );
@@ -778,10 +785,12 @@ function HeroSplitAside({
   if (block.props.mediaSrc) {
     return (
       <figure>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={block.props.mediaSrc}
           alt={block.props.mediaAltText ?? ""}
+          width={900}
+          height={1125}
+          sizes="(max-width: 1024px) 100vw, 40vw"
           className="aspect-[4/5] w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]"
         />
         {block.props.mediaCaption && (
@@ -811,26 +820,6 @@ function HeroSplitAside({
       Add split hero media or proof in block settings.
     </aside>
   );
-}
-
-export function resourceSectionClass(
-  background: PageSection["background"],
-  spacing: PageSection["spacing"],
-) {
-  const backgroundClass =
-    background === "muted"
-      ? "rounded-[12px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]"
-      : background === "brand"
-        ? "rounded-[12px] border-2 border-[#111111] bg-[#eaf8ff] p-6 shadow-[7px_7px_0_#111111]"
-        : "";
-  const spacingClass =
-    spacing === "compact" ? "py-6" : spacing === "spacious" ? "py-12" : "py-8";
-  return `${backgroundClass} ${spacingClass}`;
-}
-
-export function resourceColumnGridClass(count: number) {
-  if (count <= 1) return "grid gap-8";
-  return "grid gap-8 md:grid-cols-2";
 }
 
 function ResourceLink({
@@ -879,6 +868,18 @@ function ResourceLink({
   );
 }
 
+function RichTextParagraphContent({
+  node,
+  linkMode,
+  renderMode,
+}: {
+  node: Extract<RichTextNode, { type: "paragraph" }>;
+  linkMode: ResourcePageLinkMode;
+  renderMode: ResourcePageRenderMode;
+}) {
+  return renderRichTextParagraph(node, linkMode, renderMode);
+}
+
 function renderRichTextParagraph(
   node: Extract<RichTextNode, { type: "paragraph" }>,
   linkMode: ResourcePageLinkMode,
@@ -892,12 +893,12 @@ function renderRichTextParagraph(
     return <span className="text-slate-400">Paragraph copy</span>;
   }
 
-  return node.spans.map((span, index) => {
+  return node.spans.map((span) => {
     const text = editorFallback(span.text, "Link text", renderMode);
-    if (!span.href) return <span key={index}>{text}</span>;
+    if (!span.href) return <span key={richTextSpanKey(span)}>{text}</span>;
     return (
       <ResourceLink
-        key={index}
+        key={richTextSpanKey(span)}
         href={span.href}
         linkMode={linkMode}
         className="text-[#2d9fd6] underline underline-offset-4 hover:text-[#111111]"
@@ -906,6 +907,32 @@ function renderRichTextParagraph(
       </ResourceLink>
     );
   });
+}
+
+function richTextNodeKey(node: RichTextNode) {
+  if (node.type === "list") {
+    return `${node.type}:${node.style}:${node.items.join("|")}`;
+  }
+  if ("spans" in node) {
+    return `${node.type}:${node.spans.map(richTextSpanKey).join("|")}`;
+  }
+  return `${node.type}:${node.text}`;
+}
+
+function richTextSpanKey(span: { text: string; href?: string }) {
+  return `${span.text}:${span.href ?? ""}`;
+}
+
+function faqItemKey(
+  item: Extract<PageBlock, { type: "faq" }>["props"]["items"][number],
+) {
+  return `${item.question}:${item.answer}`;
+}
+
+function cardKey(
+  card: Extract<PageBlock, { type: "card_grid" }>["props"]["cards"][number],
+) {
+  return `${card.title}:${card.body}:${card.href ?? ""}`;
 }
 
 function editorFallback(
@@ -920,7 +947,18 @@ function editorFallback(
   return "";
 }
 
-export function resourceCtaClass(variant: PageBlock["variant"]) {
+function findPrimaryHeroId(content: PageContent) {
+  for (const section of content.sections) {
+    for (const column of section.columns) {
+      for (const block of column.blocks) {
+        if (block.type === "hero") return block.id;
+      }
+    }
+  }
+  return undefined;
+}
+
+function resourceCtaClass(variant: PageBlock["variant"]) {
   const base =
     "inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] px-5 py-3 text-sm font-black uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2";
   if (variant === "secondary") {

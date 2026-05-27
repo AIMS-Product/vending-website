@@ -73,8 +73,8 @@ function QuoteTestimonialCard({ quote }: { quote: CaseStudyQuote }) {
       </header>
       <Stars />
       <div className="space-y-3 text-sm leading-relaxed font-semibold text-slate-700">
-        {quote.body.map((paragraph, index) => (
-          <p key={index}>{paragraph}</p>
+        {quote.body.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
         ))}
       </div>
     </article>
@@ -83,14 +83,11 @@ function QuoteTestimonialCard({ quote }: { quote: CaseStudyQuote }) {
 
 function Stars() {
   return (
-    <div
-      aria-label="5 out of 5 stars"
-      role="img"
-      className="flex gap-0.5 text-[#f47b3b]"
-    >
-      {Array.from({ length: 5 }, (_, i) => (
+    <div className="flex gap-0.5 text-[#f47b3b]">
+      <span className="sr-only">5 out of 5 stars</span>
+      {[1, 2, 3, 4, 5].map((star) => (
         <svg
-          key={i}
+          key={star}
           viewBox="0 0 20 20"
           fill="currentColor"
           className="size-4"

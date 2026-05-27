@@ -29,7 +29,7 @@ export default async function AdminLoginPage({
     <section className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-6 px-6 py-16">
       <header className="space-y-2">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#0b63f6] text-lg font-semibold text-white shadow-sm">
+          <div className="flex size-10 items-center justify-center rounded-md bg-[#0b63f6] text-lg font-semibold text-white shadow-sm">
             S
           </div>
           <div>
@@ -39,7 +39,7 @@ export default async function AdminLoginPage({
         </div>
         <p className="pt-2 text-sm leading-6 text-slate-600">
           Enter the email on the allowlist. We&apos;ll send a one-time sign-in
-          link — no passwords.
+          link, no passwords.
         </p>
       </header>
 

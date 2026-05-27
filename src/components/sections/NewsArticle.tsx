@@ -228,9 +228,12 @@ function ArticleSidebar({ headings }: { headings: string[] }) {
 }
 
 function extractArticleHeadings(html: string): string[] {
-  return [...html.matchAll(/<h2(?:\s[^>]*)?>(.*?)<\/h2>/gi)]
-    .map((match) => decodeHtmlEntities(stripTags(match[1]).trim()))
-    .filter(Boolean);
+  return [...html.matchAll(/<h2(?:\s[^>]*)?>(.*?)<\/h2>/gi)].flatMap(
+    (match) => {
+      const heading = decodeHtmlEntities(stripTags(match[1]).trim());
+      return heading ? [heading] : [];
+    },
+  );
 }
 
 function getReadingTime(html: string): number {

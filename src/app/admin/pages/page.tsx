@@ -52,8 +52,10 @@ export default async function AdminPagesPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { user, role } = await requireAdmin();
-  const params = await searchParams;
+  const [{ user, role }, params] = await Promise.all([
+    requireAdmin(),
+    searchParams,
+  ]);
   const active = normalizeStatus(firstParam(params.status));
   const searchQuery = normalizeSearch(firstParam(params.q));
   const sort = normalizeSort(firstParam(params.sort));
@@ -164,6 +166,7 @@ export default async function AdminPagesPage({
                 <input
                   id="admin-pages-search"
                   name="q"
+                  aria-label="Search resource pages"
                   defaultValue={searchQuery}
                   placeholder="Search title, keyword, or URL"
                   className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-500"
@@ -314,7 +317,7 @@ export default async function AdminPagesPage({
           </div>
         )}
 
-        <div className="flex flex-col gap-4 border-t border-slate-200 bg-slate-50/60 px-4 py-4 text-sm text-slate-600 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 border-t border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-600 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
             <p>
               {displayStart}-{displayEnd} of {filteredPages.length}
@@ -350,11 +353,11 @@ export default async function AdminPagesPage({
           <div className="flex items-center justify-between gap-5 sm:justify-end">
             <div className="hidden items-center gap-5 sm:flex">
               <span className="inline-flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="size-2 rounded-full bg-emerald-500" />
                 {pageCounts.published} live
               </span>
               <span className="inline-flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-amber-400" />
+                <span className="size-2 rounded-full bg-amber-400" />
                 {pageCounts.draft} drafts
               </span>
             </div>
@@ -419,7 +422,7 @@ function MetricPanel({
       }`}
     >
       <span
-        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md ${metricToneClass(
+        className={`flex size-12 shrink-0 items-center justify-center rounded-md ${metricToneClass(
           tone,
         )}`}
         aria-hidden="true"
@@ -514,7 +517,7 @@ function PageActionsMenu({
   return (
     <details className="group relative inline-block text-left">
       <summary
-        className="inline-flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-md text-slate-700 transition group-open:bg-[#eef5ff] group-open:text-[#0b63f6] hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+        className="inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-md text-slate-700 transition group-open:bg-[#eef5ff] group-open:text-[#0b63f6] hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
         aria-label={`Open actions for ${page.title}`}
       >
         <PageIcon icon="more" />
@@ -613,7 +616,7 @@ function PaginationLink({
   const icon = (
     <svg
       aria-hidden="true"
-      className="h-4 w-4"
+      className="size-4"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -632,7 +635,7 @@ function PaginationLink({
       <span
         aria-disabled="true"
         aria-label={label}
-        className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-300"
+        className="flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-300"
       >
         {icon}
       </span>
@@ -643,7 +646,7 @@ function PaginationLink({
     <Link
       href={href}
       aria-label={label}
-      className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+      className="flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
     >
       {icon}
     </Link>
@@ -788,12 +791,11 @@ function StatusDot({ label, tone }: { label: string; tone: DotTone }) {
   return (
     <span
       aria-label={label}
-      className="group relative inline-flex h-7 w-7 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-      tabIndex={0}
+      className="group relative inline-flex size-7 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
     >
       <span
         aria-hidden="true"
-        className={`h-2.5 w-2.5 rounded-full ${dotToneClass(tone)}`}
+        className={`size-2.5 rounded-full ${dotToneClass(tone)}`}
       />
       <span
         aria-hidden="true"
@@ -846,7 +848,7 @@ function PageChevron() {
   return (
     <svg
       aria-hidden="true"
-      className="h-4 w-4"
+      className="size-4"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -875,7 +877,7 @@ function PageIcon({ icon }: { icon: PageIconName }) {
     viewBox: "0 0 24 24",
     stroke: "currentColor",
     strokeWidth: 1.9,
-    className: "h-5 w-5",
+    className: "size-5",
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
   };

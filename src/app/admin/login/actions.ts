@@ -47,6 +47,7 @@ async function originFromHeaders(): Promise<string> {
  * Errors are surfaced as a generic message; the underlying Supabase error
  * is logged server-side for diagnosis but never sent to the browser.
  */
+// oxlint-disable-next-line react-doctor/server-auth-actions -- Public login bootstrap action; admin access is gated after authentication.
 export async function requestMagicLink(
   _prev: LoginState,
   formData: FormData,

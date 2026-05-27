@@ -84,6 +84,7 @@ export function LoginForm({ initialError }: { initialError: string | null }) {
         <input
           id="email"
           name="email"
+          aria-label="Email"
           type="email"
           required
           autoComplete="email"

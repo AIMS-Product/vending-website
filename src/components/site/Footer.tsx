@@ -20,13 +20,19 @@ export function Footer() {
           aria-label="Footer"
           className="grid grid-cols-2 gap-8 sm:grid-cols-4"
         >
-          {footerColumns.map((col, i) => (
-            <ul key={i} className="space-y-3">
+          {footerColumns.map((col) => (
+            <ul
+              key={col.items[0]?.label ?? "footer-column"}
+              className="space-y-3"
+            >
               {col.items.map((item) => (
                 <FooterItem
                   key={item.label}
                   item={item}
-                  highlighted={i === footerColumns.length - 1}
+                  highlighted={
+                    col.items[0]?.label ===
+                    footerColumns[footerColumns.length - 1]?.items[0]?.label
+                  }
                 />
               ))}
             </ul>

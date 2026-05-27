@@ -66,11 +66,13 @@ export async function adminListInternalLinkTargets(
     throw new Error("Could not build internal link index.", { cause: error });
   }
 
-  return (data ?? [])
-    .map((row) => targetFromRow(row as InternalLinkIndexRow))
-    .filter((target): target is InternalLinkTarget => Boolean(target))
-    .filter((target) => target.pageId !== options.currentPageId)
-    .filter((target) => target.path !== options.currentPath);
+  return (data ?? []).flatMap((row) => {
+    const target = targetFromRow(row as InternalLinkIndexRow);
+    if (!target) return [];
+    if (target.pageId === options.currentPageId) return [];
+    if (target.path === options.currentPath) return [];
+    return [target];
+  });
 }
 
 function targetFromRow(row: InternalLinkIndexRow): InternalLinkTarget | null {
@@ -104,9 +106,9 @@ function headingsForBlock(block: PageBlock) {
   if (block.type === "rich_text") {
     return [
       block.props.heading,
-      ...block.props.body.nodes
-        .filter((node) => node.type === "heading")
-        .map((node) => node.text),
+      ...block.props.body.nodes.flatMap((node) =>
+        node.type === "heading" ? [node.text] : [],
+      ),
     ];
   }
   if (block.type === "faq") {
@@ -131,34 +133,35 @@ function firstVisibleText(content: PageContent) {
   const parts: string[] = [];
   for (const block of flattenBlocks(content)) {
     if (block.type === "hero") {
-      parts.push(block.props.heading, block.props.body);
+      const { heading, body } = block.props;
+      parts.push(heading, body);
     }
     if (block.type === "rich_text") {
-      parts.push(
-        block.props.heading,
-        richTextDocumentPlainText(block.props.body),
-      );
+      const { heading, body } = block.props;
+      parts.push(heading, richTextDocumentPlainText(body));
     }
     if (block.type === "faq") {
+      const { heading, items } = block.props;
       parts.push(
-        block.props.heading,
-        ...block.props.items.flatMap((item) => [item.question, item.answer]),
+        heading,
+        ...items.flatMap((item) => [item.question, item.answer]),
       );
     }
     if (block.type === "card_grid") {
-      parts.push(
-        block.props.heading,
-        ...block.props.cards.flatMap((card) => [card.title, card.body]),
-      );
+      const { heading, cards } = block.props;
+      parts.push(heading, ...cards.flatMap((card) => [card.title, card.body]));
     }
     if (block.type === "proof") {
-      parts.push(block.props.body, block.props.name, block.props.context);
+      const { body, name, context } = block.props;
+      parts.push(body, name, context);
     }
     if (block.type === "lead_form") {
-      parts.push(block.props.heading, block.props.body);
+      const { heading, body } = block.props;
+      parts.push(heading, body);
     }
     if (block.type === "video") {
-      parts.push(block.props.title, block.props.caption);
+      const { title, caption } = block.props;
+      parts.push(title, caption);
     }
   }
 

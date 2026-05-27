@@ -14,8 +14,8 @@ export function AboutHero() {
           </h1>
 
           <div className="mt-8 max-w-xl space-y-5 text-xl leading-8 font-semibold text-slate-700">
-            {about.hero.paragraphs.map((p, i) => (
-              <p key={i}>{p}</p>
+            {about.hero.paragraphs.map((p) => (
+              <p key={p}>{p}</p>
             ))}
           </div>
         </div>

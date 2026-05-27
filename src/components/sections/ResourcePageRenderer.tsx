@@ -73,10 +73,11 @@ function PageChromeVisibilityMarker({
 
 function StructuredData({ page }: { page: PublishedSeoPage }) {
   const blocks = flattenBlocks(page.published_content);
-  const faqItems = blocks
-    .filter((block) => block.type === "faq")
-    .flatMap((block) => (block.type === "faq" ? block.props.items : []))
-    .filter((item) => item.question && item.answer);
+  const faqItems = blocks.flatMap((block) =>
+    block.type === "faq"
+      ? block.props.items.filter((item) => item.question && item.answer)
+      : [],
+  );
   const graphs: unknown[] = [
     {
       "@context": "https://schema.org",
@@ -121,13 +122,17 @@ function StructuredData({ page }: { page: PublishedSeoPage }) {
 
   return (
     <>
-      {graphs.map((graph, index) => (
-        <script
-          key={index}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }}
-        />
+      {graphs.map((graph) => (
+        <script key={structuredDataKey(graph)} type="application/ld+json">
+          {JSON.stringify(graph)}
+        </script>
       ))}
     </>
   );
+}
+
+function structuredDataKey(graph: unknown) {
+  return typeof graph === "object" && graph && "@type" in graph
+    ? String(graph["@type" as keyof typeof graph])
+    : "structured-data";
 }

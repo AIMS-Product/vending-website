@@ -28,7 +28,7 @@ import {
   adminGenerateOpenAiSeoPageProposal,
 } from "@/lib/services/openai-seo-agent";
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
 
 export type PageEditorActionState =
   | { status: "idle"; message?: string }
@@ -104,7 +104,7 @@ export async function saveSeoPage(
   _prev: PageEditorActionState,
   formData: FormData,
 ): Promise<PageEditorActionState> {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   const parsed = parsePageFormData(formData);
   if (!parsed.success) {
     return { status: "error", message: parsed.message };
@@ -181,7 +181,7 @@ export async function autosaveSeoPageDraft(
   pageId: string,
   payload: PageAutosavePayload,
 ): Promise<PageAutosaveResult> {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   const parsed = formSchema.safeParse({
     id: pageId,
     title: payload.title,
@@ -229,7 +229,7 @@ export async function createSeoPagePreviewLink(
   _prev: PagePreviewLinkActionState,
   formData: FormData,
 ): Promise<PagePreviewLinkActionState> {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   const pageId = String(formData.get("pageId") ?? "");
   if (!pageId) return { status: "error", message: "Missing page ID." };
 
@@ -252,7 +252,7 @@ export async function saveSeoPageDraftAndCreatePreviewLink(
   _prev: PagePreviewLinkActionState,
   formData: FormData,
 ): Promise<PagePreviewLinkActionState> {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   const parsed = parsePageFormData(formData);
   if (!parsed.success) {
     return { status: "error", message: parsed.message };
@@ -329,7 +329,7 @@ export async function saveSeoPageDraftAndCreatePreviewLink(
 export async function generateAiSeoPageProposal(
   pageId: string,
 ): Promise<PageAiProposalResult> {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   if (!pageId) {
     return { status: "error", message: "Save the page before running AI." };
   }
@@ -354,7 +354,7 @@ export async function acceptAiSeoProposalBlocks(
   proposalId: string,
   blockIds: string[],
 ): Promise<PageAiProposalInsertResult> {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   const parsed = z
     .object({
       pageId: z.uuid(),
@@ -394,7 +394,7 @@ export async function acceptAiSeoProposalBlocks(
 }
 
 export async function revokeSeoPagePreviewLink(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   const pageId = String(formData.get("pageId") ?? "");
   const tokenId = String(formData.get("tokenId") ?? "");
   if (!pageId || !tokenId) redirect(ADMIN_PAGES_PATH);
@@ -417,7 +417,7 @@ export async function revokeSeoPagePreviewLink(formData: FormData) {
 }
 
 export async function rollbackSeoPageRevision(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   const pageId = String(formData.get("pageId") ?? "");
   const revisionId = String(formData.get("revisionId") ?? "");
   if (!pageId || !revisionId) redirect(ADMIN_PAGES_PATH);
@@ -442,7 +442,7 @@ export async function rollbackSeoPageRevision(formData: FormData) {
 }
 
 export async function refreshSeoPageLibraryReferences(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   const pageId = String(formData.get("pageId") ?? "");
   if (!pageId) redirect(ADMIN_PAGES_PATH);
 
@@ -454,7 +454,7 @@ export async function refreshSeoPageLibraryReferences(formData: FormData) {
 }
 
 export async function publishSeoPageFromList(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   const pageId = parseListPageId(formData, "publish");
   const returnTo = adminPageListReturnPath(formData);
   let redirectPath = returnTo;
@@ -477,7 +477,7 @@ export async function publishSeoPageFromList(formData: FormData) {
 }
 
 export async function moveSeoPageToDraftFromList(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   const pageId = parseListPageId(formData, "move to draft");
   const returnTo = adminPageListReturnPath(formData);
   let redirectPath = returnTo;
@@ -500,7 +500,7 @@ export async function moveSeoPageToDraftFromList(formData: FormData) {
 }
 
 export async function archiveSeoPageFromList(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   const pageId = parseListPageId(formData, "archive");
   const returnTo = adminPageListReturnPath(formData);
   let redirectPath = returnTo;

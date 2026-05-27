@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { adminCreateMediaAsset } from "@/lib/services/media-assets";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
 
 export type MediaAssetActionState =
   | { status: "idle"; message?: string }
@@ -39,7 +39,7 @@ export async function createMediaAsset(
   _prev: MediaAssetActionState,
   formData: FormData,
 ): Promise<MediaAssetActionState> {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   const parsed = mediaAssetSchema.safeParse({
     title: formData.get("title"),
     altText: formData.get("altText"),
@@ -90,7 +90,7 @@ export async function createMediaAsset(
 }
 
 export async function createSignedMediaUpload(formData: FormData) {
-  await requireAdmin();
+  await requireAuth();
 
   const rawName = String(formData.get("filename") ?? "image").toLowerCase();
   const extension = rawName.match(/\.(avif|webp|png|jpe?g)$/)?.[1] ?? "jpg";
@@ -142,8 +142,10 @@ function parseTags(value: string) {
     ...new Set(
       value
         .split(",")
-        .map((tag) => tag.trim().toLowerCase())
-        .filter(Boolean)
+        .flatMap((tag) => {
+          const trimmed = tag.trim().toLowerCase();
+          return trimmed ? [trimmed] : [];
+        })
         .slice(0, 20),
     ),
   ];

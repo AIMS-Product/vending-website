@@ -8,16 +8,16 @@ export function Hero() {
       <div className="mx-auto grid max-w-[1500px] items-center gap-12 px-5 pt-16 pb-12 lg:grid-cols-2 lg:gap-16 lg:px-10 lg:pt-20 lg:pb-14">
         <div className="flex flex-col justify-center">
           <h1 className="text-[clamp(3rem,5.2vw,5.15rem)] leading-[0.92] font-black text-[#111111] uppercase">
-            {hero.title.map((line, i) => (
-              <span key={i} className="block">
+            {hero.title.map((line) => (
+              <span key={line} className="block">
                 {line}
               </span>
             ))}
           </h1>
 
           <div className="mt-7 max-w-xl space-y-4 text-lg leading-8 font-semibold text-slate-700">
-            {hero.body.map((p, i) => (
-              <p key={i}>{p}</p>
+            {hero.body.map((p) => (
+              <p key={p}>{p}</p>
             ))}
           </div>
 

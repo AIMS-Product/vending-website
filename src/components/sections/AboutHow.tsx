@@ -6,16 +6,16 @@ export function AboutHow() {
     <section className="bg-white px-5 py-24 lg:px-10 lg:py-32">
       <div className="mx-auto flex max-w-[900px] flex-col items-center gap-12 text-center">
         <h2 className="text-4xl leading-tight font-black text-[#111111] uppercase sm:text-5xl">
-          {about.how.title.map((line, i) => (
-            <span key={i} className="block">
+          {about.how.title.map((line) => (
+            <span key={line} className="block">
               {line}
             </span>
           ))}
         </h2>
 
         <div className="space-y-6 text-left text-lg leading-8 font-semibold text-slate-700 sm:text-center">
-          {about.how.paragraphs.map((p, i) => (
-            <p key={i}>{p}</p>
+          {about.how.paragraphs.map((p) => (
+            <p key={p}>{p}</p>
           ))}
         </div>
       </div>

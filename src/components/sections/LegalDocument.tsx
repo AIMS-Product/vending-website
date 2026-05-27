@@ -40,8 +40,8 @@ function LegalSectionView({ section }: { section: LegalSection }) {
         {section.number}. {section.heading}
       </h2>
       <div className="mt-5 space-y-4 leading-relaxed font-semibold text-slate-700">
-        {section.blocks.map((block, i) => (
-          <BlockView key={i} block={block} />
+        {section.blocks.map((block) => (
+          <BlockView key={legalBlockKey(block)} block={block} />
         ))}
       </div>
     </section>
@@ -63,8 +63,8 @@ function BlockView({ block }: { block: LegalBlock }) {
     case "ul":
       return (
         <ul className="ml-5 list-disc space-y-2 marker:text-[#55b8e8]">
-          {block.items.map((item, i) => (
-            <ListItemView key={i} item={item} />
+          {block.items.map((item) => (
+            <ListItemView key={legalListItemKey(item)} item={item} />
           ))}
         </ul>
       );
@@ -81,4 +81,15 @@ function ListItemView({ item }: { item: LegalListItem }) {
     );
   }
   return <li>{item.text}</li>;
+}
+
+function legalBlockKey(block: LegalBlock) {
+  if (block.kind === "ul") {
+    return `ul:${block.items.map(legalListItemKey).join("|")}`;
+  }
+  return `${block.kind}:${block.text}`;
+}
+
+function legalListItemKey(item: LegalListItem) {
+  return `${item.lead ?? ""}:${item.text}`;
 }

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { pageBlockSchema } from "@/lib/page-builder/blocks";
 
-export const aiProposalWarningSchema = z
+const aiProposalWarningSchema = z
   .object({
     code: z.enum(["unsupported_claim", "needs_source", "schema_warning"]),
     message: z.string().trim().min(1).max(500),
@@ -9,7 +9,7 @@ export const aiProposalWarningSchema = z
   })
   .strict();
 
-export const aiProposedBlockSchema = z
+const aiProposedBlockSchema = z
   .object({
     block: pageBlockSchema,
     sourceDocumentIds: z.array(z.uuid()).default([]),
@@ -19,7 +19,7 @@ export const aiProposedBlockSchema = z
   })
   .strict();
 
-export const aiPageProposalSchema = z
+const aiPageProposalSchema = z
   .object({
     version: z.literal(1),
     metadata: z

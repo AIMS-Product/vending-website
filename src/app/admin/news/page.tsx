@@ -47,8 +47,10 @@ export default async function AdminNewsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { user, role } = await requireAdmin();
-  const params = await searchParams;
+  const [{ user, role }, params] = await Promise.all([
+    requireAdmin(),
+    searchParams,
+  ]);
   const active = normalizeStatus(firstParam(params.status));
   const searchQuery = normalizeSearch(firstParam(params.q));
   const sort = normalizeSort(firstParam(params.sort));
@@ -138,6 +140,7 @@ export default async function AdminNewsPage({
             <input
               id="admin-news-search"
               name="q"
+              aria-label="Search blog posts"
               defaultValue={searchQuery}
               placeholder="Search title, slug, or author"
               className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-500"
@@ -313,11 +316,11 @@ export default async function AdminNewsPage({
         <div className="flex items-center gap-5">
           <div className="hidden items-center gap-5 sm:flex">
             <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              <span className="size-2 rounded-full bg-emerald-500" />
               {postCounts.published} live posts
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-slate-300" />
+              <span className="size-2 rounded-full bg-slate-300" />
               {postCounts.archived} archived
             </span>
           </div>
@@ -383,7 +386,7 @@ function PostRow({ post, isFirst }: { post: NewsPost; isFirst: boolean }) {
         <Link
           href={`/admin/news/${post.id}`}
           aria-label={`Edit ${post.title}`}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-700 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+          className="inline-flex size-9 items-center justify-center rounded-md text-slate-700 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
         >
           <AdminIcon icon="more" />
         </Link>
@@ -406,7 +409,7 @@ function PaginationLink({
   const icon = (
     <svg
       aria-hidden="true"
-      className="h-4 w-4"
+      className="size-4"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -425,7 +428,7 @@ function PaginationLink({
       <span
         aria-disabled="true"
         aria-label={label}
-        className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-300"
+        className="flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-300"
       >
         {icon}
       </span>
@@ -436,7 +439,7 @@ function PaginationLink({
     <Link
       href={href}
       aria-label={label}
-      className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+      className="flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
     >
       {icon}
     </Link>
@@ -541,7 +544,7 @@ function NewsChevron() {
   return (
     <svg
       aria-hidden="true"
-      className="h-4 w-4"
+      className="size-4"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"

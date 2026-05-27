@@ -103,7 +103,9 @@ export default async function AdminLibrariesPage() {
               options={["primary", "secondary", "text"]}
             />
             <TextInput name="trackingName" label="Tracking name" />
-            <button className={adminPrimaryButtonClass}>Save CTA preset</button>
+            <button type="submit" className={adminPrimaryButtonClass}>
+              Save CTA preset
+            </button>
           </form>
           <ItemList
             items={libraries.ctaPresets}
@@ -135,10 +137,16 @@ export default async function AdminLibrariesPage() {
               label="Source and rights notes"
             />
             <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
-              <input name="approved" type="checkbox" />
+              <input
+                name="approved"
+                type="checkbox"
+                aria-label="Approved for publishing"
+              />
               Approved for publishing
             </label>
-            <button className={adminPrimaryButtonClass}>Save proof item</button>
+            <button type="submit" className={adminPrimaryButtonClass}>
+              Save proof item
+            </button>
           </form>
           <ItemList
             items={libraries.proofItems}
@@ -172,7 +180,7 @@ export default async function AdminLibrariesPage() {
             />
             <TextAreaInput name="body" label="Body" rows={5} />
             <TextInput name="tags" label="Tags" placeholder="seo, vending" />
-            <button className={adminPrimaryButtonClass}>
+            <button type="submit" className={adminPrimaryButtonClass}>
               Save source document
             </button>
           </form>
@@ -193,7 +201,11 @@ export default async function AdminLibrariesPage() {
           <form action={createSourceExcerpt} className="grid gap-4">
             <label>
               <span className={adminLabelClass}>Source document</span>
-              <select name="sourceDocumentId" className={adminInputClass}>
+              <select
+                name="sourceDocumentId"
+                aria-label="Source document"
+                className={adminInputClass}
+              >
                 <option value="">Choose a source document</option>
                 {libraries.sourceDocuments.map((document) => (
                   <option key={document.id} value={document.id}>
@@ -209,10 +221,14 @@ export default async function AdminLibrariesPage() {
               placeholder="locations, operators"
             />
             <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
-              <input name="approved" type="checkbox" />
+              <input
+                name="approved"
+                type="checkbox"
+                aria-label="Approved source excerpt"
+              />
               Approved source excerpt
             </label>
-            <button className={adminPrimaryButtonClass}>
+            <button type="submit" className={adminPrimaryButtonClass}>
               Save source excerpt
             </button>
           </form>
@@ -237,7 +253,11 @@ export default async function AdminLibrariesPage() {
           <form action={createApprovedClaim} className="grid gap-4">
             <label>
               <span className={adminLabelClass}>Approved excerpt</span>
-              <select name="sourceExcerptId" className={adminInputClass}>
+              <select
+                name="sourceExcerptId"
+                aria-label="Approved excerpt"
+                className={adminInputClass}
+              >
                 <option value="">Choose an approved excerpt</option>
                 {approvedExcerpts.map((excerpt) => (
                   <option key={excerpt.id} value={excerpt.id}>
@@ -256,7 +276,7 @@ export default async function AdminLibrariesPage() {
               />
             </div>
             <TextAreaInput name="usageNotes" label="Usage notes" rows={3} />
-            <button className={adminPrimaryButtonClass}>
+            <button type="submit" className={adminPrimaryButtonClass}>
               Save approved claim
             </button>
           </form>
@@ -308,6 +328,7 @@ function TextInput({
       <span className={adminLabelClass}>{label}</span>
       <input
         name={name}
+        aria-label={label}
         placeholder={placeholder}
         className={adminInputClass}
       />
@@ -327,7 +348,12 @@ function TextAreaInput({
   return (
     <label>
       <span className={adminLabelClass}>{label}</span>
-      <textarea name={name} rows={rows} className={adminTextareaClass} />
+      <textarea
+        name={name}
+        aria-label={label}
+        rows={rows}
+        className={adminTextareaClass}
+      />
     </label>
   );
 }
@@ -344,7 +370,7 @@ function SelectInput({
   return (
     <label>
       <span className={adminLabelClass}>{label}</span>
-      <select name={name} className={adminInputClass}>
+      <select name={name} aria-label={label} className={adminInputClass}>
         {options.map((option) => (
           <option key={option} value={option}>
             {option}

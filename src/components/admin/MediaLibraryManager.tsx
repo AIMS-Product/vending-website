@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
+import Image from "next/image";
 import {
   createMediaAsset,
   createSignedMediaUpload,
@@ -77,7 +78,7 @@ export function MediaLibraryManager({ assets }: MediaLibraryManagerProps) {
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-slate-950">Add media</h2>
           <span
-            className="flex h-10 w-10 items-center justify-center rounded-md bg-[#e9f1ff] text-[#0b63f6]"
+            className="flex size-10 items-center justify-center rounded-md bg-[#e9f1ff] text-[#0b63f6]"
             aria-hidden="true"
           >
             <AdminIcon icon="upload" />
@@ -96,11 +97,21 @@ export function MediaLibraryManager({ assets }: MediaLibraryManagerProps) {
         )}
         <label className="mt-4 block">
           <span className="text-sm font-medium text-slate-700">Title</span>
-          <input name="title" required className={adminInputClass} />
+          <input
+            name="title"
+            aria-label="Title"
+            required
+            className={adminInputClass}
+          />
         </label>
         <label className="mt-4 block">
           <span className="text-sm font-medium text-slate-700">Alt text</span>
-          <input name="altText" required className={adminInputClass} />
+          <input
+            name="altText"
+            aria-label="Alt text"
+            required
+            className={adminInputClass}
+          />
         </label>
         <label className="mt-4 block">
           <span className="text-sm font-medium text-slate-700">
@@ -108,6 +119,7 @@ export function MediaLibraryManager({ assets }: MediaLibraryManagerProps) {
           </span>
           <textarea
             name="sourceRightsNotes"
+            aria-label="Rights notes"
             required
             rows={3}
             className={adminTextareaClass}
@@ -115,12 +127,17 @@ export function MediaLibraryManager({ assets }: MediaLibraryManagerProps) {
         </label>
         <label className="mt-4 block">
           <span className="text-sm font-medium text-slate-700">Caption</span>
-          <input name="caption" className={adminInputClass} />
+          <input
+            name="caption"
+            aria-label="Caption"
+            className={adminInputClass}
+          />
         </label>
         <label className="mt-4 block">
           <span className="text-sm font-medium text-slate-700">Tags</span>
           <input
             name="tags"
+            aria-label="Tags"
             className={adminInputClass}
             placeholder="hero, proof"
           />
@@ -129,6 +146,7 @@ export function MediaLibraryManager({ assets }: MediaLibraryManagerProps) {
           <span className="text-sm font-medium text-slate-700">Upload</span>
           <input
             type="file"
+            aria-label="Upload media"
             accept="image/avif,image/webp,image/png,image/jpeg"
             disabled={isUploading}
             onChange={(event) =>
@@ -151,6 +169,7 @@ export function MediaLibraryManager({ assets }: MediaLibraryManagerProps) {
           </span>
           <input
             name="externalUrl"
+            aria-label="External URL"
             value={externalUrl}
             onChange={(event) => {
               setExternalUrl(event.target.value);
@@ -185,10 +204,12 @@ export function MediaLibraryManager({ assets }: MediaLibraryManagerProps) {
                 className="overflow-hidden rounded-md border border-slate-200 bg-white transition hover:border-[#bdd3ff] hover:shadow-sm"
               >
                 {asset.publicUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={asset.publicUrl}
                     alt={asset.alt_text ?? ""}
+                    width={640}
+                    height={360}
+                    sizes="(max-width: 768px) 100vw, 50vw"
                     className="aspect-[16/9] w-full object-cover"
                   />
                 )}

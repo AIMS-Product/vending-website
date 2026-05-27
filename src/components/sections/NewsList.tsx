@@ -77,9 +77,9 @@ function Meta({ post }: { post: NewsListProps["posts"][number] }) {
   if (parts.length === 0) return null;
   return (
     <p className="mt-auto border-t-2 border-[#bfeeff] pt-4 text-xs font-black text-[#55b8e8] uppercase">
-      {parts.map((part, i) => (
-        <span key={i}>
-          {i > 0 && <span aria-hidden> · </span>}
+      {parts.map((part, index) => (
+        <span key={`${part}-${index}`}>
+          {index > 0 && <span aria-hidden> · </span>}
           {part}
         </span>
       ))}

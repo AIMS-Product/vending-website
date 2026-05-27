@@ -271,6 +271,7 @@ function TextField({
       <input
         id={id}
         name={name}
+        aria-label={label}
         type={type}
         required={required}
         autoComplete={autoComplete}
@@ -302,6 +303,7 @@ function SelectField({
       <select
         id={id}
         name={name}
+        aria-label={label}
         required={required}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
@@ -339,6 +341,7 @@ function TextareaField({
       <textarea
         id={id}
         name={name}
+        aria-label={label}
         required={required}
         rows={5}
         aria-invalid={Boolean(error)}

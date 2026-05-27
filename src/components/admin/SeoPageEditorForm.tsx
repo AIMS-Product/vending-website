@@ -21,12 +21,13 @@ import { CSS } from "@dnd-kit/utilities";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Wordmark } from "@/components/site/Wordmark";
 import {
   resourceColumnGridClass,
   resourceSectionClass,
-} from "@/components/sections/ResourcePageContent";
+} from "@/components/sections/resource-page-content-classes";
 import {
   acceptAiSeoProposalBlocks,
   autosaveSeoPageDraft,
@@ -117,15 +118,20 @@ const initialState: PageEditorActionState = { status: "idle" };
 const initialAiProposalState: PageAiProposalResult = { status: "idle" };
 const initialAiInsertState: PageAiProposalInsertResult = { status: "idle" };
 const previewSessionStorageKey = "seo-page-builder-preview-link";
+const emptyInternalLinkTargets: InternalLinkSuggestionTarget[] = [];
+const emptyMediaAssets: SeoPageEditorMediaAsset[] = [];
+const emptyAiProposals: AiPageProposalReview[] = [];
+let localEditorKeyCounter = 0;
+
 export function SeoPageEditorForm({
   page,
-  internalLinkTargets = [],
-  mediaAssets = [],
-  aiProposals = [],
+  internalLinkTargets = emptyInternalLinkTargets,
+  mediaAssets = emptyMediaAssets,
+  aiProposals = emptyAiProposals,
   savedFromRedirect = false,
   redirectError,
 }: SeoPageEditorFormProps) {
-  const router = useRouter();
+  const { refresh, replace } = useRouter();
   const [state, formAction] = useActionState(saveSeoPage, initialState);
   const initialContent = useMemo(() => parseInitialContent(page), [page]);
   const [title, setTitle] = useState(page?.title ?? "");
@@ -776,7 +782,7 @@ export function SeoPageEditorForm({
                     <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
                       <span className="flex items-center gap-1.5">
                         <span
-                          className={`h-1.5 w-1.5 rounded-full ${
+                          className={`size-1.5 rounded-full ${
                             page?.status === "published"
                               ? "bg-emerald-500"
                               : "bg-amber-500"
@@ -810,6 +816,7 @@ export function SeoPageEditorForm({
                     </span>
                     <input
                       name="title"
+                      aria-label="Page title"
                       value={title}
                       id="page-title-field"
                       onChange={(event) => setTitle(event.target.value)}
@@ -853,6 +860,7 @@ export function SeoPageEditorForm({
                     </span>
                     <input
                       name="targetKeyword"
+                      aria-label="Target keyword"
                       value={targetKeyword}
                       id="seo-target-keyword-field"
                       onChange={(event) => setTargetKeyword(event.target.value)}
@@ -866,6 +874,7 @@ export function SeoPageEditorForm({
                     </span>
                     <input
                       name="seoTitle"
+                      aria-label="SEO title"
                       value={seoTitle}
                       id="seo-title-field"
                       onChange={(event) => setSeoTitle(event.target.value)}
@@ -880,6 +889,7 @@ export function SeoPageEditorForm({
                     </span>
                     <textarea
                       name="metaDescription"
+                      aria-label="Meta description"
                       value={metaDescription}
                       id="page-meta-description-field"
                       onChange={(event) =>
@@ -902,6 +912,7 @@ export function SeoPageEditorForm({
                         </span>
                         <input
                           name="canonicalUrl"
+                          aria-label="Preferred URL"
                           value={canonicalUrl}
                           id="seo-canonical-url-field"
                           onChange={(event) =>
@@ -920,6 +931,7 @@ export function SeoPageEditorForm({
                         <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
                           <input
                             name="noindex"
+                            aria-label="Hide from search engines"
                             type="checkbox"
                             checked={noindex}
                             onChange={(event) => {
@@ -927,7 +939,7 @@ export function SeoPageEditorForm({
                               if (event.target.checked)
                                 setSitemapEnabled(false);
                             }}
-                            className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
+                            className="mt-1 size-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
                           />
                           <div>
                             <span className="block text-slate-900">
@@ -942,13 +954,14 @@ export function SeoPageEditorForm({
                         <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
                           <input
                             name="sitemapEnabled"
+                            aria-label="Include in sitemap"
                             type="checkbox"
                             checked={sitemapEnabled}
                             disabled={noindex}
                             onChange={(event) =>
                               setSitemapEnabled(event.target.checked)
                             }
-                            className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6] disabled:opacity-50"
+                            className="mt-1 size-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6] disabled:opacity-50"
                           />
                           <div className={noindex ? "opacity-50" : ""}>
                             <span className="block text-slate-900">
@@ -1023,8 +1036,9 @@ export function SeoPageEditorForm({
                 />
               </div>
 
-              <div className="grid shrink-0 gap-4 border-t border-slate-200 bg-white px-4 py-4 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] sm:px-5">
+              <div className="grid shrink-0 gap-4 border-t border-slate-200 bg-white p-4 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] sm:px-5">
                 <button
+                  type="submit"
                   className={secondaryButtonClass}
                   name="intent"
                   value="save"
@@ -1032,6 +1046,7 @@ export function SeoPageEditorForm({
                   Save draft
                 </button>
                 <button
+                  type="submit"
                   className={primaryButtonClass}
                   name="intent"
                   value="publish"
@@ -1113,7 +1128,7 @@ export function SeoPageEditorForm({
               message: previewResult.message,
             }),
           );
-          router.replace(previewResult.editorPath);
+          replace(previewResult.editorPath);
         }
         return;
       }
@@ -1457,7 +1472,7 @@ export function SeoPageEditorForm({
     try {
       const result = await generateAiSeoPageProposal(page.id);
       setAiProposalResult(result);
-      if (result.status === "created") router.refresh();
+      if (result.status === "created") refresh();
     } catch (error) {
       console.error("AI SEO agent failed", error);
       setAiProposalResult({
@@ -1493,7 +1508,7 @@ export function SeoPageEditorForm({
       setAiInsertResult(result);
       if (result.status === "inserted") {
         setContent(ensureEditablePageContent(result.content));
-        router.refresh();
+        refresh();
       }
     } catch (error) {
       console.error("AI SEO proposal insert failed", error);
@@ -1515,9 +1530,8 @@ function NewPageChoiceGate({
 }) {
   return (
     <div className="grid min-h-[calc(100dvh-4rem)] place-items-center border border-slate-200 bg-slate-100 px-4 py-12">
-      <div
+      <section
         className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-xl ring-1 ring-black/5 sm:p-7"
-        role="region"
         aria-labelledby="new-page-choice-title"
       >
         <div className="mb-6">
@@ -1566,7 +1580,7 @@ function NewPageChoiceGate({
             </span>
           </button>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
@@ -1612,7 +1626,10 @@ function EditorPublicFooter() {
           className="grid grid-cols-2 gap-8 sm:grid-cols-4"
         >
           {footerColumns.map((col, columnIndex) => (
-            <ul key={columnIndex} className="space-y-3">
+            <ul
+              key={col.items[0]?.label ?? "footer-column"}
+              className="space-y-3"
+            >
               {col.items.map((item) => (
                 <li key={item.label}>
                   <EditorPublicNavLink
@@ -1644,26 +1661,16 @@ function EditorPublicNavLink({
 
   if (item.external) {
     return (
-      <a
-        href={item.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={className}
-        onClick={(event) => event.preventDefault()}
-      >
+      <span className={className} aria-disabled="true">
         {item.label}
-      </a>
+      </span>
     );
   }
 
   return (
-    <Link
-      href={item.href}
-      className={className}
-      onClick={(event) => event.preventDefault()}
-    >
+    <span className={className} aria-disabled="true">
       {item.label}
-    </Link>
+    </span>
   );
 }
 
@@ -1671,7 +1678,7 @@ function ChevronIcon({ direction }: { direction: "left" | "right" }) {
   return (
     <svg
       aria-hidden="true"
-      className="h-4 w-4"
+      className="size-4"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -1728,7 +1735,7 @@ function BuilderBlockSidebar({
 }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-900 bg-slate-950 text-white shadow-xl">
-      <div className="border-b border-white/10 px-4 py-4">
+      <div className="border-b border-white/10 p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold tracking-wider text-sky-300 uppercase">
@@ -1769,7 +1776,7 @@ function BuilderBlockSidebar({
                     onClick={() => onSelectBlock(entry)}
                   >
                     <span
-                      className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                      className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg ${
                         isSelected
                           ? "bg-sky-50 text-[#0b63f6] ring-1 ring-sky-100"
                           : "bg-white/10 text-slate-200 ring-1 ring-white/10"
@@ -1784,7 +1791,7 @@ function BuilderBlockSidebar({
                           {blockLabel(entry.block.type)}
                         </span>
                         {hasWarnings && (
-                          <span className="h-2 w-2 rounded-full bg-amber-400" />
+                          <span className="size-2 rounded-full bg-amber-400" />
                         )}
                       </span>
                       <span
@@ -1809,7 +1816,7 @@ function BuilderBlockSidebar({
                     aria-label={`Edit ${blockLabel(entry.block.type)} settings`}
                     title={`Edit ${blockLabel(entry.block.type)} settings`}
                     aria-pressed={isSelected}
-                    className={`my-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none ${
+                    className={`my-2 flex size-9 shrink-0 items-center justify-center rounded-lg transition focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none ${
                       isSelected
                         ? "bg-[#0b63f6] text-white"
                         : "bg-white/10 text-slate-200 hover:bg-white/20"
@@ -1876,6 +1883,7 @@ function ChromeToggle({
     <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm font-semibold text-white transition hover:bg-white/10">
       <span>{label}</span>
       <input
+        aria-label={label}
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
@@ -1888,7 +1896,7 @@ function ChromeToggle({
         aria-hidden="true"
       >
         <span
-          className={`h-4 w-4 rounded-full bg-white shadow-sm transition ${
+          className={`size-4 rounded-full bg-white shadow-sm transition ${
             checked ? "translate-x-4" : ""
           }`}
         />
@@ -1979,6 +1987,7 @@ function BlockSettingsModal({
 
   return (
     <div
+      role="presentation"
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
@@ -2021,7 +2030,7 @@ function BlockSettingsModal({
             </span>
             <button
               type="button"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+              className="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
               aria-label="Close block settings"
               title="Close block settings"
               onClick={onClose}
@@ -2045,7 +2054,7 @@ function BlockSettingsModal({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-5">
+        <div className="flex-1 overflow-y-auto p-5">
           <BlockSidebarSettingsPanel
             block={entry.block}
             mediaAssets={mediaAssets}
@@ -2066,7 +2075,7 @@ function BlockSettingsModal({
             className="inline-flex min-h-10 items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
             onClick={onClose}
           >
-            Done
+            Apply settings
           </button>
         </div>
       </section>
@@ -2425,86 +2434,7 @@ function BlockSidebarSettingsPanel({
               })
             }
           />
-          <div className="space-y-3">
-            {block.props.items.map((item, itemIndex) => (
-              <div
-                key={itemIndex}
-                className="rounded-lg border border-slate-200 bg-slate-50 p-3"
-              >
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
-                    FAQ {itemIndex + 1}
-                  </p>
-                  <button
-                    type="button"
-                    className={dangerButtonClass}
-                    onClick={() =>
-                      onChange({
-                        ...block,
-                        props: {
-                          ...block.props,
-                          items: block.props.items.filter(
-                            (_, index) => index !== itemIndex,
-                          ),
-                        },
-                      })
-                    }
-                  >
-                    Remove
-                  </button>
-                </div>
-                <TextInput
-                  label="Question"
-                  value={item.question}
-                  onChange={(value) =>
-                    onChange({
-                      ...block,
-                      props: {
-                        ...block.props,
-                        items: block.props.items.map((current, index) =>
-                          index === itemIndex
-                            ? { ...current, question: value }
-                            : current,
-                        ),
-                      },
-                    })
-                  }
-                />
-                <TextAreaInput
-                  label="Answer"
-                  value={item.answer}
-                  onChange={(value) =>
-                    onChange({
-                      ...block,
-                      props: {
-                        ...block.props,
-                        items: block.props.items.map((current, index) =>
-                          index === itemIndex
-                            ? { ...current, answer: value }
-                            : current,
-                        ),
-                      },
-                    })
-                  }
-                />
-              </div>
-            ))}
-            <button
-              type="button"
-              className={miniButtonClass}
-              onClick={() =>
-                onChange({
-                  ...block,
-                  props: {
-                    ...block.props,
-                    items: [...block.props.items, { question: "", answer: "" }],
-                  },
-                })
-              }
-            >
-              Add FAQ
-            </button>
-          </div>
+          <FaqItemEditorList key={block.id} block={block} onChange={onChange} />
         </>
       )}
 
@@ -2523,7 +2453,7 @@ function BlockSidebarSettingsPanel({
           <div className="space-y-3">
             {block.props.cards.map((card, cardIndex) => (
               <div
-                key={cardIndex}
+                key={cardItemKey(card)}
                 className="rounded-lg border border-slate-200 bg-slate-50 p-3"
               >
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -2763,11 +2693,110 @@ function BlockSidebarSettingsPanel({
   );
 }
 
+function FaqItemEditorList({
+  block,
+  onChange,
+}: {
+  block: FaqBlock;
+  onChange: (block: PageBlock) => void;
+}) {
+  const [itemKeys, setItemKeys] = useState(() =>
+    createLocalEditorKeys("faq", block.props.items.length),
+  );
+
+  return (
+    <div className="space-y-3">
+      {block.props.items.map((item, itemIndex) => (
+        <div
+          key={itemKeys[itemIndex] ?? `${block.id}-${itemIndex}`}
+          className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+        >
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+              FAQ {itemIndex + 1}
+            </p>
+            <button
+              type="button"
+              className={dangerButtonClass}
+              onClick={() => {
+                setItemKeys((current) =>
+                  current.filter((_, index) => index !== itemIndex),
+                );
+                onChange({
+                  ...block,
+                  props: {
+                    ...block.props,
+                    items: block.props.items.filter(
+                      (_, index) => index !== itemIndex,
+                    ),
+                  },
+                });
+              }}
+            >
+              Remove
+            </button>
+          </div>
+          <TextInput
+            label="Question"
+            value={item.question}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: {
+                  ...block.props,
+                  items: block.props.items.map((current, index) =>
+                    index === itemIndex
+                      ? { ...current, question: value }
+                      : current,
+                  ),
+                },
+              })
+            }
+          />
+          <TextAreaInput
+            label="Answer"
+            value={item.answer}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: {
+                  ...block.props,
+                  items: block.props.items.map((current, index) =>
+                    index === itemIndex
+                      ? { ...current, answer: value }
+                      : current,
+                  ),
+                },
+              })
+            }
+          />
+        </div>
+      ))}
+      <button
+        type="button"
+        className={miniButtonClass}
+        onClick={() => {
+          setItemKeys((current) => [...current, createLocalEditorKey("faq")]);
+          onChange({
+            ...block,
+            props: {
+              ...block.props,
+              items: [...block.props.items, { question: "", answer: "" }],
+            },
+          });
+        }}
+      >
+        Add FAQ
+      </button>
+    </div>
+  );
+}
+
 function SettingsGlyph() {
   return (
     <svg
       aria-hidden="true"
-      className="h-4 w-4"
+      className="size-4"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -2888,7 +2917,7 @@ function SeoReadinessPanel({
               >
                 <div className="flex flex-wrap items-center gap-2.5">
                   <span
-                    className={`h-2.5 w-2.5 rounded-full ${findingDotClass(
+                    className={`size-2.5 rounded-full ${findingDotClass(
                       finding.severity,
                     )}`}
                   />
@@ -2919,7 +2948,7 @@ function SeoReadinessPanel({
           </div>
         ) : (
           <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-8 text-center text-sm leading-6 text-emerald-800 shadow-sm">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -3477,9 +3506,9 @@ function AiProposalReviewCard({
 }) {
   const defaultSelectedBlockIds = useMemo(
     () =>
-      proposal.proposal.blocks
-        .filter(canInsertAiProposedBlock)
-        .map((entry) => entry.block.id),
+      proposal.proposal.blocks.flatMap((entry) =>
+        canInsertAiProposedBlock(entry) ? [entry.block.id] : [],
+      ),
     [proposal],
   );
   const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>(
@@ -3531,26 +3560,26 @@ function AiProposalReviewCard({
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-md bg-violet-50 px-2 py-2">
+        <div className="rounded-md bg-violet-50 p-2">
           <p className="text-lg font-semibold text-slate-950">
             {proposal.proposal.blocks.length}
           </p>
           <p className="text-[11px] font-medium text-slate-500">Items</p>
         </div>
-        <div className="rounded-md bg-violet-50 px-2 py-2">
+        <div className="rounded-md bg-violet-50 p-2">
           <p className="text-lg font-semibold text-slate-950">
             {sourceRefCount}
           </p>
           <p className="text-[11px] font-medium text-slate-500">Sources</p>
         </div>
-        <div className="rounded-md bg-violet-50 px-2 py-2">
+        <div className="rounded-md bg-violet-50 p-2">
           <p className="text-lg font-semibold text-slate-950">{warningCount}</p>
           <p className="text-[11px] font-medium text-slate-500">Warnings</p>
         </div>
       </div>
 
       {proposal.proposal.metadata.seoTitle && (
-        <p className="mt-3 rounded-md bg-violet-50 px-3 py-2 text-xs leading-5 text-slate-600">
+        <p className="mt-3 rounded-md bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-900">
           SEO title suggestion:{" "}
           <span className="font-semibold text-slate-800">
             {proposal.proposal.metadata.seoTitle}
@@ -3588,6 +3617,7 @@ function AiProposalReviewCard({
                 }`}
               >
                 <input
+                  aria-label={`Insert ${aiBlockReviewTitle(entry.block)}`}
                   type="checkbox"
                   className="mt-1"
                   checked={checked}
@@ -4469,6 +4499,7 @@ function BlockPicker({
         </button>
       ) : (
         <div
+          role="presentation"
           className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/20 px-4 py-6 sm:px-6 lg:py-8"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
@@ -4476,9 +4507,9 @@ function BlockPicker({
             }
           }}
         >
-          <div
+          <dialog
+            open
             className="animate-in fade-in slide-in-from-top-2 mx-auto w-full max-w-6xl rounded-xl border border-slate-200 bg-white p-4 shadow-2xl ring-1 ring-slate-900/5 sm:p-5"
-            role="dialog"
             aria-modal="true"
             aria-labelledby="block-picker-title"
             aria-describedby="block-picker-description"
@@ -4502,7 +4533,7 @@ function BlockPicker({
                 type="button"
                 onClick={() => setIsOpen(false)}
                 aria-label="Close page content picker"
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -4528,7 +4559,7 @@ function BlockPicker({
                     <button
                       key={option.type}
                       type="button"
-                      className={`flex min-h-16 items-start gap-3 rounded-lg border px-3 py-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+                      className={`flex min-h-16 items-start gap-3 rounded-lg border p-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
                         isSelected
                           ? "border-[#0b63f6]/65 bg-[#f7faff] shadow-sm ring-1 ring-[#0b63f6]/20"
                           : "border-slate-200 bg-white shadow-sm hover:border-slate-300 hover:bg-slate-50"
@@ -4536,7 +4567,7 @@ function BlockPicker({
                       onClick={() => setSelectedType(option.type)}
                     >
                       <span
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md shadow-sm ring-1 ring-inset ${
+                        className={`flex size-9 shrink-0 items-center justify-center rounded-md shadow-sm ring-1 ring-inset ${
                           isSelected
                             ? "bg-white text-[#0b63f6] ring-[#0b63f6]/20"
                             : "bg-slate-50 text-slate-500 ring-slate-200"
@@ -4600,7 +4631,7 @@ function BlockPicker({
                 </div>
               )}
             </div>
-          </div>
+          </dialog>
         </div>
       )}
     </div>
@@ -4662,7 +4693,7 @@ function HeroLayoutPreview({ variant }: { variant: BlockVariant }) {
     return (
       <span className="flex h-full flex-col items-center justify-center text-center">
         <PreviewAccent className="w-20" />
-        <PreviewLine tone="dark" className="mt-5 h-4 w-48 max-w-full" />
+        <PreviewLine tone="dark" className="mt-5 size-48 max-w-full" />
         <PreviewLine tone="dark" className="mt-2 h-4 w-36 max-w-full" />
         <PreviewLine className="mt-5 h-2 w-40 max-w-full" />
         <PreviewLine className="mt-2 h-2 w-36 max-w-full" />
@@ -4675,18 +4706,18 @@ function HeroLayoutPreview({ variant }: { variant: BlockVariant }) {
     return (
       <span className="block h-full pt-2">
         <PreviewAccent className="w-20" />
-        <PreviewLine tone="dark" className="mt-4 h-4 w-4/5" />
+        <PreviewLine tone="dark" className="mt-4 size-4/5" />
         <PreviewLine tone="dark" className="mt-2 h-4 w-3/5" />
         <span className="mt-4 flex items-center gap-3">
-          <span className="block h-3 w-3 rounded-full border border-slate-400" />
+          <span className="block size-3 rounded-full border border-slate-400" />
           <PreviewLine className="h-2 w-16" />
-          <span className="block h-1 w-1 rounded-full bg-slate-400" />
-          <span className="block h-3 w-3 rounded-sm border border-slate-400" />
-          <PreviewLine className="h-2 w-20" />
+          <span className="block size-1 rounded-full bg-slate-400" />
+          <span className="block size-3 rounded-sm border border-slate-400" />
+          <PreviewLine className="size-20" />
         </span>
         <PreviewLine className="mt-5 h-2 w-4/5" />
         <PreviewLine className="mt-2 h-2 w-3/4" />
-        <PreviewLine className="mt-2 h-2 w-2/3" />
+        <PreviewLine className="mt-2 size-2/3" />
         <PreviewLine className="mt-2 h-2 w-1/2" />
       </span>
     );
@@ -4695,10 +4726,10 @@ function HeroLayoutPreview({ variant }: { variant: BlockVariant }) {
   return (
     <span className="block h-full pt-2">
       <PreviewAccent className="w-16" />
-      <PreviewLine tone="dark" className="mt-5 h-4 w-4/5" />
+      <PreviewLine tone="dark" className="mt-5 size-4/5" />
       <PreviewLine tone="dark" className="mt-2 h-4 w-2/3" />
       <PreviewLine className="mt-5 h-2 w-3/4" />
-      <PreviewLine className="mt-2 h-2 w-2/3" />
+      <PreviewLine className="mt-2 size-2/3" />
       <PreviewButton className="mt-6 w-28" />
     </span>
   );
@@ -4712,8 +4743,8 @@ function TextLayoutPreview({ variant }: { variant: BlockVariant }) {
         <PreviewLine className="mt-3 h-2 w-4/5" />
         {[0, 1, 2].map((item) => (
           <span key={item} className="mt-3 flex items-center gap-3">
-            <span className="block h-4 w-4 rounded-full bg-[#0b63f6]/80" />
-            <PreviewLine className={item === 2 ? "h-2 w-2/5" : "h-2 w-3/5"} />
+            <span className="block size-4 rounded-full bg-[#0b63f6]/80" />
+            <PreviewLine className={item === 2 ? "size-2/5" : "h-2 w-3/5"} />
           </span>
         ))}
       </span>
@@ -4727,7 +4758,7 @@ function TextLayoutPreview({ variant }: { variant: BlockVariant }) {
         <PreviewLine tone="dark" className="mt-5 h-5 w-4/5" />
         <PreviewLine className="mt-4 h-2 w-full" />
         <PreviewLine className="mt-2 h-2 w-5/6" />
-        <PreviewLine className="mt-2 h-2 w-2/3" />
+        <PreviewLine className="mt-2 size-2/3" />
       </span>
     );
   }
@@ -4748,7 +4779,7 @@ function TextLayoutPreview({ variant }: { variant: BlockVariant }) {
       <PreviewLine className="mt-5 h-2 w-full" />
       <PreviewLine className="mt-2 h-2 w-5/6" />
       <PreviewLine className="mt-2 h-2 w-4/5" />
-      <PreviewLine className="mt-5 h-2 w-2/3" />
+      <PreviewLine className="mt-5 size-2/3" />
       <PreviewLine className="mt-2 h-2 w-3/5" />
     </span>
   );
@@ -4759,7 +4790,7 @@ function ImageLayoutPreview({ variant }: { variant: BlockVariant }) {
     return (
       <span className="block h-full">
         <PreviewImage className="h-28" />
-        <PreviewLine className="mt-4 h-2 w-2/5" />
+        <PreviewLine className="mt-4 size-2/5" />
       </span>
     );
   }
@@ -4783,9 +4814,9 @@ function ImageLayoutPreview({ variant }: { variant: BlockVariant }) {
       <span className="grid h-full grid-cols-[minmax(0,1fr)_104px] items-center gap-5">
         <span className="block">
           <PreviewAccent className="w-14" />
-          <PreviewLine tone="dark" className="mt-4 h-4 w-4/5" />
+          <PreviewLine tone="dark" className="mt-4 size-4/5" />
           <PreviewLine className="mt-4 h-2 w-3/4" />
-          <PreviewLine className="mt-2 h-2 w-2/3" />
+          <PreviewLine className="mt-2 size-2/3" />
         </span>
         <PreviewImage className="h-28" />
       </span>
@@ -4795,7 +4826,7 @@ function ImageLayoutPreview({ variant }: { variant: BlockVariant }) {
   return (
     <span className="block h-full">
       <PreviewImage className="h-24" />
-      <PreviewLine className="mt-4 h-2 w-2/5" />
+      <PreviewLine className="mt-4 size-2/5" />
       <PreviewLine className="mt-2 h-2 w-1/3" />
     </span>
   );
@@ -4808,7 +4839,7 @@ function CtaLayoutPreview({ variant }: { variant: BlockVariant }) {
         <PreviewLine tone="dark" className="h-4 w-2/3" />
         <PreviewLine className="mt-4 h-2 w-4/5" />
         <PreviewLine className="mt-2 h-2 w-3/5" />
-        <span className="mt-5 block h-2 w-24 rounded-full bg-[#0b63f6]/85" />
+        <span className="mt-5 block size-24 rounded-full bg-[#0b63f6]/85" />
       </span>
     );
   }
@@ -4817,7 +4848,7 @@ function CtaLayoutPreview({ variant }: { variant: BlockVariant }) {
     <span className="flex h-full flex-col justify-center">
       <PreviewLine tone="dark" className="h-4 w-3/5" />
       <PreviewLine className="mt-4 h-2 w-4/5" />
-      <PreviewLine className="mt-2 h-2 w-2/3" />
+      <PreviewLine className="mt-2 size-2/3" />
       <PreviewButton className="mt-6 w-28" subtle={variant === "secondary"} />
     </span>
   );
@@ -4844,7 +4875,7 @@ function FaqLayoutPreview({ variant }: { variant: BlockVariant }) {
             className="mt-3 flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 ring-1 ring-slate-200"
           >
             <PreviewLine className="h-2 w-3/5" />
-            <span className="block h-3 w-3 rounded-full border border-slate-400" />
+            <span className="block size-3 rounded-full border border-slate-400" />
           </span>
         ))}
       </span>
@@ -4856,7 +4887,7 @@ function FaqLayoutPreview({ variant }: { variant: BlockVariant }) {
       <PreviewLine tone="dark" className="h-4 w-2/3" />
       <PreviewQuestionRow className="mt-5" />
       <PreviewLine className="mt-3 h-2 w-5/6" />
-      <PreviewLine className="mt-2 h-2 w-2/3" />
+      <PreviewLine className="mt-2 size-2/3" />
       <PreviewQuestionRow className="mt-4" short />
     </span>
   );
@@ -4901,7 +4932,7 @@ function ProofLayoutPreview({ variant }: { variant: BlockVariant }) {
         <PreviewAccent className="w-14" />
         <PreviewLine tone="dark" className="mt-5 h-8 w-24" />
         <PreviewLine className="mt-4 h-2 w-4/5" />
-        <PreviewLine className="mt-2 h-2 w-2/3" />
+        <PreviewLine className="mt-2 size-2/3" />
       </span>
     );
   }
@@ -4918,7 +4949,7 @@ function ProofLayoutPreview({ variant }: { variant: BlockVariant }) {
             />
           ))}
         </span>
-        <PreviewLine className="mt-5 h-2 w-2/3" />
+        <PreviewLine className="mt-5 size-2/3" />
       </span>
     );
   }
@@ -4929,10 +4960,10 @@ function ProofLayoutPreview({ variant }: { variant: BlockVariant }) {
       <PreviewLine tone="dark" className="mt-5 h-3 w-4/5" />
       <PreviewLine tone="dark" className="mt-2 h-3 w-2/3" />
       <span className="mt-5 flex items-center gap-3">
-        <span className="block h-8 w-8 rounded-full bg-slate-200" />
+        <span className="block size-8 rounded-full bg-slate-200" />
         <span className="block min-w-0 flex-1">
           <PreviewLine className="h-2 w-1/2" />
-          <PreviewLine className="mt-2 h-2 w-2/5" />
+          <PreviewLine className="mt-2 size-2/5" />
         </span>
       </span>
     </span>
@@ -4956,7 +4987,7 @@ function VideoLayoutPreview({ variant }: { variant: BlockVariant }) {
   return (
     <span className="block h-full">
       <PreviewVideo className={variant === "wide" ? "h-28" : "h-24"} />
-      <PreviewLine className="mt-4 h-2 w-2/5" />
+      <PreviewLine className="mt-4 size-2/5" />
       {variant !== "wide" && <PreviewLine className="mt-2 h-2 w-1/3" />}
     </span>
   );
@@ -4967,7 +4998,7 @@ function LeadFormLayoutPreview({ variant }: { variant: BlockVariant }) {
     return (
       <span className="grid h-full grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] items-center gap-5">
         <span className="block">
-          <PreviewLine tone="dark" className="h-4 w-4/5" />
+          <PreviewLine tone="dark" className="size-4/5" />
           <PreviewLine className="mt-4 h-2 w-full" />
           <PreviewLine className="mt-2 h-2 w-3/4" />
         </span>
@@ -5051,7 +5082,7 @@ function PreviewImage({ className = "" }: { className?: string }) {
     <span
       className={`relative block overflow-hidden rounded-md bg-gradient-to-br from-slate-100 to-slate-200 ring-1 ring-slate-200 ${className}`}
     >
-      <span className="absolute top-4 right-4 block h-5 w-5 rounded-full bg-slate-300/70" />
+      <span className="absolute top-4 right-4 block size-5 rounded-full bg-slate-300/70" />
       <span className="absolute bottom-0 left-0 block h-3/5 w-3/5 rounded-tr-[28px] bg-slate-300/60" />
       <span className="absolute right-0 bottom-0 block h-2/5 w-2/5 rounded-tl-[24px] bg-slate-300/50" />
     </span>
@@ -5063,8 +5094,8 @@ function PreviewVideo({ className = "" }: { className?: string }) {
     <span
       className={`grid place-items-center rounded-md bg-slate-100 ring-1 ring-slate-200 ${className}`}
     >
-      <span className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
-        <span className="ml-0.5 block h-0 w-0 border-y-[6px] border-l-[9px] border-y-transparent border-l-slate-500" />
+      <span className="grid size-10 place-items-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
+        <span className="ml-0.5 block size-0 border-y-[6px] border-l-[9px] border-y-transparent border-l-slate-500" />
       </span>
     </span>
   );
@@ -5085,7 +5116,7 @@ function PreviewQuestionRow({
 }) {
   return (
     <span className={`flex items-center gap-3 ${className}`}>
-      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500">
+      <span className="grid size-6 shrink-0 place-items-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500">
         ?
       </span>
       <PreviewLine className={`h-2 ${short ? "w-2/5" : "w-3/5"}`} />
@@ -5111,7 +5142,7 @@ function PreviewCard({
         className={`${featured ? "h-4 w-3/4" : "h-3 w-2/3"}`}
       />
       <PreviewLine className={`${compact ? "mt-3" : "mt-4"} h-2 w-full`} />
-      <PreviewLine className="mt-2 h-2 w-2/3" />
+      <PreviewLine className="mt-2 size-2/3" />
       {featured && <PreviewButton className="mt-5 w-20" />}
     </span>
   );
@@ -5242,6 +5273,7 @@ function BlockEditor({
                 <label className="block">
                   <span className="sr-only">Eyebrow</span>
                   <input
+                    aria-label="Eyebrow"
                     value={block.props.eyebrow}
                     placeholder="Eyebrow"
                     onChange={(event) =>
@@ -5256,6 +5288,7 @@ function BlockEditor({
                 <label className="mt-3 block">
                   <span className="sr-only">Heading</span>
                   <input
+                    aria-label="Heading"
                     value={block.props.heading}
                     placeholder="Section heading"
                     onChange={(event) =>
@@ -5270,6 +5303,7 @@ function BlockEditor({
                 <label className="mt-4 block">
                   <span className="sr-only">Body</span>
                   <textarea
+                    aria-label="Body"
                     value={editableRichTextBodyText(block)}
                     placeholder="Write the page copy here."
                     onChange={(event) =>
@@ -5296,6 +5330,7 @@ function BlockEditor({
                 <label className="block">
                   <span className="sr-only">Eyebrow</span>
                   <input
+                    aria-label="Eyebrow"
                     value={block.props.eyebrow}
                     placeholder="Eyebrow"
                     onChange={(event) =>
@@ -5310,6 +5345,7 @@ function BlockEditor({
                 <label className="mt-3 block">
                   <span className="sr-only">Heading</span>
                   <textarea
+                    aria-label="Heading"
                     value={block.props.heading}
                     placeholder="Hero headline"
                     onChange={(event) =>
@@ -5325,6 +5361,7 @@ function BlockEditor({
                 <label className="mt-5 block max-w-3xl">
                   <span className="sr-only">Body</span>
                   <textarea
+                    aria-label="Body"
                     value={block.props.body}
                     placeholder="Hero body copy"
                     onChange={(event) =>
@@ -5341,6 +5378,7 @@ function BlockEditor({
                   <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
                     <span className="sr-only">CTA label</span>
                     <input
+                      aria-label="CTA label"
                       value={block.props.ctaLabel}
                       placeholder="CTA label"
                       onChange={(event) => {
@@ -5379,6 +5417,7 @@ function BlockEditor({
                 <label className="inline-flex min-h-12 max-w-sm items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
                   <span className="sr-only">CTA label</span>
                   <input
+                    aria-label="CTA label"
                     value={block.props.label}
                     placeholder="CTA label"
                     onChange={(event) => {
@@ -5416,6 +5455,7 @@ function BlockEditor({
                 <label className="block">
                   <span className="sr-only">Heading</span>
                   <input
+                    aria-label="Heading"
                     value={block.props.heading}
                     placeholder="FAQ heading"
                     onChange={(event) =>
@@ -5469,6 +5509,7 @@ function BlockEditor({
                 <label className="block">
                   <span className="sr-only">Heading</span>
                   <input
+                    aria-label="Heading"
                     value={block.props.heading}
                     placeholder="Card grid heading"
                     onChange={(event) =>
@@ -5483,7 +5524,7 @@ function BlockEditor({
                 <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {block.props.cards.map((card, cardIndex) => (
                     <article
-                      key={cardIndex}
+                      key={cardItemKey(card)}
                       className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8]"
                     >
                       <div className="mb-4 flex items-center justify-between gap-3">
@@ -5629,6 +5670,7 @@ function BlockEditor({
                 <label className="mt-3 block">
                   <span className="sr-only">Body</span>
                   <textarea
+                    aria-label="Body"
                     value={block.props.body}
                     placeholder="Proof quote or stat"
                     onChange={(event) =>
@@ -5672,6 +5714,7 @@ function BlockEditor({
                   <label className="block">
                     <span className="sr-only">Heading</span>
                     <input
+                      aria-label="Heading"
                       value={block.props.heading}
                       placeholder="Lead form heading"
                       onChange={(event) =>
@@ -5689,6 +5732,7 @@ function BlockEditor({
                   <label className="mt-3 block">
                     <span className="sr-only">Body</span>
                     <textarea
+                      aria-label="Body"
                       value={block.props.body}
                       placeholder="Lead form copy"
                       onChange={(event) =>
@@ -5712,6 +5756,7 @@ function BlockEditor({
                   <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
                     <span className="sr-only">Submit label</span>
                     <input
+                      aria-label="Submit label"
                       value={block.props.submitLabel}
                       placeholder="Submit label"
                       onChange={(event) => {
@@ -5767,10 +5812,12 @@ function ImageBlockCanvas({
           ? "aspect-[4/3] w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[9px_9px_0_#55b8e8]"
           : "aspect-video w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]";
   const mediaNode = block.props.src ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <Image
       src={block.props.src}
       alt={block.props.altText}
+      width={1600}
+      height={900}
+      sizes="(max-width: 1024px) 100vw, 900px"
       className={imageClass}
     />
   ) : (
@@ -5789,6 +5836,7 @@ function ImageBlockCanvas({
   );
   const captionInput = (
     <input
+      aria-label="Caption"
       value={block.props.caption}
       placeholder="Caption"
       onChange={(event) =>
@@ -5846,14 +5894,15 @@ function VideoBlockCanvas({
         block.variant === "wide" ? "aspect-[16/7]" : "aspect-video"
       }`}
     >
-      <span className="grid h-14 w-14 place-items-center rounded-full border-2 border-[#111111] bg-white shadow-[4px_4px_0_#55b8e8]">
+      <span className="grid size-14 place-items-center rounded-full border-2 border-[#111111] bg-white shadow-[4px_4px_0_#55b8e8]">
         <span className="sr-only">Edit video settings</span>
-        <span className="ml-1 h-0 w-0 border-y-[9px] border-l-[14px] border-y-transparent border-l-[#111111]" />
+        <span className="ml-1 size-0 border-y-[9px] border-l-[14px] border-y-transparent border-l-[#111111]" />
       </span>
     </button>
   );
   const titleInput = (
     <input
+      aria-label="Video title"
       value={block.props.title}
       placeholder="Video title"
       onChange={(event) =>
@@ -5867,6 +5916,7 @@ function VideoBlockCanvas({
   );
   const captionInput = (
     <textarea
+      aria-label="Video caption"
       value={block.props.caption}
       placeholder="Video caption"
       rows={block.variant === "inline" ? 3 : 2}
@@ -5965,7 +6015,7 @@ function BlockToolbar({
       <div className="flex min-w-0 items-center gap-3">
         {dragHandle}
         <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-500 ring-1 ring-slate-200/50 ring-inset"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-500 ring-1 ring-slate-200/50 ring-inset"
           aria-hidden="true"
         >
           <BuilderGlyph name={icon} />
@@ -6048,6 +6098,7 @@ function TextInput({
     <label className="block">
       <span className="text-sm font-medium text-slate-700">{label}</span>
       <input
+        aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className={compactInputClass}
@@ -6069,6 +6120,7 @@ function TextAreaInput({
     <label className="block">
       <span className="text-sm font-medium text-slate-700">{label}</span>
       <textarea
+        aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         rows={4}
@@ -6283,7 +6335,7 @@ function BuilderGlyph({
     viewBox: "0 0 24 24",
     stroke: "currentColor",
     strokeWidth: 1.8,
-    className: "h-4 w-4",
+    className: "size-4",
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
   };
@@ -6617,16 +6669,19 @@ function editableRichTextBodyText(
     return bodyText(block);
   }
 
-  return block.props.body.nodes
-    .map((node) => {
-      if (node.type === "list") return node.items.join("\n");
-      if (node.type === "paragraph" && "spans" in node) {
-        return node.spans.map((span) => span.text).join("");
-      }
-      return node.text;
-    })
-    .filter((value) => value.length > 0)
-    .join("\n");
+  const lines: string[] = [];
+  for (const node of block.props.body.nodes) {
+    let line: string;
+    if (node.type === "list") {
+      line = node.items.join("\n");
+    } else if (node.type === "paragraph" && "spans" in node) {
+      line = node.spans.map((span) => span.text).join("");
+    } else {
+      line = node.text;
+    }
+    if (line.length > 0) lines.push(line);
+  }
+  return lines.join("\n");
 }
 
 function richTextBodyFromEditableText(
@@ -6750,6 +6805,19 @@ function updateFirstFaqItem(
 
 function createBlankCard(): CardItem {
   return { title: "", body: "", href: "" };
+}
+
+function createLocalEditorKey(prefix: string) {
+  localEditorKeyCounter += 1;
+  return `${prefix}-${localEditorKeyCounter}`;
+}
+
+function createLocalEditorKeys(prefix: string, count: number) {
+  return Array.from({ length: count }, () => createLocalEditorKey(prefix));
+}
+
+function cardItemKey(card: CardItem) {
+  return `${card.title}:${card.body}:${card.href ?? ""}`;
 }
 
 function isBlankFaqItem(item: FaqItem) {
@@ -6941,7 +7009,7 @@ function readinessButtonClass(status: SeoReadinessStatus) {
 
 function floatingRailButtonClass(status: SeoReadinessStatus) {
   const base =
-    "inline-flex h-10 w-10 items-center justify-center rounded-full border bg-white shadow-lg transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none";
+    "inline-flex size-10 items-center justify-center rounded-full border bg-white shadow-lg transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none";
 
   if (status === "blocked") {
     return `${base} border-red-300 text-red-700 ring-4 ring-red-100 shadow-red-200/80`;
@@ -6984,7 +7052,7 @@ const bodyTextareaClass =
   "w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-base leading-8 text-slate-600 outline-none transition-all placeholder:text-slate-300 hover:bg-slate-50 focus:bg-white focus:border-[#0b63f6]/30 focus:ring-4 focus:ring-[#0b63f6]/10";
 
 const disabledLeadFieldClass =
-  "rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-400 shadow-sm";
+  "rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-400 shadow-sm";
 
 const compactInputClass =
   "mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-all outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-[#0b63f6] focus:ring-4 focus:ring-[#0b63f6]/10";
@@ -7011,7 +7079,7 @@ const dangerButtonClass =
   "w-full rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-600 transition-all hover:bg-red-50 hover:text-red-700 focus-visible:ring-4 focus-visible:ring-red-100 focus-visible:outline-none text-left";
 
 const dragHandleClass =
-  "inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none active:cursor-grabbing";
+  "inline-flex size-8 cursor-grab items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none active:cursor-grabbing";
 
 const iconButtonClass =
-  "inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex size-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";

@@ -38,9 +38,6 @@ export const adminSecondaryButtonClass =
 export const adminSmallButtonClass =
   "inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
-export const adminTinyButtonClass =
-  "inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
-
 export const adminDangerButtonClass =
   "inline-flex items-center justify-center rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:outline-none";
 
@@ -220,7 +217,7 @@ export function AdminIcon({ icon }: { icon: AdminIconName }) {
   }
 }
 
-export function adminMetricToneClass(
+function adminMetricToneClass(
   tone: "amber" | "blue" | "green" | "purple" | "slate",
 ) {
   if (tone === "amber") return "bg-amber-100 text-amber-600";
@@ -230,7 +227,7 @@ export function adminMetricToneClass(
   return "bg-[#e9f1ff] text-[#0b63f6]";
 }
 
-export function adminStatusClass(status: string) {
+function adminStatusClass(status: string) {
   if (status === "published" || status === "approved" || status === "stored") {
     return "bg-emerald-100 text-emerald-700";
   }

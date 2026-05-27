@@ -34,8 +34,11 @@ export default async function EditSeoPagePage({
   params: Promise<Params>;
   searchParams: Promise<SearchParams>;
 }) {
-  const { user, role } = await requireAdmin();
-  const [{ id }, query] = await Promise.all([params, searchParams]);
+  const [{ user, role }, { id }, query] = await Promise.all([
+    requireAdmin(),
+    params,
+    searchParams,
+  ]);
   const [
     page,
     revisions,

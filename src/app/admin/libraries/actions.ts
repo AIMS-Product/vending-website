@@ -8,12 +8,12 @@ import {
   adminCreateSourceDocument,
   adminCreateSourceExcerpt,
 } from "@/lib/services/page-builder-libraries";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
 
 const ADMIN_LIBRARIES_PATH = "/admin/libraries";
 
 export async function createCtaPreset(formData: FormData) {
-  await requireAdmin();
+  await requireAuth();
   await adminCreateCtaPreset({
     label: field(formData, "label"),
     href: field(formData, "href"),
@@ -24,7 +24,7 @@ export async function createCtaPreset(formData: FormData) {
 }
 
 export async function createProofItem(formData: FormData) {
-  await requireAdmin();
+  await requireAuth();
   await adminCreateProofItem({
     kind: field(formData, "kind"),
     body: field(formData, "body"),
@@ -37,7 +37,7 @@ export async function createProofItem(formData: FormData) {
 }
 
 export async function createSourceDocument(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   await adminCreateSourceDocument({
     title: field(formData, "title"),
     sourceType: field(formData, "sourceType"),
@@ -49,7 +49,7 @@ export async function createSourceDocument(formData: FormData) {
 }
 
 export async function createSourceExcerpt(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   const approved = formData.get("approved") === "on";
   await adminCreateSourceExcerpt({
     sourceDocumentId: field(formData, "sourceDocumentId"),
@@ -62,7 +62,7 @@ export async function createSourceExcerpt(formData: FormData) {
 }
 
 export async function createApprovedClaim(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAuth();
   await adminCreateApprovedClaim({
     claim: field(formData, "claim"),
     claimType: field(formData, "claimType"),
@@ -81,7 +81,9 @@ function field(formData: FormData, name: string) {
 function tags(value: string) {
   return value
     .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean)
+    .flatMap((item) => {
+      const trimmed = item.trim();
+      return trimmed ? [trimmed] : [];
+    })
     .slice(0, 20);
 }

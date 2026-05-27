@@ -319,7 +319,7 @@ function rankExcerptsForPage(
   );
   if (tokens.length === 0) return excerpts;
 
-  return [...excerpts].sort((a, b) => {
+  return excerpts.toSorted((a, b) => {
     const scoreDelta = scoreExcerpt(b, tokens) - scoreExcerpt(a, tokens);
     if (scoreDelta !== 0) return scoreDelta;
     return b.updated_at.localeCompare(a.updated_at);
@@ -444,14 +444,15 @@ function validateProposalSourceReferences(
   const badRefs: string[] = [];
 
   for (const proposed of proposal.blocks) {
+    const blockId = proposed.block.id;
     for (const id of proposed.sourceDocumentIds) {
-      if (!documentIds.has(id)) badRefs.push(`${proposed.block.id}:${id}`);
+      if (!documentIds.has(id)) badRefs.push(`${blockId}:${id}`);
     }
     for (const id of proposed.sourceExcerptIds) {
-      if (!excerptIds.has(id)) badRefs.push(`${proposed.block.id}:${id}`);
+      if (!excerptIds.has(id)) badRefs.push(`${blockId}:${id}`);
     }
     for (const id of proposed.approvedClaimIds) {
-      if (!claimIds.has(id)) badRefs.push(`${proposed.block.id}:${id}`);
+      if (!claimIds.has(id)) badRefs.push(`${blockId}:${id}`);
     }
     if (
       !proposedBlockHasSourceSupport(proposed) &&

@@ -404,10 +404,10 @@ async function sendSlackWebhook(
 
 function parseRecipients(value?: string) {
   return (
-    value
-      ?.split(",")
-      .map((recipient) => recipient.trim())
-      .filter(Boolean) ?? []
+    value?.split(",").flatMap((recipient) => {
+      const trimmed = recipient.trim();
+      return trimmed ? [trimmed] : [];
+    }) ?? []
   );
 }
 

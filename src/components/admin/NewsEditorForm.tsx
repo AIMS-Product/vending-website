@@ -124,6 +124,7 @@ export function NewsEditorForm({
           <span className="text-sm font-medium text-slate-700">Title</span>
           <input
             name="title"
+            aria-label="Title"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             required
@@ -135,6 +136,7 @@ export function NewsEditorForm({
           <span className="text-sm font-medium text-slate-700">Slug</span>
           <input
             name="slug"
+            aria-label="Slug"
             value={visibleSlug}
             onChange={(event) => {
               setSlugTouched(true);
@@ -149,6 +151,7 @@ export function NewsEditorForm({
           <span className="text-sm font-medium text-slate-700">Excerpt</span>
           <textarea
             name="excerpt"
+            aria-label="Excerpt"
             defaultValue={post?.excerpt ?? ""}
             rows={3}
             maxLength={240}
@@ -176,17 +179,18 @@ export function NewsEditorForm({
           {activeTab === "write" ? (
             <textarea
               name="body"
+              aria-label="Body"
               value={body}
               onChange={(event) => setBody(event.target.value)}
               required
               rows={24}
-              className="min-h-[520px] w-full resize-y border-0 px-4 py-4 font-mono text-sm leading-6 text-slate-800 outline-none"
+              className="min-h-[520px] w-full resize-y border-0 p-4 font-mono text-sm leading-6 text-slate-800 outline-none"
             />
           ) : (
             <>
               <input type="hidden" name="body" value={body} />
               <div
-                className="news-prose min-h-[520px] px-5 py-5"
+                className="news-prose min-h-[520px] p-5"
                 dangerouslySetInnerHTML={{
                   __html:
                     previewHtml ||
@@ -214,6 +218,7 @@ export function NewsEditorForm({
           )}
           <div className="mt-5 grid gap-2">
             <button
+              type="submit"
               className={adminPrimaryButtonClass}
               name="intent"
               value="save"
@@ -221,6 +226,7 @@ export function NewsEditorForm({
               Save draft
             </button>
             <button
+              type="submit"
               className={adminPrimaryButtonClass}
               name="intent"
               value="publish"
@@ -229,6 +235,7 @@ export function NewsEditorForm({
             </button>
             {canUnpublish && (
               <button
+                type="submit"
                 className={adminSecondaryButtonClass}
                 name="intent"
                 value="unpublish"
@@ -238,6 +245,7 @@ export function NewsEditorForm({
             )}
             {canArchive && (
               <button
+                type="submit"
                 className={adminSecondaryButtonClass}
                 name="intent"
                 value="archive"
@@ -256,6 +264,7 @@ export function NewsEditorForm({
             </span>
             <input
               name="cover_url"
+              aria-label="Cover image URL"
               value={coverUrl}
               onChange={(event) => setCoverUrl(event.target.value)}
               className={adminInputClass}
@@ -265,6 +274,7 @@ export function NewsEditorForm({
             <span className="text-sm font-medium text-slate-700">Upload</span>
             <input
               type="file"
+              aria-label="Upload cover image"
               accept="image/avif,image/webp,image/png,image/jpeg"
               onChange={(event) =>
                 handleFileChange(event.target.files?.[0] ?? null)
@@ -280,6 +290,7 @@ export function NewsEditorForm({
             <span className="text-sm font-medium text-slate-700">Alt text</span>
             <input
               name="cover_alt"
+              aria-label="Cover image alt text"
               defaultValue={post?.cover_alt ?? ""}
               className={adminInputClass}
             />
@@ -290,6 +301,7 @@ export function NewsEditorForm({
           <span className="text-sm font-semibold text-slate-950">Author</span>
           <input
             name="author"
+            aria-label="Author"
             defaultValue={post?.author ?? "Mike"}
             className={adminInputClass}
           />

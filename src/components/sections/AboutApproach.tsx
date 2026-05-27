@@ -21,8 +21,8 @@ export function AboutApproach() {
             {about.approach.title}
           </h2>
           <div className="mt-6 max-w-xl space-y-5 text-lg leading-8 font-semibold text-slate-700">
-            {about.approach.paragraphs.map((p, i) => (
-              <p key={i}>{p}</p>
+            {about.approach.paragraphs.map((p, index) => (
+              <p key={`${p}-${index}`}>{p}</p>
             ))}
           </div>
         </div>

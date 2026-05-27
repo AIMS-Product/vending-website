@@ -263,12 +263,22 @@ async function validateSelectedSources(
     approvedClaimIds: string[];
   },
 ) {
+  if (
+    refs.sourceDocumentIds.length === 0 &&
+    refs.sourceExcerptIds.length === 0 &&
+    refs.approvedClaimIds.length === 0
+  ) {
+    return;
+  }
+
   const issues: Array<{ code: string; message: string; path?: string }> = [];
-  await requireRows(client, "source_documents", refs.sourceDocumentIds, issues);
-  await requireRows(client, "source_excerpts", refs.sourceExcerptIds, issues, {
-    approved: true,
-  });
-  await requireRows(client, "approved_claims", refs.approvedClaimIds, issues);
+  await Promise.all([
+    requireRows(client, "source_documents", refs.sourceDocumentIds, issues),
+    requireRows(client, "source_excerpts", refs.sourceExcerptIds, issues, {
+      approved: true,
+    }),
+    requireRows(client, "approved_claims", refs.approvedClaimIds, issues),
+  ]);
   if (issues.length > 0) throw new AiProposalValidationError(issues);
 }
 
