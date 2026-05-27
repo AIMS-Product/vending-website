@@ -7,6 +7,8 @@ import {
   adminSecondaryButtonClass,
 } from "@/components/admin/AdminUi";
 import { NewsEditorForm } from "@/components/admin/NewsEditorForm";
+import { toEditorMediaAsset } from "@/lib/media/editor-asset";
+import { adminListMediaAssets } from "@/lib/services/media-assets";
 import { adminGetPostById } from "@/lib/services/news";
 import { requireAdmin } from "@/lib/supabase/auth";
 
@@ -32,6 +34,7 @@ export default async function EditPostPage({
   ]);
   const post = await adminGetPostById(id);
   if (!post) notFound();
+  const mediaAssets = await adminListMediaAssets({ assetTypes: ["image"] });
 
   return (
     <AdminShell
@@ -58,7 +61,11 @@ export default async function EditPostPage({
         </>
       }
     >
-      <NewsEditorForm post={post} savedFromRedirect={query.saved === "1"} />
+      <NewsEditorForm
+        post={post}
+        mediaAssets={mediaAssets.map(toEditorMediaAsset)}
+        savedFromRedirect={query.saved === "1"}
+      />
     </AdminShell>
   );
 }

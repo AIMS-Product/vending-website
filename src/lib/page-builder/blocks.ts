@@ -135,6 +135,7 @@ const heroBlockSchema = z
         ctaLabel: optionalTrimmedText(80),
         ctaHref: safeHrefSchema.optional().default(""),
         ctaTrackingName: optionalTrimmedText(120),
+        mediaAssetId: z.uuid().optional(),
         mediaSrc: z
           .string()
           .trim()
@@ -187,6 +188,7 @@ const videoBlockSchema = z
     variant: z.enum(["standard", "wide", "inline"]).default("standard"),
     props: z
       .object({
+        assetId: z.uuid().optional(),
         title: optionalTrimmedText(140),
         url: safeHrefSchema,
         caption: optionalTrimmedText(240),
@@ -365,6 +367,7 @@ export const blockRegistry = {
       ctaLabel: "",
       ctaHref: "",
       ctaTrackingName: "",
+      mediaAssetId: undefined,
       mediaSrc: "",
       mediaAltText: "",
       mediaCaption: "",
@@ -593,6 +596,7 @@ export function validatePageForPublish(
       }
       if (
         block.variant === "split" &&
+        !block.props.mediaAssetId &&
         !hasText(block.props.mediaSrc) &&
         !hasText(block.props.proofText)
       ) {
@@ -604,7 +608,7 @@ export function validatePageForPublish(
       }
       if (
         block.variant === "split" &&
-        hasText(block.props.mediaSrc) &&
+        (block.props.mediaAssetId || hasText(block.props.mediaSrc)) &&
         !hasText(block.props.mediaAltText)
       ) {
         issues.push({

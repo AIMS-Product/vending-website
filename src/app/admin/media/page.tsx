@@ -149,6 +149,7 @@ function toListItem(
 ): MediaAssetListItem {
   return {
     id: asset.id,
+    assetType: asset.asset_type as MediaAssetListItem["assetType"],
     title: asset.title,
     alt_text: asset.alt_text,
     caption: asset.caption,
@@ -156,6 +157,7 @@ function toListItem(
     storage_bucket: asset.storage_bucket,
     storage_path: asset.storage_path,
     external_url: asset.external_url,
+    duration_seconds: asset.duration_seconds,
     tags: asset.tags,
     created_at: asset.created_at,
     publicUrl: publicMediaAssetUrl(asset),

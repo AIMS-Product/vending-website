@@ -5,8 +5,10 @@ import {
   AdminIcon,
   adminSecondaryButtonClass,
 } from "@/components/admin/AdminUi";
-import { requireAdmin } from "@/lib/supabase/auth";
 import { NewsEditorForm } from "@/components/admin/NewsEditorForm";
+import { toEditorMediaAsset } from "@/lib/media/editor-asset";
+import { adminListMediaAssets } from "@/lib/services/media-assets";
+import { requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "New post",
@@ -15,6 +17,7 @@ export const metadata: Metadata = {
 
 export default async function NewPostPage() {
   const { user, role } = await requireAdmin();
+  const mediaAssets = await adminListMediaAssets({ assetTypes: ["image"] });
 
   return (
     <AdminShell
@@ -41,7 +44,7 @@ export default async function NewPostPage() {
         </>
       }
     >
-      <NewsEditorForm />
+      <NewsEditorForm mediaAssets={mediaAssets.map(toEditorMediaAsset)} />
     </AdminShell>
   );
 }

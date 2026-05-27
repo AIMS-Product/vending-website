@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
-import {
-  SeoPageEditorForm,
-  type SeoPageEditorMediaAsset,
-} from "@/components/admin/SeoPageEditorForm";
+import { SeoPageEditorForm } from "@/components/admin/SeoPageEditorForm";
 import { SeoPageRevisionPanel } from "@/components/admin/SeoPageRevisionPanel";
 import { adminListAiPageProposals } from "@/lib/services/ai-page-proposals";
-import {
-  adminListMediaAssets,
-  publicMediaAssetUrl,
-} from "@/lib/services/media-assets";
+import { toEditorMediaAsset } from "@/lib/media/editor-asset";
+import { adminListMediaAssets } from "@/lib/services/media-assets";
 import {
   adminGetSeoPageById,
   adminListSeoPagePreviewTokens,
@@ -81,19 +76,6 @@ export default async function EditSeoPagePage({
       />
     </AdminShell>
   );
-}
-
-function toEditorMediaAsset(
-  asset: Awaited<ReturnType<typeof adminListMediaAssets>>[number],
-): SeoPageEditorMediaAsset {
-  return {
-    id: asset.id,
-    title: asset.title,
-    altText: asset.alt_text ?? "",
-    caption: asset.caption,
-    sourceRightsNotes: asset.source_rights_notes ?? "",
-    publicUrl: publicMediaAssetUrl(asset),
-  };
 }
 
 function pageActionErrorMessage(code: string | undefined) {
