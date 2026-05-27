@@ -2,19 +2,41 @@ import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   adminCreateMediaAsset,
+  adminDeleteMediaAsset,
+  adminGetMediaAssetUsage,
   adminListMediaAssets,
+  adminUpdateMediaAsset,
   publicMediaAssetUrl,
+  validateMediaAssetReferences,
 } from "./media-assets";
 import type { Database } from "@/types/database";
 
 type MediaClient = Pick<SupabaseClient<Database>, "from">;
 
 function listSelect(data: unknown, error: unknown = null) {
-  const ilike = vi.fn().mockResolvedValue({ data, error });
-  const order = vi.fn().mockReturnValue({ ilike });
-  const eq = vi.fn().mockReturnValue({ order });
+  const resolveWith = { data, error };
+  const builder = {
+    or: vi.fn().mockReturnThis(),
+    then(
+      onFulfilled: (value: typeof resolveWith) => unknown,
+      onRejected?: (reason: unknown) => unknown,
+    ) {
+      return Promise.resolve(resolveWith).then(onFulfilled, onRejected);
+    },
+  };
+  const order = vi.fn().mockReturnValue(builder);
+  const inFn = vi.fn().mockReturnValue({ order });
+  const select = vi.fn().mockReturnValue({ in: inFn });
+  return {
+    table: { select },
+    mocks: { select, in: inFn, order, or: builder.or },
+  };
+}
+
+function eqSelect(data: unknown, error: unknown = null) {
+  const eq = vi.fn().mockResolvedValue({ data, error });
   const select = vi.fn().mockReturnValue({ eq });
-  return { table: { select }, mocks: { select, eq, order, ilike } };
+  return { table: { select }, mocks: { select, eq } };
 }
 
 function insertSingle(data: unknown, error: unknown = null) {
@@ -22,6 +44,21 @@ function insertSingle(data: unknown, error: unknown = null) {
   const select = vi.fn().mockReturnValue({ single });
   const insert = vi.fn().mockReturnValue({ select });
   return { table: { insert }, mocks: { insert, select, single } };
+}
+
+function updateSingle(data: unknown, error: unknown = null) {
+  const single = vi.fn().mockResolvedValue({ data, error });
+  const select = vi.fn().mockReturnValue({ single });
+  const eq = vi.fn().mockReturnValue({ select });
+  const update = vi.fn().mockReturnValue({ eq });
+  return { table: { update }, mocks: { update, eq, select, single } };
+}
+
+function maybeSingleSelect(data: unknown, error: unknown = null) {
+  const maybeSingle = vi.fn().mockResolvedValue({ data, error });
+  const eq = vi.fn().mockReturnValue({ maybeSingle });
+  const select = vi.fn().mockReturnValue({ eq });
+  return { table: { select }, mocks: { select, eq, maybeSingle } };
 }
 
 function buildClient(...tables: unknown[]) {
@@ -35,20 +72,25 @@ function buildClient(...tables: unknown[]) {
 }
 
 describe("media asset service", () => {
-  it("lists image assets with title search", async () => {
+  it("lists assets with type filter and title search", async () => {
     const list = listSelect([{ id: "asset_1", title: "Hero" }]);
     const client = buildClient(list.table);
 
     await expect(
-      adminListMediaAssets({ search: "Hero" }, { client }),
+      adminListMediaAssets(
+        { search: "Hero", assetTypes: ["image"] },
+        { client },
+      ),
     ).resolves.toEqual([{ id: "asset_1", title: "Hero" }]);
 
     expect(client.from).toHaveBeenCalledWith("media_assets");
-    expect(list.mocks.eq).toHaveBeenCalledWith("asset_type", "image");
+    expect(list.mocks.in).toHaveBeenCalledWith("asset_type", ["image"]);
     expect(list.mocks.order).toHaveBeenCalledWith("created_at", {
       ascending: false,
     });
-    expect(list.mocks.ilike).toHaveBeenCalledWith("title", "%Hero%");
+    expect(list.mocks.or).toHaveBeenCalledWith(
+      "title.ilike.%Hero%,tags.cs.{Hero}",
+    );
   });
 
   it("creates image media assets only with source, alt, and rights metadata", async () => {
@@ -95,21 +137,164 @@ describe("media asset service", () => {
         { client },
       ),
     ).rejects.toThrow("Alt text is required.");
+  });
+
+  it("creates video assets with external URLs only", async () => {
+    const created = { id: "video_1", title: "Walkthrough" };
+    const insert = insertSingle(created);
+    const client = buildClient(insert.table);
 
     await expect(
       adminCreateMediaAsset(
         {
-          title: "Missing bucket",
-          altText: "Operator beside vending machine",
-          sourceRightsNotes: "Owned campaign image.",
-          storagePath: "images/hero.webp",
-          externalUrl: null,
+          assetType: "video",
+          title: "Walkthrough",
+          altText: "",
+          sourceRightsNotes: "Licensed YouTube embed.",
+          externalUrl: "https://www.youtube.com/watch?v=abc123",
         },
         { client },
       ),
-    ).rejects.toThrow(
-      "Storage bucket is required when storage path is provided.",
+    ).resolves.toBe(created);
+
+    expect(insert.mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        asset_type: "video",
+        external_url: "https://www.youtube.com/watch?v=abc123",
+      }),
     );
+  });
+
+  it("updates editable media metadata", async () => {
+    const existing = {
+      id: "asset_1",
+      asset_type: "image",
+      title: "Hero",
+      alt_text: "Hero",
+      caption: null,
+      source_rights_notes: "Owned.",
+      storage_bucket: "page-builder-media",
+      storage_path: "images/hero.webp",
+      external_url: null,
+      thumbnail_asset_id: null,
+      width: null,
+      height: null,
+      duration_seconds: null,
+      tags: [],
+      uploaded_by: null,
+      created_at: "2026-05-06T00:00:00Z",
+      updated_at: "2026-05-06T00:00:00Z",
+    };
+    const load = maybeSingleSelect(existing);
+    const update = updateSingle({ ...existing, title: "Updated hero" });
+    const client = buildClient(load.table, update.table);
+
+    await expect(
+      adminUpdateMediaAsset(
+        "asset_1",
+        {
+          title: "Updated hero",
+          sourceRightsNotes: "Owned.",
+          altText: "Hero",
+        },
+        { client },
+      ),
+    ).resolves.toEqual(expect.objectContaining({ title: "Updated hero" }));
+  });
+
+  it("blocks delete when usage exists", async () => {
+    const asset = {
+      id: "asset_1",
+      asset_type: "image",
+      title: "Hero",
+      alt_text: "Hero",
+      caption: null,
+      source_rights_notes: "Owned.",
+      storage_bucket: "page-builder-media",
+      storage_path: "images/hero.webp",
+      external_url: null,
+      thumbnail_asset_id: null,
+      width: null,
+      height: null,
+      duration_seconds: null,
+      tags: [],
+      uploaded_by: null,
+      created_at: "2026-05-06T00:00:00Z",
+      updated_at: "2026-05-06T00:00:00Z",
+    };
+    const load = maybeSingleSelect(asset);
+    const seoPages = listSelect([]);
+    const newsPosts = listSelect([]);
+    const proofItems = eqSelect([{ id: "proof_1", body: "Great service." }]);
+    const sourceDocuments = eqSelect([]);
+    const client = buildClient(
+      load.table,
+      seoPages.table,
+      newsPosts.table,
+      proofItems.table,
+      sourceDocuments.table,
+    );
+
+    await expect(
+      adminGetMediaAssetUsage("asset_1", { client }),
+    ).resolves.toEqual(expect.objectContaining({ totalCount: 1 }));
+
+    const usageLoad = maybeSingleSelect(asset);
+    const usageSeo = listSelect([]);
+    const usageNews = listSelect([]);
+    const usageProof = eqSelect([{ id: "proof_1", body: "Great service." }]);
+    const usageSource = eqSelect([]);
+    const deleteClient = buildClient(
+      usageLoad.table,
+      usageSeo.table,
+      usageNews.table,
+      usageProof.table,
+      usageSource.table,
+    );
+
+    await expect(
+      adminDeleteMediaAsset("asset_1", { client: deleteClient }),
+    ).rejects.toThrow("still referenced elsewhere");
+  });
+
+  it("validates referenced asset types per block", () => {
+    const issues = validateMediaAssetReferences(
+      [
+        {
+          assetId: "asset_1",
+          expectedTypes: ["video", "embed"],
+          path: "blocks.0.props.assetId",
+        },
+      ],
+      new Map([
+        [
+          "asset_1",
+          {
+            id: "asset_1",
+            asset_type: "image",
+            title: "Hero",
+            alt_text: "Hero",
+            caption: null,
+            source_rights_notes: "Owned.",
+            storage_bucket: "page-builder-media",
+            storage_path: "images/hero.webp",
+            external_url: null,
+            thumbnail_asset_id: null,
+            width: null,
+            height: null,
+            duration_seconds: null,
+            tags: [],
+            uploaded_by: null,
+            created_at: "2026-05-06T00:00:00Z",
+            updated_at: "2026-05-06T00:00:00Z",
+          },
+        ],
+      ]),
+    );
+
+    expect(issues).toEqual([
+      expect.objectContaining({ code: "invalid_media_asset_type" }),
+    ]);
   });
 
   it("builds public URLs for stored media assets", () => {

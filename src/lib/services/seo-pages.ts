@@ -14,6 +14,8 @@ import {
 } from "@/lib/page-builder/blocks";
 import { assessSeoReadiness } from "@/lib/page-builder/seo-readiness";
 import { config } from "@/lib/config";
+import { collectMediaAssetReferences } from "@/lib/media/referenced-assets";
+import { validateMediaAssetReferences } from "@/lib/services/media-assets";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables, TablesInsert } from "@/types/database";
 
@@ -997,14 +999,9 @@ async function validateReferencedMedia(
   issues: PageBuilderValidationIssue[];
   assets: Map<string, MediaAsset>;
 }> {
+  const references = collectMediaAssetReferences(content);
   const assetIds = [
-    ...new Set(
-      flattenBlocks(content).flatMap((block) =>
-        block.type === "image" && block.props.assetId
-          ? [block.props.assetId]
-          : [],
-      ),
-    ),
+    ...new Set(references.map((reference) => reference.assetId)),
   ];
 
   if (assetIds.length === 0) {
@@ -1014,54 +1011,21 @@ async function validateReferencedMedia(
   const { data, error } = await client
     .from("media_assets")
     .select(
-      "id, asset_type, alt_text, source_rights_notes, storage_bucket, storage_path, external_url",
+      "id, asset_type, alt_text, source_rights_notes, storage_bucket, storage_path, external_url, caption, title",
     )
     .in("id", assetIds);
 
   if (error) throw new Error("Could not validate referenced media.");
 
   const rows = new Map((data ?? []).map((row) => [row.id, row as MediaAsset]));
-  const issues: PageBuilderValidationIssue[] = [];
-
-  for (const assetId of assetIds) {
-    const row = rows.get(assetId);
-    if (!row) {
-      issues.push({
-        code: "missing_media_asset",
-        path: `media_assets.${assetId}`,
-        message: "Referenced image asset does not exist.",
-      });
-      continue;
-    }
-    if (row.asset_type !== "image") {
-      issues.push({
-        code: "invalid_media_asset_type",
-        path: `media_assets.${assetId}`,
-        message: "Image blocks must reference image assets.",
-      });
-    }
-    if (!row.external_url && !(row.storage_bucket && row.storage_path)) {
-      issues.push({
-        code: "missing_media_source",
-        path: `media_assets.${assetId}`,
-        message: "Referenced image asset requires a public source.",
-      });
-    }
-    if (!row.alt_text?.trim()) {
-      issues.push({
-        code: "missing_image_alt",
-        path: `media_assets.${assetId}.alt_text`,
-        message: "Referenced image asset requires alt text.",
-      });
-    }
-    if (!row.source_rights_notes?.trim()) {
-      issues.push({
-        code: "missing_media_rights",
-        path: `media_assets.${assetId}.source_rights_notes`,
-        message: "Referenced image asset requires source and rights notes.",
-      });
-    }
-  }
+  const issues: PageBuilderValidationIssue[] = validateMediaAssetReferences(
+    references,
+    rows,
+  ).map((issue) => ({
+    code: issue.code,
+    path: issue.path,
+    message: issue.message,
+  }));
 
   return { issues, assets: rows };
 }
@@ -1079,21 +1043,52 @@ function resolvePublishedContent(
       columns: section.columns.map((column) => ({
         ...column,
         blocks: column.blocks.map((block) => {
-          if (block.type !== "image" || !block.props.assetId) return block;
-          const asset = assets.get(block.props.assetId);
-          if (!asset) return block;
-          return {
-            ...block,
-            props: {
-              ...block.props,
-              src: block.props.src || publicMediaUrl(asset),
-              altText: block.props.altText || asset.alt_text || "",
-              sourceRightsNotes:
-                block.props.sourceRightsNotes ||
-                asset.source_rights_notes ||
-                "",
-            },
-          };
+          if (block.type === "image" && block.props.assetId) {
+            const asset = assets.get(block.props.assetId);
+            if (!asset) return block;
+            return {
+              ...block,
+              props: {
+                ...block.props,
+                src: block.props.src || publicMediaUrl(asset),
+                altText: block.props.altText || asset.alt_text || "",
+                sourceRightsNotes:
+                  block.props.sourceRightsNotes ||
+                  asset.source_rights_notes ||
+                  "",
+              },
+            };
+          }
+
+          if (block.type === "hero" && block.props.mediaAssetId) {
+            const asset = assets.get(block.props.mediaAssetId);
+            if (!asset) return block;
+            return {
+              ...block,
+              props: {
+                ...block.props,
+                mediaSrc: block.props.mediaSrc || publicMediaUrl(asset),
+                mediaAltText: block.props.mediaAltText || asset.alt_text || "",
+                mediaCaption: block.props.mediaCaption || asset.caption || "",
+              },
+            };
+          }
+
+          if (block.type === "video" && block.props.assetId) {
+            const asset = assets.get(block.props.assetId);
+            if (!asset) return block;
+            return {
+              ...block,
+              props: {
+                ...block.props,
+                url: block.props.url || asset.external_url || "",
+                title: block.props.title || asset.title || "",
+                caption: block.props.caption || asset.caption || "",
+              },
+            };
+          }
+
+          return block;
         }),
       })),
     })),
