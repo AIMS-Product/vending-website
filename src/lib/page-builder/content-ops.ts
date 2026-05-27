@@ -114,7 +114,7 @@ export function createPageBlock(
       type: "faq",
       variant: "standard",
       props: {
-        heading: "Frequently asked questions",
+        heading: "",
         items: [{ question: "", answer: "" }],
       },
     };
@@ -153,9 +153,9 @@ export function createPageBlock(
       type: "lead_form",
       variant: "standard",
       props: {
-        heading: "Ready to start?",
+        heading: "",
         body: "",
-        submitLabel: "Submit application",
+        submitLabel: "",
         trackingName: "",
       },
     };
@@ -167,7 +167,7 @@ export function createPageBlock(
     variant: "primary",
     props: {
       presetId: undefined,
-      label: "Apply now",
+      label: "",
       href: "/apply",
       trackingName: "",
     },

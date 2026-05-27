@@ -60,6 +60,20 @@ const optionalTrimmedText = (max: number) =>
     .optional()
     .transform((value) => value ?? "");
 
+const blockFieldVisibilitySchema = z
+  .object({
+    eyebrow: z.boolean().optional(),
+    heading: z.boolean().optional(),
+    body: z.boolean().optional(),
+    cta: z.boolean().optional(),
+    caption: z.boolean().optional(),
+    title: z.boolean().optional(),
+    name: z.boolean().optional(),
+    context: z.boolean().optional(),
+  })
+  .strict()
+  .optional();
+
 const richTextSpanSchema = z
   .object({
     text: z.string().max(1000),
@@ -115,6 +129,7 @@ const richTextBlockSchema = z
         eyebrow: optionalTrimmedText(80),
         heading: optionalTrimmedText(180),
         body: richTextDocumentSchema,
+        fieldVisibility: blockFieldVisibilitySchema,
       })
       .strict(),
   })
@@ -146,6 +161,7 @@ const heroBlockSchema = z
         mediaAltText: z.string().trim().max(180).optional(),
         mediaCaption: z.string().trim().max(240).optional(),
         proofText: z.string().trim().max(240).optional(),
+        fieldVisibility: blockFieldVisibilitySchema,
       })
       .strict(),
   })
@@ -172,6 +188,7 @@ const imageBlockSchema = z
         altText: optionalTrimmedText(180),
         caption: optionalTrimmedText(240),
         sourceRightsNotes: optionalTrimmedText(500),
+        fieldVisibility: blockFieldVisibilitySchema,
       })
       .strict()
       .refine((props) => Boolean(props.assetId || props.src), {
@@ -192,6 +209,7 @@ const videoBlockSchema = z
         title: optionalTrimmedText(140),
         url: safeHrefSchema,
         caption: optionalTrimmedText(240),
+        fieldVisibility: blockFieldVisibilitySchema,
       })
       .strict(),
   })
@@ -231,6 +249,7 @@ const faqBlockSchema = z
               .strict(),
           )
           .max(12),
+        fieldVisibility: blockFieldVisibilitySchema,
       })
       .strict(),
   })
@@ -255,6 +274,7 @@ const cardGridBlockSchema = z
               .strict(),
           )
           .max(12),
+        fieldVisibility: blockFieldVisibilitySchema,
       })
       .strict(),
   })
@@ -272,6 +292,7 @@ const proofBlockSchema = z
         body: z.string().trim().max(800),
         name: optionalTrimmedText(120),
         context: optionalTrimmedText(160),
+        fieldVisibility: blockFieldVisibilitySchema,
       })
       .strict(),
   })
@@ -288,6 +309,7 @@ const leadFormBlockSchema = z
         body: optionalTrimmedText(500),
         submitLabel: z.string().trim().max(80).default("Submit application"),
         trackingName: optionalTrimmedText(120),
+        fieldVisibility: blockFieldVisibilitySchema,
       })
       .strict(),
   })

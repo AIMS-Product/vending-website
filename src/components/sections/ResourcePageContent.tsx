@@ -10,6 +10,7 @@ import {
   resourceColumnGridClass,
   resourceSectionClass,
 } from "@/components/sections/resource-page-content-classes";
+import { isBlockFieldVisible } from "@/lib/page-builder/block-field-visibility";
 
 export type ResourcePageRenderMode = "public" | "editor";
 export type ResourcePageLinkMode = "live" | "disabled";
@@ -28,7 +29,28 @@ type ResourcePageBlockViewProps = {
   renderMode?: ResourcePageRenderMode;
   linkMode?: ResourcePageLinkMode;
   isPrimaryHero?: boolean;
+  previewLayout?: boolean;
 };
+
+export function ResourcePageBlockPreview({ block }: { block: PageBlock }) {
+  return (
+    <ResourcePageBlockView
+      block={block}
+      linkMode="disabled"
+      renderMode="public"
+      isPrimaryHero={block.type === "hero"}
+      previewLayout
+    />
+  );
+}
+
+function previewLayoutClass(
+  previewLayout: boolean | undefined,
+  previewClass: string,
+  responsiveClass: string,
+) {
+  return previewLayout ? previewClass : responsiveClass;
+}
 
 export function ResourcePageContentView({
   content,
@@ -73,28 +95,86 @@ function ResourcePageBlockView({
   renderMode = "public",
   linkMode = "live",
   isPrimaryHero = false,
+  previewLayout = false,
 }: ResourcePageBlockViewProps) {
   if (block.type === "hero") {
     const HeadingTag = isPrimaryHero ? "h1" : "h2";
+    const heroHeadingClass = previewLayoutClass(
+      previewLayout,
+      "mt-4 text-3xl leading-tight font-black text-[#111111] uppercase",
+      "mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl",
+    );
+    const heroSectionClass = previewLayoutClass(previewLayout, "py-4", "py-8");
 
     if (block.variant === "split") {
       return (
-        <div className="grid items-center gap-10 py-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
+        <div
+          className={`grid items-center gap-10 ${heroSectionClass} ${previewLayoutClass(
+            previewLayout,
+            "grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]",
+            "lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]",
+          )}`}
+        >
           <div>
-            {block.props.eyebrow && (
+            {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
               <p className="text-sm font-black text-[#55b8e8] uppercase">
                 {block.props.eyebrow}
               </p>
             )}
-            <HeadingTag className="mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl">
+            <HeadingTag className={heroHeadingClass}>
               {editorFallback(block.props.heading, "Hero headline", renderMode)}
             </HeadingTag>
-            {(block.props.body || renderMode === "editor") && (
-              <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
+            {isBlockFieldVisible(block, "body") &&
+              (block.props.body || renderMode === "editor") && (
+                <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
+                  {editorFallback(
+                    block.props.body,
+                    "Hero body copy",
+                    renderMode,
+                  )}
+                </p>
+              )}
+            {isBlockFieldVisible(block, "cta") &&
+              ((block.props.ctaLabel && block.props.ctaHref) ||
+                renderMode === "editor") && (
+                <ResourceLink
+                  href={block.props.ctaHref || "#"}
+                  trackingName={block.props.ctaTrackingName}
+                  linkMode={linkMode}
+                  className={`${resourceCtaClass("primary")} mt-7`}
+                >
+                  {editorFallback(
+                    block.props.ctaLabel,
+                    "CTA label",
+                    renderMode,
+                  )}
+                </ResourceLink>
+              )}
+          </div>
+          <HeroSplitAside block={block} renderMode={renderMode} />
+        </div>
+      );
+    }
+
+    if (block.variant === "compact") {
+      return (
+        <div className={`mx-auto max-w-3xl text-center ${heroSectionClass}`}>
+          {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
+            <p className="text-sm font-black text-[#55b8e8] uppercase">
+              {block.props.eyebrow}
+            </p>
+          )}
+          <HeadingTag className={heroHeadingClass}>
+            {editorFallback(block.props.heading, "Hero headline", renderMode)}
+          </HeadingTag>
+          {isBlockFieldVisible(block, "body") &&
+            (block.props.body || renderMode === "editor") && (
+              <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 font-semibold text-slate-700">
                 {editorFallback(block.props.body, "Hero body copy", renderMode)}
               </p>
             )}
-            {((block.props.ctaLabel && block.props.ctaHref) ||
+          {isBlockFieldVisible(block, "cta") &&
+            ((block.props.ctaLabel && block.props.ctaHref) ||
               renderMode === "editor") && (
               <ResourceLink
                 href={block.props.ctaHref || "#"}
@@ -105,29 +185,54 @@ function ResourcePageBlockView({
                 {editorFallback(block.props.ctaLabel, "CTA label", renderMode)}
               </ResourceLink>
             )}
-          </div>
-          <HeroSplitAside block={block} renderMode={renderMode} />
         </div>
       );
     }
 
-    if (block.variant === "compact") {
+    if (block.variant === "editorial") {
       return (
-        <div className="mx-auto max-w-3xl py-8 text-center">
-          {block.props.eyebrow && (
+        <div className="max-w-4xl rounded-[12px] bg-[#eaf8ff] px-6 py-8 shadow-[inset_4px_0_0_#55b8e8]">
+          {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
             <p className="text-sm font-black text-[#55b8e8] uppercase">
               {block.props.eyebrow}
             </p>
           )}
-          <HeadingTag className="mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl">
+          <HeadingTag className={heroHeadingClass}>
             {editorFallback(block.props.heading, "Hero headline", renderMode)}
           </HeadingTag>
-          {(block.props.body || renderMode === "editor") && (
-            <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 font-semibold text-slate-700">
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-black text-slate-500 uppercase">
+            <span>Resource guide</span>
+            <span className="size-1 rounded-full bg-slate-400" />
+            <span>Editor approved block</span>
+          </div>
+          {isBlockFieldVisible(block, "body") &&
+            (block.props.body || renderMode === "editor") && (
+              <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
+                {editorFallback(block.props.body, "Hero body copy", renderMode)}
+              </p>
+            )}
+        </div>
+      );
+    }
+
+    return (
+      <div className={`max-w-4xl ${heroSectionClass}`}>
+        {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
+          <p className="text-sm font-black text-[#55b8e8] uppercase">
+            {block.props.eyebrow}
+          </p>
+        )}
+        <HeadingTag className={heroHeadingClass}>
+          {editorFallback(block.props.heading, "Hero headline", renderMode)}
+        </HeadingTag>
+        {isBlockFieldVisible(block, "body") &&
+          (block.props.body || renderMode === "editor") && (
+            <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
               {editorFallback(block.props.body, "Hero body copy", renderMode)}
             </p>
           )}
-          {((block.props.ctaLabel && block.props.ctaHref) ||
+        {isBlockFieldVisible(block, "cta") &&
+          ((block.props.ctaLabel && block.props.ctaHref) ||
             renderMode === "editor") && (
             <ResourceLink
               href={block.props.ctaHref || "#"}
@@ -138,61 +243,6 @@ function ResourcePageBlockView({
               {editorFallback(block.props.ctaLabel, "CTA label", renderMode)}
             </ResourceLink>
           )}
-        </div>
-      );
-    }
-
-    if (block.variant === "editorial") {
-      return (
-        <div className="max-w-4xl rounded-[12px] bg-[#eaf8ff] px-6 py-8 shadow-[inset_4px_0_0_#55b8e8]">
-          {block.props.eyebrow && (
-            <p className="text-sm font-black text-[#55b8e8] uppercase">
-              {block.props.eyebrow}
-            </p>
-          )}
-          <HeadingTag className="mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl">
-            {editorFallback(block.props.heading, "Hero headline", renderMode)}
-          </HeadingTag>
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-black text-slate-500 uppercase">
-            <span>Resource guide</span>
-            <span className="size-1 rounded-full bg-slate-400" />
-            <span>Editor approved block</span>
-          </div>
-          {(block.props.body || renderMode === "editor") && (
-            <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
-              {editorFallback(block.props.body, "Hero body copy", renderMode)}
-            </p>
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <div className="max-w-4xl py-8">
-        {block.props.eyebrow && (
-          <p className="text-sm font-black text-[#55b8e8] uppercase">
-            {block.props.eyebrow}
-          </p>
-        )}
-        <HeadingTag className="mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl">
-          {editorFallback(block.props.heading, "Hero headline", renderMode)}
-        </HeadingTag>
-        {(block.props.body || renderMode === "editor") && (
-          <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
-            {editorFallback(block.props.body, "Hero body copy", renderMode)}
-          </p>
-        )}
-        {((block.props.ctaLabel && block.props.ctaHref) ||
-          renderMode === "editor") && (
-          <ResourceLink
-            href={block.props.ctaHref || "#"}
-            trackingName={block.props.ctaTrackingName}
-            linkMode={linkMode}
-            className={`${resourceCtaClass("primary")} mt-7`}
-          >
-            {editorFallback(block.props.ctaLabel, "CTA label", renderMode)}
-          </ResourceLink>
-        )}
       </div>
     );
   }
@@ -215,16 +265,21 @@ function ResourcePageBlockView({
 
     return (
       <div className={richTextFrameClass}>
-        {block.props.eyebrow && (
+        {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
           <p className="text-sm font-black text-[#55b8e8] uppercase">
             {block.props.eyebrow}
           </p>
         )}
-        {(block.props.heading || renderMode === "editor") && (
-          <h2 className={richTextHeadingClass}>
-            {editorFallback(block.props.heading, "Section heading", renderMode)}
-          </h2>
-        )}
+        {isBlockFieldVisible(block, "heading") &&
+          (block.props.heading || renderMode === "editor") && (
+            <h2 className={richTextHeadingClass}>
+              {editorFallback(
+                block.props.heading,
+                "Section heading",
+                renderMode,
+              )}
+            </h2>
+          )}
         <div className="mt-5 space-y-4 text-base leading-8 font-semibold text-slate-700">
           {block.variant === "checklist" &&
           block.props.body.nodes.length === 0 &&
@@ -289,9 +344,17 @@ function ResourcePageBlockView({
   if (block.type === "image") {
     const imageFrameClass =
       block.variant === "inline"
-        ? "grid items-center gap-6 md:grid-cols-[minmax(160px,0.75fr)_minmax(0,1fr)]"
+        ? previewLayoutClass(
+            previewLayout,
+            "grid items-center gap-6 grid-cols-[minmax(160px,0.75fr)_minmax(0,1fr)]",
+            "grid items-center gap-6 md:grid-cols-[minmax(160px,0.75fr)_minmax(0,1fr)]",
+          )
         : block.variant === "feature"
-          ? "grid items-center gap-6 md:grid-cols-[minmax(0,1fr)_minmax(180px,0.75fr)]"
+          ? previewLayoutClass(
+              previewLayout,
+              "grid items-center gap-6 grid-cols-[minmax(0,1fr)_minmax(180px,0.75fr)]",
+              "grid items-center gap-6 md:grid-cols-[minmax(0,1fr)_minmax(180px,0.75fr)]",
+            )
           : "";
     const imageClass =
       block.variant === "wide"
@@ -318,7 +381,8 @@ function ResourcePageBlockView({
       </div>
     );
     const captionNode =
-      block.props.caption || renderMode === "editor" ? (
+      isBlockFieldVisible(block, "caption") &&
+      (block.props.caption || renderMode === "editor") ? (
         <figcaption
           className={
             block.variant === "inline" || block.variant === "feature"
@@ -333,21 +397,30 @@ function ResourcePageBlockView({
     if (block.variant === "feature") {
       return (
         <figure className={imageFrameClass}>
-          {(block.props.caption || renderMode === "editor") && (
-            <figcaption className="text-base leading-7 font-semibold text-slate-600">
-              <p className="text-sm font-black text-[#55b8e8] uppercase">
-                Featured media
-              </p>
-              <p className="mt-4">
-                {editorFallback(
-                  block.props.caption,
-                  "Image caption",
-                  renderMode,
-                )}
-              </p>
-            </figcaption>
-          )}
-          <div className="md:order-2">{mediaNode}</div>
+          {isBlockFieldVisible(block, "caption") &&
+            (block.props.caption || renderMode === "editor") && (
+              <figcaption className="text-base leading-7 font-semibold text-slate-600">
+                <p className="text-sm font-black text-[#55b8e8] uppercase">
+                  Featured media
+                </p>
+                <p className="mt-4">
+                  {editorFallback(
+                    block.props.caption,
+                    "Image caption",
+                    renderMode,
+                  )}
+                </p>
+              </figcaption>
+            )}
+          <div
+            className={previewLayoutClass(
+              previewLayout,
+              "order-2",
+              "md:order-2",
+            )}
+          >
+            {mediaNode}
+          </div>
         </figure>
       );
     }
@@ -363,23 +436,31 @@ function ResourcePageBlockView({
   if (block.type === "video") {
     if (block.variant === "inline") {
       return (
-        <div className="grid items-center gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[7px_7px_0_#55b8e8] md:grid-cols-[180px_minmax(0,1fr)]">
+        <div
+          className={`grid items-center gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[7px_7px_0_#55b8e8] ${previewLayoutClass(
+            previewLayout,
+            "grid-cols-[180px_minmax(0,1fr)]",
+            "md:grid-cols-[180px_minmax(0,1fr)]",
+          )}`}
+        >
           <VideoPanel />
           <div>
-            {(block.props.title || renderMode === "editor") && (
-              <h2 className="text-xl font-black text-[#111111] uppercase">
-                {editorFallback(block.props.title, "Video title", renderMode)}
-              </h2>
-            )}
-            {(block.props.caption || renderMode === "editor") && (
-              <p className="mt-3 text-sm leading-7 font-semibold text-slate-600">
-                {editorFallback(
-                  block.props.caption,
-                  "Video caption",
-                  renderMode,
-                )}
-              </p>
-            )}
+            {isBlockFieldVisible(block, "title") &&
+              (block.props.title || renderMode === "editor") && (
+                <h2 className="text-xl font-black text-[#111111] uppercase">
+                  {editorFallback(block.props.title, "Video title", renderMode)}
+                </h2>
+              )}
+            {isBlockFieldVisible(block, "caption") &&
+              (block.props.caption || renderMode === "editor") && (
+                <p className="mt-3 text-sm leading-7 font-semibold text-slate-600">
+                  {editorFallback(
+                    block.props.caption,
+                    "Video caption",
+                    renderMode,
+                  )}
+                </p>
+              )}
             {(block.props.url || renderMode === "editor") && (
               <ResourceLink
                 href={block.props.url || "#"}
@@ -401,11 +482,12 @@ function ResourcePageBlockView({
         }`}
       >
         <VideoPanel wide={block.variant === "wide"} />
-        {(block.props.title || renderMode === "editor") && (
-          <h2 className="mt-5 text-xl font-black text-[#111111] uppercase">
-            {editorFallback(block.props.title, "Video title", renderMode)}
-          </h2>
-        )}
+        {isBlockFieldVisible(block, "title") &&
+          (block.props.title || renderMode === "editor") && (
+            <h2 className="mt-5 text-xl font-black text-[#111111] uppercase">
+              {editorFallback(block.props.title, "Video title", renderMode)}
+            </h2>
+          )}
         {(block.props.url || renderMode === "editor") && (
           <ResourceLink
             href={block.props.url || "#"}
@@ -415,11 +497,12 @@ function ResourcePageBlockView({
             Watch video
           </ResourceLink>
         )}
-        {(block.props.caption || renderMode === "editor") && (
-          <p className="mt-3 text-sm font-semibold text-slate-600">
-            {editorFallback(block.props.caption, "Video caption", renderMode)}
-          </p>
-        )}
+        {isBlockFieldVisible(block, "caption") &&
+          (block.props.caption || renderMode === "editor") && (
+            <p className="mt-3 text-sm font-semibold text-slate-600">
+              {editorFallback(block.props.caption, "Video caption", renderMode)}
+            </p>
+          )}
       </div>
     );
   }
@@ -433,11 +516,12 @@ function ResourcePageBlockView({
           : "max-w-3xl";
     return (
       <div className={faqFrameClass}>
-        {(block.props.heading || renderMode === "editor") && (
-          <h2 className="text-2xl font-black text-[#111111] uppercase">
-            {editorFallback(block.props.heading, "FAQ heading", renderMode)}
-          </h2>
-        )}
+        {isBlockFieldVisible(block, "heading") &&
+          (block.props.heading || renderMode === "editor") && (
+            <h2 className="text-2xl font-black text-[#111111] uppercase">
+              {editorFallback(block.props.heading, "FAQ heading", renderMode)}
+            </h2>
+          )}
         <div className="mt-5 divide-y-2 divide-[#bfeeff] rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8]">
           {block.props.items.length === 0 && renderMode === "editor" ? (
             <div className="p-5 text-sm font-semibold text-slate-400">
@@ -469,21 +553,34 @@ function ResourcePageBlockView({
   if (block.type === "card_grid") {
     const gridClass =
       block.variant === "compact"
-        ? "mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        ? previewLayoutClass(
+            previewLayout,
+            "mt-5 grid gap-3 grid-cols-2 lg:grid-cols-4",
+            "mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4",
+          )
         : block.variant === "feature"
-          ? "mt-5 grid gap-4 md:grid-cols-[1.1fr_0.9fr]"
-          : "mt-5 grid gap-4 md:grid-cols-3";
+          ? previewLayoutClass(
+              previewLayout,
+              "mt-5 grid gap-4 grid-cols-[1.1fr_0.9fr]",
+              "mt-5 grid gap-4 md:grid-cols-[1.1fr_0.9fr]",
+            )
+          : previewLayoutClass(
+              previewLayout,
+              "mt-5 grid gap-4 grid-cols-3",
+              "mt-5 grid gap-4 md:grid-cols-3",
+            );
     return (
       <div>
-        {(block.props.heading || renderMode === "editor") && (
-          <h2 className="text-2xl font-black text-[#111111] uppercase">
-            {editorFallback(
-              block.props.heading,
-              "Card grid heading",
-              renderMode,
-            )}
-          </h2>
-        )}
+        {isBlockFieldVisible(block, "heading") &&
+          (block.props.heading || renderMode === "editor") && (
+            <h2 className="text-2xl font-black text-[#111111] uppercase">
+              {editorFallback(
+                block.props.heading,
+                "Card grid heading",
+                renderMode,
+              )}
+            </h2>
+          )}
         <div className={gridClass}>
           {block.props.cards.length === 0 && renderMode === "editor" ? (
             <div className="rounded-[10px] border-2 border-dashed border-[#111111]/35 bg-white p-5 text-sm font-semibold text-slate-400 shadow-[5px_5px_0_#55b8e8]">
@@ -495,7 +592,11 @@ function ResourcePageBlockView({
                 key={cardKey(card)}
                 className={`rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8] ${
                   block.variant === "feature" && index === 0
-                    ? "md:row-span-2 md:min-h-64"
+                    ? previewLayoutClass(
+                        previewLayout,
+                        "row-span-2 min-h-64",
+                        "md:row-span-2 md:min-h-64",
+                      )
                     : ""
                 } ${block.variant === "compact" ? "p-4" : ""}`}
               >
@@ -527,7 +628,7 @@ function ResourcePageBlockView({
     if (block.variant === "stat") {
       return (
         <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-          {block.props.eyebrow && (
+          {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
             <p className="text-sm font-black text-[#55b8e8] uppercase">
               {block.props.eyebrow}
             </p>
@@ -535,16 +636,21 @@ function ResourcePageBlockView({
           <blockquote className="mt-4 text-4xl leading-none font-black text-[#111111] uppercase md:text-5xl">
             {editorFallback(block.props.body, "Proof stat", renderMode)}
           </blockquote>
-          {(block.props.name ||
-            block.props.context ||
-            renderMode === "editor") && (
+          {((isBlockFieldVisible(block, "name") &&
+            (block.props.name || renderMode === "editor")) ||
+            (isBlockFieldVisible(block, "context") &&
+              (block.props.context || renderMode === "editor"))) && (
             <figcaption className="mt-5 text-sm font-semibold text-slate-600">
-              {editorFallback(block.props.name, "Source", renderMode)}
-              {(block.props.name || renderMode === "editor") &&
+              {isBlockFieldVisible(block, "name") &&
+                editorFallback(block.props.name, "Source", renderMode)}
+              {isBlockFieldVisible(block, "name") &&
+              isBlockFieldVisible(block, "context") &&
+              (block.props.name || renderMode === "editor") &&
               (block.props.context || renderMode === "editor")
                 ? " - "
                 : ""}
-              {editorFallback(block.props.context, "Context", renderMode)}
+              {isBlockFieldVisible(block, "context") &&
+                editorFallback(block.props.context, "Context", renderMode)}
             </figcaption>
           )}
         </figure>
@@ -554,12 +660,18 @@ function ResourcePageBlockView({
     if (block.variant === "logo") {
       return (
         <aside className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-          {block.props.eyebrow && (
+          {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
             <p className="text-sm font-black text-[#55b8e8] uppercase">
               {block.props.eyebrow}
             </p>
           )}
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div
+            className={`mt-5 grid gap-3 ${previewLayoutClass(
+              previewLayout,
+              "grid-cols-3",
+              "sm:grid-cols-3",
+            )}`}
+          >
             {[block.props.name, block.props.context, block.props.body]
               .filter((item) => item || renderMode === "editor")
               .slice(0, 3)
@@ -578,7 +690,7 @@ function ResourcePageBlockView({
 
     return (
       <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-        {block.props.eyebrow && (
+        {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
           <p className="text-sm font-black text-[#55b8e8] uppercase">
             {block.props.eyebrow}
           </p>
@@ -586,16 +698,21 @@ function ResourcePageBlockView({
         <blockquote className="mt-3 text-xl leading-8 font-black text-[#111111]">
           {editorFallback(block.props.body, "Proof quote or stat", renderMode)}
         </blockquote>
-        {(block.props.name ||
-          block.props.context ||
-          renderMode === "editor") && (
+        {((isBlockFieldVisible(block, "name") &&
+          (block.props.name || renderMode === "editor")) ||
+          (isBlockFieldVisible(block, "context") &&
+            (block.props.context || renderMode === "editor"))) && (
           <figcaption className="mt-4 text-sm font-semibold text-slate-600">
-            {editorFallback(block.props.name, "Name", renderMode)}
-            {(block.props.name || renderMode === "editor") &&
+            {isBlockFieldVisible(block, "name") &&
+              editorFallback(block.props.name, "Name", renderMode)}
+            {isBlockFieldVisible(block, "name") &&
+            isBlockFieldVisible(block, "context") &&
+            (block.props.name || renderMode === "editor") &&
             (block.props.context || renderMode === "editor")
               ? " - "
               : ""}
-            {editorFallback(block.props.context, "Context", renderMode)}
+            {isBlockFieldVisible(block, "context") &&
+              editorFallback(block.props.context, "Context", renderMode)}
           </figcaption>
         )}
       </figure>
@@ -605,22 +722,34 @@ function ResourcePageBlockView({
   if (block.type === "lead_form") {
     if (block.variant === "sidebar") {
       return (
-        <div className="grid gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8] lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
+        <div
+          className={`grid gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8] ${previewLayoutClass(
+            previewLayout,
+            "grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] items-start",
+            "lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start",
+          )}`}
+        >
           <div>
-            {(block.props.heading || renderMode === "editor") && (
-              <h2 className="text-2xl font-black text-[#111111] uppercase">
-                {editorFallback(
-                  block.props.heading,
-                  "Lead form heading",
-                  renderMode,
-                )}
-              </h2>
-            )}
-            {(block.props.body || renderMode === "editor") && (
-              <p className="mt-3 text-sm leading-7 font-semibold text-slate-700">
-                {editorFallback(block.props.body, "Lead form copy", renderMode)}
-              </p>
-            )}
+            {isBlockFieldVisible(block, "heading") &&
+              (block.props.heading || renderMode === "editor") && (
+                <h2 className="text-2xl font-black text-[#111111] uppercase">
+                  {editorFallback(
+                    block.props.heading,
+                    "Lead form heading",
+                    renderMode,
+                  )}
+                </h2>
+              )}
+            {isBlockFieldVisible(block, "body") &&
+              (block.props.body || renderMode === "editor") && (
+                <p className="mt-3 text-sm leading-7 font-semibold text-slate-700">
+                  {editorFallback(
+                    block.props.body,
+                    "Lead form copy",
+                    renderMode,
+                  )}
+                </p>
+              )}
           </div>
           {renderLeadForm ? (
             renderLeadForm(block)
@@ -640,24 +769,31 @@ function ResourcePageBlockView({
           block.variant === "compact" ? "p-5" : "p-6"
         }`}
       >
-        {(block.props.heading ||
-          block.props.body ||
-          renderMode === "editor") && (
+        {((isBlockFieldVisible(block, "heading") &&
+          (block.props.heading || renderMode === "editor")) ||
+          (isBlockFieldVisible(block, "body") &&
+            (block.props.body || renderMode === "editor"))) && (
           <div>
-            {(block.props.heading || renderMode === "editor") && (
-              <h2 className="text-2xl font-black text-[#111111] uppercase">
-                {editorFallback(
-                  block.props.heading,
-                  "Lead form heading",
-                  renderMode,
-                )}
-              </h2>
-            )}
-            {(block.props.body || renderMode === "editor") && (
-              <p className="mt-3 text-sm leading-7 font-semibold text-slate-700">
-                {editorFallback(block.props.body, "Lead form copy", renderMode)}
-              </p>
-            )}
+            {isBlockFieldVisible(block, "heading") &&
+              (block.props.heading || renderMode === "editor") && (
+                <h2 className="text-2xl font-black text-[#111111] uppercase">
+                  {editorFallback(
+                    block.props.heading,
+                    "Lead form heading",
+                    renderMode,
+                  )}
+                </h2>
+              )}
+            {isBlockFieldVisible(block, "body") &&
+              (block.props.body || renderMode === "editor") && (
+                <p className="mt-3 text-sm leading-7 font-semibold text-slate-700">
+                  {editorFallback(
+                    block.props.body,
+                    "Lead form copy",
+                    renderMode,
+                  )}
+                </p>
+              )}
           </div>
         )}
         {renderLeadForm ? (

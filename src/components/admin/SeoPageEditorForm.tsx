@@ -87,6 +87,17 @@ import {
   blockPickerOptions,
   type BlockVariant,
 } from "@/lib/page-builder/block-options";
+import {
+  blockCanvasPlaceholders,
+  richTextBodyPlaceholder,
+} from "@/lib/page-builder/block-editor-placeholders";
+import {
+  isBlockFieldVisible,
+  optionalBlockFieldLabels,
+  setBlockFieldVisibility,
+  withDefaultFieldVisibility,
+  type OptionalBlockFieldKey,
+} from "@/lib/page-builder/block-field-visibility";
 import type { EditorMediaAsset } from "@/lib/media/editor-asset";
 import {
   MediaDropTarget,
@@ -1997,6 +2008,127 @@ function ChromeToggle({
   );
 }
 
+const optionalFieldEyeTrackClass =
+  "grid w-full grid-cols-[minmax(0,1fr)_28px] items-start gap-x-2";
+const optionalFieldEyeCellClass = "flex justify-end self-start pt-0.5";
+const builderOptionalFieldScopeClass = "w-full max-w-3xl";
+
+function FieldVisibilityEyeIcon({ visible }: { visible: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className="size-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.75"
+    >
+      {visible ? (
+        <>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+          />
+        </>
+      ) : (
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"
+        />
+      )}
+    </svg>
+  );
+}
+
+function FieldVisibilityEyeToggle({
+  fieldLabel,
+  visible,
+  onChange,
+}: {
+  fieldLabel: string;
+  visible: boolean;
+  onChange: (visible: boolean) => void;
+}) {
+  const actionLabel = visible
+    ? `Hide ${fieldLabel.toLowerCase()}`
+    : `Show ${fieldLabel.toLowerCase()}`;
+
+  return (
+    <button
+      type="button"
+      aria-label={actionLabel}
+      aria-pressed={visible}
+      title={actionLabel}
+      onClick={() => onChange(!visible)}
+      className={`inline-flex size-7 shrink-0 items-center justify-center rounded-md transition ${
+        visible
+          ? "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+          : "text-slate-300 hover:bg-slate-100 hover:text-slate-500"
+      }`}
+    >
+      <FieldVisibilityEyeIcon visible={visible} />
+    </button>
+  );
+}
+
+function OptionalBlockField({
+  block,
+  field,
+  onChange,
+  label,
+  compact = false,
+  children,
+}: {
+  block: PageBlock;
+  field: OptionalBlockFieldKey;
+  onChange: (block: PageBlock) => void;
+  label?: string;
+  compact?: boolean;
+  children: ReactNode;
+}) {
+  const visible = isBlockFieldVisible(block, field);
+  const fieldLabel = label ?? optionalBlockFieldLabels[field];
+  const eyeToggle = (
+    <FieldVisibilityEyeToggle
+      fieldLabel={fieldLabel}
+      visible={visible}
+      onChange={(checked) =>
+        onChange(setBlockFieldVisibility(block, field, checked))
+      }
+    />
+  );
+
+  if (compact) {
+    return (
+      <div
+        className={`${optionalFieldEyeTrackClass} ${visible ? "" : "opacity-70"}`}
+      >
+        <div className="min-w-0">{children}</div>
+        <div className={optionalFieldEyeCellClass}>{eyeToggle}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`${optionalFieldEyeTrackClass} ${visible ? "" : "opacity-70"}`}
+    >
+      <div className="min-w-0 space-y-1.5">
+        <span className="text-sm font-medium text-slate-700">{fieldLabel}</span>
+        {children}
+      </div>
+      <div className={optionalFieldEyeCellClass}>{eyeToggle}</div>
+    </div>
+  );
+}
+
 function BlockSettingsModal({
   entry,
   onClose,
@@ -2181,29 +2313,48 @@ function BlockSidebarSettingsPanel({
     <div className="space-y-4">
       {block.type === "rich_text" && (
         <>
-          <TextInput
+          <OptionalBlockField
+            block={block}
+            field="eyebrow"
             label="Eyebrow"
-            value={block.props.eyebrow}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, eyebrow: value },
-              })
-            }
-          />
-          <TextInput
+            onChange={onChange}
+          >
+            <TextInput
+              hideLabel
+              label="Eyebrow"
+              value={block.props.eyebrow}
+              placeholder={blockCanvasPlaceholders.rich_text.eyebrow}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, eyebrow: value },
+                })
+              }
+            />
+          </OptionalBlockField>
+          <OptionalBlockField
+            block={block}
+            field="heading"
             label="Heading"
-            value={block.props.heading}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, heading: value },
-              })
-            }
-          />
+            onChange={onChange}
+          >
+            <TextInput
+              hideLabel
+              label="Heading"
+              value={block.props.heading}
+              placeholder={blockCanvasPlaceholders.rich_text.heading}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, heading: value },
+                })
+              }
+            />
+          </OptionalBlockField>
           <TextAreaInput
             label="Body"
             value={editableRichTextBodyText(block)}
+            placeholder={richTextBodyPlaceholder(block.variant)}
             onChange={(value) =>
               onChange({
                 ...block,
@@ -2219,16 +2370,25 @@ function BlockSidebarSettingsPanel({
 
       {block.type === "hero" && (
         <>
-          <TextInput
+          <OptionalBlockField
+            block={block}
+            field="eyebrow"
             label="Eyebrow"
-            value={block.props.eyebrow}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, eyebrow: value },
-              })
-            }
-          />
+            onChange={onChange}
+          >
+            <TextInput
+              hideLabel
+              label="Eyebrow"
+              value={block.props.eyebrow}
+              placeholder={blockCanvasPlaceholders.hero.eyebrow}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, eyebrow: value },
+                })
+              }
+            />
+          </OptionalBlockField>
           <TextAreaInput
             label="Headline"
             value={block.props.heading}
@@ -2239,58 +2399,73 @@ function BlockSidebarSettingsPanel({
               })
             }
           />
-          <TextAreaInput
+          <OptionalBlockField
+            block={block}
+            field="body"
             label="Body"
-            value={block.props.body}
-            maxLength={HERO_BODY_MAX_LENGTH}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, body: value },
-              })
-            }
-          />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TextInput
-              label="CTA label"
-              value={block.props.ctaLabel}
+            onChange={onChange}
+          >
+            <TextAreaInput
+              hideLabel
+              label="Body"
+              value={block.props.body}
+              maxLength={HERO_BODY_MAX_LENGTH}
               onChange={(value) =>
                 onChange({
                   ...block,
-                  props: {
-                    ...block.props,
-                    ctaLabel: value,
-                    ctaTrackingName: syncedTrackingName({
-                      currentTrackingName: block.props.ctaTrackingName,
-                      previousLabel: block.props.ctaLabel,
-                      nextLabel: value,
-                      fallback: "hero-cta",
-                    }),
-                  },
+                  props: { ...block.props, body: value },
                 })
               }
             />
-            <TextInput
-              label="CTA href"
-              value={block.props.ctaHref}
-              onChange={(value) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, ctaHref: value },
-                })
-              }
-            />
-            <TextInput
-              label="Internal CTA label"
-              value={block.props.ctaTrackingName}
-              onChange={(value) =>
-                onChange({
-                  ...block,
-                  props: { ...block.props, ctaTrackingName: value },
-                })
-              }
-            />
-          </div>
+          </OptionalBlockField>
+          <OptionalBlockField
+            block={block}
+            field="cta"
+            label="CTA"
+            onChange={onChange}
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextInput
+                label="CTA label"
+                value={block.props.ctaLabel}
+                onChange={(value) =>
+                  onChange({
+                    ...block,
+                    props: {
+                      ...block.props,
+                      ctaLabel: value,
+                      ctaTrackingName: syncedTrackingName({
+                        currentTrackingName: block.props.ctaTrackingName,
+                        previousLabel: block.props.ctaLabel,
+                        nextLabel: value,
+                        fallback: "hero-cta",
+                      }),
+                    },
+                  })
+                }
+              />
+              <TextInput
+                label="CTA href"
+                value={block.props.ctaHref}
+                onChange={(value) =>
+                  onChange({
+                    ...block,
+                    props: { ...block.props, ctaHref: value },
+                  })
+                }
+              />
+              <TextInput
+                label="Internal CTA label"
+                value={block.props.ctaTrackingName}
+                onChange={(value) =>
+                  onChange({
+                    ...block,
+                    props: { ...block.props, ctaTrackingName: value },
+                  })
+                }
+              />
+            </div>
+          </OptionalBlockField>
           {block.variant === "split" && (
             <div className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -2455,16 +2630,25 @@ function BlockSidebarSettingsPanel({
               })
             }
           />
-          <TextInput
+          <OptionalBlockField
+            block={block}
+            field="caption"
             label="Caption"
-            value={block.props.caption}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, caption: value },
-              })
-            }
-          />
+            onChange={onChange}
+          >
+            <TextInput
+              hideLabel
+              label="Caption"
+              value={block.props.caption}
+              placeholder={blockCanvasPlaceholders.image.caption}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, caption: value },
+                })
+              }
+            />
+          </OptionalBlockField>
           <TextInput
             label="Rights notes"
             value={block.props.sourceRightsNotes}
@@ -2534,16 +2718,25 @@ function BlockSidebarSettingsPanel({
 
       {block.type === "video" && (
         <>
-          <TextInput
+          <OptionalBlockField
+            block={block}
+            field="title"
             label="Title"
-            value={block.props.title}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, title: value },
-              })
-            }
-          />
+            onChange={onChange}
+          >
+            <TextInput
+              hideLabel
+              label="Title"
+              value={block.props.title}
+              placeholder={blockCanvasPlaceholders.video.title}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, title: value },
+                })
+              }
+            />
+          </OptionalBlockField>
           <div>
             <p className="text-sm font-medium text-slate-700">Library video</p>
             <p className="mt-1 text-xs text-slate-500">
@@ -2580,47 +2773,74 @@ function BlockSidebarSettingsPanel({
               })
             }
           />
-          <TextInput
+          <OptionalBlockField
+            block={block}
+            field="caption"
             label="Caption"
-            value={block.props.caption}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, caption: value },
-              })
-            }
-          />
+            onChange={onChange}
+          >
+            <TextInput
+              hideLabel
+              label="Caption"
+              value={block.props.caption}
+              placeholder={blockCanvasPlaceholders.video.caption}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, caption: value },
+                })
+              }
+            />
+          </OptionalBlockField>
         </>
       )}
 
       {block.type === "faq" && (
         <>
-          <TextInput
+          <OptionalBlockField
+            block={block}
+            field="heading"
             label="Heading"
-            value={block.props.heading}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, heading: value },
-              })
-            }
-          />
+            onChange={onChange}
+          >
+            <TextInput
+              hideLabel
+              label="Heading"
+              value={block.props.heading}
+              placeholder={blockCanvasPlaceholders.faq.heading}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, heading: value },
+                })
+              }
+            />
+          </OptionalBlockField>
           <FaqItemEditorList key={block.id} block={block} onChange={onChange} />
         </>
       )}
 
       {block.type === "card_grid" && (
         <>
-          <TextInput
+          <OptionalBlockField
+            block={block}
+            field="heading"
             label="Heading"
-            value={block.props.heading}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, heading: value },
-              })
-            }
-          />
+            onChange={onChange}
+          >
+            <TextInput
+              hideLabel
+              label="Heading"
+              value={block.props.heading}
+              placeholder={blockCanvasPlaceholders.card_grid.heading}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, heading: value },
+                })
+              }
+            />
+          </OptionalBlockField>
           <div className="space-y-3">
             {block.props.cards.map((card, cardIndex) => (
               <div
@@ -2754,16 +2974,25 @@ function BlockSidebarSettingsPanel({
 
       {block.type === "proof" && (
         <>
-          <TextInput
+          <OptionalBlockField
+            block={block}
+            field="eyebrow"
             label="Eyebrow"
-            value={block.props.eyebrow}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, eyebrow: value },
-              })
-            }
-          />
+            onChange={onChange}
+          >
+            <TextInput
+              hideLabel
+              label="Eyebrow"
+              value={block.props.eyebrow}
+              placeholder={blockCanvasPlaceholders.proof.eyebrow}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, eyebrow: value },
+                })
+              }
+            />
+          </OptionalBlockField>
           <TextAreaInput
             label="Quote or stat"
             value={block.props.body}
@@ -2774,26 +3003,44 @@ function BlockSidebarSettingsPanel({
               })
             }
           />
-          <TextInput
+          <OptionalBlockField
+            block={block}
+            field="name"
             label="Name"
-            value={block.props.name}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, name: value },
-              })
-            }
-          />
-          <TextInput
+            onChange={onChange}
+          >
+            <TextInput
+              hideLabel
+              label="Name"
+              value={block.props.name}
+              placeholder={blockCanvasPlaceholders.proof.name}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, name: value },
+                })
+              }
+            />
+          </OptionalBlockField>
+          <OptionalBlockField
+            block={block}
+            field="context"
             label="Context"
-            value={block.props.context}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, context: value },
-              })
-            }
-          />
+            onChange={onChange}
+          >
+            <TextInput
+              hideLabel
+              label="Context"
+              value={block.props.context}
+              placeholder={blockCanvasPlaceholders.proof.context}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, context: value },
+                })
+              }
+            />
+          </OptionalBlockField>
           <TextInput
             label="Proof item ID"
             value={block.props.proofItemId ?? ""}
@@ -2809,26 +3056,44 @@ function BlockSidebarSettingsPanel({
 
       {block.type === "lead_form" && (
         <>
-          <TextInput
+          <OptionalBlockField
+            block={block}
+            field="heading"
             label="Heading"
-            value={block.props.heading}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, heading: value },
-              })
-            }
-          />
-          <TextAreaInput
+            onChange={onChange}
+          >
+            <TextInput
+              hideLabel
+              label="Heading"
+              value={block.props.heading}
+              placeholder={blockCanvasPlaceholders.lead_form.heading}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, heading: value },
+                })
+              }
+            />
+          </OptionalBlockField>
+          <OptionalBlockField
+            block={block}
+            field="body"
             label="Helper copy"
-            value={block.props.body}
-            onChange={(value) =>
-              onChange({
-                ...block,
-                props: { ...block.props, body: value },
-              })
-            }
-          />
+            onChange={onChange}
+          >
+            <TextAreaInput
+              hideLabel
+              label="Helper copy"
+              value={block.props.body}
+              placeholder={blockCanvasPlaceholders.lead_form.body}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, body: value },
+                })
+              }
+            />
+          </OptionalBlockField>
           <TextInput
             label="Submit label"
             value={block.props.submitLabel}
@@ -4580,7 +4845,7 @@ function BlockPicker({
                         }}
                       >
                         <span
-                          className="block h-40 overflow-hidden border-b border-slate-200 bg-white p-5 sm:h-48 sm:p-6"
+                          className="block h-44 overflow-hidden border-b border-slate-200 bg-[#f5fbff] p-2 sm:h-52 sm:p-3"
                           aria-hidden="true"
                         >
                           <BlockVariantPreviewSkeleton
@@ -4737,49 +5002,65 @@ function BlockEditor({
             </summary>
             <div className="px-3 pt-14 pb-6 sm:px-4">
               {block.type === "rich_text" && (
-                <div className="max-w-3xl px-3 py-7 sm:px-4">
-                  <label className="block">
-                    <span className="sr-only">Eyebrow</span>
-                    <input
-                      aria-label="Eyebrow"
-                      value={block.props.eyebrow}
-                      placeholder="Eyebrow"
-                      onChange={(event) =>
-                        onChange({
-                          ...block,
-                          props: {
-                            ...block.props,
-                            eyebrow: event.target.value,
-                          },
-                        })
-                      }
-                      className={eyebrowInputClass}
-                    />
-                  </label>
-                  <label className="mt-3 block">
-                    <span className="sr-only">Heading</span>
-                    <input
-                      aria-label="Heading"
-                      value={block.props.heading}
-                      placeholder="Section heading"
-                      onChange={(event) =>
-                        onChange({
-                          ...block,
-                          props: {
-                            ...block.props,
-                            heading: event.target.value,
-                          },
-                        })
-                      }
-                      className={sectionHeadingInputClass}
-                    />
-                  </label>
+                <div
+                  className={`${builderOptionalFieldScopeClass} px-3 py-7 sm:px-4`}
+                >
+                  <OptionalBlockField
+                    block={block}
+                    field="eyebrow"
+                    onChange={onChange}
+                    compact
+                  >
+                    <label className="block">
+                      <span className="sr-only">Eyebrow</span>
+                      <input
+                        aria-label="Eyebrow"
+                        value={block.props.eyebrow}
+                        placeholder={blockCanvasPlaceholders.rich_text.eyebrow}
+                        onChange={(event) =>
+                          onChange({
+                            ...block,
+                            props: {
+                              ...block.props,
+                              eyebrow: event.target.value,
+                            },
+                          })
+                        }
+                        className={eyebrowInputClass}
+                      />
+                    </label>
+                  </OptionalBlockField>
+                  <OptionalBlockField
+                    block={block}
+                    field="heading"
+                    onChange={onChange}
+                    compact
+                  >
+                    <label className="mt-3 block">
+                      <span className="sr-only">Heading</span>
+                      <input
+                        aria-label="Heading"
+                        value={block.props.heading}
+                        placeholder={blockCanvasPlaceholders.rich_text.heading}
+                        onChange={(event) =>
+                          onChange({
+                            ...block,
+                            props: {
+                              ...block.props,
+                              heading: event.target.value,
+                            },
+                          })
+                        }
+                        className={sectionHeadingInputClass}
+                      />
+                    </label>
+                  </OptionalBlockField>
                   <label className="mt-4 block">
                     <span className="sr-only">Body</span>
                     <textarea
                       aria-label="Body"
                       value={editableRichTextBodyText(block)}
-                      placeholder="Write the page copy here."
+                      placeholder={richTextBodyPlaceholder(block.variant)}
                       onChange={(event) =>
                         onChange({
                           ...block,
@@ -4825,7 +5106,7 @@ function BlockEditor({
                     <input
                       aria-label="CTA label"
                       value={block.props.label}
-                      placeholder="CTA label"
+                      placeholder={blockCanvasPlaceholders.cta.label}
                       onChange={(event) => {
                         const nextLabel = event.target.value;
                         onChange({
@@ -4857,29 +5138,43 @@ function BlockEditor({
               )}
 
               {block.type === "faq" && (
-                <div className="max-w-3xl px-3 py-4 sm:px-4">
-                  <label className="block">
-                    <span className="sr-only">Heading</span>
-                    <input
-                      aria-label="Heading"
-                      value={block.props.heading}
-                      placeholder="FAQ heading"
-                      onChange={(event) =>
-                        onChange({
-                          ...block,
-                          props: {
-                            ...block.props,
-                            heading: event.target.value,
-                          },
-                        })
-                      }
-                      className={sectionHeadingInputClass}
-                    />
-                  </label>
-                  <div className="mt-5 divide-y-2 divide-[#bfeeff] rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8]">
+                <>
+                  <div
+                    className={`${builderOptionalFieldScopeClass} px-3 py-4 sm:px-4`}
+                  >
+                    <OptionalBlockField
+                      block={block}
+                      field="heading"
+                      onChange={onChange}
+                      compact
+                    >
+                      <label className="block">
+                        <span className="sr-only">Heading</span>
+                        <input
+                          aria-label="Heading"
+                          value={block.props.heading}
+                          placeholder={blockCanvasPlaceholders.faq.heading}
+                          onChange={(event) =>
+                            onChange({
+                              ...block,
+                              props: {
+                                ...block.props,
+                                heading: event.target.value,
+                              },
+                            })
+                          }
+                          className={sectionHeadingInputClass}
+                        />
+                      </label>
+                    </OptionalBlockField>
+                  </div>
+                  <div
+                    className={`${builderOptionalFieldScopeClass} mt-5 divide-y-2 divide-[#bfeeff] rounded-[10px] border-2 border-[#111111] bg-white px-3 shadow-[7px_7px_0_#55b8e8] sm:px-4`}
+                  >
                     <div className="p-5">
                       <TextInput
                         label="Question"
+                        placeholder={blockCanvasPlaceholders.faq.question}
                         value={block.props.items[0]?.question ?? ""}
                         onChange={(value) =>
                           onChange({
@@ -4895,6 +5190,7 @@ function BlockEditor({
                       />
                       <TextAreaInput
                         label="Answer"
+                        placeholder={blockCanvasPlaceholders.faq.answer}
                         value={block.props.items[0]?.answer ?? ""}
                         onChange={(value) =>
                           onChange({
@@ -4910,29 +5206,40 @@ function BlockEditor({
                       />
                     </div>
                   </div>
-                </div>
+                </>
               )}
 
               {block.type === "card_grid" && (
                 <div className="px-3 py-4 sm:px-4">
-                  <label className="block">
-                    <span className="sr-only">Heading</span>
-                    <input
-                      aria-label="Heading"
-                      value={block.props.heading}
-                      placeholder="Card grid heading"
-                      onChange={(event) =>
-                        onChange({
-                          ...block,
-                          props: {
-                            ...block.props,
-                            heading: event.target.value,
-                          },
-                        })
-                      }
-                      className={sectionHeadingInputClass}
-                    />
-                  </label>
+                  <div className={builderOptionalFieldScopeClass}>
+                    <OptionalBlockField
+                      block={block}
+                      field="heading"
+                      onChange={onChange}
+                      compact
+                    >
+                      <label className="block">
+                        <span className="sr-only">Heading</span>
+                        <input
+                          aria-label="Heading"
+                          value={block.props.heading}
+                          placeholder={
+                            blockCanvasPlaceholders.card_grid.heading
+                          }
+                          onChange={(event) =>
+                            onChange({
+                              ...block,
+                              props: {
+                                ...block.props,
+                                heading: event.target.value,
+                              },
+                            })
+                          }
+                          className={sectionHeadingInputClass}
+                        />
+                      </label>
+                    </OptionalBlockField>
+                  </div>
                   <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {block.props.cards.map((card, cardIndex) => (
                       <article
@@ -5008,6 +5315,7 @@ function BlockEditor({
                         </div>
                         <TextInput
                           label="Card title"
+                          placeholder={blockCanvasPlaceholders.card_grid.title}
                           value={card.title}
                           onChange={(value) =>
                             onChange({
@@ -5027,6 +5335,7 @@ function BlockEditor({
                         />
                         <TextAreaInput
                           label="Card body"
+                          placeholder={blockCanvasPlaceholders.card_grid.body}
                           value={card.body}
                           onChange={(value) =>
                             onChange({
@@ -5077,22 +5386,33 @@ function BlockEditor({
 
               {block.type === "proof" && (
                 <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-                  <TextInput
-                    label="Eyebrow"
-                    value={block.props.eyebrow}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, eyebrow: value },
-                      })
-                    }
-                  />
+                  <div className={builderOptionalFieldScopeClass}>
+                    <OptionalBlockField
+                      block={block}
+                      field="eyebrow"
+                      onChange={onChange}
+                      compact
+                    >
+                      <TextInput
+                        hideLabel
+                        label="Eyebrow"
+                        placeholder={blockCanvasPlaceholders.proof.eyebrow}
+                        value={block.props.eyebrow}
+                        onChange={(value) =>
+                          onChange({
+                            ...block,
+                            props: { ...block.props, eyebrow: value },
+                          })
+                        }
+                      />
+                    </OptionalBlockField>
+                  </div>
                   <label className="mt-3 block">
                     <span className="sr-only">Body</span>
                     <textarea
                       aria-label="Body"
                       value={block.props.body}
-                      placeholder="Proof quote or stat"
+                      placeholder={blockCanvasPlaceholders.proof.body}
                       onChange={(event) =>
                         onChange({
                           ...block,
@@ -5103,68 +5423,107 @@ function BlockEditor({
                       className="focus:ring-brand-100 w-full bg-transparent text-xl leading-8 font-semibold text-slate-950 outline-none focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:ring-2"
                     />
                   </label>
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <TextInput
-                      label="Name"
-                      value={block.props.name}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: { ...block.props, name: value },
-                        })
-                      }
-                    />
-                    <TextInput
-                      label="Context"
-                      value={block.props.context}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: { ...block.props, context: value },
-                        })
-                      }
-                    />
+                  <div
+                    className={`${builderOptionalFieldScopeClass} mt-4 space-y-4`}
+                  >
+                    <OptionalBlockField
+                      block={block}
+                      field="name"
+                      onChange={onChange}
+                      compact
+                    >
+                      <TextInput
+                        hideLabel
+                        label="Name"
+                        placeholder={blockCanvasPlaceholders.proof.name}
+                        value={block.props.name}
+                        onChange={(value) =>
+                          onChange({
+                            ...block,
+                            props: { ...block.props, name: value },
+                          })
+                        }
+                      />
+                    </OptionalBlockField>
+                    <OptionalBlockField
+                      block={block}
+                      field="context"
+                      onChange={onChange}
+                      compact
+                    >
+                      <TextInput
+                        hideLabel
+                        label="Context"
+                        placeholder={blockCanvasPlaceholders.proof.context}
+                        value={block.props.context}
+                        onChange={(value) =>
+                          onChange({
+                            ...block,
+                            props: { ...block.props, context: value },
+                          })
+                        }
+                      />
+                    </OptionalBlockField>
                   </div>
                 </figure>
               )}
 
               {block.type === "lead_form" && (
                 <div className="grid gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-                  <div>
-                    <label className="block">
-                      <span className="sr-only">Heading</span>
-                      <input
-                        aria-label="Heading"
-                        value={block.props.heading}
-                        placeholder="Lead form heading"
-                        onChange={(event) =>
-                          onChange({
-                            ...block,
-                            props: {
-                              ...block.props,
-                              heading: event.target.value,
-                            },
-                          })
-                        }
-                        className={sectionHeadingInputClass}
-                      />
-                    </label>
-                    <label className="mt-3 block">
-                      <span className="sr-only">Body</span>
-                      <textarea
-                        aria-label="Body"
-                        value={block.props.body}
-                        placeholder="Lead form copy"
-                        onChange={(event) =>
-                          onChange({
-                            ...block,
-                            props: { ...block.props, body: event.target.value },
-                          })
-                        }
-                        rows={3}
-                        className={bodyTextareaClass}
-                      />
-                    </label>
+                  <div className={builderOptionalFieldScopeClass}>
+                    <OptionalBlockField
+                      block={block}
+                      field="heading"
+                      onChange={onChange}
+                      compact
+                    >
+                      <label className="block">
+                        <span className="sr-only">Heading</span>
+                        <input
+                          aria-label="Heading"
+                          value={block.props.heading}
+                          placeholder={
+                            blockCanvasPlaceholders.lead_form.heading
+                          }
+                          onChange={(event) =>
+                            onChange({
+                              ...block,
+                              props: {
+                                ...block.props,
+                                heading: event.target.value,
+                              },
+                            })
+                          }
+                          className={sectionHeadingInputClass}
+                        />
+                      </label>
+                    </OptionalBlockField>
+                    <OptionalBlockField
+                      block={block}
+                      field="body"
+                      onChange={onChange}
+                      compact
+                    >
+                      <label className="mt-3 block">
+                        <span className="sr-only">Body</span>
+                        <textarea
+                          aria-label="Body"
+                          value={block.props.body}
+                          placeholder={blockCanvasPlaceholders.lead_form.body}
+                          onChange={(event) =>
+                            onChange({
+                              ...block,
+                              props: {
+                                ...block.props,
+                                body: event.target.value,
+                              },
+                            })
+                          }
+                          rows={3}
+                          className={bodyTextareaClass}
+                        />
+                      </label>
+                    </OptionalBlockField>
                   </div>
                   <div className="grid gap-3 md:grid-cols-2">
                     <div className={disabledLeadFieldClass}>Full name</div>
@@ -5178,7 +5537,9 @@ function BlockEditor({
                       <input
                         aria-label="Submit label"
                         value={block.props.submitLabel}
-                        placeholder="Submit label"
+                        placeholder={
+                          blockCanvasPlaceholders.lead_form.submitLabel
+                        }
                         onChange={(event) => {
                           const nextLabel = event.target.value;
                           onChange({
@@ -5267,7 +5628,7 @@ function AutoResizeTextarea({
 function HeroInlineContentFields({
   block,
   onChange,
-  className = "max-w-4xl px-3 py-8 sm:px-4",
+  className = `${builderOptionalFieldScopeClass} px-3 py-8 sm:px-4`,
 }: {
   block: Extract<PageBlock, { type: "hero" }>;
   onChange: (block: PageBlock) => void;
@@ -5275,27 +5636,34 @@ function HeroInlineContentFields({
 }) {
   return (
     <div className={className}>
-      <label className="block">
-        <span className="sr-only">Eyebrow</span>
-        <input
-          aria-label="Eyebrow"
-          value={block.props.eyebrow}
-          placeholder="Eyebrow"
-          onChange={(event) =>
-            onChange({
-              ...block,
-              props: { ...block.props, eyebrow: event.target.value },
-            })
-          }
-          className={eyebrowInputClass}
-        />
-      </label>
+      <OptionalBlockField
+        block={block}
+        field="eyebrow"
+        onChange={onChange}
+        compact
+      >
+        <label className="block">
+          <span className="sr-only">Eyebrow</span>
+          <input
+            aria-label="Eyebrow"
+            value={block.props.eyebrow}
+            placeholder={blockCanvasPlaceholders.hero.eyebrow}
+            onChange={(event) =>
+              onChange({
+                ...block,
+                props: { ...block.props, eyebrow: event.target.value },
+              })
+            }
+            className={eyebrowInputClass}
+          />
+        </label>
+      </OptionalBlockField>
       <label className="mt-3 block">
         <span className="sr-only">Heading</span>
         <textarea
           aria-label="Heading"
           value={block.props.heading}
-          placeholder="Hero headline"
+          placeholder={blockCanvasPlaceholders.hero.heading}
           onChange={(event) =>
             onChange({
               ...block,
@@ -5306,51 +5674,63 @@ function HeroInlineContentFields({
           className={heroHeadingInputClass}
         />
       </label>
-      <label className="mt-5 block max-w-3xl">
-        <span className="sr-only">Body</span>
-        <AutoResizeTextarea
-          aria-label="Body"
-          value={block.props.body}
-          placeholder="Hero body copy"
-          maxLength={HERO_BODY_MAX_LENGTH}
-          onChange={(event) =>
-            onChange({
-              ...block,
-              props: { ...block.props, body: event.target.value },
-            })
-          }
-          rows={3}
-          className={leadInputClass}
-        />
-        <EditorCharLimit value={block.props.body} max={HERO_BODY_MAX_LENGTH} />
-      </label>
-      <div className="mt-8">
-        <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
-          <span className="sr-only">CTA label</span>
-          <input
-            aria-label="CTA label"
-            value={block.props.ctaLabel}
-            placeholder="CTA label"
-            onChange={(event) => {
-              const nextLabel = event.target.value;
+      <OptionalBlockField
+        block={block}
+        field="body"
+        onChange={onChange}
+        compact
+      >
+        <label className="mt-5 block max-w-3xl">
+          <span className="sr-only">Body</span>
+          <AutoResizeTextarea
+            aria-label="Body"
+            value={block.props.body}
+            placeholder={blockCanvasPlaceholders.hero.body}
+            maxLength={HERO_BODY_MAX_LENGTH}
+            onChange={(event) =>
               onChange({
                 ...block,
-                props: {
-                  ...block.props,
-                  ctaLabel: nextLabel,
-                  ctaTrackingName: syncedTrackingName({
-                    currentTrackingName: block.props.ctaTrackingName,
-                    previousLabel: block.props.ctaLabel,
-                    nextLabel,
-                    fallback: "hero-cta",
-                  }),
-                },
-              });
-            }}
-            className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
+                props: { ...block.props, body: event.target.value },
+              })
+            }
+            rows={3}
+            className={leadInputClass}
+          />
+          <EditorCharLimit
+            value={block.props.body}
+            max={HERO_BODY_MAX_LENGTH}
           />
         </label>
-      </div>
+      </OptionalBlockField>
+      <OptionalBlockField block={block} field="cta" onChange={onChange} compact>
+        <div className="mt-8">
+          <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
+            <span className="sr-only">CTA label</span>
+            <input
+              aria-label="CTA label"
+              value={block.props.ctaLabel}
+              placeholder={blockCanvasPlaceholders.hero.ctaLabel}
+              onChange={(event) => {
+                const nextLabel = event.target.value;
+                onChange({
+                  ...block,
+                  props: {
+                    ...block.props,
+                    ctaLabel: nextLabel,
+                    ctaTrackingName: syncedTrackingName({
+                      currentTrackingName: block.props.ctaTrackingName,
+                      previousLabel: block.props.ctaLabel,
+                      nextLabel,
+                      fallback: "hero-cta",
+                    }),
+                  },
+                });
+              }}
+              className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
+            />
+          </label>
+        </div>
+      </OptionalBlockField>
     </div>
   );
 }
@@ -5381,7 +5761,7 @@ function SplitHeroBlockCanvas({
         <input
           aria-label="Media caption"
           value={block.props.mediaCaption ?? ""}
-          placeholder="Media caption"
+          placeholder={blockCanvasPlaceholders.hero.mediaCaption}
           onChange={(event) =>
             onChange({
               ...block,
@@ -5406,8 +5786,8 @@ function SplitHeroBlockCanvas({
     </aside>
   ) : (
     <MediaDropTarget
-      label="Drop or upload an image"
-      hint="Saved to the media library automatically."
+      label={blockCanvasPlaceholders.image.dropLabel}
+      hint={blockCanvasPlaceholders.image.dropHint}
       className={`${imageClass} border-dashed bg-slate-50 px-4 transition focus-within:ring-4 focus-within:ring-[#0b63f6]/20 hover:border-[#0b63f6]/40 hover:bg-white`}
       onAsset={(asset) =>
         onChange(applyMediaAssetToSplitHeroBlock(block, asset))
@@ -5468,8 +5848,8 @@ function ImageBlockCanvas({
     />
   ) : (
     <MediaDropTarget
-      label="Drop or upload an image"
-      hint="Saved to the media library automatically."
+      label={blockCanvasPlaceholders.image.dropLabel}
+      hint={blockCanvasPlaceholders.image.dropHint}
       className={`${imageClass} border-dashed bg-slate-50 px-4 transition focus-within:ring-4 focus-within:ring-[#0b63f6]/20 hover:border-[#0b63f6]/40 hover:bg-white`}
       onAsset={(asset) => onChange(applyMediaAssetToImageBlock(block, asset))}
       onOpenLibrary={() =>
@@ -5485,7 +5865,7 @@ function ImageBlockCanvas({
     <input
       aria-label="Caption"
       value={block.props.caption}
-      placeholder="Caption"
+      placeholder={blockCanvasPlaceholders.image.caption}
       onChange={(event) =>
         onChange({
           ...block,
@@ -5498,28 +5878,48 @@ function ImageBlockCanvas({
 
   if (block.variant === "feature") {
     return (
-      <figure className={`px-3 py-4 sm:px-4 ${imageFrameClass}`}>
-        <figcaption className="text-base leading-7 font-semibold text-slate-600">
-          <p className="text-sm font-black text-[#55b8e8] uppercase">
-            Featured media
-          </p>
-          <label className="mt-3 block">
-            <span className="sr-only">Caption</span>
-            {captionInput}
-          </label>
-        </figcaption>
-        <div className="md:order-2">{mediaNode}</div>
-      </figure>
+      <div className={`px-3 py-4 sm:px-4 ${builderOptionalFieldScopeClass}`}>
+        <OptionalBlockField
+          block={block}
+          field="caption"
+          onChange={onChange}
+          compact
+        >
+          <figure className={imageFrameClass}>
+            <figcaption className="text-base leading-7 font-semibold text-slate-600">
+              <p className="text-sm font-black text-[#55b8e8] uppercase">
+                Featured media
+              </p>
+              <label className="mt-3 block">
+                <span className="sr-only">Caption</span>
+                {captionInput}
+              </label>
+            </figcaption>
+            <div className="md:order-2">{mediaNode}</div>
+          </figure>
+        </OptionalBlockField>
+      </div>
     );
   }
 
   return (
     <figure className={`px-3 py-4 sm:px-4 ${imageFrameClass}`}>
       {mediaNode}
-      <label className={block.variant === "inline" ? "block" : "mt-3 block"}>
-        <span className="sr-only">Caption</span>
-        {captionInput}
-      </label>
+      <div className={builderOptionalFieldScopeClass}>
+        <OptionalBlockField
+          block={block}
+          field="caption"
+          onChange={onChange}
+          compact
+        >
+          <label
+            className={block.variant === "inline" ? "block" : "mt-3 block"}
+          >
+            <span className="sr-only">Caption</span>
+            {captionInput}
+          </label>
+        </OptionalBlockField>
+      </div>
     </figure>
   );
 }
@@ -5551,7 +5951,7 @@ function VideoBlockCanvas({
     <input
       aria-label="Video title"
       value={block.props.title}
-      placeholder="Video title"
+      placeholder={blockCanvasPlaceholders.video.title}
       onChange={(event) =>
         onChange({
           ...block,
@@ -5565,7 +5965,7 @@ function VideoBlockCanvas({
     <textarea
       aria-label="Video caption"
       value={block.props.caption}
-      placeholder="Video caption"
+      placeholder={blockCanvasPlaceholders.video.caption}
       rows={block.variant === "inline" ? 3 : 2}
       onChange={(event) =>
         onChange({
@@ -5590,15 +5990,29 @@ function VideoBlockCanvas({
     return (
       <div className="grid items-center gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[7px_7px_0_#55b8e8] md:grid-cols-[180px_minmax(0,1fr)]">
         {videoPanel}
-        <div>
-          <label className="block">
-            <span className="sr-only">Video title</span>
-            {titleInput}
-          </label>
-          <label className="block">
-            <span className="sr-only">Video caption</span>
-            {captionInput}
-          </label>
+        <div className={`min-w-0 ${builderOptionalFieldScopeClass}`}>
+          <OptionalBlockField
+            block={block}
+            field="title"
+            onChange={onChange}
+            compact
+          >
+            <label className="block">
+              <span className="sr-only">Video title</span>
+              {titleInput}
+            </label>
+          </OptionalBlockField>
+          <OptionalBlockField
+            block={block}
+            field="caption"
+            onChange={onChange}
+            compact
+          >
+            <label className="block">
+              <span className="sr-only">Video caption</span>
+              {captionInput}
+            </label>
+          </OptionalBlockField>
           {watchButton}
         </div>
       </div>
@@ -5612,15 +6026,31 @@ function VideoBlockCanvas({
       }`}
     >
       {videoPanel}
-      <label className="mt-5 block">
-        <span className="sr-only">Video title</span>
-        {titleInput}
-      </label>
-      {watchButton}
-      <label className="block">
-        <span className="sr-only">Video caption</span>
-        {captionInput}
-      </label>
+      <div className={builderOptionalFieldScopeClass}>
+        <OptionalBlockField
+          block={block}
+          field="title"
+          onChange={onChange}
+          compact
+        >
+          <label className="mt-5 block">
+            <span className="sr-only">Video title</span>
+            {titleInput}
+          </label>
+        </OptionalBlockField>
+        {watchButton}
+        <OptionalBlockField
+          block={block}
+          field="caption"
+          onChange={onChange}
+          compact
+        >
+          <label className="block">
+            <span className="sr-only">Video caption</span>
+            {captionInput}
+          </label>
+        </OptionalBlockField>
+      </div>
     </div>
   );
 }
@@ -5656,7 +6086,7 @@ function BlockToolbar({
 }) {
   return (
     <header
-      className="flex flex-wrap items-center justify-between gap-3 rounded-full border border-slate-200 bg-white/95 px-3 py-2 text-xs opacity-100 shadow-[0_10px_30px_-12px_rgba(15,23,42,0.35)] ring-1 ring-black/5 backdrop-blur transition-all md:opacity-0 md:group-focus-within/editor:opacity-100 md:group-hover/editor:opacity-100"
+      className="pointer-events-auto flex flex-wrap items-center justify-between gap-3 rounded-full border border-slate-200 bg-white/95 px-3 py-2 text-xs opacity-100 shadow-[0_10px_30px_-12px_rgba(15,23,42,0.35)] ring-1 ring-black/5 backdrop-blur transition-all md:opacity-0 md:group-focus-within/editor:opacity-100 md:group-hover/editor:opacity-100"
       title={description}
     >
       <div className="flex min-w-0 items-center gap-3">
@@ -5736,17 +6166,24 @@ function TextInput({
   label,
   value,
   onChange,
+  placeholder,
+  hideLabel = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
+  hideLabel?: boolean;
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
+      {hideLabel ? null : (
+        <span className="text-sm font-medium text-slate-700">{label}</span>
+      )}
       <input
         aria-label={label}
         value={value}
+        placeholder={placeholder ?? label}
         onChange={(event) => onChange(event.target.value)}
         className={compactInputClass}
       />
@@ -5759,18 +6196,25 @@ function TextAreaInput({
   value,
   onChange,
   maxLength,
+  placeholder,
+  hideLabel = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   maxLength?: number;
+  placeholder?: string;
+  hideLabel?: boolean;
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
+      {hideLabel ? null : (
+        <span className="text-sm font-medium text-slate-700">{label}</span>
+      )}
       <textarea
         aria-label={label}
         value={value}
+        placeholder={placeholder ?? label}
         maxLength={maxLength}
         onChange={(event) => onChange(event.target.value)}
         rows={4}
@@ -6253,22 +6697,19 @@ function withBlockVariant(block: PageBlock, variant: BlockVariant): PageBlock {
 }
 
 function withEditorDefaultsForNewBlock(block: PageBlock): PageBlock {
+  let nextBlock: PageBlock = block;
+
   if (block.type === "cta" && !block.props.presetId) {
-    const label = block.props.label || "Start an enquiry";
-    return {
+    nextBlock = {
       ...block,
       props: {
         ...block.props,
-        label,
         href: block.props.href || "/apply",
-        trackingName:
-          block.props.trackingName || trackingNameForLabel(label, "cta"),
+        trackingName: block.props.trackingName || "cta",
       },
     };
-  }
-
-  if (block.type === "lead_form") {
-    return {
+  } else if (block.type === "lead_form") {
+    nextBlock = {
       ...block,
       props: {
         ...block.props,
@@ -6277,14 +6718,12 @@ function withEditorDefaultsForNewBlock(block: PageBlock): PageBlock {
           trackingNameForLabel(block.props.submitLabel, "lead-form"),
       },
     };
-  }
-
-  if (
+  } else if (
     block.type === "rich_text" &&
     block.variant === "checklist" &&
     !hasEditorText(richTextDocumentPlainText(block.props.body))
   ) {
-    return {
+    nextBlock = {
       ...block,
       props: {
         ...block.props,
@@ -6294,14 +6733,12 @@ function withEditorDefaultsForNewBlock(block: PageBlock): PageBlock {
         },
       },
     };
-  }
-
-  if (
+  } else if (
     block.type === "faq" &&
     (block.props.items.length === 0 || block.props.items.every(isBlankFaqItem))
   ) {
     const itemCount = block.variant === "accordion" ? 3 : 2;
-    return {
+    nextBlock = {
       ...block,
       props: {
         ...block.props,
@@ -6311,14 +6748,12 @@ function withEditorDefaultsForNewBlock(block: PageBlock): PageBlock {
         })),
       },
     };
-  }
-
-  if (
+  } else if (
     block.type === "card_grid" &&
     (block.props.cards.length === 0 || block.props.cards.every(isBlankCard))
   ) {
     const cardCount = block.variant === "compact" ? 4 : 3;
-    return {
+    nextBlock = {
       ...block,
       props: {
         ...block.props,
@@ -6327,7 +6762,7 @@ function withEditorDefaultsForNewBlock(block: PageBlock): PageBlock {
     };
   }
 
-  return block;
+  return withDefaultFieldVisibility(nextBlock);
 }
 
 function trackingNameForLabel(
@@ -6557,10 +6992,14 @@ function completionMessagesForBlock(block: PageBlock) {
     if (!hasEditorText(block.props.heading)) {
       messages.push("Add a hero headline before publishing.");
     }
-    if (!hasEditorText(block.props.body)) {
+    if (
+      isBlockFieldVisible(block, "body") &&
+      !hasEditorText(block.props.body)
+    ) {
       messages.push("Add a short hero summary so the page has a clear lead.");
     }
     if (
+      isBlockFieldVisible(block, "cta") &&
       hasEditorText(block.props.ctaLabel) &&
       !hasEditorText(block.props.ctaHref)
     ) {
@@ -6576,7 +7015,10 @@ function completionMessagesForBlock(block: PageBlock) {
   }
 
   if (block.type === "rich_text") {
-    if (!hasEditorText(block.props.heading)) {
+    if (
+      isBlockFieldVisible(block, "heading") &&
+      !hasEditorText(block.props.heading)
+    ) {
       messages.push("Add a section heading.");
     }
     if (!hasEditorText(richTextDocumentPlainText(block.props.body))) {
@@ -6638,10 +7080,16 @@ function completionMessagesForBlock(block: PageBlock) {
   }
 
   if (block.type === "lead_form") {
-    if (!hasEditorText(block.props.heading)) {
+    if (
+      isBlockFieldVisible(block, "heading") &&
+      !hasEditorText(block.props.heading)
+    ) {
       messages.push("Add a lead form heading.");
     }
-    if (!hasEditorText(block.props.body)) {
+    if (
+      isBlockFieldVisible(block, "body") &&
+      !hasEditorText(block.props.body)
+    ) {
       messages.push("Add lead form helper copy.");
     }
     if (!hasEditorText(block.props.submitLabel)) {

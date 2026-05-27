@@ -90,7 +90,7 @@ function createPreviewBlock(
           variant === "editorial"
             ? "Build a profitable route with fewer wrong turns"
             : "Launch a vending route with a proven plan",
-        body: "Use the page builder to turn approved source material into a focused SEO page that converts.",
+        body: "Learn how operators plan routes, place machines, and grow recurring revenue from day one.",
         ctaLabel: variant === "editorial" ? "" : "Start an enquiry",
         ctaHref: variant === "editorial" ? "" : "/apply",
         ctaTrackingName: variant === "editorial" ? "" : "preview-hero-cta",
@@ -132,11 +132,11 @@ function createPreviewBlock(
             nodes: [
               {
                 type: "paragraph" as const,
-                text: "This block gives marketers structured copy without exposing raw schema or freeform HTML.",
+                text: "Most new operators start with a clear route plan, realistic startup costs, and a short list of target locations.",
               },
               {
                 type: "paragraph" as const,
-                text: "The same content model feeds the picker preview, editor canvas, and public resource page.",
+                text: "Use this section to explain the next step, remove objections, and keep the reader moving toward an enquiry.",
               },
             ],
           };
@@ -166,8 +166,8 @@ function createPreviewBlock(
         altText: "Vending route operator reviewing a location",
         caption:
           variant === "feature"
-            ? "Use feature media when the visual needs supporting copy."
-            : "Approved page-builder media with caption.",
+            ? "Show the route, the machine, or the operator in action."
+            : "Supporting image for this section.",
         sourceRightsNotes: "Owned Vendingpreneurs campaign image.",
       },
     };
@@ -182,7 +182,7 @@ function createPreviewBlock(
         title: "Watch the route planning walkthrough",
         url: "https://example.com/resource-video",
         caption:
-          "A supporting video block can sit wide, standard, or inline with copy.",
+          "A short walkthrough of how to evaluate locations and plan your first placements.",
       },
     };
   }
