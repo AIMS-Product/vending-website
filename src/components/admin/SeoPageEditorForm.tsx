@@ -21,12 +21,13 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   useActionState,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
 } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode, TextareaHTMLAttributes } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -35,6 +36,7 @@ import {
   resourceColumnGridClass,
   resourceSectionClass,
 } from "@/components/sections/resource-page-content-classes";
+import { BlockVariantPreviewSkeleton } from "@/components/admin/SeoPageBlockVariantPreview";
 import {
   acceptAiSeoProposalBlocks,
   autosaveSeoPageDraft,
@@ -81,6 +83,10 @@ import {
   reorderItemsById,
   type MoveDirection,
 } from "@/lib/page-builder/content-ops";
+import {
+  blockPickerOptions,
+  type BlockVariant,
+} from "@/lib/page-builder/block-options";
 import type { Tables } from "@/types/database";
 import { footerColumns, primaryNav } from "@/lib/content/nav";
 
@@ -103,13 +109,6 @@ type SeoPageEditorFormProps = {
   aiProposals?: AiPageProposalReview[];
   savedFromRedirect?: boolean;
   redirectError?: string;
-};
-
-type BlockVariant = PageBlock["variant"];
-type BlockPickerVariantOption = {
-  id: BlockVariant;
-  label: string;
-  description: string;
 };
 
 type BuilderBlockEntry = {
@@ -2238,6 +2237,7 @@ function BlockSidebarSettingsPanel({
           <TextAreaInput
             label="Body"
             value={block.props.body}
+            maxLength={HERO_BODY_MAX_LENGTH}
             onChange={(value) =>
               onChange({
                 ...block,
@@ -2288,6 +2288,44 @@ function BlockSidebarSettingsPanel({
           </div>
           {block.variant === "split" && (
             <div className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
+              <label className="block sm:col-span-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Media library asset
+                </span>
+                <select
+                  value={
+                    mediaAssets.find(
+                      (asset) => asset.publicUrl === block.props.mediaSrc,
+                    )?.id ?? ""
+                  }
+                  onChange={(event) => {
+                    const asset = mediaAssets.find(
+                      (item) => item.id === event.target.value,
+                    );
+                    onChange(
+                      asset
+                        ? applyMediaAssetToSplitHeroBlock(block, asset)
+                        : {
+                            ...block,
+                            props: {
+                              ...block.props,
+                              mediaSrc: undefined,
+                              mediaAltText: undefined,
+                              mediaCaption: undefined,
+                            },
+                          },
+                    );
+                  }}
+                  className={compactInputClass}
+                >
+                  <option value="">Choose from media library</option>
+                  {mediaAssets.map((asset) => (
+                    <option key={asset.id} value={asset.id}>
+                      {asset.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <TextInput
                 label="Media path or URL"
                 value={block.props.mediaSrc ?? ""}
@@ -4307,227 +4345,6 @@ function SortableColumnEditor({
   );
 }
 
-const blockPickerOptions: Array<{
-  type: PageBlock["type"];
-  label: string;
-  description: string;
-  variants: BlockPickerVariantOption[];
-}> = [
-  {
-    type: "hero",
-    label: "Hero",
-    description: "Opening message with optional CTA.",
-    variants: [
-      {
-        id: "standard",
-        label: "Standard hero",
-        description: "Headline, intro copy, and one CTA.",
-      },
-      {
-        id: "split",
-        label: "Split hero",
-        description: "Best for pairing copy with media or proof.",
-      },
-      {
-        id: "compact",
-        label: "Compact hero",
-        description: "Short page opener for utility pages.",
-      },
-      {
-        id: "editorial",
-        label: "Editorial hero",
-        description: "Stronger story-led opening for guides.",
-      },
-    ],
-  },
-  {
-    type: "rich_text",
-    label: "Text",
-    description: "SEO body copy and supporting sections.",
-    variants: [
-      {
-        id: "default",
-        label: "Standard text",
-        description: "Heading with paragraph body copy.",
-      },
-      {
-        id: "intro",
-        label: "Intro text",
-        description: "Lead-in copy after the hero.",
-      },
-      {
-        id: "compact",
-        label: "Compact text",
-        description: "Short supporting note or bridge.",
-      },
-      {
-        id: "checklist",
-        label: "Checklist text",
-        description: "Structured copy for steps or inclusions.",
-      },
-    ],
-  },
-  {
-    type: "image",
-    label: "Image",
-    description: "Media asset with alt text and rights notes.",
-    variants: [
-      {
-        id: "standard",
-        label: "Standard image",
-        description: "Inline image with caption.",
-      },
-      {
-        id: "wide",
-        label: "Wide image",
-        description: "Full-width visual break.",
-      },
-      {
-        id: "inline",
-        label: "Inline image",
-        description: "Smaller supporting image.",
-      },
-      {
-        id: "feature",
-        label: "Feature image",
-        description: "Prominent image for split sections.",
-      },
-    ],
-  },
-  {
-    type: "cta",
-    label: "CTA",
-    description: "Primary conversion button.",
-    variants: [
-      {
-        id: "primary",
-        label: "Primary CTA",
-        description: "Main conversion action.",
-      },
-      {
-        id: "secondary",
-        label: "Secondary CTA",
-        description: "Lower-emphasis conversion action.",
-      },
-      {
-        id: "text",
-        label: "Text link CTA",
-        description: "Inline supporting action.",
-      },
-    ],
-  },
-  {
-    type: "faq",
-    label: "FAQ",
-    description: "Visible Q&A for schema.",
-    variants: [
-      {
-        id: "standard",
-        label: "Standard FAQ",
-        description: "Question list for answer pages.",
-      },
-      {
-        id: "compact",
-        label: "Compact FAQ",
-        description: "Short objection-handling section.",
-      },
-      {
-        id: "accordion",
-        label: "Accordion FAQ",
-        description: "Expandable-style question group.",
-      },
-    ],
-  },
-  {
-    type: "card_grid",
-    label: "Cards",
-    description: "Comparison cards or grouped options.",
-    variants: [
-      {
-        id: "standard",
-        label: "Standard cards",
-        description: "Balanced grid for grouped details.",
-      },
-      {
-        id: "compact",
-        label: "Compact cards",
-        description: "Dense scannable comparison points.",
-      },
-      {
-        id: "feature",
-        label: "Feature cards",
-        description: "Bigger cards for key offers.",
-      },
-    ],
-  },
-  {
-    type: "proof",
-    label: "Proof",
-    description: "Approved testimonial, stat, or evidence.",
-    variants: [
-      {
-        id: "quote",
-        label: "Quote proof",
-        description: "Customer or source-backed quote.",
-      },
-      {
-        id: "stat",
-        label: "Stat proof",
-        description: "Number-led credibility point.",
-      },
-      {
-        id: "logo",
-        label: "Logo proof",
-        description: "Source, partner, or trust marker.",
-      },
-    ],
-  },
-  {
-    type: "video",
-    label: "Video",
-    description: "Embedded or linked video.",
-    variants: [
-      {
-        id: "standard",
-        label: "Standard video",
-        description: "Video with title and caption.",
-      },
-      {
-        id: "wide",
-        label: "Wide video",
-        description: "Full-width video feature.",
-      },
-      {
-        id: "inline",
-        label: "Inline video",
-        description: "Smaller video inside supporting copy.",
-      },
-    ],
-  },
-  {
-    type: "lead_form",
-    label: "Form",
-    description: "Lead capture with fixed contact fields.",
-    variants: [
-      {
-        id: "standard",
-        label: "Standard form",
-        description: "Full lead-capture section.",
-      },
-      {
-        id: "compact",
-        label: "Compact form",
-        description: "Shorter form for simple pages.",
-      },
-      {
-        id: "sidebar",
-        label: "Sidebar form",
-        description: "Form paired with adjacent content.",
-      },
-    ],
-  },
-];
-
 function BlockPicker({
   onAddBlock,
 }: {
@@ -4645,15 +4462,17 @@ function BlockPicker({
                 </svg>
               </button>
             </div>
-            <div className="grid min-h-0 gap-3 overflow-y-auto lg:grid-cols-[250px_minmax(0,1fr)]">
-              <div className="flex min-h-[4.5rem] gap-2 overflow-x-auto pb-2 lg:grid lg:min-h-0 lg:gap-2 lg:overflow-visible lg:pb-0">
+            <div className="grid min-h-0 flex-1 gap-3 overflow-y-auto lg:grid-cols-[250px_minmax(0,1fr)] lg:overflow-hidden">
+              <div className="flex min-h-[5.25rem] gap-2 overflow-x-auto pb-2 lg:grid lg:max-h-full lg:min-h-0 lg:gap-2 lg:overflow-x-visible lg:overflow-y-auto lg:pr-1 lg:pb-0">
                 {blockPickerOptions.map((option) => {
                   const isSelected = option.type === selectedOption.type;
                   return (
                     <button
                       key={option.type}
                       type="button"
-                      className={`flex min-h-16 min-w-56 items-start gap-3 rounded-lg border p-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none lg:min-w-0 ${
+                      data-testid="block-picker-type"
+                      data-block-picker-type={option.type}
+                      className={`flex min-h-20 min-w-56 items-start gap-3 rounded-lg border p-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none lg:min-w-0 ${
                         isSelected
                           ? "border-[#0b63f6]/65 bg-[#f7faff] shadow-sm ring-1 ring-[#0b63f6]/20"
                           : "border-slate-200 bg-white shadow-sm hover:border-slate-300 hover:bg-slate-50"
@@ -4686,7 +4505,7 @@ function BlockPicker({
               {selectedOption && (
                 <div
                   ref={variantPanelRef}
-                  className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6"
+                  className="min-h-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-6 lg:overflow-y-auto"
                 >
                   <div className="mb-4">
                     <h5 className="text-sm font-semibold text-slate-950 sm:text-base">
@@ -4699,6 +4518,9 @@ function BlockPicker({
                       <button
                         key={`${selectedOption.type}-${variant.id}`}
                         type="button"
+                        data-testid="block-picker-variant"
+                        data-block-picker-type={selectedOption.type}
+                        data-block-picker-variant={variant.id}
                         className="overflow-hidden rounded-lg border border-slate-200 bg-white text-left shadow-sm transition-all hover:border-[#0b63f6]/50 hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
                         onClick={() => {
                           onAddBlock(selectedOption.type, variant.id);
@@ -4732,516 +4554,6 @@ function BlockPicker({
         </div>
       )}
     </div>
-  );
-}
-
-function BlockVariantPreviewSkeleton({
-  type,
-  variant,
-}: {
-  type: PageBlock["type"];
-  variant: BlockVariant;
-}) {
-  if (type === "hero") {
-    return <HeroLayoutPreview variant={variant} />;
-  }
-  if (type === "image") {
-    return <ImageLayoutPreview variant={variant} />;
-  }
-  if (type === "lead_form") {
-    return <LeadFormLayoutPreview variant={variant} />;
-  }
-  if (type === "card_grid") {
-    return <CardsLayoutPreview variant={variant} />;
-  }
-  if (type === "video") {
-    return <VideoLayoutPreview variant={variant} />;
-  }
-  if (type === "faq") {
-    return <FaqLayoutPreview variant={variant} />;
-  }
-  if (type === "proof") {
-    return <ProofLayoutPreview variant={variant} />;
-  }
-  if (type === "cta") {
-    return <CtaLayoutPreview variant={variant} />;
-  }
-  return <TextLayoutPreview variant={variant} />;
-}
-
-function HeroLayoutPreview({ variant }: { variant: BlockVariant }) {
-  if (variant === "split") {
-    return (
-      <span className="grid h-full grid-cols-[minmax(0,1fr)_88px] items-center gap-6">
-        <span className="block">
-          <PreviewAccent className="w-16" />
-          <PreviewLine tone="dark" className="mt-5 h-4 w-full" />
-          <PreviewLine tone="dark" className="mt-2 h-4 w-3/4" />
-          <PreviewLine className="mt-4 h-2 w-full" />
-          <PreviewLine className="mt-2 h-2 w-4/5" />
-          <PreviewButton className="mt-5 w-20" />
-        </span>
-        <PreviewImage className="h-28" />
-      </span>
-    );
-  }
-
-  if (variant === "compact") {
-    return (
-      <span className="flex h-full flex-col items-center justify-center text-center">
-        <PreviewAccent className="w-20" />
-        <PreviewLine tone="dark" className="mt-5 size-48 max-w-full" />
-        <PreviewLine tone="dark" className="mt-2 h-4 w-36 max-w-full" />
-        <PreviewLine className="mt-5 h-2 w-40 max-w-full" />
-        <PreviewLine className="mt-2 h-2 w-36 max-w-full" />
-        <PreviewButton className="mt-6 w-24" />
-      </span>
-    );
-  }
-
-  if (variant === "editorial") {
-    return (
-      <span className="block h-full pt-2">
-        <PreviewAccent className="w-20" />
-        <PreviewLine tone="dark" className="mt-4 size-4/5" />
-        <PreviewLine tone="dark" className="mt-2 h-4 w-3/5" />
-        <span className="mt-4 flex items-center gap-3">
-          <span className="block size-3 rounded-full border border-slate-400" />
-          <PreviewLine className="h-2 w-16" />
-          <span className="block size-1 rounded-full bg-slate-400" />
-          <span className="block size-3 rounded-sm border border-slate-400" />
-          <PreviewLine className="size-20" />
-        </span>
-        <PreviewLine className="mt-5 h-2 w-4/5" />
-        <PreviewLine className="mt-2 h-2 w-3/4" />
-        <PreviewLine className="mt-2 size-2/3" />
-        <PreviewLine className="mt-2 h-2 w-1/2" />
-      </span>
-    );
-  }
-
-  return (
-    <span className="block h-full pt-2">
-      <PreviewAccent className="w-16" />
-      <PreviewLine tone="dark" className="mt-5 size-4/5" />
-      <PreviewLine tone="dark" className="mt-2 h-4 w-2/3" />
-      <PreviewLine className="mt-5 h-2 w-3/4" />
-      <PreviewLine className="mt-2 size-2/3" />
-      <PreviewButton className="mt-6 w-28" />
-    </span>
-  );
-}
-
-function TextLayoutPreview({ variant }: { variant: BlockVariant }) {
-  if (variant === "checklist") {
-    return (
-      <span className="block h-full pt-2">
-        <PreviewLine tone="dark" className="h-4 w-3/5" />
-        <PreviewLine className="mt-3 h-2 w-4/5" />
-        {[0, 1, 2].map((item) => (
-          <span key={item} className="mt-3 flex items-center gap-3">
-            <span className="block size-4 rounded-full bg-[#0b63f6]/80" />
-            <PreviewLine className={item === 2 ? "size-2/5" : "h-2 w-3/5"} />
-          </span>
-        ))}
-      </span>
-    );
-  }
-
-  if (variant === "intro") {
-    return (
-      <span className="flex h-full flex-col justify-center">
-        <PreviewAccent className="w-14" />
-        <PreviewLine tone="dark" className="mt-5 h-5 w-4/5" />
-        <PreviewLine className="mt-4 h-2 w-full" />
-        <PreviewLine className="mt-2 h-2 w-5/6" />
-        <PreviewLine className="mt-2 size-2/3" />
-      </span>
-    );
-  }
-
-  if (variant === "compact") {
-    return (
-      <span className="flex h-full flex-col justify-center">
-        <PreviewLine tone="dark" className="h-4 w-2/5" />
-        <PreviewLine className="mt-4 h-2 w-3/5" />
-        <PreviewLine className="mt-2 h-2 w-1/2" />
-      </span>
-    );
-  }
-
-  return (
-    <span className="block h-full pt-3">
-      <PreviewLine tone="dark" className="h-4 w-2/3" />
-      <PreviewLine className="mt-5 h-2 w-full" />
-      <PreviewLine className="mt-2 h-2 w-5/6" />
-      <PreviewLine className="mt-2 h-2 w-4/5" />
-      <PreviewLine className="mt-5 size-2/3" />
-      <PreviewLine className="mt-2 h-2 w-3/5" />
-    </span>
-  );
-}
-
-function ImageLayoutPreview({ variant }: { variant: BlockVariant }) {
-  if (variant === "wide") {
-    return (
-      <span className="block h-full">
-        <PreviewImage className="h-28" />
-        <PreviewLine className="mt-4 size-2/5" />
-      </span>
-    );
-  }
-
-  if (variant === "inline") {
-    return (
-      <span className="grid h-full grid-cols-[96px_minmax(0,1fr)] items-center gap-5">
-        <PreviewImage className="h-24" />
-        <span className="block">
-          <PreviewLine tone="dark" className="h-4 w-2/3" />
-          <PreviewLine className="mt-4 h-2 w-full" />
-          <PreviewLine className="mt-2 h-2 w-4/5" />
-          <PreviewLine className="mt-2 h-2 w-3/5" />
-        </span>
-      </span>
-    );
-  }
-
-  if (variant === "feature") {
-    return (
-      <span className="grid h-full grid-cols-[minmax(0,1fr)_104px] items-center gap-5">
-        <span className="block">
-          <PreviewAccent className="w-14" />
-          <PreviewLine tone="dark" className="mt-4 size-4/5" />
-          <PreviewLine className="mt-4 h-2 w-3/4" />
-          <PreviewLine className="mt-2 size-2/3" />
-        </span>
-        <PreviewImage className="h-28" />
-      </span>
-    );
-  }
-
-  return (
-    <span className="block h-full">
-      <PreviewImage className="h-24" />
-      <PreviewLine className="mt-4 size-2/5" />
-      <PreviewLine className="mt-2 h-2 w-1/3" />
-    </span>
-  );
-}
-
-function CtaLayoutPreview({ variant }: { variant: BlockVariant }) {
-  if (variant === "text") {
-    return (
-      <span className="flex h-full flex-col justify-center">
-        <PreviewLine tone="dark" className="h-4 w-2/3" />
-        <PreviewLine className="mt-4 h-2 w-4/5" />
-        <PreviewLine className="mt-2 h-2 w-3/5" />
-        <span className="mt-5 block size-24 rounded-full bg-[#0b63f6]/85" />
-      </span>
-    );
-  }
-
-  return (
-    <span className="flex h-full flex-col justify-center">
-      <PreviewLine tone="dark" className="h-4 w-3/5" />
-      <PreviewLine className="mt-4 h-2 w-4/5" />
-      <PreviewLine className="mt-2 size-2/3" />
-      <PreviewButton className="mt-6 w-28" subtle={variant === "secondary"} />
-    </span>
-  );
-}
-
-function FaqLayoutPreview({ variant }: { variant: BlockVariant }) {
-  if (variant === "compact") {
-    return (
-      <span className="flex h-full flex-col justify-center">
-        <PreviewLine tone="dark" className="h-4 w-3/5" />
-        <PreviewQuestionRow className="mt-5" />
-        <PreviewQuestionRow className="mt-2" short />
-      </span>
-    );
-  }
-
-  if (variant === "accordion") {
-    return (
-      <span className="block h-full pt-2">
-        <PreviewLine tone="dark" className="h-4 w-2/3" />
-        {[0, 1, 2].map((item) => (
-          <span
-            key={item}
-            className="mt-3 flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 ring-1 ring-slate-200"
-          >
-            <PreviewLine className="h-2 w-3/5" />
-            <span className="block size-3 rounded-full border border-slate-400" />
-          </span>
-        ))}
-      </span>
-    );
-  }
-
-  return (
-    <span className="block h-full pt-2">
-      <PreviewLine tone="dark" className="h-4 w-2/3" />
-      <PreviewQuestionRow className="mt-5" />
-      <PreviewLine className="mt-3 h-2 w-5/6" />
-      <PreviewLine className="mt-2 size-2/3" />
-      <PreviewQuestionRow className="mt-4" short />
-    </span>
-  );
-}
-
-function CardsLayoutPreview({ variant }: { variant: BlockVariant }) {
-  if (variant === "compact") {
-    return (
-      <span className="grid h-full grid-cols-2 gap-2">
-        {[0, 1, 2, 3].map((item) => (
-          <PreviewCard key={item} compact />
-        ))}
-      </span>
-    );
-  }
-
-  if (variant === "feature") {
-    return (
-      <span className="grid h-full grid-cols-[1.1fr_0.9fr] gap-3">
-        <PreviewCard featured />
-        <span className="grid gap-3">
-          <PreviewCard compact />
-          <PreviewCard compact />
-        </span>
-      </span>
-    );
-  }
-
-  return (
-    <span className="grid h-full grid-cols-3 gap-3">
-      <PreviewCard />
-      <PreviewCard />
-      <PreviewCard />
-    </span>
-  );
-}
-
-function ProofLayoutPreview({ variant }: { variant: BlockVariant }) {
-  if (variant === "stat") {
-    return (
-      <span className="flex h-full flex-col justify-center">
-        <PreviewAccent className="w-14" />
-        <PreviewLine tone="dark" className="mt-5 h-8 w-24" />
-        <PreviewLine className="mt-4 h-2 w-4/5" />
-        <PreviewLine className="mt-2 size-2/3" />
-      </span>
-    );
-  }
-
-  if (variant === "logo") {
-    return (
-      <span className="flex h-full flex-col justify-center">
-        <PreviewLine tone="dark" className="h-4 w-3/5" />
-        <span className="mt-6 grid grid-cols-3 gap-3">
-          {[0, 1, 2].map((item) => (
-            <span
-              key={item}
-              className="block h-10 rounded-md bg-slate-50 ring-1 ring-slate-200"
-            />
-          ))}
-        </span>
-        <PreviewLine className="mt-5 size-2/3" />
-      </span>
-    );
-  }
-
-  return (
-    <span className="flex h-full flex-col justify-center">
-      <PreviewAccent className="w-14" />
-      <PreviewLine tone="dark" className="mt-5 h-3 w-4/5" />
-      <PreviewLine tone="dark" className="mt-2 h-3 w-2/3" />
-      <span className="mt-5 flex items-center gap-3">
-        <span className="block size-8 rounded-full bg-slate-200" />
-        <span className="block min-w-0 flex-1">
-          <PreviewLine className="h-2 w-1/2" />
-          <PreviewLine className="mt-2 size-2/5" />
-        </span>
-      </span>
-    </span>
-  );
-}
-
-function VideoLayoutPreview({ variant }: { variant: BlockVariant }) {
-  if (variant === "inline") {
-    return (
-      <span className="grid h-full grid-cols-[104px_minmax(0,1fr)] items-center gap-5">
-        <PreviewVideo className="h-24" />
-        <span className="block">
-          <PreviewLine tone="dark" className="h-4 w-3/5" />
-          <PreviewLine className="mt-4 h-2 w-full" />
-          <PreviewLine className="mt-2 h-2 w-3/4" />
-        </span>
-      </span>
-    );
-  }
-
-  return (
-    <span className="block h-full">
-      <PreviewVideo className={variant === "wide" ? "h-28" : "h-24"} />
-      <PreviewLine className="mt-4 size-2/5" />
-      {variant !== "wide" && <PreviewLine className="mt-2 h-2 w-1/3" />}
-    </span>
-  );
-}
-
-function LeadFormLayoutPreview({ variant }: { variant: BlockVariant }) {
-  if (variant === "sidebar") {
-    return (
-      <span className="grid h-full grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] items-center gap-5">
-        <span className="block">
-          <PreviewLine tone="dark" className="size-4/5" />
-          <PreviewLine className="mt-4 h-2 w-full" />
-          <PreviewLine className="mt-2 h-2 w-3/4" />
-        </span>
-        <span className="grid gap-2">
-          <PreviewField />
-          <PreviewField />
-          <PreviewButton className="w-24" />
-        </span>
-      </span>
-    );
-  }
-
-  if (variant === "compact") {
-    return (
-      <span className="flex h-full flex-col justify-center">
-        <PreviewLine tone="dark" className="h-4 w-3/5" />
-        <span className="mt-5 grid grid-cols-2 gap-2">
-          <PreviewField />
-          <PreviewField />
-        </span>
-        <PreviewButton className="mt-4 w-24" />
-      </span>
-    );
-  }
-
-  return (
-    <span className="block h-full pt-1">
-      <PreviewLine tone="dark" className="h-4 w-3/5" />
-      <span className="mt-5 grid grid-cols-2 gap-2">
-        <PreviewField />
-        <PreviewField />
-        <PreviewField />
-        <PreviewField />
-      </span>
-      <PreviewButton className="mt-4 w-28" />
-    </span>
-  );
-}
-
-function PreviewAccent({ className = "" }: { className?: string }) {
-  return (
-    <span className={`block h-1.5 rounded-full bg-[#0b63f6]/85 ${className}`} />
-  );
-}
-
-function PreviewLine({
-  className = "",
-  tone = "muted",
-}: {
-  className?: string;
-  tone?: "dark" | "muted";
-}) {
-  const toneClass =
-    tone === "dark"
-      ? "bg-gradient-to-r from-slate-700 to-slate-500"
-      : "bg-slate-200";
-
-  return <span className={`block rounded-full ${toneClass} ${className}`} />;
-}
-
-function PreviewButton({
-  className = "",
-  subtle = false,
-}: {
-  className?: string;
-  subtle?: boolean;
-}) {
-  return (
-    <span
-      className={`block h-8 rounded-full ${
-        subtle
-          ? "border border-[#0b63f6]/50 bg-white"
-          : "bg-[#0b63f6]/85 shadow-sm"
-      } ${className}`}
-    />
-  );
-}
-
-function PreviewImage({ className = "" }: { className?: string }) {
-  return (
-    <span
-      className={`relative block overflow-hidden rounded-md bg-gradient-to-br from-slate-100 to-slate-200 ring-1 ring-slate-200 ${className}`}
-    >
-      <span className="absolute top-4 right-4 block size-5 rounded-full bg-slate-300/70" />
-      <span className="absolute bottom-0 left-0 block h-3/5 w-3/5 rounded-tr-[28px] bg-slate-300/60" />
-      <span className="absolute right-0 bottom-0 block h-2/5 w-2/5 rounded-tl-[24px] bg-slate-300/50" />
-    </span>
-  );
-}
-
-function PreviewVideo({ className = "" }: { className?: string }) {
-  return (
-    <span
-      className={`grid place-items-center rounded-md bg-slate-100 ring-1 ring-slate-200 ${className}`}
-    >
-      <span className="grid size-10 place-items-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
-        <span className="ml-0.5 block size-0 border-y-[6px] border-l-[9px] border-y-transparent border-l-slate-500" />
-      </span>
-    </span>
-  );
-}
-
-function PreviewField() {
-  return (
-    <span className="block h-8 rounded-md bg-slate-50 ring-1 ring-slate-200" />
-  );
-}
-
-function PreviewQuestionRow({
-  className = "",
-  short = false,
-}: {
-  className?: string;
-  short?: boolean;
-}) {
-  return (
-    <span className={`flex items-center gap-3 ${className}`}>
-      <span className="grid size-6 shrink-0 place-items-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500">
-        ?
-      </span>
-      <PreviewLine className={`h-2 ${short ? "w-2/5" : "w-3/5"}`} />
-    </span>
-  );
-}
-
-function PreviewCard({
-  compact = false,
-  featured = false,
-}: {
-  compact?: boolean;
-  featured?: boolean;
-}) {
-  return (
-    <span
-      className={`block rounded-md border border-slate-200 bg-white shadow-sm ${
-        compact ? "p-3" : "p-4"
-      }`}
-    >
-      <PreviewLine
-        tone="dark"
-        className={`${featured ? "h-4 w-3/4" : "h-3 w-2/3"}`}
-      />
-      <PreviewLine className={`${compact ? "mt-3" : "mt-4"} h-2 w-full`} />
-      <PreviewLine className="mt-2 size-2/3" />
-      {featured && <PreviewButton className="mt-5 w-20" />}
-    </span>
   );
 }
 
@@ -5337,483 +4649,67 @@ function BlockEditor({
   return (
     <article
       id={`builder-block-${blockNumber}`}
-      className={`group/editor relative scroll-mt-28 rounded-[12px] border border-transparent bg-transparent transition-all focus-within:border-[#0b63f6]/50 focus-within:bg-white/80 focus-within:ring-4 focus-within:ring-[#0b63f6]/5 ${
-        isDragging
-          ? "z-10 scale-[1.01] border-[#0b63f6] bg-white shadow-2xl"
-          : "hover:border-slate-300 hover:bg-white/70"
+      className={`group/editor scroll-mt-28 transition-all ${
+        isDragging ? "z-10 scale-[1.01]" : ""
       }`}
     >
-      <BlockToolbar
-        label={`Page content ${blockNumber}`}
-        typeLabel={blockLabel(block.type)}
-        variantLabel={blockVariantLabel(block)}
-        description={blockSummary(block)}
-        status={completionStatus}
-        icon={block.type}
-        isFirst={isFirst}
-        isLast={isLast}
-        dragHandle={dragHandle}
-        onMove={onMove}
-        onDuplicate={onDuplicate}
-        onRemove={onRemove}
-        onEditSettings={onEditSettings}
-      />
+      <div
+        className={`relative isolate min-w-0 rounded-[12px] border border-transparent bg-transparent transition-all ${
+          isDragging
+            ? "border-[#0b63f6] bg-white shadow-2xl"
+            : "focus-within:border-[#0b63f6]/50 focus-within:bg-white/80 focus-within:ring-4 focus-within:ring-[#0b63f6]/5 hover:border-slate-300 hover:bg-white/70"
+        }`}
+      >
+        <div className="pointer-events-none absolute inset-x-2 top-2 z-10">
+          <BlockToolbar
+            label={`Page content ${blockNumber}`}
+            typeLabel={blockLabel(block.type)}
+            variantLabel={blockVariantLabel(block)}
+            description={blockSummary(block)}
+            status={completionStatus}
+            icon={block.type}
+            isFirst={isFirst}
+            isLast={isLast}
+            dragHandle={dragHandle}
+            onMove={onMove}
+            onDuplicate={onDuplicate}
+            onRemove={onRemove}
+            onEditSettings={onEditSettings}
+          />
+        </div>
 
-      {renderInlineContentEditor && (
-        <details open className="contents">
-          <summary className="hidden text-sm font-semibold text-slate-800">
-            Block settings
-          </summary>
-          <div className="px-3 py-6 sm:px-4">
-            {block.type === "rich_text" && (
-              <div className="max-w-3xl px-3 py-7 sm:px-4">
-                <label className="block">
-                  <span className="sr-only">Eyebrow</span>
-                  <input
-                    aria-label="Eyebrow"
-                    value={block.props.eyebrow}
-                    placeholder="Eyebrow"
-                    onChange={(event) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, eyebrow: event.target.value },
-                      })
-                    }
-                    className={eyebrowInputClass}
-                  />
-                </label>
-                <label className="mt-3 block">
-                  <span className="sr-only">Heading</span>
-                  <input
-                    aria-label="Heading"
-                    value={block.props.heading}
-                    placeholder="Section heading"
-                    onChange={(event) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, heading: event.target.value },
-                      })
-                    }
-                    className={sectionHeadingInputClass}
-                  />
-                </label>
-                <label className="mt-4 block">
-                  <span className="sr-only">Body</span>
-                  <textarea
-                    aria-label="Body"
-                    value={editableRichTextBodyText(block)}
-                    placeholder="Write the page copy here."
-                    onChange={(event) =>
-                      onChange({
-                        ...block,
-                        props: {
-                          ...block.props,
-                          body: richTextBodyFromEditableText(
-                            block,
-                            event.target.value,
-                          ),
-                        },
-                      })
-                    }
-                    rows={5}
-                    className={bodyTextareaClass}
-                  />
-                </label>
-              </div>
-            )}
-
-            {block.type === "hero" && (
-              <div className="max-w-4xl px-3 py-8 sm:px-4">
-                <label className="block">
-                  <span className="sr-only">Eyebrow</span>
-                  <input
-                    aria-label="Eyebrow"
-                    value={block.props.eyebrow}
-                    placeholder="Eyebrow"
-                    onChange={(event) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, eyebrow: event.target.value },
-                      })
-                    }
-                    className={eyebrowInputClass}
-                  />
-                </label>
-                <label className="mt-3 block">
-                  <span className="sr-only">Heading</span>
-                  <textarea
-                    aria-label="Heading"
-                    value={block.props.heading}
-                    placeholder="Hero headline"
-                    onChange={(event) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, heading: event.target.value },
-                      })
-                    }
-                    rows={2}
-                    className={heroHeadingInputClass}
-                  />
-                </label>
-                <label className="mt-5 block max-w-3xl">
-                  <span className="sr-only">Body</span>
-                  <textarea
-                    aria-label="Body"
-                    value={block.props.body}
-                    placeholder="Hero body copy"
-                    onChange={(event) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, body: event.target.value },
-                      })
-                    }
-                    rows={3}
-                    className={leadInputClass}
-                  />
-                </label>
-                <div className="mt-8">
-                  <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
-                    <span className="sr-only">CTA label</span>
+        {renderInlineContentEditor && (
+          <details open className="contents">
+            <summary className="hidden text-sm font-semibold text-slate-800">
+              Block settings
+            </summary>
+            <div className="px-3 pt-14 pb-6 sm:px-4">
+              {block.type === "rich_text" && (
+                <div className="max-w-3xl px-3 py-7 sm:px-4">
+                  <label className="block">
+                    <span className="sr-only">Eyebrow</span>
                     <input
-                      aria-label="CTA label"
-                      value={block.props.ctaLabel}
-                      placeholder="CTA label"
-                      onChange={(event) => {
-                        const nextLabel = event.target.value;
+                      aria-label="Eyebrow"
+                      value={block.props.eyebrow}
+                      placeholder="Eyebrow"
+                      onChange={(event) =>
                         onChange({
                           ...block,
                           props: {
                             ...block.props,
-                            ctaLabel: nextLabel,
-                            ctaTrackingName: syncedTrackingName({
-                              currentTrackingName: block.props.ctaTrackingName,
-                              previousLabel: block.props.ctaLabel,
-                              nextLabel,
-                              fallback: "hero-cta",
-                            }),
+                            eyebrow: event.target.value,
                           },
-                        });
-                      }}
-                      className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
+                        })
+                      }
+                      className={eyebrowInputClass}
                     />
                   </label>
-                </div>
-              </div>
-            )}
-
-            {block.type === "image" && (
-              <ImageBlockCanvas
-                block={block}
-                onChange={onChange}
-                onEditSettings={onEditSettings}
-              />
-            )}
-
-            {block.type === "cta" && (
-              <div className="px-3 py-4 sm:px-4">
-                <label className="inline-flex min-h-12 max-w-sm items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
-                  <span className="sr-only">CTA label</span>
-                  <input
-                    aria-label="CTA label"
-                    value={block.props.label}
-                    placeholder="CTA label"
-                    onChange={(event) => {
-                      const nextLabel = event.target.value;
-                      onChange({
-                        ...block,
-                        props: {
-                          ...block.props,
-                          label: nextLabel,
-                          trackingName: syncedTrackingName({
-                            currentTrackingName: block.props.trackingName,
-                            previousLabel: block.props.label,
-                            nextLabel,
-                            fallback: "cta",
-                          }),
-                        },
-                      });
-                    }}
-                    className="w-full min-w-28 bg-transparent outline-none placeholder:text-[#111111]/55"
-                  />
-                </label>
-              </div>
-            )}
-
-            {block.type === "video" && (
-              <VideoBlockCanvas
-                block={block}
-                onChange={onChange}
-                onEditSettings={onEditSettings}
-              />
-            )}
-
-            {block.type === "faq" && (
-              <div className="max-w-3xl px-3 py-4 sm:px-4">
-                <label className="block">
-                  <span className="sr-only">Heading</span>
-                  <input
-                    aria-label="Heading"
-                    value={block.props.heading}
-                    placeholder="FAQ heading"
-                    onChange={(event) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, heading: event.target.value },
-                      })
-                    }
-                    className={sectionHeadingInputClass}
-                  />
-                </label>
-                <div className="mt-5 divide-y-2 divide-[#bfeeff] rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8]">
-                  <div className="p-5">
-                    <TextInput
-                      label="Question"
-                      value={block.props.items[0]?.question ?? ""}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: {
-                            ...block.props,
-                            items: updateFirstFaqItem(block.props.items, {
-                              question: value,
-                            }),
-                          },
-                        })
-                      }
-                    />
-                    <TextAreaInput
-                      label="Answer"
-                      value={block.props.items[0]?.answer ?? ""}
-                      onChange={(value) =>
-                        onChange({
-                          ...block,
-                          props: {
-                            ...block.props,
-                            items: updateFirstFaqItem(block.props.items, {
-                              answer: value,
-                            }),
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {block.type === "card_grid" && (
-              <div className="px-3 py-4 sm:px-4">
-                <label className="block">
-                  <span className="sr-only">Heading</span>
-                  <input
-                    aria-label="Heading"
-                    value={block.props.heading}
-                    placeholder="Card grid heading"
-                    onChange={(event) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, heading: event.target.value },
-                      })
-                    }
-                    className={sectionHeadingInputClass}
-                  />
-                </label>
-                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {block.props.cards.map((card, cardIndex) => (
-                    <article
-                      key={cardItemKey(card)}
-                      className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8]"
-                    >
-                      <div className="mb-4 flex items-center justify-between gap-3">
-                        <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                          Card {cardIndex + 1}
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            className={miniButtonClass}
-                            disabled={cardIndex === 0}
-                            onClick={() =>
-                              onChange({
-                                ...block,
-                                props: {
-                                  ...block.props,
-                                  cards: moveItem(
-                                    block.props.cards,
-                                    cardIndex,
-                                    "up",
-                                  ),
-                                },
-                              })
-                            }
-                          >
-                            Up
-                          </button>
-                          <button
-                            type="button"
-                            className={miniButtonClass}
-                            disabled={
-                              cardIndex === block.props.cards.length - 1
-                            }
-                            onClick={() =>
-                              onChange({
-                                ...block,
-                                props: {
-                                  ...block.props,
-                                  cards: moveItem(
-                                    block.props.cards,
-                                    cardIndex,
-                                    "down",
-                                  ),
-                                },
-                              })
-                            }
-                          >
-                            Down
-                          </button>
-                          <button
-                            type="button"
-                            className={dangerButtonClass}
-                            onClick={() =>
-                              onChange({
-                                ...block,
-                                props: {
-                                  ...block.props,
-                                  cards: removeCard(
-                                    block.props.cards,
-                                    cardIndex,
-                                  ),
-                                },
-                              })
-                            }
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                      <TextInput
-                        label="Card title"
-                        value={card.title}
-                        onChange={(value) =>
-                          onChange({
-                            ...block,
-                            props: {
-                              ...block.props,
-                              cards: updateCard(block.props.cards, cardIndex, {
-                                title: value,
-                              }),
-                            },
-                          })
-                        }
-                      />
-                      <TextAreaInput
-                        label="Card body"
-                        value={card.body}
-                        onChange={(value) =>
-                          onChange({
-                            ...block,
-                            props: {
-                              ...block.props,
-                              cards: updateCard(block.props.cards, cardIndex, {
-                                body: value,
-                              }),
-                            },
-                          })
-                        }
-                      />
-                      {(card.href || block.props.cards.length > 0) && (
-                        <button
-                          type="button"
-                          onClick={onEditSettings}
-                          className="mt-4 inline-flex text-sm font-black text-[#2d9fd6] uppercase hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/30 focus-visible:outline-none"
-                        >
-                          Learn more
-                        </button>
-                      )}
-                    </article>
-                  ))}
-                  <button
-                    type="button"
-                    className="hover:border-brand-300 hover:bg-brand-50 focus-visible:ring-brand-400 min-h-40 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-left text-sm font-semibold text-slate-600 transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={block.props.cards.length >= 12}
-                    onClick={() =>
-                      onChange({
-                        ...block,
-                        props: {
-                          ...block.props,
-                          cards: [...block.props.cards, createBlankCard()],
-                        },
-                      })
-                    }
-                  >
-                    Add card
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {block.type === "proof" && (
-              <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-                <TextInput
-                  label="Eyebrow"
-                  value={block.props.eyebrow}
-                  onChange={(value) =>
-                    onChange({
-                      ...block,
-                      props: { ...block.props, eyebrow: value },
-                    })
-                  }
-                />
-                <label className="mt-3 block">
-                  <span className="sr-only">Body</span>
-                  <textarea
-                    aria-label="Body"
-                    value={block.props.body}
-                    placeholder="Proof quote or stat"
-                    onChange={(event) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, body: event.target.value },
-                      })
-                    }
-                    rows={3}
-                    className="focus:ring-brand-100 w-full bg-transparent text-xl leading-8 font-semibold text-slate-950 outline-none focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:ring-2"
-                  />
-                </label>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <TextInput
-                    label="Name"
-                    value={block.props.name}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, name: value },
-                      })
-                    }
-                  />
-                  <TextInput
-                    label="Context"
-                    value={block.props.context}
-                    onChange={(value) =>
-                      onChange({
-                        ...block,
-                        props: { ...block.props, context: value },
-                      })
-                    }
-                  />
-                </div>
-              </figure>
-            )}
-
-            {block.type === "lead_form" && (
-              <div className="grid gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-                <div>
-                  <label className="block">
+                  <label className="mt-3 block">
                     <span className="sr-only">Heading</span>
                     <input
                       aria-label="Heading"
                       value={block.props.heading}
-                      placeholder="Lead form heading"
+                      placeholder="Section heading"
                       onChange={(event) =>
                         onChange({
                           ...block,
@@ -5826,12 +4722,325 @@ function BlockEditor({
                       className={sectionHeadingInputClass}
                     />
                   </label>
+                  <label className="mt-4 block">
+                    <span className="sr-only">Body</span>
+                    <textarea
+                      aria-label="Body"
+                      value={editableRichTextBodyText(block)}
+                      placeholder="Write the page copy here."
+                      onChange={(event) =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            body: richTextBodyFromEditableText(
+                              block,
+                              event.target.value,
+                            ),
+                          },
+                        })
+                      }
+                      rows={5}
+                      className={bodyTextareaClass}
+                    />
+                  </label>
+                </div>
+              )}
+
+              {block.type === "hero" &&
+                (block.variant === "split" ? (
+                  <SplitHeroBlockCanvas
+                    block={block}
+                    onChange={onChange}
+                    onEditSettings={onEditSettings}
+                  />
+                ) : (
+                  <HeroInlineContentFields block={block} onChange={onChange} />
+                ))}
+
+              {block.type === "image" && (
+                <ImageBlockCanvas
+                  block={block}
+                  onChange={onChange}
+                  onEditSettings={onEditSettings}
+                />
+              )}
+
+              {block.type === "cta" && (
+                <div className="px-3 py-4 sm:px-4">
+                  <label className="inline-flex min-h-12 max-w-sm items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
+                    <span className="sr-only">CTA label</span>
+                    <input
+                      aria-label="CTA label"
+                      value={block.props.label}
+                      placeholder="CTA label"
+                      onChange={(event) => {
+                        const nextLabel = event.target.value;
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            label: nextLabel,
+                            trackingName: syncedTrackingName({
+                              currentTrackingName: block.props.trackingName,
+                              previousLabel: block.props.label,
+                              nextLabel,
+                              fallback: "cta",
+                            }),
+                          },
+                        });
+                      }}
+                      className="w-full min-w-28 bg-transparent outline-none placeholder:text-[#111111]/55"
+                    />
+                  </label>
+                </div>
+              )}
+
+              {block.type === "video" && (
+                <VideoBlockCanvas
+                  block={block}
+                  onChange={onChange}
+                  onEditSettings={onEditSettings}
+                />
+              )}
+
+              {block.type === "faq" && (
+                <div className="max-w-3xl px-3 py-4 sm:px-4">
+                  <label className="block">
+                    <span className="sr-only">Heading</span>
+                    <input
+                      aria-label="Heading"
+                      value={block.props.heading}
+                      placeholder="FAQ heading"
+                      onChange={(event) =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            heading: event.target.value,
+                          },
+                        })
+                      }
+                      className={sectionHeadingInputClass}
+                    />
+                  </label>
+                  <div className="mt-5 divide-y-2 divide-[#bfeeff] rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8]">
+                    <div className="p-5">
+                      <TextInput
+                        label="Question"
+                        value={block.props.items[0]?.question ?? ""}
+                        onChange={(value) =>
+                          onChange({
+                            ...block,
+                            props: {
+                              ...block.props,
+                              items: updateFirstFaqItem(block.props.items, {
+                                question: value,
+                              }),
+                            },
+                          })
+                        }
+                      />
+                      <TextAreaInput
+                        label="Answer"
+                        value={block.props.items[0]?.answer ?? ""}
+                        onChange={(value) =>
+                          onChange({
+                            ...block,
+                            props: {
+                              ...block.props,
+                              items: updateFirstFaqItem(block.props.items, {
+                                answer: value,
+                              }),
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {block.type === "card_grid" && (
+                <div className="px-3 py-4 sm:px-4">
+                  <label className="block">
+                    <span className="sr-only">Heading</span>
+                    <input
+                      aria-label="Heading"
+                      value={block.props.heading}
+                      placeholder="Card grid heading"
+                      onChange={(event) =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            heading: event.target.value,
+                          },
+                        })
+                      }
+                      className={sectionHeadingInputClass}
+                    />
+                  </label>
+                  <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {block.props.cards.map((card, cardIndex) => (
+                      <article
+                        key={cardItemKey(card)}
+                        className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8]"
+                      >
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                            Card {cardIndex + 1}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              className={miniButtonClass}
+                              disabled={cardIndex === 0}
+                              onClick={() =>
+                                onChange({
+                                  ...block,
+                                  props: {
+                                    ...block.props,
+                                    cards: moveItem(
+                                      block.props.cards,
+                                      cardIndex,
+                                      "up",
+                                    ),
+                                  },
+                                })
+                              }
+                            >
+                              Up
+                            </button>
+                            <button
+                              type="button"
+                              className={miniButtonClass}
+                              disabled={
+                                cardIndex === block.props.cards.length - 1
+                              }
+                              onClick={() =>
+                                onChange({
+                                  ...block,
+                                  props: {
+                                    ...block.props,
+                                    cards: moveItem(
+                                      block.props.cards,
+                                      cardIndex,
+                                      "down",
+                                    ),
+                                  },
+                                })
+                              }
+                            >
+                              Down
+                            </button>
+                            <button
+                              type="button"
+                              className={dangerButtonClass}
+                              onClick={() =>
+                                onChange({
+                                  ...block,
+                                  props: {
+                                    ...block.props,
+                                    cards: removeCard(
+                                      block.props.cards,
+                                      cardIndex,
+                                    ),
+                                  },
+                                })
+                              }
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                        <TextInput
+                          label="Card title"
+                          value={card.title}
+                          onChange={(value) =>
+                            onChange({
+                              ...block,
+                              props: {
+                                ...block.props,
+                                cards: updateCard(
+                                  block.props.cards,
+                                  cardIndex,
+                                  {
+                                    title: value,
+                                  },
+                                ),
+                              },
+                            })
+                          }
+                        />
+                        <TextAreaInput
+                          label="Card body"
+                          value={card.body}
+                          onChange={(value) =>
+                            onChange({
+                              ...block,
+                              props: {
+                                ...block.props,
+                                cards: updateCard(
+                                  block.props.cards,
+                                  cardIndex,
+                                  {
+                                    body: value,
+                                  },
+                                ),
+                              },
+                            })
+                          }
+                        />
+                        {(card.href || block.props.cards.length > 0) && (
+                          <button
+                            type="button"
+                            onClick={onEditSettings}
+                            className="mt-4 inline-flex text-sm font-black text-[#2d9fd6] uppercase hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/30 focus-visible:outline-none"
+                          >
+                            Learn more
+                          </button>
+                        )}
+                      </article>
+                    ))}
+                    <button
+                      type="button"
+                      className="hover:border-brand-300 hover:bg-brand-50 focus-visible:ring-brand-400 min-h-40 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-left text-sm font-semibold text-slate-600 transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={block.props.cards.length >= 12}
+                      onClick={() =>
+                        onChange({
+                          ...block,
+                          props: {
+                            ...block.props,
+                            cards: [...block.props.cards, createBlankCard()],
+                          },
+                        })
+                      }
+                    >
+                      Add card
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {block.type === "proof" && (
+                <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
+                  <TextInput
+                    label="Eyebrow"
+                    value={block.props.eyebrow}
+                    onChange={(value) =>
+                      onChange({
+                        ...block,
+                        props: { ...block.props, eyebrow: value },
+                      })
+                    }
+                  />
                   <label className="mt-3 block">
                     <span className="sr-only">Body</span>
                     <textarea
                       aria-label="Body"
                       value={block.props.body}
-                      placeholder="Lead form copy"
+                      placeholder="Proof quote or stat"
                       onChange={(event) =>
                         onChange({
                           ...block,
@@ -5839,49 +5048,334 @@ function BlockEditor({
                         })
                       }
                       rows={3}
-                      className={bodyTextareaClass}
+                      className="focus:ring-brand-100 w-full bg-transparent text-xl leading-8 font-semibold text-slate-950 outline-none focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:ring-2"
                     />
                   </label>
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className={disabledLeadFieldClass}>Full name</div>
-                  <div className={disabledLeadFieldClass}>Email</div>
-                  <div className={disabledLeadFieldClass}>Phone</div>
-                  <div className={disabledLeadFieldClass}>Market</div>
-                </div>
-                <div>
-                  <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
-                    <span className="sr-only">Submit label</span>
-                    <input
-                      aria-label="Submit label"
-                      value={block.props.submitLabel}
-                      placeholder="Submit label"
-                      onChange={(event) => {
-                        const nextLabel = event.target.value;
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <TextInput
+                      label="Name"
+                      value={block.props.name}
+                      onChange={(value) =>
                         onChange({
                           ...block,
-                          props: {
-                            ...block.props,
-                            submitLabel: nextLabel,
-                            trackingName: syncedTrackingName({
-                              currentTrackingName: block.props.trackingName,
-                              previousLabel: block.props.submitLabel,
-                              nextLabel,
-                              fallback: "lead-form",
-                            }),
-                          },
-                        });
-                      }}
-                      className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
+                          props: { ...block.props, name: value },
+                        })
+                      }
                     />
-                  </label>
+                    <TextInput
+                      label="Context"
+                      value={block.props.context}
+                      onChange={(value) =>
+                        onChange({
+                          ...block,
+                          props: { ...block.props, context: value },
+                        })
+                      }
+                    />
+                  </div>
+                </figure>
+              )}
+
+              {block.type === "lead_form" && (
+                <div className="grid gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
+                  <div>
+                    <label className="block">
+                      <span className="sr-only">Heading</span>
+                      <input
+                        aria-label="Heading"
+                        value={block.props.heading}
+                        placeholder="Lead form heading"
+                        onChange={(event) =>
+                          onChange({
+                            ...block,
+                            props: {
+                              ...block.props,
+                              heading: event.target.value,
+                            },
+                          })
+                        }
+                        className={sectionHeadingInputClass}
+                      />
+                    </label>
+                    <label className="mt-3 block">
+                      <span className="sr-only">Body</span>
+                      <textarea
+                        aria-label="Body"
+                        value={block.props.body}
+                        placeholder="Lead form copy"
+                        onChange={(event) =>
+                          onChange({
+                            ...block,
+                            props: { ...block.props, body: event.target.value },
+                          })
+                        }
+                        rows={3}
+                        className={bodyTextareaClass}
+                      />
+                    </label>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className={disabledLeadFieldClass}>Full name</div>
+                    <div className={disabledLeadFieldClass}>Email</div>
+                    <div className={disabledLeadFieldClass}>Phone</div>
+                    <div className={disabledLeadFieldClass}>Market</div>
+                  </div>
+                  <div>
+                    <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
+                      <span className="sr-only">Submit label</span>
+                      <input
+                        aria-label="Submit label"
+                        value={block.props.submitLabel}
+                        placeholder="Submit label"
+                        onChange={(event) => {
+                          const nextLabel = event.target.value;
+                          onChange({
+                            ...block,
+                            props: {
+                              ...block.props,
+                              submitLabel: nextLabel,
+                              trackingName: syncedTrackingName({
+                                currentTrackingName: block.props.trackingName,
+                                previousLabel: block.props.submitLabel,
+                                nextLabel,
+                                fallback: "lead-form",
+                              }),
+                            },
+                          });
+                        }}
+                        className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
+                      />
+                    </label>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </details>
-      )}
+              )}
+            </div>
+          </details>
+        )}
+      </div>
     </article>
+  );
+}
+
+const HERO_BODY_MAX_LENGTH = 500;
+
+function EditorCharLimit({ value, max }: { value: string; max: number }) {
+  const count = value.length;
+  const warnAt = Math.floor(max * 0.8);
+
+  const toneClass =
+    count >= max
+      ? "font-semibold text-red-600"
+      : count >= warnAt
+        ? "font-medium text-amber-600"
+        : "font-medium text-emerald-600";
+
+  return (
+    <p
+      aria-live="polite"
+      className={`mt-1 text-right text-xs tabular-nums ${toneClass}`}
+    >
+      {count}/{max}
+    </p>
+  );
+}
+
+function AutoResizeTextarea({
+  className,
+  value,
+  onChange,
+  rows = 1,
+  ...rest
+}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [value]);
+
+  return (
+    <textarea
+      {...rest}
+      ref={textareaRef}
+      value={value}
+      rows={rows}
+      onChange={(event) => {
+        onChange?.(event);
+        event.currentTarget.style.height = "auto";
+        event.currentTarget.style.height = `${event.currentTarget.scrollHeight}px`;
+      }}
+      className={`${className ?? ""} overflow-hidden`}
+    />
+  );
+}
+
+function HeroInlineContentFields({
+  block,
+  onChange,
+  className = "max-w-4xl px-3 py-8 sm:px-4",
+}: {
+  block: Extract<PageBlock, { type: "hero" }>;
+  onChange: (block: PageBlock) => void;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <label className="block">
+        <span className="sr-only">Eyebrow</span>
+        <input
+          aria-label="Eyebrow"
+          value={block.props.eyebrow}
+          placeholder="Eyebrow"
+          onChange={(event) =>
+            onChange({
+              ...block,
+              props: { ...block.props, eyebrow: event.target.value },
+            })
+          }
+          className={eyebrowInputClass}
+        />
+      </label>
+      <label className="mt-3 block">
+        <span className="sr-only">Heading</span>
+        <textarea
+          aria-label="Heading"
+          value={block.props.heading}
+          placeholder="Hero headline"
+          onChange={(event) =>
+            onChange({
+              ...block,
+              props: { ...block.props, heading: event.target.value },
+            })
+          }
+          rows={2}
+          className={heroHeadingInputClass}
+        />
+      </label>
+      <label className="mt-5 block max-w-3xl">
+        <span className="sr-only">Body</span>
+        <AutoResizeTextarea
+          aria-label="Body"
+          value={block.props.body}
+          placeholder="Hero body copy"
+          maxLength={HERO_BODY_MAX_LENGTH}
+          onChange={(event) =>
+            onChange({
+              ...block,
+              props: { ...block.props, body: event.target.value },
+            })
+          }
+          rows={3}
+          className={leadInputClass}
+        />
+        <EditorCharLimit value={block.props.body} max={HERO_BODY_MAX_LENGTH} />
+      </label>
+      <div className="mt-8">
+        <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
+          <span className="sr-only">CTA label</span>
+          <input
+            aria-label="CTA label"
+            value={block.props.ctaLabel}
+            placeholder="CTA label"
+            onChange={(event) => {
+              const nextLabel = event.target.value;
+              onChange({
+                ...block,
+                props: {
+                  ...block.props,
+                  ctaLabel: nextLabel,
+                  ctaTrackingName: syncedTrackingName({
+                    currentTrackingName: block.props.ctaTrackingName,
+                    previousLabel: block.props.ctaLabel,
+                    nextLabel,
+                    fallback: "hero-cta",
+                  }),
+                },
+              });
+            }}
+            className="w-full min-w-24 bg-transparent outline-none placeholder:text-[#111111]/55"
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function SplitHeroBlockCanvas({
+  block,
+  onChange,
+  onEditSettings,
+}: {
+  block: Extract<PageBlock, { type: "hero" }>;
+  onChange: (block: PageBlock) => void;
+  onEditSettings: () => void;
+}) {
+  const imageClass =
+    "aspect-[4/5] w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]";
+  const mediaNode = block.props.mediaSrc ? (
+    <figure>
+      <Image
+        src={block.props.mediaSrc}
+        alt={block.props.mediaAltText ?? ""}
+        width={900}
+        height={1125}
+        sizes="(max-width: 1024px) 100vw, 40vw"
+        className={imageClass}
+      />
+      <label className="mt-4 block">
+        <span className="sr-only">Media caption</span>
+        <input
+          aria-label="Media caption"
+          value={block.props.mediaCaption ?? ""}
+          placeholder="Media caption"
+          onChange={(event) =>
+            onChange({
+              ...block,
+              props: { ...block.props, mediaCaption: event.target.value },
+            })
+          }
+          className="focus:ring-brand-100 w-full bg-transparent text-sm font-semibold text-slate-600 outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
+        />
+      </label>
+      {!block.props.mediaAltText?.trim() && (
+        <p className="mt-2 text-xs text-amber-700">
+          Add alt text in block settings before publishing.
+        </p>
+      )}
+    </figure>
+  ) : block.props.proofText ? (
+    <aside className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
+      <p className="text-sm font-black text-[#55b8e8] uppercase">Proof</p>
+      <p className="mt-4 text-xl leading-8 font-black text-[#111111]">
+        {block.props.proofText}
+      </p>
+    </aside>
+  ) : (
+    <button
+      type="button"
+      onClick={onEditSettings}
+      className={`${imageClass} grid place-items-center border-dashed bg-slate-50 text-center text-sm text-slate-500 transition hover:border-[#0b63f6]/40 hover:bg-white focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none`}
+    >
+      <span>
+        <span className="block font-semibold text-slate-600">Choose image</span>
+        <span className="mt-1 block text-xs text-slate-500">
+          Add approved media or proof content before publishing.
+        </span>
+      </span>
+    </button>
+  );
+
+  return (
+    <div className="grid items-center gap-10 px-3 py-8 sm:px-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
+      <HeroInlineContentFields
+        block={block}
+        onChange={onChange}
+        className="max-w-none px-0 py-0"
+      />
+      <div>{mediaNode}</div>
+    </div>
   );
 }
 
@@ -6106,7 +5600,7 @@ function BlockToolbar({
 }) {
   return (
     <header
-      className="absolute -top-5 right-0 left-0 z-20 flex flex-wrap items-center justify-between gap-3 rounded-full border border-slate-200 bg-white/95 px-3 py-2 text-xs opacity-0 shadow-sm ring-1 ring-black/5 backdrop-blur transition-opacity group-focus-within/editor:opacity-100 group-hover/editor:opacity-100"
+      className="flex flex-wrap items-center justify-between gap-3 rounded-full border border-slate-200 bg-white/95 px-3 py-2 text-xs opacity-100 shadow-[0_10px_30px_-12px_rgba(15,23,42,0.35)] ring-1 ring-black/5 backdrop-blur transition-all md:opacity-0 md:group-focus-within/editor:opacity-100 md:group-hover/editor:opacity-100"
       title={description}
     >
       <div className="flex min-w-0 items-center gap-3">
@@ -6208,10 +5702,12 @@ function TextAreaInput({
   label,
   value,
   onChange,
+  maxLength,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  maxLength?: number;
 }) {
   return (
     <label className="block">
@@ -6219,10 +5715,14 @@ function TextAreaInput({
       <textarea
         aria-label={label}
         value={value}
+        maxLength={maxLength}
         onChange={(event) => onChange(event.target.value)}
         rows={4}
         className={textareaClass}
       />
+      {maxLength !== undefined ? (
+        <EditorCharLimit value={value} max={maxLength} />
+      ) : null}
     </label>
   );
 }
@@ -6550,6 +6050,21 @@ function BuilderGlyph({
       <path d="M9 16h3" />
     </svg>
   );
+}
+
+function applyMediaAssetToSplitHeroBlock(
+  block: Extract<PageBlock, { type: "hero" }>,
+  asset: SeoPageEditorMediaAsset,
+): Extract<PageBlock, { type: "hero" }> {
+  return {
+    ...block,
+    props: {
+      ...block.props,
+      mediaSrc: asset.publicUrl,
+      mediaAltText: asset.altText,
+      mediaCaption: asset.caption ?? "",
+    },
+  };
 }
 
 function applyMediaAssetToImageBlock(

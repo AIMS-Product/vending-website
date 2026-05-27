@@ -1,0 +1,8 @@
+interface:
+  display_name: "Goal"
+  short_description: "Define a clear working goal"
+  brand_color: "#2563EB"
+  default_prompt: "Use $goal to define the current working goal and acceptance criteria."
+
+policy:
+  allow_implicit_invocation: true

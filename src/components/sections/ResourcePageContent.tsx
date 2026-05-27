@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import type { MouseEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
   type PageBlock,
   type PageContent,
@@ -733,13 +733,12 @@ function ResourceLeadFormPreview({
           </div>
         </div>
       )}
-      <button
-        type="button"
-        disabled
+      <span
+        aria-disabled="true"
         className="inline-flex min-h-12 max-w-max items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 py-3 text-sm font-black text-[#111111] uppercase opacity-80 shadow-[5px_5px_0_#111111]"
       >
         {submitLabel || "Submit application"}
-      </button>
+      </span>
     </div>
   );
 }
@@ -836,19 +835,22 @@ function ResourceLink({
   children: ReactNode;
 }) {
   const disabled = linkMode === "disabled" || href === "#";
-  const onClick = disabled
-    ? (event: MouseEvent<HTMLAnchorElement>) => event.preventDefault()
-    : undefined;
+
+  if (disabled) {
+    return (
+      <span
+        data-tracking-name={trackingName}
+        aria-disabled="true"
+        className={className}
+      >
+        {children}
+      </span>
+    );
+  }
 
   if (href.startsWith("/") || href.startsWith("#")) {
     return (
-      <Link
-        href={href}
-        data-tracking-name={trackingName}
-        aria-disabled={disabled || undefined}
-        onClick={onClick}
-        className={className}
-      >
+      <Link href={href} data-tracking-name={trackingName} className={className}>
         {children}
       </Link>
     );
@@ -858,8 +860,6 @@ function ResourceLink({
     <a
       href={href}
       data-tracking-name={trackingName}
-      aria-disabled={disabled || undefined}
-      onClick={onClick}
       rel="noopener noreferrer"
       className={className}
     >
