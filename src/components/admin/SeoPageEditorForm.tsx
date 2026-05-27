@@ -18,7 +18,14 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -113,6 +120,7 @@ type BuilderBlockEntry = {
   sectionNumber: number;
   columnNumber: number;
 };
+type MobileEditorPanel = "blocks" | "seo" | null;
 
 const initialState: PageEditorActionState = { status: "idle" };
 const initialAiProposalState: PageAiProposalResult = { status: "idle" };
@@ -121,7 +129,22 @@ const previewSessionStorageKey = "seo-page-builder-preview-link";
 const emptyInternalLinkTargets: InternalLinkSuggestionTarget[] = [];
 const emptyMediaAssets: SeoPageEditorMediaAsset[] = [];
 const emptyAiProposals: AiPageProposalReview[] = [];
+const narrowEditorMediaQuery = "(max-width: 1279px)";
 let localEditorKeyCounter = 0;
+
+function subscribeToNarrowEditorChange(onStoreChange: () => void) {
+  const media = window.matchMedia(narrowEditorMediaQuery);
+  media.addEventListener("change", onStoreChange);
+  return () => media.removeEventListener("change", onStoreChange);
+}
+
+function getNarrowEditorSnapshot() {
+  return window.matchMedia(narrowEditorMediaQuery).matches;
+}
+
+function getNarrowEditorServerSnapshot() {
+  return false;
+}
 
 export function SeoPageEditorForm({
   page,
@@ -166,8 +189,17 @@ export function SeoPageEditorForm({
   const [previewLinkPath, setPreviewLinkPath] = useState<string | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
-  const [isBlockSidebarCollapsed, setIsBlockSidebarCollapsed] = useState(false);
-  const [isSeoSidebarCollapsed, setIsSeoSidebarCollapsed] = useState(false);
+  const isNarrowEditor = useSyncExternalStore(
+    subscribeToNarrowEditorChange,
+    getNarrowEditorSnapshot,
+    getNarrowEditorServerSnapshot,
+  );
+  const [mobileEditorPanel, setMobileEditorPanel] =
+    useState<MobileEditorPanel>(null);
+  const [isDesktopBlockSidebarCollapsed, setIsDesktopBlockSidebarCollapsed] =
+    useState(false);
+  const [isDesktopSeoSidebarCollapsed, setIsDesktopSeoSidebarCollapsed] =
+    useState(false);
   const [hasSelectedNewPageMode, setHasSelectedNewPageMode] = useState(
     Boolean(page?.id),
   );
@@ -278,6 +310,12 @@ export function SeoPageEditorForm({
     redirectError ??
     state.message ??
     (state.status === "error" ? "Save failed." : "Draft saved.");
+  const isBlockSidebarCollapsed = isNarrowEditor
+    ? mobileEditorPanel !== "blocks"
+    : isDesktopBlockSidebarCollapsed;
+  const isSeoSidebarCollapsed = isNarrowEditor
+    ? mobileEditorPanel !== "seo"
+    : isDesktopSeoSidebarCollapsed;
   const builderShellGridClass = `grid min-h-[calc(100dvh-4rem)] gap-4 p-4 lg:min-h-screen ${
     isBlockSidebarCollapsed && isSeoSidebarCollapsed
       ? "xl:grid-cols-[minmax(0,1fr)]"
@@ -379,18 +417,24 @@ export function SeoPageEditorForm({
                 type="button"
                 className={floatingRailButtonClass(blockSidebarStatus)}
                 aria-label={
-                  isBlockSidebarCollapsed
-                    ? "Expand blocks sidebar"
-                    : "Collapse blocks sidebar"
+                  isNarrowEditor
+                    ? isBlockSidebarCollapsed
+                      ? blockSidebarExpandTitle
+                      : "Close blocks panel"
+                    : isBlockSidebarCollapsed
+                      ? "Expand blocks sidebar"
+                      : "Collapse blocks sidebar"
                 }
                 title={
-                  isBlockSidebarCollapsed
-                    ? blockSidebarExpandTitle
-                    : "Collapse blocks sidebar"
+                  isNarrowEditor
+                    ? isBlockSidebarCollapsed
+                      ? blockSidebarExpandTitle
+                      : "Close blocks panel"
+                    : isBlockSidebarCollapsed
+                      ? blockSidebarExpandTitle
+                      : "Collapse blocks sidebar"
                 }
-                onClick={() =>
-                  setIsBlockSidebarCollapsed((isCollapsed) => !isCollapsed)
-                }
+                onClick={toggleBlockSidebar}
               >
                 <ChevronIcon
                   direction={isBlockSidebarCollapsed ? "right" : "left"}
@@ -449,18 +493,24 @@ export function SeoPageEditorForm({
                 type="button"
                 className={floatingRailButtonClass(seoReadiness.status)}
                 aria-label={
-                  isSeoSidebarCollapsed
-                    ? "Expand SEO sidebar"
-                    : "Collapse SEO sidebar"
+                  isNarrowEditor
+                    ? isSeoSidebarCollapsed
+                      ? seoSidebarExpandTitle
+                      : "Close SEO panel"
+                    : isSeoSidebarCollapsed
+                      ? "Expand SEO sidebar"
+                      : "Collapse SEO sidebar"
                 }
                 title={
-                  isSeoSidebarCollapsed
-                    ? seoSidebarExpandTitle
-                    : "Collapse SEO sidebar"
+                  isNarrowEditor
+                    ? isSeoSidebarCollapsed
+                      ? seoSidebarExpandTitle
+                      : "Close SEO panel"
+                    : isSeoSidebarCollapsed
+                      ? seoSidebarExpandTitle
+                      : "Collapse SEO sidebar"
                 }
-                onClick={() =>
-                  setIsSeoSidebarCollapsed((isCollapsed) => !isCollapsed)
-                }
+                onClick={toggleSeoSidebar}
               >
                 <ChevronIcon
                   direction={isSeoSidebarCollapsed ? "left" : "right"}
@@ -469,9 +519,18 @@ export function SeoPageEditorForm({
             </div>
           </div>
         </div>
+        {isNarrowEditor &&
+          (!isBlockSidebarCollapsed || !isSeoSidebarCollapsed) && (
+            <button
+              type="button"
+              aria-label="Close editor side panel"
+              className="fixed inset-x-0 top-28 bottom-0 z-[55] bg-slate-950/20 xl:hidden"
+              onClick={() => setMobileEditorPanel(null)}
+            />
+          )}
         <div className={builderShellGridClass}>
           {!isBlockSidebarCollapsed && (
-            <aside className="order-2 flex min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:order-none xl:h-[calc(100dvh-2rem)] xl:min-h-0">
+            <aside className="fixed top-32 bottom-4 left-4 z-[60] order-2 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:bottom-auto xl:left-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none">
               <div className="flex shrink-0 items-start border-b border-slate-200 px-5 py-4">
                 <div>
                   <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
@@ -486,7 +545,7 @@ export function SeoPageEditorForm({
                   </p>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
                 <BuilderBlockSidebar
                   entries={builderBlockEntries}
                   selectedEntry={selectedBlockEntry}
@@ -525,7 +584,7 @@ export function SeoPageEditorForm({
             </aside>
           )}
 
-          <div className="order-1 min-w-0 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-100 shadow-sm xl:order-none xl:h-[calc(100dvh-2rem)]">
+          <div className="order-1 min-w-0 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-100 shadow-sm xl:order-none xl:h-[calc(100dvh-7rem)]">
             {(state.status !== "idle" ||
               savedFromRedirect ||
               redirectError ||
@@ -755,7 +814,7 @@ export function SeoPageEditorForm({
           </div>
 
           {!isSeoSidebarCollapsed && (
-            <aside className="order-3 flex min-h-[640px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:order-none xl:h-[calc(100dvh-2rem)] xl:min-h-0">
+            <aside className="fixed top-32 right-4 bottom-4 z-[60] order-3 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:right-auto xl:bottom-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none">
               <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
                 <div>
                   <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
@@ -773,7 +832,7 @@ export function SeoPageEditorForm({
                 </span>
               </div>
 
-              <div className="flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
+              <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
                 <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
@@ -1144,6 +1203,28 @@ export function SeoPageEditorForm({
     } finally {
       setIsPreviewOpening(false);
     }
+  }
+
+  function toggleBlockSidebar() {
+    if (isNarrowEditor) {
+      setMobileEditorPanel((currentPanel) =>
+        currentPanel === "blocks" ? null : "blocks",
+      );
+      return;
+    }
+
+    setIsDesktopBlockSidebarCollapsed((isCollapsed) => !isCollapsed);
+  }
+
+  function toggleSeoSidebar() {
+    if (isNarrowEditor) {
+      setMobileEditorPanel((currentPanel) =>
+        currentPanel === "seo" ? null : "seo",
+      );
+      return;
+    }
+
+    setIsDesktopSeoSidebarCollapsed((isCollapsed) => !isCollapsed);
   }
 
   async function createPreviewLinkForSavedPage() {
@@ -4456,6 +4537,7 @@ function BlockPicker({
   const [selectedType, setSelectedType] = useState<PageBlock["type"]>(
     blockPickerOptions[0]?.type ?? "rich_text",
   );
+  const variantPanelRef = useRef<HTMLDivElement | null>(null);
   const selectedOption =
     blockPickerOptions.find((option) => option.type === selectedType) ??
     blockPickerOptions[0];
@@ -4472,6 +4554,18 @@ function BlockPicker({
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
+
+  function selectBlockType(type: PageBlock["type"]) {
+    setSelectedType(type);
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      window.setTimeout(() => {
+        variantPanelRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }, 0);
+    }
+  }
 
   return (
     <div className="relative">
@@ -4500,7 +4594,7 @@ function BlockPicker({
       ) : (
         <div
           role="presentation"
-          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/20 px-4 py-6 sm:px-6 lg:py-8"
+          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/20 px-4 py-4 sm:px-6 lg:py-8"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
               setIsOpen(false);
@@ -4509,7 +4603,7 @@ function BlockPicker({
         >
           <dialog
             open
-            className="animate-in fade-in slide-in-from-top-2 mx-auto w-full max-w-6xl rounded-xl border border-slate-200 bg-white p-4 shadow-2xl ring-1 ring-slate-900/5 sm:p-5"
+            className="animate-in fade-in slide-in-from-top-2 mx-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-2xl ring-1 ring-slate-900/5 sm:p-5"
             aria-modal="true"
             aria-labelledby="block-picker-title"
             aria-describedby="block-picker-description"
@@ -4551,20 +4645,20 @@ function BlockPicker({
                 </svg>
               </button>
             </div>
-            <div className="grid gap-3 lg:grid-cols-[250px_minmax(0,1fr)]">
-              <div className="grid gap-2 self-start">
+            <div className="grid min-h-0 gap-3 overflow-y-auto lg:grid-cols-[250px_minmax(0,1fr)]">
+              <div className="flex min-h-[4.5rem] gap-2 overflow-x-auto pb-2 lg:grid lg:min-h-0 lg:gap-2 lg:overflow-visible lg:pb-0">
                 {blockPickerOptions.map((option) => {
                   const isSelected = option.type === selectedOption.type;
                   return (
                     <button
                       key={option.type}
                       type="button"
-                      className={`flex min-h-16 items-start gap-3 rounded-lg border p-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+                      className={`flex min-h-16 min-w-56 items-start gap-3 rounded-lg border p-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none lg:min-w-0 ${
                         isSelected
                           ? "border-[#0b63f6]/65 bg-[#f7faff] shadow-sm ring-1 ring-[#0b63f6]/20"
                           : "border-slate-200 bg-white shadow-sm hover:border-slate-300 hover:bg-slate-50"
                       }`}
-                      onClick={() => setSelectedType(option.type)}
+                      onClick={() => selectBlockType(option.type)}
                     >
                       <span
                         className={`flex size-9 shrink-0 items-center justify-center rounded-md shadow-sm ring-1 ring-inset ${
@@ -4590,14 +4684,17 @@ function BlockPicker({
               </div>
 
               {selectedOption && (
-                <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
+                <div
+                  ref={variantPanelRef}
+                  className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6"
+                >
                   <div className="mb-4">
                     <h5 className="text-sm font-semibold text-slate-950 sm:text-base">
                       Choose {articleFor(selectedOption.label)}{" "}
                       {selectedOption.label.toLowerCase()} layout
                     </h5>
                   </div>
-                  <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     {selectedOption.variants.map((variant) => (
                       <button
                         key={`${selectedOption.type}-${variant.id}`}
@@ -4609,7 +4706,7 @@ function BlockPicker({
                         }}
                       >
                         <span
-                          className="block h-40 border-b border-slate-200 bg-white p-5 sm:h-48 sm:p-6"
+                          className="block h-40 overflow-hidden border-b border-slate-200 bg-white p-5 sm:h-48 sm:p-6"
                           aria-hidden="true"
                         >
                           <BlockVariantPreviewSkeleton
