@@ -5,6 +5,7 @@ import {
   duplicatePageBlock,
   ensureEditablePageContent,
   moveItem,
+  moveItemToIndex,
   reorderItemsById,
 } from "./content-ops";
 import { flattenBlocks, pageContentSchema, type PageContent } from "./blocks";
@@ -128,5 +129,21 @@ describe("page builder content operations", () => {
       "block_b",
       "block_a",
     ]);
+  });
+
+  it("moves an item to an explicit target index", () => {
+    const items = [{ id: "a" }, { id: "b" }, { id: "c" }];
+
+    expect(moveItemToIndex(items, 0, 2)).toEqual([
+      { id: "b" },
+      { id: "c" },
+      { id: "a" },
+    ]);
+    expect(moveItemToIndex(items, 2, 0)).toEqual([
+      { id: "c" },
+      { id: "a" },
+      { id: "b" },
+    ]);
+    expect(moveItemToIndex(items, 1, 1)).toBe(items);
   });
 });

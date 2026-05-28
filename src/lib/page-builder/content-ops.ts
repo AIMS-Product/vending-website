@@ -189,8 +189,22 @@ export function moveItem<T>(
   if (index < 0 || index >= items.length) return items;
   const target = direction === "up" ? index - 1 : index + 1;
   if (target < 0 || target >= items.length) return items;
+  return moveItemToIndex(items, index, target);
+}
+
+export function moveItemToIndex<T>(
+  items: T[],
+  index: number,
+  targetIndex: number,
+) {
+  if (index < 0 || index >= items.length) return items;
+  if (targetIndex < 0 || targetIndex >= items.length) return items;
+  if (index === targetIndex) return items;
+
   const next = [...items];
-  [next[index], next[target]] = [next[target], next[index]];
+  const [moved] = next.splice(index, 1);
+  if (!moved) return items;
+  next.splice(targetIndex, 0, moved);
   return next;
 }
 

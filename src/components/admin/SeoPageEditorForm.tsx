@@ -1,24 +1,6 @@
 "use client";
 
 import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DraggableAttributes,
-  type DraggableSyntheticListeners,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import {
   useActionState,
   useCallback,
   useEffect,
@@ -28,12 +10,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import type {
-  CSSProperties,
-  FormEvent,
-  ReactNode,
-  TextareaHTMLAttributes,
-} from "react";
+import type { FormEvent, ReactNode, TextareaHTMLAttributes } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -88,7 +65,7 @@ import {
   duplicatePageBlock,
   ensureEditablePageContent,
   moveItem,
-  reorderItemsById,
+  moveItemToIndex,
   type MoveDirection,
 } from "@/lib/page-builder/content-ops";
 import {
@@ -117,7 +94,6 @@ import type { Tables } from "@/types/database";
 import { footerColumns, primaryNav } from "@/lib/content/nav";
 
 type SeoPage = Tables<"seo_pages">;
-type Sensors = ReturnType<typeof useSensors>;
 
 export type SeoPageEditorMediaAsset = EditorMediaAsset;
 
@@ -264,14 +240,6 @@ export function SeoPageEditorForm({
   >(null);
   const autosaveReady = useRef(false);
   const hasRefreshedAfterManualPublish = useRef(false);
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
   const visibleSlug = slugTouched ? slug : slugify(title);
   const draftContentJson = useMemo(() => JSON.stringify(content), [content]);
   const publishedContent = useMemo(() => parsePublishedContent(page), [page]);
@@ -849,17 +817,8 @@ export function SeoPageEditorForm({
                   <main className="group/page-body relative mx-auto max-w-5xl px-5 py-14 lg:px-10">
                     {usesSimpleBlockStack && primarySection && primaryColumn ? (
                       <SimpleBlockStackEditor
-                        sectionId={primarySection.id}
                         column={primaryColumn}
-                        sensors={sensors}
                         blockOrdinalById={blockOrdinalById}
-                        onBlockDragEnd={(event) =>
-                          handleBlockDragEnd(
-                            primarySection.id,
-                            primaryColumn.id,
-                            event,
-                          )
-                        }
                         onAddBlock={(type, variant) =>
                           addBlock(
                             primarySection.id,
@@ -884,6 +843,14 @@ export function SeoPageEditorForm({
                             direction,
                           )
                         }
+                        onBlockMoveToIndex={(blockId, targetIndex) =>
+                          moveBlockToIndex(
+                            primarySection.id,
+                            primaryColumn.id,
+                            blockId,
+                            targetIndex,
+                          )
+                        }
                         onBlockDuplicate={(blockId) =>
                           duplicateBlock(
                             primarySection.id,
@@ -904,139 +871,135 @@ export function SeoPageEditorForm({
                         }}
                       />
                     ) : (
-                      <DndContext
-                        id="seo-page-sections"
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={handleSectionDragEnd}
-                      >
-                        <SortableContext
-                          items={content.sections.map((section) => section.id)}
-                          strategy={verticalListSortingStrategy}
-                        >
-                          <div className="space-y-14">
-                            {content.sections.length === 0 ? (
-                              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50">
-                                <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="text-slate-400"
-                                  >
-                                    <rect
-                                      width="18"
-                                      height="18"
-                                      x="3"
-                                      y="3"
-                                      rx="2"
-                                    />
-                                    <path d="M3 9h18" />
-                                    <path d="M9 21V9" />
-                                  </svg>
-                                </div>
-                                <h3 className="text-sm font-semibold text-slate-900">
-                                  Blank page body
-                                </h3>
-                                <p className="mt-1 max-w-sm text-sm text-slate-500">
-                                  Add content to start writing this page.
-                                </p>
-                                <button
-                                  type="button"
-                                  onClick={() => addSuggestedBlock("rich_text")}
-                                  className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-300 ring-inset hover:bg-slate-50"
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  >
-                                    <path d="M5 12h14" />
-                                    <path d="M12 5v14" />
-                                  </svg>
-                                  Add page content
-                                </button>
-                              </div>
-                            ) : (
-                              content.sections.map((section, index) => (
-                                <SortableSectionEditor
-                                  key={section.id}
-                                  section={section}
-                                  sectionIndex={index}
-                                  sectionCount={content.sections.length}
-                                  sensors={sensors}
-                                  blockOrdinalById={blockOrdinalById}
-                                  onSectionMove={(direction) =>
-                                    moveSection(section.id, direction)
-                                  }
-                                  onSectionRemove={() =>
-                                    removeSection(section.id)
-                                  }
-                                  onColumnDragEnd={handleColumnDragEnd}
-                                  onBlockDragEnd={handleBlockDragEnd}
-                                  onAddColumn={() => addColumn(section.id)}
-                                  onColumnMove={(columnId, direction) =>
-                                    moveColumn(section.id, columnId, direction)
-                                  }
-                                  onColumnRemove={(columnId) =>
-                                    removeColumn(section.id, columnId)
-                                  }
-                                  onAddBlock={(columnId, type, variant) =>
-                                    addBlock(
-                                      section.id,
-                                      columnId,
-                                      type,
-                                      variant,
-                                    )
-                                  }
-                                  onBlockChange={(columnId, blockId, next) =>
-                                    replaceBlock(
-                                      section.id,
-                                      columnId,
-                                      blockId,
-                                      next,
-                                    )
-                                  }
-                                  onBlockMove={(columnId, blockId, direction) =>
-                                    moveBlock(
-                                      section.id,
-                                      columnId,
-                                      blockId,
-                                      direction,
-                                    )
-                                  }
-                                  onBlockDuplicate={(columnId, blockId) =>
-                                    duplicateBlock(
-                                      section.id,
-                                      columnId,
-                                      blockId,
-                                    )
-                                  }
-                                  onBlockRemove={(columnId, blockId) =>
-                                    removeBlock(section.id, columnId, blockId)
-                                  }
-                                  onEditBlockSettings={(blockId) => {
-                                    setSelectedBlockId(blockId);
-                                    setEditingBlockId(blockId);
-                                  }}
+                      <div className="space-y-14">
+                        {content.sections.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50">
+                            <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="text-slate-400"
+                              >
+                                <rect
+                                  width="18"
+                                  height="18"
+                                  x="3"
+                                  y="3"
+                                  rx="2"
                                 />
-                              ))
-                            )}
+                                <path d="M3 9h18" />
+                                <path d="M9 21V9" />
+                              </svg>
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-900">
+                              Blank page body
+                            </h3>
+                            <p className="mt-1 max-w-sm text-sm text-slate-500">
+                              Add content to start writing this page.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => addSuggestedBlock("rich_text")}
+                              className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-300 ring-inset hover:bg-slate-50"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M5 12h14" />
+                                <path d="M12 5v14" />
+                              </svg>
+                              Add page content
+                            </button>
                           </div>
-                        </SortableContext>
-                      </DndContext>
+                        ) : (
+                          content.sections.map((section, index) => (
+                            <SortableSectionEditor
+                              key={section.id}
+                              section={section}
+                              sectionIndex={index}
+                              sectionCount={content.sections.length}
+                              blockOrdinalById={blockOrdinalById}
+                              onSectionMove={(direction) =>
+                                moveSection(section.id, direction)
+                              }
+                              onSectionMoveToIndex={(targetIndex) =>
+                                moveSectionToIndex(section.id, targetIndex)
+                              }
+                              onSectionRemove={() => removeSection(section.id)}
+                              onAddColumn={() => addColumn(section.id)}
+                              onColumnMove={(columnId, direction) =>
+                                moveColumn(section.id, columnId, direction)
+                              }
+                              onColumnMoveToIndex={(columnId, targetIndex) =>
+                                moveColumnToIndex(
+                                  section.id,
+                                  columnId,
+                                  targetIndex,
+                                )
+                              }
+                              onColumnRemove={(columnId) =>
+                                removeColumn(section.id, columnId)
+                              }
+                              onAddBlock={(columnId, type, variant) =>
+                                addBlock(section.id, columnId, type, variant)
+                              }
+                              onBlockChange={(columnId, blockId, next) =>
+                                replaceBlock(
+                                  section.id,
+                                  columnId,
+                                  blockId,
+                                  next,
+                                )
+                              }
+                              onBlockMove={(columnId, blockId, direction) =>
+                                moveBlock(
+                                  section.id,
+                                  columnId,
+                                  blockId,
+                                  direction,
+                                )
+                              }
+                              onBlockMoveToIndex={(
+                                columnId,
+                                blockId,
+                                targetIndex,
+                              ) =>
+                                moveBlockToIndex(
+                                  section.id,
+                                  columnId,
+                                  blockId,
+                                  targetIndex,
+                                )
+                              }
+                              onBlockDuplicate={(columnId, blockId) =>
+                                duplicateBlock(section.id, columnId, blockId)
+                              }
+                              onBlockRemove={(columnId, blockId) =>
+                                removeBlock(section.id, columnId, blockId)
+                              }
+                              onEditBlockSettings={(blockId) => {
+                                setSelectedBlockId(blockId);
+                                setEditingBlockId(blockId);
+                              }}
+                            />
+                          ))
+                        )}
+                      </div>
                     )}
                   </main>
                 </article>
@@ -1674,6 +1637,23 @@ export function SeoPageEditorForm({
     );
   }
 
+  function moveBlockToIndex(
+    sectionId: string,
+    columnId: string,
+    blockId: string,
+    targetIndex: number,
+  ) {
+    setContent((current) =>
+      updateColumn(current, sectionId, columnId, (column) => {
+        const index = column.blocks.findIndex((block) => block.id === blockId);
+        return {
+          ...column,
+          blocks: moveItemToIndex(column.blocks, index, targetIndex),
+        };
+      }),
+    );
+  }
+
   function duplicateBlock(
     sectionId: string,
     columnId: string,
@@ -1722,50 +1702,33 @@ export function SeoPageEditorForm({
     );
   }
 
-  function handleSectionDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over) return;
-    setContent((current) => ({
-      ...current,
-      sections: reorderItemsById(
-        current.sections,
-        String(active.id),
-        String(over.id),
-      ),
-    }));
+  function moveSectionToIndex(sectionId: string, targetIndex: number) {
+    setContent((current) => {
+      const index = current.sections.findIndex(
+        (section) => section.id === sectionId,
+      );
+      return {
+        ...current,
+        sections: moveItemToIndex(current.sections, index, targetIndex),
+      };
+    });
   }
 
-  function handleColumnDragEnd(sectionId: string, event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over) return;
-    setContent((current) =>
-      updateSection(current, sectionId, (section) => ({
-        ...section,
-        columns: reorderItemsById(
-          section.columns,
-          String(active.id),
-          String(over.id),
-        ),
-      })),
-    );
-  }
-
-  function handleBlockDragEnd(
+  function moveColumnToIndex(
     sectionId: string,
     columnId: string,
-    event: DragEndEvent,
+    targetIndex: number,
   ) {
-    const { active, over } = event;
-    if (!over) return;
     setContent((current) =>
-      updateColumn(current, sectionId, columnId, (column) => ({
-        ...column,
-        blocks: reorderItemsById(
-          column.blocks,
-          String(active.id),
-          String(over.id),
-        ),
-      })),
+      updateSection(current, sectionId, (section) => {
+        const index = section.columns.findIndex(
+          (column) => column.id === columnId,
+        );
+        return {
+          ...section,
+          columns: moveItemToIndex(section.columns, index, targetIndex),
+        };
+      }),
     );
   }
 
@@ -4581,18 +4544,18 @@ function SortableSectionEditor({
   section,
   sectionIndex,
   sectionCount,
-  sensors,
   blockOrdinalById,
   onSectionMove,
+  onSectionMoveToIndex,
   onSectionRemove,
-  onColumnDragEnd,
-  onBlockDragEnd,
   onAddColumn,
   onColumnMove,
+  onColumnMoveToIndex,
   onColumnRemove,
   onAddBlock,
   onBlockChange,
   onBlockMove,
+  onBlockMoveToIndex,
   onBlockDuplicate,
   onBlockRemove,
   onEditBlockSettings,
@@ -4600,18 +4563,13 @@ function SortableSectionEditor({
   section: PageSection;
   sectionIndex: number;
   sectionCount: number;
-  sensors: Sensors;
   blockOrdinalById: Map<string, number>;
   onSectionMove: (direction: MoveDirection) => void;
+  onSectionMoveToIndex: (targetIndex: number) => void;
   onSectionRemove: () => void;
-  onColumnDragEnd: (sectionId: string, event: DragEndEvent) => void;
-  onBlockDragEnd: (
-    sectionId: string,
-    columnId: string,
-    event: DragEndEvent,
-  ) => void;
   onAddColumn: () => void;
   onColumnMove: (columnId: string, direction: MoveDirection) => void;
+  onColumnMoveToIndex: (columnId: string, targetIndex: number) => void;
   onColumnRemove: (columnId: string) => void;
   onAddBlock: (
     columnId: string,
@@ -4624,93 +4582,92 @@ function SortableSectionEditor({
     blockId: string,
     direction: MoveDirection,
   ) => void;
+  onBlockMoveToIndex: (
+    columnId: string,
+    blockId: string,
+    targetIndex: number,
+  ) => void;
   onBlockDuplicate: (columnId: string, blockId: string) => void;
   onBlockRemove: (columnId: string, blockId: string) => void;
   onEditBlockSettings: (blockId: string) => void;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: section.id });
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
   return (
     <section
-      ref={setNodeRef}
-      style={style}
       className={`group/section relative rounded-[12px] border border-transparent transition-all ${editorSectionClass(
         section.background,
         section.spacing,
-      )} ${
-        isDragging
-          ? "z-10 scale-[1.01] border-[#0b63f6] bg-white shadow-2xl"
-          : "hover:border-slate-300"
-      }`}
+      )} hover:border-slate-300`}
     >
       <header className="absolute -top-5 right-3 left-3 z-20 flex flex-wrap items-center justify-between gap-3 rounded-full border border-slate-200 bg-white/95 px-3 py-2 opacity-0 shadow-sm ring-1 ring-black/5 backdrop-blur transition-opacity group-focus-within/section:opacity-100 group-hover/section:opacity-100">
         <div className="flex items-center gap-3">
-          <DragHandle
-            label={`Reorder section ${sectionIndex + 1}`}
-            attributes={attributes}
-            listeners={listeners}
-          />
-          <div className="flex items-center gap-3">
-            <h3 className="text-xs font-bold tracking-wider text-slate-500 uppercase">
-              Page section {sectionIndex + 1}
-            </h3>
-            <span className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 ring-inset">
-              {section.columns.length}{" "}
-              {section.columns.length === 1 ? "column" : "columns"}
-            </span>
-          </div>
+          <BuilderTooltip
+            label={`Page section ${sectionIndex + 1}`}
+            detail={`This section contains ${section.columns.length} ${
+              section.columns.length === 1 ? "column" : "columns"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <h3 className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+                Page section {sectionIndex + 1}
+              </h3>
+              <span className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 ring-inset">
+                {section.columns.length}{" "}
+                {section.columns.length === 1 ? "column" : "columns"}
+              </span>
+            </div>
+          </BuilderTooltip>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-            <IconButton
-              icon="up"
-              label={`Move section ${sectionIndex + 1} up`}
-              disabled={sectionIndex === 0}
-              onClick={() => onSectionMove("up")}
-            />
-            <IconButton
-              icon="down"
-              label={`Move section ${sectionIndex + 1} down`}
-              disabled={sectionIndex === sectionCount - 1}
-              onClick={() => onSectionMove("down")}
+          <div className="rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+            <MovePositionMenu
+              label={`Page section ${sectionIndex + 1}`}
+              currentIndex={sectionIndex}
+              itemCount={sectionCount}
+              onMove={onSectionMove}
+              onMoveToIndex={onSectionMoveToIndex}
+              upLabel="Move up one"
+              downLabel="Move down one"
+              align="end"
             />
           </div>
-          <button
-            type="button"
-            className={`${smallButtonClass} inline-flex items-center gap-2`}
-            disabled={section.columns.length >= 4}
-            onClick={onAddColumn}
+          <BuilderTooltip
+            label="Add column"
+            detail={
+              section.columns.length >= 4
+                ? "Each section supports up to 4 columns"
+                : `Add another content column to page section ${sectionIndex + 1}`
+            }
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <button
+              type="button"
+              className={`${smallButtonClass} inline-flex items-center gap-2`}
+              disabled={section.columns.length >= 4}
+              onClick={onAddColumn}
             >
-              <rect width="18" height="18" x="3" y="3" rx="2" />
-              <path d="M12 8v8" />
-              <path d="M8 12h8" />
-            </svg>
-            Add column
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect width="18" height="18" x="3" y="3" rx="2" />
+                <path d="M12 8v8" />
+                <path d="M8 12h8" />
+              </svg>
+              Add column
+            </button>
+          </BuilderTooltip>
           <div className="rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-            <MoreActions label={`Section ${sectionIndex + 1} actions`}>
+            <MoreActions
+              label="Section actions"
+              detail="Remove this page section"
+              align="end"
+            >
               <button
                 type="button"
                 className={dangerButtonClass}
@@ -4723,196 +4680,167 @@ function SortableSectionEditor({
         </div>
       </header>
 
-      <DndContext
-        id={`seo-page-${section.id}-columns`}
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={(event) => onColumnDragEnd(section.id, event)}
-      >
-        <SortableContext
-          items={section.columns.map((column) => column.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className={columnGridClass(section.columns.length)}>
-            {section.columns.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-6 py-12 text-center transition-colors hover:border-slate-400 hover:bg-slate-50">
-                <div className="mb-3 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-slate-400"
-                  >
-                    <rect width="18" height="18" x="3" y="3" rx="2" />
-                    <path d="M12 8v8" />
-                    <path d="M8 12h8" />
-                  </svg>
-                </div>
-                <h4 className="text-sm font-semibold text-slate-900">
-                  No columns
-                </h4>
-                <p className="mt-1 max-w-sm text-sm text-slate-500">
-                  Add a column before adding page content.
-                </p>
-                <button
-                  type="button"
-                  onClick={onAddColumn}
-                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-300 ring-inset hover:bg-slate-50"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="M12 5v14" />
-                  </svg>
-                  Add column
-                </button>
-              </div>
-            ) : (
-              section.columns.map((column, columnIndex) => (
-                <SortableColumnEditor
-                  key={column.id}
-                  column={column}
-                  columnIndex={columnIndex}
-                  columnCount={section.columns.length}
-                  sensors={sensors}
-                  blockOrdinalById={blockOrdinalById}
-                  onBlockDragEnd={(event) =>
-                    onBlockDragEnd(section.id, column.id, event)
-                  }
-                  onColumnMove={(direction) =>
-                    onColumnMove(column.id, direction)
-                  }
-                  onColumnRemove={() => onColumnRemove(column.id)}
-                  onAddBlock={(type, variant) =>
-                    onAddBlock(column.id, type, variant)
-                  }
-                  onBlockChange={(blockId, next) =>
-                    onBlockChange(column.id, blockId, next)
-                  }
-                  onBlockMove={(blockId, direction) =>
-                    onBlockMove(column.id, blockId, direction)
-                  }
-                  onBlockDuplicate={(blockId) =>
-                    onBlockDuplicate(column.id, blockId)
-                  }
-                  onBlockRemove={(blockId) => onBlockRemove(column.id, blockId)}
-                  onEditBlockSettings={onEditBlockSettings}
-                />
-              ))
-            )}
+      <div className={columnGridClass(section.columns.length)}>
+        {section.columns.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-6 py-12 text-center transition-colors hover:border-slate-400 hover:bg-slate-50">
+            <div className="mb-3 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-slate-400"
+              >
+                <rect width="18" height="18" x="3" y="3" rx="2" />
+                <path d="M12 8v8" />
+                <path d="M8 12h8" />
+              </svg>
+            </div>
+            <h4 className="text-sm font-semibold text-slate-900">No columns</h4>
+            <p className="mt-1 max-w-sm text-sm text-slate-500">
+              Add a column before adding page content.
+            </p>
+            <button
+              type="button"
+              onClick={onAddColumn}
+              className="mt-4 inline-flex items-center gap-2 rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-300 ring-inset hover:bg-slate-50"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="M12 5v14" />
+              </svg>
+              Add column
+            </button>
           </div>
-        </SortableContext>
-      </DndContext>
+        ) : (
+          section.columns.map((column, columnIndex) => (
+            <SortableColumnEditor
+              key={column.id}
+              column={column}
+              columnIndex={columnIndex}
+              columnCount={section.columns.length}
+              blockOrdinalById={blockOrdinalById}
+              onColumnMove={(direction) => onColumnMove(column.id, direction)}
+              onColumnMoveToIndex={(targetIndex) =>
+                onColumnMoveToIndex(column.id, targetIndex)
+              }
+              onColumnRemove={() => onColumnRemove(column.id)}
+              onAddBlock={(type, variant) =>
+                onAddBlock(column.id, type, variant)
+              }
+              onBlockChange={(blockId, next) =>
+                onBlockChange(column.id, blockId, next)
+              }
+              onBlockMove={(blockId, direction) =>
+                onBlockMove(column.id, blockId, direction)
+              }
+              onBlockMoveToIndex={(blockId, targetIndex) =>
+                onBlockMoveToIndex(column.id, blockId, targetIndex)
+              }
+              onBlockDuplicate={(blockId) =>
+                onBlockDuplicate(column.id, blockId)
+              }
+              onBlockRemove={(blockId) => onBlockRemove(column.id, blockId)}
+              onEditBlockSettings={onEditBlockSettings}
+            />
+          ))
+        )}
+      </div>
     </section>
   );
 }
 
 function SimpleBlockStackEditor({
-  sectionId,
   column,
-  sensors,
   blockOrdinalById,
-  onBlockDragEnd,
   onAddBlock,
   onBlockChange,
   onBlockMove,
+  onBlockMoveToIndex,
   onBlockDuplicate,
   onBlockRemove,
   onEditBlockSettings,
 }: {
-  sectionId: string;
   column: PageColumn;
-  sensors: Sensors;
   blockOrdinalById: Map<string, number>;
-  onBlockDragEnd: (event: DragEndEvent) => void;
   onAddBlock: (type: PageBlock["type"], variant?: BlockVariant) => void;
   onBlockChange: (blockId: string, next: PageBlock) => void;
   onBlockMove: (blockId: string, direction: MoveDirection) => void;
+  onBlockMoveToIndex: (blockId: string, targetIndex: number) => void;
   onBlockDuplicate: (blockId: string) => void;
   onBlockRemove: (blockId: string) => void;
   onEditBlockSettings: (blockId: string) => void;
 }) {
   return (
-    <DndContext
-      id={`seo-page-${sectionId}-${column.id}-simple-blocks`}
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={onBlockDragEnd}
-    >
-      <SortableContext
-        items={column.blocks.map((block) => block.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <div className="space-y-14">
-          {column.blocks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50">
-              <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-slate-400"
-                >
-                  <rect width="18" height="18" x="3" y="3" rx="2" />
-                  <path d="M3 9h18" />
-                  <path d="M9 21V9" />
-                </svg>
-              </div>
-              <h3 className="text-sm font-semibold text-slate-900">
-                Blank page body
-              </h3>
-              <p className="mt-1 max-w-sm text-sm text-slate-500">
-                Add the next piece of content for this page.
-              </p>
-              <div className="mt-6 w-full max-w-md text-left">
-                <BlockPicker onAddBlock={onAddBlock} />
-              </div>
-            </div>
-          ) : (
-            <>
-              {column.blocks.map((block, blockIndex) => (
-                <SortableBlockEditor
-                  key={block.id}
-                  block={block}
-                  index={blockIndex}
-                  blockNumber={
-                    (blockOrdinalById.get(block.id) ?? blockIndex) + 1
-                  }
-                  blockCount={column.blocks.length}
-                  onChange={(next) => onBlockChange(block.id, next)}
-                  onMove={(direction) => onBlockMove(block.id, direction)}
-                  onDuplicate={() => onBlockDuplicate(block.id)}
-                  onRemove={() => onBlockRemove(block.id)}
-                  onEditSettings={() => onEditBlockSettings(block.id)}
-                />
-              ))}
-              <BlockPicker onAddBlock={onAddBlock} />
-            </>
-          )}
+    <div className="space-y-14">
+      {column.blocks.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50">
+          <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-slate-400"
+            >
+              <rect width="18" height="18" x="3" y="3" rx="2" />
+              <path d="M3 9h18" />
+              <path d="M9 21V9" />
+            </svg>
+          </div>
+          <h3 className="text-sm font-semibold text-slate-900">
+            Blank page body
+          </h3>
+          <p className="mt-1 max-w-sm text-sm text-slate-500">
+            Add the next piece of content for this page.
+          </p>
+          <div className="mt-6 w-full max-w-md text-left">
+            <BlockPicker onAddBlock={onAddBlock} />
+          </div>
         </div>
-      </SortableContext>
-    </DndContext>
+      ) : (
+        <>
+          {column.blocks.map((block, blockIndex) => (
+            <BlockEditor
+              key={block.id}
+              block={block}
+              blockIndex={blockIndex}
+              blockNumber={(blockOrdinalById.get(block.id) ?? blockIndex) + 1}
+              blockCount={column.blocks.length}
+              onChange={(next) => onBlockChange(block.id, next)}
+              onMove={(direction) => onBlockMove(block.id, direction)}
+              onMoveToIndex={(targetIndex) =>
+                onBlockMoveToIndex(block.id, targetIndex)
+              }
+              onDuplicate={() => onBlockDuplicate(block.id)}
+              onRemove={() => onBlockRemove(block.id)}
+              onEditSettings={() => onEditBlockSettings(block.id)}
+            />
+          ))}
+          <BlockPicker onAddBlock={onAddBlock} />
+        </>
+      )}
+    </div>
   );
 }
 
@@ -4920,14 +4848,14 @@ function SortableColumnEditor({
   column,
   columnIndex,
   columnCount,
-  sensors,
   blockOrdinalById,
-  onBlockDragEnd,
   onColumnMove,
+  onColumnMoveToIndex,
   onColumnRemove,
   onAddBlock,
   onBlockChange,
   onBlockMove,
+  onBlockMoveToIndex,
   onBlockDuplicate,
   onBlockRemove,
   onEditBlockSettings,
@@ -4935,69 +4863,50 @@ function SortableColumnEditor({
   column: PageColumn;
   columnIndex: number;
   columnCount: number;
-  sensors: Sensors;
   blockOrdinalById: Map<string, number>;
-  onBlockDragEnd: (event: DragEndEvent) => void;
   onColumnMove: (direction: MoveDirection) => void;
+  onColumnMoveToIndex: (targetIndex: number) => void;
   onColumnRemove: () => void;
   onAddBlock: (type: PageBlock["type"], variant?: BlockVariant) => void;
   onBlockChange: (blockId: string, next: PageBlock) => void;
   onBlockMove: (blockId: string, direction: MoveDirection) => void;
+  onBlockMoveToIndex: (blockId: string, targetIndex: number) => void;
   onBlockDuplicate: (blockId: string) => void;
   onBlockRemove: (blockId: string) => void;
   onEditBlockSettings: (blockId: string) => void;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: column.id });
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`group/column relative flex flex-col rounded-[12px] border border-dashed border-transparent bg-transparent transition-all ${
-        isDragging
-          ? "z-20 scale-[1.02] border-[#0b63f6] bg-white shadow-xl"
-          : "hover:border-slate-300 hover:bg-white/50"
-      }`}
-    >
+    <div className="group/column relative flex flex-col rounded-[12px] border border-dashed border-transparent bg-transparent transition-all hover:border-slate-300 hover:bg-white/50">
       <header className="absolute -top-5 right-2 left-2 z-20 flex flex-wrap items-center justify-between gap-2 rounded-full border border-slate-200 bg-white/95 px-3 py-2 opacity-0 shadow-sm ring-1 ring-black/5 transition-opacity group-focus-within/column:opacity-100 group-hover/column:opacity-100">
         <div className="flex items-center gap-2">
-          <DragHandle
-            label={`Reorder column ${columnIndex + 1}`}
-            attributes={attributes}
-            listeners={listeners}
-          />
-          <h4 className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-            Column {columnIndex + 1}
-          </h4>
+          <BuilderTooltip
+            label={`Column ${columnIndex + 1}`}
+            detail={`Content column ${columnIndex + 1} in this page section`}
+          >
+            <h4 className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+              Column {columnIndex + 1}
+            </h4>
+          </BuilderTooltip>
         </div>
         <div className="flex items-center gap-1">
-          <div className="flex items-center gap-1 rounded-md border border-slate-200 bg-white p-0.5 shadow-sm">
-            <IconButton
-              icon="left"
-              label={`Move column ${columnIndex + 1} left`}
-              disabled={columnIndex === 0}
-              onClick={() => onColumnMove("up")}
-            />
-            <IconButton
-              icon="right"
-              label={`Move column ${columnIndex + 1} right`}
-              disabled={columnIndex === columnCount - 1}
-              onClick={() => onColumnMove("down")}
+          <div className="rounded-md border border-slate-200 bg-white p-0.5 shadow-sm">
+            <MovePositionMenu
+              label={`Column ${columnIndex + 1}`}
+              currentIndex={columnIndex}
+              itemCount={columnCount}
+              onMove={onColumnMove}
+              onMoveToIndex={onColumnMoveToIndex}
+              upLabel="Move left one"
+              downLabel="Move right one"
+              align="end"
             />
           </div>
           <div className="rounded-md border border-slate-200 bg-white p-0.5 shadow-sm">
-            <MoreActions label={`Column ${columnIndex + 1} actions`}>
+            <MoreActions
+              label="Column actions"
+              detail="Remove this column from the section"
+              align="end"
+            >
               <button
                 type="button"
                 className={dangerButtonClass}
@@ -5011,71 +4920,62 @@ function SortableColumnEditor({
       </header>
 
       <div className="flex-1">
-        <DndContext
-          id={`seo-page-${column.id}-blocks`}
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={onBlockDragEnd}
-        >
-          <SortableContext
-            items={column.blocks.map((block) => block.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="space-y-10">
-              {column.blocks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-4 py-10 text-center">
-                  <div className="mb-3 rounded-full bg-white p-2 shadow-sm ring-1 ring-slate-200">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-slate-400"
-                    >
-                      <rect width="18" height="18" x="3" y="3" rx="2" />
-                      <path d="M3 9h18" />
-                      <path d="M9 21V9" />
-                    </svg>
-                  </div>
-                  <p className="text-sm font-semibold text-slate-900">
-                    Empty column
-                  </p>
-                  <p className="mt-1 mb-4 text-xs text-slate-500">
-                    Add page content below
-                  </p>
-                  <div className="w-full text-left">
-                    <BlockPicker onAddBlock={onAddBlock} />
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {column.blocks.map((block, blockIndex) => (
-                    <SortableBlockEditor
-                      key={block.id}
-                      block={block}
-                      index={blockIndex}
-                      blockNumber={
-                        (blockOrdinalById.get(block.id) ?? blockIndex) + 1
-                      }
-                      blockCount={column.blocks.length}
-                      onChange={(next) => onBlockChange(block.id, next)}
-                      onMove={(direction) => onBlockMove(block.id, direction)}
-                      onDuplicate={() => onBlockDuplicate(block.id)}
-                      onRemove={() => onBlockRemove(block.id)}
-                      onEditSettings={() => onEditBlockSettings(block.id)}
-                    />
-                  ))}
-                  <BlockPicker onAddBlock={onAddBlock} />
-                </>
-              )}
+        <div className="space-y-10">
+          {column.blocks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-4 py-10 text-center">
+              <div className="mb-3 rounded-full bg-white p-2 shadow-sm ring-1 ring-slate-200">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-slate-400"
+                >
+                  <rect width="18" height="18" x="3" y="3" rx="2" />
+                  <path d="M3 9h18" />
+                  <path d="M9 21V9" />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-slate-900">
+                Empty column
+              </p>
+              <p className="mt-1 mb-4 text-xs text-slate-500">
+                Add page content below
+              </p>
+              <div className="w-full text-left">
+                <BlockPicker onAddBlock={onAddBlock} />
+              </div>
             </div>
-          </SortableContext>
-        </DndContext>
+          ) : (
+            <>
+              {column.blocks.map((block, blockIndex) => (
+                <BlockEditor
+                  key={block.id}
+                  block={block}
+                  blockIndex={blockIndex}
+                  blockNumber={
+                    (blockOrdinalById.get(block.id) ?? blockIndex) + 1
+                  }
+                  blockCount={column.blocks.length}
+                  onChange={(next) => onBlockChange(block.id, next)}
+                  onMove={(direction) => onBlockMove(block.id, direction)}
+                  onMoveToIndex={(targetIndex) =>
+                    onBlockMoveToIndex(block.id, targetIndex)
+                  }
+                  onDuplicate={() => onBlockDuplicate(block.id)}
+                  onRemove={() => onBlockRemove(block.id)}
+                  onEditSettings={() => onEditBlockSettings(block.id)}
+                />
+              ))}
+              <BlockPicker onAddBlock={onAddBlock} />
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -5293,86 +5193,25 @@ function BlockPicker({
   );
 }
 
-function SortableBlockEditor({
+function BlockEditor({
   block,
-  index,
+  blockIndex,
   blockNumber,
   blockCount,
   onChange,
   onMove,
+  onMoveToIndex,
   onDuplicate,
   onRemove,
   onEditSettings,
 }: {
   block: PageBlock;
-  index: number;
+  blockIndex: number;
   blockNumber: number;
   blockCount: number;
   onChange: (block: PageBlock) => void;
   onMove: (direction: MoveDirection) => void;
-  onDuplicate: () => void;
-  onRemove: () => void;
-  onEditSettings: () => void;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: block.id });
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style}>
-      <BlockEditor
-        block={block}
-        blockNumber={blockNumber}
-        isFirst={index === 0}
-        isLast={index === blockCount - 1}
-        isDragging={isDragging}
-        dragHandle={
-          <DragHandle
-            label={`Reorder ${blockLabel(block.type)} content ${index + 1}`}
-            attributes={attributes}
-            listeners={listeners}
-          />
-        }
-        onChange={onChange}
-        onMove={onMove}
-        onDuplicate={onDuplicate}
-        onRemove={onRemove}
-        onEditSettings={onEditSettings}
-      />
-    </div>
-  );
-}
-
-function BlockEditor({
-  block,
-  blockNumber,
-  isFirst,
-  isLast,
-  isDragging,
-  dragHandle,
-  onChange,
-  onMove,
-  onDuplicate,
-  onRemove,
-  onEditSettings,
-}: {
-  block: PageBlock;
-  blockNumber: number;
-  isFirst: boolean;
-  isLast: boolean;
-  isDragging: boolean;
-  dragHandle: ReactNode;
-  onChange: (block: PageBlock) => void;
-  onMove: (direction: MoveDirection) => void;
+  onMoveToIndex: (targetIndex: number) => void;
   onDuplicate: () => void;
   onRemove: () => void;
   onEditSettings: () => void;
@@ -5386,17 +5225,9 @@ function BlockEditor({
     <article
       id={`builder-block-${blockNumber}`}
       data-builder-block-id={block.id}
-      className={`group/editor scroll-mt-28 transition-all ${
-        isDragging ? "z-10 scale-[1.01]" : ""
-      }`}
+      className="group/editor scroll-mt-28 transition-all"
     >
-      <div
-        className={`relative isolate min-w-0 rounded-[12px] border border-transparent bg-transparent transition-all ${
-          isDragging
-            ? "border-[#0b63f6] bg-white shadow-2xl"
-            : "focus-within:border-[#0b63f6]/50 focus-within:bg-white/80 focus-within:ring-4 focus-within:ring-[#0b63f6]/5 hover:border-slate-300 hover:bg-white/70"
-        }`}
-      >
+      <div className="relative isolate min-w-0 rounded-[12px] border border-transparent bg-transparent transition-all focus-within:border-[#0b63f6]/50 focus-within:bg-white/80 focus-within:ring-4 focus-within:ring-[#0b63f6]/5 hover:border-slate-300 hover:bg-white/70">
         <div className="pointer-events-none absolute inset-x-2 top-2 z-10">
           <BlockToolbar
             label={`Page content ${blockNumber}`}
@@ -5404,11 +5235,16 @@ function BlockEditor({
             variantLabel={blockVariantLabel(block)}
             description={blockSummary(block)}
             status={completionStatus}
+            statusDetail={
+              blockCompletionMessages.length > 0
+                ? blockCompletionMessages.join(" ")
+                : undefined
+            }
             icon={block.type}
-            isFirst={isFirst}
-            isLast={isLast}
-            dragHandle={dragHandle}
+            blockIndex={blockIndex}
+            blockCount={blockCount}
             onMove={onMove}
+            onMoveToIndex={onMoveToIndex}
             onDuplicate={onDuplicate}
             onRemove={onRemove}
             onEditSettings={onEditSettings}
@@ -6484,17 +6320,176 @@ function VideoBlockCanvas({
   );
 }
 
+function MovePositionMenu({
+  label,
+  currentIndex,
+  itemCount,
+  onMove,
+  onMoveToIndex,
+  upLabel = "Move up one",
+  downLabel = "Move down one",
+  positionHeading = "Move to position",
+  positionLabel = (index: number) => `Position ${index + 1}`,
+  align = "center",
+}: {
+  label: string;
+  currentIndex: number;
+  itemCount: number;
+  onMove: (direction: MoveDirection) => void;
+  onMoveToIndex: (targetIndex: number) => void;
+  upLabel?: string;
+  downLabel?: string;
+  positionHeading?: string;
+  positionLabel?: (index: number) => string;
+  align?: "center" | "start" | "end";
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const isFirst = currentIndex === 0;
+  const isLast = currentIndex === itemCount - 1;
+  const menuAlignClass =
+    align === "end"
+      ? "right-0"
+      : align === "start"
+        ? "left-0"
+        : "left-1/2 -translate-x-1/2";
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <BuilderTooltip
+        label="Move"
+        detail={`Change where ${label} appears · ${upLabel.toLowerCase()}, ${downLabel.toLowerCase()}, or pick a position`}
+        align={align}
+      >
+        <button
+          type="button"
+          aria-label={`Move ${label}`}
+          aria-haspopup="menu"
+          aria-expanded={isOpen}
+          className={iconButtonClass}
+          onClick={() => setIsOpen((open) => !open)}
+        >
+          <BuilderGlyph name="grip" />
+        </button>
+      </BuilderTooltip>
+      {isOpen && (
+        <div
+          className={`animate-in fade-in slide-in-from-top-2 absolute z-40 mt-2 min-w-[188px] rounded-xl border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5 ${menuAlignClass}`}
+        >
+          <button
+            type="button"
+            className={menuButtonClass}
+            disabled={isFirst}
+            onClick={() => {
+              onMove("up");
+              setIsOpen(false);
+            }}
+          >
+            {upLabel}
+          </button>
+          <button
+            type="button"
+            className={menuButtonClass}
+            disabled={isLast}
+            onClick={() => {
+              onMove("down");
+              setIsOpen(false);
+            }}
+          >
+            {downLabel}
+          </button>
+          {itemCount > 1 ? (
+            <>
+              <div className="my-1 border-t border-slate-100" />
+              <p className="px-2 py-1 text-[10px] font-semibold tracking-wide text-slate-400 uppercase">
+                {positionHeading}
+              </p>
+              {Array.from({ length: itemCount }, (_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  className={menuButtonClass}
+                  disabled={index === currentIndex}
+                  aria-current={index === currentIndex ? "true" : undefined}
+                  onClick={() => {
+                    onMoveToIndex(index);
+                    setIsOpen(false);
+                  }}
+                >
+                  {positionLabel(index)}
+                  {index === currentIndex ? " (current)" : ""}
+                </button>
+              ))}
+            </>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BuilderTooltip({
+  label,
+  detail,
+  children,
+  className,
+  align = "center",
+}: {
+  label: string;
+  detail?: string;
+  children: ReactNode;
+  className?: string;
+  align?: "center" | "start" | "end";
+}) {
+  const alignClass =
+    align === "start"
+      ? "left-0 translate-x-0"
+      : align === "end"
+        ? "right-0 translate-x-0"
+        : "left-1/2 -translate-x-1/2";
+
+  return (
+    <span
+      className={`group/builder-tooltip relative inline-flex ${className ?? ""}`}
+    >
+      {children}
+      <span
+        role="tooltip"
+        className={`pointer-events-none absolute bottom-[calc(100%+0.45rem)] z-30 hidden w-max max-w-64 rounded-lg border border-white/10 bg-slate-950 px-2.5 py-2 text-left text-[11px] leading-4 text-white shadow-lg group-focus-within/builder-tooltip:block group-hover/builder-tooltip:block ${alignClass}`}
+      >
+        <span className="block font-semibold">{label}</span>
+        {detail ? (
+          <span className="mt-1 block font-normal text-slate-300">
+            {detail}
+          </span>
+        ) : null}
+      </span>
+    </span>
+  );
+}
+
 function BlockToolbar({
   label,
   typeLabel,
   variantLabel,
   description,
   status,
+  statusDetail,
   icon,
-  isFirst,
-  isLast,
-  dragHandle,
+  blockIndex,
+  blockCount,
   onMove,
+  onMoveToIndex,
   onDuplicate,
   onRemove,
   onEditSettings,
@@ -6504,65 +6499,65 @@ function BlockToolbar({
   variantLabel: string;
   description: string;
   status: string;
+  statusDetail?: string;
   icon: PageBlock["type"];
-  isFirst: boolean;
-  isLast: boolean;
-  dragHandle: ReactNode;
+  blockIndex: number;
+  blockCount: number;
   onMove: (direction: MoveDirection) => void;
+  onMoveToIndex: (targetIndex: number) => void;
   onDuplicate: () => void;
   onRemove: () => void;
   onEditSettings: () => void;
 }) {
+  const readyDetail = `${label} · ${description}`;
+  const variantDetail = `${typeLabel} layout · ${description}${
+    status === "Ready" ? " · Ready" : ""
+  }`;
+
   return (
-    <header
-      className="pointer-events-auto flex flex-wrap items-center justify-between gap-3 rounded-full border border-slate-200 bg-white/95 px-3 py-2 text-xs opacity-100 shadow-[0_10px_30px_-12px_rgba(15,23,42,0.35)] ring-1 ring-black/5 backdrop-blur transition-all md:opacity-0 md:group-focus-within/editor:opacity-100 md:group-hover/editor:opacity-100"
-      title={description}
-    >
+    <header className="pointer-events-auto flex flex-wrap items-center justify-between gap-3 rounded-full border border-slate-200 bg-white/95 px-3 py-2 text-xs opacity-100 shadow-[0_10px_30px_-12px_rgba(15,23,42,0.35)] ring-1 ring-black/5 backdrop-blur transition-all md:opacity-0 md:group-focus-within/editor:opacity-100 md:group-hover/editor:opacity-100">
       <div className="flex min-w-0 items-center gap-3">
-        {dragHandle}
-        <span
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-500 ring-1 ring-slate-200/50 ring-inset"
-          aria-hidden="true"
-        >
-          <BuilderGlyph name={icon} />
-        </span>
-        <span className="min-w-0">
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
-              {typeLabel}
-            </span>
-            <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-medium text-indigo-700 ring-1 ring-indigo-100 ring-inset">
+        <BuilderTooltip label={`${typeLabel} block`} detail={readyDetail}>
+          <span
+            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-500 ring-1 ring-slate-200/50 ring-inset"
+            aria-label={`${typeLabel} block`}
+          >
+            <BuilderGlyph name={icon} />
+          </span>
+        </BuilderTooltip>
+        <span className="flex min-w-0 items-center gap-2">
+          <BuilderTooltip label={variantLabel} detail={variantDetail}>
+            <span className="truncate text-[11px] font-medium text-slate-600">
               {variantLabel}
             </span>
-            <span
-              className={`rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${
-                status === "Ready"
-                  ? "bg-emerald-50 text-emerald-700 ring-emerald-200/50"
-                  : "bg-amber-50 text-amber-700 ring-amber-200/50"
-              }`}
-            >
-              {status}
-            </span>
-          </span>
+          </BuilderTooltip>
+          {status !== "Ready" && (
+            <BuilderTooltip label={status} detail={statusDetail ?? description}>
+              <span
+                className="size-2 shrink-0 rounded-full bg-amber-400"
+                aria-label={status}
+              />
+            </BuilderTooltip>
+          )}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-          <IconButton
-            icon="up"
-            label={`${label} up`}
-            disabled={isFirst}
-            onClick={() => onMove("up")}
-          />
-          <IconButton
-            icon="down"
-            label={`${label} down`}
-            disabled={isLast}
-            onClick={() => onMove("down")}
+        <div className="rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+          <MovePositionMenu
+            label={label}
+            currentIndex={blockIndex}
+            itemCount={blockCount}
+            onMove={onMove}
+            onMoveToIndex={onMoveToIndex}
+            align="end"
           />
         </div>
         <div className="rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-          <MoreActions label={`${label} actions`}>
+          <MoreActions
+            label="Block actions"
+            detail="Edit settings, duplicate, or remove this block"
+            align="end"
+          >
             <button
               type="button"
               className={menuButtonClass}
@@ -6656,152 +6651,15 @@ function TextAreaInput({
   );
 }
 
-function DragHandle({
-  label,
-  attributes,
-  listeners,
-}: {
-  label: string;
-  attributes: DraggableAttributes;
-  listeners: DraggableSyntheticListeners;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      className={dragHandleClass}
-      {...attributes}
-      {...listeners}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="9" cy="12" r="1" />
-        <circle cx="9" cy="5" r="1" />
-        <circle cx="9" cy="19" r="1" />
-        <circle cx="15" cy="12" r="1" />
-        <circle cx="15" cy="5" r="1" />
-        <circle cx="15" cy="19" r="1" />
-      </svg>
-    </button>
-  );
-}
-
-function IconButton({
-  icon,
-  label,
-  disabled = false,
-  onClick,
-}: {
-  icon: "up" | "down" | "left" | "right" | "more";
-  label: string;
-  disabled?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      className={iconButtonClass}
-      disabled={disabled}
-      onClick={onClick}
-    >
-      {icon === "up" && (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m18 15-6-6-6 6" />
-        </svg>
-      )}
-      {icon === "down" && (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      )}
-      {icon === "left" && (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m15 18-6-6 6-6" />
-        </svg>
-      )}
-      {icon === "right" && (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m9 18 6-6-6-6" />
-        </svg>
-      )}
-      {icon === "more" && (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="1" />
-          <circle cx="19" cy="12" r="1" />
-          <circle cx="5" cy="12" r="1" />
-        </svg>
-      )}
-    </button>
-  );
-}
-
 function MoreActions({
   label,
+  detail,
+  align = "center",
   children,
 }: {
   label: string;
+  detail?: string;
+  align?: "center" | "start" | "end";
   children: ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -6819,29 +6677,30 @@ function MoreActions({
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        type="button"
-        aria-label={label}
-        title={label}
-        className={iconButtonClass}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+      <BuilderTooltip label={label} detail={detail} align={align}>
+        <button
+          type="button"
+          aria-label={label}
+          className={iconButtonClass}
+          onClick={() => setIsOpen(!isOpen)}
         >
-          <circle cx="12" cy="12" r="1" />
-          <circle cx="19" cy="12" r="1" />
-          <circle cx="5" cy="12" r="1" />
-        </svg>
-      </button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="1" />
+            <circle cx="19" cy="12" r="1" />
+            <circle cx="5" cy="12" r="1" />
+          </svg>
+        </button>
+      </BuilderTooltip>
       {isOpen && (
         <div className="animate-in fade-in slide-in-from-top-2 absolute right-0 z-20 mt-2 min-w-[160px] rounded-xl border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5">
           {children}
@@ -7737,9 +7596,6 @@ const menuButtonClass =
 
 const dangerButtonClass =
   "w-full rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-600 transition-all hover:bg-red-50 hover:text-red-700 focus-visible:ring-4 focus-visible:ring-red-100 focus-visible:outline-none text-left";
-
-const dragHandleClass =
-  "inline-flex size-8 cursor-grab items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none active:cursor-grabbing";
 
 const iconButtonClass =
   "inline-flex size-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
