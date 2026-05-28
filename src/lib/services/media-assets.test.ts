@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  adminBuildMediaUsageIndex,
+  adminBulkAddTagsToAssets,
   adminCreateMediaAsset,
   adminDeleteMediaAsset,
   adminGetMediaAssetUsage,
@@ -12,6 +14,11 @@ import {
 import type { Database } from "@/types/database";
 
 type MediaClient = Pick<SupabaseClient<Database>, "from">;
+
+function plainSelect(data: unknown, error: unknown = null) {
+  const select = vi.fn().mockResolvedValue({ data, error });
+  return { table: { select }, mocks: { select } };
+}
 
 function listSelect(data: unknown, error: unknown = null) {
   const resolveWith = { data, error };
@@ -295,6 +302,85 @@ describe("media asset service", () => {
     expect(issues).toEqual([
       expect.objectContaining({ code: "invalid_media_asset_type" }),
     ]);
+  });
+
+  it("builds a usage index across seo pages, news, proof, and source docs", async () => {
+    const mediaAssets = [
+      {
+        id: "asset_1",
+        asset_type: "image",
+        title: "Hero",
+        alt_text: "Hero",
+        caption: null,
+        source_rights_notes: "Owned.",
+        storage_bucket: "page-builder-media",
+        storage_path: "images/hero.webp",
+        external_url: null,
+        thumbnail_asset_id: null,
+        width: null,
+        height: null,
+        duration_seconds: null,
+        tags: [],
+        uploaded_by: null,
+        created_at: "2026-05-06T00:00:00Z",
+        updated_at: "2026-05-06T00:00:00Z",
+      },
+    ];
+    const mediaList = plainSelect(mediaAssets);
+    const seoPages = plainSelect([
+      {
+        id: "page_1",
+        og_asset_id: "asset_1",
+        draft_content: null,
+        published_content: null,
+      },
+    ]);
+    const newsPosts = plainSelect([]);
+    const proofItems = plainSelect([]);
+    const sourceDocuments = plainSelect([]);
+    const client = {
+      from: vi.fn((table: string) => {
+        if (table === "media_assets") return mediaList.table;
+        if (table === "seo_pages") return seoPages.table;
+        if (table === "news_posts") return newsPosts.table;
+        if (table === "proof_items") return proofItems.table;
+        if (table === "source_documents") return sourceDocuments.table;
+        throw new Error(`Unexpected table ${table}`);
+      }),
+    } as unknown as MediaClient & { from: ReturnType<typeof vi.fn> };
+
+    await expect(adminBuildMediaUsageIndex({ client })).resolves.toEqual({
+      asset_1: 1,
+    });
+  });
+
+  it("adds tags in bulk without duplicating existing tags", async () => {
+    const existing = {
+      id: "asset_1",
+      asset_type: "image",
+      title: "Hero",
+      alt_text: "Hero",
+      caption: null,
+      source_rights_notes: "Owned.",
+      storage_bucket: "page-builder-media",
+      storage_path: "images/hero.webp",
+      external_url: null,
+      thumbnail_asset_id: null,
+      width: null,
+      height: null,
+      duration_seconds: null,
+      tags: ["hero"],
+      uploaded_by: null,
+      created_at: "2026-05-06T00:00:00Z",
+      updated_at: "2026-05-06T00:00:00Z",
+    };
+    const load = maybeSingleSelect(existing);
+    const update = updateSingle({ ...existing, tags: ["hero", "proof"] });
+    const client = buildClient(load.table, load.table, update.table);
+
+    await expect(
+      adminBulkAddTagsToAssets(["asset_1"], "proof", { client }),
+    ).resolves.toEqual({ updated: 1, tag: "proof" });
   });
 
   it("builds public URLs for stored media assets", () => {

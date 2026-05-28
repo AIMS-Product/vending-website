@@ -53,6 +53,8 @@ export type MediaAssetUsage = {
   totalCount: number;
 };
 
+export type MediaUsageIndex = Record<string, number>;
+
 const MEDIA_ASSET_FIELDS =
   "id, asset_type, title, alt_text, caption, source_rights_notes, storage_bucket, storage_path, external_url, thumbnail_asset_id, width, height, duration_seconds, tags, uploaded_by, created_at, updated_at" as const;
 
@@ -193,6 +195,143 @@ export async function adminDeleteMediaAsset(
     .delete()
     .eq("id", assetId);
   if (error) throw new Error("Could not delete media asset.");
+}
+
+export async function adminBuildMediaUsageIndex(
+  deps: ServiceDeps = {},
+): Promise<MediaUsageIndex> {
+  const client = deps.client ?? createAdminClient();
+  const counts: MediaUsageIndex = {};
+
+  const bump = (assetId: string) => {
+    counts[assetId] = (counts[assetId] ?? 0) + 1;
+  };
+
+  const [
+    { data: mediaAssets, error: mediaError },
+    { data: seoPages, error: seoError },
+    { data: newsPosts, error: newsError },
+    { data: proofItems, error: proofError },
+    { data: sourceDocuments, error: sourceError },
+  ] = await Promise.all([
+    client.from("media_assets").select(MEDIA_ASSET_FIELDS),
+    client
+      .from("seo_pages")
+      .select("id, og_asset_id, draft_content, published_content"),
+    client.from("news_posts").select("id, cover_url"),
+    client.from("proof_items").select("id, asset_id"),
+    client.from("source_documents").select("id, asset_id"),
+  ]);
+
+  if (mediaError) throw new Error("Could not build media usage index.");
+  if (seoError) throw new Error("Could not build media usage index.");
+  if (newsError) throw new Error("Could not build media usage index.");
+  if (proofError) throw new Error("Could not build media usage index.");
+  if (sourceError) throw new Error("Could not build media usage index.");
+
+  const publicUrlToAssetId = new Map<string, string>();
+  for (const asset of mediaAssets ?? []) {
+    const url = publicMediaAssetUrl(asset);
+    if (url) publicUrlToAssetId.set(url, asset.id);
+  }
+
+  for (const page of seoPages ?? []) {
+    const seenOnPage = new Set<string>();
+    if (page.og_asset_id) {
+      bump(page.og_asset_id);
+      seenOnPage.add(page.og_asset_id);
+    }
+
+    for (const content of [page.draft_content, page.published_content]) {
+      const parsed = pageContentSchema.safeParse(content);
+      if (!parsed.success) continue;
+      for (const assetId of collectMediaAssetIds(parsed.data)) {
+        if (seenOnPage.has(assetId)) continue;
+        seenOnPage.add(assetId);
+        bump(assetId);
+      }
+    }
+  }
+
+  for (const post of newsPosts ?? []) {
+    if (!post.cover_url) continue;
+    const assetId = publicUrlToAssetId.get(post.cover_url);
+    if (assetId) bump(assetId);
+  }
+
+  for (const item of proofItems ?? []) {
+    if (item.asset_id) bump(item.asset_id);
+  }
+
+  for (const document of sourceDocuments ?? []) {
+    if (document.asset_id) bump(document.asset_id);
+  }
+
+  return counts;
+}
+
+export async function adminBulkAddTagsToAssets(
+  assetIds: string[],
+  tag: string,
+  deps: ServiceDeps = {},
+) {
+  const normalizedTag = tag.trim().toLowerCase();
+  if (!normalizedTag) throw new Error("Tag is required.");
+  if (assetIds.length === 0) throw new Error("Choose at least one asset.");
+
+  const uniqueIds = [...new Set(assetIds)];
+  let updated = 0;
+
+  for (const assetId of uniqueIds) {
+    const client = deps.client ?? createAdminClient();
+    const { data: existing, error } = await client
+      .from("media_assets")
+      .select(MEDIA_ASSET_FIELDS)
+      .eq("id", assetId)
+      .maybeSingle();
+    if (error) throw new Error("Could not load media asset.");
+    if (!existing) continue;
+
+    const nextTags = [
+      ...new Set([...(existing.tags ?? []), normalizedTag]),
+    ].slice(0, 20);
+    await adminUpdateMediaAsset(assetId, { tags: nextTags }, deps);
+    updated += 1;
+  }
+
+  return { updated, tag: normalizedTag };
+}
+
+export async function adminBulkDeleteMediaAssets(
+  assetIds: string[],
+  deps: ServiceDeps = {},
+) {
+  if (assetIds.length === 0) throw new Error("Choose at least one asset.");
+
+  const usageIndex = await adminBuildMediaUsageIndex(deps);
+  const uniqueIds = [...new Set(assetIds)];
+  let deleted = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  for (const assetId of uniqueIds) {
+    if ((usageIndex[assetId] ?? 0) > 0) {
+      skipped += 1;
+      continue;
+    }
+    try {
+      await adminDeleteMediaAsset(assetId, deps);
+      deleted += 1;
+    } catch (error) {
+      errors.push(
+        error instanceof Error
+          ? error.message
+          : "Could not delete media asset.",
+      );
+    }
+  }
+
+  return { deleted, skipped, errors };
 }
 
 export async function adminGetMediaAssetUsage(

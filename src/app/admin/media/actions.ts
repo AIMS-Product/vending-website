@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { toEditorMediaAsset } from "@/lib/media/editor-asset";
 import {
+  adminBulkAddTagsToAssets,
+  adminBulkDeleteMediaAssets,
   adminCreateMediaAsset,
   adminDeleteMediaAsset,
   adminGetMediaAssetUsage,
@@ -204,6 +206,169 @@ export async function deleteMediaAsset(assetId: string) {
 export async function fetchMediaAssetUsage(assetId: string) {
   await requireAuth();
   return adminGetMediaAssetUsage(assetId);
+}
+
+const bulkTagSchema = z.object({
+  assetIds: z.array(z.uuid()).min(1, "Choose at least one asset."),
+  tag: z.string().trim().min(1, "Tag is required.").max(40, "Tag is too long."),
+});
+
+const bulkDeleteSchema = z.object({
+  assetIds: z.array(z.uuid()).min(1, "Choose at least one asset."),
+});
+
+const bulkCreateItemSchema = z.object({
+  title: z.string().trim().min(2, "Title needs at least 2 characters."),
+  altText: z.string().trim().max(180),
+  storageBucket: z.string().trim().min(1),
+  storagePath: z.string().trim().min(1),
+  tags: z.string().trim().max(240).optional(),
+});
+
+export async function bulkAddMediaTags(assetIds: string[], tag: string) {
+  await requireAuth();
+  const parsed = bulkTagSchema.safeParse({ assetIds, tag });
+  if (!parsed.success) {
+    return {
+      status: "error" as const,
+      message: parsed.error.issues[0]?.message ?? "Invalid bulk tag request.",
+    };
+  }
+
+  try {
+    const result = await adminBulkAddTagsToAssets(
+      parsed.data.assetIds,
+      parsed.data.tag,
+    );
+    revalidatePath(ADMIN_MEDIA_PATH);
+    return {
+      status: "saved" as const,
+      message: `Added “${result.tag}” to ${result.updated} asset${result.updated === 1 ? "" : "s"}.`,
+    };
+  } catch (error) {
+    console.error("bulk media tag failed", error);
+    return {
+      status: "error" as const,
+      message:
+        error instanceof Error ? error.message : "Could not add tags in bulk.",
+    };
+  }
+}
+
+export async function bulkDeleteMediaAssets(assetIds: string[]) {
+  await requireAuth();
+  const parsed = bulkDeleteSchema.safeParse({ assetIds });
+  if (!parsed.success) {
+    return {
+      status: "error" as const,
+      message:
+        parsed.error.issues[0]?.message ?? "Invalid bulk delete request.",
+    };
+  }
+
+  try {
+    const result = await adminBulkDeleteMediaAssets(parsed.data.assetIds);
+    revalidatePath(ADMIN_MEDIA_PATH);
+    const skippedNote =
+      result.skipped > 0
+        ? ` ${result.skipped} in-use asset${result.skipped === 1 ? "" : "s"} skipped.`
+        : "";
+    const errorNote = result.errors.length > 0 ? ` ${result.errors[0]}` : "";
+    if (result.deleted === 0) {
+      return {
+        status: "error" as const,
+        message:
+          result.skipped > 0
+            ? "Selected assets are still in use and were not deleted."
+            : errorNote || "Could not delete selected assets.",
+      };
+    }
+    return {
+      status: "saved" as const,
+      message: `Deleted ${result.deleted} asset${result.deleted === 1 ? "" : "s"}.${skippedNote}${errorNote}`,
+    };
+  } catch (error) {
+    console.error("bulk media delete failed", error);
+    return {
+      status: "error" as const,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Could not delete selected assets.",
+    };
+  }
+}
+
+export async function bulkCreateMediaAssets(
+  items: Array<{
+    title: string;
+    altText: string;
+    storageBucket: string;
+    storagePath: string;
+    tags?: string;
+  }>,
+) {
+  const admin = await requireAuth();
+  if (items.length === 0) {
+    return {
+      status: "error" as const,
+      message: "Choose at least one image to upload.",
+    };
+  }
+  if (items.length > 20) {
+    return {
+      status: "error" as const,
+      message: "Upload up to 20 images at a time.",
+    };
+  }
+
+  let created = 0;
+  const errors: string[] = [];
+
+  for (const item of items) {
+    const parsed = bulkCreateItemSchema.safeParse(item);
+    if (!parsed.success) {
+      errors.push(parsed.error.issues[0]?.message ?? "Invalid upload item.");
+      continue;
+    }
+
+    try {
+      await adminCreateMediaAsset({
+        assetType: "image",
+        title: parsed.data.title,
+        altText: parsed.data.altText || parsed.data.title,
+        sourceRightsNotes:
+          "Uploaded in bulk from the media library. Confirm source and usage rights before publishing.",
+        storageBucket: parsed.data.storageBucket,
+        storagePath: parsed.data.storagePath,
+        tags: parseTags(parsed.data.tags ?? ""),
+        uploadedBy: admin.user.id,
+      });
+      created += 1;
+    } catch (error) {
+      errors.push(
+        error instanceof Error
+          ? error.message
+          : "Could not save uploaded image.",
+      );
+    }
+  }
+
+  revalidatePath(ADMIN_MEDIA_PATH);
+
+  if (created === 0) {
+    return {
+      status: "error" as const,
+      message: errors[0] ?? "Could not save uploaded images.",
+    };
+  }
+
+  const errorNote =
+    errors.length > 0 ? ` ${errors.length} file(s) failed.` : "";
+  return {
+    status: "saved" as const,
+    message: `Saved ${created} image${created === 1 ? "" : "s"}.${errorNote}`,
+  };
 }
 
 export async function fetchEditorMediaAssets(
