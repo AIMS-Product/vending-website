@@ -203,6 +203,7 @@ describe("seo page service", () => {
         status: "draft",
         created_by: "admin-1",
         draft_content: { version: 1, sections: [] },
+        structured_data_settings: { breadcrumb: true, faq: true },
       }),
     );
   });
@@ -274,6 +275,7 @@ describe("seo page service", () => {
       canonicalUrl: null,
       noindex: false,
       sitemapEnabled: true,
+      structuredDataSettings: { breadcrumb: false, faq: true },
     };
     const update = updateSingle({
       id: "page_1",
@@ -307,6 +309,7 @@ describe("seo page service", () => {
     expect(patch).not.toHaveProperty("canonical_url");
     expect(patch).not.toHaveProperty("noindex");
     expect(patch).not.toHaveProperty("sitemap_enabled");
+    expect(patch).not.toHaveProperty("structured_data_settings");
   });
 
   it("publishes by creating an immutable revision and mirroring its snapshot", async () => {
@@ -365,6 +368,7 @@ describe("seo page service", () => {
           slug: "start-vending",
           seo_title: "Start a Vending Business",
           meta_description: "Learn how to start a vending business safely.",
+          structured_data_settings: { breadcrumb: true, faq: true },
         }),
       }),
     );
@@ -374,6 +378,7 @@ describe("seo page service", () => {
         published_content: parsedContent,
         published_revision_id: "revision_1",
         published_at: "2026-05-06T01:00:00.000Z",
+        structured_data_settings: { breadcrumb: true, faq: true },
         updated_by: "admin-1",
       }),
     );
@@ -390,6 +395,7 @@ describe("seo page service", () => {
       canonicalUrl: "/resources/updated-vending-guide",
       noindex: false,
       sitemapEnabled: true,
+      structuredDataSettings: { breadcrumb: false, faq: false },
     };
     const page = {
       id: "page_1",
@@ -418,6 +424,7 @@ describe("seo page service", () => {
         canonical_url: draftSettings.canonicalUrl,
         noindex: draftSettings.noindex,
         sitemap_enabled: draftSettings.sitemapEnabled,
+        structured_data_settings: draftSettings.structuredDataSettings,
       },
       published_content: parsedContent,
       published_revision_id: "revision_1",
@@ -463,6 +470,7 @@ describe("seo page service", () => {
           target_keyword: "updated vending keyword",
           seo_title: "Updated SEO Title",
           meta_description: "Updated meta description for the live page.",
+          structured_data_settings: { breadcrumb: false, faq: false },
         }),
       }),
     );
@@ -476,6 +484,7 @@ describe("seo page service", () => {
         canonical_url: "/resources/updated-vending-guide",
         noindex: false,
         sitemap_enabled: true,
+        structured_data_settings: { breadcrumb: false, faq: false },
         draft_settings: {},
         published_content: parsedContent,
       }),
@@ -1034,5 +1043,55 @@ describe("seo page service", () => {
         created_reason: "page_archived",
       }),
     );
+  });
+
+  it("normalizes archive redirect destinations before writing redirect rows", async () => {
+    const insert = insertSingle({ id: "redirect_1" });
+    const update = updateSingle({ id: "page_1", status: "archived" });
+    const client = buildClient(insert.table, update.table);
+
+    await adminArchiveSeoPage("page_1", {
+      client,
+      actorId: "admin-1",
+      archiveBehavior: "redirect",
+      archiveRedirectUrl: " /resources/start-vending/// ",
+      currentSlug: "old-vending-guide",
+    });
+
+    expect(insert.mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source_path: "/resources/old-vending-guide",
+        destination_path: "/resources/start-vending",
+      }),
+    );
+    expect(update.mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        archive_redirect_url: "/resources/start-vending",
+      }),
+    );
+  });
+
+  it("rejects unsafe archive redirect destinations before touching Supabase", async () => {
+    const client = buildClient();
+
+    await expect(
+      adminArchiveSeoPage("page_1", {
+        client,
+        archiveBehavior: "redirect",
+        archiveRedirectUrl: "javascript:alert(1)",
+        currentSlug: "old-vending-guide",
+      }),
+    ).rejects.toMatchObject({
+      issues: [
+        {
+          code: "invalid_redirect_destination",
+          path: "destination_path",
+          message:
+            "Redirect destination must be an internal path or http(s) URL.",
+        },
+      ],
+    });
+
+    expect(client.from).not.toHaveBeenCalled();
   });
 });

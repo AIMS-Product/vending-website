@@ -41,13 +41,13 @@ function getPublicClient() {
 
 const PUBLIC_SEO_PAGE_FIELDS =
   "id, slug, title, target_keyword, published_content, seo_title, meta_description, canonical_url, noindex, sitemap_enabled, structured_data_settings, published_at, updated_at" as const;
+const PUBLIC_SEO_PAGES_TABLE = "published_seo_pages" as const;
 
 export async function listPublishedSeoPageSlugs() {
   const supabase = getPublicClient();
   const { data, error } = await supabase
-    .from("seo_pages")
-    .select("slug")
-    .eq("status", "published");
+    .from(PUBLIC_SEO_PAGES_TABLE)
+    .select("slug");
 
   if (error) {
     console.error("listPublishedSeoPageSlugs failed", error);
@@ -60,9 +60,8 @@ export async function listPublishedSeoPageSlugs() {
 export async function hasPublishedSeoPageSlug(slug: string) {
   const supabase = getPublicClient();
   const { data, error } = await supabase
-    .from("seo_pages")
+    .from(PUBLIC_SEO_PAGES_TABLE)
     .select("id")
-    .eq("status", "published")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -77,9 +76,8 @@ export async function hasPublishedSeoPageSlug(slug: string) {
 export async function listSitemapSeoPages() {
   const supabase = getPublicClient();
   const { data, error } = await supabase
-    .from("seo_pages")
+    .from(PUBLIC_SEO_PAGES_TABLE)
     .select("slug, updated_at")
-    .eq("status", "published")
     .eq("sitemap_enabled", true)
     .eq("noindex", false);
 
@@ -94,9 +92,8 @@ export async function listSitemapSeoPages() {
 export async function getPublishedSeoPageBySlug(slug: string) {
   const supabase = getPublicClient();
   const { data, error } = await supabase
-    .from("seo_pages")
+    .from(PUBLIC_SEO_PAGES_TABLE)
     .select(PUBLIC_SEO_PAGE_FIELDS)
-    .eq("status", "published")
     .eq("slug", slug)
     .maybeSingle();
 

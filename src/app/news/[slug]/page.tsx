@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NewsArticle } from "@/components/sections/NewsArticle";
@@ -12,6 +13,8 @@ type Params = { slug: string };
 
 export const revalidate = 60;
 
+const getPublishedPost = cache((slug: string) => getPublishedPostBySlug(slug));
+
 export async function generateStaticParams(): Promise<Params[]> {
   const slugs = await listPublishedSlugs();
   return slugs.map((slug) => ({ slug }));
@@ -23,8 +26,9 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPublishedPostBySlug(slug);
-  if (!post) return { title: "Not found" };
+  const post = await getPublishedPost(slug);
+  if (!post) notFound();
+
   return {
     title: post.title,
     description: post.excerpt ?? undefined,
@@ -47,7 +51,7 @@ export default async function NewsArticlePage({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const post = await getPublishedPostBySlug(slug);
+  const post = await getPublishedPost(slug);
   if (!post) notFound();
   const html = await renderMarkdown(post.body);
   return (

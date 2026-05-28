@@ -4,6 +4,7 @@ import {
   adminCreateSeoPagePreviewToken,
   adminRollbackSeoPageRevision,
   getSeoPagePreviewByToken,
+  hasActiveSeoPagePreviewToken,
 } from "./seo-pages";
 import type { PageContent } from "@/lib/page-builder/blocks";
 import type { Database } from "@/types/database";
@@ -265,6 +266,27 @@ describe("seo page revisions and previews", () => {
         now: () => new Date("2026-05-06T01:00:00.000Z"),
       }),
     ).resolves.toBeNull();
+  });
+
+  it("checks active preview token existence without loading page drafts", async () => {
+    const tokenLookup = maybeSingleByEq({
+      id: "token_1",
+      expires_at: "2026-05-09T01:00:00.000Z",
+      revoked_at: null,
+    });
+    const client = buildClient(tokenLookup.table);
+
+    await expect(
+      hasActiveSeoPagePreviewToken("preview-token", {
+        client,
+        now: () => new Date("2026-05-06T01:00:00.000Z"),
+      }),
+    ).resolves.toBe(true);
+
+    expect(client.from).toHaveBeenCalledTimes(1);
+    expect(tokenLookup.mocks.select).toHaveBeenCalledWith(
+      "id, expires_at, revoked_at",
+    );
   });
 
   it("rolls a frozen revision back into draft without changing published content", async () => {

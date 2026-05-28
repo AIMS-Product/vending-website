@@ -7,6 +7,7 @@ import {
   AiProposalValidationError,
   adminAcceptAiProposalBlocks,
 } from "@/lib/services/ai-page-proposals";
+import type { StructuredDataSettings } from "@/lib/page-builder/structured-data-settings";
 import {
   adminArchiveSeoPage,
   SeoPageValidationError,
@@ -77,6 +78,7 @@ export type PageAutosavePayload = {
   canonicalUrl: string;
   noindex: boolean;
   sitemapEnabled: boolean;
+  structuredDataSettings: StructuredDataSettings;
   draftContent: PageContent;
 };
 
@@ -94,6 +96,10 @@ const formSchema = z.object({
   canonicalUrl: z.string().trim().max(500, "Canonical URL is too long."),
   noindex: z.boolean(),
   sitemapEnabled: z.boolean(),
+  structuredDataSettings: z.object({
+    breadcrumb: z.boolean(),
+    faq: z.boolean(),
+  }),
   draftContent: pageContentSchema,
   intent: z.enum(["save", "publish"]),
 });
@@ -131,6 +137,7 @@ export async function saveSeoPage(
         canonicalUrl: nullable(page.canonicalUrl),
         noindex: page.noindex,
         sitemapEnabled: page.sitemapEnabled,
+        structuredDataSettings: page.structuredDataSettings,
         updatedBy: admin.user.id,
       });
 
@@ -178,6 +185,7 @@ export async function saveSeoPage(
         canonicalUrl: nullable(page.canonicalUrl),
         noindex: page.noindex,
         sitemapEnabled: page.sitemapEnabled,
+        structuredDataSettings: page.structuredDataSettings,
         draftContent: page.draftContent,
         updatedBy: admin.user.id,
       });
@@ -212,6 +220,7 @@ export async function autosaveSeoPageDraft(
     canonicalUrl: payload.canonicalUrl,
     noindex: payload.noindex,
     sitemapEnabled: payload.sitemapEnabled,
+    structuredDataSettings: payload.structuredDataSettings,
     draftContent: payload.draftContent,
     intent: "save",
   });
@@ -241,6 +250,7 @@ export async function autosaveSeoPageDraft(
         canonicalUrl: nullable(parsed.data.canonicalUrl),
         noindex: parsed.data.noindex,
         sitemapEnabled: parsed.data.sitemapEnabled,
+        structuredDataSettings: parsed.data.structuredDataSettings,
         draftContent: parsed.data.draftContent,
         updatedBy: admin.user.id,
       });
@@ -312,6 +322,7 @@ export async function saveSeoPageDraftAndCreatePreviewLink(
         canonicalUrl: nullable(page.canonicalUrl),
         noindex: page.noindex,
         sitemapEnabled: page.sitemapEnabled,
+        structuredDataSettings: page.structuredDataSettings,
         updatedBy: admin.user.id,
       });
     } else {
@@ -340,6 +351,7 @@ export async function saveSeoPageDraftAndCreatePreviewLink(
           canonicalUrl: nullable(page.canonicalUrl),
           noindex: page.noindex,
           sitemapEnabled: page.sitemapEnabled,
+          structuredDataSettings: page.structuredDataSettings,
           draftContent: page.draftContent,
           updatedBy: admin.user.id,
         });
@@ -352,6 +364,7 @@ export async function saveSeoPageDraftAndCreatePreviewLink(
           canonicalUrl: nullable(page.canonicalUrl),
           noindex: page.noindex,
           sitemapEnabled: page.sitemapEnabled,
+          structuredDataSettings: page.structuredDataSettings,
           draftContent: page.draftContent,
           updatedBy: admin.user.id,
         });
@@ -597,6 +610,10 @@ function parsePageFormData(formData: FormData) {
     canonicalUrl: formData.get("canonicalUrl") ?? "",
     noindex: formData.get("noindex") === "on",
     sitemapEnabled: formData.get("sitemapEnabled") === "on",
+    structuredDataSettings: {
+      breadcrumb: formData.get("structuredDataBreadcrumb") === "on",
+      faq: formData.get("structuredDataFaq") === "on",
+    },
     draftContent,
     intent: formData.get("intent") ?? "save",
   });
@@ -618,6 +635,7 @@ function draftSettingsFromPageForm(page: ParsedPageForm): SeoPageDraftSettings {
     canonicalUrl: nullable(page.canonicalUrl),
     noindex: page.noindex,
     sitemapEnabled: page.sitemapEnabled,
+    structuredDataSettings: page.structuredDataSettings,
   };
 }
 

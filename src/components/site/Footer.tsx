@@ -51,8 +51,8 @@ function FooterItem({
   highlighted: boolean;
 }) {
   const className = cn(
-    "text-sm font-black text-[#111111] uppercase transition hover:text-[#55b8e8]",
-    highlighted && "text-[#2d9fd6]",
+    "text-sm font-black text-[#111111] uppercase transition hover:text-[#066a99]",
+    highlighted && "text-[#066a99]",
   );
 
   if (item.external) {

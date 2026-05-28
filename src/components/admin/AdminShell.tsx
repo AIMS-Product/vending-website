@@ -293,7 +293,14 @@ export function AdminShell({
                           <span className="block font-semibold text-slate-950">
                             {section.label}
                           </span>
-                          <span className="mt-0.5 block text-xs text-slate-500">
+                          <span
+                            className={clsx(
+                              "mt-0.5 block text-xs",
+                              activeSection === section.id
+                                ? "text-slate-600"
+                                : "text-slate-500",
+                            )}
+                          >
                             {section.description}
                           </span>
                         </span>
@@ -387,13 +394,17 @@ export function AdminShell({
         )}
 
         <section
-          aria-label={immersive ? title : undefined}
-          aria-labelledby={immersive ? undefined : "admin-shell-title"}
+          aria-labelledby="admin-shell-title"
           className={clsx(
             "min-w-0",
             immersive ? "p-0" : "px-5 py-6 sm:px-8 xl:px-10",
           )}
         >
+          {immersive ? (
+            <h1 id="admin-shell-title" className="sr-only">
+              {title}
+            </h1>
+          ) : null}
           {!immersive && (
             <header className="mb-7">
               <div

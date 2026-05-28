@@ -62,36 +62,56 @@ const metadataSchema = z
   .optional()
   .default({});
 
-const leadInputSchema = z.object({
-  formType: z.enum(["apply", "contact"]),
-  idempotencyKey: optionalText("Submission key", 160),
-  fullName: requiredText("Name", 140),
-  email: z
-    .preprocess(stringifyFormValue, z.email())
-    .transform((value) => value.toLowerCase()),
-  phone: optionalText("Phone", 60),
-  city: optionalText("City", 120),
-  stateRegion: optionalText("State", 120),
-  businessStage: optionalText("Business stage", 160),
-  budget: optionalText("Budget", 120),
-  timeline: optionalText("Timeline", 120),
-  message: optionalText("Message", 3000),
-  sourcePath: optionalText("Source path", 500),
-  landingPath: optionalText("Landing path", 500),
-  referrer: optionalText("Referrer", 1000),
-  sourcePageId: optionalText("Source page ID", 80),
-  sourcePageSlug: optionalText("Source page slug", 160),
-  targetKeyword: optionalText("Target keyword", 180),
-  sourceBlockId: optionalText("Source block ID", 120),
-  sourceCtaTrackingName: optionalText("Source CTA tracking name", 160),
-  userAgent: optionalText("User agent", 1000),
-  utmSource: optionalText("UTM source", 160),
-  utmMedium: optionalText("UTM medium", 160),
-  utmCampaign: optionalText("UTM campaign", 200),
-  utmTerm: optionalText("UTM term", 200),
-  utmContent: optionalText("UTM content", 200),
-  metadata: metadataSchema,
-});
+const leadInputSchema = z
+  .object({
+    formType: z.enum(["apply", "contact"]),
+    idempotencyKey: optionalText("Submission key", 160),
+    fullName: requiredText("Name", 140),
+    email: z
+      .preprocess(stringifyFormValue, z.email())
+      .transform((value) => value.toLowerCase()),
+    phone: optionalText("Phone", 60),
+    city: optionalText("City", 120),
+    stateRegion: optionalText("State", 120),
+    businessStage: optionalText("Business stage", 160),
+    budget: optionalText("Budget", 120),
+    timeline: optionalText("Timeline", 120),
+    message: optionalText("Message", 3000),
+    sourcePath: optionalText("Source path", 500),
+    landingPath: optionalText("Landing path", 500),
+    referrer: optionalText("Referrer", 1000),
+    sourcePageId: optionalText("Source page ID", 80),
+    sourcePageSlug: optionalText("Source page slug", 160),
+    targetKeyword: optionalText("Target keyword", 180),
+    sourceBlockId: optionalText("Source block ID", 120),
+    sourceCtaTrackingName: optionalText("Source CTA tracking name", 160),
+    userAgent: optionalText("User agent", 1000),
+    utmSource: optionalText("UTM source", 160),
+    utmMedium: optionalText("UTM medium", 160),
+    utmCampaign: optionalText("UTM campaign", 200),
+    utmTerm: optionalText("UTM term", 200),
+    utmContent: optionalText("UTM content", 200),
+    metadata: metadataSchema,
+  })
+  .superRefine((lead, ctx) => {
+    if (lead.formType !== "apply") return;
+
+    for (const field of applyQualificationFields) {
+      if (lead[field.key]) continue;
+      ctx.addIssue({
+        code: "custom",
+        path: [field.key],
+        message: `${field.label} is required.`,
+      });
+    }
+  });
+
+const applyQualificationFields = [
+  { key: "stateRegion", label: "State" },
+  { key: "businessStage", label: "Business stage" },
+  { key: "budget", label: "Budget" },
+  { key: "timeline", label: "Timeline" },
+] as const;
 
 export type SubmitLeadInput = {
   formType: LeadActionFormType;

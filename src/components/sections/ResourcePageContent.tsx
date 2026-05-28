@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import {
+  cardGridLinkLabel,
   type PageBlock,
   type PageContent,
   type RichTextNode,
@@ -117,7 +118,7 @@ function ResourcePageBlockView({
         >
           <div>
             {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-              <p className="text-sm font-black text-[#55b8e8] uppercase">
+              <p className="text-sm font-black text-[#066a99] uppercase">
                 {block.props.eyebrow}
               </p>
             )}
@@ -160,7 +161,7 @@ function ResourcePageBlockView({
       return (
         <div className={`mx-auto max-w-3xl text-center ${heroSectionClass}`}>
           {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-            <p className="text-sm font-black text-[#55b8e8] uppercase">
+            <p className="text-sm font-black text-[#066a99] uppercase">
               {block.props.eyebrow}
             </p>
           )}
@@ -193,14 +194,14 @@ function ResourcePageBlockView({
       return (
         <div className="max-w-4xl rounded-[12px] bg-[#eaf8ff] px-6 py-8 shadow-[inset_4px_0_0_#55b8e8]">
           {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-            <p className="text-sm font-black text-[#55b8e8] uppercase">
+            <p className="text-sm font-black text-[#066a99] uppercase">
               {block.props.eyebrow}
             </p>
           )}
           <HeadingTag className={heroHeadingClass}>
             {editorFallback(block.props.heading, "Hero headline", renderMode)}
           </HeadingTag>
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-black text-slate-500 uppercase">
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-black text-slate-600 uppercase">
             <span>Resource guide</span>
             <span className="size-1 rounded-full bg-slate-400" />
             <span>Editor approved block</span>
@@ -218,7 +219,7 @@ function ResourcePageBlockView({
     return (
       <div className={`max-w-4xl ${heroSectionClass}`}>
         {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-          <p className="text-sm font-black text-[#55b8e8] uppercase">
+          <p className="text-sm font-black text-[#066a99] uppercase">
             {block.props.eyebrow}
           </p>
         )}
@@ -266,7 +267,7 @@ function ResourcePageBlockView({
     return (
       <div className={richTextFrameClass}>
         {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-          <p className="text-sm font-black text-[#55b8e8] uppercase">
+          <p className="text-sm font-black text-[#066a99] uppercase">
             {block.props.eyebrow}
           </p>
         )}
@@ -400,7 +401,7 @@ function ResourcePageBlockView({
           {isBlockFieldVisible(block, "caption") &&
             (block.props.caption || renderMode === "editor") && (
               <figcaption className="text-base leading-7 font-semibold text-slate-600">
-                <p className="text-sm font-black text-[#55b8e8] uppercase">
+                <p className="text-sm font-black text-[#066a99] uppercase">
                   Featured media
                 </p>
                 <p className="mt-4">
@@ -465,7 +466,7 @@ function ResourcePageBlockView({
               <ResourceLink
                 href={block.props.url || "#"}
                 linkMode={linkMode}
-                className="mt-4 inline-flex text-sm font-black text-[#2d9fd6] uppercase hover:text-[#111111]"
+                className="mt-4 inline-flex text-sm font-black text-[#066a99] uppercase hover:text-[#111111]"
               >
                 Watch video
               </ResourceLink>
@@ -492,7 +493,7 @@ function ResourcePageBlockView({
           <ResourceLink
             href={block.props.url || "#"}
             linkMode={linkMode}
-            className="mt-3 inline-flex text-sm font-black text-[#2d9fd6] uppercase hover:text-[#111111]"
+            className="mt-3 inline-flex text-sm font-black text-[#066a99] uppercase hover:text-[#111111]"
           >
             Watch video
           </ResourceLink>
@@ -611,9 +612,9 @@ function ResourcePageBlockView({
                   <ResourceLink
                     href={card.href || "#"}
                     linkMode={linkMode}
-                    className="mt-4 inline-flex text-sm font-black text-[#2d9fd6] uppercase hover:text-[#111111]"
+                    className="mt-4 inline-flex text-sm font-black text-[#066a99] uppercase hover:text-[#111111]"
                   >
-                    Learn more
+                    {cardGridLinkLabel(card)}
                   </ResourceLink>
                 )}
               </div>
@@ -629,7 +630,7 @@ function ResourcePageBlockView({
       return (
         <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
           {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-            <p className="text-sm font-black text-[#55b8e8] uppercase">
+            <p className="text-sm font-black text-[#066a99] uppercase">
               {block.props.eyebrow}
             </p>
           )}
@@ -661,7 +662,7 @@ function ResourcePageBlockView({
       return (
         <aside className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
           {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-            <p className="text-sm font-black text-[#55b8e8] uppercase">
+            <p className="text-sm font-black text-[#066a99] uppercase">
               {block.props.eyebrow}
             </p>
           )}
@@ -691,7 +692,7 @@ function ResourcePageBlockView({
     return (
       <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
         {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-          <p className="text-sm font-black text-[#55b8e8] uppercase">
+          <p className="text-sm font-black text-[#066a99] uppercase">
             {block.props.eyebrow}
           </p>
         )}
@@ -836,39 +837,34 @@ function ResourceLeadFormPreview({
       }`}
     >
       <div className={`grid gap-5 ${compact ? "" : "sm:grid-cols-2"}`}>
-        {(compact
-          ? ["Name", "Email"]
-          : [
-              "Name",
-              "Email",
-              "Phone",
-              "City",
-              "State",
-              "Business stage",
-              "Available startup budget",
-              "Launch timeline",
-            ]
-        ).map((label) => (
+        {[
+          "Name",
+          "Email",
+          "Phone",
+          "City",
+          "State",
+          "Business stage",
+          "Available startup budget",
+          "Launch timeline",
+        ].map((label) => (
           <div key={label}>
             <div className="mb-2 block text-sm font-black text-[#111111] uppercase">
               {label}
             </div>
-            <div className="min-h-12 rounded-[8px] border-2 border-[#111111] bg-white px-4 py-3 text-base font-semibold text-slate-400">
+            <div className="min-h-12 rounded-[8px] border-2 border-[#111111] bg-white px-4 py-3 text-base font-semibold text-slate-600">
               {label}
             </div>
           </div>
         ))}
       </div>
-      {!compact && (
-        <div>
-          <div className="mb-2 block text-sm font-black text-[#111111] uppercase">
-            What are you trying to build?
-          </div>
-          <div className="min-h-24 rounded-[8px] border-2 border-[#111111] bg-white px-4 py-3 text-base font-semibold text-slate-400">
-            Message
-          </div>
+      <div>
+        <div className="mb-2 block text-sm font-black text-[#111111] uppercase">
+          What are you trying to build?
         </div>
-      )}
+        <div className="min-h-24 rounded-[8px] border-2 border-[#111111] bg-white px-4 py-3 text-base font-semibold text-slate-600">
+          Message
+        </div>
+      </div>
       <span
         aria-disabled="true"
         className="inline-flex min-h-12 max-w-max items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 py-3 text-sm font-black text-[#111111] uppercase opacity-80 shadow-[5px_5px_0_#111111]"
@@ -941,7 +937,7 @@ function HeroSplitAside({
   if (block.props.proofText) {
     return (
       <aside className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-        <p className="text-sm font-black text-[#55b8e8] uppercase">Proof</p>
+        <p className="text-sm font-black text-[#066a99] uppercase">Proof</p>
         <p className="mt-4 text-xl leading-8 font-black text-[#111111]">
           {block.props.proofText}
         </p>
@@ -1038,7 +1034,7 @@ function renderRichTextParagraph(
         key={richTextSpanKey(span)}
         href={span.href}
         linkMode={linkMode}
-        className="text-[#2d9fd6] underline underline-offset-4 hover:text-[#111111]"
+        className="text-[#066a99] underline underline-offset-4 hover:text-[#111111]"
       >
         {text}
       </ResourceLink>
@@ -1069,7 +1065,7 @@ function faqItemKey(
 function cardKey(
   card: Extract<PageBlock, { type: "card_grid" }>["props"]["cards"][number],
 ) {
-  return `${card.title}:${card.body}:${card.href ?? ""}`;
+  return `${card.title}:${card.body}:${card.href ?? ""}:${card.linkLabel ?? ""}`;
 }
 
 function editorFallback(
@@ -1102,7 +1098,7 @@ function resourceCtaClass(variant: PageBlock["variant"]) {
     return `${base} bg-white text-[#111111] hover:bg-[#eaf8ff]`;
   }
   if (variant === "text") {
-    return "text-sm font-black uppercase text-[#2d9fd6] hover:text-[#111111]";
+    return "text-sm font-black uppercase text-[#066a99] hover:text-[#111111]";
   }
   return `${base} bg-[#f47b3b] text-[#111111]`;
 }

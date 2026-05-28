@@ -51,6 +51,7 @@ export function PublicLeadForm({
   const errors = state.status === "error" ? state.fieldErrors : undefined;
   const isApply = intent === "apply";
   const isCompact = layout === "compact";
+  const showQualificationFields = isApply || !isCompact;
 
   return (
     <form
@@ -65,7 +66,7 @@ export function PublicLeadForm({
         idempotencyKey={idempotencyKey}
       />
 
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className={cn("grid gap-5", !isCompact && "sm:grid-cols-2")}>
         <TextField
           name="full_name"
           errorKey="fullName"
@@ -83,7 +84,7 @@ export function PublicLeadForm({
           required
           errors={errors}
         />
-        {!isCompact && (
+        {showQualificationFields && (
           <>
             <TextField
               name="phone"
@@ -209,7 +210,7 @@ export function PublicLeadForm({
         )}
       </div>
 
-      {!isCompact && (
+      {showQualificationFields && (
         <TextareaField
           name="message"
           errorKey="message"

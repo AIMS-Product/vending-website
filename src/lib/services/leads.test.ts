@@ -141,6 +141,18 @@ describe("submitLead", () => {
         }),
       }),
     );
+    const emailBody = JSON.parse(
+      fetchMock.mock.calls[0]?.[1]?.body as string,
+    ) as { text: string };
+    expect(emailBody.text).toContain("Form: apply");
+    expect(emailBody.text).toContain("Name: Jane Applicant");
+    expect(emailBody.text).toContain("Email: jane@example.com");
+    expect(emailBody.text).toContain("State: Texas");
+    expect(emailBody.text).toContain("Business stage: First location");
+    expect(emailBody.text).toContain("Budget: $10k-$25k");
+    expect(emailBody.text).toContain("Timeline: 30 days");
+    expect(emailBody.text).toContain("Source CTA: resource_lead_form");
+    expect(emailBody.text).toContain("Message:\nI am ready to start.");
     expect(mocks.update).toHaveBeenCalledWith({
       status: "notified",
       notification_attempted_at: "2026-05-04T09:00:00.000Z",
@@ -161,6 +173,99 @@ describe("submitLead", () => {
 
     expect(mocks.from).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejects apply leads without qualification fields before touching Supabase", async () => {
+    const { client, mocks } = buildLeadClient();
+
+    await expect(
+      submitLead(
+        {
+          ...validLead,
+          stateRegion: "",
+          businessStage: "",
+          budget: "",
+          timeline: "",
+        },
+        { client, env: notificationEnv },
+      ),
+    ).rejects.toMatchObject({
+      fieldErrors: {
+        stateRegion: ["State is required."],
+        businessStage: ["Business stage is required."],
+        budget: ["Budget is required."],
+        timeline: ["Timeline is required."],
+      },
+    });
+
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("allows contact leads without application qualification fields", async () => {
+    const { client, mocks } = buildLeadClient();
+    const fetchMock = vi.fn();
+
+    const result = await submitLead(
+      {
+        formType: "contact",
+        idempotencyKey: "contact-key-1",
+        fullName: "Contact Lead",
+        email: "contact@example.com",
+      },
+      {
+        client,
+        env: {},
+        fetchImpl: fetchMock as unknown as typeof fetch,
+      },
+    );
+
+    expect(result.status).toBe("accepted");
+    expect(mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        form_type: "contact",
+        state_region: null,
+        business_stage: null,
+        budget: null,
+        timeline: null,
+      }),
+    );
+  });
+
+  it("sends Slack notifications with resource context after email succeeds", async () => {
+    const { client, mocks } = buildLeadClient();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response("ok", { status: 200 }));
+
+    const result = await submitLead(validLead, {
+      client,
+      env: {
+        ...notificationEnv,
+        SLACK_WEBHOOK_URL: "https://hooks.slack.test/lead",
+      },
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-05-04T09:30:00.000Z"),
+    });
+
+    expect(result.notificationStatus).toBe("notified");
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://hooks.slack.test/lead",
+      expect.objectContaining({ method: "POST" }),
+    );
+    const slackBody = JSON.parse(
+      fetchMock.mock.calls[1]?.[1]?.body as string,
+    ) as { text: string };
+    expect(slackBody.text).toContain("*New application lead*");
+    expect(slackBody.text).toContain("Jane Applicant <jane@example.com>");
+    expect(slackBody.text).toContain("Source: /book-a-call");
+    expect(slackBody.text).toContain("Resource: start-vending");
+    expect(slackBody.text).toContain("CTA: resource_lead_form");
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "notified" }),
+    );
   });
 
   it("returns an existing lead for a duplicate idempotency key without notifying twice", async () => {

@@ -21,7 +21,7 @@ export function Header() {
           aria-label="Vendingpreneurs home"
           onClick={() => setMenuOpen(false)}
         >
-          <Wordmark height={48} />
+          <Wordmark height={48} preload />
         </Link>
 
         <nav

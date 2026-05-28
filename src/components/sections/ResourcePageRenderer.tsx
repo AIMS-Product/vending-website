@@ -5,52 +5,85 @@ import { flattenBlocks, pageChromeSettings } from "@/lib/page-builder/blocks";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import type { PublishedSeoPage } from "@/lib/services/seo-page-public";
 import { buildResourceLeadFormAttribution } from "@/lib/page-builder/resource-lead-attribution";
+import { buildResourcePageStructuredDataGraphs } from "./resource-page-structured-data";
 
 type ResourcePageRendererProps = {
   page: PublishedSeoPage;
   leadAttribution?: LeadAttribution;
   idempotencyKeyPrefix: string;
+  showPreviewEmptyState?: boolean;
 };
 
 export function ResourcePageRenderer({
   page,
   leadAttribution,
   idempotencyKeyPrefix,
+  showPreviewEmptyState = false,
 }: ResourcePageRendererProps) {
   const chromeSettings = pageChromeSettings(page.published_content);
+  const isEmptyPreview =
+    showPreviewEmptyState && flattenBlocks(page.published_content).length === 0;
 
   return (
     <article className="bg-[#f5fbff]">
       <PageChromeVisibilityMarker settings={chromeSettings} />
       <StructuredData page={page} />
       <div className="mx-auto max-w-5xl px-5 py-14 lg:px-10">
-        <ResourcePageContentView
-          content={page.published_content}
-          renderLeadForm={(block) => {
-            const attribution = buildResourceLeadFormAttribution({
-              baseAttribution: leadAttribution,
-              page,
-              block,
-            });
+        {isEmptyPreview ? (
+          <ResourcePreviewEmptyState />
+        ) : (
+          <ResourcePageContentView
+            content={page.published_content}
+            renderLeadForm={(block) => {
+              const attribution = buildResourceLeadFormAttribution({
+                baseAttribution: leadAttribution,
+                page,
+                block,
+              });
 
-            return (
-              <PublicLeadForm
-                action={submitApplicationLead}
-                attribution={attribution}
-                idempotencyKey={`${idempotencyKeyPrefix}:${block.id}`}
-                intent="apply"
-                layout={
-                  block.variant === "compact" || block.variant === "sidebar"
-                    ? "compact"
-                    : "standard"
-                }
-                submitLabel={block.props.submitLabel}
-              />
-            );
-          }}
-        />
+              return (
+                <PublicLeadForm
+                  action={submitApplicationLead}
+                  attribution={attribution}
+                  idempotencyKey={`${idempotencyKeyPrefix}:${block.id}`}
+                  intent="apply"
+                  layout={
+                    block.variant === "compact" || block.variant === "sidebar"
+                      ? "compact"
+                      : "standard"
+                  }
+                  submitLabel={block.props.submitLabel}
+                />
+              );
+            }}
+          />
+        )}
       </div>
     </article>
+  );
+}
+
+function ResourcePreviewEmptyState() {
+  return (
+    <section
+      aria-labelledby="resource-preview-empty-title"
+      className="rounded-[12px] border-2 border-dashed border-[#111111]/35 bg-white px-6 py-14 text-center shadow-[7px_7px_0_#55b8e8]"
+    >
+      <p className="text-sm font-black text-[#066a99] uppercase">
+        Draft preview
+      </p>
+      <h1
+        id="resource-preview-empty-title"
+        className="mt-3 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl"
+      >
+        No page content yet
+      </h1>
+      <p className="mx-auto mt-4 max-w-xl text-base leading-7 font-semibold text-slate-700">
+        This preview link is working, but the page body is empty. Add a hero,
+        copy, media, or lead form block in the editor, then save and preview
+        again.
+      </p>
+    </section>
   );
 }
 
@@ -72,53 +105,7 @@ function PageChromeVisibilityMarker({
 }
 
 function StructuredData({ page }: { page: PublishedSeoPage }) {
-  const blocks = flattenBlocks(page.published_content);
-  const faqItems = blocks.flatMap((block) =>
-    block.type === "faq"
-      ? block.props.items.filter((item) => item.question && item.answer)
-      : [],
-  );
-  const graphs: unknown[] = [
-    {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: "Home",
-          item: "/",
-        },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: "Resources",
-          item: "/resources",
-        },
-        {
-          "@type": "ListItem",
-          position: 3,
-          name: page.title,
-          item: `/resources/${page.slug}`,
-        },
-      ],
-    },
-  ];
-
-  if (faqItems.length > 0) {
-    graphs.push({
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: faqItems.map((item) => ({
-        "@type": "Question",
-        name: item.question,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: item.answer,
-        },
-      })),
-    });
-  }
+  const graphs = buildResourcePageStructuredDataGraphs(page);
 
   return (
     <>

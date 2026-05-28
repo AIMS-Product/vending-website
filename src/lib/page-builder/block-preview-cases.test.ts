@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { pageContentSchema } from "@/lib/page-builder/blocks";
 import { blockPickerOptions } from "@/lib/page-builder/block-options";
-import { blockPreviewCases } from "@/lib/page-builder/block-preview-cases";
+import {
+  blockPreviewCases,
+  getBlockPreviewParityMarkers,
+} from "@/lib/page-builder/block-preview-cases";
 
 describe("page builder block preview cases", () => {
   it("covers every block picker variant exactly once", () => {
@@ -19,6 +22,13 @@ describe("page builder block preview cases", () => {
   it("keeps every mocked preview renderable by the page content schema", () => {
     for (const entry of blockPreviewCases) {
       expect(() => pageContentSchema.parse(entry.content)).not.toThrow();
+    }
+  });
+
+  it("defines at least one parity marker for every preview case", () => {
+    for (const entry of blockPreviewCases) {
+      const markers = getBlockPreviewParityMarkers(entry.block);
+      expect(markers.length).toBeGreaterThan(0);
     }
   });
 });

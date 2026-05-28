@@ -36,6 +36,7 @@ import type { AiPageProposalReview } from "@/lib/services/ai-page-proposals";
 import {
   CARD_GRID_MAX_CARDS,
   FAQ_MAX_ITEMS,
+  cardGridLinkLabel,
   createEmptyPageContent,
   pageContentSchema,
   pageChromeSettings,
@@ -52,6 +53,10 @@ import {
   type SeoReadinessStatus,
   type SeoReadinessSummary,
 } from "@/lib/page-builder/seo-readiness";
+import {
+  parseStructuredDataSettings,
+  type StructuredDataSettings,
+} from "@/lib/page-builder/structured-data-settings";
 import {
   applyInternalLinkSuggestion,
   suggestInternalLinks,
@@ -125,6 +130,7 @@ type EditorDraftSettings = {
   canonicalUrl: string;
   noindex: boolean;
   sitemapEnabled: boolean;
+  structuredDataSettings: StructuredDataSettings;
 };
 
 const initialState: PageEditorActionState = { status: "idle" };
@@ -196,6 +202,18 @@ export function SeoPageEditorForm({
   const [sitemapEnabled, setSitemapEnabled] = useState(
     initialDraftSettings?.sitemapEnabled ?? page?.sitemap_enabled ?? true,
   );
+  const initialStructuredDataSettings = useMemo(
+    () =>
+      initialDraftSettings?.structuredDataSettings ??
+      parseStructuredDataSettings(page?.structured_data_settings),
+    [initialDraftSettings, page?.structured_data_settings],
+  );
+  const [structuredDataBreadcrumb, setStructuredDataBreadcrumb] = useState(
+    initialStructuredDataSettings.breadcrumb,
+  );
+  const [structuredDataFaq, setStructuredDataFaq] = useState(
+    initialStructuredDataSettings.faq,
+  );
   const [content, setContent] = useState<PageContent>(() =>
     ensureEditablePageContent(initialContent),
   );
@@ -255,14 +273,23 @@ export function SeoPageEditorForm({
   const draftSettingsDifferFromLoadedPage =
     isPublishedPage &&
     Boolean(page) &&
-    (title !== page?.title ||
-      visibleSlug !== page?.slug ||
-      targetKeyword !== (page?.target_keyword ?? "") ||
-      seoTitle !== (page?.seo_title ?? "") ||
-      metaDescription !== (page?.meta_description ?? "") ||
-      canonicalUrl !== (page?.canonical_url ?? "") ||
-      noindex !== page?.noindex ||
-      sitemapEnabled !== page?.sitemap_enabled);
+    (() => {
+      const pageStructuredDataSettings = parseStructuredDataSettings(
+        page?.structured_data_settings,
+      );
+      return (
+        title !== page?.title ||
+        visibleSlug !== page?.slug ||
+        targetKeyword !== (page?.target_keyword ?? "") ||
+        seoTitle !== (page?.seo_title ?? "") ||
+        metaDescription !== (page?.meta_description ?? "") ||
+        canonicalUrl !== (page?.canonical_url ?? "") ||
+        noindex !== page?.noindex ||
+        sitemapEnabled !== page?.sitemap_enabled ||
+        structuredDataBreadcrumb !== pageStructuredDataSettings.breadcrumb ||
+        structuredDataFaq !== pageStructuredDataSettings.faq
+      );
+    })();
   const hasUnpublishedDraftChanges =
     isPublishedPage &&
     (draftContentDiffersFromLive || draftSettingsDifferFromLoadedPage);
@@ -290,6 +317,10 @@ export function SeoPageEditorForm({
         canonicalUrl,
         noindex,
         sitemapEnabled,
+        structuredDataSettings: {
+          breadcrumb: structuredDataBreadcrumb,
+          faq: structuredDataFaq,
+        },
       }),
     [
       canonicalUrl,
@@ -298,6 +329,8 @@ export function SeoPageEditorForm({
       noindex,
       seoTitle,
       sitemapEnabled,
+      structuredDataBreadcrumb,
+      structuredDataFaq,
       targetKeyword,
       title,
       visibleSlug,
@@ -495,6 +528,10 @@ export function SeoPageEditorForm({
         canonicalUrl,
         noindex,
         sitemapEnabled,
+        structuredDataSettings: {
+          breadcrumb: structuredDataBreadcrumb,
+          faq: structuredDataFaq,
+        },
         draftContent: content,
       })
         .then(setAutosave)
@@ -513,6 +550,8 @@ export function SeoPageEditorForm({
     page?.id,
     seoTitle,
     sitemapEnabled,
+    structuredDataBreadcrumb,
+    structuredDataFaq,
     targetKeyword,
     title,
     visibleSlug,
@@ -720,13 +759,19 @@ export function SeoPageEditorForm({
             )}
           <div className={builderShellGridClass}>
             {!isBlockSidebarCollapsed && (
-              <aside className="fixed top-32 bottom-4 left-4 z-[60] order-2 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:bottom-auto xl:left-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none">
+              <section
+                aria-labelledby="builder-blocks-panel-title"
+                className="fixed top-32 bottom-4 left-4 z-[60] order-2 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:bottom-auto xl:left-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none"
+              >
                 <div className="flex shrink-0 items-start border-b border-slate-200 px-5 py-4">
                   <div>
                     <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
                       Blocks
                     </p>
-                    <h2 className="mt-1 text-base font-semibold text-slate-950">
+                    <h2
+                      id="builder-blocks-panel-title"
+                      className="mt-1 text-base font-semibold text-slate-950"
+                    >
                       Page structure
                     </h2>
                     <p className="mt-1 text-xs font-medium text-slate-500">
@@ -771,7 +816,7 @@ export function SeoPageEditorForm({
                     Go back to dashboard
                   </Link>
                 </div>
-              </aside>
+              </section>
             )}
 
             <div className="order-1 min-w-0 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-100 shadow-sm xl:order-none xl:h-[calc(100dvh-7rem)]">
@@ -814,7 +859,7 @@ export function SeoPageEditorForm({
               <div className="mx-auto max-w-[1500px] bg-[#f5fbff] shadow-sm">
                 {chromeSettings.showHeader ? <EditorPublicHeader /> : null}
                 <article className="bg-[#f5fbff]">
-                  <main className="group/page-body relative mx-auto max-w-5xl px-5 py-14 lg:px-10">
+                  <div className="group/page-body relative mx-auto max-w-5xl px-5 py-14 lg:px-10">
                     {usesSimpleBlockStack && primarySection && primaryColumn ? (
                       <SimpleBlockStackEditor
                         column={primaryColumn}
@@ -1010,20 +1055,26 @@ export function SeoPageEditorForm({
                         )}
                       </div>
                     )}
-                  </main>
+                  </div>
                 </article>
                 {chromeSettings.showFooter ? <EditorPublicFooter /> : null}
               </div>
             </div>
 
             {!isSeoSidebarCollapsed && (
-              <aside className="fixed top-32 right-4 bottom-4 z-[60] order-3 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:right-auto xl:bottom-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none">
+              <section
+                aria-labelledby="seo-panel-title"
+                className="fixed top-32 right-4 bottom-4 z-[60] order-3 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:right-auto xl:bottom-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none"
+              >
                 <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
                   <div>
                     <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
                       SEO
                     </p>
-                    <h2 className="mt-1 text-base font-semibold text-slate-950">
+                    <h2
+                      id="seo-panel-title"
+                      className="mt-1 text-base font-semibold text-slate-950"
+                    >
                       Readiness and publish
                     </h2>
                     <p className="mt-1 text-xs font-medium text-slate-500">
@@ -1101,7 +1152,7 @@ export function SeoPageEditorForm({
                         Slug
                       </span>
                       <div className="mt-1.5 flex items-center rounded-lg border border-slate-200 bg-white shadow-sm transition focus-within:border-[#0b63f6] focus-within:ring-4 focus-within:ring-[#0b63f6]/10">
-                        <span className="border-r border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-400">
+                        <span className="border-r border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-600">
                           /resources/
                         </span>
                         <input
@@ -1240,6 +1291,61 @@ export function SeoPageEditorForm({
                             </div>
                           </label>
                         </div>
+
+                        <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">
+                              Structured data
+                            </p>
+                            <p className="mt-0.5 text-xs leading-5 font-normal text-slate-500">
+                              Control the search metadata generated from this
+                              published page.
+                            </p>
+                          </div>
+                          <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
+                            <input
+                              name="structuredDataBreadcrumb"
+                              aria-label="Enable breadcrumb structured data"
+                              type="checkbox"
+                              checked={structuredDataBreadcrumb}
+                              onChange={(event) =>
+                                setStructuredDataBreadcrumb(
+                                  event.target.checked,
+                                )
+                              }
+                              className="mt-1 size-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
+                            />
+                            <div>
+                              <span className="block text-slate-900">
+                                Breadcrumb trail
+                              </span>
+                              <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                                Add page path context for search engines.
+                              </span>
+                            </div>
+                          </label>
+                          <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
+                            <input
+                              name="structuredDataFaq"
+                              aria-label="Enable FAQ structured data"
+                              type="checkbox"
+                              checked={structuredDataFaq}
+                              onChange={(event) =>
+                                setStructuredDataFaq(event.target.checked)
+                              }
+                              className="mt-1 size-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
+                            />
+                            <div>
+                              <span className="block text-slate-900">
+                                Visible FAQs
+                              </span>
+                              <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                                Generate FAQ metadata only from published FAQ
+                                blocks.
+                              </span>
+                            </div>
+                          </label>
+                        </div>
                       </div>
                     </details>
 
@@ -1333,7 +1439,7 @@ export function SeoPageEditorForm({
                     {publishButtonLabel}
                   </button>
                 </div>
-              </aside>
+              </section>
             )}
           </div>
         </div>
@@ -1360,6 +1466,12 @@ export function SeoPageEditorForm({
         {noindex && <input type="hidden" name="noindex" value="on" />}
         {sitemapEnabled && !noindex && (
           <input type="hidden" name="sitemapEnabled" value="on" />
+        )}
+        {structuredDataBreadcrumb && (
+          <input type="hidden" name="structuredDataBreadcrumb" value="on" />
+        )}
+        {structuredDataFaq && (
+          <input type="hidden" name="structuredDataFaq" value="on" />
         )}
       </form>
     </MediaPickerProvider>
@@ -1458,6 +1570,10 @@ export function SeoPageEditorForm({
       canonicalUrl,
       noindex,
       sitemapEnabled,
+      structuredDataSettings: {
+        breadcrumb: structuredDataBreadcrumb,
+        faq: structuredDataFaq,
+      },
       draftContent: content,
     });
 
@@ -1481,6 +1597,12 @@ export function SeoPageEditorForm({
     formData.set("canonicalUrl", canonicalUrl);
     if (noindex) formData.set("noindex", "on");
     if (sitemapEnabled && !noindex) formData.set("sitemapEnabled", "on");
+    if (structuredDataBreadcrumb) {
+      formData.set("structuredDataBreadcrumb", "on");
+    }
+    if (structuredDataFaq) {
+      formData.set("structuredDataFaq", "on");
+    }
     formData.set("draftContent", draftContentJson);
     formData.set("intent", "save");
     return formData;
@@ -1951,8 +2073,8 @@ function EditorPublicNavLink({
     | (typeof footerColumns)[number]["items"][number];
   highlighted?: boolean;
 }) {
-  const className = `text-sm font-black uppercase transition hover:text-[#55b8e8] ${
-    highlighted ? "text-[#2d9fd6]" : "text-[#111111]"
+  const className = `text-sm font-black uppercase transition hover:text-[#066a99] ${
+    highlighted ? "text-[#066a99]" : "text-[#111111]"
   }`;
 
   if (item.external) {
@@ -2406,7 +2528,7 @@ function BlockSettingsModal({
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onClose();
@@ -3155,6 +3277,22 @@ function BlockSidebarSettingsPanel({
                     })
                   }
                 />
+                <TextInput
+                  label="Card link label (optional)"
+                  placeholder="Defaults to the card title"
+                  value={card.linkLabel ?? ""}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        cards: updateCard(block.props.cards, cardIndex, {
+                          linkLabel: value,
+                        }),
+                      },
+                    })
+                  }
+                />
               </div>
             ))}
             <button
@@ -3731,7 +3869,7 @@ function SeoReadinessPanel({
         )}
       </div>
 
-      <aside className="space-y-6">
+      <div className="space-y-6">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
           <h3 className="text-sm font-semibold text-slate-900">
             Builder support
@@ -3828,7 +3966,7 @@ function SeoReadinessPanel({
             onInsertBlocks={onInsertAiProposalBlocks}
           />
         </div>
-      </aside>
+      </div>
 
       {(internalLinkSuggestions.length > 0 || linkSuggestionMessage) && (
         <div className="mb-6 rounded-xl border border-sky-200 bg-sky-50 p-5 shadow-sm">
@@ -5606,11 +5744,11 @@ function BlockEditor({
                           aria-label={`Edit optional link for card ${cardIndex + 1}`}
                           className={`mt-4 inline-flex items-center gap-2 text-sm font-black uppercase focus-visible:ring-2 focus-visible:ring-[#0b63f6]/30 focus-visible:outline-none ${
                             hasEditorText(card.href)
-                              ? "text-[#2d9fd6] hover:text-[#111111]"
-                              : "text-slate-400 hover:text-[#2d9fd6]"
+                              ? "text-[#066a99] hover:text-[#111111]"
+                              : "text-slate-400 hover:text-[#066a99]"
                           }`}
                         >
-                          Learn more
+                          {cardGridLinkLabel(card)}
                           {!hasEditorText(card.href) && (
                             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-slate-500 uppercase ring-1 ring-slate-200">
                               Optional
@@ -6065,7 +6203,7 @@ function SplitHeroBlockCanvas({
     </figure>
   ) : block.props.proofText ? (
     <aside className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-      <p className="text-sm font-black text-[#55b8e8] uppercase">Proof</p>
+      <p className="text-sm font-black text-[#066a99] uppercase">Proof</p>
       <p className="mt-4 text-xl leading-8 font-black text-[#111111]">
         {block.props.proofText}
       </p>
@@ -6173,7 +6311,7 @@ function ImageBlockCanvas({
         >
           <figure className={imageFrameClass}>
             <figcaption className="text-base leading-7 font-semibold text-slate-600">
-              <p className="text-sm font-black text-[#55b8e8] uppercase">
+              <p className="text-sm font-black text-[#066a99] uppercase">
                 Featured media
               </p>
               <label className="mt-3 block">
@@ -6266,7 +6404,7 @@ function VideoBlockCanvas({
     <button
       type="button"
       onClick={onEditSettings}
-      className="mt-3 inline-flex text-sm font-black text-[#2d9fd6] uppercase hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/30 focus-visible:outline-none"
+      className="mt-3 inline-flex text-sm font-black text-[#066a99] uppercase hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/30 focus-visible:outline-none"
     >
       Watch video
     </button>
@@ -6974,6 +7112,9 @@ function parseInitialDraftSettings(
       settings.sitemapEnabled,
       page.sitemap_enabled,
     ),
+    structuredDataSettings: parseStructuredDataSettings(
+      settings.structuredDataSettings ?? page.structured_data_settings,
+    ),
   };
 }
 
@@ -7312,7 +7453,7 @@ function appendBlankFaq(items: FaqItem[]): FaqItem[] {
 }
 
 function createBlankCard(): CardItem {
-  return { title: "", body: "", href: "" };
+  return { title: "", body: "", href: "", linkLabel: "" };
 }
 
 function appendBlankCard(cards: CardItem[]): CardItem[] {
@@ -7361,7 +7502,8 @@ function isBlankCard(card: CardItem) {
   return (
     !hasEditorText(card.title) &&
     !hasEditorText(card.body) &&
-    !hasEditorText(card.href)
+    !hasEditorText(card.href) &&
+    !hasEditorText(card.linkLabel)
   );
 }
 

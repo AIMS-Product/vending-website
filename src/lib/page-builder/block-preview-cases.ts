@@ -1,13 +1,20 @@
 import {
+  cardGridLinkLabel,
   pageContentSchema,
   type PageBlock,
   type PageContent,
+  type RichTextNode,
 } from "@/lib/page-builder/blocks";
+import { isBlockFieldVisible } from "@/lib/page-builder/block-field-visibility";
 import {
   blockPickerOptions,
   type BlockPickerOption,
   type BlockVariant,
 } from "@/lib/page-builder/block-options";
+
+export type BlockPreviewParityMarker =
+  | { kind: "text"; label: string; value: string }
+  | { kind: "img-alt"; label: string; value: string };
 
 export type BlockPreviewCase = {
   id: string;
@@ -46,6 +53,166 @@ export function getBlockPreviewCase(
   return blockPreviewCases.find(
     (entry) => entry.type === type && entry.variant === variant,
   );
+}
+
+/** Strings that should appear in both picker preview and actual resource render. */
+export function getBlockPreviewParityMarkers(
+  block: PageBlock,
+): BlockPreviewParityMarker[] {
+  const markers: BlockPreviewParityMarker[] = [];
+
+  const addText = (label: string, value: string | undefined) => {
+    const trimmed = value?.trim();
+    if (trimmed) {
+      markers.push({ kind: "text", label, value: trimmed });
+    }
+  };
+
+  const addImgAlt = (label: string, value: string | undefined) => {
+    const trimmed = value?.trim();
+    if (trimmed) {
+      markers.push({ kind: "img-alt", label, value: trimmed });
+    }
+  };
+
+  if (block.type === "hero") {
+    if (isBlockFieldVisible(block, "eyebrow")) {
+      addText("eyebrow", block.props.eyebrow);
+    }
+    addText("heading", block.props.heading);
+    if (isBlockFieldVisible(block, "body")) {
+      addText("body", block.props.body);
+    }
+    if (isBlockFieldVisible(block, "cta") && block.props.ctaLabel) {
+      addText("cta", block.props.ctaLabel);
+    }
+    if (isBlockFieldVisible(block, "mediaCaption")) {
+      addText("mediaCaption", block.props.mediaCaption);
+    }
+    if (block.props.mediaSrc) {
+      addImgAlt("heroMedia", block.props.mediaAltText);
+    }
+    return markers;
+  }
+
+  if (block.type === "rich_text") {
+    if (isBlockFieldVisible(block, "eyebrow")) {
+      addText("eyebrow", block.props.eyebrow);
+    }
+    if (isBlockFieldVisible(block, "heading")) {
+      addText("heading", block.props.heading);
+    }
+    for (const text of extractRichTextStrings(block.props.body.nodes)) {
+      addText("body", text);
+    }
+    return markers;
+  }
+
+  if (block.type === "image") {
+    addImgAlt("altText", block.props.altText);
+    if (isBlockFieldVisible(block, "caption")) {
+      addText("caption", block.props.caption);
+    }
+    if (block.variant === "feature") {
+      addText("featureLabel", "Featured media");
+    }
+    return markers;
+  }
+
+  if (block.type === "video") {
+    if (isBlockFieldVisible(block, "title")) {
+      addText("title", block.props.title);
+    }
+    if (isBlockFieldVisible(block, "caption")) {
+      addText("caption", block.props.caption);
+    }
+    if (block.props.url) {
+      addText("watchLink", "Watch video");
+    }
+    return markers;
+  }
+
+  if (block.type === "cta") {
+    addText("label", block.props.label);
+    return markers;
+  }
+
+  if (block.type === "faq") {
+    if (isBlockFieldVisible(block, "heading")) {
+      addText("heading", block.props.heading);
+    }
+    for (const item of block.props.items) {
+      addText("question", item.question);
+      if (block.variant !== "compact") {
+        addText("answer", item.answer);
+      }
+    }
+    return markers;
+  }
+
+  if (block.type === "card_grid") {
+    if (isBlockFieldVisible(block, "heading")) {
+      addText("heading", block.props.heading);
+    }
+    for (const card of block.props.cards) {
+      addText("cardTitle", card.title);
+      addText("cardBody", card.body);
+      if (card.href) {
+        addText("cardLink", cardGridLinkLabel(card));
+      }
+    }
+    return markers;
+  }
+
+  if (block.type === "proof") {
+    if (isBlockFieldVisible(block, "eyebrow")) {
+      addText("eyebrow", block.props.eyebrow);
+    }
+    addText("body", block.props.body);
+    if (isBlockFieldVisible(block, "name")) {
+      addText("name", block.props.name);
+    }
+    if (isBlockFieldVisible(block, "context")) {
+      addText("context", block.props.context);
+    }
+    return markers;
+  }
+
+  if (block.type === "lead_form") {
+    if (isBlockFieldVisible(block, "heading")) {
+      addText("heading", block.props.heading);
+    }
+    if (isBlockFieldVisible(block, "body")) {
+      addText("body", block.props.body);
+    }
+    addText("submitLabel", block.props.submitLabel);
+    return markers;
+  }
+
+  return markers;
+}
+
+function extractRichTextStrings(nodes: RichTextNode[]): string[] {
+  const strings: string[] = [];
+
+  for (const node of nodes) {
+    if (node.type === "paragraph") {
+      if ("text" in node && node.text.trim()) {
+        strings.push(node.text.trim());
+      }
+      continue;
+    }
+
+    if (node.type === "list") {
+      for (const item of node.items) {
+        if (item.trim()) {
+          strings.push(item.trim());
+        }
+      }
+    }
+  }
+
+  return strings;
 }
 
 function createPreviewContent(block: PageBlock): PageContent {
@@ -102,10 +269,6 @@ function createPreviewBlock(
             : undefined,
         mediaCaption:
           variant === "split" ? "Approved campaign image." : undefined,
-        proofText:
-          variant === "split"
-            ? "Operators use the same framework to plan locations, costs, and growth."
-            : undefined,
       },
     };
   }

@@ -149,6 +149,50 @@ describe("OpenAI SEO agent", () => {
     expect(body.input).not.toContain("sk-test");
   });
 
+  it("sends trimmed and bounded source material to OpenAI", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(openAiResponse(proposal));
+    const longExcerpt = `  ${"Validate demand before buying inventory. ".repeat(
+      60,
+    )}EXCERPT_SENTINEL  `;
+    const exactLimitClaim = "A".repeat(700);
+
+    await generateOpenAiSeoProposalFromSources(
+      {
+        page,
+        sourceBundle: {
+          ...sourceBundle,
+          excerpts: [
+            {
+              ...sourceBundle.excerpts[0]!,
+              excerpt: longExcerpt,
+            },
+          ],
+          approvedClaims: [
+            {
+              ...sourceBundle.approvedClaims[0]!,
+              claim: exactLimitClaim,
+            },
+          ],
+        },
+        model: "gpt-5.5",
+      },
+      { apiKey: "sk-test", fetchFn },
+    );
+
+    const [, init] = fetchFn.mock.calls[0]!;
+    const body = JSON.parse(String(init?.body));
+    const input = JSON.parse(String(body.input));
+    const [excerpt] = input.sourceMaterial.excerpts;
+    const [claim] = input.sourceMaterial.approvedClaims;
+
+    expect(excerpt.excerpt).toContain("Validate demand");
+    expect(excerpt.excerpt).toHaveLength(1402);
+    expect(excerpt.excerpt.endsWith("...")).toBe(true);
+    expect(excerpt.excerpt).not.toContain("EXCERPT_SENTINEL");
+    expect(claim.claim).toHaveLength(700);
+    expect(claim.claim.endsWith("...")).toBe(false);
+  });
+
   it("fails before calling OpenAI when the key is missing", async () => {
     const fetchFn = vi.fn();
 

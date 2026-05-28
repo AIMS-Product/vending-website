@@ -489,6 +489,7 @@ function PageRow({
     noindex: page.noindex,
     sitemapEnabled: page.sitemap_enabled,
     targetKeyword: page.target_keyword,
+    structuredDataSettings: page.structured_data_settings,
   });
 
   return (
@@ -861,10 +862,8 @@ type DotTone = "amber" | "blue" | "green" | "red" | "slate";
 
 function StatusDot({ label, tone }: { label: string; tone: DotTone }) {
   return (
-    <span
-      aria-label={label}
-      className="group relative inline-flex size-7 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-    >
+    <span className="group relative inline-flex size-7 items-center justify-center rounded-full">
+      <span className="sr-only">{label}</span>
       <span
         aria-hidden="true"
         className={`size-2.5 rounded-full ${dotToneClass(tone)}`}

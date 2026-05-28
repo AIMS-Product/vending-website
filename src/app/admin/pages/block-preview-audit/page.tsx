@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { PublicLeadForm } from "@/components/forms/PublicLeadForm";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { BlockVariantPreviewSkeleton } from "@/components/admin/SeoPageBlockVariantPreview";
 import { ResourcePageContentView } from "@/components/sections/ResourcePageContent";
-import { blockPreviewCases } from "@/lib/page-builder/block-preview-cases";
-import { buildResourceLeadFormAttribution } from "@/lib/page-builder/resource-lead-attribution";
-import type { PublishedSeoPage } from "@/lib/services/seo-page-public";
+import {
+  blockPreviewCases,
+  getBlockPreviewParityMarkers,
+} from "@/lib/page-builder/block-preview-cases";
 import { requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
@@ -39,14 +39,15 @@ export default async function BlockPreviewAuditPage() {
       >
         <section className="grid gap-5" data-testid="block-preview-audit">
           {blockPreviewCases.map((previewCase) => {
-            const page = auditPageFor(previewCase);
-
             return (
               <article
                 key={previewCase.id}
                 data-testid="block-preview-case"
                 data-block-type={previewCase.type}
                 data-block-variant={previewCase.variant}
+                data-parity-markers={JSON.stringify(
+                  getBlockPreviewParityMarkers(previewCase.block),
+                )}
                 className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
               >
                 <header className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -71,7 +72,11 @@ export default async function BlockPreviewAuditPage() {
                     <p className="mb-3 text-xs font-semibold tracking-wide text-slate-500 uppercase">
                       Picker preview
                     </p>
-                    <div className="h-48 overflow-hidden rounded-lg border border-slate-200 bg-white p-4">
+                    <div
+                      className="h-48 overflow-hidden rounded-lg border border-slate-200 bg-white p-4"
+                      aria-hidden="true"
+                      inert
+                    >
                       <BlockVariantPreviewSkeleton
                         type={previewCase.type}
                         variant={previewCase.variant}
@@ -83,36 +88,14 @@ export default async function BlockPreviewAuditPage() {
                     <p className="mb-3 text-xs font-semibold tracking-wide text-slate-500 uppercase">
                       Actual resource render
                     </p>
-                    <div className="overflow-hidden rounded-lg border border-[#d8effb] bg-[#f5fbff] p-5">
+                    <div
+                      className="overflow-hidden rounded-lg border border-[#d8effb] bg-[#f5fbff] p-5"
+                      aria-hidden="true"
+                      inert
+                    >
                       <ResourcePageContentView
                         content={previewCase.content}
                         linkMode="disabled"
-                        renderLeadForm={(block) => {
-                          const attribution = buildResourceLeadFormAttribution({
-                            page,
-                            block,
-                          });
-
-                          return (
-                            <PublicLeadForm
-                              action={async () => ({
-                                status: "success",
-                                message: "Preview mode: not submitted.",
-                                leadId: "preview",
-                              })}
-                              attribution={attribution}
-                              idempotencyKey={`block-preview-audit:${block.id}`}
-                              intent="apply"
-                              layout={
-                                block.variant === "compact" ||
-                                block.variant === "sidebar"
-                                  ? "compact"
-                                  : "standard"
-                              }
-                              submitLabel={block.props.submitLabel}
-                            />
-                          );
-                        }}
                       />
                     </div>
                   </div>
@@ -124,22 +107,4 @@ export default async function BlockPreviewAuditPage() {
       </AdminShell>
     </>
   );
-}
-
-function auditPageFor(previewCase: (typeof blockPreviewCases)[number]) {
-  return {
-    id: `audit-${previewCase.id}`,
-    slug: `block-preview-${previewCase.id}`,
-    title: previewCase.variantLabel,
-    target_keyword: "seo page builder block preview",
-    published_content: previewCase.content,
-    seo_title: previewCase.variantLabel,
-    meta_description: previewCase.description,
-    canonical_url: null,
-    noindex: true,
-    sitemap_enabled: false,
-    structured_data_settings: null,
-    published_at: null,
-    updated_at: "2026-05-27T00:00:00.000Z",
-  } satisfies PublishedSeoPage;
 }
