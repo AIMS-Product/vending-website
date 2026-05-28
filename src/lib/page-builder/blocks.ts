@@ -23,6 +23,9 @@ export type PagePublishMeta = {
   sitemapEnabled: boolean;
 };
 
+export const CARD_GRID_MAX_CARDS = 12;
+export const FAQ_MAX_ITEMS = 12;
+
 const blockIdSchema = z
   .string()
   .trim()
@@ -66,6 +69,7 @@ const blockFieldVisibilitySchema = z
     heading: z.boolean().optional(),
     body: z.boolean().optional(),
     cta: z.boolean().optional(),
+    mediaCaption: z.boolean().optional(),
     caption: z.boolean().optional(),
     title: z.boolean().optional(),
     name: z.boolean().optional(),
@@ -248,7 +252,7 @@ const faqBlockSchema = z
               })
               .strict(),
           )
-          .max(12),
+          .max(FAQ_MAX_ITEMS),
         fieldVisibility: blockFieldVisibilitySchema,
       })
       .strict(),
@@ -273,7 +277,7 @@ const cardGridBlockSchema = z
               })
               .strict(),
           )
-          .max(12),
+          .max(CARD_GRID_MAX_CARDS),
         fieldVisibility: blockFieldVisibilitySchema,
       })
       .strict(),
@@ -658,11 +662,18 @@ export function validatePageForPublish(
 
     if (block.type === "faq") {
       for (const [itemIndex, item] of block.props.items.entries()) {
-        if (!hasText(item.question) || !hasText(item.answer)) {
+        if (!hasText(item.question)) {
           issues.push({
-            code: "missing_faq_item",
-            path: `blocks.${index}.props.items.${itemIndex}`,
-            message: "FAQ items require a question and answer.",
+            code: "missing_faq_question",
+            path: `blocks.${index}.props.items.${itemIndex}.question`,
+            message: "FAQ items require a question.",
+          });
+        }
+        if (!hasText(item.answer)) {
+          issues.push({
+            code: "missing_faq_answer",
+            path: `blocks.${index}.props.items.${itemIndex}.answer`,
+            message: "FAQ items require an answer.",
           });
         }
       }

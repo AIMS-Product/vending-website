@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  CARD_GRID_MAX_CARDS,
+  FAQ_MAX_ITEMS,
   blockRegistry,
   createEmptyPageContent,
   pageContentSchema,
@@ -86,6 +88,92 @@ describe("page builder block schemas", () => {
     const parsed = pageContentSchema.parse(validContent);
 
     expect(parsed.sections[0]?.columns[0]?.blocks).toHaveLength(3);
+  });
+
+  it("caps card grid blocks at the configured card limit", () => {
+    const contentWithCardCount = (count: number): PageContent => ({
+      version: 1,
+      sections: [
+        {
+          id: "section_cards",
+          preset: "standard",
+          background: "default",
+          spacing: "standard",
+          columns: [
+            {
+              id: "column_cards",
+              width: "1/1",
+              blocks: [
+                {
+                  id: "block_cards",
+                  type: "card_grid",
+                  variant: "standard",
+                  props: {
+                    heading: "Card limit",
+                    cards: Array.from({ length: count }, (_, index) => ({
+                      title: `Card ${index + 1}`,
+                      body: "A short card description.",
+                      href: "/apply",
+                    })),
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      pageContentSchema.safeParse(contentWithCardCount(CARD_GRID_MAX_CARDS))
+        .success,
+    ).toBe(true);
+    expect(
+      pageContentSchema.safeParse(contentWithCardCount(CARD_GRID_MAX_CARDS + 1))
+        .success,
+    ).toBe(false);
+  });
+
+  it("caps FAQ blocks at the configured item limit", () => {
+    const contentWithFaqCount = (count: number): PageContent => ({
+      version: 1,
+      sections: [
+        {
+          id: "section_faq",
+          preset: "standard",
+          background: "default",
+          spacing: "standard",
+          columns: [
+            {
+              id: "column_faq",
+              width: "1/1",
+              blocks: [
+                {
+                  id: "block_faq",
+                  type: "faq",
+                  variant: "standard",
+                  props: {
+                    heading: "FAQ limit",
+                    items: Array.from({ length: count }, (_, index) => ({
+                      question: `Question ${index + 1}?`,
+                      answer: "A short answer.",
+                    })),
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      pageContentSchema.safeParse(contentWithFaqCount(FAQ_MAX_ITEMS)).success,
+    ).toBe(true);
+    expect(
+      pageContentSchema.safeParse(contentWithFaqCount(FAQ_MAX_ITEMS + 1))
+        .success,
+    ).toBe(false);
   });
 
   it("keeps page chrome optional and defaults header/footer on", () => {

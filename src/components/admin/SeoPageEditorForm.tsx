@@ -20,6 +20,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   useActionState,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -27,7 +28,12 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import type { CSSProperties, ReactNode, TextareaHTMLAttributes } from "react";
+import type {
+  CSSProperties,
+  FormEvent,
+  ReactNode,
+  TextareaHTMLAttributes,
+} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -51,6 +57,8 @@ import {
 } from "@/app/admin/pages/actions";
 import type { AiPageProposalReview } from "@/lib/services/ai-page-proposals";
 import {
+  CARD_GRID_MAX_CARDS,
+  FAQ_MAX_ITEMS,
   createEmptyPageContent,
   pageContentSchema,
   pageChromeSettings,
@@ -131,6 +139,17 @@ type BuilderBlockEntry = {
   columnNumber: number;
 };
 type MobileEditorPanel = "blocks" | "seo" | null;
+type ManualSubmitIntent = "save" | "publish";
+type EditorDraftSettings = {
+  slug: string;
+  title: string;
+  targetKeyword: string;
+  seoTitle: string;
+  metaDescription: string;
+  canonicalUrl: string;
+  noindex: boolean;
+  sitemapEnabled: boolean;
+};
 
 const initialState: PageEditorActionState = { status: "idle" };
 const initialAiProposalState: PageAiProposalResult = { status: "idle" };
@@ -165,22 +184,41 @@ export function SeoPageEditorForm({
   redirectError,
 }: SeoPageEditorFormProps) {
   const { refresh, replace } = useRouter();
-  const [state, formAction] = useActionState(saveSeoPage, initialState);
+  const [state, formAction, isManualSubmitPending] = useActionState(
+    saveSeoPage,
+    initialState,
+  );
   const initialContent = useMemo(() => parseInitialContent(page), [page]);
-  const [title, setTitle] = useState(page?.title ?? "");
-  const [slug, setSlug] = useState(page?.slug ?? "");
-  const [slugTouched, setSlugTouched] = useState(Boolean(page?.slug));
+  const initialDraftSettings = useMemo(
+    () => parseInitialDraftSettings(page),
+    [page],
+  );
+  const [title, setTitle] = useState(
+    initialDraftSettings?.title ?? page?.title ?? "",
+  );
+  const [slug, setSlug] = useState(
+    initialDraftSettings?.slug ?? page?.slug ?? "",
+  );
+  const [slugTouched, setSlugTouched] = useState(
+    Boolean(initialDraftSettings?.slug ?? page?.slug),
+  );
   const [targetKeyword, setTargetKeyword] = useState(
-    page?.target_keyword ?? "",
+    initialDraftSettings?.targetKeyword ?? page?.target_keyword ?? "",
   );
-  const [seoTitle, setSeoTitle] = useState(page?.seo_title ?? "");
+  const [seoTitle, setSeoTitle] = useState(
+    initialDraftSettings?.seoTitle ?? page?.seo_title ?? "",
+  );
   const [metaDescription, setMetaDescription] = useState(
-    page?.meta_description ?? "",
+    initialDraftSettings?.metaDescription ?? page?.meta_description ?? "",
   );
-  const [canonicalUrl, setCanonicalUrl] = useState(page?.canonical_url ?? "");
-  const [noindex, setNoindex] = useState(page?.noindex ?? false);
+  const [canonicalUrl, setCanonicalUrl] = useState(
+    initialDraftSettings?.canonicalUrl ?? page?.canonical_url ?? "",
+  );
+  const [noindex, setNoindex] = useState(
+    initialDraftSettings?.noindex ?? page?.noindex ?? false,
+  );
   const [sitemapEnabled, setSitemapEnabled] = useState(
-    page?.sitemap_enabled ?? true,
+    initialDraftSettings?.sitemapEnabled ?? page?.sitemap_enabled ?? true,
   );
   const [content, setContent] = useState<PageContent>(() =>
     ensureEditablePageContent(initialContent),
@@ -199,6 +237,14 @@ export function SeoPageEditorForm({
   const [previewLinkPath, setPreviewLinkPath] = useState<string | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+  const [lastManualSubmitIntent, setLastManualSubmitIntent] =
+    useState<ManualSubmitIntent>("save");
+  const [showManualSubmitToast, setShowManualSubmitToast] = useState(
+    savedFromRedirect || Boolean(redirectError),
+  );
+  const closeBlockSettings = useCallback(() => {
+    setEditingBlockId(null);
+  }, []);
   const isNarrowEditor = useSyncExternalStore(
     subscribeToNarrowEditorChange,
     getNarrowEditorSnapshot,
@@ -217,6 +263,7 @@ export function SeoPageEditorForm({
     string | null
   >(null);
   const autosaveReady = useRef(false);
+  const hasRefreshedAfterManualPublish = useRef(false);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -227,6 +274,42 @@ export function SeoPageEditorForm({
   );
   const visibleSlug = slugTouched ? slug : slugify(title);
   const draftContentJson = useMemo(() => JSON.stringify(content), [content]);
+  const publishedContent = useMemo(() => parsePublishedContent(page), [page]);
+  const publishedContentJson = useMemo(
+    () => (publishedContent ? JSON.stringify(publishedContent) : null),
+    [publishedContent],
+  );
+  const isPublishedPage = page?.status === "published";
+  const draftContentDiffersFromLive =
+    isPublishedPage &&
+    publishedContentJson !== null &&
+    draftContentJson !== publishedContentJson;
+  const draftSettingsDifferFromLoadedPage =
+    isPublishedPage &&
+    Boolean(page) &&
+    (title !== page?.title ||
+      visibleSlug !== page?.slug ||
+      targetKeyword !== (page?.target_keyword ?? "") ||
+      seoTitle !== (page?.seo_title ?? "") ||
+      metaDescription !== (page?.meta_description ?? "") ||
+      canonicalUrl !== (page?.canonical_url ?? "") ||
+      noindex !== page?.noindex ||
+      sitemapEnabled !== page?.sitemap_enabled);
+  const hasUnpublishedDraftChanges =
+    isPublishedPage &&
+    (draftContentDiffersFromLive || draftSettingsDifferFromLoadedPage);
+  const publishStateLabel = isPublishedPage
+    ? hasUnpublishedDraftChanges
+      ? "Published with draft changes"
+      : "Published"
+    : (page?.status ?? "Draft");
+  const publishStateHelp = isPublishedPage
+    ? hasUnpublishedDraftChanges
+      ? "The live page is still the last published version. Save draft changes to keep editing later, or publish changes to update the live page."
+      : "Saving draft changes keeps the live page unchanged. Publish changes only when this working copy should replace the live page."
+    : "This page is not live yet. Save the draft now, then publish when it is ready.";
+  const saveDraftLabel = isPublishedPage ? "Save draft changes" : "Save draft";
+  const publishButtonLabel = isPublishedPage ? "Publish changes" : "Publish";
   const chromeSettings = pageChromeSettings(content);
   const seoReadiness = useMemo(
     () =>
@@ -309,6 +392,8 @@ export function SeoPageEditorForm({
   const publishDisabled = !canPublish || seoReadiness.blockers.length > 0;
   const nextPublishStep = nextRequiredPublishStep({
     canPublish,
+    hasUnpublishedDraftChanges,
+    isPublishedPage,
     summary: seoReadiness,
   });
   const primarySection = content.sections[0] ?? null;
@@ -316,10 +401,48 @@ export function SeoPageEditorForm({
   const usesSimpleBlockStack =
     content.sections.length <= 1 && (primarySection?.columns.length ?? 0) <= 1;
   const showCreationChoiceModal = !page?.id && !hasSelectedNewPageMode;
-  const saveMessage =
-    redirectError ??
-    state.message ??
-    (state.status === "error" ? "Save failed." : "Draft saved.");
+  const saveMessage = (() => {
+    if (redirectError && state.status === "idle" && !lastManualSubmitIntent) {
+      return redirectError;
+    }
+    if (
+      isPublishedPage &&
+      state.status === "saved" &&
+      lastManualSubmitIntent === "save"
+    ) {
+      return "Draft changes saved. The published page is still live.";
+    }
+    if (
+      isPublishedPage &&
+      state.status === "saved" &&
+      lastManualSubmitIntent === "publish"
+    ) {
+      return "Changes published.";
+    }
+    return (
+      state.message ??
+      (state.status === "error" ? "Save failed." : "Draft saved.")
+    );
+  })();
+  const manualSubmitToast = showManualSubmitToast
+    ? {
+        message: isManualSubmitPending
+          ? lastManualSubmitIntent === "publish"
+            ? isPublishedPage
+              ? "Publishing changes..."
+              : "Publishing page..."
+            : isPublishedPage
+              ? "Saving draft changes..."
+              : "Saving draft..."
+          : saveMessage,
+        tone:
+          !isManualSubmitPending && (state.status === "error" || redirectError)
+            ? "error"
+            : isManualSubmitPending
+              ? "pending"
+              : "success",
+      }
+    : null;
   const isBlockSidebarCollapsed = isNarrowEditor
     ? mobileEditorPanel !== "blocks"
     : isDesktopBlockSidebarCollapsed;
@@ -335,6 +458,57 @@ export function SeoPageEditorForm({
           ? "xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]"
           : "xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)_minmax(380px,440px)]"
   }`;
+
+  const handleEditorFormSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      const submitter = (event.nativeEvent as SubmitEvent).submitter;
+      if (
+        !(
+          submitter instanceof HTMLButtonElement ||
+          submitter instanceof HTMLInputElement
+        )
+      ) {
+        return;
+      }
+
+      if (submitter.name !== "intent") return;
+      if (submitter.value !== "save" && submitter.value !== "publish") return;
+
+      setLastManualSubmitIntent(submitter.value);
+      if (submitter.value === "publish") {
+        hasRefreshedAfterManualPublish.current = false;
+      }
+      setShowManualSubmitToast(true);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (state.status !== "saved" || lastManualSubmitIntent !== "publish") {
+      return;
+    }
+    if (hasRefreshedAfterManualPublish.current) return;
+
+    hasRefreshedAfterManualPublish.current = true;
+    refresh();
+  }, [lastManualSubmitIntent, refresh, state.status]);
+
+  useEffect(() => {
+    if (!showManualSubmitToast || isManualSubmitPending) return;
+    if (state.status === "idle" && !savedFromRedirect && !redirectError) return;
+
+    const timer = window.setTimeout(() => {
+      setShowManualSubmitToast(false);
+    }, 6000);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    isManualSubmitPending,
+    redirectError,
+    savedFromRedirect,
+    showManualSubmitToast,
+    state,
+  ]);
 
   useEffect(() => {
     if (!page?.id) return;
@@ -413,7 +587,40 @@ export function SeoPageEditorForm({
 
   return (
     <MediaPickerProvider initialAssets={mediaAssets}>
-      <form action={formAction} className="relative">
+      <form
+        action={formAction}
+        className="relative"
+        onSubmit={handleEditorFormSubmit}
+      >
+        {manualSubmitToast && (
+          <div className="pointer-events-none fixed top-5 right-4 z-[90] flex w-[calc(100vw-2rem)] justify-end sm:right-6">
+            <div
+              role={manualSubmitToast.tone === "error" ? "alert" : "status"}
+              aria-live={
+                manualSubmitToast.tone === "error" ? "assertive" : "polite"
+              }
+              className={`pointer-events-auto flex max-w-sm items-start gap-3 rounded-xl border px-4 py-3 text-sm font-semibold shadow-2xl backdrop-blur ${
+                manualSubmitToast.tone === "error"
+                  ? "border-red-200 bg-red-50/95 text-red-800"
+                  : manualSubmitToast.tone === "pending"
+                    ? "border-sky-200 bg-white/95 text-slate-800"
+                    : "border-emerald-200 bg-emerald-50/95 text-emerald-800"
+              }`}
+            >
+              <span
+                className={`mt-1 size-2.5 shrink-0 rounded-full ${
+                  manualSubmitToast.tone === "error"
+                    ? "bg-red-500"
+                    : manualSubmitToast.tone === "pending"
+                      ? "bg-sky-500"
+                      : "bg-emerald-500"
+                }`}
+                aria-hidden="true"
+              />
+              <span>{manualSubmitToast.message}</span>
+            </div>
+          </div>
+        )}
         {page?.id && <input type="hidden" name="id" value={page.id} />}
         <input type="hidden" name="draftContent" value={draftContentJson} />
         {isSeoSidebarCollapsed && (
@@ -459,9 +666,13 @@ export function SeoPageEditorForm({
                     name="intent"
                     value="save"
                     className="inline-flex min-h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-lg transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
-                    title="Save this page as a draft"
+                    title={
+                      isPublishedPage
+                        ? "Save unpublished edits while keeping the current live page published."
+                        : "Save this page as a draft"
+                    }
                   >
-                    Save draft
+                    {saveDraftLabel}
                   </button>
                   <button
                     type="button"
@@ -844,7 +1055,7 @@ export function SeoPageEditorForm({
                       Readiness and publish
                     </h2>
                     <p className="mt-1 text-xs font-medium text-slate-500">
-                      {page?.status ?? "draft"} · SEO {seoReadiness.label}
+                      {publishStateLabel} · SEO {seoReadiness.label}
                     </p>
                   </div>
                   <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 shadow-sm">
@@ -867,10 +1078,13 @@ export function SeoPageEditorForm({
                                 : "bg-amber-500"
                             }`}
                           />
-                          {page?.status ?? "draft"}
+                          {publishStateLabel}
                         </span>
                       </span>
                     </div>
+                    <p className="text-xs leading-5 font-medium text-slate-500">
+                      {publishStateHelp}
+                    </p>
                     <button
                       type="button"
                       className={`${smallButtonClass} ${readinessButtonClass(
@@ -1095,6 +1309,7 @@ export function SeoPageEditorForm({
                   </div>
 
                   <SeoReadinessPanel
+                    content={content}
                     summary={seoReadiness}
                     aiProposalResult={aiProposalResult}
                     aiInsertResult={aiInsertResult}
@@ -1123,8 +1338,13 @@ export function SeoPageEditorForm({
                     className={secondaryButtonClass}
                     name="intent"
                     value="save"
+                    title={
+                      isPublishedPage
+                        ? "Save unpublished edits while keeping the current live page published."
+                        : undefined
+                    }
                   >
-                    Save draft
+                    {saveDraftLabel}
                   </button>
                   <button
                     type="submit"
@@ -1138,7 +1358,7 @@ export function SeoPageEditorForm({
                         : undefined
                     }
                   >
-                    Publish
+                    {publishButtonLabel}
                   </button>
                 </div>
               </aside>
@@ -1148,7 +1368,7 @@ export function SeoPageEditorForm({
         {editingBlockEntry && (
           <BlockSettingsModal
             entry={editingBlockEntry}
-            onClose={() => setEditingBlockId(null)}
+            onClose={closeBlockSettings}
             onChange={(next) =>
               replaceBlock(
                 editingBlockEntry.sectionId,
@@ -1337,13 +1557,12 @@ export function SeoPageEditorForm({
   }
 
   function addSuggestedBlock(type: PageBlock["type"]) {
+    const blockId = makeBuilderId("block");
+    const nextBlock = createPageBlockWithVariant(type, blockId);
+
     setContent((current) => {
       const firstSection = current.sections[0];
       const firstColumn = firstSection?.columns[0];
-      const nextBlock = createPageBlockWithVariant(
-        type,
-        makeBuilderId("block"),
-      );
 
       if (!firstSection) {
         const columnId = makeBuilderId("column");
@@ -1391,6 +1610,8 @@ export function SeoPageEditorForm({
         }),
       );
     });
+    setSelectedBlockId(blockId);
+    scrollToBuilderBlockId(blockId);
   }
 
   function replaceBlock(
@@ -2150,6 +2371,8 @@ function BlockSettingsModal({
 
     const focusableSelector =
       'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const fieldSelector =
+      "textarea:not([disabled]), input:not([disabled]), select:not([disabled])";
 
     const focusableElements = () => {
       const dialog = dialogRef.current;
@@ -2161,8 +2384,9 @@ function BlockSettingsModal({
 
     window.setTimeout(() => {
       const dialog = dialogRef.current;
+      const firstField = dialog?.querySelector<HTMLElement>(fieldSelector);
       const firstFocusable = focusableElements()[0];
-      (firstFocusable ?? dialog)?.focus();
+      (firstField ?? firstFocusable ?? dialog)?.focus();
     }, 0);
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -2445,7 +2669,7 @@ function BlockSidebarSettingsPanel({
                 }
               />
               <TextInput
-                label="CTA href"
+                label="CTA destination URL"
                 value={block.props.ctaHref}
                 onChange={(value) =>
                   onChange({
@@ -2538,16 +2762,24 @@ function BlockSidebarSettingsPanel({
                   })
                 }
               />
-              <TextInput
+              <OptionalBlockField
+                block={block}
+                field="mediaCaption"
                 label="Media caption"
-                value={block.props.mediaCaption ?? ""}
-                onChange={(value) =>
-                  onChange({
-                    ...block,
-                    props: { ...block.props, mediaCaption: value },
-                  })
-                }
-              />
+                onChange={onChange}
+              >
+                <TextInput
+                  hideLabel
+                  label="Media caption"
+                  value={block.props.mediaCaption ?? ""}
+                  onChange={(value) =>
+                    onChange({
+                      ...block,
+                      props: { ...block.props, mediaCaption: value },
+                    })
+                  }
+                />
+              </OptionalBlockField>
               <TextInput
                 label="Proof text"
                 value={block.props.proofText ?? ""}
@@ -2684,7 +2916,7 @@ function BlockSidebarSettingsPanel({
             }
           />
           <TextInput
-            label="Href"
+            label="Destination URL"
             value={block.props.href}
             onChange={(value) =>
               onChange({
@@ -2844,7 +3076,7 @@ function BlockSidebarSettingsPanel({
           <div className="space-y-3">
             {block.props.cards.map((card, cardIndex) => (
               <div
-                key={cardItemKey(card)}
+                key={cardItemKey(block.id, cardIndex)}
                 className="rounded-lg border border-slate-200 bg-slate-50 p-3"
               >
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -2936,7 +3168,8 @@ function BlockSidebarSettingsPanel({
                   }
                 />
                 <TextInput
-                  label="Card link"
+                  label="Card link (optional)"
+                  placeholder="Optional destination URL"
                   value={card.href ?? ""}
                   onChange={(value) =>
                     onChange({
@@ -2955,18 +3188,21 @@ function BlockSidebarSettingsPanel({
             <button
               type="button"
               className={miniButtonClass}
-              disabled={block.props.cards.length >= 12}
-              onClick={() =>
+              disabled={block.props.cards.length >= CARD_GRID_MAX_CARDS}
+              onClick={(event) => {
+                event.currentTarget.blur();
                 onChange({
                   ...block,
                   props: {
                     ...block.props,
-                    cards: [...block.props.cards, createBlankCard()],
+                    cards: appendBlankCard(block.props.cards),
                   },
-                })
-              }
+                });
+              }}
             >
-              Add card
+              {block.props.cards.length >= CARD_GRID_MAX_CARDS
+                ? `${CARD_GRID_MAX_CARDS} card limit reached`
+                : "Add card"}
             </button>
           </div>
         </>
@@ -3211,20 +3447,129 @@ function FaqItemEditorList({
       <button
         type="button"
         className={miniButtonClass}
+        disabled={block.props.items.length >= FAQ_MAX_ITEMS}
         onClick={() => {
-          setItemKeys((current) => [...current, createLocalEditorKey("faq")]);
+          const nextItems = appendBlankFaq(block.props.items);
+          setItemKeys((current) => [
+            ...current,
+            ...createLocalEditorKeys(
+              "faq",
+              nextItems.length - block.props.items.length,
+            ),
+          ]);
           onChange({
             ...block,
             props: {
               ...block.props,
-              items: [...block.props.items, { question: "", answer: "" }],
+              items: nextItems,
             },
           });
         }}
       >
-        Add FAQ
+        {block.props.items.length >= FAQ_MAX_ITEMS
+          ? `${FAQ_MAX_ITEMS} FAQ limit reached`
+          : "Add FAQ"}
       </button>
     </div>
+  );
+}
+
+function FaqCanvasItemEditorList({
+  block,
+  onChange,
+}: {
+  block: FaqBlock;
+  onChange: (block: PageBlock) => void;
+}) {
+  const items =
+    block.props.items.length > 0
+      ? block.props.items
+      : [{ question: "", answer: "" }];
+
+  return (
+    <>
+      {items.map((item, itemIndex) => (
+        <div key={`${block.id}-faq-canvas-${itemIndex}`} className="p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+              FAQ {itemIndex + 1}
+            </p>
+            {items.length > 1 && (
+              <button
+                type="button"
+                className={dangerButtonClass}
+                onClick={() =>
+                  onChange({
+                    ...block,
+                    props: {
+                      ...block.props,
+                      items: removeFaqItem(block.props.items, itemIndex),
+                    },
+                  })
+                }
+              >
+                Remove
+              </button>
+            )}
+          </div>
+          <TextInput
+            label="Question"
+            placeholder={blockCanvasPlaceholders.faq.question}
+            value={item.question}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: {
+                  ...block.props,
+                  items: updateFaqItem(block.props.items, itemIndex, {
+                    question: value,
+                  }),
+                },
+              })
+            }
+          />
+          <TextAreaInput
+            label="Answer"
+            placeholder={blockCanvasPlaceholders.faq.answer}
+            value={item.answer}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: {
+                  ...block.props,
+                  items: updateFaqItem(block.props.items, itemIndex, {
+                    answer: value,
+                  }),
+                },
+              })
+            }
+          />
+        </div>
+      ))}
+      <div className="p-5">
+        <button
+          type="button"
+          className={miniButtonClass}
+          disabled={block.props.items.length >= FAQ_MAX_ITEMS}
+          onClick={() =>
+            onChange({
+              ...block,
+              props: {
+                ...block.props,
+                items:
+                  block.props.items.length === 0
+                    ? appendBlankFaq([{ question: "", answer: "" }])
+                    : appendBlankFaq(block.props.items),
+              },
+            })
+          }
+        >
+          {block.props.items.length >= FAQ_MAX_ITEMS
+            ? `${FAQ_MAX_ITEMS} FAQ limit reached`
+            : "Add FAQ"}
+        </button>
+      </div>
+    </>
   );
 }
 
@@ -3247,6 +3592,7 @@ function SettingsGlyph() {
 }
 
 function SeoReadinessPanel({
+  content,
   summary,
   aiProposalResult,
   aiInsertResult,
@@ -3263,6 +3609,7 @@ function SeoReadinessPanel({
   onOpenSettings,
   mediaAssetCount,
 }: {
+  content: PageContent;
   summary: SeoReadinessSummary;
   aiProposalResult: PageAiProposalResult;
   aiInsertResult: PageAiProposalInsertResult;
@@ -3374,6 +3721,7 @@ function SeoReadinessPanel({
                 )}
                 <div className="mt-auto pt-4">
                   <ReadinessFindingAction
+                    content={content}
                     finding={finding}
                     onAddSuggestedBlock={onAddSuggestedBlock}
                     onOpenSettings={onOpenSettings}
@@ -3583,16 +3931,18 @@ function SeoReadinessPanel({
 }
 
 function ReadinessFindingAction({
+  content,
   finding,
   onAddSuggestedBlock,
   onOpenSettings,
 }: {
+  content: PageContent;
   finding: SeoReadinessFinding;
   onAddSuggestedBlock: (type: PageBlock["type"]) => void;
   onOpenSettings: () => void;
 }) {
   const suggestedBlock = suggestedBlockForFinding(finding);
-  const anchor = anchorForFinding(finding);
+  const anchor = anchorForFinding(content, finding);
 
   if (suggestedBlock) {
     return (
@@ -3697,6 +4047,18 @@ function ReadinessFindingAction({
   );
 }
 
+function scrollToBuilderBlockId(blockId: string) {
+  window.setTimeout(() => {
+    document
+      .querySelector<HTMLElement>(`[data-builder-block-id="${blockId}"]`)
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "nearest",
+      });
+  }, 0);
+}
+
 function suggestedBlockForFinding(
   finding: SeoReadinessFinding,
 ): { type: PageBlock["type"]; label: string } | null {
@@ -3729,17 +4091,23 @@ function suggestedBlockForFinding(
   return null;
 }
 
-function anchorForFinding(finding: SeoReadinessFinding) {
+function anchorForFinding(content: PageContent, finding: SeoReadinessFinding) {
   if (finding.path === "title") return "#page-title-field";
   if (finding.path === "meta_description")
     return "#page-meta-description-field";
   if (finding.path.startsWith("blocks.")) {
-    const blockIndex = Number(finding.path.split(".")[1]);
-    if (Number.isFinite(blockIndex)) return `#builder-block-${blockIndex + 1}`;
+    const [, blockIndex] = finding.path.split(".");
+    const blockNumber = Number(blockIndex) + 1;
+    if (Number.isFinite(blockNumber)) {
+      return `#builder-block-${blockNumber}`;
+    }
   }
-  const nestedBlockIndex = nestedBlockIndexFromPath(finding.path);
-  if (nestedBlockIndex !== null) {
-    return `#builder-block-${nestedBlockIndex + 1}`;
+  const globalBlockIndex = globalBlockIndexFromNestedPath(
+    content,
+    finding.path,
+  );
+  if (globalBlockIndex !== null) {
+    return `#builder-block-${globalBlockIndex + 1}`;
   }
   return null;
 }
@@ -3781,11 +4149,43 @@ function friendlyFindingLocation(finding: SeoReadinessFinding) {
   return friendlyFieldName(finding.path);
 }
 
-function nestedBlockIndexFromPath(path: string) {
-  const match = path.match(/^sections\.\d+\.columns\.\d+\.blocks\.(\d+)\./);
+function nestedBlockLocationFromPath(path: string) {
+  const match = path.match(/^sections\.(\d+)\.columns\.(\d+)\.blocks\.(\d+)\./);
   if (!match) return null;
-  const blockIndex = Number(match[1]);
-  return Number.isFinite(blockIndex) ? blockIndex : null;
+  const [, sectionValue, columnValue, blockValue] = match;
+  const sectionIndex = Number(sectionValue);
+  const columnIndex = Number(columnValue);
+  const blockIndex = Number(blockValue);
+  if (
+    !Number.isFinite(sectionIndex) ||
+    !Number.isFinite(columnIndex) ||
+    !Number.isFinite(blockIndex)
+  ) {
+    return null;
+  }
+  return { sectionIndex, columnIndex, blockIndex };
+}
+
+function globalBlockIndexFromNestedPath(content: PageContent, path: string) {
+  const target = nestedBlockLocationFromPath(path);
+  if (!target) return null;
+
+  let globalIndex = 0;
+  for (const [sectionIndex, section] of content.sections.entries()) {
+    for (const [columnIndex, column] of section.columns.entries()) {
+      if (
+        sectionIndex === target.sectionIndex &&
+        columnIndex === target.columnIndex
+      ) {
+        return target.blockIndex < column.blocks.length
+          ? globalIndex + target.blockIndex
+          : null;
+      }
+      globalIndex += column.blocks.length;
+    }
+  }
+
+  return null;
 }
 
 function friendlyNestedBlockLocation(path: string) {
@@ -3821,9 +4221,13 @@ function friendlyReadinessCategoryLabel(
 
 function nextRequiredPublishStep({
   canPublish,
+  hasUnpublishedDraftChanges,
+  isPublishedPage,
   summary,
 }: {
   canPublish: boolean;
+  hasUnpublishedDraftChanges: boolean;
+  isPublishedPage: boolean;
   summary: SeoReadinessSummary;
 }): NextPublishStep {
   const blocker = summary.blockers[0];
@@ -3853,6 +4257,18 @@ function nextRequiredPublishStep({
     };
   }
 
+  if (isPublishedPage) {
+    return {
+      title: hasUnpublishedDraftChanges
+        ? "Ready to publish changes"
+        : "Published page is live",
+      detail: hasUnpublishedDraftChanges
+        ? "The live page is unchanged. Publish changes when this draft should replace the current public version."
+        : "Save draft changes to keep editing without replacing the live page, then publish when the changes are ready.",
+      tone: "ready",
+    };
+  }
+
   return {
     title: "Ready to publish",
     detail:
@@ -3863,7 +4279,7 @@ function nextRequiredPublishStep({
 
 function friendlyActionLocation(finding: SeoReadinessFinding) {
   const location = friendlyFindingLocation(finding);
-  if (location.startsWith("URL")) return location;
+  if (/^[A-Z]{2,}\b/.test(location)) return location;
   return `${location.charAt(0).toLowerCase()}${location.slice(1)}`;
 }
 
@@ -3877,6 +4293,9 @@ function friendlyEvidenceText(finding: SeoReadinessFinding) {
 
 function friendlyFieldName(value: string | undefined) {
   if (!value) return "Field";
+  if (value === "ctaHref" || value === "href") {
+    return "Destination URL";
+  }
   if (value === "trackingName" || value === "ctaTrackingName") {
     return "Internal CTA label";
   }
@@ -4966,6 +5385,7 @@ function BlockEditor({
   return (
     <article
       id={`builder-block-${blockNumber}`}
+      data-builder-block-id={block.id}
       className={`group/editor scroll-mt-28 transition-all ${
         isDragging ? "z-10 scale-[1.01]" : ""
       }`}
@@ -5171,40 +5591,10 @@ function BlockEditor({
                   <div
                     className={`${builderOptionalFieldScopeClass} mt-5 divide-y-2 divide-[#bfeeff] rounded-[10px] border-2 border-[#111111] bg-white px-3 shadow-[7px_7px_0_#55b8e8] sm:px-4`}
                   >
-                    <div className="p-5">
-                      <TextInput
-                        label="Question"
-                        placeholder={blockCanvasPlaceholders.faq.question}
-                        value={block.props.items[0]?.question ?? ""}
-                        onChange={(value) =>
-                          onChange({
-                            ...block,
-                            props: {
-                              ...block.props,
-                              items: updateFirstFaqItem(block.props.items, {
-                                question: value,
-                              }),
-                            },
-                          })
-                        }
-                      />
-                      <TextAreaInput
-                        label="Answer"
-                        placeholder={blockCanvasPlaceholders.faq.answer}
-                        value={block.props.items[0]?.answer ?? ""}
-                        onChange={(value) =>
-                          onChange({
-                            ...block,
-                            props: {
-                              ...block.props,
-                              items: updateFirstFaqItem(block.props.items, {
-                                answer: value,
-                              }),
-                            },
-                          })
-                        }
-                      />
-                    </div>
+                    <FaqCanvasItemEditorList
+                      block={block}
+                      onChange={onChange}
+                    />
                   </div>
                 </>
               )}
@@ -5240,11 +5630,11 @@ function BlockEditor({
                       </label>
                     </OptionalBlockField>
                   </div>
-                  <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  <div className={cardGridCanvasGridClass(block)}>
                     {block.props.cards.map((card, cardIndex) => (
                       <article
-                        key={cardItemKey(card)}
-                        className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8]"
+                        key={cardItemKey(block.id, cardIndex)}
+                        className={cardGridCanvasCardClass(block, cardIndex)}
                       >
                         <div className="mb-4 flex items-center justify-between gap-3">
                           <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
@@ -5353,32 +5743,61 @@ function BlockEditor({
                             })
                           }
                         />
-                        {(card.href || block.props.cards.length > 0) && (
-                          <button
-                            type="button"
-                            onClick={onEditSettings}
-                            className="mt-4 inline-flex text-sm font-black text-[#2d9fd6] uppercase hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/30 focus-visible:outline-none"
-                          >
-                            Learn more
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={onEditSettings}
+                          aria-label={`Edit optional link for card ${cardIndex + 1}`}
+                          className={`mt-4 inline-flex items-center gap-2 text-sm font-black uppercase focus-visible:ring-2 focus-visible:ring-[#0b63f6]/30 focus-visible:outline-none ${
+                            hasEditorText(card.href)
+                              ? "text-[#2d9fd6] hover:text-[#111111]"
+                              : "text-slate-400 hover:text-[#2d9fd6]"
+                          }`}
+                        >
+                          Learn more
+                          {!hasEditorText(card.href) && (
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-slate-500 uppercase ring-1 ring-slate-200">
+                              Optional
+                            </span>
+                          )}
+                        </button>
                       </article>
                     ))}
                     <button
                       type="button"
-                      className="hover:border-brand-300 hover:bg-brand-50 focus-visible:ring-brand-400 min-h-40 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-left text-sm font-semibold text-slate-600 transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={block.props.cards.length >= 12}
-                      onClick={() =>
+                      className="group flex h-full min-h-[22rem] flex-col items-center justify-center gap-3 rounded-[10px] border-2 border-dashed border-[#55b8e8]/70 bg-white p-5 text-center text-sm font-black text-[#0b63f6] uppercase shadow-[5px_5px_0_rgba(85,184,232,0.25)] transition hover:-translate-y-0.5 hover:border-[#0b63f6] hover:bg-[#f7fbff] hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-[#0b63f6] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400 disabled:shadow-none disabled:hover:translate-y-0"
+                      disabled={block.props.cards.length >= CARD_GRID_MAX_CARDS}
+                      onClick={(event) => {
+                        event.currentTarget.blur();
                         onChange({
                           ...block,
                           props: {
                             ...block.props,
-                            cards: [...block.props.cards, createBlankCard()],
+                            cards: appendBlankCard(block.props.cards),
                           },
-                        })
-                      }
+                        });
+                      }}
                     >
-                      Add card
+                      <span
+                        className="flex size-12 items-center justify-center rounded-full border-2 border-current bg-white shadow-sm transition group-hover:scale-105"
+                        aria-hidden="true"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="size-5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.4"
+                          strokeLinecap="round"
+                        >
+                          <path d="M12 5v14" />
+                          <path d="M5 12h14" />
+                        </svg>
+                      </span>
+                      <span>
+                        {block.props.cards.length >= CARD_GRID_MAX_CARDS
+                          ? `${CARD_GRID_MAX_CARDS} card limit reached`
+                          : "Add card"}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -5634,6 +6053,8 @@ function HeroInlineContentFields({
   onChange: (block: PageBlock) => void;
   className?: string;
 }) {
+  const heroBodyInputId = `${block.id}-hero-body`;
+
   return (
     <div className={className}>
       <OptionalBlockField
@@ -5680,9 +6101,10 @@ function HeroInlineContentFields({
         onChange={onChange}
         compact
       >
-        <label className="mt-5 block max-w-3xl">
+        <label htmlFor={heroBodyInputId} className="mt-5 block max-w-3xl">
           <span className="sr-only">Body</span>
           <AutoResizeTextarea
+            id={heroBodyInputId}
             aria-label="Body"
             value={block.props.body}
             placeholder={blockCanvasPlaceholders.hero.body}
@@ -5756,21 +6178,28 @@ function SplitHeroBlockCanvas({
         sizes="(max-width: 1024px) 100vw, 40vw"
         className={imageClass}
       />
-      <label className="mt-4 block">
-        <span className="sr-only">Media caption</span>
-        <input
-          aria-label="Media caption"
-          value={block.props.mediaCaption ?? ""}
-          placeholder={blockCanvasPlaceholders.hero.mediaCaption}
-          onChange={(event) =>
-            onChange({
-              ...block,
-              props: { ...block.props, mediaCaption: event.target.value },
-            })
-          }
-          className="focus:ring-brand-100 w-full bg-transparent text-sm font-semibold text-slate-600 outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
-        />
-      </label>
+      <OptionalBlockField
+        block={block}
+        field="mediaCaption"
+        onChange={onChange}
+        compact
+      >
+        <label className="mt-4 block">
+          <span className="sr-only">Media caption</span>
+          <input
+            aria-label="Media caption"
+            value={block.props.mediaCaption ?? ""}
+            placeholder={blockCanvasPlaceholders.hero.mediaCaption}
+            onChange={(event) =>
+              onChange({
+                ...block,
+                props: { ...block.props, mediaCaption: event.target.value },
+              })
+            }
+            className="focus:ring-brand-100 w-full bg-transparent text-sm font-semibold text-slate-600 outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
+          />
+        </label>
+      </OptionalBlockField>
       {!block.props.mediaAltText?.trim() && (
         <p className="mt-2 text-xs text-amber-700">
           Add alt text in block settings before publishing.
@@ -5807,7 +6236,7 @@ function SplitHeroBlockCanvas({
       <HeroInlineContentFields
         block={block}
         onChange={onChange}
-        className="max-w-none px-0 py-0"
+        className="max-w-none p-0"
       />
       <div>{mediaNode}</div>
     </div>
@@ -6556,7 +6985,7 @@ function applyMediaAssetToSplitHeroBlock(
   block: Extract<PageBlock, { type: "hero" }>,
   asset: EditorMediaAsset,
 ): Extract<PageBlock, { type: "hero" }> {
-  return {
+  const nextBlock: Extract<PageBlock, { type: "hero" }> = {
     ...block,
     props: {
       ...block.props,
@@ -6566,6 +6995,12 @@ function applyMediaAssetToSplitHeroBlock(
       mediaCaption: asset.caption ?? "",
     },
   };
+  return asset.caption
+    ? (setBlockFieldVisibility(nextBlock, "mediaCaption", true) as Extract<
+        PageBlock,
+        { type: "hero" }
+      >)
+    : nextBlock;
 }
 
 function applyMediaAssetToImageBlock(
@@ -6626,6 +7061,48 @@ function parseInitialContent(page: SeoPage | undefined): PageContent {
   );
   if (!parsed.success) return createEmptyPageContent();
   return parsed.data;
+}
+
+function parsePublishedContent(page: SeoPage | undefined): PageContent | null {
+  if (!page?.published_content) return null;
+  const parsed = pageContentSchema.safeParse(page.published_content);
+  if (!parsed.success) return null;
+  return parsed.data;
+}
+
+function parseInitialDraftSettings(
+  page: SeoPage | undefined,
+): EditorDraftSettings | null {
+  if (!page?.draft_settings) return null;
+  const value = page.draft_settings;
+  if (typeof value !== "object" || Array.isArray(value)) return null;
+
+  const settings = value as Record<string, unknown>;
+  const slug = stringSetting(settings.slug);
+  const title = stringSetting(settings.title);
+  if (!slug || !title) return null;
+
+  return {
+    slug,
+    title,
+    targetKeyword: stringSetting(settings.targetKeyword),
+    seoTitle: stringSetting(settings.seoTitle),
+    metaDescription: stringSetting(settings.metaDescription),
+    canonicalUrl: stringSetting(settings.canonicalUrl),
+    noindex: booleanSetting(settings.noindex, page.noindex),
+    sitemapEnabled: booleanSetting(
+      settings.sitemapEnabled,
+      page.sitemap_enabled,
+    ),
+  };
+}
+
+function stringSetting(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function booleanSetting(value: unknown, fallback: boolean) {
+  return typeof value === "boolean" ? value : fallback;
 }
 
 function collectBuilderBlockEntries(content: PageContent): BuilderBlockEntry[] {
@@ -6737,15 +7214,11 @@ function withEditorDefaultsForNewBlock(block: PageBlock): PageBlock {
     block.type === "faq" &&
     (block.props.items.length === 0 || block.props.items.every(isBlankFaqItem))
   ) {
-    const itemCount = block.variant === "accordion" ? 3 : 2;
     nextBlock = {
       ...block,
       props: {
         ...block.props,
-        items: Array.from({ length: itemCount }, () => ({
-          question: "",
-          answer: "",
-        })),
+        items: [{ question: "", answer: "" }],
       },
     };
   } else if (
@@ -6930,20 +7403,55 @@ type FaqItem = FaqBlock["props"]["items"][number];
 type CardGridBlock = Extract<PageBlock, { type: "card_grid" }>;
 type CardItem = CardGridBlock["props"]["cards"][number];
 
-function updateFirstFaqItem(
+function updateFaqItem(
   items: FaqItem[],
+  itemIndex: number,
   patch: Partial<FaqItem>,
 ): FaqItem[] {
-  if (items.length === 0) {
-    return [{ question: patch.question ?? "", answer: patch.answer ?? "" }];
-  }
-  return items.map((item, index) =>
-    index === 0 ? { ...item, ...patch } : item,
+  const nextItems = items.length > 0 ? items : [{ question: "", answer: "" }];
+
+  return nextItems.map((item, index) =>
+    index === itemIndex ? { ...item, ...patch } : item,
   );
+}
+
+function removeFaqItem(items: FaqItem[], itemIndex: number): FaqItem[] {
+  const nextItems = items.filter((_, index) => index !== itemIndex);
+  return nextItems.length > 0 ? nextItems : [{ question: "", answer: "" }];
+}
+
+function appendBlankFaq(items: FaqItem[]): FaqItem[] {
+  if (items.length >= FAQ_MAX_ITEMS) return items;
+  return [...items, { question: "", answer: "" }];
 }
 
 function createBlankCard(): CardItem {
   return { title: "", body: "", href: "" };
+}
+
+function appendBlankCard(cards: CardItem[]): CardItem[] {
+  if (cards.length >= CARD_GRID_MAX_CARDS) return cards;
+  return [...cards, createBlankCard()];
+}
+
+function cardGridCanvasGridClass(block: CardGridBlock) {
+  if (block.variant === "compact") {
+    return "mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4";
+  }
+
+  if (block.variant === "feature") {
+    return "mt-5 grid gap-4 md:grid-cols-[1.1fr_0.9fr]";
+  }
+
+  return "mt-5 grid gap-4 md:grid-cols-3";
+}
+
+function cardGridCanvasCardClass(block: CardGridBlock, cardIndex: number) {
+  return `rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8] ${
+    block.variant === "feature" && cardIndex === 0
+      ? "md:row-span-2 md:min-h-64"
+      : ""
+  } ${block.variant === "compact" ? "p-4" : ""}`;
 }
 
 function createLocalEditorKey(prefix: string) {
@@ -6955,8 +7463,8 @@ function createLocalEditorKeys(prefix: string, count: number) {
   return Array.from({ length: count }, () => createLocalEditorKey(prefix));
 }
 
-function cardItemKey(card: CardItem) {
-  return `${card.title}:${card.body}:${card.href ?? ""}`;
+function cardItemKey(blockId: string, cardIndex: number) {
+  return `${blockId}-card-${cardIndex}`;
 }
 
 function isBlankFaqItem(item: FaqItem) {
@@ -7219,7 +7727,7 @@ const secondaryButtonClass =
   "rounded-lg bg-white border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-300 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
 const smallButtonClass =
-  "rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 transition-all hover:bg-slate-50 hover:ring-slate-400 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex max-w-full items-center justify-center rounded-lg bg-white px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 transition-all hover:bg-slate-50 hover:ring-slate-400 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
 const miniButtonClass =
   "rounded-lg bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 transition-all hover:bg-slate-50 hover:ring-slate-400 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";

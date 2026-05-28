@@ -263,6 +263,52 @@ describe("seo page service", () => {
     ).rejects.toBeInstanceOf(SeoPageValidationError);
   });
 
+  it("can persist unpublished settings without mutating live metadata fields", async () => {
+    const parsedContent = pageContentSchema.parse(validContent);
+    const draftSettings = {
+      slug: "updated-vending-guide",
+      title: "Updated Vending Guide",
+      targetKeyword: "updated vending keyword",
+      seoTitle: "Updated SEO Title",
+      metaDescription: "Updated meta description.",
+      canonicalUrl: null,
+      noindex: false,
+      sitemapEnabled: true,
+    };
+    const update = updateSingle({
+      id: "page_1",
+      draft_content: parsedContent,
+      draft_settings: draftSettings,
+      status: "published",
+    });
+    const client = buildClient(update.table);
+
+    await adminSaveSeoPageDraft(
+      "page_1",
+      {
+        draftContent: validContent,
+        draftSettings,
+        updatedBy: "admin-1",
+      },
+      { client },
+    );
+
+    const patch = update.mocks.update.mock.calls[0]?.[0];
+    expect(patch).toEqual(
+      expect.objectContaining({
+        draft_content: parsedContent,
+        draft_settings: draftSettings,
+        updated_by: "admin-1",
+      }),
+    );
+    expect(patch).not.toHaveProperty("slug");
+    expect(patch).not.toHaveProperty("seo_title");
+    expect(patch).not.toHaveProperty("meta_description");
+    expect(patch).not.toHaveProperty("canonical_url");
+    expect(patch).not.toHaveProperty("noindex");
+    expect(patch).not.toHaveProperty("sitemap_enabled");
+  });
+
   it("publishes by creating an immutable revision and mirroring its snapshot", async () => {
     const parsedContent = pageContentSchema.parse(validContent);
     const page = {
@@ -329,6 +375,109 @@ describe("seo page service", () => {
         published_revision_id: "revision_1",
         published_at: "2026-05-06T01:00:00.000Z",
         updated_by: "admin-1",
+      }),
+    );
+  });
+
+  it("publishes saved draft settings for an already published page", async () => {
+    const parsedContent = pageContentSchema.parse(validContent);
+    const draftSettings = {
+      slug: "updated-vending-guide",
+      title: "Updated Vending Guide",
+      targetKeyword: "updated vending keyword",
+      seoTitle: "Updated SEO Title",
+      metaDescription: "Updated meta description for the live page.",
+      canonicalUrl: "/resources/updated-vending-guide",
+      noindex: false,
+      sitemapEnabled: true,
+    };
+    const page = {
+      id: "page_1",
+      slug: "start-vending",
+      title: "Start Vending",
+      status: "published",
+      draft_content: parsedContent,
+      draft_settings: draftSettings,
+      seo_title: "Start a Vending Business",
+      meta_description: "Learn how to start a vending business safely.",
+      canonical_url: null,
+      noindex: false,
+      sitemap_enabled: true,
+      structured_data_settings: {},
+      target_keyword: "start vending business",
+    };
+    const revision = { id: "revision_1", page_id: "page_1" };
+    const published = {
+      ...page,
+      ...{
+        slug: draftSettings.slug,
+        title: draftSettings.title,
+        target_keyword: draftSettings.targetKeyword,
+        seo_title: draftSettings.seoTitle,
+        meta_description: draftSettings.metaDescription,
+        canonical_url: draftSettings.canonicalUrl,
+        noindex: draftSettings.noindex,
+        sitemap_enabled: draftSettings.sitemapEnabled,
+      },
+      published_content: parsedContent,
+      published_revision_id: "revision_1",
+      draft_settings: {},
+    };
+
+    const loadPage = singleSelect(page);
+    const redirectConflict = maybeSingleSelect(null);
+    const duplicateTitle = metadataConflictSelect(null);
+    const duplicateDescription = metadataConflictSelect(null);
+    const insertRevision = insertSingle(revision);
+    const updatePage = updateSingle(published);
+    const client = buildClient(
+      loadPage.table,
+      redirectConflict.table,
+      duplicateTitle.table,
+      duplicateDescription.table,
+      insertRevision.table,
+      updatePage.table,
+    );
+    client.rpc.mockResolvedValue({ data: published, error: null });
+
+    const result = await adminPublishSeoPage("page_1", {
+      client,
+      actorId: "admin-1",
+      now: () => new Date("2026-05-06T01:00:00.000Z"),
+    });
+
+    expect(result).toEqual({ page: published, revision });
+    expect(client.rpc).toHaveBeenCalledWith(
+      "update_seo_page_slug_with_redirect",
+      {
+        p_page_id: "page_1",
+        p_next_slug: "updated-vending-guide",
+        p_actor_id: "admin-1",
+      },
+    );
+    expect(insertRevision.mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        seo_snapshot: expect.objectContaining({
+          slug: "updated-vending-guide",
+          title: "Updated Vending Guide",
+          target_keyword: "updated vending keyword",
+          seo_title: "Updated SEO Title",
+          meta_description: "Updated meta description for the live page.",
+        }),
+      }),
+    );
+    expect(updatePage.mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: "updated-vending-guide",
+        title: "Updated Vending Guide",
+        target_keyword: "updated vending keyword",
+        seo_title: "Updated SEO Title",
+        meta_description: "Updated meta description for the live page.",
+        canonical_url: "/resources/updated-vending-guide",
+        noindex: false,
+        sitemap_enabled: true,
+        draft_settings: {},
+        published_content: parsedContent,
       }),
     );
   });

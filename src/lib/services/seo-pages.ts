@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import {
   createEmptyPageContent,
   flattenBlocks,
@@ -32,6 +33,19 @@ type ServiceDeps = {
   now?: () => Date;
 };
 
+const draftSettingsSchema = z
+  .object({
+    slug: z.string().trim().min(1).transform(normalizeSlug),
+    title: z.string().trim().min(1),
+    targetKeyword: z.string().trim().nullable(),
+    seoTitle: z.string().trim().nullable(),
+    metaDescription: z.string().trim().nullable(),
+    canonicalUrl: z.string().trim().nullable(),
+    noindex: z.boolean(),
+    sitemapEnabled: z.boolean(),
+  })
+  .strict();
+
 export type CreateSeoPageInput = {
   slug: string;
   title: string;
@@ -53,7 +67,19 @@ export type SaveSeoPageDraftInput = {
   sitemapEnabled?: boolean;
   structuredDataSettings?: Json;
   draftContent?: unknown;
+  draftSettings?: SeoPageDraftSettings | null;
   updatedBy?: string | null;
+};
+
+export type SeoPageDraftSettings = {
+  slug: string;
+  title: string;
+  targetKeyword: string | null;
+  seoTitle: string | null;
+  metaDescription: string | null;
+  canonicalUrl: string | null;
+  noindex: boolean;
+  sitemapEnabled: boolean;
 };
 
 export type PublishSeoPageOptions = ServiceDeps & {
@@ -93,7 +119,7 @@ export class SeoPageValidationError extends Error {
 }
 
 const SEO_PAGE_FIELDS =
-  "id, slug, title, status, target_keyword, page_type, template_key, draft_content, published_content, published_revision_id, seo_title, meta_description, canonical_url, noindex, sitemap_enabled, og_asset_id, structured_data_settings, published_at, archived_at, archive_behavior, archive_redirect_url, created_by, updated_by, created_at, updated_at" as const;
+  "id, slug, title, status, target_keyword, page_type, template_key, draft_content, draft_settings, published_content, published_revision_id, seo_title, meta_description, canonical_url, noindex, sitemap_enabled, og_asset_id, structured_data_settings, published_at, archived_at, archive_behavior, archive_redirect_url, created_by, updated_by, created_at, updated_at" as const;
 
 const PAGE_REVISION_FIELDS =
   "id, page_id, revision_type, label, content_snapshot, seo_snapshot, created_by, created_at" as const;
@@ -197,6 +223,12 @@ export async function adminSaveSeoPageDraft(
       input.draftContent,
     ) as unknown as Json;
   }
+  if (input.draftSettings !== undefined) {
+    patch.draft_settings =
+      input.draftSettings === null
+        ? {}
+        : (draftSettingsSchema.parse(input.draftSettings) as unknown as Json);
+  }
   if (input.updatedBy !== undefined) patch.updated_by = input.updatedBy;
 
   const { data, error } = await client
@@ -217,20 +249,21 @@ export async function adminPublishSeoPage(
   const client = options.client ?? createAdminClient();
   const now = options.now ?? (() => new Date());
   const page = await loadSeoPageForPublish(client, pageId);
+  const publishSettings = effectivePublishSettings(page);
   const draftContent = await resolveReusableContent(
     client,
     parseDraftContent(page.draft_content),
   );
 
   const readiness = assessSeoReadiness(draftContent, {
-    slug: page.slug,
-    title: page.title,
-    targetKeyword: page.target_keyword,
-    seoTitle: page.seo_title,
-    metaDescription: page.meta_description,
-    canonicalUrl: page.canonical_url,
-    noindex: page.noindex,
-    sitemapEnabled: page.sitemap_enabled,
+    slug: publishSettings.slug,
+    title: publishSettings.title,
+    targetKeyword: publishSettings.targetKeyword,
+    seoTitle: publishSettings.seoTitle,
+    metaDescription: publishSettings.metaDescription,
+    canonicalUrl: publishSettings.canonicalUrl,
+    noindex: publishSettings.noindex,
+    sitemapEnabled: publishSettings.sitemapEnabled,
   });
   if (readiness.blockers.length > 0) {
     throw new SeoPageValidationError(
@@ -245,7 +278,7 @@ export async function adminPublishSeoPage(
   const issues: PageBuilderValidationIssue[] = [];
   const redirectConflict = await findRedirectBySourcePath(
     client,
-    resourcePathForSlug(page.slug),
+    resourcePathForSlug(publishSettings.slug),
   );
   if (redirectConflict) {
     issues.push({
@@ -255,10 +288,11 @@ export async function adminPublishSeoPage(
     });
   }
 
-  const duplicateMetadataIssues = await findDuplicateMetadataIssues(
-    client,
-    page,
-  );
+  const duplicateMetadataIssues = await findDuplicateMetadataIssues(client, {
+    id: page.id,
+    seo_title: publishSettings.seoTitle,
+    meta_description: publishSettings.metaDescription,
+  });
   issues.push(...duplicateMetadataIssues);
 
   const mediaValidation = await validateReferencedMedia(client, draftContent);
@@ -275,17 +309,35 @@ export async function adminPublishSeoPage(
     revision_type: "publish",
     label: `Publish ${publishedAt}`,
     content_snapshot: publishedContent as unknown as Json,
-    seo_snapshot: buildSeoSnapshot(page),
+    seo_snapshot: buildSeoSnapshot(page, publishSettings),
     created_by: options.actorId ?? null,
   });
+
+  if (page.status === "published" && page.slug !== publishSettings.slug) {
+    const { error } = await client.rpc("update_seo_page_slug_with_redirect", {
+      p_page_id: pageId,
+      p_next_slug: publishSettings.slug,
+      p_actor_id: options.actorId ?? null,
+    });
+    if (error) throw new Error("Could not update SEO page slug.");
+  }
 
   const { data, error } = await client
     .from("seo_pages")
     .update({
+      slug: publishSettings.slug,
+      title: publishSettings.title,
+      target_keyword: publishSettings.targetKeyword,
+      seo_title: publishSettings.seoTitle,
+      meta_description: publishSettings.metaDescription,
+      canonical_url: publishSettings.canonicalUrl,
+      noindex: publishSettings.noindex,
+      sitemap_enabled: publishSettings.sitemapEnabled,
       status: "published",
       published_content: publishedContent as unknown as Json,
       published_revision_id: revision.id,
       published_at: publishedAt,
+      draft_settings: {},
       archived_at: null,
       archive_behavior: "not_found",
       archive_redirect_url: null,
@@ -657,8 +709,10 @@ export async function getSeoPagePreviewByToken(
   if (!page) return null;
 
   const draftContent = parseDraftContent(page.draft_content);
+  const draftSettings = parseSeoPageDraftSettings(page.draft_settings);
   return {
     ...page,
+    ...draftSettingsToSeoPagePatch(draftSettings),
     published_content: draftContent,
   };
 }
@@ -703,6 +757,46 @@ function parseDraftContent(content: unknown): PageContent {
   const result = validatePageContent(content);
   if (!result.ok) throw new SeoPageValidationError(result.issues);
   return result.content;
+}
+
+function parseSeoPageDraftSettings(value: unknown) {
+  const parsed = draftSettingsSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
+function effectivePublishSettings(page: SeoPage): SeoPageDraftSettings {
+  return (
+    parseSeoPageDraftSettings(page.draft_settings) ?? settingsFromSeoPage(page)
+  );
+}
+
+function settingsFromSeoPage(page: SeoPage): SeoPageDraftSettings {
+  return {
+    slug: page.slug,
+    title: page.title,
+    targetKeyword: page.target_keyword,
+    seoTitle: page.seo_title,
+    metaDescription: page.meta_description,
+    canonicalUrl: page.canonical_url,
+    noindex: page.noindex,
+    sitemapEnabled: page.sitemap_enabled,
+  };
+}
+
+function draftSettingsToSeoPagePatch(
+  settings: SeoPageDraftSettings | null,
+): Partial<SeoPage> {
+  if (!settings) return {};
+  return {
+    slug: settings.slug,
+    title: settings.title,
+    target_keyword: settings.targetKeyword,
+    seo_title: settings.seoTitle,
+    meta_description: settings.metaDescription,
+    canonical_url: settings.canonicalUrl,
+    noindex: settings.noindex,
+    sitemap_enabled: settings.sitemapEnabled,
+  };
 }
 
 async function loadSeoPageForPublish(client: SeoPageClient, pageId: string) {
@@ -1104,16 +1198,19 @@ function publicMediaUrl(asset: MediaAsset) {
   return "";
 }
 
-function buildSeoSnapshot(page: SeoPage): Json {
+function buildSeoSnapshot(
+  page: SeoPage,
+  settings: SeoPageDraftSettings = settingsFromSeoPage(page),
+): Json {
   return {
-    slug: page.slug,
-    title: page.title,
-    target_keyword: page.target_keyword,
-    seo_title: page.seo_title,
-    meta_description: page.meta_description,
-    canonical_url: page.canonical_url,
-    noindex: page.noindex,
-    sitemap_enabled: page.sitemap_enabled,
+    slug: settings.slug,
+    title: settings.title,
+    target_keyword: settings.targetKeyword,
+    seo_title: settings.seoTitle,
+    meta_description: settings.metaDescription,
+    canonical_url: settings.canonicalUrl,
+    noindex: settings.noindex,
+    sitemap_enabled: settings.sitemapEnabled,
     structured_data_settings: page.structured_data_settings,
   };
 }

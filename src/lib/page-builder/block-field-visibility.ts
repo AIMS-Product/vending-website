@@ -5,6 +5,7 @@ export type OptionalBlockFieldKey =
   | "heading"
   | "body"
   | "cta"
+  | "mediaCaption"
   | "caption"
   | "title"
   | "name"
@@ -18,7 +19,7 @@ export const optionalBlockFields: Record<
   PageBlock["type"],
   readonly OptionalBlockFieldKey[]
 > = {
-  hero: ["eyebrow", "body", "cta"],
+  hero: ["eyebrow", "body", "cta", "mediaCaption"],
   rich_text: ["eyebrow", "heading"],
   image: ["caption"],
   video: ["title", "caption"],
@@ -34,6 +35,7 @@ export const optionalBlockFieldLabels: Record<OptionalBlockFieldKey, string> = {
   heading: "Heading",
   body: "Body",
   cta: "CTA",
+  mediaCaption: "Media caption",
   caption: "Caption",
   title: "Title",
   name: "Name",
@@ -54,6 +56,7 @@ export function defaultFieldVisibility(
       eyebrow: false,
       body: block.variant !== "compact",
       cta: block.variant !== "editorial",
+      mediaCaption: false,
     };
   }
 
@@ -140,6 +143,7 @@ function inferFieldVisibilityFromContent(
         block.variant !== "editorial"
       );
     }
+    if (field === "mediaCaption") return hasText(block.props.mediaCaption);
   }
 
   if (block.type === "rich_text") {

@@ -144,6 +144,7 @@ describe("seo page revisions and previews", () => {
       page_type: "resource",
       template_key: "standard",
       draft_content: validContent,
+      draft_settings: {},
       published_content: null,
       published_revision_id: null,
       seo_title: "Preview Page",
@@ -171,6 +172,72 @@ describe("seo page revisions and previews", () => {
 
     expect(result?.published_content).toEqual(validContent);
     expect(result?.slug).toBe("preview-page");
+  });
+
+  it("loads draft settings by a valid preview token", async () => {
+    const tokenLookup = maybeSingleByEq({
+      id: "token_1",
+      page_id: "page_1",
+      expires_at: "2026-05-09T01:00:00.000Z",
+      revoked_at: null,
+    });
+    const pageLookup = maybeSingleByEq({
+      id: "page_1",
+      slug: "live-page",
+      title: "Live Page",
+      status: "published",
+      target_keyword: "live keyword",
+      page_type: "resource",
+      template_key: "standard",
+      draft_content: validContent,
+      draft_settings: {
+        slug: "draft-page",
+        title: "Draft Page",
+        targetKeyword: "draft keyword",
+        seoTitle: "Draft SEO",
+        metaDescription: "Draft meta description.",
+        canonicalUrl: "/resources/draft-page",
+        noindex: true,
+        sitemapEnabled: false,
+      },
+      published_content: { version: 1, sections: [] },
+      published_revision_id: "revision_1",
+      seo_title: "Live SEO",
+      meta_description: "Live meta description.",
+      canonical_url: null,
+      noindex: false,
+      sitemap_enabled: true,
+      og_asset_id: null,
+      structured_data_settings: {},
+      published_at: "2026-05-06T01:00:00.000Z",
+      archived_at: null,
+      archive_behavior: "not_found",
+      archive_redirect_url: null,
+      created_by: null,
+      updated_by: null,
+      created_at: "2026-05-06T01:00:00.000Z",
+      updated_at: "2026-05-06T01:00:00.000Z",
+    });
+    const client = buildClient(tokenLookup.table, pageLookup.table);
+
+    const result = await getSeoPagePreviewByToken("preview-token", {
+      client,
+      now: () => new Date("2026-05-06T01:00:00.000Z"),
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        slug: "draft-page",
+        title: "Draft Page",
+        target_keyword: "draft keyword",
+        seo_title: "Draft SEO",
+        meta_description: "Draft meta description.",
+        canonical_url: "/resources/draft-page",
+        noindex: true,
+        sitemap_enabled: false,
+        published_content: validContent,
+      }),
+    );
   });
 
   it("rejects revoked or expired preview tokens", async () => {

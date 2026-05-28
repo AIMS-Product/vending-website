@@ -928,11 +928,12 @@ function HeroSplitAside({
           sizes="(max-width: 1024px) 100vw, 40vw"
           className="aspect-[4/5] w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]"
         />
-        {block.props.mediaCaption && (
-          <figcaption className="mt-4 text-sm font-semibold text-slate-600">
-            {block.props.mediaCaption}
-          </figcaption>
-        )}
+        {isBlockFieldVisible(block, "mediaCaption") &&
+          block.props.mediaCaption && (
+            <figcaption className="mt-4 text-sm font-semibold text-slate-600">
+              {block.props.mediaCaption}
+            </figcaption>
+          )}
       </figure>
     );
   }

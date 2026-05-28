@@ -51,4 +51,17 @@ describe("block field visibility", () => {
     expect(isBlockFieldVisible(block, "eyebrow")).toBe(true);
     expect(defaultFieldVisibility(block).heading).toBe(true);
   });
+
+  it("treats split hero media captions as optional", () => {
+    const block = withDefaultFieldVisibility({
+      ...(createPageBlock("hero", "block_1") as Extract<
+        PageBlock,
+        { type: "hero" }
+      >),
+      variant: "split",
+    });
+
+    expect(defaultFieldVisibility(block).mediaCaption).toBe(false);
+    expect(isBlockFieldVisible(block, "mediaCaption")).toBe(false);
+  });
 });

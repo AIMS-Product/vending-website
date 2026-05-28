@@ -9,6 +9,10 @@ import {
   AdminPageActionButton,
   AdminShell,
 } from "@/components/admin/AdminShell";
+import {
+  adminPrimaryButtonClass,
+  adminSecondaryButtonClass,
+} from "@/components/admin/AdminUi";
 import { assessSeoReadiness } from "@/lib/page-builder/seo-readiness";
 import { adminListSeoPages } from "@/lib/services/seo-pages";
 import { requireAdmin } from "@/lib/supabase/auth";
@@ -74,6 +78,14 @@ export default async function AdminPagesPage({
   const visiblePages = filteredPages.slice(pageStart, pageStart + pageSize);
   const displayStart = filteredPages.length === 0 ? 0 : pageStart + 1;
   const displayEnd = Math.min(pageStart + pageSize, filteredPages.length);
+  const paginationPages = paginationWindow(currentPage, totalPages);
+  const showRowsPerPage = filteredPages.length > defaultPageSize;
+  const resultRangeLabel =
+    filteredPages.length === 0
+      ? "No resource pages"
+      : totalPages > 1
+        ? `${displayStart}-${displayEnd} of ${filteredPages.length}`
+        : `Showing all ${filteredPages.length}`;
   const returnTo = adminPagesHref({
     status: active,
     q: searchQuery,
@@ -90,10 +102,7 @@ export default async function AdminPagesPage({
       userEmail={user.email}
       userRole={role}
       actions={
-        <Link
-          href="/admin/pages/new"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[#0b63f6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0756d6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:ring-offset-2 focus-visible:outline-none"
-        >
+        <Link href="/admin/pages/new" className={adminPrimaryButtonClass}>
           <span aria-hidden="true">
             <PageIcon icon="plus" />
           </span>
@@ -155,7 +164,8 @@ export default async function AdminPagesPage({
             <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center">
               <form
                 action="/admin/pages"
-                className="flex h-12 w-full items-center gap-3 rounded-md border border-slate-200 bg-white px-4 shadow-sm lg:w-80 lg:shrink-0"
+                method="get"
+                className="flex h-12 w-full items-center gap-3 rounded-md border border-slate-200 bg-white px-4 shadow-sm lg:w-[26rem] lg:shrink-0"
               >
                 <span className="text-slate-500" aria-hidden="true">
                   <PageIcon icon="search" />
@@ -192,7 +202,10 @@ export default async function AdminPagesPage({
                     Clear
                   </Link>
                 ) : null}
-                <button type="submit" className="sr-only">
+                <button
+                  type="submit"
+                  className="rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                >
                   Search
                 </button>
               </form>
@@ -278,15 +291,12 @@ export default async function AdminPagesPage({
                     sort,
                     perPage: pageSize,
                   })}
-                  className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                  className={adminSecondaryButtonClass}
                 >
                   Clear search
                 </Link>
               ) : null}
-              <Link
-                href="/admin/pages/new"
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-[#0b63f6] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0756d6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:ring-offset-2 focus-visible:outline-none"
-              >
+              <Link href="/admin/pages/new" className={adminPrimaryButtonClass}>
                 <span aria-hidden="true">
                   <PageIcon icon="plus" />
                 </span>
@@ -319,36 +329,38 @@ export default async function AdminPagesPage({
 
         <div className="flex flex-col gap-4 border-t border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-600 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-            <p>
-              {displayStart}-{displayEnd} of {filteredPages.length}
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-slate-500">Rows per page</span>
-              <nav
-                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm"
-                aria-label="Rows per page"
-              >
-                {pageSizeOptions.map((option) => (
-                  <Link
-                    key={option}
-                    href={adminPagesHref({
-                      status: active,
-                      q: searchQuery,
-                      sort,
-                      perPage: option,
-                    })}
-                    aria-current={pageSize === option ? "page" : undefined}
-                    className={`flex h-8 min-w-9 items-center justify-center rounded-md px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
-                      pageSize === option
-                        ? "bg-[#f4f8ff] text-[#0b63f6] shadow-sm"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
-                    }`}
-                  >
-                    {option}
-                  </Link>
-                ))}
-              </nav>
-            </div>
+            {totalPages > 1 ? <p>{resultRangeLabel}</p> : null}
+            {showRowsPerPage ? (
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-slate-500">
+                  Rows per page
+                </span>
+                <nav
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm"
+                  aria-label="Rows per page"
+                >
+                  {pageSizeOptions.map((option) => (
+                    <Link
+                      key={option}
+                      href={adminPagesHref({
+                        status: active,
+                        q: searchQuery,
+                        sort,
+                        perPage: option,
+                      })}
+                      aria-current={pageSize === option ? "page" : undefined}
+                      className={`flex h-8 min-w-9 items-center justify-center rounded-md px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+                        pageSize === option
+                          ? "bg-[#f4f8ff] text-[#0b63f6] shadow-sm"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+                      }`}
+                    >
+                      {option}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+            ) : null}
           </div>
           <div className="flex items-center justify-between gap-5 sm:justify-end">
             <div className="hidden items-center gap-5 sm:flex">
@@ -361,34 +373,55 @@ export default async function AdminPagesPage({
                 {pageCounts.draft} drafts
               </span>
             </div>
-            <nav className="flex items-center gap-2" aria-label="Pagination">
-              <PaginationLink
-                label="Previous page"
-                disabled={currentPage <= 1}
-                href={adminPagesHref({
-                  status: active,
-                  q: searchQuery,
-                  sort,
-                  page: currentPage - 1,
-                  perPage: pageSize,
-                })}
-              />
-              <span className="flex h-9 min-w-9 items-center justify-center rounded-md border border-[#0b63f6] bg-white px-3 font-semibold text-[#0b63f6]">
-                {currentPage}
-              </span>
-              <PaginationLink
-                label="Next page"
-                disabled={currentPage >= totalPages}
-                href={adminPagesHref({
-                  status: active,
-                  q: searchQuery,
-                  sort,
-                  page: currentPage + 1,
-                  perPage: pageSize,
-                })}
-                next
-              />
-            </nav>
+            {totalPages > 1 ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-slate-500">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <nav
+                  className="flex items-center gap-2"
+                  aria-label="Pagination"
+                >
+                  <PaginationLink
+                    label="Previous page"
+                    disabled={currentPage <= 1}
+                    href={adminPagesHref({
+                      status: active,
+                      q: searchQuery,
+                      sort,
+                      page: currentPage - 1,
+                      perPage: pageSize,
+                    })}
+                  />
+                  {paginationPages.map((pageNumber) => (
+                    <PaginationNumber
+                      key={pageNumber}
+                      pageNumber={pageNumber}
+                      current={pageNumber === currentPage}
+                      href={adminPagesHref({
+                        status: active,
+                        q: searchQuery,
+                        sort,
+                        page: pageNumber,
+                        perPage: pageSize,
+                      })}
+                    />
+                  ))}
+                  <PaginationLink
+                    label="Next page"
+                    disabled={currentPage >= totalPages}
+                    href={adminPagesHref({
+                      status: active,
+                      q: searchQuery,
+                      sort,
+                      page: currentPage + 1,
+                      perPage: pageSize,
+                    })}
+                    next
+                  />
+                </nav>
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
@@ -653,6 +686,36 @@ function PaginationLink({
   );
 }
 
+function PaginationNumber({
+  pageNumber,
+  current,
+  href,
+}: {
+  pageNumber: number;
+  current: boolean;
+  href: string;
+}) {
+  if (current) {
+    return (
+      <span
+        aria-current="page"
+        className="flex h-9 min-w-9 items-center justify-center rounded-md border border-[#0b63f6] bg-white px-3 font-semibold text-[#0b63f6]"
+      >
+        {pageNumber}
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      className="flex h-9 min-w-9 items-center justify-center rounded-md border border-slate-200 bg-white px-3 font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+    >
+      {pageNumber}
+    </Link>
+  );
+}
+
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -694,6 +757,15 @@ function normalizePageSize(value: string | undefined): PageSize {
   return pageSizeOptions.includes(pageSize as PageSize)
     ? (pageSize as PageSize)
     : defaultPageSize;
+}
+
+function paginationWindow(currentPage: number, totalPages: number) {
+  const start = Math.max(1, Math.min(currentPage - 1, totalPages - 2));
+  const end = Math.min(totalPages, start + 2);
+  return Array.from(
+    { length: Math.max(0, end - start + 1) },
+    (_, index) => start + index,
+  );
 }
 
 function filterPages(

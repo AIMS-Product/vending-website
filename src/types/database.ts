@@ -636,6 +636,7 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           draft_content: Json;
+          draft_settings: Json;
           id: string;
           meta_description: string | null;
           noindex: boolean;
@@ -663,6 +664,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           draft_content?: Json;
+          draft_settings?: Json;
           id?: string;
           meta_description?: string | null;
           noindex?: boolean;
@@ -690,6 +692,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           draft_content?: Json;
+          draft_settings?: Json;
           id?: string;
           meta_description?: string | null;
           noindex?: boolean;

@@ -20,6 +20,7 @@ import {
   adminSaveSeoPageDraft,
   adminUnpublishSeoPage,
   adminUpdateSeoPageSlug,
+  type SeoPageDraftSettings,
 } from "@/lib/services/seo-pages";
 import {
   SeoAgentConfigurationError,
@@ -96,6 +97,7 @@ const formSchema = z.object({
   draftContent: pageContentSchema,
   intent: z.enum(["save", "publish"]),
 });
+type ParsedPageForm = z.infer<typeof formSchema>;
 
 const ADMIN_PAGES_PATH = "/admin/pages";
 const PUBLIC_RESOURCES_PATH = "/resources";
@@ -142,6 +144,24 @@ export async function saveSeoPage(
       const existing = await adminGetSeoPageById(page.id);
       if (!existing) {
         return { status: "error", message: "Page not found." };
+      }
+
+      if (existing.status === "published") {
+        await adminSaveSeoPageDraft(page.id, {
+          draftContent: page.draftContent,
+          draftSettings: draftSettingsFromPageForm(page),
+          updatedBy: admin.user.id,
+        });
+
+        if (page.intent === "publish") {
+          await adminPublishSeoPage(page.id, { actorId: admin.user.id });
+          revalidatePagePaths(page.slug, existing.slug);
+        } else {
+          revalidatePath(`${ADMIN_PAGES_PATH}/${page.id}`);
+          revalidatePath(ADMIN_PAGES_PATH);
+        }
+
+        return { status: "saved", message: statusMessage(page.intent) };
       }
 
       if (existing.slug !== page.slug) {
@@ -201,17 +221,30 @@ export async function autosaveSeoPageDraft(
   }
 
   try {
-    await adminSaveSeoPageDraft(pageId, {
-      title: parsed.data.title,
-      targetKeyword: nullable(parsed.data.targetKeyword),
-      seoTitle: nullable(parsed.data.seoTitle),
-      metaDescription: nullable(parsed.data.metaDescription),
-      canonicalUrl: nullable(parsed.data.canonicalUrl),
-      noindex: parsed.data.noindex,
-      sitemapEnabled: parsed.data.sitemapEnabled,
-      draftContent: parsed.data.draftContent,
-      updatedBy: admin.user.id,
-    });
+    const existing = await adminGetSeoPageById(pageId);
+    if (!existing) {
+      return { status: "error", message: "Page not found." };
+    }
+
+    if (existing.status === "published") {
+      await adminSaveSeoPageDraft(pageId, {
+        draftContent: parsed.data.draftContent,
+        draftSettings: draftSettingsFromPageForm(parsed.data),
+        updatedBy: admin.user.id,
+      });
+    } else {
+      await adminSaveSeoPageDraft(pageId, {
+        title: parsed.data.title,
+        targetKeyword: nullable(parsed.data.targetKeyword),
+        seoTitle: nullable(parsed.data.seoTitle),
+        metaDescription: nullable(parsed.data.metaDescription),
+        canonicalUrl: nullable(parsed.data.canonicalUrl),
+        noindex: parsed.data.noindex,
+        sitemapEnabled: parsed.data.sitemapEnabled,
+        draftContent: parsed.data.draftContent,
+        updatedBy: admin.user.id,
+      });
+    }
     revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
     return { status: "saved", savedAt: new Date().toISOString() };
   } catch (error) {
@@ -288,29 +321,49 @@ export async function saveSeoPageDraftAndCreatePreviewLink(
       }
 
       previousSlug = existing.slug;
-      if (existing.slug !== page.slug) {
+      if (existing.status === "published") {
+        await adminSaveSeoPageDraft(pageId, {
+          draftContent: page.draftContent,
+          draftSettings: draftSettingsFromPageForm(page),
+          updatedBy: admin.user.id,
+        });
+      } else if (existing.slug !== page.slug) {
         await adminUpdateSeoPageSlug(pageId, page.slug, {
           actorId: admin.user.id,
         });
-      }
 
-      await adminSaveSeoPageDraft(pageId, {
-        title: page.title,
-        targetKeyword: nullable(page.targetKeyword),
-        seoTitle: nullable(page.seoTitle),
-        metaDescription: nullable(page.metaDescription),
-        canonicalUrl: nullable(page.canonicalUrl),
-        noindex: page.noindex,
-        sitemapEnabled: page.sitemapEnabled,
-        draftContent: page.draftContent,
-        updatedBy: admin.user.id,
-      });
+        await adminSaveSeoPageDraft(pageId, {
+          title: page.title,
+          targetKeyword: nullable(page.targetKeyword),
+          seoTitle: nullable(page.seoTitle),
+          metaDescription: nullable(page.metaDescription),
+          canonicalUrl: nullable(page.canonicalUrl),
+          noindex: page.noindex,
+          sitemapEnabled: page.sitemapEnabled,
+          draftContent: page.draftContent,
+          updatedBy: admin.user.id,
+        });
+      } else {
+        await adminSaveSeoPageDraft(pageId, {
+          title: page.title,
+          targetKeyword: nullable(page.targetKeyword),
+          seoTitle: nullable(page.seoTitle),
+          metaDescription: nullable(page.metaDescription),
+          canonicalUrl: nullable(page.canonicalUrl),
+          noindex: page.noindex,
+          sitemapEnabled: page.sitemapEnabled,
+          draftContent: page.draftContent,
+          updatedBy: admin.user.id,
+        });
+      }
     }
 
     const preview = await adminCreateSeoPagePreviewToken(pageId, {
       actorId: admin.user.id,
     });
-    revalidatePagePaths(page.slug, previousSlug);
+    if (!page.id) {
+      revalidatePagePaths(page.slug, previousSlug);
+    }
     revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
     return {
       status: "created",
@@ -553,6 +606,19 @@ function parsePageFormData(formData: FormData) {
   }
 
   return { success: true as const, data: parsed.data };
+}
+
+function draftSettingsFromPageForm(page: ParsedPageForm): SeoPageDraftSettings {
+  return {
+    slug: page.slug,
+    title: page.title,
+    targetKeyword: nullable(page.targetKeyword),
+    seoTitle: nullable(page.seoTitle),
+    metaDescription: nullable(page.metaDescription),
+    canonicalUrl: nullable(page.canonicalUrl),
+    noindex: page.noindex,
+    sitemapEnabled: page.sitemapEnabled,
+  };
 }
 
 function pageActionError(error: unknown): PageEditorActionState {
