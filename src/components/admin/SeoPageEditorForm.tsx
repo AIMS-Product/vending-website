@@ -871,7 +871,7 @@ export function SeoPageEditorForm({
                         }}
                       />
                     ) : (
-                      <div className="space-y-14">
+                      <div>
                         {content.sections.length === 0 ? (
                           <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50">
                             <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
@@ -928,75 +928,84 @@ export function SeoPageEditorForm({
                           </div>
                         ) : (
                           content.sections.map((section, index) => (
-                            <SortableSectionEditor
+                            <div
                               key={section.id}
-                              section={section}
-                              sectionIndex={index}
-                              sectionCount={content.sections.length}
-                              blockOrdinalById={blockOrdinalById}
-                              onSectionMove={(direction) =>
-                                moveSection(section.id, direction)
-                              }
-                              onSectionMoveToIndex={(targetIndex) =>
-                                moveSectionToIndex(section.id, targetIndex)
-                              }
-                              onSectionRemove={() => removeSection(section.id)}
-                              onAddColumn={() => addColumn(section.id)}
-                              onColumnMove={(columnId, direction) =>
-                                moveColumn(section.id, columnId, direction)
-                              }
-                              onColumnMoveToIndex={(columnId, targetIndex) =>
-                                moveColumnToIndex(
-                                  section.id,
+                              className={editorCanvasDividerClass(
+                                index > 0,
+                                14,
+                              )}
+                            >
+                              <SortableSectionEditor
+                                section={section}
+                                sectionIndex={index}
+                                sectionCount={content.sections.length}
+                                blockOrdinalById={blockOrdinalById}
+                                onSectionMove={(direction) =>
+                                  moveSection(section.id, direction)
+                                }
+                                onSectionMoveToIndex={(targetIndex) =>
+                                  moveSectionToIndex(section.id, targetIndex)
+                                }
+                                onSectionRemove={() =>
+                                  removeSection(section.id)
+                                }
+                                onAddColumn={() => addColumn(section.id)}
+                                onColumnMove={(columnId, direction) =>
+                                  moveColumn(section.id, columnId, direction)
+                                }
+                                onColumnMoveToIndex={(columnId, targetIndex) =>
+                                  moveColumnToIndex(
+                                    section.id,
+                                    columnId,
+                                    targetIndex,
+                                  )
+                                }
+                                onColumnRemove={(columnId) =>
+                                  removeColumn(section.id, columnId)
+                                }
+                                onAddBlock={(columnId, type, variant) =>
+                                  addBlock(section.id, columnId, type, variant)
+                                }
+                                onBlockChange={(columnId, blockId, next) =>
+                                  replaceBlock(
+                                    section.id,
+                                    columnId,
+                                    blockId,
+                                    next,
+                                  )
+                                }
+                                onBlockMove={(columnId, blockId, direction) =>
+                                  moveBlock(
+                                    section.id,
+                                    columnId,
+                                    blockId,
+                                    direction,
+                                  )
+                                }
+                                onBlockMoveToIndex={(
                                   columnId,
+                                  blockId,
                                   targetIndex,
-                                )
-                              }
-                              onColumnRemove={(columnId) =>
-                                removeColumn(section.id, columnId)
-                              }
-                              onAddBlock={(columnId, type, variant) =>
-                                addBlock(section.id, columnId, type, variant)
-                              }
-                              onBlockChange={(columnId, blockId, next) =>
-                                replaceBlock(
-                                  section.id,
-                                  columnId,
-                                  blockId,
-                                  next,
-                                )
-                              }
-                              onBlockMove={(columnId, blockId, direction) =>
-                                moveBlock(
-                                  section.id,
-                                  columnId,
-                                  blockId,
-                                  direction,
-                                )
-                              }
-                              onBlockMoveToIndex={(
-                                columnId,
-                                blockId,
-                                targetIndex,
-                              ) =>
-                                moveBlockToIndex(
-                                  section.id,
-                                  columnId,
-                                  blockId,
-                                  targetIndex,
-                                )
-                              }
-                              onBlockDuplicate={(columnId, blockId) =>
-                                duplicateBlock(section.id, columnId, blockId)
-                              }
-                              onBlockRemove={(columnId, blockId) =>
-                                removeBlock(section.id, columnId, blockId)
-                              }
-                              onEditBlockSettings={(blockId) => {
-                                setSelectedBlockId(blockId);
-                                setEditingBlockId(blockId);
-                              }}
-                            />
+                                ) =>
+                                  moveBlockToIndex(
+                                    section.id,
+                                    columnId,
+                                    blockId,
+                                    targetIndex,
+                                  )
+                                }
+                                onBlockDuplicate={(columnId, blockId) =>
+                                  duplicateBlock(section.id, columnId, blockId)
+                                }
+                                onBlockRemove={(columnId, blockId) =>
+                                  removeBlock(section.id, columnId, blockId)
+                                }
+                                onEditBlockSettings={(blockId) => {
+                                  setSelectedBlockId(blockId);
+                                  setEditingBlockId(blockId);
+                                }}
+                              />
+                            </div>
                           ))
                         )}
                       </div>
@@ -4787,7 +4796,7 @@ function SimpleBlockStackEditor({
   onEditBlockSettings: (blockId: string) => void;
 }) {
   return (
-    <div className="space-y-14">
+    <div>
       {column.blocks.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50">
           <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
@@ -4821,23 +4830,29 @@ function SimpleBlockStackEditor({
       ) : (
         <>
           {column.blocks.map((block, blockIndex) => (
-            <BlockEditor
+            <div
               key={block.id}
-              block={block}
-              blockIndex={blockIndex}
-              blockNumber={(blockOrdinalById.get(block.id) ?? blockIndex) + 1}
-              blockCount={column.blocks.length}
-              onChange={(next) => onBlockChange(block.id, next)}
-              onMove={(direction) => onBlockMove(block.id, direction)}
-              onMoveToIndex={(targetIndex) =>
-                onBlockMoveToIndex(block.id, targetIndex)
-              }
-              onDuplicate={() => onBlockDuplicate(block.id)}
-              onRemove={() => onBlockRemove(block.id)}
-              onEditSettings={() => onEditBlockSettings(block.id)}
-            />
+              className={editorCanvasDividerClass(blockIndex > 0, 14)}
+            >
+              <BlockEditor
+                block={block}
+                blockIndex={blockIndex}
+                blockNumber={(blockOrdinalById.get(block.id) ?? blockIndex) + 1}
+                blockCount={column.blocks.length}
+                onChange={(next) => onBlockChange(block.id, next)}
+                onMove={(direction) => onBlockMove(block.id, direction)}
+                onMoveToIndex={(targetIndex) =>
+                  onBlockMoveToIndex(block.id, targetIndex)
+                }
+                onDuplicate={() => onBlockDuplicate(block.id)}
+                onRemove={() => onBlockRemove(block.id)}
+                onEditSettings={() => onEditBlockSettings(block.id)}
+              />
+            </div>
           ))}
-          <BlockPicker onAddBlock={onAddBlock} />
+          <div className="pt-14">
+            <BlockPicker onAddBlock={onAddBlock} />
+          </div>
         </>
       )}
     </div>
@@ -4920,7 +4935,7 @@ function SortableColumnEditor({
       </header>
 
       <div className="flex-1">
-        <div className="space-y-10">
+        <div>
           {column.blocks.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-4 py-10 text-center">
               <div className="mb-3 rounded-full bg-white p-2 shadow-sm ring-1 ring-slate-200">
@@ -4954,25 +4969,31 @@ function SortableColumnEditor({
           ) : (
             <>
               {column.blocks.map((block, blockIndex) => (
-                <BlockEditor
+                <div
                   key={block.id}
-                  block={block}
-                  blockIndex={blockIndex}
-                  blockNumber={
-                    (blockOrdinalById.get(block.id) ?? blockIndex) + 1
-                  }
-                  blockCount={column.blocks.length}
-                  onChange={(next) => onBlockChange(block.id, next)}
-                  onMove={(direction) => onBlockMove(block.id, direction)}
-                  onMoveToIndex={(targetIndex) =>
-                    onBlockMoveToIndex(block.id, targetIndex)
-                  }
-                  onDuplicate={() => onBlockDuplicate(block.id)}
-                  onRemove={() => onBlockRemove(block.id)}
-                  onEditSettings={() => onEditBlockSettings(block.id)}
-                />
+                  className={editorCanvasDividerClass(blockIndex > 0, 10)}
+                >
+                  <BlockEditor
+                    block={block}
+                    blockIndex={blockIndex}
+                    blockNumber={
+                      (blockOrdinalById.get(block.id) ?? blockIndex) + 1
+                    }
+                    blockCount={column.blocks.length}
+                    onChange={(next) => onBlockChange(block.id, next)}
+                    onMove={(direction) => onBlockMove(block.id, direction)}
+                    onMoveToIndex={(targetIndex) =>
+                      onBlockMoveToIndex(block.id, targetIndex)
+                    }
+                    onDuplicate={() => onBlockDuplicate(block.id)}
+                    onRemove={() => onBlockRemove(block.id)}
+                    onEditSettings={() => onEditBlockSettings(block.id)}
+                  />
+                </div>
               ))}
-              <BlockPicker onAddBlock={onAddBlock} />
+              <div className="pt-10">
+                <BlockPicker onAddBlock={onAddBlock} />
+              </div>
             </>
           )}
         </div>
@@ -7251,6 +7272,12 @@ function editorSectionClass(
   spacing: PageSection["spacing"],
 ) {
   return resourceSectionClass(background, spacing);
+}
+
+function editorCanvasDividerClass(showDivider: boolean, spacing: 10 | 14) {
+  if (!showDivider) return "";
+  const spacingClass = spacing === 10 ? "mt-10 pt-10" : "mt-14 pt-14";
+  return `border-t border-dashed border-slate-300 ${spacingClass}`;
 }
 
 function columnGridClass(count: number) {
