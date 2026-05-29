@@ -98,8 +98,14 @@ export async function getPublishedSeoPageBySlug(slug: string) {
     .maybeSingle();
 
   if (error) {
+    // A query error (missing view, RLS failure, transport) is NOT a missing
+    // page. Throw so it surfaces as a 500 + error log instead of a silent 404
+    // that hides infrastructure problems — e.g. an unapplied view migration
+    // making every resource page disappear.
     console.error("getPublishedSeoPageBySlug failed", error);
-    return null;
+    throw new Error(
+      `Failed to load published SEO page "${slug}": ${error.message}`,
+    );
   }
   if (!data || !data.published_content) return null;
 

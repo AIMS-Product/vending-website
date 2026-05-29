@@ -149,14 +149,14 @@ describe("seo page public service", () => {
     errorSpy.mockRestore();
   });
 
-  it("returns null or false on public lookup errors", async () => {
+  it("throws on getPublishedSeoPageBySlug query errors so infra failures are loud", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const error = { message: "RLS denied" };
 
     mocks.query.maybeSingle.mockResolvedValueOnce({ data: null, error });
-    await expect(
-      getPublishedSeoPageBySlug("start-vending"),
-    ).resolves.toBeNull();
+    await expect(getPublishedSeoPageBySlug("start-vending")).rejects.toThrow(
+      /RLS denied/,
+    );
 
     mocks.query.maybeSingle.mockResolvedValueOnce({ data: null, error });
     await expect(hasPublishedSeoPageSlug("start-vending")).resolves.toBe(false);
