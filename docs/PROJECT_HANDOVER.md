@@ -408,6 +408,15 @@ First 30-60 minutes:
 
 ## Change Log
 
+- 2026-05-29: Auto-recorded commit cc83297 - Merge branch 'codex/seo-builder-teardown-remediation' (thermo refactor). Files: no file list available. after `git merge codex/seo-builder-teardown-remediation --no-ff -m "$(cat <<'EOF'
+  Merge branch 'codex/seo-builder-teardown-remediation' (thermo refactor)
+
+Behavior-preserving thermo code-quality remediation across the SEO Page
+Builder, admin CMS, media upload flows, and page service, plus the two
+review-flagged type-assertion hardenings.
+EOF
+)" 2>&1 | tail -15` <!-- handover-auto:commit cc8329792e7da28437ecac8220d6f0bc09984c2a -->
+
 - 2026-05-29: Auto-recorded commit da835e4 - refactor(seo-builder): remediate thermo code-quality findings. Files: docs/PROJECT_HANDOVER.md, plans/thermo-code-quality-remediation/slice-plan.md, src/app/admin/media/page.tsx, src/app/admin/news/page.tsx, src/app/admin/pages/actions.test.ts, src/app/admin/pages/actions.ts, src/components/admin/MediaLibraryManager.tsx, src/components/admin/MediaPickerProvider.tsx; +20 more. after `git commit -m "$(cat <<'EOF'
   refactor(seo-builder): remediate thermo code-quality findings
 
