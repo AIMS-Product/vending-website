@@ -51,7 +51,7 @@ export const seoPageFilters: Array<{
   label: string;
   value: SeoPageStatusFilter;
 }> = [
-  { label: "Active", value: "active" },
+  { label: "All", value: "active" },
   { label: "Drafts", value: "draft" },
   { label: "Published", value: "published" },
   { label: "Archived", value: "archived" },

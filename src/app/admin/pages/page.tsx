@@ -85,9 +85,9 @@ export default async function AdminPagesPage({
           <MetricPanel
             icon="file"
             tone="blue"
-            label="Active"
+            label="All"
             value={pageCounts.active}
-            caption="drafts and live"
+            caption="drafts + published"
             href={adminPagesHref({ status: "active", q: searchQuery, sort })}
             active={active === "active"}
           />
@@ -105,7 +105,7 @@ export default async function AdminPagesPage({
             tone="green"
             label="Published"
             value={pageCounts.published}
-            caption="live"
+            caption="publicly visible"
             href={adminPagesHref({
               status: "published",
               q: searchQuery,
@@ -331,7 +331,7 @@ export default async function AdminPagesPage({
             <div className="hidden items-center gap-5 sm:flex">
               <span className="inline-flex items-center gap-2">
                 <span className="size-2 rounded-full bg-emerald-500" />
-                {pageCounts.published} live
+                {pageCounts.published} published
               </span>
               <span className="inline-flex items-center gap-2">
                 <span className="size-2 rounded-full bg-amber-400" />
@@ -481,12 +481,14 @@ function PageRow({
         <StatusDot
           label={`SEO readiness: ${readiness.label}`}
           tone={readinessDotTone(readiness.status)}
+          glyph={readinessDotGlyph(readiness.status)}
         />
       </td>
       <td className="px-5 py-4 text-center">
         <StatusDot
           label={`Page status: ${formatStatus(page.status)}`}
           tone={statusDotTone(page.status)}
+          glyph={statusDotGlyph(page.status)}
         />
       </td>
       <td className="px-5 py-4 text-right">
@@ -539,6 +541,7 @@ function PageActionsMenu({
             pageId={page.id}
             returnTo={returnTo}
             label="Publish page"
+            confirmMessage={`Publish "${page.title}" to the live site? It will be publicly visible at /resources/${page.slug}.`}
           />
         ) : null}
         {!isDraft ? (
@@ -547,6 +550,11 @@ function PageActionsMenu({
             pageId={page.id}
             returnTo={returnTo}
             label="Move to draft"
+            confirmMessage={
+              isPublished
+                ? `Unpublish "${page.title}"? It will be removed from the live site and returned to draft.`
+                : `Move "${page.title}" back to draft?`
+            }
           />
         ) : null}
         {!isArchived ? (
@@ -689,14 +697,26 @@ function formatStatus(status: string) {
 
 type DotTone = "amber" | "blue" | "green" | "red" | "slate";
 
-function StatusDot({ label, tone }: { label: string; tone: DotTone }) {
+function StatusDot({
+  label,
+  tone,
+  glyph,
+}: {
+  label: string;
+  tone: DotTone;
+  glyph: string;
+}) {
   return (
     <span className="group relative inline-flex size-7 items-center justify-center rounded-full">
       <span className="sr-only">{label}</span>
+      {/* Glyph makes each state distinguishable without relying on colour
+          (WCAG 1.4.1); sr-only label above carries the full text. */}
       <span
         aria-hidden="true"
-        className={`size-2.5 rounded-full ${dotToneClass(tone)}`}
-      />
+        className={`flex size-4 items-center justify-center rounded-full text-[9px] leading-none font-bold text-white ${dotToneClass(tone)}`}
+      >
+        {glyph}
+      </span>
       <span
         aria-hidden="true"
         className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-2 -translate-x-1/2 rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white opacity-0 shadow-lg transition group-hover:opacity-100 group-focus-visible:opacity-100"
@@ -718,6 +738,19 @@ function readinessDotTone(status: string): DotTone {
   if (status === "blocked") return "red";
   if (status === "needs_work") return "amber";
   return "blue";
+}
+
+function statusDotGlyph(status: string) {
+  if (status === "published") return "P";
+  if (status === "archived") return "A";
+  return "D";
+}
+
+function readinessDotGlyph(status: string) {
+  if (status === "strong") return "✓";
+  if (status === "blocked") return "✕";
+  if (status === "needs_work") return "!";
+  return "+";
 }
 
 function dotToneClass(tone: DotTone) {

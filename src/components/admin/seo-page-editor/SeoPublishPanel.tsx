@@ -14,6 +14,12 @@ import {
 } from "@/components/admin/seo-page-editor/editor-styles";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 
+// S7: a clearly-disabled (greyed) variant for the Publish button so a blocked
+// page doesn't render an active-looking blue primary button. Clicking it still
+// works — it reveals the "next required step" reason rather than submitting.
+const disabledPublishButtonClass =
+  "rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-400 shadow-none transition cursor-help";
+
 export function SeoPublishPanel({
   editor,
 }: {
@@ -27,7 +33,13 @@ export function SeoPublishPanel({
       <SeoPanelHeader editor={editor} />
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
         <PublishStatusCard editor={editor} />
-        <NextPublishStepCard step={editor.nextPublishStep} />
+        <div
+          id="publish-next-step"
+          tabIndex={-1}
+          className="scroll-mt-4 outline-none"
+        >
+          <NextPublishStepCard step={editor.nextPublishStep} />
+        </div>
         <SeoMetadataFields editor={editor} />
         <SeoReadinessPanel
           content={editor.content}
@@ -177,6 +189,10 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
             placeholder="page-slug"
           />
         </div>
+        <span className="mt-1.5 block text-xs leading-5 text-slate-500">
+          Lowercase letters, numbers and hyphens only. Auto-generated from the
+          title until you edit it, and must be unique across resource pages.
+        </span>
       </label>
 
       <TextInput
@@ -417,15 +433,29 @@ function SeoPublishActions({ editor }: { editor: SeoPageEditorController }) {
       </button>
       <button
         type="submit"
-        className={primaryButtonClass}
+        className={
+          editor.publishDisabled
+            ? disabledPublishButtonClass
+            : primaryButtonClass
+        }
         name="intent"
         value="publish"
-        disabled={editor.publishDisabled}
+        aria-disabled={editor.publishDisabled || undefined}
         title={
           editor.seoReadiness.blockers.length > 0
             ? "Resolve SEO blockers before publishing."
             : undefined
         }
+        onClick={(event) => {
+          // When blocked, don't submit — instead reveal the reason so the user
+          // knows exactly what to fix (rather than a dead, unexplained button).
+          if (editor.publishDisabled) {
+            event.preventDefault();
+            const reason = document.getElementById("publish-next-step");
+            reason?.scrollIntoView({ behavior: "smooth", block: "center" });
+            reason?.focus();
+          }
+        }}
       >
         {editor.publishButtonLabel}
       </button>

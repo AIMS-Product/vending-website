@@ -155,6 +155,53 @@ export async function saveSeoPage(
   return { status: "saved", message: statusMessage(page.intent) };
 }
 
+export type CreateDraftForEditorResult =
+  | { status: "created"; pageId: string }
+  | { status: "error"; message: string };
+
+const createDraftForEditorSchema = z.object({
+  title: z.string().trim().min(1),
+  slug: z.string().trim().min(1),
+  targetKeyword: z.string().trim().optional(),
+});
+
+// S3b: auto-create a draft row once the user has actually started a new page
+// (a real title exists), so autosave can protect their work from then on. Only
+// fires after a title is entered — it never creates blank "Untitled" rows.
+export async function createSeoPageDraftForEditor(input: {
+  title: string;
+  slug: string;
+  targetKeyword?: string;
+  draftContent?: unknown;
+}): Promise<CreateDraftForEditorResult> {
+  const admin = await requireAuth();
+  const parsed = createDraftForEditorSchema.safeParse(input);
+  if (!parsed.success) {
+    return { status: "error", message: "Add a title before auto-saving." };
+  }
+
+  try {
+    const page = await adminCreateSeoPage({
+      title: parsed.data.title,
+      slug: parsed.data.slug,
+      targetKeyword: parsed.data.targetKeyword ?? null,
+      draftContent: input.draftContent,
+      createdBy: admin.user.id,
+    });
+    revalidatePath(ADMIN_PAGES_PATH);
+    return { status: "created", pageId: page.id };
+  } catch (error) {
+    console.error("failed to auto-create SEO page draft", {
+      adminUserId: admin.user.id,
+      error,
+    });
+    return {
+      status: "error",
+      message: "Could not start the draft automatically — use Save draft.",
+    };
+  }
+}
+
 export async function autosaveSeoPageDraft(
   pageId: string,
   payload: PageAutosavePayload,

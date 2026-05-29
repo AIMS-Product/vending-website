@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import {
   acceptAiSeoProposalBlocks,
   autosaveSeoPageDraft,
+  createSeoPageDraftForEditor,
   createSeoPagePreviewLink,
   generateAiSeoPageProposal,
   saveSeoPageDraftAndCreatePreviewLink,
@@ -156,6 +157,12 @@ export function useSeoPageEditorController({
     createInitialEditorContentState,
   );
   const [autosave, setAutosave] = useState<PageAutosaveResult | null>(null);
+  // S3b: id of a draft auto-created for a brand-new page once the user starts
+  // typing. `effectivePageId` lets autosave + the form's hidden id treat the
+  // freshly-created row like a loaded page, without remounting the editor.
+  const [createdDraftId, setCreatedDraftId] = useState<string | null>(null);
+  const isCreatingDraftRef = useRef(false);
+  const effectivePageId = page?.id ?? createdDraftId;
   const [aiProposalResult, setAiProposalResult] =
     useState<PageAiProposalResult>(initialAiProposalState);
   const [aiInsertResult, setAiInsertResult] =
@@ -198,6 +205,12 @@ export function useSeoPageEditorController({
   const hasRefreshedAfterManualPublish = useRef(false);
   const visibleSlug = slugTouched ? slug : slugify(title);
   const draftContentJson = useMemo(() => JSON.stringify(content), [content]);
+  // S3a: snapshot the new-page content baseline once (on mount) so we can
+  // detect unsaved edits and guard against navigating away before the first
+  // save persists them. useState lazy-init avoids reading a ref during render.
+  const [newPageBaselineContentJson] = useState<string | null>(() =>
+    page?.id ? null : draftContentJson,
+  );
   const publishedContent = useMemo(() => parsePublishedContent(page), [page]);
   const publishedContentJson = useMemo(
     () => (publishedContent ? JSON.stringify(publishedContent) : null),
@@ -339,7 +352,13 @@ export function useSeoPageEditorController({
   const primaryColumn = primarySection?.columns[0] ?? null;
   const usesSimpleBlockStack =
     content.sections.length <= 1 && (primarySection?.columns.length ?? 0) <= 1;
-  const showCreationChoiceModal = !page?.id && !hasSelectedNewPageMode;
+  // S5: the create chooser currently offers only "From scratch" ("From template"
+  // is a disabled "Coming soon" teaser), so skip it and drop straight into the
+  // builder. Flip NEW_PAGE_TEMPLATES_ENABLED to true to reintroduce the chooser
+  // once page templates actually ship.
+  const NEW_PAGE_TEMPLATES_ENABLED = false;
+  const showCreationChoiceModal =
+    NEW_PAGE_TEMPLATES_ENABLED && !page?.id && !hasSelectedNewPageMode;
   const saveMessage = (() => {
     if (redirectError && state.status === "idle" && !lastManualSubmitIntent) {
       return redirectError;
@@ -450,14 +469,14 @@ export function useSeoPageEditorController({
   ]);
 
   useEffect(() => {
-    if (!page?.id) return;
+    if (!effectivePageId) return;
     if (!autosaveReady.current) {
       autosaveReady.current = true;
       return;
     }
 
     const timer = window.setTimeout(() => {
-      autosaveSeoPageDraft(page.id, {
+      autosaveSeoPageDraft(effectivePageId, {
         title,
         slug: visibleSlug,
         targetKeyword,
@@ -483,9 +502,9 @@ export function useSeoPageEditorController({
   }, [
     canonicalUrl,
     content,
+    effectivePageId,
     metaDescription,
     noindex,
-    page?.id,
     seoTitle,
     sitemapEnabled,
     structuredDataBreadcrumb,
@@ -493,6 +512,79 @@ export function useSeoPageEditorController({
     targetKeyword,
     title,
     visibleSlug,
+  ]);
+
+  // S3b: once the user starts a brand-new page (a real title exists), create a
+  // draft row after a short pause so autosave can take over. Guarded so it
+  // fires once and never creates blank rows. URL is swapped to the new id via
+  // history (no remount) so a reload lands on the persisted draft.
+  useEffect(() => {
+    if (page?.id || createdDraftId) return;
+    if (title.trim() === "") return;
+    const timer = window.setTimeout(async () => {
+      if (isCreatingDraftRef.current) return;
+      isCreatingDraftRef.current = true;
+      try {
+        const result = await createSeoPageDraftForEditor({
+          title,
+          slug: visibleSlug,
+          targetKeyword: targetKeyword.trim() || undefined,
+          draftContent: content,
+        });
+        if (result.status === "created") {
+          setCreatedDraftId(result.pageId);
+          autosaveReady.current = true;
+          window.history.replaceState(
+            null,
+            "",
+            `/admin/pages/${result.pageId}`,
+          );
+          setAutosave({ status: "saved", savedAt: new Date().toISOString() });
+        } else {
+          setAutosave({ status: "error", message: result.message });
+        }
+      } catch (error) {
+        console.error("auto-create draft failed", error);
+        setAutosave({ status: "error", message: "Autosave failed." });
+      } finally {
+        isCreatingDraftRef.current = false;
+      }
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [content, createdDraftId, page?.id, targetKeyword, title, visibleSlug]);
+
+  // S3a: a brand-new page has no id yet, so the id-keyed autosave above does
+  // not protect it. Warn before a tab close / refresh / external navigation
+  // would discard unsaved work typed before the first save creates the row.
+  useEffect(() => {
+    // Once a draft exists (loaded page or S3b auto-created one) autosave
+    // protects the work, so the guard only matters before any row exists.
+    if (effectivePageId) return;
+    const hasUnsavedNewContent =
+      title.trim() !== "" ||
+      (slugTouched && slug.trim() !== "") ||
+      seoTitle.trim() !== "" ||
+      metaDescription.trim() !== "" ||
+      targetKeyword.trim() !== "" ||
+      (newPageBaselineContentJson !== null &&
+        draftContentJson !== newPageBaselineContentJson);
+    if (!hasUnsavedNewContent) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [
+    draftContentJson,
+    effectivePageId,
+    metaDescription,
+    newPageBaselineContentJson,
+    seoTitle,
+    slug,
+    slugTouched,
+    targetKeyword,
+    title,
   ]);
 
   useEffect(() => {
@@ -543,6 +635,7 @@ export function useSeoPageEditorController({
     draftContentJson,
     duplicateBlock,
     editBlockEntry,
+    effectivePageId,
     editingBlockEntry,
     formAction,
     focusSeoTargetKeyword,
@@ -935,6 +1028,14 @@ export function useSeoPageEditorController({
       });
       return;
     }
+
+    // S11: explain what the agent does before running it (it can take time and
+    // calls an AI model). It only generates a proposal — nothing is published
+    // or changed until the user reviews and inserts the suggested blocks.
+    const confirmed = window.confirm(
+      "Run the SEO agent?\n\nIt analyses this page and generates suggested SEO content and blocks. Nothing is published or changed automatically — you review and choose what to insert. This can take a moment.",
+    );
+    if (!confirmed) return;
 
     setIsAiGenerating(true);
     setAiProposalResult({ status: "idle" });

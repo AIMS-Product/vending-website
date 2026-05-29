@@ -17,8 +17,8 @@ export function SeoPageEditorWorkspace({
   return (
     <>
       <SeoEditorManualSubmitToast toast={editor.manualSubmitToast} />
-      {editor.page?.id && (
-        <input type="hidden" name="id" value={editor.page.id} />
+      {editor.effectivePageId && (
+        <input type="hidden" name="id" value={editor.effectivePageId} />
       )}
       <input
         type="hidden"
