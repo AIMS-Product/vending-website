@@ -408,6 +408,32 @@ First 30-60 minutes:
 
 ## Change Log
 
+- 2026-05-29: Auto-recorded commit da835e4 - refactor(seo-builder): remediate thermo code-quality findings. Files: docs/PROJECT_HANDOVER.md, plans/thermo-code-quality-remediation/slice-plan.md, src/app/admin/media/page.tsx, src/app/admin/news/page.tsx, src/app/admin/pages/actions.test.ts, src/app/admin/pages/actions.ts, src/components/admin/MediaLibraryManager.tsx, src/components/admin/MediaPickerProvider.tsx; +20 more. after `git commit -m "$(cat <<'EOF'
+  refactor(seo-builder): remediate thermo code-quality findings
+
+Behavior-preserving remediation of the thermo-nuclear maintainability
+findings across the SEO Page Builder, admin CMS routes, media upload
+flows, and page service orchestration.
+
+- Extract block behavior into descriptors (block-descriptors.ts) to
+  collapse duplicated type/variant branching shared by the public
+  renderer and editor.
+- Split the monolithic resource renderer into focused block components
+  (resource-blocks/HeroBlock, RichTextBlock, shared).
+- Deduplicate admin list state into media-list.ts / news-list.ts.
+- Consolidate page service publish/archive/refresh/rollback and the
+  save/preview server-action branching.
+- Unify the media upload flow shared by editor-upload, MediaPickerProvider,
+  and MediaLibraryManager.
+- Harden two type assertions flagged in review: validate CTA variants via
+  a type guard and throw on unsupported block types instead of casting.
+
+Public rendering, draft save/autosave/preview/publish, media governance,
+lead attribution, and admin auth are unchanged. Verified: lint, tsc,
+207 tests, build.
+EOF
+)" 2>&1 | tail -20` <!-- handover-auto:commit da835e42404801fcd2eed9efc49fb6a68faa17c2 -->
+
 - 2026-05-29: Auto-recorded commit ca44990 - Merge branch 'codex/seo-builder-teardown-remediation'. Files: no file list available. after `git merge codex/seo-builder-teardown-remediation --no-ff -m "$(cat <<'EOF'
   Merge branch 'codex/seo-builder-teardown-remediation'
 
