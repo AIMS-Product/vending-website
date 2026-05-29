@@ -17,7 +17,6 @@ import {
   bulkCreateMediaAssets,
   bulkDeleteMediaAssets,
   createMediaAsset,
-  createSignedMediaUpload,
   deleteMediaAsset,
   fetchMediaAssetUsage,
   updateMediaAsset,
@@ -31,12 +30,11 @@ import {
 } from "@/components/admin/AdminUi";
 import {
   IMAGE_ACCEPT,
+  defaultEditorImageFields,
   isAcceptedEditorImageFile,
-  mediaAltFromFilename,
-  mediaTitleFromFilename,
+  uploadImageFileToStorage,
 } from "@/lib/media/editor-upload";
 import type { MediaAssetUsage } from "@/lib/services/media-assets";
-import { createClient } from "@/lib/supabase/client";
 
 export type MediaAssetListItem = {
   id: string;
@@ -707,14 +705,17 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
     setMessage(null);
     setItems((current) => [
       ...current,
-      ...files.map((file) => ({
-        file,
-        title: mediaTitleFromFilename(file.name),
-        altText: mediaAltFromFilename(file.name),
-        storageBucket: "",
-        storagePath: "",
-        status: "pending" as const,
-      })),
+      ...files.map((file) => {
+        const defaults = defaultEditorImageFields(file);
+        return {
+          file,
+          title: defaults.title,
+          altText: defaults.altText,
+          storageBucket: "",
+          storagePath: "",
+          status: "pending" as const,
+        };
+      }),
     ]);
   }
 
@@ -731,21 +732,11 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
         setItems([...nextItems]);
 
         try {
-          const request = new FormData();
-          request.set("filename", item.file.name);
-          const signed = await createSignedMediaUpload(request);
-          const supabase = createClient();
-          const { error } = await supabase.storage
-            .from(signed.bucket)
-            .uploadToSignedUrl(signed.path, signed.token, item.file, {
-              contentType: item.file.type || "image/jpeg",
-              upsert: false,
-            });
-          if (error) throw error;
+          const uploaded = await uploadImageFileToStorage(item.file);
           nextItems[index] = {
             ...item,
-            storageBucket: signed.bucket,
-            storagePath: signed.path,
+            storageBucket: uploaded.storageBucket,
+            storagePath: uploaded.storagePath,
             status: "ready",
           };
         } catch (error) {
@@ -910,6 +901,8 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
   const [state, formAction] = useActionState(createMediaAsset, initialState);
   const [assetType, setAssetType] =
     useState<MediaAssetListItem["assetType"]>("image");
+  const [title, setTitle] = useState("");
+  const [altText, setAltText] = useState("");
   const [externalUrl, setExternalUrl] = useState("");
   const [storageBucket, setStorageBucket] = useState("");
   const [storagePath, setStoragePath] = useState("");
@@ -928,18 +921,9 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
   }
 
   function applyUploadedFileDefaults(file: File) {
-    const titleInput = document.getElementById(
-      "add-media-title",
-    ) as HTMLInputElement | null;
-    const altInput = document.getElementById(
-      "add-media-alt",
-    ) as HTMLInputElement | null;
-    if (titleInput && !titleInput.value.trim()) {
-      titleInput.value = mediaTitleFromFilename(file.name);
-    }
-    if (altInput && !altInput.value.trim()) {
-      altInput.value = mediaAltFromFilename(file.name);
-    }
+    const defaults = defaultEditorImageFields(file);
+    setTitle((current) => (current.trim() ? current : defaults.title));
+    setAltText((current) => (current.trim() ? current : defaults.altText));
   }
 
   function handleFileChange(file: File | null) {
@@ -952,19 +936,9 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
     setUploadMessage(null);
     startUploadTransition(async () => {
       try {
-        const request = new FormData();
-        request.set("filename", file.name);
-        const signed = await createSignedMediaUpload(request);
-        const supabase = createClient();
-        const { error } = await supabase.storage
-          .from(signed.bucket)
-          .uploadToSignedUrl(signed.path, signed.token, file, {
-            contentType: file.type || "image/jpeg",
-            upsert: false,
-          });
-        if (error) throw error;
-        setStorageBucket(signed.bucket);
-        setStoragePath(signed.path);
+        const uploaded = await uploadImageFileToStorage(file);
+        setStorageBucket(uploaded.storageBucket);
+        setStoragePath(uploaded.storagePath);
         setExternalUrl("");
         setUploadMessage("Image uploaded. Complete the form and save.");
       } catch (error) {
@@ -1046,6 +1020,8 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
             id="add-media-title"
             name="title"
             aria-label="Title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
             required
             className={adminInputClass}
           />
@@ -1056,6 +1032,8 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
             id="add-media-alt"
             name="altText"
             aria-label="Alt text"
+            value={altText}
+            onChange={(event) => setAltText(event.target.value)}
             required={assetType === "image"}
             className={adminInputClass}
           />

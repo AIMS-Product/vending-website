@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ctaBlockDescriptor } from "@/lib/page-builder/block-descriptors";
 
 export type PageBuilderValidationIssue = {
   code: string;
@@ -444,14 +445,9 @@ export const blockRegistry = {
     },
   },
   cta: {
-    type: "cta",
-    allowedVariants: ["primary", "secondary", "text"],
-    defaultProps: {
-      presetId: undefined,
-      label: "",
-      href: "/apply",
-      trackingName: "",
-    },
+    type: ctaBlockDescriptor.type,
+    allowedVariants: ctaBlockDescriptor.variants.map((variant) => variant.id),
+    defaultProps: ctaBlockDescriptor.defaultProps,
   },
   faq: {
     type: "faq",

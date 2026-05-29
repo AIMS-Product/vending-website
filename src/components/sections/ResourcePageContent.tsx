@@ -1,21 +1,32 @@
-import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import {
   cardGridLinkLabel,
   type PageBlock,
   type PageContent,
-  type RichTextNode,
 } from "@/lib/page-builder/blocks";
 import {
   resourceColumnGridClass,
   resourceSectionClass,
 } from "@/components/sections/resource-page-content-classes";
 import { isBlockFieldVisible } from "@/lib/page-builder/block-field-visibility";
+import { HeroBlock } from "@/components/sections/resource-blocks/HeroBlock";
+import { RichTextBlock } from "@/components/sections/resource-blocks/RichTextBlock";
+import {
+  ResourceLink,
+  editorFallback,
+  previewLayoutClass,
+  resourceCtaClass,
+  type LeadFormBlock,
+  type ResourcePageLinkMode,
+  type ResourcePageRenderMode,
+} from "@/components/sections/resource-blocks/shared";
 
-export type ResourcePageRenderMode = "public" | "editor";
-export type ResourcePageLinkMode = "live" | "disabled";
-export type LeadFormBlock = Extract<PageBlock, { type: "lead_form" }>;
+export type {
+  LeadFormBlock,
+  ResourcePageLinkMode,
+  ResourcePageRenderMode,
+} from "@/components/sections/resource-blocks/shared";
 
 type ResourcePageContentViewProps = {
   content: PageContent;
@@ -43,14 +54,6 @@ export function ResourcePageBlockPreview({ block }: { block: PageBlock }) {
       previewLayout
     />
   );
-}
-
-function previewLayoutClass(
-  previewLayout: boolean | undefined,
-  previewClass: string,
-  responsiveClass: string,
-) {
-  return previewLayout ? previewClass : responsiveClass;
 }
 
 export function ResourcePageContentView({
@@ -99,246 +102,24 @@ function ResourcePageBlockView({
   previewLayout = false,
 }: ResourcePageBlockViewProps) {
   if (block.type === "hero") {
-    const HeadingTag = isPrimaryHero ? "h1" : "h2";
-    const heroHeadingClass = previewLayoutClass(
-      previewLayout,
-      "mt-4 text-3xl leading-tight font-black text-[#111111] uppercase",
-      "mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl",
-    );
-    const heroSectionClass = previewLayoutClass(previewLayout, "py-4", "py-8");
-
-    if (block.variant === "split") {
-      return (
-        <div
-          className={`grid items-center gap-10 ${heroSectionClass} ${previewLayoutClass(
-            previewLayout,
-            "grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]",
-            "lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]",
-          )}`}
-        >
-          <div>
-            {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-              <p className="text-sm font-black text-[#066a99] uppercase">
-                {block.props.eyebrow}
-              </p>
-            )}
-            <HeadingTag className={heroHeadingClass}>
-              {editorFallback(block.props.heading, "Hero headline", renderMode)}
-            </HeadingTag>
-            {isBlockFieldVisible(block, "body") &&
-              (block.props.body || renderMode === "editor") && (
-                <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
-                  {editorFallback(
-                    block.props.body,
-                    "Hero body copy",
-                    renderMode,
-                  )}
-                </p>
-              )}
-            {isBlockFieldVisible(block, "cta") &&
-              ((block.props.ctaLabel && block.props.ctaHref) ||
-                renderMode === "editor") && (
-                <ResourceLink
-                  href={block.props.ctaHref || "#"}
-                  trackingName={block.props.ctaTrackingName}
-                  linkMode={linkMode}
-                  className={`${resourceCtaClass("primary")} mt-7`}
-                >
-                  {editorFallback(
-                    block.props.ctaLabel,
-                    "CTA label",
-                    renderMode,
-                  )}
-                </ResourceLink>
-              )}
-          </div>
-          <HeroSplitAside block={block} renderMode={renderMode} />
-        </div>
-      );
-    }
-
-    if (block.variant === "compact") {
-      return (
-        <div className={`mx-auto max-w-3xl text-center ${heroSectionClass}`}>
-          {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-            <p className="text-sm font-black text-[#066a99] uppercase">
-              {block.props.eyebrow}
-            </p>
-          )}
-          <HeadingTag className={heroHeadingClass}>
-            {editorFallback(block.props.heading, "Hero headline", renderMode)}
-          </HeadingTag>
-          {isBlockFieldVisible(block, "body") &&
-            (block.props.body || renderMode === "editor") && (
-              <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 font-semibold text-slate-700">
-                {editorFallback(block.props.body, "Hero body copy", renderMode)}
-              </p>
-            )}
-          {isBlockFieldVisible(block, "cta") &&
-            ((block.props.ctaLabel && block.props.ctaHref) ||
-              renderMode === "editor") && (
-              <ResourceLink
-                href={block.props.ctaHref || "#"}
-                trackingName={block.props.ctaTrackingName}
-                linkMode={linkMode}
-                className={`${resourceCtaClass("primary")} mt-7`}
-              >
-                {editorFallback(block.props.ctaLabel, "CTA label", renderMode)}
-              </ResourceLink>
-            )}
-        </div>
-      );
-    }
-
-    if (block.variant === "editorial") {
-      return (
-        <div className="max-w-4xl rounded-[12px] bg-[#eaf8ff] px-6 py-8 shadow-[inset_4px_0_0_#55b8e8]">
-          {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-            <p className="text-sm font-black text-[#066a99] uppercase">
-              {block.props.eyebrow}
-            </p>
-          )}
-          <HeadingTag className={heroHeadingClass}>
-            {editorFallback(block.props.heading, "Hero headline", renderMode)}
-          </HeadingTag>
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-black text-slate-600 uppercase">
-            <span>Resource guide</span>
-            <span className="size-1 rounded-full bg-slate-400" />
-            <span>Editor approved block</span>
-          </div>
-          {isBlockFieldVisible(block, "body") &&
-            (block.props.body || renderMode === "editor") && (
-              <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
-                {editorFallback(block.props.body, "Hero body copy", renderMode)}
-              </p>
-            )}
-        </div>
-      );
-    }
-
     return (
-      <div className={`max-w-4xl ${heroSectionClass}`}>
-        {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-          <p className="text-sm font-black text-[#066a99] uppercase">
-            {block.props.eyebrow}
-          </p>
-        )}
-        <HeadingTag className={heroHeadingClass}>
-          {editorFallback(block.props.heading, "Hero headline", renderMode)}
-        </HeadingTag>
-        {isBlockFieldVisible(block, "body") &&
-          (block.props.body || renderMode === "editor") && (
-            <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
-              {editorFallback(block.props.body, "Hero body copy", renderMode)}
-            </p>
-          )}
-        {isBlockFieldVisible(block, "cta") &&
-          ((block.props.ctaLabel && block.props.ctaHref) ||
-            renderMode === "editor") && (
-            <ResourceLink
-              href={block.props.ctaHref || "#"}
-              trackingName={block.props.ctaTrackingName}
-              linkMode={linkMode}
-              className={`${resourceCtaClass("primary")} mt-7`}
-            >
-              {editorFallback(block.props.ctaLabel, "CTA label", renderMode)}
-            </ResourceLink>
-          )}
-      </div>
+      <HeroBlock
+        block={block}
+        renderMode={renderMode}
+        linkMode={linkMode}
+        isPrimaryHero={isPrimaryHero}
+        previewLayout={previewLayout}
+      />
     );
   }
 
   if (block.type === "rich_text") {
-    const richTextFrameClass =
-      block.variant === "intro"
-        ? "max-w-4xl border-l-4 border-[#55b8e8] pl-6"
-        : block.variant === "compact"
-          ? "max-w-2xl"
-          : block.variant === "checklist"
-            ? "max-w-3xl rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]"
-            : "max-w-3xl";
-    const richTextHeadingClass =
-      block.variant === "intro"
-        ? "mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl"
-        : block.variant === "compact"
-          ? "mt-3 text-xl leading-tight font-black text-[#111111] uppercase md:text-2xl"
-          : "mt-4 text-2xl leading-tight font-black text-[#111111] uppercase md:text-3xl";
-
     return (
-      <div className={richTextFrameClass}>
-        {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-          <p className="text-sm font-black text-[#066a99] uppercase">
-            {block.props.eyebrow}
-          </p>
-        )}
-        {isBlockFieldVisible(block, "heading") &&
-          (block.props.heading || renderMode === "editor") && (
-            <h2 className={richTextHeadingClass}>
-              {editorFallback(
-                block.props.heading,
-                "Section heading",
-                renderMode,
-              )}
-            </h2>
-          )}
-        <div className="mt-5 space-y-4 text-base leading-8 font-semibold text-slate-700">
-          {block.variant === "checklist" &&
-          block.props.body.nodes.length === 0 &&
-          renderMode === "editor" ? (
-            <ChecklistPlaceholder />
-          ) : block.props.body.nodes.length === 0 && renderMode === "editor" ? (
-            <p className="text-slate-400">Write the page copy here.</p>
-          ) : (
-            block.props.body.nodes.map((node) => {
-              if (node.type === "heading") {
-                return (
-                  <h3
-                    key={richTextNodeKey(node)}
-                    className="pt-2 text-xl font-black text-[#111111] uppercase"
-                  >
-                    {editorFallback(node.text, "Subheading", renderMode)}
-                  </h3>
-                );
-              }
-              if (node.type === "list") {
-                const ListTag = node.style === "numbered" ? "ol" : "ul";
-                return (
-                  <ListTag
-                    key={richTextNodeKey(node)}
-                    className={
-                      block.variant === "checklist"
-                        ? "ml-0 list-none space-y-3"
-                        : "ml-5 list-outside space-y-2"
-                    }
-                  >
-                    {node.items.map((item) => (
-                      <li
-                        key={item}
-                        className={
-                          block.variant === "checklist"
-                            ? "flex gap-3 before:mt-1 before:block before:size-5 before:shrink-0 before:rounded-full before:border-2 before:border-[#111111] before:bg-[#55b8e8] before:content-['']"
-                            : undefined
-                        }
-                      >
-                        {editorFallback(item, "List item", renderMode)}
-                      </li>
-                    ))}
-                  </ListTag>
-                );
-              }
-              return (
-                <p key={richTextNodeKey(node)}>
-                  <RichTextParagraphContent
-                    node={node}
-                    linkMode={linkMode}
-                    renderMode={renderMode}
-                  />
-                </p>
-              );
-            })
-          )}
-        </div>
-      </div>
+      <RichTextBlock
+        block={block}
+        renderMode={renderMode}
+        linkMode={linkMode}
+      />
     );
   }
 
@@ -875,23 +656,6 @@ function ResourceLeadFormPreview({
   );
 }
 
-function ChecklistPlaceholder() {
-  return (
-    <ul className="space-y-3">
-      {["Checklist item 1", "Checklist item 2", "Checklist item 3"].map(
-        (item) => (
-          <li
-            key={item}
-            className="flex gap-3 text-slate-400 before:mt-1 before:block before:size-5 before:shrink-0 before:rounded-full before:border-2 before:border-[#111111] before:bg-[#55b8e8] before:content-['']"
-          >
-            Checklist item
-          </li>
-        ),
-      )}
-    </ul>
-  );
-}
-
 function VideoPanel({ wide = false }: { wide?: boolean }) {
   return (
     <div
@@ -906,156 +670,6 @@ function VideoPanel({ wide = false }: { wide?: boolean }) {
   );
 }
 
-function HeroSplitAside({
-  block,
-  renderMode,
-}: {
-  block: Extract<PageBlock, { type: "hero" }>;
-  renderMode: ResourcePageRenderMode;
-}) {
-  if (block.props.mediaSrc) {
-    return (
-      <figure>
-        <Image
-          src={block.props.mediaSrc}
-          alt={block.props.mediaAltText ?? ""}
-          width={900}
-          height={1125}
-          sizes="(max-width: 1024px) 100vw, 40vw"
-          className="aspect-[4/5] w-full rounded-[10px] border-2 border-[#111111] object-cover shadow-[7px_7px_0_#55b8e8]"
-        />
-        {isBlockFieldVisible(block, "mediaCaption") &&
-          block.props.mediaCaption && (
-            <figcaption className="mt-4 text-sm font-semibold text-slate-600">
-              {block.props.mediaCaption}
-            </figcaption>
-          )}
-      </figure>
-    );
-  }
-
-  if (block.props.proofText) {
-    return (
-      <aside className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
-        <p className="text-sm font-black text-[#066a99] uppercase">Proof</p>
-        <p className="mt-4 text-xl leading-8 font-black text-[#111111]">
-          {block.props.proofText}
-        </p>
-      </aside>
-    );
-  }
-
-  if (renderMode !== "editor") return null;
-
-  return (
-    <aside className="grid aspect-[4/5] place-items-center rounded-[10px] border-2 border-dashed border-[#111111]/35 bg-white p-6 text-center text-sm font-semibold text-slate-400 shadow-[7px_7px_0_#55b8e8]">
-      Add split hero media or proof in block settings.
-    </aside>
-  );
-}
-
-function ResourceLink({
-  href,
-  trackingName,
-  linkMode,
-  className,
-  children,
-}: {
-  href: string;
-  trackingName?: string;
-  linkMode: ResourcePageLinkMode;
-  className: string;
-  children: ReactNode;
-}) {
-  const disabled = linkMode === "disabled" || href === "#";
-
-  if (disabled) {
-    return (
-      <span
-        data-tracking-name={trackingName}
-        aria-disabled="true"
-        className={className}
-      >
-        {children}
-      </span>
-    );
-  }
-
-  if (href.startsWith("/") || href.startsWith("#")) {
-    return (
-      <Link href={href} data-tracking-name={trackingName} className={className}>
-        {children}
-      </Link>
-    );
-  }
-
-  return (
-    <a
-      href={href}
-      data-tracking-name={trackingName}
-      rel="noopener noreferrer"
-      className={className}
-    >
-      {children}
-    </a>
-  );
-}
-
-function RichTextParagraphContent({
-  node,
-  linkMode,
-  renderMode,
-}: {
-  node: Extract<RichTextNode, { type: "paragraph" }>;
-  linkMode: ResourcePageLinkMode;
-  renderMode: ResourcePageRenderMode;
-}) {
-  return renderRichTextParagraph(node, linkMode, renderMode);
-}
-
-function renderRichTextParagraph(
-  node: Extract<RichTextNode, { type: "paragraph" }>,
-  linkMode: ResourcePageLinkMode,
-  renderMode: ResourcePageRenderMode,
-) {
-  if (!("spans" in node)) {
-    return editorFallback(node.text, "Paragraph copy", renderMode);
-  }
-
-  if (node.spans.length === 0 && renderMode === "editor") {
-    return <span className="text-slate-400">Paragraph copy</span>;
-  }
-
-  return node.spans.map((span) => {
-    const text = editorFallback(span.text, "Link text", renderMode);
-    if (!span.href) return <span key={richTextSpanKey(span)}>{text}</span>;
-    return (
-      <ResourceLink
-        key={richTextSpanKey(span)}
-        href={span.href}
-        linkMode={linkMode}
-        className="text-[#066a99] underline underline-offset-4 hover:text-[#111111]"
-      >
-        {text}
-      </ResourceLink>
-    );
-  });
-}
-
-function richTextNodeKey(node: RichTextNode) {
-  if (node.type === "list") {
-    return `${node.type}:${node.style}:${node.items.join("|")}`;
-  }
-  if ("spans" in node) {
-    return `${node.type}:${node.spans.map(richTextSpanKey).join("|")}`;
-  }
-  return `${node.type}:${node.text}`;
-}
-
-function richTextSpanKey(span: { text: string; href?: string }) {
-  return `${span.text}:${span.href ?? ""}`;
-}
-
 function faqItemKey(
   item: Extract<PageBlock, { type: "faq" }>["props"]["items"][number],
 ) {
@@ -1068,18 +682,6 @@ function cardKey(
   return `${card.title}:${card.body}:${card.href ?? ""}:${card.linkLabel ?? ""}`;
 }
 
-function editorFallback(
-  value: string | null | undefined,
-  fallback: string,
-  renderMode: ResourcePageRenderMode,
-) {
-  if (value && value.trim().length > 0) return value;
-  if (renderMode === "editor") {
-    return <span className="text-slate-400">{fallback}</span>;
-  }
-  return "";
-}
-
 function findPrimaryHeroId(content: PageContent) {
   for (const section of content.sections) {
     for (const column of section.columns) {
@@ -1089,16 +691,4 @@ function findPrimaryHeroId(content: PageContent) {
     }
   }
   return undefined;
-}
-
-function resourceCtaClass(variant: PageBlock["variant"]) {
-  const base =
-    "inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] px-5 py-3 text-sm font-black uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2";
-  if (variant === "secondary") {
-    return `${base} bg-white text-[#111111] hover:bg-[#eaf8ff]`;
-  }
-  if (variant === "text") {
-    return "text-sm font-black uppercase text-[#066a99] hover:text-[#111111]";
-  }
-  return `${base} bg-[#f47b3b] text-[#111111]`;
 }

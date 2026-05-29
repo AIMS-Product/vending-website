@@ -1,4 +1,5 @@
 import type { PageBlock } from "@/lib/page-builder/blocks";
+import { ctaBlockDescriptor } from "@/lib/page-builder/block-descriptors";
 
 export const blockEditorPlaceholders = {
   eyebrow: "Eyebrow",
@@ -56,9 +57,7 @@ export const blockCanvasPlaceholders = {
     title: blockEditorPlaceholders.videoTitle,
     caption: blockEditorPlaceholders.videoCaption,
   },
-  cta: {
-    label: blockEditorPlaceholders.ctaLabel,
-  },
+  cta: ctaBlockDescriptor.editor.canvasPlaceholders,
   faq: {
     heading: blockEditorPlaceholders.faqHeading,
     question: blockEditorPlaceholders.faqQuestion,

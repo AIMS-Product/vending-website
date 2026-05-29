@@ -7,6 +7,8 @@ import {
   adminGetSeoPageById,
   adminListSeoPages,
   adminPublishSeoPage,
+  adminRefreshSeoPageLibraryReferences,
+  adminRollbackSeoPageRevision,
   adminSaveSeoPageDraft,
   adminUnpublishSeoPage,
   adminUpdateSeoPageSlug,
@@ -94,6 +96,13 @@ function maybeSingleSelect(data: unknown, error: unknown = null) {
   const eq = vi.fn().mockReturnValue({ maybeSingle });
   const select = vi.fn().mockReturnValue({ eq });
   return { table: { select }, mocks: { select, eq, maybeSingle } };
+}
+
+function matchMaybeSingleSelect(data: unknown, error: unknown = null) {
+  const maybeSingle = vi.fn().mockResolvedValue({ data, error });
+  const match = vi.fn().mockReturnValue({ maybeSingle });
+  const select = vi.fn().mockReturnValue({ match });
+  return { table: { select }, mocks: { select, match, maybeSingle } };
 }
 
 function insertSingle(data: unknown, error: unknown = null) {
@@ -340,16 +349,16 @@ describe("seo page service", () => {
     const redirectConflict = maybeSingleSelect(null);
     const duplicateTitle = metadataConflictSelect(null);
     const duplicateDescription = metadataConflictSelect(null);
-    const insertRevision = insertSingle(revision);
-    const updatePage = updateSingle(published);
     const client = buildClient(
       loadPage.table,
       redirectConflict.table,
       duplicateTitle.table,
       duplicateDescription.table,
-      insertRevision.table,
-      updatePage.table,
     );
+    client.rpc.mockResolvedValue({
+      data: { page: published, revision },
+      error: null,
+    });
 
     const result = await adminPublishSeoPage("page_1", {
       client,
@@ -358,30 +367,27 @@ describe("seo page service", () => {
     });
 
     expect(result).toEqual({ page: published, revision });
-    expect(insertRevision.mocks.insert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        page_id: "page_1",
-        revision_type: "publish",
-        content_snapshot: parsedContent,
-        created_by: "admin-1",
-        seo_snapshot: expect.objectContaining({
-          slug: "start-vending",
-          seo_title: "Start a Vending Business",
-          meta_description: "Learn how to start a vending business safely.",
-          structured_data_settings: { breadcrumb: true, faq: true },
-        }),
-      }),
-    );
-    expect(updatePage.mocks.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        status: "published",
-        published_content: parsedContent,
-        published_revision_id: "revision_1",
-        published_at: "2026-05-06T01:00:00.000Z",
+    expect(client.rpc).toHaveBeenCalledWith("publish_seo_page_atomically", {
+      p_page_id: "page_1",
+      p_slug: "start-vending",
+      p_title: "Start Vending",
+      p_target_keyword: "start vending business",
+      p_seo_title: "Start a Vending Business",
+      p_meta_description: "Learn how to start a vending business safely.",
+      p_canonical_url: null,
+      p_noindex: false,
+      p_sitemap_enabled: true,
+      p_structured_data_settings: { breadcrumb: true, faq: true },
+      p_published_content: parsedContent,
+      p_seo_snapshot: expect.objectContaining({
+        slug: "start-vending",
+        seo_title: "Start a Vending Business",
+        meta_description: "Learn how to start a vending business safely.",
         structured_data_settings: { breadcrumb: true, faq: true },
-        updated_by: "admin-1",
       }),
-    );
+      p_actor_id: "admin-1",
+      p_published_at: "2026-05-06T01:00:00.000Z",
+    });
   });
 
   it("publishes saved draft settings for an already published page", async () => {
@@ -435,17 +441,16 @@ describe("seo page service", () => {
     const redirectConflict = maybeSingleSelect(null);
     const duplicateTitle = metadataConflictSelect(null);
     const duplicateDescription = metadataConflictSelect(null);
-    const insertRevision = insertSingle(revision);
-    const updatePage = updateSingle(published);
     const client = buildClient(
       loadPage.table,
       redirectConflict.table,
       duplicateTitle.table,
       duplicateDescription.table,
-      insertRevision.table,
-      updatePage.table,
     );
-    client.rpc.mockResolvedValue({ data: published, error: null });
+    client.rpc.mockResolvedValue({
+      data: { page: published, revision },
+      error: null,
+    });
 
     const result = await adminPublishSeoPage("page_1", {
       client,
@@ -455,38 +460,24 @@ describe("seo page service", () => {
 
     expect(result).toEqual({ page: published, revision });
     expect(client.rpc).toHaveBeenCalledWith(
-      "update_seo_page_slug_with_redirect",
-      {
-        p_page_id: "page_1",
-        p_next_slug: "updated-vending-guide",
-        p_actor_id: "admin-1",
-      },
-    );
-    expect(insertRevision.mocks.insert).toHaveBeenCalledWith(
+      "publish_seo_page_atomically",
       expect.objectContaining({
-        seo_snapshot: expect.objectContaining({
+        p_page_id: "page_1",
+        p_slug: "updated-vending-guide",
+        p_title: "Updated Vending Guide",
+        p_target_keyword: "updated vending keyword",
+        p_seo_title: "Updated SEO Title",
+        p_meta_description: "Updated meta description for the live page.",
+        p_canonical_url: "/resources/updated-vending-guide",
+        p_noindex: false,
+        p_sitemap_enabled: true,
+        p_structured_data_settings: { breadcrumb: false, faq: false },
+        p_published_content: parsedContent,
+        p_seo_snapshot: expect.objectContaining({
           slug: "updated-vending-guide",
           title: "Updated Vending Guide",
           target_keyword: "updated vending keyword",
-          seo_title: "Updated SEO Title",
-          meta_description: "Updated meta description for the live page.",
-          structured_data_settings: { breadcrumb: false, faq: false },
         }),
-      }),
-    );
-    expect(updatePage.mocks.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        slug: "updated-vending-guide",
-        title: "Updated Vending Guide",
-        target_keyword: "updated vending keyword",
-        seo_title: "Updated SEO Title",
-        meta_description: "Updated meta description for the live page.",
-        canonical_url: "/resources/updated-vending-guide",
-        noindex: false,
-        sitemap_enabled: true,
-        structured_data_settings: { breadcrumb: false, faq: false },
-        draft_settings: {},
-        published_content: parsedContent,
       }),
     );
   });
@@ -524,6 +515,54 @@ describe("seo page service", () => {
       page_id: "page_1",
       created_reason: "page_archived",
     });
+  });
+
+  it("fails publish through the atomic RPC without separate revision and page writes", async () => {
+    const parsedContent = pageContentSchema.parse(validContent);
+    const page = {
+      id: "page_1",
+      slug: "start-vending",
+      title: "Start Vending",
+      status: "draft",
+      draft_content: parsedContent,
+      seo_title: "Start a Vending Business",
+      meta_description: "Learn how to start a vending business safely.",
+      canonical_url: null,
+      noindex: false,
+      sitemap_enabled: true,
+      structured_data_settings: {},
+      target_keyword: "start vending business",
+    };
+    const loadPage = singleSelect(page);
+    const redirectConflict = maybeSingleSelect(null);
+    const duplicateTitle = metadataConflictSelect(null);
+    const duplicateDescription = metadataConflictSelect(null);
+    const client = buildClient(
+      loadPage.table,
+      redirectConflict.table,
+      duplicateTitle.table,
+      duplicateDescription.table,
+    );
+    client.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "rpc failed" },
+    });
+
+    await expect(
+      adminPublishSeoPage("page_1", {
+        client,
+        actorId: "admin-1",
+        now: () => new Date("2026-05-06T01:00:00.000Z"),
+      }),
+    ).rejects.toThrow("Could not publish SEO page.");
+
+    expect(client.rpc).toHaveBeenCalledWith(
+      "publish_seo_page_atomically",
+      expect.objectContaining({
+        p_page_id: "page_1",
+        p_published_content: parsedContent,
+      }),
+    );
   });
 
   it("blocks publish when another active page already owns the same metadata", async () => {
@@ -791,17 +830,17 @@ describe("seo page service", () => {
         external_url: "https://cdn.example.com/asset.webp",
       },
     ]);
-    const insertRevision = insertSingle(revision);
-    const updatePage = updateSingle(published);
     const client = buildClient(
       loadPage.table,
       redirectConflict.table,
       duplicateTitle.table,
       duplicateDescription.table,
       mediaRows.table,
-      insertRevision.table,
-      updatePage.table,
     );
+    client.rpc.mockResolvedValue({
+      data: { page: published, revision },
+      error: null,
+    });
 
     await adminPublishSeoPage("page_1", {
       client,
@@ -809,14 +848,10 @@ describe("seo page service", () => {
       now: () => new Date("2026-05-06T01:00:00.000Z"),
     });
 
-    expect(insertRevision.mocks.insert).toHaveBeenCalledWith(
+    expect(client.rpc).toHaveBeenCalledWith(
+      "publish_seo_page_atomically",
       expect.objectContaining({
-        content_snapshot: resolvedContent,
-      }),
-    );
-    expect(updatePage.mocks.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        published_content: resolvedContent,
+        p_published_content: resolvedContent,
       }),
     );
   });
@@ -934,12 +969,12 @@ describe("seo page service", () => {
     const redirectConflict = maybeSingleSelect(null);
     const duplicateTitle = metadataConflictSelect(null);
     const duplicateDescription = metadataConflictSelect(null);
-    const insertRevision = insertSingle({ id: "revision_1" });
-    const updatePage = updateSingle({
+    const revision = { id: "revision_1" };
+    const published = {
       ...page,
       status: "published",
       published_content: resolvedContent,
-    });
+    };
     const client = buildClient(
       loadPage.table,
       ctaRows.table,
@@ -947,9 +982,11 @@ describe("seo page service", () => {
       redirectConflict.table,
       duplicateTitle.table,
       duplicateDescription.table,
-      insertRevision.table,
-      updatePage.table,
     );
+    client.rpc.mockResolvedValue({
+      data: { page: published, revision },
+      error: null,
+    });
 
     await adminPublishSeoPage("page_1", {
       client,
@@ -957,11 +994,9 @@ describe("seo page service", () => {
       now: () => new Date("2026-05-06T01:00:00.000Z"),
     });
 
-    expect(insertRevision.mocks.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ content_snapshot: resolvedContent }),
-    );
-    expect(updatePage.mocks.update).toHaveBeenCalledWith(
-      expect.objectContaining({ published_content: resolvedContent }),
+    expect(client.rpc).toHaveBeenCalledWith(
+      "publish_seo_page_atomically",
+      expect.objectContaining({ p_published_content: resolvedContent }),
     );
   });
 
@@ -997,37 +1032,67 @@ describe("seo page service", () => {
   });
 
   it("archives a page without mutating the published snapshot", async () => {
-    const update = updateSingle({
+    const archivedPage = {
       id: "page_1",
       status: "archived",
       published_content: validContent,
-    });
-    const client = buildClient(update.table);
+    };
+    const client = buildClient();
+    client.rpc.mockResolvedValue({ data: archivedPage, error: null });
 
-    await adminArchiveSeoPage("page_1", {
+    const result = await adminArchiveSeoPage("page_1", {
       client,
       actorId: "admin-1",
       now: () => new Date("2026-05-06T02:00:00.000Z"),
     });
 
-    const patch = update.mocks.update.mock.calls[0]?.[0];
-    expect(patch).toEqual(
+    expect(result).toBe(archivedPage);
+    expect(client.rpc).toHaveBeenCalledWith(
+      "archive_seo_page_atomically",
       expect.objectContaining({
-        status: "archived",
-        archived_at: "2026-05-06T02:00:00.000Z",
-        archive_behavior: "not_found",
-        updated_by: "admin-1",
+        p_page_id: "page_1",
+        p_archive_behavior: "not_found",
+        p_archive_redirect_url: null,
+        p_current_slug: null,
+        p_actor_id: "admin-1",
+        p_archived_at: "2026-05-06T02:00:00.000Z",
       }),
     );
-    expect(patch).not.toHaveProperty("published_content");
+  });
+
+  it("fails archive redirects through the atomic RPC without separate redirect and page writes", async () => {
+    const client = buildClient();
+    client.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "rpc failed" },
+    });
+
+    await expect(
+      adminArchiveSeoPage("page_1", {
+        client,
+        actorId: "admin-1",
+        archiveBehavior: "redirect",
+        archiveRedirectUrl: "/resources/start-vending",
+        currentSlug: "old-vending-guide",
+      }),
+    ).rejects.toThrow("Could not archive SEO page.");
+
+    expect(client.rpc).toHaveBeenCalledWith(
+      "archive_seo_page_atomically",
+      expect.objectContaining({
+        p_archive_behavior: "redirect",
+        p_archive_redirect_url: "/resources/start-vending",
+        p_current_slug: "old-vending-guide",
+      }),
+    );
   });
 
   it("can create a manual database redirect row for builder-managed redirects", async () => {
-    const insert = insertSingle({ id: "redirect_1" });
-    const update = updateSingle({ id: "page_1", status: "archived" });
-    const client = buildClient(insert.table, update.table);
+    const archivedPage = { id: "page_1", status: "archived" };
+    const client = buildClient();
+    client.rpc.mockResolvedValue({ data: archivedPage, error: null });
 
-    await adminArchiveSeoPage("page_1", {
+    const result = await adminArchiveSeoPage("page_1", {
       client,
       actorId: "admin-1",
       archiveBehavior: "redirect",
@@ -1035,20 +1100,23 @@ describe("seo page service", () => {
       currentSlug: "old-vending-guide",
     });
 
-    expect(insert.mocks.insert).toHaveBeenCalledWith(
+    expect(result).toBe(archivedPage);
+    expect(client.rpc).toHaveBeenCalledWith(
+      "archive_seo_page_atomically",
       expect.objectContaining({
-        source_path: "/resources/old-vending-guide",
-        destination_path: "/resources/start-vending",
-        status_code: 301,
-        created_reason: "page_archived",
+        p_archive_behavior: "redirect",
+        p_archive_redirect_url: "/resources/start-vending",
+        p_current_slug: "old-vending-guide",
       }),
     );
   });
 
   it("normalizes archive redirect destinations before writing redirect rows", async () => {
-    const insert = insertSingle({ id: "redirect_1" });
-    const update = updateSingle({ id: "page_1", status: "archived" });
-    const client = buildClient(insert.table, update.table);
+    const client = buildClient();
+    client.rpc.mockResolvedValue({
+      data: { id: "page_1", status: "archived" },
+      error: null,
+    });
 
     await adminArchiveSeoPage("page_1", {
       client,
@@ -1058,15 +1126,11 @@ describe("seo page service", () => {
       currentSlug: "old-vending-guide",
     });
 
-    expect(insert.mocks.insert).toHaveBeenCalledWith(
+    expect(client.rpc).toHaveBeenCalledWith(
+      "archive_seo_page_atomically",
       expect.objectContaining({
-        source_path: "/resources/old-vending-guide",
-        destination_path: "/resources/start-vending",
-      }),
-    );
-    expect(update.mocks.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        archive_redirect_url: "/resources/start-vending",
+        p_archive_redirect_url: "/resources/start-vending",
+        p_current_slug: "old-vending-guide",
       }),
     );
   });
@@ -1093,5 +1157,110 @@ describe("seo page service", () => {
     });
 
     expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("refreshes reusable library references with a manual-save revision and draft update", async () => {
+    const parsedContent = pageContentSchema.parse(validContent);
+    const page = {
+      id: "page_1",
+      slug: "start-vending",
+      title: "Start Vending",
+      status: "draft",
+      draft_content: parsedContent,
+      seo_title: "Start a Vending Business",
+      meta_description: "Learn how to start a vending business safely.",
+      canonical_url: null,
+      noindex: false,
+      sitemap_enabled: true,
+      structured_data_settings: {},
+      target_keyword: "start vending business",
+    };
+    const revision = { id: "revision_refresh", page_id: "page_1" };
+    const refreshedPage = { ...page, draft_content: parsedContent };
+    const loadPage = maybeSingleSelect(page);
+    const client = buildClient(loadPage.table);
+    client.rpc.mockResolvedValue({
+      data: { page: refreshedPage, revision },
+      error: null,
+    });
+
+    const result = await adminRefreshSeoPageLibraryReferences("page_1", {
+      client,
+      actorId: "admin-1",
+    });
+
+    expect(result).toEqual({ page: refreshedPage, revision });
+    expect(client.rpc).toHaveBeenCalledWith(
+      "apply_seo_page_revision_update_atomically",
+      {
+        p_page_id: "page_1",
+        p_revision_type: "manual_save",
+        p_revision_label: "Refresh library references",
+        p_content_snapshot: parsedContent,
+        p_seo_snapshot: expect.objectContaining({
+          slug: "start-vending",
+          title: "Start Vending",
+        }),
+        p_draft_content: parsedContent,
+        p_seo_patch: {},
+        p_actor_id: "admin-1",
+      },
+    );
+  });
+
+  it("rolls back a revision by recording a rollback revision and restoring draft fields", async () => {
+    const parsedContent = pageContentSchema.parse(validContent);
+    const seoSnapshot = {
+      title: "Snapshot Vending Guide",
+      target_keyword: "snapshot vending",
+      seo_title: "Snapshot SEO Title",
+      meta_description: "Snapshot meta description.",
+      canonical_url: null,
+      noindex: true,
+      sitemap_enabled: false,
+      structured_data_settings: { breadcrumb: false, faq: true },
+    };
+    const sourceRevision = {
+      id: "revision_source",
+      page_id: "page_1",
+      content_snapshot: parsedContent,
+      seo_snapshot: seoSnapshot,
+    };
+    const rollbackRevision = { id: "revision_rollback", page_id: "page_1" };
+    const rolledBackPage = { id: "page_1", draft_content: parsedContent };
+    const loadRevision = matchMaybeSingleSelect(sourceRevision);
+    const client = buildClient(loadRevision.table);
+    client.rpc.mockResolvedValue({
+      data: { page: rolledBackPage, revision: rollbackRevision },
+      error: null,
+    });
+
+    const result = await adminRollbackSeoPageRevision(
+      "page_1",
+      "revision_source",
+      { client, actorId: "admin-1" },
+    );
+
+    expect(result).toEqual({
+      page: rolledBackPage,
+      revision: rollbackRevision,
+    });
+    expect(loadRevision.mocks.match).toHaveBeenCalledWith({
+      page_id: "page_1",
+      id: "revision_source",
+    });
+    expect(client.rpc).toHaveBeenCalledWith(
+      "apply_seo_page_revision_update_atomically",
+      {
+        p_page_id: "page_1",
+        p_revision_type: "rollback",
+        p_revision_label: "Rollback from revision_source",
+        p_content_snapshot: parsedContent,
+        p_seo_snapshot: seoSnapshot,
+        p_draft_content: parsedContent,
+        p_seo_patch: seoSnapshot,
+        p_actor_id: "admin-1",
+      },
+    );
   });
 });

@@ -30,7 +30,6 @@ type PageRevision = Tables<"page_revisions">;
 type MediaAsset = Tables<"media_assets">;
 type CtaPreset = Tables<"cta_presets">;
 type ProofItem = Tables<"proof_items">;
-type RedirectInsert = TablesInsert<"redirects">;
 type SeoPageClient = Pick<SupabaseClient<Database>, "from" | "rpc">;
 
 type ServiceDeps = {
@@ -317,53 +316,26 @@ export async function adminPublishSeoPage(
     mediaValidation.assets,
   );
   const publishedAt = now().toISOString();
-  const revision = await insertPageRevision(client, {
-    page_id: page.id,
-    revision_type: "publish",
-    label: `Publish ${publishedAt}`,
-    content_snapshot: publishedContent as unknown as Json,
-    seo_snapshot: buildSeoSnapshot(page, publishSettings),
-    created_by: options.actorId ?? null,
+  const { data, error } = await client.rpc("publish_seo_page_atomically", {
+    p_page_id: pageId,
+    p_slug: publishSettings.slug,
+    p_title: publishSettings.title,
+    p_target_keyword: publishSettings.targetKeyword,
+    p_seo_title: publishSettings.seoTitle,
+    p_meta_description: publishSettings.metaDescription,
+    p_canonical_url: publishSettings.canonicalUrl,
+    p_noindex: publishSettings.noindex,
+    p_sitemap_enabled: publishSettings.sitemapEnabled,
+    p_structured_data_settings:
+      publishSettings.structuredDataSettings as unknown as Json,
+    p_published_content: publishedContent as unknown as Json,
+    p_seo_snapshot: buildSeoSnapshot(page, publishSettings),
+    p_actor_id: options.actorId ?? null,
+    p_published_at: publishedAt,
   });
 
-  if (page.status === "published" && page.slug !== publishSettings.slug) {
-    const { error } = await client.rpc("update_seo_page_slug_with_redirect", {
-      p_page_id: pageId,
-      p_next_slug: publishSettings.slug,
-      p_actor_id: options.actorId ?? null,
-    });
-    if (error) throw new Error("Could not update SEO page slug.");
-  }
-
-  const { data, error } = await client
-    .from("seo_pages")
-    .update({
-      slug: publishSettings.slug,
-      title: publishSettings.title,
-      target_keyword: publishSettings.targetKeyword,
-      seo_title: publishSettings.seoTitle,
-      meta_description: publishSettings.metaDescription,
-      canonical_url: publishSettings.canonicalUrl,
-      noindex: publishSettings.noindex,
-      sitemap_enabled: publishSettings.sitemapEnabled,
-      structured_data_settings:
-        publishSettings.structuredDataSettings as unknown as Json,
-      status: "published",
-      published_content: publishedContent as unknown as Json,
-      published_revision_id: revision.id,
-      published_at: publishedAt,
-      draft_settings: {},
-      archived_at: null,
-      archive_behavior: "not_found",
-      archive_redirect_url: null,
-      updated_by: options.actorId ?? null,
-    })
-    .eq("id", pageId)
-    .select(SEO_PAGE_FIELDS)
-    .single();
-
   if (error) throw new Error("Could not publish SEO page.");
-  return { page: data, revision };
+  return parseAtomicRevisionResult(data, "Could not publish SEO page.");
 }
 
 export async function adminUnpublishSeoPage(
@@ -453,77 +425,20 @@ export async function adminArchiveSeoPage(
     const currentSlug =
       options.currentSlug ?? (await loadSeoPageSlugState(client, pageId)).slug;
     archiveRedirectUrl = normalizeDestinationPath(archiveRedirectUrl);
-    await adminCreateBuilderRedirect(
-      {
-        sourcePath: resourcePathForSlug(currentSlug),
-        destinationPath: archiveRedirectUrl,
-        statusCode: 301,
-        pageId,
-        createdReason: "page_archived",
-        createdBy: options.actorId ?? null,
-      },
-      { client },
-    );
+    validateRedirectPaths(resourcePathForSlug(currentSlug), archiveRedirectUrl);
   }
 
-  const { data, error } = await client
-    .from("seo_pages")
-    .update({
-      status: "archived",
-      archived_at: now().toISOString(),
-      archive_behavior: behavior,
-      archive_redirect_url: archiveRedirectUrl,
-      updated_by: options.actorId ?? null,
-    })
-    .eq("id", pageId)
-    .select(SEO_PAGE_FIELDS)
-    .single();
+  const { data, error } = await client.rpc("archive_seo_page_atomically", {
+    p_page_id: pageId,
+    p_archive_behavior: behavior,
+    p_archive_redirect_url: archiveRedirectUrl,
+    p_current_slug: options.currentSlug ?? null,
+    p_actor_id: options.actorId ?? null,
+    p_archived_at: now().toISOString(),
+  });
 
   if (error) throw new Error("Could not archive SEO page.");
-  return data;
-}
-
-async function adminCreateBuilderRedirect(
-  input: {
-    sourcePath: string;
-    destinationPath: string;
-    statusCode?: 301 | 302 | 307 | 308;
-    pageId?: string | null;
-    createdReason?: "slug_changed" | "page_archived" | "manual";
-    createdBy?: string | null;
-  },
-  deps: ServiceDeps = {},
-) {
-  const client = deps.client ?? createAdminClient();
-  const row: RedirectInsert = {
-    source_path: normalizeSourcePath(input.sourcePath),
-    destination_path: normalizeDestinationPath(input.destinationPath),
-    status_code: input.statusCode ?? 301,
-    page_id: input.pageId ?? null,
-    created_reason: input.createdReason ?? "manual",
-    created_by: input.createdBy ?? null,
-  };
-
-  if (row.source_path === row.destination_path) {
-    throw new SeoPageValidationError([
-      {
-        code: "self_redirect",
-        path: "destination_path",
-        message: "Redirect source and destination must differ.",
-      },
-    ]);
-  }
-
-  const { data, error } = await client
-    .from("redirects")
-    .insert(row)
-    .select(
-      "id, source_path, destination_path, status_code, page_id, created_reason, created_by, created_at",
-    )
-    .single();
-
-  if (error) throw new Error("Could not create builder redirect.");
-  return data;
+  return parseAtomicPageResult(data, "Could not archive SEO page.");
 }
 
 export async function adminRefreshSeoPageLibraryReferences(
@@ -538,27 +453,25 @@ export async function adminRefreshSeoPageLibraryReferences(
     parseDraftContent(page.draft_content),
   );
 
-  const revision = await insertPageRevision(client, {
-    page_id: pageId,
-    revision_type: "manual_save",
-    label: "Refresh library references",
-    content_snapshot: refreshedContent as unknown as Json,
-    seo_snapshot: buildSeoSnapshot(page),
-    created_by: options.actorId ?? null,
-  });
-
-  const { data, error } = await client
-    .from("seo_pages")
-    .update({
-      draft_content: refreshedContent as unknown as Json,
-      updated_by: options.actorId ?? null,
-    })
-    .eq("id", pageId)
-    .select(SEO_PAGE_FIELDS)
-    .single();
+  const { data, error } = await client.rpc(
+    "apply_seo_page_revision_update_atomically",
+    {
+      p_page_id: pageId,
+      p_revision_type: "manual_save",
+      p_revision_label: "Refresh library references",
+      p_content_snapshot: refreshedContent as unknown as Json,
+      p_seo_snapshot: buildSeoSnapshot(page),
+      p_draft_content: refreshedContent as unknown as Json,
+      p_seo_patch: {},
+      p_actor_id: options.actorId ?? null,
+    },
+  );
 
   if (error) throw new Error("Could not refresh SEO page libraries.");
-  return { page: data, revision };
+  return parseAtomicRevisionResult(
+    data,
+    "Could not refresh SEO page libraries.",
+  );
 }
 
 export async function adminListSeoPageRevisions(
@@ -605,28 +518,25 @@ export async function adminRollbackSeoPageRevision(
 
   const draftContent = parseDraftContent(revision.content_snapshot);
   const seoPatch = seoPatchFromSnapshot(revision.seo_snapshot);
-  const rollbackRevision = await insertPageRevision(client, {
-    page_id: pageId,
-    revision_type: "rollback",
-    label: `Rollback from ${revision.id}`,
-    content_snapshot: draftContent as unknown as Json,
-    seo_snapshot: revision.seo_snapshot,
-    created_by: options.actorId ?? null,
-  });
-
-  const { data, error } = await client
-    .from("seo_pages")
-    .update({
-      ...seoPatch,
-      draft_content: draftContent as unknown as Json,
-      updated_by: options.actorId ?? null,
-    })
-    .eq("id", pageId)
-    .select(SEO_PAGE_FIELDS)
-    .single();
+  const { data, error } = await client.rpc(
+    "apply_seo_page_revision_update_atomically",
+    {
+      p_page_id: pageId,
+      p_revision_type: "rollback",
+      p_revision_label: `Rollback from ${revision.id}`,
+      p_content_snapshot: draftContent as unknown as Json,
+      p_seo_snapshot: revision.seo_snapshot,
+      p_draft_content: draftContent as unknown as Json,
+      p_seo_patch: seoPatch as unknown as Json,
+      p_actor_id: options.actorId ?? null,
+    },
+  );
 
   if (error) throw new Error("Could not rollback SEO page revision.");
-  return { page: data, revision: rollbackRevision };
+  return parseAtomicRevisionResult(
+    data,
+    "Could not rollback SEO page revision.",
+  );
 }
 
 export async function adminListSeoPagePreviewTokens(
@@ -888,18 +798,26 @@ async function loadSeoPageSlugState(client: SeoPageClient, pageId: string) {
   return data;
 }
 
-async function insertPageRevision(
-  client: SeoPageClient,
-  row: TablesInsert<"page_revisions">,
-) {
-  const { data, error } = await client
-    .from("page_revisions")
-    .insert(row)
-    .select(PAGE_REVISION_FIELDS)
-    .single();
+function parseAtomicRevisionResult(
+  data: unknown,
+  errorMessage: string,
+): { page: SeoPage; revision: PageRevision } {
+  if (!isRecord(data) || !isRecord(data.page) || !isRecord(data.revision)) {
+    throw new Error(errorMessage);
+  }
+  return {
+    page: data.page as SeoPage,
+    revision: data.revision as PageRevision,
+  };
+}
 
-  if (error) throw new Error("Could not create SEO page revision.");
-  return data;
+function parseAtomicPageResult(data: unknown, errorMessage: string): SeoPage {
+  if (!isRecord(data)) throw new Error(errorMessage);
+  return data as SeoPage;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 async function deleteArchivedPageRedirects(
@@ -1295,6 +1213,20 @@ function normalizeSourcePath(path: string) {
     ]);
   }
   return normalized;
+}
+
+function validateRedirectPaths(sourcePath: string, destinationPath: string) {
+  const normalizedSource = normalizeSourcePath(sourcePath);
+  const normalizedDestination = normalizeDestinationPath(destinationPath);
+  if (normalizedSource === normalizedDestination) {
+    throw new SeoPageValidationError([
+      {
+        code: "self_redirect",
+        path: "destination_path",
+        message: "Redirect source and destination must differ.",
+      },
+    ]);
+  }
 }
 
 function normalizeDestinationPath(path: string) {

@@ -1,11 +1,15 @@
 import {
-  cardGridLinkLabel,
   pageContentSchema,
   type PageBlock,
   type PageContent,
   type RichTextNode,
 } from "@/lib/page-builder/blocks";
+import { cardGridLinkLabel } from "@/lib/page-builder/blocks";
 import { isBlockFieldVisible } from "@/lib/page-builder/block-field-visibility";
+import {
+  addDescriptorParityMarkers,
+  createDescriptorPreviewBlock,
+} from "@/lib/page-builder/block-descriptors";
 import {
   blockPickerOptions,
   type BlockPickerOption,
@@ -75,6 +79,10 @@ export function getBlockPreviewParityMarkers(
     }
   };
 
+  if (addDescriptorParityMarkers(block, { addText, addImgAlt })) {
+    return markers;
+  }
+
   if (block.type === "hero") {
     if (isBlockFieldVisible(block, "eyebrow")) {
       addText("eyebrow", block.props.eyebrow);
@@ -129,11 +137,6 @@ export function getBlockPreviewParityMarkers(
     if (block.props.url) {
       addText("watchLink", "Watch video");
     }
-    return markers;
-  }
-
-  if (block.type === "cta") {
-    addText("label", block.props.label);
     return markers;
   }
 
@@ -245,6 +248,8 @@ function createPreviewBlock(
   variant: BlockVariant,
 ): PageBlock {
   const id = `block_${type}_${variant}`;
+  const descriptorBlock = createDescriptorPreviewBlock(type, id, variant);
+  if (descriptorBlock) return descriptorBlock;
 
   if (type === "hero") {
     return {
@@ -346,20 +351,6 @@ function createPreviewBlock(
         url: "https://example.com/resource-video",
         caption:
           "A short walkthrough of how to evaluate locations and plan your first placements.",
-      },
-    };
-  }
-
-  if (type === "cta") {
-    return {
-      id,
-      type,
-      variant: variant as Extract<PageBlock, { type: "cta" }>["variant"],
-      props: {
-        label:
-          variant === "text" ? "Read the application guide" : "Apply today",
-        href: "/apply",
-        trackingName: `preview-${variant}-cta`,
       },
     };
   }

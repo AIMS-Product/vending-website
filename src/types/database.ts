@@ -738,6 +738,30 @@ export type Database = {
       };
     };
     Functions: {
+      apply_seo_page_revision_update_atomically: {
+        Args: {
+          p_actor_id: string | null;
+          p_content_snapshot: Json;
+          p_draft_content: Json;
+          p_page_id: string;
+          p_revision_label: string;
+          p_revision_type: string;
+          p_seo_patch: Json;
+          p_seo_snapshot: Json;
+        };
+        Returns: Json;
+      };
+      archive_seo_page_atomically: {
+        Args: {
+          p_actor_id: string | null;
+          p_archive_behavior: string;
+          p_archive_redirect_url: string | null;
+          p_archived_at: string;
+          p_current_slug: string | null;
+          p_page_id: string;
+        };
+        Returns: Json;
+      };
       accept_ai_proposal_blocks: {
         Args: {
           p_accepted_at: string;
@@ -754,6 +778,25 @@ export type Database = {
       is_app_admin: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
+      };
+      publish_seo_page_atomically: {
+        Args: {
+          p_actor_id: string | null;
+          p_canonical_url: string | null;
+          p_meta_description: string | null;
+          p_noindex: boolean;
+          p_page_id: string;
+          p_published_at: string;
+          p_published_content: Json;
+          p_seo_snapshot: Json;
+          p_seo_title: string | null;
+          p_sitemap_enabled: boolean;
+          p_slug: string;
+          p_structured_data_settings: Json;
+          p_target_keyword: string | null;
+          p_title: string;
+        };
+        Returns: Json;
       };
       update_seo_page_slug_with_redirect: {
         Args: {

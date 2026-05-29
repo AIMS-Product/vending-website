@@ -32,17 +32,56 @@ export function isAcceptedEditorImageFile(file: File) {
   return /\.(avif|webp|png|jpe?g)$/i.test(file.name);
 }
 
-export async function uploadImageFileToMediaLibrary(
+type StorageUploadClient = {
+  storage: {
+    from(bucket: string): {
+      uploadToSignedUrl(
+        path: string,
+        token: string,
+        file: File,
+        options: { contentType: string; upsert: false },
+      ): Promise<{ error: unknown | null }>;
+    };
+  };
+};
+
+type UploadImageFileDeps = {
+  createSignedUpload?: typeof createSignedMediaUpload;
+  createStorageClient?: () => StorageUploadClient;
+  createMediaAsset?: typeof createMediaAssetFromEditor;
+};
+
+export type UploadedImageStorage = {
+  storageBucket: string;
+  storagePath: string;
+};
+
+export function defaultEditorImageFields(file: File) {
+  return {
+    title: mediaTitleFromFilename(file.name),
+    altText: mediaAltFromFilename(file.name),
+    sourceRightsNotes: EDITOR_UPLOAD_RIGHTS_NOTES,
+  };
+}
+
+export async function uploadImageFileToStorage(
   file: File,
-): Promise<EditorMediaAsset> {
+  deps: Pick<
+    UploadImageFileDeps,
+    "createSignedUpload" | "createStorageClient"
+  > = {},
+): Promise<UploadedImageStorage> {
   if (!isAcceptedEditorImageFile(file)) {
     throw new Error("Use an AVIF, WebP, PNG, or JPEG image.");
   }
 
   const request = new FormData();
   request.set("filename", file.name);
-  const signed = await createSignedMediaUpload(request);
-  const supabase = createClient();
+  const createSignedUpload = deps.createSignedUpload ?? createSignedMediaUpload;
+  const signed = await createSignedUpload(request);
+  const createStorageClient: () => StorageUploadClient =
+    deps.createStorageClient ?? createClient;
+  const supabase = createStorageClient();
   const { error } = await supabase.storage
     .from(signed.bucket)
     .uploadToSignedUrl(signed.path, signed.token, file, {
@@ -51,15 +90,29 @@ export async function uploadImageFileToMediaLibrary(
     });
   if (error) throw error;
 
+  return {
+    storageBucket: signed.bucket,
+    storagePath: signed.path,
+  };
+}
+
+export async function uploadImageFileToMediaLibrary(
+  file: File,
+  deps: UploadImageFileDeps = {},
+): Promise<EditorMediaAsset> {
+  const uploaded = await uploadImageFileToStorage(file, deps);
+  const defaults = defaultEditorImageFields(file);
+
   const formData = new FormData();
   formData.set("assetType", "image");
-  formData.set("title", mediaTitleFromFilename(file.name));
-  formData.set("altText", mediaAltFromFilename(file.name));
-  formData.set("sourceRightsNotes", EDITOR_UPLOAD_RIGHTS_NOTES);
-  formData.set("storageBucket", signed.bucket);
-  formData.set("storagePath", signed.path);
+  formData.set("title", defaults.title);
+  formData.set("altText", defaults.altText);
+  formData.set("sourceRightsNotes", defaults.sourceRightsNotes);
+  formData.set("storageBucket", uploaded.storageBucket);
+  formData.set("storagePath", uploaded.storagePath);
 
-  return createMediaAssetFromEditor(formData);
+  const createMediaAsset = deps.createMediaAsset ?? createMediaAssetFromEditor;
+  return createMediaAsset(formData);
 }
 
 export { IMAGE_ACCEPT };
