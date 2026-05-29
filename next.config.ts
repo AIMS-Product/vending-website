@@ -51,6 +51,17 @@ const nextConfig: NextConfig = {
         destination: "/about",
         permanent: true,
       },
+      // Retired duplicate pages — keep their URLs alive via 301 to canonicals.
+      {
+        source: "/about-us",
+        destination: "/about",
+        permanent: true,
+      },
+      {
+        source: "/privacy-policy",
+        destination: "/privacy",
+        permanent: true,
+      },
       ...legacyLeadRedirects.map(({ source, destination }) => ({
         source,
         destination,

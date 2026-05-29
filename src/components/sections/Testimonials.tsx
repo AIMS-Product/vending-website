@@ -9,7 +9,7 @@ export function Testimonials() {
   return (
     <section className="bg-white px-5 py-24 lg:px-10 lg:py-32">
       <div className="mx-auto max-w-[1500px] text-center">
-        <p className="text-sm font-black text-[#55b8e8] uppercase">
+        <p className="text-sm font-black text-[#066a99] uppercase">
           Success Stories
         </p>
         <h2 className="mt-4 text-4xl leading-tight font-black text-[#111111] uppercase sm:text-5xl">

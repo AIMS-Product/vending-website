@@ -4,19 +4,13 @@ export type NavItem = {
   external?: boolean;
 };
 
-/**
- * The five "partner" pages on the live Webflow site (Marketplace, Leads,
- * CPA Experts, Financing, Insurance) are external links to vendhub.ai.
- * We mirror that here. If/when those become real internal pages we can
- * flip `external` and add a route.
- */
-const VENDHUB_URL = "https://www.vendhub.ai/";
-
+// Nav labels describe their destination directly — a visitor can predict
+// where each link goes from its label alone.
 export const primaryNav: ReadonlyArray<NavItem> = [
-  { label: "How It Works", href: "/about" },
-  { label: "Solutions", href: "/pre-call-resources" },
-  { label: "Members", href: "/case-studies" },
-  { label: "Blog", href: "/news" },
+  { label: "About", href: "/about" },
+  { label: "Resources", href: "/pre-call-resources" },
+  { label: "Case Studies", href: "/case-studies" },
+  { label: "News", href: "/news" },
 ];
 
 export const footerColumns: ReadonlyArray<{
@@ -25,22 +19,14 @@ export const footerColumns: ReadonlyArray<{
   {
     items: [
       { label: "Home", href: "/" },
-      { label: "News", href: "/news" },
-      { label: "Vending CPA Experts", href: VENDHUB_URL, external: true },
-    ],
-  },
-  {
-    items: [
-      { label: "About Us", href: "/about" },
-      { label: "Vending Marketplace", href: VENDHUB_URL, external: true },
-      { label: "Machine Financing", href: VENDHUB_URL, external: true },
+      { label: "About", href: "/about" },
+      { label: "Resources", href: "/pre-call-resources" },
     ],
   },
   {
     items: [
       { label: "Case Studies", href: "/case-studies" },
-      { label: "Vending Leads", href: VENDHUB_URL, external: true },
-      { label: "Vending Insurance", href: VENDHUB_URL, external: true },
+      { label: "News", href: "/news" },
     ],
   },
   {

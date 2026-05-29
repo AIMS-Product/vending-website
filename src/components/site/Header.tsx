@@ -101,7 +101,7 @@ export function Header() {
           ))}
           <Link
             href="/apply"
-            className="mt-3 inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-6 text-sm font-black text-[#111111] uppercase shadow-[4px_4px_0_#111111]"
+            className="mt-3 inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-6 text-sm font-black text-[#111111] uppercase shadow-[4px_4px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:ring-offset-2 focus-visible:outline-none"
             onClick={() => setMenuOpen(false)}
           >
             Step inside
@@ -129,8 +129,8 @@ function HeaderNavLink({
       ? pathname === item.href
       : pathname === item.href || pathname.startsWith(`${item.href}/`));
   const classes = cn(
-    "text-sm font-black text-[#111111] uppercase transition hover:text-[#55b8e8]",
-    isActive && "text-[#55b8e8]",
+    "rounded-[6px] text-sm font-black text-[#111111] uppercase transition hover:text-[#066a99] focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:ring-offset-2 focus-visible:outline-none",
+    isActive && "text-[#066a99]",
     className,
   );
 
