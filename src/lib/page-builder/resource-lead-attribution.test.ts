@@ -68,6 +68,23 @@ describe("buildResourceLeadFormAttribution", () => {
       utm_source: "",
       utm_medium: "",
       utm_campaign: "",
+      utm_term: "",
+      utm_content: "",
+    });
+    expect(attribution).toEqual({
+      source_path: "/resources/route-planning",
+      landing_path: "/resources/route-planning",
+      referrer: "",
+      source_page_id: "22222222-2222-4222-8222-222222222222",
+      source_page_slug: "route-planning",
+      target_keyword: "",
+      source_block_id: "block_form",
+      source_cta_tracking_name: "route_planning_form",
+      utm_source: "",
+      utm_medium: "",
+      utm_campaign: "",
+      utm_term: "",
+      utm_content: "",
     });
   });
 });

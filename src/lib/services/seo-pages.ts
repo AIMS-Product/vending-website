@@ -14,6 +14,11 @@ import {
   type PageContent,
 } from "@/lib/page-builder/blocks";
 import { assessSeoReadiness } from "@/lib/page-builder/seo-readiness";
+import {
+  defaultStructuredDataSettings,
+  parseStructuredDataSettings,
+  type StructuredDataSettings,
+} from "@/lib/page-builder/structured-data-settings";
 import { config } from "@/lib/config";
 import { collectMediaAssetReferences } from "@/lib/media/referenced-assets";
 import { validateMediaAssetReferences } from "@/lib/services/media-assets";
@@ -43,6 +48,7 @@ const draftSettingsSchema = z
     canonicalUrl: z.string().trim().nullable(),
     noindex: z.boolean(),
     sitemapEnabled: z.boolean(),
+    structuredDataSettings: z.unknown().optional(),
   })
   .strict();
 
@@ -65,7 +71,7 @@ export type SaveSeoPageDraftInput = {
   canonicalUrl?: string | null;
   noindex?: boolean;
   sitemapEnabled?: boolean;
-  structuredDataSettings?: Json;
+  structuredDataSettings?: StructuredDataSettings;
   draftContent?: unknown;
   draftSettings?: SeoPageDraftSettings | null;
   updatedBy?: string | null;
@@ -80,6 +86,7 @@ export type SeoPageDraftSettings = {
   canonicalUrl: string | null;
   noindex: boolean;
   sitemapEnabled: boolean;
+  structuredDataSettings: StructuredDataSettings;
 };
 
 export type PublishSeoPageOptions = ServiceDeps & {
@@ -176,7 +183,7 @@ export async function adminCreateSeoPage(
     page_type: input.pageType ?? "resource",
     template_key: input.templateKey ?? "standard",
     draft_content: draftContent as unknown as Json,
-    structured_data_settings: {},
+    structured_data_settings: defaultStructuredDataSettings as unknown as Json,
     created_by: input.createdBy ?? null,
     updated_by: input.createdBy ?? null,
   };
@@ -216,7 +223,9 @@ export async function adminSaveSeoPageDraft(
     patch.sitemap_enabled = input.sitemapEnabled;
   }
   if (input.structuredDataSettings !== undefined) {
-    patch.structured_data_settings = input.structuredDataSettings;
+    patch.structured_data_settings = parseStructuredDataSettings(
+      input.structuredDataSettings,
+    ) as unknown as Json;
   }
   if (input.draftContent !== undefined) {
     patch.draft_content = parseDraftContent(
@@ -227,7 +236,10 @@ export async function adminSaveSeoPageDraft(
     patch.draft_settings =
       input.draftSettings === null
         ? {}
-        : (draftSettingsSchema.parse(input.draftSettings) as unknown as Json);
+        : (normalizeDraftSettings(
+            draftSettingsSchema.parse(input.draftSettings),
+            defaultStructuredDataSettings,
+          ) as unknown as Json);
   }
   if (input.updatedBy !== undefined) patch.updated_by = input.updatedBy;
 
@@ -264,6 +276,7 @@ export async function adminPublishSeoPage(
     canonicalUrl: publishSettings.canonicalUrl,
     noindex: publishSettings.noindex,
     sitemapEnabled: publishSettings.sitemapEnabled,
+    structuredDataSettings: publishSettings.structuredDataSettings,
   });
   if (readiness.blockers.length > 0) {
     throw new SeoPageValidationError(
@@ -333,6 +346,8 @@ export async function adminPublishSeoPage(
       canonical_url: publishSettings.canonicalUrl,
       noindex: publishSettings.noindex,
       sitemap_enabled: publishSettings.sitemapEnabled,
+      structured_data_settings:
+        publishSettings.structuredDataSettings as unknown as Json,
       status: "published",
       published_content: publishedContent as unknown as Json,
       published_revision_id: revision.id,
@@ -709,12 +724,32 @@ export async function getSeoPagePreviewByToken(
   if (!page) return null;
 
   const draftContent = parseDraftContent(page.draft_content);
-  const draftSettings = parseSeoPageDraftSettings(page.draft_settings);
+  const draftSettings = parseSeoPageDraftSettings(
+    page.draft_settings,
+    parseStructuredDataSettings(page.structured_data_settings),
+  );
   return {
     ...page,
     ...draftSettingsToSeoPagePatch(draftSettings),
     published_content: draftContent,
   };
+}
+
+export async function hasActiveSeoPagePreviewToken(
+  token: string,
+  options: ServiceDeps & { now?: () => Date } = {},
+) {
+  const client = options.client ?? createAdminClient();
+  const now = options.now ?? (() => new Date());
+  const { data: tokenRow, error } = await client
+    .from("page_preview_tokens")
+    .select("id, expires_at, revoked_at")
+    .eq("token_hash", hashPreviewToken(token))
+    .maybeSingle();
+
+  if (error) throw new Error("Could not load SEO page preview link.");
+  if (!tokenRow || tokenRow.revoked_at) return false;
+  return new Date(tokenRow.expires_at).getTime() > now().getTime();
 }
 
 function hashPreviewToken(token: string) {
@@ -759,14 +794,22 @@ function parseDraftContent(content: unknown): PageContent {
   return result.content;
 }
 
-function parseSeoPageDraftSettings(value: unknown) {
+function parseSeoPageDraftSettings(
+  value: unknown,
+  structuredDataFallback: StructuredDataSettings = defaultStructuredDataSettings,
+) {
   const parsed = draftSettingsSchema.safeParse(value);
-  return parsed.success ? parsed.data : null;
+  return parsed.success
+    ? normalizeDraftSettings(parsed.data, structuredDataFallback)
+    : null;
 }
 
 function effectivePublishSettings(page: SeoPage): SeoPageDraftSettings {
   return (
-    parseSeoPageDraftSettings(page.draft_settings) ?? settingsFromSeoPage(page)
+    parseSeoPageDraftSettings(
+      page.draft_settings,
+      parseStructuredDataSettings(page.structured_data_settings),
+    ) ?? settingsFromSeoPage(page)
   );
 }
 
@@ -780,6 +823,28 @@ function settingsFromSeoPage(page: SeoPage): SeoPageDraftSettings {
     canonicalUrl: page.canonical_url,
     noindex: page.noindex,
     sitemapEnabled: page.sitemap_enabled,
+    structuredDataSettings: parseStructuredDataSettings(
+      page.structured_data_settings,
+    ),
+  };
+}
+
+function normalizeDraftSettings(
+  settings: z.infer<typeof draftSettingsSchema>,
+  structuredDataFallback: StructuredDataSettings,
+): SeoPageDraftSettings {
+  return {
+    slug: settings.slug,
+    title: settings.title,
+    targetKeyword: settings.targetKeyword,
+    seoTitle: settings.seoTitle,
+    metaDescription: settings.metaDescription,
+    canonicalUrl: settings.canonicalUrl,
+    noindex: settings.noindex,
+    sitemapEnabled: settings.sitemapEnabled,
+    structuredDataSettings: parseStructuredDataSettings(
+      settings.structuredDataSettings ?? structuredDataFallback,
+    ),
   };
 }
 
@@ -796,6 +861,8 @@ function draftSettingsToSeoPagePatch(
     canonical_url: settings.canonicalUrl,
     noindex: settings.noindex,
     sitemap_enabled: settings.sitemapEnabled,
+    structured_data_settings:
+      settings.structuredDataSettings as unknown as Json,
   };
 }
 
@@ -1211,7 +1278,8 @@ function buildSeoSnapshot(
     canonical_url: settings.canonicalUrl,
     noindex: settings.noindex,
     sitemap_enabled: settings.sitemapEnabled,
-    structured_data_settings: page.structured_data_settings,
+    structured_data_settings:
+      settings.structuredDataSettings as unknown as Json,
   };
 }
 

@@ -13,38 +13,20 @@ import {
   adminPrimaryButtonClass,
   adminSecondaryButtonClass,
 } from "@/components/admin/AdminUi";
+import {
+  adminPagesHref,
+  buildSeoPageListState,
+  defaultSeoPageSize,
+  parseSeoPageListParams,
+  seoPageFilters,
+  seoPageSizeOptions,
+  seoPageSortLabels,
+  type SeoPageSearchParams,
+} from "@/lib/admin/seo-pages-list";
 import { assessSeoReadiness } from "@/lib/page-builder/seo-readiness";
 import { adminListSeoPages } from "@/lib/services/seo-pages";
 import { requireAdmin } from "@/lib/supabase/auth";
 import type { Tables } from "@/types/database";
-
-type SearchParams = {
-  status?: string | string[];
-  q?: string | string[];
-  sort?: string | string[];
-  page?: string | string[];
-  perPage?: string | string[];
-};
-type StatusFilter = "active" | "draft" | "published" | "archived";
-type SortKey = "updated-desc" | "updated-asc" | "published-desc" | "title-asc";
-
-const filters: Array<{ label: string; value: StatusFilter }> = [
-  { label: "Active", value: "active" },
-  { label: "Drafts", value: "draft" },
-  { label: "Published", value: "published" },
-  { label: "Archived", value: "archived" },
-];
-
-const sortLabels: Record<SortKey, string> = {
-  "updated-desc": "Updated newest",
-  "updated-asc": "Updated oldest",
-  "published-desc": "Published newest",
-  "title-asc": "Title A-Z",
-};
-
-const pageSizeOptions = [10, 25, 50, 100] as const;
-type PageSize = (typeof pageSizeOptions)[number];
-const defaultPageSize: PageSize = 10;
 
 export const metadata: Metadata = {
   title: "SEO pages admin",
@@ -54,45 +36,30 @@ export const metadata: Metadata = {
 export default async function AdminPagesPage({
   searchParams,
 }: {
-  searchParams: Promise<SearchParams>;
+  searchParams: Promise<SeoPageSearchParams>;
 }) {
   const [{ user, role }, params] = await Promise.all([
     requireAdmin(),
     searchParams,
   ]);
-  const active = normalizeStatus(firstParam(params.status));
-  const searchQuery = normalizeSearch(firstParam(params.q));
-  const sort = normalizeSort(firstParam(params.sort));
-  const requestedPage = normalizePage(firstParam(params.page));
-  const pageSize = normalizePageSize(firstParam(params.perPage));
+  const listParams = parseSeoPageListParams(params);
 
   const allPages = await adminListSeoPages();
-  const pageCounts = countPagesByStatus(allPages);
-  const filteredPages = sortPages(
-    filterPages(allPages, active, searchQuery),
-    sort,
-  );
-  const totalPages = Math.max(1, Math.ceil(filteredPages.length / pageSize));
-  const currentPage = Math.min(requestedPage, totalPages);
-  const pageStart = (currentPage - 1) * pageSize;
-  const visiblePages = filteredPages.slice(pageStart, pageStart + pageSize);
-  const displayStart = filteredPages.length === 0 ? 0 : pageStart + 1;
-  const displayEnd = Math.min(pageStart + pageSize, filteredPages.length);
-  const paginationPages = paginationWindow(currentPage, totalPages);
-  const showRowsPerPage = filteredPages.length > defaultPageSize;
-  const resultRangeLabel =
-    filteredPages.length === 0
-      ? "No resource pages"
-      : totalPages > 1
-        ? `${displayStart}-${displayEnd} of ${filteredPages.length}`
-        : `Showing all ${filteredPages.length}`;
-  const returnTo = adminPagesHref({
+  const {
     status: active,
     q: searchQuery,
     sort,
-    page: currentPage,
     perPage: pageSize,
-  });
+    pageCounts,
+    filteredPages,
+    visiblePages,
+    totalPages,
+    currentPage,
+    paginationPages,
+    showRowsPerPage,
+    resultRangeLabel,
+    returnTo,
+  } = buildSeoPageListState(allPages, listParams);
 
   return (
     <AdminShell
@@ -187,7 +154,7 @@ export default async function AdminPagesPage({
                 {sort !== "updated-desc" ? (
                   <input type="hidden" name="sort" value={sort} />
                 ) : null}
-                {pageSize !== defaultPageSize ? (
+                {pageSize !== defaultSeoPageSize ? (
                   <input type="hidden" name="perPage" value={pageSize} />
                 ) : null}
                 {searchQuery ? (
@@ -214,7 +181,7 @@ export default async function AdminPagesPage({
                 className="inline-flex min-h-12 max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-md border border-slate-200 bg-white p-1 shadow-sm"
                 aria-label="Page status filters"
               >
-                {filters.map((filter) => (
+                {seoPageFilters.map((filter) => (
                   <Link
                     key={filter.value}
                     href={adminPagesHref({
@@ -238,7 +205,7 @@ export default async function AdminPagesPage({
 
             <details className="group relative w-full sm:w-auto">
               <summary className="flex h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none sm:justify-start">
-                {sortLabels[sort]}
+                {seoPageSortLabels[sort]}
                 <span
                   className="text-slate-500 transition group-open:rotate-180"
                   aria-hidden="true"
@@ -247,13 +214,13 @@ export default async function AdminPagesPage({
                 </span>
               </summary>
               <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-md border border-slate-200 bg-white p-1 shadow-lg">
-                {Object.entries(sortLabels).map(([value, label]) => (
+                {Object.entries(seoPageSortLabels).map(([value, label]) => (
                   <Link
                     key={value}
                     href={adminPagesHref({
                       status: active,
                       q: searchQuery,
-                      sort: value as SortKey,
+                      sort: value as keyof typeof seoPageSortLabels,
                       perPage: pageSize,
                     })}
                     className="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
@@ -306,16 +273,14 @@ export default async function AdminPagesPage({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] table-fixed border-collapse text-left text-sm">
+            <table className="w-full min-w-[640px] table-fixed border-collapse text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
                 <tr>
-                  <th className="w-[36%] px-7 py-4">Title</th>
-                  <th className="w-[18%] px-5 py-4">Keyword</th>
-                  <th className="w-[9%] px-5 py-4 text-center">Readiness</th>
-                  <th className="w-[9%] px-5 py-4 text-center">Status</th>
-                  <th className="w-[10%] px-5 py-4">Updated</th>
-                  <th className="w-[10%] px-5 py-4">Published</th>
-                  <th className="w-[8%] px-5 py-4 text-right">Actions</th>
+                  <th className="w-[42%] px-7 py-4">Title</th>
+                  <th className="w-[24%] px-5 py-4">Keyword</th>
+                  <th className="w-[12%] px-5 py-4 text-center">Readiness</th>
+                  <th className="w-[12%] px-5 py-4 text-center">Status</th>
+                  <th className="w-[10%] px-5 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -339,7 +304,7 @@ export default async function AdminPagesPage({
                   className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm"
                   aria-label="Rows per page"
                 >
-                  {pageSizeOptions.map((option) => (
+                  {seoPageSizeOptions.map((option) => (
                     <Link
                       key={option}
                       href={adminPagesHref({
@@ -489,6 +454,7 @@ function PageRow({
     noindex: page.noindex,
     sitemapEnabled: page.sitemap_enabled,
     targetKeyword: page.target_keyword,
+    structuredDataSettings: page.structured_data_settings,
   });
 
   return (
@@ -522,12 +488,6 @@ function PageRow({
           label={`Page status: ${formatStatus(page.status)}`}
           tone={statusDotTone(page.status)}
         />
-      </td>
-      <td className="px-5 py-4 text-slate-700">
-        {formatDate(page.updated_at)}
-      </td>
-      <td className="px-5 py-4 text-slate-700">
-        {page.published_at ? formatDate(page.published_at) : "-"}
       </td>
       <td className="px-5 py-4 text-right">
         <PageActionsMenu page={page} returnTo={returnTo} />
@@ -716,136 +676,6 @@ function PaginationNumber({
   );
 }
 
-function firstParam(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function normalizeStatus(value: string | undefined): StatusFilter {
-  if (
-    value === "active" ||
-    value === "draft" ||
-    value === "published" ||
-    value === "archived"
-  ) {
-    return value;
-  }
-  return "active";
-}
-
-function normalizeSearch(value: string | undefined) {
-  return value?.trim().slice(0, 120) ?? "";
-}
-
-function normalizeSort(value: string | undefined): SortKey {
-  if (
-    value === "updated-asc" ||
-    value === "published-desc" ||
-    value === "title-asc"
-  ) {
-    return value;
-  }
-  return "updated-desc";
-}
-
-function normalizePage(value: string | undefined) {
-  const page = Number.parseInt(value ?? "1", 10);
-  return Number.isFinite(page) && page > 0 ? page : 1;
-}
-
-function normalizePageSize(value: string | undefined): PageSize {
-  const pageSize = Number.parseInt(value ?? String(defaultPageSize), 10);
-  return pageSizeOptions.includes(pageSize as PageSize)
-    ? (pageSize as PageSize)
-    : defaultPageSize;
-}
-
-function paginationWindow(currentPage: number, totalPages: number) {
-  const start = Math.max(1, Math.min(currentPage - 1, totalPages - 2));
-  const end = Math.min(totalPages, start + 2);
-  return Array.from(
-    { length: Math.max(0, end - start + 1) },
-    (_, index) => start + index,
-  );
-}
-
-function filterPages(
-  pages: Tables<"seo_pages">[],
-  status: StatusFilter,
-  searchQuery: string,
-) {
-  const query = searchQuery.toLowerCase();
-  return pages.filter((page) => {
-    const matchesStatus =
-      status === "active" ? page.status !== "archived" : page.status === status;
-    if (!matchesStatus) return false;
-    if (!query) return true;
-
-    return [
-      page.title,
-      page.slug,
-      `/resources/${page.slug}`,
-      page.target_keyword ?? "",
-    ].some((value) => value.toLowerCase().includes(query));
-  });
-}
-
-function sortPages(pages: Tables<"seo_pages">[], sort: SortKey) {
-  const next = [...pages];
-  if (sort === "title-asc") {
-    return next.sort((a, b) => a.title.localeCompare(b.title));
-  }
-  if (sort === "published-desc") {
-    return next.sort((a, b) => {
-      const left = a.published_at ? new Date(a.published_at).getTime() : 0;
-      const right = b.published_at ? new Date(b.published_at).getTime() : 0;
-      return right - left;
-    });
-  }
-  return next.sort((a, b) => {
-    const left = new Date(a.updated_at).getTime();
-    const right = new Date(b.updated_at).getTime();
-    return sort === "updated-asc" ? left - right : right - left;
-  });
-}
-
-function adminPagesHref({
-  status,
-  q,
-  sort,
-  page,
-  perPage,
-}: {
-  status: StatusFilter;
-  q?: string;
-  sort?: SortKey;
-  page?: number;
-  perPage?: PageSize;
-}) {
-  const params = new URLSearchParams();
-  if (status !== "active") params.set("status", status);
-  if (q) params.set("q", q);
-  if (sort && sort !== "updated-desc") params.set("sort", sort);
-  if (perPage && perPage !== defaultPageSize) {
-    params.set("perPage", String(perPage));
-  }
-  if (page && page > 1) params.set("page", String(page));
-  const query = params.toString();
-  return query ? `/admin/pages?${query}` : "/admin/pages";
-}
-
-function countPagesByStatus(pages: Tables<"seo_pages">[]) {
-  return pages.reduce(
-    (counts, page) => {
-      if (page.status === "draft") counts.draft += 1;
-      if (page.status === "published") counts.published += 1;
-      if (page.status === "archived") counts.archived += 1;
-      if (page.status !== "archived") counts.active += 1;
-      return counts;
-    },
-    { active: 0, draft: 0, published: 0, archived: 0 },
-  );
-}
-
 function metricToneClass(tone: "amber" | "blue" | "green" | "slate") {
   if (tone === "amber") return "bg-amber-100 text-amber-600";
   if (tone === "green") return "bg-emerald-100 text-emerald-600";
@@ -861,10 +691,8 @@ type DotTone = "amber" | "blue" | "green" | "red" | "slate";
 
 function StatusDot({ label, tone }: { label: string; tone: DotTone }) {
   return (
-    <span
-      aria-label={label}
-      className="group relative inline-flex size-7 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-    >
+    <span className="group relative inline-flex size-7 items-center justify-center rounded-full">
+      <span className="sr-only">{label}</span>
       <span
         aria-hidden="true"
         className={`size-2.5 rounded-full ${dotToneClass(tone)}`}
@@ -906,14 +734,6 @@ function dotToneClass(tone: DotTone) {
     return "bg-slate-400 shadow-[0_0_0_4px_rgba(100,116,139,0.12),0_0_12px_rgba(100,116,139,0.45)]";
   }
   return "bg-sky-500 shadow-[0_0_0_4px_rgba(14,165,233,0.14),0_0_14px_rgba(14,165,233,0.6)]";
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 function PageChevron() {

@@ -6,3 +6,7 @@ build
 coverage
 *.lock
 package-lock.json
+
+# Local audit/browser evidence generated during verification.
+/tmp-*
+/scripts/tmp-*.mjs

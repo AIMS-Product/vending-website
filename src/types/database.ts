@@ -716,7 +716,26 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      published_seo_pages: {
+        Row: {
+          canonical_url: string | null;
+          id: string;
+          meta_description: string | null;
+          noindex: boolean;
+          published_at: string | null;
+          published_content: Json | null;
+          seo_title: string | null;
+          sitemap_enabled: boolean;
+          slug: string;
+          structured_data_settings: Json;
+          target_keyword: string | null;
+          title: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
     };
     Functions: {
       accept_ai_proposal_blocks: {

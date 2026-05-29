@@ -124,6 +124,23 @@ describe("assessSeoReadiness", () => {
     expect(JSON.stringify(summary).toLowerCase()).not.toContain("rank ");
   });
 
+  it("reports structured-data settings as real readiness evidence", () => {
+    const summary = assessSeoReadiness(baseContent, {
+      ...baseMeta,
+      structuredDataSettings: { breadcrumb: false, faq: false },
+    });
+
+    expect(summary.evidence).toEqual(
+      expect.arrayContaining([
+        "Breadcrumb structured data is disabled.",
+        "FAQ structured data is disabled.",
+      ]),
+    );
+    expect(summary.opportunities.map((finding) => finding.code)).not.toContain(
+      "missing_faq_opportunity",
+    );
+  });
+
   it("maps existing publish failures into hard readiness blockers", () => {
     const summary = assessSeoReadiness(baseContent, {
       ...baseMeta,
@@ -320,6 +337,168 @@ describe("assessSeoReadiness", () => {
           message: "Card 1 in block 6 has no link.",
         }),
       ]),
+    );
+  });
+
+  it("detects rich-text heading nodes as supporting subsections", () => {
+    const contentWithoutSubheading: PageContent = {
+      version: 1,
+      sections: [
+        {
+          id: "section_text",
+          preset: "standard",
+          background: "default",
+          spacing: "standard",
+          columns: [
+            {
+              id: "column_text",
+              width: "1/1",
+              blocks: [
+                {
+                  id: "block_text",
+                  type: "rich_text",
+                  variant: "default",
+                  props: {
+                    eyebrow: "",
+                    heading: "",
+                    body: {
+                      version: 1,
+                      nodes: [
+                        {
+                          type: "paragraph",
+                          text: "A vending route guide should explain how to choose locations.",
+                        },
+                      ],
+                    },
+                  },
+                },
+                {
+                  id: "block_cta",
+                  type: "cta",
+                  variant: "primary",
+                  props: {
+                    label: "Apply now",
+                    href: "/apply",
+                    trackingName: "route_apply",
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const contentWithBodyHeading: PageContent = {
+      ...contentWithoutSubheading,
+      sections: [
+        {
+          ...contentWithoutSubheading.sections[0],
+          columns: [
+            {
+              ...contentWithoutSubheading.sections[0].columns[0],
+              blocks:
+                contentWithoutSubheading.sections[0].columns[0].blocks.map(
+                  (block) =>
+                    block.type === "rich_text"
+                      ? {
+                          ...block,
+                          props: {
+                            ...block.props,
+                            body: {
+                              version: 1,
+                              nodes: [
+                                {
+                                  type: "paragraph",
+                                  text: "A vending route guide should explain how to choose locations.",
+                                },
+                                {
+                                  type: "heading",
+                                  level: 2,
+                                  text: "Location planning",
+                                },
+                              ],
+                            },
+                          },
+                        }
+                      : block,
+                ),
+            },
+          ],
+        },
+      ],
+    };
+
+    const withoutSubheading = assessSeoReadiness(
+      contentWithoutSubheading,
+      baseMeta,
+    );
+    const withBodyHeading = assessSeoReadiness(
+      contentWithBodyHeading,
+      baseMeta,
+    );
+
+    expect(
+      withoutSubheading.opportunities.map((finding) => finding.code),
+    ).toContain("missing_supporting_subsections");
+    expect(
+      withBodyHeading.opportunities.map((finding) => finding.code),
+    ).not.toContain("missing_supporting_subsections");
+  });
+
+  it("counts visible words after trimming repeated whitespace", () => {
+    const content: PageContent = {
+      version: 1,
+      sections: [
+        {
+          id: "section_words",
+          preset: "standard",
+          background: "default",
+          spacing: "standard",
+          columns: [
+            {
+              id: "column_words",
+              width: "1/1",
+              blocks: [
+                {
+                  id: "block_text",
+                  type: "rich_text",
+                  variant: "default",
+                  props: {
+                    eyebrow: "",
+                    heading: "Route   planning",
+                    body: {
+                      version: 1,
+                      nodes: [
+                        {
+                          type: "paragraph",
+                          text: "Choose\n\nlocations   carefully",
+                        },
+                      ],
+                    },
+                  },
+                },
+                {
+                  id: "block_cta",
+                  type: "cta",
+                  variant: "primary",
+                  props: {
+                    label: "Apply now",
+                    href: "/apply",
+                    trackingName: "route_apply",
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const summary = assessSeoReadiness(content, baseMeta);
+
+    expect(summary.metrics.visibleWordCount).toBe(7);
+    expect(summary.evidence).toEqual(
+      expect.arrayContaining(["7 visible words"]),
     );
   });
 });

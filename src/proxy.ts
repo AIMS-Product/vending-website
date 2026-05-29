@@ -1,15 +1,43 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { resolveRedirectDestination } from "@/lib/redirects";
+import { hasPublishedPostSlug } from "@/lib/services/news";
 import {
   getBuilderRedirectBySourcePath,
   hasPublishedSeoPageSlug,
 } from "@/lib/services/seo-page-public";
+import { hasActiveSeoPagePreviewToken } from "@/lib/services/seo-pages";
 import {
   ADMIN_LOGIN_PATH,
   normalizeAdminNextPath,
 } from "@/lib/supabase/auth-redirects";
 import { isDevAdminAuthBypassEnabled } from "@/lib/supabase/dev-auth";
 import { updateSession } from "@/lib/supabase/middleware";
+
+const NOT_FOUND_HTML = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Not found | Vendingpreneurs</title>
+  </head>
+  <body>
+    <main>
+      <h1>Not found</h1>
+      <p>The requested page could not be found.</p>
+    </main>
+  </body>
+</html>`;
+
+function notFoundResponse() {
+  return new Response(NOT_FOUND_HTML, {
+    status: 404,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "X-Robots-Tag": "noindex",
+    },
+  });
+}
 
 /**
  * Next 16 proxy (formerly `middleware.ts`). Two responsibilities:
@@ -32,6 +60,16 @@ export async function proxy(request: NextRequest) {
 
   if (path.startsWith("/resources/")) {
     if (path.startsWith("/resources/preview/")) {
+      let token: string;
+      try {
+        token = decodeURIComponent(path.replace(/^\/resources\/preview\//, ""));
+      } catch {
+        return notFoundResponse();
+      }
+      const exists = await hasActiveSeoPagePreviewToken(token);
+      if (!exists) {
+        return notFoundResponse();
+      }
       return NextResponse.next();
     }
 
@@ -47,11 +85,26 @@ export async function proxy(request: NextRequest) {
     try {
       slug = decodeURIComponent(path.replace(/^\/resources\//, ""));
     } catch {
-      return new Response("Not found", { status: 404 });
+      return notFoundResponse();
     }
     const exists = await hasPublishedSeoPageSlug(slug);
     if (!exists) {
-      return new Response("Not found", { status: 404 });
+      return notFoundResponse();
+    }
+
+    return NextResponse.next();
+  }
+
+  if (path.startsWith("/news/") && path !== "/news/feed.xml") {
+    let slug: string;
+    try {
+      slug = decodeURIComponent(path.replace(/^\/news\//, ""));
+    } catch {
+      return notFoundResponse();
+    }
+    const exists = await hasPublishedPostSlug(slug);
+    if (!exists) {
+      return notFoundResponse();
     }
 
     return NextResponse.next();
@@ -107,5 +160,10 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/auth/:path*", "/resources/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/auth/:path*",
+    "/resources/:path*",
+    "/news/:path*",
+  ],
 };

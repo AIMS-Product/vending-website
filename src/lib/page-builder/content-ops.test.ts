@@ -43,6 +43,7 @@ describe("page builder content operations", () => {
     expect(moveItem(["a", "b", "c"], 1, "up")).toEqual(["b", "a", "c"]);
     expect(moveItem(["a", "b", "c"], 1, "down")).toEqual(["a", "c", "b"]);
     expect(moveItem(["a", "b", "c"], 0, "up")).toEqual(["a", "b", "c"]);
+    expect(moveItem(["a", "b", "c"], 2, "down")).toEqual(["a", "b", "c"]);
     expect(moveItem(["a", "b", "c"], -1, "down")).toEqual(["a", "b", "c"]);
     expect(moveItem(["a", "b", "c"], 3, "up")).toEqual(["a", "b", "c"]);
   });
@@ -145,5 +146,27 @@ describe("page builder content operations", () => {
       { id: "b" },
     ]);
     expect(moveItemToIndex(items, 1, 1)).toBe(items);
+  });
+
+  it("keeps the original array for out-of-range index moves", () => {
+    const items = [{ id: "a" }, { id: "b" }, { id: "c" }];
+
+    expect(moveItemToIndex(items, -1, 1)).toBe(items);
+    expect(moveItemToIndex(items, 3, 1)).toBe(items);
+    expect(moveItemToIndex(items, 1, -1)).toBe(items);
+    expect(moveItemToIndex(items, 1, 3)).toBe(items);
+  });
+
+  it("keeps the original array when reorder IDs are unchanged or missing", () => {
+    const items = [{ id: "a" }, { id: "b" }, { id: "c" }];
+
+    expect(reorderItemsById(items, "b", "b")).toBe(items);
+    expect(reorderItemsById(items, "missing", "b")).toBe(items);
+    expect(reorderItemsById(items, "b", "missing")).toBe(items);
+    expect(reorderItemsById(items, "b", "c")).toEqual([
+      { id: "a" },
+      { id: "c" },
+      { id: "b" },
+    ]);
   });
 });

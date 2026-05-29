@@ -7,6 +7,10 @@ import {
   type PageContent,
   type PagePublishMeta,
 } from "./blocks";
+import {
+  parseStructuredDataSettings,
+  type StructuredDataSettings,
+} from "./structured-data-settings";
 
 export type SeoReadinessCategory =
   | "indexing"
@@ -61,6 +65,7 @@ export type SeoReadinessSummary = {
 
 export type SeoReadinessMeta = PagePublishMeta & {
   targetKeyword?: string | null | undefined;
+  structuredDataSettings?: StructuredDataSettings | unknown;
 };
 
 const categoryLabels: Record<SeoReadinessCategory, string> = {
@@ -108,6 +113,9 @@ export function assessSeoReadiness(
 
   const parsedContent = contentResult.ok ? contentResult.content : null;
   const blocks = parsedContent ? flattenBlocks(parsedContent) : [];
+  const structuredDataSettings = parseStructuredDataSettings(
+    meta.structuredDataSettings,
+  );
   const visibleText = parsedContent ? collectVisibleText(parsedContent) : "";
   const metrics = {
     visibleWordCount: wordCount(visibleText),
@@ -120,7 +128,9 @@ export function assessSeoReadiness(
   };
 
   findings.push(...completionFindings(blocks));
-  findings.push(...softFindings(meta, visibleText, blocks, metrics));
+  findings.push(
+    ...softFindings(meta, visibleText, blocks, metrics, structuredDataSettings),
+  );
 
   const blockers = findings.filter((finding) => finding.severity === "blocker");
   const warnings = findings.filter((finding) => finding.severity === "warning");
@@ -140,7 +150,12 @@ export function assessSeoReadiness(
     warnings,
     opportunities,
     categories: buildCategories(findings),
-    evidence: evidenceForState(parsedContent, meta, metrics),
+    evidence: evidenceForState(
+      parsedContent,
+      meta,
+      metrics,
+      structuredDataSettings,
+    ),
     metrics,
   };
 }
@@ -150,6 +165,7 @@ function softFindings(
   visibleText: string,
   blocks: PageBlock[],
   metrics: SeoReadinessSummary["metrics"],
+  structuredDataSettings: StructuredDataSettings,
 ): SeoReadinessFinding[] {
   const findings: SeoReadinessFinding[] = [];
   const keyword = normalizeText(meta.targetKeyword ?? "");
@@ -275,7 +291,7 @@ function softFindings(
     });
   }
 
-  if (metrics.faqItemCount === 0) {
+  if (metrics.faqItemCount === 0 && structuredDataSettings.faq) {
     findings.push({
       code: "missing_faq_opportunity",
       category: "schema",
@@ -543,6 +559,7 @@ function evidenceForState(
   content: PageContent | null,
   meta: SeoReadinessMeta,
   metrics: SeoReadinessSummary["metrics"],
+  structuredDataSettings: StructuredDataSettings,
 ) {
   const evidence = [
     `${metrics.visibleWordCount} visible words`,
@@ -556,6 +573,16 @@ function evidenceForState(
   if (meta.canonicalUrl) evidence.push(`Canonical: ${meta.canonicalUrl}`);
   if (meta.noindex) evidence.push("Noindex is enabled.");
   if (meta.sitemapEnabled) evidence.push("Sitemap inclusion is enabled.");
+  evidence.push(
+    structuredDataSettings.breadcrumb
+      ? "Breadcrumb structured data is enabled."
+      : "Breadcrumb structured data is disabled.",
+  );
+  evidence.push(
+    structuredDataSettings.faq
+      ? "FAQ structured data is enabled for visible FAQ blocks."
+      : "FAQ structured data is disabled.",
+  );
   return evidence;
 }
 

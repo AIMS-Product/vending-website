@@ -41,7 +41,7 @@ describe("seo page public service", () => {
   });
 
   it("lists published resource slugs through the public RLS surface", async () => {
-    mocks.query.eq.mockResolvedValue({
+    mocks.query.select.mockResolvedValue({
       data: [{ slug: "start-vending" }],
       error: null,
     });
@@ -49,12 +49,10 @@ describe("seo page public service", () => {
     await expect(listPublishedSeoPageSlugs()).resolves.toEqual([
       "start-vending",
     ]);
-    expect(mocks.client.from).toHaveBeenCalledWith("seo_pages");
-    expect(mocks.query.eq).toHaveBeenCalledWith("status", "published");
+    expect(mocks.client.from).toHaveBeenCalledWith("published_seo_pages");
   });
 
   it("lists sitemap-eligible resource pages only", async () => {
-    mocks.query.eq.mockReturnValueOnce(mocks.query);
     mocks.query.eq.mockReturnValueOnce(mocks.query);
     mocks.query.eq.mockResolvedValueOnce({
       data: [{ slug: "start-vending", updated_at: "2026-05-06T00:00:00Z" }],
@@ -64,7 +62,6 @@ describe("seo page public service", () => {
     await expect(listSitemapSeoPages()).resolves.toEqual([
       { slug: "start-vending", updated_at: "2026-05-06T00:00:00Z" },
     ]);
-    expect(mocks.query.eq).toHaveBeenCalledWith("status", "published");
     expect(mocks.query.eq).toHaveBeenCalledWith("sitemap_enabled", true);
     expect(mocks.query.eq).toHaveBeenCalledWith("noindex", false);
   });
@@ -76,7 +73,7 @@ describe("seo page public service", () => {
     });
 
     await expect(hasPublishedSeoPageSlug("start-vending")).resolves.toBe(true);
-    expect(mocks.query.eq).toHaveBeenCalledWith("status", "published");
+    expect(mocks.client.from).toHaveBeenCalledWith("published_seo_pages");
     expect(mocks.query.eq).toHaveBeenCalledWith("slug", "start-vending");
   });
 
@@ -103,8 +100,76 @@ describe("seo page public service", () => {
     const page = await getPublishedSeoPageBySlug("start-vending");
 
     expect(page?.published_content).toEqual({ version: 1, sections: [] });
-    expect(mocks.query.eq).toHaveBeenCalledWith("status", "published");
+    expect(mocks.client.from).toHaveBeenCalledWith("published_seo_pages");
+    expect(mocks.query.select).toHaveBeenCalledWith(
+      expect.not.stringContaining("draft_content"),
+    );
+    expect(mocks.query.select).toHaveBeenCalledWith(
+      expect.not.stringContaining("draft_settings"),
+    );
+    expect(mocks.query.select).toHaveBeenCalledWith(
+      expect.not.stringContaining("created_by"),
+    );
+    expect(mocks.query.select).toHaveBeenCalledWith(
+      expect.not.stringContaining("updated_by"),
+    );
     expect(mocks.query.eq).toHaveBeenCalledWith("slug", "start-vending");
+  });
+
+  it("returns null for missing or invalid published page snapshots", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    mocks.query.maybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+    await expect(getPublishedSeoPageBySlug("missing")).resolves.toBeNull();
+
+    mocks.query.maybeSingle.mockResolvedValueOnce({
+      data: { slug: "missing-content", published_content: null },
+      error: null,
+    });
+    await expect(
+      getPublishedSeoPageBySlug("missing-content"),
+    ).resolves.toBeNull();
+
+    mocks.query.maybeSingle.mockResolvedValueOnce({
+      data: { slug: "bad-content", published_content: { version: 999 } },
+      error: null,
+    });
+    await expect(getPublishedSeoPageBySlug("bad-content")).resolves.toBeNull();
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      "published SEO page content is invalid",
+      expect.objectContaining({
+        slug: "bad-content",
+        issues: expect.any(Array),
+      }),
+    );
+    errorSpy.mockRestore();
+  });
+
+  it("throws on getPublishedSeoPageBySlug query errors so infra failures are loud", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = { message: "RLS denied" };
+
+    mocks.query.maybeSingle.mockResolvedValueOnce({ data: null, error });
+    await expect(getPublishedSeoPageBySlug("start-vending")).rejects.toThrow(
+      /RLS denied/,
+    );
+
+    mocks.query.maybeSingle.mockResolvedValueOnce({ data: null, error });
+    await expect(hasPublishedSeoPageSlug("start-vending")).resolves.toBe(false);
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      "getPublishedSeoPageBySlug failed",
+      error,
+    );
+    expect(errorSpy).toHaveBeenCalledWith(
+      "hasPublishedSeoPageSlug failed",
+      error,
+    );
+    errorSpy.mockRestore();
   });
 
   it("returns a database-backed redirect by source path", async () => {
@@ -124,5 +189,29 @@ describe("seo page public service", () => {
       destination_path: "/resources/new",
       status_code: 301,
     });
+  });
+
+  it("returns null when redirect lookup fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = { message: "redirect lookup failed" };
+    mocks.query.maybeSingle.mockResolvedValue({ data: null, error });
+
+    await expect(
+      getBuilderRedirectBySourcePath("/resources/old"),
+    ).resolves.toBeNull();
+
+    expect(mocks.client.from).toHaveBeenCalledWith("redirects");
+    expect(mocks.query.select).toHaveBeenCalledWith(
+      "source_path, destination_path, status_code",
+    );
+    expect(mocks.query.eq).toHaveBeenCalledWith(
+      "source_path",
+      "/resources/old",
+    );
+    expect(errorSpy).toHaveBeenCalledWith(
+      "getBuilderRedirectBySourcePath failed",
+      error,
+    );
+    errorSpy.mockRestore();
   });
 });

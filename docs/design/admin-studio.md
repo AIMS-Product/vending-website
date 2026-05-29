@@ -26,7 +26,7 @@ This contract applies to `/admin/*` routes, including resource pages, blog/news,
 
 ## Lists And Tables
 
-- Tables should support scanning first: title, status, updated date, published date, and actions.
+- Tables should support scanning first: title, key attributes, status, and actions. Keep columns lean — push per-record detail (such as updated/published dates) into the item's own editor/detail surface rather than widening the list.
 - Actions menus should use familiar icons and concise labels.
 - Filters should be segmented controls when the set is small and stable.
 - Search should look like a search control, not a general text input.

@@ -6,6 +6,7 @@ import {
   buildLeadAttribution,
   type LeadSearchParams,
 } from "@/lib/lead-attribution";
+import { normalizeBrandedPageTitle } from "@/lib/metadata-titles";
 import { getPublishedSeoPageBySlug } from "@/lib/services/seo-page-public";
 
 type Params = { slug: string };
@@ -20,16 +21,17 @@ export async function generateMetadata({
   const { slug } = await params;
   const page = await getPublishedSeoPageBySlug(slug);
   if (!page) notFound();
+  const title = normalizeBrandedPageTitle(page.seo_title ?? page.title);
 
   return {
-    title: page.seo_title ?? page.title,
+    title,
     description: page.meta_description ?? undefined,
     robots: page.noindex ? { index: false, follow: false } : undefined,
     alternates: {
       canonical: page.canonical_url ?? `/resources/${page.slug}`,
     },
     openGraph: {
-      title: page.seo_title ?? page.title,
+      title,
       description: page.meta_description ?? undefined,
       type: "article",
     },

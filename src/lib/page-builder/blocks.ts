@@ -274,6 +274,7 @@ const cardGridBlockSchema = z
                 title: z.string().trim().max(140),
                 body: z.string().trim().max(500),
                 href: safeHrefSchema.optional().default(""),
+                linkLabel: z.string().trim().max(80).optional(),
               })
               .strict(),
           )
@@ -372,6 +373,10 @@ export type PageColumn = z.infer<typeof pageColumnSchema>;
 export type PageSection = z.infer<typeof pageSectionSchema>;
 export type PageChromeSettings = z.infer<typeof pageChromeSchema>;
 export type PageContent = z.infer<typeof pageContentSchema>;
+export type CardGridCard = Extract<
+  PageBlock,
+  { type: "card_grid" }
+>["props"]["cards"][number];
 
 const defaultPageChromeSettings: PageChromeSettings = {
   showHeader: true,
@@ -380,6 +385,16 @@ const defaultPageChromeSettings: PageChromeSettings = {
 
 export function pageChromeSettings(content: PageContent): PageChromeSettings {
   return { ...defaultPageChromeSettings, ...content.chrome };
+}
+
+export function cardGridLinkLabel(card: CardGridCard) {
+  const customLabel = card.linkLabel?.trim();
+  if (customLabel) return customLabel;
+
+  const title = card.title.trim();
+  if (title) return `Learn more about ${title}`;
+
+  return "Learn more";
 }
 
 export const blockRegistry = {

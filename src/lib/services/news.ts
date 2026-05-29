@@ -74,6 +74,22 @@ export async function getPublishedPostBySlug(slug: string) {
   return data;
 }
 
+export async function hasPublishedPostSlug(slug: string) {
+  const supabase = getBuildTimeClient();
+  const { data, error } = await supabase
+    .from("news_posts")
+    .select("id")
+    .eq("status", "published")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) {
+    console.error("hasPublishedPostSlug failed", error);
+    return false;
+  }
+  return Boolean(data);
+}
+
 /**
  * Used by `generateStaticParams` at build time, so it must NOT use the
  * cookie-aware server client. RLS still applies — we only see published rows.

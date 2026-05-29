@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   AiProposalValidationError,
   adminAcceptAiProposalBlocks,
+  adminCreateAiPageProposal,
   adminListAiPageProposals,
 } from "./ai-page-proposals";
 import type { Database } from "@/types/database";
@@ -58,6 +59,13 @@ function listByPage(data: unknown, error: unknown = null) {
   return { table: { select }, mocks: { select, eq, order, limit } };
 }
 
+function approvedExcerptRows(data: unknown, error: unknown = null) {
+  const eq = vi.fn().mockResolvedValue({ data, error });
+  const inMock = vi.fn().mockReturnValue({ eq });
+  const select = vi.fn().mockReturnValue({ in: inMock });
+  return { table: { select }, mocks: { select, in: inMock, eq } };
+}
+
 function buildClient(...tables: unknown[]) {
   return {
     from: vi.fn().mockImplementation(() => {
@@ -76,6 +84,40 @@ function buildClient(...tables: unknown[]) {
 }
 
 describe("AI page proposals", () => {
+  it("rejects proposal creation when selected sources are not approved", async () => {
+    const sourceLookup = approvedExcerptRows([]);
+    const client = buildClient(sourceLookup.table);
+
+    await expect(
+      adminCreateAiPageProposal(
+        {
+          pageId: "page_1",
+          model: "gpt-5.5",
+          promptVersion: "test",
+          selectedSourceExcerptIds: ["11111111-1111-4111-8111-111111111111"],
+          proposal,
+        },
+        { client },
+      ),
+    ).rejects.toMatchObject({
+      issues: [
+        {
+          code: "missing_source",
+          path: "source_excerpts.11111111-1111-4111-8111-111111111111",
+          message: "AI proposals can only use selected approved source data.",
+        },
+      ],
+    });
+
+    expect(client.from).toHaveBeenCalledTimes(1);
+    expect(client.from).toHaveBeenCalledWith("source_excerpts");
+    expect(sourceLookup.mocks.select).toHaveBeenCalledWith("id, approved");
+    expect(sourceLookup.mocks.in).toHaveBeenCalledWith("id", [
+      "11111111-1111-4111-8111-111111111111",
+    ]);
+    expect(sourceLookup.mocks.eq).toHaveBeenCalledWith("approved", true);
+  });
+
   it("lists recent proposals with parsed source-bound proposal JSON", async () => {
     const list = listByPage([
       {

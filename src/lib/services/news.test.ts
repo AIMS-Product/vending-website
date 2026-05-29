@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { getPublishedPostBySlug } from "./news";
+import { getPublishedPostBySlug, hasPublishedPostSlug } from "./news";
 
 const mocks = vi.hoisted(() => {
   const query = {
@@ -40,5 +40,23 @@ describe("getPublishedPostBySlug", () => {
     expect(mocks.anonClient.from).toHaveBeenCalledWith("news_posts");
     expect(mocks.query.eq).toHaveBeenCalledWith("status", "published");
     expect(mocks.query.eq).toHaveBeenCalledWith("slug", "missing-post");
+  });
+});
+
+describe("hasPublishedPostSlug", () => {
+  it("checks published news existence through the anon public client", async () => {
+    mocks.createAnonClient.mockReturnValue(mocks.anonClient);
+    mocks.query.maybeSingle.mockResolvedValue({
+      data: { id: "post_1" },
+      error: null,
+    });
+
+    await expect(hasPublishedPostSlug("published-post")).resolves.toBe(true);
+
+    expect(mocks.createServerClient).not.toHaveBeenCalled();
+    expect(mocks.anonClient.from).toHaveBeenCalledWith("news_posts");
+    expect(mocks.query.select).toHaveBeenCalledWith("id");
+    expect(mocks.query.eq).toHaveBeenCalledWith("status", "published");
+    expect(mocks.query.eq).toHaveBeenCalledWith("slug", "published-post");
   });
 });

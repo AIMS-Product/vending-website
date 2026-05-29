@@ -3,10 +3,13 @@ import {
   CARD_GRID_MAX_CARDS,
   FAQ_MAX_ITEMS,
   blockRegistry,
+  cardGridLinkLabel,
+  collectPageInternalLinks,
   createEmptyPageContent,
   pageContentSchema,
   pageChromeSettings,
   richTextDocumentPlainText,
+  validatePageContent,
   validatePageForPublish,
   type PageContent,
 } from "./blocks";
@@ -132,6 +135,56 @@ describe("page builder block schemas", () => {
       pageContentSchema.safeParse(contentWithCardCount(CARD_GRID_MAX_CARDS + 1))
         .success,
     ).toBe(false);
+  });
+
+  it("keeps card link labels backward compatible and descriptive", () => {
+    const parsed = pageContentSchema.parse({
+      version: 1,
+      sections: [
+        {
+          id: "section_cards",
+          columns: [
+            {
+              id: "column_cards",
+              blocks: [
+                {
+                  id: "block_cards",
+                  type: "card_grid",
+                  props: {
+                    heading: "Options",
+                    cards: [
+                      {
+                        title: "Route planning",
+                        body: "Plan locations and restocks.",
+                        href: "/apply",
+                      },
+                      {
+                        title: "Launch support",
+                        body: "Get launch help.",
+                        href: "/apply",
+                        linkLabel: "Compare launch support",
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const block = parsed.sections[0]?.columns[0]?.blocks[0];
+    expect(block?.type).toBe("card_grid");
+    if (block?.type !== "card_grid") throw new Error("Expected card grid");
+
+    expect(block.props.cards[0].linkLabel).toBeUndefined();
+    expect(cardGridLinkLabel(block.props.cards[0])).toBe(
+      "Learn more about Route planning",
+    );
+    expect(cardGridLinkLabel(block.props.cards[1])).toBe(
+      "Compare launch support",
+    );
   });
 
   it("caps FAQ blocks at the configured item limit", () => {
@@ -642,5 +695,234 @@ describe("page builder block schemas", () => {
         expect.objectContaining({ code: "broken_internal_link" }),
       ]),
     );
+  });
+
+  it("collects root-relative links from CTA, hero, card, and rich text blocks", () => {
+    const content = pageContentSchema.parse({
+      version: 1,
+      sections: [
+        {
+          id: "section_links",
+          columns: [
+            {
+              id: "column_links",
+              blocks: [
+                {
+                  id: "block_cta",
+                  type: "cta",
+                  props: {
+                    label: "Apply",
+                    href: "/apply",
+                    trackingName: "cta_apply",
+                  },
+                },
+                {
+                  id: "block_hero",
+                  type: "hero",
+                  props: {
+                    eyebrow: "Guide",
+                    heading: "Start vending",
+                    body: "Plan a route.",
+                    ctaLabel: "Read more",
+                    ctaHref: "/resources/start-vending",
+                    ctaTrackingName: "hero_resource",
+                  },
+                },
+                {
+                  id: "block_cards",
+                  type: "card_grid",
+                  props: {
+                    heading: "Next steps",
+                    cards: [
+                      {
+                        title: "Internal card",
+                        body: "Stay on-site.",
+                        href: "/case-studies",
+                      },
+                      {
+                        title: "External card",
+                        body: "Leave the site.",
+                        href: "https://example.com",
+                      },
+                    ],
+                  },
+                },
+                {
+                  id: "block_text",
+                  type: "rich_text",
+                  props: {
+                    heading: "Related reading",
+                    body: {
+                      version: 1,
+                      nodes: [
+                        {
+                          type: "paragraph",
+                          spans: [
+                            { text: "Visit " },
+                            { text: "About", href: "/about" },
+                            { text: " or " },
+                            {
+                              text: "external",
+                              href: "https://example.com",
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+                {
+                  id: "block_external_cta",
+                  type: "cta",
+                  props: {
+                    label: "External CTA",
+                    href: "https://example.com/apply",
+                    trackingName: "external_cta",
+                  },
+                },
+                {
+                  id: "block_external_hero",
+                  type: "hero",
+                  props: {
+                    eyebrow: "External",
+                    heading: "External hero",
+                    body: "This hero links off-site.",
+                    ctaLabel: "External",
+                    ctaHref: "https://example.com/hero",
+                    ctaTrackingName: "external_hero",
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(collectPageInternalLinks(content)).toEqual([
+      {
+        blockIndex: 0,
+        href: "/apply",
+        path: "blocks.0.props.href",
+        label: "Apply",
+      },
+      {
+        blockIndex: 1,
+        href: "/resources/start-vending",
+        path: "blocks.1.props.ctaHref",
+        label: "Read more",
+      },
+      {
+        blockIndex: 2,
+        href: "/case-studies",
+        path: "blocks.2.props.cards.0.href",
+        label: "Internal card",
+      },
+      {
+        blockIndex: 3,
+        href: "/about",
+        path: "blocks.3.props.body.nodes.0.spans.1.href",
+        label: "About",
+      },
+    ]);
+  });
+
+  it("accepts root and resource query internal links at publish time", () => {
+    const content = pageContentSchema.parse({
+      ...validContent,
+      sections: [
+        {
+          ...validContent.sections[0],
+          columns: [
+            {
+              ...validContent.sections[0].columns[0],
+              blocks: validContent.sections[0].columns[0].blocks.map((block) =>
+                block.type === "cta"
+                  ? {
+                      ...block,
+                      props: {
+                        ...block.props,
+                        href: "/resources/start-vending?utm=test#intro",
+                      },
+                    }
+                  : block,
+              ),
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      validatePageForPublish(content, {
+        slug: "start-vending",
+        title: "Start Vending",
+        seoTitle: "Start Vending",
+        metaDescription: "Learn how to start vending.",
+        noindex: false,
+        sitemapEnabled: true,
+        canonicalUrl: "/",
+      }).ok,
+    ).toBe(true);
+  });
+
+  it("accepts the site root as a known internal CTA destination", () => {
+    const content = pageContentSchema.parse({
+      ...validContent,
+      sections: [
+        {
+          ...validContent.sections[0],
+          columns: [
+            {
+              ...validContent.sections[0].columns[0],
+              blocks: validContent.sections[0].columns[0].blocks.map((block) =>
+                block.type === "cta"
+                  ? {
+                      ...block,
+                      props: {
+                        ...block.props,
+                        href: "/",
+                      },
+                    }
+                  : block,
+              ),
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      validatePageForPublish(content, {
+        slug: "start-vending",
+        title: "Start Vending",
+        seoTitle: "Start Vending",
+        metaDescription: "Learn how to start vending.",
+        noindex: false,
+        sitemapEnabled: true,
+      }).ok,
+    ).toBe(true);
+  });
+
+  it("preserves invalid content issue code, path, and message", () => {
+    const result = validatePageContent({
+      version: 1,
+      sections: [
+        {
+          id: "1bad",
+          columns: [{ id: "column_1", blocks: [] }],
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("Expected invalid content.");
+    expect(result.issues).toEqual([
+      expect.objectContaining({
+        code: "invalid_content",
+        path: "sections.0.id",
+        message: "Use a stable block id.",
+      }),
+    ]);
   });
 });
