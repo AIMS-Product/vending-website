@@ -293,10 +293,11 @@ export function SimpleBlockStackEditor({
             </svg>
           </div>
           <h3 className="text-sm font-semibold text-slate-900">
-            Blank page body
+            Start building this page
           </h3>
           <p className="mt-1 max-w-sm text-sm text-slate-500">
-            Add the next piece of content for this page.
+            Add your first block below — a hero or text section to introduce the
+            page. A CTA or lead-form block is required before you can publish.
           </p>
           <div className="mt-6 w-full max-w-md text-left">
             <BlockPicker onAddBlock={onAddBlock} />
