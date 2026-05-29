@@ -33,16 +33,16 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
           <div className="flex flex-wrap items-center gap-4">
             <Link
               href="/"
-              className="text-sm font-black text-[#55b8e8] uppercase transition hover:text-[#2d9fd6]"
+              className="text-sm font-black text-[#066a99] uppercase transition hover:text-[#2d9fd6]"
             >
               Home
             </Link>
-            <span aria-hidden className="font-black text-[#55b8e8]">
+            <span aria-hidden className="font-black text-[#066a99]">
               /
             </span>
             <Link
               href="/news"
-              className="text-sm font-black text-[#55b8e8] uppercase transition hover:text-[#2d9fd6]"
+              className="text-sm font-black text-[#066a99] uppercase transition hover:text-[#2d9fd6]"
             >
               Blog
             </Link>
@@ -109,7 +109,7 @@ function Byline({
   const author = post.author ?? "Vendingpreneurs";
   return (
     <div className="mt-12 border-y-2 border-[#bfeeff] py-6">
-      <div className="flex flex-wrap items-center gap-5 text-[#55b8e8]">
+      <div className="flex flex-wrap items-center gap-5 text-[#066a99]">
         <span className="flex items-center gap-4 text-[#111111]">
           <span className="flex size-12 items-center justify-center rounded-full border-2 border-[#111111] bg-white text-sm font-black uppercase">
             {getInitials(author)}
@@ -198,7 +198,7 @@ function ArticleSidebar({ headings }: { headings: string[] }) {
           <p className="inline-flex rounded-[5px] border border-[#9fe6ff] bg-[#d6f4ff] px-3 py-2 text-xs font-black text-[#111111] uppercase">
             In this article
           </p>
-          <ol className="mt-6 space-y-4 text-lg font-semibold text-[#55b8e8]">
+          <ol className="mt-6 space-y-4 text-lg font-semibold text-[#066a99]">
             {items.map((heading, index) => (
               <li key={`${heading}-${index}`} className="flex gap-3">
                 <span>{index + 1}.</span>
@@ -212,7 +212,7 @@ function ArticleSidebar({ headings }: { headings: string[] }) {
           <h2 className="text-3xl leading-tight font-black uppercase">
             Build your route today.
           </h2>
-          <p className="mt-5 text-lg leading-7 font-semibold text-[#55b8e8]">
+          <p className="mt-5 text-lg leading-7 font-semibold text-[#066a99]">
             Get the complete A-Z blueprint to passive income.
           </p>
           <Link

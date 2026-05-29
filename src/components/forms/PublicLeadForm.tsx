@@ -36,6 +36,59 @@ type FieldProps = {
 const inputClass =
   "min-h-12 w-full rounded-[8px] border-2 border-[#111111] bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#2d9fd6] focus:ring-2 focus:ring-[#55b8e8]";
 
+const US_STATES = [
+  "Alabama",
+  "Alaska",
+  "Arizona",
+  "Arkansas",
+  "California",
+  "Colorado",
+  "Connecticut",
+  "Delaware",
+  "Florida",
+  "Georgia",
+  "Hawaii",
+  "Idaho",
+  "Illinois",
+  "Indiana",
+  "Iowa",
+  "Kansas",
+  "Kentucky",
+  "Louisiana",
+  "Maine",
+  "Maryland",
+  "Massachusetts",
+  "Michigan",
+  "Minnesota",
+  "Mississippi",
+  "Missouri",
+  "Montana",
+  "Nebraska",
+  "Nevada",
+  "New Hampshire",
+  "New Jersey",
+  "New Mexico",
+  "New York",
+  "North Carolina",
+  "North Dakota",
+  "Ohio",
+  "Oklahoma",
+  "Oregon",
+  "Pennsylvania",
+  "Rhode Island",
+  "South Carolina",
+  "South Dakota",
+  "Tennessee",
+  "Texas",
+  "Utah",
+  "Vermont",
+  "Virginia",
+  "Washington",
+  "West Virginia",
+  "Wisconsin",
+  "Wyoming",
+] as const;
+
 export function PublicLeadForm({
   action,
   attribution,
@@ -101,67 +154,18 @@ export function PublicLeadForm({
               autoComplete="address-level2"
               errors={errors}
             />
-            {isApply ? (
+            {/* State renders as the same dropdown on both forms; only
+                /apply requires it (matching server-side validation). */}
+            <SelectField
+              name="state_region"
+              errorKey="stateRegion"
+              label="State"
+              required={isApply}
+              errors={errors}
+              options={US_STATES}
+            />
+            {isApply && (
               <>
-                <SelectField
-                  name="state_region"
-                  errorKey="stateRegion"
-                  label="State"
-                  required
-                  errors={errors}
-                  options={[
-                    "Alabama",
-                    "Alaska",
-                    "Arizona",
-                    "Arkansas",
-                    "California",
-                    "Colorado",
-                    "Connecticut",
-                    "Delaware",
-                    "Florida",
-                    "Georgia",
-                    "Hawaii",
-                    "Idaho",
-                    "Illinois",
-                    "Indiana",
-                    "Iowa",
-                    "Kansas",
-                    "Kentucky",
-                    "Louisiana",
-                    "Maine",
-                    "Maryland",
-                    "Massachusetts",
-                    "Michigan",
-                    "Minnesota",
-                    "Mississippi",
-                    "Missouri",
-                    "Montana",
-                    "Nebraska",
-                    "Nevada",
-                    "New Hampshire",
-                    "New Jersey",
-                    "New Mexico",
-                    "New York",
-                    "North Carolina",
-                    "North Dakota",
-                    "Ohio",
-                    "Oklahoma",
-                    "Oregon",
-                    "Pennsylvania",
-                    "Rhode Island",
-                    "South Carolina",
-                    "South Dakota",
-                    "Tennessee",
-                    "Texas",
-                    "Utah",
-                    "Vermont",
-                    "Virginia",
-                    "Washington",
-                    "West Virginia",
-                    "Wisconsin",
-                    "Wyoming",
-                  ]}
-                />
                 <SelectField
                   name="business_stage"
                   errorKey="businessStage"
@@ -197,14 +201,6 @@ export function PublicLeadForm({
                   ]}
                 />
               </>
-            ) : (
-              <TextField
-                name="state_region"
-                errorKey="stateRegion"
-                label="State"
-                autoComplete="address-level1"
-                errors={errors}
-              />
             )}
           </>
         )}
@@ -268,6 +264,12 @@ function TextField({
     <div className="space-y-2">
       <label htmlFor={id} className="text-sm font-medium text-slate-700">
         {label}
+        {required && (
+          <span className="ml-0.5 text-[#c2410c]" aria-hidden>
+            *
+          </span>
+        )}
+        {required && <span className="sr-only"> (required)</span>}
       </label>
       <input
         id={id}
@@ -293,13 +295,19 @@ function SelectField({
   required,
   options,
   errors,
-}: FieldProps & { options: string[] }) {
+}: FieldProps & { options: readonly string[] }) {
   const error = errors?.[errorKey]?.[0];
   const id = `lead-${name}`;
   return (
     <div className="space-y-2">
       <label htmlFor={id} className="text-sm font-medium text-slate-700">
         {label}
+        {required && (
+          <span className="ml-0.5 text-[#c2410c]" aria-hidden>
+            *
+          </span>
+        )}
+        {required && <span className="sr-only"> (required)</span>}
       </label>
       <select
         id={id}
@@ -338,6 +346,12 @@ function TextareaField({
     <div className="space-y-2">
       <label htmlFor={id} className="text-sm font-medium text-slate-700">
         {label}
+        {required && (
+          <span className="ml-0.5 text-[#c2410c]" aria-hidden>
+            *
+          </span>
+        )}
+        {required && <span className="sr-only"> (required)</span>}
       </label>
       <textarea
         id={id}

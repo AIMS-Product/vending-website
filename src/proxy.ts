@@ -95,7 +95,16 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (path.startsWith("/news/") && path !== "/news/feed.xml") {
+  // Public news index and RSS feed are always reachable by anonymous
+  // visitors. The matcher (`/news/:path*`) also catches these, so they must
+  // be allowed explicitly — otherwise they fall through to the `/admin/*`
+  // auth gate below and get bounced to `/admin/login`.
+  if (path === "/news" || path === "/news/feed.xml") {
+    return NextResponse.next();
+  }
+
+  // Individual article pages must resolve to a published slug, else 404.
+  if (path.startsWith("/news/")) {
     let slug: string;
     try {
       slug = decodeURIComponent(path.replace(/^\/news\//, ""));

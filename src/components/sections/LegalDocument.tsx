@@ -62,7 +62,7 @@ function BlockView({ block }: { block: LegalBlock }) {
       );
     case "ul":
       return (
-        <ul className="ml-5 list-disc space-y-2 marker:text-[#55b8e8]">
+        <ul className="ml-5 list-disc space-y-2 marker:text-[#066a99]">
           {block.items.map((item) => (
             <ListItemView key={legalListItemKey(item)} item={item} />
           ))}

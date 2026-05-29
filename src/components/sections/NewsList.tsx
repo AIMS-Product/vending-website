@@ -76,7 +76,7 @@ function Meta({ post }: { post: NewsListProps["posts"][number] }) {
   if (post.published_at) parts.push(formatDate(post.published_at));
   if (parts.length === 0) return null;
   return (
-    <p className="mt-auto border-t-2 border-[#bfeeff] pt-4 text-xs font-black text-[#55b8e8] uppercase">
+    <p className="mt-auto border-t-2 border-[#bfeeff] pt-4 text-xs font-black text-[#066a99] uppercase">
       {parts.map((part, index) => (
         <span key={`${part}-${index}`}>
           {index > 0 && <span aria-hidden> · </span>}
@@ -91,7 +91,7 @@ function EmptyState() {
   return (
     <section className="bg-[#f5fbff] px-5 py-20 lg:px-10 lg:py-24">
       <div className="mx-auto max-w-xl text-center">
-        <p className="text-sm font-black text-[#55b8e8] uppercase">
+        <p className="text-sm font-black text-[#066a99] uppercase">
           More stories coming soon
         </p>
         <h2 className="mt-4 text-4xl leading-tight font-black text-[#111111] uppercase sm:text-5xl">
