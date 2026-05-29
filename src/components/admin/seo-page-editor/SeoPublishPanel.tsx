@@ -103,6 +103,22 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
       <p className="text-xs leading-5 font-medium text-slate-500">
         {publishStateHelp}
       </p>
+      <dl className="grid gap-1.5 text-xs text-slate-500">
+        <div className="flex items-center justify-between gap-3">
+          <dt className="font-medium">Last updated</dt>
+          <dd className="font-semibold text-slate-700">
+            {page?.updated_at ? formatPanelDate(page.updated_at) : "—"}
+          </dd>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <dt className="font-medium">Published</dt>
+          <dd className="font-semibold text-slate-700">
+            {page?.published_at
+              ? formatPanelDate(page.published_at)
+              : "Not yet"}
+          </dd>
+        </div>
+      </dl>
       <button
         type="button"
         className={`${smallButtonClass} ${readinessButtonClass(
@@ -114,6 +130,14 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
       </button>
     </div>
   );
+}
+
+function formatPanelDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
