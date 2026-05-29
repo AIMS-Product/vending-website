@@ -61,14 +61,6 @@ function insertSingle(data: unknown, error: unknown = null) {
   return { table: { insert }, mocks: { insert, select, single } };
 }
 
-function updateSingle(data: unknown, error: unknown = null) {
-  const single = vi.fn().mockResolvedValue({ data, error });
-  const select = vi.fn().mockReturnValue({ single });
-  const eq = vi.fn().mockReturnValue({ select });
-  const update = vi.fn().mockReturnValue({ eq });
-  return { table: { update }, mocks: { update, eq, select, single } };
-}
-
 function maybeSingleByEq(data: unknown, error: unknown = null) {
   const maybeSingle = vi.fn().mockResolvedValue({ data, error });
   const eq = vi.fn().mockReturnValue({ maybeSingle });
@@ -317,13 +309,11 @@ describe("seo page revisions and previews", () => {
       published_content: { version: 1, sections: [] },
     };
     const revisionLookup = maybeSingleByMatch(revision);
-    const insertRevision = insertSingle(rollbackRevision);
-    const updatePage = updateSingle(page);
-    const client = buildClient(
-      revisionLookup.table,
-      insertRevision.table,
-      updatePage.table,
-    );
+    const client = buildClient(revisionLookup.table);
+    client.rpc.mockResolvedValueOnce({
+      data: { page, revision: rollbackRevision },
+      error: null,
+    });
 
     const result = await adminRollbackSeoPageRevision("page_1", "revision_1", {
       client,
@@ -331,24 +321,24 @@ describe("seo page revisions and previews", () => {
     });
 
     expect(result).toEqual({ page, revision: rollbackRevision });
-    expect(insertRevision.mocks.insert).toHaveBeenCalledWith(
+    expect(client.rpc).toHaveBeenCalledWith(
+      "apply_seo_page_revision_update_atomically",
       expect.objectContaining({
-        page_id: "page_1",
-        revision_type: "rollback",
-        content_snapshot: validContent,
-        seo_snapshot: revision.seo_snapshot,
+        p_page_id: "page_1",
+        p_revision_type: "rollback",
+        p_revision_label: "Rollback from revision_1",
+        p_content_snapshot: validContent,
+        p_seo_snapshot: revision.seo_snapshot,
+        p_draft_content: validContent,
+        p_seo_patch: expect.objectContaining({
+          title: "Rolled Back Title",
+          seo_title: "Rolled Back SEO",
+          meta_description: "Rolled back meta.",
+        }),
+        p_actor_id: "admin_1",
       }),
     );
-    expect(updatePage.mocks.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Rolled Back Title",
-        seo_title: "Rolled Back SEO",
-        meta_description: "Rolled back meta.",
-        draft_content: validContent,
-        updated_by: "admin_1",
-      }),
-    );
-    expect(updatePage.mocks.update.mock.calls[0]?.[0]).not.toHaveProperty(
+    expect(client.rpc.mock.calls[0]?.[1].p_seo_patch).not.toHaveProperty(
       "published_content",
     );
   });

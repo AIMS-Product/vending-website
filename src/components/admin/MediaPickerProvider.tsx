@@ -13,10 +13,7 @@ import {
   type ReactNode,
 } from "react";
 import Image from "next/image";
-import {
-  createMediaAssetFromEditor,
-  createSignedMediaUpload,
-} from "@/app/admin/media/actions";
+import { createMediaAssetFromEditor } from "@/app/admin/media/actions";
 import {
   AdminIcon,
   adminInputClass,
@@ -28,12 +25,11 @@ import type { EditorMediaAsset } from "@/lib/media/editor-asset";
 import {
   EDITOR_UPLOAD_RIGHTS_NOTES,
   IMAGE_ACCEPT,
+  defaultEditorImageFields,
   isAcceptedEditorImageFile,
-  mediaAltFromFilename,
-  mediaTitleFromFilename,
   uploadImageFileToMediaLibrary,
+  uploadImageFileToStorage,
 } from "@/lib/media/editor-upload";
-import { createClient } from "@/lib/supabase/client";
 
 export type { EditorMediaAsset };
 
@@ -284,10 +280,11 @@ function MediaPickerModal({
   }, [allowedTypes, assets, search]);
 
   function applyUploadedFileDefaults(file: File) {
-    setTitle(mediaTitleFromFilename(file.name));
-    setAltText(mediaAltFromFilename(file.name));
+    const defaults = defaultEditorImageFields(file);
+    setTitle(defaults.title);
+    setAltText(defaults.altText);
     if (!sourceRightsNotes.trim()) {
-      setSourceRightsNotes(EDITOR_UPLOAD_RIGHTS_NOTES);
+      setSourceRightsNotes(defaults.sourceRightsNotes);
     }
   }
 
@@ -301,19 +298,9 @@ function MediaPickerModal({
     setUploadMessage(null);
     startUploadTransition(async () => {
       try {
-        const request = new FormData();
-        request.set("filename", file.name);
-        const signed = await createSignedMediaUpload(request);
-        const supabase = createClient();
-        const { error } = await supabase.storage
-          .from(signed.bucket)
-          .uploadToSignedUrl(signed.path, signed.token, file, {
-            contentType: file.type || "image/jpeg",
-            upsert: false,
-          });
-        if (error) throw error;
-        setStorageBucket(signed.bucket);
-        setStoragePath(signed.path);
+        const uploaded = await uploadImageFileToStorage(file);
+        setStorageBucket(uploaded.storageBucket);
+        setStoragePath(uploaded.storagePath);
         setExternalUrl("");
         setUploadMessage(
           "Image uploaded. Saving adds it to the media library.",

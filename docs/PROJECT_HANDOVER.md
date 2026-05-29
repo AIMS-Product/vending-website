@@ -1,6 +1,6 @@
 # Project Handover
 
-Last updated: 2026-05-11  
+Last updated: 2026-05-29
 Last verified: 2026-05-11, by the commands listed in [Verification](#verification)  
 Owner/context: James AIMS / Vendingpreneurs website and admin CMS
 
@@ -9,7 +9,7 @@ Owner/context: James AIMS / Vendingpreneurs website and admin CMS
 - Purpose: Vendingpreneurs marketing site, lead capture surface, News CMS, and SEO resource page builder.
 - Primary users/operators: public visitors and applicants; internal admins creating resource pages, blog/news posts, media assets, reusable claims, proof, CTAs, and source material.
 - Production URL: `https://vendingpreneurs.com`
-- Repository: `/Users/jamesaims/Desktop/Development/vending-website`
+- Repository: /Users/jamesaims/Desktop/Development/vending-website
 - Current branch at handover creation: `codex/seo-builder-ux-hierarchy`
 - Framework/runtime: Next.js `16.2.4`, React `19.2.4`, Supabase, Vercel.
 - Current status: SEO Page Builder v1 is implemented per `docs/seo-page-builder/roadmap.md`, but the repo currently has uncommitted admin/page-builder UX, PRD, and renderer changes. Treat the working tree as active work, not a clean release branch.
@@ -408,4 +408,24 @@ First 30-60 minutes:
 
 ## Change Log
 
+- 2026-05-29: Auto-recorded commit ca44990 - Merge branch 'codex/seo-builder-teardown-remediation'. Files: no file list available. after `git merge codex/seo-builder-teardown-remediation --no-ff -m "$(cat <<'EOF'
+  Merge branch 'codex/seo-builder-teardown-remediation'
+
+SEO builder teardown remediation: atomic state-transition functions,
+loud public page-load errors, slimmed admin resource list, and the
+missing list-state library that the slim-list page depends on.
+EOF
+)" 2>&1` <!-- handover-auto:commit ca449902cc4803095fc7af99505da6d60cc030db -->
+
+- 2026-05-29: Auto-recorded commit 1032772 - fix(admin): commit missing seo-pages list-state library. Files: src/lib/admin/list-state.test.ts, src/lib/admin/list-state.ts, src/lib/admin/seo-pages-list.ts. after `git commit -m "$(cat <<'EOF'
+  fix(admin): commit missing seo-pages list-state library
+
+b07e2da imported @/lib/admin/seo-pages-list in pages/page.tsx but the
+library files were never staged, breaking the Vercel preview build with
+module-not-found. Adds list-state.ts (shared pagination/filter utils),
+seo-pages-list.ts (SEO page list state builder), and list-state.test.ts.
+EOF
+)"` <!-- handover-auto:commit 10327722b99c04f3767dc3c11ac418edb3e75f64 -->
+
+- 2026-05-29: Auto-recorded commit b07e2da - feat(admin): slim resource list to title/keyword/readiness/status/actions. Files: docs/design/admin-studio.md, src/app/admin/pages/page.tsx, src/components/admin/seo-page-editor/SeoPublishPanel.tsx. after `git push -u origin HEAD 2>&1` <!-- handover-auto:commit b07e2da51ebf7dea7823875cfde47e9468d4ebb2 -->
 - 2026-05-11: Created initial living handover with current repo state, local placeholder admin access, run/verify commands, architecture notes, env names, safety notes, and takeover roadmap.

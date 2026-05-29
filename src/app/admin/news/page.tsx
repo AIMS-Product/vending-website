@@ -10,6 +10,15 @@ import {
   adminPrimaryButtonClass,
   adminSecondaryButtonClass,
 } from "@/components/admin/AdminUi";
+import {
+  adminNewsHref,
+  buildNewsListState,
+  newsFilters,
+  newsSortLabels,
+  parseNewsListParams,
+  type NewsSearchParams,
+  type NewsSortKey,
+} from "@/lib/admin/news-list";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { adminListPosts, type NewsPost } from "@/lib/services/news";
 
@@ -18,56 +27,30 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type SearchParams = {
-  status?: string | string[];
-  q?: string | string[];
-  sort?: string | string[];
-  page?: string | string[];
-};
-type StatusFilter = "all" | "draft" | "published" | "archived";
-type SortKey = "updated-desc" | "updated-asc" | "title-asc";
-
-const filters: Array<{ label: string; value: StatusFilter }> = [
-  { label: "All", value: "all" },
-  { label: "Drafts", value: "draft" },
-  { label: "Published", value: "published" },
-  { label: "Archived", value: "archived" },
-];
-
-const sortLabels: Record<SortKey, string> = {
-  "updated-desc": "Updated newest",
-  "updated-asc": "Updated oldest",
-  "title-asc": "Title A-Z",
-};
-
-const pageSize = 7;
-
 export default async function AdminNewsPage({
   searchParams,
 }: {
-  searchParams: Promise<SearchParams>;
+  searchParams: Promise<NewsSearchParams>;
 }) {
   const [{ user, role }, params] = await Promise.all([
     requireAdmin(),
     searchParams,
   ]);
-  const active = normalizeStatus(firstParam(params.status));
-  const searchQuery = normalizeSearch(firstParam(params.q));
-  const sort = normalizeSort(firstParam(params.sort));
-  const requestedPage = normalizePage(firstParam(params.page));
+  const listParams = parseNewsListParams(params);
 
   const allPosts = await adminListPosts();
-  const postCounts = countPostsByStatus(allPosts);
-  const filteredPosts = sortPosts(
-    filterPosts(allPosts, active, searchQuery),
+  const {
+    status: active,
+    q: searchQuery,
     sort,
-  );
-  const totalPages = Math.max(1, Math.ceil(filteredPosts.length / pageSize));
-  const currentPage = Math.min(requestedPage, totalPages);
-  const pageStart = (currentPage - 1) * pageSize;
-  const visiblePosts = filteredPosts.slice(pageStart, pageStart + pageSize);
-  const displayStart = filteredPosts.length === 0 ? 0 : pageStart + 1;
-  const displayEnd = Math.min(pageStart + pageSize, filteredPosts.length);
+    postCounts,
+    filteredPosts,
+    visiblePosts,
+    totalPages,
+    currentPage,
+    displayStart,
+    displayEnd,
+  } = buildNewsListState(allPosts, listParams);
 
   return (
     <AdminShell
@@ -160,7 +143,7 @@ export default async function AdminNewsPage({
             className="inline-flex h-12 flex-wrap items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm"
             aria-label="Post status filters"
           >
-            {filters.map((filter) => (
+            {newsFilters.map((filter) => (
               <Link
                 key={filter.value}
                 href={adminNewsHref({
@@ -184,7 +167,7 @@ export default async function AdminNewsPage({
         <div className="flex flex-wrap items-center gap-3">
           <details className="group relative">
             <summary className="flex h-12 cursor-pointer list-none items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none">
-              {sortLabels[sort]}
+              {newsSortLabels[sort]}
               <span
                 className="text-slate-500 transition group-open:rotate-180"
                 aria-hidden="true"
@@ -193,13 +176,13 @@ export default async function AdminNewsPage({
               </span>
             </summary>
             <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-md border border-slate-200 bg-white p-1 shadow-lg">
-              {Object.entries(sortLabels).map(([value, label]) => (
+              {Object.entries(newsSortLabels).map(([value, label]) => (
                 <Link
                   key={value}
                   href={adminNewsHref({
                     status: active,
                     q: searchQuery,
-                    sort: value as SortKey,
+                    sort: value as NewsSortKey,
                   })}
                   className="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
                   aria-current={sort === value ? "page" : undefined}
@@ -220,7 +203,7 @@ export default async function AdminNewsPage({
             <div className="absolute right-0 z-20 mt-2 w-52 rounded-md border border-slate-200 bg-white p-3 text-sm shadow-lg">
               <p className="font-semibold text-slate-950">Status</p>
               <div className="mt-2 grid gap-1">
-                {filters.map((filter) => (
+                {newsFilters.map((filter) => (
                   <Link
                     key={filter.value}
                     href={adminNewsHref({
@@ -443,92 +426,6 @@ function PaginationLink({
     >
       {icon}
     </Link>
-  );
-}
-
-function firstParam(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function normalizeStatus(value: string | undefined): StatusFilter {
-  if (value === "draft" || value === "published" || value === "archived") {
-    return value;
-  }
-  return "all";
-}
-
-function normalizeSearch(value: string | undefined) {
-  return value?.trim().slice(0, 120) ?? "";
-}
-
-function normalizeSort(value: string | undefined): SortKey {
-  if (value === "updated-asc" || value === "title-asc") return value;
-  return "updated-desc";
-}
-
-function normalizePage(value: string | undefined) {
-  const page = Number.parseInt(value ?? "1", 10);
-  return Number.isFinite(page) && page > 0 ? page : 1;
-}
-
-function filterPosts(
-  posts: NewsPost[],
-  status: StatusFilter,
-  searchQuery: string,
-) {
-  const query = searchQuery.toLowerCase();
-  return posts.filter((post) => {
-    const matchesStatus = status === "all" || post.status === status;
-    if (!matchesStatus) return false;
-    if (!query) return true;
-
-    return [post.title, post.slug, post.excerpt, post.author]
-      .filter((value): value is string => Boolean(value))
-      .some((value) => value.toLowerCase().includes(query));
-  });
-}
-
-function sortPosts(posts: NewsPost[], sort: SortKey) {
-  const next = [...posts];
-  if (sort === "title-asc") {
-    return next.sort((a, b) => a.title.localeCompare(b.title));
-  }
-  return next.sort((a, b) => {
-    const left = new Date(a.updated_at).getTime();
-    const right = new Date(b.updated_at).getTime();
-    return sort === "updated-asc" ? left - right : right - left;
-  });
-}
-
-function adminNewsHref({
-  status,
-  q,
-  sort,
-  page,
-}: {
-  status: StatusFilter;
-  q?: string;
-  sort?: SortKey;
-  page?: number;
-}) {
-  const params = new URLSearchParams();
-  if (status !== "all") params.set("status", status);
-  if (q) params.set("q", q);
-  if (sort && sort !== "updated-desc") params.set("sort", sort);
-  if (page && page > 1) params.set("page", String(page));
-  const query = params.toString();
-  return query ? `/admin/news?${query}` : "/admin/news";
-}
-
-function countPostsByStatus(posts: NewsPost[]) {
-  return posts.reduce(
-    (counts, post) => {
-      if (post.status === "draft") counts.draft += 1;
-      if (post.status === "published") counts.published += 1;
-      if (post.status === "archived") counts.archived += 1;
-      return counts;
-    },
-    { draft: 0, published: 0, archived: 0 },
   );
 }
 

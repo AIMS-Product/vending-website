@@ -108,6 +108,13 @@ type ParsedPageForm = z.infer<typeof formSchema>;
 const ADMIN_PAGES_PATH = "/admin/pages";
 const PUBLIC_RESOURCES_PATH = "/resources";
 
+type PersistedPageDraft = {
+  pageId: string;
+  created: boolean;
+  existingWasPublished: boolean;
+  previousSlug?: string;
+};
+
 export async function saveSeoPage(
   _prev: PageEditorActionState,
   formData: FormData,
@@ -122,80 +129,23 @@ export async function saveSeoPage(
   let redirectTo: string | null = null;
 
   try {
-    if (!page.id) {
-      const created = await adminCreateSeoPage({
-        slug: page.slug,
-        title: page.title,
-        targetKeyword: nullable(page.targetKeyword),
-        draftContent: page.draftContent,
-        createdBy: admin.user.id,
-      });
+    const persisted = await persistPageEditorDraft(page, admin.user.id);
+    if (!persisted) {
+      return { status: "error", message: "Page not found." };
+    }
 
-      await adminSaveSeoPageDraft(created.id, {
-        seoTitle: nullable(page.seoTitle),
-        metaDescription: nullable(page.metaDescription),
-        canonicalUrl: nullable(page.canonicalUrl),
-        noindex: page.noindex,
-        sitemapEnabled: page.sitemapEnabled,
-        structuredDataSettings: page.structuredDataSettings,
-        updatedBy: admin.user.id,
-      });
+    if (page.intent === "publish") {
+      await adminPublishSeoPage(persisted.pageId, { actorId: admin.user.id });
+    }
 
-      if (page.intent === "publish") {
-        await adminPublishSeoPage(created.id, { actorId: admin.user.id });
-      }
-
-      revalidatePagePaths(created.slug);
-      redirectTo = `${ADMIN_PAGES_PATH}/${created.id}?saved=1`;
+    if (persisted.created) {
+      revalidatePagePaths(page.slug);
+      redirectTo = `${ADMIN_PAGES_PATH}/${persisted.pageId}?saved=1`;
+    } else if (persisted.existingWasPublished && page.intent === "save") {
+      revalidatePath(`${ADMIN_PAGES_PATH}/${persisted.pageId}`);
+      revalidatePath(ADMIN_PAGES_PATH);
     } else {
-      const existing = await adminGetSeoPageById(page.id);
-      if (!existing) {
-        return { status: "error", message: "Page not found." };
-      }
-
-      if (existing.status === "published") {
-        await adminSaveSeoPageDraft(page.id, {
-          draftContent: page.draftContent,
-          draftSettings: draftSettingsFromPageForm(page),
-          updatedBy: admin.user.id,
-        });
-
-        if (page.intent === "publish") {
-          await adminPublishSeoPage(page.id, { actorId: admin.user.id });
-          revalidatePagePaths(page.slug, existing.slug);
-        } else {
-          revalidatePath(`${ADMIN_PAGES_PATH}/${page.id}`);
-          revalidatePath(ADMIN_PAGES_PATH);
-        }
-
-        return { status: "saved", message: statusMessage(page.intent) };
-      }
-
-      if (existing.slug !== page.slug) {
-        await adminUpdateSeoPageSlug(page.id, page.slug, {
-          actorId: admin.user.id,
-        });
-      }
-
-      await adminSaveSeoPageDraft(page.id, {
-        title: page.title,
-        targetKeyword: nullable(page.targetKeyword),
-        seoTitle: nullable(page.seoTitle),
-        metaDescription: nullable(page.metaDescription),
-        canonicalUrl: nullable(page.canonicalUrl),
-        noindex: page.noindex,
-        sitemapEnabled: page.sitemapEnabled,
-        structuredDataSettings: page.structuredDataSettings,
-        draftContent: page.draftContent,
-        updatedBy: admin.user.id,
-      });
-
-      if (page.intent === "publish") {
-        await adminPublishSeoPage(page.id, { actorId: admin.user.id });
-      }
-
-      revalidatePagePaths(page.slug, existing.slug);
-      return { status: "saved", message: statusMessage(page.intent) };
+      revalidatePagePaths(page.slug, persisted.previousSlug);
     }
   } catch (error) {
     return pageActionError(error);
@@ -245,12 +195,7 @@ export async function autosaveSeoPageDraft(
       await adminSaveSeoPageDraft(pageId, {
         title: parsed.data.title,
         targetKeyword: nullable(parsed.data.targetKeyword),
-        seoTitle: nullable(parsed.data.seoTitle),
-        metaDescription: nullable(parsed.data.metaDescription),
-        canonicalUrl: nullable(parsed.data.canonicalUrl),
-        noindex: parsed.data.noindex,
-        sitemapEnabled: parsed.data.sitemapEnabled,
-        structuredDataSettings: parsed.data.structuredDataSettings,
+        ...draftMetadataFromPageForm(parsed.data),
         draftContent: parsed.data.draftContent,
         updatedBy: admin.user.id,
       });
@@ -302,90 +247,28 @@ export async function saveSeoPageDraftAndCreatePreviewLink(
   }
 
   const page = parsed.data;
-  let pageId = page.id;
-  let previousSlug: string | undefined;
 
   try {
-    if (!pageId) {
-      const created = await adminCreateSeoPage({
-        slug: page.slug,
-        title: page.title,
-        targetKeyword: nullable(page.targetKeyword),
-        draftContent: page.draftContent,
-        createdBy: admin.user.id,
-      });
-
-      pageId = created.id;
-      await adminSaveSeoPageDraft(pageId, {
-        seoTitle: nullable(page.seoTitle),
-        metaDescription: nullable(page.metaDescription),
-        canonicalUrl: nullable(page.canonicalUrl),
-        noindex: page.noindex,
-        sitemapEnabled: page.sitemapEnabled,
-        structuredDataSettings: page.structuredDataSettings,
-        updatedBy: admin.user.id,
-      });
-    } else {
-      const existing = await adminGetSeoPageById(pageId);
-      if (!existing) {
-        return { status: "error", message: "Page not found." };
-      }
-
-      previousSlug = existing.slug;
-      if (existing.status === "published") {
-        await adminSaveSeoPageDraft(pageId, {
-          draftContent: page.draftContent,
-          draftSettings: draftSettingsFromPageForm(page),
-          updatedBy: admin.user.id,
-        });
-      } else if (existing.slug !== page.slug) {
-        await adminUpdateSeoPageSlug(pageId, page.slug, {
-          actorId: admin.user.id,
-        });
-
-        await adminSaveSeoPageDraft(pageId, {
-          title: page.title,
-          targetKeyword: nullable(page.targetKeyword),
-          seoTitle: nullable(page.seoTitle),
-          metaDescription: nullable(page.metaDescription),
-          canonicalUrl: nullable(page.canonicalUrl),
-          noindex: page.noindex,
-          sitemapEnabled: page.sitemapEnabled,
-          structuredDataSettings: page.structuredDataSettings,
-          draftContent: page.draftContent,
-          updatedBy: admin.user.id,
-        });
-      } else {
-        await adminSaveSeoPageDraft(pageId, {
-          title: page.title,
-          targetKeyword: nullable(page.targetKeyword),
-          seoTitle: nullable(page.seoTitle),
-          metaDescription: nullable(page.metaDescription),
-          canonicalUrl: nullable(page.canonicalUrl),
-          noindex: page.noindex,
-          sitemapEnabled: page.sitemapEnabled,
-          structuredDataSettings: page.structuredDataSettings,
-          draftContent: page.draftContent,
-          updatedBy: admin.user.id,
-        });
-      }
+    const persisted = await persistPageEditorDraft(page, admin.user.id);
+    if (!persisted) {
+      return { status: "error", message: "Page not found." };
     }
 
-    const preview = await adminCreateSeoPagePreviewToken(pageId, {
+    const preview = await adminCreateSeoPagePreviewToken(persisted.pageId, {
       actorId: admin.user.id,
     });
-    if (!page.id) {
-      revalidatePagePaths(page.slug, previousSlug);
+    if (persisted.created) {
+      revalidatePagePaths(page.slug, persisted.previousSlug);
     }
-    revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
+    revalidatePath(`${ADMIN_PAGES_PATH}/${persisted.pageId}`);
     return {
       status: "created",
       message: page.id
         ? "Preview link created."
         : "Draft saved and preview opened.",
       previewPath: preview.previewPath,
-      pageId,
-      editorPath: `${ADMIN_PAGES_PATH}/${pageId}?saved=1`,
+      pageId: persisted.pageId,
+      editorPath: `${ADMIN_PAGES_PATH}/${persisted.pageId}?saved=1`,
     };
   } catch (error) {
     return pagePreviewActionError(error);
@@ -625,17 +508,79 @@ function parsePageFormData(formData: FormData) {
   return { success: true as const, data: parsed.data };
 }
 
-function draftSettingsFromPageForm(page: ParsedPageForm): SeoPageDraftSettings {
+async function persistPageEditorDraft(
+  page: ParsedPageForm,
+  actorId: string,
+): Promise<PersistedPageDraft | null> {
+  if (!page.id) {
+    const created = await adminCreateSeoPage({
+      slug: page.slug,
+      title: page.title,
+      targetKeyword: nullable(page.targetKeyword),
+      draftContent: page.draftContent,
+      createdBy: actorId,
+    });
+
+    await adminSaveSeoPageDraft(created.id, {
+      ...draftMetadataFromPageForm(page),
+      updatedBy: actorId,
+    });
+
+    return {
+      pageId: created.id,
+      created: true,
+      existingWasPublished: false,
+    };
+  }
+
+  const existing = await adminGetSeoPageById(page.id);
+  if (!existing) return null;
+
+  if (existing.status === "published") {
+    await adminSaveSeoPageDraft(page.id, {
+      draftContent: page.draftContent,
+      draftSettings: draftSettingsFromPageForm(page),
+      updatedBy: actorId,
+    });
+  } else {
+    if (existing.slug !== page.slug) {
+      await adminUpdateSeoPageSlug(page.id, page.slug, { actorId });
+    }
+
+    await adminSaveSeoPageDraft(page.id, {
+      title: page.title,
+      targetKeyword: nullable(page.targetKeyword),
+      ...draftMetadataFromPageForm(page),
+      draftContent: page.draftContent,
+      updatedBy: actorId,
+    });
+  }
+
   return {
-    slug: page.slug,
-    title: page.title,
-    targetKeyword: nullable(page.targetKeyword),
+    pageId: page.id,
+    created: false,
+    existingWasPublished: existing.status === "published",
+    previousSlug: existing.slug,
+  };
+}
+
+function draftMetadataFromPageForm(page: ParsedPageForm) {
+  return {
     seoTitle: nullable(page.seoTitle),
     metaDescription: nullable(page.metaDescription),
     canonicalUrl: nullable(page.canonicalUrl),
     noindex: page.noindex,
     sitemapEnabled: page.sitemapEnabled,
     structuredDataSettings: page.structuredDataSettings,
+  };
+}
+
+function draftSettingsFromPageForm(page: ParsedPageForm): SeoPageDraftSettings {
+  return {
+    slug: page.slug,
+    title: page.title,
+    targetKeyword: nullable(page.targetKeyword),
+    ...draftMetadataFromPageForm(page),
   };
 }
 

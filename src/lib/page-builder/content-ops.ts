@@ -5,6 +5,7 @@ import type {
   PageSection,
 } from "@/lib/page-builder/blocks";
 import { pageBlockSchema } from "@/lib/page-builder/blocks";
+import { createDescriptorPageBlock } from "@/lib/page-builder/block-descriptors";
 
 export type MoveDirection = "up" | "down";
 
@@ -48,6 +49,9 @@ export function createPageBlock(
   type: PageBlock["type"],
   id: string,
 ): PageBlock {
+  const descriptorBlock = createDescriptorPageBlock(type, id);
+  if (descriptorBlock) return descriptorBlock;
+
   if (type === "hero") {
     return {
       id,
@@ -161,17 +165,11 @@ export function createPageBlock(
     };
   }
 
-  return {
-    id,
-    type: "cta",
-    variant: "primary",
-    props: {
-      presetId: undefined,
-      label: "",
-      href: "/apply",
-      trackingName: "",
-    },
-  };
+  const ctaBlock = createDescriptorPageBlock("cta", id);
+  if (!ctaBlock) {
+    throw new Error(`Unsupported page block type: ${type}`);
+  }
+  return ctaBlock;
 }
 
 export function duplicatePageBlock(block: PageBlock, id: string): PageBlock {
