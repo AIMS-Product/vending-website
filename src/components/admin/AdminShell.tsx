@@ -169,8 +169,7 @@ export function AdminShell({
       )}
       <div
         className={clsx(
-          "mx-auto grid w-full transition-[grid-template-columns] duration-200 xl:min-h-screen",
-          immersive ? "max-w-none" : "max-w-[1680px]",
+          "grid w-full transition-[grid-template-columns] duration-200 xl:min-h-screen",
           !immersive &&
             (sidebarCollapsed
               ? "xl:grid-cols-[76px_minmax(0,1fr)]"
@@ -178,10 +177,29 @@ export function AdminShell({
         )}
       >
         {!immersive && (
-          <aside className="hidden overflow-y-auto border-b border-slate-200 bg-white/95 backdrop-blur xl:sticky xl:top-0 xl:block xl:h-screen xl:border-r xl:border-b-0">
+          <aside className="relative hidden border-b border-slate-200 bg-white/95 backdrop-blur xl:sticky xl:top-0 xl:block xl:h-screen xl:border-r xl:border-b-0">
+            <button
+              type="button"
+              aria-label={
+                sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+              }
+              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              onClick={() => setSidebarCollapsed((current) => !current)}
+              className="absolute top-6 right-0 z-10 inline-flex size-8 translate-x-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+            >
+              <span
+                className={clsx(
+                  "transition-transform",
+                  sidebarCollapsed ? "rotate-180" : "",
+                )}
+                aria-hidden="true"
+              >
+                <AdminChevron />
+              </span>
+            </button>
             <div
               className={clsx(
-                "flex h-full flex-col pt-6 pb-5 transition-[padding] duration-200",
+                "flex h-full flex-col overflow-y-auto pt-6 pb-5 transition-[padding] duration-200",
                 sidebarCollapsed ? "px-3" : "px-4",
               )}
             >
@@ -204,27 +222,6 @@ export function AdminShell({
                     <p className="text-sm text-slate-500">Admin CMS</p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  aria-label={
-                    sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-                  }
-                  title={
-                    sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-                  }
-                  onClick={() => setSidebarCollapsed((current) => !current)}
-                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-                >
-                  <span
-                    className={clsx(
-                      "transition-transform",
-                      sidebarCollapsed ? "rotate-180" : "",
-                    )}
-                    aria-hidden="true"
-                  >
-                    <AdminChevron />
-                  </span>
-                </button>
               </div>
               <p
                 className={clsx(
@@ -397,7 +394,7 @@ export function AdminShell({
           aria-labelledby="admin-shell-title"
           className={clsx(
             "min-w-0",
-            immersive ? "p-0" : "px-5 py-6 sm:px-8 xl:px-10",
+            immersive ? "p-0" : "px-5 py-5 sm:px-8 xl:px-10",
           )}
         >
           {immersive ? (
@@ -406,10 +403,10 @@ export function AdminShell({
             </h1>
           ) : null}
           {!immersive && (
-            <header className="mb-7">
+            <header className="mb-5">
               <div
                 className={clsx(
-                  "mb-6 flex items-center gap-4",
+                  "mb-4 flex items-center gap-4",
                   eyebrow ? "justify-between" : "justify-end",
                 )}
               >
@@ -432,12 +429,12 @@ export function AdminShell({
                 <div className="max-w-3xl">
                   <h1
                     id="admin-shell-title"
-                    className="text-4xl font-semibold tracking-normal text-slate-950"
+                    className="text-3xl font-semibold tracking-normal text-slate-950"
                   >
                     {title}
                   </h1>
                   {description ? (
-                    <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+                    <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
                       {description}
                     </p>
                   ) : null}

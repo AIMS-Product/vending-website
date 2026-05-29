@@ -78,7 +78,7 @@ export default async function AdminPagesPage({
       }
     >
       <section
-        className="mb-7 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+        className="mb-5 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
         aria-label="Resource page summary"
       >
         <div className="grid divide-y divide-slate-200 md:grid-cols-4 md:divide-x md:divide-y-0">
@@ -276,11 +276,11 @@ export default async function AdminPagesPage({
             <table className="w-full min-w-[640px] table-fixed border-collapse text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
                 <tr>
-                  <th className="w-[42%] px-7 py-4">Title</th>
-                  <th className="w-[24%] px-5 py-4">Keyword</th>
-                  <th className="w-[12%] px-5 py-4 text-center">Readiness</th>
-                  <th className="w-[12%] px-5 py-4 text-center">Status</th>
-                  <th className="w-[10%] px-5 py-4 text-right">Actions</th>
+                  <th className="w-[42%] px-7 py-3">Title</th>
+                  <th className="w-[24%] px-5 py-3">Keyword</th>
+                  <th className="w-[12%] px-5 py-3 text-center">Readiness</th>
+                  <th className="w-[12%] px-5 py-3 text-center">Status</th>
+                  <th className="w-[10%] px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -415,7 +415,7 @@ function MetricPanel({
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-5 px-6 py-5 transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+      className={`flex items-center gap-5 px-6 py-4 transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
         active ? "bg-[#fbfdff] shadow-[inset_0_-3px_0_#0b63f6]" : ""
       }`}
     >
@@ -459,7 +459,7 @@ function PageRow({
 
   return (
     <tr className="align-middle transition focus-within:bg-slate-50 hover:bg-slate-50 [&:has(details[open])]:bg-[#f8fbff]">
-      <td className="border-l-4 border-transparent px-7 py-4">
+      <td className="border-l-4 border-transparent px-7 py-3">
         <Link
           href={`/admin/pages/${page.id}`}
           className="block truncate font-semibold text-[#0b63f6] underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
@@ -474,24 +474,24 @@ function PageRow({
           /resources/{page.slug}
         </p>
       </td>
-      <td className="px-5 py-4 break-words text-slate-700">
+      <td className="px-5 py-3 break-words text-slate-700">
         {page.target_keyword || "-"}
       </td>
-      <td className="px-5 py-4 text-center">
+      <td className="px-5 py-3 text-center">
         <StatusDot
           label={`SEO readiness: ${readiness.label}`}
           tone={readinessDotTone(readiness.status)}
           glyph={readinessDotGlyph(readiness.status)}
         />
       </td>
-      <td className="px-5 py-4 text-center">
+      <td className="px-5 py-3 text-center">
         <StatusDot
           label={`Page status: ${formatStatus(page.status)}`}
           tone={statusDotTone(page.status)}
           glyph={statusDotGlyph(page.status)}
         />
       </td>
-      <td className="px-5 py-4 text-right">
+      <td className="px-5 py-3 text-right">
         <PageActionsMenu page={page} returnTo={returnTo} />
       </td>
     </tr>
