@@ -1,5 +1,6 @@
 "use client";
 
+import { AiBuilderAssistant } from "@/components/admin/seo-page-editor/AiBuilderAssistant";
 import { BlockSettingsModal } from "@/components/admin/seo-page-editor/BlockSettingsModal";
 import { BuilderBlocksPanel } from "@/components/admin/seo-page-editor/BuilderBlocksPanel";
 import { SeoEditorManualSubmitToast } from "@/components/admin/seo-page-editor/SeoEditorManualSubmitToast";
@@ -49,6 +50,8 @@ export function SeoPageEditorWorkspace({
           {!editor.isSeoSidebarCollapsed && <SeoPublishPanel editor={editor} />}
         </div>
       </div>
+
+      <AiBuilderAssistant editor={editor} />
 
       {editor.editingBlockEntry && (
         <BlockSettingsModal

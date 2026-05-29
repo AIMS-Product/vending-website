@@ -7,9 +7,6 @@ import {
 import {
   compactInputClass,
   primaryButtonClass,
-  readinessButtonClass,
-  secondaryButtonClass,
-  smallButtonClass,
   textareaClass,
 } from "@/components/admin/seo-page-editor/editor-styles";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
@@ -44,18 +41,10 @@ export function SeoPublishPanel({
         <SeoReadinessPanel
           content={editor.content}
           summary={editor.seoReadiness}
-          aiProposalResult={editor.aiProposalResult}
-          aiInsertResult={editor.aiInsertResult}
-          aiProposals={editor.aiProposals}
-          canRunAiAgent={Boolean(editor.page?.id)}
-          isAiGenerating={editor.isAiGenerating}
-          isAiInserting={editor.isAiInserting}
           internalLinkSuggestions={editor.internalLinkSuggestions}
           linkSuggestionMessage={editor.linkSuggestionMessage}
-          onInsertAiProposalBlocks={editor.insertAiProposalBlocks}
           onApplyInternalLinkSuggestion={editor.applyLinkSuggestion}
           onAddSuggestedBlock={editor.addSuggestedBlock}
-          onRunAiAgent={editor.runAiSeoAgent}
           onOpenSettings={editor.focusSeoTargetKeyword}
           mediaAssetCount={editor.mediaAssets.length}
         />
@@ -92,8 +81,7 @@ function SeoPanelHeader({ editor }: { editor: SeoPageEditorController }) {
 }
 
 function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
-  const { focusSeoTargetKeyword, page, publishStateHelp, publishStateLabel } =
-    editor;
+  const { page, publishStateHelp, publishStateLabel } = editor;
 
   return (
     <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -131,15 +119,6 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
           </dd>
         </div>
       </dl>
-      <button
-        type="button"
-        className={`${smallButtonClass} ${readinessButtonClass(
-          editor.seoReadiness.status,
-        )} justify-center`}
-        onClick={focusSeoTargetKeyword}
-      >
-        SEO: {editor.seoReadiness.label}
-      </button>
     </div>
   );
 }
@@ -417,20 +396,7 @@ function SearchPreviewCard({ editor }: { editor: SeoPageEditorController }) {
 
 function SeoPublishActions({ editor }: { editor: SeoPageEditorController }) {
   return (
-    <div className="grid shrink-0 gap-4 border-t border-slate-200 bg-white p-4 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] sm:px-5">
-      <button
-        type="submit"
-        className={secondaryButtonClass}
-        name="intent"
-        value="save"
-        title={
-          editor.isPublishedPage
-            ? "Save unpublished edits while keeping the current live page published."
-            : undefined
-        }
-      >
-        {editor.saveDraftLabel}
-      </button>
+    <div className="grid shrink-0 gap-2 border-t border-slate-200 bg-white p-4 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] sm:px-5">
       <button
         type="submit"
         className={
@@ -459,6 +425,11 @@ function SeoPublishActions({ editor }: { editor: SeoPageEditorController }) {
       >
         {editor.publishButtonLabel}
       </button>
+      <p className="text-center text-xs leading-5 text-slate-400">
+        Drafts save automatically. Use{" "}
+        <span className="font-semibold text-slate-500">Save draft</span> in the
+        top bar to save manually.
+      </p>
     </div>
   );
 }
