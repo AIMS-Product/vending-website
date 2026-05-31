@@ -137,7 +137,7 @@ export function BlockPicker({
                       type="button"
                       data-testid="block-picker-type"
                       data-block-picker-type={option.type}
-                      className={`flex min-h-20 min-w-56 items-start gap-3 rounded-lg border p-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none lg:min-w-0 ${
+                      className={`flex min-h-16 min-w-56 items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none lg:min-w-0 ${
                         isSelected
                           ? "border-[#0b63f6]/65 bg-[#f7faff] shadow-sm ring-1 ring-[#0b63f6]/20"
                           : "border-slate-200 bg-white shadow-sm hover:border-slate-300 hover:bg-slate-50"
@@ -145,7 +145,7 @@ export function BlockPicker({
                       onClick={() => selectBlockType(option.type)}
                     >
                       <span
-                        className={`flex size-9 shrink-0 items-center justify-center rounded-md shadow-sm ring-1 ring-inset ${
+                        className={`flex size-8 shrink-0 items-center justify-center rounded-md shadow-sm ring-1 ring-inset ${
                           isSelected
                             ? "bg-white text-[#0b63f6] ring-[#0b63f6]/20"
                             : "bg-slate-50 text-slate-500 ring-slate-200"

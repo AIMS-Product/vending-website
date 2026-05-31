@@ -91,14 +91,32 @@ Center canvas:
 - add content in context,
 - lightweight field-level warnings.
 
-Right sidebar:
+Right sidebar (SEO and publish only):
 
-- save/publish,
-- SEO readiness,
+- publish action and publish blockers,
+- SEO readiness summary and findings,
 - page title, slug, and metadata,
-- preview,
-- publish blockers,
-- advanced technical settings.
+- advanced technical SEO settings,
+- internal link suggestions.
+
+The right sidebar configures SEO and judges readiness. It must not be a second
+block-insertion surface for arbitrary structure. Readiness findings may offer a
+focused "add the missing block" shortcut and may apply internal link
+suggestions, but bulk/generative structure creation does not live here.
+
+Top rail:
+
+- manual Save draft and Preview (the single home for Save draft),
+- autosave status.
+
+Floating AI assistant:
+
+- the generative SEO agent (run, proposal review, insert selected content),
+- AI proposal source references and warnings.
+
+The AI assistant is a separate floating surface (bottom-right launcher), not a
+section of the right sidebar. It proposes content; approved insertions land on
+the canvas. It must be positioned so it never covers the publish controls.
 
 ## Warnings And Readiness
 
@@ -111,8 +129,9 @@ Right sidebar:
 ## AI And Source-Bound Content
 
 - AI proposes block content; admins approve insertion.
+- The generative SEO agent lives in the dedicated floating AI assistant, not in the right sidebar or readiness panel.
 - Proposed blocks must validate against the same block registry as manually authored blocks.
-- AI source references and warnings belong in proposal review or source panels, not inline as normal page content.
+- AI source references and warnings belong in the assistant's proposal review, not inline as normal page content and not duplicated into the readiness panel.
 - Unsupported claims should block insertion or publish according to the roadmap contract.
 
 ## What Must Not Ship

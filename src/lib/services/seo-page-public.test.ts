@@ -149,7 +149,7 @@ describe("seo page public service", () => {
     errorSpy.mockRestore();
   });
 
-  it("throws on getPublishedSeoPageBySlug query errors so infra failures are loud", async () => {
+  it("throws on published page query errors so infra failures are loud", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const error = { message: "RLS denied" };
 
@@ -159,7 +159,12 @@ describe("seo page public service", () => {
     );
 
     mocks.query.maybeSingle.mockResolvedValueOnce({ data: null, error });
-    await expect(hasPublishedSeoPageSlug("start-vending")).resolves.toBe(false);
+    await expect(hasPublishedSeoPageSlug("start-vending")).rejects.toThrow(
+      /RLS denied/,
+    );
+
+    mocks.query.select.mockResolvedValueOnce({ data: null, error });
+    await expect(listPublishedSeoPageSlugs()).rejects.toThrow(/RLS denied/);
 
     expect(errorSpy).toHaveBeenCalledWith(
       "getPublishedSeoPageBySlug failed",
@@ -167,6 +172,10 @@ describe("seo page public service", () => {
     );
     expect(errorSpy).toHaveBeenCalledWith(
       "hasPublishedSeoPageSlug failed",
+      error,
+    );
+    expect(errorSpy).toHaveBeenCalledWith(
+      "listPublishedSeoPageSlugs failed",
       error,
     );
     errorSpy.mockRestore();

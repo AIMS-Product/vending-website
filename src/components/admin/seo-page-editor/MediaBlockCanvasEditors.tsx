@@ -5,10 +5,12 @@ import Image from "next/image";
 import type { PageBlock } from "@/lib/page-builder/blocks";
 import { blockCanvasPlaceholders } from "@/lib/page-builder/block-editor-placeholders";
 import { syncedTrackingName } from "@/lib/page-builder/editor-helpers";
+import { getVideoEmbed } from "@/lib/page-builder/video-embeds";
 import {
   MediaDropTarget,
   useMediaPicker,
 } from "@/components/admin/MediaPickerProvider";
+import { YouTubeEmbedFrame } from "@/components/sections/YouTubeEmbedFrame";
 import {
   OptionalBlockField,
   builderOptionalFieldScopeClass,
@@ -375,13 +377,20 @@ export function VideoBlockCanvas({
   onChange: (block: PageBlock) => void;
   onEditSettings: () => void;
 }) {
-  const videoPanel = (
+  const videoEmbed = getVideoEmbed(block.props.url);
+  const videoFrameClass =
+    "aspect-video w-full rounded-[10px] border-2 border-[#111111] shadow-[4px_4px_0_#55b8e8]";
+  const videoPanel = videoEmbed ? (
+    <YouTubeEmbedFrame
+      embed={videoEmbed}
+      title={block.props.title || "Video"}
+      className={videoFrameClass}
+    />
+  ) : (
     <button
       type="button"
       onClick={onEditSettings}
-      className={`grid place-items-center rounded-[10px] border-2 border-[#111111] bg-[#f5fbff] transition hover:bg-white focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none ${
-        block.variant === "wide" ? "aspect-[16/7]" : "aspect-video"
-      }`}
+      className={`${videoFrameClass} grid place-items-center bg-[#f5fbff] transition hover:bg-white focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none`}
     >
       <span className="grid size-14 place-items-center rounded-full border-2 border-[#111111] bg-white shadow-[4px_4px_0_#55b8e8]">
         <span className="sr-only">Edit video settings</span>
@@ -424,7 +433,7 @@ export function VideoBlockCanvas({
       onClick={onEditSettings}
       className="mt-3 inline-flex text-sm font-black text-[#066a99] uppercase hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/30 focus-visible:outline-none"
     >
-      Watch video
+      Edit video
     </button>
   );
 

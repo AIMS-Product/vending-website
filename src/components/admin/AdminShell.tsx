@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { useFormStatus } from "react-dom";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { createPortal, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { signOut } from "@/app/admin/actions";
@@ -169,8 +169,7 @@ export function AdminShell({
       )}
       <div
         className={clsx(
-          "mx-auto grid w-full transition-[grid-template-columns] duration-200 xl:min-h-screen",
-          immersive ? "max-w-none" : "max-w-[1680px]",
+          "grid w-full transition-[grid-template-columns] duration-200 xl:min-h-screen",
           !immersive &&
             (sidebarCollapsed
               ? "xl:grid-cols-[76px_minmax(0,1fr)]"
@@ -178,10 +177,29 @@ export function AdminShell({
         )}
       >
         {!immersive && (
-          <aside className="hidden overflow-y-auto border-b border-slate-200 bg-white/95 backdrop-blur xl:sticky xl:top-0 xl:block xl:h-screen xl:border-r xl:border-b-0">
+          <aside className="relative hidden border-b border-slate-200 bg-white/95 backdrop-blur xl:sticky xl:top-0 xl:block xl:h-screen xl:border-r xl:border-b-0">
+            <button
+              type="button"
+              aria-label={
+                sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+              }
+              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              onClick={() => setSidebarCollapsed((current) => !current)}
+              className="absolute top-6 right-0 z-10 inline-flex size-8 translate-x-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+            >
+              <span
+                className={clsx(
+                  "transition-transform",
+                  sidebarCollapsed ? "rotate-180" : "",
+                )}
+                aria-hidden="true"
+              >
+                <AdminChevron />
+              </span>
+            </button>
             <div
               className={clsx(
-                "flex h-full flex-col pt-6 pb-5 transition-[padding] duration-200",
+                "flex h-full flex-col overflow-y-auto pt-6 pb-5 transition-[padding] duration-200",
                 sidebarCollapsed ? "px-3" : "px-4",
               )}
             >
@@ -204,27 +222,6 @@ export function AdminShell({
                     <p className="text-sm text-slate-500">Admin CMS</p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  aria-label={
-                    sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-                  }
-                  title={
-                    sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-                  }
-                  onClick={() => setSidebarCollapsed((current) => !current)}
-                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-                >
-                  <span
-                    className={clsx(
-                      "transition-transform",
-                      sidebarCollapsed ? "rotate-180" : "",
-                    )}
-                    aria-hidden="true"
-                  >
-                    <AdminChevron />
-                  </span>
-                </button>
               </div>
               <p
                 className={clsx(
@@ -397,7 +394,7 @@ export function AdminShell({
           aria-labelledby="admin-shell-title"
           className={clsx(
             "min-w-0",
-            immersive ? "p-0" : "px-5 py-6 sm:px-8 xl:px-10",
+            immersive ? "p-0" : "px-5 py-5 sm:px-8 xl:px-10",
           )}
         >
           {immersive ? (
@@ -406,10 +403,10 @@ export function AdminShell({
             </h1>
           ) : null}
           {!immersive && (
-            <header className="mb-7">
+            <header className="mb-5">
               <div
                 className={clsx(
-                  "mb-6 flex items-center gap-4",
+                  "mb-4 flex items-center gap-4",
                   eyebrow ? "justify-between" : "justify-end",
                 )}
               >
@@ -432,12 +429,12 @@ export function AdminShell({
                 <div className="max-w-3xl">
                   <h1
                     id="admin-shell-title"
-                    className="text-4xl font-semibold tracking-normal text-slate-950"
+                    className="text-3xl font-semibold tracking-normal text-slate-950"
                   >
                     {title}
                   </h1>
                   {description ? (
-                    <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+                    <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
                       {description}
                     </p>
                   ) : null}
@@ -467,26 +464,148 @@ export function AdminPageActionButton({
   confirmMessage?: string;
 }) {
   const { pending } = useFormStatus();
+  const confirmTitleId = useId();
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const confirmedSubmitRef = useRef(false);
+
+  const confirmTitle =
+    tone === "danger" ? `Confirm ${label.toLowerCase()}` : "Confirm action";
+
+  useEffect(() => {
+    if (!isConfirmOpen) return;
+
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+    const dialog = dialogRef.current;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsConfirmOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialog) return;
+
+      const focusableElements = getDialogFocusableElements(dialog);
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements.at(-1);
+
+      if (!firstElement || !lastElement) return;
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
+
+    dialog?.addEventListener("keydown", handleKeyDown);
+    cancelButtonRef.current?.focus();
+
+    return () => {
+      dialog?.removeEventListener("keydown", handleKeyDown);
+      returnFocusRef.current?.focus();
+      returnFocusRef.current = null;
+    };
+  }, [isConfirmOpen]);
+
+  function closeConfirmDialog() {
+    setIsConfirmOpen(false);
+  }
+
+  function submitConfirmedAction() {
+    confirmedSubmitRef.current = true;
+    buttonRef.current?.click();
+    confirmedSubmitRef.current = false;
+    setIsConfirmOpen(false);
+  }
 
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      onClick={(event) => {
-        if (confirmMessage && !window.confirm(confirmMessage)) {
-          event.preventDefault();
-        }
-      }}
-      className={clsx(
-        "block w-full rounded-md px-3 py-2 text-left text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
-        tone === "danger"
-          ? "text-red-700 hover:bg-red-50"
-          : "text-slate-700 hover:bg-slate-50 hover:text-slate-950",
-      )}
-    >
-      {pending ? "Working..." : label}
-    </button>
+    <>
+      <button
+        ref={buttonRef}
+        type="submit"
+        disabled={pending}
+        onClick={(event) => {
+          if (confirmMessage && !confirmedSubmitRef.current) {
+            event.preventDefault();
+            setIsConfirmOpen(true);
+          }
+        }}
+        className={clsx(
+          "block w-full rounded-md px-3 py-2 text-left text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+          tone === "danger"
+            ? "text-red-700 hover:bg-red-50"
+            : "text-slate-700 hover:bg-slate-50 hover:text-slate-950",
+        )}
+      >
+        {pending ? "Working..." : label}
+      </button>
+      {isConfirmOpen &&
+        createPortal(
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={confirmTitleId}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4 py-6"
+          >
+            <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
+              <h2
+                id={confirmTitleId}
+                className="text-base font-semibold text-slate-950"
+              >
+                {confirmTitle}
+              </h2>
+              <p className="mt-3 text-sm leading-6 whitespace-pre-line text-slate-600">
+                {confirmMessage}
+              </p>
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  ref={cancelButtonRef}
+                  type="button"
+                  className="inline-flex min-h-10 items-center rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                  onClick={closeConfirmDialog}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={clsx(
+                    "inline-flex min-h-10 items-center rounded-md px-4 text-sm font-semibold text-white shadow-sm transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
+                    tone === "danger"
+                      ? "bg-red-600 hover:bg-red-700"
+                      : "bg-[#0b63f6] hover:bg-[#0756d6]",
+                  )}
+                  onClick={submitConfirmedAction}
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
   );
+}
+
+function getDialogFocusableElements(root: HTMLElement) {
+  return Array.from(
+    root.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((element) => element.offsetParent !== null);
 }
 
 function adminInitials(email: string) {

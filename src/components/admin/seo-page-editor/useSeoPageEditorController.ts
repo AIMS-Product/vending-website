@@ -33,6 +33,7 @@ import {
 } from "@/lib/page-builder/blocks";
 import {
   assessSeoReadiness,
+  type SeoReadinessFinding,
   type SeoReadinessStatus,
 } from "@/lib/page-builder/seo-readiness";
 import { parseStructuredDataSettings } from "@/lib/page-builder/structured-data-settings";
@@ -638,7 +639,7 @@ export function useSeoPageEditorController({
     effectivePageId,
     editingBlockEntry,
     formAction,
-    focusSeoTargetKeyword,
+    focusSeoSetting,
     handleEditorFormSubmit,
     insertAiProposalBlocks,
     internalLinkSuggestions,
@@ -807,8 +808,19 @@ export function useSeoPageEditorController({
     setSlug(slugify(nextSlug));
   }
 
-  function focusSeoTargetKeyword() {
-    document.getElementById("seo-target-keyword-field")?.focus();
+  function focusSeoSetting(finding: SeoReadinessFinding) {
+    const targetId = seoSettingFieldId(finding.path);
+    if (advancedSeoFieldIds.has(targetId)) {
+      const advancedFields = document.getElementById("advanced-seo-fields");
+      if (advancedFields instanceof HTMLDetailsElement) {
+        advancedFields.open = true;
+      }
+    }
+    window.requestAnimationFrame(() => {
+      const field = document.getElementById(targetId);
+      field?.scrollIntoView({ behavior: "smooth", block: "center" });
+      field?.focus();
+    });
   }
 
   async function createPreviewLinkForSavedPage() {
@@ -1091,6 +1103,32 @@ export function useSeoPageEditorController({
       setIsAiInserting(false);
     }
   }
+}
+
+const advancedSeoFieldIds = new Set([
+  "seo-canonical-url-field",
+  "seo-noindex-field",
+  "seo-sitemap-enabled-field",
+  "seo-structured-data-breadcrumb-field",
+  "seo-structured-data-faq-field",
+]);
+
+function seoSettingFieldId(path: string) {
+  if (path === "title") return "page-title-field";
+  if (path === "slug") return "page-slug-field";
+  if (path === "seo_title") return "seo-title-field";
+  if (path === "target_keyword") return "seo-target-keyword-field";
+  if (path === "meta_description") return "page-meta-description-field";
+  if (path === "canonical_url") return "seo-canonical-url-field";
+  if (path === "noindex") return "seo-noindex-field";
+  if (path === "sitemap_enabled") return "seo-sitemap-enabled-field";
+  if (path.startsWith("structured_data_settings.breadcrumb")) {
+    return "seo-structured-data-breadcrumb-field";
+  }
+  if (path.startsWith("structured_data_settings.faq")) {
+    return "seo-structured-data-faq-field";
+  }
+  return "seo-target-keyword-field";
 }
 
 export type SeoPageEditorController = ReturnType<

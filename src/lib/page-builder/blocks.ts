@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ctaBlockDescriptor } from "@/lib/page-builder/block-descriptors";
+import { isBlockFieldVisible } from "@/lib/page-builder/block-field-visibility";
 
 export type PageBuilderValidationIssue = {
   code: string;
@@ -569,13 +570,12 @@ export function validatePageForPublish(
   }
 
   const blocks = flattenBlocks(contentResult.content);
-  if (
-    !blocks.some((block) => block.type === "cta" || block.type === "lead_form")
-  ) {
+  if (!blocks.some(isConversionSurface)) {
     issues.push({
       code: "missing_conversion_block",
       path: "sections",
-      message: "Publish requires at least one CTA or lead form block.",
+      message:
+        "Publish requires at least one CTA, visible hero CTA, or lead form block.",
     });
   }
 
@@ -654,12 +654,32 @@ export function validatePageForPublish(
           message: "Split hero media requires alt text.",
         });
       }
-      if (hasText(block.props.ctaLabel) && !hasText(block.props.ctaHref)) {
-        issues.push({
-          code: "missing_hero_cta_href",
-          path: `blocks.${index}.props.ctaHref`,
-          message: "Hero CTAs require a destination.",
-        });
+      if (isBlockFieldVisible(block, "cta")) {
+        if (!hasText(block.props.ctaLabel)) {
+          issues.push({
+            code: "missing_hero_cta_label",
+            path: `blocks.${index}.props.ctaLabel`,
+            message: "Visible hero CTAs require button text.",
+          });
+        }
+        if (!hasText(block.props.ctaHref)) {
+          issues.push({
+            code: "missing_hero_cta_href",
+            path: `blocks.${index}.props.ctaHref`,
+            message: "Visible hero CTAs require a destination.",
+          });
+        }
+        if (
+          hasText(block.props.ctaLabel) &&
+          hasText(block.props.ctaHref) &&
+          !hasText(block.props.ctaTrackingName)
+        ) {
+          issues.push({
+            code: "missing_hero_cta_tracking",
+            path: `blocks.${index}.props.ctaTrackingName`,
+            message: "Visible hero CTAs require a tracking name.",
+          });
+        }
       }
     }
 
@@ -714,12 +734,38 @@ export function validatePageForPublish(
       });
     }
 
-    if (block.type === "lead_form" && !hasText(block.props.trackingName)) {
-      issues.push({
-        code: "missing_lead_form_tracking",
-        path: `blocks.${index}.props.trackingName`,
-        message: "Lead form blocks require a tracking name.",
-      });
+    if (block.type === "lead_form") {
+      if (
+        isBlockFieldVisible(block, "heading") &&
+        !hasText(block.props.heading)
+      ) {
+        issues.push({
+          code: "missing_lead_form_heading",
+          path: `blocks.${index}.props.heading`,
+          message: "Visible lead form headings require text.",
+        });
+      }
+      if (isBlockFieldVisible(block, "body") && !hasText(block.props.body)) {
+        issues.push({
+          code: "missing_lead_form_body",
+          path: `blocks.${index}.props.body`,
+          message: "Visible lead form body copy is required.",
+        });
+      }
+      if (!hasText(block.props.submitLabel)) {
+        issues.push({
+          code: "missing_lead_form_submit_label",
+          path: `blocks.${index}.props.submitLabel`,
+          message: "Lead form blocks require submit button text.",
+        });
+      }
+      if (!hasText(block.props.trackingName)) {
+        issues.push({
+          code: "missing_lead_form_tracking",
+          path: `blocks.${index}.props.trackingName`,
+          message: "Lead form blocks require a tracking name.",
+        });
+      }
     }
   }
 
@@ -765,6 +811,14 @@ export function resourcePathForSlug(slug: string) {
 
 function hasText(value: string | null | undefined) {
   return Boolean(value && value.trim().length > 0);
+}
+
+function isConversionSurface(block: PageBlock) {
+  return (
+    block.type === "cta" ||
+    block.type === "lead_form" ||
+    (block.type === "hero" && isBlockFieldVisible(block, "cta"))
+  );
 }
 
 function isSafeHref(value: string) {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   BuilderBlockSidebar,
   ChevronIcon,
+  PageChromeControls,
 } from "@/components/admin/seo-page-editor/SeoPageEditorShell";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 
@@ -20,6 +21,12 @@ export function BuilderBlocksPanel({
     selectBlockEntry,
     updateChromeSettings,
   } = editor;
+
+  const openCanvasPicker = () => {
+    document
+      .querySelector<HTMLButtonElement>("#builder-canvas-add-block button")
+      ?.click();
+  };
 
   return (
     <section
@@ -47,10 +54,15 @@ export function BuilderBlocksPanel({
         <BuilderBlockSidebar
           entries={builderBlockEntries}
           selectedEntry={selectedBlockEntry}
-          chromeSettings={chromeSettings}
           onSelectBlock={selectBlockEntry}
           onEditBlock={editBlockEntry}
-          onChromeSettingsChange={updateChromeSettings}
+          onCreateBlock={openCanvasPicker}
+        />
+      </div>
+      <div className="shrink-0 border-t border-slate-200 px-4 py-3">
+        <PageChromeControls
+          settings={chromeSettings}
+          onChange={updateChromeSettings}
         />
       </div>
       <div className="shrink-0 border-t border-slate-200 p-4">

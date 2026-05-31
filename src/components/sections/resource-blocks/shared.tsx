@@ -86,12 +86,14 @@ function renderRichTextParagraph(
     return <span className="text-slate-400">Paragraph copy</span>;
   }
 
-  return node.spans.map((span) => {
+  return node.spans.map((span, index) => {
     const text = editorFallback(span.text, "Link text", renderMode);
-    if (!span.href) return <span key={richTextSpanKey(span)}>{text}</span>;
+    if (!span.href) {
+      return <span key={richTextSpanKey(span, index)}>{text}</span>;
+    }
     return (
       <ResourceLink
-        key={richTextSpanKey(span)}
+        key={richTextSpanKey(span, index)}
         href={span.href}
         linkMode={linkMode}
         className="text-[#066a99] underline underline-offset-4 hover:text-[#111111]"
@@ -102,18 +104,20 @@ function renderRichTextParagraph(
   });
 }
 
-export function richTextNodeKey(node: RichTextNode) {
+export function richTextNodeKey(node: RichTextNode, index: number) {
   if (node.type === "list") {
-    return `${node.type}:${node.style}:${node.items.join("|")}`;
+    return `${index}:${node.type}:${node.style}:${node.items.join("|")}`;
   }
   if ("spans" in node) {
-    return `${node.type}:${node.spans.map(richTextSpanKey).join("|")}`;
+    return `${index}:${node.type}:${node.spans
+      .map((span, spanIndex) => richTextSpanKey(span, spanIndex))
+      .join("|")}`;
   }
-  return `${node.type}:${node.text}`;
+  return `${index}:${node.type}:${node.text}`;
 }
 
-function richTextSpanKey(span: { text: string; href?: string }) {
-  return `${span.text}:${span.href ?? ""}`;
+function richTextSpanKey(span: { text: string; href?: string }, index: number) {
+  return `${index}:${span.text}:${span.href ?? ""}`;
 }
 
 export function editorFallback(

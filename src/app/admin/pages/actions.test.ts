@@ -102,6 +102,7 @@ type PageFormOverrides = {
   structuredDataBreadcrumb?: boolean;
   structuredDataFaq?: boolean;
   draftContent?: PageContent;
+  publishNote?: string;
   intent?: "save" | "publish";
 };
 
@@ -118,6 +119,7 @@ function pageForm(overrides: PageFormOverrides = {}) {
     structuredDataBreadcrumb: true,
     structuredDataFaq: false,
     draftContent: validContent,
+    publishNote: "",
     intent: "save" as const,
     ...overrides,
   };
@@ -136,6 +138,7 @@ function pageForm(overrides: PageFormOverrides = {}) {
   }
   if (values.structuredDataFaq) formData.set("structuredDataFaq", "on");
   formData.set("draftContent", JSON.stringify(values.draftContent));
+  formData.set("publishNote", values.publishNote);
   formData.set("intent", values.intent);
   return formData;
 }
@@ -229,6 +232,7 @@ describe("admin page actions", () => {
         id: pageId,
         slug: "new-coffee-vending",
         intent: "publish",
+        publishNote: "Ready for launch",
       }),
     );
 
@@ -244,6 +248,7 @@ describe("admin page actions", () => {
     );
     expect(mocks.adminPublishSeoPage).toHaveBeenCalledWith(pageId, {
       actorId: "admin_1",
+      publishNote: "Ready for launch",
     });
     expect(mocks.revalidatePath).toHaveBeenCalledWith(
       "/resources/new-coffee-vending",

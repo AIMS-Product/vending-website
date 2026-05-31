@@ -7,9 +7,6 @@ import {
 import {
   compactInputClass,
   primaryButtonClass,
-  readinessButtonClass,
-  secondaryButtonClass,
-  smallButtonClass,
   textareaClass,
 } from "@/components/admin/seo-page-editor/editor-styles";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
@@ -44,19 +41,11 @@ export function SeoPublishPanel({
         <SeoReadinessPanel
           content={editor.content}
           summary={editor.seoReadiness}
-          aiProposalResult={editor.aiProposalResult}
-          aiInsertResult={editor.aiInsertResult}
-          aiProposals={editor.aiProposals}
-          canRunAiAgent={Boolean(editor.page?.id)}
-          isAiGenerating={editor.isAiGenerating}
-          isAiInserting={editor.isAiInserting}
           internalLinkSuggestions={editor.internalLinkSuggestions}
           linkSuggestionMessage={editor.linkSuggestionMessage}
-          onInsertAiProposalBlocks={editor.insertAiProposalBlocks}
           onApplyInternalLinkSuggestion={editor.applyLinkSuggestion}
           onAddSuggestedBlock={editor.addSuggestedBlock}
-          onRunAiAgent={editor.runAiSeoAgent}
-          onOpenSettings={editor.focusSeoTargetKeyword}
+          onOpenSettings={editor.focusSeoSetting}
           mediaAssetCount={editor.mediaAssets.length}
         />
       </div>
@@ -92,8 +81,7 @@ function SeoPanelHeader({ editor }: { editor: SeoPageEditorController }) {
 }
 
 function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
-  const { focusSeoTargetKeyword, page, publishStateHelp, publishStateLabel } =
-    editor;
+  const { page, publishStateHelp, publishStateLabel } = editor;
 
   return (
     <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -115,6 +103,16 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
       <p className="text-xs leading-5 font-medium text-slate-500">
         {publishStateHelp}
       </p>
+      {page?.status === "published" && (
+        <a
+          href={`/resources/${page.slug}`}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+        >
+          Open live page
+        </a>
+      )}
       <dl className="grid gap-1.5 text-xs text-slate-500">
         <div className="flex items-center justify-between gap-3">
           <dt className="font-medium">Last updated</dt>
@@ -131,15 +129,6 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
           </dd>
         </div>
       </dl>
-      <button
-        type="button"
-        className={`${smallButtonClass} ${readinessButtonClass(
-          editor.seoReadiness.status,
-        )} justify-center`}
-        onClick={focusSeoTargetKeyword}
-      >
-        SEO: {editor.seoReadiness.label}
-      </button>
     </div>
   );
 }
@@ -181,6 +170,7 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
           </span>
           <input
             name="slug"
+            id="page-slug-field"
             value={editor.visibleSlug}
             onChange={(event) => editor.updateSlugFromInput(event.target.value)}
             required
@@ -267,7 +257,10 @@ function TextInput({
 
 function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
   return (
-    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+    <details
+      id="advanced-seo-fields"
+      className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+    >
       <summary className="cursor-pointer text-sm font-semibold text-slate-900">
         Advanced SEO
       </summary>
@@ -294,6 +287,7 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
         <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
           <CheckboxSetting
             checked={editor.noindex}
+            id="seo-noindex-field"
             label="Hide from search engines"
             name="noindex"
             onChange={(checked) => {
@@ -304,6 +298,7 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
           />
           <CheckboxSetting
             checked={editor.sitemapEnabled}
+            id="seo-sitemap-enabled-field"
             disabled={editor.noindex}
             label="Include in sitemap"
             name="sitemapEnabled"
@@ -323,6 +318,7 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
           </div>
           <CheckboxSetting
             checked={editor.structuredDataBreadcrumb}
+            id="seo-structured-data-breadcrumb-field"
             label="Breadcrumb trail"
             name="structuredDataBreadcrumb"
             onChange={editor.setStructuredDataBreadcrumb}
@@ -330,6 +326,7 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
           />
           <CheckboxSetting
             checked={editor.structuredDataFaq}
+            id="seo-structured-data-faq-field"
             label="Visible FAQs"
             name="structuredDataFaq"
             onChange={editor.setStructuredDataFaq}
@@ -345,6 +342,7 @@ function CheckboxSetting({
   checked,
   disabled = false,
   help,
+  id,
   label,
   name,
   onChange,
@@ -352,6 +350,7 @@ function CheckboxSetting({
   checked: boolean;
   disabled?: boolean;
   help: string;
+  id: string;
   label: string;
   name: string;
   onChange: (checked: boolean) => void;
@@ -361,6 +360,7 @@ function CheckboxSetting({
       <input
         name={name}
         aria-label={label}
+        id={id}
         type="checkbox"
         checked={checked}
         disabled={disabled}
@@ -417,20 +417,19 @@ function SearchPreviewCard({ editor }: { editor: SeoPageEditorController }) {
 
 function SeoPublishActions({ editor }: { editor: SeoPageEditorController }) {
   return (
-    <div className="grid shrink-0 gap-4 border-t border-slate-200 bg-white p-4 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] sm:px-5">
-      <button
-        type="submit"
-        className={secondaryButtonClass}
-        name="intent"
-        value="save"
-        title={
-          editor.isPublishedPage
-            ? "Save unpublished edits while keeping the current live page published."
-            : undefined
-        }
-      >
-        {editor.saveDraftLabel}
-      </button>
+    <div className="grid shrink-0 gap-2 border-t border-slate-200 bg-white p-4 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] sm:px-5">
+      <label className="block">
+        <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+          Publish notes
+        </span>
+        <textarea
+          name="publishNote"
+          rows={2}
+          maxLength={240}
+          className="mt-1.5 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-[#0b63f6] focus:ring-4 focus:ring-[#0b63f6]/10"
+          placeholder="Optional summary for this version"
+        />
+      </label>
       <button
         type="submit"
         className={
@@ -459,6 +458,11 @@ function SeoPublishActions({ editor }: { editor: SeoPageEditorController }) {
       >
         {editor.publishButtonLabel}
       </button>
+      <p className="text-center text-xs leading-5 text-slate-400">
+        Drafts save automatically. Use{" "}
+        <span className="font-semibold text-slate-500">Save draft</span> in the
+        top bar to save manually.
+      </p>
     </div>
   );
 }

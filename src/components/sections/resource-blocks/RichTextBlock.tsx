@@ -55,11 +55,11 @@ export function RichTextBlock({
         ) : block.props.body.nodes.length === 0 && renderMode === "editor" ? (
           <p className="text-slate-400">Write the page copy here.</p>
         ) : (
-          block.props.body.nodes.map((node) => {
+          block.props.body.nodes.map((node, nodeIndex) => {
             if (node.type === "heading") {
               return (
                 <h3
-                  key={richTextNodeKey(node)}
+                  key={richTextNodeKey(node, nodeIndex)}
                   className="pt-2 text-xl font-black text-[#111111] uppercase"
                 >
                   {editorFallback(node.text, "Subheading", renderMode)}
@@ -70,16 +70,16 @@ export function RichTextBlock({
               const ListTag = node.style === "numbered" ? "ol" : "ul";
               return (
                 <ListTag
-                  key={richTextNodeKey(node)}
+                  key={richTextNodeKey(node, nodeIndex)}
                   className={
                     block.variant === "checklist"
                       ? "ml-0 list-none space-y-3"
                       : "ml-5 list-outside space-y-2"
                   }
                 >
-                  {node.items.map((item) => (
+                  {node.items.map((item, itemIndex) => (
                     <li
-                      key={item}
+                      key={`${itemIndex}:${item}`}
                       className={
                         block.variant === "checklist"
                           ? "flex gap-3 before:mt-1 before:block before:size-5 before:shrink-0 before:rounded-full before:border-2 before:border-[#111111] before:bg-[#55b8e8] before:content-['']"
@@ -93,7 +93,7 @@ export function RichTextBlock({
               );
             }
             return (
-              <p key={richTextNodeKey(node)}>
+              <p key={richTextNodeKey(node, nodeIndex)}>
                 <RichTextParagraphContent
                   node={node}
                   linkMode={linkMode}
@@ -112,9 +112,9 @@ function ChecklistPlaceholder() {
   return (
     <ul className="space-y-3">
       {["Checklist item 1", "Checklist item 2", "Checklist item 3"].map(
-        (item) => (
+        (item, index) => (
           <li
-            key={item}
+            key={`${index}:${item}`}
             className="flex gap-3 text-slate-400 before:mt-1 before:block before:size-5 before:shrink-0 before:rounded-full before:border-2 before:border-[#111111] before:bg-[#55b8e8] before:content-['']"
           >
             Checklist item

@@ -273,7 +273,10 @@ export function SimpleBlockStackEditor({
   return (
     <div>
       {column.blocks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50">
+        <div
+          id="builder-canvas-add-block"
+          className="flex scroll-mt-24 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50"
+        >
           <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
             <svg
               xmlns="http://www.w3.org/2000/svg"

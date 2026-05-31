@@ -188,17 +188,15 @@ export function ChevronIcon({ direction }: { direction: "left" | "right" }) {
 export function BuilderBlockSidebar({
   entries,
   selectedEntry,
-  chromeSettings,
   onSelectBlock,
   onEditBlock,
-  onChromeSettingsChange,
+  onCreateBlock,
 }: {
   entries: BuilderBlockEntry[];
   selectedEntry: BuilderBlockEntry | null;
-  chromeSettings: PageChromeSettings;
   onSelectBlock: (entry: BuilderBlockEntry) => void;
   onEditBlock: (entry: BuilderBlockEntry) => void;
-  onChromeSettingsChange: (settings: Partial<PageChromeSettings>) => void;
+  onCreateBlock: () => void;
 }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-900 bg-slate-950 text-white shadow-xl">
@@ -217,10 +215,6 @@ export function BuilderBlockSidebar({
       </div>
 
       <div className="grid gap-4 p-4">
-        <PageChromeControls
-          settings={chromeSettings}
-          onChange={onChromeSettingsChange}
-        />
         {entries.length > 0 ? (
           <div className="max-h-[calc(100dvh-18rem)] space-y-2 overflow-y-auto pr-1">
             {entries.map((entry) => {
@@ -297,19 +291,42 @@ export function BuilderBlockSidebar({
             })}
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-white/20 bg-white/5 px-4 py-6 text-center">
-            <p className="text-sm font-semibold">No blocks yet</p>
-            <p className="mt-1 text-xs leading-5 text-slate-300">
-              Use the page canvas to add the first content block.
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={onCreateBlock}
+            className="flex w-full flex-col items-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/5 px-4 py-6 text-center transition hover:border-sky-300/60 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none"
+          >
+            <span
+              className="flex size-9 items-center justify-center rounded-full bg-sky-400/20 text-sky-200 ring-1 ring-white/10"
+              aria-hidden="true"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-5"
+              >
+                <path d="M12 5v14" />
+                <path d="M5 12h14" />
+              </svg>
+            </span>
+            <span className="text-sm font-semibold text-white">
+              Add your first block
+            </span>
+            <span className="text-xs leading-5 text-slate-300">
+              Choose a content block to get started.
+            </span>
+          </button>
         )}
       </div>
     </section>
   );
 }
 
-function PageChromeControls({
+export function PageChromeControls({
   settings,
   onChange,
 }: {
@@ -317,22 +334,17 @@ function PageChromeControls({
   onChange: (settings: Partial<PageChromeSettings>) => void;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-      <p className="mb-3 text-xs font-semibold tracking-wider text-slate-300 uppercase">
-        Page chrome
-      </p>
-      <div className="grid gap-2">
-        <ChromeToggle
-          label="Show header"
-          checked={settings.showHeader}
-          onChange={(checked) => onChange({ showHeader: checked })}
-        />
-        <ChromeToggle
-          label="Show footer"
-          checked={settings.showFooter}
-          onChange={(checked) => onChange({ showFooter: checked })}
-        />
-      </div>
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+      <ChromeToggle
+        label="Show header"
+        checked={settings.showHeader}
+        onChange={(checked) => onChange({ showHeader: checked })}
+      />
+      <ChromeToggle
+        label="Show footer"
+        checked={settings.showFooter}
+        onChange={(checked) => onChange({ showFooter: checked })}
+      />
     </div>
   );
 }
@@ -347,7 +359,7 @@ function ChromeToggle({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm font-semibold text-white transition hover:bg-white/10">
+    <label className="flex cursor-pointer items-center gap-2.5 rounded-lg py-1 text-sm font-semibold text-slate-700 transition hover:text-slate-950">
       <span>{label}</span>
       <input
         aria-label={label}
@@ -357,8 +369,10 @@ function ChromeToggle({
         className="peer sr-only"
       />
       <span
-        className={`flex h-6 w-10 items-center rounded-full p-1 ring-1 ring-white/15 transition peer-focus-visible:ring-2 peer-focus-visible:ring-sky-200 ${
-          checked ? "bg-sky-400" : "bg-white/20"
+        className={`flex h-5 w-9 items-center rounded-full p-0.5 ring-1 transition peer-focus-visible:ring-2 peer-focus-visible:ring-[#0b63f6]/40 ${
+          checked
+            ? "bg-[#0b63f6] ring-[#0b63f6]"
+            : "bg-slate-200 ring-slate-300"
         }`}
         aria-hidden="true"
       >

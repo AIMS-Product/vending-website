@@ -206,10 +206,12 @@ export function withDefaultFieldVisibility(block: PageBlock): PageBlock {
     ...block,
     props: {
       ...block.props,
-      fieldVisibility: {
-        ...defaultFieldVisibility(block),
-        ...stored,
-      },
+      fieldVisibility: Object.fromEntries(
+        fields.map((field) => [
+          field,
+          stored?.[field] ?? inferFieldVisibilityFromContent(block, field),
+        ]),
+      ),
     },
   } as PageBlock;
 }

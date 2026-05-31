@@ -6,12 +6,17 @@ import {
   type PageContent,
 } from "@/lib/page-builder/blocks";
 import {
+  getVideoEmbed,
+  type VideoEmbed,
+} from "@/lib/page-builder/video-embeds";
+import {
   resourceColumnGridClass,
   resourceSectionClass,
 } from "@/components/sections/resource-page-content-classes";
 import { isBlockFieldVisible } from "@/lib/page-builder/block-field-visibility";
 import { HeroBlock } from "@/components/sections/resource-blocks/HeroBlock";
 import { RichTextBlock } from "@/components/sections/resource-blocks/RichTextBlock";
+import { YouTubeEmbedFrame } from "@/components/sections/YouTubeEmbedFrame";
 import {
   ResourceLink,
   editorFallback,
@@ -216,6 +221,19 @@ function ResourcePageBlockView({
   }
 
   if (block.type === "video") {
+    const videoEmbed = getVideoEmbed(block.props.url);
+    const videoPanel = (
+      <ResourceVideoPanel
+        embed={videoEmbed}
+        title={block.props.title || "Video"}
+        linkMode={linkMode}
+        renderMode={renderMode}
+        url={block.props.url}
+      />
+    );
+    const showFallbackLink =
+      !videoEmbed && (Boolean(block.props.url) || renderMode === "editor");
+
     if (block.variant === "inline") {
       return (
         <div
@@ -225,7 +243,7 @@ function ResourcePageBlockView({
             "md:grid-cols-[180px_minmax(0,1fr)]",
           )}`}
         >
-          <VideoPanel />
+          {videoPanel}
           <div>
             {isBlockFieldVisible(block, "title") &&
               (block.props.title || renderMode === "editor") && (
@@ -243,7 +261,7 @@ function ResourcePageBlockView({
                   )}
                 </p>
               )}
-            {(block.props.url || renderMode === "editor") && (
+            {showFallbackLink && (
               <ResourceLink
                 href={block.props.url || "#"}
                 linkMode={linkMode}
@@ -263,14 +281,14 @@ function ResourcePageBlockView({
           block.variant === "wide" ? "p-6" : "p-5"
         }`}
       >
-        <VideoPanel wide={block.variant === "wide"} />
+        {videoPanel}
         {isBlockFieldVisible(block, "title") &&
           (block.props.title || renderMode === "editor") && (
             <h2 className="mt-5 text-xl font-black text-[#111111] uppercase">
               {editorFallback(block.props.title, "Video title", renderMode)}
             </h2>
           )}
-        {(block.props.url || renderMode === "editor") && (
+        {showFallbackLink && (
           <ResourceLink
             href={block.props.url || "#"}
             linkMode={linkMode}
@@ -312,7 +330,7 @@ function ResourcePageBlockView({
           ) : (
             block.props.items.map((item, index) => (
               <details
-                key={faqItemKey(item)}
+                key={faqItemKey(item, index)}
                 className="group p-5"
                 open={block.variant === "standard" && index === 0}
               >
@@ -371,7 +389,7 @@ function ResourcePageBlockView({
           ) : (
             block.props.cards.map((card, index) => (
               <div
-                key={cardKey(card)}
+                key={cardKey(card, index)}
                 className={`rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8] ${
                   block.variant === "feature" && index === 0
                     ? previewLayoutClass(
@@ -457,9 +475,9 @@ function ResourcePageBlockView({
             {[block.props.name, block.props.context, block.props.body]
               .filter((item) => item || renderMode === "editor")
               .slice(0, 3)
-              .map((item) => (
+              .map((item, index) => (
                 <div
-                  key={item || "proof-placeholder"}
+                  key={`${index}:${item || "proof-placeholder"}`}
                   className="grid min-h-20 place-items-center rounded-[8px] border-2 border-[#111111] bg-[#f5fbff] px-4 text-center text-sm font-black text-[#111111] uppercase"
                 >
                   {editorFallback(item, "Proof", renderMode)}
@@ -656,30 +674,74 @@ function ResourceLeadFormPreview({
   );
 }
 
-function VideoPanel({ wide = false }: { wide?: boolean }) {
+function ResourceVideoPanel({
+  embed,
+  linkMode,
+  renderMode,
+  title,
+  url,
+}: {
+  embed: VideoEmbed | null;
+  linkMode: ResourcePageLinkMode;
+  renderMode: ResourcePageRenderMode;
+  title: string;
+  url: string;
+}) {
+  const frameClass =
+    "aspect-video w-full rounded-[10px] border-2 border-[#111111] shadow-[7px_7px_0_#55b8e8]";
+
+  if (embed) {
+    return (
+      <YouTubeEmbedFrame embed={embed} title={title} className={frameClass} />
+    );
+  }
+
+  if (url && linkMode === "live") {
+    return (
+      <a
+        href={url}
+        rel="noopener noreferrer"
+        className={`${frameClass} grid place-items-center bg-[#f5fbff] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none`}
+      >
+        <VideoPlayIcon />
+      </a>
+    );
+  }
+
   return (
     <div
-      className={`grid place-items-center rounded-[10px] border-2 border-[#111111] bg-[#f5fbff] ${
-        wide ? "aspect-[16/7]" : "aspect-video"
+      className={`${frameClass} grid place-items-center bg-[#f5fbff] ${
+        renderMode === "editor" ? "border-dashed" : ""
       }`}
     >
-      <span className="grid size-14 place-items-center rounded-full border-2 border-[#111111] bg-white shadow-[4px_4px_0_#55b8e8]">
-        <span className="ml-1 size-0 border-y-[9px] border-l-[14px] border-y-transparent border-l-[#111111]" />
-      </span>
+      <VideoPlayIcon />
     </div>
+  );
+}
+
+function VideoPlayIcon() {
+  return (
+    <span className="grid size-14 place-items-center rounded-full border-2 border-[#111111] bg-white shadow-[4px_4px_0_#55b8e8]">
+      <span className="sr-only">Play video</span>
+      <span className="ml-1 size-0 border-y-[9px] border-l-[14px] border-y-transparent border-l-[#111111]" />
+    </span>
   );
 }
 
 function faqItemKey(
   item: Extract<PageBlock, { type: "faq" }>["props"]["items"][number],
+  index: number,
 ) {
-  return `${item.question}:${item.answer}`;
+  return `${index}:${item.question}:${item.answer}`;
 }
 
 function cardKey(
   card: Extract<PageBlock, { type: "card_grid" }>["props"]["cards"][number],
+  index: number,
 ) {
-  return `${card.title}:${card.body}:${card.href ?? ""}:${card.linkLabel ?? ""}`;
+  return `${index}:${card.title}:${card.body}:${card.href ?? ""}:${
+    card.linkLabel ?? ""
+  }`;
 }
 
 function findPrimaryHeroId(content: PageContent) {

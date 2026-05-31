@@ -551,24 +551,79 @@ describe("page builder block schemas", () => {
     ).toBe(true);
   });
 
-  it("blocks lead form publishing without CTA tracking attribution", () => {
+  it("counts visible hero CTAs as conversion surfaces and validates their fields", () => {
     const content = pageContentSchema.parse({
       version: 1,
       sections: [
         {
-          id: "section_form",
+          id: "section_hero",
           columns: [
             {
-              id: "column_form",
+              id: "column_hero",
               blocks: [
                 {
-                  id: "block_form",
-                  type: "lead_form",
+                  id: "block_hero",
+                  type: "hero",
                   props: {
-                    heading: "Apply",
-                    body: "",
-                    submitLabel: "Submit",
-                    trackingName: "",
+                    eyebrow: "Guide",
+                    heading: "Start vending",
+                    body: "Plan a route.",
+                    ctaLabel: "",
+                    ctaHref: "",
+                    ctaTrackingName: "",
+                    fieldVisibility: { cta: true },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = validatePageForPublish(content, {
+      slug: "start-vending",
+      title: "Start Vending",
+      seoTitle: "Start Vending",
+      metaDescription: "Learn how to start vending.",
+      noindex: false,
+      sitemapEnabled: true,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("Expected publish validation to fail.");
+    expect(result.issues.map((issue) => issue.code)).not.toContain(
+      "missing_conversion_block",
+    );
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "missing_hero_cta_label" }),
+        expect.objectContaining({ code: "missing_hero_cta_href" }),
+      ]),
+    );
+  });
+
+  it("blocks visible hero CTAs without tracking attribution", () => {
+    const content = pageContentSchema.parse({
+      version: 1,
+      sections: [
+        {
+          id: "section_hero",
+          columns: [
+            {
+              id: "column_hero",
+              blocks: [
+                {
+                  id: "block_hero",
+                  type: "hero",
+                  props: {
+                    eyebrow: "Guide",
+                    heading: "Start vending",
+                    body: "Plan a route.",
+                    ctaLabel: "Apply now",
+                    ctaHref: "/apply",
+                    ctaTrackingName: "",
+                    fieldVisibility: { cta: true },
                   },
                 },
               ],
@@ -591,6 +646,55 @@ describe("page builder block schemas", () => {
     if (result.ok) throw new Error("Expected publish validation to fail.");
     expect(result.issues).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({ code: "missing_hero_cta_tracking" }),
+      ]),
+    );
+  });
+
+  it("blocks lead form publishing without visible copy, submit text, and tracking attribution", () => {
+    const content = pageContentSchema.parse({
+      version: 1,
+      sections: [
+        {
+          id: "section_form",
+          columns: [
+            {
+              id: "column_form",
+              blocks: [
+                {
+                  id: "block_form",
+                  type: "lead_form",
+                  props: {
+                    heading: "",
+                    body: "",
+                    submitLabel: "",
+                    trackingName: "",
+                    fieldVisibility: { heading: true, body: true },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = validatePageForPublish(content, {
+      slug: "start-vending",
+      title: "Start Vending",
+      seoTitle: "Start Vending",
+      metaDescription: "Learn how to start vending.",
+      noindex: false,
+      sitemapEnabled: true,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("Expected publish validation to fail.");
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "missing_lead_form_heading" }),
+        expect.objectContaining({ code: "missing_lead_form_body" }),
+        expect.objectContaining({ code: "missing_lead_form_submit_label" }),
         expect.objectContaining({ code: "missing_lead_form_tracking" }),
       ]),
     );
