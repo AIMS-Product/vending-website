@@ -101,6 +101,7 @@ const formSchema = z.object({
     faq: z.boolean(),
   }),
   draftContent: pageContentSchema,
+  publishNote: z.string().trim().max(240).optional(),
   intent: z.enum(["save", "publish"]),
 });
 type ParsedPageForm = z.infer<typeof formSchema>;
@@ -135,7 +136,10 @@ export async function saveSeoPage(
     }
 
     if (page.intent === "publish") {
-      await adminPublishSeoPage(persisted.pageId, { actorId: admin.user.id });
+      await adminPublishSeoPage(persisted.pageId, {
+        actorId: admin.user.id,
+        publishNote: page.publishNote,
+      });
     }
 
     if (persisted.created) {
@@ -426,7 +430,7 @@ export async function rollbackSeoPageRevision(formData: FormData) {
     });
     revalidatePath(pagePath);
   } catch (error) {
-    console.error("failed to roll back SEO page revision", {
+    console.error("failed to restore SEO page revision as draft", {
       adminUserId: admin.user.id,
       pageId,
       revisionId,
@@ -545,6 +549,7 @@ function parsePageFormData(formData: FormData) {
       faq: formData.get("structuredDataFaq") === "on",
     },
     draftContent,
+    publishNote: String(formData.get("publishNote") ?? ""),
     intent: formData.get("intent") ?? "save",
   });
 

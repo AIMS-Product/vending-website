@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { useFormStatus } from "react-dom";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { createPortal, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { signOut } from "@/app/admin/actions";
@@ -464,26 +464,148 @@ export function AdminPageActionButton({
   confirmMessage?: string;
 }) {
   const { pending } = useFormStatus();
+  const confirmTitleId = useId();
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const confirmedSubmitRef = useRef(false);
+
+  const confirmTitle =
+    tone === "danger" ? `Confirm ${label.toLowerCase()}` : "Confirm action";
+
+  useEffect(() => {
+    if (!isConfirmOpen) return;
+
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+    const dialog = dialogRef.current;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsConfirmOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialog) return;
+
+      const focusableElements = getDialogFocusableElements(dialog);
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements.at(-1);
+
+      if (!firstElement || !lastElement) return;
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
+
+    dialog?.addEventListener("keydown", handleKeyDown);
+    cancelButtonRef.current?.focus();
+
+    return () => {
+      dialog?.removeEventListener("keydown", handleKeyDown);
+      returnFocusRef.current?.focus();
+      returnFocusRef.current = null;
+    };
+  }, [isConfirmOpen]);
+
+  function closeConfirmDialog() {
+    setIsConfirmOpen(false);
+  }
+
+  function submitConfirmedAction() {
+    confirmedSubmitRef.current = true;
+    buttonRef.current?.click();
+    confirmedSubmitRef.current = false;
+    setIsConfirmOpen(false);
+  }
 
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      onClick={(event) => {
-        if (confirmMessage && !window.confirm(confirmMessage)) {
-          event.preventDefault();
-        }
-      }}
-      className={clsx(
-        "block w-full rounded-md px-3 py-2 text-left text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
-        tone === "danger"
-          ? "text-red-700 hover:bg-red-50"
-          : "text-slate-700 hover:bg-slate-50 hover:text-slate-950",
-      )}
-    >
-      {pending ? "Working..." : label}
-    </button>
+    <>
+      <button
+        ref={buttonRef}
+        type="submit"
+        disabled={pending}
+        onClick={(event) => {
+          if (confirmMessage && !confirmedSubmitRef.current) {
+            event.preventDefault();
+            setIsConfirmOpen(true);
+          }
+        }}
+        className={clsx(
+          "block w-full rounded-md px-3 py-2 text-left text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+          tone === "danger"
+            ? "text-red-700 hover:bg-red-50"
+            : "text-slate-700 hover:bg-slate-50 hover:text-slate-950",
+        )}
+      >
+        {pending ? "Working..." : label}
+      </button>
+      {isConfirmOpen &&
+        createPortal(
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={confirmTitleId}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4 py-6"
+          >
+            <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
+              <h2
+                id={confirmTitleId}
+                className="text-base font-semibold text-slate-950"
+              >
+                {confirmTitle}
+              </h2>
+              <p className="mt-3 text-sm leading-6 whitespace-pre-line text-slate-600">
+                {confirmMessage}
+              </p>
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  ref={cancelButtonRef}
+                  type="button"
+                  className="inline-flex min-h-10 items-center rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                  onClick={closeConfirmDialog}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={clsx(
+                    "inline-flex min-h-10 items-center rounded-md px-4 text-sm font-semibold text-white shadow-sm transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
+                    tone === "danger"
+                      ? "bg-red-600 hover:bg-red-700"
+                      : "bg-[#0b63f6] hover:bg-[#0756d6]",
+                  )}
+                  onClick={submitConfirmedAction}
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
   );
+}
+
+function getDialogFocusableElements(root: HTMLElement) {
+  return Array.from(
+    root.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((element) => element.offsetParent !== null);
 }
 
 function adminInitials(email: string) {

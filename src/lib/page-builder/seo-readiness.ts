@@ -534,9 +534,9 @@ function categoryForIssue(code: string): SeoReadinessCategory {
   if (code === "broken_internal_link") return "links";
   if (
     code.startsWith("missing_cta") ||
-    code === "missing_conversion_block" ||
-    code === "missing_lead_form_tracking" ||
-    code === "missing_hero_cta_href"
+    code.startsWith("missing_hero_cta") ||
+    code.startsWith("missing_lead_form") ||
+    code === "missing_conversion_block"
   ) {
     return "conversion";
   }

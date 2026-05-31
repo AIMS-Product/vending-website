@@ -326,7 +326,7 @@ describe("seo page revisions and previews", () => {
       expect.objectContaining({
         p_page_id: "page_1",
         p_revision_type: "rollback",
-        p_revision_label: "Rollback from revision_1",
+        p_revision_label: "Restore draft from Publish",
         p_content_snapshot: validContent,
         p_seo_snapshot: revision.seo_snapshot,
         p_draft_content: validContent,

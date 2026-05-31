@@ -60,7 +60,7 @@ export function SeoReadinessPanel({
   linkSuggestionMessage: string | null;
   onApplyInternalLinkSuggestion: (suggestion: InternalLinkSuggestion) => void;
   onAddSuggestedBlock: (type: PageBlock["type"]) => void;
-  onOpenSettings: () => void;
+  onOpenSettings: (finding: SeoReadinessFinding) => void;
   mediaAssetCount: number;
 }) {
   const topFindings = [
@@ -319,7 +319,7 @@ function ReadinessFindingAction({
   content: PageContent;
   finding: SeoReadinessFinding;
   onAddSuggestedBlock: (type: PageBlock["type"]) => void;
-  onOpenSettings: () => void;
+  onOpenSettings: (finding: SeoReadinessFinding) => void;
 }) {
   const suggestedBlock = suggestedBlockForFinding(finding);
   const anchor = anchorForFinding(content, finding);
@@ -357,7 +357,7 @@ function ReadinessFindingAction({
       <button
         type="button"
         className={smallButtonClass}
-        onClick={onOpenSettings}
+        onClick={() => onOpenSettings(finding)}
       >
         <span className="flex items-center gap-1.5">
           <svg

@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
 import { config } from "@/lib/config";
@@ -50,8 +52,7 @@ export async function listPublishedSeoPageSlugs() {
     .select("slug");
 
   if (error) {
-    console.error("listPublishedSeoPageSlugs failed", error);
-    return [];
+    throwPublicSeoPageQueryError("listPublishedSeoPageSlugs", error);
   }
 
   return (data ?? []).map((row) => row.slug);
@@ -66,8 +67,7 @@ export async function hasPublishedSeoPageSlug(slug: string) {
     .maybeSingle();
 
   if (error) {
-    console.error("hasPublishedSeoPageSlug failed", error);
-    return false;
+    throwPublicSeoPageQueryError("hasPublishedSeoPageSlug", error);
   }
 
   return Boolean(data);
@@ -82,8 +82,7 @@ export async function listSitemapSeoPages() {
     .eq("noindex", false);
 
   if (error) {
-    console.error("listSitemapSeoPages failed", error);
-    return [];
+    throwPublicSeoPageQueryError("listSitemapSeoPages", error);
   }
 
   return data ?? [];
@@ -102,10 +101,7 @@ export async function getPublishedSeoPageBySlug(slug: string) {
     // page. Throw so it surfaces as a 500 + error log instead of a silent 404
     // that hides infrastructure problems — e.g. an unapplied view migration
     // making every resource page disappear.
-    console.error("getPublishedSeoPageBySlug failed", error);
-    throw new Error(
-      `Failed to load published SEO page "${slug}": ${error.message}`,
-    );
+    throwPublicSeoPageQueryError("getPublishedSeoPageBySlug", error, slug);
   }
   if (!data || !data.published_content) return null;
 
@@ -122,6 +118,20 @@ export async function getPublishedSeoPageBySlug(slug: string) {
     ...data,
     published_content: content.data,
   } satisfies PublishedSeoPage;
+}
+
+function throwPublicSeoPageQueryError(
+  operation: string,
+  error: { message?: string },
+  slug?: string,
+): never {
+  console.error(`${operation} failed`, error);
+  const subject = slug ? ` "${slug}"` : "";
+  throw new Error(
+    `Failed to load published SEO page${subject}: ${
+      error.message ?? "Unknown Supabase query error"
+    }`,
+  );
 }
 
 export async function getBuilderRedirectBySourcePath(sourcePath: string) {

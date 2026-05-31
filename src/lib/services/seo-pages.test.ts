@@ -217,6 +217,35 @@ describe("seo page service", () => {
     );
   });
 
+  it("surfaces duplicate slug conflicts as editor validation", async () => {
+    const duplicateSlugError = {
+      code: "23505",
+      message: "duplicate key value violates unique constraint",
+      details: "Key (slug)=(start-vending) already exists.",
+    };
+    const insert = insertSingle(null, duplicateSlugError);
+    const client = buildClient(insert.table);
+
+    await expect(
+      adminCreateSeoPage(
+        {
+          slug: "Start Vending",
+          title: "Start Vending",
+        },
+        { client },
+      ),
+    ).rejects.toMatchObject({
+      issues: [
+        expect.objectContaining({
+          code: "duplicate_slug",
+          path: "slug",
+          message:
+            "Another resource page already uses /resources/start-vending. Choose a different slug.",
+        }),
+      ],
+    });
+  });
+
   it("saves a draft only after content schema validation passes", async () => {
     const parsedContent = pageContentSchema.parse(validContent);
     const update = updateSingle({
@@ -387,6 +416,7 @@ describe("seo page service", () => {
       }),
       p_actor_id: "admin-1",
       p_published_at: "2026-05-06T01:00:00.000Z",
+      p_revision_label: "Publish 2026-05-06T01:00:00.000Z",
     });
   });
 
@@ -1254,7 +1284,7 @@ describe("seo page service", () => {
       {
         p_page_id: "page_1",
         p_revision_type: "rollback",
-        p_revision_label: "Rollback from revision_source",
+        p_revision_label: "Restore draft from revision_source",
         p_content_snapshot: parsedContent,
         p_seo_snapshot: seoSnapshot,
         p_draft_content: parsedContent,

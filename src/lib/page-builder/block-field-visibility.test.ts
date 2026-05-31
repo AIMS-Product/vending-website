@@ -64,4 +64,22 @@ describe("block field visibility", () => {
     expect(defaultFieldVisibility(block).mediaCaption).toBe(false);
     expect(isBlockFieldVisible(block, "mediaCaption")).toBe(false);
   });
+
+  it("preserves legacy split hero media captions when defaults are backfilled", () => {
+    const base = createPageBlock("hero", "block_1") as Extract<
+      PageBlock,
+      { type: "hero" }
+    >;
+    const block = withDefaultFieldVisibility({
+      ...base,
+      variant: "split",
+      props: {
+        ...base.props,
+        mediaSrc: "/images/sections/hero.avif",
+        mediaCaption: "Approved campaign image.",
+      },
+    });
+
+    expect(isBlockFieldVisible(block, "mediaCaption")).toBe(true);
+  });
 });

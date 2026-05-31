@@ -788,6 +788,7 @@ export type Database = {
           p_page_id: string;
           p_published_at: string;
           p_published_content: Json;
+          p_revision_label?: string | null;
           p_seo_snapshot: Json;
           p_seo_title: string | null;
           p_sitemap_enabled: boolean;

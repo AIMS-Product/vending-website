@@ -90,6 +90,7 @@ export type SeoPageDraftSettings = {
 
 export type PublishSeoPageOptions = ServiceDeps & {
   actorId?: string | null;
+  publishNote?: string | null;
 };
 
 export type ArchiveSeoPageOptions = ServiceDeps & {
@@ -193,7 +194,9 @@ export async function adminCreateSeoPage(
     .select(SEO_PAGE_FIELDS)
     .single();
 
-  if (error) throw new Error("Could not create SEO page.");
+  if (error) {
+    throwSeoPageMutationError(error, "Could not create SEO page.", row.slug);
+  }
   return data;
 }
 
@@ -249,7 +252,13 @@ export async function adminSaveSeoPageDraft(
     .select(SEO_PAGE_FIELDS)
     .single();
 
-  if (error) throw new Error("Could not save SEO page draft.");
+  if (error) {
+    throwSeoPageMutationError(
+      error,
+      "Could not save SEO page draft.",
+      typeof patch.slug === "string" ? patch.slug : undefined,
+    );
+  }
   return data;
 }
 
@@ -332,9 +341,16 @@ export async function adminPublishSeoPage(
     p_seo_snapshot: buildSeoSnapshot(page, publishSettings),
     p_actor_id: options.actorId ?? null,
     p_published_at: publishedAt,
+    p_revision_label: publishRevisionLabel(publishedAt, options.publishNote),
   });
 
-  if (error) throw new Error("Could not publish SEO page.");
+  if (error) {
+    throwSeoPageMutationError(
+      error,
+      "Could not publish SEO page.",
+      publishSettings.slug,
+    );
+  }
   return parseAtomicRevisionResult(data, "Could not publish SEO page.");
 }
 
@@ -384,7 +400,14 @@ export async function adminUpdateSeoPageSlug(
         p_actor_id: options.actorId ?? null,
       },
     );
-    if (error || !data) throw new Error("Could not update SEO page slug.");
+    if (error) {
+      throwSeoPageMutationError(
+        error,
+        "Could not update SEO page slug.",
+        nextSlug,
+      );
+    }
+    if (!data) throw new Error("Could not update SEO page slug.");
     return data as SeoPage;
   }
 
@@ -398,7 +421,13 @@ export async function adminUpdateSeoPageSlug(
     .select(SEO_PAGE_FIELDS)
     .single();
 
-  if (error) throw new Error("Could not update SEO page slug.");
+  if (error) {
+    throwSeoPageMutationError(
+      error,
+      "Could not update SEO page slug.",
+      nextSlug,
+    );
+  }
   return data;
 }
 
@@ -523,7 +552,7 @@ export async function adminRollbackSeoPageRevision(
     {
       p_page_id: pageId,
       p_revision_type: "rollback",
-      p_revision_label: `Rollback from ${revision.id}`,
+      p_revision_label: `Restore draft from ${revision.label ?? revision.id}`,
       p_content_snapshot: draftContent as unknown as Json,
       p_seo_snapshot: revision.seo_snapshot,
       p_draft_content: draftContent as unknown as Json,
@@ -818,6 +847,38 @@ function parseAtomicPageResult(data: unknown, errorMessage: string): SeoPage {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function throwSeoPageMutationError(
+  error: unknown,
+  fallbackMessage: string,
+  slug?: string,
+): never {
+  if (isDuplicateSeoPageSlugError(error)) {
+    throw new SeoPageValidationError([
+      {
+        code: "duplicate_slug",
+        path: "slug",
+        message: `Another resource page already uses /resources/${slug ?? "this-slug"}. Choose a different slug.`,
+      },
+    ]);
+  }
+  throw new Error(fallbackMessage);
+}
+
+function isDuplicateSeoPageSlugError(error: unknown) {
+  if (!isRecord(error)) return false;
+  const text = [
+    error.code,
+    error.message,
+    error.details,
+    error.hint,
+    error.constraint,
+  ]
+    .filter((value): value is string => typeof value === "string")
+    .join(" ")
+    .toLowerCase();
+  return text.includes("23505") && text.includes("slug");
 }
 
 async function deleteArchivedPageRedirects(
@@ -1199,6 +1260,15 @@ function buildSeoSnapshot(
     structured_data_settings:
       settings.structuredDataSettings as unknown as Json,
   };
+}
+
+function publishRevisionLabel(
+  publishedAt: string,
+  publishNote?: string | null,
+) {
+  const note = publishNote?.trim();
+  if (note) return `Publish: ${note.slice(0, 220)}`;
+  return `Publish ${publishedAt}`;
 }
 
 function normalizeSourcePath(path: string) {

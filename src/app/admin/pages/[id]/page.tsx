@@ -71,6 +71,7 @@ export default async function EditSeoPagePage({
       />
       <SeoPageRevisionPanel
         pageId={page.id}
+        publishedRevisionId={page.published_revision_id}
         revisions={revisions}
         previewTokens={previewTokens}
       />
@@ -83,7 +84,7 @@ function pageActionErrorMessage(code: string | undefined) {
     return "Could not revoke the preview link. Please try again.";
   }
   if (code === "rollback") {
-    return "Could not roll back to that revision. Please try again.";
+    return "Could not restore that revision as a draft. Please try again.";
   }
   return undefined;
 }
