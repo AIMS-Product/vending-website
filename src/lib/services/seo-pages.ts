@@ -55,6 +55,8 @@ export type CreateSeoPageInput = {
   slug: string;
   title: string;
   targetKeyword?: string | null;
+  seoTitle?: string | null;
+  metaDescription?: string | null;
   pageType?: string;
   templateKey?: string;
   draftContent?: unknown;
@@ -180,6 +182,8 @@ export async function adminCreateSeoPage(
     title: input.title.trim(),
     status: "draft",
     target_keyword: input.targetKeyword ?? null,
+    seo_title: input.seoTitle ?? null,
+    meta_description: input.metaDescription ?? null,
     page_type: input.pageType ?? "resource",
     template_key: input.templateKey ?? "standard",
     draft_content: draftContent as unknown as Json,

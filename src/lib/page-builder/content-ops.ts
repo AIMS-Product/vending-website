@@ -21,7 +21,7 @@ export function createEditablePageContent(
 
 export function ensureEditablePageContent(content: PageContent): PageContent {
   if (content.sections.length > 0) return content;
-  return createEditablePageContent();
+  return { ...createEditablePageContent(), chrome: content.chrome };
 }
 
 export function createPageSection(
