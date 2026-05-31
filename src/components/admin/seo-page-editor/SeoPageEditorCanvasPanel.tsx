@@ -80,6 +80,7 @@ export function SeoPageEditorCanvasPanel({
                 onBlockRemove={(blockId) =>
                   removeBlock(primarySection.id, primaryColumn.id, blockId)
                 }
+                onSelectBlock={setSelectedBlockId}
                 onEditBlockSettings={(blockId) => {
                   setSelectedBlockId(blockId);
                   setEditingBlockId(blockId);
@@ -209,6 +210,7 @@ function StructuredSectionEditor({
             onBlockRemove={(columnId, blockId) =>
               removeBlock(section.id, columnId, blockId)
             }
+            onSelectBlock={setSelectedBlockId}
             onEditBlockSettings={(blockId) => {
               setSelectedBlockId(blockId);
               setEditingBlockId(blockId);

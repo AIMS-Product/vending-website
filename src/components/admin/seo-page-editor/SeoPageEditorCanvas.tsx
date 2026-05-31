@@ -42,6 +42,7 @@ export function SortableSectionEditor({
   onBlockMoveToIndex,
   onBlockDuplicate,
   onBlockRemove,
+  onSelectBlock,
   onEditBlockSettings,
 }: {
   section: PageSection;
@@ -73,6 +74,7 @@ export function SortableSectionEditor({
   ) => void;
   onBlockDuplicate: (columnId: string, blockId: string) => void;
   onBlockRemove: (columnId: string, blockId: string) => void;
+  onSelectBlock: (blockId: string) => void;
   onEditBlockSettings: (blockId: string) => void;
 }) {
   return (
@@ -240,6 +242,7 @@ export function SortableSectionEditor({
                 onBlockDuplicate(column.id, blockId)
               }
               onBlockRemove={(blockId) => onBlockRemove(column.id, blockId)}
+              onSelectBlock={onSelectBlock}
               onEditBlockSettings={onEditBlockSettings}
             />
           ))
@@ -258,6 +261,7 @@ export function SimpleBlockStackEditor({
   onBlockMoveToIndex,
   onBlockDuplicate,
   onBlockRemove,
+  onSelectBlock,
   onEditBlockSettings,
 }: {
   column: PageColumn;
@@ -268,6 +272,7 @@ export function SimpleBlockStackEditor({
   onBlockMoveToIndex: (blockId: string, targetIndex: number) => void;
   onBlockDuplicate: (blockId: string) => void;
   onBlockRemove: (blockId: string) => void;
+  onSelectBlock: (blockId: string) => void;
   onEditBlockSettings: (blockId: string) => void;
 }) {
   return (
@@ -299,7 +304,7 @@ export function SimpleBlockStackEditor({
             Start building this page
           </h3>
           <p className="mt-1 max-w-sm text-sm text-slate-500">
-            Add your first block below — a hero or text section to introduce the
+            Add your first block below: a hero or text section to introduce the
             page. A CTA or lead-form block is required before you can publish.
           </p>
           <div className="mt-6 w-full max-w-md text-left">
@@ -312,6 +317,8 @@ export function SimpleBlockStackEditor({
             <div
               key={block.id}
               className={editorCanvasDividerClass(blockIndex > 0, 14)}
+              onFocusCapture={() => onSelectBlock(block.id)}
+              onPointerDownCapture={() => onSelectBlock(block.id)}
             >
               <BlockEditor
                 block={block}
@@ -352,6 +359,7 @@ function SortableColumnEditor({
   onBlockMoveToIndex,
   onBlockDuplicate,
   onBlockRemove,
+  onSelectBlock,
   onEditBlockSettings,
 }: {
   column: PageColumn;
@@ -367,6 +375,7 @@ function SortableColumnEditor({
   onBlockMoveToIndex: (blockId: string, targetIndex: number) => void;
   onBlockDuplicate: (blockId: string) => void;
   onBlockRemove: (blockId: string) => void;
+  onSelectBlock: (blockId: string) => void;
   onEditBlockSettings: (blockId: string) => void;
 }) {
   return (
@@ -451,6 +460,8 @@ function SortableColumnEditor({
                 <div
                   key={block.id}
                   className={editorCanvasDividerClass(blockIndex > 0, 10)}
+                  onFocusCapture={() => onSelectBlock(block.id)}
+                  onPointerDownCapture={() => onSelectBlock(block.id)}
                 >
                   <BlockEditor
                     block={block}

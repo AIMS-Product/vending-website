@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PageContent } from "@/lib/page-builder/blocks";
 import {
   acceptAiSeoProposalBlocks,
+  createSeoPageDraftForEditor,
   generateAiSeoPageProposal,
   saveSeoPage,
   saveSeoPageDraftAndCreatePreviewLink,
@@ -178,6 +179,33 @@ describe("admin page actions", () => {
     expect(mocks.redirect).toHaveBeenCalledWith(
       `/admin/pages/${pageId}?saved=1`,
     );
+  });
+
+  it("auto-creates a new editor draft with AI-generated SEO fields", async () => {
+    mocks.adminCreateSeoPage.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+    });
+
+    const result = await createSeoPageDraftForEditor({
+      title: "Coffee Vending Adelaide",
+      slug: "coffee-vending-adelaide",
+      targetKeyword: "coffee vending adelaide",
+      seoTitle: "Coffee Vending Adelaide",
+      metaDescription: "Compare coffee vending machines for Adelaide offices.",
+      draftContent: validContent,
+    });
+
+    expect(result).toEqual({ status: "created", pageId });
+    expect(mocks.adminCreateSeoPage).toHaveBeenCalledWith({
+      slug: "coffee-vending-adelaide",
+      title: "Coffee Vending Adelaide",
+      targetKeyword: "coffee vending adelaide",
+      seoTitle: "Coffee Vending Adelaide",
+      metaDescription: "Compare coffee vending machines for Adelaide offices.",
+      draftContent: validContent,
+      createdBy: "admin_1",
+    });
   });
 
   it("stores published page edits as draft content and draft settings", async () => {

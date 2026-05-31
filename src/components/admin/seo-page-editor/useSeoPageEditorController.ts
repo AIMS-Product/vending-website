@@ -54,6 +54,11 @@ import {
   slugify,
 } from "@/lib/page-builder/editor-helpers";
 import {
+  applyPageBuilderAiToolCalls,
+  type PageBuilderAiApplyResult,
+  type PageBuilderAiToolCall,
+} from "@/lib/page-builder/ai-chat";
+import {
   createInitialEditorContentState,
   pageEditorContentReducer,
   type MoveDirection,
@@ -529,6 +534,8 @@ export function useSeoPageEditorController({
           title,
           slug: visibleSlug,
           targetKeyword: targetKeyword.trim() || undefined,
+          seoTitle: seoTitle.trim() || undefined,
+          metaDescription: metaDescription.trim() || undefined,
           draftContent: content,
         });
         if (result.status === "created") {
@@ -551,7 +558,16 @@ export function useSeoPageEditorController({
       }
     }, 1200);
     return () => window.clearTimeout(timer);
-  }, [content, createdDraftId, page?.id, targetKeyword, title, visibleSlug]);
+  }, [
+    content,
+    createdDraftId,
+    metaDescription,
+    page?.id,
+    seoTitle,
+    targetKeyword,
+    title,
+    visibleSlug,
+  ]);
 
   // S3a: a brand-new page has no id yet, so the id-keyed autosave above does
   // not protect it. Warn before a tab close / refresh / external navigation
@@ -622,6 +638,7 @@ export function useSeoPageEditorController({
     aiProposalResult,
     aiProposals,
     applyLinkSuggestion,
+    applyPageBuilderAiTools,
     autosave,
     blockOrdinalById,
     blockSidebarExpandTitle,
@@ -631,6 +648,7 @@ export function useSeoPageEditorController({
     canonicalUrl,
     chromeSettings,
     closeBlockSettings,
+    confirmAiDeleteBlock,
     content,
     draftContentJson,
     duplicateBlock,
@@ -685,6 +703,7 @@ export function useSeoPageEditorController({
     seoReadiness,
     seoSidebarExpandTitle,
     seoTitle,
+    selectedBlockId,
     selectedBlockEntry,
     setCanonicalUrl,
     setEditingBlockId,
@@ -1018,6 +1037,51 @@ export function useSeoPageEditorController({
     setLinkSuggestionMessage(
       `Linked "${suggestion.anchorText}" to ${suggestion.targetPath}.`,
     );
+  }
+
+  function applyPageBuilderAiTools(
+    toolCalls: PageBuilderAiToolCall[],
+  ): PageBuilderAiApplyResult {
+    const result = applyPageBuilderAiToolCalls({
+      content,
+      toolCalls,
+      makeBlockId: () => makeBuilderId("block"),
+    });
+
+    if (result.content !== content) {
+      dispatchContent({ type: "replaceContent", content: result.content });
+    }
+
+    if (result.seoPatch.title !== undefined) setTitle(result.seoPatch.title);
+    if (result.seoPatch.slug !== undefined) {
+      setSlugTouched(true);
+      setSlug(result.seoPatch.slug);
+    }
+    if (result.seoPatch.targetKeyword !== undefined) {
+      setTargetKeyword(result.seoPatch.targetKeyword);
+    }
+    if (result.seoPatch.seoTitle !== undefined) {
+      setSeoTitle(result.seoPatch.seoTitle);
+    }
+    if (result.seoPatch.metaDescription !== undefined) {
+      setMetaDescription(result.seoPatch.metaDescription);
+    }
+
+    const lastHighlightedId = result.highlightedBlockIds.at(-1);
+    if (lastHighlightedId) {
+      setSelectedBlockId(lastHighlightedId);
+      window.setTimeout(() => scrollToBuilderBlockId(lastHighlightedId), 0);
+    }
+
+    return result;
+  }
+
+  function confirmAiDeleteBlock(blockId: string) {
+    const entry = builderBlockEntries.find((item) => item.block.id === blockId);
+    if (!entry) return "Block no longer exists.";
+
+    removeBlock(entry.sectionId, entry.columnId, blockId);
+    return "Deleted block.";
   }
 
   async function runAiSeoAgent() {

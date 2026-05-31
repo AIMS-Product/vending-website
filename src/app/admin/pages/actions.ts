@@ -163,6 +163,8 @@ const createDraftForEditorSchema = z.object({
   title: z.string().trim().min(1),
   slug: z.string().trim().min(1),
   targetKeyword: z.string().trim().optional(),
+  seoTitle: z.string().trim().optional(),
+  metaDescription: z.string().trim().optional(),
 });
 
 // S3b: auto-create a draft row once the user has actually started a new page
@@ -172,6 +174,8 @@ export async function createSeoPageDraftForEditor(input: {
   title: string;
   slug: string;
   targetKeyword?: string;
+  seoTitle?: string;
+  metaDescription?: string;
   draftContent?: unknown;
 }): Promise<CreateDraftForEditorResult> {
   const admin = await requireAuth();
@@ -185,6 +189,8 @@ export async function createSeoPageDraftForEditor(input: {
       title: parsed.data.title,
       slug: parsed.data.slug,
       targetKeyword: parsed.data.targetKeyword ?? null,
+      seoTitle: parsed.data.seoTitle ?? null,
+      metaDescription: parsed.data.metaDescription ?? null,
       draftContent: input.draftContent,
       createdBy: admin.user.id,
     });
