@@ -9,6 +9,30 @@ import {
   menuButtonClass,
 } from "@/components/admin/seo-page-editor/editor-styles";
 
+const builderGlyphCommonProps = {
+  fill: "none",
+  viewBox: "0 0 24 24",
+  stroke: "currentColor",
+  strokeWidth: 1.8,
+  className: "size-4",
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+};
+
+export type BlockToolbarStructure = {
+  label: string;
+  detail: string;
+  currentIndex: number;
+  itemCount: number;
+  onMove: (direction: MoveDirection) => void;
+  onMoveToIndex: (targetIndex: number) => void;
+  addColumnLabel: string;
+  addColumnDisabled: boolean;
+  onAddColumn: () => void;
+  removeLabel: string;
+  onRemove: () => void;
+};
+
 export function SettingsGlyph() {
   return (
     <svg
@@ -200,6 +224,7 @@ export function BlockToolbar({
   onDuplicate,
   onRemove,
   onEditSettings,
+  structure,
 }: {
   label: string;
   typeLabel: string;
@@ -215,23 +240,53 @@ export function BlockToolbar({
   onDuplicate: () => void;
   onRemove: () => void;
   onEditSettings: () => void;
+  structure?: BlockToolbarStructure;
 }) {
   const readyDetail = `${label} · ${description}`;
   const variantDetail = `${typeLabel} layout · ${description}${
     status === "Ready" ? " · Ready" : ""
   }`;
+  const moveControl =
+    structure && structure.itemCount > 1
+      ? {
+          label: structure.label.toLowerCase(),
+          currentIndex: structure.currentIndex,
+          itemCount: structure.itemCount,
+          onMove: structure.onMove,
+          onMoveToIndex: structure.onMoveToIndex,
+          upLabel: "Move section up",
+          downLabel: "Move section down",
+        }
+      : blockCount > 1
+        ? {
+            label,
+            currentIndex: blockIndex,
+            itemCount: blockCount,
+            onMove,
+            onMoveToIndex,
+            upLabel: "Move up one",
+            downLabel: "Move down one",
+          }
+        : null;
 
   return (
-    <header className="pointer-events-auto flex flex-wrap items-center justify-between gap-3 rounded-full border border-slate-200 bg-white/95 px-3 py-2 text-xs opacity-100 shadow-[0_10px_30px_-12px_rgba(15,23,42,0.35)] ring-1 ring-black/5 backdrop-blur transition-all md:opacity-0 md:group-focus-within/editor:opacity-100 md:group-hover/editor:opacity-100">
-      <div className="flex min-w-0 items-center gap-3">
+    <header className="pointer-events-auto flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white/95 px-2.5 py-1.5 text-xs opacity-100 shadow-[0_10px_24px_-16px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur transition-all md:opacity-0 md:group-focus-within/editor:opacity-100 md:group-hover/editor:opacity-100">
+      <div className="flex min-w-0 items-center gap-2">
         <BuilderTooltip label={`${typeLabel} block`} detail={readyDetail}>
           <span
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-500 ring-1 ring-slate-200/50 ring-inset"
+            className="flex size-7 shrink-0 items-center justify-center rounded-md bg-slate-50 text-slate-500 ring-1 ring-slate-200/50 ring-inset"
             aria-label={`${typeLabel} block`}
           >
             <BuilderGlyph name={icon} />
           </span>
         </BuilderTooltip>
+        {structure ? (
+          <BuilderTooltip label={structure.label} detail={structure.detail}>
+            <span className="shrink-0 rounded-md bg-slate-50 px-2 py-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase ring-1 ring-slate-200/70 ring-inset">
+              {structure.label}
+            </span>
+          </BuilderTooltip>
+        ) : null}
         <span className="flex min-w-0 items-center gap-2">
           <BuilderTooltip label={variantLabel} detail={variantDetail}>
             <span className="truncate text-[11px] font-medium text-slate-600">
@@ -248,21 +303,29 @@ export function BlockToolbar({
           )}
         </span>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-          <MovePositionMenu
-            label={label}
-            currentIndex={blockIndex}
-            itemCount={blockCount}
-            onMove={onMove}
-            onMoveToIndex={onMoveToIndex}
-            align="end"
-          />
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+      <div className="flex shrink-0 items-center gap-1">
+        {moveControl ? (
+          <div className="rounded-md border border-slate-200 bg-white p-0.5 shadow-sm">
+            <MovePositionMenu
+              label={moveControl.label}
+              currentIndex={moveControl.currentIndex}
+              itemCount={moveControl.itemCount}
+              onMove={moveControl.onMove}
+              onMoveToIndex={moveControl.onMoveToIndex}
+              upLabel={moveControl.upLabel}
+              downLabel={moveControl.downLabel}
+              align="end"
+            />
+          </div>
+        ) : null}
+        <div className="rounded-md border border-slate-200 bg-white p-0.5 shadow-sm">
           <MoreActions
-            label="Block actions"
-            detail="Edit settings, duplicate, or remove this block"
+            label={structure ? "Section and block actions" : "Block actions"}
+            detail={
+              structure
+                ? "Edit content settings or manage this page section"
+                : "Edit settings, duplicate, or remove this block"
+            }
             align="end"
           >
             <button
@@ -279,6 +342,26 @@ export function BlockToolbar({
             >
               Duplicate content
             </button>
+            {structure ? (
+              <>
+                <div className="my-1 border-t border-slate-100" />
+                <button
+                  type="button"
+                  className={`${menuButtonClass} disabled:cursor-not-allowed disabled:opacity-50`}
+                  disabled={structure.addColumnDisabled}
+                  onClick={structure.onAddColumn}
+                >
+                  {structure.addColumnLabel}
+                </button>
+                <button
+                  type="button"
+                  className={dangerButtonClass}
+                  onClick={structure.onRemove}
+                >
+                  {structure.removeLabel}
+                </button>
+              </>
+            ) : null}
             <button
               type="button"
               className={dangerButtonClass}
@@ -357,33 +440,23 @@ export function BuilderGlyph({
 }: {
   name: PageBlock["type"] | "up" | "down" | "more" | "grip";
 }) {
-  const common = {
-    fill: "none",
-    viewBox: "0 0 24 24",
-    stroke: "currentColor",
-    strokeWidth: 1.8,
-    className: "size-4",
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-  };
-
   if (name === "up") {
     return (
-      <svg {...common}>
+      <svg {...builderGlyphCommonProps}>
         <path d="m6 15 6-6 6 6" />
       </svg>
     );
   }
   if (name === "down") {
     return (
-      <svg {...common}>
+      <svg {...builderGlyphCommonProps}>
         <path d="m6 9 6 6 6-6" />
       </svg>
     );
   }
   if (name === "more") {
     return (
-      <svg {...common}>
+      <svg {...builderGlyphCommonProps}>
         <path d="M12 5h.01" />
         <path d="M12 12h.01" />
         <path d="M12 19h.01" />
@@ -392,7 +465,7 @@ export function BuilderGlyph({
   }
   if (name === "grip") {
     return (
-      <svg {...common}>
+      <svg {...builderGlyphCommonProps}>
         <path d="M9 5h.01" />
         <path d="M15 5h.01" />
         <path d="M9 12h.01" />
@@ -404,7 +477,7 @@ export function BuilderGlyph({
   }
   if (name === "hero") {
     return (
-      <svg {...common}>
+      <svg {...builderGlyphCommonProps}>
         <path d="M4 6h16" />
         <path d="M4 10h10" />
         <path d="M4 15h8" />
@@ -414,7 +487,7 @@ export function BuilderGlyph({
   }
   if (name === "rich_text") {
     return (
-      <svg {...common}>
+      <svg {...builderGlyphCommonProps}>
         <path d="M5 6h14" />
         <path d="M5 11h14" />
         <path d="M5 16h9" />
@@ -423,7 +496,7 @@ export function BuilderGlyph({
   }
   if (name === "image") {
     return (
-      <svg {...common}>
+      <svg {...builderGlyphCommonProps}>
         <path d="M4 5h16v14H4V5Z" />
         <path d="m5 17 5-5 4 4 2-2 3 3" />
         <path d="M15 9h.01" />
@@ -432,7 +505,7 @@ export function BuilderGlyph({
   }
   if (name === "cta") {
     return (
-      <svg {...common}>
+      <svg {...builderGlyphCommonProps}>
         <path d="M5 8h14v8H5V8Z" />
         <path d="M9 12h6" />
       </svg>
@@ -440,7 +513,7 @@ export function BuilderGlyph({
   }
   if (name === "faq") {
     return (
-      <svg {...common}>
+      <svg {...builderGlyphCommonProps}>
         <path d="M12 18h.01" />
         <path d="M9.5 9a2.5 2.5 0 1 1 4.1 1.9c-.8.6-1.6 1.2-1.6 2.6" />
         <path d="M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
@@ -449,7 +522,7 @@ export function BuilderGlyph({
   }
   if (name === "card_grid") {
     return (
-      <svg {...common}>
+      <svg {...builderGlyphCommonProps}>
         <path d="M4 5h7v6H4V5Z" />
         <path d="M13 5h7v6h-7V5Z" />
         <path d="M4 13h7v6H4v-6Z" />
@@ -459,21 +532,21 @@ export function BuilderGlyph({
   }
   if (name === "proof") {
     return (
-      <svg {...common}>
+      <svg {...builderGlyphCommonProps}>
         <path d="m12 3 3 6 6 .9-4.5 4.4 1.1 6.2L12 17l-5.6 3.5 1.1-6.2L3 9.9 9 9l3-6Z" />
       </svg>
     );
   }
   if (name === "video") {
     return (
-      <svg {...common}>
+      <svg {...builderGlyphCommonProps}>
         <path d="M4 6h12v12H4V6Z" />
         <path d="m16 10 5-3v10l-5-3" />
       </svg>
     );
   }
   return (
-    <svg {...common}>
+    <svg {...builderGlyphCommonProps}>
       <path d="M6 4h12v16H6V4Z" />
       <path d="M9 8h6" />
       <path d="M9 12h6" />

@@ -13,15 +13,13 @@ import type { BlockVariant } from "@/lib/page-builder/block-options";
 import type { MoveDirection } from "@/lib/page-builder/editor-state";
 import {
   BuilderTooltip,
+  type BlockToolbarStructure,
   MoreActions,
   MovePositionMenu,
 } from "@/components/admin/seo-page-editor/BuilderEditorUi";
 import { BlockPicker } from "@/components/admin/seo-page-editor/BlockPicker";
 import { BlockEditor } from "@/components/admin/seo-page-editor/BlockInlineEditor";
-import {
-  dangerButtonClass,
-  smallButtonClass,
-} from "@/components/admin/seo-page-editor/editor-styles";
+import { dangerButtonClass } from "@/components/admin/seo-page-editor/editor-styles";
 import { editorCanvasDividerClass } from "@/components/admin/seo-page-editor/editor-utils";
 
 export function SortableSectionEditor({
@@ -77,6 +75,23 @@ export function SortableSectionEditor({
   onSelectBlock: (blockId: string) => void;
   onEditBlockSettings: (blockId: string) => void;
 }) {
+  const sectionStructure: BlockToolbarStructure = {
+    label: `Section ${sectionIndex + 1}`,
+    detail: `This section contains ${section.columns.length} ${
+      section.columns.length === 1 ? "column" : "columns"
+    }.`,
+    currentIndex: sectionIndex,
+    itemCount: sectionCount,
+    onMove: onSectionMove,
+    onMoveToIndex: onSectionMoveToIndex,
+    addColumnLabel:
+      section.columns.length >= 4 ? "Column limit reached" : "Add column",
+    addColumnDisabled: section.columns.length >= 4,
+    onAddColumn,
+    removeLabel: "Remove page section",
+    onRemove: onSectionRemove,
+  };
+
   return (
     <section
       className={`group/section relative rounded-[12px] border border-transparent transition-all ${editorSectionClass(
@@ -84,88 +99,6 @@ export function SortableSectionEditor({
         section.spacing,
       )} hover:border-slate-300`}
     >
-      <header className="absolute -top-5 right-3 left-3 z-20 flex flex-wrap items-center justify-between gap-3 rounded-full border border-slate-200 bg-white/95 px-3 py-2 opacity-0 shadow-sm ring-1 ring-black/5 backdrop-blur transition-opacity group-focus-within/section:opacity-100 group-hover/section:opacity-100">
-        <div className="flex items-center gap-3">
-          <BuilderTooltip
-            label={`Page section ${sectionIndex + 1}`}
-            detail={`This section contains ${section.columns.length} ${
-              section.columns.length === 1 ? "column" : "columns"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <h3 className="text-xs font-bold tracking-wider text-slate-500 uppercase">
-                Page section {sectionIndex + 1}
-              </h3>
-              <span className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 ring-inset">
-                {section.columns.length}{" "}
-                {section.columns.length === 1 ? "column" : "columns"}
-              </span>
-            </div>
-          </BuilderTooltip>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-            <MovePositionMenu
-              label={`Page section ${sectionIndex + 1}`}
-              currentIndex={sectionIndex}
-              itemCount={sectionCount}
-              onMove={onSectionMove}
-              onMoveToIndex={onSectionMoveToIndex}
-              upLabel="Move up one"
-              downLabel="Move down one"
-              align="end"
-            />
-          </div>
-          <BuilderTooltip
-            label="Add column"
-            detail={
-              section.columns.length >= 4
-                ? "Each section supports up to 4 columns"
-                : `Add another content column to page section ${sectionIndex + 1}`
-            }
-          >
-            <button
-              type="button"
-              className={`${smallButtonClass} inline-flex items-center gap-2`}
-              disabled={section.columns.length >= 4}
-              onClick={onAddColumn}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect width="18" height="18" x="3" y="3" rx="2" />
-                <path d="M12 8v8" />
-                <path d="M8 12h8" />
-              </svg>
-              Add column
-            </button>
-          </BuilderTooltip>
-          <div className="rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-            <MoreActions
-              label="Section actions"
-              detail="Remove this page section"
-              align="end"
-            >
-              <button
-                type="button"
-                className={dangerButtonClass}
-                onClick={onSectionRemove}
-              >
-                Remove page section
-              </button>
-            </MoreActions>
-          </div>
-        </div>
-      </header>
-
       <div className={columnGridClass(section.columns.length)}>
         {section.columns.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-6 py-12 text-center transition-colors hover:border-slate-400 hover:bg-slate-50">
@@ -220,6 +153,9 @@ export function SortableSectionEditor({
               column={column}
               columnIndex={columnIndex}
               columnCount={section.columns.length}
+              sectionStructure={
+                columnIndex === 0 ? sectionStructure : undefined
+              }
               blockOrdinalById={blockOrdinalById}
               onColumnMove={(direction) => onColumnMove(column.id, direction)}
               onColumnMoveToIndex={(targetIndex) =>
@@ -316,7 +252,10 @@ export function SimpleBlockStackEditor({
           {column.blocks.map((block, blockIndex) => (
             <div
               key={block.id}
-              className={editorCanvasDividerClass(blockIndex > 0, 14)}
+              className={`builder-block-editor ${editorCanvasDividerClass(
+                blockIndex > 0,
+                14,
+              )}`}
               onFocusCapture={() => onSelectBlock(block.id)}
               onPointerDownCapture={() => onSelectBlock(block.id)}
             >
@@ -349,6 +288,7 @@ function SortableColumnEditor({
   column,
   columnIndex,
   columnCount,
+  sectionStructure,
   blockOrdinalById,
   onColumnMove,
   onColumnMoveToIndex,
@@ -365,6 +305,7 @@ function SortableColumnEditor({
   column: PageColumn;
   columnIndex: number;
   columnCount: number;
+  sectionStructure?: BlockToolbarStructure;
   blockOrdinalById: Map<string, number>;
   onColumnMove: (direction: MoveDirection) => void;
   onColumnMoveToIndex: (targetIndex: number) => void;
@@ -378,23 +319,27 @@ function SortableColumnEditor({
   onSelectBlock: (blockId: string) => void;
   onEditBlockSettings: (blockId: string) => void;
 }) {
+  const showColumnChrome = columnCount > 1;
+
   return (
-    <div className="group/column relative flex flex-col rounded-[12px] border border-dashed border-transparent bg-transparent transition-all hover:border-slate-300 hover:bg-white/50">
-      <header className="absolute -top-5 right-2 left-2 z-20 flex flex-wrap items-center justify-between gap-2 rounded-full border border-slate-200 bg-white/95 px-3 py-2 opacity-0 shadow-sm ring-1 ring-black/5 transition-opacity group-focus-within/column:opacity-100 group-hover/column:opacity-100">
-        <div className="flex items-center gap-2">
-          <BuilderTooltip
-            label={`Column ${columnIndex + 1}`}
-            detail={`Content column ${columnIndex + 1} in this page section`}
-          >
-            <h4 className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-              Column {columnIndex + 1}
-            </h4>
-          </BuilderTooltip>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="rounded-md border border-slate-200 bg-white p-0.5 shadow-sm">
-            <MovePositionMenu
+    <div
+      className={`group/column relative flex flex-col rounded-[12px] border border-dashed border-transparent bg-transparent transition-all ${
+        showColumnChrome ? "hover:border-slate-300 hover:bg-white/50" : ""
+      } [&:has(.builder-block-editor:focus-within)>header]:opacity-0`}
+    >
+      {showColumnChrome ? (
+        <header className="pointer-events-none absolute top-2 right-2 z-20 flex items-center gap-1 opacity-0 transition-opacity group-hover/column:opacity-100">
+          <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-slate-200 bg-white/90 p-0.5 shadow-sm ring-1 ring-black/5 backdrop-blur">
+            <BuilderTooltip
               label={`Column ${columnIndex + 1}`}
+              detail={`Content column ${columnIndex + 1} in this page section`}
+            >
+              <span className="px-2 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                Column {columnIndex + 1}
+              </span>
+            </BuilderTooltip>
+            <MovePositionMenu
+              label={`column ${columnIndex + 1}`}
               currentIndex={columnIndex}
               itemCount={columnCount}
               onMove={onColumnMove}
@@ -403,8 +348,6 @@ function SortableColumnEditor({
               downLabel="Move right one"
               align="end"
             />
-          </div>
-          <div className="rounded-md border border-slate-200 bg-white p-0.5 shadow-sm">
             <MoreActions
               label="Column actions"
               detail="Remove this column from the section"
@@ -419,8 +362,8 @@ function SortableColumnEditor({
               </button>
             </MoreActions>
           </div>
-        </div>
-      </header>
+        </header>
+      ) : null}
 
       <div className="flex-1">
         <div>
@@ -459,7 +402,10 @@ function SortableColumnEditor({
               {column.blocks.map((block, blockIndex) => (
                 <div
                   key={block.id}
-                  className={editorCanvasDividerClass(blockIndex > 0, 10)}
+                  className={`builder-block-editor ${editorCanvasDividerClass(
+                    blockIndex > 0,
+                    10,
+                  )}`}
                   onFocusCapture={() => onSelectBlock(block.id)}
                   onPointerDownCapture={() => onSelectBlock(block.id)}
                 >
@@ -470,6 +416,9 @@ function SortableColumnEditor({
                       (blockOrdinalById.get(block.id) ?? blockIndex) + 1
                     }
                     blockCount={column.blocks.length}
+                    toolbarStructure={
+                      blockIndex === 0 ? sectionStructure : undefined
+                    }
                     onChange={(next) => onBlockChange(block.id, next)}
                     onMove={(direction) => onBlockMove(block.id, direction)}
                     onMoveToIndex={(targetIndex) =>
