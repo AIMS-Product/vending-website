@@ -86,6 +86,17 @@ describe("page builder AI chat tools", () => {
     expect(heroTool?.parameters.required).toContain("headline");
     expect(tools.map((tool) => tool.name)).toContain("set_seo_metadata");
     expect(tools.map((tool) => tool.name)).toContain("replace_page_sections");
+    const replaceTool = tools.find(
+      (tool) => tool.name === "replace_page_sections",
+    );
+    expect(replaceTool?.parameters.required).toContain("replaceExisting");
+    expect(
+      (
+        replaceTool?.parameters.properties.replaceExisting as
+          | { type?: unknown }
+          | undefined
+      )?.type,
+    ).toBe("boolean");
   });
 
   it("includes current page context and exact block tools in the prompt", () => {
@@ -98,6 +109,9 @@ describe("page builder AI chat tools", () => {
     expect(prompt).toContain('"selected": true');
     expect(prompt).toContain(collectBlockToolSpecs(content)[0]!.name);
     expect(prompt).toContain("replace_page_sections");
+    expect(prompt).toContain(
+      "fill out, expand, build out, or add more content",
+    );
   });
 
   it("applies block edits and SEO metadata to local draft state", () => {
@@ -335,6 +349,7 @@ describe("page builder AI chat tools", () => {
           id: "call_2",
           name: "replace_page_sections",
           input: {
+            replaceExisting: false,
             sections: [
               {
                 title: "Main page",
@@ -448,6 +463,7 @@ describe("page builder AI chat tools", () => {
           id: "call_1",
           name: "replace_page_sections",
           input: {
+            replaceExisting: false,
             sections: [
               {
                 title: null,
@@ -472,9 +488,74 @@ describe("page builder AI chat tools", () => {
 
     expect(result.content).toEqual(content);
     expect(result.results[0]).toMatchObject({
-      status: "failed",
+      status: "queued",
       message:
-        "Page already has blocks. Use block tools, add_block, reorder_blocks, or delete confirmations instead.",
+        "Choose whether to expand the existing blocks or replace them with a new full draft.",
+    });
+    expect(result.clarification).toEqual({
+      options: [
+        "Keep existing blocks and expand them",
+        "Replace existing blocks with a new full draft",
+      ],
+    });
+  });
+
+  it("replaces an existing page body when overwrite is explicit", () => {
+    const ids = ["section_ai", "column_ai", "block_ai_hero", "block_ai_cta"];
+    const result = applyPageBuilderAiToolCalls({
+      content,
+      makeBlockId: () => ids.shift() ?? "id_extra",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: "replace_page_sections",
+          input: {
+            replaceExisting: true,
+            sections: [
+              {
+                title: null,
+                blocks: [
+                  {
+                    blockType: "hero",
+                    title: "Vending Programs for College Campuses",
+                    body: "Launch a managed campus vending program for students, staff, and visitors.",
+                    bulletItems: null,
+                    faqItems: null,
+                    cards: null,
+                    ctaLabel: "Plan campus vending",
+                    ctaHref: "/contact",
+                  },
+                  {
+                    blockType: "cta",
+                    title: null,
+                    body: null,
+                    bulletItems: null,
+                    faqItems: null,
+                    cards: null,
+                    ctaLabel: "Book a campus vending consult",
+                    ctaHref: "/contact",
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    const blocks = result.content.sections[0]!.columns[0]!.blocks;
+    expect(blocks).toHaveLength(2);
+    expect(blocks.map((block) => block.type)).toEqual(["hero", "cta"]);
+    expect(blocks[0]).toMatchObject({
+      type: "hero",
+      props: {
+        heading: "Vending Programs for College Campuses",
+        ctaHref: "/contact",
+      },
+    });
+    expect(result.results[0]).toMatchObject({
+      status: "applied",
+      message: "Rebuilt page body with 2 blocks across 1 sections.",
     });
   });
 });
