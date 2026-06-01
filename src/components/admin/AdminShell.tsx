@@ -26,6 +26,14 @@ type AdminNavSection = {
   icon: AdminIcon;
 };
 
+const blogSection: AdminNavSection = {
+  id: "posts",
+  label: "Blog and news",
+  href: "/admin/news",
+  description: "Articles and updates",
+  icon: "book",
+};
+
 const contentSections: AdminNavSection[] = [
   {
     id: "pages",
@@ -33,13 +41,6 @@ const contentSections: AdminNavSection[] = [
     href: "/admin/pages",
     description: "SEO page content",
     icon: "file",
-  },
-  {
-    id: "posts",
-    label: "Blog and news",
-    href: "/admin/news",
-    description: "Articles and updates",
-    icon: "book",
   },
   {
     id: "media",
@@ -76,9 +77,9 @@ const plannedSections = [
     icon: "book" as const,
   },
   {
-    label: "Campaign pages",
-    description: "Offer pages",
-    icon: "target" as const,
+    label: blogSection.label,
+    description: "Coming soon",
+    icon: blogSection.icon,
   },
 ];
 
@@ -105,12 +106,15 @@ export function AdminShell({
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const activeLabel =
-    sections.find((section) => section.id === activeSection)?.label ?? "Studio";
+    (activeSection === blogSection.id
+      ? blogSection.label
+      : sections.find((section) => section.id === activeSection)?.label) ??
+    "Studio";
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f7f8fb] text-[#0f172a]">
       {!immersive && (
-        <div className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur xl:hidden">
+        <div className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur xl:hidden">
           <details>
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-950 [&::-webkit-details-marker]:hidden">
               <span className="flex min-w-0 items-center gap-3">
@@ -129,7 +133,7 @@ export function AdminShell({
               </span>
             </summary>
             <div className="mt-4 grid gap-4 border-t border-slate-200 pt-4">
-              <nav aria-label="Admin sections" className="grid gap-2">
+              <nav aria-label="Admin sections" className="grid gap-1.5">
                 {contentSections.map((section) => (
                   <MobileNavLink
                     key={section.id}
@@ -140,7 +144,7 @@ export function AdminShell({
               </nav>
               <nav
                 aria-label="Account sections"
-                className="grid gap-2 border-t border-slate-200 pt-4"
+                className="grid gap-1.5 border-t border-slate-200 pt-4"
               >
                 {accountSections.map((section) => (
                   <MobileNavLink
@@ -153,7 +157,7 @@ export function AdminShell({
               <form action={signOut}>
                 <button
                   type="submit"
-                  className="flex w-full items-center gap-3 rounded-md border border-slate-200 bg-white px-4 py-3 text-left text-sm font-semibold text-slate-950 shadow-sm"
+                  className="flex w-full items-center gap-2.5 rounded-md border border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-semibold text-slate-950 shadow-sm"
                 >
                   <span className="text-slate-700" aria-hidden="true">
                     <AdminIconGlyph icon="log-out" />
@@ -171,7 +175,7 @@ export function AdminShell({
           !immersive &&
             (sidebarCollapsed
               ? "xl:grid-cols-[76px_minmax(0,1fr)]"
-              : "xl:grid-cols-[252px_minmax(0,1fr)] 2xl:grid-cols-[292px_minmax(0,1fr)]"),
+              : "xl:grid-cols-[236px_minmax(0,1fr)] 2xl:grid-cols-[252px_minmax(0,1fr)]"),
         )}
       >
         {!immersive && (
@@ -183,7 +187,7 @@ export function AdminShell({
               }
               title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               onClick={() => setSidebarCollapsed((current) => !current)}
-              className="absolute top-6 right-0 z-10 inline-flex size-8 translate-x-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+              className="absolute top-5 right-0 z-10 inline-flex size-8 translate-x-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
             >
               <span
                 className={clsx(
@@ -197,7 +201,7 @@ export function AdminShell({
             </button>
             <div
               className={clsx(
-                "flex h-full flex-col overflow-y-auto pt-6 pb-5 transition-[padding] duration-200",
+                "flex h-full flex-col overflow-y-auto pt-5 pb-4 transition-[padding] duration-200",
                 sidebarCollapsed ? "px-3" : "px-4",
               )}
             >
@@ -208,43 +212,35 @@ export function AdminShell({
                     sidebarCollapsed && "justify-center",
                   )}
                 >
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[#0b63f6] text-lg font-semibold text-white shadow-sm">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#0b63f6] text-base font-semibold text-white shadow-sm">
                     S
                   </div>
                   <div
                     className={clsx("min-w-0", sidebarCollapsed && "hidden")}
                   >
-                    <h2 className="text-base font-semibold text-slate-950">
+                    <h2 className="text-sm font-semibold text-slate-950">
                       Studio
                     </h2>
-                    <p className="text-sm text-slate-500">Admin CMS</p>
+                    <p className="text-xs text-slate-500">Admin CMS</p>
                   </div>
                 </div>
               </div>
-              <p
-                className={clsx(
-                  "mt-5 px-2 text-sm text-slate-600",
-                  sidebarCollapsed && "hidden",
-                )}
-              >
-                Create, govern, publish.
-              </p>
 
               <div
                 className={clsx(
-                  "border-t border-slate-200 pt-6",
-                  sidebarCollapsed ? "mt-5" : "mt-7",
+                  "border-t border-slate-200 pt-4",
+                  sidebarCollapsed ? "mt-4" : "mt-5",
                 )}
               >
                 <p
                   className={clsx(
-                    "mb-3 px-2 text-xs font-semibold text-slate-500 uppercase",
+                    "mb-2 px-2 text-xs font-semibold text-slate-500 uppercase",
                     sidebarCollapsed && "sr-only",
                   )}
                 >
                   Content
                 </p>
-                <nav aria-label="Admin sections" className="grid gap-2">
+                <nav aria-label="Admin sections" className="grid gap-1">
                   {contentSections.map((section) => (
                     <div
                       key={section.id}
@@ -257,12 +253,16 @@ export function AdminShell({
                     >
                       <Link
                         href={section.href}
-                        title={sidebarCollapsed ? section.label : undefined}
+                        title={
+                          sidebarCollapsed
+                            ? section.label
+                            : `${section.label}: ${section.description}`
+                        }
                         className={clsx(
-                          "flex min-w-0 flex-1 items-center rounded-md py-3 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
+                          "flex min-w-0 flex-1 items-center rounded-md py-2 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
                           sidebarCollapsed
                             ? "justify-center px-2"
-                            : "gap-3 px-3",
+                            : "gap-2 px-3",
                         )}
                         aria-current={
                           activeSection === section.id ? "page" : undefined
@@ -270,7 +270,7 @@ export function AdminShell({
                       >
                         <span
                           className={clsx(
-                            "flex size-7 shrink-0 items-center justify-center rounded-md",
+                            "flex size-6 shrink-0 items-center justify-center rounded-md",
                             activeSection === section.id
                               ? "text-[#0b63f6]"
                               : "text-slate-500",
@@ -288,14 +288,8 @@ export function AdminShell({
                           <span className="block font-semibold text-slate-950">
                             {section.label}
                           </span>
-                          <span
-                            className={clsx(
-                              "mt-0.5 block text-xs",
-                              activeSection === section.id
-                                ? "text-slate-600"
-                                : "text-slate-500",
-                            )}
-                          >
+                          <span className="sr-only">
+                            {": "}
                             {section.description}
                           </span>
                         </span>
@@ -307,31 +301,32 @@ export function AdminShell({
 
               <div
                 className={clsx(
-                  "mt-7 border-t border-slate-200 pt-5",
+                  "mt-5 border-t border-slate-200 pt-4",
                   sidebarCollapsed && "hidden",
                 )}
               >
-                <p className="mb-3 px-2 text-xs font-semibold text-slate-500 uppercase">
+                <p className="mb-2 px-2 text-xs font-semibold text-slate-500 uppercase">
                   Planned
                 </p>
-                <div className="grid gap-2">
+                <div className="grid gap-1">
                   {plannedSections.map((section) => (
                     <div
                       key={section.label}
-                      className="flex items-center gap-3 rounded-md p-3 text-sm text-slate-500"
+                      className="flex items-center gap-2 rounded-md p-2 text-sm text-slate-500"
+                      title={`${section.label}: ${section.description}`}
                     >
                       <span
-                        className="flex size-7 shrink-0 items-center justify-center rounded-md text-slate-500"
+                        className="flex size-6 shrink-0 items-center justify-center rounded-md text-slate-500"
                         aria-hidden="true"
                       >
                         <AdminIconGlyph icon={section.icon} />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block font-semibold text-slate-700">
+                        <span className="block truncate font-semibold text-slate-700">
                           {section.label}
                         </span>
-                        <span className="mt-0.5 block text-xs">
-                          {section.description}
+                        <span className="mt-0.5 block text-[10px] font-semibold text-slate-500 uppercase">
+                          Coming soon
                         </span>
                       </span>
                     </div>
@@ -339,12 +334,12 @@ export function AdminShell({
                 </div>
               </div>
 
-              <div className="mt-auto border-t border-slate-200 pt-6">
+              <div className="mt-auto border-t border-slate-200 pt-4">
                 <nav
                   aria-label="Account settings"
                   className={clsx(
-                    "mb-4 grid gap-2",
-                    sidebarCollapsed && "mb-5",
+                    "mb-3 grid gap-1",
+                    sidebarCollapsed && "mb-4",
                   )}
                 >
                   {accountSections.map((section) => (
@@ -359,12 +354,16 @@ export function AdminShell({
                     >
                       <Link
                         href={section.href}
-                        title={sidebarCollapsed ? section.label : undefined}
+                        title={
+                          sidebarCollapsed
+                            ? section.label
+                            : `${section.label}: ${section.description}`
+                        }
                         className={clsx(
-                          "flex min-w-0 flex-1 items-center rounded-md py-3 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
+                          "flex min-w-0 flex-1 items-center rounded-md py-2 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
                           sidebarCollapsed
                             ? "justify-center px-2"
-                            : "gap-3 px-3",
+                            : "gap-2 px-3",
                         )}
                         aria-current={
                           activeSection === section.id ? "page" : undefined
@@ -372,7 +371,7 @@ export function AdminShell({
                       >
                         <span
                           className={clsx(
-                            "flex size-7 shrink-0 items-center justify-center rounded-md",
+                            "flex size-6 shrink-0 items-center justify-center rounded-md",
                             activeSection === section.id
                               ? "text-[#0b63f6]"
                               : "text-slate-500",
@@ -390,14 +389,8 @@ export function AdminShell({
                           <span className="block font-semibold text-slate-950">
                             {section.label}
                           </span>
-                          <span
-                            className={clsx(
-                              "mt-0.5 block text-xs",
-                              activeSection === section.id
-                                ? "text-slate-600"
-                                : "text-slate-500",
-                            )}
-                          >
+                          <span className="sr-only">
+                            {": "}
                             {section.description}
                           </span>
                         </span>
@@ -408,16 +401,16 @@ export function AdminShell({
                 {userEmail ? (
                   <div
                     className={clsx(
-                      "mb-4 flex items-center gap-3 px-2",
+                      "mb-3 flex items-center gap-2 px-2",
                       sidebarCollapsed && "justify-center",
                     )}
                   >
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-800">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-800">
                       {adminInitials(userEmail)}
                     </div>
                     <p
                       className={clsx(
-                        "min-w-0 text-xs leading-5 text-slate-500",
+                        "min-w-0 text-xs leading-4 text-slate-500",
                         sidebarCollapsed && "hidden",
                       )}
                     >
@@ -436,8 +429,8 @@ export function AdminShell({
                     type="submit"
                     title={sidebarCollapsed ? "Sign out" : undefined}
                     className={clsx(
-                      "flex w-full items-center rounded-md border border-slate-200 bg-white py-3 text-left text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
-                      sidebarCollapsed ? "justify-center px-2" : "gap-3 px-4",
+                      "flex w-full items-center rounded-md border border-slate-200 bg-white py-2.5 text-left text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
+                      sidebarCollapsed ? "justify-center px-2" : "gap-2 px-3",
                     )}
                   >
                     <span className="text-slate-700" aria-hidden="true">
@@ -699,18 +692,20 @@ function MobileNavLink({
     >
       <Link
         href={section.href}
-        className="flex min-w-0 flex-1 items-center gap-3 p-3"
+        title={`${section.label}: ${section.description}`}
+        className="flex min-w-0 flex-1 items-center gap-2.5 p-2.5"
         aria-current={isActive ? "page" : undefined}
       >
         <span
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-[#0b63f6]"
+          className="flex size-6 shrink-0 items-center justify-center rounded-md text-[#0b63f6]"
           aria-hidden="true"
         >
           <AdminIconGlyph icon={section.icon} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-semibold">{section.label}</span>
-          <span className="block text-xs text-slate-500">
+          <span className="sr-only">
+            {": "}
             {section.description}
           </span>
         </span>
