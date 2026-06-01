@@ -1,13 +1,12 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { z } from "zod";
-import { ADMIN_AFTER_LOGIN_PATH } from "@/lib/supabase/auth-redirects";
 import { getAuthorizedAdmin } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export type UpdatePasswordState =
   | { status: "idle" }
+  | { status: "success" }
   | { status: "error"; message: string };
 
 const updatePasswordSchema = z
@@ -61,5 +60,5 @@ export async function updatePassword(
     };
   }
 
-  redirect(ADMIN_AFTER_LOGIN_PATH);
+  return { status: "success" };
 }

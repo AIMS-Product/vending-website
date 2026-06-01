@@ -35,6 +35,18 @@ describe("auth callback recovery route", () => {
     );
   });
 
+  it("preserves the reset email through recovery redirects", async () => {
+    const response = await GET(
+      request(
+        "https://vending-website.vercel.app/auth/callback?code=abc&next=%2Fadmin%2Freset-password%3Femail%3Dadmin%2540example.com&email=admin%40example.com",
+      ),
+    );
+
+    expect(response.headers.get("location")).toBe(
+      "https://vending-website.vercel.app/admin/reset-password?email=admin%40example.com",
+    );
+  });
+
   it("redirects failed recovery links back to forgot password", async () => {
     const response = await GET(
       request("https://vending-website.vercel.app/auth/callback"),
@@ -43,6 +55,22 @@ describe("auth callback recovery route", () => {
     expect(mocks.exchangeCodeForSession).not.toHaveBeenCalled();
     expect(response.headers.get("location")).toBe(
       "https://vending-website.vercel.app/admin/forgot-password?error=missing_code",
+    );
+  });
+
+  it("preserves email when recovery links fail", async () => {
+    mocks.exchangeCodeForSession.mockResolvedValue({
+      error: { message: "expired" },
+    });
+
+    const response = await GET(
+      request(
+        "https://vending-website.vercel.app/auth/callback?code=abc&email=admin%40example.com",
+      ),
+    );
+
+    expect(response.headers.get("location")).toBe(
+      "https://vending-website.vercel.app/admin/forgot-password?error=exchange_failed&email=admin%40example.com",
     );
   });
 });

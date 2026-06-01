@@ -4,8 +4,11 @@ import {
   ADMIN_LOGIN_PATH,
   ADMIN_RESET_PASSWORD_PATH,
   AUTH_CALLBACK_PATH,
+  adminPathWithEmail,
   authErrorMessage,
   buildPasswordResetRedirectUrl,
+  normalizeAdminEmailParam,
+  normalizeRecoveryNextPath,
   normalizeAdminNextPath,
 } from "./auth-redirects";
 
@@ -20,6 +23,38 @@ describe("admin auth redirects", () => {
       buildPasswordResetRedirectUrl("https://vending-website.vercel.app/"),
     ).toBe(
       `https://vending-website.vercel.app${AUTH_CALLBACK_PATH}?next=%2Fadmin%2Freset-password`,
+    );
+    expect(
+      buildPasswordResetRedirectUrl(
+        "https://vending-website.vercel.app",
+        "Admin@Example.com",
+      ),
+    ).toBe(
+      `https://vending-website.vercel.app${AUTH_CALLBACK_PATH}?next=%2Fadmin%2Freset-password%3Femail%3Dadmin%2540example.com&email=admin%40example.com`,
+    );
+  });
+
+  it("normalizes email query params used across auth forms", () => {
+    expect(normalizeAdminEmailParam(" Admin@Example.com ")).toBe(
+      "admin@example.com",
+    );
+    expect(normalizeAdminEmailParam("bad")).toBe("");
+    expect(adminPathWithEmail("/admin/login", "Admin@Example.com")).toBe(
+      "/admin/login?email=admin%40example.com",
+    );
+    expect(adminPathWithEmail("/admin/login?error=missing_code", "bad")).toBe(
+      "/admin/login?error=missing_code",
+    );
+  });
+
+  it("keeps recovery callback redirects on the reset form", () => {
+    expect(
+      normalizeRecoveryNextPath(
+        "/admin/reset-password?email=Admin%40Example.com",
+      ),
+    ).toBe("/admin/reset-password?email=admin%40example.com");
+    expect(normalizeRecoveryNextPath("/admin/pages", "Admin@Example.com")).toBe(
+      "/admin/reset-password?email=admin%40example.com",
     );
   });
 

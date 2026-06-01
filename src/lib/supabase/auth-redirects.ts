@@ -5,11 +5,68 @@ export const ADMIN_RESET_PASSWORD_PATH = "/admin/reset-password";
 export const AUTH_CALLBACK_PATH = "/auth/callback";
 
 const safeAdminPathPattern = /^\/admin(\/|$)/;
+const emailParamPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function buildPasswordResetRedirectUrl(origin: string) {
+export function normalizeAdminEmailParam(value: string | null | undefined) {
+  const email = value?.trim().toLowerCase();
+  if (!email || email.length > 254 || !emailParamPattern.test(email)) {
+    return "";
+  }
+
+  return email;
+}
+
+export function adminPathWithEmail(
+  path: string,
+  email: string | null | undefined,
+) {
+  const normalizedEmail = normalizeAdminEmailParam(email);
+  if (!normalizedEmail) return path;
+
+  const url = new URL(path, "https://admin.local");
+  url.searchParams.set("email", normalizedEmail);
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+export function buildPasswordResetRedirectUrl(
+  origin: string,
+  email?: string | null,
+) {
   const callback = new URL(AUTH_CALLBACK_PATH, origin.replace(/\/$/, ""));
-  callback.searchParams.set("next", ADMIN_RESET_PASSWORD_PATH);
+  const resetPath = adminPathWithEmail(ADMIN_RESET_PASSWORD_PATH, email);
+  callback.searchParams.set("next", resetPath);
+
+  const normalizedEmail = normalizeAdminEmailParam(email);
+  if (normalizedEmail) {
+    callback.searchParams.set("email", normalizedEmail);
+  }
+
   return callback.toString();
+}
+
+export function normalizeRecoveryNextPath(
+  value: string | null | undefined,
+  fallbackEmail?: string | null,
+) {
+  const candidate = value?.trim();
+  let email = normalizeAdminEmailParam(fallbackEmail);
+
+  if (candidate && candidate.startsWith("/") && !candidate.startsWith("//")) {
+    try {
+      const url = new URL(candidate, "https://admin.local");
+      if (
+        url.origin === "https://admin.local" &&
+        url.pathname === ADMIN_RESET_PASSWORD_PATH
+      ) {
+        email =
+          normalizeAdminEmailParam(url.searchParams.get("email")) || email;
+      }
+    } catch {
+      // Ignore malformed callback next values and fall back to the reset form.
+    }
+  }
+
+  return adminPathWithEmail(ADMIN_RESET_PASSWORD_PATH, email);
 }
 
 export function normalizeAdminNextPath(value: string | null | undefined) {

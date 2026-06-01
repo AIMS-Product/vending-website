@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { normalizeAdminEmailParam } from "@/lib/supabase/auth-redirects";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { ResetPasswordForm } from "./ResetPasswordForm";
 
@@ -7,8 +8,18 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AdminResetPasswordPage() {
-  await requireAdmin();
+type SearchParams = { email?: string };
+
+export default async function AdminResetPasswordPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const ctx = await requireAdmin();
+  const params = await searchParams;
+  const defaultEmail =
+    normalizeAdminEmailParam(params.email) ||
+    normalizeAdminEmailParam(ctx.user.email);
 
   return (
     <section className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-6 px-6 py-16">
@@ -30,7 +41,7 @@ export default async function AdminResetPasswordPage() {
       </header>
 
       <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <ResetPasswordForm />
+        <ResetPasswordForm email={defaultEmail} />
       </div>
     </section>
   );

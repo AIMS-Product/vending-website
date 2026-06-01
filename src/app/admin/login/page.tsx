@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import {
   ADMIN_AFTER_LOGIN_PATH,
   authErrorMessage,
+  normalizeAdminEmailParam,
   normalizeAdminNextPath,
 } from "@/lib/supabase/auth-redirects";
 import { isDevAdminAuthBypassEnabled } from "@/lib/supabase/dev-auth";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type SearchParams = { error?: string; next?: string };
+type SearchParams = { email?: string; error?: string; next?: string };
 
 export default async function AdminLoginPage({
   searchParams,
@@ -26,6 +27,7 @@ export default async function AdminLoginPage({
 
   const params = await searchParams;
   const nextPath = normalizeAdminNextPath(params.next);
+  const defaultEmail = normalizeAdminEmailParam(params.email);
 
   return (
     <section className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-6 px-6 py-16">
@@ -46,6 +48,7 @@ export default async function AdminLoginPage({
 
       <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <LoginForm
+          defaultEmail={defaultEmail}
           initialError={authErrorMessage(params.error)}
           nextPath={nextPath}
         />

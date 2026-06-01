@@ -1,28 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   adminInputClass,
   adminPrimaryButtonClass,
   adminSecondaryButtonClass,
 } from "@/components/admin/AdminUi";
+import { adminPathWithEmail } from "@/lib/supabase/auth-redirects";
 import { requestPasswordReset, type PasswordResetState } from "./actions";
 
 const initialState: PasswordResetState = { status: "idle" };
 
 export function ForgotPasswordForm({
+  defaultEmail,
   initialError,
 }: {
+  defaultEmail: string;
   initialError: string | null;
 }) {
   const [state, formAction] = useActionState(
     requestPasswordReset,
     initialState,
   );
+  const [email, setEmail] = useState(defaultEmail);
+  const loginHref = adminPathWithEmail("/admin/login", email);
 
   if (state.status === "sent") {
+    const sentLoginHref = adminPathWithEmail("/admin/login", state.email);
+
     return (
       <div className="space-y-4 text-sm text-slate-700">
         <p className="text-base font-semibold text-slate-950">
@@ -33,7 +40,7 @@ export function ForgotPasswordForm({
           has Studio access, a password reset email is on its way.
         </p>
         <Link
-          href="/admin/login"
+          href={sentLoginHref}
           className={`${adminSecondaryButtonClass} w-full`}
         >
           Back to sign in
@@ -57,6 +64,8 @@ export function ForgotPasswordForm({
           required
           autoComplete="email"
           inputMode="email"
+          value={email}
+          onChange={(event) => setEmail(event.currentTarget.value)}
           placeholder="you@vendingpreneurs.com"
           className={adminInputClass}
         />
@@ -64,10 +73,7 @@ export function ForgotPasswordForm({
 
       <SubmitButton />
 
-      <Link
-        href="/admin/login"
-        className={`${adminSecondaryButtonClass} w-full`}
-      >
+      <Link href={loginHref} className={`${adminSecondaryButtonClass} w-full`}>
         Back to sign in
       </Link>
 

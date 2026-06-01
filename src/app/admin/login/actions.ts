@@ -2,13 +2,16 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { normalizeAdminNextPath } from "@/lib/supabase/auth-redirects";
+import {
+  normalizeAdminEmailParam,
+  normalizeAdminNextPath,
+} from "@/lib/supabase/auth-redirects";
 import { getAuthorizedAdmin } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export type LoginState =
   | { status: "idle" }
-  | { status: "error"; message: string };
+  | { status: "error"; message: string; email: string };
 
 const loginSchema = z.object({
   email: z.preprocess(
@@ -26,6 +29,9 @@ export async function loginWithPassword(
   _prev: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
+  const submittedEmail = normalizeAdminEmailParam(
+    String(formData.get("email") ?? ""),
+  );
   const parsed = loginSchema.safeParse({
     email: String(formData.get("email") ?? ""),
     password: String(formData.get("password") ?? ""),
@@ -36,6 +42,7 @@ export async function loginWithPassword(
     return {
       status: "error",
       message: parsed.error.issues[0]?.message ?? "Invalid login fields.",
+      email: submittedEmail,
     };
   }
 
@@ -49,6 +56,7 @@ export async function loginWithPassword(
     return {
       status: "error",
       message: "Email or password is incorrect.",
+      email: parsed.data.email,
     };
   }
 
@@ -58,6 +66,7 @@ export async function loginWithPassword(
     return {
       status: "error",
       message: "This email does not have admin access.",
+      email: parsed.data.email,
     };
   }
 

@@ -15,7 +15,6 @@ const mocks = vi.hoisted(() => {
       auth: { updateUser, getUser, signOut },
     })),
     createAdminClient: vi.fn(() => ({ from })),
-    redirect: vi.fn(),
     updateUser,
     getUser,
     signOut,
@@ -32,10 +31,6 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: mocks.createAdminClient,
-}));
-
-vi.mock("next/navigation", () => ({
-  redirect: mocks.redirect,
 }));
 
 function formData(password = "new-strong-password", confirm = password) {
@@ -67,12 +62,12 @@ describe("updatePassword", () => {
   });
 
   it("updates the password after verifying active app access", async () => {
-    await updatePassword({ status: "idle" }, formData());
+    const result = await updatePassword({ status: "idle" }, formData());
 
     expect(mocks.updateUser).toHaveBeenCalledWith({
       password: "new-strong-password",
     });
-    expect(mocks.redirect).toHaveBeenCalledWith("/admin/pages");
+    expect(result).toEqual({ status: "success" });
   });
 
   it("rejects reset attempts for users without app access", async () => {

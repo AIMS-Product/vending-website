@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { authErrorMessage } from "@/lib/supabase/auth-redirects";
+import {
+  authErrorMessage,
+  normalizeAdminEmailParam,
+} from "@/lib/supabase/auth-redirects";
 import { ForgotPasswordForm } from "./ForgotPasswordForm";
 
 export const metadata: Metadata = {
@@ -7,7 +10,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type SearchParams = { error?: string };
+type SearchParams = { email?: string; error?: string };
 
 export default async function AdminForgotPasswordPage({
   searchParams,
@@ -15,6 +18,7 @@ export default async function AdminForgotPasswordPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
+  const defaultEmail = normalizeAdminEmailParam(params.email);
 
   return (
     <section className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-6 px-6 py-16">
@@ -37,7 +41,10 @@ export default async function AdminForgotPasswordPage({
       </header>
 
       <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <ForgotPasswordForm initialError={authErrorMessage(params.error)} />
+        <ForgotPasswordForm
+          defaultEmail={defaultEmail}
+          initialError={authErrorMessage(params.error)}
+        />
       </div>
     </section>
   );

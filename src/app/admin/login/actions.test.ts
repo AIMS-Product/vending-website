@@ -90,6 +90,7 @@ describe("loginWithPassword", () => {
     expect(result).toEqual({
       status: "error",
       message: "Enter a valid email address.",
+      email: "",
     });
     expect(mocks.signInWithPassword).not.toHaveBeenCalled();
   });
@@ -116,6 +117,7 @@ describe("loginWithPassword", () => {
     expect(result).toEqual({
       status: "error",
       message: "Email or password is incorrect.",
+      email: "admin@example.com",
     });
     expect(mocks.redirect).not.toHaveBeenCalled();
   });
@@ -129,6 +131,7 @@ describe("loginWithPassword", () => {
     expect(result).toEqual({
       status: "error",
       message: "This email does not have admin access.",
+      email: "admin@example.com",
     });
     expect(mocks.redirect).not.toHaveBeenCalled();
   });

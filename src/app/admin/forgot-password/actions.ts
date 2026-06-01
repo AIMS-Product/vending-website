@@ -1,12 +1,10 @@
 "use server";
 
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { buildPasswordResetRedirectUrl } from "@/lib/supabase/auth-redirects";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { config } from "@/lib/config";
-import type { Database } from "@/types/database";
+import { createClient } from "@/lib/supabase/server";
 
 export type PasswordResetState =
   | { status: "idle" }
@@ -30,9 +28,12 @@ export async function requestPasswordReset(
 
   const hasAccess = await hasAdminEmailAccess(parsed.data);
   if (hasAccess) {
-    const supabase = createPasswordEmailClient();
+    const supabase = await createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
-      redirectTo: buildPasswordResetRedirectUrl(await originFromHeaders()),
+      redirectTo: buildPasswordResetRedirectUrl(
+        await originFromHeaders(),
+        parsed.data,
+      ),
     });
 
     if (error) {
@@ -68,18 +69,4 @@ async function originFromHeaders(): Promise<string> {
   const host = h.get("x-forwarded-host") ?? h.get("host");
   if (!host) throw new Error("No host header on incoming request");
   return `${proto}://${host}`;
-}
-
-function createPasswordEmailClient() {
-  return createSupabaseClient<Database>(
-    config.NEXT_PUBLIC_SUPABASE_URL,
-    config.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      auth: {
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-        persistSession: false,
-      },
-    },
-  );
 }

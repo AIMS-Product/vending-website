@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => {
   const from = vi.fn(() => ({ select }));
 
   return {
-    createSupabaseClient: vi.fn(() => ({
+    createServerClient: vi.fn(() => ({
       auth: { resetPasswordForEmail },
     })),
     createAdminClient: vi.fn(() => ({ from })),
@@ -22,8 +22,8 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: mocks.createSupabaseClient,
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: mocks.createServerClient,
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -70,9 +70,10 @@ describe("requestPasswordReset", () => {
       "admin@example.com",
       {
         redirectTo:
-          "https://vending-website.vercel.app/auth/callback?next=%2Fadmin%2Freset-password",
+          "https://vending-website.vercel.app/auth/callback?next=%2Fadmin%2Freset-password%3Femail%3Dadmin%2540example.com&email=admin%40example.com",
       },
     );
+    expect(mocks.createServerClient).toHaveBeenCalledOnce();
   });
 
   it("does not send reset emails to non-admin addresses but returns generic sent state", async () => {
