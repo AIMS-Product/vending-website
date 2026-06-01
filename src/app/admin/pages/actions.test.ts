@@ -4,6 +4,7 @@ import {
   acceptAiSeoProposalBlocks,
   createSeoPageDraftForEditor,
   generateAiSeoPageProposal,
+  autosaveSeoPageDraft,
   saveSeoPage,
   saveSeoPageDraftAndCreatePreviewLink,
 } from "./actions";
@@ -325,6 +326,43 @@ describe("admin page actions", () => {
     expect(mocks.revalidatePath).toHaveBeenCalledWith(
       "/resources/old-coffee-vending",
     );
+  });
+
+  it("autosaves unpublished page slug changes before preview creation", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "old-coffee-vending",
+      status: "draft",
+    });
+
+    const result = await autosaveSeoPageDraft(pageId, {
+      title: "Coffee Vending Adelaide",
+      slug: "new-coffee-vending",
+      targetKeyword: "coffee vending",
+      seoTitle: "Coffee vending machines",
+      metaDescription: "Coffee vending machines for Adelaide workplaces.",
+      canonicalUrl: "",
+      noindex: false,
+      sitemapEnabled: true,
+      structuredDataSettings: { breadcrumb: true, faq: false },
+      draftContent: validContent,
+    });
+
+    expect(result.status).toBe("saved");
+    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(pageId, {
+      slug: "new-coffee-vending",
+      title: "Coffee Vending Adelaide",
+      targetKeyword: "coffee vending",
+      seoTitle: "Coffee vending machines",
+      metaDescription: "Coffee vending machines for Adelaide workplaces.",
+      canonicalUrl: null,
+      noindex: false,
+      sitemapEnabled: true,
+      structuredDataSettings: { breadcrumb: true, faq: false },
+      draftContent: validContent,
+      updatedBy: "admin_1",
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(`/admin/pages/${pageId}`);
   });
 
   it("saves a new page before creating a preview link", async () => {

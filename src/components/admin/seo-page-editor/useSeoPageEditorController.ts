@@ -73,6 +73,7 @@ import {
   getNarrowEditorSnapshot,
   subscribeToNarrowEditorChange,
 } from "@/components/admin/seo-page-editor/editor-responsive";
+import { buildSeoPageEditorFormData } from "@/components/admin/seo-page-editor/editor-form-data";
 import { makeBuilderId } from "@/components/admin/seo-page-editor/editor-utils";
 import type { Tables } from "@/types/database";
 
@@ -96,6 +97,7 @@ const initialState: PageEditorActionState = { status: "idle" };
 const initialAiProposalState: PageAiProposalResult = { status: "idle" };
 const initialAiInsertState: PageAiProposalInsertResult = { status: "idle" };
 const previewSessionStorageKey = "seo-page-builder-preview-link";
+type PreviewLinkTone = "neutral" | "error";
 const emptyInternalLinkTargets: InternalLinkSuggestionTarget[] = [];
 const emptyMediaAssets: SeoPageEditorMediaAsset[] = [];
 const emptyAiProposals: AiPageProposalReview[] = [];
@@ -179,6 +181,8 @@ export function useSeoPageEditorController({
   const [previewLinkMessage, setPreviewLinkMessage] = useState<string | null>(
     null,
   );
+  const [previewLinkTone, setPreviewLinkTone] =
+    useState<PreviewLinkTone>("neutral");
   const [previewLinkPath, setPreviewLinkPath] = useState<string | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
@@ -619,6 +623,7 @@ export function useSeoPageEditorController({
       if (typeof parsed.path === "string") {
         window.setTimeout(() => {
           setPreviewLinkPath(parsed.path as string);
+          setPreviewLinkTone("neutral");
           setPreviewLinkMessage(
             typeof parsed.message === "string"
               ? parsed.message
@@ -685,6 +690,7 @@ export function useSeoPageEditorController({
     page,
     previewLinkMessage,
     previewLinkPath,
+    previewLinkTone,
     primaryColumn,
     primarySection,
     publishButtonLabel,
@@ -742,13 +748,14 @@ export function useSeoPageEditorController({
 
     setIsPreviewOpening(true);
     setPreviewLinkMessage(null);
+    setPreviewLinkTone("neutral");
     const previewWindow = window.open("about:blank", "_blank");
     if (previewWindow) {
       previewWindow.opener = null;
     }
 
     try {
-      const previewResult = page?.id
+      const previewResult = effectivePageId
         ? await createPreviewLinkForSavedPage()
         : await saveSeoPageDraftAndCreatePreviewLink(
             { status: "idle" },
@@ -777,12 +784,14 @@ export function useSeoPageEditorController({
       }
 
       previewWindow?.close();
+      setPreviewLinkTone("error");
       setPreviewLinkMessage(
         previewResult.message ?? "Could not open live preview.",
       );
     } catch (error) {
       console.error("failed to open live preview", error);
       previewWindow?.close();
+      setPreviewLinkTone("error");
       setPreviewLinkMessage("Could not open live preview.");
     } finally {
       setIsPreviewOpening(false);
@@ -843,14 +852,15 @@ export function useSeoPageEditorController({
   }
 
   async function createPreviewLinkForSavedPage() {
-    if (!page?.id) {
+    const previewPageId = effectivePageId;
+    if (!previewPageId) {
       return saveSeoPageDraftAndCreatePreviewLink(
         { status: "idle" },
         buildPageFormData(),
       );
     }
 
-    const autosaveResult = await autosaveSeoPageDraft(page.id, {
+    const autosaveResult = await autosaveSeoPageDraft(previewPageId, {
       title,
       slug: visibleSlug,
       targetKeyword,
@@ -871,30 +881,25 @@ export function useSeoPageEditorController({
     }
 
     const formData = new FormData();
-    formData.set("pageId", page.id);
+    formData.set("pageId", previewPageId);
     return createSeoPagePreviewLink({ status: "idle" }, formData);
   }
 
   function buildPageFormData() {
-    const formData = new FormData();
-    if (page?.id) formData.set("id", page.id);
-    formData.set("title", title);
-    formData.set("slug", visibleSlug);
-    formData.set("targetKeyword", targetKeyword);
-    formData.set("seoTitle", seoTitle);
-    formData.set("metaDescription", metaDescription);
-    formData.set("canonicalUrl", canonicalUrl);
-    if (noindex) formData.set("noindex", "on");
-    if (sitemapEnabled && !noindex) formData.set("sitemapEnabled", "on");
-    if (structuredDataBreadcrumb) {
-      formData.set("structuredDataBreadcrumb", "on");
-    }
-    if (structuredDataFaq) {
-      formData.set("structuredDataFaq", "on");
-    }
-    formData.set("draftContent", draftContentJson);
-    formData.set("intent", "save");
-    return formData;
+    return buildSeoPageEditorFormData({
+      pageId: effectivePageId,
+      title,
+      slug: visibleSlug,
+      targetKeyword,
+      seoTitle,
+      metaDescription,
+      canonicalUrl,
+      noindex,
+      sitemapEnabled,
+      structuredDataBreadcrumb,
+      structuredDataFaq,
+      draftContentJson,
+    });
   }
 
   function updateChromeSettings(next: Partial<PageChromeSettings>) {

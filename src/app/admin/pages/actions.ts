@@ -250,6 +250,7 @@ export async function autosaveSeoPageDraft(
       });
     } else {
       await adminSaveSeoPageDraft(pageId, {
+        slug: parsed.data.slug,
         title: parsed.data.title,
         targetKeyword: nullable(parsed.data.targetKeyword),
         ...draftMetadataFromPageForm(parsed.data),

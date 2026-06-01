@@ -863,7 +863,7 @@ function throwSeoPageMutationError(
       {
         code: "duplicate_slug",
         path: "slug",
-        message: `Another resource page already uses /resources/${slug ?? "this-slug"}. Choose a different slug.`,
+        message: `Another active resource page already uses /resources/${slug ?? "this-slug"}. Choose a different slug.`,
       },
     ]);
   }

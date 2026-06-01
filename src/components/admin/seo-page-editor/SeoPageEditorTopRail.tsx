@@ -34,6 +34,7 @@ export function SeoPageEditorTopRail({
     page,
     previewLinkMessage,
     previewLinkPath,
+    previewLinkTone,
     saveDraftLabel,
     seoSidebarExpandTitle,
     toggleBlockSidebar,
@@ -129,7 +130,11 @@ export function SeoPageEditorTopRail({
             </p>
           )}
           {previewLinkMessage && (
-            <p className="text-xs font-medium text-slate-500">
+            <p
+              className={`text-xs font-medium ${
+                previewLinkTone === "error" ? "text-red-600" : "text-slate-500"
+              }`}
+            >
               {previewLinkMessage}
             </p>
           )}

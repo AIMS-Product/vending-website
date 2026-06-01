@@ -244,7 +244,7 @@ describe("seo page service", () => {
           code: "duplicate_slug",
           path: "slug",
           message:
-            "Another resource page already uses /resources/start-vending. Choose a different slug.",
+            "Another active resource page already uses /resources/start-vending. Choose a different slug.",
         }),
       ],
     });
