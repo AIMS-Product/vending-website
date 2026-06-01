@@ -9,7 +9,7 @@ const devAdminContext: AdminContext = {
     id: "00000000-0000-4000-8000-000000000001",
     email: "dev-admin@dev.invalid",
   },
-  role: "admin",
+  role: "super_admin",
 };
 
 export function isDevAdminAuthBypassEnabled() {

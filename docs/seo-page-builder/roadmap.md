@@ -45,7 +45,8 @@ Latest pushed implementation commit: `12b3152 feat(admin): add cms shell and dev
 - Sidebar duplication was removed. Creation actions now live inline beside the active content types, while landing pages and campaign pages are clearly marked as planned.
 - Resource pages and blog/news list views now use the same Apple-style admin treatment: compact metrics, segmented status filters, restrained table chrome, and a shared admin header.
 - The public marketing header/footer are suppressed on `/admin` routes so backend pages render as a true admin application surface.
-- Local development can skip magic-link login with `ADMIN_DEV_AUTH_BYPASS=1` under `next dev`. The bypass is guarded by `NODE_ENV === "development"`, warning logs, login/proxy checks, and redirect sanitization.
+- Local development can skip email/password login with `ADMIN_DEV_AUTH_BYPASS=1` under `next dev`. The bypass is guarded by `NODE_ENV === "development"`, warning logs, login/proxy checks, and redirect sanitization, and it resolves to a local `super_admin` context only.
+- Hosted admin access uses Supabase email/password auth. Super admins manage user access in `/admin/settings/users`; regular admins can inspect users and account events read-only. Password setup/reset emails must redirect back to the app recovery callback/reset flow, and anonymous self-signup should stay disabled for the admin app.
 - Verification for the pushed update passed: CodeRabbit advisory review, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run format:check`, `npm run build`, local admin route smoke, and Vercel production deployment readiness.
 
 Remaining admin UX polish is not a launch blocker for the builder: media, library, and editor forms are usable, but their inner controls can receive a future visual pass to fully match the new shell.

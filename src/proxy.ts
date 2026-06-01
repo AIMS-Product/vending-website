@@ -7,6 +7,7 @@ import {
 } from "@/lib/services/seo-page-public";
 import { hasActiveSeoPagePreviewToken } from "@/lib/services/seo-pages";
 import {
+  ADMIN_FORGOT_PASSWORD_PATH,
   ADMIN_LOGIN_PATH,
   normalizeAdminNextPath,
 } from "@/lib/supabase/auth-redirects";
@@ -39,6 +40,8 @@ function notFoundResponse() {
   });
 }
 
+const REMOVED_PUBLIC_PATHS = new Set(["/test-leadscore-a"]);
+
 /**
  * Next 16 proxy (formerly `middleware.ts`). Two responsibilities:
  *
@@ -47,9 +50,10 @@ function notFoundResponse() {
  *   2. Gate `/admin/*` routes — anyone who is not signed in OR not in
  *      `app_users` gets bounced to `/admin/login`.
  *
- * `/admin/login` itself bypasses the gate (otherwise infinite redirect
- * loop). `/auth/*` bypasses the gate so the magic-link callback can
- * exchange its code for a session without an established user.
+ * `/admin/login` and `/admin/forgot-password` bypass the gate (otherwise
+ * anonymous users cannot start auth). `/auth/*` bypasses the gate so password
+ * recovery/setup callbacks can exchange their code for a session without an
+ * established user.
  *
  * Defence in depth: every `/admin/*` Server Component still calls
  * `requireAdmin()`, and the database still enforces RLS. Three layers,
@@ -57,6 +61,10 @@ function notFoundResponse() {
  */
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
+
+  if (REMOVED_PUBLIC_PATHS.has(path)) {
+    return notFoundResponse();
+  }
 
   if (path.startsWith("/resources/")) {
     if (path.startsWith("/resources/preview/")) {
@@ -143,8 +151,10 @@ export async function proxy(request: NextRequest) {
 
   const { response, user, supabase } = await updateSession(request);
 
-  // The login page must remain reachable to anonymous users.
-  if (path === ADMIN_LOGIN_PATH) return response;
+  // The login and reset-request pages must remain reachable to anonymous users.
+  if (path === ADMIN_LOGIN_PATH || path === ADMIN_FORGOT_PASSWORD_PATH) {
+    return response;
+  }
 
   // Auth callback / sign-out / etc. — proxy just refreshed the cookie;
   // the route handler itself is responsible for whatever it does next.
@@ -174,5 +184,6 @@ export const config = {
     "/auth/:path*",
     "/resources/:path*",
     "/news/:path*",
+    "/test-leadscore-a",
   ],
 };

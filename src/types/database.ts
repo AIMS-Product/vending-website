@@ -57,6 +57,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      app_user_events: {
+        Row: {
+          actor_email: string;
+          actor_user_id: string | null;
+          created_at: string;
+          event_type: string;
+          id: string;
+          metadata: Json;
+          new_role: string | null;
+          old_role: string | null;
+          target_email: string;
+          target_user_id: string | null;
+        };
+        Insert: {
+          actor_email: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          metadata?: Json;
+          new_role?: string | null;
+          old_role?: string | null;
+          target_email: string;
+          target_user_id?: string | null;
+        };
+        Update: {
+          actor_email?: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          metadata?: Json;
+          new_role?: string | null;
+          old_role?: string | null;
+          target_email?: string;
+          target_user_id?: string | null;
+        };
+        Relationships: [];
+      };
       app_users: {
         Row: {
           added_at: string;

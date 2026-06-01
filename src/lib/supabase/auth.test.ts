@@ -1,6 +1,10 @@
 import { afterEach, describe, it, expect, vi } from "vitest";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
-import { getAuthorizedAdmin } from "./auth";
+import {
+  AdminAuthorizationError,
+  getAuthorizedAdmin,
+  requireSuperAdmin,
+} from "./auth";
 import { getDevAdminContext, isDevAdminAuthBypassEnabled } from "./dev-auth";
 import type { Database } from "@/types/database";
 
@@ -113,6 +117,25 @@ describe("getAuthorizedAdmin", () => {
     });
   });
 
+  it("returns the super admin role when the app_users row is super_admin", async () => {
+    const ctx = await getAuthorizedAdmin({
+      serverClient: buildServerClient({
+        id: "u-super",
+        email: "super@example.com",
+      }),
+      adminClient: buildAdminClient({
+        user_id: "u-super",
+        email: "super@example.com",
+        role: "super_admin",
+        added_at: new Date().toISOString(),
+      }),
+    });
+    expect(ctx).toEqual({
+      user: { id: "u-super", email: "super@example.com" },
+      role: "super_admin",
+    });
+  });
+
   it("returns null when the app_users lookup errors", async () => {
     const maybeSingle = vi.fn().mockResolvedValue({
       data: null,
@@ -134,5 +157,62 @@ describe("getAuthorizedAdmin", () => {
       adminClient,
     });
     expect(ctx).toBeNull();
+  });
+});
+
+describe("requireSuperAdmin", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it("returns the current context for super admins", async () => {
+    const ctx = await requireSuperAdmin({
+      serverClient: buildServerClient({
+        id: "u-super",
+        email: "super@example.com",
+      }),
+      adminClient: buildAdminClient({
+        user_id: "u-super",
+        email: "super@example.com",
+        role: "super_admin",
+        added_at: new Date().toISOString(),
+      }),
+    });
+
+    expect(ctx.role).toBe("super_admin");
+  });
+
+  it("throws a controlled authorization error for regular admins", async () => {
+    await expect(
+      requireSuperAdmin({
+        serverClient: buildServerClient({
+          id: "u-admin",
+          email: "admin@example.com",
+        }),
+        adminClient: buildAdminClient({
+          user_id: "u-admin",
+          email: "admin@example.com",
+          role: "admin",
+          added_at: new Date().toISOString(),
+        }),
+      }),
+    ).rejects.toBeInstanceOf(AdminAuthorizationError);
+  });
+
+  it("uses a super admin dev context when the development bypass is enabled", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("ADMIN_DEV_AUTH_BYPASS", "1");
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const ctx = await requireSuperAdmin();
+
+    expect(ctx).toEqual({
+      user: {
+        id: "00000000-0000-4000-8000-000000000001",
+        email: "dev-admin@dev.invalid",
+      },
+      role: "super_admin",
+    });
   });
 });

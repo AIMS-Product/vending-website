@@ -6,7 +6,7 @@ import { createAdminClient } from "./admin";
 import { getDevAdminContext } from "./dev-auth";
 import type { Database } from "@/types/database";
 
-export type AdminRole = "admin" | "editor";
+export type AdminRole = "admin" | "super_admin";
 
 export type AdminContext = {
   user: { id: string; email: string };
@@ -17,6 +17,17 @@ type ResolveOptions = {
   serverClient?: SupabaseClient<Database>;
   adminClient?: SupabaseClient<Database>;
 };
+
+export class AdminAuthorizationError extends Error {
+  constructor(message = "Super admin access is required.") {
+    super(message);
+    this.name = "AdminAuthorizationError";
+  }
+}
+
+export function isAdminRole(value: string): value is AdminRole {
+  return value === "admin" || value === "super_admin";
+}
 
 /**
  * Resolve the current viewer to an `app_users` row, or `null` when they
@@ -59,11 +70,11 @@ export async function getAuthorizedAdmin(
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (rowError || !row) return null;
+  if (rowError || !row || !isAdminRole(row.role)) return null;
 
   return {
     user: { id: user.id, email: user.email },
-    role: row.role as AdminRole,
+    role: row.role,
   };
 }
 
@@ -78,8 +89,20 @@ export async function getAuthorizedAdmin(
  * not a programming error, and Next handles `redirect()` natively in both
  * Server Components and Server Actions.
  */
-export async function requireAdmin(): Promise<AdminContext> {
-  const ctx = await getAuthorizedAdmin();
+export async function requireAdmin(
+  opts: ResolveOptions = {},
+): Promise<AdminContext> {
+  const ctx = await getAuthorizedAdmin(opts);
   if (!ctx) redirect("/admin/login");
+  return ctx;
+}
+
+export async function requireSuperAdmin(
+  opts: ResolveOptions = {},
+): Promise<AdminContext> {
+  const ctx = await requireAdmin(opts);
+  if (ctx.role !== "super_admin") {
+    throw new AdminAuthorizationError();
+  }
   return ctx;
 }

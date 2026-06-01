@@ -1,101 +1,65 @@
 "use server";
 
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { z } from "zod";
-import { config } from "@/lib/config";
-import { buildMagicLinkRedirectUrl } from "@/lib/supabase/auth-redirects";
-import type { Database } from "@/types/database";
+import { normalizeAdminNextPath } from "@/lib/supabase/auth-redirects";
+import { getAuthorizedAdmin } from "@/lib/supabase/auth";
+import { createClient } from "@/lib/supabase/server";
 
 export type LoginState =
   | { status: "idle" }
-  | { status: "sent"; email: string }
   | { status: "error"; message: string };
 
-const emailSchema = z.email();
+const loginSchema = z.object({
+  email: z.preprocess(
+    (value) =>
+      String(value ?? "")
+        .trim()
+        .toLowerCase(),
+    z.email("Enter a valid email address."),
+  ),
+  password: z.string().min(1, "Enter your password."),
+  next: z.string().optional(),
+});
 
-/**
- * Derive the origin from the incoming Server Action request rather than a
- * hardcoded env var. This makes the magic link land back on whichever
- * deployment the user was on (localhost in dev, the preview URL on
- * branch deploys, the canonical domain in production) without us having
- * to keep `NEXT_PUBLIC_SITE_URL` in sync per environment.
- *
- * Each origin still needs to be allowlisted in Supabase Dashboard →
- * Authentication → URL Configuration → Redirect URLs.
- */
-async function originFromHeaders(): Promise<string> {
-  const h = await headers();
-  const proto = h.get("x-forwarded-proto") ?? "https";
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  if (!host) throw new Error("No host header on incoming request");
-  return `${proto}://${host}`;
-}
-
-/**
- * Server Action behind the magic-link form. Validates email server-side
- * (never trust client-supplied input), then asks Supabase to mail an OTP
- * link. Returns a discriminated state for `useActionState` to render
- * either a confirmation or an error message.
- *
- * `shouldCreateUser: true` lets a non-allowlisted email finish OAuth, but
- * the `app_users` gate (proxy + `requireAdmin()`) keeps them out of every
- * admin surface. The `on_auth_user_created` trigger only inserts an
- * `app_users` row when the email matches `app_user_emails`, so a stray
- * sign-up never grants access — it just leaves an unused `auth.users` row.
- *
- * Errors are surfaced as a generic message; the underlying Supabase error
- * is logged server-side for diagnosis but never sent to the browser.
- */
-// oxlint-disable-next-line react-doctor/server-auth-actions -- Public login bootstrap action; admin access is gated after authentication.
-export async function requestMagicLink(
+export async function loginWithPassword(
   _prev: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
-  const raw = String(formData.get("email") ?? "")
-    .trim()
-    .toLowerCase();
-  const parsed = emailSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { status: "error", message: "Enter a valid email address." };
-  }
-
-  const supabase = createMagicLinkClient();
-  const origin = await originFromHeaders();
-  const { error } = await supabase.auth.signInWithOtp({
-    email: parsed.data,
-    options: {
-      emailRedirectTo: buildMagicLinkRedirectUrl(origin),
-      shouldCreateUser: true,
-    },
+  const parsed = loginSchema.safeParse({
+    email: String(formData.get("email") ?? ""),
+    password: String(formData.get("password") ?? ""),
+    next: String(formData.get("next") ?? ""),
   });
 
-  if (error) {
-    console.error("requestMagicLink failed", { email: parsed.data, error });
+  if (!parsed.success) {
     return {
       status: "error",
-      message: "Couldn't send the link. Try again in a moment.",
+      message: parsed.error.issues[0]?.message ?? "Invalid login fields.",
     };
   }
 
-  return { status: "sent", email: parsed.data };
-}
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
 
-function createMagicLinkClient() {
-  // Do not use the SSR client here: it always sends PKCE magic links, but a
-  // Server Action cannot reliably persist the code verifier for the later
-  // email-click request. The login page handles implicit hash-token links and
-  // writes the final SSR cookies after Supabase verifies the email link.
-  return createSupabaseClient<Database>(
-    config.NEXT_PUBLIC_SUPABASE_URL,
-    config.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      auth: {
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-        flowType: "implicit",
-        persistSession: false,
-      },
-    },
-  );
+  if (error) {
+    return {
+      status: "error",
+      message: "Email or password is incorrect.",
+    };
+  }
+
+  const ctx = await getAuthorizedAdmin({ serverClient: supabase });
+  if (!ctx) {
+    await supabase.auth.signOut();
+    return {
+      status: "error",
+      message: "This email does not have admin access.",
+    };
+  }
+
+  redirect(normalizeAdminNextPath(parsed.data.next));
 }

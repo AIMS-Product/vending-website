@@ -1,101 +1,135 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { requestMagicLink } from "./actions";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { loginWithPassword } from "./actions";
 
 const mocks = vi.hoisted(() => {
-  const signInWithOtp = vi.fn();
+  const signInWithPassword = vi.fn();
+  const getUser = vi.fn();
+  const signOut = vi.fn();
+  const maybeSingle = vi.fn();
+  const eq = vi.fn(() => ({ maybeSingle }));
+  const select = vi.fn(() => ({ eq }));
+  const from = vi.fn(() => ({ select }));
+
   return {
-    createSupabaseClient: vi.fn(() => ({ auth: { signInWithOtp } })),
-    headers: vi.fn(),
-    signInWithOtp,
+    createServerClient: vi.fn(() => ({
+      auth: { signInWithPassword, getUser, signOut },
+    })),
+    createAdminClient: vi.fn(() => ({ from })),
+    redirect: vi.fn(),
+    signInWithPassword,
+    getUser,
+    signOut,
+    maybeSingle,
+    eq,
+    select,
+    from,
   };
 });
 
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: mocks.createSupabaseClient,
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: mocks.createServerClient,
 }));
 
-vi.mock("next/headers", () => ({
-  headers: mocks.headers,
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: mocks.createAdminClient,
 }));
 
-function formData(email: string) {
+vi.mock("next/navigation", () => ({
+  redirect: mocks.redirect,
+}));
+
+function formData({
+  email = " Admin@Example.com ",
+  password = "correct-password",
+  next = "/admin/settings/users",
+} = {}) {
   const data = new FormData();
   data.set("email", email);
+  data.set("password", password);
+  data.set("next", next);
   return data;
 }
 
-describe("requestMagicLink", () => {
+describe("loginWithPassword", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.headers.mockResolvedValue(
-      new Headers({
-        "x-forwarded-host": "vending-website.vercel.app",
-        "x-forwarded-proto": "https",
-      }),
-    );
-    mocks.signInWithOtp.mockResolvedValue({ error: null });
-  });
-
-  it("sends implicit-flow magic links back to the live login page", async () => {
-    const result = await requestMagicLink(
-      { status: "idle" },
-      formData(" JamesV@AImanagingservices.com "),
-    );
-
-    expect(result).toEqual({
-      status: "sent",
-      email: "jamesv@aimanagingservices.com",
+    mocks.signInWithPassword.mockResolvedValue({ error: null });
+    mocks.getUser.mockResolvedValue({
+      data: {
+        user: { id: "u-admin", email: "admin@example.com" },
+      },
+      error: null,
     });
-    expect(mocks.createSupabaseClient).toHaveBeenCalledWith(
-      "http://localhost:54321",
-      "vitest_anon_key_placeholder______",
-      {
-        auth: {
-          autoRefreshToken: false,
-          detectSessionInUrl: false,
-          flowType: "implicit",
-          persistSession: false,
-        },
+    mocks.maybeSingle.mockResolvedValue({
+      data: {
+        user_id: "u-admin",
+        email: "admin@example.com",
+        role: "admin",
+        added_at: new Date().toISOString(),
       },
-    );
-    expect(mocks.signInWithOtp).toHaveBeenCalledWith({
-      email: "jamesv@aimanagingservices.com",
-      options: {
-        emailRedirectTo: "https://vending-website.vercel.app/admin/login",
-        shouldCreateUser: true,
-      },
+      error: null,
     });
   });
 
-  it("does not call Supabase for invalid email input", async () => {
-    const result = await requestMagicLink(
+  it("signs in with email and password, then redirects to a safe admin path", async () => {
+    await loginWithPassword({ status: "idle" }, formData());
+
+    expect(mocks.signInWithPassword).toHaveBeenCalledWith({
+      email: "admin@example.com",
+      password: "correct-password",
+    });
+    expect(mocks.redirect).toHaveBeenCalledWith("/admin/settings/users");
+  });
+
+  it("rejects invalid fields before calling Supabase", async () => {
+    const result = await loginWithPassword(
       { status: "idle" },
-      formData("not an email"),
+      formData({ email: "bad", password: "short" }),
     );
 
     expect(result).toEqual({
       status: "error",
       message: "Enter a valid email address.",
     });
-    expect(mocks.createSupabaseClient).not.toHaveBeenCalled();
-    expect(mocks.signInWithOtp).not.toHaveBeenCalled();
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
   });
 
-  it("returns the generic failure message when Supabase rejects the send", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    mocks.signInWithOtp.mockResolvedValue({
-      error: { message: "provider rejected" },
+  it("allows existing short passwords to reach Supabase", async () => {
+    await loginWithPassword(
+      { status: "idle" },
+      formData({ password: "short" }),
+    );
+
+    expect(mocks.signInWithPassword).toHaveBeenCalledWith({
+      email: "admin@example.com",
+      password: "short",
+    });
+  });
+
+  it("returns a generic error when credentials are rejected", async () => {
+    mocks.signInWithPassword.mockResolvedValue({
+      error: { message: "invalid login credentials" },
     });
 
-    const result = await requestMagicLink(
-      { status: "idle" },
-      formData("jamesv@aimanagingservices.com"),
-    );
+    const result = await loginWithPassword({ status: "idle" }, formData());
 
     expect(result).toEqual({
       status: "error",
-      message: "Couldn't send the link. Try again in a moment.",
+      message: "Email or password is incorrect.",
     });
-    consoleSpy.mockRestore();
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("signs out and rejects users without app access", async () => {
+    mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
+
+    const result = await loginWithPassword({ status: "idle" }, formData());
+
+    expect(mocks.signOut).toHaveBeenCalled();
+    expect(result).toEqual({
+      status: "error",
+      message: "This email does not have admin access.",
+    });
+    expect(mocks.redirect).not.toHaveBeenCalled();
   });
 });

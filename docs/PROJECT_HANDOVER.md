@@ -25,6 +25,7 @@ What works now:
   - `/admin/news` and `/admin/news/new` for blog/news posts.
   - `/admin/media` for reusable media.
   - `/admin/libraries` for proof items, CTA presets, source documents, source excerpts, and approved claims.
+  - `/admin/settings/users` for account access, roles, password setup/reset emails, and account audit events.
 - SEO resource pages render publicly at `/resources/[slug]`; draft previews render at `/resources/preview/[token]`.
 - Builder-managed resource redirects are database-backed; legacy/cutover redirects that are not builder-owned still live in `next.config.ts`.
 - Lead capture stores server-side audit rows in Supabase before notification attempts.
@@ -57,7 +58,7 @@ ADMIN_DEV_AUTH_BYPASS=1
 - Local URL: `http://localhost:3000/admin/pages`
 - Placeholder local admin email: `dev-admin@dev.invalid`
 - Placeholder local admin user id: `00000000-0000-4000-8000-000000000001`
-- Role: `admin`
+- Role: `super_admin`
 - Password: none. This is an environment-controlled local bypass, not a password login.
 - Code path: `src/lib/supabase/dev-auth.ts`, `src/lib/supabase/auth.ts`, and `src/proxy.ts`.
 
@@ -65,8 +66,9 @@ Rules:
 
 - Only use the bypass under `next dev`.
 - Never set `ADMIN_DEV_AUTH_BYPASS=1` in Vercel, production, preview, or any non-development environment.
-- Real hosted admin access uses `/admin/login` magic links sent to an email that is allowlisted through the Supabase `app_user_emails` / `app_users` flow.
-- The placeholder `dev-admin@dev.invalid` does not prove production auth works.
+- Real hosted admin access uses `/admin/login` email/password auth. Password setup and reset emails come from Supabase Auth and land back on the app reset flow.
+- Super admins manage access in `/admin/settings/users`. The `app_user_emails` table remains the invite/access source, `app_users` remains the runtime authorization gate, and `app_user_events` records account-management audit events.
+- The placeholder `dev-admin@dev.invalid` does not prove production password auth, reset emails, or Supabase Dashboard redirect/template settings work.
 
 ## Working Tree Notes
 
@@ -173,7 +175,7 @@ Browser checks still needed:
 - Local Chrome smoke for `/admin/pages/new` after the Chrome extension UI blocker is dismissed.
 - Admin section pass for pages, news, media, and libraries.
 - Public resource render and lead submission smoke after the next deploy.
-- Production magic-link admin login smoke with a real allowlisted email.
+- Production email/password admin login and password reset smoke with a real `super_admin` account after Supabase Dashboard auth settings and redirect URLs are configured.
 
 ## Architecture
 
@@ -231,6 +233,7 @@ Core tables represented in migrations:
 - `news_posts`
 - `app_users`
 - `app_user_emails`
+- `app_user_events`
 - `lead_submissions`
 - `media_assets`
 - `seo_pages`
@@ -295,6 +298,7 @@ Rules:
 - Never expose `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `OPENAI_API_KEY`, Sentry tokens, or real webhook URLs in browser code or docs.
 - Only `NEXT_PUBLIC_*` variables are browser-visible.
 - `ADMIN_DEV_AUTH_BYPASS=1` is local-only and should stay absent or `0` outside local development.
+- Supabase Auth Dashboard needs email/password enabled, anonymous self-signup disabled for the admin app, and recovery/setup redirect URLs allowed for the relevant localhost, preview, and production origins.
 
 ## Deployment
 
@@ -358,7 +362,7 @@ Use this roadmap for the next few days while James is away. Update the status co
 | P0       | Open    | Protect current worktree        | Run `git status --short --branch` and identify which dirty files are part of the current UX/admin pass.                                   | Diff summary and any files intentionally left untouched.                                                     |
 | P0       | Blocked | SEO builder UX verification     | Dismiss the Chrome extension UI blocker and rerun Chrome smoke on `/admin/pages/new`.                                                     | Screenshot or notes proving first-time creation, drawer, save/publish controls, and no fresh console errors. |
 | P0       | Open    | Automated quality gate          | Run typecheck, lint, tests, format check, build, and `git diff --check` after the current dirty UX changes are stable.                    | Command list, date, and pass/fail summary.                                                                   |
-| P0       | Open    | Admin access handover           | Confirm who will use real magic-link admin access while James is away; add/verify their Supabase allowlist row.                           | Admin email owner confirmed; do not write real secrets here.                                                 |
+| P0       | Open    | Admin access handover           | Confirm who will use real email/password admin access while James is away; add/verify their account from `/admin/settings/users`.         | Super admin owner confirmed; do not write real secrets here.                                                 |
 | P1       | Open    | Production connection check     | Verify Vercel env vars, Supabase URL/keys, storage buckets, Resend sender/recipient, optional Slack webhook, and OpenAI SEO env.          | Checklist with current/verified/blocked state.                                                               |
 | P1       | Open    | CMS section pass                | Browser-test pages, news, media, libraries, resource preview, and public resource render.                                                 | Section-by-section notes with issues and screenshots where useful.                                           |
 | P1       | Open    | Docs sync                       | Reconcile `docs/seo-page-builder/roadmap.md`, `docs/seo-page-builder/prd.html`, this handover, and any Asana tracking after verification. | Updated docs with consistent status language.                                                                |
@@ -378,7 +382,7 @@ Next recommended actions:
 
 Open decisions:
 
-- Which real admin emails should be allowlisted for handover coverage.
+- Which real admin emails should be invited from `/admin/settings/users` for handover coverage.
 - Who owns final migrated-news review/publish decisions.
 - Whether landing pages/campaign pages remain planned only or enter the active admin scope.
 - Final launch/DNS cutover window and owner.
@@ -401,7 +405,7 @@ First 30-60 minutes:
 - Run `git status --short --branch` and `git diff --stat`.
 - Review `docs/seo-page-builder/roadmap.md`, `plans/seo-page-builder-usability/slice-plan.md`, and `plans/seo-readiness-autopilot/slice-plan.md`.
 - Populate `.env.local` from approved sources without copying secrets into docs or chat.
-- For local admin, set `ADMIN_DEV_AUTH_BYPASS=1` and open `/admin/pages`.
+- For local admin, set `ADMIN_DEV_AUTH_BYPASS=1` and open `/admin/pages` or `/admin/settings/users`.
 - Confirm whether you are continuing dirty UX work or starting a clean documentation/status pass.
 - Run the verification commands relevant to your change.
 - Update this handover when a feature, blocker, deployment, verification result, or handover decision changes.

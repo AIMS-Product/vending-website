@@ -6,7 +6,7 @@ import Link from "next/link";
 import { clsx } from "clsx";
 import { signOut } from "@/app/admin/actions";
 
-type AdminSection = "pages" | "posts" | "media" | "libraries";
+type AdminSection = "pages" | "posts" | "media" | "libraries" | "settings";
 type AdminIcon =
   | "archive"
   | "book"
@@ -14,6 +14,7 @@ type AdminIcon =
   | "image"
   | "layers"
   | "log-out"
+  | "settings"
   | "shield"
   | "target";
 
@@ -25,7 +26,7 @@ type AdminNavSection = {
   icon: AdminIcon;
 };
 
-const sections: AdminNavSection[] = [
+const contentSections: AdminNavSection[] = [
   {
     id: "pages",
     label: "Resource pages",
@@ -55,6 +56,18 @@ const sections: AdminNavSection[] = [
     icon: "layers",
   },
 ];
+
+const accountSections: AdminNavSection[] = [
+  {
+    id: "settings",
+    label: "Settings",
+    href: "/admin/settings/users",
+    description: "Users and access",
+    icon: "settings",
+  },
+];
+
+const sections = [...contentSections, ...accountSections];
 
 const plannedSections = [
   {
@@ -117,39 +130,24 @@ export function AdminShell({
             </summary>
             <div className="mt-4 grid gap-4 border-t border-slate-200 pt-4">
               <nav aria-label="Admin sections" className="grid gap-2">
-                {sections.map((section) => (
-                  <div
+                {contentSections.map((section) => (
+                  <MobileNavLink
                     key={section.id}
-                    className={clsx(
-                      "flex items-center gap-2 rounded-md border text-sm transition",
-                      activeSection === section.id
-                        ? "border-[#cfe0ff] bg-[#f4f8ff] text-slate-950"
-                        : "border-slate-200 bg-white text-slate-600",
-                    )}
-                  >
-                    <Link
-                      href={section.href}
-                      className="flex min-w-0 flex-1 items-center gap-3 p-3"
-                      aria-current={
-                        activeSection === section.id ? "page" : undefined
-                      }
-                    >
-                      <span
-                        className="flex size-7 shrink-0 items-center justify-center rounded-md text-[#0b63f6]"
-                        aria-hidden="true"
-                      >
-                        <AdminIconGlyph icon={section.icon} />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-semibold">
-                          {section.label}
-                        </span>
-                        <span className="block text-xs text-slate-500">
-                          {section.description}
-                        </span>
-                      </span>
-                    </Link>
-                  </div>
+                    section={section}
+                    isActive={activeSection === section.id}
+                  />
+                ))}
+              </nav>
+              <nav
+                aria-label="Account sections"
+                className="grid gap-2 border-t border-slate-200 pt-4"
+              >
+                {accountSections.map((section) => (
+                  <MobileNavLink
+                    key={section.id}
+                    section={section}
+                    isActive={activeSection === section.id}
+                  />
                 ))}
               </nav>
               <form action={signOut}>
@@ -247,7 +245,7 @@ export function AdminShell({
                   Content
                 </p>
                 <nav aria-label="Admin sections" className="grid gap-2">
-                  {sections.map((section) => (
+                  {contentSections.map((section) => (
                     <div
                       key={section.id}
                       className={clsx(
@@ -342,6 +340,71 @@ export function AdminShell({
               </div>
 
               <div className="mt-auto border-t border-slate-200 pt-6">
+                <nav
+                  aria-label="Account settings"
+                  className={clsx(
+                    "mb-4 grid gap-2",
+                    sidebarCollapsed && "mb-5",
+                  )}
+                >
+                  {accountSections.map((section) => (
+                    <div
+                      key={section.id}
+                      className={clsx(
+                        "group flex items-center gap-2 rounded-md border text-sm transition",
+                        activeSection === section.id
+                          ? "border-[#cfe0ff] bg-[#f4f8ff] shadow-[inset_3px_0_0_#0b63f6]"
+                          : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950",
+                      )}
+                    >
+                      <Link
+                        href={section.href}
+                        title={sidebarCollapsed ? section.label : undefined}
+                        className={clsx(
+                          "flex min-w-0 flex-1 items-center rounded-md py-3 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
+                          sidebarCollapsed
+                            ? "justify-center px-2"
+                            : "gap-3 px-3",
+                        )}
+                        aria-current={
+                          activeSection === section.id ? "page" : undefined
+                        }
+                      >
+                        <span
+                          className={clsx(
+                            "flex size-7 shrink-0 items-center justify-center rounded-md",
+                            activeSection === section.id
+                              ? "text-[#0b63f6]"
+                              : "text-slate-500",
+                          )}
+                          aria-hidden="true"
+                        >
+                          <AdminIconGlyph icon={section.icon} />
+                        </span>
+                        <span
+                          className={clsx(
+                            "min-w-0",
+                            sidebarCollapsed && "hidden",
+                          )}
+                        >
+                          <span className="block font-semibold text-slate-950">
+                            {section.label}
+                          </span>
+                          <span
+                            className={clsx(
+                              "mt-0.5 block text-xs",
+                              activeSection === section.id
+                                ? "text-slate-600"
+                                : "text-slate-500",
+                            )}
+                          >
+                            {section.description}
+                          </span>
+                        </span>
+                      </Link>
+                    </div>
+                  ))}
+                </nav>
                 {userEmail ? (
                   <div
                     className={clsx(
@@ -618,6 +681,44 @@ function adminInitials(email: string) {
     .join("");
 }
 
+function MobileNavLink({
+  section,
+  isActive,
+}: {
+  section: AdminNavSection;
+  isActive: boolean;
+}) {
+  return (
+    <div
+      className={clsx(
+        "flex items-center gap-2 rounded-md border text-sm transition",
+        isActive
+          ? "border-[#cfe0ff] bg-[#f4f8ff] text-slate-950"
+          : "border-slate-200 bg-white text-slate-600",
+      )}
+    >
+      <Link
+        href={section.href}
+        className="flex min-w-0 flex-1 items-center gap-3 p-3"
+        aria-current={isActive ? "page" : undefined}
+      >
+        <span
+          className="flex size-7 shrink-0 items-center justify-center rounded-md text-[#0b63f6]"
+          aria-hidden="true"
+        >
+          <AdminIconGlyph icon={section.icon} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">{section.label}</span>
+          <span className="block text-xs text-slate-500">
+            {section.description}
+          </span>
+        </span>
+      </Link>
+    </div>
+  );
+}
+
 function AdminChevron() {
   return (
     <svg
@@ -685,6 +786,13 @@ function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
           <path d="m12 3 9 5-9 5-9-5 9-5Z" />
           <path d="m3 12 9 5 9-5" />
           <path d="m3 16 9 5 9-5" />
+        </svg>
+      );
+    case "settings":
+      return (
+        <svg {...common}>
+          <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1-2 3.4-.2-.1a1.8 1.8 0 0 0-1.8-.2 1.7 1.7 0 0 0-1 1.4v.2h-4v-.2a1.7 1.7 0 0 0-1-1.4 1.8 1.8 0 0 0-1.8.2l-.2.1-2-3.4.1-.1A1.7 1.7 0 0 0 6.2 15a1.7 1.7 0 0 0-1.4-1H4.6v-4h.2a1.7 1.7 0 0 0 1.4-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1 2-3.4.2.1a1.8 1.8 0 0 0 1.8.2 1.7 1.7 0 0 0 1-1.4v-.2h4v.2a1.7 1.7 0 0 0 1 1.4 1.8 1.8 0 0 0 1.8-.2l.2-.1 2 3.4-.1.1A1.7 1.7 0 0 0 17.8 9a1.7 1.7 0 0 0 1.4 1h.2v4h-.2a1.7 1.7 0 0 0-1.4 1Z" />
         </svg>
       );
     case "log-out":

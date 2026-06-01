@@ -8,11 +8,16 @@ export type AdminIconName =
   | "image"
   | "layers"
   | "list"
+  | "mail"
   | "more"
   | "newspaper"
   | "pencil"
   | "plus"
+  | "save"
   | "search"
+  | "settings"
+  | "shield"
+  | "trash"
   | "upload";
 
 export const adminPanelClass =
@@ -43,7 +48,7 @@ export const adminDangerButtonClass =
 
 export function AdminMetricStrip({ children }: { children: ReactNode }) {
   return (
-    <section className={`${adminPanelClass} mb-7`} aria-label="Admin summary">
+    <section className={`${adminPanelClass} mb-5`} aria-label="Admin summary">
       <div className="grid divide-y divide-slate-200 md:grid-cols-4 md:divide-x md:divide-y-0">
         {children}
       </div>
@@ -65,9 +70,9 @@ export function AdminMetricPanel({
   caption: string;
 }) {
   return (
-    <div className="flex items-center gap-5 px-6 py-5">
+    <div className="flex items-center gap-4 px-5 py-4">
       <span
-        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md ${adminMetricToneClass(
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${adminMetricToneClass(
           tone,
         )}`}
         aria-hidden="true"
@@ -76,7 +81,7 @@ export function AdminMetricPanel({
       </span>
       <div>
         <p className="text-sm font-medium text-slate-500">{label}</p>
-        <p className="mt-1 text-3xl font-semibold tracking-normal text-slate-950">
+        <p className="mt-0.5 text-2xl font-semibold tracking-normal text-slate-950">
           {value}
         </p>
         <p className="text-sm text-slate-500">{caption}</p>
@@ -167,6 +172,13 @@ export function AdminIcon({ icon }: { icon: AdminIconName }) {
           <path d="M4 18h.01" />
         </svg>
       );
+    case "mail":
+      return (
+        <svg {...common}>
+          <path d="M4 6h16v12H4V6Z" />
+          <path d="m4 7 8 6 8-6" />
+        </svg>
+      );
     case "more":
       return (
         <svg {...common}>
@@ -199,11 +211,43 @@ export function AdminIcon({ icon }: { icon: AdminIconName }) {
           <path d="M5 12h14" />
         </svg>
       );
+    case "save":
+      return (
+        <svg {...common}>
+          <path d="M5 4h11l3 3v13H5V4Z" />
+          <path d="M8 4v6h7V4" />
+          <path d="M8 20v-6h8v6" />
+        </svg>
+      );
     case "search":
       return (
         <svg {...common}>
           <path d="m21 21-4.3-4.3" />
           <path d="M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z" />
+        </svg>
+      );
+    case "settings":
+      return (
+        <svg {...common}>
+          <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1-2 3.4-.2-.1a1.8 1.8 0 0 0-1.8-.2 1.7 1.7 0 0 0-1 1.4v.2h-4v-.2a1.7 1.7 0 0 0-1-1.4 1.8 1.8 0 0 0-1.8.2l-.2.1-2-3.4.1-.1A1.7 1.7 0 0 0 6.2 15a1.7 1.7 0 0 0-1.4-1H4.6v-4h.2a1.7 1.7 0 0 0 1.4-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1 2-3.4.2.1a1.8 1.8 0 0 0 1.8.2 1.7 1.7 0 0 0 1-1.4v-.2h4v.2a1.7 1.7 0 0 0 1 1.4 1.8 1.8 0 0 0 1.8-.2l.2-.1 2 3.4-.1.1A1.7 1.7 0 0 0 17.8 9a1.7 1.7 0 0 0 1.4 1h.2v4h-.2a1.7 1.7 0 0 0-1.4 1Z" />
+        </svg>
+      );
+    case "shield":
+      return (
+        <svg {...common}>
+          <path d="M12 21s7-3.5 7-10V5l-7-3-7 3v6c0 6.5 7 10 7 10Z" />
+          <path d="m9 12 2 2 4-4" />
+        </svg>
+      );
+    case "trash":
+      return (
+        <svg {...common}>
+          <path d="M4 7h16" />
+          <path d="M10 11v6" />
+          <path d="M14 11v6" />
+          <path d="M6 7l1 14h10l1-14" />
+          <path d="M9 7V4h6v3" />
         </svg>
       );
     case "upload":
@@ -228,14 +272,21 @@ function adminMetricToneClass(
 }
 
 function adminStatusClass(status: string) {
-  if (status === "published" || status === "approved" || status === "stored") {
+  if (
+    status === "published" ||
+    status === "approved" ||
+    status === "stored" ||
+    status === "active"
+  ) {
     return "bg-emerald-100 text-emerald-700";
   }
   if (status === "archived" || status === "external") {
     return "bg-slate-100 text-slate-600";
   }
   if (status === "high") return "bg-red-100 text-red-700";
-  if (status === "medium") return "bg-amber-100 text-amber-700";
+  if (status === "medium" || status === "pending_setup") {
+    return "bg-amber-100 text-amber-700";
+  }
   return "bg-amber-100 text-amber-700";
 }
 

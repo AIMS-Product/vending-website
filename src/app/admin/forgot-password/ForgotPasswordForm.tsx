@@ -6,23 +6,44 @@ import { useFormStatus } from "react-dom";
 import {
   adminInputClass,
   adminPrimaryButtonClass,
+  adminSecondaryButtonClass,
 } from "@/components/admin/AdminUi";
-import { loginWithPassword, type LoginState } from "./actions";
+import { requestPasswordReset, type PasswordResetState } from "./actions";
 
-const initialState: LoginState = { status: "idle" };
+const initialState: PasswordResetState = { status: "idle" };
 
-export function LoginForm({
+export function ForgotPasswordForm({
   initialError,
-  nextPath,
 }: {
   initialError: string | null;
-  nextPath: string;
 }) {
-  const [state, formAction] = useActionState(loginWithPassword, initialState);
+  const [state, formAction] = useActionState(
+    requestPasswordReset,
+    initialState,
+  );
+
+  if (state.status === "sent") {
+    return (
+      <div className="space-y-4 text-sm text-slate-700">
+        <p className="text-base font-semibold text-slate-950">
+          Check your email
+        </p>
+        <p>
+          If <span className="font-medium text-slate-950">{state.email}</span>{" "}
+          has Studio access, a password reset email is on its way.
+        </p>
+        <Link
+          href="/admin/login"
+          className={`${adminSecondaryButtonClass} w-full`}
+        >
+          Back to sign in
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="space-y-4">
-      <input type="hidden" name="next" value={nextPath} />
       <label
         htmlFor="email"
         className="block text-sm font-medium text-slate-700"
@@ -41,33 +62,14 @@ export function LoginForm({
         />
       </label>
 
-      <label
-        htmlFor="password"
-        className="block text-sm font-medium text-slate-700"
-      >
-        Password
-        <input
-          id="password"
-          name="password"
-          aria-label="Password"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="current-password"
-          className={adminInputClass}
-        />
-      </label>
-
       <SubmitButton />
 
-      <div className="flex justify-end">
-        <Link
-          href="/admin/forgot-password"
-          className="text-sm font-semibold text-[#0b63f6] transition hover:text-[#0756d6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-        >
-          Forgot password?
-        </Link>
-      </div>
+      <Link
+        href="/admin/login"
+        className={`${adminSecondaryButtonClass} w-full`}
+      >
+        Back to sign in
+      </Link>
 
       {state.status === "error" && (
         <p className="text-sm text-red-600" role="alert" aria-live="polite">
@@ -92,7 +94,7 @@ function SubmitButton() {
       disabled={pending}
       className={`${adminPrimaryButtonClass} w-full`}
     >
-      {pending ? "Signing in..." : "Sign in"}
+      {pending ? "Sending reset..." : "Send password reset"}
     </button>
   );
 }
