@@ -64,8 +64,8 @@ export default async function AdminPagesPage({
   return (
     <AdminShell
       activeSection="pages"
-      title="Resource pages"
-      description="Manage structured SEO/resource pages with the same CMS shell ready for blogs, landing pages, campaigns, and other content types."
+      title="SEO pages"
+      description="Manage structured SEO pages with the same CMS shell ready for resource content."
       userEmail={user.email}
       userRole={role}
       actions={
@@ -73,13 +73,13 @@ export default async function AdminPagesPage({
           <span aria-hidden="true">
             <PageIcon icon="plus" />
           </span>
-          New resource page
+          New SEO page
         </Link>
       }
     >
       <section
         className="mb-5 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
-        aria-label="Resource page summary"
+        aria-label="SEO page summary"
       >
         <div className="grid divide-y divide-slate-200 md:grid-cols-4 md:divide-x md:divide-y-0">
           <MetricPanel
@@ -138,12 +138,12 @@ export default async function AdminPagesPage({
                   <PageIcon icon="search" />
                 </span>
                 <label className="sr-only" htmlFor="admin-pages-search">
-                  Search resource pages
+                  Search SEO pages
                 </label>
                 <input
                   id="admin-pages-search"
                   name="q"
-                  aria-label="Search resource pages"
+                  aria-label="Search SEO pages"
                   defaultValue={searchQuery}
                   placeholder="Search title, keyword, or URL"
                   className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-500"
@@ -233,7 +233,7 @@ export default async function AdminPagesPage({
             </details>
           </div>
           <p className="mt-3 text-sm text-slate-600">
-            Showing {filteredPages.length} resource{" "}
+            Showing {filteredPages.length} SEO{" "}
             {filteredPages.length === 1 ? "page" : "pages"}
             {active === "active" ? " in active pages" : ""}
           </p>
@@ -241,14 +241,12 @@ export default async function AdminPagesPage({
         {visiblePages.length === 0 ? (
           <div className="p-10 text-center">
             <h2 className="text-lg font-semibold text-slate-950">
-              {searchQuery
-                ? "No matching resource pages"
-                : "No resource pages found"}
+              {searchQuery ? "No matching SEO pages" : "No SEO pages found"}
             </h2>
             <p className="mt-2 text-sm text-slate-600">
               {searchQuery
                 ? "Clear the search or change the status tab to broaden the list."
-                : "Create a new resource page draft to start building content."}
+                : "Create a new SEO page draft to start building content."}
             </p>
             <div className="mt-5 flex justify-center gap-3">
               {searchQuery ? (
@@ -267,7 +265,7 @@ export default async function AdminPagesPage({
                 <span aria-hidden="true">
                   <PageIcon icon="plus" />
                 </span>
-                New resource page
+                New SEO page
               </Link>
             </div>
           </div>

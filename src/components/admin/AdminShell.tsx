@@ -37,7 +37,7 @@ const blogSection: AdminNavSection = {
 const contentSections: AdminNavSection[] = [
   {
     id: "pages",
-    label: "Resource pages",
+    label: "SEO pages",
     href: "/admin/pages",
     description: "SEO page content",
     icon: "file",
@@ -48,13 +48,6 @@ const contentSections: AdminNavSection[] = [
     href: "/admin/media",
     description: "Images and source assets",
     icon: "image",
-  },
-  {
-    id: "libraries",
-    label: "Content libraries",
-    href: "/admin/libraries",
-    description: "Claims, proof, CTAs",
-    icon: "layers",
   },
 ];
 
@@ -69,19 +62,6 @@ const accountSections: AdminNavSection[] = [
 ];
 
 const sections = [...contentSections, ...accountSections];
-
-const plannedSections = [
-  {
-    label: "Landing pages",
-    description: "Conversion pages",
-    icon: "book" as const,
-  },
-  {
-    label: blogSection.label,
-    description: "Coming soon",
-    icon: blogSection.icon,
-  },
-];
 
 export function AdminShell({
   activeSection,
@@ -297,41 +277,6 @@ export function AdminShell({
                     </div>
                   ))}
                 </nav>
-              </div>
-
-              <div
-                className={clsx(
-                  "mt-5 border-t border-slate-200 pt-4",
-                  sidebarCollapsed && "hidden",
-                )}
-              >
-                <p className="mb-2 px-2 text-xs font-semibold text-slate-500 uppercase">
-                  Planned
-                </p>
-                <div className="grid gap-1">
-                  {plannedSections.map((section) => (
-                    <div
-                      key={section.label}
-                      className="flex items-center gap-2 rounded-md p-2 text-sm text-slate-500"
-                      title={`${section.label}: ${section.description}`}
-                    >
-                      <span
-                        className="flex size-6 shrink-0 items-center justify-center rounded-md text-slate-500"
-                        aria-hidden="true"
-                      >
-                        <AdminIconGlyph icon={section.icon} />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-semibold text-slate-700">
-                          {section.label}
-                        </span>
-                        <span className="mt-0.5 block text-[10px] font-semibold text-slate-500 uppercase">
-                          Coming soon
-                        </span>
-                      </span>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               <div className="mt-auto border-t border-slate-200 pt-4">

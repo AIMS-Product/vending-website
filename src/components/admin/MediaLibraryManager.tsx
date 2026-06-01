@@ -1255,7 +1255,7 @@ function AssetUsageModal({
               ? "This asset is not referenced anywhere."
               : `${usage.totalCount} reference${usage.totalCount === 1 ? "" : "s"} found.`}
           </p>
-          <UsageList title="Resource pages" items={usage.seoPages} />
+          <UsageList title="SEO pages" items={usage.seoPages} />
           <UsageList title="News posts" items={usage.newsPosts} />
           <UsageList title="Proof items" items={usage.proofItems} />
           <UsageList title="Source documents" items={usage.sourceDocuments} />
@@ -1297,7 +1297,7 @@ function UsageList({
             {item.slug ? (
               <Link
                 href={
-                  title === "Resource pages"
+                  title === "SEO pages"
                     ? `/admin/pages/${item.id}`
                     : title === "News posts"
                       ? `/admin/news/${item.id}`

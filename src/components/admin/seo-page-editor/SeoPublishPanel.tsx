@@ -181,7 +181,7 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
         </div>
         <span className="mt-1.5 block text-xs leading-5 text-slate-500">
           Lowercase letters, numbers and hyphens only. Auto-generated from the
-          title until you edit it, and must be unique across resource pages.
+          title until you edit it, and must be unique across SEO pages.
         </span>
       </label>
 

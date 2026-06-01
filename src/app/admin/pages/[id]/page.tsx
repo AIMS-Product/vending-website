@@ -55,7 +55,7 @@ export default async function EditSeoPagePage({
     <AdminShell
       activeSection="pages"
       eyebrow="SEO Page Builder"
-      title="Edit resource page"
+      title="Edit SEO page"
       description="Update the page contract, page content, publishing state, previews, and revisions."
       userEmail={user.email}
       userRole={role}
