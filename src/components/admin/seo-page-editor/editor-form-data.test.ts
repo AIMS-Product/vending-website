@@ -7,6 +7,7 @@ describe("buildSeoPageEditorFormData", () => {
       pageId: "11111111-1111-4111-8111-111111111111",
       title: "Vending in Colleges",
       slug: "vending-in-colleges",
+      routePrefix: "/blog",
       targetKeyword: "college vending",
       seoTitle: "Vending in Colleges",
       metaDescription: "A draft preview page.",
@@ -15,11 +16,16 @@ describe("buildSeoPageEditorFormData", () => {
       sitemapEnabled: true,
       structuredDataBreadcrumb: true,
       structuredDataFaq: false,
+      pageType: "blog",
+      templateKey: "blog-standard",
       draftContentJson: JSON.stringify({ version: 1, sections: [] }),
     });
 
     expect(formData.get("id")).toBe("11111111-1111-4111-8111-111111111111");
     expect(formData.get("slug")).toBe("vending-in-colleges");
+    expect(formData.get("routePrefix")).toBe("/blog");
+    expect(formData.get("pageType")).toBe("blog");
+    expect(formData.get("templateKey")).toBe("blog-standard");
     expect(formData.get("sitemapEnabled")).toBe("on");
     expect(formData.get("structuredDataBreadcrumb")).toBe("on");
   });
@@ -29,6 +35,7 @@ describe("buildSeoPageEditorFormData", () => {
       pageId: null,
       title: "Vending in Colleges",
       slug: "vending-in-colleges",
+      routePrefix: "/resources",
       targetKeyword: "",
       seoTitle: "",
       metaDescription: "",
@@ -37,6 +44,8 @@ describe("buildSeoPageEditorFormData", () => {
       sitemapEnabled: true,
       structuredDataBreadcrumb: false,
       structuredDataFaq: true,
+      pageType: "resource",
+      templateKey: "blank",
       draftContentJson: JSON.stringify({ version: 1, sections: [] }),
     });
 

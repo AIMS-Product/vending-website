@@ -105,7 +105,7 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
       </p>
       {page?.status === "published" && (
         <a
-          href={`/resources/${page.slug}`}
+          href={page.route_path}
           target="_blank"
           rel="noreferrer"
           className="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
@@ -165,9 +165,19 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
       <label className="block">
         <span className="text-sm font-semibold text-slate-900">Slug</span>
         <div className="mt-1.5 flex items-center rounded-lg border border-slate-200 bg-white shadow-sm transition focus-within:border-[#0b63f6] focus-within:ring-4 focus-within:ring-[#0b63f6]/10">
-          <span className="border-r border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-600">
-            /resources/
-          </span>
+          <select
+            name="routePrefix"
+            aria-label="Route prefix"
+            value={editor.routePrefix}
+            onChange={(event) => editor.setRoutePrefix(event.target.value)}
+            className="max-w-32 rounded-l-lg border-r border-slate-200 bg-slate-50 px-2 py-2.5 text-sm font-semibold text-slate-700 outline-none"
+          >
+            {editor.routePrefixOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.value}
+              </option>
+            ))}
+          </select>
           <input
             name="slug"
             id="page-slug-field"
@@ -181,7 +191,8 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
         </div>
         <span className="mt-1.5 block text-xs leading-5 text-slate-500">
           Lowercase letters, numbers and hyphens only. Auto-generated from the
-          title until you edit it, and must be unique across active SEO pages.
+          title until you edit it, and the full path must be unique across
+          active pages.
         </span>
       </label>
 
@@ -403,7 +414,7 @@ function SearchPreviewCard({ editor }: { editor: SeoPageEditorController }) {
           {editor.seoTitle || editor.title || "Your Page Title Here"}
         </p>
         <p className="truncate text-sm text-[#006621]">
-          www.vendingpreneurs.com/resources/
+          www.vendingpreneurs.com{editor.routePrefix}/
           {editor.visibleSlug || "your-slug"}
         </p>
         <p className="line-clamp-2 text-sm text-[#545454]">

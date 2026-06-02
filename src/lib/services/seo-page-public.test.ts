@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getBuilderRedirectBySourcePath,
+  getPublishedSeoPageByPath,
   getPublishedSeoPageBySlug,
+  hasPublishedSeoPagePath,
   hasPublishedSeoPageSlug,
   listPublishedSeoPageSlugs,
   listSitemapSeoPages,
@@ -74,7 +76,26 @@ describe("seo page public service", () => {
 
     await expect(hasPublishedSeoPageSlug("start-vending")).resolves.toBe(true);
     expect(mocks.client.from).toHaveBeenCalledWith("published_seo_pages");
-    expect(mocks.query.eq).toHaveBeenCalledWith("slug", "start-vending");
+    expect(mocks.query.eq).toHaveBeenCalledWith(
+      "route_path",
+      "/resources/start-vending",
+    );
+  });
+
+  it("checks whether a published builder path exists", async () => {
+    mocks.query.maybeSingle.mockResolvedValue({
+      data: { id: "page_1" },
+      error: null,
+    });
+
+    await expect(hasPublishedSeoPagePath("/blog/start-vending")).resolves.toBe(
+      true,
+    );
+    expect(mocks.client.from).toHaveBeenCalledWith("published_seo_pages");
+    expect(mocks.query.eq).toHaveBeenCalledWith(
+      "route_path",
+      "/blog/start-vending",
+    );
   });
 
   it("returns a published page only when its snapshot matches the block schema", async () => {
@@ -82,6 +103,8 @@ describe("seo page public service", () => {
       data: {
         id: "page_1",
         slug: "start-vending",
+        route_prefix: "/blog",
+        route_path: "/blog/start-vending",
         title: "Start Vending",
         target_keyword: "start vending business",
         published_content: { version: 1, sections: [] },
@@ -113,7 +136,41 @@ describe("seo page public service", () => {
     expect(mocks.query.select).toHaveBeenCalledWith(
       expect.not.stringContaining("updated_by"),
     );
-    expect(mocks.query.eq).toHaveBeenCalledWith("slug", "start-vending");
+    expect(mocks.query.eq).toHaveBeenCalledWith(
+      "route_path",
+      "/resources/start-vending",
+    );
+  });
+
+  it("returns a published page by full builder path", async () => {
+    mocks.query.maybeSingle.mockResolvedValue({
+      data: {
+        id: "page_1",
+        slug: "start-vending",
+        route_prefix: "/blog",
+        route_path: "/blog/start-vending",
+        title: "Start Vending",
+        target_keyword: "start vending business",
+        published_content: { version: 1, sections: [] },
+        seo_title: "Start a Vending Business",
+        meta_description: "A tested blog page.",
+        canonical_url: null,
+        noindex: false,
+        sitemap_enabled: true,
+        structured_data_settings: {},
+        published_at: "2026-05-06T00:00:00Z",
+        updated_at: "2026-05-06T00:00:00Z",
+      },
+      error: null,
+    });
+
+    const page = await getPublishedSeoPageByPath("/blog/start-vending");
+
+    expect(page?.route_path).toBe("/blog/start-vending");
+    expect(mocks.query.eq).toHaveBeenCalledWith(
+      "route_path",
+      "/blog/start-vending",
+    );
   });
 
   it("returns null for missing or invalid published page snapshots", async () => {
@@ -142,7 +199,7 @@ describe("seo page public service", () => {
     expect(errorSpy).toHaveBeenCalledWith(
       "published SEO page content is invalid",
       expect.objectContaining({
-        slug: "bad-content",
+        slug: "/resources/bad-content",
         issues: expect.any(Array),
       }),
     );
@@ -167,11 +224,11 @@ describe("seo page public service", () => {
     await expect(listPublishedSeoPageSlugs()).rejects.toThrow(/RLS denied/);
 
     expect(errorSpy).toHaveBeenCalledWith(
-      "getPublishedSeoPageBySlug failed",
+      "getPublishedSeoPageByPath failed",
       error,
     );
     expect(errorSpy).toHaveBeenCalledWith(
-      "hasPublishedSeoPageSlug failed",
+      "hasPublishedSeoPagePath failed",
       error,
     );
     expect(errorSpy).toHaveBeenCalledWith(

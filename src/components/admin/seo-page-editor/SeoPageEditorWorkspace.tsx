@@ -27,7 +27,10 @@ export function SeoPageEditorWorkspace({
         value={editor.draftContentJson}
       />
       {editor.isSeoSidebarCollapsed && (
-        <input type="hidden" name="slug" value={editor.visibleSlug} />
+        <>
+          <input type="hidden" name="slug" value={editor.visibleSlug} />
+          <input type="hidden" name="routePrefix" value={editor.routePrefix} />
+        </>
       )}
 
       <div className="relative min-h-[calc(100dvh-4rem)] overflow-x-hidden border border-slate-200 bg-slate-100 lg:min-h-screen">

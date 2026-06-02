@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
+import { pagePathForSlug } from "@/lib/page-builder/page-paths";
 import { config } from "@/lib/config";
 import type { Database } from "@/types/database";
 
@@ -10,6 +11,8 @@ type PublicClient = ReturnType<typeof createSupabaseJsClient<Database>>;
 export type PublishedSeoPage = {
   id: string;
   slug: string;
+  route_prefix: string;
+  route_path: string;
   title: string;
   target_keyword: string | null;
   published_content: PageContent;
@@ -42,7 +45,7 @@ function getPublicClient() {
 }
 
 const PUBLIC_SEO_PAGE_FIELDS =
-  "id, slug, title, target_keyword, published_content, seo_title, meta_description, canonical_url, noindex, sitemap_enabled, structured_data_settings, published_at, updated_at" as const;
+  "id, slug, route_prefix, route_path, title, target_keyword, published_content, seo_title, meta_description, canonical_url, noindex, sitemap_enabled, structured_data_settings, published_at, updated_at" as const;
 const PUBLIC_SEO_PAGES_TABLE = "published_seo_pages" as const;
 
 export async function listPublishedSeoPageSlugs() {
@@ -59,15 +62,19 @@ export async function listPublishedSeoPageSlugs() {
 }
 
 export async function hasPublishedSeoPageSlug(slug: string) {
+  return hasPublishedSeoPagePath(pagePathForSlug(slug));
+}
+
+export async function hasPublishedSeoPagePath(routePath: string) {
   const supabase = getPublicClient();
   const { data, error } = await supabase
     .from(PUBLIC_SEO_PAGES_TABLE)
     .select("id")
-    .eq("slug", slug)
+    .eq("route_path", routePath)
     .maybeSingle();
 
   if (error) {
-    throwPublicSeoPageQueryError("hasPublishedSeoPageSlug", error);
+    throwPublicSeoPageQueryError("hasPublishedSeoPagePath", error, routePath);
   }
 
   return Boolean(data);
@@ -77,7 +84,7 @@ export async function listSitemapSeoPages() {
   const supabase = getPublicClient();
   const { data, error } = await supabase
     .from(PUBLIC_SEO_PAGES_TABLE)
-    .select("slug, updated_at")
+    .select("slug, route_path, updated_at")
     .eq("sitemap_enabled", true)
     .eq("noindex", false);
 
@@ -89,11 +96,15 @@ export async function listSitemapSeoPages() {
 }
 
 export async function getPublishedSeoPageBySlug(slug: string) {
+  return getPublishedSeoPageByPath(pagePathForSlug(slug));
+}
+
+export async function getPublishedSeoPageByPath(routePath: string) {
   const supabase = getPublicClient();
   const { data, error } = await supabase
     .from(PUBLIC_SEO_PAGES_TABLE)
     .select(PUBLIC_SEO_PAGE_FIELDS)
-    .eq("slug", slug)
+    .eq("route_path", routePath)
     .maybeSingle();
 
   if (error) {
@@ -101,14 +112,14 @@ export async function getPublishedSeoPageBySlug(slug: string) {
     // page. Throw so it surfaces as a 500 + error log instead of a silent 404
     // that hides infrastructure problems — e.g. an unapplied view migration
     // making every resource page disappear.
-    throwPublicSeoPageQueryError("getPublishedSeoPageBySlug", error, slug);
+    throwPublicSeoPageQueryError("getPublishedSeoPageByPath", error, routePath);
   }
   if (!data || !data.published_content) return null;
 
   const content = pageContentSchema.safeParse(data.published_content);
   if (!content.success) {
     console.error("published SEO page content is invalid", {
-      slug,
+      slug: routePath,
       issues: content.error.issues,
     });
     return null;

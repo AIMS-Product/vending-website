@@ -32,6 +32,18 @@ import {
   type PageBlock,
 } from "@/lib/page-builder/blocks";
 import {
+  builderRoutePrefixOptions,
+  defaultRoutePrefixForPageType,
+  pagePathForSlug,
+} from "@/lib/page-builder/page-paths";
+import {
+  getPageTemplate,
+  pageTypeOptions,
+  templateOptionsForPageType,
+  type PageTemplateKey,
+  type PageTypeId,
+} from "@/lib/page-builder/page-templates";
+import {
   assessSeoReadiness,
   type SeoReadinessFinding,
   type SeoReadinessStatus,
@@ -129,6 +141,11 @@ export function useSeoPageEditorController({
   const [slugTouched, setSlugTouched] = useState(
     Boolean(initialDraftSettings?.slug ?? page?.slug),
   );
+  const [routePrefix, setRoutePrefix] = useState(
+    initialDraftSettings?.routePrefix ??
+      page?.route_prefix ??
+      defaultRoutePrefixForPageType(page?.page_type),
+  );
   const [targetKeyword, setTargetKeyword] = useState(
     initialDraftSettings?.targetKeyword ?? page?.target_keyword ?? "",
   );
@@ -146,6 +163,12 @@ export function useSeoPageEditorController({
   );
   const [sitemapEnabled, setSitemapEnabled] = useState(
     initialDraftSettings?.sitemapEnabled ?? page?.sitemap_enabled ?? true,
+  );
+  const [pageType, setPageType] = useState(
+    (page?.page_type as PageTypeId | undefined) ?? "resource",
+  );
+  const [templateKey, setTemplateKey] = useState(
+    (page?.template_key as PageTemplateKey | undefined) ?? "blank",
   );
   const initialStructuredDataSettings = useMemo(
     () =>
@@ -241,6 +264,7 @@ export function useSeoPageEditorController({
       return (
         title !== page?.title ||
         visibleSlug !== page?.slug ||
+        routePrefix !== page?.route_prefix ||
         targetKeyword !== (page?.target_keyword ?? "") ||
         seoTitle !== (page?.seo_title ?? "") ||
         metaDescription !== (page?.meta_description ?? "") ||
@@ -302,10 +326,12 @@ export function useSeoPageEditorController({
       suggestInternalLinks({
         content,
         currentPageId: page?.id,
-        currentPath: visibleSlug ? `/resources/${visibleSlug}` : null,
+        currentPath: visibleSlug
+          ? pagePathForSlug(visibleSlug, routePrefix)
+          : null,
         targets: internalLinkTargets,
       }),
-    [content, internalLinkTargets, page?.id, visibleSlug],
+    [content, internalLinkTargets, page?.id, routePrefix, visibleSlug],
   );
   const blockOrdinalById = useMemo(() => {
     const ordinals = new Map<string, number>();
@@ -362,13 +388,7 @@ export function useSeoPageEditorController({
   const primaryColumn = primarySection?.columns[0] ?? null;
   const usesSimpleBlockStack =
     content.sections.length <= 1 && (primarySection?.columns.length ?? 0) <= 1;
-  // S5: the create chooser currently offers only "From scratch" ("From template"
-  // is a disabled "Coming soon" teaser), so skip it and drop straight into the
-  // builder. Flip NEW_PAGE_TEMPLATES_ENABLED to true to reintroduce the chooser
-  // once page templates actually ship.
-  const NEW_PAGE_TEMPLATES_ENABLED = false;
-  const showCreationChoiceModal =
-    NEW_PAGE_TEMPLATES_ENABLED && !page?.id && !hasSelectedNewPageMode;
+  const showCreationChoiceModal = !page?.id && !hasSelectedNewPageMode;
   const saveMessage = (() => {
     if (redirectError && state.status === "idle" && !lastManualSubmitIntent) {
       return redirectError;
@@ -489,6 +509,7 @@ export function useSeoPageEditorController({
       autosaveSeoPageDraft(effectivePageId, {
         title,
         slug: visibleSlug,
+        routePrefix,
         targetKeyword,
         seoTitle,
         metaDescription,
@@ -499,6 +520,8 @@ export function useSeoPageEditorController({
           breadcrumb: structuredDataBreadcrumb,
           faq: structuredDataFaq,
         },
+        pageType,
+        templateKey,
         draftContent: content,
       })
         .then(setAutosave)
@@ -515,11 +538,14 @@ export function useSeoPageEditorController({
     effectivePageId,
     metaDescription,
     noindex,
+    pageType,
+    routePrefix,
     seoTitle,
     sitemapEnabled,
     structuredDataBreadcrumb,
     structuredDataFaq,
     targetKeyword,
+    templateKey,
     title,
     visibleSlug,
   ]);
@@ -538,9 +564,12 @@ export function useSeoPageEditorController({
         const result = await createSeoPageDraftForEditor({
           title,
           slug: visibleSlug,
+          routePrefix,
           targetKeyword: targetKeyword.trim() || undefined,
           seoTitle: seoTitle.trim() || undefined,
           metaDescription: metaDescription.trim() || undefined,
+          pageType,
+          templateKey,
           draftContent: content,
         });
         if (result.status === "created") {
@@ -568,8 +597,11 @@ export function useSeoPageEditorController({
     createdDraftId,
     metaDescription,
     page?.id,
+    pageType,
+    routePrefix,
     seoTitle,
     targetKeyword,
+    templateKey,
     title,
     visibleSlug,
   ]);
@@ -685,9 +717,13 @@ export function useSeoPageEditorController({
     moveSectionToIndex,
     nextPublishStep,
     noindex,
-    onCreateFromScratch: () => setHasSelectedNewPageMode(true),
+    onChoosePageTemplate,
     openLivePreview,
     page,
+    pageType,
+    pageTypeOptions,
+    routePrefix,
+    routePrefixOptions: builderRoutePrefixOptions,
     previewLinkMessage,
     previewLinkPath,
     previewLinkTone,
@@ -717,6 +753,7 @@ export function useSeoPageEditorController({
     setMetaDescription,
     setMobileEditorPanel,
     setNoindex,
+    setRoutePrefix,
     setSelectedBlockId,
     setSeoTitle,
     setSitemapEnabled,
@@ -732,6 +769,8 @@ export function useSeoPageEditorController({
     structuredDataBreadcrumb,
     structuredDataFaq,
     targetKeyword,
+    templateKey,
+    templateOptions: templateOptionsForPageType(pageType),
     title,
     toggleBlockSidebar,
     toggleSeoSidebar,
@@ -863,6 +902,7 @@ export function useSeoPageEditorController({
     const autosaveResult = await autosaveSeoPageDraft(previewPageId, {
       title,
       slug: visibleSlug,
+      routePrefix,
       targetKeyword,
       seoTitle,
       metaDescription,
@@ -873,6 +913,8 @@ export function useSeoPageEditorController({
         breadcrumb: structuredDataBreadcrumb,
         faq: structuredDataFaq,
       },
+      pageType,
+      templateKey,
       draftContent: content,
     });
 
@@ -890,6 +932,7 @@ export function useSeoPageEditorController({
       pageId: effectivePageId,
       title,
       slug: visibleSlug,
+      routePrefix,
       targetKeyword,
       seoTitle,
       metaDescription,
@@ -898,8 +941,21 @@ export function useSeoPageEditorController({
       sitemapEnabled,
       structuredDataBreadcrumb,
       structuredDataFaq,
+      pageType,
+      templateKey,
       draftContentJson,
     });
+  }
+
+  function onChoosePageTemplate(nextPageType: string, nextTemplateKey: string) {
+    const template = getPageTemplate(nextPageType, nextTemplateKey);
+    setPageType(template.pageType);
+    setRoutePrefix(defaultRoutePrefixForPageType(template.pageType));
+    setTemplateKey(template.templateKey);
+    dispatchContent({ type: "replaceContent", content: template.content });
+    setSelectedBlockId(null);
+    setEditingBlockId(null);
+    setHasSelectedNewPageMode(true);
   }
 
   function updateChromeSettings(next: Partial<PageChromeSettings>) {

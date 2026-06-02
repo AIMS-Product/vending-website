@@ -13,6 +13,7 @@ import {
   SeoPageValidationError,
   adminCreateSeoPagePreviewToken,
   adminCreateSeoPage,
+  adminDuplicateSeoPage,
   adminGetSeoPageById,
   adminPublishSeoPage,
   adminRefreshSeoPageLibraryReferences,
@@ -30,6 +31,7 @@ import {
   adminGenerateOpenAiSeoPageProposal,
 } from "@/lib/services/openai-seo-agent";
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
+import { pagePathForSlug } from "@/lib/page-builder/page-paths";
 import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
 
 export type PageEditorActionState =
@@ -72,12 +74,15 @@ export type PagePreviewLinkActionState =
 export type PageAutosavePayload = {
   title: string;
   slug: string;
+  routePrefix: string;
   targetKeyword: string;
   seoTitle: string;
   metaDescription: string;
   canonicalUrl: string;
   noindex: boolean;
   sitemapEnabled: boolean;
+  pageType: string;
+  templateKey: string;
   structuredDataSettings: StructuredDataSettings;
   draftContent: PageContent;
 };
@@ -90,12 +95,22 @@ const formSchema = z.object({
     .trim()
     .toLowerCase()
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use a URL-safe slug."),
+  routePrefix: z
+    .string()
+    .trim()
+    .regex(
+      /^\/(resources|blog|landing|videos|solutions)$/,
+      "Choose a supported route prefix.",
+    )
+    .default("/resources"),
   targetKeyword: z.string().trim().max(180, "Target keyword is too long."),
   seoTitle: z.string().trim().max(80, "SEO title is too long."),
   metaDescription: z.string().trim().max(180, "Meta description is too long."),
   canonicalUrl: z.string().trim().max(500, "Canonical URL is too long."),
   noindex: z.boolean(),
   sitemapEnabled: z.boolean(),
+  pageType: z.string().trim().min(1).default("resource"),
+  templateKey: z.string().trim().min(1).default("blank"),
   structuredDataSettings: z.object({
     breadcrumb: z.boolean(),
     faq: z.boolean(),
@@ -107,13 +122,12 @@ const formSchema = z.object({
 type ParsedPageForm = z.infer<typeof formSchema>;
 
 const ADMIN_PAGES_PATH = "/admin/pages";
-const PUBLIC_RESOURCES_PATH = "/resources";
 
 type PersistedPageDraft = {
   pageId: string;
   created: boolean;
   existingWasPublished: boolean;
-  previousSlug?: string;
+  previousPath?: string;
 };
 
 export async function saveSeoPage(
@@ -143,13 +157,16 @@ export async function saveSeoPage(
     }
 
     if (persisted.created) {
-      revalidatePagePaths(page.slug);
+      revalidatePagePaths(pagePathForSlug(page.slug, page.routePrefix));
       redirectTo = `${ADMIN_PAGES_PATH}/${persisted.pageId}?saved=1`;
     } else if (persisted.existingWasPublished && page.intent === "save") {
       revalidatePath(`${ADMIN_PAGES_PATH}/${persisted.pageId}`);
       revalidatePath(ADMIN_PAGES_PATH);
     } else {
-      revalidatePagePaths(page.slug, persisted.previousSlug);
+      revalidatePagePaths(
+        pagePathForSlug(page.slug, page.routePrefix),
+        persisted.previousPath,
+      );
     }
   } catch (error) {
     return pageActionError(error);
@@ -166,9 +183,12 @@ export type CreateDraftForEditorResult =
 const createDraftForEditorSchema = z.object({
   title: z.string().trim().min(1),
   slug: z.string().trim().min(1),
+  routePrefix: z.string().trim().min(1).default("/resources"),
   targetKeyword: z.string().trim().optional(),
   seoTitle: z.string().trim().optional(),
   metaDescription: z.string().trim().optional(),
+  pageType: z.string().trim().min(1).default("resource"),
+  templateKey: z.string().trim().min(1).default("blank"),
 });
 
 // S3b: auto-create a draft row once the user has actually started a new page
@@ -177,9 +197,12 @@ const createDraftForEditorSchema = z.object({
 export async function createSeoPageDraftForEditor(input: {
   title: string;
   slug: string;
+  routePrefix?: string;
   targetKeyword?: string;
   seoTitle?: string;
   metaDescription?: string;
+  pageType?: string;
+  templateKey?: string;
   draftContent?: unknown;
 }): Promise<CreateDraftForEditorResult> {
   const admin = await requireAuth();
@@ -192,9 +215,12 @@ export async function createSeoPageDraftForEditor(input: {
     const page = await adminCreateSeoPage({
       title: parsed.data.title,
       slug: parsed.data.slug,
+      routePrefix: parsed.data.routePrefix,
       targetKeyword: parsed.data.targetKeyword ?? null,
       seoTitle: parsed.data.seoTitle ?? null,
       metaDescription: parsed.data.metaDescription ?? null,
+      pageType: parsed.data.pageType,
+      templateKey: parsed.data.templateKey,
       draftContent: input.draftContent,
       createdBy: admin.user.id,
     });
@@ -221,12 +247,15 @@ export async function autosaveSeoPageDraft(
     id: pageId,
     title: payload.title,
     slug: payload.slug,
+    routePrefix: payload.routePrefix,
     targetKeyword: payload.targetKeyword,
     seoTitle: payload.seoTitle,
     metaDescription: payload.metaDescription,
     canonicalUrl: payload.canonicalUrl,
     noindex: payload.noindex,
     sitemapEnabled: payload.sitemapEnabled,
+    pageType: payload.pageType,
+    templateKey: payload.templateKey,
     structuredDataSettings: payload.structuredDataSettings,
     draftContent: payload.draftContent,
     intent: "save",
@@ -251,6 +280,7 @@ export async function autosaveSeoPageDraft(
     } else {
       await adminSaveSeoPageDraft(pageId, {
         slug: parsed.data.slug,
+        routePrefix: parsed.data.routePrefix,
         title: parsed.data.title,
         targetKeyword: nullable(parsed.data.targetKeyword),
         ...draftMetadataFromPageForm(parsed.data),
@@ -316,7 +346,10 @@ export async function saveSeoPageDraftAndCreatePreviewLink(
       actorId: admin.user.id,
     });
     if (persisted.created) {
-      revalidatePagePaths(page.slug, persisted.previousSlug);
+      revalidatePagePaths(
+        pagePathForSlug(page.slug, page.routePrefix),
+        persisted.previousPath,
+      );
     }
     revalidatePath(`${ADMIN_PAGES_PATH}/${persisted.pageId}`);
     return {
@@ -470,7 +503,7 @@ export async function publishSeoPageFromList(formData: FormData) {
     const { page } = await adminPublishSeoPage(pageId, {
       actorId: admin.user.id,
     });
-    revalidatePagePaths(page.slug);
+    revalidatePagePaths(page.route_path);
   } catch (error) {
     console.error("failed to publish SEO page from list", {
       adminUserId: admin.user.id,
@@ -480,6 +513,27 @@ export async function publishSeoPageFromList(formData: FormData) {
     redirectPath = `${ADMIN_PAGES_PATH}/${pageId}?error=publish`;
   }
 
+  redirect(redirectPath);
+}
+
+export async function duplicateSeoPageFromList(formData: FormData) {
+  const admin = await requireAuth();
+  const pageId = parseListPageId(formData, "duplicate");
+  let redirectPath = `${ADMIN_PAGES_PATH}/${pageId}?error=duplicate`;
+
+  try {
+    const page = await adminDuplicateSeoPage(pageId, {
+      actorId: admin.user.id,
+    });
+    revalidatePath(ADMIN_PAGES_PATH);
+    redirectPath = `${ADMIN_PAGES_PATH}/${page.id}?saved=1`;
+  } catch (error) {
+    console.error("failed to duplicate SEO page from list", {
+      adminUserId: admin.user.id,
+      pageId,
+      error,
+    });
+  }
   redirect(redirectPath);
 }
 
@@ -493,7 +547,7 @@ export async function moveSeoPageToDraftFromList(formData: FormData) {
     const page = await adminUnpublishSeoPage(pageId, {
       actorId: admin.user.id,
     });
-    revalidatePagePaths(page.slug);
+    revalidatePagePaths(page.route_path);
   } catch (error) {
     console.error("failed to move SEO page to draft from list", {
       adminUserId: admin.user.id,
@@ -516,7 +570,7 @@ export async function archiveSeoPageFromList(formData: FormData) {
     const page = await adminArchiveSeoPage(pageId, {
       actorId: admin.user.id,
     });
-    revalidatePagePaths(page.slug);
+    revalidatePagePaths(page.route_path);
   } catch (error) {
     console.error("failed to archive SEO page from list", {
       adminUserId: admin.user.id,
@@ -545,12 +599,15 @@ function parsePageFormData(formData: FormData) {
     id: String(formData.get("id") ?? "") || undefined,
     title: formData.get("title"),
     slug: formData.get("slug"),
+    routePrefix: formData.get("routePrefix") ?? "/resources",
     targetKeyword: formData.get("targetKeyword") ?? "",
     seoTitle: formData.get("seoTitle") ?? "",
     metaDescription: formData.get("metaDescription") ?? "",
     canonicalUrl: formData.get("canonicalUrl") ?? "",
     noindex: formData.get("noindex") === "on",
     sitemapEnabled: formData.get("sitemapEnabled") === "on",
+    pageType: formData.get("pageType") ?? "resource",
+    templateKey: formData.get("templateKey") ?? "blank",
     structuredDataSettings: {
       breadcrumb: formData.get("structuredDataBreadcrumb") === "on",
       faq: formData.get("structuredDataFaq") === "on",
@@ -574,8 +631,11 @@ async function persistPageEditorDraft(
   if (!page.id) {
     const created = await adminCreateSeoPage({
       slug: page.slug,
+      routePrefix: page.routePrefix,
       title: page.title,
       targetKeyword: nullable(page.targetKeyword),
+      pageType: page.pageType,
+      templateKey: page.templateKey,
       draftContent: page.draftContent,
       createdBy: actorId,
     });
@@ -602,11 +662,19 @@ async function persistPageEditorDraft(
       updatedBy: actorId,
     });
   } else {
-    if (existing.slug !== page.slug) {
-      await adminUpdateSeoPageSlug(page.id, page.slug, { actorId });
+    if (
+      existing.slug !== page.slug ||
+      existing.route_prefix !== page.routePrefix
+    ) {
+      await adminUpdateSeoPageSlug(page.id, page.slug, {
+        actorId,
+        routePrefix: page.routePrefix,
+      });
     }
 
     await adminSaveSeoPageDraft(page.id, {
+      slug: page.slug,
+      routePrefix: page.routePrefix,
       title: page.title,
       targetKeyword: nullable(page.targetKeyword),
       ...draftMetadataFromPageForm(page),
@@ -619,7 +687,7 @@ async function persistPageEditorDraft(
     pageId: page.id,
     created: false,
     existingWasPublished: existing.status === "published",
-    previousSlug: existing.slug,
+    previousPath: existing.route_path,
   };
 }
 
@@ -637,6 +705,8 @@ function draftMetadataFromPageForm(page: ParsedPageForm) {
 function draftSettingsFromPageForm(page: ParsedPageForm): SeoPageDraftSettings {
   return {
     slug: page.slug,
+    routePrefix: page.routePrefix,
+    routePath: pagePathForSlug(page.slug, page.routePrefix),
     title: page.title,
     targetKeyword: nullable(page.targetKeyword),
     ...draftMetadataFromPageForm(page),
@@ -765,12 +835,12 @@ function parseAcceptedPageContent(page: unknown): PageContent {
   return parsed.data.draft_content;
 }
 
-function revalidatePagePaths(slug: string, previousSlug?: string) {
+function revalidatePagePaths(routePath: string, previousPath?: string) {
   revalidatePath(ADMIN_PAGES_PATH);
-  revalidatePath(`${PUBLIC_RESOURCES_PATH}/${slug}`);
+  revalidatePath(routePath);
   revalidatePath("/sitemap.xml");
-  if (previousSlug && previousSlug !== slug) {
-    revalidatePath(`${PUBLIC_RESOURCES_PATH}/${previousSlug}`);
+  if (previousPath && previousPath !== routePath) {
+    revalidatePath(previousPath);
   }
 }
 

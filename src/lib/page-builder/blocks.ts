@@ -529,7 +529,7 @@ export function validatePageForPublish(
     issues.push({
       code: "invalid_slug",
       path: "slug",
-      message: "Publish requires a valid lowercase resource slug.",
+      message: "Publish requires a valid lowercase URL slug.",
     });
   }
 

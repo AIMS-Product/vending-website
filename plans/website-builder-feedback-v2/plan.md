@@ -1,6 +1,6 @@
 # Feature Plan: Website Builder Feedback V2
 
-Status: READY
+Status: IN_PROGRESS
 Last updated: 2026-06-02
 Owner: feature-orchestrator
 
@@ -27,10 +27,10 @@ Owner: feature-orchestrator
 
 | Node | Title                                                      | Tier | Depends On | Parallel Group | Shared-State Risk              | Status  |
 | ---- | ---------------------------------------------------------- | ---- | ---------- | -------------- | ------------------------------ | ------- |
-| S0   | Verify existing review-marked builder behavior             | T0   | none       | W0-A           | browser/session state          | PENDING |
-| S1   | Add persistent editor navigation and copy links            | T1   | S0         | W1-A           | low admin UI                   | PENDING |
-| S2   | Define page type and template creation foundation          | T2   | S0         | W1-B           | schema/admin creation flow     | PENDING |
-| S3   | Add route-prefix slugs and duplicate-page flow             | T2   | S2         | W2-A           | routing/redirect/sitemap       | PENDING |
+| S0   | Verify existing review-marked builder behavior             | T0   | none       | W0-A           | browser/session state          | DONE    |
+| S1   | Add persistent editor navigation and copy links            | T1   | S0         | W1-A           | low admin UI                   | DONE    |
+| S2   | Define page type and template creation foundation          | T2   | S0         | W1-B           | schema/admin creation flow     | DONE    |
+| S3   | Add route-prefix slugs and duplicate-page flow             | T2   | S2         | W2-A           | routing/redirect/sitemap       | DONE    |
 | S4   | Capture published blocks into content library              | T2   | S2         | W2-B           | publish snapshots/library data | PENDING |
 | S5   | Add SEO drawer governance fields                           | T2   | S2         | W2-C           | page metadata/publish gates    | PENDING |
 | S6   | Add dashboard metadata, lifecycle, and bulk operations     | T2   | S5         | W3-A           | admin list/bulk mutations      | PENDING |
@@ -46,7 +46,7 @@ Owner: feature-orchestrator
 
 ### S0 - Verify existing review-marked builder behavior
 
-Status: PENDING
+Status: DONE
 Tier: T0
 Type: verification
 Actor/trigger: Reviewer opens the current admin builder, media library, preview, and public resource routes.
@@ -92,7 +92,7 @@ Blocked on: none.
 
 ### S1 - Add persistent editor navigation and copy links
 
-Status: PENDING
+Status: DONE
 Tier: T1
 Type: behavior
 Actor/trigger: Admin edits a page and needs to return to the CMS or share the exact page reference.
@@ -136,7 +136,7 @@ Blocked on: none.
 
 ### S2 - Define page type and template creation foundation
 
-Status: PENDING
+Status: DONE
 Tier: T2
 Type: scaffold
 Actor/trigger: Admin starts a new page or asks the AI assistant to use a saved template.
@@ -150,11 +150,11 @@ Expected files: schema migrations, page creation action/services, `src/app/admin
 Write boundaries: Page creation, template model, template selection UI, AI template contract. Do not implement public routes for new prefixes in this node unless required for tests.
 Acceptance criteria:
 
-- [ ] New-page flow includes page type selection and blank/default/saved template choices.
-- [ ] Resource-page creation remains backward compatible.
-- [ ] Templates are composed of existing validated blocks and locked layout variants.
-- [ ] AI can reference approved templates without bypassing proposal review.
-- [ ] Template creation/selection is represented in tests and admin UI copy uses marketer-facing labels.
+- [x] New-page flow includes page type selection and blank/default/saved template choices.
+- [x] Resource-page creation remains backward compatible.
+- [x] Templates are composed of existing validated blocks and locked layout variants.
+- [x] AI can reference approved templates without bypassing proposal review.
+- [x] Template creation/selection is represented in tests and admin UI copy uses marketer-facing labels.
 
 Regression guards:
 
@@ -181,7 +181,7 @@ Blocked on: none.
 
 ### S3 - Add route-prefix slugs and duplicate-page flow
 
-Status: PENDING
+Status: DONE
 Tier: T2
 Type: integration
 Actor/trigger: Admin selects a page type, edits the slug prefix, or duplicates an existing page.
@@ -195,11 +195,11 @@ Expected files: route helpers, page services/actions, redirect services, sitemap
 Write boundaries: Page path/prefix services, duplicate action, redirect integration, slug UI. Do not broaden to full blog authoring; that is S10.
 Acceptance criteria:
 
-- [ ] Page path uniqueness is enforced by full path/prefix.
-- [ ] Default prefix is inferred by page type and can be overridden where allowed.
-- [ ] Duplicate creates a draft, resets publish state, copies relevant content/metadata/tags, and requires a publish-safe slug/title.
-- [ ] Prefix or slug changes create safe redirects for previously published paths.
-- [ ] Canonical, sitemap, preview, and public render use the full path correctly.
+- [x] Page path uniqueness is enforced by full path/prefix.
+- [x] Default prefix is inferred by page type and can be overridden where allowed.
+- [x] Duplicate creates a draft, resets publish state, copies relevant content/metadata/tags, and requires a publish-safe slug/title.
+- [x] Prefix or slug changes create safe redirects for previously published paths.
+- [x] Canonical, sitemap, preview, and public render use the full path correctly.
 
 Regression guards:
 
@@ -222,7 +222,7 @@ External docs needed: local Next.js routing docs under `node_modules/next/dist/d
 Parallelization: W2-A; single-threaded with route/migration work.
 Worker role: routing and services worker.
 Exit evidence: Passing route tests, browser smoke, and cleanup notes.
-Blocked on: final slug prefix taxonomy if implementation requires specific route groups beyond safe defaults.
+Blocked on: none; safe route-prefix defaults are recorded in `decisions.md`.
 
 ### S4 - Capture published blocks into content library
 

@@ -13,6 +13,8 @@ const request: PageBuilderAiChatRequest = {
     status: "draft",
     title: "Coffee vending Adelaide",
     slug: "coffee-vending-adelaide",
+    pageType: "resource",
+    templateKey: "blank",
     targetKeyword: "coffee vending",
     seoTitle: "Coffee vending Adelaide",
     metaDescription: "Coffee vending machines for Adelaide workplaces.",

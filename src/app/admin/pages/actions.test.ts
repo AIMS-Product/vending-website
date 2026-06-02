@@ -3,6 +3,7 @@ import type { PageContent } from "@/lib/page-builder/blocks";
 import {
   acceptAiSeoProposalBlocks,
   createSeoPageDraftForEditor,
+  duplicateSeoPageFromList,
   generateAiSeoPageProposal,
   autosaveSeoPageDraft,
   saveSeoPage,
@@ -20,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   adminArchiveSeoPage: vi.fn(),
   adminCreateSeoPagePreviewToken: vi.fn(),
   adminCreateSeoPage: vi.fn(),
+  adminDuplicateSeoPage: vi.fn(),
   adminGetSeoPageById: vi.fn(),
   adminPublishSeoPage: vi.fn(),
   adminRefreshSeoPageLibraryReferences: vi.fn(),
@@ -72,6 +74,7 @@ vi.mock("@/lib/services/seo-pages", async () => {
     adminArchiveSeoPage: mocks.adminArchiveSeoPage,
     adminCreateSeoPagePreviewToken: mocks.adminCreateSeoPagePreviewToken,
     adminCreateSeoPage: mocks.adminCreateSeoPage,
+    adminDuplicateSeoPage: mocks.adminDuplicateSeoPage,
     adminGetSeoPageById: mocks.adminGetSeoPageById,
     adminPublishSeoPage: mocks.adminPublishSeoPage,
     adminRefreshSeoPageLibraryReferences:
@@ -95,6 +98,7 @@ type PageFormOverrides = {
   id?: string;
   title?: string;
   slug?: string;
+  routePrefix?: string;
   targetKeyword?: string;
   seoTitle?: string;
   metaDescription?: string;
@@ -103,6 +107,8 @@ type PageFormOverrides = {
   sitemapEnabled?: boolean;
   structuredDataBreadcrumb?: boolean;
   structuredDataFaq?: boolean;
+  pageType?: string;
+  templateKey?: string;
   draftContent?: PageContent;
   publishNote?: string;
   intent?: "save" | "publish";
@@ -112,6 +118,7 @@ function pageForm(overrides: PageFormOverrides = {}) {
   const values = {
     title: "Coffee Vending Adelaide",
     slug: "coffee-vending-adelaide",
+    routePrefix: "/resources",
     targetKeyword: "coffee vending",
     seoTitle: "Coffee vending machines",
     metaDescription: "Coffee vending machines for Adelaide workplaces.",
@@ -120,6 +127,8 @@ function pageForm(overrides: PageFormOverrides = {}) {
     sitemapEnabled: true,
     structuredDataBreadcrumb: true,
     structuredDataFaq: false,
+    pageType: "resource",
+    templateKey: "blank",
     draftContent: validContent,
     publishNote: "",
     intent: "save" as const,
@@ -129,6 +138,7 @@ function pageForm(overrides: PageFormOverrides = {}) {
   if (values.id) formData.set("id", values.id);
   formData.set("title", values.title);
   formData.set("slug", values.slug);
+  formData.set("routePrefix", values.routePrefix);
   formData.set("targetKeyword", values.targetKeyword);
   formData.set("seoTitle", values.seoTitle);
   formData.set("metaDescription", values.metaDescription);
@@ -139,6 +149,8 @@ function pageForm(overrides: PageFormOverrides = {}) {
     formData.set("structuredDataBreadcrumb", "on");
   }
   if (values.structuredDataFaq) formData.set("structuredDataFaq", "on");
+  formData.set("pageType", values.pageType);
+  formData.set("templateKey", values.templateKey);
   formData.set("draftContent", JSON.stringify(values.draftContent));
   formData.set("publishNote", values.publishNote);
   formData.set("intent", values.intent);
@@ -161,8 +173,11 @@ describe("admin page actions", () => {
 
     expect(mocks.adminCreateSeoPage).toHaveBeenCalledWith({
       slug: "coffee-vending-adelaide",
+      routePrefix: "/resources",
       title: "Coffee Vending Adelaide",
       targetKeyword: "coffee vending",
+      pageType: "resource",
+      templateKey: "blank",
       draftContent: validContent,
       createdBy: "admin_1",
     });
@@ -197,16 +212,22 @@ describe("admin page actions", () => {
       targetKeyword: "coffee vending adelaide",
       seoTitle: "Coffee Vending Adelaide",
       metaDescription: "Compare coffee vending machines for Adelaide offices.",
+      routePrefix: "/blog",
+      pageType: "blog",
+      templateKey: "blog-standard",
       draftContent: validContent,
     });
 
     expect(result).toEqual({ status: "created", pageId });
     expect(mocks.adminCreateSeoPage).toHaveBeenCalledWith({
       slug: "coffee-vending-adelaide",
+      routePrefix: "/blog",
       title: "Coffee Vending Adelaide",
       targetKeyword: "coffee vending adelaide",
       seoTitle: "Coffee Vending Adelaide",
       metaDescription: "Compare coffee vending machines for Adelaide offices.",
+      pageType: "blog",
+      templateKey: "blog-standard",
       draftContent: validContent,
       createdBy: "admin_1",
     });
@@ -230,6 +251,8 @@ describe("admin page actions", () => {
       draftContent: validContent,
       draftSettings: {
         slug: "new-coffee-vending",
+        routePrefix: "/resources",
+        routePath: "/resources/new-coffee-vending",
         title: "Coffee Vending Adelaide",
         targetKeyword: "coffee vending",
         seoTitle: "Coffee vending machines",
@@ -252,6 +275,7 @@ describe("admin page actions", () => {
     mocks.adminGetSeoPageById.mockResolvedValue({
       id: pageId,
       slug: "old-coffee-vending",
+      route_path: "/resources/old-coffee-vending",
       status: "published",
     });
 
@@ -292,6 +316,8 @@ describe("admin page actions", () => {
     mocks.adminGetSeoPageById.mockResolvedValue({
       id: pageId,
       slug: "old-coffee-vending",
+      route_prefix: "/resources",
+      route_path: "/resources/old-coffee-vending",
       status: "draft",
     });
 
@@ -304,11 +330,13 @@ describe("admin page actions", () => {
     expect(mocks.adminUpdateSeoPageSlug).toHaveBeenCalledWith(
       pageId,
       "new-coffee-vending",
-      { actorId: "admin_1" },
+      { actorId: "admin_1", routePrefix: "/resources" },
     );
     const draftPayload = mocks.adminSaveSeoPageDraft.mock.calls[0]?.[1];
     expect(draftPayload).toMatchObject({
       title: "Coffee Vending Adelaide",
+      slug: "new-coffee-vending",
+      routePrefix: "/resources",
       targetKeyword: "coffee vending",
       seoTitle: "Coffee vending machines",
       metaDescription: "Coffee vending machines for Adelaide workplaces.",
@@ -338,12 +366,15 @@ describe("admin page actions", () => {
     const result = await autosaveSeoPageDraft(pageId, {
       title: "Coffee Vending Adelaide",
       slug: "new-coffee-vending",
+      routePrefix: "/resources",
       targetKeyword: "coffee vending",
       seoTitle: "Coffee vending machines",
       metaDescription: "Coffee vending machines for Adelaide workplaces.",
       canonicalUrl: "",
       noindex: false,
       sitemapEnabled: true,
+      pageType: "resource",
+      templateKey: "blank",
       structuredDataSettings: { breadcrumb: true, faq: false },
       draftContent: validContent,
     });
@@ -351,6 +382,7 @@ describe("admin page actions", () => {
     expect(result.status).toBe("saved");
     expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(pageId, {
       slug: "new-coffee-vending",
+      routePrefix: "/resources",
       title: "Coffee Vending Adelaide",
       targetKeyword: "coffee vending",
       seoTitle: "Coffee vending machines",
@@ -439,6 +471,25 @@ describe("admin page actions", () => {
     expect(mocks.revalidatePath).toHaveBeenCalledWith(`/admin/pages/${pageId}`);
     expect(mocks.revalidatePath).not.toHaveBeenCalledWith(
       "/resources/new-coffee-vending",
+    );
+  });
+
+  it("duplicates a page from the list and opens the copied draft", async () => {
+    const formData = new FormData();
+    formData.set("id", pageId);
+    mocks.adminDuplicateSeoPage.mockResolvedValue({
+      id: "33333333-3333-4333-8333-333333333333",
+      route_path: "/resources/draft-abcd1234",
+    });
+
+    await duplicateSeoPageFromList(formData);
+
+    expect(mocks.adminDuplicateSeoPage).toHaveBeenCalledWith(pageId, {
+      actorId: "admin_1",
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/pages");
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      "/admin/pages/33333333-3333-4333-8333-333333333333?saved=1",
     );
   });
 

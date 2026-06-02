@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   archiveSeoPageFromList,
+  duplicateSeoPageFromList,
   moveSeoPageToDraftFromList,
   publishSeoPageFromList,
 } from "@/app/admin/pages/actions";
@@ -467,9 +468,9 @@ function PageRow({
         </Link>
         <p
           className="mt-1 max-w-[36rem] truncate font-mono text-xs text-slate-500"
-          title={`/resources/${page.slug}`}
+          title={page.route_path}
         >
-          /resources/{page.slug}
+          {page.route_path}
         </p>
       </td>
       <td className="px-5 py-3 break-words text-slate-700">
@@ -524,7 +525,7 @@ function PageActionsMenu({
         </Link>
         {isPublished ? (
           <Link
-            href={`/resources/${page.slug}`}
+            href={page.route_path}
             target="_blank"
             rel="noreferrer"
             className="block rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
@@ -533,13 +534,20 @@ function PageActionsMenu({
           </Link>
         ) : null}
         <div className="my-1 border-t border-slate-100" />
+        <PageActionForm
+          action={duplicateSeoPageFromList}
+          pageId={page.id}
+          returnTo={returnTo}
+          label="Duplicate page"
+          confirmMessage={`Duplicate "${page.title}" as a draft? The copy will use a temporary draft slug until you edit it.`}
+        />
         {!isPublished ? (
           <PageActionForm
             action={publishSeoPageFromList}
             pageId={page.id}
             returnTo={returnTo}
             label="Publish page"
-            confirmMessage={`Publish "${page.title}" to the live site? It will be publicly visible at /resources/${page.slug}.`}
+            confirmMessage={`Publish "${page.title}" to the live site? It will be publicly visible at ${page.route_path}.`}
           />
         ) : null}
         {!isDraft ? (

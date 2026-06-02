@@ -9,17 +9,11 @@ import {
 import { normalizeBrandedPageTitle } from "@/lib/metadata-titles";
 import { getPublishedSeoPageByPath } from "@/lib/services/seo-page-public";
 
-type Params = { slug: string };
-
-export const revalidate = 0;
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<Params>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  const page = await getPublishedSeoPageByPath(`/resources/${slug}`);
+export async function generateBuilderPageMetadata(
+  routePrefix: string,
+  slug: string,
+): Promise<Metadata> {
+  const page = await getPublishedSeoPageByPath(`${routePrefix}/${slug}`);
   if (!page) notFound();
   const title = normalizeBrandedPageTitle(page.seo_title ?? page.title);
 
@@ -38,21 +32,21 @@ export async function generateMetadata({
   };
 }
 
-export default async function ResourcePage({
-  params,
+export async function renderBuilderPage({
+  routePrefix,
+  slug,
   searchParams,
 }: {
-  params: Promise<Params>;
+  routePrefix: string;
+  slug: string;
   searchParams: Promise<LeadSearchParams>;
 }) {
-  const { slug } = await params;
   const [page, query] = await Promise.all([
-    getPublishedSeoPageByPath(`/resources/${slug}`),
+    getPublishedSeoPageByPath(`${routePrefix}/${slug}`),
     searchParams,
   ]);
   if (!page) notFound();
-  const landingPath = page.route_path;
-  const attribution = buildLeadAttribution(query, landingPath);
+  const attribution = buildLeadAttribution(query, page.route_path);
 
   return (
     <ResourcePageRenderer

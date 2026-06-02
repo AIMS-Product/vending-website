@@ -2,6 +2,7 @@ export type SeoPageEditorFormDataInput = {
   pageId?: string | null;
   title: string;
   slug: string;
+  routePrefix: string;
   targetKeyword: string;
   seoTitle: string;
   metaDescription: string;
@@ -10,6 +11,8 @@ export type SeoPageEditorFormDataInput = {
   sitemapEnabled: boolean;
   structuredDataBreadcrumb: boolean;
   structuredDataFaq: boolean;
+  pageType: string;
+  templateKey: string;
   draftContentJson: string;
 };
 
@@ -17,6 +20,7 @@ export function buildSeoPageEditorFormData({
   pageId,
   title,
   slug,
+  routePrefix,
   targetKeyword,
   seoTitle,
   metaDescription,
@@ -25,12 +29,15 @@ export function buildSeoPageEditorFormData({
   sitemapEnabled,
   structuredDataBreadcrumb,
   structuredDataFaq,
+  pageType,
+  templateKey,
   draftContentJson,
 }: SeoPageEditorFormDataInput) {
   const formData = new FormData();
   if (pageId) formData.set("id", pageId);
   formData.set("title", title);
   formData.set("slug", slug);
+  formData.set("routePrefix", routePrefix);
   formData.set("targetKeyword", targetKeyword);
   formData.set("seoTitle", seoTitle);
   formData.set("metaDescription", metaDescription);
@@ -43,6 +50,8 @@ export function buildSeoPageEditorFormData({
   if (structuredDataFaq) {
     formData.set("structuredDataFaq", "on");
   }
+  formData.set("pageType", pageType);
+  formData.set("templateKey", templateKey);
   formData.set("draftContent", draftContentJson);
   formData.set("intent", "save");
   return formData;

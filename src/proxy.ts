@@ -3,8 +3,9 @@ import { resolveRedirectDestination } from "@/lib/redirects";
 import { hasPublishedPostSlug } from "@/lib/services/news";
 import {
   getBuilderRedirectBySourcePath,
-  hasPublishedSeoPageSlug,
+  hasPublishedSeoPagePath,
 } from "@/lib/services/seo-page-public";
+import { isBuilderRoutePath } from "@/lib/page-builder/page-paths";
 import { hasActiveSeoPagePreviewToken } from "@/lib/services/seo-pages";
 import {
   ADMIN_FORGOT_PASSWORD_PATH,
@@ -66,21 +67,21 @@ export async function proxy(request: NextRequest) {
     return notFoundResponse();
   }
 
-  if (path.startsWith("/resources/")) {
-    if (path.startsWith("/resources/preview/")) {
-      let token: string;
-      try {
-        token = decodeURIComponent(path.replace(/^\/resources\/preview\//, ""));
-      } catch {
-        return notFoundResponse();
-      }
-      const exists = await hasActiveSeoPagePreviewToken(token);
-      if (!exists) {
-        return notFoundResponse();
-      }
-      return NextResponse.next();
+  if (path.startsWith("/resources/preview/")) {
+    let token: string;
+    try {
+      token = decodeURIComponent(path.replace(/^\/resources\/preview\//, ""));
+    } catch {
+      return notFoundResponse();
     }
+    const exists = await hasActiveSeoPagePreviewToken(token);
+    if (!exists) {
+      return notFoundResponse();
+    }
+    return NextResponse.next();
+  }
 
+  if (isBuilderRoutePath(path)) {
     const redirect = await getBuilderRedirectBySourcePath(path);
     if (redirect) {
       return NextResponse.redirect(
@@ -89,13 +90,13 @@ export async function proxy(request: NextRequest) {
       );
     }
 
-    let slug: string;
+    let routePath: string;
     try {
-      slug = decodeURIComponent(path.replace(/^\/resources\//, ""));
+      routePath = decodeURIComponent(path);
     } catch {
       return notFoundResponse();
     }
-    const exists = await hasPublishedSeoPageSlug(slug);
+    const exists = await hasPublishedSeoPagePath(routePath);
     if (!exists) {
       return notFoundResponse();
     }
@@ -183,6 +184,10 @@ export const config = {
     "/admin/:path*",
     "/auth/:path*",
     "/resources/:path*",
+    "/blog/:path*",
+    "/landing/:path*",
+    "/videos/:path*",
+    "/solutions/:path*",
     "/news/:path*",
     "/test-leadscore-a",
   ],

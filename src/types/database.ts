@@ -684,6 +684,8 @@ export type Database = {
           published_at: string | null;
           published_content: Json | null;
           published_revision_id: string | null;
+          route_path: string;
+          route_prefix: string;
           seo_title: string | null;
           sitemap_enabled: boolean;
           slug: string;
@@ -712,6 +714,8 @@ export type Database = {
           published_at?: string | null;
           published_content?: Json | null;
           published_revision_id?: string | null;
+          route_path?: string;
+          route_prefix?: string;
           seo_title?: string | null;
           sitemap_enabled?: boolean;
           slug: string;
@@ -740,6 +744,8 @@ export type Database = {
           published_at?: string | null;
           published_content?: Json | null;
           published_revision_id?: string | null;
+          route_path?: string;
+          route_prefix?: string;
           seo_title?: string | null;
           sitemap_enabled?: boolean;
           slug?: string;
@@ -761,8 +767,11 @@ export type Database = {
           id: string;
           meta_description: string | null;
           noindex: boolean;
+          page_type: string;
           published_at: string | null;
           published_content: Json | null;
+          route_path: string;
+          route_prefix: string;
           seo_title: string | null;
           sitemap_enabled: boolean;
           slug: string;
@@ -828,6 +837,8 @@ export type Database = {
           p_published_at: string;
           p_published_content: Json;
           p_revision_label?: string | null;
+          p_route_path: string;
+          p_route_prefix: string;
           p_seo_snapshot: Json;
           p_seo_title: string | null;
           p_sitemap_enabled: boolean;
@@ -842,6 +853,8 @@ export type Database = {
         Args: {
           p_actor_id: string | null;
           p_next_slug: string;
+          p_next_route_path: string;
+          p_next_route_prefix: string;
           p_page_id: string;
         };
         Returns: Json;

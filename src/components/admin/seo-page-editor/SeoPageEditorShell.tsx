@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { Wordmark } from "@/components/site/Wordmark";
 import type { PageChromeSettings } from "@/lib/page-builder/blocks";
+import {
+  templateOptionsForPageType,
+  type PageTemplateKey,
+  type PageTypeId,
+  type PageTypeOption,
+} from "@/lib/page-builder/page-templates";
 import {
   blockLabel,
   blockSummary,
@@ -16,14 +23,31 @@ import {
 import { footerColumns, primaryNav } from "@/lib/content/nav";
 
 export function NewPageChoiceGate({
-  onCreateFromScratch,
+  pageTypeOptions,
+  onChoosePageTemplate,
 }: {
-  onCreateFromScratch: () => void;
+  pageTypeOptions: readonly PageTypeOption[];
+  onChoosePageTemplate: (pageType: string, templateKey: string) => void;
 }) {
+  const [selectedPageType, setSelectedPageType] =
+    useState<PageTypeId>("resource");
+  const [selectedTemplateKey, setSelectedTemplateKey] =
+    useState<PageTemplateKey>("blank");
+  const templateOptions = useMemo(
+    () => templateOptionsForPageType(selectedPageType),
+    [selectedPageType],
+  );
+  const selectedPageTypeOption =
+    pageTypeOptions.find((option) => option.id === selectedPageType) ??
+    pageTypeOptions[0];
+  const selectedTemplate =
+    templateOptions.find((option) => option.id === selectedTemplateKey) ??
+    templateOptions[0];
+
   return (
-    <div className="grid min-h-[calc(100dvh-4rem)] place-items-center border border-slate-200 bg-slate-100 px-4 py-12">
+    <div className="grid min-h-[calc(100dvh-4rem)] place-items-center border border-slate-200 bg-slate-100 px-4 py-8">
       <section
-        className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-xl ring-1 ring-black/5 sm:p-7"
+        className="w-full max-w-5xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl ring-1 ring-black/5 sm:p-7"
         aria-labelledby="new-page-choice-title"
       >
         <div className="mb-6">
@@ -37,23 +61,104 @@ export function NewPageChoiceGate({
             Create page
           </h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
-            Start with a blank editable page. The SEO checklist, page canvas,
-            and publish controls appear after this choice.
+            Choose the page path first so the builder can start with scoped
+            templates and AI context.
           </p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <button
-            type="button"
-            className="rounded-xl border-2 border-[#0b63f6] bg-[#f4f8ff] p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
-            onClick={onCreateFromScratch}
-          >
-            <span className="block text-lg font-semibold text-slate-950">
-              From scratch
-            </span>
-            <span className="mt-2 block text-sm leading-6 text-slate-600">
-              Start with a blank editable page.
-            </span>
-          </button>
+
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-950">
+                Page type
+              </h3>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {pageTypeOptions.map((option) => {
+                  const isSelected = option.id === selectedPageType;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={`rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none ${
+                        isSelected
+                          ? "border-[#0b63f6] bg-[#f4f8ff] shadow-sm"
+                          : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
+                      aria-pressed={isSelected}
+                      onClick={() => {
+                        setSelectedPageType(option.id);
+                        setSelectedTemplateKey("blank");
+                      }}
+                    >
+                      <span className="block text-sm font-semibold text-slate-950">
+                        {option.label}
+                      </span>
+                      <span className="mt-1 block text-sm leading-5 text-slate-600">
+                        {option.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-slate-950">
+                Starting point
+              </h3>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {templateOptions.map((template) => {
+                  const isSelected = template.id === selectedTemplateKey;
+                  return (
+                    <button
+                      key={template.id}
+                      type="button"
+                      className={`rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none ${
+                        isSelected
+                          ? "border-[#0b63f6] bg-[#f4f8ff] shadow-sm"
+                          : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
+                      aria-pressed={isSelected}
+                      onClick={() => setSelectedTemplateKey(template.id)}
+                    >
+                      <span className="block text-sm font-semibold text-slate-950">
+                        {template.label}
+                      </span>
+                      <span className="mt-1 block text-sm leading-5 text-slate-600">
+                        {template.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <aside className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+            <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+              Selected setup
+            </p>
+            <p className="mt-3 text-lg font-semibold text-slate-950">
+              {selectedPageTypeOption?.label}
+            </p>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              {selectedTemplate?.label}
+            </p>
+            <div className="mt-5 grid gap-2">
+              <button
+                type="button"
+                className="min-h-11 rounded-lg border border-[#0b63f6] bg-[#0b63f6] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+                onClick={() =>
+                  onChoosePageTemplate(selectedPageType, selectedTemplateKey)
+                }
+              >
+                Start building
+              </button>
+            </div>
+          </aside>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <button
             type="button"
             className="cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 p-5 text-left opacity-70"
@@ -68,7 +173,24 @@ export function NewPageChoiceGate({
               </span>
             </span>
             <span className="mt-2 block text-sm leading-6 text-slate-500">
-              Use approved page patterns.
+              Use a team-approved saved template.
+            </span>
+          </button>
+          <button
+            type="button"
+            className="cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 p-5 text-left opacity-70"
+            disabled
+          >
+            <span className="flex items-center justify-between gap-3">
+              <span className="text-lg font-semibold text-slate-950">
+                AI-assisted template
+              </span>
+              <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                Coming soon
+              </span>
+            </span>
+            <span className="mt-2 block text-sm leading-6 text-slate-500">
+              Use an approved template from the SEO agent.
             </span>
           </button>
         </div>

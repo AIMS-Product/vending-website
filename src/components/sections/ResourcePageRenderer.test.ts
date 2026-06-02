@@ -51,6 +51,8 @@ function page(content: PageContent): PublishedSeoPage {
   return {
     id: "page_1",
     slug: "draft-preview",
+    route_prefix: "/resources",
+    route_path: "/resources/draft-preview",
     title: "Draft Preview",
     target_keyword: "draft preview",
     published_content: content,

@@ -142,12 +142,11 @@ export function filterSeoPages(
     if (!matchesStatus) return false;
     if (!query) return true;
 
-    return [
-      page.title,
-      page.slug,
-      `/resources/${page.slug}`,
-      page.target_keyword ?? "",
-    ].some((value) => value.toLowerCase().includes(query));
+    const routePath = page.route_path ?? `/resources/${page.slug}`;
+
+    return [page.title, page.slug, routePath, page.target_keyword ?? ""].some(
+      (value) => value.toLowerCase().includes(query),
+    );
   });
 }
 

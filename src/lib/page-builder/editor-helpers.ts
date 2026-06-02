@@ -40,6 +40,8 @@ export type BuilderBlockEntry = {
 
 export type EditorDraftSettings = {
   slug: string;
+  routePrefix: string;
+  routePath: string;
   title: string;
   targetKeyword: string;
   seoTitle: string;
@@ -88,6 +90,8 @@ export function parseInitialDraftSettings(
 
   return {
     slug,
+    routePrefix: stringSetting(settings.routePrefix) || page.route_prefix,
+    routePath: stringSetting(settings.routePath) || page.route_path,
     title,
     targetKeyword: stringSetting(settings.targetKeyword),
     seoTitle: stringSetting(settings.seoTitle),

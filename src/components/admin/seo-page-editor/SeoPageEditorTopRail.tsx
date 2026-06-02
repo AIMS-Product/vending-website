@@ -1,13 +1,18 @@
 "use client";
 
+import Link from "next/link";
+import { useState } from "react";
 import { ChevronIcon } from "@/components/admin/seo-page-editor/SeoPageEditorShell";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
+import { pagePathForSlug } from "@/lib/page-builder/page-paths";
 
 // S6: labelled panel toggles with neutral styling (no status-coloured ring).
 // These are the only way to open the Blocks / SEO panels on mobile + tablet,
 // so they must read as "open this panel", not as ambiguous corner chevrons.
 const railPanelToggleClass =
   "inline-flex min-h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none";
+const railCommandClass =
+  "inline-flex min-h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55";
 
 // S8: format the autosave timestamp for the top-rail "Saved automatically" hint.
 function formatRailTime(iso: string) {
@@ -17,11 +22,28 @@ function formatRailTime(iso: string) {
   });
 }
 
+async function copyRailUrl(
+  getUrl: () => string | null,
+  successMessage: string,
+  setCopyMessage: (message: string) => void,
+) {
+  const url = getUrl();
+  if (!url) return;
+
+  try {
+    await navigator.clipboard.writeText(url);
+    setCopyMessage(successMessage);
+  } catch {
+    setCopyMessage("Could not copy link.");
+  }
+}
+
 export function SeoPageEditorTopRail({
   editor,
 }: {
   editor: SeoPageEditorController;
 }) {
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const {
     autosave,
     blockSidebarExpandTitle,
@@ -39,7 +61,14 @@ export function SeoPageEditorTopRail({
     seoSidebarExpandTitle,
     toggleBlockSidebar,
     toggleSeoSidebar,
+    routePrefix,
+    visibleSlug,
   } = editor;
+  const publicPath = visibleSlug
+    ? pagePathForSlug(visibleSlug, routePrefix)
+    : null;
+  const canCopyEditorUrl = Boolean(page?.id);
+  const canCopyPublicUrl = Boolean(publicPath);
 
   const blockToggleLabel = isNarrowEditor
     ? isBlockSidebarCollapsed
@@ -58,8 +87,12 @@ export function SeoPageEditorTopRail({
 
   return (
     <div className="sticky top-0 z-50 border-b border-slate-200/70 bg-slate-100/95 px-4 pt-4 pb-3 backdrop-blur">
-      <div className="mx-auto grid max-w-[1500px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-        <div className="flex justify-start">
+      <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-center gap-2 sm:grid sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-3">
+        <div className="order-1 flex flex-wrap justify-center gap-2 sm:order-none sm:justify-start">
+          <Link href="/admin/pages" className={railCommandClass}>
+            <ChevronIcon direction="left" />
+            <span>Pages</span>
+          </Link>
           <button
             type="button"
             className={railPanelToggleClass}
@@ -74,7 +107,7 @@ export function SeoPageEditorTopRail({
             <span>Blocks</span>
           </button>
         </div>
-        <div className="flex flex-col items-center gap-1">
+        <div className="order-3 flex flex-col items-center gap-1 sm:order-none">
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button
               type="submit"
@@ -118,6 +151,46 @@ export function SeoPageEditorTopRail({
                 Open preview
               </a>
             )}
+            {canCopyEditorUrl && (
+              <button
+                type="button"
+                className={railCommandClass}
+                title="Copy this editor page link"
+                onClick={() =>
+                  copyRailUrl(
+                    () =>
+                      typeof window === "undefined"
+                        ? null
+                        : window.location.href,
+                    "Editor link copied.",
+                    setCopyMessage,
+                  )
+                }
+              >
+                <span className="hidden sm:inline">Copy editor link</span>
+                <span className="sm:hidden">Editor link</span>
+              </button>
+            )}
+            {canCopyPublicUrl && (
+              <button
+                type="button"
+                className={railCommandClass}
+                title="Copy the public resource URL for this page"
+                onClick={() =>
+                  copyRailUrl(
+                    () =>
+                      publicPath && typeof window !== "undefined"
+                        ? new URL(publicPath, window.location.origin).toString()
+                        : null,
+                    "Public URL copied.",
+                    setCopyMessage,
+                  )
+                }
+              >
+                <span className="hidden sm:inline">Copy public URL</span>
+                <span className="sm:hidden">Public URL</span>
+              </button>
+            )}
           </div>
           {autosave?.status === "saved" && (
             <p className="text-xs font-medium text-slate-500">
@@ -138,8 +211,11 @@ export function SeoPageEditorTopRail({
               {previewLinkMessage}
             </p>
           )}
+          {copyMessage && (
+            <p className="text-xs font-medium text-slate-500">{copyMessage}</p>
+          )}
         </div>
-        <div className="flex justify-end">
+        <div className="order-2 flex justify-center sm:order-none sm:justify-end">
           <button
             type="button"
             className={railPanelToggleClass}

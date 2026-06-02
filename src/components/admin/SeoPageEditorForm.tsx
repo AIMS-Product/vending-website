@@ -18,7 +18,10 @@ export function SeoPageEditorForm(props: SeoPageEditorFormProps) {
 
   if (editor.showCreationChoiceModal) {
     return (
-      <NewPageChoiceGate onCreateFromScratch={editor.onCreateFromScratch} />
+      <NewPageChoiceGate
+        pageTypeOptions={editor.pageTypeOptions}
+        onChoosePageTemplate={editor.onChoosePageTemplate}
+      />
     );
   }
 

@@ -213,12 +213,78 @@ describe("seo page service", () => {
         target_keyword: "start vending business",
         seo_title: "Start Vending Business",
         meta_description: "Learn how to start a vending business.",
+        page_type: "resource",
+        template_key: "blank",
         status: "draft",
         created_by: "admin-1",
-        draft_content: { version: 1, sections: [] },
+        draft_content: expect.objectContaining({
+          version: 1,
+          sections: expect.any(Array),
+        }),
         structured_data_settings: { breadcrumb: true, faq: true },
       }),
     );
+  });
+
+  it("creates a draft page with a validated page type and template", async () => {
+    const created = {
+      id: "page_1",
+      slug: "vending-blog",
+      status: "draft",
+      page_type: "blog",
+      template_key: "blog-standard",
+      route_prefix: "/blog",
+      route_path: "/blog/vending-blog",
+    };
+    const insert = insertSingle(created);
+    const client = buildClient(insert.table);
+
+    const result = await adminCreateSeoPage(
+      {
+        slug: "Vending Blog",
+        title: "Vending Blog",
+        pageType: "blog",
+        templateKey: "blog-standard",
+        draftContent: { version: 1, sections: [] },
+      },
+      { client },
+    );
+
+    expect(result).toBe(created);
+    expect(insert.mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        page_type: "blog",
+        template_key: "blog-standard",
+        route_prefix: "/blog",
+        route_path: "/blog/vending-blog",
+      }),
+    );
+  });
+
+  it("rejects invalid page type and template combinations", async () => {
+    const insert = insertSingle({ id: "page_1" });
+    const client = buildClient(insert.table);
+
+    await expect(
+      adminCreateSeoPage(
+        {
+          slug: "Invalid",
+          title: "Invalid",
+          pageType: "blog",
+          templateKey: "landing-standard",
+        },
+        { client },
+      ),
+    ).rejects.toMatchObject({
+      issues: [
+        expect.objectContaining({
+          code: "invalid_template",
+          path: "templateKey",
+        }),
+      ],
+    });
+
+    expect(insert.mocks.insert).not.toHaveBeenCalled();
   });
 
   it("surfaces duplicate slug conflicts as editor validation", async () => {
@@ -244,7 +310,7 @@ describe("seo page service", () => {
           code: "duplicate_slug",
           path: "slug",
           message:
-            "Another active resource page already uses /resources/start-vending. Choose a different slug.",
+            "Another active page already uses /resources/start-vending. Choose a different slug or prefix.",
         }),
       ],
     });
@@ -310,6 +376,8 @@ describe("seo page service", () => {
     const parsedContent = pageContentSchema.parse(validContent);
     const draftSettings = {
       slug: "updated-vending-guide",
+      routePrefix: "/resources",
+      routePath: "/resources/updated-vending-guide",
       title: "Updated Vending Guide",
       targetKeyword: "updated vending keyword",
       seoTitle: "Updated SEO Title",
@@ -403,6 +471,8 @@ describe("seo page service", () => {
     expect(client.rpc).toHaveBeenCalledWith("publish_seo_page_atomically", {
       p_page_id: "page_1",
       p_slug: "start-vending",
+      p_route_prefix: "/resources",
+      p_route_path: "/resources/start-vending",
       p_title: "Start Vending",
       p_target_keyword: "start vending business",
       p_seo_title: "Start a Vending Business",
@@ -414,6 +484,8 @@ describe("seo page service", () => {
       p_published_content: parsedContent,
       p_seo_snapshot: expect.objectContaining({
         slug: "start-vending",
+        route_prefix: "/resources",
+        route_path: "/resources/start-vending",
         seo_title: "Start a Vending Business",
         meta_description: "Learn how to start a vending business safely.",
         structured_data_settings: { breadcrumb: true, faq: true },
@@ -498,6 +570,8 @@ describe("seo page service", () => {
       expect.objectContaining({
         p_page_id: "page_1",
         p_slug: "updated-vending-guide",
+        p_route_prefix: "/resources",
+        p_route_path: "/resources/updated-vending-guide",
         p_title: "Updated Vending Guide",
         p_target_keyword: "updated vending keyword",
         p_seo_title: "Updated SEO Title",
@@ -509,6 +583,7 @@ describe("seo page service", () => {
         p_published_content: parsedContent,
         p_seo_snapshot: expect.objectContaining({
           slug: "updated-vending-guide",
+          route_path: "/resources/updated-vending-guide",
           title: "Updated Vending Guide",
           target_keyword: "updated vending keyword",
         }),
@@ -1060,6 +1135,8 @@ describe("seo page service", () => {
       {
         p_page_id: "page_1",
         p_next_slug: "start-vending-machine-business",
+        p_next_route_prefix: "/resources",
+        p_next_route_path: "/resources/start-vending-machine-business",
         p_actor_id: "admin-1",
       },
     );

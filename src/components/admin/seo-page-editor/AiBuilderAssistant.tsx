@@ -890,6 +890,8 @@ function buildAiContextSnapshot(editor: SeoPageEditorController) {
     status: editor.page?.status ?? "draft",
     title: editor.title,
     slug: editor.visibleSlug,
+    pageType: editor.pageType,
+    templateKey: editor.templateKey,
     targetKeyword: editor.targetKeyword,
     seoTitle: editor.seoTitle,
     metaDescription: editor.metaDescription,

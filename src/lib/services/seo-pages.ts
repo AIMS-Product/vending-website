@@ -8,11 +8,16 @@ import {
   flattenBlocks,
   normalizeSlug,
   pageContentSchema,
-  resourcePathForSlug,
   validatePageContent,
   type PageBuilderValidationIssue,
   type PageContent,
 } from "@/lib/page-builder/blocks";
+import {
+  normalizeRoutePrefix,
+  pagePathForPage,
+  pagePathForSlug,
+} from "@/lib/page-builder/page-paths";
+import { normalizePageTemplateSelection } from "@/lib/page-builder/page-templates";
 import { assessSeoReadiness } from "@/lib/page-builder/seo-readiness";
 import {
   defaultStructuredDataSettings,
@@ -40,6 +45,8 @@ type ServiceDeps = {
 const draftSettingsSchema = z
   .object({
     slug: z.string().trim().min(1).transform(normalizeSlug),
+    routePrefix: z.string().trim().optional(),
+    routePath: z.string().trim().optional(),
     title: z.string().trim().min(1),
     targetKeyword: z.string().trim().nullable(),
     seoTitle: z.string().trim().nullable(),
@@ -53,6 +60,7 @@ const draftSettingsSchema = z
 
 export type CreateSeoPageInput = {
   slug: string;
+  routePrefix?: string | null;
   title: string;
   targetKeyword?: string | null;
   seoTitle?: string | null;
@@ -65,6 +73,7 @@ export type CreateSeoPageInput = {
 
 export type SaveSeoPageDraftInput = {
   slug?: string;
+  routePrefix?: string | null;
   title?: string;
   targetKeyword?: string | null;
   seoTitle?: string | null;
@@ -80,6 +89,8 @@ export type SaveSeoPageDraftInput = {
 
 export type SeoPageDraftSettings = {
   slug: string;
+  routePrefix: string;
+  routePath: string;
   title: string;
   targetKeyword: string | null;
   seoTitle: string | null;
@@ -113,6 +124,11 @@ export type CreatePreviewTokenOptions = ServiceDeps & {
   token?: string;
 };
 
+export type DuplicateSeoPageOptions = ServiceDeps & {
+  actorId?: string | null;
+  now?: () => Date;
+};
+
 export type PreviewSeoPage = Omit<SeoPage, "published_content"> & {
   published_content: PageContent;
 };
@@ -128,7 +144,7 @@ export class SeoPageValidationError extends Error {
 }
 
 const SEO_PAGE_FIELDS =
-  "id, slug, title, status, target_keyword, page_type, template_key, draft_content, draft_settings, published_content, published_revision_id, seo_title, meta_description, canonical_url, noindex, sitemap_enabled, og_asset_id, structured_data_settings, published_at, archived_at, archive_behavior, archive_redirect_url, created_by, updated_by, created_at, updated_at" as const;
+  "id, slug, route_prefix, route_path, title, status, target_keyword, page_type, template_key, draft_content, draft_settings, published_content, published_revision_id, seo_title, meta_description, canonical_url, noindex, sitemap_enabled, og_asset_id, structured_data_settings, published_at, archived_at, archive_behavior, archive_redirect_url, created_by, updated_by, created_at, updated_at" as const;
 
 const PAGE_REVISION_FIELDS =
   "id, page_id, revision_type, label, content_snapshot, seo_snapshot, created_by, created_at" as const;
@@ -173,24 +189,30 @@ export async function adminCreateSeoPage(
   deps: ServiceDeps = {},
 ) {
   const client = deps.client ?? createAdminClient();
+  const templateSelection = parseTemplateSelection(input);
   const draftContent = parseDraftContent(
-    input.draftContent ?? createEmptyPageContent(),
+    input.draftContent ?? templateSelection.content ?? createEmptyPageContent(),
   );
 
   const row: TablesInsert<"seo_pages"> = {
     slug: normalizeSlug(input.slug),
+    route_prefix: normalizeRoutePrefix(
+      input.routePrefix,
+      templateSelection.pageType,
+    ),
     title: input.title.trim(),
     status: "draft",
     target_keyword: input.targetKeyword ?? null,
     seo_title: input.seoTitle ?? null,
     meta_description: input.metaDescription ?? null,
-    page_type: input.pageType ?? "resource",
-    template_key: input.templateKey ?? "standard",
+    page_type: templateSelection.pageType,
+    template_key: templateSelection.templateKey,
     draft_content: draftContent as unknown as Json,
     structured_data_settings: defaultStructuredDataSettings as unknown as Json,
     created_by: input.createdBy ?? null,
     updated_by: input.createdBy ?? null,
   };
+  row.route_path = pagePathForSlug(row.slug, row.route_prefix);
 
   const { data, error } = await client
     .from("seo_pages")
@@ -199,9 +221,91 @@ export async function adminCreateSeoPage(
     .single();
 
   if (error) {
-    throwSeoPageMutationError(error, "Could not create SEO page.", row.slug);
+    throwSeoPageMutationError(
+      error,
+      "Could not create SEO page.",
+      row.route_path,
+    );
   }
   return data;
+}
+
+export async function adminDuplicateSeoPage(
+  pageId: string,
+  options: DuplicateSeoPageOptions = {},
+) {
+  const client = options.client ?? createAdminClient();
+  const source = await adminGetSeoPageById(pageId, { client });
+  if (!source) throw new Error("Could not load SEO page.");
+
+  const shortId = randomBytes(4).toString("hex");
+  const slug = `draft-${shortId}`;
+  const title = `Copy of ${source.title}`;
+  const routePrefix = normalizeRoutePrefix(
+    source.route_prefix,
+    source.page_type,
+  );
+
+  const duplicated = await adminCreateSeoPage(
+    {
+      slug,
+      routePrefix,
+      title,
+      targetKeyword: source.target_keyword,
+      seoTitle: source.seo_title,
+      metaDescription: source.meta_description,
+      pageType: source.page_type,
+      templateKey: source.template_key,
+      draftContent: source.draft_content,
+      createdBy: options.actorId ?? null,
+    },
+    { client },
+  );
+
+  await adminSaveSeoPageDraft(
+    duplicated.id,
+    {
+      title,
+      slug,
+      routePrefix,
+      targetKeyword: source.target_keyword,
+      seoTitle: source.seo_title,
+      metaDescription: source.meta_description,
+      canonicalUrl: source.canonical_url,
+      noindex: source.noindex,
+      sitemapEnabled: source.sitemap_enabled,
+      structuredDataSettings: parseStructuredDataSettings(
+        source.structured_data_settings,
+      ),
+      draftContent: parseDraftContent(source.draft_content),
+      updatedBy: options.actorId ?? null,
+    },
+    { client },
+  );
+
+  return duplicated;
+}
+
+function parseTemplateSelection(input: CreateSeoPageInput) {
+  try {
+    return normalizePageTemplateSelection({
+      pageType: input.pageType,
+      templateKey: input.templateKey,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Invalid page template.";
+    throw new SeoPageValidationError([
+      {
+        code:
+          message === "Unknown page type."
+            ? "invalid_page_type"
+            : "invalid_template",
+        path: message === "Unknown page type." ? "pageType" : "templateKey",
+        message,
+      },
+    ]);
+  }
 }
 
 export async function adminSaveSeoPageDraft(
@@ -213,6 +317,15 @@ export async function adminSaveSeoPageDraft(
   const patch: Database["public"]["Tables"]["seo_pages"]["Update"] = {};
 
   if (input.slug !== undefined) patch.slug = normalizeSlug(input.slug);
+  if (input.routePrefix !== undefined) {
+    patch.route_prefix = normalizeRoutePrefix(input.routePrefix);
+  }
+  if (patch.slug) {
+    patch.route_path = pagePathForSlug(
+      patch.slug,
+      patch.route_prefix ?? input.routePrefix,
+    );
+  }
   if (input.title !== undefined) patch.title = input.title.trim();
   if (input.targetKeyword !== undefined) {
     patch.target_keyword = input.targetKeyword;
@@ -260,7 +373,7 @@ export async function adminSaveSeoPageDraft(
     throwSeoPageMutationError(
       error,
       "Could not save SEO page draft.",
-      typeof patch.slug === "string" ? patch.slug : undefined,
+      typeof patch.route_path === "string" ? patch.route_path : undefined,
     );
   }
   return data;
@@ -303,13 +416,13 @@ export async function adminPublishSeoPage(
   const issues: PageBuilderValidationIssue[] = [];
   const redirectConflict = await findRedirectBySourcePath(
     client,
-    resourcePathForSlug(publishSettings.slug),
+    publishSettings.routePath,
   );
   if (redirectConflict) {
     issues.push({
       code: "redirect_conflict",
       path: "slug",
-      message: "A database redirect already owns this resource path.",
+      message: "A database redirect already owns this page path.",
     });
   }
 
@@ -332,6 +445,8 @@ export async function adminPublishSeoPage(
   const { data, error } = await client.rpc("publish_seo_page_atomically", {
     p_page_id: pageId,
     p_slug: publishSettings.slug,
+    p_route_prefix: publishSettings.routePrefix,
+    p_route_path: publishSettings.routePath,
     p_title: publishSettings.title,
     p_target_keyword: publishSettings.targetKeyword,
     p_seo_title: publishSettings.seoTitle,
@@ -352,7 +467,7 @@ export async function adminPublishSeoPage(
     throwSeoPageMutationError(
       error,
       "Could not publish SEO page.",
-      publishSettings.slug,
+      publishSettings.routePath,
     );
   }
   return parseAtomicRevisionResult(data, "Could not publish SEO page.");
@@ -387,13 +502,18 @@ export async function adminUnpublishSeoPage(
 export async function adminUpdateSeoPageSlug(
   pageId: string,
   slug: string,
-  options: ServiceDeps & { actorId?: string | null } = {},
+  options: ServiceDeps & {
+    actorId?: string | null;
+    routePrefix?: string | null;
+  } = {},
 ) {
   const client = options.client ?? createAdminClient();
   const nextSlug = normalizeSlug(slug);
+  const nextRoutePrefix = normalizeRoutePrefix(options.routePrefix);
+  const nextRoutePath = pagePathForSlug(nextSlug, nextRoutePrefix);
   const page = await loadSeoPageSlugState(client, pageId);
 
-  if (page.slug === nextSlug) return page;
+  if (page.slug === nextSlug && page.route_path === nextRoutePath) return page;
 
   if (page.status === "published") {
     const { data, error } = await client.rpc(
@@ -401,6 +521,8 @@ export async function adminUpdateSeoPageSlug(
       {
         p_page_id: pageId,
         p_next_slug: nextSlug,
+        p_next_route_prefix: nextRoutePrefix,
+        p_next_route_path: nextRoutePath,
         p_actor_id: options.actorId ?? null,
       },
     );
@@ -408,7 +530,7 @@ export async function adminUpdateSeoPageSlug(
       throwSeoPageMutationError(
         error,
         "Could not update SEO page slug.",
-        nextSlug,
+        nextRoutePath,
       );
     }
     if (!data) throw new Error("Could not update SEO page slug.");
@@ -419,6 +541,8 @@ export async function adminUpdateSeoPageSlug(
     .from("seo_pages")
     .update({
       slug: nextSlug,
+      route_prefix: nextRoutePrefix,
+      route_path: nextRoutePath,
       updated_by: options.actorId ?? null,
     })
     .eq("id", pageId)
@@ -429,7 +553,7 @@ export async function adminUpdateSeoPageSlug(
     throwSeoPageMutationError(
       error,
       "Could not update SEO page slug.",
-      nextSlug,
+      nextRoutePath,
     );
   }
   return data;
@@ -455,10 +579,11 @@ export async function adminArchiveSeoPage(
       ]);
     }
 
-    const currentSlug =
-      options.currentSlug ?? (await loadSeoPageSlugState(client, pageId)).slug;
+    const currentRoutePath = options.currentSlug
+      ? pagePathForSlug(options.currentSlug, "/resources")
+      : pagePathForPage(await loadSeoPageSlugState(client, pageId));
     archiveRedirectUrl = normalizeDestinationPath(archiveRedirectUrl);
-    validateRedirectPaths(resourcePathForSlug(currentSlug), archiveRedirectUrl);
+    validateRedirectPaths(currentRoutePath, archiveRedirectUrl);
   }
 
   const { data, error } = await client.rpc("archive_seo_page_atomically", {
@@ -757,8 +882,12 @@ function effectivePublishSettings(page: SeoPage): SeoPageDraftSettings {
 }
 
 function settingsFromSeoPage(page: SeoPage): SeoPageDraftSettings {
+  const routePrefix = normalizeRoutePrefix(page.route_prefix, page.page_type);
+  const routePath = pagePathForSlug(page.slug, routePrefix);
   return {
     slug: page.slug,
+    routePrefix,
+    routePath,
     title: page.title,
     targetKeyword: page.target_keyword,
     seoTitle: page.seo_title,
@@ -776,8 +905,12 @@ function normalizeDraftSettings(
   settings: z.infer<typeof draftSettingsSchema>,
   structuredDataFallback: StructuredDataSettings,
 ): SeoPageDraftSettings {
+  const routePrefix = normalizeRoutePrefix(settings.routePrefix);
+  const slug = settings.slug;
   return {
-    slug: settings.slug,
+    slug,
+    routePrefix,
+    routePath: pagePathForSlug(slug, routePrefix),
     title: settings.title,
     targetKeyword: settings.targetKeyword,
     seoTitle: settings.seoTitle,
@@ -797,6 +930,8 @@ function draftSettingsToSeoPagePatch(
   if (!settings) return {};
   return {
     slug: settings.slug,
+    route_prefix: settings.routePrefix,
+    route_path: settings.routePath,
     title: settings.title,
     target_keyword: settings.targetKeyword,
     seo_title: settings.seoTitle,
@@ -823,7 +958,7 @@ async function loadSeoPageForPublish(client: SeoPageClient, pageId: string) {
 async function loadSeoPageSlugState(client: SeoPageClient, pageId: string) {
   const { data, error } = await client
     .from("seo_pages")
-    .select("id, slug, status")
+    .select("id, slug, route_prefix, route_path, page_type, status")
     .eq("id", pageId)
     .single();
 
@@ -863,7 +998,7 @@ function throwSeoPageMutationError(
       {
         code: "duplicate_slug",
         path: "slug",
-        message: `Another active resource page already uses /resources/${slug ?? "this-slug"}. Choose a different slug.`,
+        message: `Another active page already uses ${slug ?? "this path"}. Choose a different slug or prefix.`,
       },
     ]);
   }
@@ -882,7 +1017,10 @@ function isDuplicateSeoPageSlugError(error: unknown) {
     .filter((value): value is string => typeof value === "string")
     .join(" ")
     .toLowerCase();
-  return text.includes("23505") && text.includes("slug");
+  return (
+    text.includes("23505") &&
+    (text.includes("slug") || text.includes("route_path"))
+  );
 }
 
 async function deleteArchivedPageRedirects(
@@ -938,14 +1076,14 @@ async function findDuplicateMetadataIssues(
     issues.push({
       code: "duplicate_seo_title",
       path: "seo_title",
-      message: `Another resource page already uses this SEO title: ${resourcePathForSlug(titleConflict.slug)}.`,
+      message: `Another page already uses this SEO title: ${pagePathForPage(titleConflict)}.`,
     });
   }
   if (descriptionConflict) {
     issues.push({
       code: "duplicate_meta_description",
       path: "meta_description",
-      message: `Another resource page already uses this meta description: ${resourcePathForSlug(descriptionConflict.slug)}.`,
+      message: `Another page already uses this meta description: ${pagePathForPage(descriptionConflict)}.`,
     });
   }
   return issues;
@@ -959,7 +1097,9 @@ async function findMetadataConflict(
 ) {
   const { data, error } = await client
     .from("seo_pages")
-    .select("id, slug, seo_title, meta_description, status")
+    .select(
+      "id, slug, route_prefix, route_path, page_type, seo_title, meta_description, status",
+    )
     .neq("id", pageId)
     .neq("status", "archived")
     .ilike(column, metadataIlikePattern(normalizedValue));
@@ -1254,6 +1394,8 @@ function buildSeoSnapshot(
 ): Json {
   return {
     slug: settings.slug,
+    route_prefix: settings.routePrefix,
+    route_path: settings.routePath,
     title: settings.title,
     target_keyword: settings.targetKeyword,
     seo_title: settings.seoTitle,
@@ -1282,7 +1424,7 @@ function normalizeSourcePath(path: string) {
       {
         code: "invalid_redirect_source",
         path: "source_path",
-        message: "Builder redirect sources must be resource paths.",
+        message: "Builder redirect sources must be builder page paths.",
       },
     ]);
   }

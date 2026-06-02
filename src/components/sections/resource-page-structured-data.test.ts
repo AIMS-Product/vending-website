@@ -33,6 +33,8 @@ function isFaqGraph(graph: unknown): graph is FaqGraph {
 const page = {
   id: "page_1",
   slug: "ztest1",
+  route_prefix: "/resources",
+  route_path: "/resources/ztest1",
   title: "Z Test One",
   target_keyword: "z test",
   published_content: {

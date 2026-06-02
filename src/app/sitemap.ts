@@ -37,7 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     })),
     ...resourcePages.map((page) => ({
-      url: absoluteUrl(`/resources/${page.slug}`),
+      url: absoluteUrl(page.route_path),
       lastModified: validDateOrFallback(page.updated_at, now),
       changeFrequency: "monthly" as const,
       priority: 0.7,

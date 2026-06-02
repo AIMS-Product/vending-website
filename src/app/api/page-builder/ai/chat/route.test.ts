@@ -30,6 +30,8 @@ const validRequest: PageBuilderAiChatRequest = {
     status: "draft",
     title: "",
     slug: "",
+    pageType: "resource",
+    templateKey: "blank",
     targetKeyword: "",
     seoTitle: "",
     metaDescription: "",
