@@ -214,8 +214,13 @@ export async function saveSeoPage(
 
 export async function createSeoPageComment(formData: FormData) {
   const admin = await requireAuth();
-  const pageId = String(formData.get("pageId") ?? "");
-  if (!pageId) return;
+  const parsedPageId = z.uuid().safeParse(String(formData.get("pageId") ?? ""));
+  if (!parsedPageId.success) {
+    redirect(ADMIN_PAGES_PATH);
+    return;
+  }
+  const pageId = parsedPageId.data;
+  const pagePath = `${ADMIN_PAGES_PATH}/${pageId}`;
   try {
     await adminCreatePageComment({
       pageId,
@@ -223,13 +228,14 @@ export async function createSeoPageComment(formData: FormData) {
       body: String(formData.get("body") ?? ""),
       createdBy: admin.user.id,
     });
-    revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
+    revalidatePath(pagePath);
   } catch (error) {
     console.error("failed to create SEO page comment", {
       adminUserId: admin.user.id,
       pageId,
       error,
     });
+    redirect(`${pagePath}?error=comment`);
   }
 }
 
