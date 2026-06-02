@@ -31,15 +31,15 @@ Owner: feature-orchestrator
 | S1   | Add persistent editor navigation and copy links            | T1   | S0         | W1-A           | low admin UI                   | DONE    |
 | S2   | Define page type and template creation foundation          | T2   | S0         | W1-B           | schema/admin creation flow     | DONE    |
 | S3   | Add route-prefix slugs and duplicate-page flow             | T2   | S2         | W2-A           | routing/redirect/sitemap       | DONE    |
-| S4   | Capture published blocks into content library              | T2   | S2         | W2-B           | publish snapshots/library data | PENDING |
-| S5   | Add SEO drawer governance fields                           | T2   | S2         | W2-C           | page metadata/publish gates    | PENDING |
-| S6   | Add dashboard metadata, lifecycle, and bulk operations     | T2   | S5         | W3-A           | admin list/bulk mutations      | PENDING |
-| S7   | Add admin redirect manager                                 | T2   | S3         | W3-B           | redirects/public routing       | PENDING |
-| S8   | Add scheduled publishing and review automation             | T2   | S5         | W3-C           | jobs/timezone/publish state    | PENDING |
-| S9   | Add media defaults, proof images, and alt-text audit       | T1   | S2         | W3-D           | media metadata/rendering       | PENDING |
-| S10  | Fold blog authoring into builder with author profiles      | T2   | S2, S3     | W4-A           | route/content model            | PENDING |
-| S11  | Add controlled custom footer and form/embed blocks         | T2   | S2, S5     | W4-B           | public render/security         | PENDING |
-| S12  | Add governance history, comments, and collision protection | T2   | S6         | W5-A           | revisions/concurrency/audit    | PENDING |
+| S4   | Capture published blocks into content library              | T2   | S2         | W2-B           | publish snapshots/library data | DONE    |
+| S5   | Add SEO drawer governance fields                           | T2   | S2         | W2-C           | page metadata/publish gates    | DONE    |
+| S6   | Add dashboard metadata, lifecycle, and bulk operations     | T2   | S5         | W3-A           | admin list/bulk mutations      | DONE    |
+| S7   | Add admin redirect manager                                 | T2   | S3         | W3-B           | redirects/public routing       | DONE    |
+| S8   | Add scheduled publishing and review automation             | T2   | S5         | W3-C           | jobs/timezone/publish state    | DONE    |
+| S9   | Add media defaults, proof images, and alt-text audit       | T1   | S2         | W3-D           | media metadata/rendering       | DONE    |
+| S10  | Fold blog authoring into builder with author profiles      | T2   | S2, S3     | W4-A           | route/content model            | DONE    |
+| S11  | Add controlled custom footer and form/embed blocks         | T2   | S2, S5     | W4-B           | public render/security         | DONE    |
+| S12  | Add governance history, comments, and collision protection | T2   | S6         | W5-A           | revisions/concurrency/audit    | DONE    |
 | S13  | Plan later analytics, webhooks, CSV import, and API access | T2   | S6, S7, S8 | W5-B           | external contracts             | BLOCKED |
 
 ## Nodes
@@ -60,12 +60,12 @@ Expected files: test/playwright or manual verification notes only if needed; no 
 Write boundaries: Existing verification artifacts under `plans/website-builder-feedback-v2/` if evidence needs to be recorded.
 Acceptance criteria:
 
-- [ ] Browser-verify autosave, reload persistence, draft-vs-live boundary, and save failure messaging.
-- [ ] Browser-verify revision preview, restore-to-draft, and publish isolation.
-- [ ] Browser-verify preview links for draft access, expiry/revoke, noindex behavior, and no admin controls.
-- [ ] Verify canonical/noindex/sitemap output on representative published pages.
-- [ ] Verify media filters and alt text paths through media library, builder picker, and public render.
-- [ ] Verify permissions still match admin/super-admin expectations.
+- [x] Browser-verify autosave, reload persistence, draft-vs-live boundary, and save failure messaging.
+- [x] Browser-verify revision preview, restore-to-draft, and publish isolation.
+- [x] Browser-verify preview links for draft access, expiry/revoke, noindex behavior, and no admin controls.
+- [x] Verify canonical/noindex/sitemap output on representative published pages.
+- [x] Verify media filters and alt text paths through media library, builder picker, and public render.
+- [x] Verify permissions still match admin/super-admin expectations.
 
 Regression guards:
 
@@ -106,10 +106,10 @@ Expected files: `src/components/admin/seo-page-editor/SeoPageEditorTopRail.tsx`,
 Write boundaries: Editor chrome and URL-copy UI only.
 Acceptance criteria:
 
-- [ ] Persistent back control is visible in desktop and narrow editor layouts.
-- [ ] Copy editor link works for draft and published pages.
-- [ ] Copy public URL is disabled or clearly unavailable before a page has a publishable public path.
-- [ ] Mobile/narrow top rail has no overlap or hidden primary actions.
+- [x] Persistent back control is visible in desktop and narrow editor layouts.
+- [x] Copy editor link works for draft and published pages.
+- [x] Copy public URL is disabled or clearly unavailable before a page has a publishable public path.
+- [x] Mobile/narrow top rail has no overlap or hidden primary actions.
 
 Regression guards:
 
@@ -226,7 +226,7 @@ Blocked on: none; safe route-prefix defaults are recorded in `decisions.md`.
 
 ### S4 - Capture published blocks into content library
 
-Status: PENDING
+Status: DONE
 Tier: T2
 Type: integration
 Actor/trigger: Admin publishes a page.
@@ -240,11 +240,11 @@ Expected files: migrations, publish service, content-library services/UI, block 
 Write boundaries: Content-library data model and publish pipeline only; do not redesign all libraries unless needed.
 Acceptance criteria:
 
-- [ ] Publish captures each block with block type, content payload, source page, revision ID, page type, tags, and created/updated metadata.
-- [ ] Republish behavior is deterministic: versioned, deduped, or explicitly linked to publish revision.
-- [ ] Internal tags from the page flow into captured pieces where appropriate.
-- [ ] Admin library can filter and inspect captured content pieces.
-- [ ] Published pages remain rendered from publish snapshots, not from mutable captured library pieces.
+- [x] Publish captures each block with block type, content payload, source page, revision ID, page type, tags, and created/updated metadata.
+- [x] Republish behavior is deterministic: versioned, deduped, or explicitly linked to publish revision.
+- [x] Internal tags from the page flow into captured pieces where appropriate.
+- [x] Admin library can filter and inspect captured content pieces.
+- [x] Published pages remain rendered from publish snapshots, not from mutable captured library pieces.
 
 Regression guards:
 
@@ -271,7 +271,7 @@ Blocked on: none.
 
 ### S5 - Add SEO drawer governance fields
 
-Status: PENDING
+Status: DONE
 Tier: T2
 Type: behavior
 Actor/trigger: Admin configures SEO and lifecycle metadata before publishing.
@@ -285,11 +285,11 @@ Expected files: migrations, SEO editor/drawer components, page services, readine
 Write boundaries: SEO/governance metadata and drawer UI. Dashboard presentation belongs to S6.
 Acceptance criteria:
 
-- [ ] Internal-only tags persist, reload, and do not render publicly unless intentionally used for admin filtering.
-- [ ] Review period supports 3, 6, 9, 12, 15, and 18 months and calculates next review due date.
-- [ ] OG/social image/title/description controls persist and render correct metadata.
-- [ ] Noindex, sitemap, and canonical states are validated together.
-- [ ] Drawer remains usable on desktop and narrow layouts.
+- [x] Internal-only tags persist, reload, and do not render publicly unless intentionally used for admin filtering.
+- [x] Review period supports 3, 6, 9, 12, 15, and 18 months and calculates next review due date.
+- [x] OG/social image/title/description controls persist and render correct metadata.
+- [x] Noindex, sitemap, and canonical states are validated together.
+- [x] Drawer remains usable on desktop and narrow layouts.
 
 Regression guards:
 
@@ -316,7 +316,7 @@ Blocked on: none.
 
 ### S6 - Add dashboard metadata, lifecycle, and bulk operations
 
-Status: PENDING
+Status: DONE
 Tier: T2
 Type: behavior
 Actor/trigger: Admin manages many pages from `/admin/pages`.
@@ -330,11 +330,11 @@ Expected files: `/admin/pages` route/components, page services/actions, metadata
 Write boundaries: Page dashboard/list/governance surfaces only.
 Acceptance criteria:
 
-- [ ] Dashboard supports metadata view with full path, target keyword, SEO title, meta description, noindex/sitemap, review status/date.
-- [ ] Filters surface Needs review, Updating, Orphaned/Needs internal links, and metadata issues.
-- [ ] Multi-select supports guarded bulk archive, move-to-draft, add/remove internal tags, and change review period/status.
-- [ ] Bulk publish is absent or explicitly guarded outside this node.
-- [ ] Mobile/tablet layout has intentional containment or stacked fallback.
+- [x] Dashboard supports metadata view with full path, target keyword, SEO title, meta description, noindex/sitemap, review status/date.
+- [x] Filters surface Needs review, Updating, Orphaned/Needs internal links, and metadata issues.
+- [x] Multi-select supports guarded bulk archive, move-to-draft, add/remove internal tags, and change review period/status.
+- [x] Bulk publish is absent or explicitly guarded outside this node.
+- [x] Mobile/tablet layout has intentional containment or stacked fallback.
 
 Regression guards:
 
@@ -361,7 +361,7 @@ Blocked on: none.
 
 ### S7 - Add admin redirect manager
 
-Status: PENDING
+Status: DONE
 Tier: T2
 Type: behavior
 Actor/trigger: Admin needs to map old URLs to new builder pages or inspect automatically created redirects.
@@ -375,11 +375,11 @@ Expected files: redirect manager route/components, redirect services, validation
 Write boundaries: Redirect admin UI and redirect validation/services.
 Acceptance criteria:
 
-- [ ] Admins can list existing redirects and identify automatic vs manual source.
-- [ ] Create/edit validates old path, destination, status code, conflicts, and self-redirects.
-- [ ] Redirects can link to a builder page when applicable.
-- [ ] Works for all route prefixes introduced by S3.
-- [ ] CSV import is deferred unless explicitly included later.
+- [x] Admins can list existing redirects and identify automatic vs manual source.
+- [x] Create/edit validates old path, destination, status code, conflicts, and self-redirects.
+- [x] Redirects can link to a builder page when applicable.
+- [x] Works for all route prefixes introduced by S3.
+- [x] CSV import is deferred unless explicitly included later.
 
 Regression guards:
 
@@ -406,7 +406,7 @@ Blocked on: none.
 
 ### S8 - Add scheduled publishing and review automation
 
-Status: PENDING
+Status: DONE
 Tier: T2
 Type: integration
 Actor/trigger: Admin schedules a page to go live or sets review lifecycle timing.
@@ -420,11 +420,11 @@ Expected files: migrations, publish scheduling services, cron/job route or hoste
 Write boundaries: Scheduling metadata, publish job, review due calculation; no unrelated notification system unless required.
 Acceptance criteria:
 
-- [ ] Admin can schedule, cancel, and reschedule publish with clear timezone.
-- [ ] Scheduled job revalidates publish gates before publishing.
-- [ ] Publish creates revision/snapshot and updates sitemap/redirect behavior consistently.
-- [ ] Dashboard shows scheduled and review-due states.
-- [ ] Job failures are observable in admin logs or status fields.
+- [x] Admin can schedule, cancel, and reschedule publish with clear timezone.
+- [x] Scheduled job revalidates publish gates before publishing.
+- [x] Publish creates revision/snapshot and updates sitemap/redirect behavior consistently.
+- [x] Dashboard shows scheduled and review-due states.
+- [x] Job failures are observable in admin logs or status fields.
 
 Regression guards:
 
@@ -451,7 +451,7 @@ Blocked on: scheduler mechanism choice if repo lacks established cron/job path.
 
 ### S9 - Add media defaults, proof images, and alt-text audit
 
-Status: PENDING
+Status: DONE
 Tier: T1
 Type: behavior
 Actor/trigger: Admin selects hero defaults, attaches proof images, or reviews media SEO completeness.
@@ -465,11 +465,11 @@ Expected files: media library manager, proof library UI, block renderer/editor, 
 Write boundaries: Media defaults/proof-image surfaces and alt metadata propagation.
 Acceptance criteria:
 
-- [ ] Media library can mark/select default hero images by page type/template.
-- [ ] Hero blocks can use default images but allow explicit block override.
-- [ ] Proof/testimonial create/edit forms include media picker and thumbnail display.
-- [ ] Public render and preview carry correct alt text/captions/rights where applicable.
-- [ ] SEO readiness flags missing media metadata.
+- [x] Media library can mark/select default hero images by page type/template.
+- [x] Hero blocks can use default images but allow explicit block override.
+- [x] Proof/testimonial create/edit forms include media picker and thumbnail display.
+- [x] Public render and preview carry correct alt text/captions/rights where applicable.
+- [x] SEO readiness flags missing media metadata.
 
 Regression guards:
 
@@ -496,7 +496,7 @@ Blocked on: none.
 
 ### S10 - Fold blog authoring into builder with author profiles
 
-Status: PENDING
+Status: DONE
 Tier: T2
 Type: integration
 Actor/trigger: Admin chooses Blog page type or manages public author profiles.
@@ -510,11 +510,11 @@ Expected files: blog/news admin routes, page type/template services, author mode
 Write boundaries: Blog page-type integration and author profile management. Do not remove legacy blog/news until a separate migration/cutover node exists.
 Acceptance criteria:
 
-- [ ] Blog page type starts with blog-appropriate template/defaults.
-- [ ] Author selection supports display name, bio, avatar, role/title, and structured-data/social fields as needed.
-- [ ] Authors may differ from admin users.
-- [ ] Existing news/blog paths remain safe during transition.
-- [ ] AI assistant can build blog content from approved templates/sources.
+- [x] Blog page type starts with blog-appropriate template/defaults.
+- [x] Author selection supports display name, bio, avatar, role/title, and structured-data/social fields as needed.
+- [x] Authors may differ from admin users.
+- [x] Existing news/blog paths remain safe during transition.
+- [x] AI assistant can build blog content from approved templates/sources.
 
 Regression guards:
 
@@ -541,7 +541,7 @@ Blocked on: migration/cutover decision for existing `/admin/news` if implementat
 
 ### S11 - Add controlled custom footer and form/embed blocks
 
-Status: PENDING
+Status: DONE
 Tier: T2
 Type: behavior
 Actor/trigger: Admin customizes page footer variant or adds a form/embed block.
@@ -555,11 +555,11 @@ Expected files: footer variant model/editor, public renderer, form/embed block s
 Write boundaries: Footer variant and controlled form/embed block surfaces.
 Acceptance criteria:
 
-- [ ] Page-builder pages can select or configure a footer variant without editing the global footer.
-- [ ] Variant can remove/adjust approved links/content within guardrails.
-- [ ] Native form block or provider embed uses allowlisted/sandboxed configuration.
-- [ ] Lead/form submissions preserve attribution fields.
-- [ ] Public render and preview match.
+- [x] Page-builder pages can select or configure a footer variant without editing the global footer.
+- [x] Variant can remove/adjust approved links/content within guardrails.
+- [x] Native form block or provider embed uses allowlisted/sandboxed configuration.
+- [x] Lead/form submissions preserve attribution fields.
+- [x] Public render and preview match.
 
 Regression guards:
 
@@ -586,7 +586,7 @@ Blocked on: approved provider allowlist for embeds if third-party forms are incl
 
 ### S12 - Add governance history, comments, and collision protection
 
-Status: PENDING
+Status: DONE
 Tier: T2
 Type: integration
 Actor/trigger: Multiple admins review or edit the same page.
@@ -600,11 +600,11 @@ Expected files: revision panel, comments model/UI, editor controller autosave/co
 Write boundaries: Governance/audit/comment/collision surfaces only.
 Acceptance criteria:
 
-- [ ] Revision UI shows actor and meaningful action context.
-- [ ] Internal page/block comments never render publicly.
-- [ ] Comments support author/timestamp and resolve/reopen.
-- [ ] Editor detects server version changes since load and warns before overwrite.
-- [ ] User has clear choices: reload latest, save as new version, or compare where supported.
+- [x] Revision UI shows actor and meaningful action context.
+- [x] Internal page/block comments never render publicly.
+- [x] Comments support author/timestamp and resolve/reopen.
+- [x] Editor detects server version changes since load and warns before overwrite.
+- [x] User has clear choices: reload latest, save as new version, or compare where supported.
 
 Regression guards:
 

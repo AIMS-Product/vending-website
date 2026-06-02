@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { MediaPickerProvider } from "@/components/admin/MediaPickerProvider";
 import { NewPageChoiceGate } from "@/components/admin/seo-page-editor/SeoPageEditorShell";
 import { SeoPageEditorWorkspace } from "@/components/admin/seo-page-editor/SeoPageEditorWorkspace";
@@ -14,7 +15,8 @@ export type { SeoPageEditorMediaAsset };
 type SeoPageEditorFormProps = SeoPageEditorControllerProps;
 
 export function SeoPageEditorForm(props: SeoPageEditorFormProps) {
-  const editor = useSeoPageEditorController(props);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const editor = useSeoPageEditorController(props, formRef);
 
   if (editor.showCreationChoiceModal) {
     return (
@@ -31,6 +33,7 @@ export function SeoPageEditorForm(props: SeoPageEditorFormProps) {
         action={editor.formAction}
         className="relative"
         onSubmit={editor.handleEditorFormSubmit}
+        ref={formRef}
       >
         <SeoPageEditorWorkspace editor={editor} />
       </form>

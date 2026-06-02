@@ -12,6 +12,7 @@ import {
   adminArchiveSeoPage,
   SeoPageValidationError,
   adminCreateSeoPagePreviewToken,
+  adminCreatePageComment,
   adminCreateSeoPage,
   adminDuplicateSeoPage,
   adminGetSeoPageById,
@@ -32,6 +33,7 @@ import {
 } from "@/lib/services/openai-seo-agent";
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
 import { pagePathForSlug } from "@/lib/page-builder/page-paths";
+import { zonedDateTimeLocalToUtcIso } from "@/lib/page-builder/scheduled-publishing";
 import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
 
 export type PageEditorActionState =
@@ -79,6 +81,17 @@ export type PageAutosavePayload = {
   seoTitle: string;
   metaDescription: string;
   canonicalUrl: string;
+  internalTags: string;
+  topicCluster: string;
+  campaignLabel: string;
+  funnelStage: string;
+  reviewPeriodMonths: number;
+  nextReviewAt: string;
+  lifecycleStatus: string;
+  ogTitle: string;
+  ogDescription: string;
+  scheduledPublishAt: string;
+  cancelScheduledPublish: boolean;
   noindex: boolean;
   sitemapEnabled: boolean;
   pageType: string;
@@ -107,6 +120,29 @@ const formSchema = z.object({
   seoTitle: z.string().trim().max(80, "SEO title is too long."),
   metaDescription: z.string().trim().max(180, "Meta description is too long."),
   canonicalUrl: z.string().trim().max(500, "Canonical URL is too long."),
+  internalTags: z.string().trim().max(500).default(""),
+  topicCluster: z.string().trim().max(120).default(""),
+  campaignLabel: z.string().trim().max(120).default(""),
+  funnelStage: z.string().trim().max(80).default(""),
+  reviewPeriodMonths: z.coerce
+    .number()
+    .int()
+    .refine((value) => [3, 6, 9, 12, 15, 18].includes(value), {
+      message: "Choose a supported review period.",
+    })
+    .default(6),
+  nextReviewAt: z.string().trim().max(40).default(""),
+  lifecycleStatus: z
+    .enum(["drafting", "updating", "needs_review", "approved"])
+    .default("drafting"),
+  ogTitle: z.string().trim().max(80, "Social title is too long.").default(""),
+  ogDescription: z
+    .string()
+    .trim()
+    .max(180, "Social description is too long.")
+    .default(""),
+  scheduledPublishAt: z.string().trim().max(40).default(""),
+  cancelScheduledPublish: z.boolean().default(false),
   noindex: z.boolean(),
   sitemapEnabled: z.boolean(),
   pageType: z.string().trim().min(1).default("resource"),
@@ -174,6 +210,27 @@ export async function saveSeoPage(
 
   if (redirectTo) redirect(redirectTo);
   return { status: "saved", message: statusMessage(page.intent) };
+}
+
+export async function createSeoPageComment(formData: FormData) {
+  const admin = await requireAuth();
+  const pageId = String(formData.get("pageId") ?? "");
+  if (!pageId) return;
+  try {
+    await adminCreatePageComment({
+      pageId,
+      blockId: String(formData.get("blockId") ?? "") || null,
+      body: String(formData.get("body") ?? ""),
+      createdBy: admin.user.id,
+    });
+    revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
+  } catch (error) {
+    console.error("failed to create SEO page comment", {
+      adminUserId: admin.user.id,
+      pageId,
+      error,
+    });
+  }
 }
 
 export type CreateDraftForEditorResult =
@@ -252,6 +309,17 @@ export async function autosaveSeoPageDraft(
     seoTitle: payload.seoTitle,
     metaDescription: payload.metaDescription,
     canonicalUrl: payload.canonicalUrl,
+    internalTags: payload.internalTags,
+    topicCluster: payload.topicCluster,
+    campaignLabel: payload.campaignLabel,
+    funnelStage: payload.funnelStage,
+    reviewPeriodMonths: payload.reviewPeriodMonths,
+    nextReviewAt: payload.nextReviewAt,
+    lifecycleStatus: payload.lifecycleStatus,
+    ogTitle: payload.ogTitle,
+    ogDescription: payload.ogDescription,
+    scheduledPublishAt: payload.scheduledPublishAt,
+    cancelScheduledPublish: payload.cancelScheduledPublish,
     noindex: payload.noindex,
     sitemapEnabled: payload.sitemapEnabled,
     pageType: payload.pageType,
@@ -275,6 +343,8 @@ export async function autosaveSeoPageDraft(
       await adminSaveSeoPageDraft(pageId, {
         draftContent: parsed.data.draftContent,
         draftSettings: draftSettingsFromPageForm(parsed.data),
+        ...governanceMetadataFromPageForm(parsed.data),
+        ...scheduledPublishMetadataFromPageForm(parsed.data),
         updatedBy: admin.user.id,
       });
     } else {
@@ -604,6 +674,17 @@ function parsePageFormData(formData: FormData) {
     seoTitle: formData.get("seoTitle") ?? "",
     metaDescription: formData.get("metaDescription") ?? "",
     canonicalUrl: formData.get("canonicalUrl") ?? "",
+    internalTags: formData.get("internalTags") ?? "",
+    topicCluster: formData.get("topicCluster") ?? "",
+    campaignLabel: formData.get("campaignLabel") ?? "",
+    funnelStage: formData.get("funnelStage") ?? "",
+    reviewPeriodMonths: formData.get("reviewPeriodMonths") ?? 6,
+    nextReviewAt: formData.get("nextReviewAt") ?? "",
+    lifecycleStatus: formData.get("lifecycleStatus") ?? "drafting",
+    ogTitle: formData.get("ogTitle") ?? "",
+    ogDescription: formData.get("ogDescription") ?? "",
+    scheduledPublishAt: formData.get("scheduledPublishAt") ?? "",
+    cancelScheduledPublish: formData.get("cancelScheduledPublish") === "on",
     noindex: formData.get("noindex") === "on",
     sitemapEnabled: formData.get("sitemapEnabled") === "on",
     pageType: formData.get("pageType") ?? "resource",
@@ -659,6 +740,8 @@ async function persistPageEditorDraft(
     await adminSaveSeoPageDraft(page.id, {
       draftContent: page.draftContent,
       draftSettings: draftSettingsFromPageForm(page),
+      ...governanceMetadataFromPageForm(page),
+      ...scheduledPublishMetadataFromPageForm(page),
       updatedBy: actorId,
     });
   } else {
@@ -693,6 +776,28 @@ async function persistPageEditorDraft(
 
 function draftMetadataFromPageForm(page: ParsedPageForm) {
   return {
+    ...seoDraftMetadataFromPageForm(page),
+    ...governanceMetadataFromPageForm(page),
+    ...scheduledPublishMetadataFromPageForm(page),
+  };
+}
+
+function governanceMetadataFromPageForm(page: ParsedPageForm) {
+  return {
+    internalTags: parseInternalTags(page.internalTags),
+    topicCluster: nullable(page.topicCluster),
+    campaignLabel: nullable(page.campaignLabel),
+    funnelStage: nullable(page.funnelStage),
+    reviewPeriodMonths: page.reviewPeriodMonths,
+    nextReviewAt: nullableDate(page.nextReviewAt),
+    lifecycleStatus: page.lifecycleStatus,
+    ogTitle: nullable(page.ogTitle),
+    ogDescription: nullable(page.ogDescription),
+  };
+}
+
+function seoDraftMetadataFromPageForm(page: ParsedPageForm) {
+  return {
     seoTitle: nullable(page.seoTitle),
     metaDescription: nullable(page.metaDescription),
     canonicalUrl: nullable(page.canonicalUrl),
@@ -702,6 +807,48 @@ function draftMetadataFromPageForm(page: ParsedPageForm) {
   };
 }
 
+function scheduledPublishMetadataFromPageForm(page: ParsedPageForm) {
+  if (page.cancelScheduledPublish) {
+    return {
+      scheduledPublishAt: null,
+      scheduledPublishStatus: "cancelled",
+      scheduledPublishError: null,
+      scheduledPublishAttempts: 0,
+      scheduledPublishLastAttemptAt: null,
+      scheduledPublishLockedAt: null,
+    };
+  }
+
+  const scheduledPublishAt = zonedDateTimeLocalToUtcIso(
+    page.scheduledPublishAt,
+  );
+  if (!scheduledPublishAt) return {};
+
+  return {
+    scheduledPublishAt,
+    scheduledPublishStatus: "scheduled",
+    scheduledPublishError: null,
+    scheduledPublishAttempts: 0,
+    scheduledPublishLastAttemptAt: null,
+    scheduledPublishLockedAt: null,
+  };
+}
+
+function parseInternalTags(value: string) {
+  return value
+    .split(",")
+    .map((tag) => tag.trim().toLowerCase())
+    .filter(Boolean)
+    .slice(0, 20);
+}
+
+function nullableDate(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const date = new Date(trimmed);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 function draftSettingsFromPageForm(page: ParsedPageForm): SeoPageDraftSettings {
   return {
     slug: page.slug,
@@ -709,7 +856,7 @@ function draftSettingsFromPageForm(page: ParsedPageForm): SeoPageDraftSettings {
     routePath: pagePathForSlug(page.slug, page.routePrefix),
     title: page.title,
     targetKeyword: nullable(page.targetKeyword),
-    ...draftMetadataFromPageForm(page),
+    ...seoDraftMetadataFromPageForm(page),
   };
 }
 
