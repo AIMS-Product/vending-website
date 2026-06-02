@@ -13,6 +13,7 @@ import {
   type PageContent,
 } from "@/lib/page-builder/blocks";
 import {
+  isBuilderRoutePath,
   normalizeRoutePrefix,
   pagePathForPage,
   pagePathForSlug,
@@ -82,6 +83,21 @@ export type SaveSeoPageDraftInput = {
   noindex?: boolean;
   sitemapEnabled?: boolean;
   structuredDataSettings?: StructuredDataSettings;
+  internalTags?: string[];
+  topicCluster?: string | null;
+  campaignLabel?: string | null;
+  funnelStage?: string | null;
+  reviewPeriodMonths?: number;
+  nextReviewAt?: string | null;
+  lifecycleStatus?: string;
+  ogTitle?: string | null;
+  ogDescription?: string | null;
+  scheduledPublishAt?: string | null;
+  scheduledPublishStatus?: string;
+  scheduledPublishError?: string | null;
+  scheduledPublishAttempts?: number;
+  scheduledPublishLastAttemptAt?: string | null;
+  scheduledPublishLockedAt?: string | null;
   draftContent?: unknown;
   draftSettings?: SeoPageDraftSettings | null;
   updatedBy?: string | null;
@@ -129,6 +145,30 @@ export type DuplicateSeoPageOptions = ServiceDeps & {
   now?: () => Date;
 };
 
+export type CreateBuilderRedirectInput = {
+  sourcePath: string;
+  destinationPath: string;
+  statusCode?: number;
+  pageId?: string | null;
+  createdBy?: string | null;
+  createdReason?: string;
+};
+
+export type CreateAuthorProfileInput = {
+  displayName: string;
+  slug: string;
+  bio?: string | null;
+  roleTitle?: string | null;
+  avatarAssetId?: string | null;
+};
+
+export type CreatePageCommentInput = {
+  pageId: string;
+  blockId?: string | null;
+  body: string;
+  createdBy?: string | null;
+};
+
 export type PreviewSeoPage = Omit<SeoPage, "published_content"> & {
   published_content: PageContent;
 };
@@ -144,7 +184,7 @@ export class SeoPageValidationError extends Error {
 }
 
 const SEO_PAGE_FIELDS =
-  "id, slug, route_prefix, route_path, title, status, target_keyword, page_type, template_key, draft_content, draft_settings, published_content, published_revision_id, seo_title, meta_description, canonical_url, noindex, sitemap_enabled, og_asset_id, structured_data_settings, published_at, archived_at, archive_behavior, archive_redirect_url, created_by, updated_by, created_at, updated_at" as const;
+  "id, slug, route_prefix, route_path, title, status, target_keyword, page_type, template_key, draft_content, draft_settings, published_content, published_revision_id, seo_title, meta_description, canonical_url, noindex, sitemap_enabled, og_asset_id, og_title, og_description, structured_data_settings, internal_tags, topic_cluster, campaign_label, funnel_stage, review_period_months, next_review_at, lifecycle_status, scheduled_publish_at, scheduled_publish_status, scheduled_publish_error, scheduled_publish_attempts, scheduled_publish_last_attempt_at, scheduled_publish_locked_at, footer_variant, author_id, published_at, archived_at, archive_behavior, archive_redirect_url, created_by, updated_by, created_at, updated_at" as const;
 
 const PAGE_REVISION_FIELDS =
   "id, page_id, revision_type, label, content_snapshot, seo_snapshot, created_by, created_at" as const;
@@ -346,6 +386,45 @@ export async function adminSaveSeoPageDraft(
       input.structuredDataSettings,
     ) as unknown as Json;
   }
+  if (input.internalTags !== undefined)
+    patch.internal_tags = input.internalTags;
+  if (input.topicCluster !== undefined)
+    patch.topic_cluster = input.topicCluster;
+  if (input.campaignLabel !== undefined) {
+    patch.campaign_label = input.campaignLabel;
+  }
+  if (input.funnelStage !== undefined) patch.funnel_stage = input.funnelStage;
+  if (input.reviewPeriodMonths !== undefined) {
+    patch.review_period_months = input.reviewPeriodMonths;
+  }
+  if (input.nextReviewAt !== undefined)
+    patch.next_review_at = input.nextReviewAt;
+  if (input.lifecycleStatus !== undefined) {
+    patch.lifecycle_status = input.lifecycleStatus;
+  }
+  if (input.ogTitle !== undefined) patch.og_title = input.ogTitle;
+  if (input.ogDescription !== undefined) {
+    patch.og_description = input.ogDescription;
+  }
+  if (input.scheduledPublishAt !== undefined) {
+    patch.scheduled_publish_at = input.scheduledPublishAt;
+  }
+  if (input.scheduledPublishStatus !== undefined) {
+    patch.scheduled_publish_status = input.scheduledPublishStatus;
+  }
+  if (input.scheduledPublishError !== undefined) {
+    patch.scheduled_publish_error = input.scheduledPublishError;
+  }
+  if (input.scheduledPublishAttempts !== undefined) {
+    patch.scheduled_publish_attempts = input.scheduledPublishAttempts;
+  }
+  if (input.scheduledPublishLastAttemptAt !== undefined) {
+    patch.scheduled_publish_last_attempt_at =
+      input.scheduledPublishLastAttemptAt;
+  }
+  if (input.scheduledPublishLockedAt !== undefined) {
+    patch.scheduled_publish_locked_at = input.scheduledPublishLockedAt;
+  }
   if (input.draftContent !== undefined) {
     patch.draft_content = parseDraftContent(
       input.draftContent,
@@ -470,7 +549,112 @@ export async function adminPublishSeoPage(
       publishSettings.routePath,
     );
   }
-  return parseAtomicRevisionResult(data, "Could not publish SEO page.");
+  const result = parseAtomicRevisionResult(data, "Could not publish SEO page.");
+  try {
+    await capturePublishedBlocks(client, result.page, result.revision);
+  } catch (error) {
+    console.error("failed to capture published page content", {
+      pageId: result.page.id,
+      revisionId: result.revision.id,
+      error,
+    });
+  }
+  return {
+    page: await clearPublishedScheduleStateBestEffort(client, result.page),
+    revision: result.revision,
+  };
+}
+
+async function clearPublishedScheduleStateBestEffort(
+  client: SeoPageClient,
+  page: SeoPage,
+) {
+  try {
+    return await clearPublishedScheduleState(client, page);
+  } catch (error) {
+    console.error("failed to clear published schedule state", {
+      pageId: page.id,
+      error,
+    });
+    return page;
+  }
+}
+
+async function clearPublishedScheduleState(
+  client: SeoPageClient,
+  page: SeoPage,
+) {
+  if (
+    page.scheduled_publish_status !== "scheduled" &&
+    page.scheduled_publish_status !== "failed" &&
+    page.scheduled_publish_status !== "cancelled" &&
+    !page.scheduled_publish_at &&
+    !page.scheduled_publish_error &&
+    !page.scheduled_publish_attempts &&
+    !page.scheduled_publish_last_attempt_at &&
+    !page.scheduled_publish_locked_at
+  ) {
+    return page;
+  }
+
+  const { data, error } = await client
+    .from("seo_pages")
+    .update({
+      scheduled_publish_at: null,
+      scheduled_publish_error: null,
+      scheduled_publish_attempts: 0,
+      scheduled_publish_last_attempt_at: null,
+      scheduled_publish_locked_at: null,
+      scheduled_publish_status: "published",
+    })
+    .eq("id", page.id)
+    .select(SEO_PAGE_FIELDS)
+    .single();
+
+  if (error) throw new Error("Could not clear scheduled publish state.");
+  return data;
+}
+
+async function capturePublishedBlocks(
+  client: SeoPageClient,
+  page: SeoPage,
+  revision: PageRevision,
+) {
+  const revisionContent = validatePageContent(revision.content_snapshot);
+  const pageContent = validatePageContent(page.published_content);
+  const content = revisionContent.ok
+    ? revisionContent.content
+    : pageContent.ok
+      ? pageContent.content
+      : null;
+  if (!content) return;
+  const blocks = flattenBlocks(content);
+  const internalTags = Array.isArray(page.internal_tags)
+    ? page.internal_tags
+    : [];
+  const rows = blocks.map((block) => ({
+    source_page_id: page.id,
+    source_revision_id: revision.id,
+    source_block_id: block.id,
+    block_type: block.type,
+    block_variant: block.variant,
+    page_type: page.page_type,
+    route_path: page.route_path,
+    title: page.title,
+    payload: block as unknown as Json,
+    internal_tags: internalTags,
+    provenance: {
+      source: "publish",
+      pageTitle: page.title,
+      publishedAt: page.published_at,
+    } as Json,
+  }));
+
+  if (rows.length === 0) return;
+  const { error } = await client
+    .from("page_builder_content_pieces")
+    .upsert(rows, { onConflict: "source_revision_id,source_block_id" });
+  if (error) throw new Error("Could not capture published page content.");
 }
 
 export async function adminUnpublishSeoPage(
@@ -712,6 +896,162 @@ export async function adminListSeoPagePreviewTokens(
   return data ?? [];
 }
 
+export async function adminListBuilderRedirects(deps: ServiceDeps = {}) {
+  const client = deps.client ?? createAdminClient();
+  const { data, error } = await client
+    .from("redirects")
+    .select(
+      "id, source_path, destination_path, status_code, page_id, created_reason, created_by, created_at",
+    )
+    .order("created_at", { ascending: false });
+  if (error) throw new Error("Could not list builder redirects.");
+  return data ?? [];
+}
+
+export async function adminCreateBuilderRedirect(
+  input: CreateBuilderRedirectInput,
+  deps: ServiceDeps = {},
+) {
+  const client = deps.client ?? createAdminClient();
+  const sourcePath = normalizeSourcePath(input.sourcePath);
+  const destinationPath = normalizeDestinationPath(input.destinationPath);
+  validateRedirectPaths(sourcePath, destinationPath);
+  const statusCode = input.statusCode ?? 301;
+  if (![301, 302, 307, 308].includes(statusCode)) {
+    throw new SeoPageValidationError([
+      {
+        code: "invalid_redirect_status",
+        path: "status_code",
+        message: "Choose a supported redirect status.",
+      },
+    ]);
+  }
+
+  const { data, error } = await client
+    .from("redirects")
+    .insert({
+      source_path: sourcePath,
+      destination_path: destinationPath,
+      status_code: statusCode,
+      page_id: input.pageId ?? null,
+      created_by: input.createdBy ?? null,
+      created_reason: input.createdReason ?? "manual",
+    })
+    .select(
+      "id, source_path, destination_path, status_code, page_id, created_reason, created_by, created_at",
+    )
+    .single();
+  if (error) {
+    throwSeoPageMutationError(error, "Could not create redirect.", sourcePath);
+  }
+  return data;
+}
+
+export async function adminListAuthorProfiles(deps: ServiceDeps = {}) {
+  const client = deps.client ?? createAdminClient();
+  const { data, error } = await client
+    .from("page_builder_authors")
+    .select(
+      "id, display_name, slug, bio, avatar_asset_id, role_title, social_links, structured_data, created_at, updated_at",
+    )
+    .order("display_name", { ascending: true });
+  if (error) throw new Error("Could not list author profiles.");
+  return data ?? [];
+}
+
+export async function adminCreateAuthorProfile(
+  input: CreateAuthorProfileInput,
+  deps: ServiceDeps = {},
+) {
+  const client = deps.client ?? createAdminClient();
+  const displayName = input.displayName.trim();
+  if (displayName.length < 2) throw new Error("Author name is required.");
+  let normalizedSlug: string;
+  try {
+    normalizedSlug = normalizeSlug(input.slug);
+  } catch {
+    throw new Error("Author slug is required.");
+  }
+  if (!normalizedSlug) throw new Error("Author slug is required.");
+  const { data, error } = await client
+    .from("page_builder_authors")
+    .insert({
+      display_name: displayName,
+      slug: normalizedSlug,
+      bio: input.bio?.trim() || null,
+      role_title: input.roleTitle?.trim() || null,
+      avatar_asset_id: input.avatarAssetId ?? null,
+      social_links: {},
+      structured_data: {},
+    })
+    .select(
+      "id, display_name, slug, bio, avatar_asset_id, role_title, social_links, structured_data, created_at, updated_at",
+    )
+    .single();
+  if (error) throw new Error("Could not create author profile.");
+  return data;
+}
+
+export async function adminListPageComments(
+  pageId: string,
+  deps: ServiceDeps = {},
+) {
+  const client = deps.client ?? createAdminClient();
+  const { data, error } = await client
+    .from("page_builder_comments")
+    .select(
+      "id, page_id, block_id, body, resolved_at, resolved_by, created_by, created_at, updated_at",
+    )
+    .eq("page_id", pageId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error("Could not list page comments.");
+  return data ?? [];
+}
+
+export async function adminCreatePageComment(
+  input: CreatePageCommentInput,
+  deps: ServiceDeps = {},
+) {
+  const client = deps.client ?? createAdminClient();
+  const body = input.body.trim();
+  if (body.length < 2) throw new Error("Comment body is required.");
+  const { data, error } = await client
+    .from("page_builder_comments")
+    .insert({
+      page_id: input.pageId,
+      block_id: input.blockId ?? null,
+      body,
+      created_by: input.createdBy ?? null,
+    })
+    .select(
+      "id, page_id, block_id, body, resolved_at, resolved_by, created_by, created_at, updated_at",
+    )
+    .single();
+  if (error) throw new Error("Could not create page comment.");
+  return data;
+}
+
+export async function adminResolvePageComment(
+  commentId: string,
+  options: ServiceDeps & { actorId?: string | null; now?: () => Date } = {},
+) {
+  const client = options.client ?? createAdminClient();
+  const now = options.now ?? (() => new Date());
+  const { data, error } = await client
+    .from("page_builder_comments")
+    .update({
+      resolved_at: now().toISOString(),
+      resolved_by: options.actorId ?? null,
+    })
+    .eq("id", commentId)
+    .select(
+      "id, page_id, block_id, body, resolved_at, resolved_by, created_by, created_at, updated_at",
+    )
+    .single();
+  if (error) throw new Error("Could not resolve page comment.");
+  return data;
+}
+
 export async function adminCreateSeoPagePreviewToken(
   pageId: string,
   options: CreatePreviewTokenOptions = {},
@@ -852,6 +1192,70 @@ function seoPatchFromSnapshot(snapshot: Json) {
   }
   if (values.structured_data_settings !== undefined) {
     patch.structured_data_settings = values.structured_data_settings;
+  }
+  if (Array.isArray(values.internal_tags)) {
+    patch.internal_tags = values.internal_tags.filter(
+      (tag): tag is string => typeof tag === "string",
+    );
+  }
+  if (typeof values.topic_cluster === "string") {
+    patch.topic_cluster = values.topic_cluster;
+  }
+  if (values.topic_cluster === null) patch.topic_cluster = null;
+  if (typeof values.campaign_label === "string") {
+    patch.campaign_label = values.campaign_label;
+  }
+  if (values.campaign_label === null) patch.campaign_label = null;
+  if (typeof values.funnel_stage === "string") {
+    patch.funnel_stage = values.funnel_stage;
+  }
+  if (values.funnel_stage === null) patch.funnel_stage = null;
+  if (typeof values.review_period_months === "number") {
+    patch.review_period_months = values.review_period_months;
+  }
+  if (typeof values.next_review_at === "string") {
+    patch.next_review_at = values.next_review_at;
+  }
+  if (values.next_review_at === null) patch.next_review_at = null;
+  if (typeof values.lifecycle_status === "string") {
+    patch.lifecycle_status = values.lifecycle_status;
+  }
+  if (typeof values.og_title === "string") patch.og_title = values.og_title;
+  if (values.og_title === null) patch.og_title = null;
+  if (typeof values.og_description === "string") {
+    patch.og_description = values.og_description;
+  }
+  if (values.og_description === null) patch.og_description = null;
+  if (typeof values.scheduled_publish_at === "string") {
+    patch.scheduled_publish_at = values.scheduled_publish_at;
+  }
+  if (values.scheduled_publish_at === null) {
+    patch.scheduled_publish_at = null;
+  }
+  if (typeof values.scheduled_publish_status === "string") {
+    patch.scheduled_publish_status = values.scheduled_publish_status;
+  }
+  if (typeof values.scheduled_publish_error === "string") {
+    patch.scheduled_publish_error = values.scheduled_publish_error;
+  }
+  if (values.scheduled_publish_error === null) {
+    patch.scheduled_publish_error = null;
+  }
+  if (typeof values.scheduled_publish_attempts === "number") {
+    patch.scheduled_publish_attempts = values.scheduled_publish_attempts;
+  }
+  if (typeof values.scheduled_publish_last_attempt_at === "string") {
+    patch.scheduled_publish_last_attempt_at =
+      values.scheduled_publish_last_attempt_at;
+  }
+  if (values.scheduled_publish_last_attempt_at === null) {
+    patch.scheduled_publish_last_attempt_at = null;
+  }
+  if (typeof values.scheduled_publish_locked_at === "string") {
+    patch.scheduled_publish_locked_at = values.scheduled_publish_locked_at;
+  }
+  if (values.scheduled_publish_locked_at === null) {
+    patch.scheduled_publish_locked_at = null;
   }
   return patch;
 }
@@ -1405,6 +1809,21 @@ function buildSeoSnapshot(
     sitemap_enabled: settings.sitemapEnabled,
     structured_data_settings:
       settings.structuredDataSettings as unknown as Json,
+    internal_tags: page.internal_tags,
+    topic_cluster: page.topic_cluster,
+    campaign_label: page.campaign_label,
+    funnel_stage: page.funnel_stage,
+    review_period_months: page.review_period_months,
+    next_review_at: page.next_review_at,
+    lifecycle_status: page.lifecycle_status,
+    og_title: page.og_title,
+    og_description: page.og_description,
+    scheduled_publish_at: page.scheduled_publish_at,
+    scheduled_publish_status: page.scheduled_publish_status,
+    scheduled_publish_error: page.scheduled_publish_error,
+    scheduled_publish_attempts: page.scheduled_publish_attempts,
+    scheduled_publish_last_attempt_at: page.scheduled_publish_last_attempt_at,
+    scheduled_publish_locked_at: page.scheduled_publish_locked_at,
   };
 }
 
@@ -1419,7 +1838,7 @@ function publishRevisionLabel(
 
 function normalizeSourcePath(path: string) {
   const normalized = normalizeInternalPath(path);
-  if (!normalized.startsWith("/resources/")) {
+  if (!isBuilderRoutePath(normalized)) {
     throw new SeoPageValidationError([
       {
         code: "invalid_redirect_source",
