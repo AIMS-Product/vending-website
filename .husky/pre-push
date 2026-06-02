@@ -1,0 +1,39 @@
+branch="$(git symbolic-ref --quiet --short HEAD || true)"
+
+is_release_train_ref() {
+  case "$1" in
+    codex/*|stack/*|builder-v2/*|release-stack/*) return 0 ;;
+    refs/heads/codex/*|refs/heads/stack/*|refs/heads/builder-v2/*|refs/heads/release-stack/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+block_push() {
+  ref="$1"
+  cat <<EOF
+Blocked push from release-train branch/ref: $ref
+
+This repo keeps Website Builder release-stack branches local-only until the user
+explicitly chooses the next slice to release. This prevents accidental GitHub
+pushes and Vercel preview deployments during stack construction.
+
+To intentionally release a selected slice, rerun the push with:
+  ALLOW_RELEASE_TRAIN_PUSH=1 git push ...
+EOF
+  exit 1
+}
+
+if [ "${ALLOW_RELEASE_TRAIN_PUSH:-}" = "1" ]; then
+  exit 0
+fi
+
+if [ -n "$branch" ] && is_release_train_ref "$branch"; then
+  block_push "$branch"
+fi
+
+while read local_ref local_sha remote_ref remote_sha
+do
+  if is_release_train_ref "$local_ref"; then
+    block_push "$local_ref"
+  fi
+done
