@@ -6,6 +6,12 @@ const optionalEnv = z.preprocess(
   z.string().optional(),
 );
 
+const optionalTrimmedOptionalEnv = z.preprocess((value) => {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return trimmed === "" ? undefined : trimmed;
+}, z.string().optional());
+
 const optionalTrimmedEnv = (fallback: string) =>
   z.preprocess(
     (value) => (value === "" ? undefined : value),
@@ -25,6 +31,7 @@ const envSchema = z.object({
   LEAD_NOTIFICATION_FROM: optionalEnv,
   LEAD_NOTIFICATION_SUBJECT_PREFIX: optionalEnv,
   SLACK_WEBHOOK_URL: optionalEnv,
+  CRON_SECRET: optionalTrimmedOptionalEnv,
   OPENAI_API_KEY: optionalEnv,
   OPENAI_SEO_MODEL: optionalTrimmedEnv("gpt-5.5"),
   OPENAI_SEO_REASONING_EFFORT: z.preprocess(
@@ -47,6 +54,7 @@ const parsed = envSchema.safeParse({
   LEAD_NOTIFICATION_SUBJECT_PREFIX:
     process.env.LEAD_NOTIFICATION_SUBJECT_PREFIX,
   SLACK_WEBHOOK_URL: process.env.SLACK_WEBHOOK_URL,
+  CRON_SECRET: process.env.CRON_SECRET,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   OPENAI_SEO_MODEL: process.env.OPENAI_SEO_MODEL,
   OPENAI_SEO_REASONING_EFFORT: process.env.OPENAI_SEO_REASONING_EFFORT,
