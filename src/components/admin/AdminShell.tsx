@@ -90,6 +90,7 @@ export function AdminShell({
       ? blogSection.label
       : sections.find((section) => section.id === activeSection)?.label) ??
     "Studio";
+  const roleLabel = userRole ? formatAdminRole(userRole) : null;
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f7f8fb] text-[#0f172a]">
@@ -363,8 +364,8 @@ export function AdminShell({
                       <span className="block truncate text-sm font-medium text-slate-950">
                         {userEmail}
                       </span>
-                      {userRole ? (
-                        <span className="block truncate">{userRole}</span>
+                      {roleLabel ? (
+                        <span className="block truncate">{roleLabel}</span>
                       ) : null}
                     </p>
                   </div>
@@ -423,7 +424,7 @@ export function AdminShell({
                   <span className="text-slate-700" aria-hidden="true">
                     <AdminIconGlyph icon="shield" />
                   </span>
-                  {userRole ? `${userRole} access` : "Admin access"}
+                  {roleLabel ? `${roleLabel} access` : "Admin access"}
                 </div>
               </div>
               <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
@@ -617,6 +618,11 @@ function adminInitials(email: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
+}
+
+function formatAdminRole(role: string) {
+  const normalized = role.split("_").filter(Boolean).join(" ");
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
 }
 
 function MobileNavLink({

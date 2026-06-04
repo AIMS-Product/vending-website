@@ -127,14 +127,17 @@ const autosaveMetadataFieldNames = new Set([
   "cancelScheduledPublish",
 ]);
 
-export function useSeoPageEditorController({
-  page,
-  internalLinkTargets = emptyInternalLinkTargets,
-  mediaAssets = emptyMediaAssets,
-  aiProposals = emptyAiProposals,
-  savedFromRedirect = false,
-  redirectError,
-}: SeoPageEditorControllerProps, formRef: RefObject<HTMLFormElement | null>) {
+export function useSeoPageEditorController(
+  {
+    page,
+    internalLinkTargets = emptyInternalLinkTargets,
+    mediaAssets = emptyMediaAssets,
+    aiProposals = emptyAiProposals,
+    savedFromRedirect = false,
+    redirectError,
+  }: SeoPageEditorControllerProps,
+  formRef: RefObject<HTMLFormElement | null>,
+) {
   const { refresh, replace } = useRouter();
   const [state, formAction, isManualSubmitPending] = useActionState(
     saveSeoPage,
@@ -239,7 +242,7 @@ export function useSeoPageEditorController({
   const [mobileEditorPanel, setMobileEditorPanel] =
     useState<MobileEditorPanel>(null);
   const [isDesktopBlockSidebarCollapsed, setIsDesktopBlockSidebarCollapsed] =
-    useState(false);
+    useState(true);
   const [isDesktopSeoSidebarCollapsed, setIsDesktopSeoSidebarCollapsed] =
     useState(false);
   const [hasSelectedNewPageMode, setHasSelectedNewPageMode] = useState(
@@ -617,11 +620,7 @@ export function useSeoPageEditorController({
     }, 1200);
 
     return () => window.clearTimeout(timer);
-  }, [
-    buildAutosavePayload,
-    effectivePageId,
-    metadataAutosaveVersion,
-  ]);
+  }, [buildAutosavePayload, effectivePageId, metadataAutosaveVersion]);
 
   // S3b: once the user starts a brand-new page (a real title exists), create a
   // draft row after a short pause so autosave can take over. Guarded so it

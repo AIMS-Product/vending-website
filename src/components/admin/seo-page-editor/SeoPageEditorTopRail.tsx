@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import {
+  copyRailUrl,
+  type CopyMessage,
+} from "@/components/admin/seo-page-editor/editor-copy-url";
 import { ChevronIcon } from "@/components/admin/seo-page-editor/SeoPageEditorShell";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 import { pagePathForSlug } from "@/lib/page-builder/page-paths";
@@ -13,6 +17,8 @@ const railPanelToggleClass =
   "inline-flex min-h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none";
 const railCommandClass =
   "inline-flex min-h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55";
+const railMenuItemClass =
+  "rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/25 focus-visible:outline-none";
 
 // S8: format the autosave timestamp for the top-rail "Saved automatically" hint.
 function formatRailTime(iso: string) {
@@ -22,28 +28,12 @@ function formatRailTime(iso: string) {
   });
 }
 
-async function copyRailUrl(
-  getUrl: () => string | null,
-  successMessage: string,
-  setCopyMessage: (message: string) => void,
-) {
-  const url = getUrl();
-  if (!url) return;
-
-  try {
-    await navigator.clipboard.writeText(url);
-    setCopyMessage(successMessage);
-  } catch {
-    setCopyMessage("Could not copy link.");
-  }
-}
-
 export function SeoPageEditorTopRail({
   editor,
 }: {
   editor: SeoPageEditorController;
 }) {
-  const [copyMessage, setCopyMessage] = useState<string | null>(null);
+  const [copyMessage, setCopyMessage] = useState<CopyMessage | null>(null);
   const {
     autosave,
     blockSidebarExpandTitle,
@@ -151,45 +141,56 @@ export function SeoPageEditorTopRail({
                 Open preview
               </a>
             )}
-            {canCopyEditorUrl && (
-              <button
-                type="button"
-                className={railCommandClass}
-                title="Copy this editor page link"
-                onClick={() =>
-                  copyRailUrl(
-                    () =>
-                      typeof window === "undefined"
-                        ? null
-                        : window.location.href,
-                    "Editor link copied.",
-                    setCopyMessage,
-                  )
-                }
-              >
-                <span className="hidden sm:inline">Copy editor link</span>
-                <span className="sm:hidden">Editor link</span>
-              </button>
-            )}
-            {canCopyPublicUrl && (
-              <button
-                type="button"
-                className={railCommandClass}
-                title="Copy the public resource URL for this page"
-                onClick={() =>
-                  copyRailUrl(
-                    () =>
-                      publicPath && typeof window !== "undefined"
-                        ? new URL(publicPath, window.location.origin).toString()
-                        : null,
-                    "Public URL copied.",
-                    setCopyMessage,
-                  )
-                }
-              >
-                <span className="hidden sm:inline">Copy public URL</span>
-                <span className="sm:hidden">Public URL</span>
-              </button>
+            {(canCopyEditorUrl || canCopyPublicUrl) && (
+              <details className="relative">
+                <summary
+                  className={`${railCommandClass} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
+                  title="Copy editor or public page links"
+                >
+                  Share
+                </summary>
+                <div className="absolute top-full left-1/2 z-[70] mt-2 grid w-56 -translate-x-1/2 gap-1 rounded-xl border border-slate-200 bg-white p-2 text-left shadow-xl">
+                  {canCopyEditorUrl && (
+                    <button
+                      type="button"
+                      className={railMenuItemClass}
+                      title="Copy this editor page link"
+                      onClick={() =>
+                        void copyRailUrl(
+                          () =>
+                            typeof window === "undefined"
+                              ? null
+                              : window.location.href,
+                          "Editor link copied.",
+                        ).then(setCopyMessage)
+                      }
+                    >
+                      Copy editor link
+                    </button>
+                  )}
+                  {canCopyPublicUrl && (
+                    <button
+                      type="button"
+                      className={railMenuItemClass}
+                      title="Copy the public resource URL for this page"
+                      onClick={() =>
+                        void copyRailUrl(
+                          () =>
+                            publicPath && typeof window !== "undefined"
+                              ? new URL(
+                                  publicPath,
+                                  window.location.origin,
+                                ).toString()
+                              : null,
+                          "Public URL copied.",
+                        ).then(setCopyMessage)
+                      }
+                    >
+                      Copy public URL
+                    </button>
+                  )}
+                </div>
+              </details>
             )}
           </div>
           {autosave?.status === "saved" && (
@@ -212,7 +213,26 @@ export function SeoPageEditorTopRail({
             </p>
           )}
           {copyMessage && (
-            <p className="text-xs font-medium text-slate-500">{copyMessage}</p>
+            <div
+              className={`text-center text-xs font-medium ${
+                copyMessage.tone === "error" ? "text-red-600" : "text-slate-500"
+              }`}
+              role={copyMessage.tone === "error" ? "alert" : "status"}
+            >
+              <p>{copyMessage.message}</p>
+              {copyMessage.manualUrl ? (
+                <label className="mt-1 block">
+                  <span className="sr-only">Copy this URL manually</span>
+                  <input
+                    readOnly
+                    value={copyMessage.manualUrl}
+                    aria-label="Copy this URL manually"
+                    onFocus={(event) => event.currentTarget.select()}
+                    className="w-full max-w-[min(80vw,32rem)] rounded-md border border-red-200 bg-white px-2 py-1 font-mono text-[11px] text-red-700 shadow-sm outline-none focus:border-red-300 focus:ring-2 focus:ring-red-100"
+                  />
+                </label>
+              ) : null}
+            </div>
           )}
         </div>
         <div className="order-2 flex justify-center sm:order-none sm:justify-end">

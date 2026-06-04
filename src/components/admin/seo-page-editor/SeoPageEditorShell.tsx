@@ -61,8 +61,8 @@ export function NewPageChoiceGate({
             Create page
           </h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
-            Choose the page path first so the builder can start with scoped
-            templates and AI context.
+            Pick the kind of page you want. We will start with the right
+            structure, and you can change the details later.
           </p>
         </div>
 
@@ -158,42 +158,10 @@ export function NewPageChoiceGate({
           </aside>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <button
-            type="button"
-            className="cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 p-5 text-left opacity-70"
-            disabled
-          >
-            <span className="flex items-center justify-between gap-3">
-              <span className="text-lg font-semibold text-slate-950">
-                From template
-              </span>
-              <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-                Coming soon
-              </span>
-            </span>
-            <span className="mt-2 block text-sm leading-6 text-slate-500">
-              Use a team-approved saved template.
-            </span>
-          </button>
-          <button
-            type="button"
-            className="cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 p-5 text-left opacity-70"
-            disabled
-          >
-            <span className="flex items-center justify-between gap-3">
-              <span className="text-lg font-semibold text-slate-950">
-                AI-assisted template
-              </span>
-              <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-                Coming soon
-              </span>
-            </span>
-            <span className="mt-2 block text-sm leading-6 text-slate-500">
-              Use an approved template from the SEO agent.
-            </span>
-          </button>
-        </div>
+        <p className="mt-5 text-sm leading-6 text-slate-500">
+          Saved templates and AI-assisted starts will appear here once they are
+          ready for editors.
+        </p>
       </section>
     </div>
   );

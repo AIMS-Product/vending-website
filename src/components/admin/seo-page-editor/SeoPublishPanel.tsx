@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   NextPublishStepCard,
   SeoReadinessPanel,
@@ -9,6 +10,7 @@ import {
   primaryButtonClass,
   textareaClass,
 } from "@/components/admin/seo-page-editor/editor-styles";
+import { editorPublishConfirmMessage } from "@/components/admin/seo-page-editor/editor-publish-confirmation";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 import {
   SCHEDULED_PUBLISH_TIME_ZONE,
@@ -631,6 +633,13 @@ function SearchPreviewCard({ editor }: { editor: SeoPageEditorController }) {
 }
 
 function SeoPublishActions({ editor }: { editor: SeoPageEditorController }) {
+  const [isConfirmingPublish, setIsConfirmingPublish] = useState(false);
+  const publishConfirmMessage = editorPublishConfirmMessage({
+    isPublishedPage: editor.isPublishedPage,
+    routePrefix: editor.routePrefix,
+    visibleSlug: editor.visibleSlug,
+  });
+
   return (
     <div className="grid shrink-0 gap-2 border-t border-slate-200 bg-white p-4 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] sm:px-5">
       <label className="block">
@@ -646,14 +655,12 @@ function SeoPublishActions({ editor }: { editor: SeoPageEditorController }) {
         />
       </label>
       <button
-        type="submit"
+        type="button"
         className={
           editor.publishDisabled
             ? disabledPublishButtonClass
             : primaryButtonClass
         }
-        name="intent"
-        value="publish"
         aria-disabled={editor.publishDisabled || undefined}
         title={
           editor.seoReadiness.blockers.length > 0
@@ -668,11 +675,53 @@ function SeoPublishActions({ editor }: { editor: SeoPageEditorController }) {
             const reason = document.getElementById("publish-next-step");
             reason?.scrollIntoView({ behavior: "smooth", block: "center" });
             reason?.focus();
+            return;
           }
+          setIsConfirmingPublish(true);
         }}
       >
         {editor.publishButtonLabel}
       </button>
+      {isConfirmingPublish ? (
+        <div
+          role="alertdialog"
+          aria-labelledby="editor-publish-confirm-title"
+          aria-describedby="editor-publish-confirm-body"
+          className="grid gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"
+        >
+          <div>
+            <p
+              id="editor-publish-confirm-title"
+              className="font-semibold text-amber-950"
+            >
+              Confirm publish
+            </p>
+            <p
+              id="editor-publish-confirm-body"
+              className="mt-1 text-xs leading-5 whitespace-pre-line text-amber-900"
+            >
+              {publishConfirmMessage}
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm font-semibold text-amber-900 shadow-sm transition hover:bg-amber-100 focus-visible:ring-4 focus-visible:ring-amber-200/70 focus-visible:outline-none"
+              onClick={() => setIsConfirmingPublish(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              name="intent"
+              value="publish"
+              className={primaryButtonClass}
+            >
+              Confirm publish
+            </button>
+          </div>
+        </div>
+      ) : null}
       <p className="text-center text-xs leading-5 text-slate-400">
         Drafts save automatically. Use{" "}
         <span className="font-semibold text-slate-500">Save draft</span> in the

@@ -25,8 +25,8 @@ export default async function RedirectManagerPage({
   return (
     <AdminShell
       activeSection="pages"
-      title="Redirect Manager"
-      description="Create and inspect builder redirects across page prefixes."
+      title="Redirects"
+      description="Send old page addresses to their new destinations."
       userEmail={user.email}
       userRole={role}
       actions={
@@ -75,19 +75,29 @@ export default async function RedirectManagerPage({
               defaultValue="301"
               className={adminInputClass}
             >
-              <option value="301">301 permanent</option>
-              <option value="302">302 temporary</option>
-              <option value="307">307 temporary</option>
-              <option value="308">308 permanent</option>
+              <option value="301">Permanent move (301)</option>
+              <option value="302">Temporary move (302)</option>
+              <option value="307">Temporary redirect (307)</option>
+              <option value="308">Permanent redirect (308)</option>
             </select>
+            <span className="mt-1 block text-xs leading-5 text-slate-500">
+              Use permanent for most renamed or moved pages.
+            </span>
           </label>
           <label className={adminLabelClass}>
-            Page ID
+            Related page ID
             <input
               name="pageId"
               placeholder="Optional"
               className={adminInputClass}
+              aria-describedby="redirect-page-id-help"
             />
+            <span
+              id="redirect-page-id-help"
+              className="mt-1 block text-xs leading-5 text-slate-500"
+            >
+              Advanced: link this rule to a builder page when you know the ID.
+            </span>
           </label>
           <div className="flex items-end">
             <button type="submit" className={adminPrimaryButtonClass}>

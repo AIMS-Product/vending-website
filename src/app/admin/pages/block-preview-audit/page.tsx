@@ -37,7 +37,10 @@ export default async function BlockPreviewAuditPage() {
         userEmail={user.email}
         userRole={role}
       >
-        <section className="grid gap-5" data-testid="block-preview-audit">
+        <section
+          className="grid max-w-full min-w-0 gap-5 overflow-x-hidden"
+          data-testid="block-preview-audit"
+        >
           {blockPreviewCases.map((previewCase) => {
             return (
               <article
@@ -48,10 +51,10 @@ export default async function BlockPreviewAuditPage() {
                 data-parity-markers={JSON.stringify(
                   getBlockPreviewParityMarkers(previewCase.block),
                 )}
-                className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+                className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
               >
-                <header className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
+                <header className="flex min-w-0 flex-col gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
                       {previewCase.blockLabel}
                     </p>
@@ -59,21 +62,21 @@ export default async function BlockPreviewAuditPage() {
                       {previewCase.variantLabel}
                     </h2>
                   </div>
-                  <p className="max-w-xl text-sm text-slate-500">
+                  <p className="max-w-xl min-w-0 text-sm text-slate-500">
                     {previewCase.description}
                   </p>
                 </header>
 
-                <div className="grid gap-0 xl:grid-cols-[360px_minmax(0,1fr)]">
+                <div className="grid max-w-full min-w-0 gap-0 overflow-hidden xl:grid-cols-[360px_minmax(0,1fr)]">
                   <div
-                    className="border-b border-slate-200 p-4 xl:border-r xl:border-b-0"
+                    className="min-w-0 border-b border-slate-200 p-4 xl:border-r xl:border-b-0"
                     data-testid="picker-preview"
                   >
                     <p className="mb-3 text-xs font-semibold tracking-wide text-slate-500 uppercase">
                       Picker preview
                     </p>
                     <div
-                      className="h-48 overflow-hidden rounded-lg border border-slate-200 bg-white p-4"
+                      className="h-48 max-w-full overflow-hidden rounded-lg border border-slate-200 bg-white p-4"
                       aria-hidden="true"
                       inert
                     >
@@ -84,12 +87,12 @@ export default async function BlockPreviewAuditPage() {
                     </div>
                   </div>
 
-                  <div className="p-4" data-testid="actual-render">
+                  <div className="min-w-0 p-4" data-testid="actual-render">
                     <p className="mb-3 text-xs font-semibold tracking-wide text-slate-500 uppercase">
                       Actual resource render
                     </p>
                     <div
-                      className="overflow-hidden rounded-lg border border-[#d8effb] bg-[#f5fbff] p-5"
+                      className="max-w-full overflow-hidden rounded-lg border border-[#d8effb] bg-[#f5fbff] p-5"
                       aria-hidden="true"
                       inert
                     >

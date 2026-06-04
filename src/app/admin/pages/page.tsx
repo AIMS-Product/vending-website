@@ -277,7 +277,7 @@ export default async function AdminPagesPage({
           </div>
           <nav
             className="mt-4 flex max-w-full flex-wrap gap-2"
-            aria-label="Governance filters"
+            aria-label="Workflow filters"
           >
             {[
               ["all", "All metadata"],
@@ -353,7 +353,7 @@ export default async function AdminPagesPage({
                 <tr>
                   <th className="w-[40%] px-7 py-3">Title</th>
                   <th className="w-[18%] px-5 py-3">Keyword</th>
-                  <th className="w-[18%] px-5 py-3">Governance</th>
+                  <th className="w-[18%] px-5 py-3">Workflow</th>
                   <th className="w-[10%] px-5 py-3 text-center">Readiness</th>
                   <th className="w-[6%] px-5 py-3 text-center">Status</th>
                   <th className="w-[8%] px-5 py-3 text-right">Actions</th>

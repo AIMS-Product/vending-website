@@ -64,8 +64,18 @@ export default async function AuthorProfilesPage({
             <input name="roleTitle" className={adminInputClass} />
           </label>
           <label className={adminLabelClass}>
-            Avatar asset ID
-            <input name="avatarAssetId" className={adminInputClass} />
+            Avatar media ID
+            <input
+              name="avatarAssetId"
+              className={adminInputClass}
+              aria-describedby="author-avatar-help"
+            />
+            <span
+              id="author-avatar-help"
+              className="mt-1 block text-xs leading-5 text-slate-500"
+            >
+              Advanced: paste a media-library asset ID, or leave this blank.
+            </span>
           </label>
           <label className={`${adminLabelClass} lg:col-span-3`}>
             Bio

@@ -68,6 +68,7 @@ export function HeroInlineContentFields({
   onChange: (block: PageBlock) => void;
   className?: string;
 }) {
+  const heroEyebrowInputId = `${block.id}-hero-eyebrow`;
   const heroBodyInputId = `${block.id}-hero-body`;
 
   return (
@@ -78,9 +79,10 @@ export function HeroInlineContentFields({
         onChange={onChange}
         compact
       >
-        <label className="block">
+        <label htmlFor={heroEyebrowInputId} className="block">
           <span className="sr-only">Eyebrow</span>
-          <input
+          <AutoResizeTextarea
+            id={heroEyebrowInputId}
             aria-label="Eyebrow"
             value={block.props.eyebrow}
             placeholder={blockCanvasPlaceholders.hero.eyebrow}
@@ -90,7 +92,8 @@ export function HeroInlineContentFields({
                 props: { ...block.props, eyebrow: event.target.value },
               })
             }
-            className={eyebrowInputClass}
+            rows={1}
+            className={`${eyebrowInputClass} resize-none leading-6`}
           />
         </label>
       </OptionalBlockField>
