@@ -12,6 +12,7 @@ import type { Tables } from "@/types/database";
 
 export type SeoPageSearchParams = {
   status?: SearchParamValue;
+  view?: SearchParamValue;
   q?: SearchParamValue;
   sort?: SearchParamValue;
   page?: SearchParamValue;
@@ -19,6 +20,14 @@ export type SeoPageSearchParams = {
 };
 
 export type SeoPageStatusFilter = "active" | "draft" | "published" | "archived";
+export type SeoPageGovernanceFilter =
+  | "all"
+  | "needs-review"
+  | "updating"
+  | "orphaned"
+  | "metadata-issues"
+  | "scheduled"
+  | "schedule-failed";
 export type SeoPageSortKey =
   | "updated-desc"
   | "updated-asc"
@@ -27,6 +36,7 @@ export type SeoPageSortKey =
 export type SeoPageSize = (typeof seoPageSizeOptions)[number];
 export type SeoPageListParams = {
   status: SeoPageStatusFilter;
+  view: SeoPageGovernanceFilter;
   q: string;
   sort: SeoPageSortKey;
   page: number;
@@ -76,6 +86,19 @@ export function parseSeoPageListParams(
       ["active", "draft", "published", "archived"] as const,
       "active",
     ),
+    view: normalizeStringOption(
+      firstParam(params.view),
+      [
+        "all",
+        "needs-review",
+        "updating",
+        "orphaned",
+        "metadata-issues",
+        "scheduled",
+        "schedule-failed",
+      ] as const,
+      "all",
+    ),
     q: normalizeSearchParam(firstParam(params.q)),
     sort: normalizeStringOption(
       firstParam(params.sort),
@@ -97,7 +120,7 @@ export function buildSeoPageListState(
 ): SeoPageListState {
   const pageCounts = countPagesByStatus(pages);
   const filteredPages = sortSeoPages(
-    filterSeoPages(pages, params.status, params.q),
+    filterSeoPages(pages, params.status, params.view, params.q),
     params.sort,
   );
   const pagination = paginateItems(filteredPages, params.page, params.perPage);
@@ -122,6 +145,7 @@ export function buildSeoPageListState(
     resultRangeLabel,
     returnTo: adminPagesHref({
       status: params.status,
+      view: params.view,
       q: params.q,
       sort: params.sort,
       page: pagination.currentPage,
@@ -133,6 +157,7 @@ export function buildSeoPageListState(
 export function filterSeoPages(
   pages: Tables<"seo_pages">[],
   status: SeoPageStatusFilter,
+  view: SeoPageGovernanceFilter,
   searchQuery: string,
 ) {
   const query = searchQuery.toLowerCase();
@@ -140,6 +165,7 @@ export function filterSeoPages(
     const matchesStatus =
       status === "active" ? page.status !== "archived" : page.status === status;
     if (!matchesStatus) return false;
+    if (!matchesGovernanceFilter(page, view)) return false;
     if (!query) return true;
 
     const routePath = page.route_path ?? `/resources/${page.slug}`;
@@ -148,6 +174,43 @@ export function filterSeoPages(
       (value) => value.toLowerCase().includes(query),
     );
   });
+}
+
+function matchesGovernanceFilter(
+  page: Tables<"seo_pages">,
+  view: SeoPageGovernanceFilter,
+) {
+  if (view === "all") return true;
+  if (view === "needs-review") {
+    return (
+      page.lifecycle_status === "needs_review" ||
+      Boolean(
+        page.next_review_at && new Date(page.next_review_at) <= new Date(),
+      )
+    );
+  }
+  if (view === "updating") return page.lifecycle_status === "updating";
+  if (view === "scheduled") {
+    return page.scheduled_publish_status === "scheduled";
+  }
+  if (view === "schedule-failed") {
+    return page.scheduled_publish_status === "failed";
+  }
+  if (view === "metadata-issues") {
+    return (
+      !page.seo_title ||
+      page.seo_title.length > 70 ||
+      !page.meta_description ||
+      page.meta_description.length > 160 ||
+      (page.noindex && page.sitemap_enabled)
+    );
+  }
+  if (view === "orphaned") {
+    return (
+      !Array.isArray(page.internal_tags) || page.internal_tags.length === 0
+    );
+  }
+  return true;
 }
 
 export function sortSeoPages(
@@ -175,21 +238,24 @@ export function sortSeoPages(
 export function adminPagesHref({
   status,
   q,
+  view,
   sort,
   page,
   perPage,
 }: {
   status: SeoPageStatusFilter;
   q?: string;
+  view?: SeoPageGovernanceFilter;
   sort?: SeoPageSortKey;
   page?: number;
   perPage?: SeoPageSize;
 }) {
   return buildAdminListHref(
     "/admin/pages",
-    { status, q, sort, page, perPage },
+    { status, view, q, sort, page, perPage },
     {
       status: "active",
+      view: "all",
       sort: "updated-desc",
       page: 1,
       perPage: defaultSeoPageSize,

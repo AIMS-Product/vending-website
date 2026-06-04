@@ -103,6 +103,15 @@ type PageFormOverrides = {
   seoTitle?: string;
   metaDescription?: string;
   canonicalUrl?: string;
+  internalTags?: string;
+  topicCluster?: string;
+  campaignLabel?: string;
+  funnelStage?: string;
+  reviewPeriodMonths?: number;
+  nextReviewAt?: string;
+  lifecycleStatus?: string;
+  ogTitle?: string;
+  ogDescription?: string;
   noindex?: boolean;
   sitemapEnabled?: boolean;
   structuredDataBreadcrumb?: boolean;
@@ -111,6 +120,8 @@ type PageFormOverrides = {
   templateKey?: string;
   draftContent?: PageContent;
   publishNote?: string;
+  scheduledPublishAt?: string;
+  cancelScheduledPublish?: boolean;
   intent?: "save" | "publish";
 };
 
@@ -123,6 +134,15 @@ function pageForm(overrides: PageFormOverrides = {}) {
     seoTitle: "Coffee vending machines",
     metaDescription: "Coffee vending machines for Adelaide workplaces.",
     canonicalUrl: "",
+    internalTags: "",
+    topicCluster: "",
+    campaignLabel: "",
+    funnelStage: "",
+    reviewPeriodMonths: 6,
+    nextReviewAt: "",
+    lifecycleStatus: "drafting",
+    ogTitle: "",
+    ogDescription: "",
     noindex: false,
     sitemapEnabled: true,
     structuredDataBreadcrumb: true,
@@ -131,6 +151,8 @@ function pageForm(overrides: PageFormOverrides = {}) {
     templateKey: "blank",
     draftContent: validContent,
     publishNote: "",
+    scheduledPublishAt: "",
+    cancelScheduledPublish: false,
     intent: "save" as const,
     ...overrides,
   };
@@ -143,6 +165,15 @@ function pageForm(overrides: PageFormOverrides = {}) {
   formData.set("seoTitle", values.seoTitle);
   formData.set("metaDescription", values.metaDescription);
   formData.set("canonicalUrl", values.canonicalUrl);
+  formData.set("internalTags", values.internalTags);
+  formData.set("topicCluster", values.topicCluster);
+  formData.set("campaignLabel", values.campaignLabel);
+  formData.set("funnelStage", values.funnelStage);
+  formData.set("reviewPeriodMonths", String(values.reviewPeriodMonths));
+  formData.set("nextReviewAt", values.nextReviewAt);
+  formData.set("lifecycleStatus", values.lifecycleStatus);
+  formData.set("ogTitle", values.ogTitle);
+  formData.set("ogDescription", values.ogDescription);
   if (values.noindex) formData.set("noindex", "on");
   if (values.sitemapEnabled) formData.set("sitemapEnabled", "on");
   if (values.structuredDataBreadcrumb) {
@@ -153,6 +184,12 @@ function pageForm(overrides: PageFormOverrides = {}) {
   formData.set("templateKey", values.templateKey);
   formData.set("draftContent", JSON.stringify(values.draftContent));
   formData.set("publishNote", values.publishNote);
+  if (values.scheduledPublishAt) {
+    formData.set("scheduledPublishAt", values.scheduledPublishAt);
+  }
+  if (values.cancelScheduledPublish) {
+    formData.set("cancelScheduledPublish", "on");
+  }
   formData.set("intent", values.intent);
   return formData;
 }
@@ -181,15 +218,18 @@ describe("admin page actions", () => {
       draftContent: validContent,
       createdBy: "admin_1",
     });
-    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(pageId, {
-      seoTitle: "Coffee vending machines",
-      metaDescription: "Coffee vending machines for Adelaide workplaces.",
-      canonicalUrl: null,
-      noindex: false,
-      sitemapEnabled: true,
-      structuredDataSettings: { breadcrumb: true, faq: false },
-      updatedBy: "admin_1",
-    });
+    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({
+        seoTitle: "Coffee vending machines",
+        metaDescription: "Coffee vending machines for Adelaide workplaces.",
+        canonicalUrl: null,
+        noindex: false,
+        sitemapEnabled: true,
+        structuredDataSettings: { breadcrumb: true, faq: false },
+        updatedBy: "admin_1",
+      }),
+    );
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/pages");
     expect(mocks.revalidatePath).toHaveBeenCalledWith(
       "/resources/coffee-vending-adelaide",
@@ -242,28 +282,53 @@ describe("admin page actions", () => {
 
     const result = await saveSeoPage(
       { status: "idle" },
-      pageForm({ id: pageId, slug: "new-coffee-vending" }),
+      pageForm({
+        id: pageId,
+        slug: "new-coffee-vending",
+        internalTags: "Revenue, Compliance",
+        topicCluster: "Workplace coffee",
+        campaignLabel: "FY26 expansion",
+        funnelStage: "consideration",
+        reviewPeriodMonths: 12,
+        nextReviewAt: "2026-07-15",
+        lifecycleStatus: "needs_review",
+        ogTitle: "Coffee vending for workplaces",
+        ogDescription: "Compare managed coffee vending options.",
+      }),
     );
 
     expect(result).toEqual({ status: "saved", message: "Draft saved." });
     expect(mocks.adminUpdateSeoPageSlug).not.toHaveBeenCalled();
-    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(pageId, {
-      draftContent: validContent,
-      draftSettings: {
-        slug: "new-coffee-vending",
-        routePrefix: "/resources",
-        routePath: "/resources/new-coffee-vending",
-        title: "Coffee Vending Adelaide",
-        targetKeyword: "coffee vending",
-        seoTitle: "Coffee vending machines",
-        metaDescription: "Coffee vending machines for Adelaide workplaces.",
-        canonicalUrl: null,
-        noindex: false,
-        sitemapEnabled: true,
-        structuredDataSettings: { breadcrumb: true, faq: false },
-      },
-      updatedBy: "admin_1",
-    });
+    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({
+        draftContent: validContent,
+        draftSettings: {
+          slug: "new-coffee-vending",
+          routePrefix: "/resources",
+          routePath: "/resources/new-coffee-vending",
+          title: "Coffee Vending Adelaide",
+          targetKeyword: "coffee vending",
+          seoTitle: "Coffee vending machines",
+          metaDescription: "Coffee vending machines for Adelaide workplaces.",
+          canonicalUrl: null,
+          noindex: false,
+          sitemapEnabled: true,
+          structuredDataSettings: { breadcrumb: true, faq: false },
+        },
+        internalTags: ["revenue", "compliance"],
+        topicCluster: "Workplace coffee",
+        campaignLabel: "FY26 expansion",
+        funnelStage: "consideration",
+        reviewPeriodMonths: 12,
+        nextReviewAt: "2026-07-15T00:00:00.000Z",
+        lifecycleStatus: "needs_review",
+        ogTitle: "Coffee vending for workplaces",
+        ogDescription: "Compare managed coffee vending options.",
+        updatedBy: "admin_1",
+      }),
+    );
+    expect(mocks.adminPublishSeoPage).not.toHaveBeenCalled();
     expect(mocks.revalidatePath).toHaveBeenCalledWith(`/admin/pages/${pageId}`);
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/pages");
     expect(mocks.revalidatePath).not.toHaveBeenCalledWith(
@@ -344,6 +409,15 @@ describe("admin page actions", () => {
       noindex: false,
       sitemapEnabled: true,
       structuredDataSettings: { breadcrumb: true, faq: false },
+      internalTags: [],
+      topicCluster: null,
+      campaignLabel: null,
+      funnelStage: null,
+      reviewPeriodMonths: 6,
+      nextReviewAt: null,
+      lifecycleStatus: "drafting",
+      ogTitle: null,
+      ogDescription: null,
       draftContent: validContent,
       updatedBy: "admin_1",
     });
@@ -353,6 +427,98 @@ describe("admin page actions", () => {
     );
     expect(mocks.revalidatePath).toHaveBeenCalledWith(
       "/resources/old-coffee-vending",
+    );
+  });
+
+  it("saves scheduled publish metadata as UTC from Pacific Time input", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ id: pageId, scheduledPublishAt: "2026-06-03T09:30" }),
+    );
+
+    expect(result).toEqual({ status: "saved", message: "Draft saved." });
+    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({
+        scheduledPublishAt: "2026-06-03T16:30:00.000Z",
+        scheduledPublishStatus: "scheduled",
+        scheduledPublishError: null,
+        scheduledPublishAttempts: 0,
+        scheduledPublishLastAttemptAt: null,
+        scheduledPublishLockedAt: null,
+      }),
+    );
+  });
+
+  it("saves scheduled updates for already-published pages without publishing immediately", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "old-coffee-vending",
+      route_path: "/resources/old-coffee-vending",
+      status: "published",
+    });
+
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({
+        id: pageId,
+        slug: "new-coffee-vending",
+        scheduledPublishAt: "2026-06-03T09:30",
+      }),
+    );
+
+    expect(result).toEqual({ status: "saved", message: "Draft saved." });
+    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({
+        draftContent: validContent,
+        draftSettings: expect.objectContaining({
+          slug: "new-coffee-vending",
+        }),
+        scheduledPublishAt: "2026-06-03T16:30:00.000Z",
+        scheduledPublishStatus: "scheduled",
+        scheduledPublishError: null,
+        scheduledPublishAttempts: 0,
+        scheduledPublishLastAttemptAt: null,
+        scheduledPublishLockedAt: null,
+      }),
+    );
+    expect(mocks.adminPublishSeoPage).not.toHaveBeenCalled();
+  });
+
+  it("cancels a scheduled publish explicitly without needing a raw status field", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ id: pageId, cancelScheduledPublish: true }),
+    );
+
+    expect(result).toEqual({ status: "saved", message: "Draft saved." });
+    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({
+        scheduledPublishAt: null,
+        scheduledPublishStatus: "cancelled",
+        scheduledPublishError: null,
+        scheduledPublishAttempts: 0,
+        scheduledPublishLastAttemptAt: null,
+        scheduledPublishLockedAt: null,
+      }),
     );
   });
 
@@ -371,6 +537,17 @@ describe("admin page actions", () => {
       seoTitle: "Coffee vending machines",
       metaDescription: "Coffee vending machines for Adelaide workplaces.",
       canonicalUrl: "",
+      internalTags: "Revenue, Compliance",
+      topicCluster: "Office vending",
+      campaignLabel: "FY26",
+      funnelStage: "consideration",
+      reviewPeriodMonths: 12,
+      nextReviewAt: "2026-07-15",
+      lifecycleStatus: "needs_review",
+      ogTitle: "Coffee vending social",
+      ogDescription: "Coffee vending social description.",
+      scheduledPublishAt: "2026-06-03T09:30",
+      cancelScheduledPublish: false,
       noindex: false,
       sitemapEnabled: true,
       pageType: "resource",
@@ -380,20 +557,38 @@ describe("admin page actions", () => {
     });
 
     expect(result.status).toBe("saved");
-    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(pageId, {
-      slug: "new-coffee-vending",
-      routePrefix: "/resources",
-      title: "Coffee Vending Adelaide",
-      targetKeyword: "coffee vending",
-      seoTitle: "Coffee vending machines",
-      metaDescription: "Coffee vending machines for Adelaide workplaces.",
-      canonicalUrl: null,
-      noindex: false,
-      sitemapEnabled: true,
-      structuredDataSettings: { breadcrumb: true, faq: false },
-      draftContent: validContent,
-      updatedBy: "admin_1",
-    });
+    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({
+        slug: "new-coffee-vending",
+        routePrefix: "/resources",
+        title: "Coffee Vending Adelaide",
+        targetKeyword: "coffee vending",
+        seoTitle: "Coffee vending machines",
+        metaDescription: "Coffee vending machines for Adelaide workplaces.",
+        canonicalUrl: null,
+        internalTags: ["revenue", "compliance"],
+        topicCluster: "Office vending",
+        campaignLabel: "FY26",
+        funnelStage: "consideration",
+        reviewPeriodMonths: 12,
+        nextReviewAt: "2026-07-15T00:00:00.000Z",
+        lifecycleStatus: "needs_review",
+        ogTitle: "Coffee vending social",
+        ogDescription: "Coffee vending social description.",
+        scheduledPublishAt: "2026-06-03T16:30:00.000Z",
+        scheduledPublishStatus: "scheduled",
+        scheduledPublishError: null,
+        scheduledPublishAttempts: 0,
+        scheduledPublishLastAttemptAt: null,
+        scheduledPublishLockedAt: null,
+        noindex: false,
+        sitemapEnabled: true,
+        structuredDataSettings: { breadcrumb: true, faq: false },
+        draftContent: validContent,
+        updatedBy: "admin_1",
+      }),
+    );
     expect(mocks.revalidatePath).toHaveBeenCalledWith(`/admin/pages/${pageId}`);
   });
 
@@ -457,14 +652,19 @@ describe("admin page actions", () => {
       pageId,
       editorPath: `/admin/pages/${pageId}?saved=1`,
     });
-    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(pageId, {
-      draftContent: validContent,
-      draftSettings: expect.objectContaining({
-        slug: "new-coffee-vending",
-        title: "Coffee Vending Adelaide",
+    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({
+        draftContent: validContent,
+        draftSettings: expect.objectContaining({
+          slug: "new-coffee-vending",
+          title: "Coffee Vending Adelaide",
+        }),
+        internalTags: [],
+        lifecycleStatus: "drafting",
+        updatedBy: "admin_1",
       }),
-      updatedBy: "admin_1",
-    });
+    );
     expect(mocks.adminCreateSeoPagePreviewToken).toHaveBeenCalledWith(pageId, {
       actorId: "admin_1",
     });

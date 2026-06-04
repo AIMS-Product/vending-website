@@ -25,6 +25,7 @@ import {
   type SeoPageSearchParams,
 } from "@/lib/admin/seo-pages-list";
 import { assessSeoReadiness } from "@/lib/page-builder/seo-readiness";
+import { formatScheduledPublishDisplay } from "@/lib/page-builder/scheduled-publishing";
 import { adminListSeoPages } from "@/lib/services/seo-pages";
 import { requireAdmin } from "@/lib/supabase/auth";
 import type { Tables } from "@/types/database";
@@ -48,6 +49,7 @@ export default async function AdminPagesPage({
   const allPages = await adminListSeoPages();
   const {
     status: active,
+    view: activeView,
     q: searchQuery,
     sort,
     perPage: pageSize,
@@ -70,12 +72,26 @@ export default async function AdminPagesPage({
       userEmail={user.email}
       userRole={role}
       actions={
-        <Link href="/admin/pages/new" className={adminPrimaryButtonClass}>
-          <span aria-hidden="true">
-            <PageIcon icon="plus" />
-          </span>
-          New SEO page
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/pages/authors"
+            className={adminSecondaryButtonClass}
+          >
+            Authors
+          </Link>
+          <Link
+            href="/admin/pages/redirects"
+            className={adminSecondaryButtonClass}
+          >
+            Redirects
+          </Link>
+          <Link href="/admin/pages/new" className={adminPrimaryButtonClass}>
+            <span aria-hidden="true">
+              <PageIcon icon="plus" />
+            </span>
+            New SEO page
+          </Link>
+        </div>
       }
     >
       <section
@@ -89,7 +105,13 @@ export default async function AdminPagesPage({
             label="All"
             value={pageCounts.active}
             caption="drafts + published"
-            href={adminPagesHref({ status: "active", q: searchQuery, sort })}
+            href={adminPagesHref({
+              status: "active",
+              view: activeView,
+              q: searchQuery,
+              sort,
+              perPage: pageSize,
+            })}
             active={active === "active"}
           />
           <MetricPanel
@@ -98,7 +120,13 @@ export default async function AdminPagesPage({
             label="Drafts"
             value={pageCounts.draft}
             caption="needs work"
-            href={adminPagesHref({ status: "draft", q: searchQuery, sort })}
+            href={adminPagesHref({
+              status: "draft",
+              view: activeView,
+              q: searchQuery,
+              sort,
+              perPage: pageSize,
+            })}
             active={active === "draft"}
           />
           <MetricPanel
@@ -109,8 +137,10 @@ export default async function AdminPagesPage({
             caption="publicly visible"
             href={adminPagesHref({
               status: "published",
+              view: activeView,
               q: searchQuery,
               sort,
+              perPage: pageSize,
             })}
             active={active === "published"}
           />
@@ -120,7 +150,13 @@ export default async function AdminPagesPage({
             label="Archived"
             value={pageCounts.archived}
             caption="retired"
-            href={adminPagesHref({ status: "archived", q: searchQuery, sort })}
+            href={adminPagesHref({
+              status: "archived",
+              view: activeView,
+              q: searchQuery,
+              sort,
+              perPage: pageSize,
+            })}
             active={active === "archived"}
           />
         </div>
@@ -152,6 +188,9 @@ export default async function AdminPagesPage({
                 {active !== "active" ? (
                   <input type="hidden" name="status" value={active} />
                 ) : null}
+                {activeView !== "all" ? (
+                  <input type="hidden" name="view" value={activeView} />
+                ) : null}
                 {sort !== "updated-desc" ? (
                   <input type="hidden" name="sort" value={sort} />
                 ) : null}
@@ -162,6 +201,7 @@ export default async function AdminPagesPage({
                   <Link
                     href={adminPagesHref({
                       status: active,
+                      view: activeView,
                       sort,
                       perPage: pageSize,
                     })}
@@ -187,6 +227,7 @@ export default async function AdminPagesPage({
                     key={filter.value}
                     href={adminPagesHref({
                       status: filter.value,
+                      view: activeView,
                       q: searchQuery,
                       sort,
                       perPage: pageSize,
@@ -220,6 +261,7 @@ export default async function AdminPagesPage({
                     key={value}
                     href={adminPagesHref({
                       status: active,
+                      view: activeView,
                       q: searchQuery,
                       sort: value as keyof typeof seoPageSortLabels,
                       perPage: pageSize,
@@ -233,6 +275,39 @@ export default async function AdminPagesPage({
               </div>
             </details>
           </div>
+          <nav
+            className="mt-4 flex max-w-full flex-wrap gap-2"
+            aria-label="Governance filters"
+          >
+            {[
+              ["all", "All metadata"],
+              ["needs-review", "Needs review"],
+              ["updating", "Updating"],
+              ["orphaned", "Needs links"],
+              ["metadata-issues", "Metadata issues"],
+              ["scheduled", "Scheduled"],
+              ["schedule-failed", "Schedule failed"],
+            ].map(([view, label]) => (
+              <Link
+                key={view}
+                href={adminPagesHref({
+                  status: active,
+                  view: view as typeof activeView,
+                  q: searchQuery,
+                  sort,
+                  perPage: pageSize,
+                })}
+                aria-current={activeView === view ? "page" : undefined}
+                className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+                  activeView === view
+                    ? "border-[#0b63f6] bg-[#f4f8ff] text-[#0b63f6]"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
           <p className="mt-3 text-sm text-slate-600">
             Showing {filteredPages.length} SEO{" "}
             {filteredPages.length === 1 ? "page" : "pages"}
@@ -254,6 +329,7 @@ export default async function AdminPagesPage({
                 <Link
                   href={adminPagesHref({
                     status: active,
+                    view: activeView,
                     sort,
                     perPage: pageSize,
                   })}
@@ -272,14 +348,15 @@ export default async function AdminPagesPage({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] table-fixed border-collapse text-left text-sm">
+            <table className="w-full min-w-[760px] table-fixed border-collapse text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
                 <tr>
-                  <th className="w-[42%] px-7 py-3">Title</th>
-                  <th className="w-[24%] px-5 py-3">Keyword</th>
-                  <th className="w-[12%] px-5 py-3 text-center">Readiness</th>
-                  <th className="w-[12%] px-5 py-3 text-center">Status</th>
-                  <th className="w-[10%] px-5 py-3 text-right">Actions</th>
+                  <th className="w-[40%] px-7 py-3">Title</th>
+                  <th className="w-[18%] px-5 py-3">Keyword</th>
+                  <th className="w-[18%] px-5 py-3">Governance</th>
+                  <th className="w-[10%] px-5 py-3 text-center">Readiness</th>
+                  <th className="w-[6%] px-5 py-3 text-center">Status</th>
+                  <th className="w-[8%] px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -308,6 +385,7 @@ export default async function AdminPagesPage({
                       key={option}
                       href={adminPagesHref({
                         status: active,
+                        view: activeView,
                         q: searchQuery,
                         sort,
                         perPage: option,
@@ -351,6 +429,7 @@ export default async function AdminPagesPage({
                     disabled={currentPage <= 1}
                     href={adminPagesHref({
                       status: active,
+                      view: activeView,
                       q: searchQuery,
                       sort,
                       page: currentPage - 1,
@@ -364,6 +443,7 @@ export default async function AdminPagesPage({
                       current={pageNumber === currentPage}
                       href={adminPagesHref({
                         status: active,
+                        view: activeView,
                         q: searchQuery,
                         sort,
                         page: pageNumber,
@@ -376,6 +456,7 @@ export default async function AdminPagesPage({
                     disabled={currentPage >= totalPages}
                     href={adminPagesHref({
                       status: active,
+                      view: activeView,
                       q: searchQuery,
                       sort,
                       page: currentPage + 1,
@@ -476,6 +557,38 @@ function PageRow({
       <td className="px-5 py-3 break-words text-slate-700">
         {page.target_keyword || "-"}
       </td>
+      <td className="px-5 py-3 text-xs text-slate-600">
+        <div className="space-y-1">
+          <p className="font-semibold text-slate-800">
+            {formatLifecycle(page.lifecycle_status)}
+          </p>
+          <p>
+            Review:{" "}
+            {page.next_review_at
+              ? formatShortDate(page.next_review_at)
+              : `${page.review_period_months} mo`}
+          </p>
+          {page.scheduled_publish_status === "scheduled" &&
+          page.scheduled_publish_at ? (
+            <p>
+              Scheduled:{" "}
+              {formatScheduledPublishDisplay(page.scheduled_publish_at)}
+            </p>
+          ) : null}
+          {page.scheduled_publish_status === "failed" ? (
+            <p className="font-semibold text-rose-700">
+              Failed: {page.scheduled_publish_error ?? "Needs reschedule"}
+            </p>
+          ) : null}
+          {page.internal_tags?.length ? (
+            <p className="truncate" title={page.internal_tags.join(", ")}>
+              {page.internal_tags.slice(0, 2).join(", ")}
+            </p>
+          ) : (
+            <p>Needs links</p>
+          )}
+        </div>
+      </td>
       <td className="px-5 py-3 text-center">
         <StatusDot
           label={`SEO readiness: ${readiness.label}`}
@@ -495,6 +608,21 @@ function PageRow({
       </td>
     </tr>
   );
+}
+
+function formatLifecycle(status: string) {
+  return status
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function formatShortDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 function PageActionsMenu({

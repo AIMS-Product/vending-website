@@ -10,7 +10,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, RefObject } from "react";
 import { useRouter } from "next/navigation";
 import {
   acceptAiSeoProposalBlocks,
@@ -113,6 +113,19 @@ type PreviewLinkTone = "neutral" | "error";
 const emptyInternalLinkTargets: InternalLinkSuggestionTarget[] = [];
 const emptyMediaAssets: SeoPageEditorMediaAsset[] = [];
 const emptyAiProposals: AiPageProposalReview[] = [];
+const autosaveMetadataFieldNames = new Set([
+  "internalTags",
+  "topicCluster",
+  "campaignLabel",
+  "funnelStage",
+  "reviewPeriodMonths",
+  "nextReviewAt",
+  "lifecycleStatus",
+  "ogTitle",
+  "ogDescription",
+  "scheduledPublishAt",
+  "cancelScheduledPublish",
+]);
 
 export function useSeoPageEditorController({
   page,
@@ -121,7 +134,7 @@ export function useSeoPageEditorController({
   aiProposals = emptyAiProposals,
   savedFromRedirect = false,
   redirectError,
-}: SeoPageEditorControllerProps) {
+}: SeoPageEditorControllerProps, formRef: RefObject<HTMLFormElement | null>) {
   const { refresh, replace } = useRouter();
   const [state, formAction, isManualSubmitPending] = useActionState(
     saveSeoPage,
@@ -188,6 +201,7 @@ export function useSeoPageEditorController({
     createInitialEditorContentState,
   );
   const [autosave, setAutosave] = useState<PageAutosaveResult | null>(null);
+  const [metadataAutosaveVersion, setMetadataAutosaveVersion] = useState(0);
   // S3b: id of a draft auto-created for a brand-new page once the user starts
   // typing. `effectivePageId` lets autosave + the form's hidden id treat the
   // freshly-created row like a loaded page, without remounting the editor.
@@ -231,6 +245,7 @@ export function useSeoPageEditorController({
   const [hasSelectedNewPageMode, setHasSelectedNewPageMode] = useState(
     Boolean(page?.id),
   );
+  const showCreationChoiceModal = !page?.id && !hasSelectedNewPageMode;
   const [linkSuggestionMessage, setLinkSuggestionMessage] = useState<
     string | null
   >(null);
@@ -333,6 +348,67 @@ export function useSeoPageEditorController({
       }),
     [content, internalLinkTargets, page?.id, routePrefix, visibleSlug],
   );
+  const buildAutosavePayload = useCallback(() => {
+    const formData = formRef.current ? new FormData(formRef.current) : null;
+    const formValue = (name: string, fallback = "") =>
+      String(formData?.get(name) ?? fallback);
+    const formChecked = (name: string) => formData?.get(name) === "on";
+
+    return {
+      title,
+      slug: visibleSlug,
+      routePrefix,
+      targetKeyword,
+      seoTitle,
+      metaDescription,
+      canonicalUrl,
+      internalTags: formValue("internalTags", page?.internal_tags.join(", ")),
+      topicCluster: formValue("topicCluster", page?.topic_cluster ?? ""),
+      campaignLabel: formValue("campaignLabel", page?.campaign_label ?? ""),
+      funnelStage: formValue("funnelStage", page?.funnel_stage ?? ""),
+      reviewPeriodMonths: Number(
+        formValue(
+          "reviewPeriodMonths",
+          String(page?.review_period_months ?? 6),
+        ),
+      ),
+      nextReviewAt: formValue("nextReviewAt", page?.next_review_at ?? ""),
+      lifecycleStatus: formValue(
+        "lifecycleStatus",
+        page?.lifecycle_status ?? "drafting",
+      ),
+      ogTitle: formValue("ogTitle", page?.og_title ?? ""),
+      ogDescription: formValue("ogDescription", page?.og_description ?? ""),
+      scheduledPublishAt: formValue("scheduledPublishAt"),
+      cancelScheduledPublish: formChecked("cancelScheduledPublish"),
+      noindex,
+      sitemapEnabled,
+      structuredDataSettings: {
+        breadcrumb: structuredDataBreadcrumb,
+        faq: structuredDataFaq,
+      },
+      pageType,
+      templateKey,
+      draftContent: content,
+    };
+  }, [
+    canonicalUrl,
+    content,
+    formRef,
+    metaDescription,
+    noindex,
+    page,
+    pageType,
+    routePrefix,
+    seoTitle,
+    sitemapEnabled,
+    structuredDataBreadcrumb,
+    structuredDataFaq,
+    targetKeyword,
+    templateKey,
+    title,
+    visibleSlug,
+  ]);
   const blockOrdinalById = useMemo(() => {
     const ordinals = new Map<string, number>();
     let ordinal = 0;
@@ -388,7 +464,6 @@ export function useSeoPageEditorController({
   const primaryColumn = primarySection?.columns[0] ?? null;
   const usesSimpleBlockStack =
     content.sections.length <= 1 && (primarySection?.columns.length ?? 0) <= 1;
-  const showCreationChoiceModal = !page?.id && !hasSelectedNewPageMode;
   const saveMessage = (() => {
     if (redirectError && state.status === "idle" && !lastManualSubmitIntent) {
       return redirectError;
@@ -499,6 +574,33 @@ export function useSeoPageEditorController({
   ]);
 
   useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+
+    function markMetadataChanged(event: Event) {
+      const target = event.target;
+      if (
+        !(
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLSelectElement ||
+          target instanceof HTMLTextAreaElement
+        )
+      ) {
+        return;
+      }
+      if (!autosaveMetadataFieldNames.has(target.name)) return;
+      setMetadataAutosaveVersion((version) => version + 1);
+    }
+
+    form.addEventListener("input", markMetadataChanged);
+    form.addEventListener("change", markMetadataChanged);
+    return () => {
+      form.removeEventListener("input", markMetadataChanged);
+      form.removeEventListener("change", markMetadataChanged);
+    };
+  }, [formRef, showCreationChoiceModal]);
+
+  useEffect(() => {
     if (!effectivePageId) return;
     if (!autosaveReady.current) {
       autosaveReady.current = true;
@@ -506,24 +608,7 @@ export function useSeoPageEditorController({
     }
 
     const timer = window.setTimeout(() => {
-      autosaveSeoPageDraft(effectivePageId, {
-        title,
-        slug: visibleSlug,
-        routePrefix,
-        targetKeyword,
-        seoTitle,
-        metaDescription,
-        canonicalUrl,
-        noindex,
-        sitemapEnabled,
-        structuredDataSettings: {
-          breadcrumb: structuredDataBreadcrumb,
-          faq: structuredDataFaq,
-        },
-        pageType,
-        templateKey,
-        draftContent: content,
-      })
+      autosaveSeoPageDraft(effectivePageId, buildAutosavePayload())
         .then(setAutosave)
         .catch((error: unknown) => {
           console.error("seo page autosave failed", error);
@@ -533,21 +618,9 @@ export function useSeoPageEditorController({
 
     return () => window.clearTimeout(timer);
   }, [
-    canonicalUrl,
-    content,
+    buildAutosavePayload,
     effectivePageId,
-    metaDescription,
-    noindex,
-    pageType,
-    routePrefix,
-    seoTitle,
-    sitemapEnabled,
-    structuredDataBreadcrumb,
-    structuredDataFaq,
-    targetKeyword,
-    templateKey,
-    title,
-    visibleSlug,
+    metadataAutosaveVersion,
   ]);
 
   // S3b: once the user starts a brand-new page (a real title exists), create a
@@ -899,24 +972,10 @@ export function useSeoPageEditorController({
       );
     }
 
-    const autosaveResult = await autosaveSeoPageDraft(previewPageId, {
-      title,
-      slug: visibleSlug,
-      routePrefix,
-      targetKeyword,
-      seoTitle,
-      metaDescription,
-      canonicalUrl,
-      noindex,
-      sitemapEnabled,
-      structuredDataSettings: {
-        breadcrumb: structuredDataBreadcrumb,
-        faq: structuredDataFaq,
-      },
-      pageType,
-      templateKey,
-      draftContent: content,
-    });
+    const autosaveResult = await autosaveSeoPageDraft(
+      previewPageId,
+      buildAutosavePayload(),
+    );
 
     if (autosaveResult.status === "error") {
       return { status: "error" as const, message: autosaveResult.message };

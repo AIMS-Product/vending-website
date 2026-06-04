@@ -103,6 +103,45 @@ describe("admin list-state helpers", () => {
     );
   });
 
+  it("exposes failed scheduled publishes as a governance filter", () => {
+    const pages = [
+      seoPage({
+        title: "Scheduled guide",
+        slug: "scheduled-guide",
+        scheduled_publish_status: "scheduled",
+      }),
+      seoPage({
+        title: "Failed schedule",
+        slug: "failed-schedule",
+        scheduled_publish_status: "failed",
+        scheduled_publish_error: "Add SEO title.",
+      }),
+      seoPage({
+        title: "Ordinary draft",
+        slug: "ordinary-draft",
+      }),
+    ];
+
+    const scheduled = buildSeoPageListState(
+      pages,
+      parseSeoPageListParams({ view: "scheduled" }),
+    );
+    const failed = buildSeoPageListState(
+      pages,
+      parseSeoPageListParams({ view: "schedule-failed" }),
+    );
+
+    expect(scheduled.visiblePages.map((page) => page.slug)).toEqual([
+      "scheduled-guide",
+    ]);
+    expect(failed.visiblePages.map((page) => page.slug)).toEqual([
+      "failed-schedule",
+    ]);
+    expect(adminPagesHref({ status: "active", view: "schedule-failed" })).toBe(
+      "/admin/pages?view=schedule-failed",
+    );
+  });
+
   it("builds media list state with filters, chips, and href defaults", () => {
     const assets = [
       mediaAsset({
@@ -192,6 +231,9 @@ function seoPage(
     target_keyword: overrides.target_keyword ?? "",
     updated_at: overrides.updated_at ?? "2026-01-01T00:00:00.000Z",
     published_at: overrides.published_at ?? null,
+    scheduled_publish_status: overrides.scheduled_publish_status ?? "none",
+    scheduled_publish_error: overrides.scheduled_publish_error ?? null,
+    scheduled_publish_at: overrides.scheduled_publish_at ?? null,
   } as Tables<"seo_pages">;
 }
 

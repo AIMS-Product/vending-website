@@ -10,6 +10,12 @@ import {
   textareaClass,
 } from "@/components/admin/seo-page-editor/editor-styles";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
+import {
+  SCHEDULED_PUBLISH_TIME_ZONE,
+  SCHEDULED_PUBLISH_TIME_ZONE_LABEL,
+  formatDateTimeLocalInTimeZone,
+  formatScheduledPublishDisplay,
+} from "@/lib/page-builder/scheduled-publishing";
 
 // S7: a clearly-disabled (greyed) variant for the Publish button so a blocked
 // page doesn't render an active-looking blue primary button. Clicking it still
@@ -103,6 +109,21 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
       <p className="text-xs leading-5 font-medium text-slate-500">
         {publishStateHelp}
       </p>
+      {page?.scheduled_publish_status === "scheduled" &&
+      page.scheduled_publish_at ? (
+        <p className="rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-xs leading-5 font-semibold text-sky-800">
+          Scheduled for{" "}
+          {formatScheduledPublishDisplay(page.scheduled_publish_at)}
+        </p>
+      ) : null}
+      {page?.scheduled_publish_status === "failed" ? (
+        <p className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs leading-5 font-semibold text-rose-700">
+          Scheduled publish failed
+          {page.scheduled_publish_error
+            ? `: ${page.scheduled_publish_error}`
+            : "."}
+        </p>
+      ) : null}
       {page?.status === "published" && (
         <a
           href={page.route_path}
@@ -344,8 +365,191 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
             help="Generate FAQ metadata only from published FAQ blocks."
           />
         </div>
+
+        <GovernanceFields editor={editor} />
       </div>
     </details>
+  );
+}
+
+function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
+  const page = editor.page;
+  const hasScheduledState =
+    page?.scheduled_publish_status === "scheduled" ||
+    page?.scheduled_publish_status === "failed";
+  return (
+    <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+      <div>
+        <p className="text-sm font-semibold text-slate-900">Governance</p>
+        <p className="mt-0.5 text-xs leading-5 text-slate-500">
+          Internal tags, review timing, social metadata, and scheduling.
+        </p>
+      </div>
+      <label className="block">
+        <span className="text-sm font-semibold text-slate-900">
+          Internal tags
+        </span>
+        <input
+          name="internalTags"
+          aria-label="Internal tags"
+          defaultValue={(page?.internal_tags ?? []).join(", ")}
+          className={compactInputClass}
+          placeholder="cluster, campaign, funnel"
+        />
+      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-semibold text-slate-900">
+            Topic cluster
+          </span>
+          <input
+            name="topicCluster"
+            aria-label="Topic cluster"
+            defaultValue={page?.topic_cluster ?? ""}
+            className={compactInputClass}
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm font-semibold text-slate-900">Campaign</span>
+          <input
+            name="campaignLabel"
+            aria-label="Campaign"
+            defaultValue={page?.campaign_label ?? ""}
+            className={compactInputClass}
+          />
+        </label>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-semibold text-slate-900">
+            Funnel stage
+          </span>
+          <input
+            name="funnelStage"
+            aria-label="Funnel stage"
+            defaultValue={page?.funnel_stage ?? ""}
+            className={compactInputClass}
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm font-semibold text-slate-900">
+            Lifecycle
+          </span>
+          <select
+            name="lifecycleStatus"
+            aria-label="Lifecycle"
+            defaultValue={page?.lifecycle_status ?? "drafting"}
+            className={compactInputClass}
+          >
+            <option value="drafting">Drafting</option>
+            <option value="updating">Updating</option>
+            <option value="needs_review">Needs review</option>
+            <option value="approved">Approved</option>
+          </select>
+        </label>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-semibold text-slate-900">
+            Review period
+          </span>
+          <select
+            name="reviewPeriodMonths"
+            aria-label="Review period"
+            defaultValue={page?.review_period_months ?? 6}
+            className={compactInputClass}
+          >
+            {[3, 6, 9, 12, 15, 18].map((months) => (
+              <option key={months} value={months}>
+                {months} months
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-sm font-semibold text-slate-900">
+            Next review
+          </span>
+          <input
+            type="date"
+            name="nextReviewAt"
+            aria-label="Next review"
+            defaultValue={page?.next_review_at?.slice(0, 10) ?? ""}
+            className={compactInputClass}
+          />
+        </label>
+      </div>
+      <label className="block">
+        <span className="text-sm font-semibold text-slate-900">
+          Social title
+        </span>
+        <input
+          name="ogTitle"
+          aria-label="Social title"
+          defaultValue={page?.og_title ?? ""}
+          className={compactInputClass}
+          placeholder="Leave blank to use SEO title"
+        />
+      </label>
+      <label className="block">
+        <span className="text-sm font-semibold text-slate-900">
+          Social description
+        </span>
+        <textarea
+          name="ogDescription"
+          aria-label="Social description"
+          defaultValue={page?.og_description ?? ""}
+          rows={3}
+          className={textareaClass}
+          placeholder="Leave blank to use meta description"
+        />
+      </label>
+      <label className="block">
+        <span className="text-sm font-semibold text-slate-900">
+          Scheduled publish
+        </span>
+        <input
+          type="datetime-local"
+          name="scheduledPublishAt"
+          aria-label="Scheduled publish"
+          defaultValue={formatDateTimeLocalInTimeZone(
+            page?.scheduled_publish_at,
+            SCHEDULED_PUBLISH_TIME_ZONE,
+          )}
+          className={compactInputClass}
+        />
+        <span className="mt-1.5 block text-xs leading-5 text-slate-500">
+          Uses {SCHEDULED_PUBLISH_TIME_ZONE_LABEL} (
+          {SCHEDULED_PUBLISH_TIME_ZONE}). Leave blank unless this page should
+          publish later.
+        </span>
+      </label>
+      {hasScheduledState ? (
+        <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm font-medium text-slate-700">
+          <input
+            name="cancelScheduledPublish"
+            aria-label="Cancel scheduled publish"
+            type="checkbox"
+            className="mt-1 size-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
+          />
+          <span>
+            <span className="block font-semibold text-slate-900">
+              Cancel scheduled publish
+            </span>
+            <span className="mt-0.5 block text-xs leading-5 font-normal text-slate-500">
+              Keeps the draft intact and removes this page from the automatic
+              publishing queue.
+            </span>
+          </span>
+        </label>
+      ) : null}
+      {page?.scheduled_publish_status === "failed" ? (
+        <p className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs leading-5 font-semibold text-rose-700">
+          {page.scheduled_publish_error ??
+            "Scheduled publish failed. Save a new time to retry."}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
