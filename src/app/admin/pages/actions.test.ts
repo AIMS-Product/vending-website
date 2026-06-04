@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PageContent } from "@/lib/page-builder/blocks";
 import {
   acceptAiSeoProposalBlocks,
+  createSeoPageComment,
   createSeoPageDraftForEditor,
   duplicateSeoPageFromList,
   generateAiSeoPageProposal,
@@ -20,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   adminAcceptAiProposalBlocks: vi.fn(),
   adminArchiveSeoPage: vi.fn(),
   adminCreateSeoPagePreviewToken: vi.fn(),
+  adminCreatePageComment: vi.fn(),
   adminCreateSeoPage: vi.fn(),
   adminDuplicateSeoPage: vi.fn(),
   adminGetSeoPageById: vi.fn(),
@@ -72,6 +74,7 @@ vi.mock("@/lib/services/seo-pages", async () => {
   return {
     ...actual,
     adminArchiveSeoPage: mocks.adminArchiveSeoPage,
+    adminCreatePageComment: mocks.adminCreatePageComment,
     adminCreateSeoPagePreviewToken: mocks.adminCreateSeoPagePreviewToken,
     adminCreateSeoPage: mocks.adminCreateSeoPage,
     adminDuplicateSeoPage: mocks.adminDuplicateSeoPage,
@@ -690,6 +693,61 @@ describe("admin page actions", () => {
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/pages");
     expect(mocks.redirect).toHaveBeenCalledWith(
       "/admin/pages/33333333-3333-4333-8333-333333333333?saved=1",
+    );
+  });
+
+  it("creates page comments and revalidates the editor on success", async () => {
+    const formData = new FormData();
+    formData.set("pageId", pageId);
+    formData.set("blockId", "block_intro");
+    formData.set("body", "Check this proof point.");
+
+    await createSeoPageComment(formData);
+
+    expect(mocks.adminCreatePageComment).toHaveBeenCalledWith({
+      pageId,
+      blockId: "block_intro",
+      body: "Check this proof point.",
+      createdBy: "admin_1",
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(
+      `/admin/pages/${pageId}`,
+    );
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("redirects invalid comment page IDs without calling the comment service", async () => {
+    const formData = new FormData();
+    formData.set("pageId", "../settings");
+    formData.set("body", "Check this proof point.");
+
+    await createSeoPageComment(formData);
+
+    expect(mocks.adminCreatePageComment).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
+    expect(mocks.redirect).toHaveBeenCalledWith("/admin/pages");
+  });
+
+  it("redirects failed comment creation back to the editor with visible error state", async () => {
+    const formData = new FormData();
+    formData.set("pageId", pageId);
+    formData.set("blockId", "block_intro");
+    formData.set("body", "Check this proof point.");
+    mocks.adminCreatePageComment.mockRejectedValue(new Error("insert failed"));
+
+    await createSeoPageComment(formData);
+
+    expect(mocks.adminCreatePageComment).toHaveBeenCalledWith({
+      pageId,
+      blockId: "block_intro",
+      body: "Check this proof point.",
+      createdBy: "admin_1",
+    });
+    expect(mocks.revalidatePath).not.toHaveBeenCalledWith(
+      `/admin/pages/${pageId}`,
+    );
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      `/admin/pages/${pageId}?error=comment`,
     );
   });
 

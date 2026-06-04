@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { SeoPageEditorForm } from "@/components/admin/SeoPageEditorForm";
+import { SeoPageCommentsPanel } from "@/components/admin/SeoPageCommentsPanel";
 import { SeoPageRevisionPanel } from "@/components/admin/SeoPageRevisionPanel";
 import { adminListAiPageProposals } from "@/lib/services/ai-page-proposals";
 import { toEditorMediaAsset } from "@/lib/media/editor-asset";
 import { adminListMediaAssets } from "@/lib/services/media-assets";
 import {
   adminGetSeoPageById,
+  adminListPageComments,
   adminListSeoPagePreviewTokens,
   adminListSeoPageRevisions,
 } from "@/lib/services/seo-pages";
@@ -41,6 +43,7 @@ export default async function EditSeoPagePage({
     internalLinkTargets,
     aiProposals,
     mediaAssets,
+    comments,
   ] = await Promise.all([
     adminGetSeoPageById(id),
     adminListSeoPageRevisions(id),
@@ -48,6 +51,7 @@ export default async function EditSeoPagePage({
     adminListInternalLinkTargets({ currentPageId: id }),
     adminListAiPageProposals(id),
     adminListMediaAssets(),
+    adminListPageComments(id),
   ]);
   if (!page) notFound();
 
@@ -75,6 +79,11 @@ export default async function EditSeoPagePage({
         revisions={revisions}
         previewTokens={previewTokens}
       />
+      <SeoPageCommentsPanel
+        pageId={page.id}
+        comments={comments}
+        commentError={commentActionErrorMessage(query.error)}
+      />
     </AdminShell>
   );
 }
@@ -85,6 +94,13 @@ function pageActionErrorMessage(code: string | undefined) {
   }
   if (code === "rollback") {
     return "Could not restore that revision as a draft. Please try again.";
+  }
+  return undefined;
+}
+
+function commentActionErrorMessage(code: string | undefined) {
+  if (code === "comment") {
+    return "Could not add the comment. Please try again.";
   }
   return undefined;
 }
