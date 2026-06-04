@@ -63,6 +63,8 @@ For Website Builder / SEO Page Builder work tracked under
 stacked release train until the user explicitly asks to push a branch or create
 a PR.
 
+Use `docs/stack-release.md` as the release-train playbook.
+
 Current release baseline:
 
 - S1-S3 are already landed on `main`.
