@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   SeoPageValidationError,
   adminArchiveSeoPage,
+  adminCreateAuthorProfile,
+  adminCreateBuilderRedirect,
   adminCreateSeoPage,
   adminGetSeoPageById,
   adminListSeoPages,
@@ -144,6 +146,11 @@ function deleteMatch(error: unknown = null) {
     table: { delete: deleteMock },
     mocks: { delete: deleteMock, match },
   };
+}
+
+function upsertRows(data: unknown = null, error: unknown = null) {
+  const upsert = vi.fn().mockResolvedValue({ data, error });
+  return { table: { upsert }, mocks: { upsert } };
 }
 
 function buildClient(...tables: unknown[]) {
@@ -437,6 +444,21 @@ describe("seo page service", () => {
       sitemap_enabled: true,
       structured_data_settings: {},
       target_keyword: "start vending business",
+      internal_tags: ["launch", "priority"],
+      topic_cluster: "Vending startups",
+      campaign_label: "FY26",
+      funnel_stage: "consideration",
+      review_period_months: 6,
+      next_review_at: "2026-08-15T00:00:00.000Z",
+      lifecycle_status: "active",
+      og_title: "Start Vending social title",
+      og_description: "Start Vending social description.",
+      scheduled_publish_at: "2026-06-03T16:30:00.000Z",
+      scheduled_publish_status: "scheduled",
+      scheduled_publish_error: "Previous failure",
+      scheduled_publish_attempts: 2,
+      scheduled_publish_last_attempt_at: "2026-06-03T16:20:00.000Z",
+      scheduled_publish_locked_at: "2026-06-03T16:25:00.000Z",
     };
     const revision = { id: "revision_1", page_id: "page_1" };
     const published = {
@@ -450,11 +472,13 @@ describe("seo page service", () => {
     const redirectConflict = maybeSingleSelect(null);
     const duplicateTitle = metadataConflictSelect(null);
     const duplicateDescription = metadataConflictSelect(null);
+    const capturedBlocks = upsertRows();
     const client = buildClient(
       loadPage.table,
       redirectConflict.table,
       duplicateTitle.table,
       duplicateDescription.table,
+      capturedBlocks.table,
     );
     client.rpc.mockResolvedValue({
       data: { page: published, revision },
@@ -468,6 +492,25 @@ describe("seo page service", () => {
     });
 
     expect(result).toEqual({ page: published, revision });
+    expect(capturedBlocks.mocks.upsert).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source_page_id: "page_1",
+          source_revision_id: "revision_1",
+          source_block_id: "block_text",
+          block_type: "rich_text",
+        }),
+        expect.objectContaining({
+          source_block_id: "block_image",
+          block_type: "image",
+        }),
+        expect.objectContaining({
+          source_block_id: "block_cta",
+          block_type: "cta",
+        }),
+      ]),
+      { onConflict: "source_revision_id,source_block_id" },
+    );
     expect(client.rpc).toHaveBeenCalledWith("publish_seo_page_atomically", {
       p_page_id: "page_1",
       p_slug: "start-vending",
@@ -489,11 +532,175 @@ describe("seo page service", () => {
         seo_title: "Start a Vending Business",
         meta_description: "Learn how to start a vending business safely.",
         structured_data_settings: { breadcrumb: true, faq: true },
+        internal_tags: ["launch", "priority"],
+        topic_cluster: "Vending startups",
+        campaign_label: "FY26",
+        funnel_stage: "consideration",
+        review_period_months: 6,
+        next_review_at: "2026-08-15T00:00:00.000Z",
+        lifecycle_status: "active",
+        og_title: "Start Vending social title",
+        og_description: "Start Vending social description.",
+        scheduled_publish_at: "2026-06-03T16:30:00.000Z",
+        scheduled_publish_status: "scheduled",
+        scheduled_publish_error: "Previous failure",
+        scheduled_publish_attempts: 2,
+        scheduled_publish_last_attempt_at: "2026-06-03T16:20:00.000Z",
+        scheduled_publish_locked_at: "2026-06-03T16:25:00.000Z",
       }),
       p_actor_id: "admin-1",
       p_published_at: "2026-05-06T01:00:00.000Z",
       p_revision_label: "Publish 2026-05-06T01:00:00.000Z",
     });
+  });
+
+  it("keeps a successful publish successful when content capture fails", async () => {
+    const parsedContent = pageContentSchema.parse(validContent);
+    const page = {
+      id: "page_1",
+      slug: "start-vending",
+      title: "Start Vending",
+      status: "draft",
+      draft_content: parsedContent,
+      seo_title: "Start a Vending Business",
+      meta_description: "Learn how to start a vending business safely.",
+      canonical_url: null,
+      noindex: false,
+      sitemap_enabled: true,
+      structured_data_settings: {},
+      target_keyword: "start vending business",
+    };
+    const revision = { id: "revision_1", page_id: "page_1" };
+    const published = {
+      ...page,
+      status: "published",
+      published_content: parsedContent,
+      published_revision_id: "revision_1",
+    };
+
+    const loadPage = singleSelect(page);
+    const redirectConflict = maybeSingleSelect(null);
+    const duplicateTitle = metadataConflictSelect(null);
+    const duplicateDescription = metadataConflictSelect(null);
+    const capturedBlocks = upsertRows(null, {
+      message: "content library unavailable",
+    });
+    const client = buildClient(
+      loadPage.table,
+      redirectConflict.table,
+      duplicateTitle.table,
+      duplicateDescription.table,
+      capturedBlocks.table,
+    );
+    client.rpc.mockResolvedValue({
+      data: { page: published, revision },
+      error: null,
+    });
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      await expect(
+        adminPublishSeoPage("page_1", {
+          client,
+          actorId: "admin-1",
+          now: () => new Date("2026-05-06T01:00:00.000Z"),
+        }),
+      ).resolves.toEqual({ page: published, revision });
+
+      expect(consoleError).toHaveBeenCalledWith(
+        "failed to capture published page content",
+        expect.objectContaining({
+          pageId: "page_1",
+          revisionId: "revision_1",
+          error: expect.any(Error),
+        }),
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
+  it("keeps a successful publish successful when scheduled cleanup fails", async () => {
+    const parsedContent = pageContentSchema.parse(validContent);
+    const page = {
+      id: "page_1",
+      slug: "start-vending",
+      title: "Start Vending",
+      status: "draft",
+      draft_content: parsedContent,
+      seo_title: "Start a Vending Business",
+      meta_description: "Learn how to start a vending business safely.",
+      canonical_url: null,
+      noindex: false,
+      sitemap_enabled: true,
+      structured_data_settings: {},
+      target_keyword: "start vending business",
+    };
+    const revision = { id: "revision_1", page_id: "page_1" };
+    const published = {
+      ...page,
+      status: "published",
+      published_content: parsedContent,
+      published_revision_id: "revision_1",
+      scheduled_publish_at: "2026-06-03T16:30:00.000Z",
+      scheduled_publish_status: "scheduled",
+      scheduled_publish_error: "Previous failure",
+      scheduled_publish_attempts: 2,
+      scheduled_publish_last_attempt_at: "2026-06-03T16:20:00.000Z",
+      scheduled_publish_locked_at: "2026-06-03T16:25:00.000Z",
+    };
+
+    const loadPage = singleSelect(page);
+    const redirectConflict = maybeSingleSelect(null);
+    const duplicateTitle = metadataConflictSelect(null);
+    const duplicateDescription = metadataConflictSelect(null);
+    const capturedBlocks = upsertRows();
+    const clearSchedule = updateSingle(null, { message: "cleanup failed" });
+    const client = buildClient(
+      loadPage.table,
+      redirectConflict.table,
+      duplicateTitle.table,
+      duplicateDescription.table,
+      capturedBlocks.table,
+      clearSchedule.table,
+    );
+    client.rpc.mockResolvedValue({
+      data: { page: published, revision },
+      error: null,
+    });
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      await expect(
+        adminPublishSeoPage("page_1", {
+          client,
+          actorId: "admin-1",
+          now: () => new Date("2026-05-06T01:00:00.000Z"),
+        }),
+      ).resolves.toEqual({ page: published, revision });
+
+      expect(clearSchedule.mocks.update).toHaveBeenCalledWith({
+        scheduled_publish_at: null,
+        scheduled_publish_error: null,
+        scheduled_publish_attempts: 0,
+        scheduled_publish_last_attempt_at: null,
+        scheduled_publish_locked_at: null,
+        scheduled_publish_status: "published",
+      });
+      expect(consoleError).toHaveBeenCalledWith(
+        "failed to clear published schedule state",
+        expect.objectContaining({
+          pageId: "page_1",
+          error: expect.any(Error),
+        }),
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 
   it("publishes saved draft settings for an already published page", async () => {
@@ -547,11 +754,13 @@ describe("seo page service", () => {
     const redirectConflict = maybeSingleSelect(null);
     const duplicateTitle = metadataConflictSelect(null);
     const duplicateDescription = metadataConflictSelect(null);
+    const capturedBlocks = upsertRows();
     const client = buildClient(
       loadPage.table,
       redirectConflict.table,
       duplicateTitle.table,
       duplicateDescription.table,
+      capturedBlocks.table,
     );
     client.rpc.mockResolvedValue({
       data: { page: published, revision },
@@ -829,12 +1038,14 @@ describe("seo page service", () => {
         source_rights_notes: "",
       },
     ]);
+    const capturedBlocks = upsertRows();
     const client = buildClient(
       loadPage.table,
       redirectConflict.table,
       duplicateTitle.table,
       duplicateDescription.table,
       mediaRows.table,
+      capturedBlocks.table,
     );
 
     await expect(
@@ -939,12 +1150,14 @@ describe("seo page service", () => {
         external_url: "https://cdn.example.com/asset.webp",
       },
     ]);
+    const capturedBlocks = upsertRows();
     const client = buildClient(
       loadPage.table,
       redirectConflict.table,
       duplicateTitle.table,
       duplicateDescription.table,
       mediaRows.table,
+      capturedBlocks.table,
     );
     client.rpc.mockResolvedValue({
       data: { page: published, revision },
@@ -1084,6 +1297,7 @@ describe("seo page service", () => {
       status: "published",
       published_content: resolvedContent,
     };
+    const capturedBlocks = upsertRows();
     const client = buildClient(
       loadPage.table,
       ctaRows.table,
@@ -1091,6 +1305,7 @@ describe("seo page service", () => {
       redirectConflict.table,
       duplicateTitle.table,
       duplicateDescription.table,
+      capturedBlocks.table,
     );
     client.rpc.mockResolvedValue({
       data: { page: published, revision },
@@ -1270,6 +1485,89 @@ describe("seo page service", () => {
     expect(client.from).not.toHaveBeenCalled();
   });
 
+  it("creates manual redirects for every canonical builder route prefix", async () => {
+    const sourcePaths = [
+      "/resources/old-resource",
+      "/blog/old-post",
+      "/landing/old-offer",
+      "/videos/old-video",
+      "/solutions/old-solution",
+    ];
+
+    for (const sourcePath of sourcePaths) {
+      const created = {
+        id: `redirect_${sourcePath.split("/")[1]}`,
+        source_path: sourcePath,
+        destination_path: "/blog/new-page",
+        status_code: 302,
+      };
+      const insert = insertSingle(created);
+      const client = buildClient(insert.table);
+
+      const result = await adminCreateBuilderRedirect(
+        {
+          sourcePath: ` ${sourcePath}/// `,
+          destinationPath: "/blog/new-page",
+          statusCode: 302,
+          createdBy: "admin-1",
+        },
+        { client },
+      );
+
+      expect(result).toBe(created);
+      expect(client.from).toHaveBeenCalledWith("redirects");
+      expect(insert.mocks.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          source_path: sourcePath,
+          destination_path: "/blog/new-page",
+          status_code: 302,
+          created_by: "admin-1",
+          created_reason: "manual",
+        }),
+      );
+    }
+  });
+
+  it("rejects manual redirect sources outside canonical builder route paths before touching Supabase", async () => {
+    const client = buildClient();
+
+    for (const sourcePath of [
+      "/about",
+      "/blog/nested/path",
+      "https://example.com/old",
+      "//example.com/old",
+    ]) {
+      await expect(
+        adminCreateBuilderRedirect(
+          {
+            sourcePath,
+            destinationPath: "/blog/new-page",
+            statusCode: 301,
+          },
+          { client },
+        ),
+      ).rejects.toBeInstanceOf(SeoPageValidationError);
+    }
+
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects author profiles whose slugs normalize to empty before touching Supabase", async () => {
+    const client = buildClient();
+
+    await expect(
+      adminCreateAuthorProfile(
+        {
+          displayName: "Mike Hoffman",
+          slug: " --- ",
+        },
+        { client },
+      ),
+    ).rejects.toThrow("Author slug is required.");
+
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
   it("refreshes reusable library references with a manual-save revision and draft update", async () => {
     const parsedContent = pageContentSchema.parse(validContent);
     const page = {
@@ -1330,6 +1628,21 @@ describe("seo page service", () => {
       noindex: true,
       sitemap_enabled: false,
       structured_data_settings: { breadcrumb: false, faq: true },
+      internal_tags: ["review", "priority"],
+      topic_cluster: "Vending operations",
+      campaign_label: "FY26",
+      funnel_stage: "consideration",
+      review_period_months: 12,
+      next_review_at: "2026-07-15T00:00:00.000Z",
+      lifecycle_status: "needs_review",
+      og_title: "Snapshot social title",
+      og_description: "Snapshot social description.",
+      scheduled_publish_at: "2026-06-03T16:30:00.000Z",
+      scheduled_publish_status: "scheduled",
+      scheduled_publish_error: "Previous failure",
+      scheduled_publish_attempts: 2,
+      scheduled_publish_last_attempt_at: "2026-06-03T16:20:00.000Z",
+      scheduled_publish_locked_at: "2026-06-03T16:25:00.000Z",
     };
     const sourceRevision = {
       id: "revision_source",
