@@ -25,7 +25,6 @@ import {
   type SeoPageSearchParams,
 } from "@/lib/admin/seo-pages-list";
 import { assessSeoReadiness } from "@/lib/page-builder/seo-readiness";
-import { formatScheduledPublishDisplay } from "@/lib/page-builder/scheduled-publishing";
 import { adminListSeoPages } from "@/lib/services/seo-pages";
 import { requireAdmin } from "@/lib/supabase/auth";
 import type { Tables } from "@/types/database";
@@ -357,11 +356,10 @@ export default async function AdminPagesPage({
               <table className="w-full min-w-[760px] table-fixed border-collapse text-left text-sm">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
                   <tr>
-                    <th className="w-[40%] px-7 py-3">Title</th>
-                    <th className="w-[18%] px-5 py-3">Keyword</th>
-                    <th className="w-[18%] px-5 py-3">Workflow</th>
-                    <th className="w-[10%] px-5 py-3 text-center">Readiness</th>
-                    <th className="w-[6%] px-5 py-3 text-center">Status</th>
+                    <th className="w-[50%] px-7 py-3">Title</th>
+                    <th className="w-[22%] px-5 py-3">Keyword</th>
+                    <th className="w-[12%] px-5 py-3 text-center">Readiness</th>
+                    <th className="w-[8%] px-5 py-3 text-center">Status</th>
                     <th className="w-[8%] px-5 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -564,38 +562,6 @@ function PageRow({
       <td className="px-5 py-3 break-words text-slate-700">
         {page.target_keyword || "-"}
       </td>
-      <td className="px-5 py-3 text-xs text-slate-600">
-        <div className="space-y-1">
-          <p className="font-semibold text-slate-800">
-            {formatLifecycle(page.lifecycle_status)}
-          </p>
-          <p>
-            Review:{" "}
-            {page.next_review_at
-              ? formatShortDate(page.next_review_at)
-              : `${page.review_period_months} mo`}
-          </p>
-          {page.scheduled_publish_status === "scheduled" &&
-          page.scheduled_publish_at ? (
-            <p>
-              Scheduled:{" "}
-              {formatScheduledPublishDisplay(page.scheduled_publish_at)}
-            </p>
-          ) : null}
-          {page.scheduled_publish_status === "failed" ? (
-            <p className="font-semibold text-rose-700">
-              Failed: {page.scheduled_publish_error ?? "Needs reschedule"}
-            </p>
-          ) : null}
-          {page.internal_tags?.length ? (
-            <p className="truncate" title={page.internal_tags.join(", ")}>
-              {page.internal_tags.slice(0, 2).join(", ")}
-            </p>
-          ) : (
-            <p>Needs links</p>
-          )}
-        </div>
-      </td>
       <td className="px-5 py-3 text-center">
         <StatusDot
           label={`SEO readiness: ${readiness.label}`}
@@ -672,39 +638,6 @@ function PageMobileCard({
           </dt>
           <dd className="mt-1 text-slate-800">{page.target_keyword || "-"}</dd>
         </div>
-        <div>
-          <dt className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
-            Workflow
-          </dt>
-          <dd className="mt-1">
-            <span className="font-semibold text-slate-800">
-              {formatLifecycle(page.lifecycle_status)}
-            </span>
-            <span className="block">
-              Review:{" "}
-              {page.next_review_at
-                ? formatShortDate(page.next_review_at)
-                : `${page.review_period_months} mo`}
-            </span>
-            {page.scheduled_publish_status === "scheduled" &&
-            page.scheduled_publish_at ? (
-              <span className="block">
-                Scheduled:{" "}
-                {formatScheduledPublishDisplay(page.scheduled_publish_at)}
-              </span>
-            ) : null}
-            {page.scheduled_publish_status === "failed" ? (
-              <span className="block font-semibold text-rose-700">
-                Failed: {page.scheduled_publish_error ?? "Needs reschedule"}
-              </span>
-            ) : null}
-            <span className="block">
-              {page.internal_tags?.length
-                ? page.internal_tags.slice(0, 2).join(", ")
-                : "Needs links"}
-            </span>
-          </dd>
-        </div>
       </dl>
 
       <Link
@@ -715,21 +648,6 @@ function PageMobileCard({
       </Link>
     </article>
   );
-}
-
-function formatLifecycle(status: string) {
-  return status
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function formatShortDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  });
 }
 
 function PageActionsMenu({

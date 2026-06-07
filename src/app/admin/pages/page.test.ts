@@ -47,13 +47,10 @@ describe("AdminPagesPage", () => {
     expect(html).toContain(
       "/admin/pages?view=schedule-failed&amp;sort=title-asc",
     );
-    expect(html).toContain(
-      "/admin/pages?view=schedule-failed&amp;perPage=25",
-    );
-    expect(html).toContain(
-      "/admin/pages?view=schedule-failed&amp;page=3",
-    );
-    expect(html).toContain('class="w-[40%] px-7 py-3"');
+    expect(html).toContain("/admin/pages?view=schedule-failed&amp;perPage=25");
+    expect(html).toContain("/admin/pages?view=schedule-failed&amp;page=3");
+    expect(html).toContain('class="w-[50%] px-7 py-3"');
+    expect(html).not.toContain(">Workflow</th>");
     expect(html).toContain('class="w-[8%] px-5 py-3 text-right"');
     expect(html).not.toContain("/admin/pages?sort=title-asc");
     expect(html).not.toContain("/admin/pages?perPage=25");
