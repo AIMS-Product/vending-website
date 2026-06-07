@@ -347,25 +347,32 @@ export default async function AdminPagesPage({
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] table-fixed border-collapse text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
-                <tr>
-                  <th className="w-[40%] px-7 py-3">Title</th>
-                  <th className="w-[18%] px-5 py-3">Keyword</th>
-                  <th className="w-[18%] px-5 py-3">Workflow</th>
-                  <th className="w-[10%] px-5 py-3 text-center">Readiness</th>
-                  <th className="w-[6%] px-5 py-3 text-center">Status</th>
-                  <th className="w-[8%] px-5 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {visiblePages.map((page) => (
-                  <PageRow key={page.id} page={page} returnTo={returnTo} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="grid gap-3 p-4 md:hidden">
+              {visiblePages.map((page) => (
+                <PageMobileCard key={page.id} page={page} returnTo={returnTo} />
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[760px] table-fixed border-collapse text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
+                  <tr>
+                    <th className="w-[40%] px-7 py-3">Title</th>
+                    <th className="w-[18%] px-5 py-3">Keyword</th>
+                    <th className="w-[18%] px-5 py-3">Workflow</th>
+                    <th className="w-[10%] px-5 py-3 text-center">Readiness</th>
+                    <th className="w-[6%] px-5 py-3 text-center">Status</th>
+                    <th className="w-[8%] px-5 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {visiblePages.map((page) => (
+                    <PageRow key={page.id} page={page} returnTo={returnTo} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         <div className="flex flex-col gap-4 border-t border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-600 lg:flex-row lg:items-center lg:justify-between">
@@ -590,23 +597,127 @@ function PageRow({
         </div>
       </td>
       <td className="px-5 py-3 text-center">
-        <StatusDot
+        <StatusBadge
           label={`SEO readiness: ${readiness.label}`}
           tone={readinessDotTone(readiness.status)}
-          glyph={readinessDotGlyph(readiness.status)}
+          text={readiness.label}
         />
       </td>
       <td className="px-5 py-3 text-center">
-        <StatusDot
+        <StatusBadge
           label={`Page status: ${formatStatus(page.status)}`}
           tone={statusDotTone(page.status)}
-          glyph={statusDotGlyph(page.status)}
+          text={formatStatus(page.status)}
         />
       </td>
       <td className="px-5 py-3 text-right">
         <PageActionsMenu page={page} returnTo={returnTo} />
       </td>
     </tr>
+  );
+}
+
+function PageMobileCard({
+  page,
+  returnTo,
+}: {
+  page: Tables<"seo_pages">;
+  returnTo: string;
+}) {
+  const readiness = assessSeoReadiness(page.draft_content, {
+    slug: page.slug,
+    title: page.title,
+    seoTitle: page.seo_title,
+    metaDescription: page.meta_description,
+    canonicalUrl: page.canonical_url,
+    noindex: page.noindex,
+    sitemapEnabled: page.sitemap_enabled,
+    targetKeyword: page.target_keyword,
+    structuredDataSettings: page.structured_data_settings,
+  });
+
+  return (
+    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <Link
+            href={`/admin/pages/${page.id}`}
+            className="text-base font-semibold text-[#0b63f6] underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+          >
+            {page.title}
+          </Link>
+          <p
+            className="mt-1 truncate font-mono text-xs text-slate-500"
+            title={page.route_path}
+          >
+            {page.route_path}
+          </p>
+        </div>
+        <PageActionsMenu page={page} returnTo={returnTo} variant="card" />
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <StatusBadge
+          label={`SEO readiness: ${readiness.label}`}
+          tone={readinessDotTone(readiness.status)}
+          text={readiness.label}
+        />
+        <StatusBadge
+          label={`Page status: ${formatStatus(page.status)}`}
+          tone={statusDotTone(page.status)}
+          text={formatStatus(page.status)}
+        />
+      </div>
+
+      <dl className="mt-4 grid gap-3 text-sm text-slate-600">
+        <div>
+          <dt className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+            Keyword
+          </dt>
+          <dd className="mt-1 text-slate-800">{page.target_keyword || "-"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+            Workflow
+          </dt>
+          <dd className="mt-1">
+            <span className="font-semibold text-slate-800">
+              {formatLifecycle(page.lifecycle_status)}
+            </span>
+            <span className="block">
+              Review:{" "}
+              {page.next_review_at
+                ? formatShortDate(page.next_review_at)
+                : `${page.review_period_months} mo`}
+            </span>
+            {page.scheduled_publish_status === "scheduled" &&
+            page.scheduled_publish_at ? (
+              <span className="block">
+                Scheduled:{" "}
+                {formatScheduledPublishDisplay(page.scheduled_publish_at)}
+              </span>
+            ) : null}
+            {page.scheduled_publish_status === "failed" ? (
+              <span className="block font-semibold text-rose-700">
+                Failed: {page.scheduled_publish_error ?? "Needs reschedule"}
+              </span>
+            ) : null}
+            <span className="block">
+              {page.internal_tags?.length
+                ? page.internal_tags.slice(0, 2).join(", ")
+                : "Needs links"}
+            </span>
+          </dd>
+        </div>
+      </dl>
+
+      <Link
+        href={`/admin/pages/${page.id}`}
+        className="mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-md bg-[#0b63f6] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0756d6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+      >
+        Edit page
+      </Link>
+    </article>
   );
 }
 
@@ -628,23 +739,33 @@ function formatShortDate(iso: string) {
 function PageActionsMenu({
   page,
   returnTo,
+  variant = "icon",
 }: {
   page: Tables<"seo_pages">;
   returnTo: string;
+  variant?: "icon" | "card";
 }) {
   const isPublished = page.status === "published";
   const isDraft = page.status === "draft";
   const isArchived = page.status === "archived";
+  const summaryClass =
+    variant === "card"
+      ? "inline-flex size-10 cursor-pointer list-none items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition group-open:bg-[#eef5ff] group-open:text-[#0b63f6] hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+      : "inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-md text-slate-700 transition group-open:bg-[#eef5ff] group-open:text-[#0b63f6] hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden";
+  const menuClass =
+    variant === "card"
+      ? "absolute top-full right-0 z-30 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white p-1 text-left shadow-lg"
+      : "absolute top-1/2 right-full z-30 mr-2 w-52 -translate-y-1/2 overflow-hidden rounded-md border border-slate-200 bg-white p-1 text-left shadow-lg";
 
   return (
-    <details className="group relative inline-block text-left">
+    <details className="group relative inline-block shrink-0 text-left">
       <summary
-        className="inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-md text-slate-700 transition group-open:bg-[#eef5ff] group-open:text-[#0b63f6] hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+        className={summaryClass}
         aria-label={`Open actions for ${page.title}`}
       >
         <PageIcon icon="more" />
       </summary>
-      <div className="absolute top-1/2 right-full z-30 mr-2 w-52 -translate-y-1/2 overflow-hidden rounded-md border border-slate-200 bg-white p-1 text-left shadow-lg">
+      <div className={menuClass}>
         <Link
           href={`/admin/pages/${page.id}`}
           className="block rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
@@ -831,32 +952,25 @@ function formatStatus(status: string) {
 
 type DotTone = "amber" | "blue" | "green" | "red" | "slate";
 
-function StatusDot({
+function StatusBadge({
   label,
   tone,
-  glyph,
+  text,
 }: {
   label: string;
   tone: DotTone;
-  glyph: string;
+  text: string;
 }) {
   return (
-    <span className="group relative inline-flex size-7 items-center justify-center rounded-full">
-      <span className="sr-only">{label}</span>
-      {/* Glyph makes each state distinguishable without relying on colour
-          (WCAG 1.4.1); sr-only label above carries the full text. */}
+    <span
+      aria-label={label}
+      className="inline-flex min-h-7 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 shadow-sm"
+    >
       <span
         aria-hidden="true"
-        className={`flex size-4 items-center justify-center rounded-full text-[9px] leading-none font-bold text-white ${dotToneClass(tone)}`}
-      >
-        {glyph}
-      </span>
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-2 -translate-x-1/2 rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white opacity-0 shadow-lg transition group-hover:opacity-100 group-focus-visible:opacity-100"
-      >
-        {label}
-      </span>
+        className={`size-2 rounded-full ${dotToneClass(tone)}`}
+      />
+      {text}
     </span>
   );
 }
@@ -874,33 +988,20 @@ function readinessDotTone(status: string): DotTone {
   return "blue";
 }
 
-function statusDotGlyph(status: string) {
-  if (status === "published") return "P";
-  if (status === "archived") return "A";
-  return "D";
-}
-
-function readinessDotGlyph(status: string) {
-  if (status === "strong") return "✓";
-  if (status === "blocked") return "✕";
-  if (status === "needs_work") return "!";
-  return "+";
-}
-
 function dotToneClass(tone: DotTone) {
   if (tone === "green") {
-    return "bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.14),0_0_14px_rgba(16,185,129,0.7)]";
+    return "bg-emerald-500";
   }
   if (tone === "amber") {
-    return "bg-amber-400 shadow-[0_0_0_4px_rgba(245,158,11,0.14),0_0_14px_rgba(245,158,11,0.6)]";
+    return "bg-amber-400";
   }
   if (tone === "red") {
-    return "bg-rose-500 shadow-[0_0_0_4px_rgba(244,63,94,0.14),0_0_14px_rgba(244,63,94,0.62)]";
+    return "bg-rose-500";
   }
   if (tone === "slate") {
-    return "bg-slate-400 shadow-[0_0_0_4px_rgba(100,116,139,0.12),0_0_12px_rgba(100,116,139,0.45)]";
+    return "bg-slate-400";
   }
-  return "bg-sky-500 shadow-[0_0_0_4px_rgba(14,165,233,0.14),0_0_14px_rgba(14,165,233,0.6)]";
+  return "bg-sky-500";
 }
 
 function PageChevron() {
@@ -930,21 +1031,21 @@ type PageIconName =
   | "plus"
   | "search";
 
-function PageIcon({ icon }: { icon: PageIconName }) {
-  const common = {
-    fill: "none",
-    viewBox: "0 0 24 24",
-    stroke: "currentColor",
-    strokeWidth: 1.9,
-    className: "size-5",
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-  };
+const pageIconCommonProps = {
+  fill: "none",
+  viewBox: "0 0 24 24",
+  stroke: "currentColor",
+  strokeWidth: 1.9,
+  className: "size-5",
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+};
 
+function PageIcon({ icon }: { icon: PageIconName }) {
   switch (icon) {
     case "archive":
       return (
-        <svg {...common}>
+        <svg {...pageIconCommonProps}>
           <path d="M4 7h16" />
           <path d="M6 7v11h12V7" />
           <path d="M9 11h6" />
@@ -953,14 +1054,14 @@ function PageIcon({ icon }: { icon: PageIconName }) {
       );
     case "check":
       return (
-        <svg {...common}>
+        <svg {...pageIconCommonProps}>
           <path d="M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
           <path d="m8.8 12.2 2 2 4.4-4.6" />
         </svg>
       );
     case "file":
       return (
-        <svg {...common}>
+        <svg {...pageIconCommonProps}>
           <path d="M7 3h7l4 4v14H7V3Z" />
           <path d="M14 3v5h5" />
           <path d="M10 12h5" />
@@ -969,13 +1070,13 @@ function PageIcon({ icon }: { icon: PageIconName }) {
       );
     case "filter":
       return (
-        <svg {...common}>
+        <svg {...pageIconCommonProps}>
           <path d="M4 6h16l-6 7v5l-4 2v-7L4 6Z" />
         </svg>
       );
     case "layers":
       return (
-        <svg {...common}>
+        <svg {...pageIconCommonProps}>
           <path d="m12 3 9 5-9 5-9-5 9-5Z" />
           <path d="m3 12 9 5 9-5" />
           <path d="m3 16 9 5 9-5" />
@@ -983,7 +1084,7 @@ function PageIcon({ icon }: { icon: PageIconName }) {
       );
     case "list":
       return (
-        <svg {...common}>
+        <svg {...pageIconCommonProps}>
           <path d="M8 6h12" />
           <path d="M8 12h12" />
           <path d="M8 18h12" />
@@ -994,7 +1095,7 @@ function PageIcon({ icon }: { icon: PageIconName }) {
       );
     case "more":
       return (
-        <svg {...common}>
+        <svg {...pageIconCommonProps}>
           <path d="M12 5h.01" />
           <path d="M12 12h.01" />
           <path d="M12 19h.01" />
@@ -1002,21 +1103,21 @@ function PageIcon({ icon }: { icon: PageIconName }) {
       );
     case "pencil":
       return (
-        <svg {...common}>
+        <svg {...pageIconCommonProps}>
           <path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z" />
           <path d="m14 7 3 3" />
         </svg>
       );
     case "plus":
       return (
-        <svg {...common}>
+        <svg {...pageIconCommonProps}>
           <path d="M12 5v14" />
           <path d="M5 12h14" />
         </svg>
       );
     case "search":
       return (
-        <svg {...common}>
+        <svg {...pageIconCommonProps}>
           <path d="m21 21-4.3-4.3" />
           <path d="M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z" />
         </svg>

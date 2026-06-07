@@ -49,7 +49,7 @@ export default async function AuthorProfilesPage({
         ) : null}
         <form
           action={createAuthorProfile}
-          className="grid gap-4 lg:grid-cols-4"
+          className="grid gap-4 lg:grid-cols-3"
         >
           <label className={adminLabelClass}>
             Display name
@@ -63,24 +63,30 @@ export default async function AuthorProfilesPage({
             Role/title
             <input name="roleTitle" className={adminInputClass} />
           </label>
-          <label className={adminLabelClass}>
-            Avatar media ID
-            <input
-              name="avatarAssetId"
-              className={adminInputClass}
-              aria-describedby="author-avatar-help"
-            />
-            <span
-              id="author-avatar-help"
-              className="mt-1 block text-xs leading-5 text-slate-500"
-            >
-              Advanced: paste a media-library asset ID, or leave this blank.
-            </span>
-          </label>
           <label className={`${adminLabelClass} lg:col-span-3`}>
             Bio
             <textarea name="bio" rows={3} className={adminTextareaClass} />
           </label>
+          <details className="rounded-lg border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-slate-700 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
+              Advanced media settings
+            </summary>
+            <label className={`${adminLabelClass} mt-4`}>
+              Avatar media asset
+              <input
+                name="avatarAssetId"
+                placeholder="Optional media-library asset ID"
+                className={adminInputClass}
+                aria-describedby="author-avatar-help"
+              />
+              <span
+                id="author-avatar-help"
+                className="mt-1 block text-xs leading-5 text-slate-500"
+              >
+                Use only when the exact media-library asset ID is known.
+              </span>
+            </label>
+          </details>
           <div className="flex items-end">
             <button type="submit" className={adminPrimaryButtonClass}>
               Create author

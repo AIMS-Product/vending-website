@@ -48,7 +48,7 @@ export default async function RedirectManagerPage({
         ) : null}
         <form
           action={createBuilderRedirect}
-          className="grid gap-4 lg:grid-cols-5"
+          className="grid gap-4 lg:grid-cols-4"
         >
           <label className={adminLabelClass}>
             Old path
@@ -84,26 +84,31 @@ export default async function RedirectManagerPage({
               Use permanent for most renamed or moved pages.
             </span>
           </label>
-          <label className={adminLabelClass}>
-            Related page ID
-            <input
-              name="pageId"
-              placeholder="Optional"
-              className={adminInputClass}
-              aria-describedby="redirect-page-id-help"
-            />
-            <span
-              id="redirect-page-id-help"
-              className="mt-1 block text-xs leading-5 text-slate-500"
-            >
-              Advanced: link this rule to a builder page when you know the ID.
-            </span>
-          </label>
           <div className="flex items-end">
             <button type="submit" className={adminPrimaryButtonClass}>
               Create redirect
             </button>
           </div>
+          <details className="rounded-lg border border-slate-200 bg-slate-50 p-4 lg:col-span-3">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-slate-700 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
+              Advanced page association
+            </summary>
+            <label className={`${adminLabelClass} mt-4 max-w-md`}>
+              Related builder page
+              <input
+                name="pageId"
+                placeholder="Optional page ID"
+                className={adminInputClass}
+                aria-describedby="redirect-page-id-help"
+              />
+              <span
+                id="redirect-page-id-help"
+                className="mt-1 block text-xs leading-5 text-slate-500"
+              >
+                Use only when linking this redirect to a specific builder page.
+              </span>
+            </label>
+          </details>
         </form>
       </section>
 

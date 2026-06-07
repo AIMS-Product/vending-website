@@ -36,6 +36,15 @@ export function AiBuilderAssistant({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const canRunAiAgent = Boolean(editor.page?.id);
+  const sidePanelOpenOnNarrow =
+    editor.isNarrowEditor &&
+    (!editor.isBlockSidebarCollapsed || !editor.isSeoSidebarCollapsed);
+  const bothEditorSidePanelsOpenOnDesktop =
+    !editor.isNarrowEditor &&
+    !editor.isBlockSidebarCollapsed &&
+    !editor.isSeoSidebarCollapsed;
+  const shouldDeferToEditorSidePanel =
+    sidePanelOpenOnNarrow || bothEditorSidePanelsOpenOnDesktop;
   const seoPanelOpenOnDesktop =
     !editor.isNarrowEditor && !editor.isSeoSidebarCollapsed;
   const offsetClass = seoPanelOpenOnDesktop ? "xl:right-[28rem]" : "";
@@ -57,6 +66,8 @@ export function AiBuilderAssistant({
       ),
     );
   }, [chatState.messages, storageKey]);
+
+  if (shouldDeferToEditorSidePanel) return null;
 
   async function sendChatMessage(message: string) {
     const content = message.trim();

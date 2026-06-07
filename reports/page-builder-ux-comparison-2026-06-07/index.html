@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Page Builder UX Before and After - June 7, 2026</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #0f172a;
+        --muted: #475569;
+        --border: #dbe3ef;
+        --panel: #ffffff;
+        --wash: #f6f8fb;
+        --accent: #0b63f6;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--wash);
+        color: var(--ink);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.5;
+      }
+
+      header,
+      main {
+        width: min(1440px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      header {
+        padding: 32px 0 18px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 44px);
+        line-height: 1.05;
+        letter-spacing: 0;
+      }
+
+      .lede {
+        max-width: 860px;
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin: 20px 0 0;
+      }
+
+      .summary div {
+        min-height: 92px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 14px;
+      }
+
+      .summary b {
+        display: block;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #64748b;
+      }
+
+      .summary span {
+        display: block;
+        margin-top: 6px;
+        font-weight: 700;
+      }
+
+      section {
+        margin: 18px 0 28px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--panel);
+        overflow: hidden;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      }
+
+      .section-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 20px;
+        letter-spacing: 0;
+      }
+
+      .note {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .status {
+        flex: 0 0 auto;
+        border: 1px solid #b7d3ff;
+        border-radius: 999px;
+        background: #eef5ff;
+        color: #0756d6;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .pair {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0;
+      }
+
+      figure {
+        margin: 0;
+        min-width: 0;
+        border-right: 1px solid var(--border);
+        background: #f8fafc;
+      }
+
+      figure:last-child {
+        border-right: 0;
+      }
+
+      figcaption {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 48px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        background: #fff;
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #334155;
+      }
+
+      a {
+        color: var(--accent);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .after-stack {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        padding: 12px;
+        background: #f8fafc;
+      }
+
+      .after-stack figure {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      footer {
+        width: min(1440px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 4px 0 32px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 900px) {
+        .summary,
+        .pair,
+        .after-stack {
+          grid-template-columns: 1fr;
+        }
+
+        figure,
+        figure:last-child {
+          border-right: 0;
+          border-bottom: 1px solid var(--border);
+        }
+
+        figure:last-child {
+          border-bottom: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Page Builder UX Before and After</h1>
+      <p class="lede">
+        Screenshot-backed comparison for the admin page builder fixes completed
+        on June 7, 2026. The after captures use the refreshed local rendered
+        app, including the corrected mobile card action trigger.
+      </p>
+      <div class="summary" aria-label="Fix summary">
+        <div>
+          <b>Publish rail</b>
+          <span
+            >Readiness and next step stay visible above publish controls.</span
+          >
+        </div>
+        <div>
+          <b>Mobile list</b>
+          <span
+            >Critical page metadata is shown in cards instead of a clipped
+            table.</span
+          >
+        </div>
+        <div>
+          <b>Editor panels</b>
+          <span>AI assistant no longer competes with open side panels.</span>
+        </div>
+        <div>
+          <b>Technical fields</b>
+          <span>Raw IDs moved behind advanced disclosure controls.</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Desktop SEO Pages List</h2>
+            <p class="note">
+              Status and readiness now use readable chips instead of symbol-only
+              dots.
+            </p>
+          </div>
+          <span class="status">Fixed</span>
+        </div>
+        <div class="pair">
+          <figure>
+            <figcaption>
+              Before
+              <a href="before/01-pages-list-desktop.png">Open</a>
+            </figcaption>
+            <img
+              src="before/01-pages-list-desktop.png"
+              alt="Before desktop SEO pages list"
+            />
+          </figure>
+          <figure>
+            <figcaption>
+              After
+              <a href="after/01-pages-list-desktop-after.png">Open</a>
+            </figcaption>
+            <img
+              src="after/01-pages-list-desktop-after.png"
+              alt="After desktop SEO pages list"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Mobile SEO Pages List</h2>
+            <p class="note">
+              The mobile view now presents each page as a task card with title,
+              route, keyword, workflow, readiness, status, and edit action.
+            </p>
+          </div>
+          <span class="status">Fixed</span>
+        </div>
+        <div class="pair">
+          <figure>
+            <figcaption>
+              Before
+              <a href="before/10-pages-list-mobile.png">Open</a>
+            </figcaption>
+            <img
+              src="before/10-pages-list-mobile.png"
+              alt="Before mobile SEO pages list"
+            />
+          </figure>
+          <figure>
+            <figcaption>
+              After
+              <a href="after/09-pages-list-mobile-after.png">Open</a>
+            </figcaption>
+            <img
+              src="after/09-pages-list-mobile-after.png"
+              alt="After mobile SEO pages list"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Editor Default State</h2>
+            <p class="note">
+              Rich text editing exposes content first and collapses secondary
+              text options by default.
+            </p>
+          </div>
+          <span class="status">Fixed</span>
+        </div>
+        <div class="pair">
+          <figure>
+            <figcaption>
+              Before
+              <a href="before/06-editor-desktop-initial.png">Open</a>
+            </figcaption>
+            <img
+              src="before/06-editor-desktop-initial.png"
+              alt="Before desktop editor default state"
+            />
+          </figure>
+          <figure>
+            <figcaption>
+              After
+              <a href="after/02-editor-desktop-initial-after.png">Open</a>
+            </figcaption>
+            <img
+              src="after/02-editor-desktop-initial-after.png"
+              alt="After desktop editor default state"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Editor Blocks and SEO Panels</h2>
+            <p class="note">
+              The publish summary remains above the publish action while the
+              blocks rail and SEO rail are open together.
+            </p>
+          </div>
+          <span class="status">Fixed</span>
+        </div>
+        <div class="pair">
+          <figure>
+            <figcaption>
+              Before
+              <a href="before/07-editor-desktop-blocks-open.png">Open</a>
+            </figcaption>
+            <img
+              src="before/07-editor-desktop-blocks-open.png"
+              alt="Before desktop editor with blocks panel open"
+            />
+          </figure>
+          <figure>
+            <figcaption>
+              After
+              <a href="after/03-editor-desktop-blocks-open-after.png">Open</a>
+            </figcaption>
+            <img
+              src="after/03-editor-desktop-blocks-open-after.png"
+              alt="After desktop editor with blocks panel open"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>AI Assistant With Editor Panels</h2>
+            <p class="note">
+              The AI assistant remains available on the normal desktop editor,
+              but is suppressed when the editor side panels need the workspace.
+            </p>
+          </div>
+          <span class="status">Fixed</span>
+        </div>
+        <div class="pair">
+          <figure>
+            <figcaption>
+              Before
+              <a href="before/09-editor-desktop-ai-open.png">Open</a>
+            </figcaption>
+            <img
+              src="before/09-editor-desktop-ai-open.png"
+              alt="Before desktop editor with AI assistant open"
+            />
+          </figure>
+          <figure>
+            <figcaption>
+              After
+              <a href="after/04-editor-desktop-ai-open-after.png">Open</a>
+            </figcaption>
+            <img
+              src="after/04-editor-desktop-ai-open-after.png"
+              alt="After desktop editor with AI assistant open"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Mobile SEO Panel</h2>
+            <p class="note">
+              The mobile publish panel prioritizes readiness and next required
+              step, with no AI overlay competing for the same space.
+            </p>
+          </div>
+          <span class="status">Fixed</span>
+        </div>
+        <div class="pair">
+          <figure>
+            <figcaption>
+              Before
+              <a href="before/17-editor-mobile-seo-open.png">Open</a>
+            </figcaption>
+            <img
+              src="before/17-editor-mobile-seo-open.png"
+              alt="Before mobile editor SEO panel"
+            />
+          </figure>
+          <figure>
+            <figcaption>
+              After
+              <a href="after/11-editor-mobile-seo-open-after.png">Open</a>
+            </figcaption>
+            <img
+              src="after/11-editor-mobile-seo-open-after.png"
+              alt="After mobile editor SEO panel"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Mobile Blocks Panel</h2>
+            <p class="note">
+              The blocks panel keeps the editing controls in one column and the
+              AI launcher stays out of the narrow panel state.
+            </p>
+          </div>
+          <span class="status">Fixed</span>
+        </div>
+        <div class="pair">
+          <figure>
+            <figcaption>
+              Before
+              <a href="before/18-editor-mobile-blocks-open.png">Open</a>
+            </figcaption>
+            <img
+              src="before/18-editor-mobile-blocks-open.png"
+              alt="Before mobile editor blocks panel"
+            />
+          </figure>
+          <figure>
+            <figcaption>
+              After
+              <a href="after/12-editor-mobile-blocks-open-after.png">Open</a>
+            </figcaption>
+            <img
+              src="after/12-editor-mobile-blocks-open-after.png"
+              alt="After mobile editor blocks panel"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Author Profile Form</h2>
+            <p class="note">
+              The default author flow now focuses on public author fields. The
+              avatar asset ID is still reachable through advanced media
+              settings.
+            </p>
+          </div>
+          <span class="status">Fixed</span>
+        </div>
+        <div class="pair">
+          <figure>
+            <figcaption>
+              Before
+              <a href="before/04-authors-desktop.png">Open</a>
+            </figcaption>
+            <img
+              src="before/04-authors-desktop.png"
+              alt="Before author profile form"
+            />
+          </figure>
+          <figure>
+            <figcaption>
+              After
+              <a href="after/05-authors-desktop-after.png">Open</a>
+            </figcaption>
+            <img
+              src="after/05-authors-desktop-after.png"
+              alt="After author profile form"
+            />
+          </figure>
+        </div>
+        <div class="after-stack" aria-label="Author advanced state">
+          <figure>
+            <figcaption>
+              After advanced open
+              <a href="after/06-authors-desktop-advanced-open-after.png"
+                >Open</a
+              >
+            </figcaption>
+            <img
+              src="after/06-authors-desktop-advanced-open-after.png"
+              alt="After author advanced media settings open"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Redirect Form</h2>
+            <p class="note">
+              Redirect creation now leads with old path, destination, and
+              status. The optional builder page ID is inside an advanced
+              association disclosure.
+            </p>
+          </div>
+          <span class="status">Fixed</span>
+        </div>
+        <div class="pair">
+          <figure>
+            <figcaption>
+              Before
+              <a href="before/05-redirects-desktop.png">Open</a>
+            </figcaption>
+            <img
+              src="before/05-redirects-desktop.png"
+              alt="Before redirect form"
+            />
+          </figure>
+          <figure>
+            <figcaption>
+              After
+              <a href="after/07-redirects-desktop-after.png">Open</a>
+            </figcaption>
+            <img
+              src="after/07-redirects-desktop-after.png"
+              alt="After redirect form"
+            />
+          </figure>
+        </div>
+        <div class="after-stack" aria-label="Redirect advanced state">
+          <figure>
+            <figcaption>
+              After advanced open
+              <a href="after/08-redirects-desktop-advanced-open-after.png">
+                Open
+              </a>
+            </figcaption>
+            <img
+              src="after/08-redirects-desktop-advanced-open-after.png"
+              alt="After redirect advanced association open"
+            />
+          </figure>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Before captures: /tmp/page-builder-ux-review-2026-06-07. After captures:
+      /tmp/page-builder-ux-review-2026-06-07-after.
+    </footer>
+  </body>
+</html>

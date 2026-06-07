@@ -36,7 +36,7 @@ export function SeoPublishPanel({
       className="fixed top-32 right-4 bottom-4 z-[60] order-3 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:right-auto xl:bottom-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none"
     >
       <SeoPanelHeader editor={editor} />
-      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
+      <div className="shrink-0 space-y-3 border-b border-slate-200 px-4 py-4 sm:px-5">
         <PublishStatusCard editor={editor} />
         <div
           id="publish-next-step"
@@ -45,6 +45,8 @@ export function SeoPublishPanel({
         >
           <NextPublishStepCard step={editor.nextPublishStep} />
         </div>
+      </div>
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
         <SeoMetadataFields editor={editor} />
         <SeoReadinessPanel
           content={editor.content}
