@@ -597,17 +597,15 @@ function PageRow({
         </div>
       </td>
       <td className="px-5 py-3 text-center">
-        <StatusBadge
+        <StatusDot
           label={`SEO readiness: ${readiness.label}`}
           tone={readinessDotTone(readiness.status)}
-          text={readiness.label}
         />
       </td>
       <td className="px-5 py-3 text-center">
-        <StatusBadge
+        <StatusDot
           label={`Page status: ${formatStatus(page.status)}`}
           tone={statusDotTone(page.status)}
-          text={formatStatus(page.status)}
         />
       </td>
       <td className="px-5 py-3 text-right">
@@ -656,16 +654,14 @@ function PageMobileCard({
         <PageActionsMenu page={page} returnTo={returnTo} variant="card" />
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        <StatusBadge
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <StatusDot
           label={`SEO readiness: ${readiness.label}`}
           tone={readinessDotTone(readiness.status)}
-          text={readiness.label}
         />
-        <StatusBadge
+        <StatusDot
           label={`Page status: ${formatStatus(page.status)}`}
           tone={statusDotTone(page.status)}
-          text={formatStatus(page.status)}
         />
       </div>
 
@@ -952,25 +948,22 @@ function formatStatus(status: string) {
 
 type DotTone = "amber" | "blue" | "green" | "red" | "slate";
 
-function StatusBadge({
-  label,
-  tone,
-  text,
-}: {
-  label: string;
-  tone: DotTone;
-  text: string;
-}) {
+function StatusDot({ label, tone }: { label: string; tone: DotTone }) {
   return (
-    <span
-      aria-label={label}
-      className="inline-flex min-h-7 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 shadow-sm"
-    >
+    <span className="group/dot relative inline-flex">
       <span
-        aria-hidden="true"
-        className={`size-2 rounded-full ${dotToneClass(tone)}`}
+        tabIndex={0}
+        aria-label={label}
+        className={`size-2.5 cursor-help rounded-full ${dotToneClass(
+          tone,
+        )} ring-2 ring-transparent hover:ring-slate-200 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none`}
       />
-      {text}
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-[calc(100%+6px)] left-1/2 z-20 hidden -translate-x-1/2 rounded-md bg-slate-900 px-2 py-1 text-xs font-medium whitespace-nowrap text-white shadow-md group-focus-within/dot:block group-hover/dot:block"
+      >
+        {label}
+      </span>
     </span>
   );
 }

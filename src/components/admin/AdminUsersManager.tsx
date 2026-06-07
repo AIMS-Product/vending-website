@@ -20,7 +20,6 @@ import {
   AdminMetricPanel,
   AdminMetricStrip,
   AdminStatusBadge,
-  adminInputClass,
   adminPanelClass,
   adminPrimaryButtonClass,
   adminSecondaryButtonClass,
@@ -76,7 +75,7 @@ export function AdminUsersManager({
           caption="setup needed"
         />
         <AdminMetricPanel
-          icon="settings"
+          icon="crown"
           tone="purple"
           label="Super admins"
           value={superAdminCount}
@@ -100,8 +99,8 @@ export function AdminUsersManager({
 
       <section className={adminPanelClass}>
         <div className="border-b border-slate-200 p-4">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-            <div>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+            <div className="shrink-0 lg:max-w-sm">
               <h2 className="text-base font-semibold text-slate-950">
                 Add user
               </h2>
@@ -132,9 +131,6 @@ export function AdminUsersManager({
                 <th scope="col" className="px-4 py-2.5">
                   Status
                 </th>
-                <th scope="col" className="px-4 py-2.5">
-                  Added
-                </th>
                 <th scope="col" className="px-4 py-2.5 text-right">
                   Actions
                 </th>
@@ -156,7 +152,11 @@ export function AdminUsersManager({
                     </td>
                     <td className="px-4 py-2.5">
                       {canManageUsers ? (
-                        <RoleForm email={user.email} role={user.role} />
+                        <RoleForm
+                          email={user.email}
+                          role={user.role}
+                          saveInActions
+                        />
                       ) : (
                         <span className="font-medium text-slate-700">
                           {roleLabel(user.role)}
@@ -166,12 +166,10 @@ export function AdminUsersManager({
                     <td className="px-4 py-2.5">
                       <AdminStatusBadge status={user.status} />
                     </td>
-                    <td className="px-4 py-2.5 text-slate-600">
-                      {formatDate(user.addedAt)}
-                    </td>
                     <td className="px-4 py-2.5">
                       {canManageUsers ? (
                         <div className="flex items-center justify-end gap-1.5">
+                          <RoleFormSaveButton email={user.email} />
                           <ResendSetupForm
                             email={user.email}
                             pending={user.status === "pending_setup"}
@@ -189,7 +187,7 @@ export function AdminUsersManager({
               ) : (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={4}
                     className="px-4 py-8 text-center text-sm text-slate-500"
                   >
                     No admin users yet.
@@ -287,21 +285,13 @@ function UsersMobileList({
               </div>
               <AdminStatusBadge status={user.status} />
             </div>
-            <dl className="grid grid-cols-2 gap-2 text-sm">
+            <dl className="text-sm">
               <div>
                 <dt className="text-xs font-semibold tracking-normal text-slate-500 uppercase">
                   Role
                 </dt>
                 <dd className="mt-1 font-medium text-slate-700">
                   {roleLabel(user.role)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs font-semibold tracking-normal text-slate-500 uppercase">
-                  Added
-                </dt>
-                <dd className="mt-1 text-slate-600">
-                  {formatDate(user.addedAt)}
                 </dd>
               </div>
             </dl>
@@ -329,67 +319,101 @@ function UsersMobileList({
   );
 }
 
+const inviteControlClass =
+  "box-border h-11 w-full min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm leading-none text-slate-950 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15 disabled:cursor-not-allowed disabled:opacity-50";
+
 function InviteUserForm({ disabled }: { disabled: boolean }) {
   const [state, formAction] = useActionState(inviteUser, initialState);
   return (
-    <form
-      action={formAction}
-      className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_auto] xl:w-auto"
-    >
-      <label className="sr-only" htmlFor="invite-email">
-        User email
-      </label>
-      <input
-        id="invite-email"
-        name="email"
-        type="email"
-        required
-        disabled={disabled}
-        placeholder="admin@example.com"
-        className={`${adminInputClass} mt-0`}
-      />
-      <label className="sr-only" htmlFor="invite-role">
-        User role
-      </label>
-      <select
-        id="invite-role"
-        name="role"
-        defaultValue="admin"
-        disabled={disabled}
-        className={`${adminInputClass} mt-0`}
-      >
-        <option value="admin">Admin</option>
-        <option value="super_admin">Super admin</option>
-      </select>
-      <SubmitButton disabled={disabled} label="Invite user" icon="plus" />
-      <ActionMessage state={state} className="sm:col-span-3" />
-    </form>
-  );
-}
-
-function RoleForm({ email, role }: { email: string; role: AppUserRole }) {
-  const [state, formAction] = useActionState(changeUserRole, initialState);
-  return (
-    <form action={formAction} className="grid gap-1.5">
-      <input type="hidden" name="email" value={email} />
-      <div className="flex items-center gap-1.5">
+    <form action={formAction} className="w-full min-w-0 lg:max-w-3xl lg:flex-1">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-center">
+        <input
+          id="invite-email"
+          name="email"
+          type="email"
+          required
+          disabled={disabled}
+          aria-label="User email"
+          placeholder="admin@example.com"
+          className={inviteControlClass}
+        />
         <select
+          id="invite-role"
           name="role"
-          defaultValue={role}
-          aria-label={`Role for ${email}`}
-          className="h-8 rounded-md border border-slate-200 bg-white px-2 text-sm font-medium text-slate-700 shadow-sm focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15 focus:outline-none"
+          defaultValue="admin"
+          disabled={disabled}
+          aria-label="User role"
+          className={inviteControlClass}
         >
           <option value="admin">Admin</option>
           <option value="super_admin">Super admin</option>
         </select>
-        <IconSubmitButton
-          icon="save"
-          label={`Save role for ${email}`}
-          title="Save role"
+        <SubmitButton
+          disabled={disabled}
+          label="Invite user"
+          icon="plus"
+          className="h-11 w-full whitespace-nowrap sm:w-auto"
         />
       </div>
+      <ActionMessage state={state} className="mt-2" />
+    </form>
+  );
+}
+
+function roleFormId(email: string) {
+  return `role-form-${email.replace(/[^a-z0-9]+/gi, "-")}`;
+}
+
+function RoleForm({
+  email,
+  role,
+  saveInActions = false,
+}: {
+  email: string;
+  role: AppUserRole;
+  saveInActions?: boolean;
+}) {
+  const [state, formAction] = useActionState(changeUserRole, initialState);
+  const roleSelect = (
+    <select
+      name="role"
+      defaultValue={role}
+      aria-label={`Role for ${email}`}
+      className="h-8 rounded-md border border-slate-200 bg-white px-2 text-sm font-medium text-slate-700 shadow-sm focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15 focus:outline-none"
+    >
+      <option value="admin">Admin</option>
+      <option value="super_admin">Super admin</option>
+    </select>
+  );
+
+  return (
+    <form id={roleFormId(email)} action={formAction} className="grid gap-1.5">
+      <input type="hidden" name="email" value={email} />
+      {saveInActions ? (
+        roleSelect
+      ) : (
+        <div className="flex items-center gap-1.5">
+          {roleSelect}
+          <IconSubmitButton
+            icon="save"
+            label={`Save role for ${email}`}
+            title="Save role"
+          />
+        </div>
+      )}
       <ActionMessage state={state} />
     </form>
+  );
+}
+
+function RoleFormSaveButton({ email }: { email: string }) {
+  return (
+    <IconSubmitButton
+      form={roleFormId(email)}
+      icon="save"
+      label={`Save role for ${email}`}
+      title="Save role"
+    />
   );
 }
 
@@ -522,17 +546,19 @@ function SubmitButton({
   disabled,
   label,
   icon,
+  className = "",
 }: {
   disabled?: boolean;
   label: string;
   icon?: "plus";
+  className?: string;
 }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={disabled || pending}
-      className={adminPrimaryButtonClass}
+      className={`${adminPrimaryButtonClass} ${className}`.trim()}
     >
       {icon ? (
         <span aria-hidden="true">
@@ -549,20 +575,24 @@ function IconSubmitButton({
   title,
   icon,
   tone = "default",
+  form,
 }: {
   label: string;
   title: string;
   icon: "mail" | "save";
   tone?: "default" | "danger";
+  form?: string;
 }) {
   const { pending } = useFormStatus();
-  const buttonLabel = pending ? "Working..." : label;
+  const isPending = form ? false : pending;
+  const buttonLabel = isPending ? "Working..." : label;
   return (
     <button
       type="submit"
-      disabled={pending}
+      form={form}
+      disabled={isPending}
       aria-label={buttonLabel}
-      title={pending ? "Working..." : title}
+      title={isPending ? "Working..." : title}
       className={`inline-flex size-8 items-center justify-center rounded-md shadow-sm transition focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
         tone === "danger"
           ? "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-200"

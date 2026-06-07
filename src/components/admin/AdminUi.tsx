@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 export type AdminIconName =
   | "archive"
   | "check"
+  | "crown"
   | "file"
   | "filter"
   | "image"
@@ -130,6 +131,13 @@ export function AdminIcon({ icon }: { icon: AdminIconName }) {
           <path d="m8.8 12.2 2 2 4.4-4.6" />
         </svg>
       );
+    case "crown":
+      return (
+        <svg {...common}>
+          <path d="M4 18h16" />
+          <path d="M6 18V11l3 2.5L12 8l3 4.5L18 11v7" />
+        </svg>
+      );
     case "file":
       return (
         <svg {...common}>
@@ -229,8 +237,15 @@ export function AdminIcon({ icon }: { icon: AdminIconName }) {
     case "settings":
       return (
         <svg {...common}>
-          <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
-          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1-2 3.4-.2-.1a1.8 1.8 0 0 0-1.8-.2 1.7 1.7 0 0 0-1 1.4v.2h-4v-.2a1.7 1.7 0 0 0-1-1.4 1.8 1.8 0 0 0-1.8.2l-.2.1-2-3.4.1-.1A1.7 1.7 0 0 0 6.2 15a1.7 1.7 0 0 0-1.4-1H4.6v-4h.2a1.7 1.7 0 0 0 1.4-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1 2-3.4.2.1a1.8 1.8 0 0 0 1.8.2 1.7 1.7 0 0 0 1-1.4v-.2h4v.2a1.7 1.7 0 0 0 1 1.4 1.8 1.8 0 0 0 1.8-.2l.2-.1 2 3.4-.1.1A1.7 1.7 0 0 0 17.8 9a1.7 1.7 0 0 0 1.4 1h.2v4h-.2a1.7 1.7 0 0 0-1.4 1Z" />
+          <circle cx="12" cy="12" r="3.25" />
+          <path d="M12 2v2.5" />
+          <path d="M12 19.5V22" />
+          <path d="M2 12h2.5" />
+          <path d="M19.5 12H22" />
+          <path d="m4.9 4.9 1.8 1.8" />
+          <path d="m17.3 17.3 1.8 1.8" />
+          <path d="m4.9 19.1 1.8-1.8" />
+          <path d="m17.3 6.7 1.8-1.8" />
         </svg>
       );
     case "shield":
