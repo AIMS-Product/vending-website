@@ -103,7 +103,7 @@ const richTextNodeSchema = z.union([
   z
     .object({
       type: z.literal("heading"),
-      level: z.union([z.literal(2), z.literal(3)]),
+      level: z.union([z.literal(2), z.literal(3), z.literal(4)]),
       text: z.string().trim().max(180),
     })
     .strict(),
@@ -214,6 +214,15 @@ const videoBlockSchema = z
         assetId: z.uuid().optional(),
         title: optionalTrimmedText(140),
         url: safeHrefSchema,
+        thumbnailAssetId: z.uuid().optional(),
+        thumbnailSrc: z
+          .string()
+          .trim()
+          .refine((value) => value.length === 0 || isSafeMediaSource(value), {
+            message: "Use an internal path or an http(s) media URL.",
+          })
+          .optional(),
+        thumbnailAltText: z.string().trim().max(180).optional(),
         caption: optionalTrimmedText(240),
         fieldVisibility: blockFieldVisibilitySchema,
       })
@@ -442,6 +451,8 @@ export const blockRegistry = {
     defaultProps: {
       title: "",
       url: "",
+      thumbnailSrc: "",
+      thumbnailAltText: "",
       caption: "",
     },
   },

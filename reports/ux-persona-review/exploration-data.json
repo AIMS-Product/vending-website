@@ -1,0 +1,1821 @@
+[
+  {
+    "slug": "pages-list",
+    "url": "http://localhost:3000/admin/pages",
+    "name": "Pages List",
+    "status": "OK",
+    "console": [],
+    "network": [],
+    "shots": [
+      "pages-list-001-load.png",
+      "pages-list-002-mobile.png",
+      "pages-list-003-tablet.png"
+    ],
+    "inventory": {
+      "buttons": [
+        {
+          "text": "Collapse sidebar",
+          "disabled": false
+        },
+        {
+          "text": "Sign out",
+          "disabled": false
+        },
+        {
+          "text": "Search",
+          "disabled": false
+        },
+        {
+          "text": "Duplicate page",
+          "disabled": false
+        },
+        {
+          "text": "Publish page",
+          "disabled": false
+        },
+        {
+          "text": "Archive page",
+          "disabled": false
+        }
+      ],
+      "links": [
+        {
+          "text": "SEO pages: SEO page content",
+          "href": "/admin/pages"
+        },
+        {
+          "text": "Media library: Images and source assets",
+          "href": "/admin/media"
+        },
+        {
+          "text": "Settings: Users and access",
+          "href": "/admin/settings/users"
+        },
+        {
+          "text": "Authors",
+          "href": "/admin/pages/authors"
+        },
+        {
+          "text": "Redirects",
+          "href": "/admin/pages/redirects"
+        },
+        {
+          "text": "New SEO page",
+          "href": "/admin/pages/new"
+        },
+        {
+          "text": "All1drafts + published",
+          "href": "/admin/pages"
+        },
+        {
+          "text": "Drafts1needs work",
+          "href": "/admin/pages?status=draft"
+        },
+        {
+          "text": "Published0publicly visible",
+          "href": "/admin/pages?status=published"
+        },
+        {
+          "text": "Archived5retired",
+          "href": "/admin/pages?status=archived"
+        },
+        {
+          "text": "All",
+          "href": "/admin/pages"
+        },
+        {
+          "text": "Drafts",
+          "href": "/admin/pages?status=draft"
+        },
+        {
+          "text": "Published",
+          "href": "/admin/pages?status=published"
+        },
+        {
+          "text": "Archived",
+          "href": "/admin/pages?status=archived"
+        },
+        {
+          "text": "Updated newest",
+          "href": "/admin/pages"
+        },
+        {
+          "text": "Updated oldest",
+          "href": "/admin/pages?sort=updated-asc"
+        },
+        {
+          "text": "Published newest",
+          "href": "/admin/pages?sort=published-desc"
+        },
+        {
+          "text": "Title A-Z",
+          "href": "/admin/pages?sort=title-asc"
+        },
+        {
+          "text": "All metadata",
+          "href": "/admin/pages"
+        },
+        {
+          "text": "Needs review",
+          "href": "/admin/pages?view=needs-review"
+        },
+        {
+          "text": "Updating",
+          "href": "/admin/pages?view=updating"
+        },
+        {
+          "text": "Needs links",
+          "href": "/admin/pages?view=orphaned"
+        },
+        {
+          "text": "Metadata issues",
+          "href": "/admin/pages?view=metadata-issues"
+        },
+        {
+          "text": "Scheduled",
+          "href": "/admin/pages?view=scheduled"
+        },
+        {
+          "text": "Schedule failed",
+          "href": "/admin/pages?view=schedule-failed"
+        },
+        {
+          "text": "Vending in Colleges",
+          "href": "/admin/pages/f7eb8024-bbba-42d9-8b13-932e337f7e32"
+        },
+        {
+          "text": "Edit page",
+          "href": "/admin/pages/f7eb8024-bbba-42d9-8b13-932e337f7e32"
+        }
+      ],
+      "inputs": [
+        {
+          "type": "text",
+          "name": "q",
+          "label": "Search SEO pages",
+          "placeholder": "Search title, keyword, or URL",
+          "required": false
+        }
+      ],
+      "headings": [
+        {
+          "level": "H2",
+          "text": "Studio"
+        },
+        {
+          "level": "H1",
+          "text": "SEO pages"
+        }
+      ],
+      "counts": {
+        "buttons": 6,
+        "links": 27,
+        "inputs": 1
+      }
+    },
+    "interactions": [],
+    "skips": [
+      {
+        "element": "Sign out",
+        "reason": "destructive/external — screenshotted not clicked"
+      },
+      {
+        "element": "Sign out",
+        "reason": "destructive/external — screenshotted not clicked"
+      }
+    ],
+    "notes": [],
+    "httpStatus": 200
+  },
+  {
+    "slug": "pages-new",
+    "url": "http://localhost:3000/admin/pages/new",
+    "name": "Create New Page",
+    "form": true,
+    "status": "OK",
+    "console": [],
+    "network": [],
+    "shots": [
+      "pages-new-004-load.png",
+      "pages-new-005-form-filled.png",
+      "pages-new-006-mobile.png",
+      "pages-new-007-tablet.png"
+    ],
+    "inventory": {
+      "buttons": [
+        {
+          "text": "SEO / Resource pageLong-form search page for resources, guides, and services.",
+          "disabled": false
+        },
+        {
+          "text": "Blog pageArticle-style page with a strong introduction and CTA.",
+          "disabled": false
+        },
+        {
+          "text": "Landing pageCampaign page for a focused offer or conversion path.",
+          "disabled": false
+        },
+        {
+          "text": "Video pageVideo-led page with supporting copy and conversion blocks.",
+          "disabled": false
+        },
+        {
+          "text": "Blank pageStart with an empty editable canvas.",
+          "disabled": false
+        },
+        {
+          "text": "Resource defaultHero, supporting copy, proof, FAQ, and CTA.",
+          "disabled": false
+        },
+        {
+          "text": "Start building",
+          "disabled": false
+        },
+        {
+          "text": "From templateComing soonUse a team-approved saved template.",
+          "disabled": true
+        },
+        {
+          "text": "AI-assisted templateComing soonUse an approved template from the SEO agent.",
+          "disabled": true
+        }
+      ],
+      "links": [],
+      "inputs": [],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "New SEO page"
+        },
+        {
+          "level": "H2",
+          "text": "Create page"
+        },
+        {
+          "level": "H3",
+          "text": "Page type"
+        },
+        {
+          "level": "H3",
+          "text": "Starting point"
+        }
+      ],
+      "counts": {
+        "buttons": 9,
+        "links": 0,
+        "inputs": 0
+      }
+    },
+    "interactions": [],
+    "skips": [],
+    "notes": [
+      "Form filled with test data; submission intentionally NOT performed to avoid creating orphan seed pages (creation flow reviewed visually)."
+    ],
+    "httpStatus": 200
+  },
+  {
+    "slug": "pages-editor",
+    "url": "http://localhost:3000/admin/pages/f7eb8024-bbba-42d9-8b13-932e337f7e32",
+    "name": "Page Builder Editor",
+    "editor": true,
+    "status": "OK",
+    "console": [],
+    "network": [],
+    "shots": [
+      "pages-editor-008-load.png",
+      "pages-editor-017-mobile.png",
+      "pages-editor-018-tablet.png"
+    ],
+    "inventory": {
+      "buttons": [
+        {
+          "text": "Collapse blocks sidebar",
+          "disabled": false
+        },
+        {
+          "text": "Save draft",
+          "disabled": false
+        },
+        {
+          "text": "Live preview",
+          "disabled": false
+        },
+        {
+          "text": "Copy editor linkEditor link",
+          "disabled": false
+        },
+        {
+          "text": "Copy public URLPublic URL",
+          "disabled": false
+        },
+        {
+          "text": "Collapse SEO sidebar",
+          "disabled": false
+        },
+        {
+          "text": "Hero1. Vending in Colleges That Works Around Campus LifeSection 1, column 1",
+          "disabled": false
+        },
+        {
+          "text": "Edit Hero settings",
+          "disabled": false
+        },
+        {
+          "text": "Rich text2. Campus image placeholderSection 1, column 1",
+          "disabled": false
+        },
+        {
+          "text": "Edit Rich text settings",
+          "disabled": false
+        },
+        {
+          "text": "Rich text3. A smarter way to serve your campus communitySection 2, column 1",
+          "disabled": false
+        },
+        {
+          "text": "Edit Rich text settings",
+          "disabled": false
+        },
+        {
+          "text": "Card grid4. Vending options for collegesSection 3, column 1",
+          "disabled": false
+        },
+        {
+          "text": "Edit Card grid settings",
+          "disabled": false
+        },
+        {
+          "text": "Rich text5. Designed around your site, students, and scheduleSection 4, column 1",
+          "disabled": false
+        },
+        {
+          "text": "Edit Rich text settings",
+          "disabled": false
+        },
+        {
+          "text": "FAQ6. Vending in colleges: FAQsSection 5, column 1",
+          "disabled": false
+        },
+        {
+          "text": "Edit FAQ settings",
+          "disabled": false
+        },
+        {
+          "text": "CTA7. Book a vending consultationSection 6, column 1",
+          "disabled": false
+        },
+        {
+          "text": "Edit CTA settings",
+          "disabled": false
+        },
+        {
+          "text": "Move section 1",
+          "disabled": false
+        },
+        {
+          "text": "Section and block actions",
+          "disabled": false
+        },
+        {
+          "text": "Hide eyebrow",
+          "disabled": false
+        },
+        {
+          "text": "Hide body",
+          "disabled": false
+        },
+        {
+          "text": "Hide cta",
+          "disabled": false
+        },
+        {
+          "text": "Move Page content 2",
+          "disabled": false
+        },
+        {
+          "text": "Block actions",
+          "disabled": false
+        },
+        {
+          "text": "Show eyebrow",
+          "disabled": false
+        },
+        {
+          "text": "Hide heading",
+          "disabled": false
+        },
+        {
+          "text": "Add page content",
+          "disabled": false
+        },
+        {
+          "text": "Move section 2",
+          "disabled": false
+        },
+        {
+          "text": "Section and block actions",
+          "disabled": false
+        },
+        {
+          "text": "Show eyebrow",
+          "disabled": false
+        },
+        {
+          "text": "Hide heading",
+          "disabled": false
+        },
+        {
+          "text": "Add page content",
+          "disabled": false
+        },
+        {
+          "text": "Move section 3",
+          "disabled": false
+        },
+        {
+          "text": "Section and block actions",
+          "disabled": false
+        },
+        {
+          "text": "Hide heading",
+          "disabled": false
+        },
+        {
+          "text": "Up",
+          "disabled": true
+        },
+        {
+          "text": "Down",
+          "disabled": false
+        },
+        {
+          "text": "Remove",
+          "disabled": false
+        },
+        {
+          "text": "Edit optional link for card 1",
+          "disabled": false
+        },
+        {
+          "text": "Up",
+          "disabled": false
+        },
+        {
+          "text": "Down",
+          "disabled": false
+        },
+        {
+          "text": "Remove",
+          "disabled": false
+        },
+        {
+          "text": "Edit optional link for card 2",
+          "disabled": false
+        },
+        {
+          "text": "Up",
+          "disabled": false
+        },
+        {
+          "text": "Down",
+          "disabled": false
+        },
+        {
+          "text": "Remove",
+          "disabled": false
+        },
+        {
+          "text": "Edit optional link for card 3",
+          "disabled": false
+        },
+        {
+          "text": "Up",
+          "disabled": false
+        },
+        {
+          "text": "Down",
+          "disabled": true
+        },
+        {
+          "text": "Remove",
+          "disabled": false
+        },
+        {
+          "text": "Edit optional link for card 4",
+          "disabled": false
+        },
+        {
+          "text": "Add card",
+          "disabled": false
+        },
+        {
+          "text": "Add page content",
+          "disabled": false
+        },
+        {
+          "text": "Move section 4",
+          "disabled": false
+        },
+        {
+          "text": "Section and block actions",
+          "disabled": false
+        },
+        {
+          "text": "Show eyebrow",
+          "disabled": false
+        },
+        {
+          "text": "Hide heading",
+          "disabled": false
+        },
+        {
+          "text": "Add page content",
+          "disabled": false
+        },
+        {
+          "text": "Move section 5",
+          "disabled": false
+        },
+        {
+          "text": "Section and block actions",
+          "disabled": false
+        },
+        {
+          "text": "Hide heading",
+          "disabled": false
+        },
+        {
+          "text": "Remove",
+          "disabled": false
+        },
+        {
+          "text": "Remove",
+          "disabled": false
+        },
+        {
+          "text": "Remove",
+          "disabled": false
+        },
+        {
+          "text": "Remove",
+          "disabled": false
+        },
+        {
+          "text": "Add FAQ",
+          "disabled": false
+        },
+        {
+          "text": "Add page content",
+          "disabled": false
+        },
+        {
+          "text": "Move section 6",
+          "disabled": false
+        },
+        {
+          "text": "Section and block actions",
+          "disabled": false
+        },
+        {
+          "text": "Add page content",
+          "disabled": false
+        },
+        {
+          "text": "Add image",
+          "disabled": false
+        },
+        {
+          "text": "Publish",
+          "disabled": false
+        },
+        {
+          "text": "Open AI assistant",
+          "disabled": false
+        },
+        {
+          "text": "Refresh libraries",
+          "disabled": false
+        },
+        {
+          "text": "Create preview link",
+          "disabled": false
+        },
+        {
+          "text": "Revoke",
+          "disabled": false
+        },
+        {
+          "text": "Revoke",
+          "disabled": false
+        },
+        {
+          "text": "Revoke",
+          "disabled": false
+        },
+        {
+          "text": "Add comment",
+          "disabled": false
+        }
+      ],
+      "links": [
+        {
+          "text": "Pages",
+          "href": "/admin/pages"
+        },
+        {
+          "text": "Go back to dashboard",
+          "href": "/admin/pages"
+        },
+        {
+          "text": "Step inside",
+          "href": "/apply"
+        },
+        {
+          "text": "Open full media library",
+          "href": "/admin/media"
+        },
+        {
+          "text": "Open content libraries",
+          "href": "/admin/libraries"
+        }
+      ],
+      "inputs": [
+        {
+          "type": "checkbox",
+          "name": "",
+          "label": "Show header",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "checkbox",
+          "name": "",
+          "label": "Show footer",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Eyebrow",
+          "placeholder": "Eyebrow",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "",
+          "label": "Heading",
+          "placeholder": "Hero headline",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "block_1780293223024_84211c-hero-body",
+          "label": "Body",
+          "placeholder": "Hero body copy",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "CTA label",
+          "placeholder": "CTA label",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Eyebrow",
+          "placeholder": "Eyebrow",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Heading",
+          "placeholder": "Section heading",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "",
+          "label": "Body",
+          "placeholder": "Write the page copy here.",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Eyebrow",
+          "placeholder": "Eyebrow",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Heading",
+          "placeholder": "Section heading",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "",
+          "label": "Body",
+          "placeholder": "Write the page copy here.",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Heading",
+          "placeholder": "Card grid heading",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Card title",
+          "placeholder": "Card title",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "",
+          "label": "Card body",
+          "placeholder": "Card body",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Card title",
+          "placeholder": "Card title",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "",
+          "label": "Card body",
+          "placeholder": "Card body",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Card title",
+          "placeholder": "Card title",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "",
+          "label": "Card body",
+          "placeholder": "Card body",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Card title",
+          "placeholder": "Card title",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "",
+          "label": "Card body",
+          "placeholder": "Card body",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Eyebrow",
+          "placeholder": "Eyebrow",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Heading",
+          "placeholder": "Section heading",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "",
+          "label": "Body",
+          "placeholder": "Write the page copy here.",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Heading",
+          "placeholder": "FAQ heading",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Question",
+          "placeholder": "Question",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "",
+          "label": "Answer",
+          "placeholder": "Answer",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Question",
+          "placeholder": "Question",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "",
+          "label": "Answer",
+          "placeholder": "Answer",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Question",
+          "placeholder": "Question",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "",
+          "label": "Answer",
+          "placeholder": "Answer",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "Question",
+          "placeholder": "Question",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "",
+          "label": "Answer",
+          "placeholder": "Answer",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "",
+          "label": "CTA label",
+          "placeholder": "CTA label",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "title",
+          "label": "Page title",
+          "placeholder": "Internal page title and SEO fallback",
+          "required": true
+        },
+        {
+          "type": "select",
+          "name": "routePrefix",
+          "label": "Route prefix",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "slug",
+          "label": "Slug",
+          "placeholder": "page-slug",
+          "required": true
+        },
+        {
+          "type": "text",
+          "name": "targetKeyword",
+          "label": "Target keyword",
+          "placeholder": "e.g. vending machine business",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "seoTitle",
+          "label": "SEO title",
+          "placeholder": "Leave blank to use page headline",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "metaDescription",
+          "label": "Meta description",
+          "placeholder": "Search result summary for this page.",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "canonicalUrl",
+          "label": "Preferred URL",
+          "placeholder": "https://...",
+          "required": false
+        },
+        {
+          "type": "checkbox",
+          "name": "noindex",
+          "label": "Hide from search engines",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "checkbox",
+          "name": "sitemapEnabled",
+          "label": "Include in sitemap",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "checkbox",
+          "name": "structuredDataBreadcrumb",
+          "label": "Breadcrumb trail",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "checkbox",
+          "name": "structuredDataFaq",
+          "label": "Visible FAQs",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "internalTags",
+          "label": "Internal tags",
+          "placeholder": "cluster, campaign, funnel",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "topicCluster",
+          "label": "Topic cluster",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "campaignLabel",
+          "label": "Campaign",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "funnelStage",
+          "label": "Funnel stage",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "select",
+          "name": "lifecycleStatus",
+          "label": "Lifecycle",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "select",
+          "name": "reviewPeriodMonths",
+          "label": "Review period",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "date",
+          "name": "nextReviewAt",
+          "label": "Next review",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "ogTitle",
+          "label": "Social title",
+          "placeholder": "Leave blank to use SEO title",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "ogDescription",
+          "label": "Social description",
+          "placeholder": "Leave blank to use meta description",
+          "required": false
+        },
+        {
+          "type": "datetime-local",
+          "name": "scheduledPublishAt",
+          "label": "Scheduled publish",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "publishNote",
+          "label": "Optional summary for this version",
+          "placeholder": "Optional summary for this version",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "blockId",
+          "label": "Optional block ID",
+          "placeholder": "Optional block ID",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "body",
+          "label": "Add an internal note",
+          "placeholder": "Add an internal note",
+          "required": true
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Edit SEO page"
+        },
+        {
+          "level": "H2",
+          "text": "Page structure"
+        },
+        {
+          "level": "H3",
+          "text": "Builder outline"
+        },
+        {
+          "level": "H2",
+          "text": "Readiness and publish"
+        },
+        {
+          "level": "H3",
+          "text": "Ready to publish"
+        },
+        {
+          "level": "H3",
+          "text": "Search Preview"
+        },
+        {
+          "level": "H3",
+          "text": "Action Items"
+        },
+        {
+          "level": "H3",
+          "text": "Builder support"
+        },
+        {
+          "level": "H2",
+          "text": "Revision history"
+        },
+        {
+          "level": "H2",
+          "text": "Draft preview"
+        },
+        {
+          "level": "H2",
+          "text": "Governance comments"
+        }
+      ],
+      "counts": {
+        "buttons": 82,
+        "links": 5,
+        "inputs": 58
+      }
+    },
+    "interactions": [
+      {
+        "element": "Blocks",
+        "result": "clicked",
+        "shot": "pages-editor-009-click-blocks.png"
+      },
+      {
+        "element": "Save draft",
+        "result": "clicked",
+        "shot": "pages-editor-010-click-save-draft.png"
+      },
+      {
+        "element": "Live preview",
+        "result": "clicked",
+        "shot": "pages-editor-011-click-live-preview.png"
+      },
+      {
+        "element": "Copy editor linkEditor link",
+        "result": "clicked",
+        "shot": "pages-editor-012-click-copy-editor-linkeditor-l.png"
+      },
+      {
+        "element": "Copy public URLPublic URL",
+        "result": "clicked",
+        "shot": "pages-editor-013-click-copy-public-urlpublic-ur.png"
+      },
+      {
+        "element": "SEO",
+        "result": "clicked",
+        "shot": "pages-editor-014-click-seo.png"
+      },
+      {
+        "element": "Add page content",
+        "result": "clicked",
+        "shot": "pages-editor-015-click-add-page-content.png"
+      },
+      {
+        "element": "Add page content",
+        "result": "clicked",
+        "shot": "pages-editor-016-click-add-page-content.png"
+      }
+    ],
+    "skips": [],
+    "notes": [],
+    "httpStatus": 200
+  },
+  {
+    "slug": "pages-authors",
+    "url": "http://localhost:3000/admin/pages/authors",
+    "name": "Authors",
+    "status": "OK",
+    "console": [],
+    "network": [],
+    "shots": [
+      "pages-authors-019-load.png",
+      "pages-authors-021-mobile.png",
+      "pages-authors-022-tablet.png"
+    ],
+    "inventory": {
+      "buttons": [
+        {
+          "text": "Collapse sidebar",
+          "disabled": false
+        },
+        {
+          "text": "Sign out",
+          "disabled": false
+        },
+        {
+          "text": "Create author",
+          "disabled": false
+        }
+      ],
+      "links": [
+        {
+          "text": "SEO pages: SEO page content",
+          "href": "/admin/pages"
+        },
+        {
+          "text": "Media library: Images and source assets",
+          "href": "/admin/media"
+        },
+        {
+          "text": "Settings: Users and access",
+          "href": "/admin/settings/users"
+        },
+        {
+          "text": "Back to pages",
+          "href": "/admin/pages"
+        }
+      ],
+      "inputs": [
+        {
+          "type": "text",
+          "name": "displayName",
+          "label": "",
+          "placeholder": "",
+          "required": true
+        },
+        {
+          "type": "text",
+          "name": "slug",
+          "label": "",
+          "placeholder": "",
+          "required": true
+        },
+        {
+          "type": "text",
+          "name": "roleTitle",
+          "label": "",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "avatarAssetId",
+          "label": "",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "textarea",
+          "name": "bio",
+          "label": "",
+          "placeholder": "",
+          "required": false
+        }
+      ],
+      "headings": [
+        {
+          "level": "H2",
+          "text": "Studio"
+        },
+        {
+          "level": "H1",
+          "text": "Author Profiles"
+        }
+      ],
+      "counts": {
+        "buttons": 3,
+        "links": 4,
+        "inputs": 5
+      }
+    },
+    "interactions": [
+      {
+        "element": "Create author",
+        "result": "clicked",
+        "shot": "pages-authors-020-click-create-author.png"
+      }
+    ],
+    "skips": [
+      {
+        "element": "Sign out",
+        "reason": "destructive/external — screenshotted not clicked"
+      },
+      {
+        "element": "Sign out",
+        "reason": "destructive/external — screenshotted not clicked"
+      }
+    ],
+    "notes": [],
+    "httpStatus": 200
+  },
+  {
+    "slug": "pages-redirects",
+    "url": "http://localhost:3000/admin/pages/redirects",
+    "name": "Redirects",
+    "status": "OK",
+    "console": [],
+    "network": [],
+    "shots": [
+      "pages-redirects-023-load.png",
+      "pages-redirects-025-mobile.png",
+      "pages-redirects-026-tablet.png"
+    ],
+    "inventory": {
+      "buttons": [
+        {
+          "text": "Collapse sidebar",
+          "disabled": false
+        },
+        {
+          "text": "Sign out",
+          "disabled": false
+        },
+        {
+          "text": "Create redirect",
+          "disabled": false
+        }
+      ],
+      "links": [
+        {
+          "text": "SEO pages: SEO page content",
+          "href": "/admin/pages"
+        },
+        {
+          "text": "Media library: Images and source assets",
+          "href": "/admin/media"
+        },
+        {
+          "text": "Settings: Users and access",
+          "href": "/admin/settings/users"
+        },
+        {
+          "text": "Back to pages",
+          "href": "/admin/pages"
+        }
+      ],
+      "inputs": [
+        {
+          "type": "text",
+          "name": "sourcePath",
+          "label": "/resources/old-page",
+          "placeholder": "/resources/old-page",
+          "required": true
+        },
+        {
+          "type": "text",
+          "name": "destinationPath",
+          "label": "/blog/new-page",
+          "placeholder": "/blog/new-page",
+          "required": true
+        },
+        {
+          "type": "select",
+          "name": "statusCode",
+          "label": "301 permanent302 temporary307 temporary308 permanent",
+          "placeholder": "",
+          "required": false
+        },
+        {
+          "type": "text",
+          "name": "pageId",
+          "label": "Optional",
+          "placeholder": "Optional",
+          "required": false
+        }
+      ],
+      "headings": [
+        {
+          "level": "H2",
+          "text": "Studio"
+        },
+        {
+          "level": "H1",
+          "text": "Redirect Manager"
+        }
+      ],
+      "counts": {
+        "buttons": 3,
+        "links": 4,
+        "inputs": 4
+      }
+    },
+    "interactions": [
+      {
+        "element": "Create redirect",
+        "result": "clicked",
+        "shot": "pages-redirects-024-click-create-redirect.png"
+      }
+    ],
+    "skips": [
+      {
+        "element": "Sign out",
+        "reason": "destructive/external — screenshotted not clicked"
+      },
+      {
+        "element": "Sign out",
+        "reason": "destructive/external — screenshotted not clicked"
+      }
+    ],
+    "notes": [],
+    "httpStatus": 200
+  },
+  {
+    "slug": "pages-block-audit",
+    "url": "http://localhost:3000/admin/pages/block-preview-audit",
+    "name": "Block Preview Audit",
+    "status": "OK",
+    "console": [],
+    "network": [],
+    "shots": [
+      "pages-block-audit-027-load.png",
+      "pages-block-audit-028-mobile.png",
+      "pages-block-audit-029-tablet.png"
+    ],
+    "inventory": {
+      "buttons": [
+        {
+          "text": "Collapse sidebar",
+          "disabled": false
+        },
+        {
+          "text": "Sign out",
+          "disabled": false
+        }
+      ],
+      "links": [
+        {
+          "text": "SEO pages: SEO page content",
+          "href": "/admin/pages"
+        },
+        {
+          "text": "Media library: Images and source assets",
+          "href": "/admin/media"
+        },
+        {
+          "text": "Settings: Users and access",
+          "href": "/admin/settings/users"
+        }
+      ],
+      "inputs": [],
+      "headings": [
+        {
+          "level": "H2",
+          "text": "Studio"
+        },
+        {
+          "level": "H1",
+          "text": "Block preview audit"
+        },
+        {
+          "level": "H2",
+          "text": "Standard hero"
+        },
+        {
+          "level": "H1",
+          "text": "Launch a vending route with a proven plan"
+        },
+        {
+          "level": "H1",
+          "text": "Launch a vending route with a proven plan"
+        },
+        {
+          "level": "H2",
+          "text": "Split hero"
+        },
+        {
+          "level": "H1",
+          "text": "Launch a vending route with a proven plan"
+        },
+        {
+          "level": "H1",
+          "text": "Launch a vending route with a proven plan"
+        },
+        {
+          "level": "H2",
+          "text": "Compact hero"
+        },
+        {
+          "level": "H1",
+          "text": "Launch a vending route with a proven plan"
+        },
+        {
+          "level": "H1",
+          "text": "Launch a vending route with a proven plan"
+        },
+        {
+          "level": "H2",
+          "text": "Editorial hero"
+        },
+        {
+          "level": "H1",
+          "text": "Build a profitable route with fewer wrong turns"
+        },
+        {
+          "level": "H1",
+          "text": "Build a profitable route with fewer wrong turns"
+        },
+        {
+          "level": "H2",
+          "text": "Standard text"
+        },
+        {
+          "level": "H2",
+          "text": "Write structured page copy"
+        },
+        {
+          "level": "H2",
+          "text": "Write structured page copy"
+        },
+        {
+          "level": "H2",
+          "text": "Intro text"
+        },
+        {
+          "level": "H2",
+          "text": "Write structured page copy"
+        },
+        {
+          "level": "H2",
+          "text": "Write structured page copy"
+        },
+        {
+          "level": "H2",
+          "text": "Compact text"
+        },
+        {
+          "level": "H2",
+          "text": "Write structured page copy"
+        },
+        {
+          "level": "H2",
+          "text": "Write structured page copy"
+        },
+        {
+          "level": "H2",
+          "text": "Checklist text"
+        },
+        {
+          "level": "H2",
+          "text": "What the page should include"
+        },
+        {
+          "level": "H2",
+          "text": "What the page should include"
+        },
+        {
+          "level": "H2",
+          "text": "Standard image"
+        },
+        {
+          "level": "H2",
+          "text": "Wide image"
+        },
+        {
+          "level": "H2",
+          "text": "Inline image"
+        },
+        {
+          "level": "H2",
+          "text": "Feature image"
+        },
+        {
+          "level": "H2",
+          "text": "Primary CTA"
+        },
+        {
+          "level": "H2",
+          "text": "Secondary CTA"
+        },
+        {
+          "level": "H2",
+          "text": "Text link CTA"
+        },
+        {
+          "level": "H2",
+          "text": "Standard FAQ"
+        },
+        {
+          "level": "H2",
+          "text": "Common vending questions"
+        },
+        {
+          "level": "H2",
+          "text": "Common vending questions"
+        },
+        {
+          "level": "H2",
+          "text": "Compact FAQ"
+        },
+        {
+          "level": "H2",
+          "text": "Common vending questions"
+        },
+        {
+          "level": "H2",
+          "text": "Common vending questions"
+        },
+        {
+          "level": "H2",
+          "text": "Accordion FAQ"
+        },
+        {
+          "level": "H2",
+          "text": "Common vending questions"
+        },
+        {
+          "level": "H2",
+          "text": "Common vending questions"
+        },
+        {
+          "level": "H2",
+          "text": "Standard cards"
+        },
+        {
+          "level": "H2",
+          "text": "Compare the next steps"
+        },
+        {
+          "level": "H3",
+          "text": "Plan"
+        },
+        {
+          "level": "H3",
+          "text": "Place"
+        },
+        {
+          "level": "H3",
+          "text": "Launch"
+        },
+        {
+          "level": "H3",
+          "text": "Improve"
+        },
+        {
+          "level": "H2",
+          "text": "Compare the next steps"
+        },
+        {
+          "level": "H3",
+          "text": "Plan"
+        },
+        {
+          "level": "H3",
+          "text": "Place"
+        },
+        {
+          "level": "H3",
+          "text": "Launch"
+        },
+        {
+          "level": "H3",
+          "text": "Improve"
+        },
+        {
+          "level": "H2",
+          "text": "Compact cards"
+        },
+        {
+          "level": "H2",
+          "text": "Compare the next steps"
+        },
+        {
+          "level": "H3",
+          "text": "Plan"
+        },
+        {
+          "level": "H3",
+          "text": "Place"
+        },
+        {
+          "level": "H3",
+          "text": "Launch"
+        },
+        {
+          "level": "H3",
+          "text": "Improve"
+        },
+        {
+          "level": "H2",
+          "text": "Compare the next steps"
+        },
+        {
+          "level": "H3",
+          "text": "Plan"
+        },
+        {
+          "level": "H3",
+          "text": "Place"
+        },
+        {
+          "level": "H3",
+          "text": "Launch"
+        },
+        {
+          "level": "H3",
+          "text": "Improve"
+        },
+        {
+          "level": "H2",
+          "text": "Feature cards"
+        },
+        {
+          "level": "H2",
+          "text": "Compare the next steps"
+        },
+        {
+          "level": "H3",
+          "text": "Plan"
+        },
+        {
+          "level": "H3",
+          "text": "Place"
+        },
+        {
+          "level": "H3",
+          "text": "Launch"
+        },
+        {
+          "level": "H3",
+          "text": "Improve"
+        },
+        {
+          "level": "H2",
+          "text": "Compare the next steps"
+        },
+        {
+          "level": "H3",
+          "text": "Plan"
+        },
+        {
+          "level": "H3",
+          "text": "Place"
+        },
+        {
+          "level": "H3",
+          "text": "Launch"
+        },
+        {
+          "level": "H3",
+          "text": "Improve"
+        },
+        {
+          "level": "H2",
+          "text": "Quote proof"
+        },
+        {
+          "level": "H2",
+          "text": "Stat proof"
+        },
+        {
+          "level": "H2",
+          "text": "Logo proof"
+        },
+        {
+          "level": "H2",
+          "text": "Standard video"
+        },
+        {
+          "level": "H2",
+          "text": "Watch the route planning walkthrough"
+        },
+        {
+          "level": "H2",
+          "text": "Watch the route planning walkthrough"
+        },
+        {
+          "level": "H2",
+          "text": "Wide video"
+        },
+        {
+          "level": "H2",
+          "text": "Watch the route planning walkthrough"
+        },
+        {
+          "level": "H2",
+          "text": "Watch the route planning walkthrough"
+        },
+        {
+          "level": "H2",
+          "text": "Inline video"
+        },
+        {
+          "level": "H2",
+          "text": "Watch the route planning walkthrough"
+        },
+        {
+          "level": "H2",
+          "text": "Watch the route planning walkthrough"
+        },
+        {
+          "level": "H2",
+          "text": "Standard form"
+        },
+        {
+          "level": "H2",
+          "text": "Start your vending plan"
+        },
+        {
+          "level": "H2",
+          "text": "Start your vending plan"
+        },
+        {
+          "level": "H2",
+          "text": "Compact form"
+        },
+        {
+          "level": "H2",
+          "text": "Start your vending plan"
+        },
+        {
+          "level": "H2",
+          "text": "Start your vending plan"
+        },
+        {
+          "level": "H2",
+          "text": "Sidebar form"
+        },
+        {
+          "level": "H2",
+          "text": "Start your vending plan"
+        },
+        {
+          "level": "H2",
+          "text": "Start your vending plan"
+        }
+      ],
+      "counts": {
+        "buttons": 2,
+        "links": 3,
+        "inputs": 0
+      }
+    },
+    "interactions": [],
+    "skips": [
+      {
+        "element": "Sign out",
+        "reason": "destructive/external — screenshotted not clicked"
+      },
+      {
+        "element": "Sign out",
+        "reason": "destructive/external — screenshotted not clicked"
+      }
+    ],
+    "notes": [],
+    "httpStatus": 200
+  }
+]

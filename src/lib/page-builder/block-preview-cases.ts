@@ -303,8 +303,23 @@ function createPreviewBlock(
                 text: "Most new operators start with a clear route plan, realistic startup costs, and a short list of target locations.",
               },
               {
+                type: "heading" as const,
+                level: 2 as const,
+                text: "Route plan",
+              },
+              {
                 type: "paragraph" as const,
                 text: "Use this section to explain the next step, remove objections, and keep the reader moving toward an enquiry.",
+              },
+              {
+                type: "heading" as const,
+                level: 3 as const,
+                text: "Launch checklist",
+              },
+              {
+                type: "heading" as const,
+                level: 4 as const,
+                text: "Follow-up details",
               },
             ],
           };
@@ -349,6 +364,8 @@ function createPreviewBlock(
       props: {
         title: "Watch the route planning walkthrough",
         url: "https://example.com/resource-video",
+        thumbnailSrc: "/images/sections/hero.avif",
+        thumbnailAltText: "Operator reviewing route planning notes",
         caption:
           "A short walkthrough of how to evaluate locations and plan your first placements.",
       },

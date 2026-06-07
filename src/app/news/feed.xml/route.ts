@@ -42,7 +42,6 @@ function renderItem(post: FeedPost, siteUrl: string) {
       <link>${url}</link>
       <guid isPermaLink="true">${url}</guid>
       ${pubDate ? `<pubDate>${pubDate}</pubDate>` : ""}
-      ${post.author ? `<author>${escapeXml(post.author)}</author>` : ""}
       ${
         post.excerpt
           ? `<description>${escapeXml(post.excerpt)}</description>`

@@ -72,18 +72,6 @@ export default async function AdminPagesPage({
       userRole={role}
       actions={
         <div className="flex flex-wrap gap-2">
-          <Link
-            href="/admin/pages/authors"
-            className={adminSecondaryButtonClass}
-          >
-            Authors
-          </Link>
-          <Link
-            href="/admin/pages/redirects"
-            className={adminSecondaryButtonClass}
-          >
-            Redirects
-          </Link>
           <Link href="/admin/pages/new" className={adminPrimaryButtonClass}>
             <span aria-hidden="true">
               <PageIcon icon="plus" />

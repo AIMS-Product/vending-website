@@ -2,16 +2,11 @@
 
 import { CARD_GRID_MAX_CARDS, type PageBlock } from "@/lib/page-builder/blocks";
 import { moveItem } from "@/lib/page-builder/content-ops";
-import {
-  blockCanvasPlaceholders,
-  richTextBodyPlaceholder,
-} from "@/lib/page-builder/block-editor-placeholders";
+import { blockCanvasPlaceholders } from "@/lib/page-builder/block-editor-placeholders";
 import {
   appendBlankCard,
   cardItemKey,
-  editableRichTextBodyText,
   removeCard,
-  richTextBodyFromEditableText,
   syncedTrackingName,
   updateCard,
 } from "@/lib/page-builder/editor-helpers";
@@ -30,6 +25,7 @@ import {
   applyMediaAssetToImageBlock,
   applyMediaAssetToSplitHeroBlock,
   applyMediaAssetToVideoBlock,
+  applyMediaAssetToVideoThumbnailBlock,
   selectedMediaAssetLabel,
 } from "@/components/admin/seo-page-editor/editor-media";
 import {
@@ -37,6 +33,7 @@ import {
   miniButtonClass,
   secondaryButtonClass,
 } from "@/components/admin/seo-page-editor/editor-styles";
+import { RichTextBodyEditor } from "@/components/admin/seo-page-editor/RichTextBodyEditor";
 
 export function BlockSidebarSettingsPanel({
   block,
@@ -88,17 +85,13 @@ export function BlockSidebarSettingsPanel({
               }
             />
           </OptionalBlockField>
-          <TextAreaInput
-            label="Body"
-            value={editableRichTextBodyText(block)}
-            placeholder={richTextBodyPlaceholder(block.variant)}
-            onChange={(value) =>
+          <RichTextBodyEditor
+            document={block.props.body}
+            variant={block.variant}
+            onChange={(body) =>
               onChange({
                 ...block,
-                props: {
-                  ...block.props,
-                  body: richTextBodyFromEditableText(block, value),
-                },
+                props: { ...block.props, body },
               })
             }
           />
@@ -514,6 +507,65 @@ export function BlockSidebarSettingsPanel({
                   ...block.props,
                   assetId: undefined,
                   url: value,
+                },
+              })
+            }
+          />
+          <div>
+            <p className="text-sm font-medium text-slate-700">
+              Thumbnail override
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {selectedMediaAssetLabel(
+                assets,
+                block.props.thumbnailAssetId,
+                block.props.thumbnailSrc,
+              )}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <MediaLibrarySelectButton
+                label="Choose image"
+                onClick={() =>
+                  openMediaPicker({
+                    allowedTypes: ["image"],
+                    onSelect: (asset) =>
+                      onChange(
+                        applyMediaAssetToVideoThumbnailBlock(block, asset),
+                      ),
+                  })
+                }
+              />
+              {(block.props.thumbnailAssetId || block.props.thumbnailSrc) && (
+                <button
+                  type="button"
+                  className={miniButtonClass}
+                  onClick={() =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        thumbnailAssetId: undefined,
+                        thumbnailSrc: "",
+                        thumbnailAltText: "",
+                      },
+                    })
+                  }
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+          <TextInput
+            label="Thumbnail URL"
+            value={block.props.thumbnailSrc ?? ""}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: {
+                  ...block.props,
+                  thumbnailAssetId: undefined,
+                  thumbnailSrc: value,
                 },
               })
             }

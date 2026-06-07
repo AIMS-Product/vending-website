@@ -257,7 +257,6 @@ function newsPost(overrides: Partial<NewsPost> = {}): NewsPost {
     title: overrides.title ?? "Post",
     slug: overrides.slug ?? "post",
     status: overrides.status ?? "draft",
-    author: overrides.author ?? "Mike",
     excerpt: overrides.excerpt ?? "",
     updated_at: overrides.updated_at ?? "2026-01-01T00:00:00.000Z",
     published_at: overrides.published_at ?? null,

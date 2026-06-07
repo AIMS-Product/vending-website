@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Wordmark } from "@/components/site/Wordmark";
-import type { PageChromeSettings } from "@/lib/page-builder/blocks";
+import type { PageBlock, PageChromeSettings } from "@/lib/page-builder/blocks";
+import type { BlockVariant } from "@/lib/page-builder/block-options";
 import {
   templateOptionsForPageType,
   type PageTemplateKey,
@@ -20,6 +21,7 @@ import {
   BuilderGlyph,
   SettingsGlyph,
 } from "@/components/admin/seo-page-editor/BuilderEditorUi";
+import { BlockPicker } from "@/components/admin/seo-page-editor/BlockPicker";
 import { footerColumns, primaryNav } from "@/lib/content/nav";
 
 export function NewPageChoiceGate({
@@ -281,12 +283,18 @@ export function BuilderBlockSidebar({
   onSelectBlock,
   onEditBlock,
   onCreateBlock,
+  onCreateBlockAfter,
 }: {
   entries: BuilderBlockEntry[];
   selectedEntry: BuilderBlockEntry | null;
   onSelectBlock: (entry: BuilderBlockEntry) => void;
   onEditBlock: (entry: BuilderBlockEntry) => void;
   onCreateBlock: () => void;
+  onCreateBlockAfter: (
+    entry: BuilderBlockEntry,
+    type: PageBlock["type"],
+    variant?: BlockVariant,
+  ) => void;
 }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-900 bg-slate-950 text-white shadow-xl">
@@ -376,6 +384,23 @@ export function BuilderBlockSidebar({
                   >
                     <SettingsGlyph />
                   </button>
+                  <div className="my-2 shrink-0">
+                    <BlockPicker
+                      triggerVariant="compact"
+                      triggerLabel={`Add block below ${blockLabel(
+                        entry.block.type,
+                      )}`}
+                      triggerAriaLabel={`Add block below block ${entry.blockNumber}`}
+                      triggerButtonClassName={`inline-flex size-9 shrink-0 items-center justify-center rounded-lg transition focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none ${
+                        isSelected
+                          ? "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          : "bg-white/10 text-slate-200 hover:bg-white/20"
+                      }`}
+                      onAddBlock={(type, variant) =>
+                        onCreateBlockAfter(entry, type, variant)
+                      }
+                    />
+                  </div>
                 </div>
               );
             })}

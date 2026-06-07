@@ -6,13 +6,7 @@ import { siteUrl } from "@/lib/site";
 type NewsArticleProps = {
   post: Pick<
     NewsPost,
-    | "slug"
-    | "title"
-    | "excerpt"
-    | "cover_url"
-    | "cover_alt"
-    | "author"
-    | "published_at"
+    "slug" | "title" | "excerpt" | "cover_url" | "cover_alt" | "published_at"
   >;
   /** Sanitised HTML rendered from the markdown body. */
   html: string;
@@ -60,7 +54,7 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
                 {post.excerpt}
               </p>
             )}
-            <Byline post={post} readingTime={readingTime} />
+            <Byline publishedAt={post.published_at} readingTime={readingTime} />
           </header>
 
           {post.cover_url && (
@@ -89,16 +83,16 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
 }
 
 function Byline({
-  post,
+  publishedAt,
   readingTime,
 }: {
-  post: NewsArticleProps["post"];
+  publishedAt: string | null;
   readingTime: number;
 }) {
   const parts: string[] = [];
-  if (post.published_at) {
+  if (publishedAt) {
     parts.push(
-      new Date(post.published_at).toLocaleDateString("en-US", {
+      new Date(publishedAt).toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -106,16 +100,9 @@ function Byline({
     );
   }
   parts.push(`${readingTime} min read`);
-  const author = post.author ?? "Vendingpreneurs";
   return (
     <div className="mt-12 border-y-2 border-[#bfeeff] py-6">
       <div className="flex flex-wrap items-center gap-5 text-[#066a99]">
-        <span className="flex items-center gap-4 text-[#111111]">
-          <span className="flex size-12 items-center justify-center rounded-full border-2 border-[#111111] bg-white text-sm font-black uppercase">
-            {getInitials(author)}
-          </span>
-          <span className="font-black">{author}</span>
-        </span>
         {parts.map((part) => (
           <span key={part} className="flex items-center gap-5 text-lg">
             <span aria-hidden className="size-1.5 rounded-full bg-[#55b8e8]" />
@@ -248,15 +235,6 @@ function getCategoryLabel(title: string): string {
   if (lower.includes("finance") || lower.includes("cost")) return "Finance";
   if (lower.includes("product")) return "Product Mix";
   return "Vending Strategy";
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("");
 }
 
 function stripTags(value: string): string {

@@ -5,6 +5,8 @@ import { proxy } from "./proxy";
 const mocks = vi.hoisted(() => ({
   updateSession: vi.fn(),
   isDevAdminAuthBypassEnabled: vi.fn(),
+  getBuilderRedirectBySourcePath: vi.fn(),
+  hasPublishedSeoPagePath: vi.fn(),
   from: vi.fn(),
 }));
 
@@ -21,8 +23,8 @@ vi.mock("@/lib/services/news", () => ({
 }));
 
 vi.mock("@/lib/services/seo-page-public", () => ({
-  getBuilderRedirectBySourcePath: vi.fn(),
-  hasPublishedSeoPageSlug: vi.fn(),
+  getBuilderRedirectBySourcePath: mocks.getBuilderRedirectBySourcePath,
+  hasPublishedSeoPagePath: mocks.hasPublishedSeoPagePath,
 }));
 
 vi.mock("@/lib/services/seo-pages", () => ({
@@ -37,6 +39,8 @@ describe("proxy admin auth gate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.isDevAdminAuthBypassEnabled.mockReturnValue(false);
+    mocks.getBuilderRedirectBySourcePath.mockResolvedValue(null);
+    mocks.hasPublishedSeoPagePath.mockResolvedValue(false);
     mocks.updateSession.mockResolvedValue({
       response: NextResponse.next(),
       user: null,
@@ -59,5 +63,14 @@ describe("proxy admin auth gate", () => {
     expect(response.headers.get("location")).toBe(
       "https://vending-website.vercel.app/admin/login",
     );
+  });
+
+  it("returns 404 for legacy blog author paths", async () => {
+    const response = await proxy(request("/blog/author/Mike%20Hoffman"));
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("location")).toBeNull();
+    expect(mocks.updateSession).not.toHaveBeenCalled();
+    expect(mocks.hasPublishedSeoPagePath).not.toHaveBeenCalled();
   });
 });

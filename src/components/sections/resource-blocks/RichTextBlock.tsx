@@ -57,13 +57,14 @@ export function RichTextBlock({
         ) : (
           block.props.body.nodes.map((node, nodeIndex) => {
             if (node.type === "heading") {
+              const HeadingTag = richTextBodyHeadingTag(node.level);
               return (
-                <h3
+                <HeadingTag
                   key={richTextNodeKey(node, nodeIndex)}
-                  className="pt-2 text-xl font-black text-[#111111] uppercase"
+                  className={richTextBodyHeadingClass(node.level)}
                 >
                   {editorFallback(node.text, "Subheading", renderMode)}
-                </h3>
+                </HeadingTag>
               );
             }
             if (node.type === "list") {
@@ -106,6 +107,19 @@ export function RichTextBlock({
       </div>
     </div>
   );
+}
+
+function richTextBodyHeadingTag(level: 2 | 3 | 4) {
+  if (level === 2) return "h2";
+  if (level === 4) return "h4";
+  return "h3";
+}
+
+function richTextBodyHeadingClass(level: 2 | 3 | 4) {
+  const base = "pt-2 font-black text-[#111111] uppercase";
+  if (level === 2) return `${base} text-2xl leading-tight`;
+  if (level === 4) return `${base} text-lg leading-snug`;
+  return `${base} text-xl leading-tight`;
 }
 
 function ChecklistPlaceholder() {

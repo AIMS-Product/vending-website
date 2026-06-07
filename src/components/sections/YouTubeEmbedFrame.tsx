@@ -11,16 +11,19 @@ type YouTubeEmbedFrameProps = {
   embed: VideoEmbed;
   title: string;
   className?: string;
+  thumbnailUrl?: string;
 };
 
 export function YouTubeEmbedFrame({
   embed,
   title,
   className,
+  thumbnailUrl,
 }: YouTubeEmbedFrameProps) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const previewThumbnailUrl = thumbnailUrl || embed.thumbnailUrl;
   const thumbnailStyle: CSSProperties = {
-    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.35)), url("${embed.thumbnailUrl}")`,
+    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.35)), url("${previewThumbnailUrl}")`,
   };
 
   if (isPlaying) {
@@ -32,6 +35,7 @@ export function YouTubeEmbedFrame({
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
         referrerPolicy="strict-origin-when-cross-origin"
+        sandbox="allow-scripts allow-presentation allow-popups"
         className={cn("block bg-black", className)}
       />
     );

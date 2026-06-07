@@ -67,6 +67,10 @@ export async function proxy(request: NextRequest) {
     return notFoundResponse();
   }
 
+  if (path.startsWith("/blog/author/")) {
+    return notFoundResponse();
+  }
+
   if (path.startsWith("/resources/preview/")) {
     let token: string;
     try {

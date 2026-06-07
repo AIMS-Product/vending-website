@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { ResourcePageRenderer } from "./ResourcePageRenderer";
-import type { PageContent } from "@/lib/page-builder/blocks";
+import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
 import type { PublishedSeoPage } from "@/lib/services/seo-page-public";
 
 vi.mock("@/app/apply/actions", () => ({
@@ -46,6 +46,87 @@ const nonEmptyContent: PageContent = {
     },
   ],
 };
+
+const richTextHeadingContent = pageContentSchema.parse({
+  version: 1,
+  sections: [
+    {
+      id: "section_1",
+      preset: "standard",
+      background: "default",
+      spacing: "standard",
+      columns: [
+        {
+          id: "column_1",
+          width: "1/1",
+          blocks: [
+            {
+              id: "block_text",
+              type: "rich_text",
+              variant: "default",
+              props: {
+                eyebrow: "Guide",
+                heading: "Page section",
+                body: {
+                  version: 1,
+                  nodes: [
+                    {
+                      type: "heading",
+                      level: 2,
+                      text: "Section detail",
+                    },
+                    {
+                      type: "heading",
+                      level: 3,
+                      text: "Subsection detail",
+                    },
+                    {
+                      type: "heading",
+                      level: 4,
+                      text: "Checklist detail",
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      ],
+    },
+  ],
+});
+
+const videoThumbnailContent = pageContentSchema.parse({
+  version: 1,
+  sections: [
+    {
+      id: "section_video",
+      preset: "standard",
+      background: "default",
+      spacing: "standard",
+      columns: [
+        {
+          id: "column_video",
+          width: "1/1",
+          blocks: [
+            {
+              id: "block_video",
+              type: "video",
+              variant: "standard",
+              props: {
+                title: "Route planning walkthrough",
+                url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                thumbnailSrc: "/images/custom-video-thumbnail.webp",
+                thumbnailAltText: "Route planning worksheet preview",
+                caption: "Watch before placing your first machine.",
+              },
+            },
+          ],
+        },
+      ],
+    },
+  ],
+});
 
 function page(content: PageContent): PublishedSeoPage {
   return {
@@ -105,5 +186,33 @@ describe("ResourcePageRenderer", () => {
 
     expect(html).toContain("Draft headline");
     expect(html).not.toContain("No page content yet");
+  });
+
+  it("preserves nested rich text heading levels in public markup", () => {
+    const html = renderToStaticMarkup(
+      createElement(ResourcePageRenderer, {
+        page: page(richTextHeadingContent),
+        idempotencyKeyPrefix: "test",
+      }),
+    );
+
+    expect(html).toContain("<h2");
+    expect(html).toContain(">Section detail</h2>");
+    expect(html).toContain("<h3");
+    expect(html).toContain(">Subsection detail</h3>");
+    expect(html).toContain("<h4");
+    expect(html).toContain(">Checklist detail</h4>");
+  });
+
+  it("uses video thumbnail overrides in public video previews", () => {
+    const html = renderToStaticMarkup(
+      createElement(ResourcePageRenderer, {
+        page: page(videoThumbnailContent),
+        idempotencyKeyPrefix: "test",
+      }),
+    );
+
+    expect(html).toContain("/images/custom-video-thumbnail.webp");
+    expect(html).toContain("Route planning walkthrough");
   });
 });

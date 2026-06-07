@@ -30,10 +30,10 @@ export type NewsPostUpdate =
   Database["public"]["Tables"]["news_posts"]["Update"];
 
 const PUBLIC_FIELDS =
-  "id, slug, title, excerpt, body, cover_url, cover_alt, author, published_at" as const;
+  "id, slug, title, excerpt, body, cover_url, cover_alt, published_at" as const;
 
 const ADMIN_FIELDS =
-  "id, slug, title, excerpt, body, cover_url, cover_alt, author, status, published_at, created_at, updated_at" as const;
+  "id, slug, title, excerpt, body, cover_url, cover_alt, status, published_at, created_at, updated_at" as const;
 
 // ---------------------------------------------------------------------------
 // Public reads (anon-friendly, RLS-gated)

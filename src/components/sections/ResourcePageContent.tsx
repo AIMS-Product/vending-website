@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
   cardGridLinkLabel,
   type PageBlock,
@@ -228,6 +228,7 @@ function ResourcePageBlockView({
         title={block.props.title || "Video"}
         linkMode={linkMode}
         renderMode={renderMode}
+        thumbnailUrl={block.props.thumbnailSrc}
         url={block.props.url}
       />
     );
@@ -458,6 +459,14 @@ function ResourcePageBlockView({
     }
 
     if (block.variant === "logo") {
+      const logoProofItems = [
+        { key: "name", value: block.props.name },
+        { key: "context", value: block.props.context },
+        { key: "body", value: block.props.body },
+      ]
+        .filter((item) => item.value || renderMode === "editor")
+        .slice(0, 3);
+
       return (
         <aside className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
           {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
@@ -472,17 +481,14 @@ function ResourcePageBlockView({
               "sm:grid-cols-3",
             )}`}
           >
-            {[block.props.name, block.props.context, block.props.body]
-              .filter((item) => item || renderMode === "editor")
-              .slice(0, 3)
-              .map((item, index) => (
-                <div
-                  key={`${index}:${item || "proof-placeholder"}`}
-                  className="grid min-h-20 place-items-center rounded-[8px] border-2 border-[#111111] bg-[#f5fbff] px-4 text-center text-sm font-black text-[#111111] uppercase"
-                >
-                  {editorFallback(item, "Proof", renderMode)}
-                </div>
-              ))}
+            {logoProofItems.map((item) => (
+              <div
+                key={item.key}
+                className="grid min-h-20 place-items-center rounded-[8px] border-2 border-[#111111] bg-[#f5fbff] px-4 text-center text-sm font-black text-[#111111] uppercase"
+              >
+                {editorFallback(item.value, "Proof", renderMode)}
+              </div>
+            ))}
           </div>
         </aside>
       );
@@ -678,21 +684,39 @@ function ResourceVideoPanel({
   embed,
   linkMode,
   renderMode,
+  thumbnailUrl,
   title,
   url,
 }: {
   embed: VideoEmbed | null;
   linkMode: ResourcePageLinkMode;
   renderMode: ResourcePageRenderMode;
+  thumbnailUrl?: string;
   title: string;
   url: string;
 }) {
   const frameClass =
     "aspect-video w-full rounded-[10px] border-2 border-[#111111] shadow-[7px_7px_0_#55b8e8]";
+  const previewThumbnailUrl = thumbnailUrl?.trim();
+  const thumbnailStyle: CSSProperties | undefined = previewThumbnailUrl
+    ? {
+        backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.35)), url("${previewThumbnailUrl}")`,
+      }
+    : undefined;
+  const previewFrameClass = `${frameClass} ${
+    previewThumbnailUrl
+      ? "relative block overflow-hidden bg-black bg-cover bg-center"
+      : "grid place-items-center bg-[#f5fbff]"
+  }`;
 
   if (embed) {
     return (
-      <YouTubeEmbedFrame embed={embed} title={title} className={frameClass} />
+      <YouTubeEmbedFrame
+        embed={embed}
+        title={title}
+        className={frameClass}
+        thumbnailUrl={previewThumbnailUrl || undefined}
+      />
     );
   }
 
@@ -701,27 +725,35 @@ function ResourceVideoPanel({
       <a
         href={url}
         rel="noopener noreferrer"
-        className={`${frameClass} grid place-items-center bg-[#f5fbff] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none`}
+        style={thumbnailStyle}
+        className={`${previewFrameClass} transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none`}
       >
-        <VideoPlayIcon />
+        <VideoPlayIcon floating={Boolean(previewThumbnailUrl)} />
       </a>
     );
   }
 
   return (
     <div
-      className={`${frameClass} grid place-items-center bg-[#f5fbff] ${
+      style={thumbnailStyle}
+      className={`${previewFrameClass} ${
         renderMode === "editor" ? "border-dashed" : ""
       }`}
     >
-      <VideoPlayIcon />
+      <VideoPlayIcon floating={Boolean(previewThumbnailUrl)} />
     </div>
   );
 }
 
-function VideoPlayIcon() {
+function VideoPlayIcon({ floating = false }: { floating?: boolean }) {
   return (
-    <span className="grid size-14 place-items-center rounded-full border-2 border-[#111111] bg-white shadow-[4px_4px_0_#55b8e8]">
+    <span
+      className={`grid size-14 place-items-center rounded-full border-2 border-[#111111] bg-white shadow-[4px_4px_0_#55b8e8] ${
+        floating
+          ? "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          : ""
+      }`}
+    >
       <span className="sr-only">Play video</span>
       <span className="ml-1 size-0 border-y-[9px] border-l-[14px] border-y-transparent border-l-[#111111]" />
     </span>

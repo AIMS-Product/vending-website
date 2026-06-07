@@ -70,6 +70,7 @@ describe("page builder editor helpers", () => {
       {
         sectionId: "section_1",
         columnId: "column_1",
+        blockIndex: 0,
         blockNumber: 1,
         sectionNumber: 1,
         columnNumber: 1,
@@ -77,6 +78,43 @@ describe("page builder editor helpers", () => {
     ]);
     expect(updated.sections[0]?.columns[0]?.blocks[0]?.type).toBe("hero");
     expect(content.sections[0]?.columns[0]?.blocks[0]?.type).toBe("cta");
+  });
+
+  it("reloads structured rich text draft content without flattening it", () => {
+    const content = singleBlockContent({
+      id: "block_text",
+      type: "rich_text",
+      variant: "default",
+      props: {
+        eyebrow: "Guide",
+        heading: "Route planning",
+        body: {
+          version: 1,
+          nodes: [
+            { type: "heading", level: 2, text: "Plan the route" },
+            {
+              type: "paragraph",
+              spans: [
+                { text: "Read the " },
+                { text: "application guide", href: "/apply" },
+                { text: " first." },
+              ],
+            },
+            {
+              type: "list",
+              style: "bullet",
+              items: ["Choose locations", "Estimate stock"],
+            },
+          ],
+        },
+      },
+    });
+
+    expect(
+      parseInitialContent(
+        seoPage({ draft_content: JSON.parse(JSON.stringify(content)) }),
+      ),
+    ).toEqual(content);
   });
 
   it("applies new-block defaults for checklist, card, FAQ, CTA, and lead form blocks", () => {

@@ -154,14 +154,6 @@ export type CreateBuilderRedirectInput = {
   createdReason?: string;
 };
 
-export type CreateAuthorProfileInput = {
-  displayName: string;
-  slug: string;
-  bio?: string | null;
-  roleTitle?: string | null;
-  avatarAssetId?: string | null;
-};
-
 export type CreatePageCommentInput = {
   pageId: string;
   blockId?: string | null;
@@ -184,7 +176,7 @@ export class SeoPageValidationError extends Error {
 }
 
 const SEO_PAGE_FIELDS =
-  "id, slug, route_prefix, route_path, title, status, target_keyword, page_type, template_key, draft_content, draft_settings, published_content, published_revision_id, seo_title, meta_description, canonical_url, noindex, sitemap_enabled, og_asset_id, og_title, og_description, structured_data_settings, internal_tags, topic_cluster, campaign_label, funnel_stage, review_period_months, next_review_at, lifecycle_status, scheduled_publish_at, scheduled_publish_status, scheduled_publish_error, scheduled_publish_attempts, scheduled_publish_last_attempt_at, scheduled_publish_locked_at, footer_variant, author_id, published_at, archived_at, archive_behavior, archive_redirect_url, created_by, updated_by, created_at, updated_at" as const;
+  "id, slug, route_prefix, route_path, title, status, target_keyword, page_type, template_key, draft_content, draft_settings, published_content, published_revision_id, seo_title, meta_description, canonical_url, noindex, sitemap_enabled, og_asset_id, og_title, og_description, structured_data_settings, internal_tags, topic_cluster, campaign_label, funnel_stage, review_period_months, next_review_at, lifecycle_status, scheduled_publish_at, scheduled_publish_status, scheduled_publish_error, scheduled_publish_attempts, scheduled_publish_last_attempt_at, scheduled_publish_locked_at, footer_variant, published_at, archived_at, archive_behavior, archive_redirect_url, created_by, updated_by, created_at, updated_at" as const;
 
 const PAGE_REVISION_FIELDS =
   "id, page_id, revision_type, label, content_snapshot, seo_snapshot, created_by, created_at" as const;
@@ -944,51 +936,6 @@ export async function adminCreateBuilderRedirect(
   if (error) {
     throwSeoPageMutationError(error, "Could not create redirect.", sourcePath);
   }
-  return data;
-}
-
-export async function adminListAuthorProfiles(deps: ServiceDeps = {}) {
-  const client = deps.client ?? createAdminClient();
-  const { data, error } = await client
-    .from("page_builder_authors")
-    .select(
-      "id, display_name, slug, bio, avatar_asset_id, role_title, social_links, structured_data, created_at, updated_at",
-    )
-    .order("display_name", { ascending: true });
-  if (error) throw new Error("Could not list author profiles.");
-  return data ?? [];
-}
-
-export async function adminCreateAuthorProfile(
-  input: CreateAuthorProfileInput,
-  deps: ServiceDeps = {},
-) {
-  const client = deps.client ?? createAdminClient();
-  const displayName = input.displayName.trim();
-  if (displayName.length < 2) throw new Error("Author name is required.");
-  let normalizedSlug: string;
-  try {
-    normalizedSlug = normalizeSlug(input.slug);
-  } catch {
-    throw new Error("Author slug is required.");
-  }
-  if (!normalizedSlug) throw new Error("Author slug is required.");
-  const { data, error } = await client
-    .from("page_builder_authors")
-    .insert({
-      display_name: displayName,
-      slug: normalizedSlug,
-      bio: input.bio?.trim() || null,
-      role_title: input.roleTitle?.trim() || null,
-      avatar_asset_id: input.avatarAssetId ?? null,
-      social_links: {},
-      structured_data: {},
-    })
-    .select(
-      "id, display_name, slug, bio, avatar_asset_id, role_title, social_links, structured_data, created_at, updated_at",
-    )
-    .single();
-  if (error) throw new Error("Could not create author profile.");
   return data;
 }
 

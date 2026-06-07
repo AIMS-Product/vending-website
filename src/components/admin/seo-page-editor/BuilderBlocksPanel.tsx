@@ -8,12 +8,19 @@ import {
 } from "@/components/admin/seo-page-editor/SeoPageEditorShell";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 
+function openCanvasPicker() {
+  document
+    .querySelector<HTMLButtonElement>("#builder-canvas-add-block button")
+    ?.click();
+}
+
 export function BuilderBlocksPanel({
   editor,
 }: {
   editor: SeoPageEditorController;
 }) {
   const {
+    addBlock,
     builderBlockEntries,
     chromeSettings,
     editBlockEntry,
@@ -21,12 +28,6 @@ export function BuilderBlocksPanel({
     selectBlockEntry,
     updateChromeSettings,
   } = editor;
-
-  const openCanvasPicker = () => {
-    document
-      .querySelector<HTMLButtonElement>("#builder-canvas-add-block button")
-      ?.click();
-  };
 
   return (
     <section
@@ -57,6 +58,15 @@ export function BuilderBlocksPanel({
           onSelectBlock={selectBlockEntry}
           onEditBlock={editBlockEntry}
           onCreateBlock={openCanvasPicker}
+          onCreateBlockAfter={(entry, type, variant) =>
+            addBlock(
+              entry.sectionId,
+              entry.columnId,
+              type,
+              variant,
+              entry.blockIndex + 1,
+            )
+          }
         />
       </div>
       <div className="shrink-0 border-t border-slate-200 px-4 py-3">

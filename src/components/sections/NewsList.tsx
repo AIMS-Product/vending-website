@@ -13,7 +13,6 @@ type NewsListProps = {
       | "excerpt"
       | "cover_url"
       | "cover_alt"
-      | "author"
       | "published_at"
     >
   >;
@@ -72,7 +71,6 @@ function NewsCard({ post }: { post: NewsListProps["posts"][number] }) {
 
 function Meta({ post }: { post: NewsListProps["posts"][number] }) {
   const parts: string[] = [];
-  if (post.author) parts.push(post.author);
   if (post.published_at) parts.push(formatDate(post.published_at));
   if (parts.length === 0) return null;
   return (

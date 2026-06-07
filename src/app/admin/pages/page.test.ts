@@ -55,6 +55,7 @@ describe("AdminPagesPage", () => {
     expect(html).not.toContain("/admin/pages?sort=title-asc");
     expect(html).not.toContain("/admin/pages?perPage=25");
     expect(html).not.toContain("/admin/pages?page=3");
+    expect(html).not.toContain("/admin/pages/authors");
   });
 });
 
@@ -94,7 +95,6 @@ function seoPage(
     scheduled_publish_last_attempt_at: "2026-06-03T16:30:00.000Z",
     scheduled_publish_locked_at: null,
     footer_variant: "default",
-    author_id: null,
     page_type: "resource",
     template_key: "blank",
     og_asset_id: null,

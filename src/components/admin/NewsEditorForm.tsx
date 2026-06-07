@@ -32,7 +32,6 @@ type NewsEditorFormProps = {
     | "slug"
     | "excerpt"
     | "body"
-    | "author"
     | "cover_url"
     | "cover_alt"
     | "status"
@@ -317,16 +316,6 @@ export function NewsEditorForm({
               />
             </label>
           </div>
-
-          <label className={`block ${adminCardClass}`}>
-            <span className="text-sm font-semibold text-slate-950">Author</span>
-            <input
-              name="author"
-              aria-label="Author"
-              defaultValue={post?.author ?? "Mike"}
-              className={adminInputClass}
-            />
-          </label>
         </aside>
       </form>
     </MediaPickerProvider>

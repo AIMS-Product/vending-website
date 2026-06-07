@@ -769,6 +769,7 @@ export function useSeoPageEditorController(
     focusSeoSetting,
     handleEditorFormSubmit,
     insertAiProposalBlocks,
+    insertDocumentImportBlocks,
     internalLinkSuggestions,
     isAiGenerating,
     isAiInserting,
@@ -1025,15 +1026,19 @@ export function useSeoPageEditorController(
     columnId: string,
     type: PageBlock["type"],
     variant?: BlockVariant,
+    insertIndex?: number,
   ) {
+    const blockId = makeBuilderId("block");
     dispatchContent({
       type: "addBlock",
       sectionId,
       columnId,
       blockType: type,
-      blockId: makeBuilderId("block"),
+      blockId,
       variant,
+      insertIndex,
     });
+    setSelectedBlockId(blockId);
   }
 
   function addColumn(sectionId: string) {
@@ -1055,6 +1060,37 @@ export function useSeoPageEditorController(
     });
     setSelectedBlockId(blockId);
     scrollToBuilderBlockId(blockId);
+  }
+
+  function insertDocumentImportBlocks(blocks: PageBlock[]) {
+    if (blocks.length === 0) return;
+
+    const firstSection = content.sections[0];
+    const firstColumn = firstSection?.columns[0];
+    if (!firstSection || !firstColumn) return;
+
+    const nextContent = {
+      ...content,
+      sections: content.sections.map((section, sectionIndex) =>
+        sectionIndex === 0
+          ? {
+              ...section,
+              columns: section.columns.map((column, columnIndex) =>
+                columnIndex === 0
+                  ? { ...column, blocks: [...column.blocks, ...blocks] }
+                  : column,
+              ),
+            }
+          : section,
+      ),
+    };
+    dispatchContent({ type: "replaceContent", content: nextContent });
+
+    const lastBlockId = blocks.at(-1)?.id;
+    if (lastBlockId) {
+      setSelectedBlockId(lastBlockId);
+      window.setTimeout(() => scrollToBuilderBlockId(lastBlockId), 0);
+    }
   }
 
   function replaceBlock(

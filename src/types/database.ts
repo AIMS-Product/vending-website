@@ -117,45 +117,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      page_builder_authors: {
-        Row: {
-          avatar_asset_id: string | null;
-          bio: string | null;
-          created_at: string;
-          display_name: string;
-          id: string;
-          role_title: string | null;
-          slug: string;
-          social_links: Json;
-          structured_data: Json;
-          updated_at: string;
-        };
-        Insert: {
-          avatar_asset_id?: string | null;
-          bio?: string | null;
-          created_at?: string;
-          display_name: string;
-          id?: string;
-          role_title?: string | null;
-          slug: string;
-          social_links?: Json;
-          structured_data?: Json;
-          updated_at?: string;
-        };
-        Update: {
-          avatar_asset_id?: string | null;
-          bio?: string | null;
-          created_at?: string;
-          display_name?: string;
-          id?: string;
-          role_title?: string | null;
-          slug?: string;
-          social_links?: Json;
-          structured_data?: Json;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
       page_builder_comments: {
         Row: {
           block_id: string | null;
@@ -650,7 +611,6 @@ export type Database = {
       };
       news_posts: {
         Row: {
-          author: string | null;
           body: string;
           cover_alt: string | null;
           cover_url: string | null;
@@ -664,7 +624,6 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
-          author?: string | null;
           body: string;
           cover_alt?: string | null;
           cover_url?: string | null;
@@ -678,7 +637,6 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          author?: string | null;
           body?: string;
           cover_alt?: string | null;
           cover_url?: string | null;
@@ -802,7 +760,6 @@ export type Database = {
           created_by: string | null;
           draft_content: Json;
           draft_settings: Json;
-          author_id: string | null;
           campaign_label: string | null;
           footer_variant: Json;
           funnel_stage: string | null;
@@ -849,7 +806,6 @@ export type Database = {
           created_by?: string | null;
           draft_content?: Json;
           draft_settings?: Json;
-          author_id?: string | null;
           campaign_label?: string | null;
           footer_variant?: Json;
           funnel_stage?: string | null;
@@ -896,7 +852,6 @@ export type Database = {
           created_by?: string | null;
           draft_content?: Json;
           draft_settings?: Json;
-          author_id?: string | null;
           campaign_label?: string | null;
           footer_variant?: Json;
           funnel_stage?: string | null;

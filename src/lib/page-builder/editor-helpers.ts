@@ -33,6 +33,7 @@ export type BuilderBlockEntry = {
   sectionId: string;
   columnId: string;
   block: PageBlock;
+  blockIndex: number;
   blockNumber: number;
   sectionNumber: number;
   columnNumber: number;
@@ -116,11 +117,12 @@ export function collectBuilderBlockEntries(
 
   for (const [sectionIndex, section] of content.sections.entries()) {
     for (const [columnIndex, column] of section.columns.entries()) {
-      for (const block of column.blocks) {
+      for (const [blockIndex, block] of column.blocks.entries()) {
         entries.push({
           sectionId: section.id,
           columnId: column.id,
           block,
+          blockIndex,
           blockNumber,
           sectionNumber: sectionIndex + 1,
           columnNumber: columnIndex + 1,

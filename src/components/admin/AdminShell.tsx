@@ -406,27 +406,14 @@ export function AdminShell({
           ) : null}
           {!immersive && (
             <header className="mb-5">
-              <div
-                className={clsx(
-                  "mb-4 flex items-center gap-4",
-                  eyebrow ? "justify-between" : "justify-end",
-                )}
-              >
-                {eyebrow ? (
-                  <div className="flex items-center gap-3 text-sm font-semibold text-[#0b63f6]">
-                    <span>{eyebrow}</span>
-                    <span className="text-slate-400" aria-hidden="true">
-                      <AdminChevron />
-                    </span>
-                  </div>
-                ) : null}
-                <div className="flex w-fit items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm">
-                  <span className="text-slate-700" aria-hidden="true">
-                    <AdminIconGlyph icon="shield" />
+              {eyebrow ? (
+                <div className="mb-4 flex items-center gap-3 text-sm font-semibold text-[#0b63f6]">
+                  <span>{eyebrow}</span>
+                  <span className="text-slate-400" aria-hidden="true">
+                    <AdminChevron />
                   </span>
-                  {roleLabel ? `${roleLabel} access` : "Admin access"}
                 </div>
-              </div>
+              ) : null}
               <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
                 <div className="max-w-3xl">
                   <h1

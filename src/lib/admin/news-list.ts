@@ -25,10 +25,12 @@ export type NewsListParams = {
   page: number;
 };
 
+export type NewsListPost = NewsPost;
+
 export type NewsListState = NewsListParams & {
   postCounts: ReturnType<typeof countPostsByStatus>;
-  filteredPosts: NewsPost[];
-  visiblePosts: NewsPost[];
+  filteredPosts: NewsListPost[];
+  visiblePosts: NewsListPost[];
   totalPages: number;
   currentPage: number;
   displayStart: number;
@@ -68,7 +70,7 @@ export function parseNewsListParams(params: NewsSearchParams): NewsListParams {
 }
 
 export function buildNewsListState(
-  posts: NewsPost[],
+  posts: NewsListPost[],
   params: NewsListParams,
 ): NewsListState {
   const postCounts = countPostsByStatus(posts);
@@ -91,7 +93,7 @@ export function buildNewsListState(
 }
 
 export function filterNewsPosts(
-  posts: NewsPost[],
+  posts: NewsListPost[],
   status: NewsStatusFilter,
   searchQuery: string,
 ) {
@@ -101,13 +103,13 @@ export function filterNewsPosts(
     if (!matchesStatus) return false;
     if (!query) return true;
 
-    return [post.title, post.slug, post.excerpt, post.author]
+    return [post.title, post.slug, post.excerpt]
       .filter((value): value is string => Boolean(value))
       .some((value) => value.toLowerCase().includes(query));
   });
 }
 
-export function sortNewsPosts(posts: NewsPost[], sort: NewsSortKey) {
+export function sortNewsPosts(posts: NewsListPost[], sort: NewsSortKey) {
   const next = [...posts];
   if (sort === "title-asc") {
     return next.sort((a, b) => a.title.localeCompare(b.title));
@@ -141,7 +143,7 @@ export function adminNewsHref({
   );
 }
 
-export function countPostsByStatus(posts: NewsPost[]) {
+export function countPostsByStatus(posts: NewsListPost[]) {
   return posts.reduce(
     (counts, post) => {
       if (post.status === "draft") counts.draft += 1;

@@ -1,6 +1,11 @@
 "use client";
 
-import { useLayoutEffect, useRef, type TextareaHTMLAttributes } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  type CSSProperties,
+  type TextareaHTMLAttributes,
+} from "react";
 import Image from "next/image";
 import type { PageBlock } from "@/lib/page-builder/blocks";
 import { blockCanvasPlaceholders } from "@/lib/page-builder/block-editor-placeholders";
@@ -381,6 +386,12 @@ export function VideoBlockCanvas({
   onEditSettings: () => void;
 }) {
   const videoEmbed = getVideoEmbed(block.props.url);
+  const thumbnailSrc = block.props.thumbnailSrc?.trim();
+  const thumbnailStyle: CSSProperties | undefined = thumbnailSrc
+    ? {
+        backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.35)), url("${thumbnailSrc}")`,
+      }
+    : undefined;
   const videoFrameClass =
     "aspect-video w-full rounded-[10px] border-2 border-[#111111] shadow-[4px_4px_0_#55b8e8]";
   const videoPanel = videoEmbed ? (
@@ -388,12 +399,16 @@ export function VideoBlockCanvas({
       embed={videoEmbed}
       title={block.props.title || "Video"}
       className={videoFrameClass}
+      thumbnailUrl={thumbnailSrc || undefined}
     />
   ) : (
     <button
       type="button"
       onClick={onEditSettings}
-      className={`${videoFrameClass} grid place-items-center bg-[#f5fbff] transition hover:bg-white focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none`}
+      style={thumbnailStyle}
+      className={`${videoFrameClass} grid place-items-center ${
+        thumbnailSrc ? "bg-black bg-cover bg-center" : "bg-[#f5fbff]"
+      } transition hover:bg-white focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none`}
     >
       <span className="grid size-14 place-items-center rounded-full border-2 border-[#111111] bg-white shadow-[4px_4px_0_#55b8e8]">
         <span className="sr-only">Edit video settings</span>

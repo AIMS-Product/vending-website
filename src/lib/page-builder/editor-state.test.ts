@@ -78,6 +78,53 @@ describe("page builder editor content reducer", () => {
     ).toEqual(["block_hero_copy", "block_hero"]);
   });
 
+  it("inserts new blocks at a deterministic clamped position", () => {
+    const original = pageEditorContentReducer(
+      singleBlockContent(createPageBlock("cta", "block_first")),
+      {
+        type: "addBlock",
+        sectionId: "section_1",
+        columnId: "column_1",
+        blockType: "faq",
+        blockId: "block_last",
+      },
+    );
+    const insertedMiddle = pageEditorContentReducer(original, {
+      type: "addBlock",
+      sectionId: "section_1",
+      columnId: "column_1",
+      blockType: "rich_text",
+      blockId: "block_middle",
+      insertIndex: 1,
+    });
+    const insertedStart = pageEditorContentReducer(insertedMiddle, {
+      type: "addBlock",
+      sectionId: "section_1",
+      columnId: "column_1",
+      blockType: "hero",
+      blockId: "block_start",
+      insertIndex: -10,
+    });
+    const insertedEnd = pageEditorContentReducer(insertedStart, {
+      type: "addBlock",
+      sectionId: "section_1",
+      columnId: "column_1",
+      blockType: "image",
+      blockId: "block_end",
+      insertIndex: 99,
+    });
+
+    expect(
+      insertedEnd.sections[0]?.columns[0]?.blocks.map((block) => block.id),
+    ).toEqual([
+      "block_start",
+      "block_first",
+      "block_middle",
+      "block_last",
+      "block_end",
+    ]);
+  });
+
   it("adds suggested blocks to missing or existing primary structure", () => {
     const emptyContent: PageContent = { version: 1, sections: [] };
     const fromEmpty = pageEditorContentReducer(emptyContent, {

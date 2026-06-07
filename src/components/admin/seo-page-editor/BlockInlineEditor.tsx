@@ -7,10 +7,7 @@ import {
   type PageBlock,
 } from "@/lib/page-builder/blocks";
 import { moveItem } from "@/lib/page-builder/content-ops";
-import {
-  blockCanvasPlaceholders,
-  richTextBodyPlaceholder,
-} from "@/lib/page-builder/block-editor-placeholders";
+import { blockCanvasPlaceholders } from "@/lib/page-builder/block-editor-placeholders";
 import {
   appendBlankCard,
   appendBlankFaq,
@@ -19,11 +16,9 @@ import {
   blockVariantLabel,
   cardItemKey,
   completionMessagesForBlock,
-  editableRichTextBodyText,
   hasEditorText,
   removeCard,
   removeFaqItem,
-  richTextBodyFromEditableText,
   syncedTrackingName,
   updateCard,
   updateFaqItem,
@@ -57,6 +52,7 @@ import {
   miniButtonClass,
   sectionHeadingInputClass,
 } from "@/components/admin/seo-page-editor/editor-styles";
+import { RichTextBodyEditor } from "@/components/admin/seo-page-editor/RichTextBodyEditor";
 
 function FaqCanvasItemEditorList({
   block,
@@ -270,25 +266,18 @@ function RichTextCanvasEditor({
           />
         </label>
       </OptionalBlockField>
-      <label className="mt-4 block">
-        <span className="sr-only">Body</span>
-        <textarea
-          aria-label="Body"
-          value={editableRichTextBodyText(block)}
-          placeholder={richTextBodyPlaceholder(block.variant)}
-          onChange={(event) =>
+      <div className="mt-4">
+        <RichTextBodyEditor
+          document={block.props.body}
+          variant={block.variant}
+          onChange={(body) =>
             onChange({
               ...block,
-              props: {
-                ...block.props,
-                body: richTextBodyFromEditableText(block, event.target.value),
-              },
+              props: { ...block.props, body },
             })
           }
-          rows={5}
-          className={bodyTextareaClass}
         />
-      </label>
+      </div>
     </div>
   );
 }

@@ -3,7 +3,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   SeoPageValidationError,
   adminArchiveSeoPage,
-  adminCreateAuthorProfile,
   adminCreateBuilderRedirect,
   adminCreateSeoPage,
   adminGetSeoPageById,
@@ -1548,22 +1547,6 @@ describe("seo page service", () => {
         ),
       ).rejects.toBeInstanceOf(SeoPageValidationError);
     }
-
-    expect(client.from).not.toHaveBeenCalled();
-  });
-
-  it("rejects author profiles whose slugs normalize to empty before touching Supabase", async () => {
-    const client = buildClient();
-
-    await expect(
-      adminCreateAuthorProfile(
-        {
-          displayName: "Mike Hoffman",
-          slug: " --- ",
-        },
-        { client },
-      ),
-    ).rejects.toThrow("Author slug is required.");
 
     expect(client.from).not.toHaveBeenCalled();
   });

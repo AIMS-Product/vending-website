@@ -30,6 +30,7 @@ export type PageEditorContentAction =
       blockType: PageBlock["type"];
       blockId: string;
       variant?: BlockVariant;
+      insertIndex?: number;
     }
   | { type: "addColumn"; sectionId: string; columnId: string }
   | {
@@ -116,17 +117,21 @@ export function pageEditorContentReducer(
       content,
       action.sectionId,
       action.columnId,
-      (column) => ({
-        ...column,
-        blocks: [
-          ...column.blocks,
-          createPageBlockWithVariant(
-            action.blockType,
-            action.blockId,
-            action.variant,
-          ),
-        ],
-      }),
+      (column) => {
+        const block = createPageBlockWithVariant(
+          action.blockType,
+          action.blockId,
+          action.variant,
+        );
+        const insertIndex =
+          typeof action.insertIndex === "number"
+            ? Math.max(0, Math.min(action.insertIndex, column.blocks.length))
+            : column.blocks.length;
+        const blocks = [...column.blocks];
+        blocks.splice(insertIndex, 0, block);
+
+        return { ...column, blocks };
+      },
     );
   }
 

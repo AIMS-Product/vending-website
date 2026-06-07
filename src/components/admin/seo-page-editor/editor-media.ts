@@ -57,6 +57,21 @@ export function applyMediaAssetToVideoBlock(
   };
 }
 
+export function applyMediaAssetToVideoThumbnailBlock(
+  block: Extract<PageBlock, { type: "video" }>,
+  asset: EditorMediaAsset,
+): Extract<PageBlock, { type: "video" }> {
+  return {
+    ...block,
+    props: {
+      ...block.props,
+      thumbnailAssetId: asset.id,
+      thumbnailSrc: asset.publicUrl,
+      thumbnailAltText: asset.altText || asset.title,
+    },
+  };
+}
+
 export function selectedMediaAssetLabel(
   assets: EditorMediaAsset[],
   assetId?: string,

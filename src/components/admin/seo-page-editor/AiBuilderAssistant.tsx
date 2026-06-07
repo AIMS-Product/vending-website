@@ -22,6 +22,11 @@ import {
   type PageBuilderAiClarification,
   type PageBuilderAiPendingDelete,
 } from "@/lib/page-builder/ai-chat";
+import type { PageBlock } from "@/lib/page-builder/blocks";
+import {
+  createDocumentImportProposal,
+  type DocumentImportProposal,
+} from "@/lib/page-builder/document-import";
 import { miniButtonClass } from "@/components/admin/seo-page-editor/editor-styles";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 
@@ -57,6 +62,12 @@ export function AiBuilderAssistant({
     storageKey,
     initialChatState,
   );
+  const [documentImportText, setDocumentImportText] = useState("");
+  const [documentImportProposal, setDocumentImportProposal] =
+    useState<DocumentImportProposal | null>(null);
+  const [documentImportMessage, setDocumentImportMessage] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -143,6 +154,24 @@ export function AiBuilderAssistant({
     }
   }
 
+  function createLocalDocumentImportProposal() {
+    const text = documentImportText.trim();
+    if (!text) return;
+    const proposal = createDocumentImportProposal({
+      text,
+      makeProposalId: () => makeLocalImportId("document_import"),
+      makeBlockId: () => makeLocalImportId("block_import"),
+    });
+    setDocumentImportProposal(proposal);
+    setDocumentImportMessage(
+      proposal.blocks.length > 0
+        ? `${proposal.blocks.length} validated block plan${
+            proposal.blocks.length === 1 ? "" : "s"
+          } ready for review.`
+        : "No valid blocks could be mapped from that document.",
+    );
+  }
+
   return (
     <>
       {isOpen && (
@@ -224,6 +253,25 @@ export function AiBuilderAssistant({
                 {chatState.error}
               </p>
             )}
+
+            <DocumentImportPanel
+              text={documentImportText}
+              message={documentImportMessage}
+              proposal={documentImportProposal}
+              onTextChange={(value) => {
+                setDocumentImportText(value);
+                setDocumentImportMessage(null);
+              }}
+              onCreateProposal={createLocalDocumentImportProposal}
+              onInsertBlocks={(blocks) => {
+                editor.insertDocumentImportBlocks(blocks);
+                setDocumentImportMessage(
+                  `${blocks.length} imported block${
+                    blocks.length === 1 ? "" : "s"
+                  } inserted into the draft.`,
+                );
+              }}
+            />
 
             <details className="mt-4 rounded-lg border border-violet-100 bg-violet-50/50">
               <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-violet-800">
@@ -951,6 +999,172 @@ function makeMessageId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : `msg_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}
+
+function makeLocalImportId(prefix: string) {
+  const suffix =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  return `${prefix}_${suffix}`;
+}
+
+function DocumentImportPanel({
+  message,
+  proposal,
+  text,
+  onCreateProposal,
+  onInsertBlocks,
+  onTextChange,
+}: {
+  message: string | null;
+  proposal: DocumentImportProposal | null;
+  text: string;
+  onCreateProposal: () => void;
+  onInsertBlocks: (blocks: PageBlock[]) => void;
+  onTextChange: (value: string) => void;
+}) {
+  return (
+    <details className="mt-4 rounded-lg border border-violet-100 bg-violet-50/50">
+      <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-violet-800">
+        Document import
+      </summary>
+      <div className="space-y-3 border-t border-violet-100 p-3">
+        <label className="block">
+          <span className="text-xs font-semibold text-violet-900">
+            Paste document text
+          </span>
+          <textarea
+            data-testid="document-import-text"
+            value={text}
+            rows={5}
+            className="mt-2 min-h-28 w-full resize-y rounded-lg border border-violet-100 bg-white px-3 py-2 text-sm leading-6 text-slate-900 shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none"
+            placeholder="Paste a brief, outline, or document excerpt"
+            onChange={(event) => onTextChange(event.target.value)}
+          />
+        </label>
+        <button
+          type="button"
+          className="w-full rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={text.trim().length === 0}
+          onClick={onCreateProposal}
+        >
+          Create block plan
+        </button>
+        {message && (
+          <p className="rounded-lg bg-white px-3 py-2 text-xs leading-5 text-violet-800 ring-1 ring-violet-100">
+            {message}
+          </p>
+        )}
+        {proposal && (
+          <DocumentImportReview
+            key={proposal.id}
+            proposal={proposal}
+            onInsertBlocks={onInsertBlocks}
+          />
+        )}
+      </div>
+    </details>
+  );
+}
+
+function DocumentImportReview({
+  proposal,
+  onInsertBlocks,
+}: {
+  proposal: DocumentImportProposal;
+  onInsertBlocks: (blocks: PageBlock[]) => void;
+}) {
+  const defaultSelectedBlockIds = useMemo(
+    () => proposal.blocks.map((entry) => entry.block.id),
+    [proposal],
+  );
+  const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>(
+    defaultSelectedBlockIds,
+  );
+  const selectedBlocks = proposal.blocks.filter((entry) =>
+    selectedBlockIds.includes(entry.block.id),
+  );
+
+  return (
+    <section className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-violet-100">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h4 className="text-sm font-semibold text-slate-950">
+            {proposal.sourceTitle}
+          </h4>
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            Pasted text · {proposal.lineCount} source lines
+          </p>
+        </div>
+        <button
+          type="button"
+          className={miniButtonClass}
+          disabled={selectedBlocks.length === 0}
+          onClick={() =>
+            onInsertBlocks(selectedBlocks.map((entry) => entry.block))
+          }
+        >
+          Insert selected
+        </button>
+      </div>
+      <p className="mt-3 line-clamp-3 rounded-md bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-900">
+        {proposal.sourceExcerpt}
+      </p>
+      {proposal.warnings.length > 0 && (
+        <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100">
+          {proposal.warnings.join(" ")}
+        </p>
+      )}
+      <div className="mt-3 grid gap-2">
+        {proposal.blocks.map((entry) => {
+          const checked = selectedBlockIds.includes(entry.block.id);
+          return (
+            <label
+              key={entry.block.id}
+              className="flex gap-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-left"
+            >
+              <input
+                aria-label={`Insert imported ${blockLabel(entry.block.type)}`}
+                type="checkbox"
+                className="mt-1"
+                checked={checked}
+                onChange={(event) => {
+                  const nextChecked = event.target.checked;
+                  setSelectedBlockIds((current) =>
+                    nextChecked
+                      ? [...new Set([...current, entry.block.id])]
+                      : current.filter((id) => id !== entry.block.id),
+                  );
+                }}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold text-slate-900">
+                    {blockLabel(entry.block.type)}
+                  </span>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200">
+                    Lines {entry.sourceLines[0]}-{entry.sourceLines[1]}
+                  </span>
+                </span>
+                <span className="mt-1 block text-sm font-medium text-slate-800">
+                  {aiBlockReviewTitle(entry.block)}
+                </span>
+                {aiBlockReviewBody(entry.block) && (
+                  <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">
+                    {aiBlockReviewBody(entry.block)}
+                  </span>
+                )}
+                <span className="mt-2 line-clamp-2 block text-[11px] leading-5 text-violet-700">
+                  Source: {entry.sourceExcerpt}
+                </span>
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </section>
+  );
 }
 
 type AiReviewProposedBlock = AiPageProposalReview["proposal"]["blocks"][number];

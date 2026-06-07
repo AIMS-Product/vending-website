@@ -16,11 +16,12 @@ import {
   newsFilters,
   newsSortLabels,
   parseNewsListParams,
+  type NewsListPost,
   type NewsSearchParams,
   type NewsSortKey,
 } from "@/lib/admin/news-list";
 import { requireAdmin } from "@/lib/supabase/auth";
-import { adminListPosts, type NewsPost } from "@/lib/services/news";
+import { adminListPosts } from "@/lib/services/news";
 
 export const metadata: Metadata = {
   title: "News admin",
@@ -125,7 +126,7 @@ export default async function AdminNewsPage({
               name="q"
               aria-label="Search blog posts"
               defaultValue={searchQuery}
-              placeholder="Search title, slug, or author"
+              placeholder="Search title or slug"
               className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-500"
             />
             {active !== "all" ? (
@@ -275,7 +276,6 @@ export default async function AdminNewsPage({
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
                 <tr>
                   <th className="px-7 py-4">Title</th>
-                  <th className="px-5 py-4">Author</th>
                   <th className="px-5 py-4">Status</th>
                   <th className="px-5 py-4">Updated</th>
                   <th className="px-5 py-4">Published</th>
@@ -339,7 +339,7 @@ export default async function AdminNewsPage({
   );
 }
 
-function PostRow({ post, isFirst }: { post: NewsPost; isFirst: boolean }) {
+function PostRow({ post, isFirst }: { post: NewsListPost; isFirst: boolean }) {
   return (
     <tr className="align-middle transition hover:bg-slate-50">
       <td
@@ -355,7 +355,6 @@ function PostRow({ post, isFirst }: { post: NewsPost; isFirst: boolean }) {
         </Link>
         <p className="mt-1 font-mono text-xs text-slate-500">/{post.slug}</p>
       </td>
-      <td className="px-5 py-4 text-slate-700">{post.author}</td>
       <td className="px-5 py-4">
         <AdminStatusBadge status={post.status} />
       </td>

@@ -93,6 +93,42 @@ describe("page builder block schemas", () => {
     expect(parsed.sections[0]?.columns[0]?.blocks).toHaveLength(3);
   });
 
+  it("accepts optional video thumbnail overrides", () => {
+    const parsed = pageContentSchema.parse({
+      version: 1,
+      sections: [
+        {
+          id: "section_video",
+          columns: [
+            {
+              id: "column_video",
+              blocks: [
+                {
+                  id: "block_video",
+                  type: "video",
+                  props: {
+                    assetId: "11111111-1111-4111-8111-111111111111",
+                    title: "Route planning walkthrough",
+                    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    thumbnailAssetId: "22222222-2222-4222-8222-222222222222",
+                    thumbnailSrc: "/images/video-thumbnail.webp",
+                    thumbnailAltText: "Route planning worksheet preview",
+                    caption: "Watch before placing your first machine.",
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const block = parsed.sections[0]?.columns[0]?.blocks[0];
+    expect(block?.type).toBe("video");
+    if (block?.type !== "video") throw new Error("Expected video block.");
+    expect(block.props.thumbnailSrc).toBe("/images/video-thumbnail.webp");
+  });
+
   it("caps card grid blocks at the configured card limit", () => {
     const contentWithCardCount = (count: number): PageContent => ({
       version: 1,
@@ -328,6 +364,79 @@ describe("page builder block schemas", () => {
 
     expect(richTextDocumentPlainText(richTextBlock.props.body)).toContain(
       "Legacy paragraph stays valid. Read the application guide before you start.",
+    );
+  });
+
+  it("accepts rich text heading hierarchy through h4 without breaking existing nodes", () => {
+    const content = pageContentSchema.parse({
+      ...validContent,
+      sections: [
+        {
+          ...validContent.sections[0],
+          columns: [
+            {
+              ...validContent.sections[0].columns[0],
+              blocks: validContent.sections[0].columns[0].blocks.map((block) =>
+                block.type === "rich_text"
+                  ? {
+                      ...block,
+                      props: {
+                        ...block.props,
+                        body: {
+                          version: 1,
+                          nodes: [
+                            {
+                              type: "paragraph",
+                              text: "Legacy paragraph stays valid.",
+                            },
+                            {
+                              type: "heading",
+                              level: 2,
+                              text: "Section heading",
+                            },
+                            {
+                              type: "heading",
+                              level: 3,
+                              text: "Subsection heading",
+                            },
+                            {
+                              type: "heading",
+                              level: 4,
+                              text: "Detail heading",
+                            },
+                            {
+                              type: "list",
+                              style: "bullet",
+                              items: ["Location quality", "Refill cadence"],
+                            },
+                          ],
+                        },
+                      },
+                    }
+                  : block,
+              ),
+            },
+          ],
+        },
+      ],
+    });
+
+    const richTextBlock = content.sections[0]?.columns[0]?.blocks.find(
+      (block) => block.type === "rich_text",
+    );
+    if (!richTextBlock || richTextBlock.type !== "rich_text") {
+      throw new Error("Expected rich text block.");
+    }
+
+    expect(richTextBlock.props.body.nodes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "heading", level: 2 }),
+        expect.objectContaining({ type: "heading", level: 3 }),
+        expect.objectContaining({ type: "heading", level: 4 }),
+      ]),
+    );
+    expect(richTextDocumentPlainText(richTextBlock.props.body)).toContain(
+      "Legacy paragraph stays valid. Section heading Subsection heading Detail heading Location quality Refill cadence",
     );
   });
 

@@ -1,3 +1,6 @@
+"use client";
+
+import { useLayoutEffect, useRef } from "react";
 import {
   compactInputClass,
   textareaClass,
@@ -74,19 +77,33 @@ export function TextAreaInput({
   placeholder?: string;
   hideLabel?: boolean;
 }) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [value]);
+
   return (
     <label className="block">
       {hideLabel ? null : (
         <span className="text-sm font-medium text-slate-700">{label}</span>
       )}
       <textarea
+        ref={textareaRef}
         aria-label={label}
         value={value}
         placeholder={placeholder ?? label}
         maxLength={maxLength}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => {
+          onChange(event.target.value);
+          event.currentTarget.style.height = "auto";
+          event.currentTarget.style.height = `${event.currentTarget.scrollHeight}px`;
+        }}
         rows={4}
-        className={textareaClass}
+        className={`${textareaClass} resize-none overflow-hidden`}
       />
       {maxLength !== undefined ? (
         <EditorCharLimit value={value} max={maxLength} />
