@@ -7,7 +7,7 @@ import { adminListInternalLinkTargets } from "@/lib/services/seo-internal-link-i
 import { requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
-  title: "New SEO page",
+  title: "Create page",
   robots: { index: false, follow: false },
 };
 
@@ -22,7 +22,7 @@ export default async function NewSeoPagePage() {
     <AdminShell
       activeSection="pages"
       eyebrow="SEO Page Builder"
-      title="New SEO page"
+      title="Create page"
       description="Create a structured page using the current SEO page contract."
       userEmail={user.email}
       userRole={role}

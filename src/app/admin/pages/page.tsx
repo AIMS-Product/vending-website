@@ -71,12 +71,15 @@ export default async function AdminPagesPage({
       userEmail={user.email}
       userRole={role}
       actions={
-        <div className="flex flex-wrap gap-2">
-          <Link href="/admin/pages/new" className={adminPrimaryButtonClass}>
+        <div className="flex w-full flex-wrap gap-2">
+          <Link
+            href="/admin/pages/new"
+            className={`${adminPrimaryButtonClass} w-full`}
+          >
             <span aria-hidden="true">
               <PageIcon icon="plus" />
             </span>
-            New SEO page
+            Create page
           </Link>
         </div>
       }
@@ -311,7 +314,7 @@ export default async function AdminPagesPage({
                 ? "Clear the search or change the status tab to broaden the list."
                 : "Create a new SEO page draft to start building content."}
             </p>
-            <div className="mt-5 flex justify-center gap-3">
+            <div className="mt-5 flex w-full justify-center gap-3">
               {searchQuery ? (
                 <Link
                   href={adminPagesHref({
@@ -325,11 +328,14 @@ export default async function AdminPagesPage({
                   Clear search
                 </Link>
               ) : null}
-              <Link href="/admin/pages/new" className={adminPrimaryButtonClass}>
+              <Link
+                href="/admin/pages/new"
+                className={`${adminPrimaryButtonClass} w-full`}
+              >
                 <span aria-hidden="true">
                   <PageIcon icon="plus" />
                 </span>
-                New SEO page
+                Create page
               </Link>
             </div>
           </div>
