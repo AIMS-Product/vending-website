@@ -1,4 +1,5 @@
 import { pageBuilderAiChatRequestSchema } from "@/lib/page-builder/ai-chat";
+import type { SeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
 import {
   PageBuilderAiConfigurationError,
   PageBuilderAiGenerationError,
@@ -9,6 +10,7 @@ import { getAuthorizedAdmin } from "@/lib/supabase/auth";
 const WINDOW_MS = 60 * 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 30;
 const rateLimits = new Map<string, { count: number; resetAt: number }>();
+const providerValues = new Set<SeoAgentProvider>(["openai", "cerebras"]);
 
 export async function POST(request: Request) {
   const admin = await getAuthorizedAdmin();
@@ -30,7 +32,10 @@ export async function POST(request: Request) {
     return Response.json({ message: "Invalid JSON body." }, { status: 400 });
   }
 
-  const parsed = pageBuilderAiChatRequestSchema.safeParse(body);
+  const provider = parseProvider(body);
+  const parsed = pageBuilderAiChatRequestSchema.safeParse(
+    bodyWithoutProvider(body),
+  );
   if (!parsed.success) {
     return Response.json(
       { message: parsed.error.issues[0]?.message ?? "Invalid AI request." },
@@ -39,7 +44,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const response = await generateOpenAiPageBuilderChatResponse(parsed.data);
+    const response = await generateOpenAiPageBuilderChatResponse(parsed.data, {
+      provider,
+    });
     return Response.json(response);
   } catch (error) {
     if (error instanceof PageBuilderAiConfigurationError) {
@@ -55,7 +62,9 @@ export async function POST(request: Request) {
           message:
             error.code === "insufficient_quota"
               ? "OpenAI quota is not available. Add credits, then retry."
-              : "OpenAI could not complete the page builder request.",
+              : provider === "cerebras"
+                ? "Cerebras could not complete the page builder request."
+                : "OpenAI could not complete the page builder request.",
         },
         { status },
       );
@@ -67,6 +76,26 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+}
+
+function parseProvider(body: unknown): SeoAgentProvider {
+  if (
+    typeof body === "object" &&
+    body &&
+    "provider" in body &&
+    typeof (body as { provider?: unknown }).provider === "string" &&
+    providerValues.has((body as { provider: SeoAgentProvider }).provider)
+  ) {
+    return (body as { provider: SeoAgentProvider }).provider;
+  }
+  return "openai";
+}
+
+function bodyWithoutProvider(body: unknown) {
+  if (typeof body !== "object" || !body || !("provider" in body)) return body;
+  const rest = { ...(body as Record<string, unknown>) };
+  delete rest.provider;
+  return rest;
 }
 
 function checkRateLimit(userId: string) {

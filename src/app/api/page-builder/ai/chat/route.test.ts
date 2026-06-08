@@ -84,6 +84,19 @@ describe("page builder AI chat route", () => {
     });
     expect(mockGenerateOpenAiPageBuilderChatResponse).toHaveBeenCalledWith(
       validRequest,
+      { provider: "openai" },
+    );
+  });
+
+  it("passes the selected Cerebras provider to the AI service", async () => {
+    const response = await POST(
+      jsonRequest({ ...validRequest, provider: "cerebras" }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockGenerateOpenAiPageBuilderChatResponse).toHaveBeenCalledWith(
+      validRequest,
+      { provider: "cerebras" },
     );
   });
 });

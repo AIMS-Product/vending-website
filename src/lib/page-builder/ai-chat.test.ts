@@ -626,7 +626,7 @@ describe("page builder AI chat tools", () => {
                     faqItems: null,
                     cards: null,
                     ctaLabel: "Book a vending consultation",
-                    ctaHref: "/contact",
+                    ctaHref: "#benefits",
                   },
                   {
                     blockType: "rich_text",
@@ -648,7 +648,7 @@ describe("page builder AI chat tools", () => {
                       {
                         title: "Bean-to-cup",
                         body: "Fresh coffee for busy teams.",
-                        href: null,
+                        href: "#",
                         linkLabel: null,
                       },
                     ],
@@ -700,6 +700,10 @@ describe("page builder AI chat tools", () => {
       "faq",
       "cta",
     ]);
+    expect(blocks[0]).toMatchObject({
+      type: "hero",
+      props: { ctaHref: "" },
+    });
     expect(blocks[2]).toMatchObject({
       type: "card_grid",
       props: { cards: [{ href: "" }] },

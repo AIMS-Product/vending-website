@@ -710,9 +710,7 @@ describe("admin page actions", () => {
       body: "Check this proof point.",
       createdBy: "admin_1",
     });
-    expect(mocks.revalidatePath).toHaveBeenCalledWith(
-      `/admin/pages/${pageId}`,
-    );
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(`/admin/pages/${pageId}`);
     expect(mocks.redirect).not.toHaveBeenCalled();
   });
 
@@ -775,7 +773,25 @@ describe("admin page actions", () => {
     expect(JSON.stringify(result)).not.toContain("sk-secret");
     expect(mocks.adminGenerateOpenAiSeoPageProposal).toHaveBeenCalledWith(
       pageId,
-      { actorId: "admin_1" },
+      { actorId: "admin_1", provider: "openai" },
+    );
+  });
+
+  it("passes the selected Cerebras provider to the AI proposal service", async () => {
+    mocks.adminGenerateOpenAiSeoPageProposal.mockResolvedValue({
+      id: proposalId,
+    });
+
+    const result = await generateAiSeoPageProposal(pageId, "cerebras");
+
+    expect(result).toEqual({
+      status: "created",
+      message: "Cerebras proposal created for review.",
+      proposalId,
+    });
+    expect(mocks.adminGenerateOpenAiSeoPageProposal).toHaveBeenCalledWith(
+      pageId,
+      { actorId: "admin_1", provider: "cerebras" },
     );
   });
 

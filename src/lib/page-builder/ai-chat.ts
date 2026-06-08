@@ -1460,7 +1460,7 @@ function createAiBlock(
         heading: input.title ?? "",
         body: input.body ?? "",
         ctaLabel: input.ctaLabel ?? "",
-        ctaHref: input.ctaHref ?? "",
+        ctaHref: normalizeAiHref(input.ctaHref),
         ctaTrackingName: trackingNameForLabel(input.ctaLabel ?? "", "hero-cta"),
       },
     });
@@ -1512,7 +1512,7 @@ function createAiBlock(
       props: {
         ...block.props,
         label,
-        href: input.ctaHref ?? "/apply",
+        href: normalizeAiHref(input.ctaHref) || "/apply",
         trackingName: trackingNameForLabel(label, "cta"),
       },
     });
@@ -2253,9 +2253,15 @@ function normalizeCardGridCards(
   return cards.map((card) => ({
     title: card.title,
     body: card.body,
-    href: card.href ?? "",
+    href: normalizeAiHref(card.href),
     ...(card.linkLabel ? { linkLabel: card.linkLabel } : {}),
   }));
+}
+
+function normalizeAiHref(href: string | null | undefined) {
+  const trimmed = href?.trim() ?? "";
+  if (trimmed.startsWith("#")) return "";
+  return trimmed;
 }
 
 function nextRichTextDocument(

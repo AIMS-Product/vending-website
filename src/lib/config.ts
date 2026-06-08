@@ -40,6 +40,8 @@ const envSchema = z.object({
       .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
       .default("medium"),
   ),
+  CEREBRAS_API_KEY: optionalEnv,
+  CEREBRAS_SEO_MODEL: optionalTrimmedEnv("gpt-oss-120b"),
 });
 
 const parsed = envSchema.safeParse({
@@ -58,6 +60,8 @@ const parsed = envSchema.safeParse({
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   OPENAI_SEO_MODEL: process.env.OPENAI_SEO_MODEL,
   OPENAI_SEO_REASONING_EFFORT: process.env.OPENAI_SEO_REASONING_EFFORT,
+  CEREBRAS_API_KEY: process.env.CEREBRAS_API_KEY,
+  CEREBRAS_SEO_MODEL: process.env.CEREBRAS_SEO_MODEL,
 });
 
 if (!parsed.success) {

@@ -32,6 +32,10 @@ import {
   createDocumentImportProposal,
   type DocumentImportProposal,
 } from "@/lib/page-builder/document-import";
+import {
+  seoAgentProviderOptions,
+  type SeoAgentProvider,
+} from "@/lib/page-builder/seo-agent-provider";
 import { miniButtonClass } from "@/components/admin/seo-page-editor/editor-styles";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 
@@ -136,6 +140,7 @@ export function AiBuilderAssistant({
             content: text,
           })),
           context: buildAiContextSnapshot(editor),
+          provider: editor.aiAgentProvider,
         }),
       });
       const payload = (await response.json()) as unknown;
@@ -336,6 +341,12 @@ export function AiBuilderAssistant({
                 onInsertBlocks={editor.insertAiProposalBlocks}
               />
             ) : null}
+
+            <ProviderSelector
+              provider={editor.aiAgentProvider}
+              disabled={editor.isAiGenerating || chatState.isLoading}
+              onProviderChange={editor.setAiAgentProvider}
+            />
 
             <label className="sr-only" htmlFor="page-ai-chat-input">
               Message AI assistant
@@ -1356,6 +1367,50 @@ function DocumentImportPanel({
   );
 }
 
+function ProviderSelector({
+  provider,
+  disabled,
+  onProviderChange,
+}: {
+  provider: SeoAgentProvider;
+  disabled: boolean;
+  onProviderChange: (provider: SeoAgentProvider) => void;
+}) {
+  return (
+    <fieldset className="mb-3 space-y-2">
+      <legend className="text-[11px] font-semibold text-violet-900">
+        Model provider
+      </legend>
+      <div className="grid grid-cols-2 gap-2">
+        {seoAgentProviderOptions.map((option) => {
+          const selected = option.value === provider;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={selected}
+              className={`rounded-lg border px-3 py-2 text-left transition focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none ${
+                selected
+                  ? "border-violet-600 bg-white text-violet-950 shadow-sm"
+                  : "border-violet-100 bg-white/70 text-violet-700 hover:border-violet-300"
+              }`}
+              disabled={disabled}
+              onClick={() => onProviderChange(option.value)}
+            >
+              <span className="block text-xs font-semibold">
+                {option.label}
+              </span>
+              <span className="mt-0.5 block text-[11px] leading-4">
+                {option.description}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
 function AiPageDraftPanel({
   embedded = false,
   canRunAiAgent,
@@ -1576,8 +1631,7 @@ function AiProposalReviewList({
   if (proposals.length === 0) {
     return (
       <p className="mt-4 rounded-lg border border-dashed border-violet-200 bg-violet-50/60 px-4 py-6 text-center text-sm leading-6 text-violet-700">
-        No drafts yet. Generate a page draft to get AI-proposed blocks you can
-        review and insert.
+        No drafts yet.
       </p>
     );
   }

@@ -13,6 +13,8 @@ import {
   richTextDocumentPlainText,
   type PageBlock,
 } from "@/lib/page-builder/blocks";
+import { toCerebrasJsonSchema } from "@/lib/page-builder/cerebras-json-schema";
+import type { SeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
 import { adminCreateAiPageProposal } from "./ai-page-proposals";
@@ -62,6 +64,7 @@ export type SeoAgentSourceBundle = {
 export type GenerateOpenAiSeoProposalInput = {
   page: SeoAgentPageRow;
   sourceBundle: SeoAgentSourceBundle;
+  provider?: SeoAgentProvider;
   model?: string;
   reasoningEffort?: OpenAiReasoningEffort;
   promptVersion?: string;
@@ -72,6 +75,8 @@ export type AdminGenerateOpenAiSeoPageProposalOptions = {
   client?: SeoAgentClient;
   fetchFn?: FetchLike;
   apiKey?: string;
+  cerebrasApiKey?: string;
+  provider?: SeoAgentProvider;
   model?: string;
   reasoningEffort?: OpenAiReasoningEffort;
   promptVersion?: string;
@@ -88,6 +93,8 @@ export type OpenAiReasoningEffort =
 export const SEO_AGENT_PROMPT_VERSION = "seo-source-bound-proposal-v1";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
+const CEREBRAS_CHAT_COMPLETIONS_URL =
+  "https://api.cerebras.ai/v1/chat/completions";
 const MAX_EXCERPTS = 8;
 const MAX_CLAIMS = 16;
 
@@ -124,12 +131,18 @@ export async function adminGenerateOpenAiSeoPageProposal(
   const client = options.client ?? createAdminClient();
   const page = await loadSeoAgentPage(client, pageId);
   const sourceBundle = await loadApprovedSourceBundle(client, page);
-  const model = options.model ?? config.OPENAI_SEO_MODEL;
+  const provider = options.provider ?? "openai";
+  const model =
+    options.model ??
+    (provider === "cerebras"
+      ? config.CEREBRAS_SEO_MODEL
+      : config.OPENAI_SEO_MODEL);
   const promptVersion = options.promptVersion ?? SEO_AGENT_PROMPT_VERSION;
   const proposal = await generateOpenAiSeoProposalFromSources(
     {
       page,
       sourceBundle,
+      provider,
       model,
       reasoningEffort:
         options.reasoningEffort ?? config.OPENAI_SEO_REASONING_EFFORT,
@@ -137,6 +150,7 @@ export async function adminGenerateOpenAiSeoPageProposal(
     },
     {
       apiKey: options.apiKey,
+      cerebrasApiKey: options.cerebrasApiKey,
       fetchFn: options.fetchFn,
     },
   );
@@ -164,20 +178,45 @@ export async function adminGenerateOpenAiSeoPageProposal(
 
 export async function generateOpenAiSeoProposalFromSources(
   input: GenerateOpenAiSeoProposalInput,
-  deps: { apiKey?: string; fetchFn?: FetchLike } = {},
+  deps: { apiKey?: string; cerebrasApiKey?: string; fetchFn?: FetchLike } = {},
 ): Promise<AiPageProposal> {
+  const provider = input.provider ?? "openai";
   const apiKey =
-    deps.apiKey !== undefined ? deps.apiKey.trim() : config.OPENAI_API_KEY;
+    provider === "cerebras"
+      ? deps.cerebrasApiKey !== undefined
+        ? deps.cerebrasApiKey.trim()
+        : config.CEREBRAS_API_KEY
+      : deps.apiKey !== undefined
+        ? deps.apiKey.trim()
+        : config.OPENAI_API_KEY;
   if (!apiKey) {
     throw new SeoAgentConfigurationError(
-      "OpenAI API key is not configured for the SEO agent.",
+      provider === "cerebras"
+        ? "Cerebras API key is not configured for the SEO agent."
+        : "OpenAI API key is not configured for the SEO agent.",
     );
   }
 
   ensureSourceBundleHasUsableEvidence(input.sourceBundle);
 
-  const model = input.model ?? config.OPENAI_SEO_MODEL;
+  const model =
+    input.model ??
+    (provider === "cerebras"
+      ? config.CEREBRAS_SEO_MODEL
+      : config.OPENAI_SEO_MODEL);
   const promptVersion = input.promptVersion ?? SEO_AGENT_PROMPT_VERSION;
+  const promptPayload = buildPromptPayload(input);
+
+  if (provider === "cerebras") {
+    return generateCerebrasSeoProposal({
+      apiKey,
+      fetchFn: deps.fetchFn ?? fetch,
+      input,
+      model,
+      promptPayload,
+    });
+  }
+
   const response = await (deps.fetchFn ?? fetch)(OPENAI_RESPONSES_URL, {
     method: "POST",
     headers: {
@@ -187,7 +226,7 @@ export async function generateOpenAiSeoProposalFromSources(
     body: JSON.stringify({
       model,
       instructions: seoAgentInstructions(),
-      input: JSON.stringify(buildPromptPayload(input)),
+      input: JSON.stringify(promptPayload),
       reasoning: { effort: input.reasoningEffort ?? "medium" },
       max_output_tokens: 6000,
       store: false,
@@ -215,6 +254,72 @@ export async function generateOpenAiSeoProposalFromSources(
   if (!proposal.success) {
     throw new SeoAgentGenerationError(
       `OpenAI returned a proposal that failed validation: ${
+        proposal.error.issues[0]?.message ?? "Invalid proposal"
+      }`,
+    );
+  }
+
+  validateProposalSourceReferences(proposal.data, input.sourceBundle);
+  return proposal.data;
+}
+
+async function generateCerebrasSeoProposal({
+  apiKey,
+  fetchFn,
+  input,
+  model,
+  promptPayload,
+}: {
+  apiKey: string;
+  fetchFn: FetchLike;
+  input: GenerateOpenAiSeoProposalInput;
+  model: string;
+  promptPayload: ReturnType<typeof buildPromptPayload>;
+}) {
+  const response = await fetchFn(CEREBRAS_CHAT_COMPLETIONS_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: "system",
+          content: seoAgentInstructions(),
+        },
+        {
+          role: "user",
+          content: JSON.stringify(promptPayload),
+        },
+      ],
+      reasoning_effort: cerebrasReasoningEffort(
+        input.reasoningEffort ?? "medium",
+      ),
+      max_completion_tokens: 6000,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "seo_page_proposal",
+          strict: true,
+          schema: toCerebrasJsonSchema(aiPageProposalJsonSchema),
+        },
+      },
+    }),
+  });
+
+  const payload = await readProviderJsonResponse(response, "Cerebras");
+  if (!response.ok) {
+    throw generationErrorFromPayload(response.status, payload, "Cerebras");
+  }
+
+  const text = extractCerebrasOutputText(payload);
+  const parsed = parseJson(text, "Cerebras");
+  const proposal = validateAiPageProposal(parsed);
+  if (!proposal.success) {
+    throw new SeoAgentGenerationError(
+      `Cerebras returned a proposal that failed validation: ${
         proposal.error.issues[0]?.message ?? "Invalid proposal"
       }`,
     );
@@ -469,28 +574,51 @@ function validateProposalSourceReferences(
   }
 }
 
-async function readOpenAiResponse(response: Response) {
+async function readProviderJsonResponse(response: Response, provider: string) {
   const body = await response.text();
   try {
     return JSON.parse(body) as unknown;
   } catch {
-    throw new SeoAgentGenerationError("OpenAI returned invalid JSON.", {
+    throw new SeoAgentGenerationError(`${provider} returned invalid JSON.`, {
       status: response.status,
     });
   }
 }
 
-function generationErrorFromPayload(status: number, payload: unknown) {
-  const error =
-    typeof payload === "object" && payload && "error" in payload
-      ? (payload as { error?: { code?: string; message?: string } }).error
-      : null;
-  const code = error?.code;
+async function readOpenAiResponse(response: Response) {
+  return readProviderJsonResponse(response, "OpenAI");
+}
+
+function generationErrorFromPayload(
+  status: number,
+  payload: unknown,
+  provider = "OpenAI",
+) {
+  const code = errorCodeFromPayload(payload);
   const detail = code ? ` (${code})` : "";
   return new SeoAgentGenerationError(
-    `OpenAI rejected the SEO agent request${detail}.`,
+    `${provider} rejected the SEO agent request${detail}.`,
     { status, code },
   );
+}
+
+function errorCodeFromPayload(payload: unknown) {
+  if (typeof payload !== "object" || !payload) return undefined;
+  if (
+    "error" in payload &&
+    typeof (payload as { error?: unknown }).error === "object" &&
+    (payload as { error?: unknown }).error
+  ) {
+    const error = (payload as { error?: { code?: unknown } }).error;
+    return typeof error?.code === "string" ? error.code : undefined;
+  }
+  if (
+    "code" in payload &&
+    typeof (payload as { code?: unknown }).code === "string"
+  ) {
+    return (payload as { code: string }).code;
+  }
+  return undefined;
 }
 
 function extractOpenAiOutputText(payload: unknown) {
@@ -540,14 +668,69 @@ function extractOpenAiOutputText(payload: unknown) {
   return text;
 }
 
-function parseJson(text: string) {
+function extractCerebrasOutputText(payload: unknown) {
+  const choices =
+    typeof payload === "object" && payload && "choices" in payload
+      ? (payload as { choices?: unknown }).choices
+      : null;
+  if (!Array.isArray(choices)) {
+    throw new SeoAgentGenerationError(
+      "Cerebras response did not include choices.",
+    );
+  }
+
+  const content = choices
+    .map((choice) => {
+      if (
+        typeof choice !== "object" ||
+        !choice ||
+        !("message" in choice) ||
+        typeof (choice as { message?: unknown }).message !== "object" ||
+        !(choice as { message?: unknown }).message
+      ) {
+        return "";
+      }
+      const message = (choice as { message: { content?: unknown } }).message;
+      if (typeof message.content === "string") return message.content;
+      if (Array.isArray(message.content)) {
+        return message.content
+          .map((part) =>
+            typeof part === "object" &&
+            part &&
+            "text" in part &&
+            typeof (part as { text?: unknown }).text === "string"
+              ? (part as { text: string }).text
+              : "",
+          )
+          .join("");
+      }
+      return "";
+    })
+    .join("")
+    .trim();
+
+  if (!content) {
+    throw new SeoAgentGenerationError(
+      "Cerebras response did not include text.",
+    );
+  }
+  return content;
+}
+
+function parseJson(text: string, provider = "OpenAI") {
   try {
     return JSON.parse(text) as unknown;
   } catch {
     throw new SeoAgentGenerationError(
-      "OpenAI returned text that was not valid proposal JSON.",
+      `${provider} returned text that was not valid proposal JSON.`,
     );
   }
+}
+
+function cerebrasReasoningEffort(effort: OpenAiReasoningEffort) {
+  if (effort === "high" || effort === "xhigh") return "high";
+  if (effort === "medium") return "medium";
+  return "low";
 }
 
 function truncate(value: string | null | undefined, max: number) {

@@ -110,6 +110,22 @@ function openAiResponse(output: unknown, init: ResponseInit = {}) {
   );
 }
 
+function cerebrasResponse(output: unknown, init: ResponseInit = {}) {
+  return new Response(
+    JSON.stringify({
+      choices: [
+        {
+          message: {
+            content:
+              typeof output === "string" ? output : JSON.stringify(output),
+          },
+        },
+      ],
+    }),
+    { status: 200, ...init },
+  );
+}
+
 describe("OpenAI SEO agent", () => {
   it("calls the Responses API with structured output and source-bound input", async () => {
     const fetchFn = vi.fn().mockResolvedValue(openAiResponse(proposal));
@@ -144,6 +160,7 @@ describe("OpenAI SEO agent", () => {
         strict: true,
       }),
     );
+    expect(JSON.stringify(body.text.format.schema)).toContain("maxItems");
     expect(body.input).toContain(excerptId);
     expect(body.input).toContain(claimId);
     expect(body.input).not.toContain("sk-test");
@@ -200,6 +217,62 @@ describe("OpenAI SEO agent", () => {
       generateOpenAiSeoProposalFromSources(
         { page, sourceBundle, model: "gpt-5.5" },
         { apiKey: "", fetchFn },
+      ),
+    ).rejects.toBeInstanceOf(SeoAgentConfigurationError);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("calls Cerebras chat completions with gpt-oss structured output", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(cerebrasResponse(proposal));
+
+    const result = await generateOpenAiSeoProposalFromSources(
+      {
+        page,
+        sourceBundle,
+        provider: "cerebras",
+        model: "gpt-oss-120b",
+        reasoningEffort: "medium",
+        promptVersion: "test-prompt",
+      },
+      { cerebrasApiKey: "csk-test", fetchFn },
+    );
+
+    expect(result).toEqual(proposal);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchFn.mock.calls[0]!;
+    const body = JSON.parse(String(init?.body));
+    expect(String(url)).toBe("https://api.cerebras.ai/v1/chat/completions");
+    expect(body).toEqual(
+      expect.objectContaining({
+        model: "gpt-oss-120b",
+        reasoning_effort: "medium",
+        max_completion_tokens: 6000,
+      }),
+    );
+    expect(body.response_format).toEqual(
+      expect.objectContaining({
+        type: "json_schema",
+        json_schema: expect.objectContaining({
+          name: "seo_page_proposal",
+          strict: true,
+        }),
+      }),
+    );
+    expect(
+      JSON.stringify(body.response_format.json_schema.schema),
+    ).not.toContain("maxItems");
+    expect(body.messages[1].content).toContain(excerptId);
+    expect(body.messages[1].content).toContain(claimId);
+    expect(body.messages[1].content).not.toContain("csk-test");
+  });
+
+  it("fails before calling Cerebras when the key is missing", async () => {
+    const fetchFn = vi.fn();
+
+    await expect(
+      generateOpenAiSeoProposalFromSources(
+        { page, sourceBundle, provider: "cerebras", model: "gpt-oss-120b" },
+        { cerebrasApiKey: "", fetchFn },
       ),
     ).rejects.toBeInstanceOf(SeoAgentConfigurationError);
     expect(fetchFn).not.toHaveBeenCalled();

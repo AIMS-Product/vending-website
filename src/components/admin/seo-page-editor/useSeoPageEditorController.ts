@@ -48,6 +48,7 @@ import {
   type SeoReadinessFinding,
   type SeoReadinessStatus,
 } from "@/lib/page-builder/seo-readiness";
+import type { SeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
 import { parseStructuredDataSettings } from "@/lib/page-builder/structured-data-settings";
 import {
   applyInternalLinkSuggestion,
@@ -218,6 +219,8 @@ export function useSeoPageEditorController(
     useState<PageAiProposalResult>(initialAiProposalState);
   const [aiInsertResult, setAiInsertResult] =
     useState<PageAiProposalInsertResult>(initialAiInsertState);
+  const [aiAgentProvider, setAiAgentProvider] =
+    useState<SeoAgentProvider>("openai");
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [isAiInserting, setIsAiInserting] = useState(false);
   const [isPreviewOpening, setIsPreviewOpening] = useState(false);
@@ -727,6 +730,7 @@ export function useSeoPageEditorController(
     addBlock,
     addColumn,
     addSuggestedBlock,
+    aiAgentProvider,
     aiInsertResult,
     aiProposalResult,
     aiProposals,
@@ -811,6 +815,7 @@ export function useSeoPageEditorController(
     setCanonicalUrl,
     setEditingBlockId,
     setMetaDescription,
+    setAiAgentProvider,
     setMobileEditorPanel,
     setNoindex,
     setRoutePrefix,
@@ -1314,7 +1319,7 @@ export function useSeoPageEditorController(
     setIsAiGenerating(true);
     setAiProposalResult({ status: "idle" });
     try {
-      const result = await generateAiSeoPageProposal(page.id);
+      const result = await generateAiSeoPageProposal(page.id, aiAgentProvider);
       setAiProposalResult(result);
       if (result.status === "created") refresh();
     } catch (error) {
