@@ -66,10 +66,9 @@ import {
   parsePublishedContent,
   slugify,
 } from "@/lib/page-builder/editor-helpers";
-import {
-  applyPageBuilderAiToolCalls,
-  type PageBuilderAiApplyResult,
-  type PageBuilderAiToolCall,
+import type {
+  PageBuilderAiApplyResult,
+  PageBuilderAiToolCall,
 } from "@/lib/page-builder/ai-chat";
 import {
   createInitialEditorContentState,
@@ -85,6 +84,8 @@ import {
   getNarrowEditorSnapshot,
   subscribeToNarrowEditorChange,
 } from "@/components/admin/seo-page-editor/editor-responsive";
+import { applyPageBuilderAiToolsToEditor } from "@/components/admin/seo-page-editor/editor-ai-tools";
+import { buildSeoPageAutosavePayload } from "@/components/admin/seo-page-editor/editor-autosave-payload";
 import { buildSeoPageEditorFormData } from "@/components/admin/seo-page-editor/editor-form-data";
 import { makeBuilderId } from "@/components/admin/seo-page-editor/editor-utils";
 import type { Tables } from "@/types/database";
@@ -357,11 +358,10 @@ export function useSeoPageEditorController(
   );
   const buildAutosavePayload = useCallback(() => {
     const formData = formRef.current ? new FormData(formRef.current) : null;
-    const formValue = (name: string, fallback = "") =>
-      String(formData?.get(name) ?? fallback);
-    const formChecked = (name: string) => formData?.get(name) === "on";
 
-    return {
+    return buildSeoPageAutosavePayload({
+      formData,
+      page,
       title,
       slug: visibleSlug,
       routePrefix,
@@ -369,35 +369,14 @@ export function useSeoPageEditorController(
       seoTitle,
       metaDescription,
       canonicalUrl,
-      internalTags: formValue("internalTags", page?.internal_tags.join(", ")),
-      topicCluster: formValue("topicCluster", page?.topic_cluster ?? ""),
-      campaignLabel: formValue("campaignLabel", page?.campaign_label ?? ""),
-      funnelStage: formValue("funnelStage", page?.funnel_stage ?? ""),
-      reviewPeriodMonths: Number(
-        formValue(
-          "reviewPeriodMonths",
-          String(page?.review_period_months ?? 6),
-        ),
-      ),
-      nextReviewAt: formValue("nextReviewAt", page?.next_review_at ?? ""),
-      lifecycleStatus: formValue(
-        "lifecycleStatus",
-        page?.lifecycle_status ?? "drafting",
-      ),
-      ogTitle: formValue("ogTitle", page?.og_title ?? ""),
-      ogDescription: formValue("ogDescription", page?.og_description ?? ""),
-      scheduledPublishAt: formValue("scheduledPublishAt"),
-      cancelScheduledPublish: formChecked("cancelScheduledPublish"),
       noindex,
       sitemapEnabled,
-      structuredDataSettings: {
-        breadcrumb: structuredDataBreadcrumb,
-        faq: structuredDataFaq,
-      },
+      structuredDataBreadcrumb,
+      structuredDataFaq,
       pageType,
       templateKey,
-      draftContent: content,
-    };
+      content,
+    });
   }, [
     canonicalUrl,
     content,
@@ -1288,38 +1267,23 @@ export function useSeoPageEditorController(
   function applyPageBuilderAiTools(
     toolCalls: PageBuilderAiToolCall[],
   ): PageBuilderAiApplyResult {
-    const result = applyPageBuilderAiToolCalls({
+    return applyPageBuilderAiToolsToEditor({
       content,
       toolCalls,
       makeBlockId: () => makeBuilderId("block"),
+      replaceContent: (nextContent) =>
+        dispatchContent({ type: "replaceContent", content: nextContent }),
+      setTitle,
+      setSlugTouched,
+      setSlug,
+      setTargetKeyword,
+      setSeoTitle,
+      setMetaDescription,
+      setSelectedBlockId,
+      scheduleBlockScroll: (blockId) => {
+        window.setTimeout(() => scrollToBuilderBlockId(blockId), 0);
+      },
     });
-
-    if (result.content !== content) {
-      dispatchContent({ type: "replaceContent", content: result.content });
-    }
-
-    if (result.seoPatch.title !== undefined) setTitle(result.seoPatch.title);
-    if (result.seoPatch.slug !== undefined) {
-      setSlugTouched(true);
-      setSlug(result.seoPatch.slug);
-    }
-    if (result.seoPatch.targetKeyword !== undefined) {
-      setTargetKeyword(result.seoPatch.targetKeyword);
-    }
-    if (result.seoPatch.seoTitle !== undefined) {
-      setSeoTitle(result.seoPatch.seoTitle);
-    }
-    if (result.seoPatch.metaDescription !== undefined) {
-      setMetaDescription(result.seoPatch.metaDescription);
-    }
-
-    const lastHighlightedId = result.highlightedBlockIds.at(-1);
-    if (lastHighlightedId) {
-      setSelectedBlockId(lastHighlightedId);
-      window.setTimeout(() => scrollToBuilderBlockId(lastHighlightedId), 0);
-    }
-
-    return result;
   }
 
   function confirmAiDeleteBlock(blockId: string) {

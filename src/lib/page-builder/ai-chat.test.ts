@@ -4,6 +4,7 @@ import {
   applyPageBuilderAiToolCalls,
   buildPageBuilderAiToolDefinitions,
   collectBlockToolSpecs,
+  normalizePageBuilderAiChatResponseForIntent,
   pageBuilderAiSystemPrompt,
   type PageBuilderAiContext,
 } from "./ai-chat";
@@ -73,6 +74,93 @@ const context: PageBuilderAiContext = {
   },
 };
 
+const intentVariantTemplates = [
+  "Add {subject} about campus vending.",
+  "Create {subject} for office vending.",
+  "Insert {subject} on workplace vending.",
+  "Make {subject} around snack vending.",
+  "Build {subject} for coffee vending.",
+  "Put {subject} about school vending.",
+  "Include {subject} for gym vending.",
+  "Draft {subject} about managed vending.",
+  "Generate {subject} for Adelaide vending.",
+  "Write {subject} about vending operators.",
+  "Compose {subject} for healthy vending.",
+  "Give me {subject} about retail vending.",
+  "Can you add {subject} for lobby vending?",
+  "Please create {subject} around machine servicing.",
+  "I need you to insert {subject} for refill schedules.",
+  "Let's build {subject} about customer support.",
+  "Please include {subject} for product range.",
+  "Can you make {subject} around machine uptime?",
+  "Could you draft {subject} for new locations?",
+  "Generate {subject} about route planning.",
+];
+
+const intentEvalScenarios = [
+  {
+    subject: "a hero block",
+    expectedToolName: "add_block",
+    expectedInput: { blockType: "hero" },
+  },
+  {
+    subject: "a text section",
+    expectedToolName: "add_block",
+    expectedInput: { blockType: "rich_text" },
+  },
+  {
+    subject: "an FAQ block",
+    expectedToolName: "add_block",
+    expectedInput: { blockType: "faq" },
+  },
+  {
+    subject: "a card grid block",
+    expectedToolName: "add_block",
+    expectedInput: { blockType: "card_grid" },
+  },
+  {
+    subject: "a CTA block",
+    expectedToolName: "add_block",
+    expectedInput: { blockType: "cta" },
+  },
+  {
+    subject: "a proof block",
+    expectedToolName: "add_block",
+    expectedInput: { blockType: "proof" },
+  },
+  {
+    subject: "a lead form block",
+    expectedToolName: "add_block",
+    expectedInput: { blockType: "lead_form" },
+  },
+  {
+    subject: "an image block using /images/sections/hero.avif",
+    expectedToolName: "add_media_block",
+    expectedInput: { mediaType: "image", url: "/images/sections/hero.avif" },
+  },
+  {
+    subject: "a video block using https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    expectedToolName: "add_media_block",
+    expectedInput: {
+      mediaType: "video",
+      url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    },
+  },
+  {
+    subject: "an image section with text using /images/sections/hero.avif",
+    expectedToolName: "add_image_text_section",
+    expectedInput: { imageUrl: "/images/sections/hero.avif" },
+  },
+];
+
+const intentEvalCases = intentEvalScenarios.flatMap((scenario) =>
+  intentVariantTemplates.map((template) => ({
+    message: template.replace("{subject}", scenario.subject),
+    expectedToolName: scenario.expectedToolName,
+    expectedInput: scenario.expectedInput,
+  })),
+);
+
 describe("page builder AI chat tools", () => {
   it("builds dynamic strict tools for the current blocks", () => {
     const tools = buildPageBuilderAiToolDefinitions(context);
@@ -88,6 +176,7 @@ describe("page builder AI chat tools", () => {
     expect(heroTool?.parameters.required).toContain("headline");
     expect(tools.map((tool) => tool.name)).toContain("set_seo_metadata");
     expect(tools.map((tool) => tool.name)).toContain("replace_page_sections");
+    expect(tools.map((tool) => tool.name)).toContain("add_image_text_section");
     const replaceTool = tools.find(
       (tool) => tool.name === "replace_page_sections",
     );
@@ -114,6 +203,7 @@ describe("page builder AI chat tools", () => {
     expect(prompt).toContain(
       "fill out, expand, build out, or add more content",
     );
+    expect(prompt).toContain("image section with text");
   });
 
   it("applies block edits and SEO metadata to local draft state", () => {
@@ -236,6 +326,178 @@ describe("page builder AI chat tools", () => {
       id: "block_ai_text",
       type: "rich_text",
       props: { heading: "Why vending support matters" },
+    });
+  });
+
+  it("adds a paired image and text section when a real image URL is supplied", () => {
+    const ids = [
+      "section_ai",
+      "column_text",
+      "column_image",
+      "block_text",
+      "block_image",
+    ];
+    const result = applyPageBuilderAiToolCalls({
+      content,
+      makeBlockId: () => ids.shift() ?? "id_extra",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: "add_image_text_section",
+          input: {
+            heading: "Campus vending that feels stocked and intentional",
+            body: "Pair visible product range with a simple message for students and staff.",
+            bulletItems: ["Managed restocking", "Clear campus placement"],
+            imageUrl: "/images/sections/hero.avif",
+            imageAltText: "Stocked campus vending display",
+            imageCaption: "A stocked vending display for high-traffic spaces.",
+            sourceRightsNotes: "Owned campaign image.",
+            imagePosition: "right",
+          },
+        },
+      ],
+    });
+
+    const section = result.content.sections[1]!;
+    expect(section.preset).toBe("feature");
+    expect(section.columns.map((column) => column.width)).toEqual([
+      "1/2",
+      "1/2",
+    ]);
+    expect(section.columns[0]!.blocks[0]).toMatchObject({
+      id: "text_block_text",
+      type: "rich_text",
+      variant: "intro",
+      props: {
+        heading: "Campus vending that feels stocked and intentional",
+      },
+    });
+    expect(section.columns[1]!.blocks[0]).toMatchObject({
+      id: "image_block_image",
+      type: "image",
+      variant: "standard",
+      props: {
+        src: "/images/sections/hero.avif",
+        altText: "Stocked campus vending display",
+        caption: "A stocked vending display for high-traffic spaces.",
+        sourceRightsNotes: "Owned campaign image.",
+      },
+    });
+    expect(result.results[0]).toMatchObject({
+      status: "applied",
+      message:
+        "Added a paired image and text section. Review image alt text and rights notes before publishing.",
+    });
+    expect(result.highlightedBlockIds).toEqual([
+      "text_block_text",
+      "image_block_image",
+    ]);
+  });
+
+  it("asks for a media source before adding a requested image and text section", () => {
+    const result = applyPageBuilderAiToolCalls({
+      content,
+      makeBlockId: () => "id_extra",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: "add_image_text_section",
+          input: {
+            heading: "Campus vending that feels stocked and intentional",
+            body: "Pair visible product range with a simple message for students and staff.",
+            bulletItems: null,
+            imageUrl: null,
+            imageAltText: null,
+            imageCaption: null,
+            sourceRightsNotes: null,
+            imagePosition: "right",
+          },
+        },
+      ],
+    });
+
+    expect(result.content).toEqual(content);
+    expect(result.results[0]).toMatchObject({
+      status: "queued",
+      message:
+        "Choose an image source before adding the image and text section.",
+    });
+    expect(result.clarification).toEqual({
+      options: [
+        "Paste an image URL",
+        "Choose a media library image first",
+        "Add the text section now",
+      ],
+    });
+  });
+
+  it("adds a standalone media block when a real media URL is supplied", () => {
+    const result = applyPageBuilderAiToolCalls({
+      content,
+      makeBlockId: () => "block_ai_image",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: "add_media_block",
+          input: {
+            mediaType: "image",
+            title: null,
+            url: "/images/sections/hero.avif",
+            altText: "Campus vending machine",
+            caption: "Approved campaign image.",
+            sourceRightsNotes: "Owned campaign image.",
+          },
+        },
+      ],
+    });
+
+    expect(result.content.sections[0]!.columns[0]!.blocks[2]).toMatchObject({
+      id: "block_ai_image",
+      type: "image",
+      props: {
+        src: "/images/sections/hero.avif",
+        altText: "Campus vending machine",
+        caption: "Approved campaign image.",
+        sourceRightsNotes: "Owned campaign image.",
+      },
+    });
+    expect(result.results[0]).toMatchObject({
+      status: "applied",
+      message: 'Added Image "Campus vending machine".',
+    });
+  });
+
+  it("asks for a media source before adding a requested media block", () => {
+    const result = applyPageBuilderAiToolCalls({
+      content,
+      makeBlockId: () => "block_ai_video",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: "add_media_block",
+          input: {
+            mediaType: "video",
+            title: "Campus vending walkthrough",
+            url: null,
+            altText: null,
+            caption: null,
+            sourceRightsNotes: null,
+          },
+        },
+      ],
+    });
+
+    expect(result.content).toEqual(content);
+    expect(result.results[0]).toMatchObject({
+      status: "queued",
+      message: "Choose a media source before adding this block.",
+    });
+    expect(result.clarification).toEqual({
+      options: [
+        "Paste a media URL",
+        "Choose from the media library first",
+        "Add a text placeholder instead",
+      ],
     });
   });
 
@@ -559,5 +821,118 @@ describe("page builder AI chat tools", () => {
       status: "applied",
       message: "Rebuilt page body with 2 blocks across 1 sections.",
     });
+  });
+
+  it("normalizes vague human image-section asks into a clarification", () => {
+    const response = normalizePageBuilderAiChatResponseForIntent(
+      {
+        messages: [
+          {
+            role: "user",
+            content: "Add an image section with text about campus vending.",
+          },
+        ],
+        context,
+      },
+      {
+        message: "I added the text and left the image as a review item.",
+        toolCalls: [
+          {
+            id: "call_1",
+            name: "add_block",
+            input: {
+              blockType: "rich_text",
+              title: "Campus vending",
+              body: "A short section about campus vending.",
+              bulletItems: null,
+              faqItems: null,
+              cards: null,
+              ctaLabel: null,
+              ctaHref: null,
+            },
+          },
+        ],
+      },
+    );
+
+    expect(response).toEqual({
+      message:
+        "I can add the image and text section, but I need the image source first.",
+      toolCalls: [
+        {
+          id: "deterministic_image_text_clarification",
+          name: "request_clarification",
+          input: {
+            options: [
+              "Paste an image URL",
+              "Choose a media library image first",
+              "Add the text section now",
+            ],
+          },
+        },
+      ],
+    });
+  });
+
+  it("preserves useful non-content tool calls when adding a deterministic fallback", () => {
+    const response = normalizePageBuilderAiChatResponseForIntent(
+      {
+        messages: [
+          {
+            role: "user",
+            content: "Add a CTA block about campus vending.",
+          },
+        ],
+        context,
+      },
+      {
+        message: "I updated the metadata but did not add the CTA.",
+        toolCalls: [
+          {
+            id: "call_1",
+            name: "set_seo_metadata",
+            input: {
+              title: null,
+              slug: null,
+              targetKeyword: "campus vending",
+              seoTitle: null,
+              metaDescription: null,
+            },
+          },
+        ],
+      },
+    );
+
+    expect(response.toolCalls).toHaveLength(2);
+    expect(response.toolCalls[0]?.name).toBe("set_seo_metadata");
+    expect(response.toolCalls[1]).toMatchObject({
+      name: "add_block",
+      input: { blockType: "cta" },
+    });
+  });
+
+  it("normalizes 200 human add-request variants across block families", () => {
+    expect(intentEvalCases).toHaveLength(200);
+
+    for (const evalCase of intentEvalCases) {
+      const response = normalizePageBuilderAiChatResponseForIntent(
+        {
+          messages: [{ role: "user", content: evalCase.message }],
+          context,
+        },
+        {
+          message: "Here is how I would approach that.",
+          toolCalls: [],
+        },
+      );
+
+      expect(response.toolCalls, evalCase.message).toHaveLength(1);
+      expect(response.toolCalls[0]?.name, evalCase.message).toBe(
+        evalCase.expectedToolName,
+      );
+      expect(response.toolCalls[0]?.input, evalCase.message).toMatchObject(
+        evalCase.expectedInput,
+      );
+    }
   });
 });

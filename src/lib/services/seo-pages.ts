@@ -2,7 +2,6 @@ import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { z } from "zod";
 import {
   createEmptyPageContent,
   flattenBlocks,
@@ -23,13 +22,28 @@ import { assessSeoReadiness } from "@/lib/page-builder/seo-readiness";
 import {
   defaultStructuredDataSettings,
   parseStructuredDataSettings,
-  type StructuredDataSettings,
 } from "@/lib/page-builder/structured-data-settings";
 import { config } from "@/lib/config";
 import { collectMediaAssetReferences } from "@/lib/media/referenced-assets";
+import {
+  buildSeoPageDraftPatch,
+  draftSettingsToSeoPagePatch,
+  effectivePublishSettings,
+  parseSeoPageDraftSettings,
+} from "@/lib/services/seo-page-draft-patches";
+import {
+  buildSeoSnapshot,
+  seoPatchFromSnapshot,
+} from "@/lib/services/seo-page-snapshots";
 import { validateMediaAssetReferences } from "@/lib/services/media-assets";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables, TablesInsert } from "@/types/database";
+import type { SaveSeoPageDraftInput } from "@/lib/services/seo-page-draft-patches";
+
+export type {
+  SaveSeoPageDraftInput,
+  SeoPageDraftSettings,
+} from "@/lib/services/seo-page-draft-patches";
 
 type SeoPage = Tables<"seo_pages">;
 type PageRevision = Tables<"page_revisions">;
@@ -43,22 +57,6 @@ type ServiceDeps = {
   now?: () => Date;
 };
 
-const draftSettingsSchema = z
-  .object({
-    slug: z.string().trim().min(1).transform(normalizeSlug),
-    routePrefix: z.string().trim().optional(),
-    routePath: z.string().trim().optional(),
-    title: z.string().trim().min(1),
-    targetKeyword: z.string().trim().nullable(),
-    seoTitle: z.string().trim().nullable(),
-    metaDescription: z.string().trim().nullable(),
-    canonicalUrl: z.string().trim().nullable(),
-    noindex: z.boolean(),
-    sitemapEnabled: z.boolean(),
-    structuredDataSettings: z.unknown().optional(),
-  })
-  .strict();
-
 export type CreateSeoPageInput = {
   slug: string;
   routePrefix?: string | null;
@@ -70,51 +68,6 @@ export type CreateSeoPageInput = {
   templateKey?: string;
   draftContent?: unknown;
   createdBy?: string | null;
-};
-
-export type SaveSeoPageDraftInput = {
-  slug?: string;
-  routePrefix?: string | null;
-  title?: string;
-  targetKeyword?: string | null;
-  seoTitle?: string | null;
-  metaDescription?: string | null;
-  canonicalUrl?: string | null;
-  noindex?: boolean;
-  sitemapEnabled?: boolean;
-  structuredDataSettings?: StructuredDataSettings;
-  internalTags?: string[];
-  topicCluster?: string | null;
-  campaignLabel?: string | null;
-  funnelStage?: string | null;
-  reviewPeriodMonths?: number;
-  nextReviewAt?: string | null;
-  lifecycleStatus?: string;
-  ogTitle?: string | null;
-  ogDescription?: string | null;
-  scheduledPublishAt?: string | null;
-  scheduledPublishStatus?: string;
-  scheduledPublishError?: string | null;
-  scheduledPublishAttempts?: number;
-  scheduledPublishLastAttemptAt?: string | null;
-  scheduledPublishLockedAt?: string | null;
-  draftContent?: unknown;
-  draftSettings?: SeoPageDraftSettings | null;
-  updatedBy?: string | null;
-};
-
-export type SeoPageDraftSettings = {
-  slug: string;
-  routePrefix: string;
-  routePath: string;
-  title: string;
-  targetKeyword: string | null;
-  seoTitle: string | null;
-  metaDescription: string | null;
-  canonicalUrl: string | null;
-  noindex: boolean;
-  sitemapEnabled: boolean;
-  structuredDataSettings: StructuredDataSettings;
 };
 
 export type PublishSeoPageOptions = ServiceDeps & {
@@ -346,92 +299,7 @@ export async function adminSaveSeoPageDraft(
   deps: ServiceDeps = {},
 ) {
   const client = deps.client ?? createAdminClient();
-  const patch: Database["public"]["Tables"]["seo_pages"]["Update"] = {};
-
-  if (input.slug !== undefined) patch.slug = normalizeSlug(input.slug);
-  if (input.routePrefix !== undefined) {
-    patch.route_prefix = normalizeRoutePrefix(input.routePrefix);
-  }
-  if (patch.slug) {
-    patch.route_path = pagePathForSlug(
-      patch.slug,
-      patch.route_prefix ?? input.routePrefix,
-    );
-  }
-  if (input.title !== undefined) patch.title = input.title.trim();
-  if (input.targetKeyword !== undefined) {
-    patch.target_keyword = input.targetKeyword;
-  }
-  if (input.seoTitle !== undefined) patch.seo_title = input.seoTitle;
-  if (input.metaDescription !== undefined) {
-    patch.meta_description = input.metaDescription;
-  }
-  if (input.canonicalUrl !== undefined) {
-    patch.canonical_url = input.canonicalUrl;
-  }
-  if (input.noindex !== undefined) patch.noindex = input.noindex;
-  if (input.sitemapEnabled !== undefined) {
-    patch.sitemap_enabled = input.sitemapEnabled;
-  }
-  if (input.structuredDataSettings !== undefined) {
-    patch.structured_data_settings = parseStructuredDataSettings(
-      input.structuredDataSettings,
-    ) as unknown as Json;
-  }
-  if (input.internalTags !== undefined)
-    patch.internal_tags = input.internalTags;
-  if (input.topicCluster !== undefined)
-    patch.topic_cluster = input.topicCluster;
-  if (input.campaignLabel !== undefined) {
-    patch.campaign_label = input.campaignLabel;
-  }
-  if (input.funnelStage !== undefined) patch.funnel_stage = input.funnelStage;
-  if (input.reviewPeriodMonths !== undefined) {
-    patch.review_period_months = input.reviewPeriodMonths;
-  }
-  if (input.nextReviewAt !== undefined)
-    patch.next_review_at = input.nextReviewAt;
-  if (input.lifecycleStatus !== undefined) {
-    patch.lifecycle_status = input.lifecycleStatus;
-  }
-  if (input.ogTitle !== undefined) patch.og_title = input.ogTitle;
-  if (input.ogDescription !== undefined) {
-    patch.og_description = input.ogDescription;
-  }
-  if (input.scheduledPublishAt !== undefined) {
-    patch.scheduled_publish_at = input.scheduledPublishAt;
-  }
-  if (input.scheduledPublishStatus !== undefined) {
-    patch.scheduled_publish_status = input.scheduledPublishStatus;
-  }
-  if (input.scheduledPublishError !== undefined) {
-    patch.scheduled_publish_error = input.scheduledPublishError;
-  }
-  if (input.scheduledPublishAttempts !== undefined) {
-    patch.scheduled_publish_attempts = input.scheduledPublishAttempts;
-  }
-  if (input.scheduledPublishLastAttemptAt !== undefined) {
-    patch.scheduled_publish_last_attempt_at =
-      input.scheduledPublishLastAttemptAt;
-  }
-  if (input.scheduledPublishLockedAt !== undefined) {
-    patch.scheduled_publish_locked_at = input.scheduledPublishLockedAt;
-  }
-  if (input.draftContent !== undefined) {
-    patch.draft_content = parseDraftContent(
-      input.draftContent,
-    ) as unknown as Json;
-  }
-  if (input.draftSettings !== undefined) {
-    patch.draft_settings =
-      input.draftSettings === null
-        ? {}
-        : (normalizeDraftSettings(
-            draftSettingsSchema.parse(input.draftSettings),
-            defaultStructuredDataSettings,
-          ) as unknown as Json);
-  }
-  if (input.updatedBy !== undefined) patch.updated_by = input.updatedBy;
+  const patch = buildSeoPageDraftPatch(input, parseDraftContent);
 
   const { data, error } = await client
     .from("seo_pages")
@@ -1111,188 +979,10 @@ function hashPreviewToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-function seoPatchFromSnapshot(snapshot: Json) {
-  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
-    return {};
-  }
-
-  const values = snapshot as Record<string, Json | undefined>;
-  const patch: Database["public"]["Tables"]["seo_pages"]["Update"] = {};
-  if (typeof values.title === "string") patch.title = values.title;
-  if (typeof values.target_keyword === "string") {
-    patch.target_keyword = values.target_keyword;
-  }
-  if (values.target_keyword === null) patch.target_keyword = null;
-  if (typeof values.seo_title === "string") patch.seo_title = values.seo_title;
-  if (values.seo_title === null) patch.seo_title = null;
-  if (typeof values.meta_description === "string") {
-    patch.meta_description = values.meta_description;
-  }
-  if (values.meta_description === null) patch.meta_description = null;
-  if (typeof values.canonical_url === "string") {
-    patch.canonical_url = values.canonical_url;
-  }
-  if (values.canonical_url === null) patch.canonical_url = null;
-  if (typeof values.noindex === "boolean") patch.noindex = values.noindex;
-  if (typeof values.sitemap_enabled === "boolean") {
-    patch.sitemap_enabled = values.sitemap_enabled;
-  }
-  if (values.structured_data_settings !== undefined) {
-    patch.structured_data_settings = values.structured_data_settings;
-  }
-  if (Array.isArray(values.internal_tags)) {
-    patch.internal_tags = values.internal_tags.filter(
-      (tag): tag is string => typeof tag === "string",
-    );
-  }
-  if (typeof values.topic_cluster === "string") {
-    patch.topic_cluster = values.topic_cluster;
-  }
-  if (values.topic_cluster === null) patch.topic_cluster = null;
-  if (typeof values.campaign_label === "string") {
-    patch.campaign_label = values.campaign_label;
-  }
-  if (values.campaign_label === null) patch.campaign_label = null;
-  if (typeof values.funnel_stage === "string") {
-    patch.funnel_stage = values.funnel_stage;
-  }
-  if (values.funnel_stage === null) patch.funnel_stage = null;
-  if (typeof values.review_period_months === "number") {
-    patch.review_period_months = values.review_period_months;
-  }
-  if (typeof values.next_review_at === "string") {
-    patch.next_review_at = values.next_review_at;
-  }
-  if (values.next_review_at === null) patch.next_review_at = null;
-  if (typeof values.lifecycle_status === "string") {
-    patch.lifecycle_status = values.lifecycle_status;
-  }
-  if (typeof values.og_title === "string") patch.og_title = values.og_title;
-  if (values.og_title === null) patch.og_title = null;
-  if (typeof values.og_description === "string") {
-    patch.og_description = values.og_description;
-  }
-  if (values.og_description === null) patch.og_description = null;
-  if (typeof values.scheduled_publish_at === "string") {
-    patch.scheduled_publish_at = values.scheduled_publish_at;
-  }
-  if (values.scheduled_publish_at === null) {
-    patch.scheduled_publish_at = null;
-  }
-  if (typeof values.scheduled_publish_status === "string") {
-    patch.scheduled_publish_status = values.scheduled_publish_status;
-  }
-  if (typeof values.scheduled_publish_error === "string") {
-    patch.scheduled_publish_error = values.scheduled_publish_error;
-  }
-  if (values.scheduled_publish_error === null) {
-    patch.scheduled_publish_error = null;
-  }
-  if (typeof values.scheduled_publish_attempts === "number") {
-    patch.scheduled_publish_attempts = values.scheduled_publish_attempts;
-  }
-  if (typeof values.scheduled_publish_last_attempt_at === "string") {
-    patch.scheduled_publish_last_attempt_at =
-      values.scheduled_publish_last_attempt_at;
-  }
-  if (values.scheduled_publish_last_attempt_at === null) {
-    patch.scheduled_publish_last_attempt_at = null;
-  }
-  if (typeof values.scheduled_publish_locked_at === "string") {
-    patch.scheduled_publish_locked_at = values.scheduled_publish_locked_at;
-  }
-  if (values.scheduled_publish_locked_at === null) {
-    patch.scheduled_publish_locked_at = null;
-  }
-  return patch;
-}
-
 function parseDraftContent(content: unknown): PageContent {
   const result = validatePageContent(content);
   if (!result.ok) throw new SeoPageValidationError(result.issues);
   return result.content;
-}
-
-function parseSeoPageDraftSettings(
-  value: unknown,
-  structuredDataFallback: StructuredDataSettings = defaultStructuredDataSettings,
-) {
-  const parsed = draftSettingsSchema.safeParse(value);
-  return parsed.success
-    ? normalizeDraftSettings(parsed.data, structuredDataFallback)
-    : null;
-}
-
-function effectivePublishSettings(page: SeoPage): SeoPageDraftSettings {
-  return (
-    parseSeoPageDraftSettings(
-      page.draft_settings,
-      parseStructuredDataSettings(page.structured_data_settings),
-    ) ?? settingsFromSeoPage(page)
-  );
-}
-
-function settingsFromSeoPage(page: SeoPage): SeoPageDraftSettings {
-  const routePrefix = normalizeRoutePrefix(page.route_prefix, page.page_type);
-  const routePath = pagePathForSlug(page.slug, routePrefix);
-  return {
-    slug: page.slug,
-    routePrefix,
-    routePath,
-    title: page.title,
-    targetKeyword: page.target_keyword,
-    seoTitle: page.seo_title,
-    metaDescription: page.meta_description,
-    canonicalUrl: page.canonical_url,
-    noindex: page.noindex,
-    sitemapEnabled: page.sitemap_enabled,
-    structuredDataSettings: parseStructuredDataSettings(
-      page.structured_data_settings,
-    ),
-  };
-}
-
-function normalizeDraftSettings(
-  settings: z.infer<typeof draftSettingsSchema>,
-  structuredDataFallback: StructuredDataSettings,
-): SeoPageDraftSettings {
-  const routePrefix = normalizeRoutePrefix(settings.routePrefix);
-  const slug = settings.slug;
-  return {
-    slug,
-    routePrefix,
-    routePath: pagePathForSlug(slug, routePrefix),
-    title: settings.title,
-    targetKeyword: settings.targetKeyword,
-    seoTitle: settings.seoTitle,
-    metaDescription: settings.metaDescription,
-    canonicalUrl: settings.canonicalUrl,
-    noindex: settings.noindex,
-    sitemapEnabled: settings.sitemapEnabled,
-    structuredDataSettings: parseStructuredDataSettings(
-      settings.structuredDataSettings ?? structuredDataFallback,
-    ),
-  };
-}
-
-function draftSettingsToSeoPagePatch(
-  settings: SeoPageDraftSettings | null,
-): Partial<SeoPage> {
-  if (!settings) return {};
-  return {
-    slug: settings.slug,
-    route_prefix: settings.routePrefix,
-    route_path: settings.routePath,
-    title: settings.title,
-    target_keyword: settings.targetKeyword,
-    seo_title: settings.seoTitle,
-    meta_description: settings.metaDescription,
-    canonical_url: settings.canonicalUrl,
-    noindex: settings.noindex,
-    sitemap_enabled: settings.sitemapEnabled,
-    structured_data_settings:
-      settings.structuredDataSettings as unknown as Json,
-  };
 }
 
 async function loadSeoPageForPublish(client: SeoPageClient, pageId: string) {
@@ -1737,41 +1427,6 @@ function publicMediaUrl(asset: MediaAsset) {
     return `${base}/storage/v1/object/public/${asset.storage_bucket}/${asset.storage_path}`;
   }
   return "";
-}
-
-function buildSeoSnapshot(
-  page: SeoPage,
-  settings: SeoPageDraftSettings = settingsFromSeoPage(page),
-): Json {
-  return {
-    slug: settings.slug,
-    route_prefix: settings.routePrefix,
-    route_path: settings.routePath,
-    title: settings.title,
-    target_keyword: settings.targetKeyword,
-    seo_title: settings.seoTitle,
-    meta_description: settings.metaDescription,
-    canonical_url: settings.canonicalUrl,
-    noindex: settings.noindex,
-    sitemap_enabled: settings.sitemapEnabled,
-    structured_data_settings:
-      settings.structuredDataSettings as unknown as Json,
-    internal_tags: page.internal_tags,
-    topic_cluster: page.topic_cluster,
-    campaign_label: page.campaign_label,
-    funnel_stage: page.funnel_stage,
-    review_period_months: page.review_period_months,
-    next_review_at: page.next_review_at,
-    lifecycle_status: page.lifecycle_status,
-    og_title: page.og_title,
-    og_description: page.og_description,
-    scheduled_publish_at: page.scheduled_publish_at,
-    scheduled_publish_status: page.scheduled_publish_status,
-    scheduled_publish_error: page.scheduled_publish_error,
-    scheduled_publish_attempts: page.scheduled_publish_attempts,
-    scheduled_publish_last_attempt_at: page.scheduled_publish_last_attempt_at,
-    scheduled_publish_locked_at: page.scheduled_publish_locked_at,
-  };
 }
 
 function publishRevisionLabel(

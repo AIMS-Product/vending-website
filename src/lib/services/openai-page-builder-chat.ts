@@ -3,6 +3,7 @@ import "server-only";
 import { config } from "@/lib/config";
 import {
   buildPageBuilderAiToolDefinitions,
+  normalizePageBuilderAiChatResponseForIntent,
   pageBuilderAiChatResponseSchema,
   pageBuilderAiSystemPrompt,
   type PageBuilderAiChatRequest,
@@ -99,7 +100,7 @@ export async function generateOpenAiPageBuilderChatResponse(
     );
   }
 
-  return normalized.data;
+  return normalizePageBuilderAiChatResponseForIntent(request, normalized.data);
 }
 
 async function readOpenAiResponse(response: Response) {

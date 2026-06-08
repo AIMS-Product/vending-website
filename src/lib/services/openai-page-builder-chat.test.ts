@@ -84,6 +84,20 @@ function openAiResponse(output: unknown, init: ResponseInit = {}) {
   );
 }
 
+function openAiMessageOnlyResponse(message: string, init: ResponseInit = {}) {
+  return new Response(
+    JSON.stringify({
+      output: [
+        {
+          type: "message",
+          content: [{ type: "output_text", text: message }],
+        },
+      ],
+    }),
+    { status: 200, ...init },
+  );
+}
+
 describe("OpenAI page builder chat", () => {
   it("calls the Responses API with page-builder tools and normalizes tool calls", async () => {
     const fetchFn = vi.fn().mockResolvedValue(
@@ -137,7 +151,55 @@ describe("OpenAI page builder chat", () => {
     expect(body.tools.map((tool: { name: string }) => tool.name)).toContain(
       "replace_page_sections",
     );
+    expect(body.tools.map((tool: { name: string }) => tool.name)).toContain(
+      "add_image_text_section",
+    );
+    expect(body.tools.map((tool: { name: string }) => tool.name)).toContain(
+      "add_media_block",
+    );
     expect(String(init?.headers)).not.toContain("sk-test");
+  });
+
+  it("turns vague human image-and-text section asks into a clarification", async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValue(
+        openAiMessageOnlyResponse("I can add the text and note the image."),
+      );
+
+    const result = await generateOpenAiPageBuilderChatResponse(
+      {
+        ...request,
+        messages: [
+          {
+            role: "user",
+            content: "Add an image section with text about campus vending.",
+          },
+        ],
+      },
+      {
+        apiKey: "sk-test",
+        fetchFn,
+      },
+    );
+
+    expect(result).toEqual({
+      message:
+        "I can add the image and text section, but I need the image source first.",
+      toolCalls: [
+        {
+          id: "deterministic_image_text_clarification",
+          name: "request_clarification",
+          input: {
+            options: [
+              "Paste an image URL",
+              "Choose a media library image first",
+              "Add the text section now",
+            ],
+          },
+        },
+      ],
+    });
   });
 
   it("fails before calling OpenAI when the API key is missing", async () => {

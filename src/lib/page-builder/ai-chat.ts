@@ -60,6 +60,25 @@ const safeHrefSchema = {
   pattern: "^(|/[^/].*|https?://.+)$",
 };
 
+const safeMediaSourceSchema = {
+  type: ["string", "null"],
+  maxLength: 500,
+  pattern:
+    "^(|/[^/].*\\.(?:avif|webp|png|jpe?g|gif|svg|mp4|webm|mov|m4v)(?:[?#].*)?|https?://.+)$",
+};
+
+const imageTextSectionClarificationOptions = [
+  "Paste an image URL",
+  "Choose a media library image first",
+  "Add the text section now",
+];
+
+const mediaSourceClarificationOptions = [
+  "Paste a media URL",
+  "Choose from the media library first",
+  "Add a text placeholder instead",
+];
+
 const pageBuilderAiChatMessageSchema = z
   .object({
     role: z.enum(["user", "assistant"]),
@@ -262,6 +281,16 @@ const mediaInputSchema = z
   })
   .strict();
 
+const nullableSafeMediaSource = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((value) => value.length === 0 || isAiSafeMediaSource(value), {
+    message: "Use an internal media path or an http(s) URL.",
+  })
+  .nullable()
+  .optional();
+
 const addBlockInputSchema = z
   .object({
     blockType: z.enum([
@@ -308,6 +337,34 @@ const addBlockInputSchema = z
       .optional(),
     ctaLabel: nullableText(80),
     ctaHref: nullableText(500),
+  })
+  .strict();
+
+const addImageTextSectionInputSchema = z
+  .object({
+    heading: nullableText(180),
+    body: nullableText(2000),
+    bulletItems: z
+      .array(z.string().trim().max(300))
+      .max(12)
+      .nullable()
+      .optional(),
+    imageUrl: nullableSafeMediaSource,
+    imageAltText: nullableText(180),
+    imageCaption: nullableText(240),
+    sourceRightsNotes: nullableText(500),
+    imagePosition: z.enum(["left", "right"]).default("right"),
+  })
+  .strict();
+
+const addMediaBlockInputSchema = z
+  .object({
+    mediaType: z.enum(["image", "video"]),
+    title: nullableText(140),
+    url: nullableSafeMediaSource,
+    altText: nullableText(180),
+    caption: nullableText(240),
+    sourceRightsNotes: nullableText(500),
   })
   .strict();
 
@@ -365,6 +422,8 @@ export function buildPageBuilderAiToolDefinitions(
       dynamicBlockTool(spec),
     ),
     replacePageSectionsTool(),
+    addImageTextSectionTool(),
+    addMediaBlockTool(),
     addBlockTool(),
     setSeoMetadataTool(),
     reorderBlocksTool(context.content),
@@ -414,6 +473,9 @@ export function pageBuilderAiSystemPrompt(context: PageBuilderAiContext) {
     "Use replace_page_sections on an existing page only when the user explicitly asks to overwrite, replace, rebuild from scratch, or has confirmed that choice. Set replaceExisting to true in that case.",
     "If a broad request does not make it clear whether to preserve or replace existing blocks, either preserve the useful existing blocks while adding content or call request_clarification with concrete choices.",
     "A complete first draft should usually include a hero, one useful copy or benefits section, a service/options card grid, an FAQ section, and a CTA or lead form. Include safe internal hrefs for CTA and card links.",
+    "When the user asks for an image section with text, infer they want a paired image-and-copy section. If they supplied a usable image URL or internal image path, call add_image_text_section and default imagePosition to right unless they specify otherwise.",
+    "If the user asks for an image section but has not supplied an image URL or internal image path, call request_clarification before creating image content.",
+    "When the user asks for an image block or video block with a usable URL or internal path, call add_media_block. If the media source is missing, call request_clarification.",
     "Use /contact for consultation, enquiry, and booking CTA links unless the user supplies a different existing path.",
     "The SEO readiness checker uses exact normalized phrase matching. If you set a targetKeyword, include that exact phrase without inserted words in the SEO title, meta description, and at least one visible heading or body sentence.",
     "Use set_seo_metadata whenever the user asks to discuss or adjust page title, slug, target keyword, SEO title, or meta description.",
@@ -421,7 +483,7 @@ export function pageBuilderAiSystemPrompt(context: PageBuilderAiContext) {
     "When updating arrays such as card_grid cards or FAQ items, pass the complete updated array and preserve existing entries that should remain.",
     "When selectedBlockId is present, resolve phrases like this block, this bit, selected block, or the current section to that selected block. If there is no selected block and the user's target text is not uniquely identifiable, request clarification.",
     "Use add_block only when the page is missing a needed block. Do not create duplicate blocks when editing an existing block is enough.",
-    "Do not use image blocks unless the user supplied a real image asset or URL. If an image is still needed, summarize it as a review item after tool calls.",
+    "Do not create image blocks with placeholder, fake, or guessed media URLs. If an image is still needed and no source is available, ask for the missing source or add text-only content only after the user chooses that.",
     "Use delete_block only to request deletion. The UI will ask the user to confirm before anything is removed.",
     "Use request_clarification only when a real business or design decision blocks a safe edit. Give tappable choices, not a loose open question.",
     "Before saying the page is ready to publish, consider blockers: real H1, clear CTA, SEO title and description, links/forms, alt text, no placeholder copy, and mobile/accessibility risks.",
@@ -514,6 +576,74 @@ export function applyPageBuilderAiToolCalls({
         continue;
       }
       const block = createAiBlock(parsed.data, makeBlockId());
+      workingContent = appendBlockToPrimaryColumn(workingContent, block);
+      highlightedBlockIds.add(block.id);
+      results.push({
+        status: "applied",
+        toolName: toolCall.name,
+        blockId: block.id,
+        message: `Added ${blockLabel(block)}.`,
+      });
+      continue;
+    }
+
+    if (toolCall.name === "add_image_text_section") {
+      const parsed = addImageTextSectionInputSchema.safeParse(toolCall.input);
+      if (!parsed.success) {
+        results.push(failedTool(toolCall.name, firstIssue(parsed.error)));
+        continue;
+      }
+      const imageUrl = parsed.data.imageUrl?.trim() ?? "";
+      if (!imageUrl) {
+        clarification = { options: imageTextSectionClarificationOptions };
+        results.push({
+          status: "queued",
+          toolName: toolCall.name,
+          message:
+            "Choose an image source before adding the image and text section.",
+        });
+        continue;
+      }
+
+      const nextSection = createImageTextSection(parsed.data, makeBlockId);
+      const textBlock = nextSection.columns
+        .flatMap((column) => column.blocks)
+        .find((block) => block.type === "rich_text");
+      const imageBlock = nextSection.columns
+        .flatMap((column) => column.blocks)
+        .find((block) => block.type === "image");
+
+      workingContent = appendSectionToContent(workingContent, nextSection);
+      if (textBlock) highlightedBlockIds.add(textBlock.id);
+      if (imageBlock) highlightedBlockIds.add(imageBlock.id);
+      results.push({
+        status: "applied",
+        toolName: toolCall.name,
+        blockId: imageBlock?.id ?? textBlock?.id,
+        message:
+          "Added a paired image and text section. Review image alt text and rights notes before publishing.",
+      });
+      continue;
+    }
+
+    if (toolCall.name === "add_media_block") {
+      const parsed = addMediaBlockInputSchema.safeParse(toolCall.input);
+      if (!parsed.success) {
+        results.push(failedTool(toolCall.name, firstIssue(parsed.error)));
+        continue;
+      }
+      const mediaUrl = parsed.data.url?.trim() ?? "";
+      if (!mediaUrl) {
+        clarification = { options: mediaSourceClarificationOptions };
+        results.push({
+          status: "queued",
+          toolName: toolCall.name,
+          message: "Choose a media source before adding this block.",
+        });
+        continue;
+      }
+
+      const block = createAiMediaBlock(parsed.data, makeBlockId());
       workingContent = appendBlockToPrimaryColumn(workingContent, block);
       highlightedBlockIds.add(block.id);
       results.push({
@@ -683,6 +813,15 @@ export function formatPageBuilderAiToolResultSummary(
   return result.results.map((entry) => entry.message).join(" ");
 }
 
+export function normalizePageBuilderAiChatResponseForIntent(
+  request: PageBuilderAiChatRequest,
+  response: PageBuilderAiChatResponse,
+): PageBuilderAiChatResponse {
+  const fallback = intentFallbackToolCall(request, response);
+  if (!fallback) return response;
+  return fallback;
+}
+
 export function collectBlockToolSpecs(content: PageContent): BlockToolSpec[] {
   return flattenBlocks(content).map((block, index) => ({
     name: blockToolName(block.id, index),
@@ -699,6 +838,74 @@ function dynamicBlockTool(spec: BlockToolSpec): PageBuilderAiFunctionTool {
     description: `Edit exactly this page block: ${spec.label}. Block ID: ${spec.blockId}. Pass null for any field that should stay unchanged.`,
     strict: true,
     parameters: blockToolParameters(spec.block),
+  };
+}
+
+function addImageTextSectionTool(): PageBuilderAiFunctionTool {
+  return {
+    type: "function",
+    name: "add_image_text_section",
+    description:
+      "Add one new paired image-and-copy section. Use when the user asks for an image section with text and supplies a concrete image URL or internal image path.",
+    strict: true,
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      required: [
+        "heading",
+        "body",
+        "bulletItems",
+        "imageUrl",
+        "imageAltText",
+        "imageCaption",
+        "sourceRightsNotes",
+        "imagePosition",
+      ],
+      properties: {
+        heading: nullableStringSchema(180),
+        body: nullableStringSchema(2000),
+        bulletItems: {
+          type: ["array", "null"],
+          maxItems: 12,
+          items: { type: "string", maxLength: 300 },
+        },
+        imageUrl: safeMediaSourceSchema,
+        imageAltText: nullableStringSchema(180),
+        imageCaption: nullableStringSchema(240),
+        sourceRightsNotes: nullableStringSchema(500),
+        imagePosition: { type: "string", enum: ["left", "right"] },
+      },
+    },
+  };
+}
+
+function addMediaBlockTool(): PageBuilderAiFunctionTool {
+  return {
+    type: "function",
+    name: "add_media_block",
+    description:
+      "Add one image or video block when the user supplies a concrete URL or internal media path. Ask for clarification when the source is missing.",
+    strict: true,
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      required: [
+        "mediaType",
+        "title",
+        "url",
+        "altText",
+        "caption",
+        "sourceRightsNotes",
+      ],
+      properties: {
+        mediaType: { type: "string", enum: ["image", "video"] },
+        title: nullableStringSchema(140),
+        url: safeMediaSourceSchema,
+        altText: nullableStringSchema(180),
+        caption: nullableStringSchema(240),
+        sourceRightsNotes: nullableStringSchema(500),
+      },
+    },
   };
 }
 
@@ -1339,6 +1546,47 @@ function createAiBlock(
   throw new Error(`Unsupported AI block type: ${input.blockType}`);
 }
 
+function createAiMediaBlock(
+  input: z.infer<typeof addMediaBlockInputSchema>,
+  id: string,
+): PageBlock {
+  const block = createPageBlock(input.mediaType, id);
+  const url = input.url?.trim() ?? "";
+
+  if (block.type === "image") {
+    const altText =
+      input.altText?.trim() ||
+      input.caption?.trim() ||
+      input.title?.trim() ||
+      "Supporting image";
+
+    return pageBlockSchema.parse({
+      ...block,
+      props: {
+        ...block.props,
+        src: url,
+        altText,
+        caption: input.caption ?? "",
+        sourceRightsNotes: input.sourceRightsNotes ?? "",
+      },
+    });
+  }
+
+  if (block.type === "video") {
+    return pageBlockSchema.parse({
+      ...block,
+      props: {
+        ...block.props,
+        title: input.title ?? "Video",
+        url,
+        caption: input.caption ?? "",
+      },
+    });
+  }
+
+  throw new Error(`Unsupported AI media block type: ${input.mediaType}`);
+}
+
 function createReplacementPageContent(
   current: PageContent,
   input: z.infer<typeof replacePageSectionsInputSchema>,
@@ -1367,6 +1615,82 @@ function createReplacementPageContent(
       };
     }),
   });
+}
+
+function createImageTextSection(
+  input: z.infer<typeof addImageTextSectionInputSchema>,
+  makeBlockId: () => string,
+) {
+  const section = createPageSection(
+    generatedAiId("section", makeBlockId),
+    generatedAiId("column_text", makeBlockId),
+  );
+  const textColumnId =
+    section.columns[0]?.id ?? generatedAiId("column_text", makeBlockId);
+  const imageColumnId = generatedAiId("column_image", makeBlockId);
+  const heading = input.heading ?? "";
+  const imageUrl = input.imageUrl?.trim() ?? "";
+  const imageAltText =
+    input.imageAltText?.trim() ||
+    input.imageCaption?.trim() ||
+    heading ||
+    "Supporting image";
+
+  const textBlock = pageBlockSchema.parse({
+    ...createPageBlock("rich_text", generatedAiId("text", makeBlockId)),
+    variant: "intro",
+    props: {
+      eyebrow: "",
+      heading,
+      body: buildRichTextDocument(input.body, input.bulletItems),
+    },
+  });
+  const imageBlock = pageBlockSchema.parse({
+    ...createPageBlock("image", generatedAiId("image", makeBlockId)),
+    variant: "standard",
+    props: {
+      src: imageUrl,
+      altText: imageAltText,
+      caption: input.imageCaption ?? "",
+      sourceRightsNotes: input.sourceRightsNotes ?? "",
+    },
+  });
+  const textColumn = {
+    id: textColumnId,
+    width: "1/2" as const,
+    blocks: [textBlock],
+  };
+  const imageColumn = {
+    id: imageColumnId,
+    width: "1/2" as const,
+    blocks: [imageBlock],
+  };
+
+  return {
+    ...section,
+    preset: "feature" as const,
+    columns:
+      input.imagePosition === "left"
+        ? [imageColumn, textColumn]
+        : [textColumn, imageColumn],
+  };
+}
+
+function appendSectionToContent(
+  content: PageContent,
+  section: PageContent["sections"][number],
+): PageContent {
+  if (flattenBlocks(content).length === 0) {
+    return {
+      ...content,
+      sections: [section],
+    };
+  }
+
+  return {
+    ...ensureEditablePageContent(content),
+    sections: [...ensureEditablePageContent(content).sections, section],
+  };
 }
 
 function appendBlockToPrimaryColumn(
@@ -1401,6 +1725,438 @@ function generatedAiId(prefix: string, makeBlockId: () => string) {
   return `${prefix}_${makeBlockId()}`
     .replace(/[^A-Za-z0-9_-]/g, "_")
     .slice(0, 79);
+}
+
+function intentFallbackToolCall(
+  request: PageBuilderAiChatRequest,
+  response: PageBuilderAiChatResponse,
+): PageBuilderAiChatResponse | null {
+  const latestUserMessage = latestUserMessageFrom(request.messages);
+  if (!latestUserMessage) return null;
+
+  const fallback = resolveIntentFallbackAction(
+    latestUserMessage,
+    request.context,
+    response,
+  );
+  if (!fallback) return null;
+
+  return applyIntentFallbackAction(fallback, response);
+}
+
+type IntentFallbackAction = {
+  mode: "append" | "replace";
+  message: string;
+  toolCall: PageBuilderAiToolCall;
+};
+
+function latestUserMessageFrom(messages: PageBuilderAiChatRequest["messages"]) {
+  return [...messages].reverse().find((message) => message.role === "user")
+    ?.content;
+}
+
+function resolveIntentFallbackAction(
+  message: string,
+  context: PageBuilderAiContext,
+  response: PageBuilderAiChatResponse,
+): IntentFallbackAction | null {
+  return (
+    imageTextSectionFallbackAction(message, context, response) ??
+    mediaBlockFallbackAction(message, context, response) ??
+    addBlockFallbackAction(message, context, response)
+  );
+}
+
+function imageTextSectionFallbackAction(
+  message: string,
+  context: PageBuilderAiContext,
+  response: PageBuilderAiChatResponse,
+): IntentFallbackAction | null {
+  if (!isImageTextSectionIntent(message)) return null;
+  if (responseHasTool(response, ["add_image_text_section"])) return null;
+
+  const imageUrl = extractMediaSource(message);
+  if (!imageUrl) {
+    if (responseHasTool(response, ["request_clarification"])) return null;
+    return replaceWithFallback(
+      "I can add the image and text section, but I need the image source first.",
+      imageTextSectionClarificationToolCall(),
+    );
+  }
+
+  return appendWithFallback(
+    "Added a paired image and text section.",
+    addImageTextSectionToolCall(intentTopic(message, context), imageUrl),
+  );
+}
+
+function mediaBlockFallbackAction(
+  message: string,
+  context: PageBuilderAiContext,
+  response: PageBuilderAiChatResponse,
+): IntentFallbackAction | null {
+  const mediaType = detectMediaBlockIntent(message);
+  if (!mediaType) return null;
+  if (responseHasTool(response, ["add_media_block"])) return null;
+
+  const mediaUrl = extractMediaSource(message);
+  if (!mediaUrl) {
+    if (responseHasTool(response, ["request_clarification"])) return null;
+    return replaceWithFallback(
+      `I can add the ${mediaType} block, but I need the media source first.`,
+      mediaSourceClarificationToolCall(),
+    );
+  }
+
+  return appendWithFallback(
+    `Added a ${mediaType} block.`,
+    addMediaBlockToolCall(mediaType, intentTopic(message, context), mediaUrl),
+  );
+}
+
+function addBlockFallbackAction(
+  message: string,
+  context: PageBuilderAiContext,
+  response: PageBuilderAiChatResponse,
+): IntentFallbackAction | null {
+  const blockType = detectAddBlockIntent(message);
+  if (!blockType) return null;
+  if (responseHasContentTool(response)) return null;
+
+  return appendWithFallback(
+    `Added ${humanBlockType(blockType)}.`,
+    addBlockFallbackToolCall(blockType, message, context),
+  );
+}
+
+function replaceWithFallback(
+  message: string,
+  toolCall: PageBuilderAiToolCall,
+): IntentFallbackAction {
+  return { mode: "replace", message, toolCall };
+}
+
+function appendWithFallback(
+  message: string,
+  toolCall: PageBuilderAiToolCall,
+): IntentFallbackAction {
+  return { mode: "append", message, toolCall };
+}
+
+function applyIntentFallbackAction(
+  fallback: IntentFallbackAction,
+  response: PageBuilderAiChatResponse,
+) {
+  return fallbackResponse(
+    fallback.message,
+    fallback.toolCall,
+    fallback.mode === "append" ? response : undefined,
+  );
+}
+
+function imageTextSectionClarificationToolCall(): PageBuilderAiToolCall {
+  return {
+    id: "deterministic_image_text_clarification",
+    name: "request_clarification",
+    input: { options: imageTextSectionClarificationOptions },
+  };
+}
+
+function addImageTextSectionToolCall(
+  topic: string,
+  imageUrl: string,
+): PageBuilderAiToolCall {
+  return {
+    id: "deterministic_add_image_text_section",
+    name: "add_image_text_section",
+    input: {
+      heading: titleWithTopic(topic, "Useful context"),
+      body: bodyForTopic(topic),
+      bulletItems: null,
+      imageUrl,
+      imageAltText: titleWithTopic(topic, "Supporting image"),
+      imageCaption: null,
+      sourceRightsNotes: null,
+      imagePosition: "right",
+    },
+  };
+}
+
+function mediaSourceClarificationToolCall(): PageBuilderAiToolCall {
+  return {
+    id: "deterministic_media_source_clarification",
+    name: "request_clarification",
+    input: { options: mediaSourceClarificationOptions },
+  };
+}
+
+function addMediaBlockToolCall(
+  mediaType: "image" | "video",
+  topic: string,
+  mediaUrl: string,
+): PageBuilderAiToolCall {
+  return {
+    id: `deterministic_add_${mediaType}_block`,
+    name: "add_media_block",
+    input: {
+      mediaType,
+      title: mediaType === "video" ? titleWithTopic(topic, "Video") : null,
+      url: mediaUrl,
+      altText: mediaType === "image" ? titleWithTopic(topic, "Image") : null,
+      caption: null,
+      sourceRightsNotes: null,
+    },
+  };
+}
+
+function addBlockFallbackToolCall(
+  blockType: AiAddBlockType,
+  message: string,
+  context: PageBuilderAiContext,
+): PageBuilderAiToolCall {
+  return {
+    id: `deterministic_add_${blockType}`,
+    name: "add_block",
+    input: fallbackAddBlockInput(blockType, message, context),
+  };
+}
+
+function isImageTextSectionIntent(message: string) {
+  const text = message.toLowerCase();
+  const asksToAdd = isAddRequest(text);
+  const mentionsImage = /\b(image|photo|picture|visual|media)\b/.test(text);
+  const mentionsText = /\b(text|copy|content|paragraph|words|body)\b/.test(
+    text,
+  );
+  const mentionsSection = /\b(section|block|row|area)\b/.test(text);
+
+  return asksToAdd && mentionsImage && mentionsText && mentionsSection;
+}
+
+function detectMediaBlockIntent(message: string): "image" | "video" | null {
+  const text = message.toLowerCase();
+  if (!isAddRequest(text)) return null;
+  if (/\b(video|youtube|vimeo|embed|clip)\b/.test(text)) return "video";
+  if (/\b(image|photo|picture|visual|media)\b/.test(text)) return "image";
+  return null;
+}
+
+type AiAddBlockType = z.infer<typeof addBlockInputSchema>["blockType"];
+
+function detectAddBlockIntent(message: string): AiAddBlockType | null {
+  const text = message.toLowerCase();
+  if (!isAddRequest(text)) return null;
+
+  const checks: Array<[AiAddBlockType, RegExp]> = [
+    [
+      "lead_form",
+      /\b(lead form|enquiry form|inquiry form|contact form|application form|signup form|sign-up form|form block)\b/,
+    ],
+    [
+      "card_grid",
+      /\b(card grid|cards?|tiles?|grid|comparison|options|services list|benefits grid|feature grid)\b/,
+    ],
+    ["faq", /\b(faq|faqs|q&a|questions?|answers?|question and answer)\b/],
+    [
+      "cta",
+      /\b(cta|call to action|button|contact button|booking button|enquiry button|inquiry button)\b/,
+    ],
+    [
+      "proof",
+      /\b(proof|testimonial|quote|stat|evidence|social proof|case proof|trust block)\b/,
+    ],
+    [
+      "hero",
+      /\b(hero|headline|opening|page opener|top section|above the fold)\b/,
+    ],
+    [
+      "rich_text",
+      /\b(text block|text section|copy block|body copy|paragraph|article section|intro copy|rich text|content section|written section)\b/,
+    ],
+  ];
+
+  return checks.find(([, pattern]) => pattern.test(text))?.[0] ?? null;
+}
+
+function isAddRequest(text: string) {
+  return /\b(add|create|insert|make|build|put|include|draft|generate|write|compose|give me)\b/.test(
+    text,
+  );
+}
+
+function isAiSafeMediaSource(value: string) {
+  return (
+    /^\/(?!\/).+\.(?:avif|webp|png|jpe?g|gif|svg|mp4|webm|mov|m4v)(?:[?#].*)?$/i.test(
+      value,
+    ) || /^https?:\/\/.+/i.test(value)
+  );
+}
+
+function extractMediaSource(message: string) {
+  const external = message.match(/https?:\/\/[^\s'")]+/i)?.[0];
+  if (external) return cleanMediaSource(external);
+  const internal = message.match(
+    /\/[^\s'")]+\.(?:avif|webp|png|jpe?g|gif|svg|mp4|webm|mov|m4v)(?:[?#][^\s'")]*)?/i,
+  )?.[0];
+  return internal ? cleanMediaSource(internal) : "";
+}
+
+function cleanMediaSource(value: string) {
+  return value.replace(/[.,;!?]+$/g, "");
+}
+
+function responseHasTool(response: PageBuilderAiChatResponse, names: string[]) {
+  return response.toolCalls.some((toolCall) => names.includes(toolCall.name));
+}
+
+function responseHasContentTool(response: PageBuilderAiChatResponse) {
+  return response.toolCalls.some(
+    (toolCall) =>
+      toolCall.name.startsWith("edit_block_") ||
+      [
+        "add_block",
+        "add_media_block",
+        "add_image_text_section",
+        "replace_page_sections",
+        "reorder_blocks",
+        "delete_block",
+      ].includes(toolCall.name),
+  );
+}
+
+function fallbackResponse(
+  message: string,
+  toolCall: PageBuilderAiToolCall,
+  response?: PageBuilderAiChatResponse,
+): PageBuilderAiChatResponse {
+  return {
+    message: response?.message || message,
+    toolCalls: [...(response?.toolCalls ?? []), toolCall],
+  };
+}
+
+function fallbackAddBlockInput(
+  blockType: AiAddBlockType,
+  message: string,
+  context: PageBuilderAiContext,
+): z.infer<typeof addBlockInputSchema> {
+  const topic = intentTopic(message, context);
+  const base = {
+    blockType,
+    title: null,
+    body: null,
+    bulletItems: null,
+    faqItems: null,
+    cards: null,
+    ctaLabel: null,
+    ctaHref: null,
+  };
+
+  if (blockType === "hero") {
+    return {
+      ...base,
+      title: titleWithTopic(topic, "Better vending"),
+      body: bodyForTopic(topic),
+      ctaLabel: "Book a consultation",
+      ctaHref: "/contact",
+    };
+  }
+
+  if (blockType === "rich_text") {
+    return {
+      ...base,
+      title: titleWithTopic(topic, "What to know"),
+      body: bodyForTopic(topic),
+      bulletItems: ["Clarify the audience", "Explain the benefit"],
+    };
+  }
+
+  if (blockType === "faq") {
+    return {
+      ...base,
+      title: titleWithTopic(topic, "FAQs"),
+      faqItems: [
+        {
+          question: questionForTopic(topic),
+          answer: bodyForTopic(topic),
+        },
+      ],
+    };
+  }
+
+  if (blockType === "card_grid") {
+    return {
+      ...base,
+      title: titleWithTopic(topic, "Options"),
+      cards: [
+        {
+          title: "Managed setup",
+          body: bodyForTopic(topic),
+          href: "/contact",
+          linkLabel: "Ask about this option",
+        },
+      ],
+    };
+  }
+
+  if (blockType === "cta") {
+    return {
+      ...base,
+      ctaLabel: titleWithTopic(topic, "Talk to us"),
+      ctaHref: "/contact",
+    };
+  }
+
+  if (blockType === "proof") {
+    return {
+      ...base,
+      title: "Proof point",
+      body: `Use this proof block to support ${topic}.`,
+    };
+  }
+
+  return {
+    ...base,
+    title: titleWithTopic(topic, "Enquire"),
+    body: `Share a few details and we will help with ${topic}.`,
+    ctaLabel: "Send enquiry",
+  };
+}
+
+function intentTopic(message: string, context: PageBuilderAiContext) {
+  const topicMatch = message.match(
+    /\b(?:about|for|on|around)\s+([^.,;!?]+)/i,
+  )?.[1];
+  const source =
+    cleanTopic(topicMatch ?? "") ||
+    cleanTopic(context.targetKeyword) ||
+    cleanTopic(context.title) ||
+    "this page";
+  return source.slice(0, 90);
+}
+
+function cleanTopic(value: string) {
+  return value
+    .replace(/\busing\s+(?:https?:\/\/|\/)\S+/i, "")
+    .replace(/\bwith\s+(?:https?:\/\/|\/)\S+/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function titleWithTopic(topic: string, fallback: string) {
+  const cleaned = cleanTopic(topic);
+  if (!cleaned) return fallback;
+  return cleaned.length > 120
+    ? cleaned.slice(0, 117).trimEnd() + "..."
+    : cleaned;
+}
+
+function bodyForTopic(topic: string) {
+  return `Use this section to explain ${topic} in clear customer-facing language.`;
+}
+
+function questionForTopic(topic: string) {
+  return `What should readers know about ${topic}?`;
 }
 
 function reorderBlocks(

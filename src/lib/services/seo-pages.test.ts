@@ -428,6 +428,80 @@ describe("seo page service", () => {
     expect(patch).not.toHaveProperty("structured_data_settings");
   });
 
+  it("saves draft route, governance, social, and schedule fields as one patch", async () => {
+    const update = updateSingle({
+      id: "page_1",
+      slug: "updated-vending-guide",
+      route_prefix: "/blog",
+      route_path: "/blog/updated-vending-guide",
+      status: "draft",
+    });
+    const client = buildClient(update.table);
+
+    await adminSaveSeoPageDraft(
+      "page_1",
+      {
+        slug: "Updated Vending Guide",
+        routePrefix: "/blog",
+        title: " Updated Vending Guide ",
+        targetKeyword: null,
+        seoTitle: null,
+        metaDescription: "Updated meta description.",
+        canonicalUrl: null,
+        noindex: true,
+        sitemapEnabled: false,
+        structuredDataSettings: { breadcrumb: false, faq: false },
+        internalTags: ["review", "priority"],
+        topicCluster: null,
+        campaignLabel: "FY26",
+        funnelStage: "consideration",
+        reviewPeriodMonths: 3,
+        nextReviewAt: null,
+        lifecycleStatus: "needs_review",
+        ogTitle: null,
+        ogDescription: "Updated social description.",
+        scheduledPublishAt: null,
+        scheduledPublishStatus: "idle",
+        scheduledPublishError: null,
+        scheduledPublishAttempts: 0,
+        scheduledPublishLastAttemptAt: null,
+        scheduledPublishLockedAt: null,
+        updatedBy: "admin-1",
+      },
+      { client },
+    );
+
+    expect(update.mocks.update).toHaveBeenCalledWith({
+      slug: "updated-vending-guide",
+      route_prefix: "/blog",
+      route_path: "/blog/updated-vending-guide",
+      title: "Updated Vending Guide",
+      target_keyword: null,
+      seo_title: null,
+      meta_description: "Updated meta description.",
+      canonical_url: null,
+      noindex: true,
+      sitemap_enabled: false,
+      structured_data_settings: { breadcrumb: false, faq: false },
+      internal_tags: ["review", "priority"],
+      topic_cluster: null,
+      campaign_label: "FY26",
+      funnel_stage: "consideration",
+      review_period_months: 3,
+      next_review_at: null,
+      lifecycle_status: "needs_review",
+      og_title: null,
+      og_description: "Updated social description.",
+      scheduled_publish_at: null,
+      scheduled_publish_status: "idle",
+      scheduled_publish_error: null,
+      scheduled_publish_attempts: 0,
+      scheduled_publish_last_attempt_at: null,
+      scheduled_publish_locked_at: null,
+      updated_by: "admin-1",
+    });
+  });
+
   it("publishes by creating an immutable revision and mirroring its snapshot", async () => {
     const parsedContent = pageContentSchema.parse(validContent);
     const page = {
@@ -1666,6 +1740,86 @@ describe("seo page service", () => {
         p_seo_snapshot: seoSnapshot,
         p_draft_content: parsedContent,
         p_seo_patch: seoSnapshot,
+        p_actor_id: "admin-1",
+      },
+    );
+  });
+
+  it("filters malformed SEO snapshot values before applying rollback patches", async () => {
+    const parsedContent = pageContentSchema.parse(validContent);
+    const seoSnapshot = {
+      title: "Snapshot Vending Guide",
+      target_keyword: null,
+      seo_title: 123,
+      meta_description: null,
+      canonical_url: null,
+      noindex: "yes",
+      sitemap_enabled: false,
+      structured_data_settings: { breadcrumb: false, faq: true },
+      internal_tags: ["review", 123, null, "priority"],
+      topic_cluster: null,
+      campaign_label: 42,
+      funnel_stage: null,
+      review_period_months: "12",
+      next_review_at: null,
+      lifecycle_status: "needs_review",
+      og_title: null,
+      og_description: "Snapshot social description.",
+      scheduled_publish_at: null,
+      scheduled_publish_status: true,
+      scheduled_publish_error: null,
+      scheduled_publish_attempts: 2,
+      scheduled_publish_last_attempt_at: null,
+      scheduled_publish_locked_at: {},
+    };
+    const sourceRevision = {
+      id: "revision_source",
+      page_id: "page_1",
+      content_snapshot: parsedContent,
+      seo_snapshot: seoSnapshot,
+    };
+    const rollbackRevision = { id: "revision_rollback", page_id: "page_1" };
+    const rolledBackPage = { id: "page_1", draft_content: parsedContent };
+    const loadRevision = matchMaybeSingleSelect(sourceRevision);
+    const client = buildClient(loadRevision.table);
+    client.rpc.mockResolvedValue({
+      data: { page: rolledBackPage, revision: rollbackRevision },
+      error: null,
+    });
+
+    await adminRollbackSeoPageRevision("page_1", "revision_source", {
+      client,
+      actorId: "admin-1",
+    });
+
+    expect(client.rpc).toHaveBeenCalledWith(
+      "apply_seo_page_revision_update_atomically",
+      {
+        p_page_id: "page_1",
+        p_revision_type: "rollback",
+        p_revision_label: "Restore draft from revision_source",
+        p_content_snapshot: parsedContent,
+        p_seo_snapshot: seoSnapshot,
+        p_draft_content: parsedContent,
+        p_seo_patch: {
+          title: "Snapshot Vending Guide",
+          target_keyword: null,
+          meta_description: null,
+          canonical_url: null,
+          sitemap_enabled: false,
+          structured_data_settings: { breadcrumb: false, faq: true },
+          internal_tags: ["review", "priority"],
+          topic_cluster: null,
+          funnel_stage: null,
+          next_review_at: null,
+          lifecycle_status: "needs_review",
+          og_title: null,
+          og_description: "Snapshot social description.",
+          scheduled_publish_at: null,
+          scheduled_publish_error: null,
+          scheduled_publish_attempts: 2,
+          scheduled_publish_last_attempt_at: null,
+        },
         p_actor_id: "admin-1",
       },
     );

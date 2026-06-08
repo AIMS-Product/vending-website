@@ -4,11 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
-  adminArchivePost,
   adminCreatePost,
   adminGetPostById,
-  adminPublishPost,
-  adminUnpublishPost,
   adminUpdatePost,
 } from "@/lib/services/news";
 import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
@@ -145,30 +142,6 @@ export async function savePost(
 
   if (redirectTo) redirect(redirectTo);
   return { status: "saved", message: "Post saved." };
-}
-
-export async function publishPost(formData: FormData) {
-  await requireAuth();
-  const id = z.uuid().parse(String(formData.get("id") ?? ""));
-  const post = await adminPublishPost(id);
-  revalidateNewsPaths(post.slug);
-  redirect(`/admin/news/${post.id}?saved=1`);
-}
-
-export async function unpublishPost(formData: FormData) {
-  await requireAuth();
-  const id = z.uuid().parse(String(formData.get("id") ?? ""));
-  const post = await adminUnpublishPost(id);
-  revalidateNewsPaths(post.slug);
-  redirect(`/admin/news/${post.id}?saved=1`);
-}
-
-export async function archivePost(formData: FormData) {
-  await requireAuth();
-  const id = z.uuid().parse(String(formData.get("id") ?? ""));
-  const post = await adminArchivePost(id);
-  revalidateNewsPaths(post.slug);
-  redirect("/admin/news?status=archived");
 }
 
 export async function createSignedImageUpload(formData: FormData) {
