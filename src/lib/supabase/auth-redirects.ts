@@ -6,6 +6,7 @@ export const AUTH_CALLBACK_PATH = "/auth/callback";
 
 const safeAdminPathPattern = /^\/admin(\/|$)/;
 const emailParamPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const expiredLinkErrorMessagePattern = /\b(invalid|expired)\b/;
 
 export function normalizeAdminEmailParam(value: string | null | undefined) {
   const email = value?.trim().toLowerCase();
@@ -93,6 +94,37 @@ export function normalizeAdminNextPath(value: string | null | undefined) {
   }
 
   return `${url.pathname}${url.search}${url.hash}`;
+}
+
+export function supabaseAuthErrorRedirectPath(params: URLSearchParams) {
+  const error = params.get("error")?.toLowerCase() ?? "";
+  const errorCode = params.get("error_code")?.toLowerCase() ?? "";
+  const description = params.get("error_description")?.toLowerCase() ?? "";
+
+  if (
+    errorCode === "otp_expired" ||
+    (error === "access_denied" &&
+      description.includes("email link") &&
+      expiredLinkErrorMessagePattern.test(description))
+  ) {
+    return `${ADMIN_FORGOT_PASSWORD_PATH}?error=exchange_failed`;
+  }
+
+  return null;
+}
+
+export function supabaseAuthErrorRedirectPathFromUrlParts(
+  search: string,
+  hash = "",
+) {
+  const queryRedirect = supabaseAuthErrorRedirectPath(
+    new URLSearchParams(search.startsWith("?") ? search.slice(1) : search),
+  );
+  if (queryRedirect) return queryRedirect;
+
+  return supabaseAuthErrorRedirectPath(
+    new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash),
+  );
 }
 
 export function authErrorMessage(errorCode: string | null | undefined) {

@@ -10,6 +10,8 @@ import {
   normalizeAdminEmailParam,
   normalizeRecoveryNextPath,
   normalizeAdminNextPath,
+  supabaseAuthErrorRedirectPath,
+  supabaseAuthErrorRedirectPathFromUrlParts,
 } from "./auth-redirects";
 
 describe("admin auth redirects", () => {
@@ -80,6 +82,46 @@ describe("admin auth redirects", () => {
     expect(authErrorMessage("missing_code")).toContain("could not be used");
     expect(authErrorMessage("exchange_failed")).toContain("expired");
     expect(authErrorMessage(null)).toBeNull();
+  });
+
+  it("maps Supabase expired link errors to the reset request screen", () => {
+    expect(
+      supabaseAuthErrorRedirectPath(
+        new URLSearchParams(
+          "error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired",
+        ),
+      ),
+    ).toBe("/admin/forgot-password?error=exchange_failed");
+
+    expect(
+      supabaseAuthErrorRedirectPath(
+        new URLSearchParams(
+          "error=access_denied&error_description=Email+link+has+expired",
+        ),
+      ),
+    ).toBe("/admin/forgot-password?error=exchange_failed");
+
+    expect(
+      supabaseAuthErrorRedirectPath(
+        new URLSearchParams("error=server_error&error_code=unexpected"),
+      ),
+    ).toBeNull();
+  });
+
+  it("checks Supabase auth errors in both query strings and URL fragments", () => {
+    expect(
+      supabaseAuthErrorRedirectPathFromUrlParts(
+        "",
+        "#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired&sb=ignored",
+      ),
+    ).toBe("/admin/forgot-password?error=exchange_failed");
+
+    expect(
+      supabaseAuthErrorRedirectPathFromUrlParts(
+        "?error=access_denied&error_code=otp_expired",
+        "",
+      ),
+    ).toBe("/admin/forgot-password?error=exchange_failed");
   });
 
   it("keeps exported auth route constants stable", () => {

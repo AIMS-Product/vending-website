@@ -56,6 +56,20 @@ describe("proxy admin auth gate", () => {
     expect(response.headers.get("location")).toBeNull();
   });
 
+  it("routes expired Supabase auth links from the root to forgot password", async () => {
+    const response = await proxy(
+      request(
+        "/?error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired",
+      ),
+    );
+
+    expect(mocks.updateSession).not.toHaveBeenCalled();
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://vending-website.vercel.app/admin/forgot-password?error=exchange_failed",
+    );
+  });
+
   it("keeps reset-password protected until the recovery session exists", async () => {
     const response = await proxy(request("/admin/reset-password"));
 

@@ -5,6 +5,7 @@ import { Benefits } from "@/components/sections/Benefits";
 import { AcceleratorProgram } from "@/components/sections/AcceleratorProgram";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { FinalCta } from "@/components/sections/FinalCta";
+import { SupabaseAuthErrorRedirect } from "./SupabaseAuthErrorRedirect";
 
 export const metadata: Metadata = {
   alternates: {
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <>
+      <SupabaseAuthErrorRedirect />
       <Hero />
       <BrandStrip />
       <AcceleratorProgram />

@@ -11,6 +11,7 @@ import {
   ADMIN_FORGOT_PASSWORD_PATH,
   ADMIN_LOGIN_PATH,
   normalizeAdminNextPath,
+  supabaseAuthErrorRedirectPath,
 } from "@/lib/supabase/auth-redirects";
 import { isDevAdminAuthBypassEnabled } from "@/lib/supabase/dev-auth";
 import { updateSession } from "@/lib/supabase/middleware";
@@ -62,6 +63,17 @@ const REMOVED_PUBLIC_PATHS = new Set(["/test-leadscore-a"]);
  */
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
+
+  if (path === "/") {
+    const authErrorRedirect = supabaseAuthErrorRedirectPath(
+      request.nextUrl.searchParams,
+    );
+    if (authErrorRedirect) {
+      return NextResponse.redirect(new URL(authErrorRedirect, request.url));
+    }
+
+    return NextResponse.next();
+  }
 
   if (REMOVED_PUBLIC_PATHS.has(path)) {
     return notFoundResponse();
@@ -185,6 +197,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    {
+      source: "/",
+      has: [{ type: "query", key: "error" }],
+    },
     "/admin/:path*",
     "/auth/:path*",
     "/resources/:path*",
