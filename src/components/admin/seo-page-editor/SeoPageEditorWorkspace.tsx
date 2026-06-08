@@ -1,5 +1,6 @@
 "use client";
 
+import { BuilderEditorWalkthrough } from "@/components/admin/seo-page-editor/BuilderEditorWalkthrough";
 import { AiBuilderAssistant } from "@/components/admin/seo-page-editor/AiBuilderAssistant";
 import { BlockSettingsModal } from "@/components/admin/seo-page-editor/BlockSettingsModal";
 import { BuilderBlocksPanel } from "@/components/admin/seo-page-editor/BuilderBlocksPanel";
@@ -54,6 +55,7 @@ export function SeoPageEditorWorkspace({
         </div>
       </div>
 
+      <BuilderEditorWalkthrough editor={editor} />
       <AiBuilderAssistant editor={editor} />
 
       {editor.editingBlockEntry && (

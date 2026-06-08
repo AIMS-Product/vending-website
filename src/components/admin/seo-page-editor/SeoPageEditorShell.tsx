@@ -6,8 +6,7 @@ import { Wordmark } from "@/components/site/Wordmark";
 import type { PageBlock, PageChromeSettings } from "@/lib/page-builder/blocks";
 import type { BlockVariant } from "@/lib/page-builder/block-options";
 import {
-  templateOptionsForPageType,
-  type PageTemplateKey,
+  type SavedPageTemplateOption,
   type PageTypeId,
   type PageTypeOption,
 } from "@/lib/page-builder/page-templates";
@@ -24,57 +23,108 @@ import {
 import { BlockPicker } from "@/components/admin/seo-page-editor/BlockPicker";
 import { footerColumns, primaryNav } from "@/lib/content/nav";
 
+type CreationStep = 1 | 2 | 3;
+type StartingPoint = "blank" | "template";
+
+const creationSteps = [
+  { step: 1 as const, label: "Page type" },
+  { step: 2 as const, label: "Starting point" },
+  { step: 3 as const, label: "Ready to build" },
+];
+
 export function NewPageChoiceGate({
   pageTypeOptions,
+  savedTemplates = [],
   onChoosePageTemplate,
 }: {
   pageTypeOptions: readonly PageTypeOption[];
+  savedTemplates?: readonly SavedPageTemplateOption[];
   onChoosePageTemplate: (pageType: string, templateKey: string) => void;
 }) {
+  const [step, setStep] = useState<CreationStep>(1);
   const [selectedPageType, setSelectedPageType] =
     useState<PageTypeId>("resource");
-  const [selectedTemplateKey, setSelectedTemplateKey] =
-    useState<PageTemplateKey>("blank");
-  const templateOptions = useMemo(
-    () => templateOptionsForPageType(selectedPageType),
-    [selectedPageType],
+  const [startingPoint, setStartingPoint] = useState<StartingPoint>("blank");
+  const [selectedSavedTemplateId, setSelectedSavedTemplateId] = useState<
+    string | null
+  >(null);
+
+  const templatesForPageType = useMemo(
+    () =>
+      savedTemplates.filter(
+        (template) => template.pageType === selectedPageType,
+      ),
+    [savedTemplates, selectedPageType],
   );
+  const hasSavedTemplates = templatesForPageType.length > 0;
   const selectedPageTypeOption =
     pageTypeOptions.find((option) => option.id === selectedPageType) ??
     pageTypeOptions[0];
-  const selectedTemplate =
-    templateOptions.find((option) => option.id === selectedTemplateKey) ??
-    templateOptions[0];
+  const selectedSavedTemplate =
+    templatesForPageType.find(
+      (template) => template.id === selectedSavedTemplateId,
+    ) ?? null;
+  const startingPointLabel =
+    startingPoint === "blank"
+      ? "Blank page"
+      : (selectedSavedTemplate?.label ?? "Template");
+
+  const canContinueFromStep2 =
+    startingPoint === "blank" ||
+    (startingPoint === "template" &&
+      hasSavedTemplates &&
+      selectedSavedTemplate !== null);
+
+  function goToStep2() {
+    setStartingPoint("blank");
+    setSelectedSavedTemplateId(null);
+    setStep(2);
+  }
+
+  function handleStartBuilding() {
+    const templateKey =
+      startingPoint === "blank"
+        ? "blank"
+        : (selectedSavedTemplate?.templateKey ?? "blank");
+    onChoosePageTemplate(selectedPageType, templateKey);
+  }
 
   return (
     <div className="grid min-h-[calc(100dvh-4rem)] place-items-center border border-slate-200 bg-slate-100 px-4 py-8">
       <section
-        className="w-full max-w-5xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl ring-1 ring-black/5 sm:p-7"
+        className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl ring-1 ring-black/5 sm:p-8"
         aria-labelledby="new-page-choice-title"
       >
-        <div className="mb-6">
+        <div className="mb-8">
           <p className="text-xs font-semibold tracking-wider text-[#0b63f6] uppercase">
             SEO Page Builder
           </p>
           <h2
             id="new-page-choice-title"
-            className="mt-2 text-2xl font-semibold tracking-tight text-slate-950"
+            className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl"
           >
             Create page
           </h2>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
-            Pick the kind of page you want. We will start with the right
-            structure, and you can change the details later.
-          </p>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
-          <div className="space-y-5">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-950">
-                Page type
-              </h3>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <CreationStepIndicator currentStep={step} />
+
+        <div className="mt-8 min-h-[280px]">
+          {step === 1 ? (
+            <div className="space-y-5">
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  Step 1 of 3
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-slate-950 sm:text-2xl">
+                  What kind of page are you creating?
+                </h3>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
+                  Choose the page type that best matches your goal. You can
+                  adjust details later in the builder.
+                </p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
                 {pageTypeOptions.map((option) => {
                   const isSelected = option.id === selectedPageType;
                   return (
@@ -87,10 +137,7 @@ export function NewPageChoiceGate({
                           : "border-slate-200 bg-white hover:border-slate-300"
                       }`}
                       aria-pressed={isSelected}
-                      onClick={() => {
-                        setSelectedPageType(option.id);
-                        setSelectedTemplateKey("blank");
-                      }}
+                      onClick={() => setSelectedPageType(option.id)}
                     >
                       <span className="block text-sm font-semibold text-slate-950">
                         {option.label}
@@ -103,68 +150,271 @@ export function NewPageChoiceGate({
                 })}
               </div>
             </div>
+          ) : null}
 
-            <div>
-              <h3 className="text-sm font-semibold text-slate-950">
-                Starting point
-              </h3>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {templateOptions.map((template) => {
-                  const isSelected = template.id === selectedTemplateKey;
-                  return (
-                    <button
-                      key={template.id}
-                      type="button"
-                      className={`rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none ${
-                        isSelected
-                          ? "border-[#0b63f6] bg-[#f4f8ff] shadow-sm"
-                          : "border-slate-200 bg-white hover:border-slate-300"
-                      }`}
-                      aria-pressed={isSelected}
-                      onClick={() => setSelectedTemplateKey(template.id)}
-                    >
-                      <span className="block text-sm font-semibold text-slate-950">
-                        {template.label}
-                      </span>
-                      <span className="mt-1 block text-sm leading-5 text-slate-600">
-                        {template.description}
-                      </span>
-                    </button>
-                  );
-                })}
+          {step === 2 ? (
+            <div className="space-y-5">
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  Step 2 of 3
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-slate-950 sm:text-2xl">
+                  How would you like to start?
+                </h3>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
+                  Start from scratch or reuse a saved template for this page
+                  type.
+                </p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <ChoiceCard
+                  label="Blank page"
+                  description="Start with an empty editable canvas."
+                  selected={startingPoint === "blank"}
+                  onClick={() => {
+                    setStartingPoint("blank");
+                    setSelectedSavedTemplateId(null);
+                  }}
+                />
+                <ChoiceCard
+                  label="Template"
+                  description={
+                    hasSavedTemplates
+                      ? "Start from a saved page template."
+                      : "No templates created"
+                  }
+                  selected={startingPoint === "template"}
+                  disabled={!hasSavedTemplates}
+                  onClick={() => {
+                    if (!hasSavedTemplates) return;
+                    setStartingPoint("template");
+                    setSelectedSavedTemplateId(
+                      templatesForPageType[0]?.id ?? null,
+                    );
+                  }}
+                />
+              </div>
+              {startingPoint === "template" && hasSavedTemplates ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-slate-950">
+                    Choose a template
+                  </p>
+                  <div className="grid gap-2">
+                    {templatesForPageType.map((template) => {
+                      const isSelected =
+                        template.id === selectedSavedTemplateId;
+                      return (
+                        <button
+                          key={template.id}
+                          type="button"
+                          className={`rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none ${
+                            isSelected
+                              ? "border-[#0b63f6] bg-[#f4f8ff] shadow-sm"
+                              : "border-slate-200 bg-white hover:border-slate-300"
+                          }`}
+                          aria-pressed={isSelected}
+                          onClick={() =>
+                            setSelectedSavedTemplateId(template.id)
+                          }
+                        >
+                          <span className="block text-sm font-semibold text-slate-950">
+                            {template.label}
+                          </span>
+                          <span className="mt-1 block text-sm leading-5 text-slate-600">
+                            {template.description}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {step === 3 ? (
+            <div className="space-y-5">
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  Step 3 of 3
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-slate-950 sm:text-2xl">
+                  Ready to build your page
+                </h3>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
+                  Review your choices, then open the builder when you are ready.
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                <dl className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                      Page type
+                    </dt>
+                    <dd className="mt-1 text-base font-semibold text-slate-950">
+                      {selectedPageTypeOption?.label}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                      Starting point
+                    </dt>
+                    <dd className="mt-1 text-base font-semibold text-slate-950">
+                      {startingPointLabel}
+                    </dd>
+                    {startingPoint === "template" &&
+                    selectedSavedTemplate?.description ? (
+                      <dd className="mt-1 text-sm leading-6 text-slate-600">
+                        {selectedSavedTemplate.description}
+                      </dd>
+                    ) : null}
+                  </div>
+                </dl>
               </div>
             </div>
-          </div>
-
-          <aside className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-            <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
-              Selected setup
-            </p>
-            <p className="mt-3 text-lg font-semibold text-slate-950">
-              {selectedPageTypeOption?.label}
-            </p>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              {selectedTemplate?.label}
-            </p>
-            <div className="mt-5 grid gap-2">
-              <button
-                type="button"
-                className="min-h-11 rounded-lg border border-[#0b63f6] bg-[#0b63f6] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
-                onClick={() =>
-                  onChoosePageTemplate(selectedPageType, selectedTemplateKey)
-                }
-              >
-                Start building
-              </button>
-            </div>
-          </aside>
+          ) : null}
         </div>
 
-        <p className="mt-5 text-sm leading-6 text-slate-500">
-          Saved templates and AI-assisted starts will appear here once they are
-          ready for editors.
-        </p>
+        <CreationStepActions
+          step={step}
+          canContinueFromStep2={canContinueFromStep2}
+          onBack={() => setStep((current) => (current - 1) as CreationStep)}
+          onContinueFromStep1={goToStep2}
+          onContinueFromStep2={() => setStep(3)}
+          onStartBuilding={handleStartBuilding}
+        />
       </section>
+    </div>
+  );
+}
+
+function CreationStepIndicator({ currentStep }: { currentStep: CreationStep }) {
+  return (
+    <ol
+      aria-label="Create page progress"
+      className="grid grid-cols-3 gap-2 sm:gap-3"
+    >
+      {creationSteps.map(({ step, label }) => {
+        const isComplete = step < currentStep;
+        const isCurrent = step === currentStep;
+        return (
+          <li key={step} className="min-w-0">
+            <div
+              className={`h-1.5 rounded-full transition ${
+                isComplete || isCurrent ? "bg-[#0b63f6]" : "bg-slate-200"
+              }`}
+              aria-hidden="true"
+            />
+            <p
+              className={`mt-2 truncate text-xs font-medium ${
+                isCurrent ? "text-[#0b63f6]" : "text-slate-500"
+              }`}
+            >
+              {label}
+            </p>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function ChoiceCard({
+  label,
+  description,
+  selected,
+  disabled = false,
+  onClick,
+}: {
+  label: string;
+  description: string;
+  selected: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      className={`rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none ${
+        disabled
+          ? "cursor-not-allowed border-slate-200 bg-slate-50 opacity-70"
+          : selected
+            ? "border-[#0b63f6] bg-[#f4f8ff] shadow-sm"
+            : "border-slate-200 bg-white hover:border-slate-300"
+      }`}
+      aria-pressed={selected}
+      onClick={onClick}
+    >
+      <span className="block text-sm font-semibold text-slate-950">
+        {label}
+      </span>
+      <span className="mt-1 block text-sm leading-5 text-slate-600">
+        {description}
+      </span>
+    </button>
+  );
+}
+
+function CreationStepActions({
+  step,
+  canContinueFromStep2,
+  onBack,
+  onContinueFromStep1,
+  onContinueFromStep2,
+  onStartBuilding,
+}: {
+  step: CreationStep;
+  canContinueFromStep2: boolean;
+  onBack: () => void;
+  onContinueFromStep1: () => void;
+  onContinueFromStep2: () => void;
+  onStartBuilding: () => void;
+}) {
+  return (
+    <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-6">
+      {step > 1 ? (
+        <button
+          type="button"
+          className="min-h-11 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+          onClick={onBack}
+        >
+          Back
+        </button>
+      ) : (
+        <span aria-hidden="true" />
+      )}
+
+      {step === 1 ? (
+        <button
+          type="button"
+          className="min-h-11 rounded-lg border border-[#0b63f6] bg-[#0b63f6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+          onClick={onContinueFromStep1}
+        >
+          Continue
+        </button>
+      ) : null}
+
+      {step === 2 ? (
+        <button
+          type="button"
+          disabled={!canContinueFromStep2}
+          className="min-h-11 rounded-lg border border-[#0b63f6] bg-[#0b63f6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500"
+          onClick={onContinueFromStep2}
+        >
+          Continue
+        </button>
+      ) : null}
+
+      {step === 3 ? (
+        <button
+          type="button"
+          className="min-h-11 rounded-lg border border-[#0b63f6] bg-[#0b63f6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+          onClick={onStartBuilding}
+        >
+          Start building page
+        </button>
+      ) : null}
     </div>
   );
 }

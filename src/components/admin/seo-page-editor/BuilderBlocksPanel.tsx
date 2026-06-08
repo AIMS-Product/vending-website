@@ -32,6 +32,7 @@ export function BuilderBlocksPanel({
   return (
     <section
       aria-labelledby="builder-blocks-panel-title"
+      data-builder-walkthrough="blocks"
       className="fixed top-32 bottom-4 left-4 z-[60] order-2 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:bottom-auto xl:left-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none"
     >
       <div className="flex shrink-0 items-start border-b border-slate-200 px-5 py-4">

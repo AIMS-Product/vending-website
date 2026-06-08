@@ -27,6 +27,15 @@ export type PageTemplateOption = {
   content: PageContent;
 };
 
+/** Editor-saved page templates surfaced in the new-page creation flow. */
+export type SavedPageTemplateOption = {
+  id: string;
+  label: string;
+  description: string;
+  pageType: PageTypeId;
+  templateKey: PageTemplateKey;
+};
+
 export type ResolvedPageTemplate = {
   pageType: PageTypeId;
   templateKey: PageTemplateKey;

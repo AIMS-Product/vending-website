@@ -126,6 +126,8 @@ const autosaveMetadataFieldNames = new Set([
   "scheduledPublishAt",
   "cancelScheduledPublish",
 ]);
+const builderWalkthroughStorageKey = "page-builder-editor-walkthrough-seen";
+type BuilderWalkthroughStep = 1 | 2 | 3;
 
 export function useSeoPageEditorController(
   {
@@ -248,6 +250,8 @@ export function useSeoPageEditorController(
   const [hasSelectedNewPageMode, setHasSelectedNewPageMode] = useState(
     Boolean(page?.id),
   );
+  const [builderWalkthroughStep, setBuilderWalkthroughStep] =
+    useState<BuilderWalkthroughStep | null>(null);
   const showCreationChoiceModal = !page?.id && !hasSelectedNewPageMode;
   const [linkSuggestionMessage, setLinkSuggestionMessage] = useState<
     string | null
@@ -749,12 +753,14 @@ export function useSeoPageEditorController(
     aiProposals,
     applyLinkSuggestion,
     applyPageBuilderAiTools,
+    advanceBuilderWalkthrough,
     autosave,
     blockOrdinalById,
     blockSidebarExpandTitle,
     blockSidebarStatus,
     builderBlockEntries,
     builderShellGridClass,
+    builderWalkthroughStep,
     canonicalUrl,
     chromeSettings,
     closeBlockSettings,
@@ -762,9 +768,11 @@ export function useSeoPageEditorController(
     content,
     draftContentJson,
     duplicateBlock,
+    dismissBuilderWalkthrough,
     editBlockEntry,
     effectivePageId,
     editingBlockEntry,
+    finishBuilderWalkthrough,
     formAction,
     focusSeoSetting,
     handleEditorFormSubmit,
@@ -932,6 +940,73 @@ export function useSeoPageEditorController(
     setIsDesktopSeoSidebarCollapsed((isCollapsed) => !isCollapsed);
   }
 
+  function shouldOfferBuilderWalkthrough() {
+    if (page?.id) return false;
+    try {
+      return !window.localStorage.getItem(builderWalkthroughStorageKey);
+    } catch {
+      return false;
+    }
+  }
+
+  function applyWalkthroughPanelLayout(step: BuilderWalkthroughStep) {
+    if (step === 1) {
+      if (isNarrowEditor) {
+        setMobileEditorPanel("blocks");
+      } else {
+        setIsDesktopBlockSidebarCollapsed(false);
+      }
+      return;
+    }
+
+    if (step === 2) {
+      if (isNarrowEditor) {
+        setMobileEditorPanel("seo");
+      } else {
+        setIsDesktopSeoSidebarCollapsed(false);
+      }
+      return;
+    }
+
+    if (isNarrowEditor) {
+      setMobileEditorPanel(null);
+    } else {
+      setIsDesktopBlockSidebarCollapsed(true);
+      setIsDesktopSeoSidebarCollapsed(true);
+    }
+  }
+
+  function completeBuilderWalkthrough() {
+    try {
+      window.localStorage.setItem(builderWalkthroughStorageKey, "1");
+    } catch {
+      // Ignore private browsing storage failures.
+    }
+  }
+
+  function advanceBuilderWalkthrough() {
+    if (builderWalkthroughStep === 1) {
+      applyWalkthroughPanelLayout(2);
+      setBuilderWalkthroughStep(2);
+      return;
+    }
+
+    if (builderWalkthroughStep === 2) {
+      applyWalkthroughPanelLayout(3);
+      setBuilderWalkthroughStep(3);
+    }
+  }
+
+  function finishBuilderWalkthrough() {
+    completeBuilderWalkthrough();
+    setBuilderWalkthroughStep(null);
+  }
+
+  function dismissBuilderWalkthrough() {
+    completeBuilderWalkthrough();
+    setBuilderWalkthroughStep(null);
+  }
+
   function selectBlockEntry(entry: BuilderBlockEntry) {
     setSelectedBlockId(entry.block.id);
     scrollToBuilderBlockId(entry.block.id);
@@ -1015,6 +1090,10 @@ export function useSeoPageEditorController(
     setSelectedBlockId(null);
     setEditingBlockId(null);
     setHasSelectedNewPageMode(true);
+    if (shouldOfferBuilderWalkthrough()) {
+      applyWalkthroughPanelLayout(1);
+      setBuilderWalkthroughStep(1);
+    }
   }
 
   function updateChromeSettings(next: Partial<PageChromeSettings>) {

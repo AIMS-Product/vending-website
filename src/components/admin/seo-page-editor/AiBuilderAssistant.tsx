@@ -39,8 +39,10 @@ export function AiBuilderAssistant({
 }: {
   editor: SeoPageEditorController;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isUserOpen, setIsUserOpen] = useState(false);
   const canRunAiAgent = Boolean(editor.page?.id);
+  const isWalkthroughAiStep = editor.builderWalkthroughStep === 3;
+  const isOpen = isUserOpen || isWalkthroughAiStep;
   const sidePanelOpenOnNarrow =
     editor.isNarrowEditor &&
     (!editor.isBlockSidebarCollapsed || !editor.isSeoSidebarCollapsed);
@@ -202,7 +204,7 @@ export function AiBuilderAssistant({
                 type="button"
                 aria-label="Close AI assistant"
                 className="rounded-lg p-1 text-violet-500 transition hover:bg-violet-100 hover:text-violet-800 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
-                onClick={() => setIsOpen(false)}
+                onClick={() => setIsUserOpen(false)}
               >
                 <CloseIcon />
               </button>
@@ -359,10 +361,14 @@ export function AiBuilderAssistant({
 
       <button
         type="button"
+        data-builder-walkthrough="ai"
         aria-label={isOpen ? "Close AI assistant" : "Open AI assistant"}
         aria-expanded={isOpen}
         className={`fixed right-4 bottom-6 z-[70] inline-flex items-center gap-2 rounded-full border border-violet-400 bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-xl transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none ${offsetClass}`}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => {
+          if (isWalkthroughAiStep) return;
+          setIsUserOpen((open) => !open);
+        }}
       >
         <SparkIcon />
         <span>AI</span>
