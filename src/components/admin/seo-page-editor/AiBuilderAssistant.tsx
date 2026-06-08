@@ -67,7 +67,9 @@ export function AiBuilderAssistant({
   const pendingCount = editor.aiProposals.filter(
     (proposal) => proposal.status === "proposed",
   ).length;
-  const storageKey = `page-builder-ai-chat-${editor.effectivePageId ?? "new"}`;
+  const storageKey = editor.effectivePageId
+    ? `page-builder-ai-chat-${editor.effectivePageId}`
+    : null;
   const [chatState, dispatchChat] = useReducer(
     chatReducer,
     storageKey,
@@ -86,6 +88,11 @@ export function AiBuilderAssistant({
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    dispatchChat({ type: "reset", storageKey });
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!storageKey) return;
     window.localStorage.setItem(
       storageKey,
       JSON.stringify(
@@ -513,6 +520,7 @@ type AiChatState = {
 };
 
 type AiChatAction =
+  | { type: "reset"; storageKey: string | null }
   | { type: "setInput"; input: string }
   | { type: "submitStart"; messages: AiChatMessage[] }
   | { type: "assistantMessage"; message: AiChatMessage }
@@ -520,16 +528,19 @@ type AiChatAction =
   | { type: "resolveDelete"; messageId: string; message: AiChatMessage }
   | { type: "clearMessages" };
 
-function initialChatState(storageKey: string): AiChatState {
+function initialChatState(storageKey: string | null): AiChatState {
   return {
     input: "",
-    messages: loadStoredChatMessages(storageKey),
+    messages: storageKey ? loadStoredChatMessages(storageKey) : [],
     isLoading: false,
     error: null,
   };
 }
 
 function chatReducer(state: AiChatState, action: AiChatAction): AiChatState {
+  if (action.type === "reset") {
+    return initialChatState(action.storageKey);
+  }
   if (action.type === "setInput") {
     return { ...state, input: action.input };
   }

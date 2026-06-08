@@ -915,6 +915,63 @@ describe("page builder AI chat tools", () => {
     });
   });
 
+  it("adds a full page body when a create-page ask only returns metadata", () => {
+    const emptyContext: PageBuilderAiContext = {
+      ...context,
+      selectedBlockId: null,
+      content: {
+        version: 1,
+        chrome: { showHeader: true, showFooter: true },
+        sections: [],
+      },
+    };
+    const response = normalizePageBuilderAiChatResponseForIntent(
+      {
+        messages: [
+          {
+            role: "user",
+            content:
+              "Create a page about placing vending machines in college dormitories.",
+          },
+        ],
+        context: emptyContext,
+      },
+      {
+        message: "Updated SEO metadata fields.",
+        toolCalls: [
+          {
+            id: "call_1",
+            name: "set_seo_metadata",
+            input: {
+              title: "Placing Vending Machines in College Dormitories",
+              slug: "placing-vending-machines-in-college-dormitories",
+              targetKeyword: "vending machines in college dormitories",
+              seoTitle: "Vending Machines in College Dormitories",
+              metaDescription:
+                "Learn how to place vending machines in college dormitories.",
+            },
+          },
+        ],
+      },
+    );
+
+    expect(response.message).toBe("Updated SEO metadata fields.");
+    expect(response.toolCalls.map((toolCall) => toolCall.name)).toEqual([
+      "set_seo_metadata",
+      "replace_page_sections",
+    ]);
+    expect(response.toolCalls[1]).toMatchObject({
+      id: "deterministic_replace_page_sections",
+      input: {
+        replaceExisting: false,
+        sections: expect.arrayContaining([
+          expect.objectContaining({ title: "Hero" }),
+          expect.objectContaining({ title: "CTA" }),
+        ]),
+      },
+    });
+  });
+
   it("normalizes 200 human add-request variants across block families", () => {
     expect(intentEvalCases).toHaveLength(200);
 
