@@ -2,12 +2,17 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import type { PageAiProposalInsertResult } from "@/app/admin/pages/actions";
+import type {
+  PageAiProposalInsertResult,
+  PageAiProposalResult,
+} from "@/app/admin/pages/actions";
 import type { AiPageProposalReview } from "@/lib/services/ai-page-proposals";
 import {
   aiBlockReviewBody,
@@ -70,6 +75,11 @@ export function AiBuilderAssistant({
   const [documentImportMessage, setDocumentImportMessage] = useState<
     string | null
   >(null);
+  const [activeAssistantTool, setActiveAssistantTool] = useState<
+    "import" | "draft" | null
+  >(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -79,6 +89,28 @@ export function AiBuilderAssistant({
       ),
     );
   }, [chatState.messages, storageKey]);
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+
+    const scrollToLatest = () => {
+      chatBottomRef.current?.scrollIntoView({ block: "end" });
+      const container = chatScrollRef.current;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    };
+
+    scrollToLatest();
+    const frame = requestAnimationFrame(scrollToLatest);
+    return () => cancelAnimationFrame(frame);
+  }, [
+    activeAssistantTool,
+    chatState.error,
+    chatState.isLoading,
+    chatState.messages,
+    isOpen,
+  ]);
 
   if (shouldDeferToEditorSidePanel) return null;
 
@@ -211,7 +243,10 @@ export function AiBuilderAssistant({
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+          <div
+            ref={chatScrollRef}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4"
+          >
             <AiBlockChecklist
               editor={editor}
               onPrompt={(prompt) => {
@@ -255,96 +290,102 @@ export function AiBuilderAssistant({
                 {chatState.error}
               </p>
             )}
-
-            <DocumentImportPanel
-              text={documentImportText}
-              message={documentImportMessage}
-              proposal={documentImportProposal}
-              onTextChange={(value) => {
-                setDocumentImportText(value);
-                setDocumentImportMessage(null);
-              }}
-              onCreateProposal={createLocalDocumentImportProposal}
-              onInsertBlocks={(blocks) => {
-                editor.insertDocumentImportBlocks(blocks);
-                setDocumentImportMessage(
-                  `${blocks.length} imported block${
-                    blocks.length === 1 ? "" : "s"
-                  } inserted into the draft.`,
-                );
-              }}
+            <div
+              ref={chatBottomRef}
+              aria-hidden="true"
+              className="h-px shrink-0 scroll-mt-4"
             />
-
-            <details className="mt-4 rounded-lg border border-violet-100 bg-violet-50/50">
-              <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-violet-800">
-                Source proposals
-                {pendingCount > 0 ? ` · ${pendingCount}` : ""}
-              </summary>
-              <div className="border-t border-violet-100 p-3">
-                <button
-                  type="button"
-                  className="w-full rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={!canRunAiAgent || editor.isAiGenerating}
-                  onClick={() => {
-                    void editor.runAiSeoAgent();
-                  }}
-                >
-                  {editor.isAiGenerating
-                    ? "Running..."
-                    : canRunAiAgent
-                      ? "Run SEO agent"
-                      : "Save the page first"}
-                </button>
-
-                {editor.aiProposalResult.status !== "idle" &&
-                  editor.aiProposalResult.message && (
-                    <p
-                      className={`mt-4 rounded-lg px-4 py-3 text-sm font-medium ring-1 ring-inset ${
-                        editor.aiProposalResult.status === "error"
-                          ? "bg-red-50 text-red-700 ring-red-200"
-                          : "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                      }`}
-                    >
-                      {editor.aiProposalResult.message}
-                    </p>
-                  )}
-
-                <AiProposalReviewList
-                  proposals={editor.aiProposals}
-                  insertResult={editor.aiInsertResult}
-                  isInserting={editor.isAiInserting}
-                  onInsertBlocks={editor.insertAiProposalBlocks}
-                />
-              </div>
-            </details>
           </div>
 
           <div className="shrink-0 border-t border-violet-100 bg-white p-3">
+            {activeAssistantTool === "import" ? (
+              <DocumentImportPanel
+                embedded
+                text={documentImportText}
+                message={documentImportMessage}
+                proposal={documentImportProposal}
+                onTextChange={(value) => {
+                  setDocumentImportText(value);
+                  setDocumentImportMessage(null);
+                }}
+                onCreateProposal={createLocalDocumentImportProposal}
+                onInsertBlocks={(blocks) => {
+                  editor.insertDocumentImportBlocks(blocks);
+                  setDocumentImportMessage(
+                    `${blocks.length} imported block${
+                      blocks.length === 1 ? "" : "s"
+                    } inserted into the draft.`,
+                  );
+                }}
+              />
+            ) : null}
+
+            {activeAssistantTool === "draft" ? (
+              <AiPageDraftPanel
+                embedded
+                canRunAiAgent={canRunAiAgent}
+                isAiGenerating={editor.isAiGenerating}
+                pendingCount={pendingCount}
+                aiProposalResult={editor.aiProposalResult}
+                proposals={editor.aiProposals}
+                insertResult={editor.aiInsertResult}
+                isInserting={editor.isAiInserting}
+                onGenerateDraft={() => {
+                  void editor.runAiSeoAgent();
+                }}
+                onInsertBlocks={editor.insertAiProposalBlocks}
+              />
+            ) : null}
+
             <label className="sr-only" htmlFor="page-ai-chat-input">
               Message AI assistant
             </label>
-            <div className="flex items-end gap-2">
-              <textarea
-                id="page-ai-chat-input"
-                value={chatState.input}
-                rows={2}
-                className="min-h-11 flex-1 resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none"
-                placeholder="Ask for a page edit"
-                disabled={chatState.isLoading}
-                onChange={(event) =>
-                  dispatchChat({ type: "setInput", input: event.target.value })
+            <textarea
+              id="page-ai-chat-input"
+              value={chatState.input}
+              rows={2}
+              className="min-h-11 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none"
+              placeholder="Ask for a page edit"
+              disabled={chatState.isLoading}
+              onChange={(event) =>
+                dispatchChat({ type: "setInput", input: event.target.value })
+              }
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void sendChatMessage(chatState.input);
                 }
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    void sendChatMessage(chatState.input);
+              }}
+            />
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
+                <AssistantIconButton
+                  label="Import document"
+                  pressed={activeAssistantTool === "import"}
+                  onClick={() =>
+                    setActiveAssistantTool((current) =>
+                      current === "import" ? null : "import",
+                    )
                   }
-                }}
-              />
-              <button
-                type="button"
-                aria-label="Send message"
-                className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-violet-600 text-white shadow-sm transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <UploadIcon />
+                </AssistantIconButton>
+                <AssistantIconButton
+                  label="Generate page draft"
+                  pressed={activeAssistantTool === "draft"}
+                  badge={pendingCount > 0 ? pendingCount : undefined}
+                  onClick={() =>
+                    setActiveAssistantTool((current) =>
+                      current === "draft" ? null : "draft",
+                    )
+                  }
+                >
+                  <SparkIcon />
+                </AssistantIconButton>
+              </div>
+              <AssistantIconButton
+                label="Send message"
+                primary
                 disabled={
                   chatState.isLoading || chatState.input.trim().length === 0
                 }
@@ -353,7 +394,7 @@ export function AiBuilderAssistant({
                 }}
               >
                 <SendIcon />
-              </button>
+              </AssistantIconButton>
             </div>
           </div>
         </section>
@@ -1015,7 +1056,119 @@ function makeLocalImportId(prefix: string) {
   return `${prefix}_${suffix}`;
 }
 
+function DocumentImportIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="M12 18v-6" />
+      <path d="m9 15 3 3 3-3" />
+    </svg>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3v12" />
+      <path d="m7 8 5-5 5 5" />
+      <path d="M5 21h14" />
+    </svg>
+  );
+}
+
+function PasteIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M15 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      <rect x="9" y="2" width="6" height="4" rx="1" />
+    </svg>
+  );
+}
+
+function AssistantIconButton({
+  label,
+  children,
+  pressed = false,
+  primary = false,
+  disabled = false,
+  badge,
+  onClick,
+}: {
+  label: string;
+  children: ReactNode;
+  pressed?: boolean;
+  primary?: boolean;
+  disabled?: boolean;
+  badge?: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={pressed}
+      disabled={disabled}
+      title={label}
+      className={`relative inline-flex size-10 items-center justify-center rounded-lg transition focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+        primary
+          ? "bg-violet-600 text-white shadow-sm hover:bg-violet-700"
+          : pressed
+            ? "bg-violet-100 text-violet-900 ring-1 ring-violet-200"
+            : "text-violet-700 hover:bg-violet-50 hover:text-violet-900"
+      }`}
+      onClick={onClick}
+    >
+      {children}
+      {badge ? (
+        <span className="absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full bg-violet-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+          {badge}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+type DocumentImportMode = "upload" | "paste";
+
+const documentImportAccept =
+  ".txt,.md,text/plain,text/markdown,application/octet-stream";
+
 function DocumentImportPanel({
+  embedded = false,
   message,
   proposal,
   text,
@@ -1023,6 +1176,7 @@ function DocumentImportPanel({
   onInsertBlocks,
   onTextChange,
 }: {
+  embedded?: boolean;
   message: string | null;
   proposal: DocumentImportProposal | null;
   text: string;
@@ -1030,25 +1184,153 @@ function DocumentImportPanel({
   onInsertBlocks: (blocks: PageBlock[]) => void;
   onTextChange: (value: string) => void;
 }) {
+  const [importMode, setImportMode] = useState<DocumentImportMode>("paste");
+  const [uploadFileName, setUploadFileName] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleFileUpload(fileList: FileList | null) {
+    const file = fileList?.[0];
+    if (!file) return;
+
+    setUploadError(null);
+    setUploadFileName(file.name);
+
+    try {
+      const importedText = await file.text();
+      if (!importedText.trim()) {
+        setUploadError("That file is empty. Try another document.");
+        onTextChange("");
+        return;
+      }
+      onTextChange(importedText);
+    } catch {
+      setUploadError("Could not read that file. Try a .txt or .md document.");
+      onTextChange("");
+    }
+  }
+
   return (
-    <details className="mt-4 rounded-lg border border-violet-100 bg-violet-50/50">
-      <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-violet-800">
-        Document import
-      </summary>
-      <div className="space-y-3 border-t border-violet-100 p-3">
-        <label className="block">
-          <span className="text-xs font-semibold text-violet-900">
-            Paste document text
+    <section
+      aria-labelledby="document-import-title"
+      className={`rounded-lg border border-violet-100 bg-violet-50/50 ${
+        embedded ? "mb-3 max-h-[min(40vh,20rem)] overflow-y-auto" : "mt-4"
+      }`}
+    >
+      <div
+        className={`${embedded ? "px-3 py-2" : "flex items-start gap-3 px-3 py-3"}`}
+      >
+        {!embedded ? (
+          <span
+            className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-700 ring-1 ring-violet-200"
+            aria-hidden="true"
+          >
+            <DocumentImportIcon />
           </span>
-          <textarea
-            data-testid="document-import-text"
-            value={text}
-            rows={5}
-            className="mt-2 min-h-28 w-full resize-y rounded-lg border border-violet-100 bg-white px-3 py-2 text-sm leading-6 text-slate-900 shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none"
-            placeholder="Paste a brief, outline, or document excerpt"
-            onChange={(event) => onTextChange(event.target.value)}
-          />
-        </label>
+        ) : null}
+        <div className="min-w-0">
+          <h3
+            id="document-import-title"
+            className="text-xs font-semibold text-violet-900"
+          >
+            Import document
+          </h3>
+          {!embedded ? (
+            <p className="mt-1 text-xs leading-5 text-violet-700">
+              Turn an outline or brief into draft blocks you can review before
+              inserting.
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="space-y-3 border-t border-violet-100 p-3">
+        <div
+          className="grid grid-cols-2 gap-1 rounded-lg bg-white p-1 ring-1 ring-violet-100"
+          role="tablist"
+          aria-label="Import method"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={importMode === "upload"}
+            className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none ${
+              importMode === "upload"
+                ? "bg-violet-600 text-white shadow-sm"
+                : "text-violet-700 hover:bg-violet-50"
+            }`}
+            onClick={() => setImportMode("upload")}
+          >
+            <UploadIcon />
+            Upload
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={importMode === "paste"}
+            className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none ${
+              importMode === "paste"
+                ? "bg-violet-600 text-white shadow-sm"
+                : "text-violet-700 hover:bg-violet-50"
+            }`}
+            onClick={() => setImportMode("paste")}
+          >
+            <PasteIcon />
+            Paste
+          </button>
+        </div>
+
+        {importMode === "upload" ? (
+          <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-violet-200 bg-white px-4 py-6 text-center transition focus-within:ring-2 focus-within:ring-violet-200 hover:border-violet-300 hover:bg-violet-50/40">
+            <span className="flex size-10 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+              <UploadIcon />
+            </span>
+            <span className="text-sm font-semibold text-violet-900">
+              Upload a document
+            </span>
+            <span className="text-xs leading-5 text-violet-700">
+              .txt or .md files
+            </span>
+            <input
+              type="file"
+              accept={documentImportAccept}
+              className="sr-only"
+              onChange={(event) => {
+                void handleFileUpload(event.target.files);
+                event.target.value = "";
+              }}
+            />
+          </label>
+        ) : (
+          <label className="block">
+            <span className="text-xs font-semibold text-violet-900">
+              Paste document text
+            </span>
+            <textarea
+              data-testid="document-import-text"
+              value={text}
+              rows={5}
+              className="mt-2 min-h-28 w-full resize-y rounded-lg border border-violet-100 bg-white px-3 py-2 text-sm leading-6 text-slate-900 shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none"
+              placeholder="Paste a brief, outline, or document excerpt"
+              onChange={(event) => {
+                setUploadFileName(null);
+                setUploadError(null);
+                onTextChange(event.target.value);
+              }}
+            />
+          </label>
+        )}
+
+        {uploadFileName ? (
+          <p className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-violet-800 ring-1 ring-violet-100">
+            Loaded {uploadFileName}
+          </p>
+        ) : null}
+        {uploadError ? (
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700 ring-1 ring-red-100">
+            {uploadError}
+          </p>
+        ) : null}
+
         <button
           type="button"
           className="w-full rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
@@ -1070,7 +1352,112 @@ function DocumentImportPanel({
           />
         )}
       </div>
-    </details>
+    </section>
+  );
+}
+
+function AiPageDraftPanel({
+  embedded = false,
+  canRunAiAgent,
+  isAiGenerating,
+  pendingCount,
+  aiProposalResult,
+  proposals,
+  insertResult,
+  isInserting,
+  onGenerateDraft,
+  onInsertBlocks,
+}: {
+  embedded?: boolean;
+  canRunAiAgent: boolean;
+  isAiGenerating: boolean;
+  pendingCount: number;
+  aiProposalResult: PageAiProposalResult;
+  proposals: AiPageProposalReview[];
+  insertResult: PageAiProposalInsertResult;
+  isInserting: boolean;
+  onGenerateDraft: () => void;
+  onInsertBlocks: (proposalId: string, blockIds: string[]) => void;
+}) {
+  return (
+    <section
+      aria-labelledby="ai-page-draft-title"
+      className={`rounded-lg border border-violet-100 bg-violet-50/50 ${
+        embedded ? "mb-3 max-h-[min(40vh,20rem)] overflow-y-auto" : "mt-4"
+      }`}
+    >
+      <div className="space-y-3 p-3">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3
+              id="ai-page-draft-title"
+              className="text-xs font-semibold text-violet-900"
+            >
+              Generate page draft
+            </h3>
+            {pendingCount > 0 ? (
+              <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-semibold text-white">
+                {pendingCount} to review
+              </span>
+            ) : null}
+          </div>
+          {!embedded ? (
+            <p className="mt-2 text-xs leading-5 text-violet-700">
+              AI reads your page title, keyword, and page type, then proposes
+              hero, body, FAQ, and CTA blocks. Nothing is added until you review
+              and insert the draft.
+            </p>
+          ) : (
+            <p className="mt-1 text-xs leading-5 text-violet-700">
+              Proposes hero, body, FAQ, and CTA blocks for your review.
+            </p>
+          )}
+        </div>
+
+        <button
+          type="button"
+          className="w-full rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!canRunAiAgent || isAiGenerating}
+          onClick={onGenerateDraft}
+        >
+          {isAiGenerating
+            ? "Generating draft..."
+            : canRunAiAgent
+              ? "Generate page draft"
+              : "Save the page first"}
+        </button>
+
+        {!canRunAiAgent ? (
+          <p className="text-xs leading-5 text-violet-700">
+            Save this page once so AI can use its title, keyword, and page type.
+          </p>
+        ) : null}
+
+        {aiProposalResult.status !== "idle" && aiProposalResult.message ? (
+          <p
+            className={`rounded-lg px-4 py-3 text-sm font-medium ring-1 ring-inset ${
+              aiProposalResult.status === "error"
+                ? "bg-red-50 text-red-700 ring-red-200"
+                : "bg-emerald-50 text-emerald-700 ring-emerald-200"
+            }`}
+          >
+            {aiProposalResult.message}
+          </p>
+        ) : null}
+
+        <div>
+          <h4 className="text-xs font-semibold text-violet-900">
+            Draft proposals
+          </h4>
+          <AiProposalReviewList
+            proposals={proposals}
+            insertResult={insertResult}
+            isInserting={isInserting}
+            onInsertBlocks={onInsertBlocks}
+          />
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -1189,8 +1576,8 @@ function AiProposalReviewList({
   if (proposals.length === 0) {
     return (
       <p className="mt-4 rounded-lg border border-dashed border-violet-200 bg-violet-50/60 px-4 py-6 text-center text-sm leading-6 text-violet-700">
-        No proposals yet. Run the SEO agent to generate source-backed draft
-        blocks you can review and insert.
+        No drafts yet. Generate a page draft to get AI-proposed blocks you can
+        review and insert.
       </p>
     );
   }
