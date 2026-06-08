@@ -266,6 +266,41 @@ describe("page builder AI chat tools", () => {
     );
   });
 
+  it("truncates overlong AI SEO metadata before applying it", () => {
+    const result = applyPageBuilderAiToolCalls({
+      content,
+      makeBlockId: () => "block_ai",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: "set_seo_metadata",
+          input: {
+            title: "Managed Workplace Vending ".repeat(12),
+            slug: "Managed Workplace Vending ".repeat(8),
+            targetKeyword: "managed workplace vending",
+            seoTitle:
+              "Managed Workplace Vending Machines for Offices, Warehouses, Universities, and Staff Rooms",
+            metaDescription:
+              "Managed workplace vending machines with stocked products, clear placement planning, reliable restocking, and a consultation path for offices, warehouses, universities, and staff rooms that need practical support.",
+          },
+        },
+      ],
+    });
+
+    expect(result.results).toEqual([
+      {
+        status: "applied",
+        toolName: "set_seo_metadata",
+        message: "Updated SEO metadata fields.",
+      },
+    ]);
+    expect(result.seoPatch.title?.length).toBeLessThanOrEqual(180);
+    expect(result.seoPatch.slug?.length).toBeLessThanOrEqual(120);
+    expect(result.seoPatch.targetKeyword).toBe("managed workplace vending");
+    expect(result.seoPatch.seoTitle?.length).toBeLessThanOrEqual(80);
+    expect(result.seoPatch.metaDescription?.length).toBeLessThanOrEqual(180);
+  });
+
   it("rejects incomplete reorders without dropping blocks", () => {
     const result = applyPageBuilderAiToolCalls({
       content,

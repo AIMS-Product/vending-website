@@ -400,6 +400,14 @@ const setSeoMetadataInputSchema = z
   })
   .strict();
 
+const seoMetadataInputLimits = {
+  title: 180,
+  slug: 120,
+  targetKeyword: 180,
+  seoTitle: 80,
+  metaDescription: 180,
+} as const;
+
 const reorderBlocksInputSchema = z
   .object({
     blockIds: z.array(blockIdSchema).min(1).max(80),
@@ -723,7 +731,9 @@ export function applyPageBuilderAiToolCalls({
     }
 
     if (toolCall.name === "set_seo_metadata") {
-      const parsed = setSeoMetadataInputSchema.safeParse(toolCall.input);
+      const parsed = setSeoMetadataInputSchema.safeParse(
+        normalizeSeoMetadataInput(toolCall.input),
+      );
       if (!parsed.success) {
         results.push(failedTool(toolCall.name, firstIssue(parsed.error)));
         continue;
@@ -2290,6 +2300,46 @@ function cleanMediaSource(value: string) {
   return value.replace(/[.,;!?]+$/g, "");
 }
 
+function normalizeSeoMetadataInput(input: unknown) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return input;
+  }
+
+  const source = input as Record<string, unknown>;
+  const normalized: Partial<
+    Record<keyof typeof seoMetadataInputLimits, string | null>
+  > = {};
+
+  for (const [field, limit] of Object.entries(seoMetadataInputLimits) as Array<
+    [keyof typeof seoMetadataInputLimits, number]
+  >) {
+    const value = source[field];
+    if (value === undefined) continue;
+    if (value === null) {
+      normalized[field] = null;
+      continue;
+    }
+    if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      normalized[field] = truncateAiText(String(value), limit);
+    }
+  }
+
+  return normalized;
+}
+
+function truncateAiText(value: string, maxLength: number) {
+  const trimmed = value.trim();
+  if (trimmed.length <= maxLength) return trimmed;
+
+  const hardCut = trimmed.slice(0, maxLength).trimEnd();
+  const wordCut = hardCut.replace(/\s+\S*$/u, "").trimEnd();
+  return wordCut || hardCut;
+}
+
 function responseHasTool(response: PageBuilderAiChatResponse, names: string[]) {
   return response.toolCalls.some((toolCall) => names.includes(toolCall.name));
 }
@@ -2431,17 +2481,52 @@ function cleanTopic(value: string) {
 function titleWithTopic(topic: string, fallback: string) {
   const cleaned = cleanTopic(topic);
   if (!cleaned) return fallback;
-  return cleaned.length > 120
-    ? cleaned.slice(0, 117).trimEnd() + "..."
-    : cleaned;
+  const display = sentenceCaseTopic(cleaned);
+  return display.length > 120
+    ? display.slice(0, 117).trimEnd() + "..."
+    : display;
 }
 
 function bodyForTopic(topic: string) {
-  return `Use this section to explain ${topic} in clear customer-facing language.`;
+  const cleaned = cleanTopic(topic) || "this page";
+  const audience = audienceContextForTopic(cleaned);
+  return `${sentenceCaseTopic(cleaned)} should be planned around ${audience}, placement, product mix, service access, and restocking. This gives readers a practical starting point and a clear way to request help.`;
 }
 
 function questionForTopic(topic: string) {
-  return `What should readers know about ${topic}?`;
+  return `What should readers know about ${cleanTopic(topic) || "this page"}?`;
+}
+
+function sentenceCaseTopic(topic: string) {
+  const cleaned = cleanTopic(topic);
+  if (!cleaned) return "";
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+function audienceContextForTopic(topic: string) {
+  const text = topic.toLowerCase();
+
+  if (/\b(universit\w*|college|campus|dorm|student|school)\b/.test(text)) {
+    return "students, staff, campus foot traffic";
+  }
+
+  if (/\b(warehouse|distribution|logistics)\b/.test(text)) {
+    return "shift teams, visitors, break areas";
+  }
+
+  if (/\b(factory|factories|manufacturing|industrial)\b/.test(text)) {
+    return "shift workers, production schedules, break areas";
+  }
+
+  if (/\b(office|workplace|staff room|staff rooms|corporate)\b/.test(text)) {
+    return "staff, visitors, daily workplace routines";
+  }
+
+  if (/\b(gym|fitness|health club)\b/.test(text)) {
+    return "members, staff, training routines";
+  }
+
+  return "the audience, site traffic";
 }
 
 function reorderBlocks(
