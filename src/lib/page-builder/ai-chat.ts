@@ -19,6 +19,11 @@ import {
   slugify,
   trackingNameForLabel,
 } from "@/lib/page-builder/editor-helpers";
+import {
+  renderPageGuidePrompt,
+  selectPageGuide,
+  type PageGuideSelection,
+} from "@/lib/page-builder/ai-page-guides";
 
 export type PageBuilderAiFunctionTool = {
   type: "function";
@@ -432,8 +437,22 @@ export function buildPageBuilderAiToolDefinitions(
   ];
 }
 
-export function pageBuilderAiSystemPrompt(context: PageBuilderAiContext) {
+export function pageBuilderAiSystemPrompt(
+  context: PageBuilderAiContext,
+  latestUserMessage?: string | null,
+) {
   const blockSpecs = collectBlockToolSpecs(context.content);
+  const pageGuide = selectPageGuide({
+    pageType: context.pageType,
+    templateKey: context.templateKey,
+    title: context.title,
+    slug: context.slug,
+    targetKeyword: context.targetKeyword,
+    seoTitle: context.seoTitle,
+    metaDescription: context.metaDescription,
+    content: context.content,
+    latestUserMessage,
+  });
   const selectedBlockId = context.selectedBlockId ?? null;
   const selectedBlockSpec = selectedBlockId
     ? blockSpecs.find((spec) => spec.blockId === selectedBlockId)
@@ -492,6 +511,8 @@ export function pageBuilderAiSystemPrompt(context: PageBuilderAiContext) {
     "Use request_clarification only when a real business or design decision blocks a safe edit. Give tappable choices, not a loose open question.",
     "Before saying the page is ready to publish, consider blockers: real H1, clear CTA, SEO title and description, links/forms, alt text, no placeholder copy, and mobile/accessibility risks.",
     "After tool calls, summarize what changed and what the user should review next. Do not tell the user to use internal tool names.",
+    "",
+    renderPageGuidePrompt(pageGuide),
     "",
     "Current page context:",
     JSON.stringify(
@@ -1781,9 +1802,21 @@ function completePageDraftFallbackAction(
   if (flattenBlocks(context.content).length > 0) return null;
   if (responseHasContentTool(response)) return null;
 
+  const pageGuide = selectPageGuide({
+    pageType: context.pageType,
+    templateKey: context.templateKey,
+    title: context.title,
+    slug: context.slug,
+    targetKeyword: context.targetKeyword,
+    seoTitle: context.seoTitle,
+    metaDescription: context.metaDescription,
+    content: context.content,
+    latestUserMessage: message,
+  });
+
   return appendWithFallback(
     "Built the page body draft.",
-    completePageDraftToolCall(intentTopic(message, context)),
+    completePageDraftToolCall(intentTopic(message, context), pageGuide),
   );
 }
 
@@ -1941,124 +1974,223 @@ function addBlockFallbackToolCall(
   };
 }
 
-function completePageDraftToolCall(topic: string): PageBuilderAiToolCall {
+function completePageDraftToolCall(
+  topic: string,
+  pageGuide: PageGuideSelection,
+): PageBuilderAiToolCall {
   const pageTopic = titleWithTopic(topic, "this page");
   return {
     id: "deterministic_replace_page_sections",
     name: "replace_page_sections",
     input: {
       replaceExisting: false,
-      sections: [
-        {
-          title: "Hero",
-          blocks: [
-            {
-              blockType: "hero",
-              title: titleWithTopic(pageTopic, "Better vending"),
-              body: bodyForTopic(pageTopic),
-              bulletItems: null,
-              faqItems: null,
-              cards: null,
-              ctaLabel: "Book a consultation",
-              ctaHref: "/contact",
-            },
-          ],
-        },
-        {
-          title: "Benefits",
-          blocks: [
-            {
-              blockType: "rich_text",
-              title: titleWithTopic(pageTopic, "What to know"),
-              body: bodyForTopic(pageTopic),
-              bulletItems: [
-                "Explain the audience and their needs",
-                "Show the practical benefits",
-                "Make the next step clear",
-              ],
-              faqItems: null,
-              cards: null,
-              ctaLabel: null,
-              ctaHref: null,
-            },
-          ],
-        },
-        {
-          title: "Options",
-          blocks: [
-            {
-              blockType: "card_grid",
-              title: titleWithTopic(pageTopic, "Options"),
-              body: null,
-              bulletItems: null,
-              faqItems: null,
-              cards: [
-                {
-                  title: "Managed setup",
-                  body: bodyForTopic(pageTopic),
-                  href: "/contact",
-                  linkLabel: "Ask about this option",
-                },
-                {
-                  title: "Flexible service",
-                  body: `Tailor the vending plan around ${pageTopic}.`,
-                  href: "/contact",
-                  linkLabel: "Plan the service",
-                },
-                {
-                  title: "Ongoing support",
-                  body: `Keep ${pageTopic} supplied with reliable restocking and support.`,
-                  href: "/contact",
-                  linkLabel: "Talk to us",
-                },
-              ],
-              ctaLabel: null,
-              ctaHref: null,
-            },
-          ],
-        },
-        {
-          title: "FAQs",
-          blocks: [
-            {
-              blockType: "faq",
-              title: titleWithTopic(pageTopic, "FAQs"),
-              body: null,
-              bulletItems: null,
-              faqItems: [
-                {
-                  question: questionForTopic(pageTopic),
-                  answer: bodyForTopic(pageTopic),
-                },
-                {
-                  question: "How do we get started?",
-                  answer:
-                    "Start with a quick consultation so the right vending setup, product mix, and placement plan can be matched to the site.",
-                },
-              ],
-              cards: null,
-              ctaLabel: null,
-              ctaHref: null,
-            },
-          ],
-        },
-        {
-          title: "CTA",
-          blocks: [
-            {
-              blockType: "cta",
-              title: titleWithTopic(pageTopic, "Ready to talk?"),
-              body: `Share a few details and we will help with ${pageTopic}.`,
-              bulletItems: null,
-              faqItems: null,
-              cards: null,
-              ctaLabel: "Book a consultation",
-              ctaHref: "/contact",
-            },
-          ],
-        },
-      ],
+      sections: completePageDraftSections(pageTopic, pageGuide),
     },
+  };
+}
+
+function completePageDraftSections(
+  pageTopic: string,
+  pageGuide: PageGuideSelection,
+) {
+  if (pageGuide.primaryGuide === "how-to-guide") {
+    return [
+      heroDraftSection(pageTopic),
+      richTextDraftSection(pageTopic, "Steps", [
+        "Clarify the goal and audience",
+        "Plan the service requirements",
+        "Confirm the next step",
+      ]),
+      richTextDraftSection(pageTopic, "What to consider", [
+        "Operational fit",
+        "Ongoing service needs",
+        "Decision criteria",
+      ]),
+      faqDraftSection(pageTopic),
+      ctaDraftSection(pageTopic),
+    ];
+  }
+
+  if (pageGuide.primaryGuide === "comparison") {
+    return [
+      heroDraftSection(pageTopic),
+      richTextDraftSection(pageTopic, "How to choose", [
+        "Compare the main options",
+        "Match the option to the site",
+        "Choose a practical next step",
+      ]),
+      cardGridDraftSection(pageTopic, "Options"),
+      faqDraftSection(pageTopic),
+      ctaDraftSection(pageTopic),
+    ];
+  }
+
+  if (pageGuide.primaryGuide === "use-case") {
+    return [
+      heroDraftSection(pageTopic),
+      richTextDraftSection(pageTopic, "Why this use case matters", [
+        "Explain the audience and their needs",
+        "Show the practical benefits",
+        "Make the next step clear",
+      ]),
+      cardGridDraftSection(pageTopic, "Fit and requirements"),
+      richTextDraftSection(pageTopic, "Implementation", [
+        "Confirm the site needs",
+        "Plan the machine mix",
+        "Review service and support",
+      ]),
+      faqDraftSection(pageTopic),
+      ctaDraftSection(pageTopic),
+    ];
+  }
+
+  if (pageGuide.primaryGuide === "local-intent") {
+    return [
+      heroDraftSection(pageTopic),
+      richTextDraftSection(pageTopic, "Local service context", [
+        "Explain availability without inventing guarantees",
+        "Describe practical service needs",
+        "Invite the reader to confirm fit",
+      ]),
+      cardGridDraftSection(pageTopic, "Service options"),
+      faqDraftSection(pageTopic),
+      ctaDraftSection(pageTopic),
+    ];
+  }
+
+  return [
+    heroDraftSection(pageTopic),
+    richTextDraftSection(pageTopic, "What to know", [
+      "Explain the audience and their needs",
+      "Show the practical benefits",
+      "Make the next step clear",
+    ]),
+    cardGridDraftSection(pageTopic, "Options"),
+    faqDraftSection(pageTopic),
+    ctaDraftSection(pageTopic),
+  ];
+}
+
+function heroDraftSection(pageTopic: string) {
+  return {
+    title: "Hero",
+    blocks: [
+      {
+        blockType: "hero" as const,
+        title: titleWithTopic(pageTopic, "Better vending"),
+        body: bodyForTopic(pageTopic),
+        bulletItems: null,
+        faqItems: null,
+        cards: null,
+        ctaLabel: "Book a consultation",
+        ctaHref: "/contact",
+      },
+    ],
+  };
+}
+
+function richTextDraftSection(
+  pageTopic: string,
+  title: string,
+  bulletItems: string[],
+) {
+  return {
+    title,
+    blocks: [
+      {
+        blockType: "rich_text" as const,
+        title,
+        body: bodyForTopic(pageTopic),
+        bulletItems,
+        faqItems: null,
+        cards: null,
+        ctaLabel: null,
+        ctaHref: null,
+      },
+    ],
+  };
+}
+
+function cardGridDraftSection(pageTopic: string, title: string) {
+  return {
+    title,
+    blocks: [
+      {
+        blockType: "card_grid" as const,
+        title,
+        body: null,
+        bulletItems: null,
+        faqItems: null,
+        cards: [
+          {
+            title: "Managed setup",
+            body: bodyForTopic(pageTopic),
+            href: "/contact",
+            linkLabel: "Ask about this option",
+          },
+          {
+            title: "Flexible service",
+            body: `Tailor the vending plan around ${pageTopic}.`,
+            href: "/contact",
+            linkLabel: "Plan the service",
+          },
+          {
+            title: "Ongoing support",
+            body: `Keep ${pageTopic} supplied with reliable restocking and support.`,
+            href: "/contact",
+            linkLabel: "Talk to us",
+          },
+        ],
+        ctaLabel: null,
+        ctaHref: null,
+      },
+    ],
+  };
+}
+
+function faqDraftSection(pageTopic: string) {
+  return {
+    title: "FAQs",
+    blocks: [
+      {
+        blockType: "faq" as const,
+        title: titleWithTopic(pageTopic, "FAQs"),
+        body: null,
+        bulletItems: null,
+        faqItems: [
+          {
+            question: questionForTopic(pageTopic),
+            answer: bodyForTopic(pageTopic),
+          },
+          {
+            question: "How do we get started?",
+            answer:
+              "Start with a quick consultation so the right vending setup, product mix, and placement plan can be matched to the site.",
+          },
+        ],
+        cards: null,
+        ctaLabel: null,
+        ctaHref: null,
+      },
+    ],
+  };
+}
+
+function ctaDraftSection(pageTopic: string) {
+  return {
+    title: "CTA",
+    blocks: [
+      {
+        blockType: "cta" as const,
+        title: titleWithTopic(pageTopic, "Ready to talk?"),
+        body: `Share a few details and we will help with ${pageTopic}.`,
+        bulletItems: null,
+        faqItems: null,
+        cards: null,
+        ctaLabel: "Book a consultation",
+        ctaHref: "/contact",
+      },
+    ],
   };
 }
 

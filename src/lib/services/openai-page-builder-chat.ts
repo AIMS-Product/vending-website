@@ -88,7 +88,10 @@ export async function generateOpenAiPageBuilderChatResponse(
     },
     body: JSON.stringify({
       model: options.model ?? config.OPENAI_SEO_MODEL,
-      instructions: pageBuilderAiSystemPrompt(request.context),
+      instructions: pageBuilderAiSystemPrompt(
+        request.context,
+        latestUserMessage(request),
+      ),
       input: request.messages.map((message) => ({
         role: message.role,
         content: message.content,
@@ -146,7 +149,10 @@ async function generateCerebrasPageBuilderChatResponse(
       messages: [
         {
           role: "system",
-          content: pageBuilderAiSystemPrompt(request.context),
+          content: pageBuilderAiSystemPrompt(
+            request.context,
+            latestUserMessage(request),
+          ),
         },
         ...request.messages.map((message) => ({
           role: message.role,
@@ -409,6 +415,12 @@ function cerebrasReasoningEffort(
   if (effort === "high" || effort === "xhigh") return "high";
   if (effort === "medium") return "medium";
   return "low";
+}
+
+function latestUserMessage(request: PageBuilderAiChatRequest) {
+  return [...request.messages]
+    .reverse()
+    .find((message) => message.role === "user")?.content;
 }
 
 function parseArguments(value: string) {

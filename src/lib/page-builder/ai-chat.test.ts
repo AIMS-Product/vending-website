@@ -190,10 +190,18 @@ describe("page builder AI chat tools", () => {
     ).toBe("boolean");
   });
 
-  it("includes current page context and exact block tools in the prompt", () => {
-    const prompt = pageBuilderAiSystemPrompt(context);
+  it("includes current page context, guide strategy, and exact block tools in the prompt", () => {
+    const prompt = pageBuilderAiSystemPrompt(
+      context,
+      "Create a page about vending machines for college dormitories in Adelaide.",
+    );
 
     expect(prompt).toContain("Coffee vending Adelaide");
+    expect(prompt).toContain("Hidden guide selection: Use-case SEO page");
+    expect(prompt).toContain(
+      "Secondary signals to blend: Local intent SEO page",
+    );
+    expect(prompt).toContain("Do not mention this guide name to the user");
     expect(prompt).toContain("Publish requires at least one CTA");
     expect(prompt).toContain("Full editable block context");
     expect(prompt).toContain('"selectedBlockId": "block_faq"');
@@ -966,6 +974,7 @@ describe("page builder AI chat tools", () => {
         replaceExisting: false,
         sections: expect.arrayContaining([
           expect.objectContaining({ title: "Hero" }),
+          expect.objectContaining({ title: "Fit and requirements" }),
           expect.objectContaining({ title: "CTA" }),
         ]),
       },
