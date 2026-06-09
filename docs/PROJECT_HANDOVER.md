@@ -1,6 +1,6 @@
 # Project Handover
 
-Last updated: 2026-05-29
+Last updated: 2026-06-10
 Last verified: 2026-05-11, by the commands listed in [Verification](#verification)  
 Owner/context: James AIMS / Vendingpreneurs website and admin CMS
 
@@ -412,6 +412,80 @@ First 30-60 minutes:
 
 ## Change Log
 
+- 2026-06-10: Auto-recorded commit 11a3464 - chore(handover): record release commits in change log. Files: docs/PROJECT_HANDOVER.md. after `git add docs/PROJECT_HANDOVER.md && git commit -m "$(cat <<'EOF'
+  chore(handover): record release commits in change log
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+EOF
+)" 2>&1 | tail -2 && git status --short && echo "TREE_CHECK_DONE"` <!-- handover-auto:commit 11a34646a8f2810d431777b460cabc0032579eb9 -->
+
+- 2026-06-10: Auto-recorded commit 54cc06e - chore(plans): record admin split plan and seo confidence report. Files: plans/react-doctor-admin-component-split/agent-runs/s0-baseline-2026-06-09.md, plans/react-doctor-admin-component-split/agent-runs/s1-admin-shell-2026-06-09.md, plans/react-doctor-admin-component-split/agent-runs/s2-admin-pages-page-2026-06-09.md, plans/react-doctor-admin-component-split/agent-runs/s3-integration-proof-2026-06-09.md, plans/react-doctor-admin-component-split/decisions.md, plans/react-doctor-admin-component-split/plan.md, plans/react-doctor-admin-component-split/progress.md, plans/react-doctor-admin-component-split/screenshots/admin-media-desktop.png; +10 more. after `git add plans/react-doctor-admin-component-split reports/ai-page-builder-seo-confidence-2026-06-09 && git commit -m "$(cat <<'EOF'
+  chore(plans): record admin split plan and seo confidence report
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+EOF
+)" 2>&1 | tail -2 && git status --short | head -5 && echo "TREE_STATE_ABOVE" && git log --oneline -6` <!-- handover-auto:commit 54cc06e9559e87232bb704cfd3d6032b8a3a4996 -->
+
+- 2026-06-10: Auto-recorded commit a325b68 - fix(page-builder): harden ai chat contract and split server modules. Files: src/lib/page-builder/ai-chat-draft-copy.ts, src/lib/page-builder/ai-chat-intent-fallback.test.ts, src/lib/page-builder/ai-chat-intent-fallback.ts, src/lib/page-builder/ai-chat-prompt.test.ts, src/lib/page-builder/ai-chat-prompt.ts, src/lib/page-builder/ai-chat.test.ts, src/lib/page-builder/ai-chat.ts, src/lib/services/openai-page-builder-chat.test.ts; +1 more. after `git add src/lib/page-builder/ai-chat.ts src/lib/page-builder/ai-chat.test.ts src/lib/page-builder/ai-chat-prompt.ts src/lib/page-builder/ai-chat-prompt.test.ts src/lib/page-builder/ai-chat-intent-fallback.ts src/lib/page-builder/ai-chat-intent-fallback.test.ts src/lib/page-builder/ai-chat-draft-copy.ts src/lib/services/openai-page-builder-chat.ts src/lib/services/openai-page-builder-chat.test.ts && git commit -m "$(cat <<'EOF'
+  fix(page-builder): harden ai chat contract and split server modules
+
+Dynamic edits passing null no longer flatten rich-text structure; the
+SEO quality gate now replaces a rejected model draft instead of letting
+it apply first; dynamic edit tools resolve by block-id suffix so batches
+survive flatten-index drift; image edits honor url through the safe
+source allowlist; overlong assistant messages are truncated instead of
+discarding valid tool calls; Cerebras failures are labeled correctly.
+
+ai-chat.ts is split into a client-shared apply engine plus server-only
+prompt, intent-fallback, and draft-copy modules, keeping the system
+prompt and template corpus out of the admin bundle. Fallback-generated
+responses now carry source: "intent-fallback".
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+EOF
+)" 2>&1 | tail -3` <!-- handover-auto:commit a325b683caec4c80f6ea9328ae5b36e4e059c700 -->
+
+- 2026-06-10: Auto-recorded commit bcb78a8 - fix(page-builder): own scheduled-publish state and guard the purge path. Files: scripts/purge-seo-pages.mjs, src/app/admin/pages/actions.test.ts, src/app/admin/pages/actions.ts, src/components/admin/seo-page-editor/SeoPublishPanel.tsx, src/components/admin/seo-page-editor/editor-autosave-payload.ts, src/components/admin/seo-page-editor/useSeoPageEditorController.ts, src/lib/services/ai-page-proposals.test.ts, src/lib/services/ai-page-proposals.ts; +12 more. after `git add src/app/admin/pages/actions.ts src/app/admin/pages/actions.test.ts src/components/admin/seo-page-editor/SeoPublishPanel.tsx src/components/admin/seo-page-editor/editor-autosave-payload.ts src/components/admin/seo-page-editor/useSeoPageEditorController.ts src/lib/services/seo-pages.ts src/lib/services/seo-pages.test.ts src/lib/services/seo-page-scheduler.ts src/lib/services/seo-page-scheduler.test.ts src/lib/services/seo-page-snapshots.ts src/lib/services/ai-page-proposals.ts src/lib/services/ai-page-proposals.test.ts src/proxy.ts scripts/purge-seo-pages.mjs supabase/migrations/20260609104500_purge_seo_pages_testing_fn.sql supabase/migrations/20260609110000_fix_purge_seo_pages_testing_fn.sql supabase/migrations/20260609111500_fix_purge_seo_pages_unpublish.sql supabase/migrations/20260609113000_fix_purge_seo_pages_safe_delete.sql supabase/migrations/20260610090000_guard_purge_seo_pages_fn.sql supabase/migrations/20260610091000_schedule_state_ownership.sql && git commit -m "$(cat <<'EOF'
+  fix(page-builder): own scheduled-publish state and guard the purge path
+
+Scheduler columns are now written only by explicit schedule actions and
+the publish runner: saves/autosaves gate on a schedule-field baseline so
+they can never reset the runner lock or re-arm a stale schedule; publish
+clears schedule state atomically; archive cancels schedules and builds
+redirects from the page's real route prefix with a self-redirect guard;
+unpublish cancels schedules; revision snapshots no longer carry scheduler
+state; the runner skips archived pages. DST-invalid schedule times now
+error instead of silently dropping.
+
+The testing purge function requires an explicit confirmation phrase and
+the purge script refuses remote projects without --confirm plus
+ALLOW_REMOTE_PURGE=1. Proposal block IDs are remapped on collision,
+client autosaves are serialized, the proxy enforces admin role parity,
+and the library-refresh action validates its input.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+EOF
+)" 2>&1 | tail -3` <!-- handover-auto:commit bcb78a8b622f1e3735c8e26120dc0b14e02d44e6 -->
+
+- 2026-06-10: Auto-recorded commit fa0da68 - refactor(admin): hoist AdminShell props type and icon glyph constants. Files: src/components/admin/AdminShell.tsx. after `git add src/components/admin/AdminShell.tsx && git commit -m "$(cat <<'EOF'
+  refactor(admin): hoist AdminShell props type and icon glyph constants
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+EOF
+)" 2>&1 | tail -2` <!-- handover-auto:commit fa0da68e01abeb0f1109dca206e3dc0d8645d4d2 -->
+
+- 2026-06-10: Auto-recorded commit 4a41eca - feat(monitoring): wire sentry error reporting and source map upload. Files: .env.example, next.config.ts, package-lock.json, package.json, src/app/global-error.tsx, src/instrumentation-client.ts, src/instrumentation.ts, src/sentry.edge.config.ts; +1 more. after `git commit -m "$(cat <<'EOF'
+  feat(monitoring): wire sentry error reporting and source map upload
+
+Adds @sentry/nextjs with client/server/edge instrumentation, captures
+global errors, and uploads source maps only when CI/Vercel credentials
+are present. DSNs come from env; nothing is reported when unset.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+EOF
+)" 2>&1 | tail -5` <!-- handover-auto:commit 4a41ecad401f57e4a78cbdb2b898d74af15b5bd8 -->
+
+- 2026-06-10: Auto-recorded commit 4d61728 - fix(admin): align pages list actions with AdminShell button props. Files: src/app/admin/pages/page.tsx. after `git fetch origin --prune 2>&1 | head -5; echo "---"; git log --oneline origin/main..main | head -8; git log --oneline main..origin/main | head -8; echo "---local main vs HEAD ancestry---"; git merge-base --is-ancestor main HEAD && echo "main IS ancestor of HEAD" || echo "main NOT ancestor"; git merge-base --is-ancestor origin/main HEAD && echo "origin/main IS ancestor of HEAD" || echo "origin/main NOT ancestor"; echo "---cerebras branch ancestry---"; git merge-base --is-ancestor codex/cerebras-seo-agent-provider HEAD && echo "cerebras IS ancestor of HEAD" || echo "cerebras NOT ancestor"` <!-- handover-auto:commit 4d617287e41edec9f98da02bf31f9905a9a238a4 -->
 - 2026-05-29: Auto-recorded commit cc83297 - Merge branch 'codex/seo-builder-teardown-remediation' (thermo refactor). Files: no file list available. after `git merge codex/seo-builder-teardown-remediation --no-ff -m "$(cat <<'EOF'
   Merge branch 'codex/seo-builder-teardown-remediation' (thermo refactor)
 
