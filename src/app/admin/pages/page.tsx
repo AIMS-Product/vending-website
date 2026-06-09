@@ -801,7 +801,6 @@ function PageActionsMenu({
           pageId={page.id}
           returnTo={returnTo}
           label="Duplicate page"
-          pendingLabel="Duplicating page..."
           confirmMessage={`Duplicate "${page.title}" as a draft? The copy will use a temporary draft slug until you edit it.`}
         />
         {!isPublished ? (
@@ -810,7 +809,6 @@ function PageActionsMenu({
             pageId={page.id}
             returnTo={returnTo}
             label="Publish page"
-            pendingLabel="Publishing page..."
             confirmMessage={`Publish "${page.title}" to the live site? It will be publicly visible at ${page.route_path}.`}
           />
         ) : null}
@@ -820,7 +818,6 @@ function PageActionsMenu({
             pageId={page.id}
             returnTo={returnTo}
             label="Move to draft"
-            pendingLabel="Moving to draft..."
             confirmMessage={
               isPublished
                 ? `Unpublish "${page.title}"? It will be removed from the live site and returned to draft.`
@@ -836,7 +833,6 @@ function PageActionsMenu({
               pageId={page.id}
               returnTo={returnTo}
               label="Archive page"
-              pendingLabel="Archiving page..."
               tone="danger"
               confirmMessage={`Archive "${page.title}"? This removes it from the active page list.`}
             />
@@ -852,7 +848,6 @@ function PageActionForm({
   pageId,
   returnTo,
   label,
-  pendingLabel,
   tone = "default",
   confirmMessage,
 }: {
@@ -860,7 +855,6 @@ function PageActionForm({
   pageId: string;
   returnTo: string;
   label: string;
-  pendingLabel: string;
   tone?: "default" | "danger";
   confirmMessage?: string;
 }) {
@@ -870,7 +864,6 @@ function PageActionForm({
       <input type="hidden" name="returnTo" value={returnTo} />
       <AdminPageActionButton
         label={label}
-        pendingLabel={pendingLabel}
         tone={tone}
         confirmMessage={confirmMessage}
       />
