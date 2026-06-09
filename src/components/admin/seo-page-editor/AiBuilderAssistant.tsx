@@ -50,7 +50,7 @@ import type { SeoPageEditorController } from "@/components/admin/seo-page-editor
 // The generative SEO agent lives in its own floating surface so the right
 // sidebar stays purely SEO configuration + publish, and structure mutation
 // never originates from the readiness panel. The launcher is offset on desktop
-// when the SEO panel is open so it never covers the sticky Publish footer.
+// when the SEO panel is open so it never covers the publish control.
 export function AiBuilderAssistant({
   editor,
 }: {
@@ -344,12 +344,6 @@ export function AiBuilderAssistant({
               <SeoAssistantReviewPanel embedded editor={editor} />
             ) : null}
 
-            <ProviderSelector
-              provider={editor.aiAgentProvider}
-              disabled={editor.isAiGenerating || chatState.isLoading}
-              onProviderChange={editor.setAiAgentProvider}
-            />
-
             <label className="sr-only" htmlFor="page-ai-chat-input">
               Message AI assistant
             </label>
@@ -399,6 +393,11 @@ export function AiBuilderAssistant({
                 >
                   <ReviewIcon />
                 </AssistantIconButton>
+                <ProviderSelectorPopover
+                  provider={editor.aiAgentProvider}
+                  disabled={editor.isAiGenerating || chatState.isLoading}
+                  onProviderChange={editor.setAiAgentProvider}
+                />
               </div>
               <AssistantIconButton
                 label="Send message"
@@ -1393,7 +1392,35 @@ function DocumentImportPanel({
   );
 }
 
-function ProviderSelector({
+function ModelProviderIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <rect x="9" y="9" width="6" height="6" />
+      <path d="M9 2v2" />
+      <path d="M15 2v2" />
+      <path d="M9 20v2" />
+      <path d="M15 20v2" />
+      <path d="M2 9h2" />
+      <path d="M2 15h2" />
+      <path d="M20 9h2" />
+      <path d="M20 15h2" />
+    </svg>
+  );
+}
+
+function ProviderSelectorPopover({
   provider,
   disabled,
   onProviderChange,
@@ -1402,38 +1429,95 @@ function ProviderSelector({
   disabled: boolean;
   onProviderChange: (provider: SeoAgentProvider) => void;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const selectedOption =
+    seoAgentProviderOptions.find((option) => option.value === provider) ??
+    seoAgentProviderOptions[0];
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
   return (
-    <fieldset className="mb-3 space-y-2">
-      <legend className="text-[11px] font-semibold text-violet-900">
-        Model provider
-      </legend>
-      <div className="grid grid-cols-2 gap-2">
-        {seoAgentProviderOptions.map((option) => {
-          const selected = option.value === provider;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              aria-pressed={selected}
-              className={`rounded-lg border px-3 py-2 text-left transition focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none ${
-                selected
-                  ? "border-violet-600 bg-white text-violet-950 shadow-sm"
-                  : "border-violet-100 bg-white/70 text-violet-700 hover:border-violet-300"
-              }`}
-              disabled={disabled}
-              onClick={() => onProviderChange(option.value)}
-            >
-              <span className="block text-xs font-semibold">
-                {option.label}
-              </span>
-              <span className="mt-0.5 block text-[11px] leading-4">
-                {option.description}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </fieldset>
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        aria-label={`Model provider: ${selectedOption.label}`}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        disabled={disabled}
+        title={`Model: ${selectedOption.label}`}
+        className={`relative inline-flex size-10 items-center justify-center rounded-lg transition focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+          isOpen
+            ? "bg-violet-100 text-violet-900 ring-1 ring-violet-200"
+            : "text-violet-700 hover:bg-violet-50 hover:text-violet-900"
+        }`}
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        <ModelProviderIcon />
+      </button>
+
+      {isOpen ? (
+        <div
+          role="listbox"
+          aria-label="Model provider"
+          className="absolute bottom-full left-0 z-10 mb-2 w-56 overflow-hidden rounded-xl border border-violet-200 bg-white p-2 shadow-xl"
+        >
+          <p className="px-2 py-1.5 text-[11px] font-semibold tracking-wide text-violet-500 uppercase">
+            Model provider
+          </p>
+          <div className="grid gap-1">
+            {seoAgentProviderOptions.map((option) => {
+              const selected = option.value === provider;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  className={`rounded-lg border px-3 py-2 text-left transition focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none ${
+                    selected
+                      ? "border-violet-600 bg-violet-50 text-violet-950 shadow-sm"
+                      : "border-transparent bg-white text-violet-700 hover:border-violet-200 hover:bg-violet-50"
+                  }`}
+                  onClick={() => {
+                    onProviderChange(option.value);
+                    setIsOpen(false);
+                  }}
+                >
+                  <span className="block text-xs font-semibold">
+                    {option.label}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] leading-4 text-violet-600">
+                    {option.description}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

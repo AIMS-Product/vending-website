@@ -30,6 +30,8 @@ export function SeoPublishPanel({
 }: {
   editor: SeoPageEditorController;
 }) {
+  const [isStatusExpanded, setIsStatusExpanded] = useState(false);
+
   return (
     <section
       aria-labelledby="seo-panel-title"
@@ -37,16 +39,11 @@ export function SeoPublishPanel({
       className="fixed top-32 right-4 bottom-4 z-[60] order-3 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:right-auto xl:bottom-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none"
     >
       <SeoPanelHeader editor={editor} />
-      <div className="shrink-0 space-y-3 border-b border-slate-200 px-4 py-4 sm:px-5">
-        <PublishStatusCard editor={editor} />
-        <div
-          id="publish-next-step"
-          tabIndex={-1}
-          className="scroll-mt-4 outline-none"
-        >
-          <NextPublishStepCard step={editor.nextPublishStep} />
-        </div>
-      </div>
+      <PublishStatusSection
+        editor={editor}
+        isExpanded={isStatusExpanded}
+        onExpandedChange={setIsStatusExpanded}
+      />
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
         <SeoMetadataFields editor={editor} />
         <SeoReadinessPanel
@@ -60,8 +57,123 @@ export function SeoPublishPanel({
           mediaAssetCount={editor.mediaAssets.length}
         />
       </div>
-      <SeoPublishActions editor={editor} />
     </section>
+  );
+}
+
+function PublishStatusSection({
+  editor,
+  isExpanded,
+  onExpandedChange,
+}: {
+  editor: SeoPageEditorController;
+  isExpanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
+}) {
+  const [isConfirmingPublish, setIsConfirmingPublish] = useState(false);
+  const { nextPublishStep, page, publishStateLabel } = editor;
+  const statusDotClass =
+    page?.status === "published" ? "bg-emerald-500" : "bg-amber-500";
+  const nextStepToneClass =
+    nextPublishStep.tone === "ready"
+      ? "text-emerald-700"
+      : nextPublishStep.tone === "blocked"
+        ? "text-amber-700"
+        : "text-sky-700";
+
+  function revealPublishBlocker() {
+    onExpandedChange(true);
+    requestAnimationFrame(() => {
+      const reason = document.getElementById("publish-next-step");
+      reason?.scrollIntoView({ behavior: "smooth", block: "center" });
+      reason?.focus();
+    });
+  }
+
+  return (
+    <div className="shrink-0 border-b border-slate-200 px-4 py-3 sm:px-5">
+      <div className="flex items-start gap-2">
+        <button
+          type="button"
+          aria-expanded={isExpanded}
+          aria-controls="publish-status-content"
+          className="flex min-w-0 flex-1 items-start justify-between gap-3 rounded-lg px-1 py-1 text-left transition hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+          onClick={() => onExpandedChange(!isExpanded)}
+        >
+          <div className="min-w-0">
+            <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+              Publish status
+            </span>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
+                <span
+                  className={`size-1.5 rounded-full ${statusDotClass}`}
+                  aria-hidden="true"
+                />
+                {publishStateLabel}
+              </span>
+              <span
+                className={`truncate text-xs font-semibold ${nextStepToneClass}`}
+              >
+                {nextPublishStep.title}
+              </span>
+            </div>
+          </div>
+          <CollapseChevronIcon expanded={isExpanded} />
+        </button>
+        <PublishButton
+          editor={editor}
+          onRevealPublishBlocker={revealPublishBlocker}
+          onRequestConfirm={() => setIsConfirmingPublish(true)}
+        />
+      </div>
+
+      {isConfirmingPublish ? (
+        <PublishConfirmDialog
+          editor={editor}
+          onCancel={() => setIsConfirmingPublish(false)}
+        />
+      ) : null}
+
+      {isExpanded ? (
+        <div id="publish-status-content" className="mt-3 space-y-3">
+          <PublishStatusCard editor={editor} />
+          <div
+            id="publish-next-step"
+            tabIndex={-1}
+            className="scroll-mt-4 outline-none"
+          >
+            <NextPublishStepCard step={nextPublishStep} />
+          </div>
+        </div>
+      ) : (
+        <div
+          id="publish-next-step"
+          tabIndex={-1}
+          className="sr-only"
+          aria-hidden="true"
+        >
+          {nextPublishStep.title}: {nextPublishStep.detail}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CollapseChevronIcon({ expanded }: { expanded: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={`mt-0.5 size-4 shrink-0 text-slate-400 transition-transform ${
+        expanded ? "rotate-180" : ""
+      }`}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
+    </svg>
   );
 }
 
@@ -635,8 +747,48 @@ function SearchPreviewCard({ editor }: { editor: SeoPageEditorController }) {
   );
 }
 
-function SeoPublishActions({ editor }: { editor: SeoPageEditorController }) {
-  const [isConfirmingPublish, setIsConfirmingPublish] = useState(false);
+function PublishButton({
+  editor,
+  onRevealPublishBlocker,
+  onRequestConfirm,
+}: {
+  editor: SeoPageEditorController;
+  onRevealPublishBlocker: () => void;
+  onRequestConfirm: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`shrink-0 ${
+        editor.publishDisabled ? disabledPublishButtonClass : primaryButtonClass
+      }`}
+      aria-disabled={editor.publishDisabled || undefined}
+      title={
+        editor.seoReadiness.blockers.length > 0
+          ? "Resolve SEO blockers before publishing."
+          : undefined
+      }
+      onClick={(event) => {
+        if (editor.publishDisabled) {
+          event.preventDefault();
+          onRevealPublishBlocker();
+          return;
+        }
+        onRequestConfirm();
+      }}
+    >
+      {editor.publishButtonLabel}
+    </button>
+  );
+}
+
+function PublishConfirmDialog({
+  editor,
+  onCancel,
+}: {
+  editor: SeoPageEditorController;
+  onCancel: () => void;
+}) {
   const publishConfirmMessage = editorPublishConfirmMessage({
     isPublishedPage: editor.isPublishedPage,
     routePrefix: editor.routePrefix,
@@ -644,92 +796,43 @@ function SeoPublishActions({ editor }: { editor: SeoPageEditorController }) {
   });
 
   return (
-    <div className="grid shrink-0 gap-2 border-t border-slate-200 bg-white p-4 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] sm:px-5">
-      <label className="block">
-        <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
-          Publish notes
-        </span>
-        <textarea
-          name="publishNote"
-          rows={2}
-          maxLength={240}
-          className="mt-1.5 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-[#0b63f6] focus:ring-4 focus:ring-[#0b63f6]/10"
-          placeholder="Optional summary for this version"
-        />
-      </label>
-      <button
-        type="button"
-        className={
-          editor.publishDisabled
-            ? disabledPublishButtonClass
-            : primaryButtonClass
-        }
-        aria-disabled={editor.publishDisabled || undefined}
-        title={
-          editor.seoReadiness.blockers.length > 0
-            ? "Resolve SEO blockers before publishing."
-            : undefined
-        }
-        onClick={(event) => {
-          // When blocked, don't submit — instead reveal the reason so the user
-          // knows exactly what to fix (rather than a dead, unexplained button).
-          if (editor.publishDisabled) {
-            event.preventDefault();
-            const reason = document.getElementById("publish-next-step");
-            reason?.scrollIntoView({ behavior: "smooth", block: "center" });
-            reason?.focus();
-            return;
-          }
-          setIsConfirmingPublish(true);
-        }}
-      >
-        {editor.publishButtonLabel}
-      </button>
-      {isConfirmingPublish ? (
-        <div
-          role="alertdialog"
-          aria-labelledby="editor-publish-confirm-title"
-          aria-describedby="editor-publish-confirm-body"
-          className="grid gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"
+    <div
+      role="alertdialog"
+      aria-labelledby="editor-publish-confirm-title"
+      aria-describedby="editor-publish-confirm-body"
+      className="mt-3 grid gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"
+    >
+      <div>
+        <p
+          id="editor-publish-confirm-title"
+          className="font-semibold text-amber-950"
         >
-          <div>
-            <p
-              id="editor-publish-confirm-title"
-              className="font-semibold text-amber-950"
-            >
-              Confirm publish
-            </p>
-            <p
-              id="editor-publish-confirm-body"
-              className="mt-1 text-xs leading-5 whitespace-pre-line text-amber-900"
-            >
-              {publishConfirmMessage}
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm font-semibold text-amber-900 shadow-sm transition hover:bg-amber-100 focus-visible:ring-4 focus-visible:ring-amber-200/70 focus-visible:outline-none"
-              onClick={() => setIsConfirmingPublish(false)}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              name="intent"
-              value="publish"
-              className={primaryButtonClass}
-            >
-              Confirm publish
-            </button>
-          </div>
-        </div>
-      ) : null}
-      <p className="text-center text-xs leading-5 text-slate-400">
-        Drafts save automatically. Use{" "}
-        <span className="font-semibold text-slate-500">Save draft</span> in the
-        top bar to save manually.
-      </p>
+          Confirm publish
+        </p>
+        <p
+          id="editor-publish-confirm-body"
+          className="mt-1 text-xs leading-5 whitespace-pre-line text-amber-900"
+        >
+          {publishConfirmMessage}
+        </p>
+      </div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm font-semibold text-amber-900 shadow-sm transition hover:bg-amber-100 focus-visible:ring-4 focus-visible:ring-amber-200/70 focus-visible:outline-none"
+          onClick={onCancel}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          name="intent"
+          value="publish"
+          className={primaryButtonClass}
+        >
+          Confirm publish
+        </button>
+      </div>
     </div>
   );
 }
