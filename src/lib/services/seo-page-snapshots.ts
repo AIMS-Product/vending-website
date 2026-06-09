@@ -69,37 +69,11 @@ export function seoPatchFromSnapshot(snapshot: Json): SeoPageUpdate {
     patch.og_description = values.og_description;
   }
   if (values.og_description === null) patch.og_description = null;
-  if (typeof values.scheduled_publish_at === "string") {
-    patch.scheduled_publish_at = values.scheduled_publish_at;
-  }
-  if (values.scheduled_publish_at === null) {
-    patch.scheduled_publish_at = null;
-  }
-  if (typeof values.scheduled_publish_status === "string") {
-    patch.scheduled_publish_status = values.scheduled_publish_status;
-  }
-  if (typeof values.scheduled_publish_error === "string") {
-    patch.scheduled_publish_error = values.scheduled_publish_error;
-  }
-  if (values.scheduled_publish_error === null) {
-    patch.scheduled_publish_error = null;
-  }
-  if (typeof values.scheduled_publish_attempts === "number") {
-    patch.scheduled_publish_attempts = values.scheduled_publish_attempts;
-  }
-  if (typeof values.scheduled_publish_last_attempt_at === "string") {
-    patch.scheduled_publish_last_attempt_at =
-      values.scheduled_publish_last_attempt_at;
-  }
-  if (values.scheduled_publish_last_attempt_at === null) {
-    patch.scheduled_publish_last_attempt_at = null;
-  }
-  if (typeof values.scheduled_publish_locked_at === "string") {
-    patch.scheduled_publish_locked_at = values.scheduled_publish_locked_at;
-  }
-  if (values.scheduled_publish_locked_at === null) {
-    patch.scheduled_publish_locked_at = null;
-  }
+  // scheduled_publish_* columns are deliberately never restored: schedules
+  // are operational state owned by explicit actions and the publish runner,
+  // not page content. Restoring an old snapshot must not re-arm a past
+  // schedule or clobber the runner's lock. Older revisions may still carry
+  // these keys in their snapshots; they are ignored here.
   return patch;
 }
 
@@ -129,11 +103,5 @@ export function buildSeoSnapshot(
     lifecycle_status: page.lifecycle_status,
     og_title: page.og_title,
     og_description: page.og_description,
-    scheduled_publish_at: page.scheduled_publish_at,
-    scheduled_publish_status: page.scheduled_publish_status,
-    scheduled_publish_error: page.scheduled_publish_error,
-    scheduled_publish_attempts: page.scheduled_publish_attempts,
-    scheduled_publish_last_attempt_at: page.scheduled_publish_last_attempt_at,
-    scheduled_publish_locked_at: page.scheduled_publish_locked_at,
   };
 }

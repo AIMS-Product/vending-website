@@ -77,6 +77,7 @@ export function buildSeoPageAutosavePayload({
     ogTitle: formValue("ogTitle", page?.og_title ?? ""),
     ogDescription: formValue("ogDescription", page?.og_description ?? ""),
     scheduledPublishAt: formValue("scheduledPublishAt"),
+    scheduledPublishAtBaseline: formValue("scheduledPublishAtBaseline"),
     cancelScheduledPublish: formChecked("cancelScheduledPublish"),
     noindex,
     sitemapEnabled,

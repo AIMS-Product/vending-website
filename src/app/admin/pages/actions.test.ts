@@ -2,13 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PageContent } from "@/lib/page-builder/blocks";
 import {
   acceptAiSeoProposalBlocks,
+  archiveSeoPageFromList,
   createSeoPageComment,
   createSeoPageDraftForEditor,
   duplicateSeoPageFromList,
   generateAiSeoPageProposal,
+  moveSeoPageToDraftFromList,
   autosaveSeoPageDraft,
   saveSeoPage,
   saveSeoPageDraftAndCreatePreviewLink,
+  publishSeoPageFromList,
 } from "./actions";
 import { SeoAgentConfigurationError } from "@/lib/services/openai-seo-agent";
 import { AiProposalValidationError } from "@/lib/services/ai-page-proposals";
@@ -124,6 +127,7 @@ type PageFormOverrides = {
   draftContent?: PageContent;
   publishNote?: string;
   scheduledPublishAt?: string;
+  scheduledPublishAtBaseline?: string;
   cancelScheduledPublish?: boolean;
   intent?: "save" | "publish";
 };
@@ -155,6 +159,7 @@ function pageForm(overrides: PageFormOverrides = {}) {
     draftContent: validContent,
     publishNote: "",
     scheduledPublishAt: "",
+    scheduledPublishAtBaseline: "",
     cancelScheduledPublish: false,
     intent: "save" as const,
     ...overrides,
@@ -189,6 +194,12 @@ function pageForm(overrides: PageFormOverrides = {}) {
   formData.set("publishNote", values.publishNote);
   if (values.scheduledPublishAt) {
     formData.set("scheduledPublishAt", values.scheduledPublishAt);
+  }
+  if (values.scheduledPublishAtBaseline) {
+    formData.set(
+      "scheduledPublishAtBaseline",
+      values.scheduledPublishAtBaseline,
+    );
   }
   if (values.cancelScheduledPublish) {
     formData.set("cancelScheduledPublish", "on");
@@ -525,6 +536,123 @@ describe("admin page actions", () => {
     );
   });
 
+  it("leaves scheduler state untouched when the schedule field is unchanged", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({
+        id: pageId,
+        scheduledPublishAt: "2026-06-03T09:30",
+        scheduledPublishAtBaseline: "2026-06-03T09:30",
+      }),
+    );
+
+    expect(result).toEqual({ status: "saved", message: "Draft saved." });
+    const patch = mocks.adminSaveSeoPageDraft.mock.calls[0][1];
+    expect(patch).not.toHaveProperty("scheduledPublishAt");
+    expect(patch).not.toHaveProperty("scheduledPublishStatus");
+    expect(patch).not.toHaveProperty("scheduledPublishAttempts");
+    expect(patch).not.toHaveProperty("scheduledPublishLockedAt");
+  });
+
+  it("cancels the schedule when the user clears the schedule field", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({
+        id: pageId,
+        scheduledPublishAt: "",
+        scheduledPublishAtBaseline: "2026-06-03T09:30",
+      }),
+    );
+
+    expect(result).toEqual({ status: "saved", message: "Draft saved." });
+    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({
+        scheduledPublishAt: null,
+        scheduledPublishStatus: "cancelled",
+        scheduledPublishLockedAt: null,
+      }),
+    );
+  });
+
+  it("rejects schedule times that do not exist in Pacific Time instead of silently dropping them", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+
+    // 2:30 AM on 8 March 2026 is inside the PT spring-forward gap.
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ id: pageId, scheduledPublishAt: "2026-03-08T02:30" }),
+    );
+
+    expect(result.status).toBe("error");
+    expect(result.message).toContain("Pacific Time");
+    expect(mocks.adminSaveSeoPageDraft).not.toHaveBeenCalled();
+  });
+
+  it("autosave with an unchanged schedule field never resets the runner lock", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      status: "published",
+    });
+
+    const result = await autosaveSeoPageDraft(pageId, {
+      title: "Coffee Vending Adelaide",
+      slug: "coffee-vending-adelaide",
+      routePrefix: "/resources",
+      targetKeyword: "coffee vending",
+      seoTitle: "Coffee vending machines",
+      metaDescription: "Coffee vending machines for Adelaide workplaces.",
+      canonicalUrl: "",
+      internalTags: "",
+      topicCluster: "",
+      campaignLabel: "",
+      funnelStage: "",
+      reviewPeriodMonths: 6,
+      nextReviewAt: "",
+      lifecycleStatus: "drafting",
+      ogTitle: "",
+      ogDescription: "",
+      scheduledPublishAt: "2026-06-03T09:30",
+      scheduledPublishAtBaseline: "2026-06-03T09:30",
+      cancelScheduledPublish: false,
+      noindex: false,
+      sitemapEnabled: true,
+      pageType: "resource",
+      templateKey: "blank",
+      structuredDataSettings: { breadcrumb: true, faq: false },
+      draftContent: validContent,
+    });
+
+    expect(result.status).toBe("saved");
+    const patch = mocks.adminSaveSeoPageDraft.mock.calls[0][1];
+    expect(patch).not.toHaveProperty("scheduledPublishStatus");
+    expect(patch).not.toHaveProperty("scheduledPublishAttempts");
+    expect(patch).not.toHaveProperty("scheduledPublishLockedAt");
+  });
+
   it("autosaves unpublished page slug changes before preview creation", async () => {
     mocks.adminGetSeoPageById.mockResolvedValue({
       id: pageId,
@@ -550,6 +678,7 @@ describe("admin page actions", () => {
       ogTitle: "Coffee vending social",
       ogDescription: "Coffee vending social description.",
       scheduledPublishAt: "2026-06-03T09:30",
+      scheduledPublishAtBaseline: "",
       cancelScheduledPublish: false,
       noindex: false,
       sitemapEnabled: true,
@@ -696,6 +825,97 @@ describe("admin page actions", () => {
     );
   });
 
+  it("archives a page from the list and returns to the preserved list view", async () => {
+    const formData = new FormData();
+    formData.set("id", pageId);
+    formData.set(
+      "returnTo",
+      "/admin/pages?view=metadata-issues&sort=title-asc",
+    );
+    mocks.adminArchiveSeoPage.mockResolvedValue({
+      id: pageId,
+      route_path: "/resources/vending-in-colleges",
+    });
+
+    await archiveSeoPageFromList(formData);
+
+    expect(mocks.adminArchiveSeoPage).toHaveBeenCalledWith(pageId, {
+      actorId: "admin_1",
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/pages");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(
+      "/resources/vending-in-colleges",
+    );
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/sitemap.xml");
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      "/admin/pages?view=metadata-issues&sort=title-asc",
+    );
+  });
+
+  it("redirects failed archive-from-list attempts to the page error state", async () => {
+    const formData = new FormData();
+    formData.set("id", pageId);
+    formData.set(
+      "returnTo",
+      "/admin/pages?view=metadata-issues&sort=title-asc",
+    );
+    mocks.adminArchiveSeoPage.mockRejectedValue(new Error("rpc failed"));
+
+    await archiveSeoPageFromList(formData);
+
+    expect(mocks.adminArchiveSeoPage).toHaveBeenCalledWith(pageId, {
+      actorId: "admin_1",
+    });
+    expect(mocks.revalidatePath).not.toHaveBeenCalledWith("/admin/pages");
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      `/admin/pages/${pageId}?error=archive`,
+    );
+  });
+
+  it("publishes a page from the list and revalidates the public path", async () => {
+    const formData = new FormData();
+    formData.set("id", pageId);
+    mocks.adminPublishSeoPage.mockResolvedValue({
+      page: {
+        id: pageId,
+        route_path: "/resources/vending-in-colleges",
+      },
+    });
+
+    await publishSeoPageFromList(formData);
+
+    expect(mocks.adminPublishSeoPage).toHaveBeenCalledWith(pageId, {
+      actorId: "admin_1",
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/pages");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(
+      "/resources/vending-in-colleges",
+    );
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/sitemap.xml");
+    expect(mocks.redirect).toHaveBeenCalledWith("/admin/pages");
+  });
+
+  it("moves a page to draft from the list and revalidates the public path", async () => {
+    const formData = new FormData();
+    formData.set("id", pageId);
+    mocks.adminUnpublishSeoPage.mockResolvedValue({
+      id: pageId,
+      route_path: "/resources/vending-in-colleges",
+    });
+
+    await moveSeoPageToDraftFromList(formData);
+
+    expect(mocks.adminUnpublishSeoPage).toHaveBeenCalledWith(pageId, {
+      actorId: "admin_1",
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/pages");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(
+      "/resources/vending-in-colleges",
+    );
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/sitemap.xml");
+    expect(mocks.redirect).toHaveBeenCalledWith("/admin/pages");
+  });
+
   it("creates page comments and revalidates the editor on success", async () => {
     const formData = new FormData();
     formData.set("pageId", pageId);
@@ -764,7 +984,7 @@ describe("admin page actions", () => {
       new SeoAgentConfigurationError("sk-secret is missing"),
     );
 
-    const result = await generateAiSeoPageProposal(pageId);
+    const result = await generateAiSeoPageProposal(pageId, "openai");
 
     expect(result).toEqual({
       status: "error",

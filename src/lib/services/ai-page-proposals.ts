@@ -7,7 +7,8 @@ import {
   validateAiPageProposal,
   type AiPageProposal,
 } from "@/lib/page-builder/ai-proposals";
-import { pageContentSchema } from "@/lib/page-builder/blocks";
+import { flattenBlocks, pageContentSchema } from "@/lib/page-builder/blocks";
+import type { PageBlock } from "@/lib/page-builder/blocks";
 import { ensureEditablePageContent } from "@/lib/page-builder/content-ops";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, TablesInsert } from "@/types/database";
@@ -185,6 +186,13 @@ export async function adminAcceptAiProposalBlocks(
   const content = ensureEditablePageContent(
     pageContentSchema.parse(page.draft_content),
   );
+  // Model-generated proposal IDs can collide with blocks already in the
+  // draft (or with a previously accepted proposal). Duplicate IDs break every
+  // ID-keyed editor operation, so remap collisions to fresh IDs on insert.
+  const insertedBlocks = dedupeAcceptedBlockIds(
+    content,
+    acceptedBlocks.map((entry) => entry.block),
+  );
   const nextContent = {
     ...content,
     sections: content.sections.map((section, sectionIndex) =>
@@ -195,10 +203,7 @@ export async function adminAcceptAiProposalBlocks(
               columnIndex === 0
                 ? {
                     ...column,
-                    blocks: [
-                      ...column.blocks,
-                      ...acceptedBlocks.map((entry) => entry.block),
-                    ],
+                    blocks: [...column.blocks, ...insertedBlocks],
                   }
                 : column,
             ),
@@ -240,7 +245,30 @@ export async function adminAcceptAiProposalBlocks(
     page: result.page,
     proposal: result.proposal,
     revision: result.revision,
+    insertedBlockIds: insertedBlocks.map((block) => block.id),
   };
+}
+
+function dedupeAcceptedBlockIds(
+  content: ReturnType<typeof ensureEditablePageContent>,
+  blocks: PageBlock[],
+): PageBlock[] {
+  const usedIds = new Set(flattenBlocks(content).map((block) => block.id));
+  return blocks.map((block) => {
+    if (!usedIds.has(block.id)) {
+      usedIds.add(block.id);
+      return block;
+    }
+    const base = block.id.slice(0, 72);
+    let suffix = 2;
+    let nextId = `${base}_${suffix}`;
+    while (usedIds.has(nextId)) {
+      suffix += 1;
+      nextId = `${base}_${suffix}`;
+    }
+    usedIds.add(nextId);
+    return { ...block, id: nextId };
+  });
 }
 
 function parseProposal(input: unknown): AiPageProposal {

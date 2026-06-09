@@ -614,17 +614,16 @@ describe("seo page service", () => {
         lifecycle_status: "active",
         og_title: "Start Vending social title",
         og_description: "Start Vending social description.",
-        scheduled_publish_at: "2026-06-03T16:30:00.000Z",
-        scheduled_publish_status: "scheduled",
-        scheduled_publish_error: "Previous failure",
-        scheduled_publish_attempts: 2,
-        scheduled_publish_last_attempt_at: "2026-06-03T16:20:00.000Z",
-        scheduled_publish_locked_at: "2026-06-03T16:25:00.000Z",
       }),
       p_actor_id: "admin-1",
       p_published_at: "2026-05-06T01:00:00.000Z",
       p_revision_label: "Publish 2026-05-06T01:00:00.000Z",
     });
+    // Scheduler state is operational, never part of revision snapshots.
+    const snapshot = client.rpc.mock.calls[0][1].p_seo_snapshot;
+    expect(snapshot).not.toHaveProperty("scheduled_publish_at");
+    expect(snapshot).not.toHaveProperty("scheduled_publish_status");
+    expect(snapshot).not.toHaveProperty("scheduled_publish_locked_at");
   });
 
   it("keeps a successful publish successful when content capture fails", async () => {
@@ -873,7 +872,7 @@ describe("seo page service", () => {
     );
   });
 
-  it("moves a published page back to draft", async () => {
+  it("moves a published page back to draft and cancels any pending schedule", async () => {
     const draftPage = {
       id: "page_1",
       slug: "start-vending",
@@ -881,9 +880,17 @@ describe("seo page service", () => {
       published_at: null,
       archived_at: null,
     };
+    const scheduleState = singleSelect({
+      id: "page_1",
+      scheduled_publish_status: "scheduled",
+    });
     const updatePage = updateSingle(draftPage);
     const deleteRedirects = deleteMatch();
-    const client = buildClient(updatePage.table, deleteRedirects.table);
+    const client = buildClient(
+      scheduleState.table,
+      updatePage.table,
+      deleteRedirects.table,
+    );
 
     const result = await adminUnpublishSeoPage("page_1", {
       client,
@@ -899,6 +906,10 @@ describe("seo page service", () => {
       archived_at: null,
       archive_behavior: "not_found",
       archive_redirect_url: null,
+      scheduled_publish_at: null,
+      scheduled_publish_status: "cancelled",
+      scheduled_publish_error: null,
+      scheduled_publish_locked_at: null,
       updated_by: "admin-1",
     });
     expect(updatePage.mocks.eq).toHaveBeenCalledWith("id", "page_1");
@@ -906,6 +917,27 @@ describe("seo page service", () => {
       page_id: "page_1",
       created_reason: "page_archived",
     });
+  });
+
+  it("keeps non-pending schedule status when moving a page back to draft", async () => {
+    const draftPage = { id: "page_1", status: "draft" };
+    const scheduleState = singleSelect({
+      id: "page_1",
+      scheduled_publish_status: "published",
+    });
+    const updatePage = updateSingle(draftPage);
+    const deleteRedirects = deleteMatch();
+    const client = buildClient(
+      scheduleState.table,
+      updatePage.table,
+      deleteRedirects.table,
+    );
+
+    await adminUnpublishSeoPage("page_1", { client, actorId: "admin-1" });
+
+    expect(updatePage.mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ scheduled_publish_status: "published" }),
+    );
   });
 
   it("fails publish through the atomic RPC without separate revision and page writes", async () => {
@@ -1694,6 +1726,8 @@ describe("seo page service", () => {
       lifecycle_status: "needs_review",
       og_title: "Snapshot social title",
       og_description: "Snapshot social description.",
+      // Legacy revisions may still carry scheduler state in their snapshots;
+      // rollback must never restore it.
       scheduled_publish_at: "2026-06-03T16:30:00.000Z",
       scheduled_publish_status: "scheduled",
       scheduled_publish_error: "Previous failure",
@@ -1701,6 +1735,11 @@ describe("seo page service", () => {
       scheduled_publish_last_attempt_at: "2026-06-03T16:20:00.000Z",
       scheduled_publish_locked_at: "2026-06-03T16:25:00.000Z",
     };
+    const restorablePatch = Object.fromEntries(
+      Object.entries(seoSnapshot).filter(
+        ([key]) => !key.startsWith("scheduled_publish"),
+      ),
+    );
     const sourceRevision = {
       id: "revision_source",
       page_id: "page_1",
@@ -1739,7 +1778,7 @@ describe("seo page service", () => {
         p_content_snapshot: parsedContent,
         p_seo_snapshot: seoSnapshot,
         p_draft_content: parsedContent,
-        p_seo_patch: seoSnapshot,
+        p_seo_patch: restorablePatch,
         p_actor_id: "admin-1",
       },
     );
@@ -1815,10 +1854,6 @@ describe("seo page service", () => {
           lifecycle_status: "needs_review",
           og_title: null,
           og_description: "Snapshot social description.",
-          scheduled_publish_at: null,
-          scheduled_publish_error: null,
-          scheduled_publish_attempts: 2,
-          scheduled_publish_last_attempt_at: null,
         },
         p_actor_id: "admin-1",
       },

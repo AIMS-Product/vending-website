@@ -522,6 +522,7 @@ export async function adminUnpublishSeoPage(
   options: ServiceDeps & { actorId?: string | null } = {},
 ) {
   const client = options.client ?? createAdminClient();
+  const existing = await loadSeoPageScheduleState(client, pageId);
   const { data, error } = await client
     .from("seo_pages")
     .update({
@@ -532,6 +533,16 @@ export async function adminUnpublishSeoPage(
       archived_at: null,
       archive_behavior: "not_found",
       archive_redirect_url: null,
+      // Moving to draft is an explicit takedown: a pending schedule must not
+      // republish the page behind the admin's back.
+      scheduled_publish_at: null,
+      scheduled_publish_status:
+        existing.scheduled_publish_status === "scheduled" ||
+        existing.scheduled_publish_status === "failed"
+          ? "cancelled"
+          : existing.scheduled_publish_status,
+      scheduled_publish_error: null,
+      scheduled_publish_locked_at: null,
       updated_by: options.actorId ?? null,
     })
     .eq("id", pageId)
@@ -623,11 +634,13 @@ export async function adminArchiveSeoPage(
       ]);
     }
 
-    const currentRoutePath = options.currentSlug
-      ? pagePathForSlug(options.currentSlug, "/resources")
-      : pagePathForPage(await loadSeoPageSlugState(client, pageId));
     archiveRedirectUrl = normalizeDestinationPath(archiveRedirectUrl);
-    validateRedirectPaths(currentRoutePath, archiveRedirectUrl);
+    if (!options.currentSlug) {
+      // Self-redirects against a caller-supplied slug are enforced inside the
+      // RPC, which knows the page's real route prefix without an extra read.
+      const slugState = await loadSeoPageSlugState(client, pageId);
+      validateRedirectPaths(pagePathForPage(slugState), archiveRedirectUrl);
+    }
   }
 
   const { data, error } = await client.rpc("archive_seo_page_atomically", {
@@ -989,6 +1002,17 @@ async function loadSeoPageForPublish(client: SeoPageClient, pageId: string) {
   const { data, error } = await client
     .from("seo_pages")
     .select(SEO_PAGE_FIELDS)
+    .eq("id", pageId)
+    .single();
+
+  if (error || !data) throw new Error("Could not load SEO page.");
+  return data;
+}
+
+async function loadSeoPageScheduleState(client: SeoPageClient, pageId: string) {
+  const { data, error } = await client
+    .from("seo_pages")
+    .select("id, scheduled_publish_status")
     .eq("id", pageId)
     .single();
 

@@ -65,6 +65,9 @@ export async function adminListDueScheduledSeoPages(
     .from("seo_pages")
     .select(SCHEDULED_SEO_PAGE_FIELDS)
     .eq("scheduled_publish_status", "scheduled")
+    // Archive cancels schedules, but stay defensive: the runner must never
+    // resurrect an archived page even if stale schedule state slips through.
+    .neq("status", "archived")
     .lte("scheduled_publish_at", nowIso)
     .lt("scheduled_publish_attempts", maxAttempts)
     .or(
@@ -108,6 +111,7 @@ export async function adminClaimDueScheduledSeoPage(
     })
     .eq("id", page.id)
     .eq("scheduled_publish_status", "scheduled")
+    .neq("status", "archived")
     .lte("scheduled_publish_at", claimedAtIso)
     .lt("scheduled_publish_attempts", maxAttempts)
     .or(

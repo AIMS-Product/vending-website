@@ -182,13 +182,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(ADMIN_LOGIN_PATH, request.url));
   }
 
+  // Enforce the same predicate as the inner requireAdmin layer: row
+  // existence alone would silently stop filtering if a non-admin role is
+  // ever added to app_users.
   const { data: row } = await supabase
     .from("app_users")
-    .select("user_id")
+    .select("user_id, role")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!row) {
+  const isAdminRole = row?.role === "admin" || row?.role === "super_admin";
+  if (!isAdminRole) {
     return NextResponse.redirect(new URL(ADMIN_LOGIN_PATH, request.url));
   }
 

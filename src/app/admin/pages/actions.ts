@@ -95,6 +95,7 @@ export type PageAutosavePayload = {
   ogTitle: string;
   ogDescription: string;
   scheduledPublishAt: string;
+  scheduledPublishAtBaseline: string;
   cancelScheduledPublish: boolean;
   noindex: boolean;
   sitemapEnabled: boolean;
@@ -104,7 +105,7 @@ export type PageAutosavePayload = {
   draftContent: PageContent;
 };
 
-const formSchema = z.object({
+const formObjectSchema = z.object({
   id: z.uuid().optional(),
   title: z.string().trim().min(3, "Title needs at least 3 characters."),
   slug: z
@@ -146,6 +147,7 @@ const formSchema = z.object({
     .max(180, "Social description is too long.")
     .default(""),
   scheduledPublishAt: z.string().trim().max(40).default(""),
+  scheduledPublishAtBaseline: z.string().trim().max(40).default(""),
   cancelScheduledPublish: z.boolean().default(false),
   noindex: z.boolean(),
   sitemapEnabled: z.boolean(),
@@ -158,6 +160,21 @@ const formSchema = z.object({
   draftContent: pageContentSchema,
   publishNote: z.string().trim().max(240).optional(),
   intent: z.enum(["save", "publish"]),
+});
+const formSchema = formObjectSchema.superRefine((data, ctx) => {
+  if (
+    !data.cancelScheduledPublish &&
+    data.scheduledPublishAt.length > 0 &&
+    data.scheduledPublishAt !== data.scheduledPublishAtBaseline &&
+    !zonedDateTimeLocalToUtcIso(data.scheduledPublishAt)
+  ) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["scheduledPublishAt"],
+      message:
+        "Scheduled publish time is not valid in Pacific Time. Pick a different time.",
+    });
+  }
 });
 type ParsedPageForm = z.infer<typeof formSchema>;
 
@@ -330,6 +347,7 @@ export async function autosaveSeoPageDraft(
     ogTitle: payload.ogTitle,
     ogDescription: payload.ogDescription,
     scheduledPublishAt: payload.scheduledPublishAt,
+    scheduledPublishAtBaseline: payload.scheduledPublishAtBaseline,
     cancelScheduledPublish: payload.cancelScheduledPublish,
     noindex: payload.noindex,
     sitemapEnabled: payload.sitemapEnabled,
@@ -515,7 +533,8 @@ export async function acceptAiSeoProposalBlocks(
         parsed.data.blockIds.length === 1 ? "" : "s"
       } inserted into the draft.`,
       proposalId: parsed.data.proposalId,
-      insertedBlockIds: parsed.data.blockIds,
+      // The service may remap IDs that collide with existing draft blocks.
+      insertedBlockIds: result.insertedBlockIds ?? parsed.data.blockIds,
       content,
     };
   } catch (error) {
@@ -573,14 +592,28 @@ export async function rollbackSeoPageRevision(formData: FormData) {
 
 export async function refreshSeoPageLibraryReferences(formData: FormData) {
   const admin = await requireAuth();
-  const pageId = String(formData.get("pageId") ?? "");
-  if (!pageId) redirect(ADMIN_PAGES_PATH);
-
-  await adminRefreshSeoPageLibraryReferences(pageId, {
-    actorId: admin.user.id,
-  });
-  revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
-  redirect(`${ADMIN_PAGES_PATH}/${pageId}?saved=1`);
+  const parsedPageId = z.uuid().safeParse(String(formData.get("pageId") ?? ""));
+  if (!parsedPageId.success) {
+    redirect(`${ADMIN_PAGES_PATH}?error=invalid-id`);
+    return;
+  }
+  const pageId = parsedPageId.data;
+  const pagePath = `${ADMIN_PAGES_PATH}/${pageId}`;
+  let redirectPath = `${pagePath}?saved=1`;
+  try {
+    await adminRefreshSeoPageLibraryReferences(pageId, {
+      actorId: admin.user.id,
+    });
+    revalidatePath(pagePath);
+  } catch (error) {
+    console.error("failed to refresh SEO page library references", {
+      adminUserId: admin.user.id,
+      pageId,
+      error,
+    });
+    redirectPath = `${pagePath}?error=refresh`;
+  }
+  redirect(redirectPath);
 }
 
 export async function publishSeoPageFromList(formData: FormData) {
@@ -704,6 +737,8 @@ function parsePageFormData(formData: FormData) {
     ogTitle: formData.get("ogTitle") ?? "",
     ogDescription: formData.get("ogDescription") ?? "",
     scheduledPublishAt: formData.get("scheduledPublishAt") ?? "",
+    scheduledPublishAtBaseline:
+      formData.get("scheduledPublishAtBaseline") ?? "",
     cancelScheduledPublish: formData.get("cancelScheduledPublish") === "on",
     noindex: formData.get("noindex") === "on",
     sitemapEnabled: formData.get("sitemapEnabled") === "on",
@@ -827,16 +862,22 @@ function seoDraftMetadataFromPageForm(page: ParsedPageForm) {
   };
 }
 
+// Scheduler columns are owned by explicit schedule/cancel actions and the
+// publish runner. Saves and autosaves must leave them untouched unless the
+// user actually edited the schedule field — otherwise a routine autosave can
+// null the runner's claim lock, reset attempts, or re-arm a past schedule
+// left in a stale tab.
 function scheduledPublishMetadataFromPageForm(page: ParsedPageForm) {
   if (page.cancelScheduledPublish) {
-    return {
-      scheduledPublishAt: null,
-      scheduledPublishStatus: "cancelled",
-      scheduledPublishError: null,
-      scheduledPublishAttempts: 0,
-      scheduledPublishLastAttemptAt: null,
-      scheduledPublishLockedAt: null,
-    };
+    return cancelledScheduledPublishMetadata();
+  }
+
+  if (page.scheduledPublishAt === page.scheduledPublishAtBaseline) {
+    return {};
+  }
+
+  if (page.scheduledPublishAt.length === 0) {
+    return cancelledScheduledPublishMetadata();
   }
 
   const scheduledPublishAt = zonedDateTimeLocalToUtcIso(
@@ -847,6 +888,17 @@ function scheduledPublishMetadataFromPageForm(page: ParsedPageForm) {
   return {
     scheduledPublishAt,
     scheduledPublishStatus: "scheduled",
+    scheduledPublishError: null,
+    scheduledPublishAttempts: 0,
+    scheduledPublishLastAttemptAt: null,
+    scheduledPublishLockedAt: null,
+  };
+}
+
+function cancelledScheduledPublishMetadata() {
+  return {
+    scheduledPublishAt: null,
+    scheduledPublishStatus: "cancelled",
     scheduledPublishError: null,
     scheduledPublishAttempts: 0,
     scheduledPublishLastAttemptAt: null,

@@ -265,6 +265,7 @@ export function useSeoPageEditorController(
     string | null
   >(null);
   const autosaveReady = useRef(false);
+  const autosaveInFlight = useRef<Promise<unknown>>(Promise.resolve());
   const hasRefreshedAfterManualPublish = useRef(false);
   const visibleSlug = slugTouched ? slug : slugify(title);
   const draftContentJson = useMemo(() => JSON.stringify(content), [content]);
@@ -601,7 +602,15 @@ export function useSeoPageEditorController(
     }
 
     const timer = window.setTimeout(() => {
-      autosaveSeoPageDraft(effectivePageId, buildAutosavePayload())
+      // Serialize requests: the draft save is a blind full-row update, so two
+      // overlapping autosaves can commit out of order and silently regress
+      // the draft. The payload is built after the previous request settles so
+      // each save carries the freshest state.
+      autosaveInFlight.current = autosaveInFlight.current
+        .catch(() => undefined)
+        .then(() =>
+          autosaveSeoPageDraft(effectivePageId, buildAutosavePayload()),
+        )
         .then(setAutosave)
         .catch((error: unknown) => {
           console.error("seo page autosave failed", error);

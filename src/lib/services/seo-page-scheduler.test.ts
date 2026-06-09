@@ -54,6 +54,7 @@ function dueQuery(data: unknown, error: unknown = null) {
   const chain: Record<string, ReturnType<typeof vi.fn>> = {};
   chain.select = vi.fn().mockReturnValue(chain);
   chain.eq = vi.fn().mockReturnValue(chain);
+  chain.neq = vi.fn().mockReturnValue(chain);
   chain.lte = vi.fn().mockReturnValue(chain);
   chain.lt = vi.fn().mockReturnValue(chain);
   chain.or = vi.fn().mockReturnValue(chain);
@@ -66,6 +67,7 @@ function claimQuery(data: unknown, error: unknown = null) {
   const chain: Record<string, ReturnType<typeof vi.fn>> = {};
   chain.update = vi.fn().mockReturnValue(chain);
   chain.eq = vi.fn().mockReturnValue(chain);
+  chain.neq = vi.fn().mockReturnValue(chain);
   chain.lte = vi.fn().mockReturnValue(chain);
   chain.lt = vi.fn().mockReturnValue(chain);
   chain.or = vi.fn().mockReturnValue(chain);
@@ -113,6 +115,7 @@ describe("seo page scheduler service", () => {
       "scheduled_publish_status",
       "scheduled",
     );
+    expect(due.mocks.neq).toHaveBeenCalledWith("status", "archived");
     expect(due.mocks.lte).toHaveBeenCalledWith(
       "scheduled_publish_at",
       "2026-06-03T16:30:00.000Z",
@@ -155,6 +158,7 @@ describe("seo page scheduler service", () => {
       "scheduled_publish_status",
       "scheduled",
     );
+    expect(claim.mocks.neq).toHaveBeenCalledWith("status", "archived");
     expect(claim.mocks.lte).toHaveBeenCalledWith(
       "scheduled_publish_at",
       "2026-06-03T16:30:00.000Z",

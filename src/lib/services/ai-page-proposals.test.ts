@@ -253,7 +253,7 @@ describe("AI page proposals", () => {
       },
     );
 
-    expect(result).toEqual(rpcResult);
+    expect(result).toEqual({ ...rpcResult, insertedBlockIds: ["block_ai"] });
     expect(client.rpc).toHaveBeenCalledWith("accept_ai_proposal_blocks", {
       p_page_id: "page_1",
       p_proposal_id: "proposal_1",
@@ -270,6 +270,83 @@ describe("AI page proposals", () => {
       p_label: "AI insert 2026-05-06T01:00:00.000Z",
       p_accepted_at: "2026-05-06T01:00:00.000Z",
     });
+  });
+
+  it("remaps proposal block IDs that collide with existing draft blocks", async () => {
+    const proposalLookup = maybeSingleByMatch({
+      id: "proposal_1",
+      page_id: "page_1",
+      status: "proposed",
+      proposal_json: proposal,
+    });
+    const pageLookup = singleByEq({
+      id: "page_1",
+      slug: "start-vending",
+      title: "Start Vending",
+      target_keyword: "start vending",
+      seo_title: "Start Vending",
+      meta_description: "Meta",
+      draft_content: {
+        version: 1,
+        sections: [
+          {
+            id: "section_1",
+            preset: "standard",
+            background: "default",
+            spacing: "standard",
+            columns: [
+              {
+                id: "column_1",
+                width: "1/1",
+                blocks: [
+                  {
+                    // Same ID as the proposal block being accepted.
+                    id: "block_ai",
+                    type: "rich_text",
+                    variant: "default",
+                    props: {
+                      eyebrow: "",
+                      heading: "Existing block",
+                      body: {
+                        version: 1,
+                        nodes: [{ type: "paragraph", text: "Existing." }],
+                      },
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const client = buildClient(proposalLookup.table, pageLookup.table);
+    client.rpc.mockResolvedValue({
+      data: {
+        page: { id: "page_1" },
+        proposal: { id: "proposal_1" },
+        revision: { id: "revision_1" },
+      },
+      error: null,
+    });
+
+    const result = await adminAcceptAiProposalBlocks(
+      "page_1",
+      "proposal_1",
+      ["block_ai"],
+      { client, actorId: "admin_1", now: () => new Date("2026-05-06") },
+    );
+
+    expect(result.insertedBlockIds).toEqual(["block_ai_2"]);
+    const nextContent = client.rpc.mock.calls[0]![1].p_next_content as {
+      sections: Array<{
+        columns: Array<{ blocks: Array<{ id: string }> }>;
+      }>;
+    };
+    const ids = nextContent.sections[0]!.columns[0]!.blocks.map(
+      (block) => block.id,
+    );
+    expect(ids).toEqual(["block_ai", "block_ai_2"]);
   });
 
   it("rejects stale concurrent proposal acceptance attempts", async () => {

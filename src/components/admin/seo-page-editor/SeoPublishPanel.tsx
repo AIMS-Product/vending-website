@@ -491,6 +491,15 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
 
 function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
   const page = editor.page;
+  // Mount-time baseline for the uncontrolled schedule input: the server only
+  // writes scheduler state when the submitted value differs from this, so
+  // routine saves and stale tabs never re-arm or unlock a schedule.
+  const [scheduledPublishBaseline] = useState(() =>
+    formatDateTimeLocalInTimeZone(
+      page?.scheduled_publish_at,
+      SCHEDULED_PUBLISH_TIME_ZONE,
+    ),
+  );
   const hasScheduledState =
     page?.scheduled_publish_status === "scheduled" ||
     page?.scheduled_publish_status === "failed";
@@ -629,11 +638,13 @@ function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
           type="datetime-local"
           name="scheduledPublishAt"
           aria-label="Scheduled publish"
-          defaultValue={formatDateTimeLocalInTimeZone(
-            page?.scheduled_publish_at,
-            SCHEDULED_PUBLISH_TIME_ZONE,
-          )}
+          defaultValue={scheduledPublishBaseline}
           className={compactInputClass}
+        />
+        <input
+          type="hidden"
+          name="scheduledPublishAtBaseline"
+          value={scheduledPublishBaseline}
         />
         <span className="mt-1.5 block text-xs leading-5 text-slate-500">
           Uses {SCHEDULED_PUBLISH_TIME_ZONE_LABEL} (
