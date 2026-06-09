@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PageContent } from "@/lib/page-builder/blocks";
-import {
-  applyPageBuilderAiToolCalls,
-  buildPageBuilderAiToolDefinitions,
-  collectBlockToolSpecs,
-  normalizePageBuilderAiChatResponseForIntent,
-  pageBuilderAiSystemPrompt,
-  type PageBuilderAiContext,
-} from "./ai-chat";
+import { applyPageBuilderAiToolCalls, collectBlockToolSpecs } from "./ai-chat";
 
 const content: PageContent = {
   version: 1,
@@ -55,165 +48,7 @@ const content: PageContent = {
   ],
 };
 
-const context: PageBuilderAiContext = {
-  pageId: "11111111-1111-4111-8111-111111111111",
-  status: "draft",
-  title: "Coffee vending Adelaide",
-  slug: "coffee-vending-adelaide",
-  pageType: "resource",
-  templateKey: "blank",
-  targetKeyword: "coffee vending",
-  seoTitle: "Coffee vending Adelaide",
-  metaDescription: "Coffee vending machines for Adelaide workplaces.",
-  selectedBlockId: "block_faq",
-  content,
-  publishReadiness: {
-    blockers: ["Publish requires at least one CTA or lead form block."],
-    warnings: [],
-    opportunities: [],
-  },
-};
-
-const intentVariantTemplates = [
-  "Add {subject} about campus vending.",
-  "Create {subject} for office vending.",
-  "Insert {subject} on workplace vending.",
-  "Make {subject} around snack vending.",
-  "Build {subject} for coffee vending.",
-  "Put {subject} about school vending.",
-  "Include {subject} for gym vending.",
-  "Draft {subject} about managed vending.",
-  "Generate {subject} for Adelaide vending.",
-  "Write {subject} about vending operators.",
-  "Compose {subject} for healthy vending.",
-  "Give me {subject} about retail vending.",
-  "Can you add {subject} for lobby vending?",
-  "Please create {subject} around machine servicing.",
-  "I need you to insert {subject} for refill schedules.",
-  "Let's build {subject} about customer support.",
-  "Please include {subject} for product range.",
-  "Can you make {subject} around machine uptime?",
-  "Could you draft {subject} for new locations?",
-  "Generate {subject} about route planning.",
-];
-
-const intentEvalScenarios = [
-  {
-    subject: "a hero block",
-    expectedToolName: "add_block",
-    expectedInput: { blockType: "hero" },
-  },
-  {
-    subject: "a text section",
-    expectedToolName: "add_block",
-    expectedInput: { blockType: "rich_text" },
-  },
-  {
-    subject: "an FAQ block",
-    expectedToolName: "add_block",
-    expectedInput: { blockType: "faq" },
-  },
-  {
-    subject: "a card grid block",
-    expectedToolName: "add_block",
-    expectedInput: { blockType: "card_grid" },
-  },
-  {
-    subject: "a CTA block",
-    expectedToolName: "add_block",
-    expectedInput: { blockType: "cta" },
-  },
-  {
-    subject: "a proof block",
-    expectedToolName: "add_block",
-    expectedInput: { blockType: "proof" },
-  },
-  {
-    subject: "a lead form block",
-    expectedToolName: "add_block",
-    expectedInput: { blockType: "lead_form" },
-  },
-  {
-    subject: "an image block using /images/sections/hero.avif",
-    expectedToolName: "add_media_block",
-    expectedInput: { mediaType: "image", url: "/images/sections/hero.avif" },
-  },
-  {
-    subject: "a video block using https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    expectedToolName: "add_media_block",
-    expectedInput: {
-      mediaType: "video",
-      url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    },
-  },
-  {
-    subject: "an image section with text using /images/sections/hero.avif",
-    expectedToolName: "add_image_text_section",
-    expectedInput: { imageUrl: "/images/sections/hero.avif" },
-  },
-];
-
-const intentEvalCases = intentEvalScenarios.flatMap((scenario) =>
-  intentVariantTemplates.map((template) => ({
-    message: template.replace("{subject}", scenario.subject),
-    expectedToolName: scenario.expectedToolName,
-    expectedInput: scenario.expectedInput,
-  })),
-);
-
 describe("page builder AI chat tools", () => {
-  it("builds dynamic strict tools for the current blocks", () => {
-    const tools = buildPageBuilderAiToolDefinitions(context);
-    const heroTool = tools.find((tool) => tool.name.includes("block_hero"));
-
-    expect(heroTool).toEqual(
-      expect.objectContaining({
-        type: "function",
-        strict: true,
-      }),
-    );
-    expect(heroTool?.parameters.additionalProperties).toBe(false);
-    expect(heroTool?.parameters.required).toContain("headline");
-    expect(tools.map((tool) => tool.name)).toContain("set_seo_metadata");
-    expect(tools.map((tool) => tool.name)).toContain("replace_page_sections");
-    expect(tools.map((tool) => tool.name)).toContain("add_image_text_section");
-    const replaceTool = tools.find(
-      (tool) => tool.name === "replace_page_sections",
-    );
-    expect(replaceTool?.parameters.required).toContain("replaceExisting");
-    expect(
-      (
-        replaceTool?.parameters.properties.replaceExisting as
-          | { type?: unknown }
-          | undefined
-      )?.type,
-    ).toBe("boolean");
-  });
-
-  it("includes current page context, guide strategy, and exact block tools in the prompt", () => {
-    const prompt = pageBuilderAiSystemPrompt(
-      context,
-      "Create a page about vending machines for college dormitories in Adelaide.",
-    );
-
-    expect(prompt).toContain("Coffee vending Adelaide");
-    expect(prompt).toContain("Hidden guide selection: Use-case SEO page");
-    expect(prompt).toContain(
-      "Secondary signals to blend: Local intent SEO page",
-    );
-    expect(prompt).toContain("Do not mention this guide name to the user");
-    expect(prompt).toContain("Publish requires at least one CTA");
-    expect(prompt).toContain("Full editable block context");
-    expect(prompt).toContain('"selectedBlockId": "block_faq"');
-    expect(prompt).toContain('"selected": true');
-    expect(prompt).toContain(collectBlockToolSpecs(content)[0]!.name);
-    expect(prompt).toContain("replace_page_sections");
-    expect(prompt).toContain(
-      "fill out, expand, build out, or add more content",
-    );
-    expect(prompt).toContain("image section with text");
-  });
-
   it("applies block edits and SEO metadata to local draft state", () => {
     const [heroTool] = collectBlockToolSpecs(content);
     const result = applyPageBuilderAiToolCalls({
@@ -264,6 +99,239 @@ describe("page builder AI chat tools", () => {
     expect(result.results.every((entry) => entry.status === "applied")).toBe(
       true,
     );
+  });
+
+  it("keeps rich text structure when a dynamic edit passes body: null", () => {
+    const richBody = {
+      version: 1 as const,
+      nodes: [
+        { type: "heading" as const, level: 2 as const, text: "Why it works" },
+        {
+          type: "paragraph" as const,
+          spans: [{ text: "Linked detail", href: "/contact" }],
+        },
+        {
+          type: "list" as const,
+          style: "bullet" as const,
+          items: ["First point", "Second point"],
+        },
+      ],
+    };
+    const richContent: PageContent = {
+      version: 1,
+      sections: [
+        {
+          id: "section_1",
+          preset: "standard",
+          background: "default",
+          spacing: "standard",
+          columns: [
+            {
+              id: "column_1",
+              width: "1/1",
+              blocks: [
+                {
+                  id: "block_rich",
+                  type: "rich_text",
+                  variant: "default",
+                  props: {
+                    eyebrow: "",
+                    heading: "Old heading",
+                    body: richBody,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const [richTool] = collectBlockToolSpecs(richContent);
+    const result = applyPageBuilderAiToolCalls({
+      content: richContent,
+      makeBlockId: () => "block_ai",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: richTool!.name,
+          input: {
+            eyebrow: null,
+            heading: "New heading",
+            body: null,
+            bulletItems: null,
+          },
+        },
+      ],
+    });
+
+    expect(result.results[0]).toMatchObject({ status: "applied" });
+    const block = result.content.sections[0]!.columns[0]!.blocks[0]!;
+    expect(block).toMatchObject({
+      type: "rich_text",
+      props: { heading: "New heading", body: richBody },
+    });
+  });
+
+  it("replaces only the list when a dynamic edit passes new bullet items", () => {
+    const richContent: PageContent = {
+      version: 1,
+      sections: [
+        {
+          id: "section_1",
+          preset: "standard",
+          background: "default",
+          spacing: "standard",
+          columns: [
+            {
+              id: "column_1",
+              width: "1/1",
+              blocks: [
+                {
+                  id: "block_rich",
+                  type: "rich_text",
+                  variant: "default",
+                  props: {
+                    eyebrow: "",
+                    heading: "Heading",
+                    body: {
+                      version: 1,
+                      nodes: [
+                        { type: "paragraph", text: "Keep this prose." },
+                        {
+                          type: "list",
+                          style: "bullet",
+                          items: ["Old item"],
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const [richTool] = collectBlockToolSpecs(richContent);
+    const result = applyPageBuilderAiToolCalls({
+      content: richContent,
+      makeBlockId: () => "block_ai",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: richTool!.name,
+          input: {
+            eyebrow: null,
+            heading: null,
+            body: null,
+            bulletItems: ["New item one", "New item two"],
+          },
+        },
+      ],
+    });
+
+    expect(result.results[0]).toMatchObject({ status: "applied" });
+    const block = result.content.sections[0]!.columns[0]!.blocks[0]!;
+    expect(block).toMatchObject({
+      type: "rich_text",
+      props: {
+        body: {
+          version: 1,
+          nodes: [
+            { type: "paragraph", text: "Keep this prose." },
+            {
+              type: "list",
+              style: "bullet",
+              items: ["New item one", "New item two"],
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  it("applies dynamic edits whose flatten index shifted earlier in the batch", () => {
+    const twoSectionContent: PageContent = {
+      version: 1,
+      sections: [
+        content.sections[0]!,
+        {
+          id: "section_2",
+          preset: "standard",
+          background: "default",
+          spacing: "standard",
+          columns: [
+            {
+              id: "column_2",
+              width: "1/1",
+              blocks: [
+                {
+                  id: "block_late",
+                  type: "rich_text",
+                  variant: "default",
+                  props: {
+                    eyebrow: "",
+                    heading: "Late heading",
+                    body: {
+                      version: 1,
+                      nodes: [{ type: "paragraph", text: "Late body." }],
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    // Tool names were generated against pre-batch content; the add_block call
+    // shifts every later block's flatten index before the edit resolves.
+    const lateTool = collectBlockToolSpecs(twoSectionContent).find(
+      (spec) => spec.blockId === "block_late",
+    );
+    const result = applyPageBuilderAiToolCalls({
+      content: twoSectionContent,
+      makeBlockId: () => "block_added",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: "add_block",
+          input: {
+            blockType: "rich_text",
+            title: "Inserted block",
+            body: "Inserted body copy.",
+            bulletItems: null,
+            faqItems: null,
+            cards: null,
+            ctaLabel: null,
+            ctaHref: null,
+          },
+        },
+        {
+          id: "call_2",
+          name: lateTool!.name,
+          input: {
+            eyebrow: null,
+            heading: "Updated late heading",
+            body: null,
+            bulletItems: null,
+          },
+        },
+      ],
+    });
+
+    expect(result.results[1]).toMatchObject({
+      status: "applied",
+      blockId: "block_late",
+    });
+    const lateBlock = result.content.sections[1]!.columns[0]!.blocks[0]!;
+    expect(lateBlock).toMatchObject({
+      type: "rich_text",
+      props: { heading: "Updated late heading" },
+    });
   });
 
   it("truncates overlong AI SEO metadata before applying it", () => {
@@ -381,6 +449,84 @@ describe("page builder AI chat tools", () => {
     expect(result.content.sections[0]!.columns[0]!.blocks).toHaveLength(12);
   });
 
+  it("applies a validated image source from a dynamic image edit", () => {
+    const imageContent: PageContent = {
+      version: 1,
+      sections: [
+        {
+          id: "section_1",
+          preset: "standard",
+          background: "default",
+          spacing: "standard",
+          columns: [
+            {
+              id: "column_1",
+              width: "1/1",
+              blocks: [
+                {
+                  id: "block_image",
+                  type: "image",
+                  variant: "standard",
+                  props: {
+                    src: "/images/old.webp",
+                    altText: "Old image",
+                    caption: "",
+                    sourceRightsNotes: "",
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const [imageTool] = collectBlockToolSpecs(imageContent);
+    const applied = applyPageBuilderAiToolCalls({
+      content: imageContent,
+      makeBlockId: () => "block_ai",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: imageTool!.name,
+          input: {
+            title: null,
+            url: "/images/new.webp",
+            caption: null,
+            altText: "New image",
+          },
+        },
+      ],
+    });
+    expect(applied.results[0]).toMatchObject({ status: "applied" });
+    expect(applied.content.sections[0]!.columns[0]!.blocks[0]).toMatchObject({
+      type: "image",
+      props: { src: "/images/new.webp", altText: "New image" },
+    });
+
+    const rejected = applyPageBuilderAiToolCalls({
+      content: imageContent,
+      makeBlockId: () => "block_ai",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: imageTool!.name,
+          input: {
+            title: null,
+            url: "https://attacker.example/payload.png",
+            caption: null,
+            altText: null,
+          },
+        },
+      ],
+    });
+    expect(rejected.results[0]).toMatchObject({
+      status: "failed",
+      message: "Use an internal image path or an approved remote image URL.",
+    });
+    expect(rejected.content).toEqual(imageContent);
+  });
+
   it("still rejects unsafe media URLs after normalization", () => {
     const result = applyPageBuilderAiToolCalls({
       content,
@@ -405,6 +551,33 @@ describe("page builder AI chat tools", () => {
     expect(result.results[0]).toMatchObject({
       status: "failed",
       message: "Use an internal media path or an http(s) URL.",
+    });
+  });
+
+  it("rejects video URLs when the AI tries to create an image block", () => {
+    const result = applyPageBuilderAiToolCalls({
+      content,
+      makeBlockId: () => "block_ai_image",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: "add_media_block",
+          input: {
+            mediaType: "image",
+            title: "Video as image",
+            url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            altText: "Video as image",
+            caption: null,
+            sourceRightsNotes: null,
+          },
+        },
+      ],
+    });
+
+    expect(result.content).toEqual(content);
+    expect(result.results[0]).toMatchObject({
+      status: "failed",
+      message: "Use an internal image path or an approved remote image URL.",
     });
   });
 
@@ -975,206 +1148,5 @@ describe("page builder AI chat tools", () => {
       status: "applied",
       message: "Rebuilt page body with 2 blocks across 1 sections.",
     });
-  });
-
-  it("normalizes vague human image-section asks into a clarification", () => {
-    const response = normalizePageBuilderAiChatResponseForIntent(
-      {
-        messages: [
-          {
-            role: "user",
-            content: "Add an image section with text about campus vending.",
-          },
-        ],
-        context,
-      },
-      {
-        message: "I added the text and left the image as a review item.",
-        toolCalls: [
-          {
-            id: "call_1",
-            name: "add_block",
-            input: {
-              blockType: "rich_text",
-              title: "Campus vending",
-              body: "A short section about campus vending.",
-              bulletItems: null,
-              faqItems: null,
-              cards: null,
-              ctaLabel: null,
-              ctaHref: null,
-            },
-          },
-        ],
-      },
-    );
-
-    expect(response).toEqual({
-      message:
-        "I can add the image and text section, but I need the image source first.",
-      toolCalls: [
-        {
-          id: "deterministic_image_text_clarification",
-          name: "request_clarification",
-          input: {
-            options: [
-              "Paste an image URL",
-              "Choose a media library image first",
-              "Add the text section now",
-            ],
-          },
-        },
-      ],
-    });
-  });
-
-  it("preserves useful non-content tool calls when adding a deterministic fallback", () => {
-    const response = normalizePageBuilderAiChatResponseForIntent(
-      {
-        messages: [
-          {
-            role: "user",
-            content: "Add a CTA block about campus vending.",
-          },
-        ],
-        context,
-      },
-      {
-        message: "I updated the metadata but did not add the CTA.",
-        toolCalls: [
-          {
-            id: "call_1",
-            name: "set_seo_metadata",
-            input: {
-              title: null,
-              slug: null,
-              targetKeyword: "campus vending",
-              seoTitle: null,
-              metaDescription: null,
-            },
-          },
-        ],
-      },
-    );
-
-    expect(response.toolCalls).toHaveLength(2);
-    expect(response.toolCalls[0]?.name).toBe("set_seo_metadata");
-    expect(response.toolCalls[1]).toMatchObject({
-      name: "add_block",
-      input: { blockType: "cta" },
-    });
-  });
-
-  it("adds a full page body when a create-page ask only returns metadata", () => {
-    const emptyContext: PageBuilderAiContext = {
-      ...context,
-      selectedBlockId: null,
-      content: {
-        version: 1,
-        chrome: { showHeader: true, showFooter: true },
-        sections: [],
-      },
-    };
-    const response = normalizePageBuilderAiChatResponseForIntent(
-      {
-        messages: [
-          {
-            role: "user",
-            content:
-              "Create a page about placing vending machines in college dormitories.",
-          },
-        ],
-        context: emptyContext,
-      },
-      {
-        message: "Updated SEO metadata fields.",
-        toolCalls: [
-          {
-            id: "call_1",
-            name: "set_seo_metadata",
-            input: {
-              title: "Placing Vending Machines in College Dormitories",
-              slug: "placing-vending-machines-in-college-dormitories",
-              targetKeyword: "vending machines in college dormitories",
-              seoTitle: "Vending Machines in College Dormitories",
-              metaDescription:
-                "Learn how to place vending machines in college dormitories.",
-            },
-          },
-        ],
-      },
-    );
-
-    expect(response.message).toBe("Updated SEO metadata fields.");
-    expect(response.toolCalls.map((toolCall) => toolCall.name)).toEqual([
-      "set_seo_metadata",
-      "replace_page_sections",
-    ]);
-    expect(response.toolCalls[1]).toMatchObject({
-      id: "deterministic_replace_page_sections",
-      input: {
-        replaceExisting: false,
-        sections: expect.arrayContaining([
-          expect.objectContaining({ title: "Hero" }),
-          expect.objectContaining({ title: "Fit and requirements" }),
-          expect.objectContaining({ title: "CTA" }),
-        ]),
-      },
-    });
-
-    const replaceInput = response.toolCalls[1]!.input as {
-      sections: Array<{
-        blocks: Array<{
-          body?: string | null;
-          cards?: Array<{ body?: string | null }> | null;
-          faqItems?: Array<{ answer?: string | null }> | null;
-        }>;
-      }>;
-    };
-    const fallbackBodyCopy = replaceInput.sections.flatMap((section) =>
-      section.blocks.flatMap((block) => [
-        ...(block.body ? [block.body] : []),
-        ...((block.cards ?? []).flatMap((card) =>
-          card.body ? [card.body] : [],
-        ) ?? []),
-        ...((block.faqItems ?? []).flatMap((item) =>
-          item.answer ? [item.answer] : [],
-        ) ?? []),
-      ]),
-    );
-
-    expect(new Set(fallbackBodyCopy).size).toBeGreaterThanOrEqual(6);
-    expect(fallbackBodyCopy.join(" ")).toContain("college dormitories");
-    expect(fallbackBodyCopy.some((copy) => copy.includes("restocking"))).toBe(
-      true,
-    );
-    expect(
-      fallbackBodyCopy.some((copy) => copy.includes("service needs")),
-    ).toBe(true);
-  });
-
-  it("normalizes 200 human add-request variants across block families", () => {
-    expect(intentEvalCases).toHaveLength(200);
-
-    for (const evalCase of intentEvalCases) {
-      const response = normalizePageBuilderAiChatResponseForIntent(
-        {
-          messages: [{ role: "user", content: evalCase.message }],
-          context,
-        },
-        {
-          message: "Here is how I would approach that.",
-          toolCalls: [],
-        },
-      );
-
-      expect(response.toolCalls, evalCase.message).toHaveLength(1);
-      expect(response.toolCalls[0]?.name, evalCase.message).toBe(
-        evalCase.expectedToolName,
-      );
-      expect(response.toolCalls[0]?.input, evalCase.message).toMatchObject(
-        evalCase.expectedInput,
-      );
-    }
   });
 });

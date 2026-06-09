@@ -165,7 +165,7 @@ describe("OpenAI page builder chat", () => {
     expect(body).toEqual(
       expect.objectContaining({
         model: "gpt-5.5",
-        max_output_tokens: 5000,
+        max_output_tokens: 8000,
         tool_choice: "auto",
         store: false,
       }),
@@ -213,6 +213,7 @@ describe("OpenAI page builder chat", () => {
     expect(result).toEqual({
       message:
         "I can add the image and text section, but I need the image source first.",
+      source: "intent-fallback",
       toolCalls: [
         {
           id: "deterministic_image_text_clarification",
@@ -285,7 +286,7 @@ describe("OpenAI page builder chat", () => {
       expect.objectContaining({
         model: "gpt-oss-120b",
         reasoning_effort: "medium",
-        max_completion_tokens: 5000,
+        max_completion_tokens: 8000,
         tool_choice: "auto",
       }),
     );
@@ -328,5 +329,82 @@ describe("OpenAI page builder chat", () => {
         fetchFn,
       }),
     ).rejects.toBeInstanceOf(PageBuilderAiGenerationError);
+  });
+
+  it("labels invalid Cerebras tool-call JSON as a Cerebras failure", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: "Updated the hero.",
+                tool_calls: [
+                  {
+                    id: "call_1",
+                    type: "function",
+                    function: {
+                      name: "edit_block_1_block_hero",
+                      arguments: "{truncated",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+      ),
+    );
+
+    await expect(
+      generateOpenAiPageBuilderChatResponse(request, {
+        provider: "cerebras",
+        cerebrasApiKey: "csk-test",
+        fetchFn,
+      }),
+    ).rejects.toThrow(
+      "Cerebras returned a tool call with invalid JSON arguments.",
+    );
+  });
+
+  it("keeps valid tool calls when the assistant message exceeds the transport cap", async () => {
+    const longMessage = "Detailed summary of the rebuilt page. ".repeat(220);
+    expect(longMessage.length).toBeGreaterThan(6000);
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          output: [
+            {
+              type: "message",
+              content: [{ type: "output_text", text: longMessage }],
+            },
+            {
+              type: "function_call",
+              id: "fc_1",
+              call_id: "call_1",
+              name: "edit_block_1_block_hero",
+              arguments: JSON.stringify({
+                eyebrow: null,
+                headline: "Better vending for Adelaide teams",
+                body: null,
+                ctaLabel: null,
+                ctaHref: null,
+              }),
+            },
+          ],
+        }),
+      ),
+    );
+
+    const result = await generateOpenAiPageBuilderChatResponse(request, {
+      provider: "openai",
+      apiKey: "sk-test",
+      fetchFn,
+    });
+
+    expect(result.message.length).toBeLessThanOrEqual(6000);
+    expect(result.toolCalls).toEqual([
+      expect.objectContaining({ name: "edit_block_1_block_hero" }),
+    ]);
   });
 });

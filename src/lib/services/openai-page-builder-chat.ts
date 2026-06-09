@@ -2,13 +2,16 @@ import "server-only";
 
 import { config } from "@/lib/config";
 import {
-  buildPageBuilderAiToolDefinitions,
-  normalizePageBuilderAiChatResponseForIntent,
+  PAGE_BUILDER_AI_MESSAGE_MAX_CHARS,
   pageBuilderAiChatResponseSchema,
-  pageBuilderAiSystemPrompt,
   type PageBuilderAiChatRequest,
   type PageBuilderAiChatResponse,
 } from "@/lib/page-builder/ai-chat";
+import { normalizePageBuilderAiChatResponseForIntent } from "@/lib/page-builder/ai-chat-intent-fallback";
+import {
+  buildPageBuilderAiToolDefinitions,
+  pageBuilderAiSystemPrompt,
+} from "@/lib/page-builder/ai-chat-prompt";
 import { toCerebrasJsonSchema } from "@/lib/page-builder/cerebras-json-schema";
 import { defaultSeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
 import type { SeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
@@ -59,10 +62,10 @@ export async function generateOpenAiPageBuilderChatResponse(
     provider === "cerebras"
       ? options.cerebrasApiKey !== undefined
         ? options.cerebrasApiKey.trim()
-        : config.CEREBRAS_API_KEY
+        : config.CEREBRAS_API_KEY?.trim()
       : options.apiKey !== undefined
         ? options.apiKey.trim()
-        : config.OPENAI_API_KEY;
+        : config.OPENAI_API_KEY?.trim();
   if (!apiKey) {
     throw new PageBuilderAiConfigurationError(
       provider === "cerebras"
@@ -103,7 +106,7 @@ export async function generateOpenAiPageBuilderChatResponse(
       reasoning: {
         effort: options.reasoningEffort ?? config.OPENAI_SEO_REASONING_EFFORT,
       },
-      max_output_tokens: 5000,
+      max_output_tokens: 8000,
       store: false,
       metadata: {
         surface: "seo-page-builder-chat",
@@ -116,7 +119,7 @@ export async function generateOpenAiPageBuilderChatResponse(
   if (!response.ok) throw generationErrorFromPayload(response.status, payload);
 
   const normalized = pageBuilderAiChatResponseSchema.safeParse({
-    message: extractOpenAiOutputText(payload),
+    message: clampAssistantMessage(extractOpenAiOutputText(payload)),
     toolCalls: extractOpenAiFunctionCalls(payload),
   });
   if (!normalized.success) {
@@ -166,7 +169,7 @@ async function generateCerebrasPageBuilderChatResponse(
       reasoning_effort: cerebrasReasoningEffort(
         options.reasoningEffort ?? "medium",
       ),
-      max_completion_tokens: 5000,
+      max_completion_tokens: 8000,
     }),
   });
 
@@ -176,7 +179,7 @@ async function generateCerebrasPageBuilderChatResponse(
   }
 
   const normalized = pageBuilderAiChatResponseSchema.safeParse({
-    message: extractCerebrasOutputText(payload),
+    message: clampAssistantMessage(extractCerebrasOutputText(payload)),
     toolCalls: extractCerebrasToolCalls(payload),
   });
   if (!normalized.success) {
@@ -314,7 +317,7 @@ function extractOpenAiFunctionCalls(payload: unknown) {
               ? call.id
               : `tool_call_${index + 1}`,
         name: call.name,
-        input: parseArguments(call.arguments),
+        input: parseArguments(call.arguments, "OpenAI"),
       },
     ];
   });
@@ -363,7 +366,7 @@ function extractCerebrasToolCalls(payload: unknown) {
       {
         id: typeof call.id === "string" ? call.id : `tool_call_${index + 1}`,
         name: call.function.name,
-        input: parseArguments(call.function.arguments),
+        input: parseArguments(call.function.arguments, "Cerebras"),
       },
     ];
   });
@@ -424,13 +427,22 @@ function latestUserMessage(request: PageBuilderAiChatRequest) {
     .find((message) => message.role === "user")?.content;
 }
 
-function parseArguments(value: string) {
+// The schema caps the assistant message length as a transport limit, not a
+// correctness signal — an overlong summary must not throw away the turn's
+// valid tool calls after a paid generation.
+function clampAssistantMessage(text: string) {
+  return text.length > PAGE_BUILDER_AI_MESSAGE_MAX_CHARS
+    ? text.slice(0, PAGE_BUILDER_AI_MESSAGE_MAX_CHARS).trimEnd()
+    : text;
+}
+
+function parseArguments(value: string, provider: string) {
   if (!value.trim()) return {};
   try {
     return JSON.parse(value) as unknown;
   } catch {
     throw new PageBuilderAiGenerationError(
-      "OpenAI returned a tool call with invalid JSON arguments.",
+      `${provider} returned a tool call with invalid JSON arguments.`,
     );
   }
 }
