@@ -47,10 +47,77 @@ import {
 } from "@/components/admin/seo-page-editor/SeoReadinessHelpers";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 
+const AI_CHAT_PANEL_HEIGHT_KEY = "page-builder-ai-chat-panel-height";
+const AI_CHAT_PANEL_WIDTH_KEY = "page-builder-ai-chat-panel-width";
+const AI_CHAT_PANEL_MIN_HEIGHT = 320;
+const AI_CHAT_PANEL_DEFAULT_HEIGHT = 420;
+const AI_CHAT_PANEL_MAX_HEIGHT_VH = 76;
+const AI_CHAT_PANEL_MIN_WIDTH = 280;
+const AI_CHAT_PANEL_DEFAULT_WIDTH = 448;
+const AI_CHAT_PANEL_VIEWPORT_MARGIN = 32;
+
+function getAiChatPanelMaxHeight() {
+  if (typeof window === "undefined") {
+    return AI_CHAT_PANEL_DEFAULT_HEIGHT;
+  }
+  return (window.innerHeight * AI_CHAT_PANEL_MAX_HEIGHT_VH) / 100;
+}
+
+function getAiChatPanelMaxWidth() {
+  if (typeof window === "undefined") {
+    return AI_CHAT_PANEL_DEFAULT_WIDTH;
+  }
+  return window.innerWidth - AI_CHAT_PANEL_VIEWPORT_MARGIN;
+}
+
+function clampAiChatPanelHeight(height: number) {
+  return Math.min(
+    getAiChatPanelMaxHeight(),
+    Math.max(AI_CHAT_PANEL_MIN_HEIGHT, height),
+  );
+}
+
+function clampAiChatPanelWidth(width: number) {
+  return Math.min(
+    getAiChatPanelMaxWidth(),
+    Math.max(AI_CHAT_PANEL_MIN_WIDTH, width),
+  );
+}
+
+function loadStoredAiChatPanelHeight() {
+  if (typeof window === "undefined") {
+    return AI_CHAT_PANEL_DEFAULT_HEIGHT;
+  }
+  const stored = window.localStorage.getItem(AI_CHAT_PANEL_HEIGHT_KEY);
+  if (!stored) {
+    return clampAiChatPanelHeight(AI_CHAT_PANEL_DEFAULT_HEIGHT);
+  }
+  const parsed = Number(stored);
+  if (!Number.isFinite(parsed)) {
+    return clampAiChatPanelHeight(AI_CHAT_PANEL_DEFAULT_HEIGHT);
+  }
+  return clampAiChatPanelHeight(parsed);
+}
+
+function loadStoredAiChatPanelWidth() {
+  if (typeof window === "undefined") {
+    return AI_CHAT_PANEL_DEFAULT_WIDTH;
+  }
+  const stored = window.localStorage.getItem(AI_CHAT_PANEL_WIDTH_KEY);
+  if (!stored) {
+    return clampAiChatPanelWidth(AI_CHAT_PANEL_DEFAULT_WIDTH);
+  }
+  const parsed = Number(stored);
+  if (!Number.isFinite(parsed)) {
+    return clampAiChatPanelWidth(AI_CHAT_PANEL_DEFAULT_WIDTH);
+  }
+  return clampAiChatPanelWidth(parsed);
+}
+
 // The generative SEO agent lives in its own floating surface so the right
 // sidebar stays purely SEO configuration + publish, and structure mutation
-// never originates from the readiness panel. The launcher is offset on desktop
-// when the SEO panel is open so it never covers the publish control.
+// never originates from the readiness panel. The panel stays pinned to the
+// viewport edge even when the SEO drawer is open.
 export function AiBuilderAssistant({
   editor,
 }: {
@@ -68,9 +135,6 @@ export function AiBuilderAssistant({
     !editor.isSeoSidebarCollapsed;
   const shouldDeferToEditorSidePanel =
     sidePanelOpenOnNarrow || bothEditorSidePanelsOpenOnDesktop;
-  const seoPanelOpenOnDesktop =
-    !editor.isNarrowEditor && !editor.isSeoSidebarCollapsed;
-  const offsetClass = seoPanelOpenOnDesktop ? "xl:right-[28rem]" : "";
   const seoReviewFindingCount =
     editor.seoReadiness.blockers.length +
     editor.seoReadiness.warnings.length +
@@ -94,6 +158,33 @@ export function AiBuilderAssistant({
   >(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const [panelHeight, setPanelHeight] = useState(loadStoredAiChatPanelHeight);
+  const [panelWidth, setPanelWidth] = useState(loadStoredAiChatPanelWidth);
+  const panelHeightResizeSessionRef = useRef<{
+    startY: number;
+    startHeight: number;
+  } | null>(null);
+  const panelWidthResizeSessionRef = useRef<{
+    startX: number;
+    startWidth: number;
+  } | null>(null);
+
+  useEffect(() => {
+    window.localStorage.setItem(AI_CHAT_PANEL_HEIGHT_KEY, String(panelHeight));
+  }, [panelHeight]);
+
+  useEffect(() => {
+    window.localStorage.setItem(AI_CHAT_PANEL_WIDTH_KEY, String(panelWidth));
+  }, [panelWidth]);
+
+  useEffect(() => {
+    function handleViewportResize() {
+      setPanelHeight((current) => clampAiChatPanelHeight(current));
+      setPanelWidth((current) => clampAiChatPanelWidth(current));
+    }
+    window.addEventListener("resize", handleViewportResize);
+    return () => window.removeEventListener("resize", handleViewportResize);
+  }, []);
 
   useEffect(() => {
     dispatchChat({ type: "reset", storageKey });
@@ -231,8 +322,63 @@ export function AiBuilderAssistant({
       {isOpen && (
         <section
           aria-label="AI page builder assistant"
-          className={`fixed right-4 bottom-24 z-[70] flex max-h-[76vh] w-[min(28rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-2xl ${offsetClass}`}
+          style={{
+            position: "fixed",
+            right: "1rem",
+            bottom: "6rem",
+            height: panelHeight,
+            width: panelWidth,
+            minHeight: AI_CHAT_PANEL_MIN_HEIGHT,
+            maxHeight: `${AI_CHAT_PANEL_MAX_HEIGHT_VH}vh`,
+            minWidth: AI_CHAT_PANEL_MIN_WIDTH,
+            maxWidth: `calc(100vw - ${AI_CHAT_PANEL_VIEWPORT_MARGIN}px)`,
+          }}
+          className="z-[70] flex flex-col overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-2xl"
         >
+          <AiAssistantPanelEdgeResize
+            axis="vertical"
+            ariaLabel="Resize assistant panel height"
+            className="relative flex h-3 shrink-0 cursor-ns-resize touch-none items-center justify-center border-b border-violet-100 bg-violet-50/80 transition hover:bg-violet-100 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none focus-visible:ring-inset"
+            indicatorClassName="h-1 w-10 rounded-full bg-violet-300"
+            onResizeStart={(_, clientY) => {
+              panelHeightResizeSessionRef.current = {
+                startY: clientY,
+                startHeight: panelHeight,
+              };
+            }}
+            onResizeMove={(clientX, clientY) => {
+              const session = panelHeightResizeSessionRef.current;
+              if (!session || clientY === undefined) return;
+              const delta = session.startY - clientY;
+              setPanelHeight(
+                clampAiChatPanelHeight(session.startHeight + delta),
+              );
+            }}
+            onResizeEnd={() => {
+              panelHeightResizeSessionRef.current = null;
+            }}
+          />
+          <AiAssistantPanelEdgeResize
+            axis="horizontal"
+            ariaLabel="Resize assistant panel width"
+            className="absolute top-0 bottom-0 left-0 z-10 flex w-3 cursor-ew-resize touch-none items-center justify-center border-r border-violet-100 bg-violet-50/80 transition hover:bg-violet-100 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none focus-visible:ring-inset"
+            indicatorClassName="h-10 w-1 rounded-full bg-violet-300"
+            onResizeStart={(clientX) => {
+              panelWidthResizeSessionRef.current = {
+                startX: clientX,
+                startWidth: panelWidth,
+              };
+            }}
+            onResizeMove={(clientX) => {
+              const session = panelWidthResizeSessionRef.current;
+              if (!session || clientX === undefined) return;
+              const delta = session.startX - clientX;
+              setPanelWidth(clampAiChatPanelWidth(session.startWidth + delta));
+            }}
+            onResizeEnd={() => {
+              panelWidthResizeSessionRef.current = null;
+            }}
+          />
           <div className="flex shrink-0 items-start justify-between gap-3 border-b border-violet-100 bg-violet-50 px-5 py-4">
             <div>
               <h2 className="flex items-center gap-2 text-sm font-semibold text-violet-900">
@@ -248,17 +394,9 @@ export function AiBuilderAssistant({
               <button
                 type="button"
                 className="rounded-md px-2 py-1 text-xs font-semibold text-violet-600 transition hover:bg-violet-100 hover:text-violet-900 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
-                onClick={() => dispatchChat({ type: "clearMessages" })}
-              >
-                Clear
-              </button>
-              <button
-                type="button"
-                aria-label="Close AI assistant"
-                className="rounded-lg p-1 text-violet-500 transition hover:bg-violet-100 hover:text-violet-800 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
                 onClick={() => setIsUserOpen(false)}
               >
-                <CloseIcon />
+                Hide
               </button>
             </div>
           </div>
@@ -352,7 +490,7 @@ export function AiBuilderAssistant({
               value={chatState.input}
               rows={2}
               className="min-h-11 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none"
-              placeholder="Ask for a page edit"
+              placeholder="Describe what to build or change — e.g. draft a hero, FAQ, and CTA for this page"
               disabled={chatState.isLoading}
               onChange={(event) =>
                 dispatchChat({ type: "setInput", input: event.target.value })
@@ -421,7 +559,7 @@ export function AiBuilderAssistant({
         data-builder-walkthrough="ai"
         aria-label={isOpen ? "Close AI assistant" : "Open AI assistant"}
         aria-expanded={isOpen}
-        className={`fixed right-4 bottom-6 z-[70] inline-flex items-center gap-2 rounded-full border border-violet-400 bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-xl transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none ${offsetClass}`}
+        className="fixed right-4 bottom-6 z-[70] inline-flex items-center gap-2 rounded-full border border-violet-400 bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-xl transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none"
         onClick={() => {
           if (isWalkthroughAiStep) return;
           setIsUserOpen((open) => !open);
@@ -431,6 +569,62 @@ export function AiBuilderAssistant({
         <span>AI</span>
       </button>
     </>
+  );
+}
+
+function AiAssistantPanelEdgeResize({
+  axis,
+  ariaLabel,
+  className,
+  indicatorClassName,
+  onResizeStart,
+  onResizeMove,
+  onResizeEnd,
+}: {
+  axis: "vertical" | "horizontal";
+  ariaLabel: string;
+  className: string;
+  indicatorClassName: string;
+  onResizeStart: (clientX: number, clientY: number) => void;
+  onResizeMove: (
+    clientX: number | undefined,
+    clientY: number | undefined,
+  ) => void;
+  onResizeEnd: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      className={className}
+      onPointerDown={(event) => {
+        event.preventDefault();
+        onResizeStart(event.clientX, event.clientY);
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+        if (axis === "vertical") {
+          onResizeMove(undefined, event.clientY);
+          return;
+        }
+        onResizeMove(event.clientX, undefined);
+      }}
+      onPointerUp={(event) => {
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+        onResizeEnd();
+      }}
+      onPointerCancel={(event) => {
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+        onResizeEnd();
+      }}
+    >
+      <span className={indicatorClassName} aria-hidden="true" />
+    </button>
   );
 }
 
@@ -453,26 +647,6 @@ function SparkIcon() {
       <path d="M22 5h-4" />
       <path d="M4 17v2" />
       <path d="M5 18H3" />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
     </svg>
   );
 }
@@ -539,8 +713,7 @@ type AiChatAction =
   | { type: "submitStart"; messages: AiChatMessage[] }
   | { type: "assistantMessage"; message: AiChatMessage }
   | { type: "errorMessage"; message: AiChatMessage; error: string }
-  | { type: "resolveDelete"; messageId: string; message: AiChatMessage }
-  | { type: "clearMessages" };
+  | { type: "resolveDelete"; messageId: string; message: AiChatMessage };
 
 function initialChatState(storageKey: string | null): AiChatState {
   return {
@@ -595,7 +768,7 @@ function chatReducer(state: AiChatState, action: AiChatAction): AiChatState {
       ],
     };
   }
-  return { ...state, messages: [], error: null };
+  return state;
 }
 
 function AiBlockChecklist({
@@ -607,19 +780,7 @@ function AiBlockChecklist({
 }) {
   const entries = editor.builderBlockEntries;
   if (entries.length === 0) {
-    return (
-      <button
-        type="button"
-        className="w-full rounded-lg border border-dashed border-violet-200 bg-violet-50 px-3 py-4 text-sm font-semibold text-violet-800 transition hover:bg-violet-100 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
-        onClick={() =>
-          onPrompt(
-            "Draft a strong first page structure with a hero, useful sections, FAQ, and CTA.",
-          )
-        }
-      >
-        Draft page structure
-      </button>
-    );
+    return null;
   }
 
   const readyCount = entries.filter(
@@ -686,11 +847,7 @@ function ChatMessageList({
   onCancelDelete: (messageId: string) => void;
 }) {
   if (messages.length === 0 && !isLoading) {
-    return (
-      <p className="mt-4 rounded-lg border border-dashed border-violet-200 bg-violet-50/60 px-4 py-6 text-center text-sm leading-6 text-violet-700">
-        No messages yet.
-      </p>
-    );
+    return null;
   }
 
   return (
