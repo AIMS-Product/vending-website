@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const legacyLeadRedirects = [
   {
@@ -97,4 +98,23 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const shouldUploadSentrySourceMaps = Boolean(
+  (process.env.CI || process.env.VERCEL) &&
+  process.env.SENTRY_AUTH_TOKEN &&
+  process.env.SENTRY_ORG &&
+  process.env.SENTRY_PROJECT,
+);
+
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  telemetry: false,
+  sourcemaps: {
+    disable: !shouldUploadSentrySourceMaps,
+  },
+  bundleSizeOptimizations: {
+    excludeDebugStatements: true,
+  },
+});
