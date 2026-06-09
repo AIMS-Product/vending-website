@@ -1,0 +1,2933 @@
+{
+  "summary": {
+    "pass": 30,
+    "fail": 0,
+    "needsHuman": 0,
+    "skip": 0,
+    "total": 30
+  },
+  "results": [
+    {
+      "type": "hero",
+      "variant": "standard",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "hero",
+        "variant": "standard",
+        "id": "hero:standard",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Resource guide",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Launch a vending route with a proven plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Learn how operators plan routes, place machines, and grow recurring revenue from day one.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cta",
+            "kind": "text",
+            "value": "Start an enquiry",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "hero",
+        "variant": "standard",
+        "id": "hero:standard",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Resource guide",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Launch a vending route with a proven plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Learn how operators plan routes, place machines, and grow recurring revenue from day one.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cta",
+            "kind": "text",
+            "value": "Start an enquiry",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "hero",
+      "variant": "split",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "hero",
+        "variant": "split",
+        "id": "hero:split",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Resource guide",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Launch a vending route with a proven plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Learn how operators plan routes, place machines, and grow recurring revenue from day one.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cta",
+            "kind": "text",
+            "value": "Start an enquiry",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "mediaCaption",
+            "kind": "text",
+            "value": "Approved campaign image.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "heroMedia",
+            "kind": "img-alt",
+            "value": "Vending route operator reviewing a location",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "hero",
+        "variant": "split",
+        "id": "hero:split",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Resource guide",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Launch a vending route with a proven plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Learn how operators plan routes, place machines, and grow recurring revenue from day one.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cta",
+            "kind": "text",
+            "value": "Start an enquiry",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "mediaCaption",
+            "kind": "text",
+            "value": "Approved campaign image.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "heroMedia",
+            "kind": "img-alt",
+            "value": "Vending route operator reviewing a location",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "hero",
+      "variant": "compact",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "hero",
+        "variant": "compact",
+        "id": "hero:compact",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Quick guide",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Launch a vending route with a proven plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Learn how operators plan routes, place machines, and grow recurring revenue from day one.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cta",
+            "kind": "text",
+            "value": "Start an enquiry",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "hero",
+        "variant": "compact",
+        "id": "hero:compact",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Quick guide",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Launch a vending route with a proven plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Learn how operators plan routes, place machines, and grow recurring revenue from day one.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cta",
+            "kind": "text",
+            "value": "Start an enquiry",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "hero",
+      "variant": "editorial",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "hero",
+        "variant": "editorial",
+        "id": "hero:editorial",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Resource guide",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Build a profitable route with fewer wrong turns",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Learn how operators plan routes, place machines, and grow recurring revenue from day one.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "hero",
+        "variant": "editorial",
+        "id": "hero:editorial",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Resource guide",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Build a profitable route with fewer wrong turns",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Learn how operators plan routes, place machines, and grow recurring revenue from day one.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "rich_text",
+      "variant": "default",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "rich_text",
+        "variant": "default",
+        "id": "rich_text:default",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Plan",
+            "pickerCount": 3,
+            "actualCount": 3,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Write structured page copy",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Most new operators start with a clear route plan, realistic startup costs, and a short list of target locations.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Use this section to explain the next step, remove objections, and keep the reader moving toward an enquiry.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "rich_text",
+        "variant": "default",
+        "id": "rich_text:default",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Plan",
+            "pickerCount": 3,
+            "actualCount": 3,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Write structured page copy",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Most new operators start with a clear route plan, realistic startup costs, and a short list of target locations.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Use this section to explain the next step, remove objections, and keep the reader moving toward an enquiry.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "rich_text",
+      "variant": "intro",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "rich_text",
+        "variant": "intro",
+        "id": "rich_text:intro",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Plan",
+            "pickerCount": 3,
+            "actualCount": 3,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Write structured page copy",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Most new operators start with a clear route plan, realistic startup costs, and a short list of target locations.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Use this section to explain the next step, remove objections, and keep the reader moving toward an enquiry.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "rich_text",
+        "variant": "intro",
+        "id": "rich_text:intro",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Plan",
+            "pickerCount": 3,
+            "actualCount": 3,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Write structured page copy",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Most new operators start with a clear route plan, realistic startup costs, and a short list of target locations.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Use this section to explain the next step, remove objections, and keep the reader moving toward an enquiry.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "rich_text",
+      "variant": "compact",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "rich_text",
+        "variant": "compact",
+        "id": "rich_text:compact",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Write structured page copy",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Most new operators start with a clear route plan, realistic startup costs, and a short list of target locations.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Use this section to explain the next step, remove objections, and keep the reader moving toward an enquiry.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "rich_text",
+        "variant": "compact",
+        "id": "rich_text:compact",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Write structured page copy",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Most new operators start with a clear route plan, realistic startup costs, and a short list of target locations.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Use this section to explain the next step, remove objections, and keep the reader moving toward an enquiry.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "rich_text",
+      "variant": "checklist",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "rich_text",
+        "variant": "checklist",
+        "id": "rich_text:checklist",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Plan",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "What the page should include",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Choose a route strategy",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Validate startup costs",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Plan the first outreach run",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "rich_text",
+        "variant": "checklist",
+        "id": "rich_text:checklist",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Plan",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "What the page should include",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Choose a route strategy",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Validate startup costs",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Plan the first outreach run",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "image",
+      "variant": "standard",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "image",
+        "variant": "standard",
+        "id": "image:standard",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "altText",
+            "kind": "img-alt",
+            "value": "Vending route operator reviewing a location",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "Supporting image for this section.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "image",
+        "variant": "standard",
+        "id": "image:standard",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "altText",
+            "kind": "img-alt",
+            "value": "Vending route operator reviewing a location",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "Supporting image for this section.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "image",
+      "variant": "wide",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "image",
+        "variant": "wide",
+        "id": "image:wide",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "altText",
+            "kind": "img-alt",
+            "value": "Vending route operator reviewing a location",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "Supporting image for this section.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "image",
+        "variant": "wide",
+        "id": "image:wide",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "altText",
+            "kind": "img-alt",
+            "value": "Vending route operator reviewing a location",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "Supporting image for this section.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "image",
+      "variant": "inline",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "image",
+        "variant": "inline",
+        "id": "image:inline",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "altText",
+            "kind": "img-alt",
+            "value": "Vending route operator reviewing a location",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "Supporting image for this section.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "image",
+        "variant": "inline",
+        "id": "image:inline",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "altText",
+            "kind": "img-alt",
+            "value": "Vending route operator reviewing a location",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "Supporting image for this section.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "image",
+      "variant": "feature",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "image",
+        "variant": "feature",
+        "id": "image:feature",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "altText",
+            "kind": "img-alt",
+            "value": "Vending route operator reviewing a location",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "Show the route, the machine, or the operator in action.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "featureLabel",
+            "kind": "text",
+            "value": "Featured media",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "image",
+        "variant": "feature",
+        "id": "image:feature",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "altText",
+            "kind": "img-alt",
+            "value": "Vending route operator reviewing a location",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "Show the route, the machine, or the operator in action.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "featureLabel",
+            "kind": "text",
+            "value": "Featured media",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "cta",
+      "variant": "primary",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "cta",
+        "variant": "primary",
+        "id": "cta:primary",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "label",
+            "kind": "text",
+            "value": "Apply today",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "cta",
+        "variant": "primary",
+        "id": "cta:primary",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "label",
+            "kind": "text",
+            "value": "Apply today",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "cta",
+      "variant": "secondary",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "cta",
+        "variant": "secondary",
+        "id": "cta:secondary",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "label",
+            "kind": "text",
+            "value": "Apply today",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "cta",
+        "variant": "secondary",
+        "id": "cta:secondary",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "label",
+            "kind": "text",
+            "value": "Apply today",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "cta",
+      "variant": "text",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "cta",
+        "variant": "text",
+        "id": "cta:text",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "label",
+            "kind": "text",
+            "value": "Read the application guide",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "cta",
+        "variant": "text",
+        "id": "cta:text",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "label",
+            "kind": "text",
+            "value": "Read the application guide",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "faq",
+      "variant": "standard",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "faq",
+        "variant": "standard",
+        "id": "faq:standard",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Common vending questions",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "How much budget should I plan for?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "answer",
+            "kind": "text",
+            "value": "Most operators need to account for machines, stock, placement, and working capital before launch.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "Can I start while working another job?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "answer",
+            "kind": "text",
+            "value": "Yes, but the plan should define outreach, servicing, and restocking time before commitments are made.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "What makes a good first location?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "answer",
+            "kind": "text",
+            "value": "Good locations have repeat traffic, clear operator access, and a product mix that matches the audience.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "faq",
+        "variant": "standard",
+        "id": "faq:standard",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Common vending questions",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "How much budget should I plan for?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "answer",
+            "kind": "text",
+            "value": "Most operators need to account for machines, stock, placement, and working capital before launch.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "Can I start while working another job?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "answer",
+            "kind": "text",
+            "value": "Yes, but the plan should define outreach, servicing, and restocking time before commitments are made.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "What makes a good first location?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "answer",
+            "kind": "text",
+            "value": "Good locations have repeat traffic, clear operator access, and a product mix that matches the audience.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "faq",
+      "variant": "compact",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "faq",
+        "variant": "compact",
+        "id": "faq:compact",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Common vending questions",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "How much budget should I plan for?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "Can I start while working another job?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "What makes a good first location?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "faq",
+        "variant": "compact",
+        "id": "faq:compact",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Common vending questions",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "How much budget should I plan for?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "Can I start while working another job?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "What makes a good first location?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "faq",
+      "variant": "accordion",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "faq",
+        "variant": "accordion",
+        "id": "faq:accordion",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Common vending questions",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "How much budget should I plan for?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "answer",
+            "kind": "text",
+            "value": "Most operators need to account for machines, stock, placement, and working capital before launch.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "Can I start while working another job?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "answer",
+            "kind": "text",
+            "value": "Yes, but the plan should define outreach, servicing, and restocking time before commitments are made.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "What makes a good first location?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "answer",
+            "kind": "text",
+            "value": "Good locations have repeat traffic, clear operator access, and a product mix that matches the audience.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "faq",
+        "variant": "accordion",
+        "id": "faq:accordion",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Common vending questions",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "How much budget should I plan for?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "answer",
+            "kind": "text",
+            "value": "Most operators need to account for machines, stock, placement, and working capital before launch.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "Can I start while working another job?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "answer",
+            "kind": "text",
+            "value": "Yes, but the plan should define outreach, servicing, and restocking time before commitments are made.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "question",
+            "kind": "text",
+            "value": "What makes a good first location?",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "answer",
+            "kind": "text",
+            "value": "Good locations have repeat traffic, clear operator access, and a product mix that matches the audience.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "card_grid",
+      "variant": "standard",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "card_grid",
+        "variant": "standard",
+        "id": "card_grid:standard",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Compare the next steps",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Plan",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Define the route model and startup assumptions.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Place",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Build a location outreach list and pitch.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Place",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Launch",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Install, stock, and track the early route.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Launch",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Improve",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Use sales feedback to adjust products and cadence.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Improve",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "card_grid",
+        "variant": "standard",
+        "id": "card_grid:standard",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Compare the next steps",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Plan",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Define the route model and startup assumptions.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Place",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Build a location outreach list and pitch.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Place",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Launch",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Install, stock, and track the early route.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Launch",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Improve",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Use sales feedback to adjust products and cadence.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Improve",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "card_grid",
+      "variant": "compact",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "card_grid",
+        "variant": "compact",
+        "id": "card_grid:compact",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Compare the next steps",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Plan",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Define the route model and startup assumptions.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Place",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Build a location outreach list and pitch.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Place",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Launch",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Install, stock, and track the early route.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Launch",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Improve",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Use sales feedback to adjust products and cadence.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Improve",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "card_grid",
+        "variant": "compact",
+        "id": "card_grid:compact",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Compare the next steps",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Plan",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Define the route model and startup assumptions.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Place",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Build a location outreach list and pitch.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Place",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Launch",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Install, stock, and track the early route.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Launch",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Improve",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Use sales feedback to adjust products and cadence.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Improve",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "card_grid",
+      "variant": "feature",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "card_grid",
+        "variant": "feature",
+        "id": "card_grid:feature",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Compare the next steps",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Plan",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Define the route model and startup assumptions.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Place",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Build a location outreach list and pitch.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Place",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Launch",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Install, stock, and track the early route.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Launch",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Improve",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Use sales feedback to adjust products and cadence.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Improve",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "card_grid",
+        "variant": "feature",
+        "id": "card_grid:feature",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Compare the next steps",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Plan",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Define the route model and startup assumptions.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Place",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Build a location outreach list and pitch.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Place",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Launch",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Install, stock, and track the early route.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Launch",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardTitle",
+            "kind": "text",
+            "value": "Improve",
+            "pickerCount": 2,
+            "actualCount": 2,
+            "ok": true
+          },
+          {
+            "label": "cardBody",
+            "kind": "text",
+            "value": "Use sales feedback to adjust products and cadence.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "cardLink",
+            "kind": "text",
+            "value": "Learn more about Improve",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "proof",
+      "variant": "quote",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "proof",
+        "variant": "quote",
+        "id": "proof:quote",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Operator proof",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "The framework helped us understand locations, costs, and the first real route decisions.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "name",
+            "kind": "text",
+            "value": "Vending operator",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "context",
+            "kind": "text",
+            "value": "Route planning cohort",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "proof",
+        "variant": "quote",
+        "id": "proof:quote",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Operator proof",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "The framework helped us understand locations, costs, and the first real route decisions.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "name",
+            "kind": "text",
+            "value": "Vending operator",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "context",
+            "kind": "text",
+            "value": "Route planning cohort",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "proof",
+      "variant": "stat",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "proof",
+        "variant": "stat",
+        "id": "proof:stat",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Proof",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "90 days",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "name",
+            "kind": "text",
+            "value": "Vending operator",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "context",
+            "kind": "text",
+            "value": "Route planning cohort",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "proof",
+        "variant": "stat",
+        "id": "proof:stat",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Proof",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "90 days",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "name",
+            "kind": "text",
+            "value": "Vending operator",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "context",
+            "kind": "text",
+            "value": "Route planning cohort",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "proof",
+      "variant": "logo",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "proof",
+        "variant": "logo",
+        "id": "proof:logo",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Proof",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Vendingpreneurs",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "name",
+            "kind": "text",
+            "value": "Training",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "context",
+            "kind": "text",
+            "value": "Suppliers",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "proof",
+        "variant": "logo",
+        "id": "proof:logo",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "eyebrow",
+            "kind": "text",
+            "value": "Proof",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Vendingpreneurs",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "name",
+            "kind": "text",
+            "value": "Training",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "context",
+            "kind": "text",
+            "value": "Suppliers",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "video",
+      "variant": "standard",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "video",
+        "variant": "standard",
+        "id": "video:standard",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "title",
+            "kind": "text",
+            "value": "Watch the route planning walkthrough",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "A short walkthrough of how to evaluate locations and plan your first placements.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "watchLink",
+            "kind": "text",
+            "value": "Watch video",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "video",
+        "variant": "standard",
+        "id": "video:standard",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "title",
+            "kind": "text",
+            "value": "Watch the route planning walkthrough",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "A short walkthrough of how to evaluate locations and plan your first placements.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "watchLink",
+            "kind": "text",
+            "value": "Watch video",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "video",
+      "variant": "wide",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "video",
+        "variant": "wide",
+        "id": "video:wide",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "title",
+            "kind": "text",
+            "value": "Watch the route planning walkthrough",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "A short walkthrough of how to evaluate locations and plan your first placements.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "watchLink",
+            "kind": "text",
+            "value": "Watch video",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "video",
+        "variant": "wide",
+        "id": "video:wide",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "title",
+            "kind": "text",
+            "value": "Watch the route planning walkthrough",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "A short walkthrough of how to evaluate locations and plan your first placements.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "watchLink",
+            "kind": "text",
+            "value": "Watch video",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "video",
+      "variant": "inline",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "video",
+        "variant": "inline",
+        "id": "video:inline",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "title",
+            "kind": "text",
+            "value": "Watch the route planning walkthrough",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "A short walkthrough of how to evaluate locations and plan your first placements.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "watchLink",
+            "kind": "text",
+            "value": "Watch video",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "video",
+        "variant": "inline",
+        "id": "video:inline",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "title",
+            "kind": "text",
+            "value": "Watch the route planning walkthrough",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "caption",
+            "kind": "text",
+            "value": "A short walkthrough of how to evaluate locations and plan your first placements.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "watchLink",
+            "kind": "text",
+            "value": "Watch video",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "lead_form",
+      "variant": "standard",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "lead_form",
+        "variant": "standard",
+        "id": "lead_form:standard",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Start your vending plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Share your goals and we will point you toward the right next step.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "submitLabel",
+            "kind": "text",
+            "value": "Request guidance",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "lead_form",
+        "variant": "standard",
+        "id": "lead_form:standard",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Start your vending plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Share your goals and we will point you toward the right next step.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "submitLabel",
+            "kind": "text",
+            "value": "Request guidance",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "lead_form",
+      "variant": "compact",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "lead_form",
+        "variant": "compact",
+        "id": "lead_form:compact",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Start your vending plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Share your goals and we will point you toward the right next step.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "submitLabel",
+            "kind": "text",
+            "value": "Request guidance",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "lead_form",
+        "variant": "compact",
+        "id": "lead_form:compact",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Start your vending plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Share your goals and we will point you toward the right next step.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "submitLabel",
+            "kind": "text",
+            "value": "Request guidance",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    },
+    {
+      "type": "lead_form",
+      "variant": "sidebar",
+      "verdict": "PASS",
+      "desktop": {
+        "type": "lead_form",
+        "variant": "sidebar",
+        "id": "lead_form:sidebar",
+        "viewportSuffix": "desktop",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Start your vending plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Share your goals and we will point you toward the right next step.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "submitLabel",
+            "kind": "text",
+            "value": "Request guidance",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "mobile": {
+        "type": "lead_form",
+        "variant": "sidebar",
+        "id": "lead_form:sidebar",
+        "viewportSuffix": "mobile",
+        "parity": true,
+        "details": [
+          {
+            "label": "heading",
+            "kind": "text",
+            "value": "Start your vending plan",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "body",
+            "kind": "text",
+            "value": "Share your goals and we will point you toward the right next step.",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          },
+          {
+            "label": "submitLabel",
+            "kind": "text",
+            "value": "Request guidance",
+            "pickerCount": 1,
+            "actualCount": 1,
+            "ok": true
+          }
+        ],
+        "failed": []
+      },
+      "failed": [],
+      "reason": "Content markers match on desktop and mobile"
+    }
+  ]
+}
