@@ -13,10 +13,3 @@ export const seoAgentProviderOptions = [
 
 export type SeoAgentProvider =
   (typeof seoAgentProviderOptions)[number]["value"];
-
-export function seoAgentProviderLabel(provider: SeoAgentProvider) {
-  return (
-    seoAgentProviderOptions.find((option) => option.value === provider)
-      ?.label ?? provider
-  );
-}

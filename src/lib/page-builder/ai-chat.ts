@@ -603,7 +603,9 @@ export function applyPageBuilderAiToolCalls({
     }
 
     if (toolCall.name === "add_block") {
-      const parsed = addBlockInputSchema.safeParse(toolCall.input);
+      const parsed = addBlockInputSchema.safeParse(
+        normalizeAddBlockInput(toolCall.input),
+      );
       if (!parsed.success) {
         results.push(failedTool(toolCall.name, firstIssue(parsed.error)));
         continue;
@@ -621,7 +623,9 @@ export function applyPageBuilderAiToolCalls({
     }
 
     if (toolCall.name === "add_image_text_section") {
-      const parsed = addImageTextSectionInputSchema.safeParse(toolCall.input);
+      const parsed = addImageTextSectionInputSchema.safeParse(
+        normalizeImageTextSectionInput(toolCall.input),
+      );
       if (!parsed.success) {
         results.push(failedTool(toolCall.name, firstIssue(parsed.error)));
         continue;
@@ -660,7 +664,9 @@ export function applyPageBuilderAiToolCalls({
     }
 
     if (toolCall.name === "add_media_block") {
-      const parsed = addMediaBlockInputSchema.safeParse(toolCall.input);
+      const parsed = addMediaBlockInputSchema.safeParse(
+        normalizeMediaBlockInput(toolCall.input),
+      );
       if (!parsed.success) {
         results.push(failedTool(toolCall.name, firstIssue(parsed.error)));
         continue;
@@ -689,7 +695,9 @@ export function applyPageBuilderAiToolCalls({
     }
 
     if (toolCall.name === "replace_page_sections") {
-      const parsed = replacePageSectionsInputSchema.safeParse(toolCall.input);
+      const parsed = replacePageSectionsInputSchema.safeParse(
+        normalizeReplacePageSectionsInput(toolCall.input),
+      );
       if (!parsed.success) {
         results.push(failedTool(toolCall.name, firstIssue(parsed.error)));
         continue;
@@ -1332,7 +1340,9 @@ function applyDynamicBlockEdit(
   input: unknown,
 ): { ok: true; block: PageBlock } | { ok: false; message: string } {
   if (block.type === "hero") {
-    const parsed = heroInputSchema.safeParse(input);
+    const parsed = heroInputSchema.safeParse(
+      normalizeDynamicBlockInput(block.type, input),
+    );
     if (!parsed.success)
       return { ok: false, message: firstIssue(parsed.error) };
     return parseBlock({
@@ -1353,7 +1363,9 @@ function applyDynamicBlockEdit(
   }
 
   if (block.type === "rich_text") {
-    const parsed = richTextBodyInputSchema.safeParse(input);
+    const parsed = richTextBodyInputSchema.safeParse(
+      normalizeDynamicBlockInput(block.type, input),
+    );
     if (!parsed.success)
       return { ok: false, message: firstIssue(parsed.error) };
     return parseBlock({
@@ -1368,7 +1380,9 @@ function applyDynamicBlockEdit(
   }
 
   if (block.type === "faq") {
-    const parsed = faqInputSchema.safeParse(input);
+    const parsed = faqInputSchema.safeParse(
+      normalizeDynamicBlockInput(block.type, input),
+    );
     if (!parsed.success)
       return { ok: false, message: firstIssue(parsed.error) };
     return parseBlock({
@@ -1382,7 +1396,9 @@ function applyDynamicBlockEdit(
   }
 
   if (block.type === "card_grid") {
-    const parsed = cardGridInputSchema.safeParse(input);
+    const parsed = cardGridInputSchema.safeParse(
+      normalizeDynamicBlockInput(block.type, input),
+    );
     if (!parsed.success)
       return { ok: false, message: firstIssue(parsed.error) };
     return parseBlock({
@@ -1396,7 +1412,9 @@ function applyDynamicBlockEdit(
   }
 
   if (block.type === "cta") {
-    const parsed = ctaInputSchema.safeParse(input);
+    const parsed = ctaInputSchema.safeParse(
+      normalizeDynamicBlockInput(block.type, input),
+    );
     if (!parsed.success)
       return { ok: false, message: firstIssue(parsed.error) };
     const label = nextText(parsed.data.label, block.props.label);
@@ -1415,7 +1433,9 @@ function applyDynamicBlockEdit(
   }
 
   if (block.type === "proof") {
-    const parsed = proofInputSchema.safeParse(input);
+    const parsed = proofInputSchema.safeParse(
+      normalizeDynamicBlockInput(block.type, input),
+    );
     if (!parsed.success)
       return { ok: false, message: firstIssue(parsed.error) };
     return parseBlock({
@@ -1431,7 +1451,9 @@ function applyDynamicBlockEdit(
   }
 
   if (block.type === "lead_form") {
-    const parsed = leadFormInputSchema.safeParse(input);
+    const parsed = leadFormInputSchema.safeParse(
+      normalizeDynamicBlockInput(block.type, input),
+    );
     if (!parsed.success)
       return { ok: false, message: firstIssue(parsed.error) };
     const submitLabel = nextText(
@@ -1454,7 +1476,9 @@ function applyDynamicBlockEdit(
     });
   }
 
-  const parsed = mediaInputSchema.safeParse(input);
+  const parsed = mediaInputSchema.safeParse(
+    normalizeDynamicBlockInput(block.type, input),
+  );
   if (!parsed.success) return { ok: false, message: firstIssue(parsed.error) };
   if (block.type === "video") {
     return parseBlock({
@@ -1488,15 +1512,16 @@ function createAiBlock(
   const block = createPageBlock(input.blockType, id);
 
   if (block.type === "hero") {
+    const ctaLabel = normalizedCreationText(input.ctaLabel, 80);
     return pageBlockSchema.parse({
       ...block,
       props: {
         ...block.props,
-        heading: input.title ?? "",
-        body: input.body ?? "",
-        ctaLabel: input.ctaLabel ?? "",
+        heading: normalizedCreationText(input.title, 180),
+        body: normalizedCreationText(input.body, 500),
+        ctaLabel,
         ctaHref: normalizeAiHref(input.ctaHref),
-        ctaTrackingName: trackingNameForLabel(input.ctaLabel ?? "", "hero-cta"),
+        ctaTrackingName: trackingNameForLabel(ctaLabel, "hero-cta"),
       },
     });
   }
@@ -1506,8 +1531,11 @@ function createAiBlock(
       ...block,
       props: {
         ...block.props,
-        heading: input.title ?? "",
-        body: buildRichTextDocument(input.body, input.bulletItems),
+        heading: normalizedCreationText(input.title, 180),
+        body: buildRichTextDocument(
+          normalizedCreationText(input.body, 2000),
+          input.bulletItems,
+        ),
       },
     });
   }
@@ -1517,8 +1545,8 @@ function createAiBlock(
       ...block,
       props: {
         ...block.props,
-        heading: input.title ?? "Questions",
-        items: input.faqItems ?? [],
+        heading: normalizedCreationText(input.title, 160, "Questions"),
+        items: normalizeCreationFaqItems(input.faqItems),
       },
     });
   }
@@ -1528,11 +1556,11 @@ function createAiBlock(
       ...block,
       props: {
         ...block.props,
-        heading: input.title ?? "",
+        heading: normalizedCreationText(input.title, 160),
         cards:
-          normalizeCardGridCards(input.cards) ??
+          normalizeCardGridCards(normalizeCreationCardItems(input.cards)) ??
           (input.bulletItems ?? []).map((item) => ({
-            title: item,
+            title: truncateAiText(item, 140),
             body: "",
             href: "",
           })),
@@ -1541,7 +1569,9 @@ function createAiBlock(
   }
 
   if (block.type === "cta") {
-    const label = input.ctaLabel ?? input.title ?? "Get started";
+    const label =
+      normalizedCreationText(input.ctaLabel, 80) ||
+      normalizedCreationText(input.title, 80, "Get started");
     return pageBlockSchema.parse({
       ...block,
       props: {
@@ -1558,20 +1588,24 @@ function createAiBlock(
       ...block,
       props: {
         ...block.props,
-        eyebrow: input.title ?? "",
-        body: input.body ?? "",
+        eyebrow: normalizedCreationText(input.title, 80),
+        body: normalizedCreationText(input.body, 800),
       },
     });
   }
 
   if (block.type === "lead_form") {
-    const submitLabel = input.ctaLabel ?? block.props.submitLabel;
+    const submitLabel = normalizedCreationText(
+      input.ctaLabel,
+      80,
+      block.props.submitLabel,
+    );
     return pageBlockSchema.parse({
       ...block,
       props: {
         ...block.props,
-        heading: input.title ?? "",
-        body: input.body ?? "",
+        heading: normalizedCreationText(input.title, 160),
+        body: normalizedCreationText(input.body, 500),
         submitLabel,
         trackingName: trackingNameForLabel(submitLabel, "lead-form"),
       },
@@ -1579,6 +1613,38 @@ function createAiBlock(
   }
 
   throw new Error(`Unsupported AI block type: ${input.blockType}`);
+}
+
+function normalizedCreationText(
+  value: string | null | undefined,
+  maxLength: number,
+  fallback = "",
+) {
+  const normalized = normalizeNullableText(value, maxLength);
+  return normalized === undefined || normalized === null
+    ? fallback
+    : normalized;
+}
+
+function normalizeCreationFaqItems(
+  items: z.infer<typeof addBlockInputSchema>["faqItems"],
+) {
+  return (items ?? []).slice(0, 12).map((item) => ({
+    question: truncateAiText(item.question, 240),
+    answer: truncateAiText(item.answer, 1200),
+  }));
+}
+
+function normalizeCreationCardItems(
+  cards: z.infer<typeof addBlockInputSchema>["cards"],
+) {
+  if (!cards) return null;
+  return cards.slice(0, 12).map((card) => ({
+    title: truncateAiText(card.title, 140),
+    body: truncateAiText(card.body, 500),
+    href: card.href,
+    linkLabel: normalizedCreationText(card.linkLabel, 80),
+  }));
 }
 
 function createAiMediaBlock(
@@ -2006,16 +2072,22 @@ function completePageDraftSections(
   if (pageGuide.primaryGuide === "how-to-guide") {
     return [
       heroDraftSection(pageTopic),
-      richTextDraftSection(pageTopic, "Steps", [
-        "Clarify the goal and audience",
-        "Plan the service requirements",
-        "Confirm the next step",
-      ]),
-      richTextDraftSection(pageTopic, "What to consider", [
-        "Operational fit",
-        "Ongoing service needs",
-        "Decision criteria",
-      ]),
+      richTextDraftSection(
+        pageTopic,
+        "Steps",
+        [
+          "Clarify the goal and audience",
+          "Plan the service requirements",
+          "Confirm the next step",
+        ],
+        "process",
+      ),
+      richTextDraftSection(
+        pageTopic,
+        "What to consider",
+        ["Operational fit", "Ongoing service needs", "Decision criteria"],
+        "fit",
+      ),
       faqDraftSection(pageTopic),
       ctaDraftSection(pageTopic),
     ];
@@ -2024,11 +2096,16 @@ function completePageDraftSections(
   if (pageGuide.primaryGuide === "comparison") {
     return [
       heroDraftSection(pageTopic),
-      richTextDraftSection(pageTopic, "How to choose", [
-        "Compare the main options",
-        "Match the option to the site",
-        "Choose a practical next step",
-      ]),
+      richTextDraftSection(
+        pageTopic,
+        "How to choose",
+        [
+          "Compare the main options",
+          "Match the option to the site",
+          "Choose a practical next step",
+        ],
+        "comparison",
+      ),
       cardGridDraftSection(pageTopic, "Options"),
       faqDraftSection(pageTopic),
       ctaDraftSection(pageTopic),
@@ -2038,17 +2115,27 @@ function completePageDraftSections(
   if (pageGuide.primaryGuide === "use-case") {
     return [
       heroDraftSection(pageTopic),
-      richTextDraftSection(pageTopic, "Why this use case matters", [
-        "Explain the audience and their needs",
-        "Show the practical benefits",
-        "Make the next step clear",
-      ]),
+      richTextDraftSection(
+        pageTopic,
+        "Why this use case matters",
+        [
+          "Explain the audience and their needs",
+          "Show the practical benefits",
+          "Make the next step clear",
+        ],
+        "overview",
+      ),
       cardGridDraftSection(pageTopic, "Fit and requirements"),
-      richTextDraftSection(pageTopic, "Implementation", [
-        "Confirm the site needs",
-        "Plan the machine mix",
-        "Review service and support",
-      ]),
+      richTextDraftSection(
+        pageTopic,
+        "Implementation",
+        [
+          "Confirm the site needs",
+          "Plan the machine mix",
+          "Review service and support",
+        ],
+        "implementation",
+      ),
       faqDraftSection(pageTopic),
       ctaDraftSection(pageTopic),
     ];
@@ -2057,11 +2144,16 @@ function completePageDraftSections(
   if (pageGuide.primaryGuide === "local-intent") {
     return [
       heroDraftSection(pageTopic),
-      richTextDraftSection(pageTopic, "Local service context", [
-        "Explain availability without inventing guarantees",
-        "Describe practical service needs",
-        "Invite the reader to confirm fit",
-      ]),
+      richTextDraftSection(
+        pageTopic,
+        "Local service context",
+        [
+          "Explain availability without inventing guarantees",
+          "Describe practical service needs",
+          "Invite the reader to confirm fit",
+        ],
+        "local",
+      ),
       cardGridDraftSection(pageTopic, "Service options"),
       faqDraftSection(pageTopic),
       ctaDraftSection(pageTopic),
@@ -2070,11 +2162,16 @@ function completePageDraftSections(
 
   return [
     heroDraftSection(pageTopic),
-    richTextDraftSection(pageTopic, "What to know", [
-      "Explain the audience and their needs",
-      "Show the practical benefits",
-      "Make the next step clear",
-    ]),
+    richTextDraftSection(
+      pageTopic,
+      "What to know",
+      [
+        "Explain the audience and their needs",
+        "Show the practical benefits",
+        "Make the next step clear",
+      ],
+      "overview",
+    ),
     cardGridDraftSection(pageTopic, "Options"),
     faqDraftSection(pageTopic),
     ctaDraftSection(pageTopic),
@@ -2088,7 +2185,7 @@ function heroDraftSection(pageTopic: string) {
       {
         blockType: "hero" as const,
         title: titleWithTopic(pageTopic, "Better vending"),
-        body: bodyForTopic(pageTopic),
+        body: bodyForTopic(pageTopic, "hero"),
         bulletItems: null,
         faqItems: null,
         cards: null,
@@ -2103,6 +2200,7 @@ function richTextDraftSection(
   pageTopic: string,
   title: string,
   bulletItems: string[],
+  angle: DraftCopyAngle = "overview",
 ) {
   return {
     title,
@@ -2110,7 +2208,7 @@ function richTextDraftSection(
       {
         blockType: "rich_text" as const,
         title,
-        body: bodyForTopic(pageTopic),
+        body: bodyForTopic(pageTopic, angle),
         bulletItems,
         faqItems: null,
         cards: null,
@@ -2134,19 +2232,19 @@ function cardGridDraftSection(pageTopic: string, title: string) {
         cards: [
           {
             title: "Managed setup",
-            body: bodyForTopic(pageTopic),
+            body: bodyForTopic(pageTopic, "managedSetup"),
             href: "/contact",
             linkLabel: "Ask about this option",
           },
           {
             title: "Flexible service",
-            body: `Tailor the vending plan around ${pageTopic}.`,
+            body: bodyForTopic(pageTopic, "flexibleService"),
             href: "/contact",
             linkLabel: "Plan the service",
           },
           {
             title: "Ongoing support",
-            body: `Keep ${pageTopic} supplied with reliable restocking and support.`,
+            body: bodyForTopic(pageTopic, "ongoingSupport"),
             href: "/contact",
             linkLabel: "Talk to us",
           },
@@ -2170,7 +2268,7 @@ function faqDraftSection(pageTopic: string) {
         faqItems: [
           {
             question: questionForTopic(pageTopic),
-            answer: bodyForTopic(pageTopic),
+            answer: bodyForTopic(pageTopic, "faq"),
           },
           {
             question: "How do we get started?",
@@ -2193,7 +2291,7 @@ function ctaDraftSection(pageTopic: string) {
       {
         blockType: "cta" as const,
         title: titleWithTopic(pageTopic, "Ready to talk?"),
-        body: `Share a few details and we will help with ${pageTopic}.`,
+        body: bodyForTopic(pageTopic, "cta"),
         bulletItems: null,
         faqItems: null,
         cards: null,
@@ -2300,6 +2398,151 @@ function cleanMediaSource(value: string) {
   return value.replace(/[.,;!?]+$/g, "");
 }
 
+function normalizeAddBlockInput(input: unknown) {
+  const source = objectInput(input);
+  if (!source) return input;
+
+  return {
+    blockType: source.blockType,
+    title: normalizeNullableText(source.title, 180),
+    body: normalizeNullableText(source.body, 2000),
+    bulletItems: normalizeNullableTextArray(source.bulletItems, 12, 300),
+    faqItems: normalizeFaqItems(source.faqItems, 12),
+    cards: normalizeCardItems(source.cards, 12),
+    ctaLabel: normalizeNullableText(source.ctaLabel, 80),
+    ctaHref: normalizeNullableText(source.ctaHref, 500),
+  };
+}
+
+function normalizeImageTextSectionInput(input: unknown) {
+  const source = objectInput(input);
+  if (!source) return input;
+
+  return {
+    heading: normalizeNullableText(source.heading, 180),
+    body: normalizeNullableText(source.body, 2000),
+    bulletItems: normalizeNullableTextArray(source.bulletItems, 12, 300),
+    imageUrl: normalizeNullableText(source.imageUrl, 500),
+    imageAltText: normalizeNullableText(source.imageAltText, 180),
+    imageCaption: normalizeNullableText(source.imageCaption, 240),
+    sourceRightsNotes: normalizeNullableText(source.sourceRightsNotes, 500),
+    imagePosition:
+      source.imagePosition === "left" || source.imagePosition === "right"
+        ? source.imagePosition
+        : undefined,
+  };
+}
+
+function normalizeMediaBlockInput(input: unknown) {
+  const source = objectInput(input);
+  if (!source) return input;
+
+  return {
+    mediaType: source.mediaType,
+    title: normalizeNullableText(source.title, 140),
+    url: normalizeNullableText(source.url, 500),
+    altText: normalizeNullableText(source.altText, 180),
+    caption: normalizeNullableText(source.caption, 240),
+    sourceRightsNotes: normalizeNullableText(source.sourceRightsNotes, 500),
+  };
+}
+
+function normalizeReplacePageSectionsInput(input: unknown) {
+  const source = objectInput(input);
+  if (!source) return input;
+
+  return {
+    replaceExisting:
+      typeof source.replaceExisting === "boolean"
+        ? source.replaceExisting
+        : undefined,
+    sections: Array.isArray(source.sections)
+      ? source.sections.slice(0, 12).map((section) => {
+          const sectionSource = objectInput(section);
+          if (!sectionSource) return section;
+          return {
+            title: normalizeNullableText(sectionSource.title, 180),
+            blocks: Array.isArray(sectionSource.blocks)
+              ? sectionSource.blocks.slice(0, 12).map(normalizeAddBlockInput)
+              : sectionSource.blocks,
+          };
+        })
+      : source.sections,
+  };
+}
+
+function normalizeDynamicBlockInput(
+  blockType: PageBlock["type"],
+  input: unknown,
+) {
+  const source = objectInput(input);
+  if (!source) return input;
+
+  if (blockType === "hero") {
+    return {
+      eyebrow: normalizeNullableText(source.eyebrow, 80),
+      headline: normalizeNullableText(source.headline, 180),
+      body: normalizeNullableText(source.body, 500),
+      ctaLabel: normalizeNullableText(source.ctaLabel, 80),
+      ctaHref: normalizeNullableText(source.ctaHref, 500),
+    };
+  }
+
+  if (blockType === "rich_text") {
+    return {
+      eyebrow: normalizeNullableText(source.eyebrow, 80),
+      heading: normalizeNullableText(source.heading, 180),
+      body: normalizeNullableText(source.body, 2000),
+      bulletItems: normalizeNullableTextArray(source.bulletItems, 12, 300),
+    };
+  }
+
+  if (blockType === "faq") {
+    return {
+      heading: normalizeNullableText(source.heading, 160),
+      items: normalizeFaqItems(source.items, 12),
+    };
+  }
+
+  if (blockType === "card_grid") {
+    return {
+      heading: normalizeNullableText(source.heading, 160),
+      cards: normalizeCardItems(source.cards, 12),
+    };
+  }
+
+  if (blockType === "cta") {
+    return {
+      label: normalizeNullableText(source.label, 80),
+      href: normalizeNullableText(source.href, 500),
+    };
+  }
+
+  if (blockType === "proof") {
+    return {
+      eyebrow: normalizeNullableText(source.eyebrow, 80),
+      body: normalizeNullableText(source.body, 800),
+      name: normalizeNullableText(source.name, 120),
+      context: normalizeNullableText(source.context, 160),
+    };
+  }
+
+  if (blockType === "lead_form") {
+    return {
+      heading: normalizeNullableText(source.heading, 160),
+      body: normalizeNullableText(source.body, 500),
+      submitLabel: normalizeNullableText(source.submitLabel, 80),
+    };
+  }
+
+  return {
+    title: normalizeNullableText(source.title, 140),
+    url: normalizeNullableText(source.url, 500),
+    altText: normalizeNullableText(source.altText, 180),
+    caption: normalizeNullableText(source.caption, 240),
+  };
+}
+
 function normalizeSeoMetadataInput(input: unknown) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     return input;
@@ -2338,6 +2581,81 @@ function truncateAiText(value: string, maxLength: number) {
   const hardCut = trimmed.slice(0, maxLength).trimEnd();
   const wordCut = hardCut.replace(/\s+\S*$/u, "").trimEnd();
   return wordCut || hardCut;
+}
+
+function objectInput(input: unknown) {
+  return input && typeof input === "object" && !Array.isArray(input)
+    ? (input as Record<string, unknown>)
+    : null;
+}
+
+function normalizeNullableText(value: unknown, maxLength: number) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return truncateAiText(String(value), maxLength);
+  }
+  return undefined;
+}
+
+function normalizeNullableTextArray(
+  value: unknown,
+  maxItems: number,
+  maxLength: number,
+) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (!Array.isArray(value)) return value;
+
+  return value
+    .slice(0, maxItems)
+    .flatMap((item) =>
+      typeof item === "string" ||
+      typeof item === "number" ||
+      typeof item === "boolean"
+        ? [truncateAiText(String(item), maxLength)]
+        : [],
+    );
+}
+
+function normalizeFaqItems(value: unknown, maxItems: number) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (!Array.isArray(value)) return value;
+
+  return value.slice(0, maxItems).flatMap((item) => {
+    const source = objectInput(item);
+    if (!source) return [];
+    return [
+      {
+        question: normalizeNullableText(source.question, 240) ?? "",
+        answer: normalizeNullableText(source.answer, 1200) ?? "",
+      },
+    ];
+  });
+}
+
+function normalizeCardItems(value: unknown, maxItems: number) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (!Array.isArray(value)) return value;
+
+  return value.slice(0, maxItems).flatMap((item) => {
+    const source = objectInput(item);
+    if (!source) return [];
+    return [
+      {
+        title: normalizeNullableText(source.title, 140) ?? "",
+        body: normalizeNullableText(source.body, 500) ?? "",
+        href: normalizeNullableText(source.href, 500),
+        linkLabel: normalizeNullableText(source.linkLabel, 80),
+      },
+    ];
+  });
 }
 
 function responseHasTool(response: PageBuilderAiChatResponse, names: string[]) {
@@ -2391,7 +2709,7 @@ function fallbackAddBlockInput(
     return {
       ...base,
       title: titleWithTopic(topic, "Better vending"),
-      body: bodyForTopic(topic),
+      body: bodyForTopic(topic, "hero"),
       ctaLabel: "Book a consultation",
       ctaHref: "/contact",
     };
@@ -2487,10 +2805,66 @@ function titleWithTopic(topic: string, fallback: string) {
     : display;
 }
 
-function bodyForTopic(topic: string) {
+type DraftCopyAngle =
+  | "hero"
+  | "overview"
+  | "fit"
+  | "process"
+  | "implementation"
+  | "local"
+  | "comparison"
+  | "managedSetup"
+  | "flexibleService"
+  | "ongoingSupport"
+  | "faq"
+  | "cta";
+
+function bodyForTopic(topic: string, angle: DraftCopyAngle = "overview") {
   const cleaned = cleanTopic(topic) || "this page";
   const audience = audienceContextForTopic(cleaned);
-  return `${sentenceCaseTopic(cleaned)} should be planned around ${audience}, placement, product mix, service access, and restocking. This gives readers a practical starting point and a clear way to request help.`;
+  const displayTopic = sentenceCaseTopic(cleaned);
+
+  if (angle === "hero") {
+    return `${displayTopic} gives ${audience} a clearer way to keep food, drinks, or coffee available without adding avoidable admin.`;
+  }
+
+  if (angle === "fit") {
+    return `${displayTopic} should cover foot traffic, placement, access, product mix, refill cadence, and how the site will judge whether the setup is working.`;
+  }
+
+  if (angle === "process" || angle === "implementation") {
+    return `A practical rollout for ${cleaned} starts with the site, audience, and service needs, then turns those details into a machine mix, product plan, and restocking schedule.`;
+  }
+
+  if (angle === "local") {
+    return `For local ${cleaned}, the page should explain service fit, response expectations, and enquiry steps without inventing availability guarantees.`;
+  }
+
+  if (angle === "comparison") {
+    return `The strongest ${cleaned} comparison helps readers choose by space, staffing, budget, product range, payment needs, and ongoing maintenance.`;
+  }
+
+  if (angle === "managedSetup") {
+    return `Plan ${cleaned} around the location, expected demand, and what the operator needs handled before the first machine goes live.`;
+  }
+
+  if (angle === "flexibleService") {
+    return `Tailor ${cleaned} by product range, machine type, refill frequency, and the level of support the site expects.`;
+  }
+
+  if (angle === "ongoingSupport") {
+    return `Keep ${cleaned} useful after launch with clear restocking, servicing, issue response, and periodic product review.`;
+  }
+
+  if (angle === "faq") {
+    return `Readers should understand setup requirements, product selection, ongoing restocking, and who handles service issues before committing to ${cleaned}.`;
+  }
+
+  if (angle === "cta") {
+    return `Share the site type, audience, and preferred products so the next step for ${cleaned} can be scoped clearly.`;
+  }
+
+  return `${displayTopic} works best when the page explains who it serves, why the location needs vending, what support is included, and what happens next.`;
 }
 
 function questionForTopic(topic: string) {

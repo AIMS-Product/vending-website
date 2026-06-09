@@ -9,11 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type {
-  PageAiProposalInsertResult,
-  PageAiProposalResult,
-} from "@/app/admin/pages/actions";
-import type { AiPageProposalReview } from "@/lib/services/ai-page-proposals";
 import {
   aiBlockReviewBody,
   aiBlockReviewTitle,
@@ -28,6 +23,7 @@ import {
   type PageBuilderAiPendingDelete,
 } from "@/lib/page-builder/ai-chat";
 import type { PageBlock } from "@/lib/page-builder/blocks";
+import type { SeoReadinessFinding } from "@/lib/page-builder/seo-readiness";
 import {
   createDocumentImportProposal,
   type DocumentImportProposal,
@@ -36,7 +32,19 @@ import {
   seoAgentProviderOptions,
   type SeoAgentProvider,
 } from "@/lib/page-builder/seo-agent-provider";
-import { miniButtonClass } from "@/components/admin/seo-page-editor/editor-styles";
+import {
+  findingDotClass,
+  labelForReadinessStatus,
+  miniButtonClass,
+  readinessPillClass,
+} from "@/components/admin/seo-page-editor/editor-styles";
+import {
+  findingSeverityLabel,
+  friendlyEvidenceText,
+  friendlyFindingLocation,
+  requiresSeoSettings,
+  suggestedBlockForFinding,
+} from "@/components/admin/seo-page-editor/SeoReadinessHelpers";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 
 // The generative SEO agent lives in its own floating surface so the right
@@ -49,7 +57,6 @@ export function AiBuilderAssistant({
   editor: SeoPageEditorController;
 }) {
   const [isUserOpen, setIsUserOpen] = useState(false);
-  const canRunAiAgent = Boolean(editor.page?.id);
   const isWalkthroughAiStep = editor.builderWalkthroughStep === 3;
   const isOpen = isUserOpen || isWalkthroughAiStep;
   const sidePanelOpenOnNarrow =
@@ -64,9 +71,10 @@ export function AiBuilderAssistant({
   const seoPanelOpenOnDesktop =
     !editor.isNarrowEditor && !editor.isSeoSidebarCollapsed;
   const offsetClass = seoPanelOpenOnDesktop ? "xl:right-[28rem]" : "";
-  const pendingCount = editor.aiProposals.filter(
-    (proposal) => proposal.status === "proposed",
-  ).length;
+  const seoReviewFindingCount =
+    editor.seoReadiness.blockers.length +
+    editor.seoReadiness.warnings.length +
+    editor.seoReadiness.opportunities.length;
   const storageKey = editor.effectivePageId
     ? `page-builder-ai-chat-${editor.effectivePageId}`
     : null;
@@ -82,7 +90,7 @@ export function AiBuilderAssistant({
     string | null
   >(null);
   const [activeAssistantTool, setActiveAssistantTool] = useState<
-    "import" | "draft" | null
+    "import" | "review" | null
   >(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -332,21 +340,8 @@ export function AiBuilderAssistant({
               />
             ) : null}
 
-            {activeAssistantTool === "draft" ? (
-              <AiPageDraftPanel
-                embedded
-                canRunAiAgent={canRunAiAgent}
-                isAiGenerating={editor.isAiGenerating}
-                pendingCount={pendingCount}
-                aiProposalResult={editor.aiProposalResult}
-                proposals={editor.aiProposals}
-                insertResult={editor.aiInsertResult}
-                isInserting={editor.isAiInserting}
-                onGenerateDraft={() => {
-                  void editor.runAiSeoAgent();
-                }}
-                onInsertBlocks={editor.insertAiProposalBlocks}
-              />
+            {activeAssistantTool === "review" ? (
+              <SeoAssistantReviewPanel embedded editor={editor} />
             ) : null}
 
             <ProviderSelector
@@ -389,16 +384,20 @@ export function AiBuilderAssistant({
                   <UploadIcon />
                 </AssistantIconButton>
                 <AssistantIconButton
-                  label="Generate page draft"
-                  pressed={activeAssistantTool === "draft"}
-                  badge={pendingCount > 0 ? pendingCount : undefined}
+                  label="Review SEO"
+                  pressed={activeAssistantTool === "review"}
+                  badge={
+                    seoReviewFindingCount > 0
+                      ? seoReviewFindingCount
+                      : undefined
+                  }
                   onClick={() =>
                     setActiveAssistantTool((current) =>
-                      current === "draft" ? null : "draft",
+                      current === "review" ? null : "review",
                     )
                   }
                 >
-                  <SparkIcon />
+                  <ReviewIcon />
                 </AssistantIconButton>
               </div>
               <AssistantIconButton
@@ -431,11 +430,6 @@ export function AiBuilderAssistant({
       >
         <SparkIcon />
         <span>AI</span>
-        {!isOpen && pendingCount > 0 && (
-          <span className="ml-0.5 inline-flex min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-violet-700">
-            {pendingCount}
-          </span>
-        )}
       </button>
     </>
   );
@@ -500,6 +494,27 @@ function SendIcon() {
     >
       <path d="m22 2-7 20-4-9-9-4Z" />
       <path d="M22 2 11 13" />
+    </svg>
+  );
+}
+
+function ReviewIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+      <path d="M8 11.5 10 13l4-5" />
     </svg>
   );
 }
@@ -1422,32 +1437,36 @@ function ProviderSelector({
   );
 }
 
-function AiPageDraftPanel({
+function SeoAssistantReviewPanel({
   embedded = false,
-  canRunAiAgent,
-  isAiGenerating,
-  pendingCount,
-  aiProposalResult,
-  proposals,
-  insertResult,
-  isInserting,
-  onGenerateDraft,
-  onInsertBlocks,
+  editor,
 }: {
   embedded?: boolean;
-  canRunAiAgent: boolean;
-  isAiGenerating: boolean;
-  pendingCount: number;
-  aiProposalResult: PageAiProposalResult;
-  proposals: AiPageProposalReview[];
-  insertResult: PageAiProposalInsertResult;
-  isInserting: boolean;
-  onGenerateDraft: () => void;
-  onInsertBlocks: (proposalId: string, blockIds: string[]) => void;
+  editor: SeoPageEditorController;
 }) {
+  const summary = editor.seoReadiness;
+  const metrics = [
+    {
+      label: "Words",
+      value: summary.metrics.visibleWordCount.toLocaleString(),
+    },
+    { label: "Blocks", value: summary.metrics.blockCount.toString() },
+    {
+      label: "Internal links",
+      value: summary.metrics.internalLinkCount.toString(),
+    },
+    { label: "Images", value: summary.metrics.imageCount.toString() },
+    { label: "FAQs", value: summary.metrics.faqItemCount.toString() },
+  ];
+  const topFindings = [
+    ...summary.blockers,
+    ...summary.warnings,
+    ...summary.opportunities,
+  ].slice(0, 5);
+
   return (
     <section
-      aria-labelledby="ai-page-draft-title"
+      aria-labelledby="ai-seo-review-title"
       className={`rounded-lg border border-violet-100 bg-violet-50/50 ${
         embedded ? "mb-3 max-h-[min(40vh,20rem)] overflow-y-auto" : "mt-4"
       }`}
@@ -1456,75 +1475,145 @@ function AiPageDraftPanel({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h3
-              id="ai-page-draft-title"
+              id="ai-seo-review-title"
               className="text-xs font-semibold text-violet-900"
             >
-              Generate page draft
+              Review SEO
             </h3>
-            {pendingCount > 0 ? (
-              <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-semibold text-white">
-                {pendingCount} to review
-              </span>
-            ) : null}
+            <span
+              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${readinessPillClass(
+                summary.status,
+              )}`}
+            >
+              {labelForReadinessStatus(summary.status)}
+            </span>
           </div>
-          {!embedded ? (
-            <p className="mt-2 text-xs leading-5 text-violet-700">
-              AI reads your page title, keyword, and page type, then proposes
-              hero, body, FAQ, and CTA blocks. Nothing is added until you review
-              and insert the draft.
-            </p>
-          ) : (
-            <p className="mt-1 text-xs leading-5 text-violet-700">
-              Proposes hero, body, FAQ, and CTA blocks for your review.
-            </p>
-          )}
+          <p className="mt-1 text-xs leading-5 text-violet-700">
+            Checks the current draft against the same readiness rules used
+            before publishing.
+          </p>
         </div>
 
-        <button
-          type="button"
-          className="w-full rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={!canRunAiAgent || isAiGenerating}
-          onClick={onGenerateDraft}
-        >
-          {isAiGenerating
-            ? "Generating draft..."
-            : canRunAiAgent
-              ? "Generate page draft"
-              : "Save the page first"}
-        </button>
-
-        {!canRunAiAgent ? (
-          <p className="text-xs leading-5 text-violet-700">
-            Save this page once so AI can use its title, keyword, and page type.
+        <div className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-violet-100">
+          <p className="text-[11px] font-semibold tracking-wider text-violet-500 uppercase">
+            Next required step
           </p>
-        ) : null}
-
-        {aiProposalResult.status !== "idle" && aiProposalResult.message ? (
-          <p
-            className={`rounded-lg px-4 py-3 text-sm font-medium ring-1 ring-inset ${
-              aiProposalResult.status === "error"
-                ? "bg-red-50 text-red-700 ring-red-200"
-                : "bg-emerald-50 text-emerald-700 ring-emerald-200"
-            }`}
-          >
-            {aiProposalResult.message}
+          <p className="mt-1 text-sm font-semibold text-slate-950">
+            {editor.nextPublishStep.title}
           </p>
-        ) : null}
+          <p className="mt-1 text-xs leading-5 text-slate-600">
+            {editor.nextPublishStep.detail}
+          </p>
+        </div>
 
-        <div>
+        <dl className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {metrics.map((metric) => (
+            <div
+              key={metric.label}
+              className="rounded-lg bg-white p-2 text-center shadow-sm ring-1 ring-violet-100"
+            >
+              <dt className="text-[10px] font-semibold text-slate-500">
+                {metric.label}
+              </dt>
+              <dd className="mt-1 text-sm font-semibold text-slate-950">
+                {metric.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className="space-y-2">
           <h4 className="text-xs font-semibold text-violet-900">
-            Draft proposals
+            Top findings
           </h4>
-          <AiProposalReviewList
-            proposals={proposals}
-            insertResult={insertResult}
-            isInserting={isInserting}
-            onInsertBlocks={onInsertBlocks}
-          />
+          {topFindings.length > 0 ? (
+            topFindings.map((finding, index) => (
+              <SeoReviewFindingCard
+                key={`${finding.code}-${finding.path}-${index}`}
+                finding={finding}
+                editor={editor}
+              />
+            ))
+          ) : (
+            <p className="rounded-lg bg-emerald-50 px-3 py-3 text-xs leading-5 text-emerald-800 ring-1 ring-emerald-100">
+              No readiness findings on this draft. Open the public preview
+              before publishing.
+            </p>
+          )}
         </div>
       </div>
     </section>
   );
+}
+
+function SeoReviewFindingCard({
+  finding,
+  editor,
+}: {
+  finding: SeoReadinessFinding;
+  editor: SeoPageEditorController;
+}) {
+  return (
+    <article className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-violet-100">
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={`size-2 rounded-full ${findingDotClass(finding.severity)}`}
+          aria-hidden="true"
+        />
+        <span className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+          {findingSeverityLabel(finding.severity)}
+        </span>
+        <span className="rounded-md bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
+          {friendlyFindingLocation(finding)}
+        </span>
+      </div>
+      <p className="mt-2 text-sm leading-5 font-semibold text-slate-900">
+        {finding.message}
+      </p>
+      {friendlyEvidenceText(finding) ? (
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          {friendlyEvidenceText(finding)}
+        </p>
+      ) : null}
+      <SeoReviewFindingAction finding={finding} editor={editor} />
+    </article>
+  );
+}
+
+function SeoReviewFindingAction({
+  finding,
+  editor,
+}: {
+  finding: SeoReadinessFinding;
+  editor: SeoPageEditorController;
+}) {
+  const suggestedBlock = suggestedBlockForFinding(finding);
+
+  if (suggestedBlock) {
+    return (
+      <button
+        type="button"
+        className={`${miniButtonClass} mt-3`}
+        onClick={() => editor.addSuggestedBlock(suggestedBlock.type)}
+      >
+        {suggestedBlock.label}
+      </button>
+    );
+  }
+
+  if (requiresSeoSettings(finding)) {
+    return (
+      <button
+        type="button"
+        className={`${miniButtonClass} mt-3`}
+        onClick={() => editor.focusSeoSetting(finding)}
+      >
+        Open SEO settings
+      </button>
+    );
+  }
+
+  return null;
 }
 
 function DocumentImportReview({
@@ -1623,245 +1712,5 @@ function DocumentImportReview({
         })}
       </div>
     </section>
-  );
-}
-
-type AiReviewProposedBlock = AiPageProposalReview["proposal"]["blocks"][number];
-
-function AiProposalReviewList({
-  proposals,
-  insertResult,
-  isInserting,
-  onInsertBlocks,
-}: {
-  proposals: AiPageProposalReview[];
-  insertResult: PageAiProposalInsertResult;
-  isInserting: boolean;
-  onInsertBlocks: (proposalId: string, blockIds: string[]) => void;
-}) {
-  if (proposals.length === 0) {
-    return (
-      <p className="mt-4 rounded-lg border border-dashed border-violet-200 bg-violet-50/60 px-4 py-6 text-center text-sm leading-6 text-violet-700">
-        No drafts yet.
-      </p>
-    );
-  }
-
-  return (
-    <div className="mt-4 space-y-3">
-      {proposals.slice(0, 3).map((proposal) => (
-        <AiProposalReviewCard
-          key={proposal.id}
-          proposal={proposal}
-          insertResult={insertResult}
-          isInserting={isInserting}
-          onInsertBlocks={onInsertBlocks}
-        />
-      ))}
-    </div>
-  );
-}
-
-function AiProposalReviewCard({
-  proposal,
-  insertResult,
-  isInserting,
-  onInsertBlocks,
-}: {
-  proposal: AiPageProposalReview;
-  insertResult: PageAiProposalInsertResult;
-  isInserting: boolean;
-  onInsertBlocks: (proposalId: string, blockIds: string[]) => void;
-}) {
-  const defaultSelectedBlockIds = useMemo(
-    () =>
-      proposal.proposal.blocks.flatMap((entry) =>
-        canInsertAiProposedBlock(entry) ? [entry.block.id] : [],
-      ),
-    [proposal],
-  );
-  const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>(
-    defaultSelectedBlockIds,
-  );
-  const proposalResult =
-    insertResult.proposalId === proposal.id ? insertResult : null;
-  const isProposed = proposal.status === "proposed";
-  const selectableCount = defaultSelectedBlockIds.length;
-  const sourceRefCount = proposal.proposal.blocks.reduce(
-    (count, entry) => count + aiSourceCount(entry),
-    0,
-  );
-  const warningCount =
-    proposal.warnings.length +
-    proposal.proposal.blocks.reduce(
-      (count, entry) => count + entry.warnings.length,
-      0,
-    );
-
-  return (
-    <article className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-violet-100">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h4 className="text-sm font-semibold text-slate-950">
-              AI proposal
-            </h4>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
-              {isProposed ? "Ready" : proposal.status}
-            </span>
-          </div>
-          <p className="mt-1 text-xs leading-5 text-slate-500">
-            {isProposed
-              ? "Review selected content before inserting it into the page."
-              : "Already accepted. Check the editor below for duplicate or outdated sections before publishing."}
-          </p>
-        </div>
-        {isProposed && (
-          <button
-            type="button"
-            className={miniButtonClass}
-            disabled={isInserting || selectedBlockIds.length === 0}
-            onClick={() => onInsertBlocks(proposal.id, selectedBlockIds)}
-          >
-            {isInserting ? "Inserting..." : "Insert selected content"}
-          </button>
-        )}
-      </div>
-
-      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-md bg-violet-50 p-2">
-          <p className="text-lg font-semibold text-slate-950">
-            {proposal.proposal.blocks.length}
-          </p>
-          <p className="text-[11px] font-medium text-slate-500">Items</p>
-        </div>
-        <div className="rounded-md bg-violet-50 p-2">
-          <p className="text-lg font-semibold text-slate-950">
-            {sourceRefCount}
-          </p>
-          <p className="text-[11px] font-medium text-slate-500">Sources</p>
-        </div>
-        <div className="rounded-md bg-violet-50 p-2">
-          <p className="text-lg font-semibold text-slate-950">{warningCount}</p>
-          <p className="text-[11px] font-medium text-slate-500">Warnings</p>
-        </div>
-      </div>
-
-      {proposal.proposal.metadata.seoTitle && (
-        <p className="mt-3 rounded-md bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-900">
-          SEO title suggestion:{" "}
-          <span className="font-semibold text-slate-800">
-            {proposal.proposal.metadata.seoTitle}
-          </span>
-        </p>
-      )}
-
-      {proposalResult?.message && (
-        <p
-          className={`mt-3 rounded-lg px-3 py-2 text-xs leading-5 ring-1 ${
-            proposalResult.status === "error"
-              ? "bg-red-50 text-red-700 ring-red-100"
-              : "bg-emerald-50 text-emerald-700 ring-emerald-100"
-          }`}
-        >
-          {proposalResult.message}
-        </p>
-      )}
-
-      <details className="mt-3 rounded-md border border-violet-100 bg-violet-50/40">
-        <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
-          Review content changes · {selectableCount} safe to insert
-        </summary>
-        <div className="grid gap-2 border-t border-violet-100 p-2">
-          {proposal.proposal.blocks.map((entry) => {
-            const canInsert = canInsertAiProposedBlock(entry);
-            const checked = selectedBlockIds.includes(entry.block.id);
-            return (
-              <label
-                key={entry.block.id}
-                className={`flex gap-3 rounded-md border p-3 text-left ${
-                  canInsert && isProposed
-                    ? "border-slate-200 bg-slate-50"
-                    : "border-slate-100 bg-slate-50/60 text-slate-400"
-                }`}
-              >
-                <input
-                  aria-label={`Insert ${aiBlockReviewTitle(entry.block)}`}
-                  type="checkbox"
-                  className="mt-1"
-                  checked={checked}
-                  disabled={!canInsert || !isProposed || isInserting}
-                  onChange={(event) => {
-                    const nextChecked = event.target.checked;
-                    setSelectedBlockIds((current) =>
-                      nextChecked
-                        ? [...new Set([...current, entry.block.id])]
-                        : current.filter((id) => id !== entry.block.id),
-                    );
-                  }}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-slate-900">
-                      {blockLabel(entry.block.type)}
-                    </span>
-                    <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200">
-                      {aiSourceCount(entry)} source refs
-                    </span>
-                  </span>
-                  <span className="mt-1 block text-sm font-medium text-slate-800">
-                    {aiBlockReviewTitle(entry.block)}
-                  </span>
-                  {aiBlockReviewBody(entry.block) && (
-                    <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">
-                      {aiBlockReviewBody(entry.block)}
-                    </span>
-                  )}
-                  {entry.warnings.length > 0 && (
-                    <span className="mt-2 block text-xs leading-5 text-amber-700">
-                      {entry.warnings
-                        .map((warning) => warning.message)
-                        .join(" ")}
-                    </span>
-                  )}
-                </span>
-              </label>
-            );
-          })}
-        </div>
-      </details>
-
-      {proposal.warnings.length > 0 && (
-        <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100">
-          {proposal.warnings.map((warning) => warning.message).join(" ")}
-        </p>
-      )}
-      <details className="mt-3">
-        <summary className="cursor-pointer text-[11px] font-semibold text-slate-400">
-          Technical reference
-        </summary>
-        <p className="mt-1 font-mono text-[11px] break-all text-slate-400">
-          {proposal.id}
-        </p>
-      </details>
-    </article>
-  );
-}
-
-function canInsertAiProposedBlock(entry: AiReviewProposedBlock) {
-  return (
-    aiSourceCount(entry) > 0 &&
-    !entry.warnings.some(
-      (warning) =>
-        warning.code === "unsupported_claim" || warning.code === "needs_source",
-    )
-  );
-}
-
-function aiSourceCount(entry: AiReviewProposedBlock) {
-  return (
-    entry.sourceDocumentIds.length +
-    entry.sourceExcerptIds.length +
-    entry.approvedClaimIds.length
   );
 }

@@ -301,6 +301,113 @@ describe("page builder AI chat tools", () => {
     expect(result.seoPatch.metaDescription?.length).toBeLessThanOrEqual(180);
   });
 
+  it("normalizes overlong AI block payloads before applying them", () => {
+    const result = applyPageBuilderAiToolCalls({
+      content,
+      makeBlockId: () => "block_ai_cards",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: "add_block",
+          input: {
+            blockType: "card_grid",
+            title: "Managed workplace vending options ".repeat(12),
+            body: null,
+            bulletItems: null,
+            faqItems: null,
+            cards: Array.from({ length: 14 }, (_, index) => ({
+              title: `Card ${index + 1} ${"managed vending ".repeat(20)}`,
+              body: "A long card body about workplace vending support. ".repeat(
+                30,
+              ),
+              href: "/contact",
+              linkLabel: "Ask about managed vending support ".repeat(6),
+            })),
+            ctaLabel: null,
+            ctaHref: null,
+          },
+        },
+      ],
+    });
+
+    const block = result.content.sections[0]!.columns[0]!.blocks.at(-1);
+    expect(result.results[0]).toMatchObject({ status: "applied" });
+    expect(block).toMatchObject({ type: "card_grid" });
+    expect(block?.type === "card_grid" ? block.props.cards : []).toHaveLength(
+      12,
+    );
+    if (block?.type === "card_grid") {
+      expect(block.props.cards[0]!.title.length).toBeLessThanOrEqual(140);
+      expect(block.props.cards[0]!.body.length).toBeLessThanOrEqual(500);
+      expect(block.props.cards[0]!.linkLabel?.length).toBeLessThanOrEqual(80);
+    }
+  });
+
+  it("normalizes oversized replacement section payloads before rebuilding", () => {
+    const emptyContent: PageContent = {
+      version: 1,
+      chrome: { showHeader: true, showFooter: true },
+      sections: [],
+    };
+    const result = applyPageBuilderAiToolCalls({
+      content: emptyContent,
+      makeBlockId: () => "block_ai_replace",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: "replace_page_sections",
+          input: {
+            replaceExisting: false,
+            sections: Array.from({ length: 14 }, (_, sectionIndex) => ({
+              title: `Section ${sectionIndex + 1} ${"vending ".repeat(40)}`,
+              blocks: Array.from({ length: 14 }, () => ({
+                blockType: "hero",
+                title: "Office vending machines ".repeat(20),
+                body: "Managed office vending machine support. ".repeat(40),
+                bulletItems: null,
+                faqItems: null,
+                cards: null,
+                ctaLabel: "Book an office vending consultation ".repeat(8),
+                ctaHref: "/contact",
+              })),
+            })),
+          },
+        },
+      ],
+    });
+
+    expect(result.results[0]).toMatchObject({ status: "applied" });
+    expect(result.content.sections).toHaveLength(12);
+    expect(result.content.sections[0]!.columns[0]!.blocks).toHaveLength(12);
+  });
+
+  it("still rejects unsafe media URLs after normalization", () => {
+    const result = applyPageBuilderAiToolCalls({
+      content,
+      makeBlockId: () => "block_ai_image",
+      toolCalls: [
+        {
+          id: "call_1",
+          name: "add_media_block",
+          input: {
+            mediaType: "image",
+            title: "Unsafe image",
+            url: "javascript:alert(1)",
+            altText: "Unsafe image",
+            caption: null,
+            sourceRightsNotes: null,
+          },
+        },
+      ],
+    });
+
+    expect(result.content).toEqual(content);
+    expect(result.results[0]).toMatchObject({
+      status: "failed",
+      message: "Use an internal media path or an http(s) URL.",
+    });
+  });
+
   it("rejects incomplete reorders without dropping blocks", () => {
     const result = applyPageBuilderAiToolCalls({
       content,
@@ -1014,6 +1121,36 @@ describe("page builder AI chat tools", () => {
         ]),
       },
     });
+
+    const replaceInput = response.toolCalls[1]!.input as {
+      sections: Array<{
+        blocks: Array<{
+          body?: string | null;
+          cards?: Array<{ body?: string | null }> | null;
+          faqItems?: Array<{ answer?: string | null }> | null;
+        }>;
+      }>;
+    };
+    const fallbackBodyCopy = replaceInput.sections.flatMap((section) =>
+      section.blocks.flatMap((block) => [
+        ...(block.body ? [block.body] : []),
+        ...((block.cards ?? []).flatMap((card) =>
+          card.body ? [card.body] : [],
+        ) ?? []),
+        ...((block.faqItems ?? []).flatMap((item) =>
+          item.answer ? [item.answer] : [],
+        ) ?? []),
+      ]),
+    );
+
+    expect(new Set(fallbackBodyCopy).size).toBeGreaterThanOrEqual(6);
+    expect(fallbackBodyCopy.join(" ")).toContain("college dormitories");
+    expect(fallbackBodyCopy.some((copy) => copy.includes("restocking"))).toBe(
+      true,
+    );
+    expect(
+      fallbackBodyCopy.some((copy) => copy.includes("service needs")),
+    ).toBe(true);
   });
 
   it("normalizes 200 human add-request variants across block families", () => {

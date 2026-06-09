@@ -255,7 +255,7 @@ export function renderPageGuidePrompt(selection: PageGuideSelection) {
     .join("\n");
 }
 
-export function pageGuideDefinition(id: PageGuideId): PageGuideDefinition {
+function pageGuideDefinition(id: PageGuideId): PageGuideDefinition {
   if (id in seoResourceGuides) {
     return seoResourceGuides[id as SeoResourceGuideId];
   }
