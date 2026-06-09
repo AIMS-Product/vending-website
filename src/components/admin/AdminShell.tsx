@@ -63,6 +63,28 @@ const accountSections: AdminNavSection[] = [
 
 const sections = [...contentSections, ...accountSections];
 
+const adminIconGlyphCommonProps = {
+  fill: "none",
+  viewBox: "0 0 24 24",
+  stroke: "currentColor",
+  strokeWidth: 1.8,
+  className: "size-5",
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+};
+
+type AdminShellProps = {
+  activeSection: AdminSection;
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  userEmail?: string | null;
+  userRole?: string | null;
+  actions?: ReactNode;
+  immersive?: boolean;
+  children: ReactNode;
+};
+
 export function AdminShell({
   activeSection,
   eyebrow,
@@ -73,82 +95,18 @@ export function AdminShell({
   actions,
   immersive = false,
   children,
-}: {
-  activeSection: AdminSection;
-  eyebrow?: string;
-  title: string;
-  description?: string;
-  userEmail?: string | null;
-  userRole?: string | null;
-  actions?: ReactNode;
-  immersive?: boolean;
-  children: ReactNode;
-}) {
+}: AdminShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const activeLabel =
-    (activeSection === blogSection.id
-      ? blogSection.label
-      : sections.find((section) => section.id === activeSection)?.label) ??
-    "Studio";
+  const activeLabel = getAdminActiveLabel(activeSection);
   const roleLabel = userRole ? formatAdminRole(userRole) : null;
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f7f8fb] text-[#0f172a]">
       {!immersive && (
-        <div className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur xl:hidden">
-          <details>
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-950 [&::-webkit-details-marker]:hidden">
-              <span className="flex min-w-0 items-center gap-3">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#0b63f6] text-sm font-semibold text-white">
-                  S
-                </span>
-                <span className="min-w-0">
-                  <span className="block">Studio</span>
-                  <span className="block truncate text-xs font-medium text-slate-500">
-                    {activeLabel}
-                  </span>
-                </span>
-              </span>
-              <span className="text-slate-500" aria-hidden="true">
-                <AdminChevron />
-              </span>
-            </summary>
-            <div className="mt-4 grid gap-4 border-t border-slate-200 pt-4">
-              <nav aria-label="Admin sections" className="grid gap-1.5">
-                {contentSections.map((section) => (
-                  <MobileNavLink
-                    key={section.id}
-                    section={section}
-                    isActive={activeSection === section.id}
-                  />
-                ))}
-              </nav>
-              <nav
-                aria-label="Account sections"
-                className="grid gap-1.5 border-t border-slate-200 pt-4"
-              >
-                {accountSections.map((section) => (
-                  <MobileNavLink
-                    key={section.id}
-                    section={section}
-                    isActive={activeSection === section.id}
-                  />
-                ))}
-              </nav>
-              <form action={signOut}>
-                <button
-                  type="submit"
-                  className="flex w-full items-center gap-2.5 rounded-md border border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-semibold text-slate-950 shadow-sm"
-                >
-                  <span className="text-slate-700" aria-hidden="true">
-                    <AdminIconGlyph icon="log-out" />
-                  </span>
-                  Sign out
-                </button>
-              </form>
-            </div>
-          </details>
-        </div>
+        <AdminMobileNav
+          activeLabel={activeLabel}
+          activeSection={activeSection}
+        />
       )}
       <div
         className={clsx(
@@ -160,295 +118,431 @@ export function AdminShell({
         )}
       >
         {!immersive && (
-          <aside className="relative hidden border-b border-slate-200 bg-white/95 backdrop-blur xl:sticky xl:top-0 xl:block xl:h-screen xl:border-r xl:border-b-0">
-            <button
-              type="button"
-              aria-label={
-                sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-              }
-              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              onClick={() => setSidebarCollapsed((current) => !current)}
-              className="absolute top-5 right-0 z-10 inline-flex size-8 translate-x-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-            >
-              <span
-                className={clsx(
-                  "transition-transform",
-                  sidebarCollapsed ? "rotate-180" : "",
-                )}
-                aria-hidden="true"
-              >
-                <AdminChevron />
-              </span>
-            </button>
-            <div
-              className={clsx(
-                "flex h-full flex-col overflow-y-auto pt-5 pb-4 transition-[padding] duration-200",
-                sidebarCollapsed ? "px-3" : "px-4",
-              )}
-            >
-              <div className="flex items-start justify-between gap-3 px-2">
-                <div
-                  className={clsx(
-                    "flex min-w-0 items-start gap-3",
-                    sidebarCollapsed && "justify-center",
-                  )}
-                >
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#0b63f6] text-base font-semibold text-white shadow-sm">
-                    S
-                  </div>
-                  <div
-                    className={clsx("min-w-0", sidebarCollapsed && "hidden")}
-                  >
-                    <h2 className="text-sm font-semibold text-slate-950">
-                      Studio
-                    </h2>
-                    <p className="text-xs text-slate-500">Admin CMS</p>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className={clsx(
-                  "border-t border-slate-200 pt-4",
-                  sidebarCollapsed ? "mt-4" : "mt-5",
-                )}
-              >
-                <p
-                  className={clsx(
-                    "mb-2 px-2 text-xs font-semibold text-slate-500 uppercase",
-                    sidebarCollapsed && "sr-only",
-                  )}
-                >
-                  Content
-                </p>
-                <nav aria-label="Admin sections" className="grid gap-1">
-                  {contentSections.map((section) => (
-                    <div
-                      key={section.id}
-                      className={clsx(
-                        "group flex items-center gap-2 rounded-md border text-sm transition",
-                        activeSection === section.id
-                          ? "border-[#cfe0ff] bg-[#f4f8ff] shadow-[inset_3px_0_0_#0b63f6]"
-                          : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950",
-                      )}
-                    >
-                      <Link
-                        href={section.href}
-                        title={
-                          sidebarCollapsed
-                            ? section.label
-                            : `${section.label}: ${section.description}`
-                        }
-                        className={clsx(
-                          "flex min-w-0 flex-1 items-center rounded-md py-2 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
-                          sidebarCollapsed
-                            ? "justify-center px-2"
-                            : "gap-2 px-3",
-                        )}
-                        aria-current={
-                          activeSection === section.id ? "page" : undefined
-                        }
-                      >
-                        <span
-                          className={clsx(
-                            "flex size-6 shrink-0 items-center justify-center rounded-md",
-                            activeSection === section.id
-                              ? "text-[#0b63f6]"
-                              : "text-slate-500",
-                          )}
-                          aria-hidden="true"
-                        >
-                          <AdminIconGlyph icon={section.icon} />
-                        </span>
-                        <span
-                          className={clsx(
-                            "min-w-0",
-                            sidebarCollapsed && "hidden",
-                          )}
-                        >
-                          <span className="block font-semibold text-slate-950">
-                            {section.label}
-                          </span>
-                          <span className="sr-only">
-                            {": "}
-                            {section.description}
-                          </span>
-                        </span>
-                      </Link>
-                    </div>
-                  ))}
-                </nav>
-              </div>
-
-              <div className="mt-auto border-t border-slate-200 pt-4">
-                <nav
-                  aria-label="Account settings"
-                  className={clsx(
-                    "mb-3 grid gap-1",
-                    sidebarCollapsed && "mb-4",
-                  )}
-                >
-                  {accountSections.map((section) => (
-                    <div
-                      key={section.id}
-                      className={clsx(
-                        "group flex items-center gap-2 rounded-md border text-sm transition",
-                        activeSection === section.id
-                          ? "border-[#cfe0ff] bg-[#f4f8ff] shadow-[inset_3px_0_0_#0b63f6]"
-                          : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950",
-                      )}
-                    >
-                      <Link
-                        href={section.href}
-                        title={
-                          sidebarCollapsed
-                            ? section.label
-                            : `${section.label}: ${section.description}`
-                        }
-                        className={clsx(
-                          "flex min-w-0 flex-1 items-center rounded-md py-2 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
-                          sidebarCollapsed
-                            ? "justify-center px-2"
-                            : "gap-2 px-3",
-                        )}
-                        aria-current={
-                          activeSection === section.id ? "page" : undefined
-                        }
-                      >
-                        <span
-                          className={clsx(
-                            "flex size-6 shrink-0 items-center justify-center rounded-md",
-                            activeSection === section.id
-                              ? "text-[#0b63f6]"
-                              : "text-slate-500",
-                          )}
-                          aria-hidden="true"
-                        >
-                          <AdminIconGlyph icon={section.icon} />
-                        </span>
-                        <span
-                          className={clsx(
-                            "min-w-0",
-                            sidebarCollapsed && "hidden",
-                          )}
-                        >
-                          <span className="block font-semibold text-slate-950">
-                            {section.label}
-                          </span>
-                          <span className="sr-only">
-                            {": "}
-                            {section.description}
-                          </span>
-                        </span>
-                      </Link>
-                    </div>
-                  ))}
-                </nav>
-                {userEmail ? (
-                  <div
-                    className={clsx(
-                      "mb-3 flex items-center gap-2 px-2",
-                      sidebarCollapsed && "justify-center",
-                    )}
-                  >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-800">
-                      {adminInitials(userEmail)}
-                    </div>
-                    <p
-                      className={clsx(
-                        "min-w-0 text-xs leading-4 text-slate-500",
-                        sidebarCollapsed && "hidden",
-                      )}
-                    >
-                      Signed in as
-                      <span className="block truncate text-sm font-medium text-slate-950">
-                        {userEmail}
-                      </span>
-                      {roleLabel ? (
-                        <span className="block truncate">{roleLabel}</span>
-                      ) : null}
-                    </p>
-                  </div>
-                ) : null}
-                <form action={signOut}>
-                  <button
-                    type="submit"
-                    title={sidebarCollapsed ? "Sign out" : undefined}
-                    className={clsx(
-                      "flex w-full items-center rounded-md border border-slate-200 bg-white py-2.5 text-left text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
-                      sidebarCollapsed ? "justify-center px-2" : "gap-2 px-3",
-                    )}
-                  >
-                    <span className="text-slate-700" aria-hidden="true">
-                      <AdminIconGlyph icon="log-out" />
-                    </span>
-                    <span className={clsx(sidebarCollapsed && "hidden")}>
-                      Sign out
-                    </span>
-                  </button>
-                </form>
-              </div>
-            </div>
-          </aside>
+          <AdminDesktopSidebar
+            activeSection={activeSection}
+            collapsed={sidebarCollapsed}
+            onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
+            roleLabel={roleLabel}
+            userEmail={userEmail}
+          />
         )}
 
-        <section
-          aria-labelledby="admin-shell-title"
-          className={clsx(
-            "min-w-0",
-            immersive ? "p-0" : "px-5 py-5 sm:px-8 xl:px-10",
-          )}
+        <AdminShellContent
+          actions={actions}
+          description={description}
+          eyebrow={eyebrow}
+          immersive={immersive}
+          title={title}
         >
-          {immersive ? (
-            <h1 id="admin-shell-title" className="sr-only">
-              {title}
-            </h1>
-          ) : null}
-          {!immersive && (
-            <header className="mb-5">
-              {eyebrow ? (
-                <div className="mb-4 flex items-center gap-3 text-sm font-semibold text-[#0b63f6]">
-                  <span>{eyebrow}</span>
-                  <span className="text-slate-400" aria-hidden="true">
-                    <AdminChevron />
-                  </span>
-                </div>
-              ) : null}
-              <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-                <div className="max-w-3xl">
-                  <h1
-                    id="admin-shell-title"
-                    className="text-3xl font-semibold tracking-normal text-slate-950"
-                  >
-                    {title}
-                  </h1>
-                  {description ? (
-                    <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
-                      {description}
-                    </p>
-                  ) : null}
-                </div>
-                {actions ? (
-                  <div className="flex flex-wrap items-center gap-3">
-                    {actions}
-                  </div>
-                ) : null}
-              </div>
-            </header>
-          )}
           {children}
-        </section>
+        </AdminShellContent>
       </div>
     </div>
   );
 }
 
+function getAdminActiveLabel(activeSection: AdminSection) {
+  return (
+    (activeSection === blogSection.id
+      ? blogSection.label
+      : sections.find((section) => section.id === activeSection)?.label) ??
+    "Studio"
+  );
+}
+
+function AdminMobileNav({
+  activeLabel,
+  activeSection,
+}: {
+  activeLabel: string;
+  activeSection: AdminSection;
+}) {
+  return (
+    <div className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur xl:hidden">
+      <details>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-950 [&::-webkit-details-marker]:hidden">
+          <span className="flex min-w-0 items-center gap-3">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#0b63f6] text-sm font-semibold text-white">
+              S
+            </span>
+            <span className="min-w-0">
+              <span className="block">Studio</span>
+              <span className="block truncate text-xs font-medium text-slate-500">
+                {activeLabel}
+              </span>
+            </span>
+          </span>
+          <span className="text-slate-500" aria-hidden="true">
+            <AdminChevron />
+          </span>
+        </summary>
+        <div className="mt-4 grid gap-4 border-t border-slate-200 pt-4">
+          <AdminMobileNavList
+            activeSection={activeSection}
+            ariaLabel="Admin sections"
+            sections={contentSections}
+          />
+          <AdminMobileNavList
+            activeSection={activeSection}
+            ariaLabel="Account sections"
+            className="border-t border-slate-200 pt-4"
+            sections={accountSections}
+          />
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="flex w-full items-center gap-2.5 rounded-md border border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-semibold text-slate-950 shadow-sm"
+            >
+              <span className="text-slate-700" aria-hidden="true">
+                <AdminIconGlyph icon="log-out" />
+              </span>
+              Sign out
+            </button>
+          </form>
+        </div>
+      </details>
+    </div>
+  );
+}
+
+function AdminMobileNavList({
+  activeSection,
+  ariaLabel,
+  className,
+  sections: navSections,
+}: {
+  activeSection: AdminSection;
+  ariaLabel: string;
+  className?: string;
+  sections: AdminNavSection[];
+}) {
+  return (
+    <nav aria-label={ariaLabel} className={clsx("grid gap-1.5", className)}>
+      {navSections.map((section) => (
+        <MobileNavLink
+          key={section.id}
+          section={section}
+          isActive={activeSection === section.id}
+        />
+      ))}
+    </nav>
+  );
+}
+
+function AdminDesktopSidebar({
+  activeSection,
+  collapsed,
+  onToggleCollapsed,
+  roleLabel,
+  userEmail,
+}: {
+  activeSection: AdminSection;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+  roleLabel: string | null;
+  userEmail?: string | null;
+}) {
+  return (
+    <aside className="relative hidden border-b border-slate-200 bg-white/95 backdrop-blur xl:sticky xl:top-0 xl:block xl:h-screen xl:border-r xl:border-b-0">
+      <button
+        type="button"
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        onClick={onToggleCollapsed}
+        className="absolute top-5 right-0 z-10 inline-flex size-8 translate-x-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+      >
+        <span
+          className={clsx(
+            "transition-transform",
+            collapsed ? "rotate-180" : "",
+          )}
+          aria-hidden="true"
+        >
+          <AdminChevron />
+        </span>
+      </button>
+      <div
+        className={clsx(
+          "flex h-full flex-col overflow-y-auto pt-5 pb-4 transition-[padding] duration-200",
+          collapsed ? "px-3" : "px-4",
+        )}
+      >
+        <AdminDesktopBrand collapsed={collapsed} />
+        <AdminDesktopNavGroup
+          activeSection={activeSection}
+          ariaLabel="Admin sections"
+          collapsed={collapsed}
+          label="Content"
+          sections={contentSections}
+        />
+        <AdminAccountBlock
+          activeSection={activeSection}
+          collapsed={collapsed}
+          roleLabel={roleLabel}
+          userEmail={userEmail}
+        />
+      </div>
+    </aside>
+  );
+}
+
+function AdminDesktopBrand({ collapsed }: { collapsed: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-3 px-2">
+      <div
+        className={clsx(
+          "flex min-w-0 items-start gap-3",
+          collapsed && "justify-center",
+        )}
+      >
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#0b63f6] text-base font-semibold text-white shadow-sm">
+          S
+        </div>
+        <div className={clsx("min-w-0", collapsed && "hidden")}>
+          <h2 className="text-sm font-semibold text-slate-950">Studio</h2>
+          <p className="text-xs text-slate-500">Admin CMS</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminDesktopNavGroup({
+  activeSection,
+  ariaLabel,
+  collapsed,
+  label,
+  sections: navSections,
+}: {
+  activeSection: AdminSection;
+  ariaLabel: string;
+  collapsed: boolean;
+  label: string;
+  sections: AdminNavSection[];
+}) {
+  return (
+    <div
+      className={clsx(
+        "border-t border-slate-200 pt-4",
+        collapsed ? "mt-4" : "mt-5",
+      )}
+    >
+      <p
+        className={clsx(
+          "mb-2 px-2 text-xs font-semibold text-slate-500 uppercase",
+          collapsed && "sr-only",
+        )}
+      >
+        {label}
+      </p>
+      <nav aria-label={ariaLabel} className="grid gap-1">
+        {navSections.map((section) => (
+          <AdminDesktopNavItem
+            key={section.id}
+            collapsed={collapsed}
+            isActive={activeSection === section.id}
+            section={section}
+          />
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+function AdminDesktopNavItem({
+  collapsed,
+  isActive,
+  section,
+}: {
+  collapsed: boolean;
+  isActive: boolean;
+  section: AdminNavSection;
+}) {
+  return (
+    <div
+      className={clsx(
+        "group flex items-center gap-2 rounded-md border text-sm transition",
+        isActive
+          ? "border-[#cfe0ff] bg-[#f4f8ff] shadow-[inset_3px_0_0_#0b63f6]"
+          : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950",
+      )}
+    >
+      <Link
+        href={section.href}
+        title={
+          collapsed ? section.label : `${section.label}: ${section.description}`
+        }
+        className={clsx(
+          "flex min-w-0 flex-1 items-center rounded-md py-2 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
+          collapsed ? "justify-center px-2" : "gap-2 px-3",
+        )}
+        aria-current={isActive ? "page" : undefined}
+      >
+        <span
+          className={clsx(
+            "flex size-6 shrink-0 items-center justify-center rounded-md",
+            isActive ? "text-[#0b63f6]" : "text-slate-500",
+          )}
+          aria-hidden="true"
+        >
+          <AdminIconGlyph icon={section.icon} />
+        </span>
+        <span className={clsx("min-w-0", collapsed && "hidden")}>
+          <span className="block font-semibold text-slate-950">
+            {section.label}
+          </span>
+          <span className="sr-only">
+            {": "}
+            {section.description}
+          </span>
+        </span>
+      </Link>
+    </div>
+  );
+}
+
+function AdminAccountBlock({
+  activeSection,
+  collapsed,
+  roleLabel,
+  userEmail,
+}: {
+  activeSection: AdminSection;
+  collapsed: boolean;
+  roleLabel: string | null;
+  userEmail?: string | null;
+}) {
+  return (
+    <div className="mt-auto border-t border-slate-200 pt-4">
+      <nav
+        aria-label="Account settings"
+        className={clsx("mb-3 grid gap-1", collapsed && "mb-4")}
+      >
+        {accountSections.map((section) => (
+          <AdminDesktopNavItem
+            key={section.id}
+            collapsed={collapsed}
+            isActive={activeSection === section.id}
+            section={section}
+          />
+        ))}
+      </nav>
+      {userEmail ? (
+        <div
+          className={clsx(
+            "mb-3 flex items-center gap-2 px-2",
+            collapsed && "justify-center",
+          )}
+        >
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-800">
+            {adminInitials(userEmail)}
+          </div>
+          <p
+            className={clsx(
+              "min-w-0 text-xs leading-4 text-slate-500",
+              collapsed && "hidden",
+            )}
+          >
+            Signed in as
+            <span className="block truncate text-sm font-medium text-slate-950">
+              {userEmail}
+            </span>
+            {roleLabel ? (
+              <span className="block truncate">{roleLabel}</span>
+            ) : null}
+          </p>
+        </div>
+      ) : null}
+      <form action={signOut}>
+        <button
+          type="submit"
+          title={collapsed ? "Sign out" : undefined}
+          className={clsx(
+            "flex w-full items-center rounded-md border border-slate-200 bg-white py-2.5 text-left text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
+            collapsed ? "justify-center px-2" : "gap-2 px-3",
+          )}
+        >
+          <span className="text-slate-700" aria-hidden="true">
+            <AdminIconGlyph icon="log-out" />
+          </span>
+          <span className={clsx(collapsed && "hidden")}>Sign out</span>
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function AdminShellContent({
+  actions,
+  children,
+  description,
+  eyebrow,
+  immersive,
+  title,
+}: {
+  actions?: ReactNode;
+  children: ReactNode;
+  description?: string;
+  eyebrow?: string;
+  immersive: boolean;
+  title: string;
+}) {
+  return (
+    <section
+      aria-labelledby="admin-shell-title"
+      className={clsx(
+        "min-w-0",
+        immersive ? "p-0" : "px-5 py-5 sm:px-8 xl:px-10",
+      )}
+    >
+      {immersive ? (
+        <h1 id="admin-shell-title" className="sr-only">
+          {title}
+        </h1>
+      ) : null}
+      {!immersive && (
+        <header className="mb-5">
+          {eyebrow ? (
+            <div className="mb-4 flex items-center gap-3 text-sm font-semibold text-[#0b63f6]">
+              <span>{eyebrow}</span>
+              <span className="text-slate-400" aria-hidden="true">
+                <AdminChevron />
+              </span>
+            </div>
+          ) : null}
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+            <div className="max-w-3xl">
+              <h1
+                id="admin-shell-title"
+                className="text-3xl font-semibold tracking-normal text-slate-950"
+              >
+                {title}
+              </h1>
+              {description ? (
+                <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
+                  {description}
+                </p>
+              ) : null}
+            </div>
+            {actions ? (
+              <div className="flex flex-wrap items-center gap-3">{actions}</div>
+            ) : null}
+          </div>
+        </header>
+      )}
+      {children}
+    </section>
+  );
+}
+
 export function AdminPageActionButton({
   label,
+  pendingLabel = "Working...",
   tone = "default",
   confirmMessage,
 }: {
   label: string;
+  pendingLabel?: string;
   tone?: "default" | "danger";
   confirmMessage?: string;
 }) {
@@ -457,7 +551,7 @@ export function AdminPageActionButton({
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const confirmedSubmitRef = useRef(false);
 
@@ -473,50 +567,32 @@ export function AdminPageActionButton({
         : null;
 
     const dialog = dialogRef.current;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        setIsConfirmOpen(false);
-        return;
-      }
-
-      if (event.key !== "Tab" || !dialog) return;
-
-      const focusableElements = getDialogFocusableElements(dialog);
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements.at(-1);
-
-      if (!firstElement || !lastElement) return;
-
-      if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
+    if (dialog && !dialog.open) {
+      dialog.showModal();
     }
 
-    dialog?.addEventListener("keydown", handleKeyDown);
     cancelButtonRef.current?.focus();
 
     return () => {
-      dialog?.removeEventListener("keydown", handleKeyDown);
+      if (dialog?.open) {
+        dialog.close();
+      }
       returnFocusRef.current?.focus();
       returnFocusRef.current = null;
     };
   }, [isConfirmOpen]);
 
   function closeConfirmDialog() {
+    if (pending) return;
     setIsConfirmOpen(false);
   }
 
   function submitConfirmedAction() {
     confirmedSubmitRef.current = true;
-    buttonRef.current?.click();
+    if (buttonRef.current?.form) {
+      buttonRef.current.form.requestSubmit(buttonRef.current);
+    }
     confirmedSubmitRef.current = false;
-    setIsConfirmOpen(false);
   }
 
   return (
@@ -525,6 +601,7 @@ export function AdminPageActionButton({
         ref={buttonRef}
         type="submit"
         disabled={pending}
+        aria-busy={pending ? "true" : undefined}
         onClick={(event) => {
           if (confirmMessage && !confirmedSubmitRef.current) {
             event.preventDefault();
@@ -538,63 +615,65 @@ export function AdminPageActionButton({
             : "text-slate-700 hover:bg-slate-50 hover:text-slate-950",
         )}
       >
-        {pending ? "Working..." : label}
+        {pending ? pendingLabel : label}
       </button>
       {isConfirmOpen &&
         createPortal(
-          <div
+          <dialog
             ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
             aria-labelledby={confirmTitleId}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4 py-6"
+            className="fixed inset-0 z-[100] m-0 h-full max-h-none w-full max-w-none bg-transparent p-0 backdrop:bg-slate-950/35"
+            onCancel={(event) => {
+              if (pending) {
+                event.preventDefault();
+                return;
+              }
+              setIsConfirmOpen(false);
+            }}
           >
-            <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
-              <h2
-                id={confirmTitleId}
-                className="text-base font-semibold text-slate-950"
-              >
-                {confirmTitle}
-              </h2>
-              <p className="mt-3 text-sm leading-6 whitespace-pre-line text-slate-600">
-                {confirmMessage}
-              </p>
-              <div className="mt-5 flex justify-end gap-2">
-                <button
-                  ref={cancelButtonRef}
-                  type="button"
-                  className="inline-flex min-h-10 items-center rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-                  onClick={closeConfirmDialog}
+            <div className="flex min-h-full items-center justify-center px-4 py-6">
+              <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
+                <h2
+                  id={confirmTitleId}
+                  className="text-base font-semibold text-slate-950"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className={clsx(
-                    "inline-flex min-h-10 items-center rounded-md px-4 text-sm font-semibold text-white shadow-sm transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
-                    tone === "danger"
-                      ? "bg-red-600 hover:bg-red-700"
-                      : "bg-[#0b63f6] hover:bg-[#0756d6]",
-                  )}
-                  onClick={submitConfirmedAction}
-                >
-                  Confirm
-                </button>
+                  {confirmTitle}
+                </h2>
+                <p className="mt-3 text-sm leading-6 whitespace-pre-line text-slate-600">
+                  {confirmMessage}
+                </p>
+                <div className="mt-5 flex justify-end gap-2">
+                  <button
+                    ref={cancelButtonRef}
+                    type="button"
+                    disabled={pending}
+                    className="inline-flex min-h-10 items-center rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+                    onClick={closeConfirmDialog}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    aria-busy={pending ? "true" : undefined}
+                    className={clsx(
+                      "inline-flex min-h-10 items-center rounded-md px-4 text-sm font-semibold text-white shadow-sm transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70",
+                      tone === "danger"
+                        ? "bg-red-600 hover:bg-red-700"
+                        : "bg-[#0b63f6] hover:bg-[#0756d6]",
+                    )}
+                    onClick={submitConfirmedAction}
+                  >
+                    {pending ? pendingLabel : "Confirm"}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>,
+          </dialog>,
           document.body,
         )}
     </>
   );
-}
-
-function getDialogFocusableElements(root: HTMLElement) {
-  return Array.from(
-    root.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
-    ),
-  ).filter((element) => element.offsetParent !== null);
 }
 
 function adminInitials(email: string) {
@@ -668,20 +747,10 @@ function AdminChevron() {
 }
 
 function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
-  const common = {
-    fill: "none",
-    viewBox: "0 0 24 24",
-    stroke: "currentColor",
-    strokeWidth: 1.8,
-    className: "size-5",
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-  };
-
   switch (icon) {
     case "archive":
       return (
-        <svg {...common}>
+        <svg {...adminIconGlyphCommonProps}>
           <path d="M4 7h16" />
           <path d="M6 7v11h12V7" />
           <path d="M9 11h6" />
@@ -690,7 +759,7 @@ function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
       );
     case "book":
       return (
-        <svg {...common}>
+        <svg {...adminIconGlyphCommonProps}>
           <path d="M6 4h10a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2V4Z" />
           <path d="M9 8h6" />
           <path d="M9 12h5" />
@@ -698,7 +767,7 @@ function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
       );
     case "file":
       return (
-        <svg {...common}>
+        <svg {...adminIconGlyphCommonProps}>
           <path d="M7 3h7l4 4v14H7V3Z" />
           <path d="M14 3v5h5" />
           <path d="M10 12h5" />
@@ -707,7 +776,7 @@ function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
       );
     case "image":
       return (
-        <svg {...common}>
+        <svg {...adminIconGlyphCommonProps}>
           <path d="M4 5h16v14H4V5Z" />
           <path d="m5 17 5-5 4 4 2-2 3 3" />
           <path d="M15 9h.01" />
@@ -715,7 +784,7 @@ function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
       );
     case "layers":
       return (
-        <svg {...common}>
+        <svg {...adminIconGlyphCommonProps}>
           <path d="m12 3 9 5-9 5-9-5 9-5Z" />
           <path d="m3 12 9 5 9-5" />
           <path d="m3 16 9 5 9-5" />
@@ -723,7 +792,7 @@ function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
       );
     case "settings":
       return (
-        <svg {...common}>
+        <svg {...adminIconGlyphCommonProps}>
           <circle cx="12" cy="12" r="3.25" />
           <path d="M12 2v2.5" />
           <path d="M12 19.5V22" />
@@ -737,7 +806,7 @@ function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
       );
     case "log-out":
       return (
-        <svg {...common}>
+        <svg {...adminIconGlyphCommonProps}>
           <path d="M10 17H5V7h5" />
           <path d="M14 8l4 4-4 4" />
           <path d="M18 12H9" />
@@ -745,14 +814,14 @@ function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
       );
     case "shield":
       return (
-        <svg {...common}>
+        <svg {...adminIconGlyphCommonProps}>
           <path d="M12 3 19 6v5c0 4-2.5 7-7 10-4.5-3-7-6-7-10V6l7-3Z" />
           <path d="m9.5 12 1.8 1.8 3.7-4" />
         </svg>
       );
     case "target":
       return (
-        <svg {...common}>
+        <svg {...adminIconGlyphCommonProps}>
           <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
           <path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" />
           <path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
