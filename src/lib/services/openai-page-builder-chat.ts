@@ -10,6 +10,7 @@ import {
   type PageBuilderAiChatResponse,
 } from "@/lib/page-builder/ai-chat";
 import { toCerebrasJsonSchema } from "@/lib/page-builder/cerebras-json-schema";
+import { defaultSeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
 import type { SeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
 
 type FetchLike = (
@@ -53,7 +54,7 @@ export async function generateOpenAiPageBuilderChatResponse(
   request: PageBuilderAiChatRequest,
   options: OpenAiPageBuilderChatOptions = {},
 ): Promise<PageBuilderAiChatResponse> {
-  const provider = options.provider ?? "openai";
+  const provider = options.provider ?? defaultSeoAgentProvider;
   const apiKey =
     provider === "cerebras"
       ? options.cerebrasApiKey !== undefined

@@ -1,4 +1,5 @@
 import { pageBuilderAiChatRequestSchema } from "@/lib/page-builder/ai-chat";
+import { defaultSeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
 import type { SeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
 import {
   PageBuilderAiConfigurationError,
@@ -88,7 +89,7 @@ function parseProvider(body: unknown): SeoAgentProvider {
   ) {
     return (body as { provider: SeoAgentProvider }).provider;
   }
-  return "openai";
+  return defaultSeoAgentProvider;
 }
 
 function bodyWithoutProvider(body: unknown) {

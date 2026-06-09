@@ -48,7 +48,10 @@ import {
   type SeoReadinessFinding,
   type SeoReadinessStatus,
 } from "@/lib/page-builder/seo-readiness";
-import type { SeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
+import {
+  defaultSeoAgentProvider,
+  type SeoAgentProvider,
+} from "@/lib/page-builder/seo-agent-provider";
 import { parseStructuredDataSettings } from "@/lib/page-builder/structured-data-settings";
 import {
   applyInternalLinkSuggestion,
@@ -219,8 +222,9 @@ export function useSeoPageEditorController(
     useState<PageAiProposalResult>(initialAiProposalState);
   const [aiInsertResult, setAiInsertResult] =
     useState<PageAiProposalInsertResult>(initialAiInsertState);
-  const [aiAgentProvider, setAiAgentProvider] =
-    useState<SeoAgentProvider>("openai");
+  const [aiAgentProvider, setAiAgentProvider] = useState<SeoAgentProvider>(
+    defaultSeoAgentProvider,
+  );
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [isAiInserting, setIsAiInserting] = useState(false);
   const [isPreviewOpening, setIsPreviewOpening] = useState(false);

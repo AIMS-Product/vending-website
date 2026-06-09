@@ -14,6 +14,7 @@ import {
   type PageBlock,
 } from "@/lib/page-builder/blocks";
 import { toCerebrasJsonSchema } from "@/lib/page-builder/cerebras-json-schema";
+import { defaultSeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
 import type { SeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
@@ -131,7 +132,7 @@ export async function adminGenerateOpenAiSeoPageProposal(
   const client = options.client ?? createAdminClient();
   const page = await loadSeoAgentPage(client, pageId);
   const sourceBundle = await loadApprovedSourceBundle(client, page);
-  const provider = options.provider ?? "openai";
+  const provider = options.provider ?? defaultSeoAgentProvider;
   const model =
     options.model ??
     (provider === "cerebras"
@@ -180,7 +181,7 @@ export async function generateOpenAiSeoProposalFromSources(
   input: GenerateOpenAiSeoProposalInput,
   deps: { apiKey?: string; cerebrasApiKey?: string; fetchFn?: FetchLike } = {},
 ): Promise<AiPageProposal> {
-  const provider = input.provider ?? "openai";
+  const provider = input.provider ?? defaultSeoAgentProvider;
   const apiKey =
     provider === "cerebras"
       ? deps.cerebrasApiKey !== undefined

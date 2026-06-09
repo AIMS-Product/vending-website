@@ -34,6 +34,19 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+type SeoPagesListState = ReturnType<typeof buildSeoPageListState>;
+type SeoPageWorkflowView = SeoPagesListState["view"];
+
+const workflowFilters: Array<{ value: SeoPageWorkflowView; label: string }> = [
+  { value: "all", label: "All metadata" },
+  { value: "needs-review", label: "Needs review" },
+  { value: "updating", label: "Updating" },
+  { value: "orphaned", label: "Needs links" },
+  { value: "metadata-issues", label: "Metadata issues" },
+  { value: "scheduled", label: "Scheduled" },
+  { value: "schedule-failed", label: "Schedule failed" },
+];
+
 export default async function AdminPagesPage({
   searchParams,
 }: {
@@ -46,22 +59,7 @@ export default async function AdminPagesPage({
   const listParams = parseSeoPageListParams(params);
 
   const allPages = await adminListSeoPages();
-  const {
-    status: active,
-    view: activeView,
-    q: searchQuery,
-    sort,
-    perPage: pageSize,
-    pageCounts,
-    filteredPages,
-    visiblePages,
-    totalPages,
-    currentPage,
-    paginationPages,
-    showRowsPerPage,
-    resultRangeLabel,
-    returnTo,
-  } = buildSeoPageListState(allPages, listParams);
+  const listState = buildSeoPageListState(allPages, listParams);
 
   return (
     <AdminShell
@@ -70,406 +68,515 @@ export default async function AdminPagesPage({
       description="Manage structured SEO pages with the same CMS shell ready for resource content."
       userEmail={user.email}
       userRole={role}
-      actions={
-        <div className="flex w-full flex-wrap gap-2">
-          <Link
-            href="/admin/pages/new"
-            className={`${adminPrimaryButtonClass} w-full`}
-          >
-            <span aria-hidden="true">
-              <PageIcon icon="plus" />
-            </span>
-            Create page
-          </Link>
-        </div>
-      }
+      actions={<AdminPagesActions />}
     >
-      <section
-        className="mb-5 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
-        aria-label="SEO page summary"
-      >
-        <div className="grid divide-y divide-slate-200 md:grid-cols-4 md:divide-x md:divide-y-0">
-          <MetricPanel
-            icon="file"
-            tone="blue"
-            label="All"
-            value={pageCounts.active}
-            caption="drafts + published"
-            href={adminPagesHref({
-              status: "active",
-              view: activeView,
-              q: searchQuery,
-              sort,
-              perPage: pageSize,
-            })}
-            active={active === "active"}
-          />
-          <MetricPanel
-            icon="pencil"
-            tone="amber"
-            label="Drafts"
-            value={pageCounts.draft}
-            caption="needs work"
-            href={adminPagesHref({
-              status: "draft",
-              view: activeView,
-              q: searchQuery,
-              sort,
-              perPage: pageSize,
-            })}
-            active={active === "draft"}
-          />
-          <MetricPanel
-            icon="check"
-            tone="green"
-            label="Published"
-            value={pageCounts.published}
-            caption="publicly visible"
-            href={adminPagesHref({
-              status: "published",
-              view: activeView,
-              q: searchQuery,
-              sort,
-              perPage: pageSize,
-            })}
-            active={active === "published"}
-          />
-          <MetricPanel
-            icon="archive"
-            tone="slate"
-            label="Archived"
-            value={pageCounts.archived}
-            caption="retired"
-            href={adminPagesHref({
-              status: "archived",
-              view: activeView,
-              q: searchQuery,
-              sort,
-              perPage: pageSize,
-            })}
-            active={active === "archived"}
-          />
-        </div>
-      </section>
-
-      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 bg-white p-4 sm:p-5">
-          <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center">
-              <form
-                action="/admin/pages"
-                method="get"
-                className="flex h-12 w-full items-center gap-3 rounded-md border border-slate-200 bg-white px-4 shadow-sm lg:w-[26rem] lg:shrink-0"
-              >
-                <span className="text-slate-500" aria-hidden="true">
-                  <PageIcon icon="search" />
-                </span>
-                <label className="sr-only" htmlFor="admin-pages-search">
-                  Search SEO pages
-                </label>
-                <input
-                  id="admin-pages-search"
-                  name="q"
-                  aria-label="Search SEO pages"
-                  defaultValue={searchQuery}
-                  placeholder="Search title, keyword, or URL"
-                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-500"
-                />
-                {active !== "active" ? (
-                  <input type="hidden" name="status" value={active} />
-                ) : null}
-                {activeView !== "all" ? (
-                  <input type="hidden" name="view" value={activeView} />
-                ) : null}
-                {sort !== "updated-desc" ? (
-                  <input type="hidden" name="sort" value={sort} />
-                ) : null}
-                {pageSize !== defaultSeoPageSize ? (
-                  <input type="hidden" name="perPage" value={pageSize} />
-                ) : null}
-                {searchQuery ? (
-                  <Link
-                    href={adminPagesHref({
-                      status: active,
-                      view: activeView,
-                      sort,
-                      perPage: pageSize,
-                    })}
-                    className="rounded px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-                  >
-                    Clear
-                  </Link>
-                ) : null}
-                <button
-                  type="submit"
-                  className="rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-                >
-                  Search
-                </button>
-              </form>
-
-              <nav
-                className="inline-flex min-h-12 max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-md border border-slate-200 bg-white p-1 shadow-sm"
-                aria-label="Page status filters"
-              >
-                {seoPageFilters.map((filter) => (
-                  <Link
-                    key={filter.value}
-                    href={adminPagesHref({
-                      status: filter.value,
-                      view: activeView,
-                      q: searchQuery,
-                      sort,
-                      perPage: pageSize,
-                    })}
-                    aria-current={active === filter.value ? "page" : undefined}
-                    className={`shrink-0 rounded-md px-4 py-2 text-sm font-semibold whitespace-nowrap transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
-                      active === filter.value
-                        ? "bg-[#f4f8ff] text-[#0b63f6] shadow-sm"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
-                    }`}
-                  >
-                    {filter.label}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-
-            <details className="group relative w-full sm:w-auto">
-              <summary className="flex h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none sm:justify-start">
-                {seoPageSortLabels[sort]}
-                <span
-                  className="text-slate-500 transition group-open:rotate-180"
-                  aria-hidden="true"
-                >
-                  <PageChevron />
-                </span>
-              </summary>
-              <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-md border border-slate-200 bg-white p-1 shadow-lg">
-                {Object.entries(seoPageSortLabels).map(([value, label]) => (
-                  <Link
-                    key={value}
-                    href={adminPagesHref({
-                      status: active,
-                      view: activeView,
-                      q: searchQuery,
-                      sort: value as keyof typeof seoPageSortLabels,
-                      perPage: pageSize,
-                    })}
-                    className="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-                    aria-current={sort === value ? "page" : undefined}
-                  >
-                    {label}
-                  </Link>
-                ))}
-              </div>
-            </details>
-          </div>
-          <nav
-            className="mt-4 flex max-w-full flex-wrap gap-2"
-            aria-label="Workflow filters"
-          >
-            {[
-              ["all", "All metadata"],
-              ["needs-review", "Needs review"],
-              ["updating", "Updating"],
-              ["orphaned", "Needs links"],
-              ["metadata-issues", "Metadata issues"],
-              ["scheduled", "Scheduled"],
-              ["schedule-failed", "Schedule failed"],
-            ].map(([view, label]) => (
-              <Link
-                key={view}
-                href={adminPagesHref({
-                  status: active,
-                  view: view as typeof activeView,
-                  q: searchQuery,
-                  sort,
-                  perPage: pageSize,
-                })}
-                aria-current={activeView === view ? "page" : undefined}
-                className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
-                  activeView === view
-                    ? "border-[#0b63f6] bg-[#f4f8ff] text-[#0b63f6]"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950"
-                }`}
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
-          <p className="mt-3 text-sm text-slate-600">
-            Showing {filteredPages.length} SEO{" "}
-            {filteredPages.length === 1 ? "page" : "pages"}
-            {active === "active" ? " in active pages" : ""}
-          </p>
-        </div>
-        {visiblePages.length === 0 ? (
-          <div className="p-10 text-center">
-            <h2 className="text-lg font-semibold text-slate-950">
-              {searchQuery ? "No matching SEO pages" : "No SEO pages found"}
-            </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              {searchQuery
-                ? "Clear the search or change the status tab to broaden the list."
-                : "Create a new SEO page draft to start building content."}
-            </p>
-            <div className="mt-5 flex w-full justify-center gap-3">
-              {searchQuery ? (
-                <Link
-                  href={adminPagesHref({
-                    status: active,
-                    view: activeView,
-                    sort,
-                    perPage: pageSize,
-                  })}
-                  className={adminSecondaryButtonClass}
-                >
-                  Clear search
-                </Link>
-              ) : null}
-              <Link
-                href="/admin/pages/new"
-                className={`${adminPrimaryButtonClass} w-full`}
-              >
-                <span aria-hidden="true">
-                  <PageIcon icon="plus" />
-                </span>
-                Create page
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-3 p-4 md:hidden">
-              {visiblePages.map((page) => (
-                <PageMobileCard key={page.id} page={page} returnTo={returnTo} />
-              ))}
-            </div>
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[760px] table-fixed border-collapse text-left text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
-                  <tr>
-                    <th className="w-[50%] px-7 py-3">Title</th>
-                    <th className="w-[22%] px-5 py-3">Keyword</th>
-                    <th className="w-[12%] px-5 py-3 text-center">Readiness</th>
-                    <th className="w-[8%] px-5 py-3 text-center">Status</th>
-                    <th className="w-[8%] px-5 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {visiblePages.map((page) => (
-                    <PageRow key={page.id} page={page} returnTo={returnTo} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-
-        <div className="flex flex-col gap-4 border-t border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-600 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-            {totalPages > 1 ? <p>{resultRangeLabel}</p> : null}
-            {showRowsPerPage ? (
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-slate-500">
-                  Rows per page
-                </span>
-                <nav
-                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm"
-                  aria-label="Rows per page"
-                >
-                  {seoPageSizeOptions.map((option) => (
-                    <Link
-                      key={option}
-                      href={adminPagesHref({
-                        status: active,
-                        view: activeView,
-                        q: searchQuery,
-                        sort,
-                        perPage: option,
-                      })}
-                      aria-current={pageSize === option ? "page" : undefined}
-                      className={`flex h-8 min-w-9 items-center justify-center rounded-md px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
-                        pageSize === option
-                          ? "bg-[#f4f8ff] text-[#0b63f6] shadow-sm"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
-                      }`}
-                    >
-                      {option}
-                    </Link>
-                  ))}
-                </nav>
-              </div>
-            ) : null}
-          </div>
-          <div className="flex items-center justify-between gap-5 sm:justify-end">
-            <div className="hidden items-center gap-5 sm:flex">
-              <span className="inline-flex items-center gap-2">
-                <span className="size-2 rounded-full bg-emerald-500" />
-                {pageCounts.published} published
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <span className="size-2 rounded-full bg-amber-400" />
-                {pageCounts.draft} drafts
-              </span>
-            </div>
-            {totalPages > 1 ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-slate-500">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <nav
-                  className="flex items-center gap-2"
-                  aria-label="Pagination"
-                >
-                  <PaginationLink
-                    label="Previous page"
-                    disabled={currentPage <= 1}
-                    href={adminPagesHref({
-                      status: active,
-                      view: activeView,
-                      q: searchQuery,
-                      sort,
-                      page: currentPage - 1,
-                      perPage: pageSize,
-                    })}
-                  />
-                  {paginationPages.map((pageNumber) => (
-                    <PaginationNumber
-                      key={pageNumber}
-                      pageNumber={pageNumber}
-                      current={pageNumber === currentPage}
-                      href={adminPagesHref({
-                        status: active,
-                        view: activeView,
-                        q: searchQuery,
-                        sort,
-                        page: pageNumber,
-                        perPage: pageSize,
-                      })}
-                    />
-                  ))}
-                  <PaginationLink
-                    label="Next page"
-                    disabled={currentPage >= totalPages}
-                    href={adminPagesHref({
-                      status: active,
-                      view: activeView,
-                      q: searchQuery,
-                      sort,
-                      page: currentPage + 1,
-                      perPage: pageSize,
-                    })}
-                    next
-                  />
-                </nav>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </section>
+      <SeoPagesAdminSurface state={listState} />
     </AdminShell>
+  );
+}
+
+function AdminPagesActions() {
+  return (
+    <div className="flex w-full flex-wrap gap-2">
+      <Link
+        href="/admin/pages/new"
+        className={`${adminPrimaryButtonClass} w-full`}
+      >
+        <span aria-hidden="true">
+          <PageIcon icon="plus" />
+        </span>
+        Create page
+      </Link>
+    </div>
+  );
+}
+
+function SeoPagesAdminSurface({ state }: { state: SeoPagesListState }) {
+  return (
+    <>
+      <SeoPagesSummary state={state} />
+      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <SeoPagesToolbar state={state} />
+        <SeoPagesResults state={state} />
+        <SeoPagesFooter state={state} />
+      </section>
+    </>
+  );
+}
+
+function SeoPagesSummary({ state }: { state: SeoPagesListState }) {
+  const { pageCounts, perPage, q: searchQuery, sort, status, view } = state;
+
+  return (
+    <section
+      className="mb-5 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+      aria-label="SEO page summary"
+    >
+      <div className="grid divide-y divide-slate-200 md:grid-cols-4 md:divide-x md:divide-y-0">
+        <MetricPanel
+          icon="file"
+          tone="blue"
+          label="All"
+          value={pageCounts.active}
+          caption="drafts + published"
+          href={adminPagesHref({
+            status: "active",
+            view,
+            q: searchQuery,
+            sort,
+            perPage,
+          })}
+          active={status === "active"}
+        />
+        <MetricPanel
+          icon="pencil"
+          tone="amber"
+          label="Drafts"
+          value={pageCounts.draft}
+          caption="needs work"
+          href={adminPagesHref({
+            status: "draft",
+            view,
+            q: searchQuery,
+            sort,
+            perPage,
+          })}
+          active={status === "draft"}
+        />
+        <MetricPanel
+          icon="check"
+          tone="green"
+          label="Published"
+          value={pageCounts.published}
+          caption="publicly visible"
+          href={adminPagesHref({
+            status: "published",
+            view,
+            q: searchQuery,
+            sort,
+            perPage,
+          })}
+          active={status === "published"}
+        />
+        <MetricPanel
+          icon="archive"
+          tone="slate"
+          label="Archived"
+          value={pageCounts.archived}
+          caption="retired"
+          href={adminPagesHref({
+            status: "archived",
+            view,
+            q: searchQuery,
+            sort,
+            perPage,
+          })}
+          active={status === "archived"}
+        />
+      </div>
+    </section>
+  );
+}
+
+function SeoPagesToolbar({ state }: { state: SeoPagesListState }) {
+  return (
+    <div className="border-b border-slate-200 bg-white p-4 sm:p-5">
+      <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center">
+          <SeoPagesSearchForm state={state} />
+          <SeoPagesStatusFilters state={state} />
+        </div>
+        <SeoPagesSortMenu state={state} />
+      </div>
+      <SeoPagesWorkflowFilters state={state} />
+      <SeoPagesResultCount state={state} />
+    </div>
+  );
+}
+
+function SeoPagesSearchForm({ state }: { state: SeoPagesListState }) {
+  const { perPage, q: searchQuery, sort, status, view } = state;
+
+  return (
+    <form
+      action="/admin/pages"
+      method="get"
+      className="flex h-12 w-full items-center gap-3 rounded-md border border-slate-200 bg-white px-4 shadow-sm lg:w-[26rem] lg:shrink-0"
+    >
+      <span className="text-slate-500" aria-hidden="true">
+        <PageIcon icon="search" />
+      </span>
+      <label className="sr-only" htmlFor="admin-pages-search">
+        Search SEO pages
+      </label>
+      <input
+        id="admin-pages-search"
+        name="q"
+        aria-label="Search SEO pages"
+        defaultValue={searchQuery}
+        placeholder="Search title, keyword, or URL"
+        className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-500"
+      />
+      {status !== "active" ? (
+        <input type="hidden" name="status" value={status} />
+      ) : null}
+      {view !== "all" ? <input type="hidden" name="view" value={view} /> : null}
+      {sort !== "updated-desc" ? (
+        <input type="hidden" name="sort" value={sort} />
+      ) : null}
+      {perPage !== defaultSeoPageSize ? (
+        <input type="hidden" name="perPage" value={perPage} />
+      ) : null}
+      {searchQuery ? (
+        <Link
+          href={adminPagesHref({
+            status,
+            view,
+            sort,
+            perPage,
+          })}
+          className="rounded px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+        >
+          Clear
+        </Link>
+      ) : null}
+      <button
+        type="submit"
+        className="rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+      >
+        Search
+      </button>
+    </form>
+  );
+}
+
+function SeoPagesStatusFilters({ state }: { state: SeoPagesListState }) {
+  const { perPage, q: searchQuery, sort, status, view } = state;
+
+  return (
+    <nav
+      className="inline-flex min-h-12 max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-md border border-slate-200 bg-white p-1 shadow-sm"
+      aria-label="Page status filters"
+    >
+      {seoPageFilters.map((filter) => (
+        <Link
+          key={filter.value}
+          href={adminPagesHref({
+            status: filter.value,
+            view,
+            q: searchQuery,
+            sort,
+            perPage,
+          })}
+          aria-current={status === filter.value ? "page" : undefined}
+          className={`shrink-0 rounded-md px-4 py-2 text-sm font-semibold whitespace-nowrap transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+            status === filter.value
+              ? "bg-[#f4f8ff] text-[#0b63f6] shadow-sm"
+              : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+          }`}
+        >
+          {filter.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+function SeoPagesSortMenu({ state }: { state: SeoPagesListState }) {
+  const { perPage, q: searchQuery, sort, status, view } = state;
+
+  return (
+    <details className="group relative w-full sm:w-auto">
+      <summary className="flex h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none sm:justify-start">
+        {seoPageSortLabels[sort]}
+        <span
+          className="text-slate-500 transition group-open:rotate-180"
+          aria-hidden="true"
+        >
+          <PageChevron />
+        </span>
+      </summary>
+      <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+        {Object.entries(seoPageSortLabels).map(([value, label]) => (
+          <Link
+            key={value}
+            href={adminPagesHref({
+              status,
+              view,
+              q: searchQuery,
+              sort: value as keyof typeof seoPageSortLabels,
+              perPage,
+            })}
+            className="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+            aria-current={sort === value ? "page" : undefined}
+          >
+            {label}
+          </Link>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function SeoPagesWorkflowFilters({ state }: { state: SeoPagesListState }) {
+  const { perPage, q: searchQuery, sort, status, view: activeView } = state;
+
+  return (
+    <nav
+      className="mt-4 flex max-w-full flex-wrap gap-2"
+      aria-label="Workflow filters"
+    >
+      {workflowFilters.map((filter) => (
+        <Link
+          key={filter.value}
+          href={adminPagesHref({
+            status,
+            view: filter.value,
+            q: searchQuery,
+            sort,
+            perPage,
+          })}
+          aria-current={activeView === filter.value ? "page" : undefined}
+          className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+            activeView === filter.value
+              ? "border-[#0b63f6] bg-[#f4f8ff] text-[#0b63f6]"
+              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+          }`}
+        >
+          {filter.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+function SeoPagesResultCount({ state }: { state: SeoPagesListState }) {
+  const { filteredPages, status } = state;
+
+  return (
+    <p className="mt-3 text-sm text-slate-600">
+      Showing {filteredPages.length} SEO{" "}
+      {filteredPages.length === 1 ? "page" : "pages"}
+      {status === "active" ? " in active pages" : ""}
+    </p>
+  );
+}
+
+function SeoPagesResults({ state }: { state: SeoPagesListState }) {
+  if (state.visiblePages.length === 0) {
+    return <SeoPagesEmptyState state={state} />;
+  }
+
+  return (
+    <>
+      <div className="grid gap-3 p-4 md:hidden">
+        {state.visiblePages.map((page) => (
+          <PageMobileCard key={page.id} page={page} returnTo={state.returnTo} />
+        ))}
+      </div>
+      <SeoPagesDesktopTable
+        pages={state.visiblePages}
+        returnTo={state.returnTo}
+      />
+    </>
+  );
+}
+
+function SeoPagesEmptyState({ state }: { state: SeoPagesListState }) {
+  const { perPage, q: searchQuery, sort, status, view } = state;
+
+  return (
+    <div className="p-10 text-center">
+      <h2 className="text-lg font-semibold text-slate-950">
+        {searchQuery ? "No matching SEO pages" : "No SEO pages found"}
+      </h2>
+      <p className="mt-2 text-sm text-slate-600">
+        {searchQuery
+          ? "Clear the search or change the status tab to broaden the list."
+          : "Create a new SEO page draft to start building content."}
+      </p>
+      <div className="mt-5 flex w-full justify-center gap-3">
+        {searchQuery ? (
+          <Link
+            href={adminPagesHref({
+              status,
+              view,
+              sort,
+              perPage,
+            })}
+            className={adminSecondaryButtonClass}
+          >
+            Clear search
+          </Link>
+        ) : null}
+        <Link
+          href="/admin/pages/new"
+          className={`${adminPrimaryButtonClass} w-full`}
+        >
+          <span aria-hidden="true">
+            <PageIcon icon="plus" />
+          </span>
+          Create page
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function SeoPagesDesktopTable({
+  pages,
+  returnTo,
+}: {
+  pages: Tables<"seo_pages">[];
+  returnTo: string;
+}) {
+  return (
+    <div className="hidden min-h-[28rem] overflow-x-auto md:block">
+      <table className="w-full min-w-[880px] table-fixed border-collapse text-left text-sm">
+        <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
+          <tr>
+            <th className="w-[44%] px-7 py-4">Title</th>
+            <th className="w-[22%] px-5 py-4">Keyword</th>
+            <th className="w-[12%] px-5 py-4 text-center">Readiness</th>
+            <th className="w-[10%] px-5 py-4 text-center">Status</th>
+            <th className="w-[12%] px-5 py-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-200">
+          {pages.map((page) => (
+            <PageRow key={page.id} page={page} returnTo={returnTo} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SeoPagesFooter({ state }: { state: SeoPagesListState }) {
+  return (
+    <div className="flex flex-col gap-4 border-t border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-600 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
+        {state.totalPages > 1 ? <p>{state.resultRangeLabel}</p> : null}
+        {state.showRowsPerPage ? <RowsPerPageControl state={state} /> : null}
+      </div>
+      <div className="flex items-center justify-between gap-5 sm:justify-end">
+        <SeoPagesFooterCounts state={state} />
+        {state.totalPages > 1 ? <SeoPagesPagination state={state} /> : null}
+      </div>
+    </div>
+  );
+}
+
+function RowsPerPageControl({ state }: { state: SeoPagesListState }) {
+  const { perPage, q: searchQuery, sort, status, view } = state;
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="font-medium text-slate-500">Rows per page</span>
+      <nav
+        className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm"
+        aria-label="Rows per page"
+      >
+        {seoPageSizeOptions.map((option) => (
+          <Link
+            key={option}
+            href={adminPagesHref({
+              status,
+              view,
+              q: searchQuery,
+              sort,
+              perPage: option,
+            })}
+            aria-current={perPage === option ? "page" : undefined}
+            className={`flex h-8 min-w-9 items-center justify-center rounded-md px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+              perPage === option
+                ? "bg-[#f4f8ff] text-[#0b63f6] shadow-sm"
+                : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+            }`}
+          >
+            {option}
+          </Link>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+function SeoPagesFooterCounts({ state }: { state: SeoPagesListState }) {
+  return (
+    <div className="hidden items-center gap-5 sm:flex">
+      <span className="inline-flex items-center gap-2">
+        <span className="size-2 rounded-full bg-emerald-500" />
+        {state.pageCounts.published} published
+      </span>
+      <span className="inline-flex items-center gap-2">
+        <span className="size-2 rounded-full bg-amber-400" />
+        {state.pageCounts.draft} drafts
+      </span>
+    </div>
+  );
+}
+
+function SeoPagesPagination({ state }: { state: SeoPagesListState }) {
+  const {
+    currentPage,
+    paginationPages,
+    perPage,
+    q: searchQuery,
+    sort,
+    status,
+    totalPages,
+    view,
+  } = state;
+
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-sm font-medium text-slate-500">
+        Page {currentPage} of {totalPages}
+      </span>
+      <nav className="flex items-center gap-2" aria-label="Pagination">
+        <PaginationLink
+          label="Previous page"
+          disabled={currentPage <= 1}
+          href={adminPagesHref({
+            status,
+            view,
+            q: searchQuery,
+            sort,
+            page: currentPage - 1,
+            perPage,
+          })}
+        />
+        {paginationPages.map((pageNumber) => (
+          <PaginationNumber
+            key={pageNumber}
+            pageNumber={pageNumber}
+            current={pageNumber === currentPage}
+            href={adminPagesHref({
+              status,
+              view,
+              q: searchQuery,
+              sort,
+              page: pageNumber,
+              perPage,
+            })}
+          />
+        ))}
+        <PaginationLink
+          label="Next page"
+          disabled={currentPage >= totalPages}
+          href={adminPagesHref({
+            status,
+            view,
+            q: searchQuery,
+            sort,
+            page: currentPage + 1,
+            perPage,
+          })}
+          next
+        />
+      </nav>
+    </div>
   );
 }
 
@@ -537,8 +644,8 @@ function PageRow({
   });
 
   return (
-    <tr className="align-middle transition focus-within:bg-slate-50 hover:bg-slate-50 [&:has(details[open])]:bg-[#f8fbff]">
-      <td className="border-l-4 border-transparent px-7 py-3">
+    <tr className="align-middle transition focus-within:bg-slate-50 hover:bg-slate-50 [&:has(details[open])]:relative [&:has(details[open])]:z-20 [&:has(details[open])]:bg-[#f8fbff]">
+      <td className="border-l-4 border-transparent px-7 py-4">
         <Link
           href={`/admin/pages/${page.id}`}
           className="block truncate font-semibold text-[#0b63f6] underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
@@ -553,22 +660,22 @@ function PageRow({
           {page.route_path}
         </p>
       </td>
-      <td className="px-5 py-3 break-words text-slate-700">
+      <td className="px-5 py-4 break-words text-slate-700">
         {page.target_keyword || "-"}
       </td>
-      <td className="px-5 py-3 text-center">
+      <td className="px-5 py-4 text-center">
         <StatusDot
           label={`SEO readiness: ${readiness.label}`}
           tone={readinessDotTone(readiness.status)}
         />
       </td>
-      <td className="px-5 py-3 text-center">
+      <td className="px-5 py-4 text-center">
         <StatusDot
           label={`Page status: ${formatStatus(page.status)}`}
           tone={statusDotTone(page.status)}
         />
       </td>
-      <td className="px-5 py-3 text-right">
+      <td className="px-5 py-4 text-right">
         <PageActionsMenu page={page} returnTo={returnTo} />
       </td>
     </tr>
@@ -661,9 +768,7 @@ function PageActionsMenu({
       ? "inline-flex size-10 cursor-pointer list-none items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition group-open:bg-[#eef5ff] group-open:text-[#0b63f6] hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
       : "inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-md text-slate-700 transition group-open:bg-[#eef5ff] group-open:text-[#0b63f6] hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden";
   const menuClass =
-    variant === "card"
-      ? "absolute top-full right-0 z-30 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white p-1 text-left shadow-lg"
-      : "absolute top-1/2 right-full z-30 mr-2 w-52 -translate-y-1/2 overflow-hidden rounded-md border border-slate-200 bg-white p-1 text-left shadow-lg";
+    "absolute top-full right-0 z-30 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white p-1 text-left shadow-lg";
 
   return (
     <details className="group relative inline-block shrink-0 text-left">
@@ -696,6 +801,7 @@ function PageActionsMenu({
           pageId={page.id}
           returnTo={returnTo}
           label="Duplicate page"
+          pendingLabel="Duplicating page..."
           confirmMessage={`Duplicate "${page.title}" as a draft? The copy will use a temporary draft slug until you edit it.`}
         />
         {!isPublished ? (
@@ -704,6 +810,7 @@ function PageActionsMenu({
             pageId={page.id}
             returnTo={returnTo}
             label="Publish page"
+            pendingLabel="Publishing page..."
             confirmMessage={`Publish "${page.title}" to the live site? It will be publicly visible at ${page.route_path}.`}
           />
         ) : null}
@@ -713,6 +820,7 @@ function PageActionsMenu({
             pageId={page.id}
             returnTo={returnTo}
             label="Move to draft"
+            pendingLabel="Moving to draft..."
             confirmMessage={
               isPublished
                 ? `Unpublish "${page.title}"? It will be removed from the live site and returned to draft.`
@@ -728,6 +836,7 @@ function PageActionsMenu({
               pageId={page.id}
               returnTo={returnTo}
               label="Archive page"
+              pendingLabel="Archiving page..."
               tone="danger"
               confirmMessage={`Archive "${page.title}"? This removes it from the active page list.`}
             />
@@ -743,6 +852,7 @@ function PageActionForm({
   pageId,
   returnTo,
   label,
+  pendingLabel,
   tone = "default",
   confirmMessage,
 }: {
@@ -750,6 +860,7 @@ function PageActionForm({
   pageId: string;
   returnTo: string;
   label: string;
+  pendingLabel: string;
   tone?: "default" | "danger";
   confirmMessage?: string;
 }) {
@@ -759,6 +870,7 @@ function PageActionForm({
       <input type="hidden" name="returnTo" value={returnTo} />
       <AdminPageActionButton
         label={label}
+        pendingLabel={pendingLabel}
         tone={tone}
         confirmMessage={confirmMessage}
       />
@@ -863,10 +975,10 @@ type DotTone = "amber" | "blue" | "green" | "red" | "slate";
 function StatusDot({ label, tone }: { label: string; tone: DotTone }) {
   return (
     <span className="group/dot relative inline-flex">
-      <span
-        tabIndex={0}
+      <button
+        type="button"
         aria-label={label}
-        className={`size-2.5 cursor-help rounded-full ${dotToneClass(
+        className={`size-2.5 cursor-help appearance-none rounded-full border-0 p-0 ${dotToneClass(
           tone,
         )} ring-2 ring-transparent hover:ring-slate-200 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none`}
       />

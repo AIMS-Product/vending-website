@@ -98,8 +98,8 @@ describe("admin list-state helpers", () => {
       published: 1,
       archived: 1,
     });
-    expect(adminPagesHref({ status: "draft", q: "route", perPage: 25 })).toBe(
-      "/admin/pages?status=draft&q=route&perPage=25",
+    expect(adminPagesHref({ status: "draft", q: "route", perPage: 50 })).toBe(
+      "/admin/pages?status=draft&q=route&perPage=50",
     );
   });
 

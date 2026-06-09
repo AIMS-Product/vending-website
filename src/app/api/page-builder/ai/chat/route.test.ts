@@ -84,7 +84,7 @@ describe("page builder AI chat route", () => {
     });
     expect(mockGenerateOpenAiPageBuilderChatResponse).toHaveBeenCalledWith(
       validRequest,
-      { provider: "openai" },
+      { provider: "cerebras" },
     );
   });
 

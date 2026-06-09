@@ -136,6 +136,7 @@ describe("OpenAI page builder chat", () => {
     );
 
     const result = await generateOpenAiPageBuilderChatResponse(request, {
+      provider: "openai",
       apiKey: "sk-test",
       fetchFn,
       model: "gpt-5.5",
@@ -205,6 +206,7 @@ describe("OpenAI page builder chat", () => {
       {
         apiKey: "sk-test",
         fetchFn,
+        provider: "openai",
       },
     );
 
@@ -232,6 +234,7 @@ describe("OpenAI page builder chat", () => {
 
     await expect(
       generateOpenAiPageBuilderChatResponse(request, {
+        provider: "openai",
         apiKey: "",
         fetchFn,
       }),
@@ -320,6 +323,7 @@ describe("OpenAI page builder chat", () => {
 
     await expect(
       generateOpenAiPageBuilderChatResponse(request, {
+        provider: "openai",
         apiKey: "sk-test",
         fetchFn,
       }),

@@ -134,6 +134,7 @@ describe("OpenAI SEO agent", () => {
       {
         page,
         sourceBundle,
+        provider: "openai",
         model: "gpt-5.5",
         reasoningEffort: "medium",
         promptVersion: "test-prompt",
@@ -191,6 +192,7 @@ describe("OpenAI SEO agent", () => {
             },
           ],
         },
+        provider: "openai",
         model: "gpt-5.5",
       },
       { apiKey: "sk-test", fetchFn },
@@ -215,7 +217,7 @@ describe("OpenAI SEO agent", () => {
 
     await expect(
       generateOpenAiSeoProposalFromSources(
-        { page, sourceBundle, model: "gpt-5.5" },
+        { page, sourceBundle, provider: "openai", model: "gpt-5.5" },
         { apiKey: "", fetchFn },
       ),
     ).rejects.toBeInstanceOf(SeoAgentConfigurationError);
@@ -293,7 +295,7 @@ describe("OpenAI SEO agent", () => {
 
     await expect(
       generateOpenAiSeoProposalFromSources(
-        { page, sourceBundle, model: "gpt-5.5" },
+        { page, sourceBundle, provider: "openai", model: "gpt-5.5" },
         { apiKey: "sk-test", fetchFn },
       ),
     ).rejects.toMatchObject({
@@ -318,7 +320,7 @@ describe("OpenAI SEO agent", () => {
 
     await expect(
       generateOpenAiSeoProposalFromSources(
-        { page, sourceBundle, model: "gpt-5.5" },
+        { page, sourceBundle, provider: "openai", model: "gpt-5.5" },
         { apiKey: "sk-test", fetchFn },
       ),
     ).rejects.toBeInstanceOf(SeoAgentGenerationError);

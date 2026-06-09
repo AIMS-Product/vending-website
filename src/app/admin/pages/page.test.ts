@@ -31,7 +31,7 @@ describe("AdminPagesPage", () => {
 
   it("preserves governance view across sort, page-size, and pagination links", async () => {
     vi.mocked(adminListSeoPages).mockResolvedValue(
-      Array.from({ length: 26 }, (_, index) =>
+      Array.from({ length: 51 }, (_, index) =>
         seoPage({ id: `page_${index}`, slug: `failed-page-${index}` }),
       ),
     );
@@ -47,13 +47,13 @@ describe("AdminPagesPage", () => {
     expect(html).toContain(
       "/admin/pages?view=schedule-failed&amp;sort=title-asc",
     );
-    expect(html).toContain("/admin/pages?view=schedule-failed&amp;perPage=25");
+    expect(html).toContain("/admin/pages?view=schedule-failed&amp;perPage=10");
     expect(html).toContain("/admin/pages?view=schedule-failed&amp;page=3");
-    expect(html).toContain('class="w-[50%] px-7 py-3"');
+    expect(html).toContain('class="w-[44%] px-7 py-4"');
     expect(html).not.toContain(">Workflow</th>");
-    expect(html).toContain('class="w-[8%] px-5 py-3 text-right"');
+    expect(html).toContain('class="w-[12%] px-5 py-4 text-right"');
     expect(html).not.toContain("/admin/pages?sort=title-asc");
-    expect(html).not.toContain("/admin/pages?perPage=25");
+    expect(html).not.toContain("/admin/pages?perPage=10");
     expect(html).not.toContain("/admin/pages?page=3");
     expect(html).not.toContain("/admin/pages/authors");
   });

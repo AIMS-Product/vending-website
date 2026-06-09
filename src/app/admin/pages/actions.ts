@@ -34,7 +34,10 @@ import {
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
 import { pagePathForSlug } from "@/lib/page-builder/page-paths";
 import { zonedDateTimeLocalToUtcIso } from "@/lib/page-builder/scheduled-publishing";
-import type { SeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
+import {
+  defaultSeoAgentProvider,
+  type SeoAgentProvider,
+} from "@/lib/page-builder/seo-agent-provider";
 import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
 
 export type PageEditorActionState =
@@ -446,14 +449,16 @@ export async function saveSeoPageDraftAndCreatePreviewLink(
 
 export async function generateAiSeoPageProposal(
   pageId: string,
-  providerInput: SeoAgentProvider = "openai",
+  providerInput: SeoAgentProvider = defaultSeoAgentProvider,
 ): Promise<PageAiProposalResult> {
   const admin = await requireAuth();
   if (!pageId) {
     return { status: "error", message: "Save the page before running AI." };
   }
 
-  const provider = seoAgentProviderSchema.catch("openai").parse(providerInput);
+  const provider = seoAgentProviderSchema
+    .catch(defaultSeoAgentProvider)
+    .parse(providerInput);
 
   try {
     const proposal = await adminGenerateOpenAiSeoPageProposal(pageId, {

@@ -75,7 +75,7 @@ export const seoPageSortLabels: Record<SeoPageSortKey, string> = {
 };
 
 export const seoPageSizeOptions = [10, 25, 50, 100] as const;
-export const defaultSeoPageSize: SeoPageSize = 10;
+export const defaultSeoPageSize: SeoPageSize = 25;
 
 export function parseSeoPageListParams(
   params: SeoPageSearchParams,
