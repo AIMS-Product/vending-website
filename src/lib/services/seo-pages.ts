@@ -714,6 +714,50 @@ export async function adminListSeoPageRevisions(
   return data ?? [];
 }
 
+const MANUAL_SAVE_REVISIONS_KEPT = 20;
+
+// Snapshot the current draft as an immutable `manual_save` revision, then prune
+// older manual_save revisions for the page so only the newest N survive.
+// The save itself has already committed before this runs — callers must treat
+// a thrown error here as non-fatal (the user's draft is safe regardless).
+export async function adminSnapshotManualSaveRevision(
+  pageId: string,
+  options: {
+    actorId?: string | null;
+    keepRevisions?: number;
+    now?: () => Date;
+  } = {},
+  deps: ServiceDeps = {},
+) {
+  const client = deps.client ?? createAdminClient();
+  const now = options.now ?? (() => new Date());
+  const page = await adminGetSeoPageById(pageId, { client });
+  if (!page) throw new Error("Could not load SEO page to snapshot.");
+
+  const { data: revision, error } = await client
+    .from("page_revisions")
+    .insert({
+      page_id: pageId,
+      revision_type: "manual_save",
+      label: `Manual save • ${now().toISOString()}`,
+      content_snapshot: page.draft_content as unknown as Json,
+      seo_snapshot: buildSeoSnapshot(page),
+      created_by: options.actorId ?? null,
+    })
+    .select(PAGE_REVISION_FIELDS)
+    .single();
+  if (error) throw new Error("Could not snapshot manual save revision.");
+
+  const keep = options.keepRevisions ?? MANUAL_SAVE_REVISIONS_KEPT;
+  const { data: pruned, error: pruneError } = await client.rpc(
+    "prune_seo_page_manual_save_revisions",
+    { p_page_id: pageId, p_keep: keep },
+  );
+  if (pruneError) throw new Error("Could not prune manual save revisions.");
+
+  return { revision, pruned: pruned ?? 0 };
+}
+
 export async function adminGetSeoPageRevision(
   pageId: string,
   revisionId: string,

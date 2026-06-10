@@ -7,30 +7,30 @@ Owner: feature-orchestrator
 
 ## Graph Summary
 
-| Node | Title                                 | Issues  | Tier   | Depends On   | Parallel Group | Owner        | Status                                                      |
-| ---- | ------------------------------------- | ------- | ------ | ------------ | -------------- | ------------ | ----------------------------------------------------------- |
-| N0   | Pre-flight: commit review artifacts   | —       | ops    | none         | W0 (single)    | orchestrator | DONE                                                        |
-| N1   | Canonical publish-blocker checklist   | I1, I19 | T1     | N0           | W1-A 1/4       | worker-n1    | DONE                                                        |
-| N2   | Schedule status honesty               | I2      | T1     | N1           | W1-A 2/4       | worker-n1    | IN_PROGRESS                                                 |
-| N3   | Publish success state                 | I3      | T2     | N2           | W1-A 3/4       | unassigned   | PENDING                                                     |
-| N4   | Autosave failure surfacing + dedupe   | I6      | T2     | N3           | W1-A 4/4       | unassigned   | PENDING                                                     |
-| N5   | Redirect CRUD (risky surface)         | I4      | T1     | N0           | W1-B           | worker-n5    | DONE                                                        |
-| N6   | Unsaved-exit guard / orphan drafts    | I5      | T2     | N0           | W1-C           | worker-n6    | DONE                                                        |
-| N7   | Pages-list status labels/legend       | I7      | T3     | W1 int.      | W2-A           | worker-n6    | DONE                                                        |
-| N8   | aria-prohibited-attr fix              | I8      | T2     | W1 int.      | W2-B           | worker-n8    | DONE                                                        |
-| N9   | Manual-save revisions + prune         | I9      | T2     | W1 int.      | W2-C 1/2       | worker-n5    | IN_PROGRESS (launched after N5+N6 landed freed its surface) |
-| N10  | Duplicate slug -copy-n                | I13     | T3     | N9           | W2-C 2/2       | unassigned   | PENDING                                                     |
-| N11  | Mobile sticky bar + collapsible panel | I10     | T3     | W1 int.      | W2-D           | worker-n8    | DONE                                                        |
-| N12  | SEO panel verdict + tabs              | I14     | T3     | W2 int.      | W3-A           | unassigned   | PENDING                                                     |
-| N13  | One-step create wizard                | I15     | T3     | W2 int.      | W3-B           | worker-n6    | DONE                                                        |
-| N14  | Keyboard shortcuts                    | I16     | T3     | W2 int.      | W3-C           | worker-n8    | DONE                                                        |
-| N15  | Quick Tour opt-in                     | I17     | T3     | W2 int.      | W3-D           | worker-n6    | DONE                                                        |
-| N16  | Revision page labels/AM-PM/context    | I18     | T3     | N9 + W2 int. | W3-E           | worker-n6    | DONE                                                        |
-| N21  | Editor rail/mobile time → Pacific fmt | I18 f/u | T3     | N16          | W3-F           | worker-n8    | IN_PROGRESS (new node from N16 handoff)                     |
-| N17  | A11y batch                            | I12     | T2     | N11, N16     | W4 1/3         | unassigned   | PENDING                                                     |
-| N18  | Jargon/copy sweep                     | I11     | T3     | N17          | W4 2/3         | unassigned   | PENDING                                                     |
-| N19  | P3 batch                              | I20     | T3     | N18          | W4 3/3         | unassigned   | PENDING                                                     |
-| N20  | Final proof + verification.md         | all     | verif. | all          | W5             | orchestrator | PENDING                                                     |
+| Node | Title                                 | Issues  | Tier   | Depends On   | Parallel Group | Owner        | Status                                      |
+| ---- | ------------------------------------- | ------- | ------ | ------------ | -------------- | ------------ | ------------------------------------------- |
+| N0   | Pre-flight: commit review artifacts   | —       | ops    | none         | W0 (single)    | orchestrator | DONE                                        |
+| N1   | Canonical publish-blocker checklist   | I1, I19 | T1     | N0           | W1-A 1/4       | worker-n1    | DONE                                        |
+| N2   | Schedule status honesty               | I2      | T1     | N1           | W1-A 2/4       | worker-n1    | IN_PROGRESS                                 |
+| N3   | Publish success state                 | I3      | T2     | N2           | W1-A 3/4       | unassigned   | PENDING                                     |
+| N4   | Autosave failure surfacing + dedupe   | I6      | T2     | N3           | W1-A 4/4       | unassigned   | PENDING                                     |
+| N5   | Redirect CRUD (risky surface)         | I4      | T1     | N0           | W1-B           | worker-n5    | DONE                                        |
+| N6   | Unsaved-exit guard / orphan drafts    | I5      | T2     | N0           | W1-C           | worker-n6    | DONE                                        |
+| N7   | Pages-list status labels/legend       | I7      | T3     | W1 int.      | W2-A           | worker-n6    | DONE                                        |
+| N8   | aria-prohibited-attr fix              | I8      | T2     | W1 int.      | W2-B           | worker-n8    | DONE                                        |
+| N9   | Manual-save revisions + prune         | I9      | T2     | W1 int.      | W2-C 1/2       | worker-n5    | DONE (incl. gated migration 20260610100000) |
+| N10  | Duplicate slug -copy-n                | I13     | T3     | N9           | W2-C 2/2       | unassigned   | PENDING                                     |
+| N11  | Mobile sticky bar + collapsible panel | I10     | T3     | W1 int.      | W2-D           | worker-n8    | DONE                                        |
+| N12  | SEO panel verdict + tabs              | I14     | T3     | W2 int.      | W3-A           | unassigned   | PENDING                                     |
+| N13  | One-step create wizard                | I15     | T3     | W2 int.      | W3-B           | worker-n6    | DONE                                        |
+| N14  | Keyboard shortcuts                    | I16     | T3     | W2 int.      | W3-C           | worker-n8    | DONE                                        |
+| N15  | Quick Tour opt-in                     | I17     | T3     | W2 int.      | W3-D           | worker-n6    | DONE                                        |
+| N16  | Revision page labels/AM-PM/context    | I18     | T3     | N9 + W2 int. | W3-E           | worker-n6    | DONE                                        |
+| N21  | Editor rail/mobile time → Pacific fmt | I18 f/u | T3     | N16          | W3-F           | worker-n8    | IN_PROGRESS (new node from N16 handoff)     |
+| N17  | A11y batch                            | I12     | T2     | N11, N16     | W4 1/3         | unassigned   | PENDING                                     |
+| N18  | Jargon/copy sweep                     | I11     | T3     | N17          | W4 2/3         | unassigned   | PENDING                                     |
+| N19  | P3 batch                              | I20     | T3     | N18          | W4 3/3         | unassigned   | PENDING                                     |
+| N20  | Final proof + verification.md         | all     | verif. | all          | W5             | orchestrator | PENDING                                     |
 
 ## Gate Progress
 
@@ -45,7 +45,7 @@ Owner: feature-orchestrator
 | N6   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | agent-runs/N6-1.md; 55/55 node tests; browser 9/9 (n6-screens/); server never-saved floor unit-proven; orchestrator re-ran gates fresh; scope deviation accepted: mounted in SeoPageEditorForm.tsx (collision-free)                                                                                             | 95%        |
 | N7   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/N7-1.md; visible labels + legend; 13/13 browser, axe 0 serious/critical on list; sr-only names kept; orchestrator fresh tsc+vitest 500/500                                                                                                                                                           | 97%        |
 | N8   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/N8-1.md; role="img" 2-line fix; axe aria-prohibited-attr 0; names still announced; out-of-scope finding logged: landmark-complementary-is-top-level → N17; orchestrator fresh tsc+vitest 500/500                                                                                                     | 98%        |
-| N9   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                                                                                                                                                                                                                                                                                                            | TBD        |
+| N9   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | agent-runs/N9-1.md; migration applied alone (list before/after); live prune proof type+page-scoped; snapshot-after-commit ordering unit-proven; autosave exclusion test; orchestrator ran scoped teardown of probe row + verified trigger re-enabled; fresh tsc clean + vitest 537/537                          | 96%        |
 | N10  | TODO | TODO  | TODO     | TODO      | TODO         | n/a           | none                                                                                                                                                                                                                                                                                                            | TBD        |
 | N11  | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/N11-1.md; root cause: overflow-x-hidden sticky trap; fixed bottom bar reuses real Save submit; desktop DOM-absent + 0px padding proven; axe no new; keyboard pass; orchestrator fresh tsc+vitest 506/506 (run included N11 files)                                                                    | 96%        |
 | N12  | TODO | TODO  | TODO     | TODO      | TODO         | n/a           | none                                                                                                                                                                                                                                                                                                            | TBD        |

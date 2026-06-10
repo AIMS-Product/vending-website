@@ -21,6 +21,7 @@ import {
   adminRevokeSeoPagePreviewToken,
   adminRollbackSeoPageRevision,
   adminSaveSeoPageDraft,
+  adminSnapshotManualSaveRevision,
   adminUnpublishSeoPage,
   adminUpdateSeoPageSlug,
   type SeoPageDraftSettings,
@@ -213,6 +214,12 @@ export async function saveSeoPage(
         actorId: admin.user.id,
         publishNote: page.publishNote,
       });
+    } else {
+      // Snapshot a manual_save revision for every explicit "Save draft" (not
+      // publish, which records its own revision; not autosave, a separate
+      // action). The draft has already committed above, so a snapshot/prune
+      // failure must never fail the user's save — log and move on.
+      await snapshotManualSaveRevisionSafely(persisted.pageId, admin.user.id);
     }
 
     if (persisted.created) {
@@ -804,6 +811,23 @@ function parsePageFormData(formData: FormData) {
   }
 
   return { success: true as const, data: parsed.data };
+}
+
+// Snapshots the just-saved draft as a manual_save revision and prunes old
+// ones. Deliberately swallows failures: the draft is already persisted, so a
+// revision-history hiccup must not turn a successful save into an error.
+async function snapshotManualSaveRevisionSafely(
+  pageId: string,
+  actorId: string,
+): Promise<void> {
+  try {
+    await adminSnapshotManualSaveRevision(pageId, { actorId });
+  } catch (error) {
+    console.error("manual_save revision snapshot failed", {
+      pageId,
+      error,
+    });
+  }
 }
 
 async function persistPageEditorDraft(

@@ -35,6 +35,7 @@ const mocks = vi.hoisted(() => ({
   adminRevokeSeoPagePreviewToken: vi.fn(),
   adminRollbackSeoPageRevision: vi.fn(),
   adminSaveSeoPageDraft: vi.fn(),
+  adminSnapshotManualSaveRevision: vi.fn(),
   adminUnpublishSeoPage: vi.fn(),
   adminUpdateSeoPageSlug: vi.fn(),
 }));
@@ -94,6 +95,7 @@ vi.mock("@/lib/services/seo-pages", async () => {
     adminRevokeSeoPagePreviewToken: mocks.adminRevokeSeoPagePreviewToken,
     adminRollbackSeoPageRevision: mocks.adminRollbackSeoPageRevision,
     adminSaveSeoPageDraft: mocks.adminSaveSeoPageDraft,
+    adminSnapshotManualSaveRevision: mocks.adminSnapshotManualSaveRevision,
     adminUnpublishSeoPage: mocks.adminUnpublishSeoPage,
     adminUpdateSeoPageSlug: mocks.adminUpdateSeoPageSlug,
   };
@@ -258,6 +260,118 @@ describe("admin page actions", () => {
     expect(mocks.redirect).toHaveBeenCalledWith(
       `/admin/pages/${pageId}?saved=1`,
     );
+  });
+
+  it("snapshots a manual_save revision when a new page is saved", async () => {
+    mocks.adminCreateSeoPage.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+    });
+
+    await saveSeoPage({ status: "idle" }, pageForm());
+
+    expect(mocks.adminSnapshotManualSaveRevision).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({ actorId: "admin_1" }),
+    );
+  });
+
+  it("snapshots a manual_save revision when an existing draft is saved", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+
+    await saveSeoPage({ status: "idle" }, pageForm({ id: pageId }));
+
+    expect(mocks.adminSnapshotManualSaveRevision).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({ actorId: "admin_1" }),
+    );
+  });
+
+  it("does NOT snapshot a manual_save revision on publish intent", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+    mocks.adminPublishSeoPage.mockResolvedValue({
+      page: { id: pageId },
+      revision: { id: "rev_pub" },
+    });
+
+    await saveSeoPage(
+      { status: "idle" },
+      pageForm({ id: pageId, intent: "publish" }),
+    );
+
+    expect(mocks.adminPublishSeoPage).toHaveBeenCalled();
+    expect(mocks.adminSnapshotManualSaveRevision).not.toHaveBeenCalled();
+  });
+
+  it("does NOT snapshot a manual_save revision on autosave", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      status: "draft",
+    });
+
+    await autosaveSeoPageDraft(pageId, {
+      title: "Coffee Vending Adelaide",
+      slug: "coffee-vending-adelaide",
+      routePrefix: "/resources",
+      targetKeyword: "coffee vending",
+      seoTitle: "Coffee vending machines",
+      metaDescription: "Coffee vending machines for Adelaide workplaces.",
+      canonicalUrl: "",
+      internalTags: "",
+      topicCluster: "",
+      campaignLabel: "",
+      funnelStage: "",
+      reviewPeriodMonths: 6,
+      nextReviewAt: "",
+      lifecycleStatus: "drafting",
+      ogTitle: "",
+      ogDescription: "",
+      scheduledPublishAt: "",
+      scheduledPublishAtBaseline: "",
+      cancelScheduledPublish: false,
+      noindex: false,
+      sitemapEnabled: true,
+      pageType: "resource",
+      templateKey: "blank",
+      structuredDataSettings: { breadcrumb: true, faq: false },
+      draftContent: validContent,
+    });
+
+    expect(mocks.adminSnapshotManualSaveRevision).not.toHaveBeenCalled();
+  });
+
+  it("still reports the save as successful when the snapshot fails", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+    mocks.adminSnapshotManualSaveRevision.mockRejectedValue(
+      new Error("snapshot boom"),
+    );
+
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ id: pageId }),
+    );
+
+    expect(result.status).toBe("saved");
+    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalled();
   });
 
   it("auto-creates a new editor draft with AI-generated SEO fields", async () => {

@@ -959,6 +959,13 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      prune_seo_page_manual_save_revisions: {
+        Args: {
+          p_page_id: string;
+          p_keep?: number;
+        };
+        Returns: number;
+      };
       publish_seo_page_atomically: {
         Args: {
           p_actor_id: string | null;

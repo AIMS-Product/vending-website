@@ -6,6 +6,7 @@ import {
   adminCreateBuilderRedirect,
   adminDeleteBuilderRedirect,
   adminUpdateBuilderRedirect,
+  adminSnapshotManualSaveRevision,
   adminCreateSeoPage,
   adminGetSeoPageById,
   adminListSeoPages,
@@ -1994,5 +1995,127 @@ describe("seo page service", () => {
     ).rejects.toMatchObject({
       issues: [expect.objectContaining({ code: "redirect_not_found" })],
     });
+  });
+
+  it("snapshots a manual_save revision from the saved draft then prunes", async () => {
+    const savedPage = {
+      id: "page_1",
+      slug: "start-vending",
+      route_prefix: "/resources",
+      route_path: "/resources/start-vending",
+      title: "Start Vending",
+      target_keyword: null,
+      seo_title: null,
+      meta_description: null,
+      canonical_url: null,
+      noindex: false,
+      sitemap_enabled: true,
+      structured_data_settings: { breadcrumb: true, faq: true },
+      internal_tags: [],
+      topic_cluster: null,
+      campaign_label: null,
+      funnel_stage: null,
+      review_period_months: null,
+      next_review_at: null,
+      lifecycle_status: "active",
+      og_title: null,
+      og_description: null,
+      draft_content: { version: 1, sections: [] },
+    };
+    const read = maybeSingleSelect(savedPage);
+    const insert = insertSingle({ id: "rev_1", revision_type: "manual_save" });
+    const client = buildClient(read.table, insert.table);
+    client.rpc.mockResolvedValue({ data: 3, error: null });
+
+    const result = await adminSnapshotManualSaveRevision(
+      "page_1",
+      { actorId: "admin-1", now: () => new Date("2026-06-10T17:00:00Z") },
+      { client },
+    );
+
+    expect(result.revision).toEqual({
+      id: "rev_1",
+      revision_type: "manual_save",
+    });
+    expect(result.pruned).toBe(3);
+    expect(client.from).toHaveBeenNthCalledWith(1, "seo_pages");
+    expect(client.from).toHaveBeenNthCalledWith(2, "page_revisions");
+    expect(insert.mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        page_id: "page_1",
+        revision_type: "manual_save",
+        content_snapshot: { version: 1, sections: [] },
+        created_by: "admin-1",
+      }),
+    );
+    expect(client.rpc).toHaveBeenCalledWith(
+      "prune_seo_page_manual_save_revisions",
+      { p_page_id: "page_1", p_keep: 20 },
+    );
+  });
+
+  it("throws when the page to snapshot is missing", async () => {
+    const read = maybeSingleSelect(null);
+    const client = buildClient(read.table);
+
+    await expect(
+      adminSnapshotManualSaveRevision(
+        "ghost",
+        { actorId: "admin-1" },
+        { client },
+      ),
+    ).rejects.toThrow();
+    expect(client.rpc).not.toHaveBeenCalled();
+  });
+
+  it("passes a custom keep count through to the prune RPC", async () => {
+    const savedPage = {
+      id: "page_1",
+      slug: "s",
+      route_prefix: "/resources",
+      route_path: "/resources/s",
+      title: "S",
+      structured_data_settings: { breadcrumb: true, faq: true },
+      draft_content: { version: 1, sections: [] },
+    };
+    const read = maybeSingleSelect(savedPage);
+    const insert = insertSingle({ id: "rev_2", revision_type: "manual_save" });
+    const client = buildClient(read.table, insert.table);
+    client.rpc.mockResolvedValue({ data: 0, error: null });
+
+    await adminSnapshotManualSaveRevision(
+      "page_1",
+      { actorId: "admin-1", keepRevisions: 5 },
+      { client },
+    );
+
+    expect(client.rpc).toHaveBeenCalledWith(
+      "prune_seo_page_manual_save_revisions",
+      { p_page_id: "page_1", p_keep: 5 },
+    );
+  });
+
+  it("surfaces a failed revision insert before pruning", async () => {
+    const savedPage = {
+      id: "page_1",
+      slug: "s",
+      route_prefix: "/resources",
+      route_path: "/resources/s",
+      title: "S",
+      structured_data_settings: { breadcrumb: true, faq: true },
+      draft_content: { version: 1, sections: [] },
+    };
+    const read = maybeSingleSelect(savedPage);
+    const insert = insertSingle(null, { message: "insert failed" });
+    const client = buildClient(read.table, insert.table);
+
+    await expect(
+      adminSnapshotManualSaveRevision(
+        "page_1",
+        { actorId: "admin-1" },
+        { client },
+      ),
+    ).rejects.toThrow();
+    expect(client.rpc).not.toHaveBeenCalled();
   });
 });
