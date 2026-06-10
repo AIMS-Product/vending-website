@@ -10,6 +10,7 @@ import {
   PublishBlockerChecklist,
 } from "@/components/admin/seo-page-editor/PublishBlockerChecklist";
 import { ScheduleStatusCard } from "@/components/admin/seo-page-editor/ScheduleStatusCard";
+import { PublishSuccessCard } from "@/components/admin/seo-page-editor/PublishSuccessCard";
 import {
   compactInputClass,
   primaryButtonClass,
@@ -74,7 +75,9 @@ function PublishStatusSection({
   isExpanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
 }) {
-  const [isConfirmingPublish, setIsConfirmingPublish] = useState(false);
+  // I3: confirm state lives in the controller so the publish submit dismisses
+  // it — guaranteeing a re-publish must re-open a fresh confirm.
+  const { isConfirmingPublish, setIsConfirmingPublish } = editor;
   const { nextPublishStep, page, publishStateLabel } = editor;
   const statusDotClass =
     page?.status === "published" ? "bg-emerald-500" : "bg-amber-500";
@@ -163,6 +166,15 @@ function PublishStatusSection({
             status={editor.scheduleStatus}
             isCancelling={editor.isCancellingSchedule}
             onCancelSchedule={editor.requestCancelSchedule}
+          />
+        </div>
+      ) : null}
+
+      {editor.publishJustSucceeded && editor.livePageUrl ? (
+        <div className="mt-3">
+          <PublishSuccessCard
+            key={editor.livePageUrl}
+            livePageUrl={editor.livePageUrl}
           />
         </div>
       ) : null}

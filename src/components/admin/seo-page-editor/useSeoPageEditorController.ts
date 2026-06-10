@@ -91,6 +91,7 @@ import {
   deriveScheduleStatus,
   type ScheduleStatus,
 } from "@/components/admin/seo-page-editor/schedule-status";
+import { isPublishJustSucceeded } from "@/components/admin/seo-page-editor/publish-success-state";
 import {
   getNarrowEditorServerSnapshot,
   getNarrowEditorSnapshot,
@@ -257,6 +258,10 @@ export function useSeoPageEditorController(
   // (cancelScheduledPublish -> cancelledScheduledPublishMetadata) runs. No new
   // write path to the scheduler columns is introduced.
   const [isCancellingSchedule, setIsCancellingSchedule] = useState(false);
+  // I3: the publish confirm step. Owned here (not in the panel) so the same
+  // success transition that refreshes the page also dismisses the confirm —
+  // guaranteeing a re-publish must re-open a fresh confirm.
+  const [isConfirmingPublish, setIsConfirmingPublish] = useState(false);
   const isNarrowEditor = useSyncExternalStore(
     subscribeToNarrowEditorChange,
     getNarrowEditorSnapshot,
@@ -345,6 +350,16 @@ export function useSeoPageEditorController(
         : "This page is not live yet. Save the draft now, then publish when it is ready.";
   const saveDraftLabel = isPublishedPage ? "Save draft changes" : "Save draft";
   const publishButtonLabel = isPublishedPage ? "Publish changes" : "Publish";
+  // I3: a manual publish that has just completed. Drives the success block.
+  const publishJustSucceeded = isPublishJustSucceeded({
+    stateStatus: state.status,
+    lastManualSubmitIntent,
+  });
+  // The public URL to poll/link once the page is published. Only meaningful for
+  // a published page (route_path is set); the success card polls this until the
+  // route actually responds before surfacing the link.
+  const livePageUrl =
+    page?.status === "published" ? (page.route_path ?? null) : null;
   const chromeSettings = pageChromeSettings(content);
   const seoReadiness = useMemo(
     () =>
@@ -571,6 +586,10 @@ export function useSeoPageEditorController(
       setLastManualSubmitIntent(submitter.value);
       if (submitter.value === "publish") {
         hasRefreshedAfterManualPublish.current = false;
+        // The confirm dialog has done its job once the user submits the
+        // publish. Dismissing it here means a later re-publish must re-open a
+        // fresh confirm — the confirm can never stay armed across publishes.
+        setIsConfirmingPublish(false);
       }
       setShowManualSubmitToast(true);
     },
@@ -810,6 +829,7 @@ export function useSeoPageEditorController(
     formAction,
     focusSeoSetting,
     isCancellingSchedule,
+    isConfirmingPublish,
     handleEditorFormSubmit,
     insertAiProposalBlocks,
     insertDocumentImportBlocks,
@@ -848,8 +868,10 @@ export function useSeoPageEditorController(
     publishBlockerChecklist,
     publishButtonLabel,
     publishDisabled,
+    publishJustSucceeded,
     publishStateHelp,
     publishStateLabel,
+    livePageUrl,
     removeBlock,
     removeColumn,
     removeSection,
@@ -869,6 +891,7 @@ export function useSeoPageEditorController(
     selectedBlockEntry,
     setCanonicalUrl,
     setEditingBlockId,
+    setIsConfirmingPublish,
     setMetaDescription,
     setAiAgentProvider,
     setMobileEditorPanel,
