@@ -2,6 +2,7 @@
 
 import { getMobileActionBarState } from "@/components/admin/seo-page-editor/editor-responsive";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
+import { formatPacificDateTime } from "@/lib/page-builder/datetime-format";
 
 // I10 / N11: a viewport-fixed action bar for narrow widths. The editor's
 // sticky top rail is trapped inside an `overflow-x-hidden` ancestor (which the
@@ -10,13 +11,6 @@ import type { SeoPageEditorController } from "@/components/admin/seo-page-editor
 // `position: fixed` bar escapes that trap and keeps Save + the SEO/publish
 // entry reachable without scrolling. Hidden on desktop (`xl:hidden`), so the
 // top-rail layout is unchanged there.
-
-function formatBarTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 export function MobileEditorActionBar({
   editor,
@@ -45,7 +39,7 @@ export function MobileEditorActionBar({
     >
       {autosave?.status === "saved" && (
         <p className="mb-1.5 text-center text-xs font-medium text-slate-500">
-          Saved automatically · {formatBarTime(autosave.savedAt)}
+          Saved automatically · {formatPacificDateTime(autosave.savedAt)}
         </p>
       )}
       {autosave?.status === "error" && (

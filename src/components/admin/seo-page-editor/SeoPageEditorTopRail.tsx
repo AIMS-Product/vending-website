@@ -8,6 +8,7 @@ import {
 } from "@/components/admin/seo-page-editor/editor-copy-url";
 import { ChevronIcon } from "@/components/admin/seo-page-editor/SeoPageEditorShell";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
+import { formatPacificDateTime } from "@/lib/page-builder/datetime-format";
 import { pagePathForSlug } from "@/lib/page-builder/page-paths";
 
 // S6: labelled panel toggles with neutral styling (no status-coloured ring).
@@ -19,14 +20,6 @@ const railCommandClass =
   "inline-flex min-h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55";
 const railMenuItemClass =
   "rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/25 focus-visible:outline-none";
-
-// S8: format the autosave timestamp for the top-rail "Saved automatically" hint.
-function formatRailTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 export function SeoPageEditorTopRail({
   editor,
@@ -195,7 +188,7 @@ export function SeoPageEditorTopRail({
           </div>
           {autosave?.status === "saved" && (
             <p className="text-xs font-medium text-slate-500">
-              Saved automatically · {formatRailTime(autosave.savedAt)}
+              Saved automatically · {formatPacificDateTime(autosave.savedAt)}
             </p>
           )}
           {autosave?.status === "error" && (

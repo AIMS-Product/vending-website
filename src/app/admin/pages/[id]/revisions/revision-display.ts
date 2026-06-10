@@ -1,4 +1,4 @@
-import { SCHEDULED_PUBLISH_TIME_ZONE } from "@/lib/page-builder/scheduled-publishing";
+import { formatPacificDateTime } from "@/lib/page-builder/datetime-format";
 
 // N16 / issue I18: shared presentation for the revision history (list panel +
 // detail page) so labels and timestamps are consistent in one place.
@@ -17,28 +17,12 @@ export function revisionTypeLabel(type: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-// Root cause of the review's AM/PM mismatch: the revision panel formatted in
-// UTC (`timeZone: "UTC"`) while the detail page and the editor's autosave time
-// used an unspecified zone (runtime-local). For a Pacific-Time business those
-// render hours apart and flip AM/PM. This formatter renders the business's
-// Pacific Time deterministically, matching the scheduled-publish UI's zone, so
-// the revision list and detail page always agree. (The editor's own
-// formatRailTime lives in an n8-active file; unifying it onto this formatter is
-// flagged as a handoff.)
-const revisionDateTimeFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: SCHEDULED_PUBLISH_TIME_ZONE,
-  timeZoneName: "short",
-});
-
-export function formatRevisionDateTime(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return revisionDateTimeFormatter.format(date);
-}
+// N21: the Pacific-anchored timestamp formatter now lives in a neutral lib
+// location (`@/lib/page-builder/datetime-format`) so the editor's own save-time
+// displays (top rail + mobile action bar) share the exact same source as these
+// revision surfaces. Re-exported here under the original name to keep the
+// revision surfaces' import sites and public API unchanged.
+export const formatRevisionDateTime = formatPacificDateTime;
 
 export type RevisionBlockStats = {
   blockCount: number;
