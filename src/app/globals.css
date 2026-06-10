@@ -245,7 +245,7 @@ body:has([data-hide-site-footer="true"]) > footer {
   max-width: 72ch;
 }
 .public-news-prose a {
-  color: #2d9fd6;
+  color: #066a99;
   font-weight: 800;
   text-decoration: underline;
   text-decoration-thickness: 2px;

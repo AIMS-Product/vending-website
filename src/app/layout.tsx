@@ -7,9 +7,15 @@ import { Footer } from "@/components/site/Footer";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
+// `display: "optional"` (not the "swap" default) is deliberate: it gives the
+// browser a ~100ms window to use Inter, and if it isn't ready the size-matched
+// fallback (adjustFontFallback, on by default) is kept for the rest of the page
+// load with NO later swap. That removes the cold-load reflow where Inter swaps
+// in and re-flows text, which was pushing the footer down (measured CLS ~0.29).
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: "optional",
 });
 
 export const metadata: Metadata = {

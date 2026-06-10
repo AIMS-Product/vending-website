@@ -1,0 +1,75 @@
+{
+  "results": [
+    {
+      "path": "/about",
+      "cls": 0.29167,
+      "shifts": [
+        {
+          "value": 0.29167,
+          "startTime": 346,
+          "sources": [
+            {
+              "node": "footer.border-t-2.border-[#111111].bg-[#f5fbff]",
+              "prev": {
+                "y": 510,
+                "h": 210
+              },
+              "curr": {
+                "y": 0,
+                "h": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/news",
+      "cls": 0.29167,
+      "shifts": [
+        {
+          "value": 0.29167,
+          "startTime": 584,
+          "sources": [
+            {
+              "node": "footer.border-t-2.border-[#111111].bg-[#f5fbff]",
+              "prev": {
+                "y": 510,
+                "h": 210
+              },
+              "curr": {
+                "y": 0,
+                "h": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "cls": 0.29167,
+      "shifts": [
+        {
+          "value": 0.29167,
+          "startTime": 598,
+          "sources": [
+            {
+              "node": "footer.border-t-2.border-[#111111].bg-[#f5fbff]",
+              "prev": {
+                "y": 510,
+                "h": 210
+              },
+              "curr": {
+                "y": 0,
+                "h": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "baseUrl": "http://localhost:3000",
+  "settleMs": 8000
+}

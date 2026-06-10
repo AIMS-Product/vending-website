@@ -23,7 +23,7 @@ export function Footer() {
           {footerColumns.map((col) => (
             <ul
               key={col.items[0]?.label ?? "footer-column"}
-              className="space-y-3"
+              className="-space-y-1.5"
             >
               {col.items.map((item) => (
                 <FooterItem
@@ -51,7 +51,7 @@ function FooterItem({
   highlighted: boolean;
 }) {
   const className = cn(
-    "text-sm font-black text-[#111111] uppercase transition hover:text-[#066a99]",
+    "block py-3 text-sm font-black text-[#111111] uppercase transition hover:text-[#066a99] focus-visible:rounded-[6px] focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:ring-offset-2 focus-visible:outline-none",
     highlighted && "text-[#066a99]",
   );
 

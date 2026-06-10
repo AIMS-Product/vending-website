@@ -899,14 +899,22 @@ function PageRow({
       >
         <div className="flex items-start gap-3">
           {page.status !== "archived" ? (
-            <input
-              type="checkbox"
-              name="ids"
-              value={page.id}
-              form="bulk-archive-form"
-              aria-label={`Select ${page.title} for bulk actions`}
-              className="mt-1 size-4 shrink-0 rounded border-slate-300 text-[#0b63f6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-            />
+            // S3 / WCAG 2.5.8: the checkbox stays a 16px visual box, but a
+            // label wrapper gives it a 24px-square hit area (clicking the
+            // padding toggles the box). `-m-1` cancels the padding's layout
+            // effect so visual density and the `mt-1` offset are unchanged.
+            <label className="-mx-1 mt-0 -mb-1 flex shrink-0 cursor-pointer items-start p-1">
+              <span className="sr-only">
+                Select {page.title} for bulk actions
+              </span>
+              <input
+                type="checkbox"
+                name="ids"
+                value={page.id}
+                form="bulk-archive-form"
+                className="size-4 rounded border-slate-300 text-[#0b63f6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+              />
+            </label>
           ) : null}
           <div className="min-w-0">
             <Link

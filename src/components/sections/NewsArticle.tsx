@@ -199,7 +199,7 @@ function ArticleSidebar({ headings }: { headings: string[] }) {
           <h2 className="text-3xl leading-tight font-black uppercase">
             Build your route today.
           </h2>
-          <p className="mt-5 text-lg leading-7 font-semibold text-[#066a99]">
+          <p className="mt-5 text-lg leading-7 font-semibold text-white">
             Get the complete A-Z blueprint to passive income.
           </p>
           <Link
