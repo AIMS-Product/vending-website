@@ -22,12 +22,12 @@ export default function Error({
         An unexpected error occurred. Please try again.
       </p>
       {error.digest && (
-        <p className="text-xs text-slate-400">Reference: {error.digest}</p>
+        <p className="text-xs text-slate-500">Reference: {error.digest}</p>
       )}
       <button
         type="button"
         onClick={() => unstable_retry()}
-        className="mt-2 inline-flex items-center rounded-full bg-sky-500 px-6 py-3 text-sm font-medium text-white shadow transition hover:bg-sky-600"
+        className="mt-2 inline-flex items-center rounded-full bg-sky-700 px-6 py-3 text-sm font-medium text-white shadow transition hover:bg-sky-800"
       >
         Try again
       </button>

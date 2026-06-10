@@ -38,8 +38,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
+        <a href="#main-content" className="skip-to-content">
+          Skip to content
+        </a>
         <Header />
-        <main className="flex-1">{children}</main>
+        <main id="main-content" className="flex-1">
+          {children}
+        </main>
         <Footer />
         <Analytics />
         <SpeedInsights />
