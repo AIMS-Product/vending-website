@@ -7,10 +7,7 @@ import { SeoPageEditorWorkspace } from "@/components/admin/seo-page-editor/SeoPa
 import {
   useSeoPageEditorController,
   type SeoPageEditorControllerProps,
-  type SeoPageEditorMediaAsset,
 } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
-
-export type { SeoPageEditorMediaAsset };
 
 type SeoPageEditorFormProps = SeoPageEditorControllerProps;
 

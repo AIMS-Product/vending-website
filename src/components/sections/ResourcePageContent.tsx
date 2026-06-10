@@ -27,12 +27,6 @@ import {
   type ResourcePageRenderMode,
 } from "@/components/sections/resource-blocks/shared";
 
-export type {
-  LeadFormBlock,
-  ResourcePageLinkMode,
-  ResourcePageRenderMode,
-} from "@/components/sections/resource-blocks/shared";
-
 type ResourcePageContentViewProps = {
   content: PageContent;
   renderLeadForm?: (block: LeadFormBlock) => ReactNode;

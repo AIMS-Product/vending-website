@@ -491,8 +491,3 @@ function normalizeSearch(search: string | undefined) {
   const term = search?.trim().replace(/[%_]/g, "").slice(0, 80);
   return term || "";
 }
-
-export {
-  collectMediaAssetIds,
-  collectMediaAssetReferences,
-} from "@/lib/media/referenced-assets";

@@ -30,7 +30,7 @@ type InternalLinkIndexRow = {
   updated_at: string;
 };
 
-export type InternalLinkTarget = {
+type InternalLinkTarget = {
   pageId: string;
   slug: string;
   path: string;

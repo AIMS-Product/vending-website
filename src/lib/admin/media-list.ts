@@ -46,7 +46,7 @@ export type MediaSortKey =
   | "title-asc"
   | "title-desc";
 export type MediaPageSize = (typeof mediaPageSizeOptions)[number];
-export type MediaAsset = Awaited<
+export type MediaListAsset = Awaited<
   ReturnType<typeof adminListMediaAssets>
 >[number];
 
@@ -70,8 +70,8 @@ export type MediaListState = MediaListParams & {
   assetCounts: ReturnType<typeof countAssets>;
   collectionCounts: Record<MediaCollection, number>;
   allTags: string[];
-  filteredAssets: MediaAsset[];
-  visibleAssets: MediaAsset[];
+  filteredAssets: MediaListAsset[];
+  visibleAssets: MediaListAsset[];
   totalPages: number;
   currentPage: number;
   paginationPages: number[];
@@ -155,7 +155,7 @@ export function buildMediaListState({
   collectionCounts,
   params,
 }: {
-  assets: MediaAsset[];
+  assets: MediaListAsset[];
   usageIndex: Record<string, number>;
   collectionCounts: MediaListState["collectionCounts"];
   params: MediaListParams;
@@ -222,7 +222,7 @@ export function buildMediaListState({
   };
 }
 
-export function buildActiveFilterChips({
+function buildActiveFilterChips({
   filterContext,
   searchQuery,
   typeFilter,
@@ -290,8 +290,8 @@ export function buildActiveFilterChips({
   return chips;
 }
 
-export function filterMediaAssets(
-  assets: MediaAsset[],
+function filterMediaAssets(
+  assets: MediaListAsset[],
   {
     typeFilter,
     sourceFilter,
@@ -335,7 +335,7 @@ export function filterMediaAssets(
   });
 }
 
-export function sortMediaAssets(assets: MediaAsset[], sort: MediaSortKey) {
+function sortMediaAssets(assets: MediaListAsset[], sort: MediaSortKey) {
   const next = [...assets];
   if (sort === "title-asc") {
     return next.sort((a, b) => a.title.localeCompare(b.title));
@@ -350,7 +350,7 @@ export function sortMediaAssets(assets: MediaAsset[], sort: MediaSortKey) {
   });
 }
 
-export function collectTags(assets: MediaAsset[]) {
+function collectTags(assets: MediaListAsset[]) {
   const tags = new Set<string>();
   for (const asset of assets) {
     for (const tag of asset.tags) {
@@ -389,8 +389,8 @@ export function adminMediaHref({
   );
 }
 
-export function countAssets(
-  assets: MediaAsset[],
+function countAssets(
+  assets: MediaListAsset[],
   usageIndex: Record<string, number>,
 ) {
   return assets.reduce(

@@ -120,7 +120,7 @@ const standardTemplates = [
   },
 ] satisfies PageTemplateOption[];
 
-export const pageTemplateOptions = [
+const pageTemplateOptions = [
   ...blankTemplates,
   ...standardTemplates,
 ] as const satisfies readonly PageTemplateOption[];

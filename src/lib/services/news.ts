@@ -159,18 +159,3 @@ export async function adminUpdatePost(id: string, patch: NewsPostUpdate) {
   if (error) throw error;
   return data;
 }
-
-export async function adminPublishPost(id: string) {
-  return adminUpdatePost(id, {
-    status: "published",
-    published_at: new Date().toISOString(),
-  });
-}
-
-export async function adminUnpublishPost(id: string) {
-  return adminUpdatePost(id, { status: "draft", published_at: null });
-}
-
-export async function adminArchivePost(id: string) {
-  return adminUpdatePost(id, { status: "archived" });
-}

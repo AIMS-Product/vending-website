@@ -122,7 +122,7 @@ export function completionMessagesForBlock(block: PageBlock) {
   return messages;
 }
 
-export function cardCompletionMessages(card: CardItem) {
+function cardCompletionMessages(card: CardItem) {
   const messages: string[] = [];
   if (!hasEditorText(card.title)) messages.push("Add a card title.");
   if (!hasEditorText(card.body)) messages.push("Add a short card description.");

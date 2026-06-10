@@ -123,7 +123,7 @@ export const pageBuilderAiChatRequestSchema = z
   })
   .strict();
 
-export const pageBuilderAiToolCallSchema = z
+const pageBuilderAiToolCallSchema = z
   .object({
     id: z.string().trim().min(1).max(120),
     name: z.string().trim().min(1).max(80),
@@ -132,7 +132,7 @@ export const pageBuilderAiToolCallSchema = z
   .strict();
 
 export const PAGE_BUILDER_AI_MESSAGE_MAX_CHARS = 6000;
-export const PAGE_BUILDER_AI_MAX_TOOL_CALLS = 20;
+const PAGE_BUILDER_AI_MAX_TOOL_CALLS = 20;
 
 export const pageBuilderAiChatResponseSchema = z
   .object({

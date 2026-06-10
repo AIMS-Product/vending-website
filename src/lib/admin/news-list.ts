@@ -50,7 +50,7 @@ export const newsSortLabels: Record<NewsSortKey, string> = {
   "title-asc": "Title A-Z",
 };
 
-export const newsPageSize = 7;
+const newsPageSize = 7;
 
 export function parseNewsListParams(params: NewsSearchParams): NewsListParams {
   return {
@@ -92,7 +92,7 @@ export function buildNewsListState(
   };
 }
 
-export function filterNewsPosts(
+function filterNewsPosts(
   posts: NewsListPost[],
   status: NewsStatusFilter,
   searchQuery: string,
@@ -109,7 +109,7 @@ export function filterNewsPosts(
   });
 }
 
-export function sortNewsPosts(posts: NewsListPost[], sort: NewsSortKey) {
+function sortNewsPosts(posts: NewsListPost[], sort: NewsSortKey) {
   const next = [...posts];
   if (sort === "title-asc") {
     return next.sort((a, b) => a.title.localeCompare(b.title));
@@ -143,7 +143,7 @@ export function adminNewsHref({
   );
 }
 
-export function countPostsByStatus(posts: NewsListPost[]) {
+function countPostsByStatus(posts: NewsListPost[]) {
   return posts.reduce(
     (counts, post) => {
       if (post.status === "draft") counts.draft += 1;

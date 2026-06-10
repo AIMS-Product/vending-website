@@ -19,7 +19,7 @@ type FieldVisibilityProps = {
   fieldVisibility?: Partial<Record<OptionalBlockFieldKey, boolean>>;
 };
 
-export const optionalBlockFields: Record<
+const optionalBlockFields: Record<
   PageBlock["type"],
   readonly OptionalBlockFieldKey[]
 > = {

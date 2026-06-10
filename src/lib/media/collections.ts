@@ -10,7 +10,7 @@ export type MediaCollection =
   | "proof"
   | "brand";
 
-export const mediaCollectionFilters: Array<{
+const mediaCollectionFilters: Array<{
   label: string;
   value: MediaCollection;
   description: string;
@@ -74,7 +74,7 @@ export function normalizeMediaCollection(
   return "all";
 }
 
-export function assetNeedsMetadata(
+function assetNeedsMetadata(
   asset: Pick<
     MediaAsset,
     "asset_type" | "alt_text" | "source_rights_notes" | "tags"

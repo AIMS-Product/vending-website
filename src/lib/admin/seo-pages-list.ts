@@ -154,7 +154,7 @@ export function buildSeoPageListState(
   };
 }
 
-export function filterSeoPages(
+function filterSeoPages(
   pages: Tables<"seo_pages">[],
   status: SeoPageStatusFilter,
   view: SeoPageGovernanceFilter,
@@ -213,10 +213,7 @@ function matchesGovernanceFilter(
   return true;
 }
 
-export function sortSeoPages(
-  pages: Tables<"seo_pages">[],
-  sort: SeoPageSortKey,
-) {
+function sortSeoPages(pages: Tables<"seo_pages">[], sort: SeoPageSortKey) {
   const next = [...pages];
   if (sort === "title-asc") {
     return next.sort((a, b) => a.title.localeCompare(b.title));
@@ -263,7 +260,7 @@ export function adminPagesHref({
   );
 }
 
-export function countPagesByStatus(pages: Tables<"seo_pages">[]) {
+function countPagesByStatus(pages: Tables<"seo_pages">[]) {
   return pages.reduce(
     (counts, page) => {
       if (page.status === "draft") counts.draft += 1;

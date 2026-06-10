@@ -43,7 +43,7 @@ export function normalizeNumberOption<TOption extends number>(
   return allowed.includes(parsed as TOption) ? (parsed as TOption) : fallback;
 }
 
-export function paginationWindow(currentPage: number, totalPages: number) {
+function paginationWindow(currentPage: number, totalPages: number) {
   const start = Math.max(1, Math.min(currentPage - 1, totalPages - 2));
   const end = Math.min(totalPages, start + 2);
   return Array.from(

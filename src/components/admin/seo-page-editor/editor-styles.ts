@@ -18,34 +18,6 @@ export function readinessPillClass(status: SeoReadinessStatus) {
   return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
 }
 
-export function readinessButtonClass(status: SeoReadinessStatus) {
-  if (status === "blocked")
-    return "border-red-200 bg-white text-red-700 hover:bg-red-50 ring-1 ring-inset ring-red-100";
-  if (status === "needs_work") {
-    return "border-amber-200 bg-white text-amber-700 hover:bg-amber-50 ring-1 ring-inset ring-amber-100";
-  }
-  if (status === "opportunities") {
-    return "border-sky-200 bg-white text-sky-700 hover:bg-sky-50 ring-1 ring-inset ring-sky-100";
-  }
-  return "border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50 ring-1 ring-inset ring-emerald-100";
-}
-
-export function floatingRailButtonClass(status: SeoReadinessStatus) {
-  const base =
-    "inline-flex size-10 items-center justify-center rounded-full border bg-white shadow-lg transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none";
-
-  if (status === "blocked") {
-    return `${base} border-red-300 text-red-700 ring-4 ring-red-100 shadow-red-200/80`;
-  }
-  if (status === "needs_work") {
-    return `${base} border-amber-300 text-amber-700 ring-4 ring-amber-100 shadow-amber-200/80`;
-  }
-  if (status === "opportunities") {
-    return `${base} border-sky-300 text-sky-700 ring-4 ring-sky-100 shadow-sky-200/80`;
-  }
-  return `${base} border-emerald-300 text-emerald-700 ring-4 ring-emerald-100 shadow-emerald-200/80`;
-}
-
 export function readinessCategoryClass(status: SeoReadinessStatus) {
   if (status === "blocked") return "border-l-4 border-l-red-500";
   if (status === "needs_work") return "border-l-4 border-l-amber-500";

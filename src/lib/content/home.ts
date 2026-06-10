@@ -1,4 +1,4 @@
-export type Stat = {
+type Stat = {
   value: string;
   label: string;
 };
@@ -9,7 +9,7 @@ export type Benefit = {
   icon: "trend" | "people" | "percent" | "globe";
 };
 
-export type AcceleratorPoint = string;
+type AcceleratorPoint = string;
 
 export type PartnerLogo = {
   name: string;

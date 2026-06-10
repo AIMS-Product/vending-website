@@ -117,7 +117,7 @@ const richTextNodeSchema = z.union([
     .strict(),
 ]);
 
-export const richTextDocumentSchema = z
+const richTextDocumentSchema = z
   .object({
     version: z.literal(1),
     nodes: z.array(richTextNodeSchema).max(30),

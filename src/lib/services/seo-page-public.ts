@@ -26,7 +26,7 @@ export type PublishedSeoPage = {
   updated_at: string;
 };
 
-export type BuilderRedirect = {
+type BuilderRedirect = {
   source_path: string;
   destination_path: string;
   status_code: number;

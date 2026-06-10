@@ -13,10 +13,7 @@ import {
   blockPickerOptions,
   type BlockVariant,
 } from "@/lib/page-builder/block-options";
-import {
-  createPageBlock,
-  type MoveDirection,
-} from "@/lib/page-builder/content-ops";
+import { createPageBlock } from "@/lib/page-builder/content-ops";
 import { withDefaultFieldVisibility } from "@/lib/page-builder/block-field-visibility";
 import { hasEditorText } from "@/lib/page-builder/block-completion";
 import {
@@ -57,7 +54,6 @@ export type CardGridBlock = Extract<PageBlock, { type: "card_grid" }>;
 export type CardItem = CardGridBlock["props"]["cards"][number];
 
 export {
-  cardCompletionMessages,
   completionMessagesForBlock,
   hasEditorText,
 } from "@/lib/page-builder/block-completion";
@@ -176,14 +172,11 @@ export function createPageBlockWithVariant(
   return withEditorDefaultsForNewBlock(variantBlock);
 }
 
-export function withBlockVariant(
-  block: PageBlock,
-  variant: BlockVariant,
-): PageBlock {
+function withBlockVariant(block: PageBlock, variant: BlockVariant): PageBlock {
   return { ...block, variant } as PageBlock;
 }
 
-export function withEditorDefaultsForNewBlock(block: PageBlock): PageBlock {
+function withEditorDefaultsForNewBlock(block: PageBlock): PageBlock {
   let nextBlock: PageBlock = block;
 
   if (block.type === "cta" && !block.props.presetId) {
@@ -280,7 +273,7 @@ export function syncedTrackingName({
   return currentTrackingName;
 }
 
-export function bodyText(block: Extract<PageBlock, { type: "rich_text" }>) {
+function bodyText(block: Extract<PageBlock, { type: "rich_text" }>) {
   return richTextDocumentPlainText(block.props.body);
 }
 
@@ -343,7 +336,7 @@ export function richTextBodyFromEditableText(
   };
 }
 
-export function shouldEditRichTextAsList(
+function shouldEditRichTextAsList(
   block: Extract<PageBlock, { type: "rich_text" }>,
 ) {
   return (
@@ -352,7 +345,7 @@ export function shouldEditRichTextAsList(
   );
 }
 
-export function blockVariantOptions(type: PageBlock["type"]) {
+function blockVariantOptions(type: PageBlock["type"]) {
   return (
     blockPickerOptions.find((option) => option.type === type)?.variants ?? []
   );
@@ -365,7 +358,7 @@ export function blockVariantLabel(block: PageBlock) {
   return option?.label ?? humanizeVariant(block.variant);
 }
 
-export function humanizeVariant(variant: BlockVariant) {
+function humanizeVariant(variant: BlockVariant) {
   return String(variant)
     .replace(/_/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -419,7 +412,7 @@ export function appendBlankFaq(items: FaqItem[]): FaqItem[] {
   return [...items, { question: "", answer: "" }];
 }
 
-export function createBlankCard(): CardItem {
+function createBlankCard(): CardItem {
   return { title: "", body: "", href: "", linkLabel: "" };
 }
 
@@ -432,11 +425,11 @@ export function cardItemKey(blockId: string, cardIndex: number) {
   return `${blockId}-card-${cardIndex}`;
 }
 
-export function isBlankFaqItem(item: FaqItem) {
+function isBlankFaqItem(item: FaqItem) {
   return !hasEditorText(item.question) && !hasEditorText(item.answer);
 }
 
-export function isBlankCard(card: CardItem) {
+function isBlankCard(card: CardItem) {
   return (
     !hasEditorText(card.title) &&
     !hasEditorText(card.body) &&
@@ -492,8 +485,6 @@ export function aiBlockReviewBody(block: PageBlock) {
   if (block.type === "video") return block.props.caption;
   return block.props.href;
 }
-
-export type { MoveDirection };
 
 function stringSetting(value: unknown) {
   return typeof value === "string" ? value : "";

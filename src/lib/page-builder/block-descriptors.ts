@@ -17,7 +17,7 @@ type BlockParityMarkerAdders = {
   addImgAlt: (label: string, value: string | undefined) => void;
 };
 
-export type PageBlockDescriptor<TType extends PageBlock["type"]> = {
+type PageBlockDescriptor<TType extends PageBlock["type"]> = {
   type: TType;
   label: string;
   description: string;
@@ -111,10 +111,6 @@ export const ctaBlockDescriptor = {
     addText("label", block.props.label);
   },
 } as const satisfies PageBlockDescriptor<"cta">;
-
-export const blockDescriptorPilots = {
-  cta: ctaBlockDescriptor,
-} as const;
 
 export function createDescriptorPageBlock(
   type: PageBlock["type"],

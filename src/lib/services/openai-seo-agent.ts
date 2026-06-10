@@ -91,7 +91,7 @@ export type OpenAiReasoningEffort =
   | "high"
   | "xhigh";
 
-export const SEO_AGENT_PROMPT_VERSION = "seo-source-bound-proposal-v1";
+const SEO_AGENT_PROMPT_VERSION = "seo-source-bound-proposal-v1";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const CEREBRAS_CHAT_COMPLETIONS_URL =

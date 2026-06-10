@@ -1,7 +1,7 @@
 import { normalizeSlug } from "@/lib/page-builder/blocks";
 import type { PageTypeId } from "@/lib/page-builder/page-templates";
 
-export const builderRoutePrefixes = [
+const builderRoutePrefixes = [
   "/resources",
   "/blog",
   "/landing",
@@ -68,7 +68,7 @@ export function pagePathForPage(page: {
   );
 }
 
-export function normalizeBuilderRoutePath(path: string) {
+function normalizeBuilderRoutePath(path: string) {
   const trimmed = path.trim().replace(/\/+$/, "");
   const match = splitBuilderRoutePath(trimmed);
   if (!match) return pagePathForSlug(trimmed.split("/").pop() ?? "");
@@ -90,7 +90,7 @@ export function splitBuilderRoutePath(path: string): {
   return null;
 }
 
-export function isBuilderRoutePrefix(
+function isBuilderRoutePrefix(
   value: string | null | undefined,
 ): value is BuilderRoutePrefix {
   return builderRoutePrefixes.includes(value as BuilderRoutePrefix);

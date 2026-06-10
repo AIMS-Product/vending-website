@@ -12,7 +12,7 @@ import {
   adminMediaHref,
   buildMediaListState,
   parseMediaListParams,
-  type MediaAsset,
+  type MediaListAsset,
 } from "@/lib/admin/media-list";
 import {
   adminNewsHref,
@@ -237,7 +237,7 @@ function seoPage(
   } as Tables<"seo_pages">;
 }
 
-function mediaAsset(overrides: Partial<MediaAsset> = {}): MediaAsset {
+function mediaAsset(overrides: Partial<MediaListAsset> = {}): MediaListAsset {
   return {
     id: overrides.id ?? "asset",
     title: overrides.title ?? "Asset",
@@ -248,7 +248,7 @@ function mediaAsset(overrides: Partial<MediaAsset> = {}): MediaAsset {
     alt_text: overrides.alt_text ?? "Alt text",
     source_rights_notes: overrides.source_rights_notes ?? "Owned",
     created_at: overrides.created_at ?? "2026-01-01T00:00:00.000Z",
-  } as MediaAsset;
+  } as MediaListAsset;
 }
 
 function newsPost(overrides: Partial<NewsPost> = {}): NewsPost {
