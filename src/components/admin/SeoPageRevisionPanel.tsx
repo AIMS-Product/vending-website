@@ -24,6 +24,12 @@ import {
   adminPrimaryButtonClass,
   adminSmallButtonClass,
 } from "@/components/admin/AdminUi";
+import {
+  formatRevisionDateTime,
+  revisionBlockStats,
+  revisionTypeLabel,
+} from "@/app/admin/pages/[id]/revisions/revision-display";
+import type { Json } from "@/types/database";
 
 type RevisionRow = {
   id: string;
@@ -31,6 +37,9 @@ type RevisionRow = {
   label: string | null;
   created_at: string;
   created_by: string | null;
+  // Already loaded by adminListSeoPageRevisions (PAGE_REVISION_FIELDS); used for
+  // the block/word-count context line. No query change needed.
+  content_snapshot?: Json;
 };
 
 type PreviewTokenRow = {
@@ -154,9 +163,10 @@ export function SeoPageRevisionPanel({
                       {index === 0 && <RevisionChip>Latest</RevisionChip>}
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      {revisionTypeLabel(revision.revision_type)} -{" "}
-                      {formatDateTime(revision.created_at)}
+                      {revisionTypeLabel(revision.revision_type)} ·{" "}
+                      {formatRevisionDateTime(revision.created_at)}
                     </p>
+                    <RevisionContext snapshot={revision.content_snapshot} />
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Link
@@ -229,7 +239,8 @@ export function SeoPageRevisionPanel({
                       {token.token_prefix}...
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      {status} - expires {formatDateTime(token.expires_at)}
+                      {status} - expires{" "}
+                      {formatRevisionDateTime(token.expires_at)}
                     </p>
                   </div>
                   {status === "Active" && (
@@ -322,6 +333,18 @@ function RevisionChip({
   );
 }
 
+// N16: cheap per-revision context from the already-loaded content snapshot.
+function RevisionContext({ snapshot }: { snapshot?: Json }) {
+  const { blockCount, wordCount } = revisionBlockStats(snapshot ?? null);
+  if (blockCount === 0 && wordCount === 0) return null;
+  return (
+    <p className="mt-0.5 text-xs text-slate-400">
+      {blockCount} {blockCount === 1 ? "block" : "blocks"} · {wordCount}{" "}
+      {wordCount === 1 ? "word" : "words"}
+    </p>
+  );
+}
+
 function revisionTitle(revision: RevisionRow, versionNumber?: number) {
   const label = revision.label?.trim();
   if (label?.startsWith("Publish: ")) return label.replace("Publish: ", "");
@@ -332,27 +355,8 @@ function revisionTitle(revision: RevisionRow, versionNumber?: number) {
   return revisionTypeLabel(revision.revision_type);
 }
 
-function revisionTypeLabel(type: string) {
-  if (type === "publish") return "Published";
-  if (type === "rollback") return "Draft restored";
-  if (type === "manual_save") return "Manual save";
-  if (type === "ai_insert") return "AI insert";
-  if (type === "autosave") return "Autosave";
-  return type.replace(/_/g, " ");
-}
-
 function previewTokenStatus(token: PreviewTokenRow) {
   if (token.revoked_at) return "Revoked";
   if (new Date(token.expires_at).getTime() <= Date.now()) return "Expired";
   return "Active";
-}
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "UTC",
-  });
 }

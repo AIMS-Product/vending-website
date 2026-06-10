@@ -3,6 +3,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { adminSecondaryButtonClass } from "@/components/admin/AdminUi";
+import {
+  formatRevisionDateTime,
+  revisionBlockStats,
+  revisionTypeLabel,
+} from "@/app/admin/pages/[id]/revisions/revision-display";
 import { ResourcePageRenderer } from "@/components/sections/ResourcePageRenderer";
 import { seoPageDraftContentSchema } from "@/lib/services/seo-pages";
 import {
@@ -37,6 +42,7 @@ export default async function AdminRevisionPreviewPage({
   if (!content.success) notFound();
 
   const snapshot = readSeoSnapshot(revision.seo_snapshot);
+  const stats = revisionBlockStats(revision.content_snapshot);
   const previewPage = {
     ...page,
     title: snapshot.title ?? page.title,
@@ -58,7 +64,12 @@ export default async function AdminRevisionPreviewPage({
               Revision preview
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              {revision.revision_type} - {formatDateTime(revision.created_at)}
+              {revisionTypeLabel(revision.revision_type)} ·{" "}
+              {formatRevisionDateTime(revision.created_at)}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-400">
+              {stats.blockCount} {stats.blockCount === 1 ? "block" : "blocks"} ·{" "}
+              {stats.wordCount} {stats.wordCount === 1 ? "word" : "words"}
             </p>
           </div>
           <Link
@@ -99,13 +110,4 @@ function readSeoSnapshot(snapshot: Json) {
         ? values.canonical_url
         : undefined,
   };
-}
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
 }
