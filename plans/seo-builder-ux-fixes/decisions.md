@@ -20,6 +20,9 @@ Source of authority: `reports/ux-persona-review-seo-builder/fix-strategy.md` (is
 - 2026-06-10 (N2/I2): the schedule-field round-trip bug (part a) does NOT reproduce on current code — already fixed by the June 10 scheduler-ownership rework (20260610091000), which postdates the review evidence. Disposition: regression-lock test added; sub-behavior ALREADY_RESOLVED; N2 ships part (b) only (always-visible scheduled status + Cancel + failed state + de-burial). Verified by worker-n1 code trace + browser repro.
 - 2026-06-10 (N5/I4): "enable/disable" realized as delete — redirects table has no enabled column and adding one would require a resolution-touching migration on a risky surface. Edit + delete fully cover correction and removal. Reversible-disable would be a new migration node if product wants it later.
 
+- 2026-06-10 (N9/I9): the keep-last-20 prune REQUIRES a new migration — page_revisions has a no-delete trigger (foundation migration line ~156), so deletes must go through a security-definer SQL fn using the established disable/delete/enable pattern (per purge fns 20260609110000 + 20260610090000). Orchestrator approved one additive CREATE FUNCTION migration, single-threaded, service-role-only grant, applied alone (no stray pending migrations). Also corrected: create_seo_page_revision does not exist; the real fn is apply_seo_page_revision_update_atomically — reusing it in the save path would double-write, so snapshot is a direct INSERT in the manual-save action only.
+- 2026-06-10 (N15/I17): tour opt-in implemented locally in BuilderEditorWalkthrough (component owns step state; controller's legacy auto-start writes a value nothing reads). Controller-side cleanup of the now-unused walkthrough fns + one-time blocks-panel auto-expand is flagged as residual for an n1-owned file pass (candidate for N19/P3 or chain wrap-up), not blocking.
+
 ## Open Questions
 
 - None blocking. (Both intake items above were resolved with defaults at triage.)

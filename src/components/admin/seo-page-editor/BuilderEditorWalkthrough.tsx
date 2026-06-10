@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 import { computeWalkthroughCardPlacement } from "@/components/admin/seo-page-editor/walkthrough-card-position";
 
@@ -27,31 +27,116 @@ const walkthroughSteps = {
 
 type WalkthroughStep = keyof typeof walkthroughSteps;
 
+// N15 / issue I17: the Quick Tour is now opt-in. Previously the controller
+// auto-started it (set builderWalkthroughStep = 1) the first time the editor
+// opened, which the review found intrusive. This component now drives tour
+// visibility from its OWN local step state and ignores the controller's
+// auto-start, so opening the editor never pops the tour. A persistent "Quick
+// tour" launch button starts it on demand; finishing or skipping persists the
+// seen-flag (which also stops the controller's legacy auto-start) and the user
+// can re-launch any time. The positioning logic (computeWalkthroughCardPlacement
+// + useWalkthroughTarget + data-builder-walkthrough targeting) is unchanged, so
+// the prior tour-positioning fix is preserved.
+const walkthroughSeenStorageKey = "page-builder-editor-walkthrough-seen";
+
 export function BuilderEditorWalkthrough({
   editor,
 }: {
   editor: SeoPageEditorController;
 }) {
-  const step = editor.builderWalkthroughStep;
-  if (!step) return null;
+  const [activeStep, setActiveStep] = useState<WalkthroughStep | null>(null);
 
-  const copy = walkthroughSteps[step as WalkthroughStep];
+  // Ensure the panel a step points at is expanded so the highlight anchors to a
+  // real on-screen target (steps: 1 = blocks, 2 = SEO, 3 = AI assistant which is
+  // always mounted). Uses the controller's exposed toggles only.
+  const revealPanelForStep = useCallback(
+    (step: WalkthroughStep) => {
+      if (step === 1 && editor.isBlockSidebarCollapsed) {
+        editor.toggleBlockSidebar();
+      } else if (step === 2 && editor.isSeoSidebarCollapsed) {
+        editor.toggleSeoSidebar();
+      }
+    },
+    [editor],
+  );
+
+  const startTour = useCallback(() => {
+    revealPanelForStep(1);
+    setActiveStep(1);
+  }, [revealPanelForStep]);
+
+  const persistSeen = useCallback(() => {
+    try {
+      window.localStorage.setItem(walkthroughSeenStorageKey, "1");
+    } catch {
+      // Ignore private-browsing storage failures.
+    }
+  }, []);
+
+  const endTour = useCallback(() => {
+    persistSeen();
+    setActiveStep(null);
+  }, [persistSeen]);
+
+  const advance = useCallback(() => {
+    setActiveStep((current) => {
+      if (current === 1) {
+        revealPanelForStep(2);
+        return 2;
+      }
+      if (current === 2) {
+        revealPanelForStep(3);
+        return 3;
+      }
+      return current;
+    });
+  }, [revealPanelForStep]);
+
+  if (!activeStep) {
+    return <QuickTourLauncher onStart={startTour} />;
+  }
+
+  const copy = walkthroughSteps[activeStep];
 
   return (
     <WalkthroughOverlay
-      step={step as WalkthroughStep}
+      step={activeStep}
       targetKey={copy.target}
       title={copy.title}
       body={copy.body}
       cta={copy.cta}
-      retryKey={`${step}:${editor.isBlockSidebarCollapsed}:${editor.isSeoSidebarCollapsed}`}
-      onContinue={
-        step === 3
-          ? editor.finishBuilderWalkthrough
-          : editor.advanceBuilderWalkthrough
-      }
-      onSkip={editor.dismissBuilderWalkthrough}
+      retryKey={`${activeStep}:${editor.isBlockSidebarCollapsed}:${editor.isSeoSidebarCollapsed}`}
+      onContinue={activeStep === 3 ? endTour : advance}
+      onSkip={endTour}
     />
+  );
+}
+
+function QuickTourLauncher({ onStart }: { onStart: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label="Start the quick tour"
+      title="Take a quick tour of the builder"
+      className="fixed bottom-4 left-4 z-[70] inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-lg transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+      onClick={onStart}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="size-4 text-[#0b63f6]"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3" />
+        <path d="M12 17h.01" />
+      </svg>
+      Quick tour
+    </button>
   );
 }
 
