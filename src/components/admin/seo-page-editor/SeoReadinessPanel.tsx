@@ -63,11 +63,13 @@ export function SeoReadinessPanel({
   onOpenSettings: (finding: SeoReadinessFinding) => void;
   mediaAssetCount: number;
 }) {
-  const topFindings = [
-    ...summary.blockers,
-    ...summary.warnings,
-    ...summary.opportunities,
-  ].slice(0, 6);
+  // Blockers now live in the dedicated, always-visible publish-blocker
+  // checklist above (single source of truth). This list shows the non-blocking
+  // improvements only, so the same issue never appears in two panels.
+  const topFindings = [...summary.warnings, ...summary.opportunities].slice(
+    0,
+    6,
+  );
 
   return (
     <section className="flex flex-col gap-6">

@@ -84,6 +84,10 @@ import {
   scrollToBuilderBlockId,
 } from "@/components/admin/seo-page-editor/SeoReadinessHelpers";
 import {
+  derivePublishBlockerChecklist,
+  type PublishBlockerChecklistItem,
+} from "@/components/admin/seo-page-editor/publish-blocker-checklist";
+import {
   getNarrowEditorServerSnapshot,
   getNarrowEditorSnapshot,
   subscribeToNarrowEditorChange,
@@ -447,7 +451,20 @@ export function useSeoPageEditorController(
         : "Expand blocks sidebar - all blocks ready";
   const seoSidebarExpandTitle = `Expand SEO sidebar - SEO ${seoReadiness.label}`;
   const canPublish = Boolean(page?.id);
-  const publishDisabled = !canPublish || seoReadiness.blockers.length > 0;
+  // Single canonical publish-blocker list. The chip count, the rendered
+  // checklist, and the disabled Publish button all read from this one list so
+  // they can never disagree. It reflects the existing readiness rules plus the
+  // pre-existing "save first" precondition — no rule is added or removed here.
+  const publishBlockerChecklist = useMemo(
+    () =>
+      derivePublishBlockerChecklist({
+        content,
+        summary: seoReadiness,
+        canPublish,
+      }),
+    [canPublish, content, seoReadiness],
+  );
+  const publishDisabled = publishBlockerChecklist.length > 0;
   const nextPublishStep = nextRequiredPublishStep({
     canPublish,
     hasUnpublishedDraftChanges,
@@ -769,6 +786,7 @@ export function useSeoPageEditorController(
     effectivePageId,
     editingBlockEntry,
     finishBuilderWalkthrough,
+    focusPublishBlocker,
     formAction,
     focusSeoSetting,
     handleEditorFormSubmit,
@@ -806,6 +824,7 @@ export function useSeoPageEditorController(
     previewLinkTone,
     primaryColumn,
     primarySection,
+    publishBlockerChecklist,
     publishButtonLabel,
     publishDisabled,
     publishStateHelp,
@@ -1018,6 +1037,53 @@ export function useSeoPageEditorController(
   function updateSlugFromInput(nextSlug: string) {
     setSlugTouched(true);
     setSlug(slugify(nextSlug));
+  }
+
+  function focusPublishBlocker(item: PublishBlockerChecklistItem) {
+    const { target } = item;
+    if (target.kind === "save-first") {
+      // The Save draft control lives in the top rail (outside this panel). Move
+      // focus to it so keyboard users land on the action that clears this step.
+      window.requestAnimationFrame(() => {
+        const saveButton = document.querySelector<HTMLElement>(
+          'button[name="intent"][value="save"]',
+        );
+        saveButton?.scrollIntoView({ behavior: "smooth", block: "center" });
+        saveButton?.focus();
+      });
+      return;
+    }
+
+    if (target.kind === "field") {
+      if (advancedSeoFieldIds.has(target.elementId)) {
+        const advancedFields = document.getElementById("advanced-seo-fields");
+        if (advancedFields instanceof HTMLDetailsElement) {
+          advancedFields.open = true;
+        }
+      }
+      window.requestAnimationFrame(() => {
+        const field = document.getElementById(target.elementId);
+        field?.scrollIntoView({ behavior: "smooth", block: "center" });
+        field?.focus();
+      });
+      return;
+    }
+
+    if (target.kind === "block-modal") {
+      const entry = builderBlockEntries[target.blockIndex];
+      if (entry) {
+        editBlockEntry(entry);
+      }
+      return;
+    }
+
+    // anchor target: scroll the canvas to the referenced block.
+    const elementId = target.anchor.replace(/^#/, "");
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById(elementId)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   }
 
   function focusSeoSetting(finding: SeoReadinessFinding) {

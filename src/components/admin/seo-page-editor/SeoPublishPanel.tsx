@@ -6,6 +6,10 @@ import {
   SeoReadinessPanel,
 } from "@/components/admin/seo-page-editor/SeoReadinessPanel";
 import {
+  PUBLISH_BLOCKER_LIST_ID,
+  PublishBlockerChecklist,
+} from "@/components/admin/seo-page-editor/PublishBlockerChecklist";
+import {
   compactInputClass,
   primaryButtonClass,
   textareaClass,
@@ -82,8 +86,17 @@ function PublishStatusSection({
         : "text-sky-700";
 
   function revealPublishBlocker() {
-    onExpandedChange(true);
+    // Move attention to the canonical blocker checklist (the single source of
+    // truth for what blocks publish), focusing its first actionable item.
     requestAnimationFrame(() => {
+      const list = document.getElementById(PUBLISH_BLOCKER_LIST_ID);
+      const firstItem = list?.querySelector<HTMLElement>("button");
+      if (firstItem) {
+        list?.scrollIntoView({ behavior: "smooth", block: "center" });
+        firstItem.focus();
+        return;
+      }
+      onExpandedChange(true);
       const reason = document.getElementById("publish-next-step");
       reason?.scrollIntoView({ behavior: "smooth", block: "center" });
       reason?.focus();
@@ -133,6 +146,15 @@ function PublishStatusSection({
           editor={editor}
           onCancel={() => setIsConfirmingPublish(false)}
         />
+      ) : null}
+
+      {editor.publishBlockerChecklist.length > 0 ? (
+        <div className="mt-3">
+          <PublishBlockerChecklist
+            items={editor.publishBlockerChecklist}
+            onFocusBlocker={editor.focusPublishBlocker}
+          />
+        </div>
       ) : null}
 
       {isExpanded ? (
@@ -767,6 +789,7 @@ function PublishButton({
   onRevealPublishBlocker: () => void;
   onRequestConfirm: () => void;
 }) {
+  const blockerCount = editor.publishBlockerChecklist.length;
   return (
     <button
       type="button"
@@ -774,9 +797,12 @@ function PublishButton({
         editor.publishDisabled ? disabledPublishButtonClass : primaryButtonClass
       }`}
       aria-disabled={editor.publishDisabled || undefined}
+      aria-describedby={blockerCount > 0 ? PUBLISH_BLOCKER_LIST_ID : undefined}
       title={
-        editor.seoReadiness.blockers.length > 0
-          ? "Resolve SEO blockers before publishing."
+        blockerCount > 0
+          ? `Resolve ${blockerCount} ${
+              blockerCount === 1 ? "item" : "items"
+            } in the checklist before publishing.`
           : undefined
       }
       onClick={(event) => {

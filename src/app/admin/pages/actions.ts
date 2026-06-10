@@ -31,6 +31,7 @@ import {
   SeoAgentSourceError,
   adminGenerateOpenAiSeoPageProposal,
 } from "@/lib/services/openai-seo-agent";
+import { adminDeleteNeverSavedSeoPageDraft } from "@/lib/services/seo-page-drafts";
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
 import { pagePathForSlug } from "@/lib/page-builder/page-paths";
 import { zonedDateTimeLocalToUtcIso } from "@/lib/page-builder/scheduled-publishing";
@@ -319,6 +320,51 @@ export async function createSeoPageDraftForEditor(input: {
     return {
       status: "error",
       message: "Could not start the draft automatically — use Save draft.",
+    };
+  }
+}
+
+export type DiscardNeverSavedDraftResult =
+  | { status: "deleted" }
+  | { status: "error"; message: string };
+
+// N6 / issue I5: discard a draft row that S3b auto-created but the user never
+// explicitly saved. Called from the unsaved-exit guard's "Discard draft"
+// option. The service re-derives a server-side safety floor (never deletes a
+// published or revision-bearing page), so a stale client or spoofed id can
+// never cause data loss.
+export async function deleteNeverSavedSeoPageDraft(
+  pageId: string,
+): Promise<DiscardNeverSavedDraftResult> {
+  const admin = await requireAuth();
+  const parsedPageId = z.uuid().safeParse(pageId);
+  if (!parsedPageId.success) {
+    return { status: "error", message: "Invalid page reference." };
+  }
+
+  try {
+    const result = await adminDeleteNeverSavedSeoPageDraft(parsedPageId.data);
+    if (result.status === "deleted") {
+      revalidatePath(ADMIN_PAGES_PATH);
+      return { status: "deleted" };
+    }
+    if (result.status === "not_found") {
+      // Already gone — treat as success so the guard lets the user leave.
+      return { status: "deleted" };
+    }
+    return {
+      status: "error",
+      message: "This page was already saved, so it was kept.",
+    };
+  } catch (error) {
+    console.error("failed to discard never-saved SEO page draft", {
+      adminUserId: admin.user.id,
+      pageId: parsedPageId.data,
+      error,
+    });
+    return {
+      status: "error",
+      message: "Could not discard the draft. Use Save draft to keep it.",
     };
   }
 }

@@ -5,6 +5,7 @@ import {
   archiveSeoPageFromList,
   createSeoPageComment,
   createSeoPageDraftForEditor,
+  deleteNeverSavedSeoPageDraft,
   duplicateSeoPageFromList,
   generateAiSeoPageProposal,
   moveSeoPageToDraftFromList,
@@ -20,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
   revalidatePath: vi.fn(),
   redirect: vi.fn(),
+  adminDeleteNeverSavedSeoPageDraft: vi.fn(),
   adminGenerateOpenAiSeoPageProposal: vi.fn(),
   adminAcceptAiProposalBlocks: vi.fn(),
   adminArchiveSeoPage: vi.fn(),
@@ -59,6 +61,10 @@ vi.mock("@/lib/services/openai-seo-agent", async () => {
       mocks.adminGenerateOpenAiSeoPageProposal,
   };
 });
+
+vi.mock("@/lib/services/seo-page-drafts", () => ({
+  adminDeleteNeverSavedSeoPageDraft: mocks.adminDeleteNeverSavedSeoPageDraft,
+}));
 
 vi.mock("@/lib/services/ai-page-proposals", async () => {
   const actual = await vi.importActual<
@@ -1070,6 +1076,67 @@ describe("admin page actions", () => {
       status: "error",
       proposalId,
       message: "AI proposals can only use selected approved source data.",
+    });
+  });
+
+  it("discards a never-saved auto-draft and revalidates the pages list", async () => {
+    mocks.adminDeleteNeverSavedSeoPageDraft.mockResolvedValue({
+      status: "deleted",
+    });
+
+    const result = await deleteNeverSavedSeoPageDraft(pageId);
+
+    expect(result).toEqual({ status: "deleted" });
+    expect(mocks.adminDeleteNeverSavedSeoPageDraft).toHaveBeenCalledWith(
+      pageId,
+    );
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/pages");
+  });
+
+  it("treats an already-gone draft as discarded so the user can leave", async () => {
+    mocks.adminDeleteNeverSavedSeoPageDraft.mockResolvedValue({
+      status: "not_found",
+    });
+
+    const result = await deleteNeverSavedSeoPageDraft(pageId);
+
+    expect(result).toEqual({ status: "deleted" });
+  });
+
+  it("refuses to discard a page the server reports as already saved", async () => {
+    mocks.adminDeleteNeverSavedSeoPageDraft.mockResolvedValue({
+      status: "protected",
+    });
+
+    const result = await deleteNeverSavedSeoPageDraft(pageId);
+
+    expect(result).toEqual({
+      status: "error",
+      message: "This page was already saved, so it was kept.",
+    });
+    expect(mocks.revalidatePath).not.toHaveBeenCalledWith("/admin/pages");
+  });
+
+  it("rejects an invalid page id without calling the delete service", async () => {
+    const result = await deleteNeverSavedSeoPageDraft("../settings");
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Invalid page reference.",
+    });
+    expect(mocks.adminDeleteNeverSavedSeoPageDraft).not.toHaveBeenCalled();
+  });
+
+  it("maps an unexpected delete failure to a safe message", async () => {
+    mocks.adminDeleteNeverSavedSeoPageDraft.mockRejectedValue(
+      new Error("delete exploded"),
+    );
+
+    const result = await deleteNeverSavedSeoPageDraft(pageId);
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Could not discard the draft. Use Save draft to keep it.",
     });
   });
 });
