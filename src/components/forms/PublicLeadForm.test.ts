@@ -124,6 +124,75 @@ describe("PublicLeadForm", () => {
     expect(html).toContain('aria-invalid="true"');
   });
 
+  it("shows a privacy assurance with a link to /privacy on the apply form", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        idempotencyKey: "lead-apply-privacy",
+        intent: "apply",
+        submitLabel: "Apply now",
+      }),
+    );
+
+    expect(html).toContain('href="/privacy"');
+    expect(html).toContain("Privacy Policy");
+    expect(html).toMatch(/By applying/);
+    expect(html).toContain("We never sell your data");
+  });
+
+  it("shows privacy assurance with contact-appropriate copy on the contact form", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        idempotencyKey: "lead-contact-privacy",
+        intent: "contact",
+        submitLabel: "Send message",
+      }),
+    );
+
+    expect(html).toContain('href="/privacy"');
+    expect(html).toMatch(/By sending/);
+    expect(html).toContain("We never sell your data");
+  });
+
+  it("marks optional fields with an (optional) suffix and leaves required fields unmarked", () => {
+    const contactHtml = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        idempotencyKey: "lead-contact-optional",
+        intent: "contact",
+        submitLabel: "Send message",
+      }),
+    );
+
+    // Contact: State is optional, so its visible label gains "(optional)".
+    expect(contactHtml).toMatch(/State[\s\S]*?\(optional\)/);
+    // Phone is optional on both forms.
+    expect(contactHtml).toMatch(/Phone[\s\S]*?\(optional\)/);
+    // Required fields do not get the optional suffix on their own label.
+    expect(contactHtml).toMatch(/Email[\s\S]*?\(required\)/);
+
+    const applyHtml = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        idempotencyKey: "lead-apply-optional",
+        intent: "apply",
+        submitLabel: "Apply now",
+      }),
+    );
+
+    // Apply: State is required, so it keeps the required marker, not optional.
+    expect(applyHtml).toMatch(/State[\s\S]*?\(required\)/);
+    // Apply: the message field is optional, so it gains "(optional)".
+    expect(applyHtml).toMatch(
+      /What are you trying to build\?[\s\S]*?\(optional\)/,
+    );
+  });
+
   it("renders the live form (not a success panel) on first paint", () => {
     const html = renderToStaticMarkup(
       createElement(PublicLeadForm, {

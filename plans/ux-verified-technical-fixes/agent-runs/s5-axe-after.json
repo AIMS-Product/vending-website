@@ -1,0 +1,12 @@
+{
+  "article": {
+    "url": "http://localhost:3001/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "violations": [],
+    "violationCount": 0
+  },
+  "admin-news-new": {
+    "url": "http://localhost:3001/admin/news/new",
+    "violations": [],
+    "violationCount": 0
+  }
+}

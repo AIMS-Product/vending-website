@@ -1,12 +1,14 @@
 import Image from "next/image";
 import {
   caseStudyQuotes,
+  caseStudySectionHeadings,
   type CaseStudyQuote,
 } from "@/lib/content/case-studies";
 
 export function CaseStudyQuotes() {
   return (
     <section className="bg-[#f5fbff] px-5 py-16 lg:px-10 lg:py-20">
+      <h2 className="sr-only">{caseStudySectionHeadings.quotes}</h2>
       <ul className="mx-auto grid max-w-[1500px] gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {caseStudyQuotes.map((quote) => (
           <li key={quote.id} className="min-w-0">

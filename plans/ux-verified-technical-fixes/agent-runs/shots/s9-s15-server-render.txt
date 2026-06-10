@@ -1,0 +1,13 @@
+=== S9 banner+highlight: GET /admin/pages?created=be68c3ae-e5e5-4028-9508-1bfb8852b6a6 ===
+Open page
+<div role="status" class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700"><span>Created “<!-- -->Vending MAchine Location Test<!-- -->”. It is at the top of the list below.</span><a class="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-
+Open page
+data-created-row="true"
+data-created-row="true"
+
+=== S9 no-param baseline: GET /admin/pages (expect 0 banner/highlight) ===
+banner+highlight occurrences: 0
+
+=== S15 KPI 0-state: GET /admin/pages (expect no data-kpi) ===
+data-kpi occurrences: 0
+schedule-failed view rows: 

@@ -73,10 +73,11 @@ export function NewPageChoiceGate({
 
   return (
     <div className="grid min-h-[calc(100dvh-4rem)] place-items-center border border-slate-200 bg-slate-100 px-4 py-8">
-      <section
-        className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl ring-1 ring-black/5 sm:p-8"
-        aria-labelledby="new-page-choice-title"
-      >
+      {/* C132: a plain <div>, not a named <section>. AdminShell already wraps
+          this route in a `region` landmark (<section aria-labelledby="admin-shell-title">),
+          so adding a second named region here nested inside it tripped axe's
+          landmark-unique rule. The heading below keeps the panel's structure. */}
+      <div className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl ring-1 ring-black/5 sm:p-8">
         <div className="mb-6">
           <p className="text-xs font-semibold tracking-wider text-[#0b63f6] uppercase">
             SEO Page Builder
@@ -158,7 +159,7 @@ export function NewPageChoiceGate({
             Start building page
           </button>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

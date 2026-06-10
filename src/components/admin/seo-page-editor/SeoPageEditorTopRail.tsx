@@ -21,6 +21,21 @@ const railCommandClass =
 const railMenuItemClass =
   "rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/25 focus-visible:outline-none";
 
+// S20 / C140 e2e: a page is "just created in-session" when there is no loaded
+// page (the editor opened on /admin/pages/new) but a draft row now exists
+// (S3b auto-created it, or the first save did). In that case the "Pages"
+// back-link carries `?created=<id>` so the list's S9 success banner + row
+// highlight fire. Editing an already-loaded page returns to a plain list.
+export function backToPagesHref(
+  page: { id: string } | null | undefined,
+  effectivePageId: string | null | undefined,
+): string {
+  if (!page?.id && effectivePageId) {
+    return `/admin/pages?created=${effectivePageId}`;
+  }
+  return "/admin/pages";
+}
+
 export function SeoPageEditorTopRail({
   editor,
 }: {
@@ -50,6 +65,7 @@ export function SeoPageEditorTopRail({
   const {
     autosave,
     blockSidebarExpandTitle,
+    effectivePageId,
     isBlockSidebarCollapsed,
     isNarrowEditor,
     isPreviewOpening,
@@ -92,7 +108,10 @@ export function SeoPageEditorTopRail({
     <div className="sticky top-0 z-50 border-b border-slate-200/70 bg-slate-100/95 px-4 pt-4 pb-3 backdrop-blur">
       <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-center gap-2 sm:grid sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-3">
         <div className="order-1 flex flex-wrap justify-center gap-2 sm:order-none sm:justify-start">
-          <Link href="/admin/pages" className={railCommandClass}>
+          <Link
+            href={backToPagesHref(page, effectivePageId)}
+            className={railCommandClass}
+          >
             <ChevronIcon direction="left" />
             <span>Pages</span>
           </Link>

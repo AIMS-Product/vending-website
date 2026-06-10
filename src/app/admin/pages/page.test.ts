@@ -166,6 +166,147 @@ describe("AdminPagesPage", () => {
 
     expect(html).toContain('aria-label="Page status: Published"');
   });
+
+  // S9 / C140: deterministic create-success feedback.
+  describe("created-page success feedback", () => {
+    const createdId = "11111111-1111-4111-8111-111111111111";
+
+    it("renders a success banner with an Open page link when ?created matches a page", async () => {
+      vi.mocked(adminListSeoPages).mockResolvedValue([
+        seoPage({ id: createdId, slug: "brand-new", title: "Brand new page" }),
+      ]);
+
+      const page = await AdminPagesPage({
+        searchParams: Promise.resolve({ created: createdId }),
+      });
+      const html = renderToStaticMarkup(page);
+
+      expect(html).toContain("Brand new page");
+      expect(html).toContain('role="status"');
+      expect(html).toContain(`href="/admin/pages/${createdId}"`);
+      expect(html).toContain("Open page");
+    });
+
+    it("highlights the newly created row", async () => {
+      vi.mocked(adminListSeoPages).mockResolvedValue([
+        seoPage({ id: createdId, slug: "brand-new", title: "Brand new page" }),
+      ]);
+
+      const page = await AdminPagesPage({
+        searchParams: Promise.resolve({ created: createdId }),
+      });
+      const html = renderToStaticMarkup(page);
+
+      // The matching row carries the highlight marker so it stands out without
+      // the admin manually searching for it.
+      expect(html).toContain('data-created-row="true"');
+    });
+
+    it("does not render the banner without the created param", async () => {
+      vi.mocked(adminListSeoPages).mockResolvedValue([
+        seoPage({ id: createdId, slug: "brand-new", title: "Brand new page" }),
+      ]);
+
+      const page = await AdminPagesPage({ searchParams: Promise.resolve({}) });
+      const html = renderToStaticMarkup(page);
+
+      expect(html).not.toContain("Open page");
+      expect(html).not.toContain('data-created-row="true"');
+    });
+
+    it("does not render the banner when ?created does not match any page", async () => {
+      vi.mocked(adminListSeoPages).mockResolvedValue([
+        seoPage({ id: createdId, slug: "brand-new" }),
+      ]);
+
+      const page = await AdminPagesPage({
+        searchParams: Promise.resolve({
+          created: "99999999-9999-4999-8999-999999999999",
+        }),
+      });
+      const html = renderToStaticMarkup(page);
+
+      expect(html).not.toContain("Open page");
+      expect(html).not.toContain('data-created-row="true"');
+    });
+
+    it("places the newest page at the top of the default (updated-desc) order", async () => {
+      vi.mocked(adminListSeoPages).mockResolvedValue([
+        seoPage({
+          id: "old",
+          slug: "older-page",
+          title: "Older page",
+          updated_at: "2026-06-01T00:00:00.000Z",
+        }),
+        seoPage({
+          id: createdId,
+          slug: "newest-page",
+          title: "Newest page",
+          updated_at: "2026-06-10T00:00:00.000Z",
+        }),
+      ]);
+
+      const page = await AdminPagesPage({ searchParams: Promise.resolve({}) });
+      const html = renderToStaticMarkup(page);
+
+      // Default sort is updated-desc, so the freshest row renders before the
+      // older one — a just-created page lands at the top without a sort change.
+      expect(html.indexOf("Newest page")).toBeLessThan(
+        html.indexOf("Older page"),
+      );
+    });
+  });
+
+  // S15 / C137: schedule-failed surfaced in the KPI strip.
+  describe("schedule-failed KPI surfacing", () => {
+    it("surfaces the schedule-failed count with a link to the filter when > 0", async () => {
+      vi.mocked(adminListSeoPages).mockResolvedValue([
+        seoPage({
+          id: "f1",
+          slug: "failed-1",
+          scheduled_publish_status: "failed",
+        }),
+        seoPage({
+          id: "f2",
+          slug: "failed-2",
+          scheduled_publish_status: "failed",
+        }),
+        seoPage({
+          id: "ok",
+          slug: "ok-page",
+          scheduled_publish_status: "none",
+        }),
+      ]);
+
+      const page = await AdminPagesPage({ searchParams: Promise.resolve({}) });
+      const html = renderToStaticMarkup(page);
+
+      // The KPI alert carries a dedicated marker so it is distinct from the
+      // always-present "Schedule failed" workflow filter chip.
+      expect(html).toContain('data-kpi="schedule-failed"');
+      expect(html).toContain("/admin/pages?view=schedule-failed");
+      // Red/alert tone for a failure surface.
+      expect(html).toMatch(/bg-red-50|text-red-700|border-red-200/);
+      expect(html).toContain(">2<");
+    });
+
+    it("renders nothing extra when no page is in the schedule-failed state", async () => {
+      vi.mocked(adminListSeoPages).mockResolvedValue([
+        seoPage({
+          id: "ok",
+          slug: "ok-page",
+          scheduled_publish_status: "none",
+        }),
+      ]);
+
+      const page = await AdminPagesPage({ searchParams: Promise.resolve({}) });
+      const html = renderToStaticMarkup(page);
+
+      // No schedule-failed KPI affordance at a zero count. (The workflow filter
+      // chip "Schedule failed" still exists; the KPI strip surface does not.)
+      expect(html).not.toContain('data-kpi="schedule-failed"');
+    });
+  });
 });
 
 function seoPage(

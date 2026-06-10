@@ -1,13 +1,19 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   initialLeadActionState,
   resolveLeadSuccessTransition,
   type PublicLeadActionState,
 } from "@/app/lead-action-state";
+import {
+  deriveLeadErrorSummary,
+  type LeadErrorSummaryItem,
+} from "./lead-error-summary";
 import type { LeadAttribution } from "@/lib/lead-attribution";
+import { US_STATES } from "@/lib/content/us-states";
 import { cn } from "@/lib/utils";
 
 type PublicLeadFormProps = {
@@ -43,59 +49,6 @@ type FieldProps = {
 
 const inputClass =
   "min-h-12 w-full rounded-[8px] border-2 border-[#111111] bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#2d9fd6] focus:ring-2 focus:ring-[#55b8e8]";
-
-const US_STATES = [
-  "Alabama",
-  "Alaska",
-  "Arizona",
-  "Arkansas",
-  "California",
-  "Colorado",
-  "Connecticut",
-  "Delaware",
-  "Florida",
-  "Georgia",
-  "Hawaii",
-  "Idaho",
-  "Illinois",
-  "Indiana",
-  "Iowa",
-  "Kansas",
-  "Kentucky",
-  "Louisiana",
-  "Maine",
-  "Maryland",
-  "Massachusetts",
-  "Michigan",
-  "Minnesota",
-  "Mississippi",
-  "Missouri",
-  "Montana",
-  "Nebraska",
-  "Nevada",
-  "New Hampshire",
-  "New Jersey",
-  "New Mexico",
-  "New York",
-  "North Carolina",
-  "North Dakota",
-  "Ohio",
-  "Oklahoma",
-  "Oregon",
-  "Pennsylvania",
-  "Rhode Island",
-  "South Carolina",
-  "South Dakota",
-  "Tennessee",
-  "Texas",
-  "Utah",
-  "Vermont",
-  "Virginia",
-  "Washington",
-  "West Virginia",
-  "Wisconsin",
-  "Wyoming",
-] as const;
 
 export function PublicLeadForm({
   action,
@@ -148,6 +101,18 @@ export function PublicLeadForm({
   }, [redirectHref, router]);
 
   const errors = state.status === "error" ? state.fieldErrors : undefined;
+  const summaryItems = deriveLeadErrorSummary(state);
+  const hasSummary = summaryItems.length > 0;
+  const summaryRef = useRef<HTMLDivElement>(null);
+
+  // Move keyboard/SR focus to the error summary the moment it appears after a
+  // failed submit. Keyed on the summary count + first key so re-submitting a
+  // still-invalid form re-focuses the summary.
+  const summarySignature = summaryItems.map((item) => item.errorKey).join(",");
+  useEffect(() => {
+    if (hasSummary) summaryRef.current?.focus();
+  }, [hasSummary, summarySignature]);
+
   const isApply = intent === "apply";
   const isCompact = layout === "compact";
   const showQualificationFields = isApply || !isCompact;
@@ -169,6 +134,15 @@ export function PublicLeadForm({
         attribution={attribution}
         idempotencyKey={idempotencyKey}
       />
+
+      {hasSummary && (
+        <LeadErrorSummary
+          ref={summaryRef}
+          items={summaryItems}
+          fieldErrors={errors}
+          intent={intent}
+        />
+      )}
 
       <div className={cn("grid gap-5", !isCompact && "sm:grid-cols-2")}>
         <TextField
@@ -293,9 +267,71 @@ export function PublicLeadForm({
           {pending ? "Submitting..." : submitLabel}
         </button>
 
-        <ActionMessage state={state} />
+        <ActionMessage state={state} muted={hasSummary} />
       </div>
+
+      <PrivacyAssurance intent={intent} />
     </form>
+  );
+}
+
+function PrivacyAssurance({ intent }: { intent: "apply" | "contact" }) {
+  const lead =
+    intent === "apply"
+      ? "By applying you agree to our"
+      : "By sending this note you agree to our";
+  return (
+    <p className="text-xs leading-5 font-medium text-slate-500">
+      {lead}{" "}
+      <Link
+        href="/privacy"
+        className="font-semibold text-slate-700 underline underline-offset-2 hover:text-slate-900"
+      >
+        Privacy Policy
+      </Link>
+      . We never sell your data.
+    </p>
+  );
+}
+
+function LeadErrorSummary({
+  ref,
+  items,
+  fieldErrors,
+  intent,
+}: {
+  ref: React.Ref<HTMLDivElement>;
+  items: LeadErrorSummaryItem[];
+  fieldErrors?: Record<string, string[]>;
+  intent: "apply" | "contact";
+}) {
+  const noun = intent === "apply" ? "application" : "message";
+  const count = items.length;
+  return (
+    <div
+      ref={ref}
+      role="alert"
+      tabIndex={-1}
+      className="grid gap-2 rounded-[8px] border-2 border-red-300 bg-red-50 p-4 outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+    >
+      <p className="text-sm font-bold text-red-700">
+        {count === 1
+          ? `There is 1 problem with your ${noun}`
+          : `There are ${count} problems with your ${noun}`}
+      </p>
+      <ul className="grid gap-1">
+        {items.map((item) => (
+          <li key={item.errorKey}>
+            <a
+              href={`#${item.inputId}`}
+              className="text-sm font-semibold text-red-700 underline underline-offset-2 hover:text-red-800"
+            >
+              {item.label}: {fieldErrors?.[item.errorKey]?.[0]}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -338,6 +374,32 @@ function HiddenAttribution({
   );
 }
 
+function FieldLabel({
+  id,
+  label,
+  required,
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+}) {
+  return (
+    <label htmlFor={id} className="text-sm font-medium text-slate-700">
+      {label}
+      {required ? (
+        <>
+          <span className="ml-0.5 text-[#c2410c]" aria-hidden>
+            *
+          </span>
+          <span className="sr-only"> (required)</span>
+        </>
+      ) : (
+        <span className="ml-1 font-normal text-slate-400"> (optional)</span>
+      )}
+    </label>
+  );
+}
+
 function TextField({
   name,
   errorKey,
@@ -353,15 +415,7 @@ function TextField({
   const id = `lead-${name}`;
   return (
     <div className="space-y-2">
-      <label htmlFor={id} className="text-sm font-medium text-slate-700">
-        {label}
-        {required && (
-          <span className="ml-0.5 text-[#c2410c]" aria-hidden>
-            *
-          </span>
-        )}
-        {required && <span className="sr-only"> (required)</span>}
-      </label>
+      <FieldLabel id={id} label={label} required={required} />
       <input
         id={id}
         name={name}
@@ -393,15 +447,7 @@ function SelectField({
   const id = `lead-${name}`;
   return (
     <div className="space-y-2">
-      <label htmlFor={id} className="text-sm font-medium text-slate-700">
-        {label}
-        {required && (
-          <span className="ml-0.5 text-[#c2410c]" aria-hidden>
-            *
-          </span>
-        )}
-        {required && <span className="sr-only"> (required)</span>}
-      </label>
+      <FieldLabel id={id} label={label} required={required} />
       <select
         id={id}
         name={name}
@@ -438,15 +484,7 @@ function TextareaField({
   const id = `lead-${name}`;
   return (
     <div className="space-y-2">
-      <label htmlFor={id} className="text-sm font-medium text-slate-700">
-        {label}
-        {required && (
-          <span className="ml-0.5 text-[#c2410c]" aria-hidden>
-            *
-          </span>
-        )}
-        {required && <span className="sr-only"> (required)</span>}
-      </label>
+      <FieldLabel id={id} label={label} required={required} />
       <textarea
         id={id}
         name={name}
@@ -472,14 +510,23 @@ function FieldError({ id, error }: { id: string; error?: string }) {
   );
 }
 
-function ActionMessage({ state }: { state: PublicLeadActionState }) {
+function ActionMessage({
+  state,
+  muted,
+}: {
+  state: PublicLeadActionState;
+  // When the error summary is on screen it owns the assertive announcement, so
+  // this region drops role="alert"/assertive to avoid double SR spam. Success
+  // and server-error (no field errors) announcements are unaffected.
+  muted?: boolean;
+}) {
   if (state.status === "idle") return null;
   const isError = state.status === "error";
+  const announceAssertively = isError && !muted;
   return (
     <p
-      // Errors announce assertively via role="alert"; success stays polite.
-      role={isError ? "alert" : undefined}
-      aria-live={isError ? "assertive" : "polite"}
+      role={announceAssertively ? "alert" : undefined}
+      aria-live={announceAssertively ? "assertive" : "polite"}
       className={cn(
         "text-sm font-medium",
         isError ? "text-red-600" : "text-emerald-700",

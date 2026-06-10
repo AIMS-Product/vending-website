@@ -97,6 +97,7 @@ type AdminPagesSearchParams = SeoPageSearchParams & {
   archived?: SearchParamValue;
   failed?: SearchParamValue;
   error?: SearchParamValue;
+  created?: SearchParamValue;
 };
 
 export default async function AdminPagesPage({
@@ -114,6 +115,12 @@ export default async function AdminPagesPage({
   const allPages = await adminListSeoPages();
   const listState = buildSeoPageListState(allPages, listParams);
 
+  // S9 / C140: a deterministic success banner driven by `?created=<id>`, so
+  // returning to the list after creating a page always confirms it landed and
+  // links straight back to its editor — no racing the list to find the row.
+  const createdPage = resolveCreatedPage(allPages, params.created);
+  const scheduleFailedCount = countScheduleFailed(allPages);
+
   return (
     <AdminShell
       activeSection="pages"
@@ -124,8 +131,50 @@ export default async function AdminPagesPage({
       actions={<AdminPagesActions />}
     >
       <BulkArchiveResultBanner result={bulkArchiveResult} />
-      <SeoPagesAdminSurface state={listState} />
+      <CreatedPageBanner page={createdPage} />
+      <SeoPagesAdminSurface
+        state={listState}
+        scheduleFailedCount={scheduleFailedCount}
+        createdId={createdPage?.id ?? null}
+      />
     </AdminShell>
+  );
+}
+
+// Resolves the `?created=<id>` param to an actual row so a stale or spoofed id
+// renders nothing rather than a banner pointing at a page that does not exist.
+function resolveCreatedPage(
+  pages: Tables<"seo_pages">[],
+  created: SearchParamValue,
+): Tables<"seo_pages"> | null {
+  const id = firstParam(created);
+  if (!id) return null;
+  return pages.find((page) => page.id === id) ?? null;
+}
+
+function countScheduleFailed(pages: Tables<"seo_pages">[]): number {
+  return pages.filter((page) => page.scheduled_publish_status === "failed")
+    .length;
+}
+
+function CreatedPageBanner({ page }: { page: Tables<"seo_pages"> | null }) {
+  if (!page) return null;
+
+  return (
+    <div
+      role="status"
+      className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700"
+    >
+      <span>
+        Created &ldquo;{page.title}&rdquo;. It is at the top of the list below.
+      </span>
+      <Link
+        href={`/admin/pages/${page.id}`}
+        className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-600/40 focus-visible:outline-none"
+      >
+        Open page
+      </Link>
+    </div>
   );
 }
 
@@ -210,28 +259,42 @@ function AdminPagesActions() {
   );
 }
 
-function SeoPagesAdminSurface({ state }: { state: SeoPagesListState }) {
+function SeoPagesAdminSurface({
+  state,
+  scheduleFailedCount,
+  createdId,
+}: {
+  state: SeoPagesListState;
+  scheduleFailedCount: number;
+  createdId: string | null;
+}) {
   return (
     <>
-      <SeoPagesSummary state={state} />
+      <SeoPagesSummary
+        state={state}
+        scheduleFailedCount={scheduleFailedCount}
+      />
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <SeoPagesToolbar state={state} />
-        <SeoPagesResults state={state} />
+        <SeoPagesResults state={state} createdId={createdId} />
         <SeoPagesFooter state={state} />
       </section>
     </>
   );
 }
 
-function SeoPagesSummary({ state }: { state: SeoPagesListState }) {
+function SeoPagesSummary({
+  state,
+  scheduleFailedCount,
+}: {
+  state: SeoPagesListState;
+  scheduleFailedCount: number;
+}) {
   const { pageCounts, perPage, q: searchQuery, sort, status, view } = state;
 
   return (
-    <section
-      className="mb-5 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
-      aria-label="SEO page summary"
-    >
-      <div className="grid divide-y divide-slate-200 md:grid-cols-4 md:divide-x md:divide-y-0">
+    <section className="mb-5 space-y-3" aria-label="SEO page summary">
+      <div className="grid divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:grid-cols-4 md:divide-x md:divide-y-0">
         <MetricPanel
           icon="file"
           tone="blue"
@@ -293,7 +356,31 @@ function SeoPagesSummary({ state }: { state: SeoPagesListState }) {
           active={status === "archived"}
         />
       </div>
+      <ScheduleFailedKpi count={scheduleFailedCount} />
     </section>
+  );
+}
+
+// S15 / C137: surface the schedule-failed count alongside the status metrics so
+// a failed scheduled publish is visible without opening the workflow filter.
+// Reuses the same `?view=schedule-failed` filter and renders nothing at zero.
+function ScheduleFailedKpi({ count }: { count: number }) {
+  if (count <= 0) return null;
+
+  return (
+    <Link
+      href="/admin/pages?view=schedule-failed"
+      data-kpi="schedule-failed"
+      className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 focus-visible:ring-2 focus-visible:ring-red-600/40 focus-visible:outline-none"
+    >
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-red-100 text-lg font-semibold text-red-700">
+        {count}
+      </span>
+      <span>
+        Schedule failed — {count === 1 ? "1 page" : `${count} pages`} need
+        attention
+      </span>
+    </Link>
   );
 }
 
@@ -492,7 +579,13 @@ function SeoPagesResultCount({ state }: { state: SeoPagesListState }) {
   );
 }
 
-function SeoPagesResults({ state }: { state: SeoPagesListState }) {
+function SeoPagesResults({
+  state,
+  createdId,
+}: {
+  state: SeoPagesListState;
+  createdId: string | null;
+}) {
   if (state.visiblePages.length === 0) {
     return <SeoPagesEmptyState state={state} />;
   }
@@ -505,12 +598,18 @@ function SeoPagesResults({ state }: { state: SeoPagesListState }) {
       </div>
       <div className="grid gap-3 p-4 md:hidden">
         {state.visiblePages.map((page) => (
-          <PageMobileCard key={page.id} page={page} returnTo={state.returnTo} />
+          <PageMobileCard
+            key={page.id}
+            page={page}
+            returnTo={state.returnTo}
+            justCreated={page.id === createdId}
+          />
         ))}
       </div>
       <SeoPagesDesktopTable
         pages={state.visiblePages}
         returnTo={state.returnTo}
+        createdId={createdId}
       />
     </>
   );
@@ -560,9 +659,11 @@ function SeoPagesEmptyState({ state }: { state: SeoPagesListState }) {
 function SeoPagesDesktopTable({
   pages,
   returnTo,
+  createdId,
 }: {
   pages: Tables<"seo_pages">[];
   returnTo: string;
+  createdId: string | null;
 }) {
   return (
     <div className="hidden min-h-[28rem] overflow-x-auto md:block">
@@ -578,7 +679,12 @@ function SeoPagesDesktopTable({
         </thead>
         <tbody className="divide-y divide-slate-200">
           {pages.map((page) => (
-            <PageRow key={page.id} page={page} returnTo={returnTo} />
+            <PageRow
+              key={page.id}
+              page={page}
+              returnTo={returnTo}
+              justCreated={page.id === createdId}
+            />
           ))}
         </tbody>
       </table>
@@ -761,9 +867,11 @@ function MetricPanel({
 function PageRow({
   page,
   returnTo,
+  justCreated = false,
 }: {
   page: Tables<"seo_pages">;
   returnTo: string;
+  justCreated?: boolean;
 }) {
   const readiness = assessSeoReadiness(page.draft_content, {
     slug: page.slug,
@@ -778,8 +886,17 @@ function PageRow({
   });
 
   return (
-    <tr className="align-middle transition focus-within:bg-slate-50 hover:bg-slate-50 [&:has(details[open])]:relative [&:has(details[open])]:z-20 [&:has(details[open])]:bg-[#f8fbff]">
-      <td className="border-l-4 border-transparent px-7 py-4">
+    <tr
+      data-created-row={justCreated ? "true" : undefined}
+      className={`align-middle transition focus-within:bg-slate-50 hover:bg-slate-50 [&:has(details[open])]:relative [&:has(details[open])]:z-20 [&:has(details[open])]:bg-[#f8fbff] ${
+        justCreated ? "bg-emerald-50/70" : ""
+      }`}
+    >
+      <td
+        className={`border-l-4 px-7 py-4 ${
+          justCreated ? "border-emerald-400" : "border-transparent"
+        }`}
+      >
         <div className="flex items-start gap-3">
           {page.status !== "archived" ? (
             <input
@@ -837,9 +954,11 @@ function PageRow({
 function PageMobileCard({
   page,
   returnTo,
+  justCreated = false,
 }: {
   page: Tables<"seo_pages">;
   returnTo: string;
+  justCreated?: boolean;
 }) {
   const readiness = assessSeoReadiness(page.draft_content, {
     slug: page.slug,
@@ -854,7 +973,14 @@ function PageMobileCard({
   });
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <article
+      data-created-row={justCreated ? "true" : undefined}
+      className={`rounded-lg border bg-white p-4 shadow-sm ${
+        justCreated
+          ? "border-emerald-300 ring-1 ring-emerald-200"
+          : "border-slate-200"
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Link

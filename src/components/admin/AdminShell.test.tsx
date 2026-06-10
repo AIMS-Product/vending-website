@@ -37,6 +37,21 @@ describe("AdminShell navigation", () => {
     expect(newsLink?.[0]).toContain('aria-current="page"');
   });
 
+  it("renders the Content libraries link in the Content nav", () => {
+    const html = renderShell("pages");
+
+    expect(html).toContain('href="/admin/libraries"');
+    expect(html).toContain("Content libraries");
+  });
+
+  it("marks Content libraries as the active page when on /admin/libraries", () => {
+    const html = renderShell("libraries");
+
+    const librariesLink = html.match(/<a[^>]*href="\/admin\/libraries"[^>]*>/);
+    expect(librariesLink).not.toBeNull();
+    expect(librariesLink?.[0]).toContain('aria-current="page"');
+  });
+
   it("keeps the existing Content and Account nav links rendering", () => {
     const html = renderShell("pages");
 

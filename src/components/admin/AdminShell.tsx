@@ -51,6 +51,13 @@ const contentSections: AdminNavSection[] = [
     description: "Images and source assets",
     icon: "image",
   },
+  {
+    id: "libraries",
+    label: "Content libraries",
+    href: "/admin/libraries",
+    description: "Reusable content collections",
+    icon: "archive",
+  },
 ];
 
 const accountSections: AdminNavSection[] = [

@@ -1,4 +1,5 @@
 import {
+  caseStudySectionHeadings,
   caseStudyVideos,
   type CaseStudyVideo,
 } from "@/lib/content/case-studies";
@@ -6,6 +7,7 @@ import {
 export function CaseStudyVideos() {
   return (
     <section className="bg-[#f5fbff] px-5 py-16 lg:px-10 lg:py-20">
+      <h2 className="sr-only">{caseStudySectionHeadings.videos}</h2>
       <ul className="mx-auto grid max-w-[1500px] gap-8 sm:grid-cols-2 lg:grid-cols-4">
         {caseStudyVideos.map((video) => (
           <li key={video.id}>
