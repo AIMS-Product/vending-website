@@ -1,105 +1,112 @@
-# Persona Review: Alex — Developer Who Judges Everything
+# Persona Review — Alex, Developer Who Judges Everything (29)
 
 ## Summary
 
-- Pages reviewed: 6
-- Issues found: 27
-- Blockers: 0
-- Overall gut feel: 3.5/5
+- **Pages reviewed:** 28 (full exploration log)
+- **Issues found:** 18
+- **Blockers:** 0
+- **Overall gut feel:** 2.5 / 5 — It mostly _works_, but the console errors, the missing form success/validation states, the two error-page handlers, and a failing Core Web Vital are exactly the things I judge a build on. Nothing is broken enough to be a blocker; almost everything is the kind of "didn't finish the edge" that I'd block a PR on.
 
-First, credit where it's due: **zero console errors and zero failed network requests across all 6 pages and 10 interactions.** That's genuinely better than most CMS admins I've poked at, and it moved my baseline up a full point. The build is clean under the hood. My gripes are almost entirely at the seams: a clipboard call that fails silently into a 9px gray line, a z-index collision where the toast eats the SEO button, native-browser-only form validation with no inline field errors, empty tables with no empty states, and an 82-button / 58-input editor route whose URL is a raw UUID with zero deep-link state. Solid engineering, sloppy edges.
+I came in inspecting network requests, console output, validation behaviour and URLs — and the app handed me a 500 on a flagship page, a 404 served by the wrong handler, a form that "succeeds" with a whisper, and CLS 0.263 on four pages. The bones are fine; the finishing is not.
+
+---
+
+## Journey Review
+
+| Journey                  | Score | Could I complete it?                                               | Where I'd give up                                                                                                                      |
+| ------------------------ | ----- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| discover-and-apply       | 2/5   | Yes, but I double-submitted because the success state is invisible | The submit "succeeds" with one line of green text, form stays filled and enabled — I'd assume it failed and click again                |
+| contact-the-team         | 3/5   | Path is followable (submit not executed for safety)                | Contact is footer-only; minor, but I'd hunt for it                                                                                     |
+| read-a-news-article      | 2/5   | Yes                                                                | First paint = empty card outlines + a 500 image error + a broken thumbnail; looks half-built before I even click                       |
+| evaluate-trust           | 4/5   | Yes — about, case studies, privacy, terms all load                 | A heading-order violation on case studies, otherwise clean                                                                             |
+| pre-call-prep            | 3/5   | Yes                                                                | Page loads fine; "0 embedded videos" for a "prep material" page is thin but functional                                                 |
+| admin-create-news-draft  | 2/5   | Yes, only because I guessed the URL                                | No sidebar link to /admin/news — the CMS ships with no inbound nav                                                                     |
+| admin-create-seo-page    | 2/5   | Yes, with friction                                                 | Unsaved editor isn't URL-addressable; Quick Tour overlay blocks the panel it points at; "add block" was flaky across runs (race smell) |
+| admin-manage-content-ops | 3/5   | Mostly                                                             | Redirects manager is a second orphaned route with zero inbound links                                                                   |
+
+### Per-journey notes
+
+- **discover-and-apply (2/5):** The DB confirms a row is created on first submit and duplicate suppression works server-side — but that's the _only_ reason 6 submit clicks didn't create 6 leads. The client gives no guard: button stays enabled, form keeps its values, no redirect to the `/thank-you-for-applying` page that _already exists_ in the app. That's finding 001 and it's my single biggest issue.
+- **read-a-news-article (2/5):** `news-001-load.png` is damning — above the fold is the heading "BLOG", a one-line description, and three empty card rectangles. The cards are scroll-reveal-gated content, not skeletons. Plus a `500 /_next/image` in the console and a visibly broken third thumbnail showing raw alt text.
+- **admin-create-seo-page (2/5):** "Add your first block was inconsistently clickable for automation across runs" reads like a race between the tour overlay mounting and the panel hydrating. Flaky interactive state is the thing I trust least.
 
 ---
 
 ## Page-by-Page Review
 
-### /admin/pages (Pages List)
+### / (homepage) — 2/5
 
-**Gut feel: 4/5** — "Clean 200, no console noise, sensible queryparam-driven filters — but a stray 'N' avatar is z-index-clipping the Sign out button and that's the kind of thing that tells me nobody QA'd the chrome."
+Fast TTFB (~160ms) but **CLS 0.263** (failing), **horizontal scroll at 375px**, a **serious color-contrast** axe violation on the stats `dd` elements, and testimonial `<video>`s in the tab order with **no focus indicator + possible focus trap**. Findings 006, 011, 015.
 
-| #   | Category          | Finding                                                                                                                                                                                                                                                                       | Severity     | Why this matters to me                                                                                                                                                                         |
-| --- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Visual & Layout   | A dark circular "N" avatar overlaps the "Sign out" button's left edge (bottom-left), clipping the "S" in "Sign out". Present on desktop AND mobile.                                                                                                                           | High         | This is a fixed/absolutely-positioned element with a busted z-index or a portal mounting in the wrong stacking context. It's the first thing my eye lands on and it screams "untested layout." |
-| 2   | Navigation & Flow | Filter/sort/view state is all driven by real URL query params (`?status=draft`, `?sort=updated-asc`, `?view=orphaned`) with proper `<a href>` links.                                                                                                                          | Low (praise) | This is exactly right — shareable, bookmarkable, back-button-safe, SSR-friendly. No client-only state hiding the truth. Respect.                                                               |
-| 3   | Copy & Labels     | Filter chip link text concatenates label + count with no separator in the DOM (`All1drafts + published`, `Archived5retired`). Visually it's two lines, but the accessible name is a mashed string.                                                                            | Medium       | A screen reader reads "Archived five retired" as one token. The visual layout papers over a markup problem — counts should be a separate `<span>`, not glued into the link text.               |
-| 4   | Feedback & State  | Row-level action buttons (Duplicate / Publish / Archive) live behind a kebab (`⋮`) but the exploration log lists them as top-level buttons — they're not visible until interaction. Publish/Archive being one click deep with no visible guard from the list view worries me. | Medium       | "Publish page" and "Archive page" from a list row are state-mutating. I want to know there's a confirm step before I find out the hard way.                                                    |
-| 5   | Visual & Layout   | Mobile (375px) stacks the stat cards full-width cleanly, no horizontal scroll, no layout shift.                                                                                                                                                                               | Low (praise) | Responsive done properly. The grid collapses instead of squishing.                                                                                                                             |
-| 6   | Trust & Safety    | "super_admin access" badge top-right is good — but the signed-in email is truncated with an ellipsis (`dev-admin@dev.inv...`) and there's no title/tooltip to see the full value.                                                                                             | Low          | Minor, but as a dev I want to confirm which account I'm acting as before I publish anything.                                                                                                   |
+### /apply — 2/5
 
-### /admin/pages/new (Create New Page)
+No client validation on five `(required)` fields (finding 002); invisible success state (finding 001). The form markup itself is decent — proper input types, sensible tab order, real `<select>` elements — which makes the missing validation/feedback layer stand out more.
 
-**Gut feel: 4/5** — "Card-based type picker is a sensible pattern and the 'Coming soon' disabled states are honest, but the exploration log calls this a 'form' with a 'form-filled' screenshot and there are literally zero inputs — the filled screenshot is byte-identical to load."
+### /news — 2/5
 
-| #   | Category          | Finding                                                                                                                                                             | Severity     | Why this matters to me                                                                                                                                                                         |
-| --- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7   | Forms & Input     | Element count is 9 buttons / 0 inputs / 0 links. The `pages-new-005-form-filled.png` is pixel-identical to `pages-new-004-load.png` — there is no form to fill.     | Low          | Not a product bug, but it tells me the crawler couldn't actually exercise a create flow. The real validation surface is hidden until after "Start building." I can't judge what I can't reach. |
-| 8   | Feedback & State  | Disabled "From template" / "AI-assisted template" cards show a "Coming soon" pill — clear, honest, not a dead button pretending to work.                            | Low (praise) | This is the right way to ship a half-built feature. Disabled + explained beats hidden or broken.                                                                                               |
-| 9   | Navigation & Flow | This page has **0 links** — no breadcrumb, no "Back to pages", no nav rail. The only escape is "Start building" or the browser back button.                         | Medium       | A create screen with no cancel/back affordance is a dead-end-adjacent pattern. If I picked the wrong type I have to hit browser-back, which feels like leaving the app.                        |
-| 10  | Navigation & Flow | "Start building" is the only forward action and the URL is `/admin/pages/new` with no `?type=` param — the selected type/starting-point lives in client state only. | Medium       | Inconsistent with the list page, which is fully URL-driven. If I refresh after selecting "Landing page + Resource default", do I lose my selection? Almost certainly yes.                      |
-| 11  | Visual & Layout   | "SELECTED SETUP" summary panel correctly mirrors the two selections (page type + starting point) live.                                                              | Low (praise) | Good — the summary panel is the single source of truth for what "Start building" will do.                                                                                                      |
+Empty cards on first paint (004), `500 /_next/image` console error + broken thumbnail (005, 017), CLS 0.263. The "BLOG"/"NEWS"/`/news` naming split (007).
 
-### /admin/pages/[id] (Page Builder Editor)
+### /news/{article} — 3/5
 
-**Gut feel: 3/5** — "82 buttons and 58 inputs on one route with a raw UUID URL and no per-block deep-linking — it works and renders without errors, but the clipboard 'Could not copy link.' failure dumped into a 9px gray line is exactly the kind of silent failure I hunt for."
+First article loads in ~2s vs ~130ms siblings (likely the remote image), CLS 0.263, serious contrast violation, and `landmark-complementary-is-top-level` (finding 012).
 
-| #   | Category                  | Finding                                                                                                                                                                                                                                                                            | Severity     | Why this matters to me                                                                                                                                                                                                                                                                   |
-| --- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 12  | Feedback & State          | Clicking "Copy editor link" / "Copy public URL" surfaced **"Could not copy link."** as a tiny gray status line stacked under two other messages (014 screenshot). The clipboard write failed and the app whispered about it.                                                       | High         | This is a textbook silent failure. `navigator.clipboard.writeText` throws without a secure context / focus, and the handler caught it but rendered the error at the same muted weight as success. A failed copy should be a visible error toast, not the third line of a gray stack.     |
-| 13  | Visual & Layout           | In the 014 (post-SEO-click) state, three status messages stack in the top center ("Saved automatically · 3:51 PM", "Preview link created.", "Could not copy link.") AND the "SEO" button top-right is partially occluded behind the green "Draft saved." toast.                    | High         | Z-index / overlap collision again. Two transient regions firing at once with no coordination — the toast literally covers a primary nav control. This is a layout-management problem, not a one-off.                                                                                     |
-| 14  | Navigation & Flow         | The editor URL is a bare UUID (`/admin/pages/f7eb8024-bbba-42d9-8b13-932e337f7e32`). The active panel (Blocks / SEO), the selected block, and which section is open are NOT in the URL.                                                                                            | High         | I cannot deep-link a teammate to "the FAQ block's settings." Refresh resets my panel state. For a builder this dense (58 inputs), losing scroll/panel position on reload is real friction. The list page proved they CAN do URL state — they just didn't here.                           |
-| 15  | Forms & Input             | 58 inputs, and the only `required` fields are "Page title" and "Slug" (plus the governance comment "body"). Critical SEO fields — meta description, SEO title, canonical URL — have no required/validation markers despite "Metadata issues" being a real filter on the list page. | Medium       | The app has a "Metadata issues" view, which means it KNOWS metadata can be wrong — but it lets you save a page with empty meta. Validation and the warning surface are disconnected.                                                                                                     |
-| 16  | Feedback & State          | Autosave + manual save are clearly differentiated: "Saving draft..." → "Draft saved." toast, "Saved automatically · 3:51 PM" timestamp, and a persistent "Autosaved 3:51 PM" line. "Opening preview..." disables the button while in flight.                                       | Low (praise) | This is the good stuff. Loading states are designed, not absent. Pending UI on the preview button, optimistic-feeling autosave with timestamps. Whoever wired the feedback states for save knew what they were doing — which makes the clipboard failure (#12) more glaring by contrast. |
-| 17  | Feedback & State          | A "Rendering…" pill persists bottom-left across multiple screenshots (010, 011, 014). Unclear if the live preview iframe ever finishes rendering or if this is a stuck indicator.                                                                                                  | Medium       | A loading indicator that never resolves is worse than none — it trains users to ignore it. I'd want to confirm this clears; if it's perpetual it's a leaked loading state.                                                                                                               |
-| 18  | Visual & Layout           | The `pages-editor-008-load.png` full-page capture is rendered at ~25% scale (everything microscopic), while 009 onward are at proper 1:1.                                                                                                                                          | Low          | Capture artifact, not a product bug — but the load shot is unusable for actual review; I had to lean entirely on the interaction shots.                                                                                                                                                  |
-| 19  | Accessibility & Inclusion | Per-card reorder controls expose duplicate generic button labels — multiple "Up" / "Down" / "Remove" buttons with identical accessible names, distinguished only by an adjacent "Edit optional link for card N".                                                                   | Medium       | Eight identically-named "Up"/"Down" buttons in the a11y tree is a screen-reader nightmare. Each needs `aria-label="Move card 1 up"`. The visual context that disambiguates them doesn't exist for AT.                                                                                    |
-| 20  | Feedback & State          | Disabled reorder buttons are handled correctly — first card's "Up" and last card's "Down" are `disabled` (per exploration log).                                                                                                                                                    | Low (praise) | Boundary state on reorder is correct. Many builders let you click "Up" on the top item and silently no-op. This doesn't.                                                                                                                                                                 |
-| 21  | Trust & Safety            | "Publish" is a prominent blue primary button in the SEO sidebar with a "PUBLISH NOTES" field above it, gated behind a "NEXT REQUIRED STEP / Ready to publish — No hard blockers remain" readiness check.                                                                           | Low (praise) | A readiness gate before publish is the right pattern. The "No hard blockers remain" copy implies a soft/hard blocker distinction, which is thoughtful state modeling.                                                                                                                    |
+### /blog/{slug} — 1/5
 
-### /admin/pages/authors (Authors)
+Legacy path 404s to a **bare unstyled "Not found"** with no nav/footer/recovery link — a different handler from the site's styled 404 (finding 003). Two error pages for two missing routes is a routing defect.
 
-**Gut feel: 3/5** — "Clean 200, but it's a bare form with native-browser-only validation, no required-field markers, and an authors list that's nowhere to be seen — there's no empty state, just a form floating in space."
+### /this-page-does-not-exist — 4/5
 
-| #   | Category        | Finding                                                                                                                                                                                              | Severity | Why this matters to me                                                                                                                                                                                                                                                                                         |
-| --- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 22  | Forms & Input   | Validation is 100% native browser (`Please fill out this field.` yellow bubble on Display name). No custom inline errors, no field-level error styling, no Zod-style messaging surfaced to the user. | High     | Native validation is inconsistent across browsers, untranslatable, and disappears on the next interaction. For a CMS that should be enforcing slug uniqueness server-side, relying on `required` attributes alone means the real errors (duplicate slug, bad avatar ID) only surface after submit — if at all. |
-| 23  | Forms & Input   | Required fields (Display name, Slug) have no asterisk or visual "required" marker — you only learn they're required by submitting and getting the browser bubble.                                    | Medium   | I shouldn't have to trigger validation to discover what's mandatory. Mark required fields up front.                                                                                                                                                                                                            |
-| 24  | Visual & Layout | No authors list / table on the page — just the create form. There's no empty state ("No authors yet") and no list of existing authors to edit or delete.                                             | High     | Either authors can't be listed/edited (a CRUD gap) or the list is conditionally hidden when empty with no empty-state copy. Both are wrong. A management screen with only a create form and a blank void below it looks half-built.                                                                            |
-| 25  | Forms & Input   | "Avatar asset ID" is a free-text field expecting an opaque ID — no picker, no link to the media library, no validation that the ID exists.                                                           | Medium   | Asking a content editor to paste a raw asset ID is a developer-grade leak into the user UI. The editor route links to the media library; this form should too. Garbage IDs will silently produce broken avatars.                                                                                               |
+The _good_ 404: styled, "Page not found", "Back to home" link, nav + footer. This is what /blog/\* should have hit. One serious contrast violation on the page.
 
-### /admin/pages/redirects (Redirects)
+### /about, /privacy, /terms, /pre-call-resources, /thank-you-for-applying — 3-4/5
 
-**Gut feel: 3.5/5** — "Same native-validation story as Authors, but the URL/status-code modeling is sensible and the inline create-row-above-table layout is a pattern I actually like — it just needs an empty state."
+Clean: 0 axe violations each, fast loads, CLS 0 on most. `/thank-you-for-applying` is well-built and ironically unreachable from the apply flow.
 
-| #   | Category        | Finding                                                                                                                                                                                                                       | Severity           | Why this matters to me                                                                                                                                                                                                                   |
-| --- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 26  | Visual & Layout | The redirects table renders headers (OLD PATH / DESTINATION / STATUS / SOURCE / CREATED) over an empty body with no empty-state row ("No redirects yet — create your first above").                                           | Medium             | A header with no body and no empty state is ambiguous: did it fail to load, or are there genuinely zero rows? As a dev I can't tell a 200-with-empty-array from a swallowed fetch error by looking. Empty states resolve that ambiguity. |
-| 27  | Forms & Input   | Status is a proper `<select>` with all four codes (301/302/307/308) labeled permanent/temporary — correct HTTP semantics — defaulting to 301 permanent. "Page ID" is optional free-text, same as the avatar-ID problem (#25). | Low (praise + nit) | Good: surfacing 308 (permanent + method-preserving) shows someone actually understands redirect semantics. Nit: same raw-ID-as-text issue as Authors; should be a page picker. Native-only validation applies here too.                  |
+### /case-studies — 3/5
 
-### /admin/pages/block-preview-audit (Block Preview Audit)
+Real content, but `heading-order` violation (016), horizontal scroll at 375px, video focus issues mirroring the homepage.
 
-**Gut feel: 4/5** — "A dedicated visual-regression page rendering every block variant in one scroll is a sign of an actual engineering culture — this is the page I'd build myself."
+### /admin/pages — 3/5
 
-| #   | Category        | Finding                                                                                                                                                             | Severity     | Why this matters to me                                                                                                                                                                                                                                         |
-| --- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 28  | Trust & Safety  | A `/block-preview-audit` route rendering all block variants (4 hero styles, 4 text styles, image/CTA/FAQ/cards/proof/video/form variants) end-to-end exists at all. | Low (praise) | This is a developer's QA harness shipped as a real route. It tells me the block system is componentized and someone cares about visual consistency. Big trust signal.                                                                                          |
-| 29  | Visual & Layout | Multiple `<h1>` elements per section (the log shows repeated `H1:"Launch a vending route..."`), because each block variant renders its own H1 in isolation.         | Low          | Expected on an audit page (each variant is standalone), but it confirms the hero blocks emit H1 — so on a real page with 7 blocks I'd want to verify exactly one H1 wins. The audit page can't tell me that; it's a heading-hierarchy risk to check elsewhere. |
-| 30  | Visual & Layout | Image blocks render as blue-dashed placeholder boxes (no real asset bound). Clean, intentional placeholder styling.                                                 | Low (praise) | Placeholders that look like placeholders, not broken images. Correct.                                                                                                                                                                                          |
+0 axe violations, clean tab order, sensible URL-state filters (`?status=`, `?sort=`, `?view=`) — this is the most developer-respecting part of the app. Tiny touch targets on the 10x10px status pills.
+
+### /admin/pages/new — 2/5
+
+`landmark-unique` violation (014); non-URL-addressable editor + blocking Quick Tour (010).
+
+### /admin/news — 2/5
+
+Orphaned route (008); `aria-prohibited-attr` serious violation (013).
+
+### /admin/news/new — 3/5
+
+`landmark-complementary-is-top-level` violation; otherwise a normal editor with Write/Preview toggle.
+
+### /admin/pages/redirects — 2/5
+
+Orphaned route, zero inbound links (009). Functionally the fix for the /blog 404, hidden from the UI.
+
+### /admin/media, /admin/libraries, /admin/settings/users — 3/5
+
+Media has 3 axe violations; Libraries is reachable only indirectly via a Media header link; settings/users uses URL-state filters well. Lots of 32x32px icon-button touch targets.
 
 ---
 
 ## Blockers
 
-None. Every page returned 200, no console errors, no failed network requests, and core flows (save, autosave, preview, validation-on-submit) function. Nothing is broken enough to stop work — the issues are silent-failure and polish-grade, which is why I have no Blockers but a stack of Highs.
+None. Nothing is fully broken or missing such that the journey cannot complete. The closest is the /blog/\* bare 404 (dead-end with no recovery), but a user who got there via the in-app nav lands on the styled 404 instead.
+
+---
 
 ## My Top 10 Issues
 
-1. **Clipboard copy fails silently** (Editor, #12) — "Could not copy link." rendered as a muted gray line at the same weight as success messages. A failed action must be a visible error, not a whisper. Likely an uncaught `navigator.clipboard` rejection outside a secure/focused context handled with the wrong UI severity.
-2. **Toast z-index collides with the SEO nav button** (Editor, #13) — the "Draft saved." toast partially covers a primary navigation control, and three status regions fire simultaneously with no coordination. Stacking-context bug.
-3. **Editor has no URL state** (Editor, #14) — bare UUID route; active panel, selected block, and section state are client-only. Can't deep-link, refresh resets everything. The list page proves they know how to do URL state — the densest screen in the app skips it.
-4. **Authors has no list / no empty state** (Authors, #24) — a management screen that's only a create form with a blank void below. CRUD gap or hidden-when-empty with no copy. Looks half-built.
-5. **Native-browser-only form validation** (Authors + Redirects, #22, #27) — `required` attributes and the browser's yellow bubble are the entire validation story on the standalone forms. No inline field errors, no surfaced server-side errors (duplicate slug, bad ID).
-6. **Stray "N" avatar clips the Sign out button** (List/Authors/Redirects, #1) — fixed-position element with a busted z-index overlapping the sidebar control on every shell page, desktop and mobile.
-7. **Empty tables with no empty states** (Redirects #26, Authors #24) — headers over a blank body. Can't distinguish "zero rows" from "swallowed fetch error" by looking.
-8. **"Rendering…" pill may be a stuck loading indicator** (Editor, #17) — persists across multiple post-action screenshots; if it never resolves it's a leaked loading state that trains users to ignore it.
-9. **Raw asset/page IDs as free-text inputs** (Authors #25, Redirects #27) — "Avatar asset ID" and "Page ID" expect opaque IDs with no picker and no existence validation. A developer abstraction leaking into the content-editor UI; garbage IDs fail silently.
-10. **Duplicate generic accessible labels on reorder controls** (Editor, #19) — many identical "Up"/"Down"/"Remove" buttons in the a11y tree, plus metadata SEO fields that feed the "Metadata issues" filter aren't validated on save (#15). Both are disconnects between a feature the app clearly models and the UI that should enforce it.
+1. **(001, critical)** Apply form "succeeds" with one invisible line of green text — no redirect, form stays filled & enabled, double-submit only stopped server-side.
+2. **(005, high)** `500 /_next/image` on the News page — optimizer chokes on the Webflow CDN host; thumbnail renders broken with raw alt text.
+3. **(003, high)** Legacy `/blog/{slug}` 404s to a bare unstyled "Not found" with no nav/footer/recovery — wrong error handler for that subtree.
+4. **(002, high)** No visible validation on five `(required)` apply fields — empty/invalid submit shows nothing.
+5. **(006, high)** CLS 0.263 (failing Core Web Vital) repeated on /, /about, /news, and article pages.
+6. **(004, high)** /news article cards render as empty outlines on first paint (scroll-reveal gating content, no skeleton).
+7. **(008, high)** /admin/news CMS has no sidebar link — orphaned route reachable only by URL.
+8. **(010, high)** SEO editor isn't URL-addressable until save; Quick Tour overlay blocks the panel it points at; "add block" flaky across runs (race smell).
+9. **(011, medium)** Homepage testimonial videos focusable with no focus ring + possible focus trap; serious contrast violation.
+10. **(015, medium)** Horizontal scroll at 375px on /, /case-studies, and an article page — an element overflowing the viewport.

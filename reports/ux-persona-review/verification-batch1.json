@@ -1,0 +1,39 @@
+[
+  {
+    "cid": "C001",
+    "verdict": "confirmed",
+    "reason": "Screenshot journey-discover-and-apply-004 shows the only success feedback is small inline green text 'Thanks. We received your details and will follow up shortly.' beside the still-enabled SUBMIT APPLICATION button; the form keeps its values (budget/timeline still 'Select', textarea empty), with no clear, disable, or redirect. A /thank-you-for-applying route exists but is not used. Blocker severity holds (resubmission/dropoff risk, 13 personas)."
+  },
+  {
+    "cid": "C007",
+    "verdict": "confirmed",
+    "reason": "admin-pages-text.md 'Admin sections' nav lists only 'SEO pages' and 'Media library' (no Blog/News); axe item /admin/news sidebar tab order confirms the same two links plus Settings. Screenshot s02 shows that even while ON the Blog and news CMS page, the left sidebar has no Blog/News entry — the section is reachable only via /admin/news or a 'Resource pages' cross-link. Matches finding."
+  },
+  {
+    "cid": "C148",
+    "verdict": "confirmed",
+    "reason": "home-text.md ARIA snapshot shows the footer contains only nav links (Home, About, Resources, Case Studies, News, Contact Us, Terms, Privacy) and no tel:/mailto:. Footer.tsx renders only footerColumns nav with no contact details. The support@vendingpreneurs.com address exists but is buried in /terms content, not on the homepage or footer. Finding accurate as stated (no human contact path on home/footer; everything routes into a web form). Same underlying complaint as C150 (/contact form-only) and overlaps C003 (no Contact in top nav) — merge candidates within the 'no human contact channel' theme but distinct pages."
+  },
+  {
+    "cid": "C035",
+    "verdict": "confirmed",
+    "newSeverity": "high",
+    "correctedFinding": "Homepage (and /case-studies) testimonial videos each produce keyboard tab stops with no visible focus indicator, and the crawler flags a possible focus trap at the last stop of each of the four video groups; the missing focus indicator is the confirmed defect, the trap is a heuristic flag needing manual keyboard confirmation.",
+    "reason": "axe-results.json page '/' tabIssues quotes match verbatim: 'stop 10 (video Video testimonial from Thomas Rohlader): no visible focus indicator' and 'possible focus trap around stop 11 ...', repeating for Joe Natoli, Jason Priest, and Anthony CEO; the same pattern appears on /case-studies. Confirmed as a real a11y issue. Slight demote from critical to high: 'no visible focus indicator' is solid, but 'possible focus trap' is a heuristic from the tab-walk with no corresponding axe violation, so the trap claim is plausible-but-unverified rather than a hard blocker."
+  },
+  {
+    "cid": "C076",
+    "verdict": "demote",
+    "newSeverity": "high",
+    "correctedFinding": "Homepage hero stats default to '0+ / $0M+ / 0+' for no-JS users, crawlers, and anyone whose scroll/IntersectionObserver does not fire; real values (500+, $3M+, 3,000+) only appear via a client-side count-up triggered on scroll into view.",
+    "reason": "src/lib/content/home.ts defines real values 500+/$3M+/3,000+, so the stats are NOT fake or hardcoded-zero as the finding states. AnimatedStatValue.tsx initializes display to formatStat(parsed, 0) and only counts up via IntersectionObserver (threshold 0.35) on scroll, so SSR/no-JS/no-scroll output is '0+', matching home-text.md and home-002-full.png. Real issue is animation-gated content defaulting to 0 (trust + SEO risk), not broken/fake stats. Demote to high. Same underlying issue as C039 and C112 — merge all three."
+  },
+  {
+    "cid": "C039",
+    "verdict": "demote",
+    "newSeverity": "high",
+    "mergeWith": "C076",
+    "correctedFinding": "Homepage hero stats render '0+ / $0M+ / 0+' before the scroll-triggered count-up fires (and permanently for no-JS users and crawlers); real values 500+/$3M+/3,000+ exist in content but are only revealed client-side on scroll.",
+    "reason": "Identical root cause to C076/C112 — count-up animation initialised to 0 with no SSR fallback (home.ts + AnimatedStatValue.tsx). Same evidence (home-002-full.png, home-text.md). Demote from critical to high and merge into C076."
+  }
+]

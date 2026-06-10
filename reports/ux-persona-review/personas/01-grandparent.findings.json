@@ -1,0 +1,468 @@
+[
+  {
+    "id": "01-grandparent-001",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "blocker",
+    "finding": "After submitting the application the only confirmation is a small line of green text beside the button; the form does not clear, disable, or redirect, so a non-technical user cannot tell the submission succeeded and will resubmit.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Thanks. We received your details and will follow up shortly."
+      }
+    ],
+    "persona_rationale": "My eyes were on the big orange SUBMIT button, not on a thin green line off to the right, and all my typed answers were still sitting in the boxes. To me that means it failed, so I would press submit again and again, then phone my grandson in a panic.",
+    "suggested_fix": {
+      "current": "Small inline green text 'Thanks. We received your details and will follow up shortly.' next to the SUBMIT button; form stays filled, no redirect",
+      "proposed": "On success, redirect to the existing /thank-you-for-applying page (or show a full-width banner above the form), and clear/disable the form"
+    }
+  },
+  {
+    "id": "01-grandparent-002",
+    "page": "/",
+    "journey": "evaluate-trust",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "The three headline statistics render as '0+', '$0M+', '0+' instead of real figures, making the site look broken and untrustworthy.",
+    "evidence": [
+      { "type": "text", "ref": "home-text.md", "quote": "0+" },
+      { "type": "text", "ref": "home-text.md", "quote": "$0M+" },
+      { "type": "screenshot", "ref": "home-002-full.png", "quote": "" }
+    ],
+    "persona_rationale": "A zero means nobody has done this. Seeing '0 entrepreneurs launched' on the very first page made me doubt the whole company before I read a single word, and I nearly closed the tab.",
+    "suggested_fix": {
+      "current": "Counters show '0+', '$0M+', '0+'",
+      "proposed": "Render the real counts (e.g. '500+', '$12M+', '1,200+'); if a count is unknown at load, hide the stat rather than show 0"
+    }
+  },
+  {
+    "id": "01-grandparent-003",
+    "page": "/",
+    "journey": "contact-the-team",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "There is no Contact link in the top navigation; the only way to reach /contact is the small footer link or knowing the URL.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "ABOUT\nRESOURCES\nCASE STUDIES\nNEWS\nSTEP INSIDE"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-contact-the-team-002-02-find-and-click-contact-link.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "I scan the menu along the top for the word I want. 'Contact' isn't there, so I'd conclude there's no way to reach a real person — I would never think to scroll all the way to the bottom and hunt in the small grey writing.",
+    "suggested_fix": {
+      "current": "Top nav: About, Resources, Case Studies, News (no Contact)",
+      "proposed": "Add a 'Contact' link to the top navigation"
+    }
+  },
+  {
+    "id": "01-grandparent-004",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The navigation item and route say 'NEWS' but the page heading is 'BLOG', and article breadcrumbs also say 'BLOG' — the same section has two different names.",
+    "evidence": [
+      { "type": "text", "ref": "news-text.md", "quote": "BLOG" },
+      { "type": "screenshot", "ref": "news-001-load.png", "quote": "" },
+      {
+        "type": "screenshot",
+        "ref": "news-how-to-choose-the-perfect-location-for-vending-machine-001-load.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "I clicked the word NEWS and landed on a page shouting BLOG. I immediately worry I clicked the wrong thing or ended up somewhere I shouldn't be, because the words don't match.",
+    "suggested_fix": {
+      "current": "Nav says 'NEWS', page heading and breadcrumb say 'BLOG'",
+      "proposed": "Use one name everywhere — change the page heading and breadcrumb to 'News' to match the nav item and the /news route"
+    }
+  },
+  {
+    "id": "01-grandparent-005",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "On first load the article cards render as blank outlines until the user scrolls (scroll-reveal animation), so the page looks broken or half-loaded above the fold.",
+    "evidence": [
+      { "type": "screenshot", "ref": "news-001-load.png", "quote": "" },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "they render as BLANK card outlines until scrolled into view"
+      }
+    ],
+    "persona_rationale": "Empty boxes where I expect articles tell me the page didn't finish loading. I'd wait, refresh, or leave — I wouldn't know that scrolling makes the content appear.",
+    "suggested_fix": {
+      "current": "Article cards are invisible until scrolled into view",
+      "proposed": "Render the first row of article cards visible on load; only apply reveal animation to cards genuinely below the fold"
+    }
+  },
+  {
+    "id": "01-grandparent-006",
+    "page": "/admin/pages",
+    "journey": "admin-create-seo-page",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "On first open of the page editor a 'Quick Tour' overlay sits on top of the outline panel it points at and blocks interaction until dismissed.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s04-04-wizard-starting-point-build.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "a \"Quick Tour\" overlay (Step 1 of 3) covers the outline panel and blocks interaction until dismissed"
+      }
+    ],
+    "persona_rationale": "A pop-up that covers the very button it's telling me to press is the kind of thing that makes me certain I've broken the computer. I'd freeze and not touch anything.",
+    "suggested_fix": {
+      "current": "Quick Tour overlay obscures the panel/button it references",
+      "proposed": "Position the tour tooltip beside (not over) its target, and let the user dismiss or skip the whole tour with one obvious button"
+    }
+  },
+  {
+    "id": "01-grandparent-007",
+    "page": "/admin/pages",
+    "journey": "admin-create-news-draft",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "The admin sidebar has no News/Blog section; /admin/news is only reachable by typing the URL.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-news-draft-s02-02-look-for-news-in-studio-nav.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "NO News/Blog item in the sidebar"
+      }
+    ],
+    "persona_rationale": "If my grandson asked me to add a news post, I'd look in the menu, not find it, and give up entirely — I have no idea how to 'type a URL' to reach a hidden page.",
+    "suggested_fix": {
+      "current": "Sidebar has only SEO pages, Media library, Settings",
+      "proposed": "Add a 'News' (or 'Blog') item to the admin sidebar linking to /admin/news"
+    }
+  },
+  {
+    "id": "01-grandparent-008",
+    "page": "/",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "The homepage produces a horizontal scrollbar at mobile width.",
+    "evidence": [
+      { "type": "screenshot", "ref": "home-003-mobile.png", "quote": "" },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | home-003-mobile.png | horizontal scroll present"
+      }
+    ],
+    "persona_rationale": "A sideways scrollbar on my iPad always makes me think I've zoomed or stretched something by accident, and I waste time trying to 'fix' it.",
+    "suggested_fix": {
+      "current": "Page content exceeds viewport width at 375px causing horizontal scroll",
+      "proposed": "Constrain full-bleed sections to 100vw / add overflow-x guards so the page fits the screen width"
+    }
+  },
+  {
+    "id": "01-grandparent-009",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "An article thumbnail image fails to load with a 500 error on the news listing page.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com%2F...png&w=640&q=75"
+      }
+    ],
+    "persona_rationale": "A broken picture tells me nobody is looking after this website, and that makes me nervous to type my name and email into it.",
+    "suggested_fix": {
+      "current": "Image returns 500 (broken external CDN URL via /_next/image)",
+      "proposed": "Re-host the image locally / fix the source URL, and show a placeholder image if a thumbnail fails rather than a broken box"
+    }
+  },
+  {
+    "id": "01-grandparent-010",
+    "page": "/admin/pages",
+    "journey": "admin-manage-content-ops",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Page status and SEO-readiness indicators are 10x10px buttons and row actions hide behind small three-dot summaries.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "small touch target: button \"SEO readiness: Blocked\" 10x10px"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "small touch target: button \"Page status: Draft\" 10x10px"
+      }
+    ],
+    "persona_rationale": "My fingers aren't steady and my eyes aren't sharp. A 10-pixel dot is impossible for me to see the meaning of or to tap without hitting the wrong thing.",
+    "suggested_fix": {
+      "current": "10x10px status dots and icon-only '⋮' action buttons",
+      "proposed": "Enlarge interactive status/action targets to at least 44x44px and pair status dots with a visible text label"
+    }
+  },
+  {
+    "id": "01-grandparent-011",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "The primary CTA in the header is labelled 'STEP INSIDE', which does not clearly say it opens the application form.",
+    "evidence": [
+      { "type": "text", "ref": "apply-text.md", "quote": "STEP INSIDE" },
+      { "type": "screenshot", "ref": "apply-001-load.png", "quote": "" }
+    ],
+    "persona_rationale": "'Step inside' sounds like a doorway in a shop, not a button. I wouldn't know it takes me to the application, so I'd hunt for something clearer.",
+    "suggested_fix": {
+      "current": "Header button: 'STEP INSIDE' -> /apply",
+      "proposed": "Label it 'Apply Now' to match its destination and the page CTAs"
+    }
+  },
+  {
+    "id": "01-grandparent-012",
+    "page": "/",
+    "journey": null,
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "finding": "The top navigation has no 'Home' link; returning home depends on knowing the logo is clickable.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "ABOUT\nRESOURCES\nCASE STUDIES\nNEWS\nSTEP INSIDE"
+      }
+    ],
+    "persona_rationale": "I don't know that pictures (the logo) are buttons. If I want to get back to the start I look for the word 'Home' in the menu, and it isn't there.",
+    "suggested_fix": {
+      "current": "No 'Home' item in the top nav (logo links home but isn't an obvious link)",
+      "proposed": "Add a 'Home' item to the top nav, or add visible hover styling so the logo reads as clickable"
+    }
+  },
+  {
+    "id": "01-grandparent-013",
+    "page": "/",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "The 'Resources' nav item links to /pre-call-resources, a page aimed at people who have already booked a call, not general resources.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "link \"Resources\":\n      - /url: /pre-call-resources"
+      },
+      {
+        "type": "text",
+        "ref": "pre-call-resources-text.md",
+        "quote": "PREPARE FOR YOUR VENDING STRATEGY CALL."
+      }
+    ],
+    "persona_rationale": "I clicked 'Resources' expecting helpful reading, and got a page about preparing for a phone call I haven't booked. That mismatch makes me feel I clicked the wrong button.",
+    "suggested_fix": {
+      "current": "'Resources' nav -> /pre-call-resources (call-prep content)",
+      "proposed": "Rename the nav item to 'Pre-Call Prep', or point 'Resources' at a general resources page"
+    }
+  },
+  {
+    "id": "01-grandparent-014",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "low",
+    "finding": "Submitting the empty form surfaces only the browser's native single-field tooltip 'Please fill out this field.' with no on-page list of what is missing.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "apply-003-form-empty-submit.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "empty: no visible validation errors after empty submit"
+      }
+    ],
+    "persona_rationale": "The little 'Please fill out this field' bubble did help me, but it only shows one field at a time and vanishes — I'd like the page itself to tell me, in plain words, every box I still need to fill.",
+    "suggested_fix": {
+      "current": "Relies solely on the browser's native validation tooltip, one field at a time",
+      "proposed": "Show inline messages under each required field on submit (e.g. 'Please enter your name') so all missing fields are visible at once"
+    }
+  },
+  {
+    "id": "01-grandparent-015",
+    "page": "/admin/forgot-password",
+    "journey": null,
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "Submitting the forgot-password form with empty or invalid input shows no visible validation feedback.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "empty: no visible validation errors after empty submit"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-forgot-password-004-form-empty-submit.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "Resetting a password is exactly when I'm already anxious. If I press the button and nothing visibly happens, I won't know whether to wait, retry, or that I typed my email wrong.",
+    "suggested_fix": {
+      "current": "No visible error or confirmation after submitting the reset form",
+      "proposed": "Show a clear confirmation ('If that email exists, we've sent a reset link') and an inline error for an empty/invalid email"
+    }
+  },
+  {
+    "id": "01-grandparent-016",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "The contact form's success/failure feedback could not be observed (submit was skipped for safety), and the apply form's known-weak inline-only confirmation suggests contact likely shares the same pattern.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "external-bucket form: filled for visual review, NOT submitted"
+      },
+      {
+        "type": "screenshot",
+        "ref": "contact-004-form-filled-not-submitted.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "When I send a message to a real person I need the screen to plainly say 'Your message was sent.' If contact mirrors the apply form's tiny inline note, I'd never be sure my question got through.",
+    "suggested_fix": {
+      "current": "Contact submit feedback unverified; apply form uses a small inline note",
+      "proposed": "Ensure the contact form shows a prominent success confirmation (banner or dedicated thank-you state) on submit"
+    }
+  },
+  {
+    "id": "01-grandparent-017",
+    "page": "/admin/pages",
+    "journey": "admin-create-seo-page",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "There is no discoverable archive/delete path for a page from the editor or the list row menu, so an admin cannot retire a page they created.",
+    "evidence": [
+      { "type": "screenshot", "ref": "cleanup-seo-row-menu.png", "quote": "" },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the builder editor offers no archive/delete path that automation could find"
+      }
+    ],
+    "persona_rationale": "If I made a page by mistake, I'd desperately want an obvious 'undo' or 'delete'. Not being able to find one would leave me stuck with my error and afraid I'd made a permanent mess.",
+    "suggested_fix": {
+      "current": "No visible Archive/Delete in the page editor or list row actions",
+      "proposed": "Add an explicit 'Archive page' control in the editor and an 'Archive' item in the list row '⋮' menu, with a confirm dialog"
+    }
+  },
+  {
+    "id": "01-grandparent-018",
+    "page": "/admin/pages/redirects",
+    "journey": "admin-manage-content-ops",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "The Redirects manager is an orphaned route with no inbound link from any explored admin page.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Redirects | NO PATH FOUND"
+      }
+    ],
+    "persona_rationale": "A page with no way to reach it from any menu might as well not exist for someone like me. I only ever use what I can see and click.",
+    "suggested_fix": {
+      "current": "/admin/pages/redirects has no inbound navigation",
+      "proposed": "Add a 'Redirects' link under the SEO pages section of the admin sidebar"
+    }
+  },
+  {
+    "id": "01-grandparent-019",
+    "page": "/admin/news/new",
+    "journey": "admin-create-news-draft",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "The same content type is named four different ways across the product: 'News' (route/public nav), 'Blog CMS'/'New blog post' (editor), 'BLOG' (public heading).",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "\"News\" in the route, \"Blog CMS\"/\"New blog post\" in the editor, \"NEWS\" in public nav, \"BLOG\" as the public page heading"
+      }
+    ],
+    "persona_rationale": "Four names for one thing means I can never be sure I'm in the right place. Consistency is the only way I learn an app.",
+    "suggested_fix": {
+      "current": "Mixed 'News'/'Blog'/'Blog CMS' naming for one content type",
+      "proposed": "Pick one term ('News') and use it for the route, nav, editor breadcrumb, editor heading, and public page heading"
+    }
+  },
+  {
+    "id": "01-grandparent-020",
+    "page": "/admin/news",
+    "journey": "admin-create-news-draft",
+    "category": "Trust & Safety",
+    "severity": "low",
+    "finding": "News list rows offer no archive/delete affordance; retiring a post requires opening each post's editor to find the Archive button.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "List rows offer no destructive/archive affordance; archiving requires opening each post's editor"
+      },
+      { "type": "screenshot", "ref": "cleanup-news-editor.png", "quote": "" }
+    ],
+    "persona_rationale": "If I want to tidy up a mistaken post, I'd expect a clear option right there in the list. Having to dig inside each one makes me afraid I'll change the wrong thing along the way.",
+    "suggested_fix": {
+      "current": "No archive/delete in the news list row",
+      "proposed": "Add an 'Archive' action to each news list row with a confirmation prompt"
+    }
+  },
+  {
+    "id": "01-grandparent-021",
+    "page": "/",
+    "journey": "evaluate-trust",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "The homepage records a high cumulative layout shift (CLS 0.263), meaning content jumps around as it loads.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Layout shift (CLS): 0.263"
+      }
+    ],
+    "persona_rationale": "When things jump on the screen while I'm reading, I lose my place and sometimes tap a button I didn't mean to — which is the thing I fear most.",
+    "suggested_fix": {
+      "current": "CLS 0.263 on the homepage",
+      "proposed": "Reserve space for images/fonts (set width/height, use font-display swap with metrics) to bring CLS under 0.1"
+    }
+  }
+]

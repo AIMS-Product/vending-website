@@ -1,0 +1,549 @@
+[
+  {
+    "id": "08-perfectionist-001",
+    "page": "global",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "The public marketing site and the admin studio are two unrelated design systems. The public site uses heavy black display type, hard black borders, offset drop shadows, and orange CTAs (neo-brutalist); the admin studio uses a soft light-gray SaaS dashboard with rounded cards, hairline borders, and blue primaries. There is no shared component language, type scale, button shape, or colour token between the two halves of the product.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "home-001-load.png",
+        "quote": "black display headline 'TURN VENDING' + orange 'STEP INSIDE' button"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "rounded light-gray dashboard with blue '+ Create page' button"
+      }
+    ],
+    "persona_rationale": "When I move from the marketing site to the studio that powers it, it feels like two products built by two teams who never spoke. A mature design system shares tokens across surfaces; here nothing carries over, so neither side reinforces the brand.",
+    "suggested_fix": {
+      "current": "Two independent visual languages (brutalist public, generic SaaS admin) with no shared tokens",
+      "proposed": "Define one token set (type scale, radius scale, brand orange/blue, shadow scale) and apply brand accents to the studio (e.g. orange primary actions, the brand display face on section headings) so the studio reads as the same product"
+    }
+  },
+  {
+    "id": "08-perfectionist-002",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "The hero stat counters render as zeroes in the captured state: '0+' Entrepreneurs launched, '$0M+' Snack/Drink sales, '0+' Vending locations. These are count-up animations frozen at their start value, so the most prominent proof numbers on the homepage read as literal zero.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "0+ ENTREPRENEURS LAUNCHED $0M+ SNACK/DRINK SALES IN VENDINGPRENEUR MACHINES 0+ VENDING LOCATIONS W/OUR GUIDANCE"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-002-full.png",
+        "quote": "stat band shows '0+' and '50M+' counters"
+      }
+    ],
+    "persona_rationale": "A count-up animation that hasn't run yet is the textbook example of a designed-vs-default state failure. Anyone who lands above the fold before the animation fires (or with reduced motion) sees a vending program that has launched zero entrepreneurs and done $0M in sales. The number must have a non-zero rendered fallback.",
+    "suggested_fix": {
+      "current": "Counters animate from 0 with no static fallback, so first paint and reduced-motion show '0+ / $0M+ / 0+'",
+      "proposed": "Render the final value as the default content and only animate as a progressive enhancement; respect prefers-reduced-motion by showing the final number immediately"
+    }
+  },
+  {
+    "id": "08-perfectionist-003",
+    "page": "global",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "Nearly every public page reports a Cumulative Layout Shift of 0.263 (home, about, news, all three articles, privacy-free pages excepted). A CLS of 0.263 is well above Google's 0.1 'good' threshold and indicates a consistent, repeatable jump as the page settles.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Layout shift (CLS): 0.263"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-001-load.png",
+        "quote": "above-fold hero"
+      }
+    ],
+    "persona_rationale": "The identical 0.263 across many pages tells me it's a single shared layout element shifting (almost certainly the header/hero or the web-font swap), not random noise. A repeatable quarter-viewport jump is exactly the kind of instability I cannot unsee, and it makes the whole site feel unfinished.",
+    "suggested_fix": {
+      "current": "CLS 0.263 on most public routes from a shared above-fold element / font swap",
+      "proposed": "Reserve space for the shifting element (explicit hero image dimensions) and use next/font with font-display:optional or a size-adjust fallback to remove the swap-driven reflow"
+    }
+  },
+  {
+    "id": "08-perfectionist-004",
+    "page": "/this-page-does-not-exist",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "The 404 page is the only public page that abandons the brand. 'Page not found' is set in a rounded system sans-serif at a modest size with a thin outline 'Back to home' pill, sitting inside the otherwise-branded header/footer. Every other public page uses the heavy black display face and the orange/black brand button.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "this-page-does-not-exist-002-full.png",
+        "quote": "'Page not found' in default sans + thin outline 'Back to home' pill"
+      },
+      {
+        "type": "text",
+        "ref": "this-page-does-not-exist-text.md",
+        "quote": "404 Page not found The page you're looking for doesn't exist or has moved. Back to home"
+      }
+    ],
+    "persona_rationale": "It reads like the framework's default error page was left in the branded shell. The 404 is a real page users hit; its typography and button must match the system. The mismatch is glaring next to 'TURN VENDING' and 'THANKS FOR APPLYING.'",
+    "suggested_fix": {
+      "current": "Default sans 'Page not found' heading + thin outline 'Back to home' pill",
+      "proposed": "Set the 404 heading in the brand display face (e.g. 'PAGE NOT FOUND.') and use the standard orange brand button for 'Back to home' so it matches the rest of the site"
+    }
+  },
+  {
+    "id": "08-perfectionist-005",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "A fully designed success page (/thank-you-for-applying) exists with a branded 'THANKS FOR APPLYING.' headline and next-step cards, but the apply form does not route to it. On submit, the only confirmation is a single line of small green text beside the button; the form is not cleared or disabled and there is no redirect.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "thank-you-for-applying-002-full.png",
+        "quote": "designed success page with 'APPLICATION RECEIVED' badge and next-step cards"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "small green inline 'Thanks. We received your details...' beside the button, no redirect"
+      }
+    ],
+    "persona_rationale": "A designed success state going completely unused while the live confirmation is afterthought inline text is the kind of inconsistency that drives me up the wall. The team built the right artefact and then didn't wire it. The journey log even shows automation re-submitting six times because the confirmation is too subtle to register.",
+    "suggested_fix": {
+      "current": "Apply submit shows inline green text and leaves the form populated; /thank-you-for-applying is never reached",
+      "proposed": "Redirect a successful apply submission to /thank-you-for-applying (or render that page's confirmation block inline and disable the form)"
+    }
+  },
+  {
+    "id": "08-perfectionist-006",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "The same 'State' field is required on /apply ('State*' with '(required)') but optional on /contact (plain 'State', no asterisk). The two forms otherwise share an identical Name/Email/Phone/City/State layout, so the differing requiredness of the identical field is an inconsistency in the form system.",
+    "evidence": [
+      { "type": "text", "ref": "apply-text.md", "quote": "State*\n(required)" },
+      { "type": "text", "ref": "contact-text.md", "quote": "State\nSelect" }
+    ],
+    "persona_rationale": "Two visually identical forms treating the same field differently with no visible reason is exactly the kind of detail I audit for. Either State matters or it doesn't; the inconsistency signals the two forms were hand-built rather than composed from one field library.",
+    "suggested_fix": {
+      "current": "State is required on /apply but optional on /contact",
+      "proposed": "Decide one rule for the State field and apply it to both forms (most likely required on apply, optional on contact is defensible — but then label contact's State 'State (optional)' to make the choice intentional)"
+    }
+  },
+  {
+    "id": "08-perfectionist-007",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "The /apply and /contact form cards share the same brutalist shadowed-card treatment, but the offset drop shadow and the submit-button shadow are not rendered identically: the contact 'SEND MESSAGE' button shows a heavier visible offset/border than the flush 'SUBMIT APPLICATION' button on /apply.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "contact-002-full.png",
+        "quote": "'SEND MESSAGE' button with visible offset shadow"
+      },
+      {
+        "type": "screenshot",
+        "ref": "apply-002-full.png",
+        "quote": "'SUBMIT APPLICATION' button sits flush"
+      }
+    ],
+    "persona_rationale": "When two forms are clearly built from the same card pattern, the submit buttons should be pixel-identical. The differing shadow depth means the primary button is not a shared component, which is a maintainability smell as much as a visual one.",
+    "suggested_fix": {
+      "current": "Apply and Contact submit buttons render with different shadow/offset depth",
+      "proposed": "Extract a single brand submit-button component and use it on both forms so shadow, border, padding and radius are identical"
+    }
+  },
+  {
+    "id": "08-perfectionist-008",
+    "page": "/admin",
+    "journey": "admin-manage-content-ops",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The admin studio's eyebrow/breadcrumb label changes on every section with no consistent scheme: 'SEO pages' (no eyebrow), 'CMS Assets' (media), 'Studio Settings' (settings), 'CMS Governance' (libraries), 'Blog CMS' (news), 'SEO PAGE BUILDER' (create wizard). Five different naming conventions for one studio.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-media-001-load.png",
+        "quote": "eyebrow 'CMS Assets'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-settings-users-001-load.png",
+        "quote": "eyebrow 'Studio Settings'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-libraries-001-load.png",
+        "quote": "eyebrow 'CMS Governance'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-news-new-002-full.png",
+        "quote": "breadcrumb 'Blog CMS'"
+      }
+    ],
+    "persona_rationale": "An eyebrow label is a structural element of the page header; it should follow one pattern. 'CMS Assets', 'Studio Settings', 'CMS Governance', 'Blog CMS' read as ad-hoc labels invented per page. It makes the studio feel like stitched-together modules rather than one IA.",
+    "suggested_fix": {
+      "current": "Per-page eyebrows: CMS Assets / Studio Settings / CMS Governance / Blog CMS / (none)",
+      "proposed": "Standardise on one breadcrumb pattern, e.g. 'Studio › Media library', 'Studio › Settings › Users', 'Studio › SEO pages' across every admin route"
+    }
+  },
+  {
+    "id": "08-perfectionist-009",
+    "page": "/admin",
+    "journey": "admin-manage-content-ops",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "The four-up stat-card row appears on SEO pages, Users, and Libraries with the same shape but inconsistent icon-tile colours and no consistent semantic mapping. SEO pages: blue/amber/green/gray. Users: green/amber/purple/blue. Libraries: blue/green/gray/amber. The colour of each tile does not map to a stable meaning across screens.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "All(blue) Drafts(amber) Published(green) Archived(gray)"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-settings-users-001-load.png",
+        "quote": "Active(green) Pending(amber) Super admins(purple) Admins(blue)"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-libraries-001-load.png",
+        "quote": "CTA presets(blue) Proof(green) Sources(gray) Claims(amber)"
+      }
+    ],
+    "persona_rationale": "When the same card component is reused, the icon-tile colour should be a deliberate semantic token (e.g. green = healthy/published, amber = needs attention). Here green means 'Published' on one screen and 'Active' on another and 'Proof' on a third — the colour carries no consistent meaning, so the visual language is decorative rather than systematic.",
+    "suggested_fix": {
+      "current": "Stat-card tile colours assigned ad-hoc per screen with no consistent semantics",
+      "proposed": "Define semantic colour tokens (success/warning/neutral/info) and assign each metric a token by meaning, so green always = good/live and amber always = needs work across all stat cards"
+    }
+  },
+  {
+    "id": "08-perfectionist-010",
+    "page": "/admin",
+    "journey": "admin-create-news-draft",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "Primary buttons in the studio have no consistent shape. 'Create page' and 'Invite user' are auto-width blue with a leading '+'; 'Save CTA preset' is full-width solid blue with no icon; 'Save draft' and 'Publish' in the blog editor are two identical full-width blue rectangles; the SEO page editor toolbar uses pill-shaped outline buttons ('Save draft', 'Save & preview', 'Share'). The same conceptual 'primary action' is styled four different ways.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "'+ Create page' auto-width blue"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-libraries-001-load.png",
+        "quote": "full-width 'Save CTA preset'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-news-new-002-full.png",
+        "quote": "identical 'Save draft' and 'Publish' blue rectangles"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s06-06-fill-page-title-slug-keyword.png",
+        "quote": "pill outline 'Save draft' / 'Save & preview' / 'Share' in editor toolbar"
+      }
+    ],
+    "persona_rationale": "Button shape is the most basic atom of a design system. Four different primary-button shapes across one admin area means there is no Button component — every page rolled its own. This is the single clearest sign the studio lacks a design system.",
+    "suggested_fix": {
+      "current": "Four primary-button variants (auto-width +icon, full-width solid, identical pair, outline pill) across admin",
+      "proposed": "Ship one Button component with documented primary/secondary/ghost variants and a single radius, and use it everywhere in the studio"
+    }
+  },
+  {
+    "id": "08-perfectionist-011",
+    "page": "/admin/news/new",
+    "journey": "admin-create-news-draft",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "On the New blog post page, 'Save draft' and 'Publish' are rendered as two visually identical full-width blue buttons stacked directly on top of each other. Publish (irreversible, makes content public) and Save draft (safe, private) carry the same colour, size, and weight, so the destructive-leaning action has no visual distinction.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-news-new-002-full.png",
+        "quote": "'Save draft' and 'Publish' identical blue buttons stacked in the Publish card"
+      }
+    ],
+    "persona_rationale": "Two actions with very different consequences must not look identical. A primary/secondary hierarchy is design-system table stakes: Save draft should be secondary, Publish the single emphasised primary. Stacking two identical blue buttons invites mis-clicks and shows no hierarchy thinking.",
+    "suggested_fix": {
+      "current": "'Save draft' and 'Publish' are identical full-width blue buttons",
+      "proposed": "Make 'Save draft' a secondary/outline button and 'Publish' the single solid primary, so the consequential action is visually distinct"
+    }
+  },
+  {
+    "id": "08-perfectionist-012",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "Above the fold on /news the article cards render as empty outlined boxes before any scrolling — the cards are scroll-reveal animated and paint blank until scrolled into view. First paint of the listing page looks broken/unfinished.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "three empty card outlines below the BLOG heading at first paint"
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "article cards are scroll-reveal animated — they render as BLANK card outlines until scrolled into view"
+      }
+    ],
+    "persona_rationale": "A reveal-on-scroll animation that leaves the content invisible at rest is a designed-vs-default failure: the resting state is the empty box, the content only appears as a side effect of scrolling. The landing view of a content listing should show content, not skeleton outlines that never resolve until interaction.",
+    "suggested_fix": {
+      "current": "Article cards are hidden (opacity 0) until scrolled into view, so above-fold cards stay blank",
+      "proposed": "Trigger the reveal for in-viewport cards on load, or render content visible by default and use the animation only as enhancement (and honour prefers-reduced-motion)"
+    }
+  },
+  {
+    "id": "08-perfectionist-013",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "One article card on /news shows broken-image alt text instead of an image ('Top 10 Profitable Products to Stock in Your Vending Machine...') because the cover image returns HTTP 500 from the Next.js image optimizer (legacy Webflow CDN URL).",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "third card renders alt text 'Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Items, Niche Products)' in place of image"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com...png&w=640&q=75"
+      }
+    ],
+    "persona_rationale": "A broken image showing raw alt text on the primary content listing is the most visible kind of polish failure. There is also no broken-image fallback styling, so the card just shows grey text where art should be. On a marketing site this reads as neglect.",
+    "suggested_fix": {
+      "current": "Cover image 500s and the card shows raw alt text with no fallback",
+      "proposed": "Fix/migrate the failing CDN asset and add an image-error fallback (brand placeholder card) so a broken cover never exposes raw alt text"
+    }
+  },
+  {
+    "id": "08-perfectionist-014",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The same section is named three different ways: the public nav item is 'NEWS', the page heading is 'BLOG', and the article-page breadcrumb is 'BLOG' while the route is /news. In the studio the same content type is 'Blog CMS' / 'New blog post' / 'Blog and news'.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "page heading 'BLOG' under nav item 'NEWS'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "news-how-to-choose-the-perfect-location-for-vending-machine-001-load.png",
+        "quote": "breadcrumb 'HOME / BLOG / LOCATION SCOUTING'"
+      }
+    ],
+    "persona_rationale": "Naming consistency is part of the design system. One content type should have one name. 'News' in the nav, 'BLOG' as the heading, 'Blog and news' in the studio means a user (and an editor) never knows which word is canonical. I would standardise on one term everywhere.",
+    "suggested_fix": {
+      "current": "Section is 'NEWS' in nav, 'BLOG' as heading/breadcrumb, 'Blog and news'/'Blog CMS' in studio",
+      "proposed": "Pick one canonical name (e.g. 'News') and use it for the nav item, page heading, breadcrumb, and studio section labels"
+    }
+  },
+  {
+    "id": "08-perfectionist-015",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "journey": "read-a-news-article",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "The article-page share buttons are four individually-bordered black pill chips with inconsistent labels — single uppercase letters and abbreviations ('X', 'in', 'f', 'link') rather than a consistent icon set. Mixing a brand glyph (X), a lowercase initialism (in, f), and a word ('link') in one control group is inconsistent.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-how-to-choose-the-perfect-location-for-vending-machine-001-load.png",
+        "quote": "vertical share rail with chips labelled 'X', 'in', 'f', 'link'"
+      }
+    ],
+    "persona_rationale": "A share rail should use one consistent visual treatment — ideally the real platform icons, or a uniform text convention. 'X / in / f / link' mixes three conventions in four chips. It's small, but it's the kind of inconsistency that signals no icon system.",
+    "suggested_fix": {
+      "current": "Share chips labelled 'X', 'in', 'f', 'link' (mixed letters/abbreviations/word)",
+      "proposed": "Use a single consistent icon set (X, LinkedIn, Facebook, copy-link icons) with aria-labels, all in one chip style"
+    }
+  },
+  {
+    "id": "08-perfectionist-016",
+    "page": "/admin/pages",
+    "journey": "admin-create-seo-page",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "The SEO pages list communicates two separate statuses per row as tiny coloured dots (READINESS and STATUS columns, ~10x10px) with no on-page legend. Readiness uses red/blue/amber and Status uses amber, but the meaning of each colour is only decodable by reading the per-row hidden button labels ('SEO readiness: Blocked / Opportunities / Needs work').",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "READINESS and STATUS columns shown as small coloured dots, no legend visible"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "small touch target: button \"SEO readiness: Blocked\" 10x10px"
+      }
+    ],
+    "persona_rationale": "Encoding two distinct status dimensions purely as undersized colour dots with no legend is poor information design — a perfectionist (and a colour-blind user) cannot tell readiness from status at a glance. The colours also overlap with the stat-card palette, compounding the ambiguity.",
+    "suggested_fix": {
+      "current": "Readiness/Status shown only as ~10px coloured dots with no legend or text",
+      "proposed": "Add a short text label or pill next to each dot (e.g. 'Blocked', 'Draft') and a one-line legend above the table; enlarge the dot hit area to >=24px"
+    }
+  },
+  {
+    "id": "08-perfectionist-017",
+    "page": "/admin/news/new",
+    "journey": "admin-create-news-draft",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "The blog post body editor is a large empty textarea with no placeholder text, no toolbar, and no empty-state guidance, occupying most of the viewport as blank white space. The Excerpt and Title fields are also placeholder-free.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-news-new-002-full.png",
+        "quote": "large empty body textarea below Write/Preview tabs, no placeholder or toolbar"
+      }
+    ],
+    "persona_rationale": "An empty content area with no placeholder, helper text, or formatting affordance is an undesigned empty state. Compared to the SEO page builder (which has a designed 'Add your first block' empty state), the blog editor's blank slate feels unfinished and inconsistent with its sibling editor.",
+    "suggested_fix": {
+      "current": "Blog body is a bare empty textarea with no placeholder/toolbar/empty-state",
+      "proposed": "Add placeholder/helper text ('Write your post in Markdown...'), a minimal formatting hint, and match the designed empty-state treatment used by the SEO page builder"
+    }
+  },
+  {
+    "id": "08-perfectionist-018",
+    "page": "/admin/pages/new",
+    "journey": "admin-create-seo-page",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "On first open of the SEO page builder a 'Quick Tour · Step 1 of 3' overlay anchors directly on top of the Builder outline / 'Add your first block' panel and blocks interaction with the very control it points at until dismissed.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s06-06-fill-page-title-slug-keyword.png",
+        "quote": "Quick Tour overlay covering the 'Add your first block' panel"
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "a 'Quick Tour' overlay (Step 1 of 3) covers the outline panel and blocks interaction until dismissed"
+      }
+    ],
+    "persona_rationale": "A coach-mark that obscures the element it is describing is a coordination failure between the tour and the layout. The first thing a new editor must do (add a block) is the thing the tour sits on top of. It should highlight, not occlude.",
+    "suggested_fix": {
+      "current": "Quick Tour step 1 overlays and blocks the 'Add your first block' panel",
+      "proposed": "Position the tour callout adjacent to (not over) the highlighted panel, dim the rest with a spotlight cutout around the panel, and keep the panel interactive"
+    }
+  },
+  {
+    "id": "08-perfectionist-019",
+    "page": "/admin/pages/new",
+    "journey": "admin-create-seo-page",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "finding": "The Create-page wizard advertises four page types (SEO / Resource, Blog page, Landing page, Video page) but the SEO pages list and broader studio only surface 'SEO pages' content; meanwhile the create wizard's 'Blog page' overlaps conceptually with the separate /admin/news 'New blog post' editor — two different ways to create a blog-style page with different editors.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-004-click-blog-page-article-style-page-w.png",
+        "quote": "wizard card 'Blog page — Article-style page with a strong introduction and CTA.'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-news-new-002-full.png",
+        "quote": "'New blog post — Create an article or announcement from the shared CMS backend.'"
+      }
+    ],
+    "persona_rationale": "Two distinct entry points ('Blog page' in the SEO wizard vs 'New blog post' in News) that both produce article-style content, using two different editors, is a redundant and confusing IA. An editor cannot tell which one to use or how they differ.",
+    "suggested_fix": {
+      "current": "'Blog page' (SEO builder wizard) and 'New blog post' (News editor) are two separate blog-creation paths with different editors",
+      "proposed": "Clarify the distinction in the wizard copy, or consolidate so one editor owns article-style content and the wizard links to it"
+    }
+  },
+  {
+    "id": "08-perfectionist-020",
+    "page": "global",
+    "journey": null,
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Every public-site nav and footer link is an undersized touch/click target (e.g. ABOUT 51x20px, NEWS 44x20px, HOME 43x17px, TERMS 50x17px, PRIVACY POLICY 120x17px), all under the 24px minimum height. The admin studio repeats this with 10x10px status dots and 32x32px icon-only action buttons.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "small touch target: a \"ABOUT\" 51x20px ... a \"HOME\" 43x17px ... a \"PRIVACY POLICY\" 120x17px"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "small touch target: button \"Save role for alysia@modern-amenities.com\" 32x32px"
+      }
+    ],
+    "persona_rationale": "Consistent sizing of interactive elements to the 24px (ideally 44px) minimum is a design-system rule. The whole nav being ~17-20px tall, and admin actions at 32px and dots at 10px, is a systematic under-sizing across the product, not a one-off.",
+    "suggested_fix": {
+      "current": "Nav/footer links ~17-20px tall; admin status dots 10px; admin icon actions 32px",
+      "proposed": "Set a minimum 44px tappable height on nav/footer links (extend padding without changing visual text size) and a 24px+ hit area on admin dots/icon buttons"
+    }
+  },
+  {
+    "id": "08-perfectionist-021",
+    "page": "/",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "The homepage shows horizontal scroll on the 375px mobile viewport (and case-studies and the top-5 article also report horizontal scroll on mobile), meaning some element overflows the viewport width on small screens.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | home-003-mobile.png | horizontal scroll present"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | case-studies-003-mobile.png | horizontal scroll present"
+      }
+    ],
+    "persona_rationale": "Horizontal scroll on mobile is an unambiguous layout defect — something is wider than the viewport (likely the partner-logo marquee or a fixed-width element). It appears on multiple pages, so it's a shared container/overflow problem, not a one-page slip.",
+    "suggested_fix": {
+      "current": "Horizontal scroll present at 375px on home, case-studies, and an article",
+      "proposed": "Add overflow-x:hidden on the offending marquee/section and audit fixed widths so no element exceeds 100vw at 375px"
+    }
+  },
+  {
+    "id": "08-perfectionist-022",
+    "page": "/case-studies",
+    "journey": "evaluate-trust",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "The case-studies testimonial grid mixes card states inconsistently: some cards show a leading avatar circle and others do not, and card heights vary widely with ragged bottom alignment within the same row because content length is not normalised.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "case-studies-002-full.png",
+        "quote": "testimonial grid with uneven card heights and inconsistent avatar presence across cards in a row"
+      }
+    ],
+    "persona_rationale": "In a masonry-ish testimonial grid I expect either equal-height cards per row or a deliberate masonry layout — what's here is a regular grid with ragged heights, which looks accidental. Inconsistent avatar presence in the same row compounds the unevenness.",
+    "suggested_fix": {
+      "current": "Testimonial cards have ragged heights and inconsistent avatar presence within a row",
+      "proposed": "Either equalise card heights per row (align-items:stretch with internal scroll/clamp) or adopt an intentional masonry layout, and standardise the avatar slot (placeholder when absent)"
+    }
+  }
+]

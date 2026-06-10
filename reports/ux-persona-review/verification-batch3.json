@@ -1,0 +1,30 @@
+[
+  {
+    "cid": "C014",
+    "verdict": "confirmed",
+    "reason": "PublicLeadForm.tsx puts native `required` on every field, so empty submit triggers the browser's transient bubble ('Please fill out this field.') before the server action runs — the custom per-field aria-invalid/aria-describedby/FieldError layer never renders on empty submit. Screenshot apply-003 shows the native bubble anchored to an off-screen field with no inline errors visible; exploration log records 'no visible validation errors after empty submit'. There is no aria-live='assertive' error summary listing failed fields. High severity holds."
+  },
+  {
+    "cid": "C024",
+    "verdict": "discard",
+    "mergeWith": "C030",
+    "reason": "The stated mechanism is wrong. NewsList.tsx is a server component with no scroll-reveal animation, no opacity-0, and no IntersectionObserver — cards render with full content server-side. Full-page screenshot news-002-full.png shows all three cards painted with titles, excerpts, and dates; first paint screenshot news-001-load.png shows cards with images, not 'empty outlined boxes'. The only 'broken' appearance is the single failed thumbnail on the third card, which is exactly C030. No supportable residual finding distinct from C030."
+  },
+  {
+    "cid": "C030",
+    "verdict": "demote",
+    "newSeverity": "medium",
+    "correctedFinding": "A transient upstream failure on a Webflow-CDN news thumbnail can surface as a broken image because NewsCard's next/image has no onError/fallback; the host is already whitelisted and the proxy now returns 200, so this is a graceful-degradation gap, not a config blocker.",
+    "reason": "The cited primary cause (host not whitelisted / persistent 500) is not reproducible: cdn.prod.website-files.com is already in next.config.ts images.remotePatterns, and a live curl of the exact failing _next/image URL returns 200 (X-Nextjs-Cache: HIT). The exploration-time 500 was a transient upstream/cold-cache failure. The real residual issue is the missing onError fallback in NewsList.tsx NewsCard, which is medium, not high."
+  },
+  {
+    "cid": "C006",
+    "verdict": "confirmed",
+    "reason": "BuilderEditorWalkthrough.tsx renders role='dialog' aria-modal='true' with a full-screen bg-slate-950/55 backdrop, so it does block interaction until dismissed. WalkthroughCard positions itself at targetRect.bottom+16, but the step-1 target is the full-height left rail ('blocks'), so it falls back to targetRect.top-180 clamped to viewportPadding (16px) — placing the card over the top of the very panel it highlights. Screenshot s04-04 confirms the card overlapping the Builder outline panel. There is a Skip tour / Next escape, but the overlap-with-target finding is accurate. High holds."
+  },
+  {
+    "cid": "C018",
+    "verdict": "confirmed",
+    "reason": "AdminShell.tsx sidebar exposes only four destinations (Blog and news, SEO pages, Media library, Settings); no Redirects entry. A full src grep finds no component linking to /admin/pages/redirects — the route's own page has only an outbound 'Back to pages' link. Reachable solely by typing the URL. Orphaned admin feature; high severity holds."
+  }
+]

@@ -40,3 +40,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# UX persona review artifacts — screenshots/text stay local (52MB)
+reports/ux-persona-review*/screenshots/
+reports/ux-persona-review*/text/
+reports/ux-persona-review/ux-review.html

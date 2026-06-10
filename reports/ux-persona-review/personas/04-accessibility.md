@@ -1,124 +1,137 @@
-# Persona Review: David — Accessibility-Dependent User
+# Persona Review — David, Accessibility-Dependent User (45)
+
+> Low vision (200% zoom + screen reader). Motor impairment — keyboard only, no mouse. Knows technology well, depends on proper implementation.
 
 ## Summary
 
-- Pages reviewed: 6
-- Issues found: 31
-- Blockers: 4
-- Overall gut feel: 2/5
+- **Pages reviewed**: 28 (all routes in the exploration log + axe data)
+- **Issues found**: 18
+- **Blockers**: 0 hard blockers, but **2 critical keyboard focus traps** (homepage + case-studies video walls) that would functionally stop me mid-journey
+- **Overall gut feel**: **2 / 5** — Structurally it is a real, semantic site (proper landmarks, accessible names on form fields, native required validation), but the keyboard experience is hostile: focus traps in the testimonial videos, no skip link anywhere, serious contrast failures on exactly the content I most need to read (stats, error page, article meta, admin filter counts), and a success state my screen reader probably never announces.
 
-I navigate by keyboard only, at 200% zoom, with a screen reader. The simpler
-admin shell pages (Authors, Redirects, Create Page) are mostly survivable. But
-the actual Page Builder Editor — the core of this product — is a wall of
-icon-only buttons, dozens of identically-labelled controls with no positional
-context, and visibility toggles I can't interpret without sight. The Block
-Preview Audit page has a heading structure that would make my screen reader
-announce a dozen identical H1s in a row. The thing I most need to do here —
-build and edit a page — is the thing I'm least able to do.
-
-## Page-by-Page Review
-
-### /admin/pages (Pages List)
-
-**Gut feel: 3/5** — "Clean and mostly navigable, but the heading order is wrong and the row actions hide behind an unlabelled icon."
-
-| #   | Category         | Finding                                                                                                                                                                    | Severity | Why this matters to me                                                                                                                                        |
-| --- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Accessibility    | Heading order is inverted: H2 "Studio" (sidebar brand) is announced before H1 "SEO pages". H1 should come first and be unique.                                             | High     | My screen reader builds a mental outline from headings. Starting at H2 then jumping back to H1 tells me the page is structured backwards and I lose my place. |
-| 2   | Accessibility    | The row "ACTIONS" control is a three-dot (kebab) icon button with no visible text label. The inventory lists no accessible name for it.                                    | High     | I cannot tell what the kebab does. If it has no aria-label, my screen reader just says "button" and I'm guessing whether it deletes my page.                  |
-| 3   | Accessibility    | Readiness and Status are shown only as small coloured circle icons (blue "+" / amber "D") with no text equivalent visible.                                                 | High     | Colour-coded dots carry the entire meaning. At 200% zoom they're tiny, and a screen reader gets nothing — I can't tell a draft from a published page.         |
-| 4   | Feedback & State | Filter/sort options (All, Drafts, Published, status pills, "Updated newest") are rendered as links, not buttons or a real select. The active filter shows only via colour. | Medium   | I can't tell which filter is active without a programmatic "current" state. Colour-only active state is invisible to me.                                      |
-| 5   | Copy & Labels    | The "Search" affordance is both an icon and a button; the input label "Search SEO pages" exists but the magnifying-glass-only state is ambiguous.                          | Low      | Minor — the input is labelled, which is the part that matters most to me.                                                                                     |
-| 6   | Trust & Safety   | "Sign out" sits at the very bottom of the tab order under the avatar; fine, but no visible focus order documented.                                                         | Low      | I need Sign out to be reachable and clearly labelled — it appears to be, which is good.                                                                       |
-
-### /admin/pages/new (Create New Page)
-
-**Gut feel: 3/5** — "Card-based choices are reasonable but I can't tell which card is selected without seeing the blue border, and 'Coming soon' cards aren't clearly disabled to a screen reader."
-
-| #   | Category         | Finding                                                                                                                                                                                       | Severity | Why this matters to me                                                                                                                                        |
-| --- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7   | Accessibility    | Page-type and starting-point options are buttons whose selected state is conveyed only by a blue border/tint (SEO/Resource + Blank page). No visible "selected" text or checkmark.            | Critical | I have no sighted way to know what's selected. If selection isn't exposed via aria-pressed/aria-selected, I'll hit "Start building" not knowing what I chose. |
-| 8   | Forms & Input    | The whole button label is one long run-on string ("SEO / Resource pageLong-form search page for resources, guides, and services.") with no separation between title and description.          | High     | My screen reader reads it as one breathless sentence with no pause. The title and helper text run together, making it hard to parse which is which.           |
-| 9   | Feedback & State | "From template" and "AI-assisted template" are disabled with a "Coming soon" pill. The inventory confirms disabled=yes, but disabled buttons are often skipped by the screen reader entirely. | Medium   | If they're skipped I won't even know those options exist; if focusable-but-disabled I need the "Coming soon" reason announced, not just shown as a pill.      |
-| 10  | Visual & Layout  | "SELECTED SETUP" summary panel updates on the right, but there's no live region indication.                                                                                                   | Medium   | When I change a card, the right-hand summary changes silently. Without an aria-live region I never hear that my selection updated.                            |
-
-### /admin/pages/[id] (Page Builder Editor)
-
-**Gut feel: 1/5** — "This is where I give up — 82 buttons, swarms of identical 'Up/Down/Remove/Add page content' labels with no context, eye-icon toggles I can't interpret, and an AI button that's pure icon."
-
-| #   | Category         | Finding                                                                                                                                                                                                                                                                                                                           | Severity | Why this matters to me                                                                                                                                                                                                                               |
-| --- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 11  | Accessibility    | Eye-icon visibility toggles appear next to every block (eyebrow, heading, body) with no visible text. The inventory does list "Hide eyebrow / Show eyebrow / Hide heading / Hide body / Hide cta" labels — so IF those are the accessible names this is survivable, but the canvas eye icons may be separate unlabelled controls. | Critical | If the canvas eye icons lack labels, I cannot tell what each toggles or its current state. "Hide" vs "Show" must also reflect the live state, not just the action.                                                                                   |
-| 12  | Accessibility    | Dozens of repeated, context-free button labels: "Up", "Down", "Remove" appear 4+ times each; "Add page content" 5+ times; "Section and block actions" repeatedly; "Edit Rich text settings" 3 times.                                                                                                                              | Blocker  | When I pull up a list of buttons, I get "Remove, Remove, Remove, Remove" with zero indication of WHICH card I'm removing. I literally cannot safely operate this editor — I could delete the wrong block.                                            |
-| 13  | Accessibility    | The floating "AI" button (bottom-right purple pill) is icon + abbreviation only. Its purpose and what it triggers are unclear.                                                                                                                                                                                                    | High     | "AI" announces as two letters. I don't know if it opens a chat, rewrites my content, or something destructive.                                                                                                                                       |
-| 14  | Forms & Input    | 58 inputs, and the inventory shows the vast majority (Eyebrow, Heading, Body, Card title, Card body, Question, Answer, CTA label) have NO name/id attribute — only a visible Label column value.                                                                                                                                  | Critical | If those labels aren't programmatically tied (label[for]/aria-labelledby) to the inputs, my screen reader announces "edit text, blank" with no idea if it's a heading or a card body. With ~15 "Heading"/"Body" pairs repeated, I'm completely lost. |
-| 15  | Forms & Input    | Many duplicate field labels ("Heading", "Body", "Question", "Answer", "Card title", "Card body") repeat with no section/block qualifier.                                                                                                                                                                                          | Blocker  | Even if each input is labelled "Heading", there are five "Heading" fields. Without "Hero heading", "FAQ section heading" etc., I can't tell which block I'm editing.                                                                                 |
-| 16  | Accessibility    | "Move section 1/2/3/4", "Move Page content 2" buttons exist for reordering — but reordering by button is the only path; no indication these support keyboard drag alternatives or announce new position.                                                                                                                          | High     | Reordering is the one place drag-and-drop usually locks me out. Buttons are better, but I need the new position announced after each move or I'm reordering blind.                                                                                   |
-| 17  | Feedback & State | "Up" and "Down" buttons show disabled=yes at list extremes (first card's Up, last card's Down) — good — but disabled state may not be announced with a reason.                                                                                                                                                                    | Medium   | A silently disabled Up button just feels broken to me unless I'm told "first item, can't move up".                                                                                                                                                   |
-| 18  | Feedback & State | Save feedback ("Draft saved", "Autosaved 3:51 PM", "Could not copy link", "Rendering…") appears as small status text. Unclear if these are aria-live regions.                                                                                                                                                                     | High     | Autosave and "Could not copy link" are critical state changes. If they aren't live regions, I never hear them — I won't know my work saved or that copy failed.                                                                                      |
-| 19  | Visual & Layout  | Three-column layout (blocks sidebar / canvas / SEO sidebar) collapses to stacked pills on mobile/zoom. At 200% zoom this likely forces heavy horizontal scrolling or hides panels behind collapse toggles.                                                                                                                        | High     | At my zoom level a three-pane editor is brutal. I'm constantly toggling "Collapse blocks sidebar" / "Collapse SEO sidebar" just to see one pane.                                                                                                     |
-| 20  | Accessibility    | Collapse toggles ("Collapse blocks sidebar", "Collapse SEO sidebar", sidebar chevron) — labels exist, but their expanded/collapsed state needs aria-expanded.                                                                                                                                                                     | Medium   | I need to know if a panel is currently open or closed before I toggle it, or I'll close the thing I was trying to open.                                                                                                                              |
-| 21  | Copy & Labels    | "Copy editor link" / "Copy public URL" buttons render duplicated text ("Copy editor linkEditor link", "Copy public URLPublic URL") in the inventory — suggests doubled/visually-hidden text concatenating oddly.                                                                                                                  | Medium   | My screen reader may read "Copy editor link Editor link" — redundant and confusing, though not blocking.                                                                                                                                             |
-| 22  | Trust & Safety   | "Publish" is a prominent blue button with publish notes; "Remove" block buttons have no apparent confirm step.                                                                                                                                                                                                                    | High     | One stray Enter on a context-free "Remove" button and a block is gone with no confirmation I can hear. Destructive actions need a confirm dialog I can navigate.                                                                                     |
-| 23  | Visual & Layout  | Heading structure in the editor is deep and mixed (H1 "Edit SEO page", multiple H2/H3 for panels: "Page structure", "Builder outline", "Readiness and publish", "Search Preview", "Action Items", "Governance comments"). Order looks plausible but very dense.                                                                   | Medium   | A lot of headings is fine if ordered; I rely on them to jump between the canvas and the SEO/governance panels. This is the one redeeming accessibility feature here.                                                                                 |
-
-### /admin/pages/authors (Authors)
-
-**Gut feel: 3/5** — "A simple labelled form I can actually fill out, but it relies on the browser's default validation tooltip and the required fields aren't marked before I submit."
-
-| #   | Category         | Finding                                                                                                                                                                                                                            | Severity | Why this matters to me                                                                                                                                               |
-| --- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 24  | Forms & Input    | Visible labels (Display name, Slug, Role/title, Avatar asset ID, Bio) sit above each field — good — but the inventory shows blank Label/Placeholder, so I need confirmation the label is programmatically associated (label[for]). | High     | If the visible text isn't a real `<label for>`, my screen reader reads "edit text, required" with no name. The visual layout looks correct, which is hopeful.        |
-| 25  | Forms & Input    | Required fields (Display name, Slug) have no visible required indicator (asterisk/text) until I submit and hit the native "Please fill out this field" tooltip.                                                                    | High     | I want to know a field is required BEFORE I tab past it, not get ambushed by a validation popup. Native tooltips also vanish quickly and aren't always re-announced. |
-| 26  | Feedback & State | Validation uses the browser's native HTML5 tooltip ("Please fill out this field"). It's generic and doesn't say WHICH field by name beyond focus.                                                                                  | Medium   | Native validation is at least keyboard/SR reachable, but "this field" is vague. Field-name-specific errors in an aria-live region would serve me far better.         |
-| 27  | Copy & Labels    | "Avatar asset ID" expects an ID with no helper text, picker, or example.                                                                                                                                                           | Medium   | I have no way to discover a valid asset ID by keyboard/SR — there's no "browse media" affordance tied to this field.                                                 |
-
-### /admin/pages/redirects (Redirects)
-
-**Gut feel: 3/5** — "Clear labelled fields and a proper native select for status code — the most accessible form here — but placeholders double as the only hint and the empty table has no announced empty state."
-
-| #   | Category        | Finding                                                                                                                                                                    | Severity       | Why this matters to me                                                                                                                 |
-| --- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 28  | Forms & Input   | "Old path" and "Destination" rely on placeholder text (`/resources/old-page`, `/blog/new-page`) as the format hint; placeholders disappear on focus and have low contrast. | High           | Once I focus the field the example vanishes and a screen reader may not read placeholders. I'm left guessing the required path format. |
-| 29  | Visual & Layout | Empty redirects table shows only column headers (OLD PATH, DESTINATION, STATUS, SOURCE, CREATED) and no "No redirects yet" message.                                        | Medium         | Silence reads as "broken or still loading" to me. An announced empty state tells me the page worked and there's just nothing here yet. |
-| 30  | Forms & Input   | Native `<select>` for status code is the right control choice and is keyboard/SR friendly.                                                                                 | Low (positive) | This is the one input on the whole tour done right for me — a real select I can operate with arrow keys.                               |
-
-### /admin/pages/block-preview-audit (Block Preview Audit)
-
-**Gut feel: 1/5** — "A horror show for a screen reader: many identical H1s and H2s repeated down the page, decorative previews with no structure I can parse."
-
-| #   | Category        | Finding                                                                                                                                                                                                                                                                                                       | Severity | Why this matters to me                                                                                                                                                                                                 |
-| --- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 31  | Accessibility   | Multiple H1s on one page, and the same H1 text ("Launch a vending route with a proven plan") repeated 6+ times; same H2 headings ("Write structured page copy", "Common vending questions", "Compare the next steps", "Start your vending plan", "Watch the route planning walkthrough") repeated many times. | Blocker  | A page must have ONE H1. My heading-navigation shortcut here would cycle through a dozen identical H1/H2s — I cannot use headings to find anything, which is my primary navigation tool. The page becomes unnavigable. |
-| 32  | Accessibility   | Section labels for each block variant ("Standard hero", "Split hero", etc.) are H2 BEFORE the H1 inside the preview — so an H2 contains an H1, inverting hierarchy throughout.                                                                                                                                | High     | Every single preview nests an H1 under an H2. My outline is upside-down forty times over.                                                                                                                              |
-| 33  | Visual & Layout | The page is one enormous scroll (18,000+ px) of preview cards with no skip links or in-page navigation.                                                                                                                                                                                                       | High     | With no landmarks or skip-to links I have to tab/scroll through the entire gallery. There's no way to jump to "Form blocks" without traversing everything before it.                                                   |
-
-## Blockers
-
-1. **(Editor) Context-free repeated action buttons** — "Remove", "Up", "Down", "Add page content", "Section and block actions" each appear many times with identical accessible names and no positional/owner context. I cannot tell which block any of them affects, so I risk deleting or moving the wrong content. This makes the core editor unusable and unsafe for me.
-2. **(Editor) Duplicate, context-free field labels** — ~15 inputs labelled only "Heading", "Body", "Question", "Answer", "Card title", "Card body" with no block qualifier. I can't tell which block I'm typing into.
-3. **(Editor) Inputs missing programmatic names/ids** — the inventory shows blank name/id for almost all block-content inputs. If the visible label isn't programmatically associated, my screen reader announces "edit text, blank" for 50+ fields.
-4. **(Block Preview Audit) Broken heading structure** — many identical H1s and H2s, with H1s nested under H2s, repeated dozens of times. Heading navigation — my main way around a page — is destroyed.
-
-## My Top 10 Issues
-
-1. **Editor: repeated "Remove/Up/Down/Add page content" buttons with no context** (Blocker) — I can't tell which block I'm acting on; I'll destroy the wrong content.
-2. **Editor: 50+ inputs with no programmatic name/id** (Critical) — every block field risks announcing as "edit text, blank".
-3. **Editor: duplicate field labels ("Heading", "Body", "Question"...) with no block qualifier** (Blocker) — five identical "Heading" fields, no way to disambiguate.
-4. **Block Preview Audit: multiple/duplicate H1s and inverted H2>H1 nesting repeated dozens of times** (Blocker) — heading navigation is unusable.
-5. **Editor: eye-icon visibility toggles and the icon-only "AI" button** (Critical) — icon-only controls with no clear text/state; I can't interpret or trust them.
-6. **Create Page: selected card state conveyed by colour border only** (Critical) — I can't tell what page type/starting point is selected before "Start building".
-7. **Editor: save/error status ("Draft saved", "Could not copy link") may not be in aria-live regions** (High) — I never hear whether my work saved or an action failed.
-8. **Pages List: status/readiness shown as colour-only icon dots, kebab actions unlabelled** (High) — I can't distinguish draft from published, or know what the row menu does.
-9. **Authors/Redirects: required fields unmarked until native validation fires; placeholders used as the only format hint** (High) — I'm ambushed by validation and lose the format hint on focus.
-10. **Editor at 200% zoom: dense three-pane layout forces constant panel collapsing and horizontal scrolling** (High) — the editor is physically exhausting to operate at my zoom level.
+The single thing that breaks me: **keyboard focus appears to trap inside the testimonial/case-study videos with no visible focus ring**, on the two pages central to deciding whether to apply.
 
 ---
 
-_Note on skipped destructive actions:_ "Sign out", Publish/Unpublish/Delete on
-the pre-existing sample page were screenshotted but not executed per the
-exploration rules. From the screenshots, "Sign out" is consistently labelled
-text (good), and "Publish" is a clearly-labelled blue button. My concern isn't
-the skip — it's that block-level "Remove" buttons appear to lack both labels
-and a confirmation step, which is exactly the kind of destructive control I most
-need guarded.
+## Journey Review
+
+| Journey                  | Score | Could I complete it?                 | Where I'd give up                                                                                                                                                                                      |
+| ------------------------ | ----- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| discover-and-apply       | 2     | Probably not unaided                 | Tabbing into the homepage testimonial videos — possible focus trap, no escape, no focus ring (04-001). If I route around it, the success message likely never gets announced (04-018) so I'd resubmit. |
+| contact-the-team         | 3     | Yes, if I know to look in the footer | Contact is footer-only; native validation works but no announced error summary.                                                                                                                        |
+| read-a-news-article      | 3     | Yes                                  | Reachable and readable, but article meta and inline links fail contrast (04-007) and share icons are bare letters (04-008).                                                                            |
+| evaluate-trust           | 2     | Partially                            | The proof videos on /case-studies have the same focus-trap risk (04-002) — the trust content itself becomes a keyboard dead end.                                                                       |
+| pre-call-prep            | 4     | Yes                                  | Clean page, only the global no-skip-link friction.                                                                                                                                                     |
+| admin-create-news-draft  | 2     | With difficulty                      | Serious aria-prohibited-attr on the list (04-011) plus the section being unreachable from the sidebar (a navigation gap others flagged) makes this hard by screen reader.                              |
+| admin-create-seo-page    | 2     | With difficulty                      | Duplicate landmark in the wizard (04-013); the first-run Quick Tour overlay (per journeys.md) blocking the panel is doubly hostile to keyboard/SR users.                                               |
+| admin-manage-content-ops | 2     | Partially                            | Media library filter counts fail contrast (04-012) and heading order is broken; I can't read the state counts I navigate by.                                                                           |
+
+### Per-journey notes
+
+- **discover-and-apply**: The whole reason this is my worst journey is the combination of (1) the testimonial video focus traps with no visible focus, and (2) the near-silent success state. The journeys.md note that automation resubmitted five more times because the confirmation was so subtle is exactly my lived experience — if it isn't in an aria-live region, I don't know it worked.
+- **evaluate-trust**: I _can_ reach About, Case Studies, Privacy, and Terms. But the case-study videos are the proof, and if focus traps there, the content meant to earn my trust is what locks me out.
+
+---
+
+## Page-by-Page Review
+
+### / (homepage) — Gut feel 2/5
+
+_Strong semantics (banner/nav/main/contentinfo, real headings, labeled images) undercut by keyboard traps, no skip link, and failing stat contrast._
+
+| #      | Category         | Finding                                                                   | Evidence                                                                                    | Severity |
+| ------ | ---------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------- |
+| 04-001 | Accessibility    | Testimonial videos: possible focus trap + no visible focus indicator (×4) | axe: "possible focus trap around stop 11 on video 'Video testimonial from Thomas Rohlader'" | critical |
+| 04-003 | Accessibility    | No skip-to-content link; logo → nav → 12 video stops before content       | axe tabOrder stops 1–20; home-text.md banner/main                                           | high     |
+| 04-005 | Accessibility    | Serious contrast fail on stat values (`dd`)                               | axe: "color-contrast serious — .grid-cols-[auto_1fr]...> dd"                                | high     |
+| 04-015 | Copy & Labels    | Stats render as literal '0+' / '$0M+' — SR reads "zero plus"              | home-text.md: "term: 0+ / definition: Entrepreneurs launched"                               | medium   |
+| 04-016 | Navigation       | Two consecutive identical 'APPLY NOW' links; no header Contact            | axe tabOrder stops 7 & 8                                                                    | low      |
+| 04-018 | Feedback & State | Success only as subtle green text; empty alert region; no redirect        | home-text.md: "- alert"; journeys.md success note                                           | high     |
+
+### /case-studies — Gut feel 2/5
+
+_The trust content is gated behind the same video focus-trap risk._
+
+| #      | Category      | Finding                                                      | Evidence                                                                                  | Severity |
+| ------ | ------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | -------- |
+| 04-002 | Accessibility | Video case studies: possible focus trap + no focus ring (×4) | axe: "possible focus trap around stop 9 on video 'Video case study from Thomas Rohlader'" | critical |
+| 04-010 | Accessibility | Heading order broken — h3 with no preceding h2               | axe: "heading-order — li:nth-child(1) > .p-5 > header > h3"                               | medium   |
+
+### /apply — Gut feel 3/5
+
+_Form fields have proper accessible names and native required validation works (the empty-submit screenshot shows a real "Please fill out this field." bubble). Weakness is the lack of a programmatic error summary._
+
+| #      | Category      | Finding                                                                                  | Evidence                                                                                           | Severity |
+| ------ | ------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------- |
+| 04-004 | Forms & Input | Native-only error bubbles; no aria-live error summary; bubble anchors off-screen at zoom | apply-003-form-empty-submit.png; exploration-log "no visible validation errors after empty submit" | high     |
+
+### /news (listing) — Gut feel 3/5
+
+| #      | Category        | Finding                                                                                | Evidence          | Severity |
+| ------ | --------------- | -------------------------------------------------------------------------------------- | ----------------- | -------- |
+| 04-017 | Visual & Layout | A card cover image fails to load, surfacing raw alt text as a broken-image placeholder | news-001-load.png | medium   |
+
+### /news/\* (articles) — Gut feel 3/5
+
+| #      | Category      | Finding                                                                 | Evidence                                                     | Severity |
+| ------ | ------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------ | -------- |
+| 04-007 | Accessibility | Contrast fail on article meta (`.mt-5`) and inline body links (`p > a`) | axe: "color-contrast serious — .mt-5"; "p:nth-child(48) > a" | high     |
+| 04-008 | Accessibility | Share icons exposed as bare 'X', 'in', 'f', 'link'                      | news-...-text.md: "X / in / f / link"                        | medium   |
+| 04-009 | Accessibility | Complementary/aside landmark not at top level                           | axe: "landmark-complementary-is-top-level — .lg:block"       | medium   |
+
+### /this-page-does-not-exist (404) — Gut feel 2/5
+
+| #      | Category      | Finding                                  | Evidence                                                                             | Severity |
+| ------ | ------------- | ---------------------------------------- | ------------------------------------------------------------------------------------ | -------- |
+| 04-006 | Accessibility | Contrast fail on '404' label and subtext | axe: "color-contrast — .tracking-wide, .mt-2"; this-page-does-not-exist-001-load.png | high     |
+
+### /admin/news — Gut feel 2/5
+
+| #      | Category      | Finding                                                  | Evidence                                              | Severity |
+| ------ | ------------- | -------------------------------------------------------- | ----------------------------------------------------- | -------- |
+| 04-011 | Accessibility | Serious aria-prohibited-attr on list (`.text-slate-300`) | axe: "aria-prohibited-attr serious — .text-slate-300" | high     |
+
+### /admin/media — Gut feel 2/5
+
+| #      | Category      | Finding                                                                      | Evidence                                                                                      | Severity |
+| ------ | ------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------- |
+| 04-012 | Accessibility | Contrast fail on filter counts (`.mr-1`) + description; broken heading order | axe: "color-contrast — .mr-1, .space-y-2 > p"; "heading-order — h3"; admin-media-001-load.png | high     |
+
+### /admin/pages/new — Gut feel 2/5
+
+| #      | Category      | Finding                                            | Evidence                      | Severity |
+| ------ | ------------- | -------------------------------------------------- | ----------------------------- | -------- |
+| 04-013 | Accessibility | Duplicate (non-unique) landmark in wizard (`.p-0`) | axe: "landmark-unique — .p-0" | medium   |
+
+### /admin/news/new — Gut feel 2/5
+
+| #      | Category      | Finding                                                | Evidence                                                | Severity |
+| ------ | ------------- | ------------------------------------------------------ | ------------------------------------------------------- | -------- |
+| 04-014 | Accessibility | Complementary landmark not at top level (`.space-y-5`) | axe: "landmark-complementary-is-top-level — .space-y-5" | medium   |
+
+### Pages with clean axe + tab data (only the global no-skip-link friction applies)
+
+/about, /contact, /privacy, /terms, /thank-you-for-applying, /pre-call-resources, /admin/pages, /admin/libraries, /admin/settings/users, /admin/pages/redirects, /admin/forgot-password. The only tab issue on these is the `nextjs-portal` "no visible focus indicator" stop, which is the dev-tools artifact and is excluded per the brief.
+
+---
+
+## Blockers
+
+No hard 404/broken-feature blockers, but two **critical** issues function as journey-stoppers for me specifically:
+
+1. **04-001 / 04-002 — Keyboard focus traps in the testimonial and case-study videos** with no visible focus indicator. On the two pages most central to deciding to apply, tabbing into a video may strand my focus with no way out and no on-screen cue of where I am.
+
+---
+
+## My Top 10 Issues
+
+1. **04-001** (critical) — Homepage testimonial video focus traps, no focus ring.
+2. **04-002** (critical) — Case-studies video focus traps, no focus ring.
+3. **04-003** (high) — No skip-to-content link anywhere; I tab through nav + 12 video stops to reach content.
+4. **04-018** (high) — Application success state likely never announced to my screen reader; no redirect to /thank-you-for-applying.
+5. **04-005** (high) — Homepage credibility stats fail AA contrast.
+6. **04-006** (high) — 404 page '404' label and subtext fail AA contrast — unreadable exactly when I need to recover.
+7. **04-007** (high) — News article meta and inline body links fail AA contrast.
+8. **04-011** (high) — Serious aria-prohibited-attr in the admin news list corrupts SR output.
+9. **04-012** (high) — Media library filter counts/description fail contrast + broken heading order.
+10. **04-004** (high) — Apply form has no programmatic aria-live error summary; native bubbles anchor off-screen at 200% zoom.

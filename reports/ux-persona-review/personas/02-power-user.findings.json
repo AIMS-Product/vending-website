@@ -1,0 +1,523 @@
+[
+  {
+    "id": "02-power-user-001",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "Application submit success is a single small green line of text next to the button — no redirect, no form clear, no disable, no prominent confirmation.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "Thanks. We received your details and will follow up shortly."
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-014-14-submit-continue-round-6-.png",
+        "quote": "automation re-submitted 6 times because the success state was missed"
+      }
+    ],
+    "persona_rationale": "I move fast and look away the instant I click submit. A faint line of text beside the button is not a state change I'll register, so I'd assume it failed and resubmit or bounce — and there's already a /thank-you-for-applying page sitting unused.",
+    "suggested_fix": {
+      "current": "Inline green sentence beside SUBMIT APPLICATION button; form stays as-is",
+      "proposed": "Redirect to /thank-you-for-applying on success (or replace the form with a full-width confirmation card that clears/disables the form)"
+    }
+  },
+  {
+    "id": "02-power-user-002",
+    "page": "/admin/news",
+    "journey": "admin-create-news-draft",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "No News/Blog item in the studio sidebar; /admin/news is reachable only by typing the URL.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-news-draft-s02-02-look-for-news-in-studio-nav.png",
+        "quote": "sidebar offers only SEO pages, Media library, and Settings"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "Media library : Images and source assets"
+      }
+    ],
+    "persona_rationale": "An admin creates news drafts repeatedly; forcing me to memorize a URL for a daily task is the kind of hidden-primary-action friction I won't tolerate in a tool I use often.",
+    "suggested_fix": {
+      "current": "Sidebar: SEO pages, Media library, Settings only",
+      "proposed": "Add a 'Blog & news' sidebar entry linking to /admin/news alongside SEO pages"
+    }
+  },
+  {
+    "id": "02-power-user-003",
+    "page": "/admin/pages/new",
+    "journey": "admin-create-seo-page",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "A 'Quick Tour · Step 1 of 3' overlay covers the outline panel on first editor open and blocks interaction until dismissed.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s04-04-wizard-starting-point-build.png",
+        "quote": "QUICK TOUR · STEP 1 OF 3 / Page structure / This is where the structure of the page is."
+      }
+    ],
+    "persona_rationale": "Forced tutorials are a hard trigger for me. The overlay points at the exact panel I need and stops me from working; even with a 'Skip tour' link I resent having to dismiss a tour before doing anything.",
+    "suggested_fix": {
+      "current": "Modal tour overlay auto-opens over the builder panel and blocks clicks",
+      "proposed": "Make the tour an opt-in '?' button; never auto-block the panel — or remember dismissal per-user so it shows at most once"
+    }
+  },
+  {
+    "id": "02-power-user-004",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "Hero stat counters render as '0+', '$0M+', '0+' placeholders.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "0+\nENTREPRENEURS LAUNCHED\n$0M+\nSNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\n0+\nVENDING LOCATIONS W/OUR GUIDANCE"
+      }
+    ],
+    "persona_rationale": "I judge legitimacy in 3 seconds. Zeroed-out vanity metrics read as broken or unconfigured data and make the whole site feel unmaintained.",
+    "suggested_fix": {
+      "current": "0+ / $0M+ / 0+ stat values",
+      "proposed": "Populate real figures, or remove the stat band until real numbers exist — never ship placeholder zeros"
+    }
+  },
+  {
+    "id": "02-power-user-005",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "Contact link exists only in the footer; it is not in the header/primary navigation.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-contact-the-team-002-02-find-and-click-contact-link.png",
+        "quote": "link is in the FOOTER only — CONTACT US; not in the header nav"
+      },
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "navigation \"Primary\": link \"About\" link \"Resources\" link \"Case Studies\" link \"News\""
+      }
+    ],
+    "persona_rationale": "My reflex is the top nav. When Contact isn't there I waste time scrolling to the footer or guessing the URL — avoidable hunting.",
+    "suggested_fix": {
+      "current": "Contact only in footer nav",
+      "proposed": "Add 'Contact' to the primary header navigation"
+    }
+  },
+  {
+    "id": "02-power-user-006",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The news listing page is headed 'BLOG' while the nav item and route are both 'NEWS'.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "BLOG heading on /news page"
+      },
+      { "type": "text", "ref": "news-text.md", "quote": "NEWS" }
+    ],
+    "persona_rationale": "Two names for the same section makes me second-guess whether I'm in the right place. Inconsistent labels slow down the mental model I build to navigate fast.",
+    "suggested_fix": {
+      "current": "Page heading 'BLOG' vs nav/route 'NEWS'",
+      "proposed": "Use one term everywhere — change the page heading to 'NEWS' to match nav and route"
+    }
+  },
+  {
+    "id": "02-power-user-007",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "Article cards are scroll-reveal animated and render as blank outlines above the fold until scrolled into view.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "empty card outlines before any scrolling"
+      }
+    ],
+    "persona_rationale": "Empty outlines on first paint look like a half-loaded or broken page; my 3-second judgment is 'this isn't ready' before I even scroll.",
+    "suggested_fix": {
+      "current": "Cards hidden/blank until scroll-reveal fires",
+      "proposed": "Render cards visible by default; apply reveal animation only to below-fold cards, or drop reveal entirely on the listing"
+    }
+  },
+  {
+    "id": "02-power-user-008",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "No autofocus on the first form field; the page loads with no field focused.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "apply-001-load.png",
+        "quote": "Name field empty and unfocused on load"
+      }
+    ],
+    "persona_rationale": "I want to land and start typing. Having to click into the Name field first is one extra interaction on every single form.",
+    "suggested_fix": {
+      "current": "No focused field on load",
+      "proposed": "autofocus the Name input on /apply (and the first field on /contact)"
+    }
+  },
+  {
+    "id": "02-power-user-009",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "Phone field is a plain text input rather than type=tel, so it offers no numeric keypad and no input affordance.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "text: Phone\ntextbox \"Phone\""
+      }
+    ],
+    "persona_rationale": "Wrong input types are sloppy and slow me down — on any device I expect the phone field to behave like a phone field.",
+    "suggested_fix": {
+      "current": "<input> (text) for Phone",
+      "proposed": "<input type=\"tel\" inputmode=\"tel\"> for Phone on /apply and /contact"
+    }
+  },
+  {
+    "id": "02-power-user-010",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "Contact Phone field is also a plain text input, not type=tel.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "contact-text.md",
+        "quote": "text: Phone\ntextbox \"Phone\""
+      }
+    ],
+    "persona_rationale": "Same wrong-input-type friction repeated on the contact form — consistency in sloppiness, not in quality.",
+    "suggested_fix": {
+      "current": "<input> (text) for Phone",
+      "proposed": "<input type=\"tel\" inputmode=\"tel\"> for the contact Phone field"
+    }
+  },
+  {
+    "id": "02-power-user-011",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "low",
+    "finding": "No keyboard submit (Cmd/Ctrl+Enter) on the application form; submitting requires tabbing to or clicking the button.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "/apply tabOrder ... 16 button 'SUBMIT APPLICATION'"
+      }
+    ],
+    "persona_rationale": "Keyboard-first users expect Cmd+Enter to submit a focused form. Reaching for the mouse or tabbing to the button at the end is needless friction.",
+    "suggested_fix": {
+      "current": "Submit only via button click/tab",
+      "proposed": "Add Cmd/Ctrl+Enter keyboard submit handler to the apply and contact forms"
+    }
+  },
+  {
+    "id": "02-power-user-012",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "low",
+    "finding": "State is a 50-option native <select> with no typeahead-by-name UX beyond default browser behavior; budget/stage/timeline are all 'Select' placeholder dropdowns with no smart default.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "combobox \"State\": option \"Select\" [disabled] [selected] option \"Alabama\" ..."
+      }
+    ],
+    "persona_rationale": "Four 'Select' dropdowns with no pre-selection means four manual picks. A combobox with type-to-filter (or geo-prefilled State) would cut the form time noticeably.",
+    "suggested_fix": {
+      "current": "Native 50-item State select + 3 unselected dropdowns",
+      "proposed": "Use a searchable combobox for State (type 'TX' to jump); consider geo-prefilling State from IP as an editable default"
+    }
+  },
+  {
+    "id": "02-power-user-013",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "Homepage has a measured layout shift of CLS 0.263 and horizontal scroll on mobile.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Layout shift (CLS): 0.263"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-003-mobile.png",
+        "quote": "mobile-375 ... horizontal scroll present"
+      }
+    ],
+    "persona_rationale": "Visible jumping during load and a page that scrolls sideways on mobile both read as unpolished — I notice jank immediately and it lowers my confidence in the build.",
+    "suggested_fix": {
+      "current": "CLS 0.263, horizontal overflow on 375px",
+      "proposed": "Reserve dimensions for hero/image/logo-strip to bring CLS under 0.1; fix the element causing horizontal overflow at 375px width"
+    }
+  },
+  {
+    "id": "02-power-user-014",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "A news hero image fails to load (500 from the Webflow CDN via next/image), showing alt text where the image should be.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com%2F...png&w=640&q=75"
+      },
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "third card shows 'Top 10 Profitable Products...' alt text instead of an image"
+      }
+    ],
+    "persona_rationale": "A broken image on the first content card is the kind of visible defect that makes a developer-minded user assume the rest is fragile too.",
+    "suggested_fix": {
+      "current": "next/image proxying a remote Webflow CDN URL that 500s",
+      "proposed": "Self-host the image or fix the remote URL/loader config; add a graceful image fallback so a failed load doesn't expose raw alt text"
+    }
+  },
+  {
+    "id": "02-power-user-015",
+    "page": "/admin/pages/new",
+    "journey": "admin-create-seo-page",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "Creating an SEO page is a 3-step wizard (Page type -> Starting point -> Ready to build) before the editor opens.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s02-02-click-create-page.png",
+        "quote": "3-step wizard opens (Page type -> Starting point -> Ready to build)"
+      }
+    ],
+    "persona_rationale": "Three steps to start a page is ceremony. After I've made one, I know what I want — I'd rather drop straight into the editor with sensible defaults than click through a wizard each time.",
+    "suggested_fix": {
+      "current": "Mandatory 3-step wizard on every Create page",
+      "proposed": "Default 'Create page' to SEO/Resource + blank, opening the editor directly; keep the wizard behind a 'Choose a template' secondary option"
+    }
+  },
+  {
+    "id": "02-power-user-016",
+    "page": "/admin/pages/new",
+    "journey": "admin-create-seo-page",
+    "category": "Feedback & State",
+    "severity": "low",
+    "finding": "Publish is gated behind readiness warnings ('Fix SEO title', 'Fix URL slug') with no inline jump-to-field link.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s04-04-wizard-starting-point-build.png",
+        "quote": "PUBLISH STATUS draft ... Fix URL slug"
+      }
+    ],
+    "persona_rationale": "The gating is reasonable, but as a power user I want the warning to jump me straight to the offending field, not just tell me to fix it.",
+    "suggested_fix": {
+      "current": "Static 'Fix SEO title / Fix URL slug' text",
+      "proposed": "Make each readiness warning a link that focuses/scrolls to the relevant field"
+    }
+  },
+  {
+    "id": "02-power-user-017",
+    "page": "/admin/pages/redirects",
+    "journey": "admin-manage-content-ops",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "The redirects manager has zero inbound links from any explored admin page; it is reachable only by URL.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-redirects-text.md",
+        "quote": "Back to pages"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Redirects | NO PATH FOUND — /admin/pages/redirects is not linked from any explored admin page"
+      }
+    ],
+    "persona_rationale": "Redirects are exactly the kind of thing a power user reaches for often; an orphaned URL-only page means I have to bookmark it or remember the path.",
+    "suggested_fix": {
+      "current": "No nav link to /admin/pages/redirects",
+      "proposed": "Add a 'Redirects' link in the SEO pages page header or sidebar"
+    }
+  },
+  {
+    "id": "02-power-user-018",
+    "page": "/admin/news",
+    "journey": "admin-create-news-draft",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The same content type is labeled inconsistently: 'News' (route), 'Blog CMS'/'New blog post' (editor), 'NEWS' (public nav), 'BLOG' (public heading).",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-news-draft-s03-03-click-new-post.png",
+        "quote": "page is headed 'New blog post' under breadcrumb 'Blog CMS'"
+      },
+      {
+        "type": "text",
+        "ref": "admin-news-new-text.md",
+        "quote": "Blog and news"
+      }
+    ],
+    "persona_rationale": "Four names for one thing forces me to keep re-mapping terms in my head — friction every time I navigate the admin.",
+    "suggested_fix": {
+      "current": "News / Blog CMS / New blog post / NEWS / BLOG used interchangeably",
+      "proposed": "Standardize on one term (e.g. 'Blog') across admin breadcrumbs, public nav, and public heading"
+    }
+  },
+  {
+    "id": "02-power-user-019",
+    "page": "/admin/news",
+    "journey": "admin-create-news-draft",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "News list rows have no delete/archive affordance; retiring a post requires opening each post's editor to find the Archive control.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-news-draft-s07-07-delete-created-draft-session-created-per.png",
+        "quote": "no delete control in the list row; the EDITOR has an Archive button"
+      }
+    ],
+    "persona_rationale": "Bulk-managing content from the list is a core power-user expectation. Having to open every post to archive it is several extra clicks per item.",
+    "suggested_fix": {
+      "current": "Archive only inside each post editor",
+      "proposed": "Add a per-row actions menu (Edit / Archive / Delete) on the news list, matching the SEO pages list pattern"
+    }
+  },
+  {
+    "id": "02-power-user-020",
+    "page": "/admin/pages",
+    "journey": "admin-create-seo-page",
+    "category": "Feedback & State",
+    "severity": "low",
+    "finding": "SEO pages list row actions menu did not expose Archive/Delete to keyboard/automation, and the editor exposes no archive control either — page retirement path is unclear despite 2 archived pages existing.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "cleanup-seo-row-menu.png",
+        "quote": "row '⋮' actions menu did not expose Archive/Delete items to automation"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "the builder editor offers no archive/delete path that automation could find"
+      }
+    ],
+    "persona_rationale": "If I can't reliably find how to retire a page, I lose confidence I can clean up my own mistakes quickly — and cleanup speed matters to me.",
+    "suggested_fix": {
+      "current": "Archive/Delete hard to reach from row menu and absent from editor",
+      "proposed": "Ensure the row '⋮' menu reliably exposes Archive/Delete and keyboard-opens; add an Archive control in the page editor"
+    }
+  },
+  {
+    "id": "02-power-user-021",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Accessibility & Inclusion",
+    "severity": "low",
+    "finding": "Each video testimonial occupies three consecutive keyboard tab stops on the homepage, inflating the tab sequence.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "/ tabOrder stops 9-11 all 'video' 'Video testimonial from Thomas Rohlader' (repeated x3 per testimonial)"
+      }
+    ],
+    "persona_rationale": "As a keyboard user, tabbing through the homepage means three stops per testimonial card — a long, repetitive sequence to get past the proof section to a CTA.",
+    "suggested_fix": {
+      "current": "3 tab stops per testimonial video",
+      "proposed": "Collapse each video to a single focusable control; remove redundant focusable wrappers"
+    }
+  },
+  {
+    "id": "02-power-user-022",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Accessibility & Inclusion",
+    "severity": "low",
+    "finding": "Homepage stat values (dd elements) fail WCAG AA color contrast.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast (serious) — .grid-cols-[auto_1fr].items-baseline.py-5 > dd, count 3"
+      }
+    ],
+    "persona_rationale": "Low-contrast metric labels are hard to scan quickly; combined with the '0+' placeholders, the whole stat band is weak.",
+    "suggested_fix": {
+      "current": "Stat <dd> text below AA contrast",
+      "proposed": "Darken/strengthen the stat value text color to meet 4.5:1"
+    }
+  },
+  {
+    "id": "02-power-user-023",
+    "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+    "journey": "read-a-news-article",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "finding": "Legacy /blog/* article path 404s instead of redirecting to the /news/* equivalent.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "404 /blog/how-to-choose-the-perfect-location-for-vending-machine"
+      }
+    ],
+    "persona_rationale": "Given the BLOG/NEWS naming confusion, I might type or follow a /blog/ link and hit a dead 404 — a redirect would catch that bounce.",
+    "suggested_fix": {
+      "current": "/blog/{slug} returns 404",
+      "proposed": "Add a 301 redirect from /blog/{slug} to /news/{slug}"
+    }
+  },
+  {
+    "id": "02-power-user-024",
+    "page": "/admin/settings",
+    "journey": "admin-manage-content-ops",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "finding": "The Settings sidebar link deep-links straight to /admin/settings/users; /admin/settings itself only resolves by redirect, so there's no settings landing/index.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Settings ... deep-links to /admin/settings/users; /admin/settings itself is only reachable by URL"
+      }
+    ],
+    "persona_rationale": "If settings ever grows beyond users, the lack of a settings index means I can't see the full set of settings sections at a glance.",
+    "suggested_fix": {
+      "current": "/admin/settings redirects to /users with no index",
+      "proposed": "Keep the redirect for now but plan a settings index/landing once a second settings section exists"
+    }
+  }
+]

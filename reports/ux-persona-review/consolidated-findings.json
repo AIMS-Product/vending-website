@@ -1,0 +1,4297 @@
+[
+  {
+    "cid": "C001",
+    "band": "P0",
+    "page": "/apply",
+    "category": "Feedback & State",
+    "severity": "blocker",
+    "personaCount": 13,
+    "personas": [
+      "01-grandparent",
+      "02-power-user",
+      "03-first-timer",
+      "06-skeptic",
+      "07-mobile",
+      "08-perfectionist",
+      "09-pragmatist",
+      "10-teenager",
+      "11-business-owner",
+      "12-developer",
+      "13-executive",
+      "14-competitor",
+      "15-angry-user"
+    ],
+    "finding": "After submitting the application the only confirmation is a small line of green text beside the button; the form does not clear, disable, or redirect, so a non-technical user cannot tell the submission succeeded and will resubmit.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Thanks. We received your details and will follow up shortly."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Small inline green text 'Thanks. We received your details and will follow up shortly.' next to the SUBMIT button; form stays filled, no redirect",
+      "proposed": "On success, redirect to the existing /thank-you-for-applying page (or show a full-width banner above the form), and clear/disable the form"
+    },
+    "ids": [
+      "01-grandparent-001",
+      "02-power-user-001",
+      "03-first-timer-006",
+      "06-skeptic-015",
+      "07-mobile-001",
+      "08-perfectionist-005",
+      "09-pragmatist-005",
+      "10-teenager-001",
+      "11-business-owner-006",
+      "12-developer-001",
+      "13-executive-004",
+      "14-competitor-001",
+      "15-angry-user-004",
+      "15-angry-user-005"
+    ]
+  },
+  {
+    "cid": "C007",
+    "band": "P0",
+    "page": "/admin/pages",
+    "category": "Navigation & Flow",
+    "severity": "blocker",
+    "personaCount": 2,
+    "personas": ["01-grandparent", "14-competitor"],
+    "finding": "The Blog/News CMS has no entry in the studio sidebar; the entire content type is only reachable by typing /admin/news.",
+    "journey": "admin-create-news-draft",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "navigation \"Admin sections\": link \"SEO pages : SEO page content\" ... link \"Media library : Images and source assets\""
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-news-draft-s02-02-look-for-news-in-studio-nav.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "Sidebar 'Admin sections' = SEO pages, Media library only",
+      "proposed": "Add a 'Blog & News' link (→ /admin/news) to the studio sidebar 'Admin sections' nav"
+    },
+    "ids": ["01-grandparent-007", "14-competitor-002"]
+  },
+  {
+    "cid": "C148",
+    "band": "P0",
+    "page": "/",
+    "category": "Trust & Safety",
+    "severity": "blocker",
+    "personaCount": 1,
+    "personas": ["15-angry-user"],
+    "finding": "No phone number or email address anywhere on the homepage or in the footer — every contact path routes into a web form, leaving a frustrated user with no way to reach a human.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "HOME\nABOUT\nRESOURCES\nCASE STUDIES\nNEWS\nCONTACT US\nTERMS\nPRIVACY POLICY"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Footer and site offer only nav links and a contact form; no phone/email",
+      "proposed": "Add a visible support email (e.g. support@vendingpreneurs.com) and/or phone number to the footer and contact page, plus a stated response time"
+    },
+    "ids": ["15-angry-user-001"]
+  },
+  {
+    "cid": "C035",
+    "band": "P1",
+    "page": "/, /case-studies",
+    "category": "Accessibility & Inclusion",
+    "severity": "critical",
+    "personaCount": 3,
+    "personas": ["02-power-user", "04-accessibility", "12-developer"],
+    "finding": "Homepage testimonial videos create possible keyboard focus traps with no visible focus indicator. Each of the four testimonial videos produces a tab stop with 'no visible focus indicator' and a 'possible focus trap' is flagged at the last stop of each video group.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "possible focus trap around stop 11 on video 'Video testimonial from Thomas Rohlader'"
+      },
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "stop 10 (video 'Video testimonial from Thomas Rohlader'): no visible focus indicator"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Custom video players with no managed focus and no visible focus ring",
+      "proposed": "Ensure each video control is reachable and escapable by keyboard (no trap), and add a visible :focus-visible outline (e.g. 2px solid high-contrast ring) on the player and its controls"
+    },
+    "ids": [
+      "02-power-user-021",
+      "04-accessibility-001",
+      "12-developer-011",
+      "04-accessibility-002"
+    ]
+  },
+  {
+    "cid": "C076",
+    "band": "P1",
+    "page": "/",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "personaCount": 3,
+    "personas": ["06-skeptic", "10-teenager", "11-business-owner"],
+    "finding": "The three hero proof-statistics render as literal zeros — '0+' entrepreneurs launched, '$0M+' sales, '0+' vending locations — so the site's headline social proof communicates that nothing has happened.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "0+\nENTREPRENEURS LAUNCHED\n$0M+\nSNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\n0+\nVENDING LOCATIONS W/OUR GUIDANCE"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-002-full.png",
+        "quote": "stat block shows 0+ and $0M+"
+      }
+    ],
+    "suggested_fix": {
+      "current": "0+ Entrepreneurs launched / $0M+ Snack-drink sales / 0+ Vending locations",
+      "proposed": "Populate real verified figures (e.g. '600+ entrepreneurs launched', '$12M+ in machine sales', '2,000+ locations'); if the count-up animation is failing, render the final value server-side as a fallback so it never shows 0"
+    },
+    "ids": ["06-skeptic-001", "10-teenager-003", "11-business-owner-001"]
+  },
+  {
+    "cid": "C117",
+    "band": "P1",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "severity": "critical",
+    "personaCount": 2,
+    "personas": ["10-teenager", "11-business-owner"],
+    "finding": "Three required fields are commitments I may not have made yet: Business stage, Available startup budget, and Launch timeline are all required",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/apply-text.md",
+        "quote": "Business stage*\n(required)"
+      },
+      {
+        "type": "text",
+        "ref": "text/apply-text.md",
+        "quote": "Available startup budget*\n(required)"
+      },
+      {
+        "type": "text",
+        "ref": "text/apply-text.md",
+        "quote": "Launch timeline*\n(required)"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Business stage, budget, and timeline marked '(required)'",
+      "proposed": "Make only Name + Email required; mark stage/budget/timeline optional with a 'Not sure yet' option in each dropdown"
+    },
+    "ids": ["10-teenager-002", "11-business-owner-005"]
+  },
+  {
+    "cid": "C039",
+    "band": "P1",
+    "page": "/",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "personaCount": 1,
+    "personas": ["03-first-timer"],
+    "finding": "Homepage stat counters render as '0+', '$0M+', '0+' — to a cold visitor with no context this reads as a fake, brand-new, or broken site, destroying trust before they read the testimonials below.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "home-002-full.png",
+        "quote": "stat row shows 0+ / $0M+ / 0+"
+      },
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "0+\nENTREPRENEURS LAUNCHED\n$0M+\nSNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\n0+\nVENDING LOCATIONS W/OUR GUIDANCE"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Counters animating from/stuck at 0 with no real values (0+, $0M+, 0+)",
+      "proposed": "Render real seeded values (e.g. '500+', '$10M+', '1,200+') server-side so they never display as zero, even before any count-up animation runs"
+    },
+    "ids": ["03-first-timer-001"]
+  },
+  {
+    "cid": "C112",
+    "band": "P1",
+    "page": "/",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "personaCount": 1,
+    "personas": ["09-pragmatist"],
+    "finding": "The headline stat block renders literal zeros: \"0+ ENTREPRENEURS LAUNCHED\", \"$0M+ SNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\", \"0+ VENDING LOCATIONS W/OUR GUIDANCE\". To a no-nonsense reader this says the program has launched zero people and done zero sales.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "0+\nENTREPRENEURS LAUNCHED\n$0M+\nSNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\n0+\nVENDING LOCATIONS W/OUR GUIDANCE"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-002-full.png",
+        "quote": "0+ / $0M+ / 0+ stat row under THE VENDING ACCELERATOR PROGRAM"
+      }
+    ],
+    "suggested_fix": {
+      "current": "0+ ENTREPRENEURS LAUNCHED / $0M+ SNACK/DRINK SALES / 0+ VENDING LOCATIONS",
+      "proposed": "Populate the counters with real figures (e.g. \"500+ entrepreneurs launched\", \"$12M+ sales\", \"2,000+ locations\"); if the data can't load, hide the stat block entirely rather than showing zeros"
+    },
+    "ids": ["09-pragmatist-001"]
+  },
+  {
+    "cid": "C138",
+    "band": "P1",
+    "page": "/admin/pages",
+    "category": "Navigation & Flow",
+    "severity": "critical",
+    "personaCount": 1,
+    "personas": ["14-competitor"],
+    "finding": "The pages list has no row-level delete/duplicate/bulk actions; the '⋮' actions menu did not expose Archive/Delete and there is no multi-select.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "columnheader \"Actions\""
+      }
+    ],
+    "suggested_fix": {
+      "current": "'⋮' row menu with no visible Delete/Duplicate; no bulk select",
+      "proposed": "Expose Edit / Duplicate / Archive / Delete in the row menu and add checkbox multi-select with bulk archive/delete"
+    },
+    "ids": ["14-competitor-005"]
+  },
+  {
+    "cid": "C150",
+    "band": "P1",
+    "page": "/contact",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "personaCount": 1,
+    "personas": ["15-angry-user"],
+    "finding": "The contact page offers only a web form — no phone number, no email address, no chat, and no alternative channel.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "contact-002-full.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "text/contact-text.md",
+        "quote": "Name*\n(required)\nEmail*\n(required)\nPhone\nCity\nState\n...\nMessage*\n(required)\nSEND MESSAGE"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Contact page = form only",
+      "proposed": "Add a support email and/or phone number prominently on the contact page alongside the form"
+    },
+    "ids": ["15-angry-user-008"]
+  },
+  {
+    "cid": "C004",
+    "band": "P1",
+    "page": "/news, /, /news + /news/* + breadcrumb, /admin/news, /admin/news/new",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "personaCount": 13,
+    "personas": [
+      "01-grandparent",
+      "02-power-user",
+      "03-first-timer",
+      "08-perfectionist",
+      "09-pragmatist",
+      "10-teenager",
+      "11-business-owner",
+      "13-executive",
+      "14-competitor",
+      "15-angry-user",
+      "12-developer",
+      "07-mobile",
+      "05-non-native"
+    ],
+    "finding": "The navigation item and route say 'NEWS' but the page heading is 'BLOG', and article breadcrumbs also say 'BLOG' — the same section has two different names.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "news-text.md",
+        "quote": "BLOG"
+      },
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": ""
+      },
+      {
+        "type": "screenshot",
+        "ref": "news-how-to-choose-the-perfect-location-for-vending-machine-001-load.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "Nav says 'NEWS', page heading and breadcrumb say 'BLOG'",
+      "proposed": "Use one name everywhere — change the page heading and breadcrumb to 'News' to match the nav item and the /news route"
+    },
+    "ids": [
+      "01-grandparent-004",
+      "02-power-user-006",
+      "03-first-timer-009",
+      "08-perfectionist-014",
+      "09-pragmatist-008",
+      "10-teenager-005",
+      "11-business-owner-013",
+      "13-executive-006",
+      "13-executive-014",
+      "14-competitor-003",
+      "15-angry-user-015",
+      "12-developer-007",
+      "07-mobile-007",
+      "02-power-user-018",
+      "01-grandparent-019",
+      "05-non-native-011"
+    ]
+  },
+  {
+    "cid": "C003",
+    "band": "P1",
+    "page": "/, /contact",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "personaCount": 11,
+    "personas": [
+      "01-grandparent",
+      "13-executive",
+      "15-angry-user",
+      "02-power-user",
+      "03-first-timer",
+      "05-non-native",
+      "09-pragmatist",
+      "10-teenager",
+      "11-business-owner",
+      "12-developer",
+      "14-competitor"
+    ],
+    "finding": "There is no Contact link in the top navigation; the only way to reach /contact is the small footer link or knowing the URL.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "ABOUT\nRESOURCES\nCASE STUDIES\nNEWS\nSTEP INSIDE"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-contact-the-team-002-02-find-and-click-contact-link.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "Top nav: About, Resources, Case Studies, News (no Contact)",
+      "proposed": "Add a 'Contact' link to the top navigation"
+    },
+    "ids": [
+      "01-grandparent-003",
+      "13-executive-003",
+      "15-angry-user-003",
+      "02-power-user-005",
+      "03-first-timer-013",
+      "05-non-native-010",
+      "09-pragmatist-003",
+      "10-teenager-008",
+      "11-business-owner-011",
+      "12-developer-018",
+      "14-competitor-004"
+    ]
+  },
+  {
+    "cid": "C014",
+    "band": "P1",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "severity": "high",
+    "personaCount": 8,
+    "personas": [
+      "01-grandparent",
+      "04-accessibility",
+      "06-skeptic",
+      "10-teenager",
+      "11-business-owner",
+      "12-developer",
+      "14-competitor",
+      "15-angry-user"
+    ],
+    "finding": "Form errors rely solely on native browser bubbles ('Please fill out this field.') with no programmatic error summary and no in-page, persistent, screen-reader-announced error list. The exploration log records 'no visible validation errors after empty submit' for the custom layer.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "apply-003-form-empty-submit.png",
+        "quote": "native tooltip 'Please fill out this field.' anchored to a hidden upper field"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "empty: no visible validation errors after empty submit"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Native-only required validation, transient bubbles, no error summary",
+      "proposed": "Add aria-invalid + aria-describedby per field with persistent inline messages, and an aria-live='assertive' error summary at the top of the form listing each failed field with anchor links"
+    },
+    "ids": [
+      "01-grandparent-014",
+      "04-accessibility-004",
+      "06-skeptic-014",
+      "10-teenager-011",
+      "11-business-owner-009",
+      "12-developer-002",
+      "14-competitor-024",
+      "15-angry-user-007"
+    ]
+  },
+  {
+    "cid": "C024",
+    "band": "P1",
+    "page": "/news",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "personaCount": 6,
+    "personas": [
+      "02-power-user",
+      "08-perfectionist",
+      "10-teenager",
+      "11-business-owner",
+      "13-executive",
+      "14-competitor"
+    ],
+    "finding": "Above the fold on /news the article cards render as empty outlined boxes before any scrolling — the cards are scroll-reveal animated and paint blank until scrolled into view. First paint of the listing page looks broken/unfinished.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "three empty card outlines below the BLOG heading at first paint"
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "article cards are scroll-reveal animated — they render as BLANK card outlines until scrolled into view"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Article cards are hidden (opacity 0) until scrolled into view, so above-fold cards stay blank",
+      "proposed": "Trigger the reveal for in-viewport cards on load, or render content visible by default and use the animation only as enhancement (and honour prefers-reduced-motion)"
+    },
+    "ids": [
+      "02-power-user-007",
+      "08-perfectionist-012",
+      "10-teenager-004",
+      "11-business-owner-014",
+      "13-executive-005",
+      "14-competitor-019"
+    ]
+  },
+  {
+    "cid": "C030",
+    "band": "P1",
+    "page": "/news",
+    "category": "Feedback & State",
+    "severity": "high",
+    "personaCount": 6,
+    "personas": [
+      "02-power-user",
+      "08-perfectionist",
+      "09-pragmatist",
+      "11-business-owner",
+      "12-developer",
+      "15-angry-user"
+    ],
+    "finding": "A news article thumbnail fails to load with a 500 from the Next.js image optimizer; the card falls back to showing raw alt text instead of an image, and a server 500 is logged in the console.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com%2F...png&w=640&q=75"
+      },
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "third card shows broken-image placeholder with literal alt text 'Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Items, Niche Products)'"
+      }
+    ],
+    "suggested_fix": {
+      "current": "next/image proxy returns 500 for the cdn.prod.website-files.com source; card renders broken with alt text",
+      "proposed": "Whitelist the CDN host in next.config images.remotePatterns (or migrate the asset into managed media), and add an onError/fallback image so a failed thumbnail degrades gracefully"
+    },
+    "ids": [
+      "02-power-user-014",
+      "08-perfectionist-013",
+      "09-pragmatist-007",
+      "11-business-owner-015",
+      "12-developer-005",
+      "15-angry-user-016"
+    ]
+  },
+  {
+    "cid": "C006",
+    "band": "P1",
+    "page": "/admin/pages, /admin/pages/new",
+    "category": "Feedback & State",
+    "severity": "high",
+    "personaCount": 5,
+    "personas": [
+      "01-grandparent",
+      "08-perfectionist",
+      "12-developer",
+      "13-executive",
+      "14-competitor"
+    ],
+    "finding": "On first open of the page editor a 'Quick Tour' overlay sits on top of the outline panel it points at and blocks interaction until dismissed.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s04-04-wizard-starting-point-build.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "a \"Quick Tour\" overlay (Step 1 of 3) covers the outline panel and blocks interaction until dismissed"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Quick Tour overlay obscures the panel/button it references",
+      "proposed": "Position the tour tooltip beside (not over) its target, and let the user dismiss or skip the whole tour with one obvious button"
+    },
+    "ids": [
+      "01-grandparent-006",
+      "08-perfectionist-018",
+      "12-developer-010",
+      "13-executive-012",
+      "14-competitor-007"
+    ]
+  },
+  {
+    "cid": "C018",
+    "band": "P1",
+    "page": "/admin/pages/redirects",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "personaCount": 5,
+    "personas": [
+      "01-grandparent",
+      "02-power-user",
+      "12-developer",
+      "13-executive",
+      "14-competitor"
+    ],
+    "finding": "The Redirects manager is an orphan route with zero inbound links from any explored admin page.",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-redirects-text.md",
+        "quote": "Back to pages"
+      }
+    ],
+    "suggested_fix": {
+      "current": "/admin/pages/redirects reachable only by URL",
+      "proposed": "Link 'Redirects' from the SEO pages screen header and/or the studio sidebar"
+    },
+    "ids": [
+      "01-grandparent-018",
+      "02-power-user-017",
+      "12-developer-009",
+      "13-executive-013",
+      "14-competitor-006"
+    ]
+  },
+  {
+    "cid": "C011",
+    "band": "P2",
+    "page": "/apply, /",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "personaCount": 4,
+    "personas": [
+      "01-grandparent",
+      "03-first-timer",
+      "05-non-native",
+      "10-teenager"
+    ],
+    "finding": "The primary nav CTA 'STEP INSIDE' does not communicate what it does (it links to /apply).",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "STEP INSIDE"
+      },
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "link \"Step inside\":\n    - /url: /apply"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Nav button label 'STEP INSIDE'",
+      "proposed": "'APPLY NOW' (match the hero CTA so the primary action is named consistently)"
+    },
+    "ids": [
+      "01-grandparent-011",
+      "03-first-timer-002",
+      "05-non-native-005",
+      "10-teenager-007"
+    ]
+  },
+  {
+    "cid": "C005",
+    "band": "P2",
+    "page": "/news",
+    "category": "Feedback & State",
+    "severity": "high",
+    "personaCount": 3,
+    "personas": ["01-grandparent", "12-developer", "15-angry-user"],
+    "finding": "On first load the article cards render as blank outlines until the user scrolls (scroll-reveal animation), so the page looks broken or half-loaded above the fold.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "they render as BLANK card outlines until scrolled into view"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Article cards are invisible until scrolled into view",
+      "proposed": "Render the first row of article cards visible on load; only apply reveal animation to cards genuinely below the fold"
+    },
+    "ids": ["01-grandparent-005", "12-developer-004", "15-angry-user-014"]
+  },
+  {
+    "cid": "C021",
+    "band": "P2",
+    "page": "/admin/news",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "personaCount": 3,
+    "personas": ["02-power-user", "12-developer", "13-executive"],
+    "finding": "No News/Blog item in the studio sidebar; /admin/news is reachable only by typing the URL.",
+    "journey": "admin-create-news-draft",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-news-draft-s02-02-look-for-news-in-studio-nav.png",
+        "quote": "sidebar offers only SEO pages, Media library, and Settings"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "Media library : Images and source assets"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Sidebar: SEO pages, Media library, Settings only",
+      "proposed": "Add a 'Blog & news' sidebar entry linking to /admin/news alongside SEO pages"
+    },
+    "ids": ["02-power-user-002", "12-developer-008", "13-executive-011"]
+  },
+  {
+    "cid": "C036",
+    "band": "P2",
+    "page": "/",
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "personaCount": 3,
+    "personas": ["02-power-user", "04-accessibility", "06-skeptic"],
+    "finding": "Serious color-contrast failure on the homepage statistic values (the 'definition' values under the Accelerator Program). Three <dd> elements fail WCAG AA contrast.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast serious — .grid-cols-[auto_1fr].items-baseline.py-5:nth-child(1) > dd"
+      },
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "term: 0+ / definition: Entrepreneurs launched"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Stat label/value color below 4.5:1 against background",
+      "proposed": "Darken the <dd> text (or lighten background) to meet at least 4.5:1 contrast"
+    },
+    "ids": ["02-power-user-022", "04-accessibility-005", "06-skeptic-006"]
+  },
+  {
+    "cid": "C037",
+    "band": "P2",
+    "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "personaCount": 3,
+    "personas": ["02-power-user", "14-competitor", "15-angry-user"],
+    "finding": "Legacy /blog/{slug} paths hard-404 instead of redirecting to the live /news/{slug} article that exists.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "404 /blog/how-to-choose-the-perfect-location-for-vending-machine"
+      }
+    ],
+    "suggested_fix": {
+      "current": "/blog/{slug} returns 404",
+      "proposed": "301-redirect /blog/{slug} to the corresponding /news/{slug} article"
+    },
+    "ids": ["02-power-user-023", "14-competitor-018", "15-angry-user-013"]
+  },
+  {
+    "cid": "C044",
+    "band": "P2",
+    "page": "/news",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "personaCount": 3,
+    "personas": ["03-first-timer", "07-mobile", "04-accessibility"],
+    "finding": "The first paint of /news shows article cards as empty outlines (scroll-reveal animation) and one card renders as broken-image alt text instead of an image ('Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Items, Niche Products)').",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "third card shows alt text 'Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Items, Niche Products)' in place of an image"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=...cdn.prod.website-files.com...ChatGPT%2520Image..."
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "article cards are scroll-reveal animated — they render as BLANK card outlines until scrolled into view"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Scroll-reveal cards paint empty; one image returns 500 from /_next/image (legacy website-files.com CDN)",
+      "proposed": "Render card content visible by default (reveal as enhancement only) and fix/replace the failing website-files.com image source so /_next/image returns 200"
+    },
+    "ids": ["03-first-timer-010", "07-mobile-005", "04-accessibility-017"]
+  },
+  {
+    "cid": "C070",
+    "band": "P2",
+    "page": "/",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "personaCount": 3,
+    "personas": ["05-non-native", "08-perfectionist", "13-executive"],
+    "finding": "The hero stat counters render as zeroes in the captured state: '0+' Entrepreneurs launched, '$0M+' Snack/Drink sales, '0+' Vending locations. These are count-up animations frozen at their start value, so the most prominent proof numbers on the homepage read as literal zero.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "0+ ENTREPRENEURS LAUNCHED $0M+ SNACK/DRINK SALES IN VENDINGPRENEUR MACHINES 0+ VENDING LOCATIONS W/OUR GUIDANCE"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-002-full.png",
+        "quote": "stat band shows '0+' and '50M+' counters"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Counters animate from 0 with no static fallback, so first paint and reduced-motion show '0+ / $0M+ / 0+'",
+      "proposed": "Render the final value as the default content and only animate as a progressive enhancement; respect prefers-reduced-motion by showing the final number immediately"
+    },
+    "ids": ["05-non-native-014", "08-perfectionist-002", "13-executive-001"]
+  },
+  {
+    "cid": "C002",
+    "band": "P2",
+    "page": "/",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "personaCount": 2,
+    "personas": ["01-grandparent", "15-angry-user"],
+    "finding": "The three headline statistics render as '0+', '$0M+', '0+' instead of real figures, making the site look broken and untrustworthy.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "0+"
+      },
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "$0M+"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-002-full.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "Counters show '0+', '$0M+', '0+'",
+      "proposed": "Render the real counts (e.g. '500+', '$12M+', '1,200+'); if a count is unknown at load, hide the stat rather than show 0"
+    },
+    "ids": ["01-grandparent-002", "15-angry-user-002"]
+  },
+  {
+    "cid": "C042",
+    "band": "P2",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "severity": "high",
+    "personaCount": 2,
+    "personas": ["03-first-timer", "05-non-native"],
+    "finding": "Submitting the apply form with empty required fields produces NO visible validation error; the form silently does nothing. A non-native user has no message to read and cannot tell what is wrong.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "empty: no visible validation errors after empty submit"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "invalid: no visible validation errors on invalid data — entered values preserved"
+      }
+    ],
+    "suggested_fix": {
+      "current": "No validation message on empty/invalid submit",
+      "proposed": "Show a specific inline error per field, e.g. \"Email is required\" / \"Enter a valid email address like name@example.com\"."
+    },
+    "ids": ["03-first-timer-007", "05-non-native-007"]
+  },
+  {
+    "cid": "C054",
+    "band": "P2",
+    "page": "/admin/news",
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "personaCount": 2,
+    "personas": ["04-accessibility", "12-developer"],
+    "finding": "Serious aria-prohibited-attr violation in the admin news list (.text-slate-300) — an ARIA attribute is applied to an element whose role does not allow it.",
+    "journey": "admin-create-news-draft",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "aria-prohibited-attr serious — .text-slate-300"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Prohibited ARIA attribute (e.g. aria-label on a non-interactive/incorrect role element)",
+      "proposed": "Remove the disallowed ARIA attribute or wrap the content in an element with a role that permits it"
+    },
+    "ids": ["04-accessibility-011", "12-developer-013"]
+  },
+  {
+    "cid": "C096",
+    "band": "P2",
+    "page": "/",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "personaCount": 2,
+    "personas": ["07-mobile", "12-developer"],
+    "finding": "The homepage has a Cumulative Layout Shift of 0.263, well above the 0.1 'good' threshold; the same 0.263 CLS recurs on /about, /news, and every news article page, indicating a shared layout component shifts after load.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "Layout shift (CLS): 0.263"
+      },
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | home-003-mobile.png | horizontal scroll present"
+      }
+    ],
+    "suggested_fix": {
+      "current": "CLS 0.263 on /, /about, /news, and article pages",
+      "proposed": "Reserve space for the shifting element (explicit width/height on hero/logo images, font-display swap with metric-matched fallback, fixed-height header) to bring CLS under 0.1"
+    },
+    "ids": ["07-mobile-011", "12-developer-006"]
+  },
+  {
+    "cid": "C144",
+    "band": "P2",
+    "page": "/admin/pages",
+    "category": "Feedback & State",
+    "severity": "high",
+    "personaCount": 2,
+    "personas": ["14-competitor", "15-angry-user"],
+    "finding": "A 'Schedule failed' filter is exposed in the workflow navigation with no inline explanation of what failed or how to recover.",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/admin-login-text.md",
+        "quote": "Scheduled\nSchedule failed"
+      }
+    ],
+    "suggested_fix": {
+      "current": "'Schedule failed' filter link with no context",
+      "proposed": "When the filter has results, show what failed and a Retry action per item; hide or de-emphasise the filter when there are zero failures"
+    },
+    "ids": ["14-competitor-017", "15-angry-user-017"]
+  },
+  {
+    "cid": "C022",
+    "band": "P2",
+    "page": "/admin/pages/new",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["02-power-user"],
+    "finding": "A 'Quick Tour · Step 1 of 3' overlay covers the outline panel on first editor open and blocks interaction until dismissed.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s04-04-wizard-starting-point-build.png",
+        "quote": "QUICK TOUR · STEP 1 OF 3 / Page structure / This is where the structure of the page is."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Modal tour overlay auto-opens over the builder panel and blocks clicks",
+      "proposed": "Make the tour an opt-in '?' button; never auto-block the panel — or remember dismissal per-user so it shows at most once"
+    },
+    "ids": ["02-power-user-003"]
+  },
+  {
+    "cid": "C023",
+    "band": "P2",
+    "page": "/",
+    "category": "Feedback & State",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["02-power-user"],
+    "finding": "Hero stat counters render as '0+', '$0M+', '0+' placeholders.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "0+\nENTREPRENEURS LAUNCHED\n$0M+\nSNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\n0+\nVENDING LOCATIONS W/OUR GUIDANCE"
+      }
+    ],
+    "suggested_fix": {
+      "current": "0+ / $0M+ / 0+ stat values",
+      "proposed": "Populate real figures, or remove the stat band until real numbers exist — never ship placeholder zeros"
+    },
+    "ids": ["02-power-user-004"]
+  },
+  {
+    "cid": "C041",
+    "band": "P2",
+    "page": "/",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["03-first-timer"],
+    "finding": "The homepage has horizontal scroll at mobile-375, making the landing page feel broken on the phone a social-media visitor arrives with.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | home-003-mobile.png | horizontal scroll present"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Homepage content overflows viewport width at 375px (horizontal scroll)",
+      "proposed": "Constrain offending element(s) with max-width:100% / overflow-x clipping so the page fits the 375px viewport"
+    },
+    "ids": ["03-first-timer-004"]
+  },
+  {
+    "cid": "C048",
+    "band": "P2",
+    "page": "/",
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["04-accessibility"],
+    "finding": "No skip-to-content link. The first tab stop is the logo, followed by all primary nav links and (on the homepage) 12 video tab stops, before any main content or the Apply CTA in the body is reachable.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "tabOrder: stop 1 'Vendingpreneurs home' ... stop 8 'APPLY NOW' ... stops 9-20 video testimonials"
+      },
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "banner: link \"Vendingpreneurs home\" ... navigation \"Primary\" ... main:"
+      }
+    ],
+    "suggested_fix": {
+      "current": "No skip link; first focusable element is the logo",
+      "proposed": "Add a visually-hidden 'Skip to main content' link as the first focusable element that targets <main> and becomes visible on focus"
+    },
+    "ids": ["04-accessibility-003"]
+  },
+  {
+    "cid": "C049",
+    "band": "P2",
+    "page": "/this-page-does-not-exist",
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["04-accessibility"],
+    "finding": "Serious color-contrast failures on the 404 page: the '404' label (.tracking-wide, light blue on white) and the explanatory subtext (.mt-2, light gray on white) both fail AA.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast serious — selectors: .tracking-wide, .mt-2 (count 2)"
+      },
+      {
+        "type": "screenshot",
+        "ref": "this-page-does-not-exist-001-load.png",
+        "quote": "light-blue '404' and gray 'The page you're looking for doesn't exist or has moved.'"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Light-blue '404' and light-gray subtext below 4.5:1",
+      "proposed": "Use darker, AA-compliant colors for the '404' label and the subtext"
+    },
+    "ids": ["04-accessibility-006"]
+  },
+  {
+    "cid": "C050",
+    "band": "P2",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["04-accessibility"],
+    "finding": "Serious color-contrast failure on article meta text (.mt-5, the date / '13 min read' line) and, on sibling articles, on inline body links (p > a). Article body links fail AA.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast serious — .mt-5"
+      },
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast serious — selectors: p:nth-child(48) > a, .mt-5 (top-5-questions)"
+      },
+      {
+        "type": "text",
+        "ref": "news-how-to-choose-the-perfect-location-for-vending-machine-text.md",
+        "quote": "May 27, 2026\n13 min read"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Faint gray meta text and low-contrast inline link color",
+      "proposed": "Raise meta and inline-link colors to meet 4.5:1; underline inline links so they are distinguishable without relying on color"
+    },
+    "ids": ["04-accessibility-007"]
+  },
+  {
+    "cid": "C055",
+    "band": "P2",
+    "page": "/admin/media",
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["04-accessibility"],
+    "finding": "Serious color-contrast failures on the media library filter counts (.mr-1) and a description paragraph (.space-y-2 > p), plus a broken heading order (h3 without preceding h2).",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast serious — selectors: .mr-1, .space-y-2 > p (count 2)"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-media-001-load.png",
+        "quote": "filter tabs 'All assets 1 · In use 0 · Unused 1 · Needs metadata 1 · Stored 0' in faint gray"
+      },
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "heading-order moderate — h3"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Faint gray filter counts/description text below 4.5:1; h3 with no h2",
+      "proposed": "Darken the count and description text to AA; fix the heading hierarchy so the section h2 precedes the h3"
+    },
+    "ids": ["04-accessibility-012"]
+  },
+  {
+    "cid": "C060",
+    "band": "P2",
+    "page": "/",
+    "category": "Feedback & State",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["04-accessibility"],
+    "finding": "The successful application submission is announced only as a single line of green text beside the submit button, with an empty <alert> region present in the DOM but no confirmed live announcement; no redirect to the existing /thank-you-for-applying page.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "- alert"
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "small green inline text \"Thanks. We received your details and will follow up shortly.\" appears beside the button; NO redirect, NO page-level confirmation"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Subtle inline green text; empty/unconfirmed alert region; no redirect",
+      "proposed": "Announce success via a populated aria-live='polite' region (or move focus to a success heading) and/or redirect to /thank-you-for-applying"
+    },
+    "ids": ["04-accessibility-018"]
+  },
+  {
+    "cid": "C061",
+    "band": "P2",
+    "page": "/apply",
+    "category": "Feedback & State",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "After a successful application the only confirmation is a small line of green text beside the button: \"Thanks. We received your details and will follow up shortly.\" For a non-native reader this is easy to miss and the phrase \"follow up\" is a phrasal verb that is ambiguous (will they email me? call me? when?).",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "Thanks. We received your details and will follow up shortly."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Thanks. We received your details and will follow up shortly.",
+      "proposed": "Redirect to /thank-you-for-applying, or show a large confirmation: \"Application received. We will email you within 2 business days.\""
+    },
+    "ids": ["05-non-native-001"]
+  },
+  {
+    "cid": "C062",
+    "band": "P2",
+    "page": "/news",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "The nav item, the URL and the page heading use three different words for the same section: nav says \"NEWS\", the route is /news, but the page heading is \"BLOG\" with the eyebrow \"Insights from the route\". A non-native reader cannot tell whether News and Blog are the same place.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "news-text.md",
+        "quote": "Insights from the route"
+      },
+      {
+        "type": "text",
+        "ref": "news-text.md",
+        "quote": "heading \"Blog\" [level=1]"
+      },
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "BLOG"
+      }
+    ],
+    "suggested_fix": {
+      "current": "nav \"NEWS\" -> page heading \"BLOG\"",
+      "proposed": "Use one word everywhere: heading \"News\" to match the nav item and /news route."
+    },
+    "ids": ["05-non-native-002"]
+  },
+  {
+    "cid": "C077",
+    "band": "P2",
+    "page": "/",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["06-skeptic"],
+    "finding": "No price, price range, or explanation of how pricing works appears anywhere on the public site; the program asks for an application with the cost entirely hidden.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "THE VENDING ACCELERATOR PROGRAM"
+      },
+      {
+        "type": "text",
+        "ref": "text/terms-text.md",
+        "quote": "All fees for courses, memberships, and digital products are stated at the time of purchase."
+      }
+    ],
+    "suggested_fix": {
+      "current": "No pricing anywhere; cost revealed only after an application/call",
+      "proposed": "Add a Pricing or 'What it costs' section (a 'from $X' figure, a price band, or at minimum 'investment discussed on your call, typically $X-$Y range, no obligation')"
+    },
+    "ids": ["06-skeptic-002"]
+  },
+  {
+    "cid": "C078",
+    "band": "P2",
+    "page": "/",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["06-skeptic"],
+    "finding": "The hero and supporting copy lean on 'financial freedom' and 'passive income' with 'minimal time investment' — the exact framing of get-rich-quick funnels that a skeptical buyer is trained to distrust.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "TURN VENDING INTO YOUR PATH TO FINANCIAL FREEDOM"
+      },
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "launch and scale a profitable vending machine business with minimal time investment."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Turn Vending Into Your Path to Financial Freedom … with minimal time investment",
+      "proposed": "Lead with a concrete, defensible promise (e.g. 'Learn the exact system to place your first profitable vending machine in 90 days') and drop 'minimal time investment'"
+    },
+    "ids": ["06-skeptic-003"]
+  },
+  {
+    "cid": "C080",
+    "band": "P2",
+    "page": "/",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["06-skeptic"],
+    "finding": "A specific income figure ('making $10,000 a month in vending machines') is quoted approvingly inside a homepage testimonial with no earnings disclaimer anywhere near it.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "I've had an article about a successful entrepreneur (making $10,000 a month in vending machines) bookmarked on my phone"
+      }
+    ],
+    "suggested_fix": {
+      "current": "$10,000/month figure in a testimonial, no disclaimer nearby",
+      "proposed": "Add a visible earnings disclaimer adjacent to any income claim ('Individual results vary; this is not a guarantee of income') and link it to the Terms income-disclaimer section"
+    },
+    "ids": ["06-skeptic-005"]
+  },
+  {
+    "cid": "C082",
+    "band": "P2",
+    "page": "/about",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["06-skeptic"],
+    "finding": "The founder is presented by first name only ('Mike') with no surname, credentials, company registration, or verifiable identity.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/about-text.md",
+        "quote": "MEET MIKE"
+      },
+      {
+        "type": "text",
+        "ref": "text/about-text.md",
+        "quote": "img \"Mike, founder of Vendingpreneurs\""
+      }
+    ],
+    "suggested_fix": {
+      "current": "Founder identified only as 'Mike'",
+      "proposed": "Use his full name, a one-line verifiable bio, and link to a LinkedIn/business profile and the registered company entity (Modern Amenities) named in the legal pages"
+    },
+    "ids": ["06-skeptic-008"]
+  },
+  {
+    "cid": "C089",
+    "band": "P2",
+    "page": "/news/top-5-questions-vending-entrepreneurship-program",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["07-mobile"],
+    "finding": "The article H1 overflows the right edge of a 375px phone — the long uppercase word 'ENTREPRENEURSHIP' is not breaking/wrapping, so it runs off-screen and the page scrolls horizontally.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-top-5-questions-vending-entrepreneurship-program-004-mobile.png",
+        "quote": "H1 'TOP 5 QUESTIONS TO ASK BEFORE JOINING A VENDING ENTREPRENEURS[HIP]' clipped at right edge"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | news-top-5-questions-...-004-mobile.png | horizontal scroll present"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Article H1 with no word-break on long words; overflows at 375px",
+      "proposed": "Add overflow-wrap:anywhere / hyphens:auto (or clamp font-size with clamp()) to the article H1 so long words break within the viewport"
+    },
+    "ids": ["07-mobile-002"]
+  },
+  {
+    "cid": "C090",
+    "band": "P2",
+    "page": "/",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["07-mobile"],
+    "finding": "The homepage scrolls horizontally on a 375px phone. Above the fold renders fine (hamburger nav, stacked hero), so the overflow comes from content further down the page.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | home-003-mobile.png | horizontal scroll present"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-003-mobile.png",
+        "quote": "above-fold hero fits, but page is flagged horizontal-scroll"
+      }
+    ],
+    "suggested_fix": {
+      "current": "A below-fold section on / exceeds the 375px viewport width",
+      "proposed": "Audit home sections for fixed widths / negative margins / oversized images and constrain with max-w-full + overflow-x-hidden on the page wrapper"
+    },
+    "ids": ["07-mobile-003"]
+  },
+  {
+    "cid": "C091",
+    "band": "P2",
+    "page": "/case-studies",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["07-mobile"],
+    "finding": "The /case-studies page scrolls horizontally on a 375px phone. The header area fits; overflow is below the fold.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | case-studies-003-mobile.png | horizontal scroll present"
+      },
+      {
+        "type": "screenshot",
+        "ref": "case-studies-003-mobile.png",
+        "quote": "header fits viewport; page flagged horizontal-scroll"
+      }
+    ],
+    "suggested_fix": {
+      "current": "A case-study card/quote section exceeds 375px width",
+      "proposed": "Constrain the case-study cards/testimonial rows to max-w-full and verify no fixed-width child forces overflow at 375px"
+    },
+    "ids": ["07-mobile-004"]
+  },
+  {
+    "cid": "C098",
+    "band": "P2",
+    "page": "global",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "The public marketing site and the admin studio are two unrelated design systems. The public site uses heavy black display type, hard black borders, offset drop shadows, and orange CTAs (neo-brutalist); the admin studio uses a soft light-gray SaaS dashboard with rounded cards, hairline borders, and blue primaries. There is no shared component language, type scale, button shape, or colour token between the two halves of the product.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "home-001-load.png",
+        "quote": "black display headline 'TURN VENDING' + orange 'STEP INSIDE' button"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "rounded light-gray dashboard with blue '+ Create page' button"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Two independent visual languages (brutalist public, generic SaaS admin) with no shared tokens",
+      "proposed": "Define one token set (type scale, radius scale, brand orange/blue, shadow scale) and apply brand accents to the studio (e.g. orange primary actions, the brand display face on section headings) so the studio reads as the same product"
+    },
+    "ids": ["08-perfectionist-001"]
+  },
+  {
+    "cid": "C099",
+    "band": "P2",
+    "page": "global",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "Nearly every public page reports a Cumulative Layout Shift of 0.263 (home, about, news, all three articles, privacy-free pages excepted). A CLS of 0.263 is well above Google's 0.1 'good' threshold and indicates a consistent, repeatable jump as the page settles.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Layout shift (CLS): 0.263"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-001-load.png",
+        "quote": "above-fold hero"
+      }
+    ],
+    "suggested_fix": {
+      "current": "CLS 0.263 on most public routes from a shared above-fold element / font swap",
+      "proposed": "Reserve space for the shifting element (explicit hero image dimensions) and use next/font with font-display:optional or a size-adjust fallback to remove the swap-driven reflow"
+    },
+    "ids": ["08-perfectionist-003"]
+  },
+  {
+    "cid": "C100",
+    "band": "P2",
+    "page": "/this-page-does-not-exist",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "The 404 page is the only public page that abandons the brand. 'Page not found' is set in a rounded system sans-serif at a modest size with a thin outline 'Back to home' pill, sitting inside the otherwise-branded header/footer. Every other public page uses the heavy black display face and the orange/black brand button.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "this-page-does-not-exist-002-full.png",
+        "quote": "'Page not found' in default sans + thin outline 'Back to home' pill"
+      },
+      {
+        "type": "text",
+        "ref": "this-page-does-not-exist-text.md",
+        "quote": "404 Page not found The page you're looking for doesn't exist or has moved. Back to home"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Default sans 'Page not found' heading + thin outline 'Back to home' pill",
+      "proposed": "Set the 404 heading in the brand display face (e.g. 'PAGE NOT FOUND.') and use the standard orange brand button for 'Back to home' so it matches the rest of the site"
+    },
+    "ids": ["08-perfectionist-004"]
+  },
+  {
+    "cid": "C105",
+    "band": "P2",
+    "page": "/admin/news/new",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "On the New blog post page, 'Save draft' and 'Publish' are rendered as two visually identical full-width blue buttons stacked directly on top of each other. Publish (irreversible, makes content public) and Save draft (safe, private) carry the same colour, size, and weight, so the destructive-leaning action has no visual distinction.",
+    "journey": "admin-create-news-draft",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-news-new-002-full.png",
+        "quote": "'Save draft' and 'Publish' identical blue buttons stacked in the Publish card"
+      }
+    ],
+    "suggested_fix": {
+      "current": "'Save draft' and 'Publish' are identical full-width blue buttons",
+      "proposed": "Make 'Save draft' a secondary/outline button and 'Publish' the single solid primary, so the consequential action is visually distinct"
+    },
+    "ids": ["08-perfectionist-011"]
+  },
+  {
+    "cid": "C113",
+    "band": "P2",
+    "page": "/",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["09-pragmatist"],
+    "finding": "The header's only call-to-action button is labelled \"STEP INSIDE\" and links to /apply, but nothing says it leads to the application. The clear \"APPLY NOW\" wording only appears further down the page in the body.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "link \"Step inside\":\n    - /url: /apply"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-001-load.png",
+        "quote": "Orange \"STEP INSIDE\" button top-right is the only header CTA"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Header button text: \"STEP INSIDE\" → /apply",
+      "proposed": "\"APPLY NOW\" → /apply (keep one consistent apply label everywhere)"
+    },
+    "ids": ["09-pragmatist-002"]
+  },
+  {
+    "cid": "C114",
+    "band": "P2",
+    "page": "/contact",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["09-pragmatist"],
+    "finding": "The contact page offers only a form — no phone number, no email address, no business hours. A pragmatist who wants to call cannot.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/contact-text.md",
+        "quote": "TALK WITH VENDINGPRENEURS.\nSend the team a note about vending locations, machine decisions, partnerships, or accelerator fit."
+      },
+      {
+        "type": "screenshot",
+        "ref": "contact-001-load.png",
+        "quote": "Contact page shows form fields only, no phone/email listed"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Contact page: form only",
+      "proposed": "Add a visible phone number, email address, and business hours above the form"
+    },
+    "ids": ["09-pragmatist-004"]
+  },
+  {
+    "cid": "C115",
+    "band": "P2",
+    "page": "/",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["09-pragmatist"],
+    "finding": "Nowhere on the public site is there any price, cost range, or fee for the Vending Accelerator Program. The only path to find out what it costs is to apply and get a sales call.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "Our flagship Vending Accelerator Program is designed for both beginners and experienced entrepreneurs looking to optimize their vending routes."
+      },
+      {
+        "type": "text",
+        "ref": "text/about-text.md",
+        "quote": "I'm not here to sell a dream, I'm here to show you a system that works."
+      }
+    ],
+    "suggested_fix": {
+      "current": "No pricing anywhere; cost only revealed after applying",
+      "proposed": "Add a pricing or \"what it costs / what's included\" section (even a starting-from range) so a visitor can self-qualify before applying"
+    },
+    "ids": ["09-pragmatist-006"]
+  },
+  {
+    "cid": "C123",
+    "band": "P2",
+    "page": "/apply",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["11-business-owner"],
+    "finding": "A dedicated /thank-you-for-applying confirmation page exists but the apply form never routes to it",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/thank-you-for-applying-text.md",
+        "quote": "THANKS FOR APPLYING."
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "A dedicated `/thank-you-for-applying` page EXISTS in the app but the apply form does not route to it."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Apply form shows inline text and stays on /apply",
+      "proposed": "On successful submit, redirect to /thank-you-for-applying"
+    },
+    "ids": ["11-business-owner-007"]
+  },
+  {
+    "cid": "C124",
+    "band": "P2",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["11-business-owner"],
+    "finding": "No progress saving on the apply form — an interruption that reloads the tab loses all entered data",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "apply-002-full.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "Uncontrolled single-shot form with no persistence",
+      "proposed": "Persist field values to localStorage as the user types and restore them on reload"
+    },
+    "ids": ["11-business-owner-008"]
+  },
+  {
+    "cid": "C130",
+    "band": "P2",
+    "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["12-developer"],
+    "finding": "Legacy /blog/* article paths 404 with a bare, unstyled 'Not found' page that has no header, no footer, and no recovery link — a completely different 404 handler from the styled site-wide 404. Articles previously lived at /blog and the app links the public article page heading as 'BLOG'.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "blog-how-to-choose-the-perfect-location-for-vending-machine-text.md",
+        "quote": "heading \"Not found\" [level=1]\n  - paragraph: The requested page could not be found."
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "404 /blog/how-to-choose-the-perfect-location-for-vending-machine"
+      },
+      {
+        "type": "text",
+        "ref": "this-page-does-not-exist-text.md",
+        "quote": "heading \"Page not found\" [level=1] ... link \"Back to home\""
+      }
+    ],
+    "suggested_fix": {
+      "current": "/blog/{slug} returns a bare 'Not found' page with no nav/footer/recovery link",
+      "proposed": "Add 301 redirects from /blog/{slug} to /news/{slug}, or route the /blog subtree through the global styled not-found page with a 'Back to home' link"
+    },
+    "ids": ["12-developer-003"]
+  },
+  {
+    "cid": "C135",
+    "band": "P2",
+    "page": "/thank-you-for-applying",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["13-executive"],
+    "finding": "A clear, well-designed application confirmation page exists but the apply form never routes to it; the real flow instead shows buried inline text.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "thank-you-for-applying-001-load.png",
+        "quote": ""
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "A dedicated /thank-you-for-applying page EXISTS in the app but the apply form does not route to it."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Apply form shows inline green text; /thank-you-for-applying is never reached",
+      "proposed": "Route successful applications to /thank-you-for-applying"
+    },
+    "ids": ["13-executive-008"]
+  },
+  {
+    "cid": "C141",
+    "band": "P2",
+    "page": "/admin/news",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["14-competitor"],
+    "finding": "The news list rows offer no delete/archive affordance; archiving requires opening each post's editor.",
+    "journey": "admin-create-news-draft",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "no Delete control found in list row or editor"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-news-draft-s07-07-delete-created-draft-session-created-per.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "No row-level delete/archive in /admin/news; editor-only",
+      "proposed": "Add row actions (Edit / Archive / Delete) and bulk select to the news list"
+    },
+    "ids": ["14-competitor-013"]
+  },
+  {
+    "cid": "C151",
+    "band": "P2",
+    "page": "/contact",
+    "category": "Feedback & State",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["15-angry-user"],
+    "finding": "The contact form has no visibly designed success or error region, carrying the same vanishing-confirmation risk seen on /apply.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "external-bucket form: filled for visual review, NOT submitted (outbound side effects)"
+      },
+      {
+        "type": "screenshot",
+        "ref": "contact-002-full.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "No prominent success/error state visible on the contact form",
+      "proposed": "Show a clear, prominent success confirmation (and a clear inline error on failure that preserves entered data) after submit"
+    },
+    "ids": ["15-angry-user-009"]
+  },
+  {
+    "cid": "C153",
+    "band": "P2",
+    "page": "/this-page-does-not-exist",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "personaCount": 1,
+    "personas": ["15-angry-user"],
+    "finding": "The 404 page offers only a 'Back to home' link — no search, no contact/help link, and no suggestion of where content moved.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "this-page-does-not-exist-001-load.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "text/this-page-does-not-exist-text.md",
+        "quote": "Page not found\n\nThe page you're looking for doesn't exist or has moved.\n\nBack to home"
+      }
+    ],
+    "suggested_fix": {
+      "current": "404 with only 'Back to home'",
+      "proposed": "Add a search box and links to News, Apply, and Contact on the 404 page"
+    },
+    "ids": ["15-angry-user-011"]
+  },
+  {
+    "cid": "C008",
+    "band": "P2",
+    "page": "/, /case-studies",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "personaCount": 7,
+    "personas": [
+      "01-grandparent",
+      "02-power-user",
+      "08-perfectionist",
+      "09-pragmatist",
+      "12-developer",
+      "14-competitor",
+      "13-executive"
+    ],
+    "finding": "The homepage produces a horizontal scrollbar at mobile width.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "home-003-mobile.png",
+        "quote": ""
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | home-003-mobile.png | horizontal scroll present"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Page content exceeds viewport width at 375px causing horizontal scroll",
+      "proposed": "Constrain full-bleed sections to 100vw / add overflow-x guards so the page fits the screen width"
+    },
+    "ids": [
+      "01-grandparent-008",
+      "02-power-user-013",
+      "08-perfectionist-021",
+      "09-pragmatist-010",
+      "12-developer-015",
+      "14-competitor-009",
+      "13-executive-007"
+    ]
+  },
+  {
+    "cid": "C020",
+    "band": "P2",
+    "page": "/",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "personaCount": 4,
+    "personas": [
+      "01-grandparent",
+      "03-first-timer",
+      "10-teenager",
+      "11-business-owner"
+    ],
+    "finding": "Homepage layout shift on load is high (CLS 0.263) — content jumps as the page settles.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "/ ... Layout shift (CLS): 0.263"
+      }
+    ],
+    "suggested_fix": {
+      "current": "CLS 0.263 on homepage load",
+      "proposed": "Reserve space for hero image, logo strip, and stat row (explicit width/height or aspect-ratio) to bring CLS under 0.1"
+    },
+    "ids": [
+      "01-grandparent-021",
+      "03-first-timer-005",
+      "10-teenager-010",
+      "11-business-owner-003"
+    ]
+  },
+  {
+    "cid": "C009",
+    "band": "P2",
+    "page": "/news",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "personaCount": 3,
+    "personas": ["01-grandparent", "06-skeptic", "14-competitor"],
+    "finding": "A news card image fails with a 500 error from a leftover Webflow CDN URL (rendering raw alt text), and the page heading 'BLOG' contradicts the 'NEWS' navigation label and /news route.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com%2F…ChatGPT%2520Image…"
+      },
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "third card shows broken image with raw alt text 'Top 10 Profitable Products to Stock…'"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Broken image from cdn.prod.website-files.com (500); heading 'BLOG' vs nav 'NEWS'",
+      "proposed": "Re-host the article images on the app's own storage/CDN and fix the 500; rename the page heading to 'NEWS' (or rename the nav item) so the section has one consistent name"
+    },
+    "ids": ["01-grandparent-009", "06-skeptic-017", "14-competitor-008"]
+  },
+  {
+    "cid": "C010",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "personaCount": 2,
+    "personas": ["01-grandparent", "14-competitor"],
+    "finding": "Page status and SEO-readiness indicators are 10x10px buttons and row actions hide behind small three-dot summaries.",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "small touch target: button \"SEO readiness: Blocked\" 10x10px"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "small touch target: button \"Page status: Draft\" 10x10px"
+      }
+    ],
+    "suggested_fix": {
+      "current": "10x10px status dots and icon-only '⋮' action buttons",
+      "proposed": "Enlarge interactive status/action targets to at least 44x44px and pair status dots with a visible text label"
+    },
+    "ids": ["01-grandparent-010", "14-competitor-016"]
+  },
+  {
+    "cid": "C013",
+    "band": "P3",
+    "page": "/, /pre-call-resources",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 2,
+    "personas": ["01-grandparent", "09-pragmatist"],
+    "finding": "The header nav item \"RESOURCES\" links to /pre-call-resources, a page headed \"PRE-CALL RESOURCES / PREPARE FOR YOUR VENDING STRATEGY CALL.\" — a checklist meant for people who have already booked a call, not the general resource library a visitor expects.",
+    "journey": "pre-call-prep",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/pre-call-resources-text.md",
+        "quote": "PRE-CALL RESOURCES\nPREPARE FOR YOUR VENDING STRATEGY CALL.\nA focused call is easier when the business basics are already clear."
+      },
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "link \"Resources\":\n      - /url: /pre-call-resources"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Nav \"RESOURCES\" → /pre-call-resources (call-prep checklist)",
+      "proposed": "Either rename the nav item to \"Pre-Call Prep\" or point \"Resources\" at a genuine resource/guide library"
+    },
+    "ids": ["01-grandparent-013", "09-pragmatist-009"]
+  },
+  {
+    "cid": "C027",
+    "band": "P3",
+    "page": "/contact",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "personaCount": 2,
+    "personas": ["02-power-user", "08-perfectionist"],
+    "finding": "The same 'State' field is required on /apply ('State*' with '(required)') but optional on /contact (plain 'State', no asterisk). The two forms otherwise share an identical Name/Email/Phone/City/State layout, so the differing requiredness of the identical field is an inconsistency in the form system.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "State*\n(required)"
+      },
+      {
+        "type": "text",
+        "ref": "contact-text.md",
+        "quote": "State\nSelect"
+      }
+    ],
+    "suggested_fix": {
+      "current": "State is required on /apply but optional on /contact",
+      "proposed": "Decide one rule for the State field and apply it to both forms (most likely required on apply, optional on contact is defensible — but then label contact's State 'State (optional)' to make the choice intentional)"
+    },
+    "ids": ["02-power-user-010", "08-perfectionist-006"]
+  },
+  {
+    "cid": "C045",
+    "band": "P3",
+    "page": "/news",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "personaCount": 2,
+    "personas": ["03-first-timer", "05-non-native"],
+    "finding": "On first paint the article cards render as blank outlines until scrolled into view, and a cover image fails with a 500 error (broken-image alt text is shown). A non-native user sees an empty/broken page and no message explaining it.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "broken image showing alt text 'Top 10 Profitable Products to Stock in Your Vending Machine...'"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com..."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Blank scroll-reveal cards + failing cover image (500) on load",
+      "proposed": "Render card content on first paint (reveal only the animation, not the content) and fix or replace the broken cover image so no broken-image placeholder shows."
+    },
+    "ids": ["03-first-timer-011", "05-non-native-016"]
+  },
+  {
+    "cid": "C015",
+    "band": "P3",
+    "page": "/admin/forgot-password",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["01-grandparent"],
+    "finding": "Submitting the forgot-password form with empty or invalid input shows no visible validation feedback.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "empty: no visible validation errors after empty submit"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-forgot-password-004-form-empty-submit.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "No visible error or confirmation after submitting the reset form",
+      "proposed": "Show a clear confirmation ('If that email exists, we've sent a reset link') and an inline error for an empty/invalid email"
+    },
+    "ids": ["01-grandparent-015"]
+  },
+  {
+    "cid": "C016",
+    "band": "P3",
+    "page": "/contact",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["01-grandparent"],
+    "finding": "The contact form's success/failure feedback could not be observed (submit was skipped for safety), and the apply form's known-weak inline-only confirmation suggests contact likely shares the same pattern.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "external-bucket form: filled for visual review, NOT submitted"
+      },
+      {
+        "type": "screenshot",
+        "ref": "contact-004-form-filled-not-submitted.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "Contact submit feedback unverified; apply form uses a small inline note",
+      "proposed": "Ensure the contact form shows a prominent success confirmation (banner or dedicated thank-you state) on submit"
+    },
+    "ids": ["01-grandparent-016"]
+  },
+  {
+    "cid": "C017",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["01-grandparent"],
+    "finding": "There is no discoverable archive/delete path for a page from the editor or the list row menu, so an admin cannot retire a page they created.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "cleanup-seo-row-menu.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the builder editor offers no archive/delete path that automation could find"
+      }
+    ],
+    "suggested_fix": {
+      "current": "No visible Archive/Delete in the page editor or list row actions",
+      "proposed": "Add an explicit 'Archive page' control in the editor and an 'Archive' item in the list row '⋮' menu, with a confirm dialog"
+    },
+    "ids": ["01-grandparent-017"]
+  },
+  {
+    "cid": "C025",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["02-power-user"],
+    "finding": "No autofocus on the first form field; the page loads with no field focused.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "apply-001-load.png",
+        "quote": "Name field empty and unfocused on load"
+      }
+    ],
+    "suggested_fix": {
+      "current": "No focused field on load",
+      "proposed": "autofocus the Name input on /apply (and the first field on /contact)"
+    },
+    "ids": ["02-power-user-008"]
+  },
+  {
+    "cid": "C026",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["02-power-user"],
+    "finding": "Phone field is a plain text input rather than type=tel, so it offers no numeric keypad and no input affordance.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "text: Phone\ntextbox \"Phone\""
+      }
+    ],
+    "suggested_fix": {
+      "current": "<input> (text) for Phone",
+      "proposed": "<input type=\"tel\" inputmode=\"tel\"> for Phone on /apply and /contact"
+    },
+    "ids": ["02-power-user-009"]
+  },
+  {
+    "cid": "C031",
+    "band": "P3",
+    "page": "/admin/pages/new",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["02-power-user"],
+    "finding": "Creating an SEO page is a 3-step wizard (Page type -> Starting point -> Ready to build) before the editor opens.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s02-02-click-create-page.png",
+        "quote": "3-step wizard opens (Page type -> Starting point -> Ready to build)"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Mandatory 3-step wizard on every Create page",
+      "proposed": "Default 'Create page' to SEO/Resource + blank, opening the editor directly; keep the wizard behind a 'Choose a template' secondary option"
+    },
+    "ids": ["02-power-user-015"]
+  },
+  {
+    "cid": "C033",
+    "band": "P3",
+    "page": "/admin/news",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["02-power-user"],
+    "finding": "News list rows have no delete/archive affordance; retiring a post requires opening each post's editor to find the Archive control.",
+    "journey": "admin-create-news-draft",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-news-draft-s07-07-delete-created-draft-session-created-per.png",
+        "quote": "no delete control in the list row; the EDITOR has an Archive button"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Archive only inside each post editor",
+      "proposed": "Add a per-row actions menu (Edit / Archive / Delete) on the news list, matching the SEO pages list pattern"
+    },
+    "ids": ["02-power-user-019"]
+  },
+  {
+    "cid": "C040",
+    "band": "P3",
+    "page": "/",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["03-first-timer"],
+    "finding": "Two differently-labelled CTAs ('STEP INSIDE' in the nav and 'APPLY NOW' in the hero) both link to /apply, which is ambiguous about whether they lead to the same place.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "STEP INSIDE"
+      },
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "APPLY NOW"
+      }
+    ],
+    "suggested_fix": {
+      "current": "'STEP INSIDE' (nav) and 'APPLY NOW' (hero) both go to /apply",
+      "proposed": "Use one consistent label 'APPLY NOW' for both, or differentiate destinations if they are meant to differ"
+    },
+    "ids": ["03-first-timer-003"]
+  },
+  {
+    "cid": "C051",
+    "band": "P3",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["04-accessibility"],
+    "finding": "Article social-share controls are icon-only links exposed to the accessible tree as single characters 'X', 'in', 'f', 'link' with no descriptive label.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "news-how-to-choose-the-perfect-location-for-vending-machine-text.md",
+        "quote": "X\nin\nf\nlink"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Icon links with accessible names 'X', 'in', 'f', 'link'",
+      "proposed": "Add aria-label='Share on X', 'Share on LinkedIn', 'Share on Facebook', 'Copy link' to each share control"
+    },
+    "ids": ["04-accessibility-008"]
+  },
+  {
+    "cid": "C052",
+    "band": "P3",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["04-accessibility"],
+    "finding": "Complementary/aside landmark is not at the top level (nested inside another landmark) on all three news articles.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "landmark-complementary-is-top-level moderate — .lg:block"
+      }
+    ],
+    "suggested_fix": {
+      "current": "<aside>/complementary nested inside main",
+      "proposed": "Move the complementary landmark to top level (direct child of body) or remove the redundant landmark role"
+    },
+    "ids": ["04-accessibility-009"]
+  },
+  {
+    "cid": "C053",
+    "band": "P3",
+    "page": "/case-studies",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["04-accessibility"],
+    "finding": "Heading order is broken — an <h3> appears in a card header without a preceding <h2> in the section hierarchy.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "heading-order moderate — li:nth-child(1) > .p-5 > header > h3"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Card headings start at h3 with no h2 section heading",
+      "proposed": "Introduce a section h2 for the case-study list or demote card headings so the order is sequential (h1 > h2 > h3)"
+    },
+    "ids": ["04-accessibility-010"]
+  },
+  {
+    "cid": "C056",
+    "band": "P3",
+    "page": "/admin/pages/new",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["04-accessibility"],
+    "finding": "Duplicate (non-unique) landmark on the SEO page creation wizard (.p-0) — two landmarks of the same type without distinguishing labels.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "landmark-unique moderate — .p-0"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Two same-type landmarks with no labels",
+      "proposed": "Give each landmark a distinct aria-label, or remove the redundant landmark role"
+    },
+    "ids": ["04-accessibility-013"]
+  },
+  {
+    "cid": "C057",
+    "band": "P3",
+    "page": "/admin/news/new",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["04-accessibility"],
+    "finding": "Complementary/aside landmark not at top level on the new-post editor (.space-y-5).",
+    "journey": "admin-create-news-draft",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "landmark-complementary-is-top-level moderate — .space-y-5"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Complementary landmark nested inside another landmark",
+      "proposed": "Hoist the aside to top level or drop the complementary role"
+    },
+    "ids": ["04-accessibility-014"]
+  },
+  {
+    "cid": "C058",
+    "band": "P3",
+    "page": "/",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["04-accessibility"],
+    "finding": "Credibility statistics render as literal zeros — '0+' Entrepreneurs launched, '$0M+' sales, '0+' Vending locations — read verbatim by a screen reader as 'zero plus'.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "term: 0+ / definition: Entrepreneurs launched / term: $0M+ / definition: Snack/Drink sales in Vendingpreneur machines"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Stat DOM value is '0+' / '$0M+' (animation start value)",
+      "proposed": "Render the real final value in the DOM (e.g. '500+') and animate via a visual-only technique, or add an aria-label with the true figure"
+    },
+    "ids": ["04-accessibility-015"]
+  },
+  {
+    "cid": "C063",
+    "band": "P3",
+    "page": "/news",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "Intro copy uses an idiom and a non-literal verb: \"...the back-office work that makes a vending route compound. New posts drop here as we publish them.\" \"compound\" used as a verb and \"posts drop\" are not literal and do not translate.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "news-text.md",
+        "quote": "Strategies on locations, machine selection, products, and the back-office work that makes a vending route compound. New posts drop here as we publish them."
+      }
+    ],
+    "suggested_fix": {
+      "current": "...makes a vending route compound. New posts drop here as we publish them.",
+      "proposed": "...helps a vending route grow steadily. We add new posts here when we publish them."
+    },
+    "ids": ["05-non-native-003"]
+  },
+  {
+    "cid": "C064",
+    "band": "P3",
+    "page": "/about",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "The about page uses the idiom \"the Rat Race\" as a section heading: \"How I Escaped The Rat Race\". This is a culturally specific idiom with no literal meaning.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "about-text.md",
+        "quote": "How I Escaped The Rat Race"
+      }
+    ],
+    "suggested_fix": {
+      "current": "How I Escaped The Rat Race",
+      "proposed": "How I Left the Traditional 9-to-5 Job"
+    },
+    "ids": ["05-non-native-004"]
+  },
+  {
+    "cid": "C065",
+    "band": "P3",
+    "page": "/case-studies",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "Testimonials are dense with idioms and slang that a second-language reader must decode: \"game changer\", \"hard charging\", \"learning the biz\", \"In just a blink of time\", \"Namaste, indeed, to the journey ahead!\". These are the trust-building proof, but the meaning is locked behind colloquialisms.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "case-studies-text.md",
+        "quote": "Vendingpreneur has been an absolute game changer for us!"
+      },
+      {
+        "type": "text",
+        "ref": "case-studies-text.md",
+        "quote": "so many hard charging, intelligent entrepreneurs"
+      },
+      {
+        "type": "text",
+        "ref": "case-studies-text.md",
+        "quote": "an invaluable resource for learning the biz"
+      },
+      {
+        "type": "text",
+        "ref": "case-studies-text.md",
+        "quote": "In just a blink of time, Mike Hoffman and Vendingpreneurs transformed my journey"
+      },
+      {
+        "type": "text",
+        "ref": "case-studies-text.md",
+        "quote": "Namaste, indeed, to the journey ahead!"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Verbatim slang-heavy testimonials with no plain-language summary",
+      "proposed": "Add a one-line plain-English takeaway under each testimonial (e.g. \"Result: 10 locations in 6 months\") so meaning is accessible even when the quote uses slang."
+    },
+    "ids": ["05-non-native-006"]
+  },
+  {
+    "cid": "C066",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "The State dropdown lists only US states (Alabama...Wyoming) with no country context, and budget options use the abbreviation \"k\" (\"Under $5k\", \"$5k-$10k\", \"$25k+\") and currency without a code. A non-American reader may not recognise \"$25k+\" or know whether \"$\" means USD.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "Under $5k"
+      },
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "$5k-$10k"
+      },
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "$25k+"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Under $5k / $5k-$10k / $25k+ (state list US-only, no country)",
+      "proposed": "Spell amounts with currency code, e.g. \"Under US$5,000\", and add a Country field or label the State field \"State (US)\"."
+    },
+    "ids": ["05-non-native-008"]
+  },
+  {
+    "cid": "C067",
+    "band": "P3",
+    "page": "/contact",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "Contact intro copy uses the noun phrase \"accelerator fit\" with no explanation: \"Send the team a note about vending locations, machine decisions, partnerships, or accelerator fit.\" \"accelerator fit\" is jargon a second-language reader cannot parse.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "contact-text.md",
+        "quote": "Send the team a note about vending locations, machine decisions, partnerships, or accelerator fit."
+      }
+    ],
+    "suggested_fix": {
+      "current": "...partnerships, or accelerator fit.",
+      "proposed": "...partnerships, or whether the Accelerator program is right for you."
+    },
+    "ids": ["05-non-native-009"]
+  },
+  {
+    "cid": "C068",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "Workflow filter labels are terse jargon with no tooltips: \"Needs review\", \"Updating\", \"Needs links\", \"Metadata issues\", \"Scheduled\", \"Schedule failed\". \"SEO readiness\" states are likewise abbreviated to single words \"Blocked\", \"Opportunities\", \"Needs work\".",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "Needs review"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "Metadata issues"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "SEO readiness: Opportunities"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "SEO readiness: Needs work"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Opportunities / Needs links / Metadata issues",
+      "proposed": "Use full descriptive labels with a tooltip, e.g. \"Some SEO improvements available\", \"Missing internal links\", \"Page metadata needs fixing\"."
+    },
+    "ids": ["05-non-native-012"]
+  },
+  {
+    "cid": "C069",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "The page description mixes jargon: \"Manage structured SEO pages with the same CMS shell ready for resource content.\" \"CMS shell\" and \"structured SEO pages\" are unexplained technical noun phrases.",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "Manage structured SEO pages with the same CMS shell ready for resource content."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Manage structured SEO pages with the same CMS shell ready for resource content.",
+      "proposed": "Create and edit SEO and resource pages for the website."
+    },
+    "ids": ["05-non-native-013"]
+  },
+  {
+    "cid": "C071",
+    "band": "P3",
+    "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "A legacy /blog/... article URL returns a 404. Because the public page heading is \"BLOG\", a non-native user who guesses the URL from the heading word lands on a dead page.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "404 /blog/how-to-choose-the-perfect-location-for-vending-machine"
+      }
+    ],
+    "suggested_fix": {
+      "current": "/blog/{slug} returns 404",
+      "proposed": "Add a 301 redirect from /blog/{slug} to /news/{slug} so the word users see (\"Blog\") maps to a working URL."
+    },
+    "ids": ["05-non-native-015"]
+  },
+  {
+    "cid": "C079",
+    "band": "P3",
+    "page": "/",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["06-skeptic"],
+    "finding": "Testimonials carry no dates, several use first-name-plus-initial only, and none link to a verifiable profile — making the social proof unfalsifiable.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "ADAM S\n\nOwner, Emporio Vending LLC\n\n5 out of 5 stars"
+      },
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "ABBY C\n\nVan Pelt Vending\n\n5 out of 5 stars"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Name-only testimonials, no dates, no links (e.g. 'ADAM S')",
+      "proposed": "Add a month/year and, where possible, a linked LinkedIn/business profile or named full attribution to each testimonial"
+    },
+    "ids": ["06-skeptic-004"]
+  },
+  {
+    "cid": "C081",
+    "band": "P3",
+    "page": "/",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["06-skeptic"],
+    "finding": "A 'Featured partners' logo wall (PepsiCo, Doritos, Poppi, Prime, Cantaloupe, 365 Retail Markets) implies major-brand endorsement without stating the actual relationship.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "region \"Featured partners\":\n    - img \"365 Retail Markets\" … \"PepsiCo\" … \"Doritos\" … \"Poppi\""
+      }
+    ],
+    "suggested_fix": {
+      "current": "Unlabeled 'Featured partners' brand logos",
+      "proposed": "Relabel honestly to the real relationship, e.g. 'Brands you can source through our supplier network' or 'Products our members stock'"
+    },
+    "ids": ["06-skeptic-007"]
+  },
+  {
+    "cid": "C083",
+    "band": "P3",
+    "page": "/about",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["06-skeptic"],
+    "finding": "An explicit 'I'm not here to sell a dream' line on the About page reads as protesting too much and raises rather than lowers suspicion.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/about-text.md",
+        "quote": "I'm not here to sell a dream, I'm here to show you a system that works."
+      }
+    ],
+    "suggested_fix": {
+      "current": "I'm not here to sell a dream, I'm here to show you a system that works.",
+      "proposed": "Replace the assertion with evidence: a concrete, dated outcome ('Here's the 4-step system, and here are three members who used it in the last 12 months — see case studies')"
+    },
+    "ids": ["06-skeptic-009"]
+  },
+  {
+    "cid": "C084",
+    "band": "P3",
+    "page": "/about",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["06-skeptic"],
+    "finding": "Specific personal financial figures are presented as proof of credibility with no substantiation ($1,200/mo job, $70k fixer-upper, $250k condo, 'thousands of dollars in monthly income').",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/about-text.md",
+        "quote": "I was working a 60-hour per week job that paid me only $1,200/month. I used my emergency fund to invest 20% down on a $70,000 fixer upper."
+      },
+      {
+        "type": "text",
+        "ref": "text/about-text.md",
+        "quote": "a Vending route that includes over a dozen machines and thousands of dollars in monthly income."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Personal income/asset figures stated as narrative",
+      "proposed": "Either substantiate (screenshots, a route count that matches a public record, a named business) or shift the emphasis from the founder's personal wealth to documented member outcomes"
+    },
+    "ids": ["06-skeptic-010"]
+  },
+  {
+    "cid": "C085",
+    "band": "P3",
+    "page": "/case-studies",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["06-skeptic"],
+    "finding": "The four featured 'case studies' are video thumbnails with names only and no written outcome or context; the page never provides concrete, dated metrics (machines placed, revenue, time-to-first-location) for any member.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "case-studies-001-load.png",
+        "quote": "four video tiles labeled with names only (Thomas Rohlader, Joe Natoli, Jason Priest, Anthony)"
+      },
+      {
+        "type": "text",
+        "ref": "text/case-studies-text.md",
+        "quote": "THOMAS ROHLADER\n\nOwner, TR Vending\n\nJOE NATOLI\n\nOwner — Stryker300 Vending"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Video tiles + name/company only, no written metrics",
+      "proposed": "Give each case study a short structured summary: starting point, time elapsed, machines/locations, and a verifiable outcome figure beneath the video"
+    },
+    "ids": ["06-skeptic-011"]
+  },
+  {
+    "cid": "C087",
+    "band": "P3",
+    "page": "/case-studies",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["06-skeptic"],
+    "finding": "Every testimonial across the home and case-studies pages is a uniform '5 out of 5 stars' with no mixed or critical feedback, which reads as curated rather than authentic.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/case-studies-text.md",
+        "quote": "5 out of 5 stars"
+      }
+    ],
+    "suggested_fix": {
+      "current": "10+ testimonials all '5 out of 5 stars'",
+      "proposed": "Either drop the star ratings (the quotes stand alone) or surface aggregate/third-party reviews (e.g. a Trustpilot or Skool community rating) that include the real distribution"
+    },
+    "ids": ["06-skeptic-013"]
+  },
+  {
+    "cid": "C088",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["06-skeptic"],
+    "finding": "The apply form collects name, email, phone, location and budget tier but shows no privacy/consent statement or link to the Privacy Policy at the point of submission.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/apply-text.md",
+        "quote": "What are you trying to build?\nSUBMIT APPLICATION"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Submit button with no consent/privacy text",
+      "proposed": "Add a short consent line beneath the submit button: 'By applying you agree to our Privacy Policy. We never sell your data.' with Privacy Policy linked"
+    },
+    "ids": ["06-skeptic-016"]
+  },
+  {
+    "cid": "C092",
+    "band": "P3",
+    "page": "global (header nav)",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["07-mobile"],
+    "finding": "Contact is not in the header navigation on any page; the only in-app path is the footer 'CONTACT US' link. On mobile that means opening the hamburger gives no Contact option — I have to scroll to the very bottom of every page.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "click Contact link | navigated to /contact (link is in the FOOTER only — \"CONTACT US\"; not in the header nav)"
+      },
+      {
+        "type": "screenshot",
+        "ref": "contact-005-mobile.png",
+        "quote": "Contact page reachable, but no header-nav entry"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Contact only in footer; absent from header/hamburger menu",
+      "proposed": "Add 'CONTACT' to the header navigation (and therefore the mobile hamburger menu)"
+    },
+    "ids": ["07-mobile-006"]
+  },
+  {
+    "cid": "C093",
+    "band": "P3",
+    "page": "global (footer nav)",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["07-mobile"],
+    "finding": "Footer link tap targets are far below the 44x44px mobile minimum — e.g. 'HOME' is 43x17px, 'TERMS' 50x17px, 'CONTACT US' 93x17px, 'PRIVACY POLICY' 120x17px. Only ~17px tall.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "NOTE: small touch target: a \"HOME\" 43x17px / a \"CONTACT US\" 93x17px / a \"PRIVACY POLICY\" 120x17px"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Footer links ~17px tall (well under 44px)",
+      "proposed": "Increase footer link line-height/padding to a minimum 44px tap height on mobile (e.g. py-2.5 block links)"
+    },
+    "ids": ["07-mobile-008"]
+  },
+  {
+    "cid": "C095",
+    "band": "P3",
+    "page": "/apply, /contact, /admin/forgot-password",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["07-mobile"],
+    "finding": "Forms show no inline validation. Empty submit and invalid-data submit produce no visible field errors — values are just preserved with nothing telling me what's wrong.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "empty: no visible validation errors after empty submit / invalid: no visible validation errors on invalid data — entered values preserved"
+      }
+    ],
+    "suggested_fix": {
+      "current": "No visible field-level validation on empty/invalid submit",
+      "proposed": "Show inline per-field error messages on submit (the form already collects fieldErrors in state) and scroll the first error into view on mobile"
+    },
+    "ids": ["07-mobile-010"]
+  },
+  {
+    "cid": "C097",
+    "band": "P3",
+    "page": "/news (and article images)",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["07-mobile"],
+    "finding": "An article image fails to load with a 500 from the Next image optimizer pointing at a legacy Webflow CDN URL; the failure shows as raw alt text rather than a graceful placeholder.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com%2F...ChatGPT%2520Image..."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Failing website-files.com image returns 500 from /_next/image; shows raw alt text",
+      "proposed": "Replace/migrate the legacy CDN image to a working source and add a neutral image placeholder fallback so a single failed image doesn't look like a page error"
+    },
+    "ids": ["07-mobile-012"]
+  },
+  {
+    "cid": "C102",
+    "band": "P3",
+    "page": "/admin",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "The admin studio's eyebrow/breadcrumb label changes on every section with no consistent scheme: 'SEO pages' (no eyebrow), 'CMS Assets' (media), 'Studio Settings' (settings), 'CMS Governance' (libraries), 'Blog CMS' (news), 'SEO PAGE BUILDER' (create wizard). Five different naming conventions for one studio.",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-media-001-load.png",
+        "quote": "eyebrow 'CMS Assets'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-settings-users-001-load.png",
+        "quote": "eyebrow 'Studio Settings'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-libraries-001-load.png",
+        "quote": "eyebrow 'CMS Governance'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-news-new-002-full.png",
+        "quote": "breadcrumb 'Blog CMS'"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Per-page eyebrows: CMS Assets / Studio Settings / CMS Governance / Blog CMS / (none)",
+      "proposed": "Standardise on one breadcrumb pattern, e.g. 'Studio › Media library', 'Studio › Settings › Users', 'Studio › SEO pages' across every admin route"
+    },
+    "ids": ["08-perfectionist-008"]
+  },
+  {
+    "cid": "C103",
+    "band": "P3",
+    "page": "/admin",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "The four-up stat-card row appears on SEO pages, Users, and Libraries with the same shape but inconsistent icon-tile colours and no consistent semantic mapping. SEO pages: blue/amber/green/gray. Users: green/amber/purple/blue. Libraries: blue/green/gray/amber. The colour of each tile does not map to a stable meaning across screens.",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "All(blue) Drafts(amber) Published(green) Archived(gray)"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-settings-users-001-load.png",
+        "quote": "Active(green) Pending(amber) Super admins(purple) Admins(blue)"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-libraries-001-load.png",
+        "quote": "CTA presets(blue) Proof(green) Sources(gray) Claims(amber)"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Stat-card tile colours assigned ad-hoc per screen with no consistent semantics",
+      "proposed": "Define semantic colour tokens (success/warning/neutral/info) and assign each metric a token by meaning, so green always = good/live and amber always = needs work across all stat cards"
+    },
+    "ids": ["08-perfectionist-009"]
+  },
+  {
+    "cid": "C104",
+    "band": "P3",
+    "page": "/admin",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "Primary buttons in the studio have no consistent shape. 'Create page' and 'Invite user' are auto-width blue with a leading '+'; 'Save CTA preset' is full-width solid blue with no icon; 'Save draft' and 'Publish' in the blog editor are two identical full-width blue rectangles; the SEO page editor toolbar uses pill-shaped outline buttons ('Save draft', 'Save & preview', 'Share'). The same conceptual 'primary action' is styled four different ways.",
+    "journey": "admin-create-news-draft",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "'+ Create page' auto-width blue"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-libraries-001-load.png",
+        "quote": "full-width 'Save CTA preset'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-news-new-002-full.png",
+        "quote": "identical 'Save draft' and 'Publish' blue rectangles"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s06-06-fill-page-title-slug-keyword.png",
+        "quote": "pill outline 'Save draft' / 'Save & preview' / 'Share' in editor toolbar"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Four primary-button variants (auto-width +icon, full-width solid, identical pair, outline pill) across admin",
+      "proposed": "Ship one Button component with documented primary/secondary/ghost variants and a single radius, and use it everywhere in the studio"
+    },
+    "ids": ["08-perfectionist-010"]
+  },
+  {
+    "cid": "C107",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "The SEO pages list communicates two separate statuses per row as tiny coloured dots (READINESS and STATUS columns, ~10x10px) with no on-page legend. Readiness uses red/blue/amber and Status uses amber, but the meaning of each colour is only decodable by reading the per-row hidden button labels ('SEO readiness: Blocked / Opportunities / Needs work').",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "READINESS and STATUS columns shown as small coloured dots, no legend visible"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "small touch target: button \"SEO readiness: Blocked\" 10x10px"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Readiness/Status shown only as ~10px coloured dots with no legend or text",
+      "proposed": "Add a short text label or pill next to each dot (e.g. 'Blocked', 'Draft') and a one-line legend above the table; enlarge the dot hit area to >=24px"
+    },
+    "ids": ["08-perfectionist-016"]
+  },
+  {
+    "cid": "C110",
+    "band": "P3",
+    "page": "global",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "Every public-site nav and footer link is an undersized touch/click target (e.g. ABOUT 51x20px, NEWS 44x20px, HOME 43x17px, TERMS 50x17px, PRIVACY POLICY 120x17px), all under the 24px minimum height. The admin studio repeats this with 10x10px status dots and 32x32px icon-only action buttons.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "small touch target: a \"ABOUT\" 51x20px ... a \"HOME\" 43x17px ... a \"PRIVACY POLICY\" 120x17px"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "small touch target: button \"Save role for alysia@modern-amenities.com\" 32x32px"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Nav/footer links ~17-20px tall; admin status dots 10px; admin icon actions 32px",
+      "proposed": "Set a minimum 44px tappable height on nav/footer links (extend padding without changing visual text size) and a 24px+ hit area on admin dots/icon buttons"
+    },
+    "ids": ["08-perfectionist-020"]
+  },
+  {
+    "cid": "C118",
+    "band": "P3",
+    "page": "/",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["10-teenager"],
+    "finding": "Hero copy and body are corporate/buzzwordy — 'launch and scale a profitable vending machine business with minimal time investment', 'Automation & scaling strategies to maximize your time and revenue', 'structured roadmap to success'.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "we provide aspiring entrepreneurs with the mentorship, tools, and exclusive discounts they need to launch and scale a profitable vending machine business with minimal time investment."
+      }
+    ],
+    "suggested_fix": {
+      "current": "'launch and scale a profitable vending machine business with minimal time investment'",
+      "proposed": "Plain, human line like 'Start a vending business without the guesswork — we show you exactly how, step by step.'"
+    },
+    "ids": ["10-teenager-006"]
+  },
+  {
+    "cid": "C119",
+    "band": "P3",
+    "page": "/",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["10-teenager"],
+    "finding": "Mobile homepage has horizontal scrolling — the page can be dragged sideways, which feels glitchy on a phone.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | home-003-mobile.png | horizontal scroll present"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Horizontal scroll present at 375px width on the homepage",
+      "proposed": "Constrain content to 100% viewport width / fix the overflowing element so the page only scrolls vertically on mobile"
+    },
+    "ids": ["10-teenager-009"]
+  },
+  {
+    "cid": "C121",
+    "band": "P3",
+    "page": "/",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["11-business-owner"],
+    "finding": "Homepage is a very long single scroll of ~15 testimonials before the final 'Take Action' CTA",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "home-002-full.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "TAKE ACTION TODAY"
+      }
+    ],
+    "suggested_fix": {
+      "current": "All ~15 full-length testimonials stacked inline before the closing CTA",
+      "proposed": "Show 3-4 testimonials with a 'See more stories' toggle, and place a CTA higher up so the action is reachable without a long scroll"
+    },
+    "ids": ["11-business-owner-002"]
+  },
+  {
+    "cid": "C125",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["11-business-owner"],
+    "finding": "On mobile the submit button is far below the fold after a tall hero, with no sticky CTA",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "apply-005-mobile.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "Tall hero pushes form down; submit button only reachable after long scroll",
+      "proposed": "Tighten the mobile hero and add a sticky 'Submit application' bar once the form is in view"
+    },
+    "ids": ["11-business-owner-010"]
+  },
+  {
+    "cid": "C131",
+    "band": "P3",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["12-developer"],
+    "finding": "The first news article is slow to load relative to the rest of the site (1743ms DCL / 2055ms load) and carries CLS 0.263 plus a serious color-contrast violation and a 'landmark-complementary-is-top-level' axe violation.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "Load time: 1743ms DCL / 2055ms load"
+      },
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast impact serious selectors '.mt-5'; landmark-complementary-is-top-level impact moderate selectors '.lg:block'"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Article ~2s load, CLS 0.263, aside nested below a landmark, low-contrast link",
+      "proposed": "Profile and fix the slow article render (likely the remote image), hoist the complementary aside to top level, and fix the link contrast to AA"
+    },
+    "ids": ["12-developer-012"]
+  },
+  {
+    "cid": "C133",
+    "band": "P3",
+    "page": "/news",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["12-developer"],
+    "finding": "A News-section 500 server error from the image optimizer surfaces in the console on page load with no client-side handling, so the failure is silent to the user beyond a broken image.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "### Console Errors\n- Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Image optimizer 500 logged to console, no UI handling",
+      "proposed": "Add an image error fallback and route the optimizer failure to error monitoring so it is observable and the user sees a placeholder rather than a broken element"
+    },
+    "ids": ["12-developer-017"]
+  },
+  {
+    "cid": "C134",
+    "band": "P3",
+    "page": "/",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["13-executive"],
+    "finding": "Homepage above-the-fold renders at a cramped, downscaled width compared to other pages (header nav squeezed) and has a high layout shift.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "home-001-load.png",
+        "quote": ""
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Layout shift (CLS): 0.263"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Hero/header renders narrow with CLS 0.263 on load",
+      "proposed": "Reserve space for hero image and partner logos to eliminate the shift, and ensure the header lays out at full viewport width on first paint"
+    },
+    "ids": ["13-executive-002"]
+  },
+  {
+    "cid": "C136",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["13-executive"],
+    "finding": "The Readiness and Status columns are shown as bare colored dots (red/blue/amber) with no visible legend, so a color's meaning is only available on hover per row.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "text/admin-pages-text.md",
+        "quote": "SEO readiness: Blocked"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Readiness/Status rendered as unlabeled colored dots; meaning only in hover/aria text",
+      "proposed": "Add a short legend above the table and/or text labels beside the dots (e.g. \"Blocked\", \"Needs work\", \"Ready\")"
+    },
+    "ids": ["13-executive-009"]
+  },
+  {
+    "cid": "C139",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["14-competitor"],
+    "finding": "There is no global search across content types; search is scoped per-CMS ('Search SEO pages' only).",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "textbox \"Search SEO pages\": /placeholder: Search title, keyword, or URL"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Per-CMS search box ('Search SEO pages') with no cross-content search",
+      "proposed": "Add a studio-level global search that returns SEO pages, blog posts, and media in one result list"
+    },
+    "ids": ["14-competitor-010"]
+  },
+  {
+    "cid": "C140",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["14-competitor"],
+    "finding": "After saving a new SEO page the list verification raced and the page did not reliably appear; one run reported the created page 'not visible in /admin/pages list'.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s09-09-verify-page-in-list.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "New page does not reliably/immediately appear at top of list after save",
+      "proposed": "Revalidate the list on save and show a success toast with a direct link to the new page row"
+    },
+    "ids": ["14-competitor-012"]
+  },
+  {
+    "cid": "C145",
+    "band": "P3",
+    "page": "/admin/news/new",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["14-competitor"],
+    "finding": "The news editor's Save control was not findable on one corrected run ('FAILED: no visible Save control'), indicating an inconsistent/low-visibility save affordance.",
+    "journey": "admin-create-news-draft",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys-rerun.md",
+        "quote": "save draft (NOT publish) | FAILED: no visible Save control"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Save draft control intermittently not visible in news editor",
+      "proposed": "Pin a persistent 'Save draft' button in the editor header alongside Publish, always in view"
+    },
+    "ids": ["14-competitor-021"]
+  },
+  {
+    "cid": "C149",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["15-angry-user"],
+    "finding": "No application reference or confirmation number is issued, so a user cannot quote anything when following up.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "Thanks. We received your details and will follow up shortly."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Confirmation text with no reference identifier",
+      "proposed": "Show a confirmation/reference ID on the success page and include it in the confirmation email"
+    },
+    "ids": ["15-angry-user-006"]
+  },
+  {
+    "cid": "C152",
+    "band": "P3",
+    "page": "/contact",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["15-angry-user"],
+    "finding": "No statement of when or whether anyone will reply; the prompt 'Send the team a note' sets no expectation.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/contact-text.md",
+        "quote": "Send the team a note about vending locations, machine decisions, partnerships, or accelerator fit."
+      }
+    ],
+    "suggested_fix": {
+      "current": "'Send the team a note about...'",
+      "proposed": "Add a response-time expectation, e.g. 'We reply within 1 business day.'"
+    },
+    "ids": ["15-angry-user-010"]
+  },
+  {
+    "cid": "C155",
+    "band": "P3",
+    "page": "/admin/forgot-password",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "personaCount": 1,
+    "personas": ["15-angry-user"],
+    "finding": "Password reset copy hedges ('If it has admin access, we'll send a password reset link') and no on-screen confirmation flow was observed, so a locked-out admin can't tell whether the email is coming.",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/admin-forgot-password-text.md",
+        "quote": "Enter your Studio email. If it has admin access, we'll send a password reset link."
+      }
+    ],
+    "suggested_fix": {
+      "current": "'If it has admin access, we'll send a password reset link' with no confirmed success state",
+      "proposed": "After submit, show a clear confirmation: 'If that email has admin access, a reset link is on its way — check your inbox and spam.'"
+    },
+    "ids": ["15-angry-user-018"]
+  },
+  {
+    "cid": "C038",
+    "band": "P3",
+    "page": "/admin/settings, /admin/settings/users",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "personaCount": 2,
+    "personas": ["02-power-user", "14-competitor"],
+    "finding": "The Settings sidebar link deep-links straight to /admin/settings/users; /admin/settings itself only resolves by redirect, so there's no settings landing/index.",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Settings ... deep-links to /admin/settings/users; /admin/settings itself is only reachable by URL"
+      }
+    ],
+    "suggested_fix": {
+      "current": "/admin/settings redirects to /users with no index",
+      "proposed": "Keep the redirect for now but plan a settings index/landing once a second settings section exists"
+    },
+    "ids": ["02-power-user-024", "14-competitor-011"]
+  },
+  {
+    "cid": "C047",
+    "band": "P3",
+    "page": "/",
+    "category": "Accessibility & Inclusion",
+    "severity": "low",
+    "personaCount": 2,
+    "personas": ["03-first-timer", "14-competitor"],
+    "finding": "Top-nav links are very short touch targets (~17-20px tall), making them fiddly to tap on the phone a social-media visitor arrives with.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "NOTE: small touch target: a \"ABOUT\" 51x20px ... a \"NEWS\" 44x20px ... a \"HOME\" 43x17px"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Nav link hit areas ~17-20px tall",
+      "proposed": "Increase tappable area to at least 44x44px (extra vertical padding on nav links) per touch-target guidelines"
+    },
+    "ids": ["03-first-timer-014", "14-competitor-020"]
+  },
+  {
+    "cid": "C086",
+    "band": "P3",
+    "page": "/case-studies",
+    "category": "Accessibility & Inclusion",
+    "severity": "low",
+    "personaCount": 2,
+    "personas": ["06-skeptic", "12-developer"],
+    "finding": "The case studies page has a heading-order (skipped heading levels) violation.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "/case-studies … heading-order | moderate | Ensure the order of headings is semantically correct"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Non-sequential heading levels on /case-studies",
+      "proposed": "Reorder headings so levels do not skip (h1 → h2 → h3 in document order)"
+    },
+    "ids": ["06-skeptic-012", "12-developer-016"]
+  },
+  {
+    "cid": "C012",
+    "band": "P3",
+    "page": "/",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["01-grandparent"],
+    "finding": "The top navigation has no 'Home' link; returning home depends on knowing the logo is clickable.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "ABOUT\nRESOURCES\nCASE STUDIES\nNEWS\nSTEP INSIDE"
+      }
+    ],
+    "suggested_fix": {
+      "current": "No 'Home' item in the top nav (logo links home but isn't an obvious link)",
+      "proposed": "Add a 'Home' item to the top nav, or add visible hover styling so the logo reads as clickable"
+    },
+    "ids": ["01-grandparent-012"]
+  },
+  {
+    "cid": "C019",
+    "band": "P3",
+    "page": "/admin/news",
+    "category": "Trust & Safety",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["01-grandparent"],
+    "finding": "News list rows offer no archive/delete affordance; retiring a post requires opening each post's editor to find the Archive button.",
+    "journey": "admin-create-news-draft",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "List rows offer no destructive/archive affordance; archiving requires opening each post's editor"
+      },
+      {
+        "type": "screenshot",
+        "ref": "cleanup-news-editor.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "No archive/delete in the news list row",
+      "proposed": "Add an 'Archive' action to each news list row with a confirmation prompt"
+    },
+    "ids": ["01-grandparent-020"]
+  },
+  {
+    "cid": "C028",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["02-power-user"],
+    "finding": "No keyboard submit (Cmd/Ctrl+Enter) on the application form; submitting requires tabbing to or clicking the button.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "/apply tabOrder ... 16 button 'SUBMIT APPLICATION'"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Submit only via button click/tab",
+      "proposed": "Add Cmd/Ctrl+Enter keyboard submit handler to the apply and contact forms"
+    },
+    "ids": ["02-power-user-011"]
+  },
+  {
+    "cid": "C029",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["02-power-user"],
+    "finding": "State is a 50-option native <select> with no typeahead-by-name UX beyond default browser behavior; budget/stage/timeline are all 'Select' placeholder dropdowns with no smart default.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "combobox \"State\": option \"Select\" [disabled] [selected] option \"Alabama\" ..."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Native 50-item State select + 3 unselected dropdowns",
+      "proposed": "Use a searchable combobox for State (type 'TX' to jump); consider geo-prefilling State from IP as an editable default"
+    },
+    "ids": ["02-power-user-012"]
+  },
+  {
+    "cid": "C032",
+    "band": "P3",
+    "page": "/admin/pages/new",
+    "category": "Feedback & State",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["02-power-user"],
+    "finding": "Publish is gated behind readiness warnings ('Fix SEO title', 'Fix URL slug') with no inline jump-to-field link.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s04-04-wizard-starting-point-build.png",
+        "quote": "PUBLISH STATUS draft ... Fix URL slug"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Static 'Fix SEO title / Fix URL slug' text",
+      "proposed": "Make each readiness warning a link that focuses/scrolls to the relevant field"
+    },
+    "ids": ["02-power-user-016"]
+  },
+  {
+    "cid": "C034",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Feedback & State",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["02-power-user"],
+    "finding": "SEO pages list row actions menu did not expose Archive/Delete to keyboard/automation, and the editor exposes no archive control either — page retirement path is unclear despite 2 archived pages existing.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "cleanup-seo-row-menu.png",
+        "quote": "row '⋮' actions menu did not expose Archive/Delete items to automation"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "the builder editor offers no archive/delete path that automation could find"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Archive/Delete hard to reach from row menu and absent from editor",
+      "proposed": "Ensure the row '⋮' menu reliably exposes Archive/Delete and keyboard-opens; add an Archive control in the page editor"
+    },
+    "ids": ["02-power-user-020"]
+  },
+  {
+    "cid": "C043",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["03-first-timer"],
+    "finding": "The apply headline references 'Mike' by first name with no introduction for someone landing directly on /apply.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/apply-text.md",
+        "quote": "APPLY TO BUILD YOUR VENDING BUSINESS WITH MIKE."
+      }
+    ],
+    "suggested_fix": {
+      "current": "'Apply to build your vending business with Mike.'",
+      "proposed": "'Apply to build your vending business with Mike Hoffman, founder of Vendingpreneurs.' or add a one-line 'who is Mike' sub-caption"
+    },
+    "ids": ["03-first-timer-008"]
+  },
+  {
+    "cid": "C046",
+    "band": "P3",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["03-first-timer"],
+    "finding": "Inside an article the back link is labelled 'BLOG' while the nav item that leads to the same destination is 'NEWS'.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "a 'BLOG' links to /news (verified via route visits)  ... a 'NEWS' links to /news"
+      }
+    ],
+    "suggested_fix": {
+      "current": "In-article back link 'BLOG' vs nav 'NEWS' (both -> /news)",
+      "proposed": "Use the same label everywhere for /news"
+    },
+    "ids": ["03-first-timer-012"]
+  },
+  {
+    "cid": "C059",
+    "band": "P3",
+    "page": "/",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["04-accessibility"],
+    "finding": "The header navigation contains two adjacent identical 'APPLY NOW' links (tab stops 7 and 8) and 'Contact' is absent from the header (footer only).",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "tabOrder stop 7 'APPLY NOW', stop 8 'APPLY NOW'"
+      },
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "navigation \"Primary\": link \"About\" ... link \"News\" (no Contact)"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Two consecutive identical 'APPLY NOW' links in the header; no header Contact link",
+      "proposed": "Remove the duplicate Apply link (or differentiate its label/purpose) and consider adding Contact to the primary nav"
+    },
+    "ids": ["04-accessibility-016"]
+  },
+  {
+    "cid": "C072",
+    "band": "P3",
+    "page": "/",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "Body copy uses the idiom \"increase your bottom line\" and the metaphor \"eliminate the guesswork\". \"bottom line\" is a financial idiom that does not translate literally.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "bulk product deals to increase your bottom line."
+      },
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "We eliminate the guesswork by providing a structured roadmap to success."
+      }
+    ],
+    "suggested_fix": {
+      "current": "increase your bottom line",
+      "proposed": "increase your profit"
+    },
+    "ids": ["05-non-native-017"]
+  },
+  {
+    "cid": "C073",
+    "band": "P3",
+    "page": "/news/top-5-questions-vending-entrepreneurship-program",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "Article preview compresses meaning into ambiguous shorthand: \"success track record (300% boost via vetted options)\". \"vetted options\" and \"300% boost\" with no baseline are unclear without context.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "news-text.md",
+        "quote": "success track record (300% boost via vetted options), ongoing tools. L..."
+      }
+    ],
+    "suggested_fix": {
+      "current": "300% boost via vetted options",
+      "proposed": "up to 300% higher sales using pre-checked machine and location choices"
+    },
+    "ids": ["05-non-native-018"]
+  },
+  {
+    "cid": "C074",
+    "band": "P3",
+    "page": "/thank-you-for-applying",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "The thank-you page exists with clear copy (\"Watch your inbox for the next step.\") but the apply form never routes to it, so non-native users get the unclear inline message instead of this readable page.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "thank-you-for-applying-text.md",
+        "quote": "Watch your inbox for the next step."
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "Thanks. We received your details and will follow up shortly."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Apply form shows inline text and stays on /apply",
+      "proposed": "Redirect a successful apply submission to /thank-you-for-applying, which already has clearer next-step copy."
+    },
+    "ids": ["05-non-native-019"]
+  },
+  {
+    "cid": "C075",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["05-non-native"],
+    "finding": "Open-text field label \"What are you trying to build?\" is vague for a second-language reader and overlaps with the intro line \"...what kind of support would move the business forward.\" It is unclear what answer is expected.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "What are you trying to build?"
+      },
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "Share where you are now, where you want to launch, and what kind of support would move the business forward."
+      }
+    ],
+    "suggested_fix": {
+      "current": "What are you trying to build?",
+      "proposed": "Tell us about your vending goals (optional) — e.g. \"I want 5 machines in offices within a year.\""
+    },
+    "ids": ["05-non-native-020"]
+  },
+  {
+    "cid": "C094",
+    "band": "P3",
+    "page": "global (header nav)",
+    "category": "Accessibility & Inclusion",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["07-mobile"],
+    "finding": "Desktop header nav links ('ABOUT' 51x20px, 'CASE STUDIES' 102x20px, etc.) are only ~20px tall. The mobile hamburger button itself is a good size, but on tablet/landscape where the inline nav shows, the targets are thumb-hostile.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "NOTE: small touch target: a \"ABOUT\" 51x20px / a \"CASE STUDIES\" 102x20px"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-003-mobile.png",
+        "quote": "375px uses a hamburger (good); inline nav appears at wider widths"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Inline header nav links ~20px tall",
+      "proposed": "Give header nav links a minimum 44px tap height via vertical padding for the inline (non-hamburger) layout"
+    },
+    "ids": ["07-mobile-009"]
+  },
+  {
+    "cid": "C101",
+    "band": "P3",
+    "page": "/contact",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "The /apply and /contact form cards share the same brutalist shadowed-card treatment, but the offset drop shadow and the submit-button shadow are not rendered identically: the contact 'SEND MESSAGE' button shows a heavier visible offset/border than the flush 'SUBMIT APPLICATION' button on /apply.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "contact-002-full.png",
+        "quote": "'SEND MESSAGE' button with visible offset shadow"
+      },
+      {
+        "type": "screenshot",
+        "ref": "apply-002-full.png",
+        "quote": "'SUBMIT APPLICATION' button sits flush"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Apply and Contact submit buttons render with different shadow/offset depth",
+      "proposed": "Extract a single brand submit-button component and use it on both forms so shadow, border, padding and radius are identical"
+    },
+    "ids": ["08-perfectionist-007"]
+  },
+  {
+    "cid": "C106",
+    "band": "P3",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "The article-page share buttons are four individually-bordered black pill chips with inconsistent labels — single uppercase letters and abbreviations ('X', 'in', 'f', 'link') rather than a consistent icon set. Mixing a brand glyph (X), a lowercase initialism (in, f), and a word ('link') in one control group is inconsistent.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-how-to-choose-the-perfect-location-for-vending-machine-001-load.png",
+        "quote": "vertical share rail with chips labelled 'X', 'in', 'f', 'link'"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Share chips labelled 'X', 'in', 'f', 'link' (mixed letters/abbreviations/word)",
+      "proposed": "Use a single consistent icon set (X, LinkedIn, Facebook, copy-link icons) with aria-labels, all in one chip style"
+    },
+    "ids": ["08-perfectionist-015"]
+  },
+  {
+    "cid": "C108",
+    "band": "P3",
+    "page": "/admin/news/new",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "The blog post body editor is a large empty textarea with no placeholder text, no toolbar, and no empty-state guidance, occupying most of the viewport as blank white space. The Excerpt and Title fields are also placeholder-free.",
+    "journey": "admin-create-news-draft",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-news-new-002-full.png",
+        "quote": "large empty body textarea below Write/Preview tabs, no placeholder or toolbar"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Blog body is a bare empty textarea with no placeholder/toolbar/empty-state",
+      "proposed": "Add placeholder/helper text ('Write your post in Markdown...'), a minimal formatting hint, and match the designed empty-state treatment used by the SEO page builder"
+    },
+    "ids": ["08-perfectionist-017"]
+  },
+  {
+    "cid": "C109",
+    "band": "P3",
+    "page": "/admin/pages/new",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "The Create-page wizard advertises four page types (SEO / Resource, Blog page, Landing page, Video page) but the SEO pages list and broader studio only surface 'SEO pages' content; meanwhile the create wizard's 'Blog page' overlaps conceptually with the separate /admin/news 'New blog post' editor — two different ways to create a blog-style page with different editors.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-004-click-blog-page-article-style-page-w.png",
+        "quote": "wizard card 'Blog page — Article-style page with a strong introduction and CTA.'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-news-new-002-full.png",
+        "quote": "'New blog post — Create an article or announcement from the shared CMS backend.'"
+      }
+    ],
+    "suggested_fix": {
+      "current": "'Blog page' (SEO builder wizard) and 'New blog post' (News editor) are two separate blog-creation paths with different editors",
+      "proposed": "Clarify the distinction in the wizard copy, or consolidate so one editor owns article-style content and the wizard links to it"
+    },
+    "ids": ["08-perfectionist-019"]
+  },
+  {
+    "cid": "C111",
+    "band": "P3",
+    "page": "/case-studies",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["08-perfectionist"],
+    "finding": "The case-studies testimonial grid mixes card states inconsistently: some cards show a leading avatar circle and others do not, and card heights vary widely with ragged bottom alignment within the same row because content length is not normalised.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "case-studies-002-full.png",
+        "quote": "testimonial grid with uneven card heights and inconsistent avatar presence across cards in a row"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Testimonial cards have ragged heights and inconsistent avatar presence within a row",
+      "proposed": "Either equalise card heights per row (align-items:stretch with internal scroll/clamp) or adopt an intentional masonry layout, and standardise the avatar slot (placeholder when absent)"
+    },
+    "ids": ["08-perfectionist-022"]
+  },
+  {
+    "cid": "C116",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Trust & Safety",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["09-pragmatist"],
+    "finding": "On the admin pages list a \"Schedule failed\" link is present, indicating a failed scheduled-publish state surfaced in the UI.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "a \"Schedule failed\" | external | external: outbound side effect / leaves app"
+      }
+    ],
+    "suggested_fix": {
+      "current": "\"Schedule failed\" state shown as a link in admin pages list",
+      "proposed": "Investigate the failed scheduled publish and surface a clear retry/error explanation in the admin UI"
+    },
+    "ids": ["09-pragmatist-011"]
+  },
+  {
+    "cid": "C120",
+    "band": "P3",
+    "page": "/about",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["10-teenager"],
+    "finding": "The About page is several dense paragraphs of life story ('How I Escaped The Rat Race', 'Mike's Unique Approach') with no short summary or skimmable highlights.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/about-text.md",
+        "quote": "At the time, I was working a 60-hour per week job that paid me only $1,200/month. I used my emergency fund to invest 20% down on a $70,000 fixer upper..."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Multi-paragraph founder essay with no summary",
+      "proposed": "Add a 3-bullet 'the short version' at the top (e.g. 'Quit a 60-hr job', 'Built passive income with vending', '12+ machines now') above the full story"
+    },
+    "ids": ["10-teenager-012"]
+  },
+  {
+    "cid": "C122",
+    "band": "P3",
+    "page": "/",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["11-business-owner"],
+    "finding": "Mobile navigation is an icon-only hamburger with no text label",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "home-003-mobile.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "Hamburger icon with no accessible/visible label",
+      "proposed": "Add a 'Menu' label or aria-label to the hamburger button"
+    },
+    "ids": ["11-business-owner-004"]
+  },
+  {
+    "cid": "C126",
+    "band": "P3",
+    "page": "/contact",
+    "category": "Forms & Input",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["11-business-owner"],
+    "finding": "Required Message field gives no guidance on what to include or expected length",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/contact-text.md",
+        "quote": "Message*\n(required)"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Empty Message textarea with no placeholder",
+      "proposed": "Add placeholder guidance, e.g. 'Tell us where you are and your main question (a sentence or two is fine)'"
+    },
+    "ids": ["11-business-owner-012"]
+  },
+  {
+    "cid": "C127",
+    "band": "P3",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["11-business-owner"],
+    "finding": "Article page loads slowly (~1.7s DCL) with CLS 0.263, so content shifts while reading",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Load time: 1743ms DCL / 2055ms load"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Layout shift (CLS): 0.263"
+      }
+    ],
+    "suggested_fix": {
+      "current": "~2s load and CLS 0.263 on article pages",
+      "proposed": "Reserve image dimensions and reduce blocking work to bring CLS under 0.1 and speed first paint"
+    },
+    "ids": ["11-business-owner-016"]
+  },
+  {
+    "cid": "C128",
+    "band": "P3",
+    "page": "/thank-you-for-applying",
+    "category": "Feedback & State",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["11-business-owner"],
+    "finding": "The thank-you page is clear and reassuring, but it is orphaned because the apply form never sends users to it",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/thank-you-for-applying-text.md",
+        "quote": "THANKS FOR APPLYING.\nThe team reviews application details before the next conversation."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Good confirmation page exists but is unreachable from the apply flow",
+      "proposed": "Wire the apply form's success path to this page"
+    },
+    "ids": ["11-business-owner-017"]
+  },
+  {
+    "cid": "C129",
+    "band": "P3",
+    "page": "/",
+    "category": "Accessibility & Inclusion",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["11-business-owner"],
+    "finding": "Header and footer navigation links are only 17-20px tall, below comfortable touch-target size",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "small touch target: a \"CONTACT US\" 93x17px"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Nav links ~17-20px tall",
+      "proposed": "Increase tappable height to at least 44px per WCAG target-size guidance"
+    },
+    "ids": ["11-business-owner-018"]
+  },
+  {
+    "cid": "C132",
+    "band": "P3",
+    "page": "/admin/pages/new",
+    "category": "Accessibility & Inclusion",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["12-developer"],
+    "finding": "The page-type wizard at /admin/pages/new has a moderate 'landmark-unique' axe violation (non-unique landmark on a .p-0 element).",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "landmark-unique impact moderate selectors '.p-0'"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Two landmarks with the same role and no distinguishing label",
+      "proposed": "Give each landmark a unique aria-label or collapse the duplicate landmark"
+    },
+    "ids": ["12-developer-014"]
+  },
+  {
+    "cid": "C137",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Feedback & State",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["13-executive"],
+    "finding": "A \"Schedule failed\" state is exposed as a filter but is not summarized in the top KPI cards, so a failure isn't visible at a glance.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/admin-pages-text.md",
+        "quote": "Schedule failed"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "a \"Schedule failed\""
+      }
+    ],
+    "suggested_fix": {
+      "current": "\"Schedule failed\" only appears as a workflow filter link",
+      "proposed": "Surface a count of schedule failures in the KPI card strip when greater than zero"
+    },
+    "ids": ["13-executive-010"]
+  },
+  {
+    "cid": "C142",
+    "band": "P3",
+    "page": "/admin/libraries",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["14-competitor"],
+    "finding": "Content libraries (/admin/libraries) is reachable only via a 'Content libraries' link in the Media library header, not from the sidebar.",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-media-text.md",
+        "quote": "Content libraries"
+      }
+    ],
+    "suggested_fix": {
+      "current": "/admin/libraries linked only from the Media library header",
+      "proposed": "Surface 'Content libraries' as its own sidebar item under CONTENT"
+    },
+    "ids": ["14-competitor-014"]
+  },
+  {
+    "cid": "C143",
+    "band": "P3",
+    "page": "/pre-call-resources",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["14-competitor"],
+    "finding": "The pre-call resources page contains 14 links and 0 embedded videos/iframes.",
+    "journey": "pre-call-prep",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "0 embedded videos/iframes, 14 visible links"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Pre-call page is a list of 14 links, no embedded media",
+      "proposed": "Embed the key prep video(s) inline on /pre-call-resources"
+    },
+    "ids": ["14-competitor-015"]
+  },
+  {
+    "cid": "C146",
+    "band": "P3",
+    "page": "/admin/pages/new",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["14-competitor"],
+    "finding": "While building, the editor URL stays /admin/pages/new until the first save, so there is no shareable/bookmarkable page URL mid-edit.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys-rerun.md",
+        "quote": "Editor URL stays at /admin/pages/new while building (no shareable page URL until saved)"
+      }
+    ],
+    "suggested_fix": {
+      "current": "URL stays /admin/pages/new until first save",
+      "proposed": "Create the draft record (and its URL) on entering the builder so the page is addressable immediately"
+    },
+    "ids": ["14-competitor-022"]
+  },
+  {
+    "cid": "C147",
+    "band": "P3",
+    "page": "/admin/pages/block-preview-audit",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["14-competitor"],
+    "finding": "/admin/pages/block-preview-audit is an internal tool reachable only by URL with no inbound links.",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Block-preview-audit (/admin/pages/block-preview-audit) is likewise only reachable by URL"
+      }
+    ],
+    "suggested_fix": {
+      "current": "block-preview-audit internal route present in admin with no nav",
+      "proposed": "Gate internal audit tools behind a dev flag or remove them from the production admin build"
+    },
+    "ids": ["14-competitor-023"]
+  },
+  {
+    "cid": "C154",
+    "band": "P3",
+    "page": "/this-page-does-not-exist",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "personaCount": 1,
+    "personas": ["15-angry-user"],
+    "finding": "The 404 text says content may have 'moved' but provides no destination or link to where it moved.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/this-page-does-not-exist-text.md",
+        "quote": "The page you're looking for doesn't exist or has moved."
+      }
+    ],
+    "suggested_fix": {
+      "current": "'...doesn't exist or has moved.'",
+      "proposed": "Either redirect known moved paths, or drop the 'or has moved' clause and offer a search + key links"
+    },
+    "ids": ["15-angry-user-012"]
+  }
+]

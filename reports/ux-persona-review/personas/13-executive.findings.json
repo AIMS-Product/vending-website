@@ -1,0 +1,296 @@
+[
+  {
+    "id": "13-executive-001",
+    "page": "/",
+    "journey": "evaluate-trust",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "Homepage credibility counters render as \"0+\", \"$0M+\", \"0+\" in the captured frame, so the site's strongest proof block reads as literally zero at a glance.",
+    "evidence": [
+      { "type": "screenshot", "ref": "home-002-full.png", "quote": "" },
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "0+\nENTREPRENEURS LAUNCHED\n$0M+\nSNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\n0+\nVENDING LOCATIONS W/OUR GUIDANCE"
+      }
+    ],
+    "persona_rationale": "I scan a homepage for proof in seconds. Stats that read 0+ and $0M+ are worse than no stats at all — they tell me the program has launched nobody and sold nothing.",
+    "suggested_fix": {
+      "current": "Animated count-up counters captured at their 0 start state: \"0+\", \"$0M+\", \"0+\"",
+      "proposed": "Render the final values server-side (e.g. \"500+\", \"$8M+\", \"1,200+\") so they are correct before any animation, or disable the count-up so the real numbers show immediately above the fold"
+    }
+  },
+  {
+    "id": "13-executive-002",
+    "page": "/",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "Homepage above-the-fold renders at a cramped, downscaled width compared to other pages (header nav squeezed) and has a high layout shift.",
+    "evidence": [
+      { "type": "screenshot", "ref": "home-001-load.png", "quote": "" },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Layout shift (CLS): 0.263"
+      }
+    ],
+    "persona_rationale": "A confident first impression matters in my 30 seconds; a squeezed, shifting hero reads as unpolished before I've absorbed the message.",
+    "suggested_fix": {
+      "current": "Hero/header renders narrow with CLS 0.263 on load",
+      "proposed": "Reserve space for hero image and partner logos to eliminate the shift, and ensure the header lays out at full viewport width on first paint"
+    }
+  },
+  {
+    "id": "13-executive-003",
+    "page": "/",
+    "journey": "contact-the-team",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "Contact is absent from the header navigation; the only paths are the footer link or knowing the URL.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "ABOUT\nRESOURCES\nCASE STUDIES\nNEWS\nSTEP INSIDE"
+      },
+      { "type": "screenshot", "ref": "home-001-load.png", "quote": "" }
+    ],
+    "persona_rationale": "When I want to reach someone I glance at the top nav. If Contact isn't there I assume there's no easy way to reach the team and I move on.",
+    "suggested_fix": {
+      "current": "Header nav: About, Resources, Case Studies, News (no Contact)",
+      "proposed": "Add a \"Contact\" item to the primary header navigation"
+    }
+  },
+  {
+    "id": "13-executive-004",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "Application submit success is shown only as a small inline green line of text next to the button, with no banner, no redirect, and the form left fully populated.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "Thanks. We received your details and will follow up shortly."
+      }
+    ],
+    "persona_rationale": "I glance after clicking Submit. If the form still looks full and there's no prominent confirmation, I conclude it failed and either resubmit or leave annoyed.",
+    "suggested_fix": {
+      "current": "Inline green text \"Thanks. We received your details and will follow up shortly.\" beside an unchanged form",
+      "proposed": "Redirect to the existing /thank-you-for-applying page (or show a full-width success banner and clear/disable the form) on successful submit"
+    }
+  },
+  {
+    "id": "13-executive-005",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "Above-the-fold article cards show blank/broken thumbnails — one card renders raw alt text instead of an image — caused by a 500 image error, making first paint look half-loaded.",
+    "evidence": [
+      { "type": "screenshot", "ref": "news-001-load.png", "quote": "" },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com%2F...png&w=640&q=75"
+      }
+    ],
+    "persona_rationale": "A broken thumbnail at the top of the news page tells me in a glance the site isn't maintained — that erodes trust before I read a word.",
+    "suggested_fix": {
+      "current": "Article image returns 500 from /_next/image; card shows raw alt text",
+      "proposed": "Fix or re-host the failing CDN image and add a styled fallback thumbnail so a broken image never shows raw alt text"
+    }
+  },
+  {
+    "id": "13-executive-006",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The news listing page heading is \"BLOG\" while the nav item and route are \"NEWS\".",
+    "evidence": [
+      { "type": "text", "ref": "text/news-text.md", "quote": "BLOG" },
+      { "type": "text", "ref": "text/news-text.md", "quote": "NEWS" }
+    ],
+    "persona_rationale": "I clicked NEWS and landed on a page titled BLOG; that mismatch makes me second-guess whether I'm where I meant to be.",
+    "suggested_fix": {
+      "current": "Nav/route \"News\" lands on a page headed \"BLOG\"",
+      "proposed": "Use one consistent label — either rename the heading to \"News\" or rename the nav item and route to \"Blog\""
+    }
+  },
+  {
+    "id": "13-executive-007",
+    "page": "/case-studies",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "Horizontal scroll present at mobile width.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | case-studies-003-mobile.png | horizontal scroll present"
+      }
+    ],
+    "persona_rationale": "I often open links on a phone in a meeting; horizontal scroll signals a layout that wasn't finished for mobile.",
+    "suggested_fix": {
+      "current": "Page overflows horizontally at 375px",
+      "proposed": "Constrain the case-study card row to the viewport width (overflow handled within a contained carousel, not the page)"
+    }
+  },
+  {
+    "id": "13-executive-008",
+    "page": "/thank-you-for-applying",
+    "journey": "discover-and-apply",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "A clear, well-designed application confirmation page exists but the apply form never routes to it; the real flow instead shows buried inline text.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "thank-you-for-applying-001-load.png",
+        "quote": ""
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "A dedicated /thank-you-for-applying page EXISTS in the app but the apply form does not route to it."
+      }
+    ],
+    "persona_rationale": "The good confirmation I'd want already exists — leaving it orphaned while the live flow hides the success signal is the easiest high-value fix on the site.",
+    "suggested_fix": {
+      "current": "Apply form shows inline green text; /thank-you-for-applying is never reached",
+      "proposed": "Route successful applications to /thank-you-for-applying"
+    }
+  },
+  {
+    "id": "13-executive-009",
+    "page": "/admin/pages",
+    "journey": "admin-create-seo-page",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "The Readiness and Status columns are shown as bare colored dots (red/blue/amber) with no visible legend, so a color's meaning is only available on hover per row.",
+    "evidence": [
+      { "type": "screenshot", "ref": "admin-pages-001-load.png", "quote": "" },
+      {
+        "type": "text",
+        "ref": "text/admin-pages-text.md",
+        "quote": "SEO readiness: Blocked"
+      }
+    ],
+    "persona_rationale": "I want to scan the table and instantly see which pages are in trouble. Colored dots with no key force me to hover every row — the opposite of glanceable.",
+    "suggested_fix": {
+      "current": "Readiness/Status rendered as unlabeled colored dots; meaning only in hover/aria text",
+      "proposed": "Add a short legend above the table and/or text labels beside the dots (e.g. \"Blocked\", \"Needs work\", \"Ready\")"
+    }
+  },
+  {
+    "id": "13-executive-010",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Feedback & State",
+    "severity": "low",
+    "finding": "A \"Schedule failed\" state is exposed as a filter but is not summarized in the top KPI cards, so a failure isn't visible at a glance.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/admin-pages-text.md",
+        "quote": "Schedule failed"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "a \"Schedule failed\""
+      }
+    ],
+    "persona_rationale": "If something is failing I want it in the headline cards, not hidden behind a filter chip I have to think to click.",
+    "suggested_fix": {
+      "current": "\"Schedule failed\" only appears as a workflow filter link",
+      "proposed": "Surface a count of schedule failures in the KPI card strip when greater than zero"
+    }
+  },
+  {
+    "id": "13-executive-011",
+    "page": "/admin/news",
+    "journey": "admin-create-news-draft",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "The Blog/news CMS has no entry in the studio sidebar; it is reachable only by direct URL or breadcrumb.",
+    "evidence": [
+      { "type": "screenshot", "ref": "admin-news-001-load.png", "quote": "" },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "NO News/Blog item in the sidebar — sidebar offers only \"SEO pages\", \"Media library\", and \"Settings\"."
+      }
+    ],
+    "persona_rationale": "I orient by scanning the sidebar. If News isn't listed there, I'd conclude the studio can't manage news at all.",
+    "suggested_fix": {
+      "current": "Sidebar: SEO pages, Media library, Settings (no News)",
+      "proposed": "Add a \"Blog and news\" item to the studio sidebar navigation"
+    }
+  },
+  {
+    "id": "13-executive-012",
+    "page": "/admin/pages/new",
+    "journey": "admin-create-seo-page",
+    "category": "Feedback & State",
+    "severity": "low",
+    "finding": "On first open the page builder shows a \"Quick Tour\" overlay that covers the outline panel it points at and blocks interaction until dismissed.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "On FIRST open a \"Quick Tour\" overlay (Step 1 of 3) covers the outline panel and blocks interaction until dismissed"
+      }
+    ],
+    "persona_rationale": "An overlay that blocks the very panel I'm trying to use wastes the few seconds I have; I'll dismiss it blind and possibly miss what I needed.",
+    "suggested_fix": {
+      "current": "Quick Tour overlay covers the outline panel on first builder open",
+      "proposed": "Position the tour tooltip so it does not occlude the target panel, and allow interaction with the page while the tour is open"
+    }
+  },
+  {
+    "id": "13-executive-013",
+    "page": "/admin/pages/redirects",
+    "journey": "admin-manage-content-ops",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "The Redirects manager has no inbound links from any explored admin page — it is an orphaned route reachable only by URL.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "Redirects | NO PATH FOUND — /admin/pages/redirects is not linked from any explored admin page (zero links to it in all ARIA extracts)"
+      }
+    ],
+    "persona_rationale": "A functional feature I can't find by scanning the UI may as well not exist to me.",
+    "suggested_fix": {
+      "current": "No link to /admin/pages/redirects anywhere in admin nav",
+      "proposed": "Link Redirects from the SEO pages screen header or the studio sidebar"
+    }
+  },
+  {
+    "id": "13-executive-014",
+    "page": "/news",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The same content type is labeled four different ways across the app: route \"News\", public heading \"BLOG\", editor \"Blog CMS\"/\"New blog post\", and nav \"NEWS\".",
+    "evidence": [
+      { "type": "text", "ref": "text/news-text.md", "quote": "BLOG" },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "Naming is inconsistent across the same content type: sidebar-less section is \"News\" in the route, \"Blog CMS\"/\"New blog post\" in the editor, \"NEWS\" in public nav, \"BLOG\" as the public page heading."
+      }
+    ],
+    "persona_rationale": "Four names for one thing forces me to re-learn the same concept at every screen — it slows the instant recognition I rely on.",
+    "suggested_fix": {
+      "current": "News / BLOG / Blog CMS / New blog post used interchangeably",
+      "proposed": "Pick one canonical label (e.g. \"News\") and apply it to the nav, route, public heading, and editor consistently"
+    }
+  }
+]

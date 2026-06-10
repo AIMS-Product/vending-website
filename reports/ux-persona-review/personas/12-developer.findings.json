@@ -1,0 +1,432 @@
+[
+  {
+    "id": "12-developer-001",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "After a successful application submit the only feedback is one small line of green inline text next to the button; the form does not clear, disable, or redirect, and there is no page-level confirmation. The automation itself missed the success state and re-submitted 6 times.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "small green text 'Thanks. We received your details and will follow up shortly.' beside an enabled SUBMIT APPLICATION button, form still populated"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Automation itself missed the success state and re-submitted 5 more times — evidence of how subtle the confirmation is."
+      }
+    ],
+    "persona_rationale": "This is the textbook missing-success-state bug I look for. The submit button stays enabled and the form keeps its values, so there is no guard against double-submit on the client at all — duplicate suppression is happening only server-side, which is fragile to rely on and invisible to the user.",
+    "suggested_fix": {
+      "current": "Inline green text appears, form stays filled and submit stays enabled, no redirect",
+      "proposed": "On success, redirect to the existing /thank-you-for-applying page (or swap the form for a confirmation panel) and disable the submit button while the request is in flight"
+    }
+  },
+  {
+    "id": "12-developer-002",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "The apply form performs no visible client-side validation: submitting empty shows no errors and submitting invalid data shows no errors, despite four fields being marked (required).",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "form#1 (9 fields, mode: no-valid) empty: no visible validation errors after empty submit / invalid: no visible validation errors on invalid data — entered values preserved"
+      },
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "Name*\n(required) ... State*\n(required) ... Business stage*\n(required) ... Available startup budget*\n(required) ... Launch timeline*\n(required)"
+      }
+    ],
+    "persona_rationale": "Five fields are labelled (required) but an empty submit produces no field-level errors — that means validation is either absent or only server-side with no surfaced message. I would expect inline errors next to each invalid field on submit; their absence is a correctness gap, not a style preference.",
+    "suggested_fix": {
+      "current": "Empty/invalid submit returns no visible error feedback",
+      "proposed": "Add client-side (and surfaced server-side) validation that renders an error message adjacent to each invalid required field on submit, and move focus to the first invalid field"
+    }
+  },
+  {
+    "id": "12-developer-003",
+    "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+    "journey": "read-a-news-article",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "Legacy /blog/* article paths 404 with a bare, unstyled 'Not found' page that has no header, no footer, and no recovery link — a completely different 404 handler from the styled site-wide 404. Articles previously lived at /blog and the app links the public article page heading as 'BLOG'.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "blog-how-to-choose-the-perfect-location-for-vending-machine-text.md",
+        "quote": "heading \"Not found\" [level=1]\n  - paragraph: The requested page could not be found."
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "404 /blog/how-to-choose-the-perfect-location-for-vending-machine"
+      },
+      {
+        "type": "text",
+        "ref": "this-page-does-not-exist-text.md",
+        "quote": "heading \"Page not found\" [level=1] ... link \"Back to home\""
+      }
+    ],
+    "persona_rationale": "Two different 404 responses for two unmatched routes tells me there are two error boundaries and the /blog subtree isn't covered by the app's not-found.tsx. Old indexed/shared /blog links land users on a dead-end bare page with no way back. Either redirect /blog/{slug} to /news/{slug} (301) or let it fall through to the styled 404.",
+    "suggested_fix": {
+      "current": "/blog/{slug} returns a bare 'Not found' page with no nav/footer/recovery link",
+      "proposed": "Add 301 redirects from /blog/{slug} to /news/{slug}, or route the /blog subtree through the global styled not-found page with a 'Back to home' link"
+    }
+  },
+  {
+    "id": "12-developer-004",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "On first paint the /news listing shows three empty card outlines and the article cards only render after a scroll triggers a scroll-reveal animation, so above-the-fold the page looks broken/unfinished with no skeleton or loading state.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "above the fold shows 'BLOG' heading and empty card outlines; article content not visible until scrolled"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "article cards are scroll-reveal animated — they render as BLANK card outlines until scrolled into view"
+      }
+    ],
+    "persona_rationale": "Content that is present in the DOM but invisible until a scroll event fires is a scroll-reveal animation gating actual content, not progressive enhancement. To me it reads as a hydration/render bug on first load — the listing's primary content should be visible at first paint, with reveal animations as decoration only.",
+    "suggested_fix": {
+      "current": "Article cards start at opacity 0 / hidden and only appear on scroll-into-view",
+      "proposed": "Render cards visible by default (or via a designed skeleton) and treat the reveal animation as progressive enhancement that never hides content on a non-scrolling viewport"
+    }
+  },
+  {
+    "id": "12-developer-005",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "A news article thumbnail fails to load with a 500 from the Next.js image optimizer; the card falls back to showing raw alt text instead of an image, and a server 500 is logged in the console.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com%2F...png&w=640&q=75"
+      },
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "third card shows broken-image placeholder with literal alt text 'Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Items, Niche Products)'"
+      }
+    ],
+    "persona_rationale": "A 500 from /_next/image means the optimizer is choking on a remote Webflow CDN URL — likely the host isn't in next.config images.remotePatterns, or the upstream asset is gone. Either way it's a server error in the console on a flagship page, exactly the kind of thing I judge a build on.",
+    "suggested_fix": {
+      "current": "next/image proxy returns 500 for the cdn.prod.website-files.com source; card renders broken with alt text",
+      "proposed": "Whitelist the CDN host in next.config images.remotePatterns (or migrate the asset into managed media), and add an onError/fallback image so a failed thumbnail degrades gracefully"
+    }
+  },
+  {
+    "id": "12-developer-006",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "The homepage has a Cumulative Layout Shift of 0.263, well above the 0.1 'good' threshold; the same 0.263 CLS recurs on /about, /news, and every news article page, indicating a shared layout component shifts after load.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "Layout shift (CLS): 0.263"
+      },
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | home-003-mobile.png | horizontal scroll present"
+      }
+    ],
+    "persona_rationale": "CLS 0.263 is a failing Core Web Vital and it's identical across multiple pages, so it's the shared header/hero/footer reflowing after fonts or images load — a measurable, fixable framework artifact. I notice jank like this immediately and it's a real SEO/ranking cost for a site whose whole admin is an 'SEO Page Builder'.",
+    "suggested_fix": {
+      "current": "CLS 0.263 on /, /about, /news, and article pages",
+      "proposed": "Reserve space for the shifting element (explicit width/height on hero/logo images, font-display swap with metric-matched fallback, fixed-height header) to bring CLS under 0.1"
+    }
+  },
+  {
+    "id": "12-developer-007",
+    "page": "/",
+    "journey": "read-a-news-article",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The same content section uses inconsistent naming: nav item 'NEWS' and route /news, but the listing page heading is 'BLOG', the article page header link is 'BLOG', and the admin editor calls it 'Blog CMS' / 'New blog post'.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "page heading reads 'BLOG' while it is reached via the 'NEWS' nav item at /news"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Page is headed \"BLOG\" while the nav item that leads here says \"NEWS\" and the route is /news. Same section, two names."
+      }
+    ],
+    "persona_rationale": "Three names (News / Blog / route /news) for one entity is the kind of inconsistency that signals the data model and the UI labels drifted apart. It makes the URL structure read as accidental rather than designed, and it's a trivial naming-convention fix.",
+    "suggested_fix": {
+      "current": "Nav 'NEWS' → /news → page heading 'BLOG' → admin 'Blog CMS'",
+      "proposed": "Pick one canonical noun (e.g. 'News') and use it consistently in nav, page heading, route, and admin labels"
+    }
+  },
+  {
+    "id": "12-developer-008",
+    "page": "/admin/news",
+    "journey": "admin-create-news-draft",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "The News/Blog CMS has no entry in the admin sidebar; /admin/news is only reachable by typing the URL. The sidebar exposes only SEO pages, Media library, and Settings.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Admin sidebar has no News/Blog section. /admin/news is unreachable from visible studio UI — an admin must know the URL."
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the studio sidebar contains exactly — \"SEO pages\" (/admin/pages), \"Media library\" (/admin/media), and \"Settings : Users and access\" (/admin/settings/users), plus \"Sign out\""
+      }
+    ],
+    "persona_rationale": "An orphaned route — a fully functional CMS with zero inbound navigation — is a routing/IA defect I'd flag in review. It means a whole feature ships dark; the only way in is tribal knowledge of the URL.",
+    "suggested_fix": {
+      "current": "No sidebar link to /admin/news; reachable only by URL",
+      "proposed": "Add a 'News' (or 'Blog') item to the admin sidebar pointing at /admin/news alongside SEO pages, Media library, and Settings"
+    }
+  },
+  {
+    "id": "12-developer-009",
+    "page": "/admin/pages/redirects",
+    "journey": "admin-manage-content-ops",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "The redirects manager at /admin/pages/redirects is an orphaned route: a grep across every admin page's ARIA extract found zero inbound links to it.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Redirects | **NO PATH FOUND** — /admin/pages/redirects is not linked from any explored admin page (zero links to it in all ARIA extracts)"
+      }
+    ],
+    "persona_rationale": "Second orphaned admin route. A redirects tool is exactly what you need to fix the /blog 404 problem (finding 003), yet it's invisible in the UI. Dead navigation to a live feature is a defect.",
+    "suggested_fix": {
+      "current": "/admin/pages/redirects has no inbound link from any admin page",
+      "proposed": "Link the redirects manager from the SEO pages list header or admin sidebar so it is reachable without knowing the URL"
+    }
+  },
+  {
+    "id": "12-developer-010",
+    "page": "/admin/pages/new",
+    "journey": "admin-create-seo-page",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "The SEO page builder editor opens in place but the URL stays /admin/pages/new until first save, so the create-state is not reflected in the URL; on first open a 'Quick Tour' overlay covers and blocks the outline panel it points at.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "builder editor opens IN PLACE (URL stays /admin/pages/new until saved). On FIRST open a \"Quick Tour\" overlay (Step 1 of 3) covers the outline panel and blocks interaction until dismissed"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "\"Add your first block\" affordance was inconsistently clickable for automation across runs (tour overlay; panel state)"
+      }
+    ],
+    "persona_rationale": "A non-URL-addressable editor state plus a modal that blocks the very control it highlights is a state-management smell. The 'inconsistently clickable' block button across runs reads like a race condition between the tour overlay mount and the panel becoming interactive — exactly the kind of flaky UI I distrust.",
+    "suggested_fix": {
+      "current": "Editor lives at /admin/pages/new with an overlay blocking the outline panel on first load",
+      "proposed": "Give the unsaved draft its own addressable URL (e.g. create the draft row on entry and route to /admin/pages/{id}), and render the Quick Tour so it never overlaps/blocks the control it references"
+    }
+  },
+  {
+    "id": "12-developer-011",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Homepage testimonial <video> elements are in the tab order with no visible focus indicator and the tab-walk flags a possible focus trap around each one; the homepage also has a serious color-contrast axe violation.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "possible focus trap around stop 11 on video 'Video testimonial from Thomas Rohlader'"
+      },
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast impact serious selectors '.grid-cols-[auto_1fr].items-baseline.py-5:nth-child(1) > dd'"
+      }
+    ],
+    "persona_rationale": "Keyboard-focusable videos with no focus ring and a flagged focus trap are a real keyboard-nav defect, and a serious contrast violation is a measurable axe failure — both are objective, not aesthetic. I run axe on what I build and these would fail CI if a11y checks were wired in.",
+    "suggested_fix": {
+      "current": "Testimonial videos focusable with no visible focus state / possible trap; dd contrast below AA",
+      "proposed": "Add visible :focus-visible styling to media controls (and verify Tab/Shift+Tab escape each video), and raise the dd foreground color to meet 4.5:1"
+    }
+  },
+  {
+    "id": "12-developer-012",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "journey": "read-a-news-article",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "The first news article is slow to load relative to the rest of the site (1743ms DCL / 2055ms load) and carries CLS 0.263 plus a serious color-contrast violation and a 'landmark-complementary-is-top-level' axe violation.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "Load time: 1743ms DCL / 2055ms load"
+      },
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast impact serious selectors '.mt-5'; landmark-complementary-is-top-level impact moderate selectors '.lg:block'"
+      }
+    ],
+    "persona_rationale": "A 2-second load on a static-ish content article (vs ~130ms for sibling pages) is an outlier I'd profile — most likely the same failing remote image fetch blocking. The aside not being a top-level landmark is a structural HTML mistake screen readers will mis-announce.",
+    "suggested_fix": {
+      "current": "Article ~2s load, CLS 0.263, aside nested below a landmark, low-contrast link",
+      "proposed": "Profile and fix the slow article render (likely the remote image), hoist the complementary aside to top level, and fix the link contrast to AA"
+    }
+  },
+  {
+    "id": "12-developer-013",
+    "page": "/admin/news",
+    "journey": "admin-create-news-draft",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "The admin news list has a serious axe violation: an ARIA attribute is prohibited for the element's role (aria-prohibited-attr on a .text-slate-300 element).",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "aria-prohibited-attr impact serious selectors '.text-slate-300'"
+      }
+    ],
+    "persona_rationale": "aria-prohibited-attr means someone put an aria-label (or similar) on an element whose role doesn't allow it — a copy-paste a11y mistake that an axe run catches instantly. Small, but it's exactly the kind of detail I'd leave a review comment on.",
+    "suggested_fix": {
+      "current": "Prohibited ARIA attribute on a .text-slate-300 element in /admin/news",
+      "proposed": "Remove the prohibited ARIA attribute or change the element to a role that permits it"
+    }
+  },
+  {
+    "id": "12-developer-014",
+    "page": "/admin/pages/new",
+    "journey": "admin-create-seo-page",
+    "category": "Accessibility & Inclusion",
+    "severity": "low",
+    "finding": "The page-type wizard at /admin/pages/new has a moderate 'landmark-unique' axe violation (non-unique landmark on a .p-0 element).",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "landmark-unique impact moderate selectors '.p-0'"
+      }
+    ],
+    "persona_rationale": "Duplicate unlabeled landmarks make the landmark-navigation rotor ambiguous. Minor, but it's a structural correctness issue an audit flags and a one-line fix.",
+    "suggested_fix": {
+      "current": "Two landmarks with the same role and no distinguishing label",
+      "proposed": "Give each landmark a unique aria-label or collapse the duplicate landmark"
+    }
+  },
+  {
+    "id": "12-developer-015",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "The homepage has horizontal scroll at the 375px mobile viewport, indicating an element overflowing the viewport width.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | home-003-mobile.png | horizontal scroll present"
+      },
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | case-studies-003-mobile.png | horizontal scroll present"
+      }
+    ],
+    "persona_rationale": "Horizontal overflow at 375px is a concrete layout bug — something has a fixed width or unconstrained content wider than the viewport. It recurs on /case-studies and an article page too, so it's likely a shared full-bleed section without max-width/overflow control.",
+    "suggested_fix": {
+      "current": "Body scrolls horizontally at 375px on /, /case-studies, and an article page",
+      "proposed": "Audit for the overflowing element (add overflow-x-hidden to the offending wrapper or constrain its width to 100vw) so no horizontal scrollbar appears at 375px"
+    }
+  },
+  {
+    "id": "12-developer-016",
+    "page": "/case-studies",
+    "journey": "evaluate-trust",
+    "category": "Accessibility & Inclusion",
+    "severity": "low",
+    "finding": "The case studies page has a moderate 'heading-order' axe violation: a card uses an h3 in a position that breaks the document heading hierarchy.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "heading-order impact moderate selectors 'li:nth-child(1) > .p-5 > header > h3'"
+      }
+    ],
+    "persona_rationale": "Skipping heading levels is a structural defect that screen-reader users navigate by; it also signals the component was styled by appearance rather than semantics. Cheap to fix.",
+    "suggested_fix": {
+      "current": "Card heading jumps to h3 without an intervening h2",
+      "proposed": "Set the card heading to the correct level for its place in the hierarchy (likely h2) or restructure so levels are not skipped"
+    }
+  },
+  {
+    "id": "12-developer-017",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "A News-section 500 server error from the image optimizer surfaces in the console on page load with no client-side handling, so the failure is silent to the user beyond a broken image.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "### Console Errors\n- Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      }
+    ],
+    "persona_rationale": "A 500 logged with no error boundary or fallback is a silent failure — the page neither tells the user nor reports the error anywhere visible. As a dev I'd want this caught and either retried, fallen back, or logged to monitoring, not swallowed.",
+    "suggested_fix": {
+      "current": "Image optimizer 500 logged to console, no UI handling",
+      "proposed": "Add an image error fallback and route the optimizer failure to error monitoring so it is observable and the user sees a placeholder rather than a broken element"
+    }
+  },
+  {
+    "id": "12-developer-018",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "The Contact page is not in the header navigation; it is reachable only from the footer 'CONTACT US' link or by knowing the URL.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "click Contact link | navigated to /contact (link is in the FOOTER only — \"CONTACT US\"; not in the header nav)"
+      }
+    ],
+    "persona_rationale": "Not a build bug per se, but the IA forces a scroll-to-footer for a primary 'get in touch' action while the apply funnel gets a prominent header CTA. For a marketing site that's a discoverability gap I'd raise.",
+    "suggested_fix": {
+      "current": "Contact only in footer",
+      "proposed": "Add a 'Contact' link to the primary header nav (or keep footer-only deliberately and document it as intentional)"
+    }
+  }
+]

@@ -1,0 +1,418 @@
+[
+  {
+    "id": "04-accessibility-001",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Accessibility & Inclusion",
+    "severity": "critical",
+    "finding": "Homepage testimonial videos create possible keyboard focus traps with no visible focus indicator. Each of the four testimonial videos produces a tab stop with 'no visible focus indicator' and a 'possible focus trap' is flagged at the last stop of each video group.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "possible focus trap around stop 11 on video 'Video testimonial from Thomas Rohlader'"
+      },
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "stop 10 (video 'Video testimonial from Thomas Rohlader'): no visible focus indicator"
+      }
+    ],
+    "persona_rationale": "I navigate only by keyboard. If Tab puts focus into a video player that traps it, I cannot escape to reach the rest of the page or the footer Apply CTA without reloading. Four traps in a row on the homepage is a hard stop for me before I ever reach the application form.",
+    "suggested_fix": {
+      "current": "Custom video players with no managed focus and no visible focus ring",
+      "proposed": "Ensure each video control is reachable and escapable by keyboard (no trap), and add a visible :focus-visible outline (e.g. 2px solid high-contrast ring) on the player and its controls"
+    }
+  },
+  {
+    "id": "04-accessibility-002",
+    "page": "/case-studies",
+    "journey": "evaluate-trust",
+    "category": "Accessibility & Inclusion",
+    "severity": "critical",
+    "finding": "Case-studies video case studies create the same possible keyboard focus traps with no visible focus indicator — one per video, four videos.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "possible focus trap around stop 9 on video 'Video case study from Thomas Rohlader'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "case-studies-001-load.png",
+        "quote": "row of four video thumbnails with play buttons below the CASE STUDIES heading"
+      }
+    ],
+    "persona_rationale": "The trust journey depends on me watching proof-of-results videos. If keyboard focus gets trapped in the first player I cannot reach the other case studies or continue to apply — the exact content meant to convince me becomes a dead end.",
+    "suggested_fix": {
+      "current": "Custom video players that may trap keyboard focus and show no focus ring",
+      "proposed": "Make players keyboard-escapable and add a visible focus indicator on the player and each control"
+    }
+  },
+  {
+    "id": "04-accessibility-003",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "finding": "No skip-to-content link. The first tab stop is the logo, followed by all primary nav links and (on the homepage) 12 video tab stops, before any main content or the Apply CTA in the body is reachable.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "tabOrder: stop 1 'Vendingpreneurs home' ... stop 8 'APPLY NOW' ... stops 9-20 video testimonials"
+      },
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "banner: link \"Vendingpreneurs home\" ... navigation \"Primary\" ... main:"
+      }
+    ],
+    "persona_rationale": "With a screen reader and keyboard I have to tab through the whole header and the entire testimonial video block on every page load just to reach content. A skip link is the single most basic affordance for keyboard users and it is absent everywhere.",
+    "suggested_fix": {
+      "current": "No skip link; first focusable element is the logo",
+      "proposed": "Add a visually-hidden 'Skip to main content' link as the first focusable element that targets <main> and becomes visible on focus"
+    }
+  },
+  {
+    "id": "04-accessibility-004",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "Form errors rely solely on native browser bubbles ('Please fill out this field.') with no programmatic error summary and no in-page, persistent, screen-reader-announced error list. The exploration log records 'no visible validation errors after empty submit' for the custom layer.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "apply-003-form-empty-submit.png",
+        "quote": "native tooltip 'Please fill out this field.' anchored to a hidden upper field"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "empty: no visible validation errors after empty submit"
+      }
+    ],
+    "persona_rationale": "Native validation bubbles vanish and are inconsistently announced; at 200% zoom the bubble in apply-003 points at a field scrolled off-screen above the visible area. Without an aria-live error summary I cannot reliably tell which fields failed or why.",
+    "suggested_fix": {
+      "current": "Native-only required validation, transient bubbles, no error summary",
+      "proposed": "Add aria-invalid + aria-describedby per field with persistent inline messages, and an aria-live='assertive' error summary at the top of the form listing each failed field with anchor links"
+    }
+  },
+  {
+    "id": "04-accessibility-005",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "finding": "Serious color-contrast failure on the homepage statistic values (the 'definition' values under the Accelerator Program). Three <dd> elements fail WCAG AA contrast.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast serious — .grid-cols-[auto_1fr].items-baseline.py-5:nth-child(1) > dd"
+      },
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "term: 0+ / definition: Entrepreneurs launched"
+      }
+    ],
+    "persona_rationale": "I have low vision and rely on sufficient contrast. The headline credibility stats are exactly the content I most need to read, and they fail the AA threshold.",
+    "suggested_fix": {
+      "current": "Stat label/value color below 4.5:1 against background",
+      "proposed": "Darken the <dd> text (or lighten background) to meet at least 4.5:1 contrast"
+    }
+  },
+  {
+    "id": "04-accessibility-006",
+    "page": "/this-page-does-not-exist",
+    "journey": null,
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "finding": "Serious color-contrast failures on the 404 page: the '404' label (.tracking-wide, light blue on white) and the explanatory subtext (.mt-2, light gray on white) both fail AA.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast serious — selectors: .tracking-wide, .mt-2 (count 2)"
+      },
+      {
+        "type": "screenshot",
+        "ref": "this-page-does-not-exist-001-load.png",
+        "quote": "light-blue '404' and gray 'The page you're looking for doesn't exist or has moved.'"
+      }
+    ],
+    "persona_rationale": "An error page is where I most need to read clearly to recover. Faint blue and gray on white at low vision means I cannot read what went wrong or my way out.",
+    "suggested_fix": {
+      "current": "Light-blue '404' and light-gray subtext below 4.5:1",
+      "proposed": "Use darker, AA-compliant colors for the '404' label and the subtext"
+    }
+  },
+  {
+    "id": "04-accessibility-007",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "journey": "read-a-news-article",
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "finding": "Serious color-contrast failure on article meta text (.mt-5, the date / '13 min read' line) and, on sibling articles, on inline body links (p > a). Article body links fail AA.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast serious — .mt-5"
+      },
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast serious — selectors: p:nth-child(48) > a, .mt-5 (top-5-questions)"
+      },
+      {
+        "type": "text",
+        "ref": "news-how-to-choose-the-perfect-location-for-vending-machine-text.md",
+        "quote": "May 27, 2026\n13 min read"
+      }
+    ],
+    "persona_rationale": "Inline links failing contrast means I cannot distinguish them from body text at low vision, and the faint meta line is unreadable. In a 13-minute article that is a lot of unreadable secondary content.",
+    "suggested_fix": {
+      "current": "Faint gray meta text and low-contrast inline link color",
+      "proposed": "Raise meta and inline-link colors to meet 4.5:1; underline inline links so they are distinguishable without relying on color"
+    }
+  },
+  {
+    "id": "04-accessibility-008",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "journey": "read-a-news-article",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Article social-share controls are icon-only links exposed to the accessible tree as single characters 'X', 'in', 'f', 'link' with no descriptive label.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "news-how-to-choose-the-perfect-location-for-vending-machine-text.md",
+        "quote": "X\nin\nf\nlink"
+      }
+    ],
+    "persona_rationale": "My screen reader announces these as the letters 'X', 'in', 'f', 'link' with no indication they share to Twitter/X, LinkedIn, Facebook, or copy a link. I cannot tell what activating them does.",
+    "suggested_fix": {
+      "current": "Icon links with accessible names 'X', 'in', 'f', 'link'",
+      "proposed": "Add aria-label='Share on X', 'Share on LinkedIn', 'Share on Facebook', 'Copy link' to each share control"
+    }
+  },
+  {
+    "id": "04-accessibility-009",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "journey": "read-a-news-article",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Complementary/aside landmark is not at the top level (nested inside another landmark) on all three news articles.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "landmark-complementary-is-top-level moderate — .lg:block"
+      }
+    ],
+    "persona_rationale": "I navigate by landmarks. A misnested aside means my landmark rotor either skips the related-content region or reports the page structure incorrectly, so I lose a reliable way to jump around the article.",
+    "suggested_fix": {
+      "current": "<aside>/complementary nested inside main",
+      "proposed": "Move the complementary landmark to top level (direct child of body) or remove the redundant landmark role"
+    }
+  },
+  {
+    "id": "04-accessibility-010",
+    "page": "/case-studies",
+    "journey": "evaluate-trust",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Heading order is broken — an <h3> appears in a card header without a preceding <h2> in the section hierarchy.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "heading-order moderate — li:nth-child(1) > .p-5 > header > h3"
+      }
+    ],
+    "persona_rationale": "I use heading navigation to scan a page. Jumping straight to h3 without an h2 makes the case-study list look like it belongs to a parent section that doesn't exist, so I lose the structure.",
+    "suggested_fix": {
+      "current": "Card headings start at h3 with no h2 section heading",
+      "proposed": "Introduce a section h2 for the case-study list or demote card headings so the order is sequential (h1 > h2 > h3)"
+    }
+  },
+  {
+    "id": "04-accessibility-011",
+    "page": "/admin/news",
+    "journey": "admin-create-news-draft",
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "finding": "Serious aria-prohibited-attr violation in the admin news list (.text-slate-300) — an ARIA attribute is applied to an element whose role does not allow it.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "aria-prohibited-attr serious — .text-slate-300"
+      }
+    ],
+    "persona_rationale": "A prohibited ARIA attribute makes my screen reader announce garbage or silently drop the element. As an admin doing my job by screen reader, an unreliable list row undermines my ability to find and edit the right post.",
+    "suggested_fix": {
+      "current": "Prohibited ARIA attribute (e.g. aria-label on a non-interactive/incorrect role element)",
+      "proposed": "Remove the disallowed ARIA attribute or wrap the content in an element with a role that permits it"
+    }
+  },
+  {
+    "id": "04-accessibility-012",
+    "page": "/admin/media",
+    "journey": "admin-manage-content-ops",
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "finding": "Serious color-contrast failures on the media library filter counts (.mr-1) and a description paragraph (.space-y-2 > p), plus a broken heading order (h3 without preceding h2).",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "color-contrast serious — selectors: .mr-1, .space-y-2 > p (count 2)"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-media-001-load.png",
+        "quote": "filter tabs 'All assets 1 · In use 0 · Unused 1 · Needs metadata 1 · Stored 0' in faint gray"
+      },
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "heading-order moderate — h3"
+      }
+    ],
+    "persona_rationale": "The filter counts tell me how many assets are in each state — core information for managing media by keyboard and low vision. Faint gray numbers I cannot read, plus a skipped heading level, make the studio hard to operate.",
+    "suggested_fix": {
+      "current": "Faint gray filter counts/description text below 4.5:1; h3 with no h2",
+      "proposed": "Darken the count and description text to AA; fix the heading hierarchy so the section h2 precedes the h3"
+    }
+  },
+  {
+    "id": "04-accessibility-013",
+    "page": "/admin/pages/new",
+    "journey": "admin-create-seo-page",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Duplicate (non-unique) landmark on the SEO page creation wizard (.p-0) — two landmarks of the same type without distinguishing labels.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "landmark-unique moderate — .p-0"
+      }
+    ],
+    "persona_rationale": "Two identical, unlabeled landmarks mean my landmark rotor lists the same region name twice with no way to tell them apart, so I cannot navigate the page-creation wizard structurally.",
+    "suggested_fix": {
+      "current": "Two same-type landmarks with no labels",
+      "proposed": "Give each landmark a distinct aria-label, or remove the redundant landmark role"
+    }
+  },
+  {
+    "id": "04-accessibility-014",
+    "page": "/admin/news/new",
+    "journey": "admin-create-news-draft",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Complementary/aside landmark not at top level on the new-post editor (.space-y-5).",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "landmark-complementary-is-top-level moderate — .space-y-5"
+      }
+    ],
+    "persona_rationale": "A misnested complementary region in the editor breaks my ability to jump between the writing area and the cover-image/settings sidebar by landmark.",
+    "suggested_fix": {
+      "current": "Complementary landmark nested inside another landmark",
+      "proposed": "Hoist the aside to top level or drop the complementary role"
+    }
+  },
+  {
+    "id": "04-accessibility-015",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "Credibility statistics render as literal zeros — '0+' Entrepreneurs launched, '$0M+' sales, '0+' Vending locations — read verbatim by a screen reader as 'zero plus'.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "term: 0+ / definition: Entrepreneurs launched / term: $0M+ / definition: Snack/Drink sales in Vendingpreneur machines"
+      }
+    ],
+    "persona_rationale": "Sighted users may see these animate up from zero, but my screen reader announces the static DOM value 'zero plus entrepreneurs launched', which reads as the program having launched no one — the opposite of the intended proof.",
+    "suggested_fix": {
+      "current": "Stat DOM value is '0+' / '$0M+' (animation start value)",
+      "proposed": "Render the real final value in the DOM (e.g. '500+') and animate via a visual-only technique, or add an aria-label with the true figure"
+    }
+  },
+  {
+    "id": "04-accessibility-016",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "finding": "The header navigation contains two adjacent identical 'APPLY NOW' links (tab stops 7 and 8) and 'Contact' is absent from the header (footer only).",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "tabOrder stop 7 'APPLY NOW', stop 8 'APPLY NOW'"
+      },
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "navigation \"Primary\": link \"About\" ... link \"News\" (no Contact)"
+      }
+    ],
+    "persona_rationale": "Tabbing past two identical 'APPLY NOW' links in a row is confusing on a screen reader — I cannot tell why there are two or whether they differ. And needing to find Contact only in the footer means extra tab traversal for a keyboard user.",
+    "suggested_fix": {
+      "current": "Two consecutive identical 'APPLY NOW' links in the header; no header Contact link",
+      "proposed": "Remove the duplicate Apply link (or differentiate its label/purpose) and consider adding Contact to the primary nav"
+    }
+  },
+  {
+    "id": "04-accessibility-017",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "On /news first paint, a news card cover image fails to load and renders its alt text as a broken-image placeholder ('Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Items, Niche Products)').",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "third card shows broken-image icon with raw alt text 'Top 10 Profitable Products to Stock in Your Vending Machine...'"
+      }
+    ],
+    "persona_rationale": "Seeing alt text surface as a broken-image placeholder confirms the image is genuinely missing — for me that means the visual content of the card is gone, and it signals the listing is not robust to failed media.",
+    "suggested_fix": {
+      "current": "Failed cover image renders raw alt text as a broken-image placeholder",
+      "proposed": "Provide a placeholder/fallback image (e.g. next/image with a blur or default thumbnail) when the cover fails to load"
+    }
+  },
+  {
+    "id": "04-accessibility-018",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "The successful application submission is announced only as a single line of green text beside the submit button, with an empty <alert> region present in the DOM but no confirmed live announcement; no redirect to the existing /thank-you-for-applying page.",
+    "evidence": [
+      { "type": "text", "ref": "home-text.md", "quote": "- alert" },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "small green inline text \"Thanks. We received your details and will follow up shortly.\" appears beside the button; NO redirect, NO page-level confirmation"
+      }
+    ],
+    "persona_rationale": "If the success message is not pushed through an aria-live region, my screen reader never tells me the application went through. The journey log shows the automation itself resubmitted five more times because the confirmation was too subtle — I would do the same, not knowing I succeeded.",
+    "suggested_fix": {
+      "current": "Subtle inline green text; empty/unconfirmed alert region; no redirect",
+      "proposed": "Announce success via a populated aria-live='polite' region (or move focus to a success heading) and/or redirect to /thank-you-for-applying"
+    }
+  }
+]

@@ -1,113 +1,105 @@
-# Persona Review: Zoe — Confused Teenager
+# Persona Review — Zoe, Confused Teenager (16)
+
+**Lens:** Digital native, but I only know TikTok, Instagram, Snapchat. I've never used a "business" app. I expect everything to be instant, obvious, and feel modern — tap, swipe, scroll. Corporate language, long forms, walls of text, and anything that looks even slightly broken makes me close the tab.
 
 ## Summary
 
-- Pages reviewed: 6
-- Issues found: 31
-- Blockers: 2
-- Overall gut feel: 2/5
+- **Pages reviewed:** all public marketing pages (/, /about, /apply, /contact, /case-studies, /news + 3 articles, /pre-call-resources, /privacy, /terms, /thank-you-for-applying). I skipped the /admin studio entirely — no teen would ever land there, and it's not my world.
+- **Issues found:** 12
+- **Blockers:** 0 (nothing 404'd on me on the main path, but two issues come close to feeling broken)
+- **Overall gut feel:** **2.5 / 5** — It mostly works and the design is clean-ish, but it talks like a LinkedIn ad, the apply form is long, the success message is invisible, and the news page literally shows a broken image. It reads as "made for adults, half-finished," not modern.
 
-> ok so. i make stuff on tiktok and canva every day and that just _works_, you tap and it does the thing. this is like... my dad's work computer. there's words everywhere i don't know like "governance" and "canonical URL" and "funnel stage" and nobody explains anything. some screens look kinda clean ngl but the second i click into the actual builder it's a WALL of stuff. i'd close the tab.
+---
+
+## Journey Review
+
+| Journey             | Score | Could I complete it?                     | Where I'd give up                                                                                                         |
+| ------------------- | ----- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| discover-and-apply  | 2/5   | Technically yes, but I'd doubt it worked | After submit — the confirmation is one tiny line of green text, so I'd think it failed and either re-tap forever or leave |
+| contact-the-team    | 2/5   | Only if I scrolled to the very bottom    | At the top of the page — Contact isn't in the menu, so I'd assume there's no way to message them                          |
+| read-a-news-article | 3/5   | Yes                                      | Almost gave up on the listing — blank cards + a broken image made it look broken before I scrolled                        |
+| evaluate-trust      | 3/5   | Yes                                      | The About page is a wall of text; I'd skim and bail before learning who Mike is, but the reviews are genuinely convincing |
+| pre-call-prep       | 3/5   | Yes (if I had the link)                  | Fine, but it's just a list of links — no embedded videos, feels flat for a "resources" page                               |
+
+**discover-and-apply:** The "STEP INSIDE" button doesn't tell me it's an application, the form is 9 fields with 4 dropdowns asking my _budget_ and _launch timeline_ before anyone's even talked to me, and worst of all — after I hit submit, the only sign it worked is a thin green sentence next to the button. The form doesn't clear, nothing big happens. On every app I use I get a checkmark, a "Sent!", a whole new screen. I'd assume it broke.
+
+**contact-the-team:** I look at the top menu for a way to reach people. There's no Contact there — it's buried in the footer, which I never scroll to. I'd conclude you can't message them.
+
+**read-a-news-article:** The listing page shows empty white card outlines and one card has a busted image showing the file caption text. That's the #1 "this site is dead/sketchy" signal for me. Once I scrolled past it the actual article was readable and fine, with a table of contents, which was actually nice.
+
+**evaluate-trust:** The reviews ("Real People, Real Results") are good and there are a lot of them — that part I trust. But the big homepage stats say **0+ entrepreneurs, $0M+, 0+ locations**. A zero count is the universal sign that nobody's here. That undercuts all the reviews.
 
 ---
 
 ## Page-by-Page Review
 
-### /admin/pages (Pages List)
+### / (Homepage) — Gut feel 2/5
 
-**Gut feel: 3/5** — "Looks clean-ish like a real app but it's already throwing weird words at me (governance? readiness? metadata?) and I don't know what half the buttons do."
+Clean hero, but the "0+" stat counters scream fake, the copy is corporate buzzword soup, mobile scrolls sideways, and the page jumps as it loads.
 
-| #   | Category          | Finding                                                                                                                            | Severity | Why this matters to me                                                                                                                                                          |
-| --- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Copy & Labels     | "Governance", "Readiness", "Metadata", "Drafts/Published/Archived" all stacked as filter chips with no explanation                 | High     | I have literally never seen these words used like this. On TikTok stuff is just "Drafts" and "Posted". I'd be scared to click "Archived" cause I don't know if that deletes it. |
-| 2   | Copy & Labels     | The little chips "Needs review / Updating / Needs links / Metadata issues / Scheduled / Schedule failed" are jargon soup           | High     | This reads like an error log, not a thing I'm meant to use. I'd just ignore all of them and feel dumb.                                                                          |
-| 3   | Feedback & State  | The "..." menu under ACTIONS and the tiny circle icons (a blue "+" and an orange "D") in READINESS/STATUS columns have zero labels | High     | I don't know what the orange "D" circle means. Is it bad? Is my page broken? No tooltip, nothing. I'd tap it just to find out and panic.                                        |
-| 4   | Visual & Layout   | The four stat cards (All / Drafts / Published / Archived) look like buttons but I'm not sure if they're clickable or just numbers  | Medium   | On apps I use, big tappable cards = you tap them. These are ambiguous so I'd poke at them randomly.                                                                             |
-| 5   | Navigation & Flow | "Authors" and "Redirects" buttons up top look like they belong with "New SEO page" but go to totally different tools               | Medium   | They're styled almost the same so I'd expect them to be related. Surprise navigation = I get lost.                                                                              |
-| 6   | Copy & Labels     | Empty-ish state: "Showing 1 SEO page in active pages" is robotic                                                                   | Low      | A normal app would say "You've got 1 page" not "in active pages". Sounds like a database talking to me.                                                                         |
+| Category        | Finding                                                               | Severity |
+| --------------- | --------------------------------------------------------------------- | -------- |
+| Trust & Safety  | Hero stats all read "0+" / "$0M+" / "0+"                              | high     |
+| Copy & Labels   | Buzzword body copy ("launch and scale… with minimal time investment") | medium   |
+| Copy & Labels   | "STEP INSIDE" CTA doesn't say it's the apply form                     | medium   |
+| Visual & Layout | Horizontal scroll on mobile (375px)                                   | medium   |
+| Visual & Layout | Content jumps on load (CLS 0.263)                                     | medium   |
 
-### /admin/pages/new (Create New Page)
+### /apply — Gut feel 2/5
 
-**Gut feel: 4/5** — "Honestly this one's not bad? Big tappable cards, pick a type, hit the blue button — that part feels like picking a template in Canva."
+The thing they most want me to do is the most off-putting screen: long form, invisible success.
 
-| #   | Category         | Finding                                                                                                                                  | Severity | Why this matters to me                                                                                                                             |
-| --- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7   | Copy & Labels    | "Choose the page path first so the builder can start with scoped templates and AI context" — what is a "page path"? "scoped templates"?? | Medium   | First sentence and I already don't get it. Just say "Pick what kind of page you want."                                                             |
-| 8   | Feedback & State | Two cards ("From template", "AI-assisted template") are greyed with "Coming soon" but still look kinda clickable                         | Low      | I'd tap them anyway hoping for the AI one (that's the fun one!) and be let down. At least the label is there though.                               |
-| 9   | Visual & Layout  | "Page type" and "Starting point" are two separate sections but it's not obvious I have to pick from BOTH before "Start building"         | Medium   | I might pick a page type, hit the blue button, and not realise there's a second choice. The "SELECTED SETUP" box helps a bit but I'd skim past it. |
-| 10  | Copy & Labels    | Difference between "SEO / Resource page", "Landing page", "Blog page" isn't clear to a normal person                                     | Medium   | I don't know what SEO even is really. I'd just pick "Blog page" cause it's the only word I recognise.                                              |
+| Category         | Finding                                                          | Severity |
+| ---------------- | ---------------------------------------------------------------- | -------- |
+| Feedback & State | Invisible submit confirmation (tiny green line)                  | critical |
+| Forms & Input    | 9 fields / 4 required dropdowns on first contact                 | high     |
+| Forms & Input    | Only native browser validation tooltips, no styled inline errors | low      |
 
-### /admin/pages/[id] (Page Builder Editor) — THE BIG ONE
+### /news (Blog) — Gut feel 2/5
 
-**Gut feel: 1/5** — "Nope. This is the boomer-est software I have ever seen, it's a thousand tiny boxes and words and a phone screen makes it WORSE — I'd close it immediately."
+First paint looks broken.
 
-| #   | Category                  | Finding                                                                                                                                                             | Severity | Why this matters to me                                                                                                                                                            |
-| --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 11  | Visual & Layout           | THREE columns crammed in (blocks list, live preview, SEO/publish panel) — total information overload on load                                                        | Blocker  | My eyes don't know where to go. There's like 82 buttons. Apps I use show me ONE thing at a time. I'd give up before doing anything.                                               |
-| 12  | Copy & Labels             | "Readiness and publish", "Next required step", "Governance comments", "Revision history", "Lifecycle", "Funnel stage", "Topic cluster", "Canonical / Preferred URL" | Blocker  | This is a different language. I counted like 10 words I don't understand just sitting on screen. I genuinely could not use this without someone teaching me for an hour.          |
-| 13  | Forms & Input             | The SEO panel has a MASSIVE form — dozens of fields (meta description, og title, breadcrumb, sitemap checkboxes, review period, scheduled publish...)               | Critical | This is the "settings page with 50 options" nightmare. I'd never fill all that out. I'd just type a title and hope for the best.                                                  |
-| 14  | Navigation & Flow         | Two near-identical buttons "Copy editor link" and "Copy public URL" sit side by side                                                                                | High     | What's the difference?? Which one do I send to my friend? I'd copy the wrong one and not realise.                                                                                 |
-| 15  | Feedback & State          | "Save draft" exists AND there's tiny text "Drafts save automatically" — so do I need to save or not?                                                                | High     | Snapchat/Insta never make me hit save, it's just saved. Seeing a Save button makes me think it WON'T save unless I press it, but then it says auto-save. Confusing and stressful. |
-| 16  | Copy & Labels             | Block list items are super verbose: "Hero1. Vending in Colleges That Works Around Campus LifeSection 1, column 1" all jammed together                               | Medium   | It's a clickable thing but the text is a run-on with no spaces between the parts. Looks broken.                                                                                   |
-| 17  | Visual & Layout (mobile)  | On phone the editor collapses to a vertical stack of pill buttons (Pages/Blocks/SEO/Save draft/Live preview/Editor link/Public URL) then a cramped preview          | Critical | This is unusable on a phone and I do EVERYTHING on my phone. The blocks have tiny "::" and "..." icons I can barely tap.                                                          |
-| 18  | Feedback & State          | Tiny eye icons (👁) floating next to text blocks with no label                                                                                                      | Medium   | Is that hide? preview? I don't know. Icon-only with no text = I'm guessing.                                                                                                       |
-| 19  | Trust & Safety            | "Publish" is a big blue button right there — for a teen this feels scary cause I don't know if it goes LIVE to the actual internet for everyone                     | High     | There's no clear "are you sure?" vibe before something becomes public. I'd be terrified of accidentally publishing.                                                               |
-| 20  | Copy & Labels             | The purple floating "AI" bubble is the ONE thing that looks fun/familiar but it's unlabeled — what does it even do?                                                 | Low      | This is the only button I actually _want_ to tap (AI = cool), but I have no idea what it does so I'm cautious.                                                                    |
-| 21  | Accessibility & Inclusion | Sign-out button at bottom-left is overlapped by a dark circle avatar covering the first letter ("N" over "Sign out")                                                | Medium   | It looks glitchy/broken, which makes the whole thing feel unfinished and untrustworthy.                                                                                           |
+| Category        | Finding                                                   | Severity |
+| --------------- | --------------------------------------------------------- | -------- |
+| Visual & Layout | Blank card outlines + broken image (500) showing alt text | high     |
+| Copy & Labels   | Nav says "NEWS", page title says "BLOG"                   | medium   |
 
-### /admin/pages/authors (Authors)
+### /contact — Gut feel 2/5
 
-**Gut feel: 3/5** — "A plain form, fine, but it just throws empty boxes at me with words like 'Slug' and 'Avatar asset ID' and no help text."
+| Category          | Finding                                                  | Severity |
+| ----------------- | -------------------------------------------------------- | -------- |
+| Navigation & Flow | Contact only reachable from the footer, not the top menu | medium   |
 
-| #   | Category      | Finding                                                                   | Severity | Why this matters to me                                                                                                                                 |
-| --- | ------------- | ------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 22  | Copy & Labels | "Slug" — literally no idea what that is                                   | High     | A slug is a bug?? There's no placeholder example showing me what to type. I'd leave it blank and probably break it.                                    |
-| 23  | Copy & Labels | "Avatar asset ID" instead of just "Profile picture" with an upload button | High     | On every app I use, a profile pic is tap-to-upload-a-photo. Asking me for an "asset ID" (a number? a code??) makes no sense. Where do I even get that. |
-| 24  | Forms & Input | No placeholders or examples in any field, no hint which are required      | Medium   | The boxes are just empty. I don't know the format. Insta always shows me example text inside the box.                                                  |
-| 25  | Forms & Input | No avatar preview / image picker — just a text field                      | Medium   | I can't see the photo I'm "adding". Feels like I'm filling a tax form, not making a profile.                                                           |
+### /about — Gut feel 3/5
 
-### /admin/pages/redirects (Redirects)
+| Category      | Finding                                        | Severity |
+| ------------- | ---------------------------------------------- | -------- |
+| Copy & Labels | Wall-of-text founder story, no skimmable TL;DR | low      |
 
-**Gut feel: 2/5** — "I genuinely don't know what a 'redirect' is or why I'd ever need this, and the dropdown has '301 permanent / 302 temporary' which means nothing to me."
+### /case-studies, /pre-call-resources, /privacy, /terms, /thank-you-for-applying — Gut feel 3/5
 
-| #   | Category        | Finding                                                                                                                         | Severity | Why this matters to me                                                                                                                         |
-| --- | --------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 26  | Copy & Labels   | The whole concept "Redirect Manager / Create and inspect builder redirects across page prefixes" is total jargon                | High     | I have no clue what this page is for. "Page prefixes"? I'd never come here, and if I landed here by accident I'd be confused about where I am. |
-| 27  | Forms & Input   | Status dropdown "301 permanent / 302 temporary / 307 / 308" — random numbers                                                    | High     | Why are there numbers? Just say "Permanent" or "Temporary". The numbers make me think I'll pick wrong and break something.                     |
-| 28  | Copy & Labels   | Empty table just shows column headers (OLD PATH / DESTINATION / STATUS...) with nothing below and no "nothing here yet" message | Medium   | Looks like it's loading forever or broken. A good empty state would say "No redirects yet".                                                    |
-| 29  | Visual & Layout | "Old path" / "Destination" with placeholders like "/resources/old-page" assume I understand URL paths                           | Medium   | The "/" stuff looks like code. I don't write URLs by hand, I just tap links.                                                                   |
-
-### /admin/pages/block-preview-audit (Block Preview Audit)
-
-**Gut feel: 2/5** — "This is a giant never-ending scroll of repeated previews — it looks like a dev's test page, not something a person is supposed to use."
-
-| #   | Category        | Finding                                                                                                               | Severity | Why this matters to me                                                                                                                                                          |
-| --- | --------------- | --------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 30  | Copy & Labels   | "Block preview audit / Compare every picker preview against the real resource-page render using mocked block content" | High     | "picker preview", "render", "mocked block content" — this is a sentence for programmers, not me. I'd bounce instantly.                                                          |
-| 31  | Visual & Layout | Endlessly long page (like 18,000px tall) showing every block style over and over                                      | Medium   | The scroll never ends. On mobile especially this feels broken/infinite. I have no idea what I'm supposed to DO here — there are no buttons to actually use it. It's a dead end. |
+Functional and not offensive to me, but plain. (Note: the real /thank-you-for-applying page exists and looks fine — frustrating that the apply form never sends me here.)
 
 ---
 
 ## Blockers
 
-1. **The Page Builder Editor is information overload (Issue #11).** Three dense columns and 80+ buttons on first load. As someone who only knows tap-and-scroll social apps, I cannot find a starting point. I would close the tab before creating anything.
-2. **The editor's vocabulary is a foreign language (Issue #12).** "Governance", "Readiness", "Canonical URL", "Funnel stage", "Lifecycle", "Topic cluster" — too many unknown terms on one screen. Without a tutorial or plain-English labels, I literally cannot operate this.
+None that hard-stopped me, but two come dangerously close to feeling broken:
+
+- The **invisible apply confirmation** (10-teenager-001) — I'd believe submission failed.
+- The **broken news image + blank cards** (10-teenager-004) — I'd believe the site is broken/abandoned.
 
 ---
 
 ## My Top 10 Issues
 
-1. **Page Builder Editor is a wall of 80+ buttons across 3 columns** (Blocker) — I don't know where to even look or start.
-2. **Editor is full of words I've never seen** — governance, canonical, funnel stage, lifecycle, topic cluster (Blocker).
-3. **The giant SEO settings form with dozens of fields** (Critical) — the exact "50-option settings page" that makes me give up.
-4. **Editor on mobile is basically unusable** (Critical) — I live on my phone and this is tiny pills + a cramped preview.
-5. **"Save draft" button vs "auto-saves" text contradiction** (High) — I can't tell if my work is safe, that's stressful.
-6. **"Copy editor link" vs "Copy public URL" — two same-looking buttons, no idea which is which** (High).
-7. **"Publish" feels scary with no clear "this goes live to everyone" warning** (High) — I'm afraid of accidentally posting publicly.
-8. **"Slug" and "Avatar asset ID" on the Authors form** (High) — make me upload a photo by tapping, don't ask me for an "ID".
-9. **Redirects page + "301 permanent / 302 temporary" numbers** (High) — no clue what any of this means or why it exists.
-10. **Jargon filter chips on the pages list** — "Governance / Readiness / Needs links / Metadata issues" (High) — looks like an error log, makes me feel dumb.
-
----
-
-_File written by Zoe (Confused Teenager persona)._
+1. **(critical) Apply success is invisible** — one tiny green line, no redirect, form stays full. I'd think it didn't work and bail or spam submit.
+2. **(high) Homepage stats all show "0+"** — a zero count = "this is fake/dead" to me.
+3. **(high) Apply form is long** — 9 fields, 4 dropdowns asking budget/timeline up front. Feels like a job application.
+4. **(high) News page shows a broken image + blank cards on load** — the classic "sketchy/abandoned site" signal.
+5. **(medium) "STEP INSIDE" button is vague** — doesn't tell me it's the apply form.
+6. **(medium) Corporate buzzword copy** — reads like an ad for adults, not made for me.
+7. **(medium) "NEWS" menu → "BLOG" page** — same thing, two names, makes me second-guess.
+8. **(medium) Contact hidden in the footer** — no way to reach them from the top menu.
+9. **(medium) Horizontal scroll on mobile** — feels glitchy and not made for phones.
+10. **(medium) Page jumps on load (CLS 0.263)** — feels old and laggy.

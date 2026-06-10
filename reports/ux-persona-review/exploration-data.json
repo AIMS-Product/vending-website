@@ -1,1821 +1,4340 @@
-[
-  {
-    "slug": "pages-list",
-    "url": "http://localhost:3000/admin/pages",
-    "name": "Pages List",
-    "status": "OK",
-    "console": [],
-    "network": [],
-    "shots": [
-      "pages-list-001-load.png",
-      "pages-list-002-mobile.png",
-      "pages-list-003-tablet.png"
-    ],
-    "inventory": {
-      "buttons": [
+{
+  "base": "http://localhost:3000",
+  "date": "2026-06-10T00:40:54.170Z",
+  "testEmail": "test+ux-review-1781052054170@example.com",
+  "pages": [
+    {
+      "route": "/",
+      "slug": "home",
+      "status": 200,
+      "finalUrl": "/",
+      "screenshots": {
+        "load": "home-001-load.png",
+        "full": "home-002-full.png"
+      },
+      "textExtract": "text/home-text.md",
+      "metrics": {
+        "dcl": 155,
+        "load": 161,
+        "cls": 0.263
+      },
+      "axeViolationCount": 3,
+      "interactions": [
         {
-          "text": "Collapse sidebar",
-          "disabled": false
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Sign out",
-          "disabled": false
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Search",
-          "disabled": false
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Duplicate page",
-          "disabled": false
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Publish page",
-          "disabled": false
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Archive page",
-          "disabled": false
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "APPLY NOW",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
         }
       ],
-      "links": [
+      "forms": [],
+      "skips": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
         {
-          "text": "SEO pages: SEO page content",
-          "href": "/admin/pages"
+          "viewport": "mobile-375",
+          "screenshot": "home-003-mobile.png",
+          "issues": "horizontal scroll present"
         },
         {
-          "text": "Media library: Images and source assets",
-          "href": "/admin/media"
+          "viewport": "tablet-768",
+          "screenshot": "home-004-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x17px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/about",
+      "slug": "about",
+      "status": 200,
+      "finalUrl": "/about",
+      "screenshots": {
+        "load": "about-001-load.png",
+        "full": "about-002-full.png"
+      },
+      "textExtract": "text/about-text.md",
+      "metrics": {
+        "dcl": 72,
+        "load": 133,
+        "cls": 0.263
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Settings: Users and access",
-          "href": "/admin/settings/users"
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Authors",
-          "href": "/admin/pages/authors"
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Redirects",
-          "href": "/admin/pages/redirects"
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "New SEO page",
-          "href": "/admin/pages/new"
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "All1drafts + published",
-          "href": "/admin/pages"
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Drafts1needs work",
-          "href": "/admin/pages?status=draft"
+          "element": "a",
+          "bucket": "safe",
+          "text": "APPLY NOW",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Published0publicly visible",
-          "href": "/admin/pages?status=published"
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Archived5retired",
-          "href": "/admin/pages?status=archived"
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
         },
         {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [],
+      "skips": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "about-003-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "about-004-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x17px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/apply",
+      "slug": "apply",
+      "status": 200,
+      "finalUrl": "/apply",
+      "screenshots": {
+        "load": "apply-001-load.png",
+        "full": "apply-002-full.png"
+      },
+      "textExtract": "text/apply-text.md",
+      "metrics": {
+        "dcl": 78,
+        "load": 132,
+        "cls": 0.086
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [
+        {
+          "form": "form#1",
+          "fields": 9,
+          "mode": "no-valid",
+          "phases": {
+            "empty": "no visible validation errors after empty submit",
+            "invalid": "no visible validation errors on invalid data — entered values preserved",
+            "valid": "skipped — valid submission covered by journey run (avoids duplicate records)"
+          },
+          "screenshots": [
+            "apply-003-form-empty-submit.png",
+            "apply-004-form-invalid-submit.png"
+          ]
+        }
+      ],
+      "skips": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "apply-005-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "apply-006-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x17px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/case-studies",
+      "slug": "case-studies",
+      "status": 200,
+      "finalUrl": "/case-studies",
+      "screenshots": {
+        "load": "case-studies-001-load.png",
+        "full": "case-studies-002-full.png"
+      },
+      "textExtract": "text/case-studies-text.md",
+      "metrics": {
+        "dcl": 108,
+        "load": 169,
+        "cls": 0
+      },
+      "axeViolationCount": 1,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "APPLY NOW",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [],
+      "skips": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "case-studies-003-mobile.png",
+          "issues": "horizontal scroll present"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "case-studies-004-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x17px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/contact",
+      "slug": "contact",
+      "status": 200,
+      "finalUrl": "/contact",
+      "screenshots": {
+        "load": "contact-001-load.png",
+        "full": "contact-002-full.png"
+      },
+      "textExtract": "text/contact-text.md",
+      "metrics": {
+        "dcl": 125,
+        "load": 128,
+        "cls": 0.066
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [
+        {
+          "form": "form#1",
+          "fields": 6,
+          "mode": "fill-only",
+          "phases": {
+            "note": "external-bucket form: filled for visual review, NOT submitted (outbound side effects)"
+          },
+          "screenshots": ["contact-004-form-filled-not-submitted.png"]
+        }
+      ],
+      "skips": [
+        {
+          "element": "button \"SEND MESSAGE\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        }
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "contact-005-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "contact-006-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x17px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/news",
+      "slug": "news",
+      "status": 200,
+      "finalUrl": "/news",
+      "screenshots": {
+        "load": "news-001-load.png",
+        "full": "news-002-full.png"
+      },
+      "textExtract": "text/news-text.md",
+      "metrics": {
+        "dcl": 522,
+        "load": 529,
+        "cls": 0.263
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOW TO CHOOSE THE PERFECT LOCATION FOR YOUR VENDING MACHINE IN 2025 Are you stru",
+          "result": "links to /news/how-to-choose-the-perfect-location-for-vending-machine (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TOP 5 QUESTIONS TO ASK BEFORE JOINING A VENDING ENTREPRENEURSHIP PROGRAM Ask the",
+          "result": "links to /news/top-5-questions-vending-entrepreneurship-program (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TOP 10 PROFITABLE PRODUCTS TO STOCK IN YOUR VENDING MACHINE (SNACKS, HEALTHY ITE",
+          "result": "links to /news/top-10-profitable-products-to-stock-in-your-vending-machine (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "APPLY NOW",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [],
+      "skips": [],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ],
+      "networkErrors": [
+        "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com%2F67f65d37ab8dcabf1595af84%2F694bcfaf10178c3a1340c777_ChatGPT%2520Image%2520Dec%252024%252C%25202025%252C%252005_03_57%2520PM.png&w=640&q=75"
+      ],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "news-003-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "news-004-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x17px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "slug": "news-how-to-choose-the-perfect-location-for-vending-machine",
+      "status": 200,
+      "finalUrl": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "screenshots": {
+        "load": "news-how-to-choose-the-perfect-location-for-vending-machine-001-load.png",
+        "full": "news-how-to-choose-the-perfect-location-for-vending-machine-002-full.png"
+      },
+      "textExtract": "text/news-how-to-choose-the-perfect-location-for-vending-machine-text.md",
+      "metrics": {
+        "dcl": 1743,
+        "load": 2055,
+        "cls": 0.263
+      },
+      "axeViolationCount": 2,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "BLOG",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "APPLY NOW",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [],
+      "skips": [
+        {
+          "element": "a \"Share on X\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "a \"Share on LinkedIn\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "a \"Share on Facebook\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "a \"Open article link\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        }
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "news-how-to-choose-the-perfect-location-for-vending-machine-004-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "news-how-to-choose-the-perfect-location-for-vending-machine-005-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x20px",
+        "small touch target: a \"BLOG\" 38x20px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/news/top-5-questions-vending-entrepreneurship-program",
+      "slug": "news-top-5-questions-vending-entrepreneurship-program",
+      "status": 200,
+      "finalUrl": "/news/top-5-questions-vending-entrepreneurship-program",
+      "screenshots": {
+        "load": "news-top-5-questions-vending-entrepreneurship-program-001-load.png",
+        "full": "news-top-5-questions-vending-entrepreneurship-program-002-full.png"
+      },
+      "textExtract": "text/news-top-5-questions-vending-entrepreneurship-program-text.md",
+      "metrics": {
+        "dcl": 539,
+        "load": 834,
+        "cls": 0.263
+      },
+      "axeViolationCount": 3,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "BLOG",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "APPLY NOW",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [],
+      "skips": [
+        {
+          "element": "a \"Share on X\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "a \"Share on LinkedIn\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "a \"Share on Facebook\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "a \"Open article link\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "a \"vending entrepreneurship program\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        }
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "news-top-5-questions-vending-entrepreneurship-program-004-mobile.png",
+          "issues": "horizontal scroll present"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "news-top-5-questions-vending-entrepreneurship-program-005-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x20px",
+        "small touch target: a \"BLOG\" 38x20px",
+        "small touch target: a \"vending entrepreneurship program\" 316x21px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/news/top-10-profitable-products-to-stock-in-your-vending-machine",
+      "slug": "news-top-10-profitable-products-to-stock-in-your-vending-mac",
+      "status": 200,
+      "finalUrl": "/news/top-10-profitable-products-to-stock-in-your-vending-machine",
+      "screenshots": {
+        "load": "news-top-10-profitable-products-to-stock-in-your-vending-mac-001-load.png",
+        "full": "news-top-10-profitable-products-to-stock-in-your-vending-mac-002-full.png"
+      },
+      "textExtract": "text/news-top-10-profitable-products-to-stock-in-your-vending-mac-text.md",
+      "metrics": {
+        "dcl": 566,
+        "load": 1207,
+        "cls": 0.263
+      },
+      "axeViolationCount": 3,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "BLOG",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "APPLY NOW",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [],
+      "skips": [
+        {
+          "element": "a \"Share on X\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "a \"Share on LinkedIn\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "a \"Share on Facebook\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "a \"Open article link\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "a \"Vending Preneurs\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        }
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "news-top-10-profitable-products-to-stock-in-your-vending-mac-004-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "news-top-10-profitable-products-to-stock-in-your-vending-mac-005-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x20px",
+        "small touch target: a \"BLOG\" 38x20px",
+        "small touch target: a \"Vending Preneurs\" 164x21px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+      "slug": "blog-how-to-choose-the-perfect-location-for-vending-machine",
+      "status": 404,
+      "finalUrl": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+      "screenshots": {
+        "load": "blog-how-to-choose-the-perfect-location-for-vending-machine-001-load.png",
+        "full": "blog-how-to-choose-the-perfect-location-for-vending-machine-002-full.png"
+      },
+      "textExtract": "text/blog-how-to-choose-the-perfect-location-for-vending-machine-text.md",
+      "metrics": {
+        "dcl": 569,
+        "load": 569,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [],
+      "forms": [],
+      "skips": [],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "networkErrors": [
+        "404 /blog/how-to-choose-the-perfect-location-for-vending-machine",
+        "404 /blog/how-to-choose-the-perfect-location-for-vending-machine"
+      ],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "blog-how-to-choose-the-perfect-location-for-vending-machine-003-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "blog-how-to-choose-the-perfect-location-for-vending-machine-004-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": ["legacy blog path — checking redirect behaviour"]
+    },
+    {
+      "route": "/pre-call-resources",
+      "slug": "pre-call-resources",
+      "status": 200,
+      "finalUrl": "/pre-call-resources",
+      "screenshots": {
+        "load": "pre-call-resources-001-load.png",
+        "full": "pre-call-resources-002-full.png"
+      },
+      "textExtract": "text/pre-call-resources-text.md",
+      "metrics": {
+        "dcl": 60,
+        "load": 135,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [],
+      "skips": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "pre-call-resources-003-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "pre-call-resources-004-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x17px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/privacy",
+      "slug": "privacy",
+      "status": 200,
+      "finalUrl": "/privacy",
+      "screenshots": {
+        "load": "privacy-001-load.png",
+        "full": "privacy-002-full.png"
+      },
+      "textExtract": "text/privacy-text.md",
+      "metrics": {
+        "dcl": 169,
+        "load": 174,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "APPLY NOW",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [],
+      "skips": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "privacy-003-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "privacy-004-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x17px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/terms",
+      "slug": "terms",
+      "status": 200,
+      "finalUrl": "/terms",
+      "screenshots": {
+        "load": "terms-001-load.png",
+        "full": "terms-002-full.png"
+      },
+      "textExtract": "text/terms-text.md",
+      "metrics": {
+        "dcl": 90,
+        "load": 145,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "APPLY NOW",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [],
+      "skips": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "terms-003-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "terms-004-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x17px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/thank-you-for-applying",
+      "slug": "thank-you-for-applying",
+      "status": 200,
+      "finalUrl": "/thank-you-for-applying",
+      "screenshots": {
+        "load": "thank-you-for-applying-001-load.png",
+        "full": "thank-you-for-applying-002-full.png"
+      },
+      "textExtract": "text/thank-you-for-applying-text.md",
+      "metrics": {
+        "dcl": 54,
+        "load": 128,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [],
+      "skips": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "thank-you-for-applying-003-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "thank-you-for-applying-004-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x17px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/resources/vending-sporting-arenas",
+      "slug": "resources-vending-sporting-arenas",
+      "status": 404,
+      "finalUrl": "/resources/vending-sporting-arenas",
+      "screenshots": {
+        "load": "resources-vending-sporting-arenas-001-load.png",
+        "full": "resources-vending-sporting-arenas-002-full.png"
+      },
+      "textExtract": "text/resources-vending-sporting-arenas-text.md",
+      "metrics": {
+        "dcl": 533,
+        "load": 534,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [],
+      "forms": [],
+      "skips": [],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "networkErrors": [
+        "404 /resources/vending-sporting-arenas",
+        "404 /resources/vending-sporting-arenas"
+      ],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "resources-vending-sporting-arenas-003-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "resources-vending-sporting-arenas-004-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "CMS draft page — expected 404 publicly (no published seo_pages)"
+      ]
+    },
+    {
+      "route": "/this-page-does-not-exist",
+      "slug": "this-page-does-not-exist",
+      "status": 200,
+      "finalUrl": "/this-page-does-not-exist",
+      "screenshots": {
+        "load": "this-page-does-not-exist-001-load.png",
+        "full": "this-page-does-not-exist-002-full.png"
+      },
+      "textExtract": "text/this-page-does-not-exist-text.md",
+      "metrics": {
+        "dcl": 347,
+        "load": 414,
+        "cls": 0
+      },
+      "axeViolationCount": 2,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vendingpreneurs home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "ABOUT",
+          "result": "links to /about (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "RESOURCES",
+          "result": "links to /pre-call-resources (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CASE STUDIES",
+          "result": "links to /case-studies (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "NEWS",
+          "result": "links to /news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "STEP INSIDE",
+          "result": "links to /apply (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Back to home",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "HOME",
+          "result": "links to / (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "CONTACT US",
+          "result": "links to /contact (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "TERMS",
+          "result": "links to /terms (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "PRIVACY POLICY",
+          "result": "links to /privacy (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [],
+      "skips": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "this-page-does-not-exist-003-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "this-page-does-not-exist-004-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "404 page check",
+        "small touch target: a \"ABOUT\" 51x20px",
+        "small touch target: a \"RESOURCES\" 86x20px",
+        "small touch target: a \"CASE STUDIES\" 102x20px",
+        "small touch target: a \"NEWS\" 44x20px",
+        "small touch target: a \"HOME\" 43x17px",
+        "small touch target: a \"CONTACT US\" 93x17px",
+        "small touch target: a \"TERMS\" 50x17px",
+        "small touch target: a \"PRIVACY POLICY\" 120x17px"
+      ]
+    },
+    {
+      "route": "/admin/login",
+      "slug": "admin-login",
+      "status": 200,
+      "finalUrl": "/admin/pages",
+      "screenshots": {
+        "load": "admin-login-001-load.png",
+        "full": "admin-login-002-full.png"
+      },
+      "textExtract": "text/admin-login-text.md",
+      "metrics": {
+        "dcl": 781,
+        "load": 781,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "SEO pages : SEO page content",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Media library : Images and source assets",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Settings : Users and access",
+          "result": "links to /admin/settings/users (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Create page",
+          "result": "links to /admin/pages/new (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "All 4 drafts + published",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Drafts 4 needs work",
+          "result": "links to /admin/pages?status=draft (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Published 0 publicly visible",
+          "result": "links to /admin/pages?status=published (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Archived 2 retired",
+          "result": "links to /admin/pages?status=archived (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
           "text": "All",
-          "href": "/admin/pages"
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
         },
         {
+          "element": "a",
+          "bucket": "safe",
           "text": "Drafts",
-          "href": "/admin/pages?status=draft"
+          "result": "links to /admin/pages?status=draft (verified via route visits)",
+          "screenshot": null
         },
         {
+          "element": "a",
+          "bucket": "safe",
           "text": "Published",
-          "href": "/admin/pages?status=published"
+          "result": "links to /admin/pages?status=published (verified via route visits)",
+          "screenshot": null
         },
         {
+          "element": "a",
+          "bucket": "safe",
           "text": "Archived",
-          "href": "/admin/pages?status=archived"
+          "result": "links to /admin/pages?status=archived (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Updated newest",
-          "href": "/admin/pages"
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Updated oldest",
-          "href": "/admin/pages?sort=updated-asc"
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages?sort=updated-asc (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Published newest",
-          "href": "/admin/pages?sort=published-desc"
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages?sort=published-desc (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Title A-Z",
-          "href": "/admin/pages?sort=title-asc"
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages?sort=title-asc (verified via route visits)",
+          "screenshot": null
         },
         {
+          "element": "a",
+          "bucket": "safe",
           "text": "All metadata",
-          "href": "/admin/pages"
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
         },
         {
+          "element": "a",
+          "bucket": "safe",
           "text": "Needs review",
-          "href": "/admin/pages?view=needs-review"
+          "result": "links to /admin/pages?view=needs-review (verified via route visits)",
+          "screenshot": null
         },
         {
+          "element": "a",
+          "bucket": "safe",
           "text": "Updating",
-          "href": "/admin/pages?view=updating"
+          "result": "links to /admin/pages?view=updating (verified via route visits)",
+          "screenshot": null
         },
         {
+          "element": "a",
+          "bucket": "safe",
           "text": "Needs links",
-          "href": "/admin/pages?view=orphaned"
+          "result": "links to /admin/pages?view=orphaned (verified via route visits)",
+          "screenshot": null
         },
         {
+          "element": "a",
+          "bucket": "safe",
           "text": "Metadata issues",
-          "href": "/admin/pages?view=metadata-issues"
+          "result": "links to /admin/pages?view=metadata-issues (verified via route visits)",
+          "screenshot": null
         },
         {
+          "element": "a",
+          "bucket": "safe",
           "text": "Scheduled",
-          "href": "/admin/pages?view=scheduled"
+          "result": "links to /admin/pages?view=scheduled (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Schedule failed",
-          "href": "/admin/pages?view=schedule-failed"
+          "element": "a",
+          "bucket": "safe",
+          "text": "How to Start a Vending Business for Passive Income",
+          "result": "links to /admin/pages/bb27a586-a967-49a1-8f2d-c1a0fed87e98 (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Vending in Colleges",
-          "href": "/admin/pages/f7eb8024-bbba-42d9-8b13-932e337f7e32"
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages/bb27a586-a967-49a1-8f2d-c1a0fed87e98 (verified via route visits)",
+          "screenshot": null
         },
         {
-          "text": "Edit page",
-          "href": "/admin/pages/f7eb8024-bbba-42d9-8b13-932e337f7e32"
-        }
-      ],
-      "inputs": [
-        {
-          "type": "text",
-          "name": "q",
-          "label": "Search SEO pages",
-          "placeholder": "Search title, keyword, or URL",
-          "required": false
-        }
-      ],
-      "headings": [
-        {
-          "level": "H2",
-          "text": "Studio"
-        },
-        {
-          "level": "H1",
-          "text": "SEO pages"
-        }
-      ],
-      "counts": {
-        "buttons": 6,
-        "links": 27,
-        "inputs": 1
-      }
-    },
-    "interactions": [],
-    "skips": [
-      {
-        "element": "Sign out",
-        "reason": "destructive/external — screenshotted not clicked"
-      },
-      {
-        "element": "Sign out",
-        "reason": "destructive/external — screenshotted not clicked"
-      }
-    ],
-    "notes": [],
-    "httpStatus": 200
-  },
-  {
-    "slug": "pages-new",
-    "url": "http://localhost:3000/admin/pages/new",
-    "name": "Create New Page",
-    "form": true,
-    "status": "OK",
-    "console": [],
-    "network": [],
-    "shots": [
-      "pages-new-004-load.png",
-      "pages-new-005-form-filled.png",
-      "pages-new-006-mobile.png",
-      "pages-new-007-tablet.png"
-    ],
-    "inventory": {
-      "buttons": [
-        {
-          "text": "SEO / Resource pageLong-form search page for resources, guides, and services.",
-          "disabled": false
-        },
-        {
-          "text": "Blog pageArticle-style page with a strong introduction and CTA.",
-          "disabled": false
-        },
-        {
-          "text": "Landing pageCampaign page for a focused offer or conversion path.",
-          "disabled": false
-        },
-        {
-          "text": "Video pageVideo-led page with supporting copy and conversion blocks.",
-          "disabled": false
-        },
-        {
-          "text": "Blank pageStart with an empty editable canvas.",
-          "disabled": false
-        },
-        {
-          "text": "Resource defaultHero, supporting copy, proof, FAQ, and CTA.",
-          "disabled": false
-        },
-        {
-          "text": "Start building",
-          "disabled": false
-        },
-        {
-          "text": "From templateComing soonUse a team-approved saved template.",
-          "disabled": true
-        },
-        {
-          "text": "AI-assisted templateComing soonUse an approved template from the SEO agent.",
-          "disabled": true
-        }
-      ],
-      "links": [],
-      "inputs": [],
-      "headings": [
-        {
-          "level": "H1",
-          "text": "New SEO page"
-        },
-        {
-          "level": "H2",
-          "text": "Create page"
-        },
-        {
-          "level": "H3",
-          "text": "Page type"
-        },
-        {
-          "level": "H3",
-          "text": "Starting point"
-        }
-      ],
-      "counts": {
-        "buttons": 9,
-        "links": 0,
-        "inputs": 0
-      }
-    },
-    "interactions": [],
-    "skips": [],
-    "notes": [
-      "Form filled with test data; submission intentionally NOT performed to avoid creating orphan seed pages (creation flow reviewed visually)."
-    ],
-    "httpStatus": 200
-  },
-  {
-    "slug": "pages-editor",
-    "url": "http://localhost:3000/admin/pages/f7eb8024-bbba-42d9-8b13-932e337f7e32",
-    "name": "Page Builder Editor",
-    "editor": true,
-    "status": "OK",
-    "console": [],
-    "network": [],
-    "shots": [
-      "pages-editor-008-load.png",
-      "pages-editor-017-mobile.png",
-      "pages-editor-018-tablet.png"
-    ],
-    "inventory": {
-      "buttons": [
-        {
-          "text": "Collapse blocks sidebar",
-          "disabled": false
-        },
-        {
-          "text": "Save draft",
-          "disabled": false
-        },
-        {
-          "text": "Live preview",
-          "disabled": false
-        },
-        {
-          "text": "Copy editor linkEditor link",
-          "disabled": false
-        },
-        {
-          "text": "Copy public URLPublic URL",
-          "disabled": false
-        },
-        {
-          "text": "Collapse SEO sidebar",
-          "disabled": false
-        },
-        {
-          "text": "Hero1. Vending in Colleges That Works Around Campus LifeSection 1, column 1",
-          "disabled": false
-        },
-        {
-          "text": "Edit Hero settings",
-          "disabled": false
-        },
-        {
-          "text": "Rich text2. Campus image placeholderSection 1, column 1",
-          "disabled": false
-        },
-        {
-          "text": "Edit Rich text settings",
-          "disabled": false
-        },
-        {
-          "text": "Rich text3. A smarter way to serve your campus communitySection 2, column 1",
-          "disabled": false
-        },
-        {
-          "text": "Edit Rich text settings",
-          "disabled": false
-        },
-        {
-          "text": "Card grid4. Vending options for collegesSection 3, column 1",
-          "disabled": false
-        },
-        {
-          "text": "Edit Card grid settings",
-          "disabled": false
-        },
-        {
-          "text": "Rich text5. Designed around your site, students, and scheduleSection 4, column 1",
-          "disabled": false
-        },
-        {
-          "text": "Edit Rich text settings",
-          "disabled": false
-        },
-        {
-          "text": "FAQ6. Vending in colleges: FAQsSection 5, column 1",
-          "disabled": false
-        },
-        {
-          "text": "Edit FAQ settings",
-          "disabled": false
-        },
-        {
-          "text": "CTA7. Book a vending consultationSection 6, column 1",
-          "disabled": false
-        },
-        {
-          "text": "Edit CTA settings",
-          "disabled": false
-        },
-        {
-          "text": "Move section 1",
-          "disabled": false
-        },
-        {
-          "text": "Section and block actions",
-          "disabled": false
-        },
-        {
-          "text": "Hide eyebrow",
-          "disabled": false
-        },
-        {
-          "text": "Hide body",
-          "disabled": false
-        },
-        {
-          "text": "Hide cta",
-          "disabled": false
-        },
-        {
-          "text": "Move Page content 2",
-          "disabled": false
-        },
-        {
-          "text": "Block actions",
-          "disabled": false
-        },
-        {
-          "text": "Show eyebrow",
-          "disabled": false
-        },
-        {
-          "text": "Hide heading",
-          "disabled": false
-        },
-        {
-          "text": "Add page content",
-          "disabled": false
-        },
-        {
-          "text": "Move section 2",
-          "disabled": false
-        },
-        {
-          "text": "Section and block actions",
-          "disabled": false
-        },
-        {
-          "text": "Show eyebrow",
-          "disabled": false
-        },
-        {
-          "text": "Hide heading",
-          "disabled": false
-        },
-        {
-          "text": "Add page content",
-          "disabled": false
-        },
-        {
-          "text": "Move section 3",
-          "disabled": false
-        },
-        {
-          "text": "Section and block actions",
-          "disabled": false
-        },
-        {
-          "text": "Hide heading",
-          "disabled": false
-        },
-        {
-          "text": "Up",
-          "disabled": true
-        },
-        {
-          "text": "Down",
-          "disabled": false
-        },
-        {
-          "text": "Remove",
-          "disabled": false
-        },
-        {
-          "text": "Edit optional link for card 1",
-          "disabled": false
-        },
-        {
-          "text": "Up",
-          "disabled": false
-        },
-        {
-          "text": "Down",
-          "disabled": false
-        },
-        {
-          "text": "Remove",
-          "disabled": false
-        },
-        {
-          "text": "Edit optional link for card 2",
-          "disabled": false
-        },
-        {
-          "text": "Up",
-          "disabled": false
-        },
-        {
-          "text": "Down",
-          "disabled": false
-        },
-        {
-          "text": "Remove",
-          "disabled": false
-        },
-        {
-          "text": "Edit optional link for card 3",
-          "disabled": false
-        },
-        {
-          "text": "Up",
-          "disabled": false
-        },
-        {
-          "text": "Down",
-          "disabled": true
-        },
-        {
-          "text": "Remove",
-          "disabled": false
-        },
-        {
-          "text": "Edit optional link for card 4",
-          "disabled": false
-        },
-        {
-          "text": "Add card",
-          "disabled": false
-        },
-        {
-          "text": "Add page content",
-          "disabled": false
-        },
-        {
-          "text": "Move section 4",
-          "disabled": false
-        },
-        {
-          "text": "Section and block actions",
-          "disabled": false
-        },
-        {
-          "text": "Show eyebrow",
-          "disabled": false
-        },
-        {
-          "text": "Hide heading",
-          "disabled": false
-        },
-        {
-          "text": "Add page content",
-          "disabled": false
-        },
-        {
-          "text": "Move section 5",
-          "disabled": false
-        },
-        {
-          "text": "Section and block actions",
-          "disabled": false
-        },
-        {
-          "text": "Hide heading",
-          "disabled": false
-        },
-        {
-          "text": "Remove",
-          "disabled": false
-        },
-        {
-          "text": "Remove",
-          "disabled": false
-        },
-        {
-          "text": "Remove",
-          "disabled": false
-        },
-        {
-          "text": "Remove",
-          "disabled": false
-        },
-        {
-          "text": "Add FAQ",
-          "disabled": false
-        },
-        {
-          "text": "Add page content",
-          "disabled": false
-        },
-        {
-          "text": "Move section 6",
-          "disabled": false
-        },
-        {
-          "text": "Section and block actions",
-          "disabled": false
-        },
-        {
-          "text": "Add page content",
-          "disabled": false
-        },
-        {
-          "text": "Add image",
-          "disabled": false
-        },
-        {
-          "text": "Publish",
-          "disabled": false
-        },
-        {
-          "text": "Open AI assistant",
-          "disabled": false
-        },
-        {
-          "text": "Refresh libraries",
-          "disabled": false
-        },
-        {
-          "text": "Create preview link",
-          "disabled": false
-        },
-        {
-          "text": "Revoke",
-          "disabled": false
-        },
-        {
-          "text": "Revoke",
-          "disabled": false
-        },
-        {
-          "text": "Revoke",
-          "disabled": false
-        },
-        {
-          "text": "Add comment",
-          "disabled": false
-        }
-      ],
-      "links": [
-        {
-          "text": "Pages",
-          "href": "/admin/pages"
-        },
-        {
-          "text": "Go back to dashboard",
-          "href": "/admin/pages"
-        },
-        {
-          "text": "Step inside",
-          "href": "/apply"
-        },
-        {
-          "text": "Open full media library",
-          "href": "/admin/media"
-        },
-        {
-          "text": "Open content libraries",
-          "href": "/admin/libraries"
-        }
-      ],
-      "inputs": [
-        {
-          "type": "checkbox",
-          "name": "",
-          "label": "Show header",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "checkbox",
-          "name": "",
-          "label": "Show footer",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Eyebrow",
-          "placeholder": "Eyebrow",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "",
-          "label": "Heading",
-          "placeholder": "Hero headline",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "block_1780293223024_84211c-hero-body",
-          "label": "Body",
-          "placeholder": "Hero body copy",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "CTA label",
-          "placeholder": "CTA label",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Eyebrow",
-          "placeholder": "Eyebrow",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Heading",
-          "placeholder": "Section heading",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "",
-          "label": "Body",
-          "placeholder": "Write the page copy here.",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Eyebrow",
-          "placeholder": "Eyebrow",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Heading",
-          "placeholder": "Section heading",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "",
-          "label": "Body",
-          "placeholder": "Write the page copy here.",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Heading",
-          "placeholder": "Card grid heading",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Card title",
-          "placeholder": "Card title",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "",
-          "label": "Card body",
-          "placeholder": "Card body",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Card title",
-          "placeholder": "Card title",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "",
-          "label": "Card body",
-          "placeholder": "Card body",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Card title",
-          "placeholder": "Card title",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "",
-          "label": "Card body",
-          "placeholder": "Card body",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Card title",
-          "placeholder": "Card title",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "",
-          "label": "Card body",
-          "placeholder": "Card body",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Eyebrow",
-          "placeholder": "Eyebrow",
-          "required": false
+          "element": "a",
+          "bucket": "safe",
+          "text": "Mini Market Vending in Train Stations",
+          "result": "links to /admin/pages/69e4a548-7091-40ce-ad91-bc5b87e1f44a (verified via route visits)",
+          "screenshot": null
         },
         {
-          "type": "text",
-          "name": "",
-          "label": "Heading",
-          "placeholder": "Section heading",
-          "required": false
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages/69e4a548-7091-40ce-ad91-bc5b87e1f44a (verified via route visits)",
+          "screenshot": null
         },
         {
-          "type": "textarea",
-          "name": "",
-          "label": "Body",
-          "placeholder": "Write the page copy here.",
-          "required": false
+          "element": "a",
+          "bucket": "safe",
+          "text": "Micro Market Vending Adelaide for Office Managers",
+          "result": "links to /admin/pages/c3fd3d60-5032-43d4-9b07-a1bac1cc3f89 (verified via route visits)",
+          "screenshot": null
         },
         {
-          "type": "text",
-          "name": "",
-          "label": "Heading",
-          "placeholder": "FAQ heading",
-          "required": false
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages/c3fd3d60-5032-43d4-9b07-a1bac1cc3f89 (verified via route visits)",
+          "screenshot": null
         },
         {
-          "type": "text",
-          "name": "",
-          "label": "Question",
-          "placeholder": "Question",
-          "required": false
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vending at Sporting Arenas",
+          "result": "links to /admin/pages/cc62b7ed-59c1-47c9-9e73-a7ab6b7afcd2 (verified via route visits)",
+          "screenshot": null
         },
         {
-          "type": "textarea",
-          "name": "",
-          "label": "Answer",
-          "placeholder": "Answer",
-          "required": false
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages/cc62b7ed-59c1-47c9-9e73-a7ab6b7afcd2 (verified via route visits)",
+          "screenshot": null
         },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Question",
-          "placeholder": "Question",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "",
-          "label": "Answer",
-          "placeholder": "Answer",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Question",
-          "placeholder": "Question",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "",
-          "label": "Answer",
-          "placeholder": "Answer",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "Question",
-          "placeholder": "Question",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "",
-          "label": "Answer",
-          "placeholder": "Answer",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "",
-          "label": "CTA label",
-          "placeholder": "CTA label",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "title",
-          "label": "Page title",
-          "placeholder": "Internal page title and SEO fallback",
-          "required": true
-        },
-        {
-          "type": "select",
-          "name": "routePrefix",
-          "label": "Route prefix",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "slug",
-          "label": "Slug",
-          "placeholder": "page-slug",
-          "required": true
-        },
-        {
-          "type": "text",
-          "name": "targetKeyword",
-          "label": "Target keyword",
-          "placeholder": "e.g. vending machine business",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "seoTitle",
-          "label": "SEO title",
-          "placeholder": "Leave blank to use page headline",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "metaDescription",
-          "label": "Meta description",
-          "placeholder": "Search result summary for this page.",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "canonicalUrl",
-          "label": "Preferred URL",
-          "placeholder": "https://...",
-          "required": false
-        },
-        {
-          "type": "checkbox",
-          "name": "noindex",
-          "label": "Hide from search engines",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "checkbox",
-          "name": "sitemapEnabled",
-          "label": "Include in sitemap",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "checkbox",
-          "name": "structuredDataBreadcrumb",
-          "label": "Breadcrumb trail",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "checkbox",
-          "name": "structuredDataFaq",
-          "label": "Visible FAQs",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "internalTags",
-          "label": "Internal tags",
-          "placeholder": "cluster, campaign, funnel",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "topicCluster",
-          "label": "Topic cluster",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "campaignLabel",
-          "label": "Campaign",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "funnelStage",
-          "label": "Funnel stage",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "select",
-          "name": "lifecycleStatus",
-          "label": "Lifecycle",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "select",
-          "name": "reviewPeriodMonths",
-          "label": "Review period",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "date",
-          "name": "nextReviewAt",
-          "label": "Next review",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "ogTitle",
-          "label": "Social title",
-          "placeholder": "Leave blank to use SEO title",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "ogDescription",
-          "label": "Social description",
-          "placeholder": "Leave blank to use meta description",
-          "required": false
-        },
-        {
-          "type": "datetime-local",
-          "name": "scheduledPublishAt",
-          "label": "Scheduled publish",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "publishNote",
-          "label": "Optional summary for this version",
-          "placeholder": "Optional summary for this version",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "blockId",
-          "label": "Optional block ID",
-          "placeholder": "Optional block ID",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "body",
-          "label": "Add an internal note",
-          "placeholder": "Add an internal note",
-          "required": true
-        }
-      ],
-      "headings": [
-        {
-          "level": "H1",
-          "text": "Edit SEO page"
-        },
-        {
-          "level": "H2",
-          "text": "Page structure"
-        },
-        {
-          "level": "H3",
-          "text": "Builder outline"
-        },
-        {
-          "level": "H2",
-          "text": "Readiness and publish"
-        },
-        {
-          "level": "H3",
-          "text": "Ready to publish"
-        },
-        {
-          "level": "H3",
-          "text": "Search Preview"
-        },
-        {
-          "level": "H3",
-          "text": "Action Items"
-        },
-        {
-          "level": "H3",
-          "text": "Builder support"
-        },
-        {
-          "level": "H2",
-          "text": "Revision history"
-        },
-        {
-          "level": "H2",
-          "text": "Draft preview"
-        },
-        {
-          "level": "H2",
-          "text": "Governance comments"
-        }
-      ],
-      "counts": {
-        "buttons": 82,
-        "links": 5,
-        "inputs": 58
-      }
-    },
-    "interactions": [
-      {
-        "element": "Blocks",
-        "result": "clicked",
-        "shot": "pages-editor-009-click-blocks.png"
-      },
-      {
-        "element": "Save draft",
-        "result": "clicked",
-        "shot": "pages-editor-010-click-save-draft.png"
-      },
-      {
-        "element": "Live preview",
-        "result": "clicked",
-        "shot": "pages-editor-011-click-live-preview.png"
-      },
-      {
-        "element": "Copy editor linkEditor link",
-        "result": "clicked",
-        "shot": "pages-editor-012-click-copy-editor-linkeditor-l.png"
-      },
-      {
-        "element": "Copy public URLPublic URL",
-        "result": "clicked",
-        "shot": "pages-editor-013-click-copy-public-urlpublic-ur.png"
-      },
-      {
-        "element": "SEO",
-        "result": "clicked",
-        "shot": "pages-editor-014-click-seo.png"
-      },
-      {
-        "element": "Add page content",
-        "result": "clicked",
-        "shot": "pages-editor-015-click-add-page-content.png"
-      },
-      {
-        "element": "Add page content",
-        "result": "clicked",
-        "shot": "pages-editor-016-click-add-page-content.png"
-      }
-    ],
-    "skips": [],
-    "notes": [],
-    "httpStatus": 200
-  },
-  {
-    "slug": "pages-authors",
-    "url": "http://localhost:3000/admin/pages/authors",
-    "name": "Authors",
-    "status": "OK",
-    "console": [],
-    "network": [],
-    "shots": [
-      "pages-authors-019-load.png",
-      "pages-authors-021-mobile.png",
-      "pages-authors-022-tablet.png"
-    ],
-    "inventory": {
-      "buttons": [
         {
+          "element": "button",
+          "bucket": "safe",
           "text": "Collapse sidebar",
-          "disabled": false
-        },
-        {
-          "text": "Sign out",
-          "disabled": false
-        },
-        {
-          "text": "Create author",
-          "disabled": false
+          "result": "navigated to /admin/pages",
+          "screenshot": "admin-login-004-click-collapse-sidebar.png"
         }
       ],
-      "links": [
+      "forms": [],
+      "skips": [
         {
-          "text": "SEO pages: SEO page content",
-          "href": "/admin/pages"
+          "element": "button \"Sign out\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
         },
         {
-          "text": "Media library: Images and source assets",
-          "href": "/admin/media"
+          "element": "a \"Schedule failed\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        }
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "admin-login-005-mobile.png",
+          "issues": "none detected"
         },
         {
-          "text": "Settings: Users and access",
-          "href": "/admin/settings/users"
+          "viewport": "tablet-768",
+          "screenshot": "admin-login-006-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "dev bypass active; form may redirect",
+        "small touch target: button \"Collapse sidebar\" 32x32px",
+        "small touch target: button \"Search\" 65x28px",
+        "small touch target: a \"How to Start a Vending Business for Passive Income\" 364x20px",
+        "small touch target: button \"SEO readiness: Blocked\" 10x10px",
+        "small touch target: button \"Page status: Draft\" 10x10px",
+        "small touch target: summary \"Open actions for How to Start a Vending Business for Passive Income\" 36x36px",
+        "small touch target: a \"Mini Market Vending in Train Stations\" 364x20px",
+        "small touch target: button \"SEO readiness: Opportunities\" 10x10px",
+        "small touch target: summary \"Open actions for Mini Market Vending in Train Stations\" 36x36px",
+        "small touch target: a \"Micro Market Vending Adelaide for Office Managers\" 364x20px",
+        "small touch target: summary \"Open actions for Micro Market Vending Adelaide for Office Managers\" 36x36px",
+        "small touch target: a \"Vending at Sporting Arenas\" 364x20px",
+        "small touch target: button \"SEO readiness: Needs work\" 10x10px",
+        "small touch target: summary \"Open actions for Vending at Sporting Arenas\" 36x36px"
+      ]
+    },
+    {
+      "route": "/admin/forgot-password",
+      "slug": "admin-forgot-password",
+      "status": 200,
+      "finalUrl": "/admin/forgot-password",
+      "screenshots": {
+        "load": "admin-forgot-password-001-load.png",
+        "full": "admin-forgot-password-002-full.png"
+      },
+      "textExtract": "text/admin-forgot-password-text.md",
+      "metrics": {
+        "dcl": 523,
+        "load": 590,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Back to sign in",
+          "result": "links to /admin/login (verified via route visits)",
+          "screenshot": null
+        }
+      ],
+      "forms": [
+        {
+          "form": "form#1",
+          "fields": 1,
+          "mode": "no-valid",
+          "phases": {
+            "empty": "no visible validation errors after empty submit",
+            "invalid": "no visible validation errors on invalid data — entered values preserved",
+            "valid": "skipped — valid submission covered by journey run (avoids duplicate records)"
+          },
+          "screenshots": [
+            "admin-forgot-password-004-form-empty-submit.png",
+            "admin-forgot-password-005-form-invalid-submit.png"
+          ]
+        }
+      ],
+      "skips": [
+        {
+          "element": "button \"Send password reset\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        }
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "admin-forgot-password-006-mobile.png",
+          "issues": "none detected"
         },
         {
+          "viewport": "tablet-768",
+          "screenshot": "admin-forgot-password-007-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "route": "/admin/pages",
+      "slug": "admin-pages",
+      "status": 200,
+      "finalUrl": "/admin/pages",
+      "screenshots": {
+        "load": "admin-pages-001-load.png",
+        "full": "admin-pages-002-full.png"
+      },
+      "textExtract": "text/admin-pages-text.md",
+      "metrics": {
+        "dcl": 795,
+        "load": 798,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "SEO pages : SEO page content",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Media library : Images and source assets",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Settings : Users and access",
+          "result": "links to /admin/settings/users (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Create page",
+          "result": "links to /admin/pages/new (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "All 4 drafts + published",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Drafts 4 needs work",
+          "result": "links to /admin/pages?status=draft (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Published 0 publicly visible",
+          "result": "links to /admin/pages?status=published (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Archived 2 retired",
+          "result": "links to /admin/pages?status=archived (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "All",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Drafts",
+          "result": "links to /admin/pages?status=draft (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Published",
+          "result": "links to /admin/pages?status=published (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Archived",
+          "result": "links to /admin/pages?status=archived (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages?sort=updated-asc (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages?sort=published-desc (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages?sort=title-asc (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "All metadata",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Needs review",
+          "result": "links to /admin/pages?view=needs-review (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Updating",
+          "result": "links to /admin/pages?view=updating (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Needs links",
+          "result": "links to /admin/pages?view=orphaned (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Metadata issues",
+          "result": "links to /admin/pages?view=metadata-issues (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Scheduled",
+          "result": "links to /admin/pages?view=scheduled (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "How to Start a Vending Business for Passive Income",
+          "result": "links to /admin/pages/bb27a586-a967-49a1-8f2d-c1a0fed87e98 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages/bb27a586-a967-49a1-8f2d-c1a0fed87e98 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Mini Market Vending in Train Stations",
+          "result": "links to /admin/pages/69e4a548-7091-40ce-ad91-bc5b87e1f44a (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages/69e4a548-7091-40ce-ad91-bc5b87e1f44a (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Micro Market Vending Adelaide for Office Managers",
+          "result": "links to /admin/pages/c3fd3d60-5032-43d4-9b07-a1bac1cc3f89 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages/c3fd3d60-5032-43d4-9b07-a1bac1cc3f89 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Vending at Sporting Arenas",
+          "result": "links to /admin/pages/cc62b7ed-59c1-47c9-9e73-a7ab6b7afcd2 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/pages/cc62b7ed-59c1-47c9-9e73-a7ab6b7afcd2 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Collapse sidebar",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-pages-004-click-collapse-sidebar.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Search",
+          "result": "navigated to /admin/pages?q=",
+          "screenshot": "admin-pages-005-click-search.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "SEO readiness: Blocked",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-pages-006-click-seo-readiness-blocked.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Page status: Draft",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-pages-007-click-page-status-draft.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "SEO readiness: Opportunities",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-pages-008-click-seo-readiness-opportunities.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "SEO readiness: Needs work",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-pages-009-click-seo-readiness-needs-work.png"
+        }
+      ],
+      "forms": [],
+      "skips": [
+        {
+          "element": "button \"Sign out\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "a \"Schedule failed\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        }
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "admin-pages-010-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "admin-pages-011-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: button \"Collapse sidebar\" 32x32px",
+        "small touch target: button \"Search\" 65x28px",
+        "small touch target: a \"How to Start a Vending Business for Passive Income\" 364x20px",
+        "small touch target: button \"SEO readiness: Blocked\" 10x10px",
+        "small touch target: button \"Page status: Draft\" 10x10px",
+        "small touch target: summary \"Open actions for How to Start a Vending Business for Passive Income\" 36x36px",
+        "small touch target: a \"Mini Market Vending in Train Stations\" 364x20px",
+        "small touch target: button \"SEO readiness: Opportunities\" 10x10px",
+        "small touch target: summary \"Open actions for Mini Market Vending in Train Stations\" 36x36px",
+        "small touch target: a \"Micro Market Vending Adelaide for Office Managers\" 364x20px",
+        "small touch target: summary \"Open actions for Micro Market Vending Adelaide for Office Managers\" 36x36px",
+        "small touch target: a \"Vending at Sporting Arenas\" 364x20px",
+        "small touch target: button \"SEO readiness: Needs work\" 10x10px",
+        "small touch target: summary \"Open actions for Vending at Sporting Arenas\" 36x36px"
+      ]
+    },
+    {
+      "route": "/admin/pages/new",
+      "slug": "admin-pages-new",
+      "status": 200,
+      "finalUrl": "/admin/pages/new",
+      "screenshots": {
+        "load": "admin-pages-new-001-load.png",
+        "full": "admin-pages-new-002-full.png"
+      },
+      "textExtract": "text/admin-pages-new-text.md",
+      "metrics": {
+        "dcl": 444,
+        "load": 444,
+        "cls": 0
+      },
+      "axeViolationCount": 1,
+      "interactions": [
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "SEO / Resource page Long-form search page for resources, guides, and services.",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-pages-new-003-click-seo-resource-page-long-form-se.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Blog page Article-style page with a strong introduction and CTA.",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-pages-new-004-click-blog-page-article-style-page-w.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Landing page Campaign page for a focused offer or conversion path.",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-pages-new-005-click-landing-page-campaign-page-for.png"
+        }
+      ],
+      "forms": [],
+      "skips": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "admin-pages-new-006-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "admin-pages-new-007-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "route": "/admin/pages/redirects",
+      "slug": "admin-pages-redirects",
+      "status": 200,
+      "finalUrl": "/admin/pages/redirects",
+      "screenshots": {
+        "load": "admin-pages-redirects-001-load.png",
+        "full": "admin-pages-redirects-002-full.png"
+      },
+      "textExtract": "text/admin-pages-redirects-text.md",
+      "metrics": {
+        "dcl": 274,
+        "load": 274,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "SEO pages : SEO page content",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Media library : Images and source assets",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Settings : Users and access",
+          "result": "links to /admin/settings/users (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
           "text": "Back to pages",
-          "href": "/admin/pages"
-        }
-      ],
-      "inputs": [
-        {
-          "type": "text",
-          "name": "displayName",
-          "label": "",
-          "placeholder": "",
-          "required": true
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
         },
         {
-          "type": "text",
-          "name": "slug",
-          "label": "",
-          "placeholder": "",
-          "required": true
-        },
-        {
-          "type": "text",
-          "name": "roleTitle",
-          "label": "",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "avatarAssetId",
-          "label": "",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "textarea",
-          "name": "bio",
-          "label": "",
-          "placeholder": "",
-          "required": false
-        }
-      ],
-      "headings": [
-        {
-          "level": "H2",
-          "text": "Studio"
-        },
-        {
-          "level": "H1",
-          "text": "Author Profiles"
-        }
-      ],
-      "counts": {
-        "buttons": 3,
-        "links": 4,
-        "inputs": 5
-      }
-    },
-    "interactions": [
-      {
-        "element": "Create author",
-        "result": "clicked",
-        "shot": "pages-authors-020-click-create-author.png"
-      }
-    ],
-    "skips": [
-      {
-        "element": "Sign out",
-        "reason": "destructive/external — screenshotted not clicked"
-      },
-      {
-        "element": "Sign out",
-        "reason": "destructive/external — screenshotted not clicked"
-      }
-    ],
-    "notes": [],
-    "httpStatus": 200
-  },
-  {
-    "slug": "pages-redirects",
-    "url": "http://localhost:3000/admin/pages/redirects",
-    "name": "Redirects",
-    "status": "OK",
-    "console": [],
-    "network": [],
-    "shots": [
-      "pages-redirects-023-load.png",
-      "pages-redirects-025-mobile.png",
-      "pages-redirects-026-tablet.png"
-    ],
-    "inventory": {
-      "buttons": [
-        {
+          "element": "button",
+          "bucket": "safe",
           "text": "Collapse sidebar",
-          "disabled": false
-        },
-        {
-          "text": "Sign out",
-          "disabled": false
-        },
-        {
-          "text": "Create redirect",
-          "disabled": false
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-pages-redirects-004-click-collapse-sidebar.png"
         }
       ],
-      "links": [
+      "forms": [],
+      "skips": [
         {
-          "text": "SEO pages: SEO page content",
-          "href": "/admin/pages"
-        },
-        {
-          "text": "Media library: Images and source assets",
-          "href": "/admin/media"
-        },
-        {
-          "text": "Settings: Users and access",
-          "href": "/admin/settings/users"
-        },
-        {
-          "text": "Back to pages",
-          "href": "/admin/pages"
+          "element": "button \"Sign out\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
         }
       ],
-      "inputs": [
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
         {
-          "type": "text",
-          "name": "sourcePath",
-          "label": "/resources/old-page",
-          "placeholder": "/resources/old-page",
-          "required": true
+          "viewport": "mobile-375",
+          "screenshot": "admin-pages-redirects-005-mobile.png",
+          "issues": "none detected"
         },
         {
-          "type": "text",
-          "name": "destinationPath",
-          "label": "/blog/new-page",
-          "placeholder": "/blog/new-page",
-          "required": true
-        },
-        {
-          "type": "select",
-          "name": "statusCode",
-          "label": "301 permanent302 temporary307 temporary308 permanent",
-          "placeholder": "",
-          "required": false
-        },
-        {
-          "type": "text",
-          "name": "pageId",
-          "label": "Optional",
-          "placeholder": "Optional",
-          "required": false
+          "viewport": "tablet-768",
+          "screenshot": "admin-pages-redirects-006-tablet.png",
+          "issues": "see screenshot"
         }
       ],
-      "headings": [
-        {
-          "level": "H2",
-          "text": "Studio"
-        },
-        {
-          "level": "H1",
-          "text": "Redirect Manager"
-        }
-      ],
-      "counts": {
-        "buttons": 3,
-        "links": 4,
-        "inputs": 4
-      }
+      "notes": [
+        "small touch target: button \"Collapse sidebar\" 32x32px",
+        "small touch target: summary \"Advanced page association\" 654x20px"
+      ]
     },
-    "interactions": [
-      {
-        "element": "Create redirect",
-        "result": "clicked",
-        "shot": "pages-redirects-024-click-create-redirect.png"
-      }
-    ],
-    "skips": [
-      {
-        "element": "Sign out",
-        "reason": "destructive/external — screenshotted not clicked"
+    {
+      "route": "/admin/pages/block-preview-audit",
+      "slug": "admin-pages-block-preview-audit",
+      "status": 200,
+      "finalUrl": "/admin/pages/block-preview-audit",
+      "screenshots": {
+        "load": "admin-pages-block-preview-audit-001-load.png",
+        "full": "admin-pages-block-preview-audit-002-full.png"
       },
-      {
-        "element": "Sign out",
-        "reason": "destructive/external — screenshotted not clicked"
-      }
-    ],
-    "notes": [],
-    "httpStatus": 200
-  },
-  {
-    "slug": "pages-block-audit",
-    "url": "http://localhost:3000/admin/pages/block-preview-audit",
-    "name": "Block Preview Audit",
-    "status": "OK",
-    "console": [],
-    "network": [],
-    "shots": [
-      "pages-block-audit-027-load.png",
-      "pages-block-audit-028-mobile.png",
-      "pages-block-audit-029-tablet.png"
-    ],
-    "inventory": {
-      "buttons": [
+      "textExtract": "text/admin-pages-block-preview-audit-text.md",
+      "metrics": {
+        "dcl": 1077,
+        "load": 1080,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [
         {
+          "element": "a",
+          "bucket": "safe",
+          "text": "SEO pages : SEO page content",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Media library : Images and source assets",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Settings : Users and access",
+          "result": "links to /admin/settings/users (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
           "text": "Collapse sidebar",
-          "disabled": false
-        },
-        {
-          "text": "Sign out",
-          "disabled": false
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-pages-block-preview-audit-004-click-collapse-sidebar.png"
         }
       ],
-      "links": [
+      "forms": [],
+      "skips": [
         {
-          "text": "SEO pages: SEO page content",
-          "href": "/admin/pages"
-        },
-        {
-          "text": "Media library: Images and source assets",
-          "href": "/admin/media"
-        },
-        {
-          "text": "Settings: Users and access",
-          "href": "/admin/settings/users"
+          "element": "button \"Sign out\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
         }
       ],
-      "inputs": [],
-      "headings": [
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
         {
-          "level": "H2",
-          "text": "Studio"
+          "viewport": "mobile-375",
+          "screenshot": "admin-pages-block-preview-audit-005-mobile.png",
+          "issues": "none detected"
         },
         {
-          "level": "H1",
-          "text": "Block preview audit"
-        },
-        {
-          "level": "H2",
-          "text": "Standard hero"
-        },
-        {
-          "level": "H1",
-          "text": "Launch a vending route with a proven plan"
-        },
-        {
-          "level": "H1",
-          "text": "Launch a vending route with a proven plan"
-        },
-        {
-          "level": "H2",
-          "text": "Split hero"
-        },
-        {
-          "level": "H1",
-          "text": "Launch a vending route with a proven plan"
-        },
-        {
-          "level": "H1",
-          "text": "Launch a vending route with a proven plan"
-        },
-        {
-          "level": "H2",
-          "text": "Compact hero"
-        },
-        {
-          "level": "H1",
-          "text": "Launch a vending route with a proven plan"
-        },
-        {
-          "level": "H1",
-          "text": "Launch a vending route with a proven plan"
-        },
-        {
-          "level": "H2",
-          "text": "Editorial hero"
-        },
-        {
-          "level": "H1",
-          "text": "Build a profitable route with fewer wrong turns"
-        },
-        {
-          "level": "H1",
-          "text": "Build a profitable route with fewer wrong turns"
-        },
-        {
-          "level": "H2",
-          "text": "Standard text"
-        },
-        {
-          "level": "H2",
-          "text": "Write structured page copy"
-        },
-        {
-          "level": "H2",
-          "text": "Write structured page copy"
-        },
-        {
-          "level": "H2",
-          "text": "Intro text"
-        },
-        {
-          "level": "H2",
-          "text": "Write structured page copy"
-        },
-        {
-          "level": "H2",
-          "text": "Write structured page copy"
-        },
-        {
-          "level": "H2",
-          "text": "Compact text"
-        },
-        {
-          "level": "H2",
-          "text": "Write structured page copy"
-        },
-        {
-          "level": "H2",
-          "text": "Write structured page copy"
-        },
-        {
-          "level": "H2",
-          "text": "Checklist text"
-        },
-        {
-          "level": "H2",
-          "text": "What the page should include"
-        },
-        {
-          "level": "H2",
-          "text": "What the page should include"
-        },
-        {
-          "level": "H2",
-          "text": "Standard image"
-        },
-        {
-          "level": "H2",
-          "text": "Wide image"
-        },
-        {
-          "level": "H2",
-          "text": "Inline image"
-        },
-        {
-          "level": "H2",
-          "text": "Feature image"
-        },
-        {
-          "level": "H2",
-          "text": "Primary CTA"
-        },
-        {
-          "level": "H2",
-          "text": "Secondary CTA"
-        },
-        {
-          "level": "H2",
-          "text": "Text link CTA"
-        },
-        {
-          "level": "H2",
-          "text": "Standard FAQ"
-        },
-        {
-          "level": "H2",
-          "text": "Common vending questions"
-        },
-        {
-          "level": "H2",
-          "text": "Common vending questions"
-        },
-        {
-          "level": "H2",
-          "text": "Compact FAQ"
-        },
-        {
-          "level": "H2",
-          "text": "Common vending questions"
-        },
-        {
-          "level": "H2",
-          "text": "Common vending questions"
-        },
-        {
-          "level": "H2",
-          "text": "Accordion FAQ"
-        },
-        {
-          "level": "H2",
-          "text": "Common vending questions"
-        },
-        {
-          "level": "H2",
-          "text": "Common vending questions"
-        },
-        {
-          "level": "H2",
-          "text": "Standard cards"
-        },
-        {
-          "level": "H2",
-          "text": "Compare the next steps"
-        },
-        {
-          "level": "H3",
-          "text": "Plan"
-        },
-        {
-          "level": "H3",
-          "text": "Place"
-        },
-        {
-          "level": "H3",
-          "text": "Launch"
-        },
-        {
-          "level": "H3",
-          "text": "Improve"
-        },
-        {
-          "level": "H2",
-          "text": "Compare the next steps"
-        },
-        {
-          "level": "H3",
-          "text": "Plan"
-        },
-        {
-          "level": "H3",
-          "text": "Place"
-        },
-        {
-          "level": "H3",
-          "text": "Launch"
-        },
-        {
-          "level": "H3",
-          "text": "Improve"
-        },
-        {
-          "level": "H2",
-          "text": "Compact cards"
-        },
-        {
-          "level": "H2",
-          "text": "Compare the next steps"
-        },
-        {
-          "level": "H3",
-          "text": "Plan"
-        },
-        {
-          "level": "H3",
-          "text": "Place"
-        },
-        {
-          "level": "H3",
-          "text": "Launch"
-        },
-        {
-          "level": "H3",
-          "text": "Improve"
-        },
-        {
-          "level": "H2",
-          "text": "Compare the next steps"
-        },
-        {
-          "level": "H3",
-          "text": "Plan"
-        },
-        {
-          "level": "H3",
-          "text": "Place"
-        },
-        {
-          "level": "H3",
-          "text": "Launch"
-        },
-        {
-          "level": "H3",
-          "text": "Improve"
-        },
-        {
-          "level": "H2",
-          "text": "Feature cards"
-        },
-        {
-          "level": "H2",
-          "text": "Compare the next steps"
-        },
-        {
-          "level": "H3",
-          "text": "Plan"
-        },
-        {
-          "level": "H3",
-          "text": "Place"
-        },
-        {
-          "level": "H3",
-          "text": "Launch"
-        },
-        {
-          "level": "H3",
-          "text": "Improve"
-        },
-        {
-          "level": "H2",
-          "text": "Compare the next steps"
-        },
-        {
-          "level": "H3",
-          "text": "Plan"
-        },
-        {
-          "level": "H3",
-          "text": "Place"
-        },
-        {
-          "level": "H3",
-          "text": "Launch"
-        },
-        {
-          "level": "H3",
-          "text": "Improve"
-        },
-        {
-          "level": "H2",
-          "text": "Quote proof"
-        },
-        {
-          "level": "H2",
-          "text": "Stat proof"
-        },
-        {
-          "level": "H2",
-          "text": "Logo proof"
-        },
-        {
-          "level": "H2",
-          "text": "Standard video"
-        },
-        {
-          "level": "H2",
-          "text": "Watch the route planning walkthrough"
-        },
-        {
-          "level": "H2",
-          "text": "Watch the route planning walkthrough"
-        },
-        {
-          "level": "H2",
-          "text": "Wide video"
-        },
-        {
-          "level": "H2",
-          "text": "Watch the route planning walkthrough"
-        },
-        {
-          "level": "H2",
-          "text": "Watch the route planning walkthrough"
-        },
-        {
-          "level": "H2",
-          "text": "Inline video"
-        },
-        {
-          "level": "H2",
-          "text": "Watch the route planning walkthrough"
-        },
-        {
-          "level": "H2",
-          "text": "Watch the route planning walkthrough"
-        },
-        {
-          "level": "H2",
-          "text": "Standard form"
-        },
-        {
-          "level": "H2",
-          "text": "Start your vending plan"
-        },
-        {
-          "level": "H2",
-          "text": "Start your vending plan"
-        },
-        {
-          "level": "H2",
-          "text": "Compact form"
-        },
-        {
-          "level": "H2",
-          "text": "Start your vending plan"
-        },
-        {
-          "level": "H2",
-          "text": "Start your vending plan"
-        },
-        {
-          "level": "H2",
-          "text": "Sidebar form"
-        },
-        {
-          "level": "H2",
-          "text": "Start your vending plan"
-        },
-        {
-          "level": "H2",
-          "text": "Start your vending plan"
+          "viewport": "tablet-768",
+          "screenshot": "admin-pages-block-preview-audit-006-tablet.png",
+          "issues": "see screenshot"
         }
       ],
-      "counts": {
-        "buttons": 2,
-        "links": 3,
-        "inputs": 0
-      }
+      "notes": [
+        "small touch target: button \"Collapse sidebar\" 32x32px",
+        "small touch target: summary \"HOW MUCH BUDGET SHOULD I PLAN FOR?\" 246x7px",
+        "small touch target: summary \"CAN I START WHILE WORKING ANOTHER JOB?\" 246x7px",
+        "small touch target: summary \"WHAT MAKES A GOOD FIRST LOCATION?\" 246x7px"
+      ]
     },
-    "interactions": [],
-    "skips": [
-      {
-        "element": "Sign out",
-        "reason": "destructive/external — screenshotted not clicked"
+    {
+      "route": "/admin/news",
+      "slug": "admin-news",
+      "status": 200,
+      "finalUrl": "/admin/news",
+      "screenshots": {
+        "load": "admin-news-001-load.png",
+        "full": "admin-news-002-full.png"
       },
-      {
-        "element": "Sign out",
-        "reason": "destructive/external — screenshotted not clicked"
-      }
-    ],
-    "notes": [],
-    "httpStatus": 200
-  }
-]
+      "textExtract": "text/admin-news-text.md",
+      "metrics": {
+        "dcl": 962,
+        "load": 963,
+        "cls": 0
+      },
+      "axeViolationCount": 1,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "SEO pages : SEO page content",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Media library : Images and source assets",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Settings : Users and access",
+          "result": "links to /admin/settings/users (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Resource pages",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "New blog post",
+          "result": "links to /admin/news/new (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "All",
+          "result": "links to /admin/news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Drafts",
+          "result": "links to /admin/news?status=draft (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Published",
+          "result": "links to /admin/news?status=published (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Archived",
+          "result": "links to /admin/news?status=archived (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/news?sort=updated-asc (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/news?sort=title-asc (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/news?status=draft (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/news?status=published (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/news?status=archived (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "How to Choose the Perfect Location for Your Vending Machine in 2025",
+          "result": "links to /admin/news/e6598828-bb3b-472c-a9cc-59a56f3f7442 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Edit How to Choose the Perfect Location for Your Vending Machine in 2025",
+          "result": "links to /admin/news/e6598828-bb3b-472c-a9cc-59a56f3f7442 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Top 5 Questions to Ask Before Joining a Vending Entrepreneurship Program",
+          "result": "links to /admin/news/857a5f9c-eb35-4a0a-86d5-98ab8d1b34f4 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Edit Top 5 Questions to Ask Before Joining a Vending Entrepreneurship Program",
+          "result": "links to /admin/news/857a5f9c-eb35-4a0a-86d5-98ab8d1b34f4 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Ite",
+          "result": "links to /admin/news/6780ff2f-9937-4de2-8034-bdc985cbfc66 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Edit Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Health",
+          "result": "links to /admin/news/6780ff2f-9937-4de2-8034-bdc985cbfc66 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Step-by-Step Guide: From Zero to First Vending Machine — What You Need to Do to ",
+          "result": "links to /admin/news/f6f10a15-015d-48f2-b414-f03cb8e71b21 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Edit Step-by-Step Guide: From Zero to First Vending Machine — What You Need to D",
+          "result": "links to /admin/news/f6f10a15-015d-48f2-b414-f03cb8e71b21 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "How to Build a Self-Managed Route So You Can Work Less",
+          "result": "links to /admin/news/2fa83f65-00b2-42ad-923c-51143a8c1093 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Edit How to Build a Self-Managed Route So You Can Work Less",
+          "result": "links to /admin/news/2fa83f65-00b2-42ad-923c-51143a8c1093 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Pros and Cons of Hiring Vending Business Mentorship vs. Learning On Your Own",
+          "result": "links to /admin/news/70ebc15d-bfab-460f-b4f3-eb6a78c70bc7 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Edit Pros and Cons of Hiring Vending Business Mentorship vs. Learning On Your Ow",
+          "result": "links to /admin/news/70ebc15d-bfab-460f-b4f3-eb6a78c70bc7 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Seasonal Vending Machine Ideas (Winter, Summer, Back-to-School)",
+          "result": "links to /admin/news/f17a07ad-caa0-4439-8a7f-053fd3a56d7c (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Edit Seasonal Vending Machine Ideas (Winter, Summer, Back-to-School)",
+          "result": "links to /admin/news/f17a07ad-caa0-4439-8a7f-053fd3a56d7c (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Next page",
+          "result": "links to /admin/news?page=2 (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Collapse sidebar",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-news-004-click-collapse-sidebar.png"
+        }
+      ],
+      "forms": [],
+      "skips": [
+        {
+          "element": "button \"Sign out\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        }
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "admin-news-005-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "admin-news-006-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: button \"Collapse sidebar\" 32x32px",
+        "small touch target: a \"Edit How to Choose the Perfect Location for Your Vending Machine in 2025\" 36x36px",
+        "small touch target: a \"Edit Top 5 Questions to Ask Before Joining a Vending Entrepreneurship Program\" 36x36px",
+        "small touch target: a \"Edit Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Health\" 36x36px",
+        "small touch target: a \"Edit Step-by-Step Guide: From Zero to First Vending Machine — What You Need to D\" 36x36px",
+        "small touch target: a \"How to Build a Self-Managed Route So You Can Work Less\" 394x17px",
+        "small touch target: a \"Edit How to Build a Self-Managed Route So You Can Work Less\" 36x36px",
+        "small touch target: a \"Edit Pros and Cons of Hiring Vending Business Mentorship vs. Learning On Your Ow\" 36x36px",
+        "small touch target: a \"Edit Seasonal Vending Machine Ideas (Winter, Summer, Back-to-School)\" 36x36px",
+        "small touch target: a \"Next page\" 36x36px"
+      ]
+    },
+    {
+      "route": "/admin/news/new",
+      "slug": "admin-news-new",
+      "status": 200,
+      "finalUrl": "/admin/news/new",
+      "screenshots": {
+        "load": "admin-news-new-001-load.png",
+        "full": "admin-news-new-002-full.png"
+      },
+      "textExtract": "text/admin-news-new-text.md",
+      "metrics": {
+        "dcl": 851,
+        "load": 852,
+        "cls": 0
+      },
+      "axeViolationCount": 1,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "SEO pages : SEO page content",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Media library : Images and source assets",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Settings : Users and access",
+          "result": "links to /admin/settings/users (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Blog and news",
+          "result": "links to /admin/news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Resource pages",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Back to posts",
+          "result": "links to /admin/news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Collapse sidebar",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-news-new-004-click-collapse-sidebar.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Write",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-news-new-005-click-write.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Preview",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-news-new-006-click-preview.png"
+        }
+      ],
+      "forms": [],
+      "skips": [
+        {
+          "element": "button \"Sign out\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "button \"Publish\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        }
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "admin-news-new-007-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "admin-news-new-008-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: button \"Collapse sidebar\" 32x32px",
+        "small touch target: a \"Back to posts\" 91x20px"
+      ]
+    },
+    {
+      "route": "/admin/media",
+      "slug": "admin-media",
+      "status": 200,
+      "finalUrl": "/admin/media",
+      "screenshots": {
+        "load": "admin-media-001-load.png",
+        "full": "admin-media-002-full.png"
+      },
+      "textExtract": "text/admin-media-text.md",
+      "metrics": {
+        "dcl": 372,
+        "load": 375,
+        "cls": 0
+      },
+      "axeViolationCount": 3,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "SEO pages : SEO page content",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Media library : Images and source assets",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Settings : Users and access",
+          "result": "links to /admin/settings/users (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Content libraries",
+          "result": "links to /admin/libraries (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Grid view",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "List view",
+          "result": "links to /admin/media?view=list (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/media?sort=created-asc (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/media?sort=title-asc (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/media?sort=title-desc (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "All assets 1",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "In use 0",
+          "result": "links to /admin/media?collection=in-use (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Unused 1",
+          "result": "links to /admin/media?collection=unused (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Needs metadata 1",
+          "result": "links to /admin/media?collection=needs-metadata (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Stored 0",
+          "result": "links to /admin/media?source=stored (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "All",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Images",
+          "result": "links to /admin/media?type=image (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Video",
+          "result": "links to /admin/media?type=video (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Embeds",
+          "result": "links to /admin/media?type=embed (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/media?collection=resource-pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/media?collection=news (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/media?collection=proof (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/media?collection=brand (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/media?source=stored (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/media?source=external (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/media?source=tagged (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "",
+          "result": "links to /admin/media?source=untagged (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Collapse sidebar",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-media-004-click-collapse-sidebar.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Edit",
+          "result": "opened dialog/modal",
+          "screenshot": "admin-media-005-click-edit.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Usage",
+          "result": "opened dialog/modal",
+          "screenshot": "admin-media-006-click-usage.png"
+        }
+      ],
+      "forms": [],
+      "skips": [
+        {
+          "element": "button \"Sign out\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "button \"Upload media\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "button \"More upload options\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        }
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "admin-media-007-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "admin-media-008-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: button \"Collapse sidebar\" 32x32px",
+        "small touch target: a \"Grid view\" 36x36px",
+        "small touch target: a \"List view\" 36x36px",
+        "small touch target: a \"All assets 1\" 84x24px",
+        "small touch target: a \"In use 0\" 62x24px",
+        "small touch target: a \"Unused 1\" 70x24px",
+        "small touch target: a \"Needs metadata 1\" 128x24px",
+        "small touch target: a \"Stored 0\" 65x24px",
+        "small touch target: a \"All\" 35x24px",
+        "small touch target: a \"Images\" 62x24px",
+        "small touch target: a \"Video\" 54x24px",
+        "small touch target: a \"Embeds\" 67x24px",
+        "small touch target: summary \"Purpose: All\" 118x24px",
+        "small touch target: summary \"More filters\" 91x16px"
+      ]
+    },
+    {
+      "route": "/admin/libraries",
+      "slug": "admin-libraries",
+      "status": 200,
+      "finalUrl": "/admin/libraries",
+      "screenshots": {
+        "load": "admin-libraries-001-load.png",
+        "full": "admin-libraries-002-full.png"
+      },
+      "textExtract": "text/admin-libraries-text.md",
+      "metrics": {
+        "dcl": 374,
+        "load": 375,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "SEO pages : SEO page content",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Media library : Images and source assets",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Settings : Users and access",
+          "result": "links to /admin/settings/users (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Media library",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "New resource page",
+          "result": "links to /admin/pages/new (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Collapse sidebar",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-libraries-004-click-collapse-sidebar.png"
+        }
+      ],
+      "forms": [],
+      "skips": [
+        {
+          "element": "button \"Sign out\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        }
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "admin-libraries-005-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "admin-libraries-006-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": ["small touch target: button \"Collapse sidebar\" 32x32px"]
+    },
+    {
+      "route": "/admin/settings",
+      "slug": "admin-settings",
+      "status": 200,
+      "finalUrl": "/admin/settings/users",
+      "screenshots": {
+        "load": "admin-settings-001-load.png",
+        "full": "admin-settings-002-full.png"
+      },
+      "textExtract": "text/admin-settings-text.md",
+      "metrics": {
+        "dcl": 279,
+        "load": 279,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "SEO pages : SEO page content",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Media library : Images and source assets",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Settings : Users and access",
+          "result": "links to /admin/settings/users (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Collapse sidebar",
+          "result": "navigated to /admin/settings/users",
+          "screenshot": "admin-settings-004-click-collapse-sidebar.png"
+        }
+      ],
+      "forms": [],
+      "skips": [
+        {
+          "element": "button \"Sign out\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "button \"Invite user\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "button \"Send reset for alysia@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for alysia@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Send reset for james@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for james@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Send reset for jamesv@aimanagingservices.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for jamesv@aimanagingservices.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Send reset for jeffery@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for jeffery@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for jess@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Send reset for joshua.stein@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for joshua.stein@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Send reset for kody@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for kody@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        }
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "admin-settings-005-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "admin-settings-006-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "small touch target: button \"Collapse sidebar\" 32x32px",
+        "small touch target: button \"Save role for alysia@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Send reset for alysia@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Remove access for alysia@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Save role for james@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Send reset for james@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Remove access for james@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Save role for jamesv@aimanagingservices.com\" 32x32px",
+        "small touch target: button \"Send reset for jamesv@aimanagingservices.com\" 32x32px",
+        "small touch target: button \"Remove access for jamesv@aimanagingservices.com\" 32x32px",
+        "small touch target: button \"Save role for jeffery@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Send reset for jeffery@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Remove access for jeffery@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Save role for jess@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Resend setup for jess@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Remove access for jess@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Save role for joshua.stein@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Send reset for joshua.stein@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Remove access for joshua.stein@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Save role for kody@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Send reset for kody@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Remove access for kody@modern-amenities.com\" 32x32px"
+      ]
+    },
+    {
+      "route": "/admin/settings/users",
+      "slug": "admin-settings-users",
+      "status": 200,
+      "finalUrl": "/admin/settings/users",
+      "screenshots": {
+        "load": "admin-settings-users-001-load.png",
+        "full": "admin-settings-users-002-full.png"
+      },
+      "textExtract": "text/admin-settings-users-text.md",
+      "metrics": {
+        "dcl": 277,
+        "load": 277,
+        "cls": 0
+      },
+      "axeViolationCount": 0,
+      "interactions": [
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "SEO pages : SEO page content",
+          "result": "links to /admin/pages (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Media library : Images and source assets",
+          "result": "links to /admin/media (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "a",
+          "bucket": "safe",
+          "text": "Settings : Users and access",
+          "result": "links to /admin/settings/users (verified via route visits)",
+          "screenshot": null
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Collapse sidebar",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-settings-users-004-click-collapse-sidebar.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Resend setup for jess@modern-amenities.com",
+          "result": "in-page change or no visible change",
+          "screenshot": "admin-settings-users-005-click-resend-setup-for-jess-modern-a.png"
+        }
+      ],
+      "forms": [],
+      "skips": [
+        {
+          "element": "button \"Sign out\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "button \"Invite user\"",
+          "bucket": "external",
+          "reason": "external: outbound side effect / leaves app"
+        },
+        {
+          "element": "button \"Send reset for alysia@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for alysia@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Send reset for james@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for james@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Send reset for jamesv@aimanagingservices.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for jamesv@aimanagingservices.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Send reset for jeffery@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for jeffery@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for jess@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Send reset for joshua.stein@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for joshua.stein@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Send reset for kody@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        },
+        {
+          "element": "button \"Remove access for kody@modern-amenities.com\"",
+          "bucket": "destructive",
+          "reason": "destructive on pre-existing data"
+        }
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "responsive": [
+        {
+          "viewport": "mobile-375",
+          "screenshot": "admin-settings-users-006-mobile.png",
+          "issues": "none detected"
+        },
+        {
+          "viewport": "tablet-768",
+          "screenshot": "admin-settings-users-007-tablet.png",
+          "issues": "see screenshot"
+        }
+      ],
+      "notes": [
+        "user management — mutations on real users are skipped",
+        "small touch target: button \"Collapse sidebar\" 32x32px",
+        "small touch target: button \"Save role for alysia@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Send reset for alysia@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Remove access for alysia@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Save role for james@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Send reset for james@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Remove access for james@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Save role for jamesv@aimanagingservices.com\" 32x32px",
+        "small touch target: button \"Send reset for jamesv@aimanagingservices.com\" 32x32px",
+        "small touch target: button \"Remove access for jamesv@aimanagingservices.com\" 32x32px",
+        "small touch target: button \"Save role for jeffery@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Send reset for jeffery@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Remove access for jeffery@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Save role for jess@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Resend setup for jess@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Remove access for jess@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Save role for joshua.stein@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Send reset for joshua.stein@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Remove access for joshua.stein@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Save role for kody@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Send reset for kody@modern-amenities.com\" 32x32px",
+        "small touch target: button \"Remove access for kody@modern-amenities.com\" 32x32px"
+      ]
+    }
+  ],
+  "journeys": [
+    {
+      "slug": "discover-and-apply",
+      "name": "Discover & Apply",
+      "status": "blocked",
+      "clicks": 7,
+      "pageLoads": 2,
+      "steps": [
+        {
+          "n": 1,
+          "page": "about:blank",
+          "action": "load homepage",
+          "result": "homepage loaded",
+          "screenshot": "journey-discover-and-apply-001-01-load-homepage.png"
+        },
+        {
+          "n": 2,
+          "page": "/",
+          "action": "find and click Apply CTA",
+          "result": "clicked visible link to /apply → /",
+          "screenshot": "journey-discover-and-apply-002-02-find-and-click-apply-cta.png"
+        },
+        {
+          "n": 3,
+          "page": "/apply",
+          "action": "fill visible fields (round 1)",
+          "result": "filled: full_name, email, phone, city, state_region, business_stage, budget, timeline, message",
+          "screenshot": "journey-discover-and-apply-003-03-fill-visible-fields-round-1-.png"
+        },
+        {
+          "n": 4,
+          "page": "/apply",
+          "action": "submit/continue (round 1)",
+          "result": "clicked \"SUBMIT APPLICATION\" → still on /apply",
+          "screenshot": "journey-discover-and-apply-004-04-submit-continue-round-1-.png"
+        },
+        {
+          "n": 5,
+          "page": "/apply",
+          "action": "fill visible fields (round 2)",
+          "result": "filled: full_name, email, phone, city, state_region, business_stage, budget, timeline, message",
+          "screenshot": "journey-discover-and-apply-005-05-fill-visible-fields-round-2-.png"
+        },
+        {
+          "n": 6,
+          "page": "/apply",
+          "action": "submit/continue (round 2)",
+          "result": "clicked \"SUBMIT APPLICATION\" → still on /apply",
+          "screenshot": "journey-discover-and-apply-006-06-submit-continue-round-2-.png"
+        },
+        {
+          "n": 7,
+          "page": "/apply",
+          "action": "fill visible fields (round 3)",
+          "result": "filled: full_name, email, phone, city, state_region, business_stage, budget, timeline, message",
+          "screenshot": "journey-discover-and-apply-007-07-fill-visible-fields-round-3-.png"
+        },
+        {
+          "n": 8,
+          "page": "/apply",
+          "action": "submit/continue (round 3)",
+          "result": "clicked \"SUBMIT APPLICATION\" → still on /apply",
+          "screenshot": "journey-discover-and-apply-008-08-submit-continue-round-3-.png"
+        },
+        {
+          "n": 9,
+          "page": "/apply",
+          "action": "fill visible fields (round 4)",
+          "result": "filled: full_name, email, phone, city, state_region, business_stage, budget, timeline, message",
+          "screenshot": "journey-discover-and-apply-009-09-fill-visible-fields-round-4-.png"
+        },
+        {
+          "n": 10,
+          "page": "/apply",
+          "action": "submit/continue (round 4)",
+          "result": "clicked \"SUBMIT APPLICATION\" → still on /apply",
+          "screenshot": "journey-discover-and-apply-010-10-submit-continue-round-4-.png"
+        },
+        {
+          "n": 11,
+          "page": "/apply",
+          "action": "fill visible fields (round 5)",
+          "result": "filled: full_name, email, phone, city, state_region, business_stage, budget, timeline, message",
+          "screenshot": "journey-discover-and-apply-011-11-fill-visible-fields-round-5-.png"
+        },
+        {
+          "n": 12,
+          "page": "/apply",
+          "action": "submit/continue (round 5)",
+          "result": "clicked \"SUBMIT APPLICATION\" → still on /apply",
+          "screenshot": "journey-discover-and-apply-012-12-submit-continue-round-5-.png"
+        },
+        {
+          "n": 13,
+          "page": "/apply",
+          "action": "fill visible fields (round 6)",
+          "result": "filled: full_name, email, phone, city, state_region, business_stage, budget, timeline, message",
+          "screenshot": "journey-discover-and-apply-013-13-fill-visible-fields-round-6-.png"
+        },
+        {
+          "n": 14,
+          "page": "/apply",
+          "action": "submit/continue (round 6)",
+          "result": "clicked \"SUBMIT APPLICATION\" → still on /apply",
+          "screenshot": "journey-discover-and-apply-014-14-submit-continue-round-6-.png"
+        }
+      ],
+      "wrongTurns": [],
+      "notes": [],
+      "blockedAt": "/apply — could not reach success state after form submission rounds"
+    },
+    {
+      "slug": "contact-the-team",
+      "name": "Contact the Team",
+      "status": "blocked",
+      "clicks": 1,
+      "pageLoads": 2,
+      "steps": [
+        {
+          "n": 1,
+          "page": "about:blank",
+          "action": "load homepage",
+          "result": "homepage loaded",
+          "screenshot": "journey-contact-the-team-001-01-load-homepage.png"
+        },
+        {
+          "n": 2,
+          "page": "/",
+          "action": "find and click Contact link",
+          "result": "clicked visible link to /contact → /",
+          "screenshot": "journey-contact-the-team-002-02-find-and-click-contact-link.png"
+        },
+        {
+          "n": 3,
+          "page": "/contact",
+          "action": "fill contact form (not submitted)",
+          "result": "filled: full_name, email, phone, city, state_region, message — submission SKIPPED (safety: outbound email to real recipient)",
+          "screenshot": "journey-contact-the-team-003-03-fill-contact-form-not-submitted-.png"
+        }
+      ],
+      "wrongTurns": [],
+      "notes": [
+        "Form fill and visual flow verified; actual send not performed per destructive/external safety policy."
+      ],
+      "blockedAt": "/contact submit — skipped by safety policy (outbound email); path up to submit was followable"
+    },
+    {
+      "slug": "read-a-news-article",
+      "name": "Read a News Article",
+      "status": "completed",
+      "clicks": 2,
+      "pageLoads": 3,
+      "steps": [
+        {
+          "n": 1,
+          "page": "about:blank",
+          "action": "load homepage",
+          "result": "homepage loaded",
+          "screenshot": "journey-read-a-news-article-001-01-load-homepage.png"
+        },
+        {
+          "n": 2,
+          "page": "/",
+          "action": "navigate to News",
+          "result": "clicked visible link to /news → /",
+          "screenshot": "journey-read-a-news-article-002-02-navigate-to-news.png"
+        },
+        {
+          "n": 3,
+          "page": "/news",
+          "action": "open first article",
+          "result": "FAILED: no article links visible on /news",
+          "screenshot": "journey-read-a-news-article-003-03-open-first-article.png"
+        },
+        {
+          "n": 4,
+          "page": "/news",
+          "action": "verify article content + scroll",
+          "result": "article heading: \"BLOG\"",
+          "screenshot": "journey-read-a-news-article-004-04-verify-article-content-scroll.png"
+        },
+        {
+          "n": 5,
+          "page": "/news",
+          "action": "return to news listing",
+          "result": "clicked visible back-to-news link",
+          "screenshot": "journey-read-a-news-article-005-05-return-to-news-listing.png"
+        }
+      ],
+      "wrongTurns": [],
+      "notes": [],
+      "blockedAt": null
+    },
+    {
+      "slug": "evaluate-trust",
+      "name": "Evaluate Trust Before Committing",
+      "status": "completed",
+      "clicks": 4,
+      "pageLoads": 9,
+      "steps": [
+        {
+          "n": 1,
+          "page": "about:blank",
+          "action": "load homepage",
+          "result": "homepage loaded",
+          "screenshot": "journey-evaluate-trust-001-01-load-homepage.png"
+        },
+        {
+          "n": 2,
+          "page": "/",
+          "action": "navigate to About",
+          "result": "clicked visible link to /about → /; heading: \"TURN VENDING\nINTO YOUR PATH\nTO FINANCIAL FREEDOM\"",
+          "screenshot": "journey-evaluate-trust-002-02-navigate-to-about.png"
+        },
+        {
+          "n": 3,
+          "page": "/about",
+          "action": "return home from About",
+          "result": "back on homepage",
+          "screenshot": "journey-evaluate-trust-003-03-return-home-from-about.png"
+        },
+        {
+          "n": 4,
+          "page": "/",
+          "action": "navigate to Case Studies",
+          "result": "clicked visible link to /case-studies → /; heading: \"TURN VENDING\nINTO YOUR PATH\nTO FINANCIAL FREEDOM\"",
+          "screenshot": "journey-evaluate-trust-004-04-navigate-to-case-studies.png"
+        },
+        {
+          "n": 5,
+          "page": "/case-studies",
+          "action": "return home from Case Studies",
+          "result": "back on homepage",
+          "screenshot": "journey-evaluate-trust-005-05-return-home-from-case-studies.png"
+        },
+        {
+          "n": 6,
+          "page": "/",
+          "action": "navigate to Privacy",
+          "result": "clicked visible link to /privacy → /; heading: \"TURN VENDING\nINTO YOUR PATH\nTO FINANCIAL FREEDOM\"",
+          "screenshot": "journey-evaluate-trust-006-06-navigate-to-privacy.png"
+        },
+        {
+          "n": 7,
+          "page": "/privacy",
+          "action": "return home from Privacy",
+          "result": "back on homepage",
+          "screenshot": "journey-evaluate-trust-007-07-return-home-from-privacy.png"
+        },
+        {
+          "n": 8,
+          "page": "/",
+          "action": "navigate to Terms",
+          "result": "clicked visible link to /terms → /; heading: \"TURN VENDING\nINTO YOUR PATH\nTO FINANCIAL FREEDOM\"",
+          "screenshot": "journey-evaluate-trust-008-08-navigate-to-terms.png"
+        },
+        {
+          "n": 9,
+          "page": "/terms",
+          "action": "return home from Terms",
+          "result": "back on homepage",
+          "screenshot": "journey-evaluate-trust-009-09-return-home-from-terms.png"
+        }
+      ],
+      "wrongTurns": [],
+      "notes": [],
+      "blockedAt": null
+    },
+    {
+      "slug": "pre-call-prep",
+      "name": "Pre-Call Resources",
+      "status": "completed",
+      "clicks": 0,
+      "pageLoads": 1,
+      "steps": [
+        {
+          "n": 1,
+          "page": "about:blank",
+          "action": "open pre-call resources (email-link entry)",
+          "result": "loaded; heading: \"PREPARE FOR YOUR VENDING STRATEGY CALL.\"",
+          "screenshot": "journey-pre-call-prep-001-01-open-pre-call-resources-email-link-entry.png"
+        },
+        {
+          "n": 2,
+          "page": "/pre-call-resources",
+          "action": "scroll through resources",
+          "result": "0 embedded video(s)/iframe(s), 14 visible links",
+          "screenshot": "journey-pre-call-prep-002-02-scroll-through-resources.png"
+        }
+      ],
+      "wrongTurns": [],
+      "notes": [],
+      "blockedAt": null
+    },
+    {
+      "slug": "admin-create-news-draft",
+      "name": "Admin: Create a News Draft",
+      "status": "blocked",
+      "clicks": 0,
+      "pageLoads": 2,
+      "steps": [
+        {
+          "n": 1,
+          "page": "about:blank",
+          "action": "open /admin",
+          "result": "landed on /admin/pages (dev auth bypass)",
+          "screenshot": "journey-admin-create-news-draft-001-01-open-admin.png"
+        },
+        {
+          "n": 2,
+          "page": "/admin/pages",
+          "action": "navigate to News section",
+          "result": "FAILED: no visible link matching /admin/news (news) on /admin/pages",
+          "screenshot": "journey-admin-create-news-draft-002-02-navigate-to-news-section.png"
+        },
+        {
+          "n": 3,
+          "page": "/admin/pages",
+          "action": "click New post",
+          "result": "FAILED: no visible New post button on /admin/news",
+          "screenshot": "journey-admin-create-news-draft-003-03-click-new-post.png"
+        },
+        {
+          "n": 4,
+          "page": "/admin/pages",
+          "action": "fill title and content",
+          "result": "filled: q",
+          "screenshot": "journey-admin-create-news-draft-004-04-fill-title-and-content.png"
+        },
+        {
+          "n": 5,
+          "page": "/admin/pages",
+          "action": "save draft (NOT publish)",
+          "result": "FAILED: no visible Save/Save draft button",
+          "screenshot": "journey-admin-create-news-draft-005-05-save-draft-not-publish-.png"
+        },
+        {
+          "n": 6,
+          "page": "/admin/pages",
+          "action": "verify draft in news list",
+          "result": "FAILED: created draft not found in /admin/news list",
+          "screenshot": "journey-admin-create-news-draft-006-06-verify-draft-in-news-list.png"
+        }
+      ],
+      "wrongTurns": [],
+      "notes": [],
+      "blockedAt": "/admin/pages — FAILED: no visible link matching /admin/news (news) on /admin/pages"
+    },
+    {
+      "slug": "admin-create-seo-page",
+      "name": "Admin: Create an SEO Page Draft",
+      "status": "blocked",
+      "clicks": 1,
+      "pageLoads": 2,
+      "steps": [
+        {
+          "n": 1,
+          "page": "about:blank",
+          "action": "open /admin/pages",
+          "result": "pages list loaded",
+          "screenshot": "journey-admin-create-seo-page-001-01-open-admin-pages.png"
+        },
+        {
+          "n": 2,
+          "page": "/admin/pages",
+          "action": "click New page",
+          "result": "on /admin/pages",
+          "screenshot": "journey-admin-create-seo-page-002-02-click-new-page.png"
+        },
+        {
+          "n": 3,
+          "page": "/admin/pages/new",
+          "action": "fill new page form",
+          "result": "filled: ",
+          "screenshot": "journey-admin-create-seo-page-003-03-fill-new-page-form.png"
+        },
+        {
+          "n": 4,
+          "page": "/admin/pages/new",
+          "action": "create the page",
+          "result": "FAILED: no Create button visible",
+          "screenshot": "journey-admin-create-seo-page-004-04-create-the-page.png"
+        },
+        {
+          "n": 5,
+          "page": "/admin/pages/new",
+          "action": "try adding a block in editor",
+          "result": "no visible Add block control (noted)",
+          "screenshot": "journey-admin-create-seo-page-005-05-try-adding-a-block-in-editor.png"
+        },
+        {
+          "n": 6,
+          "page": "/admin/pages/new",
+          "action": "save draft",
+          "result": "no separate Save button (may autosave — noted)",
+          "screenshot": "journey-admin-create-seo-page-006-06-save-draft.png"
+        }
+      ],
+      "wrongTurns": [],
+      "notes": [],
+      "blockedAt": "/admin/pages/new — page creation did not reach editor"
+    },
+    {
+      "slug": "admin-manage-content-ops",
+      "name": "Admin: Media & Settings Walkthrough",
+      "status": "completed-with-friction",
+      "clicks": 1,
+      "pageLoads": 6,
+      "steps": [
+        {
+          "n": 1,
+          "page": "about:blank",
+          "action": "open admin studio",
+          "result": "studio loaded",
+          "screenshot": "journey-admin-manage-content-ops-001-01-open-admin-studio.png"
+        },
+        {
+          "n": 2,
+          "page": "/admin/pages",
+          "action": "navigate to Media",
+          "result": "NO visible nav affordance — direct URL used (/admin/media)",
+          "screenshot": "journey-admin-manage-content-ops-002-02-navigate-to-media.png"
+        },
+        {
+          "n": 3,
+          "page": "/admin/media",
+          "action": "navigate to Libraries",
+          "result": "clicked visible link to /admin/libraries → /admin/media",
+          "screenshot": "journey-admin-manage-content-ops-003-03-navigate-to-libraries.png"
+        },
+        {
+          "n": 4,
+          "page": "/admin/libraries",
+          "action": "navigate to Redirects",
+          "result": "NO visible nav affordance — direct URL used (/admin/pages/redirects)",
+          "screenshot": "journey-admin-manage-content-ops-004-04-navigate-to-redirects.png"
+        },
+        {
+          "n": 5,
+          "page": "/admin/pages/redirects",
+          "action": "navigate to Settings",
+          "result": "NO visible nav affordance — direct URL used (/admin/settings)",
+          "screenshot": "journey-admin-manage-content-ops-005-05-navigate-to-settings.png"
+        },
+        {
+          "n": 6,
+          "page": "/admin/settings/users",
+          "action": "navigate to Users",
+          "result": "NO visible nav affordance — direct URL used (/admin/settings/users)",
+          "screenshot": "journey-admin-manage-content-ops-006-06-navigate-to-users.png"
+        }
+      ],
+      "wrongTurns": [
+        "Media: no visible nav link from /admin/media — required direct URL",
+        "Redirects: no visible nav link from /admin/pages/redirects — required direct URL",
+        "Settings: no visible nav link from /admin/settings/users — required direct URL",
+        "Users: no visible nav link from /admin/settings/users — required direct URL"
+      ],
+      "notes": [],
+      "blockedAt": null
+    }
+  ],
+  "created": [],
+  "skips": [],
+  "errors": []
+}

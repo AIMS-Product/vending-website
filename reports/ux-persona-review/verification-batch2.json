@@ -1,0 +1,37 @@
+[
+  {
+    "cid": "C112",
+    "verdict": "demote",
+    "newSeverity": "high",
+    "correctedFinding": "Homepage hero stat block shows real values (500+, $3M+, 3,000+ per src/lib/content/home.ts) only after a scroll-triggered count-up animation fires; before the animation (and for no-JS users / crawlers / headless captures) the counters render literal zeros (0+, $0M+, 0+), so first paint and non-JS clients see zero social proof.",
+    "mergeWith": ["C076", "C039"],
+    "reason": "Confirmed real cause: home.ts defines 500+/$3M+/3,000+; zeros are the un-fired count-up start state, not missing data. Real user trust impact (first-paint/no-JS/SEO) is genuine but not a P0 'nothing has happened' blocker since JS users see real numbers. Same root issue as C076 and C039 (batch 1) — merge all three."
+  },
+  {
+    "cid": "C117",
+    "verdict": "confirmed",
+    "reason": "PublicLeadForm.tsx lines 173, 186, 193 mark business_stage, budget, and timeline as required for intent=apply. A prospect who hasn't decided stage/budget/timeline is blocked from submitting. Matches apply-text.md '(required)' extracts. P1/critical stands."
+  },
+  {
+    "cid": "C138",
+    "verdict": "demote",
+    "newSeverity": "low",
+    "correctedFinding": "The pages list row '⋮' menu (a native details/summary in admin/pages/page.tsx PageActionsMenu) DOES expose Edit, View live, Duplicate, Publish/Move-to-draft, and Archive — automation could not open the native details element so the menu appeared empty. The only genuine gaps are no hard Delete (Archive is the intentional soft-delete) and no checkbox multi-select / bulk actions.",
+    "reason": "Core claim ('no row-level delete/duplicate', 'menu did not expose Archive/Delete') is contradicted by source: Duplicate page and Archive page are both present (page.tsx:799-840). Headless automation cannot open <details> via JS click, which explains the empty-menu observation — works for real mouse users. Residual (no bulk select, no hard delete) is a minor enhancement, not critical."
+  },
+  {
+    "cid": "C150",
+    "verdict": "confirmed",
+    "reason": "src/app/contact/page.tsx renders only headline copy plus PublicLeadForm — no phone, email, or alternative channel anywhere. Matches contact-002-full.png and contact-text.md. Real trust/accessibility gap for users who can't or won't use a form. Merge candidate with C148 (homepage/footer no human contact), same root cause."
+  },
+  {
+    "cid": "C004",
+    "verdict": "confirmed",
+    "reason": "Nav and route say 'News' (nav.ts primaryNav + /news route), but NewsHero.tsx:9 heading is 'Blog' and NewsArticle.tsx:41 breadcrumb is 'Blog' — one section, two names. Matches news-text.md 'BLOG' and the cited screenshots. Consistency/copy defect confirmed; high-frequency (13 personas)."
+  },
+  {
+    "cid": "C003",
+    "verdict": "confirmed",
+    "reason": "nav.ts primaryNav = About, Resources, Case Studies, News — no Contact. /contact appears only in Footer (footerColumns 'Contact Us'). Header.tsx renders primaryNav only, so top nav has no Contact link. Matches home-text.md nav extract and the journey screenshot. Confirmed; high-frequency (11 personas)."
+  }
+]
