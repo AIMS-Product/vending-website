@@ -4,6 +4,8 @@ import {
   SeoPageValidationError,
   adminArchiveSeoPage,
   adminCreateBuilderRedirect,
+  adminDeleteBuilderRedirect,
+  adminUpdateBuilderRedirect,
   adminCreateSeoPage,
   adminGetSeoPageById,
   adminListSeoPages,
@@ -144,6 +146,24 @@ function deleteMatch(error: unknown = null) {
   return {
     table: { delete: deleteMock },
     mocks: { delete: deleteMock, match },
+  };
+}
+
+function updateMaybeSingle(data: unknown, error: unknown = null) {
+  const maybeSingle = vi.fn().mockResolvedValue({ data, error });
+  const select = vi.fn().mockReturnValue({ maybeSingle });
+  const eq = vi.fn().mockReturnValue({ select });
+  const update = vi.fn().mockReturnValue({ eq });
+  return { table: { update }, mocks: { update, eq, select, maybeSingle } };
+}
+
+function deleteEqSelect(data: unknown, error: unknown = null) {
+  const select = vi.fn().mockResolvedValue({ data, error });
+  const eq = vi.fn().mockReturnValue({ select });
+  const deleteMock = vi.fn().mockReturnValue({ eq });
+  return {
+    table: { delete: deleteMock },
+    mocks: { delete: deleteMock, eq, select },
   };
 }
 
@@ -1858,5 +1878,121 @@ describe("seo page service", () => {
         p_actor_id: "admin-1",
       },
     );
+  });
+
+  it("updates a builder redirect with normalized paths and a supported status", async () => {
+    const updated = {
+      id: "redirect_1",
+      source_path: "/resources/old",
+      destination_path: "/blog/new",
+      status_code: 302,
+    };
+    const update = updateMaybeSingle(updated);
+    const client = buildClient(update.table);
+
+    const result = await adminUpdateBuilderRedirect(
+      {
+        id: "  redirect_1  ",
+        sourcePath: " /resources/old/// ",
+        destinationPath: "/blog/new",
+        statusCode: 302,
+      },
+      { client },
+    );
+
+    expect(result).toBe(updated);
+    expect(client.from).toHaveBeenCalledWith("redirects");
+    expect(update.mocks.update).toHaveBeenCalledWith({
+      source_path: "/resources/old",
+      destination_path: "/blog/new",
+      status_code: 302,
+    });
+    expect(update.mocks.eq).toHaveBeenCalledWith("id", "redirect_1");
+  });
+
+  it("rejects an update with an unsupported status before touching Supabase", async () => {
+    const client = buildClient();
+
+    await expect(
+      adminUpdateBuilderRedirect(
+        {
+          id: "redirect_1",
+          sourcePath: "/resources/old",
+          destinationPath: "/blog/new",
+          statusCode: 418,
+        },
+        { client },
+      ),
+    ).rejects.toBeInstanceOf(SeoPageValidationError);
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects an update whose source is not a canonical builder path", async () => {
+    const client = buildClient();
+
+    await expect(
+      adminUpdateBuilderRedirect(
+        {
+          id: "redirect_1",
+          sourcePath: "/about",
+          destinationPath: "/blog/new",
+          statusCode: 301,
+        },
+        { client },
+      ),
+    ).rejects.toBeInstanceOf(SeoPageValidationError);
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects an update when the redirect row is gone", async () => {
+    const update = updateMaybeSingle(null);
+    const client = buildClient(update.table);
+
+    await expect(
+      adminUpdateBuilderRedirect(
+        {
+          id: "redirect_missing",
+          sourcePath: "/resources/old",
+          destinationPath: "/blog/new",
+          statusCode: 301,
+        },
+        { client },
+      ),
+    ).rejects.toMatchObject({
+      issues: [expect.objectContaining({ code: "redirect_not_found" })],
+    });
+  });
+
+  it("deletes a builder redirect by id and reports the removed id", async () => {
+    const remove = deleteEqSelect([{ id: "redirect_1" }]);
+    const client = buildClient(remove.table);
+
+    const result = await adminDeleteBuilderRedirect("  redirect_1  ", {
+      client,
+    });
+
+    expect(result).toEqual({ id: "redirect_1" });
+    expect(client.from).toHaveBeenCalledWith("redirects");
+    expect(remove.mocks.eq).toHaveBeenCalledWith("id", "redirect_1");
+  });
+
+  it("rejects a delete with a blank id before touching Supabase", async () => {
+    const client = buildClient();
+
+    await expect(
+      adminDeleteBuilderRedirect("   ", { client }),
+    ).rejects.toBeInstanceOf(SeoPageValidationError);
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects a delete when no row matched the id", async () => {
+    const remove = deleteEqSelect([]);
+    const client = buildClient(remove.table);
+
+    await expect(
+      adminDeleteBuilderRedirect("redirect_missing", { client }),
+    ).rejects.toMatchObject({
+      issues: [expect.objectContaining({ code: "redirect_not_found" })],
+    });
   });
 });

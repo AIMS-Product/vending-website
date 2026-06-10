@@ -98,6 +98,13 @@ export type DuplicateSeoPageOptions = ServiceDeps & {
   now?: () => Date;
 };
 
+export type UpdateBuilderRedirectInput = {
+  id: string;
+  sourcePath: string;
+  destinationPath: string;
+  statusCode?: number;
+};
+
 export type CreateBuilderRedirectInput = {
   sourcePath: string;
   destinationPath: string;
@@ -136,6 +143,9 @@ const PAGE_REVISION_FIELDS =
 
 const PAGE_PREVIEW_TOKEN_FIELDS =
   "id, page_id, token_prefix, expires_at, revoked_at, created_by, created_at" as const;
+
+const BUILDER_REDIRECT_FIELDS =
+  "id, source_path, destination_path, status_code, page_id, created_reason, created_by, created_at" as const;
 
 export async function adminListSeoPages(
   { status }: SeoPageListOptions = {},
@@ -818,6 +828,98 @@ export async function adminCreateBuilderRedirect(
     throwSeoPageMutationError(error, "Could not create redirect.", sourcePath);
   }
   return data;
+}
+
+export async function adminUpdateBuilderRedirect(
+  input: UpdateBuilderRedirectInput,
+  deps: ServiceDeps = {},
+) {
+  const client = deps.client ?? createAdminClient();
+  const id = input.id.trim();
+  if (!id) {
+    throw new SeoPageValidationError([
+      {
+        code: "missing_redirect_id",
+        path: "id",
+        message: "Choose which redirect to update.",
+      },
+    ]);
+  }
+  const sourcePath = normalizeSourcePath(input.sourcePath);
+  const destinationPath = normalizeDestinationPath(input.destinationPath);
+  validateRedirectPaths(sourcePath, destinationPath);
+  const statusCode = assertRedirectStatusCode(input.statusCode ?? 301);
+
+  const { data, error } = await client
+    .from("redirects")
+    .update({
+      source_path: sourcePath,
+      destination_path: destinationPath,
+      status_code: statusCode,
+    })
+    .eq("id", id)
+    .select(BUILDER_REDIRECT_FIELDS)
+    .maybeSingle();
+  if (error) {
+    throwSeoPageMutationError(error, "Could not update redirect.", sourcePath);
+  }
+  if (!data) {
+    throw new SeoPageValidationError([
+      {
+        code: "redirect_not_found",
+        path: "id",
+        message: "That redirect no longer exists. Refresh and try again.",
+      },
+    ]);
+  }
+  return data;
+}
+
+export async function adminDeleteBuilderRedirect(
+  id: string,
+  deps: ServiceDeps = {},
+) {
+  const client = deps.client ?? createAdminClient();
+  const redirectId = id.trim();
+  if (!redirectId) {
+    throw new SeoPageValidationError([
+      {
+        code: "missing_redirect_id",
+        path: "id",
+        message: "Choose which redirect to delete.",
+      },
+    ]);
+  }
+
+  const { data, error } = await client
+    .from("redirects")
+    .delete()
+    .eq("id", redirectId)
+    .select("id");
+  if (error) throw new Error("Could not delete redirect.");
+  if (!data || data.length === 0) {
+    throw new SeoPageValidationError([
+      {
+        code: "redirect_not_found",
+        path: "id",
+        message: "That redirect no longer exists. Refresh and try again.",
+      },
+    ]);
+  }
+  return { id: redirectId };
+}
+
+function assertRedirectStatusCode(statusCode: number) {
+  if (![301, 302, 307, 308].includes(statusCode)) {
+    throw new SeoPageValidationError([
+      {
+        code: "invalid_redirect_status",
+        path: "status_code",
+        message: "Choose a supported redirect status.",
+      },
+    ]);
+  }
+  return statusCode;
 }
 
 export async function adminListPageComments(
