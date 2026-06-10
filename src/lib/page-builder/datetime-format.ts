@@ -22,3 +22,19 @@ export function formatPacificDateTime(iso: string): string {
   if (Number.isNaN(date.getTime())) return "";
   return pacificDateTimeFormatter.format(date);
 }
+
+// Date-only variant for surfaces that show calendar dates (redirect created-at,
+// publish panel "Last updated"/"Published"). Anchored to the same Pacific zone
+// so a record created in the Pacific evening never displays as the next day.
+const pacificDateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: SCHEDULED_PUBLISH_TIME_ZONE,
+});
+
+export function formatPacificDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return pacificDateFormatter.format(date);
+}

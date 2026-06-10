@@ -139,7 +139,24 @@ type PageFormOverrides = {
   scheduledPublishAtBaseline?: string;
   cancelScheduledPublish?: boolean;
   intent?: "save" | "publish";
+  // Simulates a manual save submitted while the collapsible SEO panel is
+  // closed: its uncontrolled governance inputs unmount, so none of them are
+  // present in the FormData.
+  omitGovernanceFields?: boolean;
 };
+
+// Same names in the FormData and in the service patch.
+const GOVERNANCE_FIELDS = [
+  "internalTags",
+  "topicCluster",
+  "campaignLabel",
+  "funnelStage",
+  "reviewPeriodMonths",
+  "nextReviewAt",
+  "lifecycleStatus",
+  "ogTitle",
+  "ogDescription",
+] as const;
 
 function pageForm(overrides: PageFormOverrides = {}) {
   const values = {
@@ -1012,8 +1029,29 @@ describe("admin page actions", () => {
     expect(mocks.adminArchiveSeoPage).toHaveBeenCalledWith(secondId, {
       actorId: "admin_1",
     });
+    // The result redirect carries an explicit archived count for the banner.
     expect(mocks.redirect).toHaveBeenCalledWith(
-      "/admin/pages?view=metadata-issues",
+      "/admin/pages?view=metadata-issues&archived=2",
+    );
+  });
+
+  it("dedupes ids and reports partial failures in the result redirect", async () => {
+    const failingId = "44444444-4444-4444-8444-444444444444";
+    const formData = new FormData();
+    formData.append("ids", pageId);
+    formData.append("ids", pageId); // duplicate — must archive once
+    formData.append("ids", failingId);
+    formData.set("returnTo", "/admin/pages");
+    mocks.adminArchiveSeoPage.mockImplementation((id: string) => {
+      if (id === failingId) return Promise.reject(new Error("rpc failed"));
+      return Promise.resolve({ id, route_path: "/resources/x" });
+    });
+
+    await bulkArchiveSeoPagesFromList(formData);
+
+    expect(mocks.adminArchiveSeoPage).toHaveBeenCalledTimes(2);
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      "/admin/pages?archived=1&failed=1",
     );
   });
 

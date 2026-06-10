@@ -27,16 +27,15 @@ const walkthroughSteps = {
 
 type WalkthroughStep = keyof typeof walkthroughSteps;
 
-// N15 / issue I17: the Quick Tour is now opt-in. Previously the controller
-// auto-started it (set builderWalkthroughStep = 1) the first time the editor
-// opened, which the review found intrusive. This component now drives tour
-// visibility from its OWN local step state and ignores the controller's
-// auto-start, so opening the editor never pops the tour. A persistent "Quick
-// tour" launch button starts it on demand; finishing or skipping persists the
-// seen-flag (which also stops the controller's legacy auto-start) and the user
-// can re-launch any time. The positioning logic (computeWalkthroughCardPlacement
-// + useWalkthroughTarget + data-builder-walkthrough targeting) is unchanged, so
-// the prior tour-positioning fix is preserved.
+// N15 / issue I17: the Quick Tour is opt-in and fully self-driven. The
+// controller's legacy auto-start (builderWalkthroughStep) has been removed, so
+// opening the editor never pops the tour. This component drives visibility
+// from its OWN local step state; a persistent "Quick tour" launch button
+// starts it on demand, and finishing or skipping persists the seen-flag so
+// the user can re-launch any time. The positioning logic
+// (computeWalkthroughCardPlacement + useWalkthroughTarget +
+// data-builder-walkthrough targeting) is unchanged, so the prior
+// tour-positioning fix is preserved.
 const walkthroughSeenStorageKey = "page-builder-editor-walkthrough-seen";
 
 export function BuilderEditorWalkthrough({

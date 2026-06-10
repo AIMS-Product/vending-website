@@ -54,10 +54,19 @@ export async function adminDeleteNeverSavedSeoPageDraft(
   });
   if (!deletable) return { status: "protected" };
 
+  // Defense in depth: re-assert the floor conditions inside the DELETE itself
+  // so a publish that lands between the check above and this delete cannot be
+  // wiped out (the revision-count part of the floor is backstopped by the
+  // page_revisions FK). If the state changed and the delete matches 0 rows,
+  // the row was kept — still report "deleted" so the exit guard lets the user
+  // leave; nothing was lost.
   const { error: deleteError } = await client
     .from("seo_pages")
     .delete()
-    .eq("id", pageId);
+    .eq("id", pageId)
+    .eq("status", "draft")
+    .is("published_at", null)
+    .is("published_revision_id", null);
 
   if (deleteError) throw new Error("Could not delete SEO page draft.");
   return { status: "deleted" };

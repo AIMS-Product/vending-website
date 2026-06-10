@@ -3,17 +3,15 @@ import { describe, expect, it } from "vitest";
 import { BuilderEditorWalkthrough } from "./BuilderEditorWalkthrough";
 import type { SeoPageEditorController } from "./useSeoPageEditorController";
 
-// Minimal controller stub — only the fields the walkthrough reads/calls.
+// Minimal controller stub — only the fields the walkthrough reads/calls. The
+// legacy controller walkthrough state (builderWalkthroughStep etc.) is gone;
+// the tour is fully self-driven from this component's own local step state.
 function editorStub(
   overrides: Partial<SeoPageEditorController> = {},
 ): SeoPageEditorController {
   return {
-    builderWalkthroughStep: null,
     isBlockSidebarCollapsed: true,
     isSeoSidebarCollapsed: false,
-    advanceBuilderWalkthrough: () => {},
-    finishBuilderWalkthrough: () => {},
-    dismissBuilderWalkthrough: () => {},
     toggleBlockSidebar: () => {},
     toggleSeoSidebar: () => {},
     ...overrides,
@@ -21,12 +19,9 @@ function editorStub(
 }
 
 describe("BuilderEditorWalkthrough (opt-in)", () => {
-  it("does NOT auto-render the tour overlay when the controller auto-sets a step", () => {
-    // Simulate the controller's create-time auto-start (step = 1).
+  it("does NOT auto-render the tour overlay on mount", () => {
     const html = renderToStaticMarkup(
-      <BuilderEditorWalkthrough
-        editor={editorStub({ builderWalkthroughStep: 1 })}
-      />,
+      <BuilderEditorWalkthrough editor={editorStub()} />,
     );
 
     // The intrusive overlay (modal dialog / step copy) must not appear on its own.

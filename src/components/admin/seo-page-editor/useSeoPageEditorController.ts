@@ -132,6 +132,11 @@ type PreviewLinkTone = "neutral" | "error";
 const emptyInternalLinkTargets: InternalLinkSuggestionTarget[] = [];
 const emptyMediaAssets: SeoPageEditorMediaAsset[] = [];
 const emptyAiProposals: AiPageProposalReview[] = [];
+// Uncontrolled metadata fields whose edits should trigger an autosave. The
+// schedule controls (scheduledPublishAt / cancelScheduledPublish) are
+// deliberately absent: scheduler columns are owned by explicit saves, and the
+// autosave payload is schedule-inert, so a half-typed schedule must never
+// kick off a background save.
 const autosaveMetadataFieldNames = new Set([
   "internalTags",
   "topicCluster",
@@ -142,11 +147,7 @@ const autosaveMetadataFieldNames = new Set([
   "lifecycleStatus",
   "ogTitle",
   "ogDescription",
-  "scheduledPublishAt",
-  "cancelScheduledPublish",
 ]);
-const builderWalkthroughStorageKey = "page-builder-editor-walkthrough-seen";
-type BuilderWalkthroughStep = 1 | 2 | 3;
 
 export function useSeoPageEditorController(
   {
@@ -281,8 +282,6 @@ export function useSeoPageEditorController(
   const [hasSelectedNewPageMode, setHasSelectedNewPageMode] = useState(
     Boolean(page?.id),
   );
-  const [builderWalkthroughStep, setBuilderWalkthroughStep] =
-    useState<BuilderWalkthroughStep | null>(null);
   const showCreationChoiceModal = !page?.id && !hasSelectedNewPageMode;
   const [linkSuggestionMessage, setLinkSuggestionMessage] = useState<
     string | null
@@ -857,14 +856,12 @@ export function useSeoPageEditorController(
     aiProposals,
     applyLinkSuggestion,
     applyPageBuilderAiTools,
-    advanceBuilderWalkthrough,
     autosave,
     blockOrdinalById,
     blockSidebarExpandTitle,
     blockSidebarStatus,
     builderBlockEntries,
     builderShellGridClass,
-    builderWalkthroughStep,
     canonicalUrl,
     chromeSettings,
     closeBlockSettings,
@@ -872,11 +869,9 @@ export function useSeoPageEditorController(
     content,
     draftContentJson,
     duplicateBlock,
-    dismissBuilderWalkthrough,
     editBlockEntry,
     effectivePageId,
     editingBlockEntry,
-    finishBuilderWalkthrough,
     focusPublishBlocker,
     formAction,
     focusSeoSetting,
@@ -1054,73 +1049,6 @@ export function useSeoPageEditorController(
     setIsDesktopSeoSidebarCollapsed((isCollapsed) => !isCollapsed);
   }
 
-  function shouldOfferBuilderWalkthrough() {
-    if (page?.id) return false;
-    try {
-      return !window.localStorage.getItem(builderWalkthroughStorageKey);
-    } catch {
-      return false;
-    }
-  }
-
-  function applyWalkthroughPanelLayout(step: BuilderWalkthroughStep) {
-    if (step === 1) {
-      if (isNarrowEditor) {
-        setMobileEditorPanel("blocks");
-      } else {
-        setIsDesktopBlockSidebarCollapsed(false);
-      }
-      return;
-    }
-
-    if (step === 2) {
-      if (isNarrowEditor) {
-        setMobileEditorPanel("seo");
-      } else {
-        setIsDesktopSeoSidebarCollapsed(false);
-      }
-      return;
-    }
-
-    if (isNarrowEditor) {
-      setMobileEditorPanel(null);
-    } else {
-      setIsDesktopBlockSidebarCollapsed(true);
-      setIsDesktopSeoSidebarCollapsed(true);
-    }
-  }
-
-  function completeBuilderWalkthrough() {
-    try {
-      window.localStorage.setItem(builderWalkthroughStorageKey, "1");
-    } catch {
-      // Ignore private browsing storage failures.
-    }
-  }
-
-  function advanceBuilderWalkthrough() {
-    if (builderWalkthroughStep === 1) {
-      applyWalkthroughPanelLayout(2);
-      setBuilderWalkthroughStep(2);
-      return;
-    }
-
-    if (builderWalkthroughStep === 2) {
-      applyWalkthroughPanelLayout(3);
-      setBuilderWalkthroughStep(3);
-    }
-  }
-
-  function finishBuilderWalkthrough() {
-    completeBuilderWalkthrough();
-    setBuilderWalkthroughStep(null);
-  }
-
-  function dismissBuilderWalkthrough() {
-    completeBuilderWalkthrough();
-    setBuilderWalkthroughStep(null);
-  }
-
   function selectBlockEntry(entry: BuilderBlockEntry) {
     setSelectedBlockId(entry.block.id);
     scrollToBuilderBlockId(entry.block.id);
@@ -1173,6 +1101,11 @@ export function useSeoPageEditorController(
     }
 
     if (target.kind === "field") {
+      // Settings fields live inside the Settings tabpanel, which stays mounted
+      // but hidden while another tab is active — scrollIntoView/focus are
+      // no-ops on display:none elements. Activate the tab first, then focus
+      // the field on the next frame.
+      activateSeoSettingsPanelTab();
       if (advancedSeoFieldIds.has(target.elementId)) {
         const advancedFields = document.getElementById("advanced-seo-fields");
         if (advancedFields instanceof HTMLDetailsElement) {
@@ -1206,6 +1139,9 @@ export function useSeoPageEditorController(
 
   function focusSeoSetting(finding: SeoReadinessFinding) {
     const targetId = seoSettingFieldId(finding.path);
+    // Same hidden-tabpanel rule as focusPublishBlocker: reveal the Settings
+    // tab before focusing one of its fields.
+    activateSeoSettingsPanelTab();
     if (advancedSeoFieldIds.has(targetId)) {
       const advancedFields = document.getElementById("advanced-seo-fields");
       if (advancedFields instanceof HTMLDetailsElement) {
@@ -1271,10 +1207,8 @@ export function useSeoPageEditorController(
     setSelectedBlockId(null);
     setEditingBlockId(null);
     setHasSelectedNewPageMode(true);
-    if (shouldOfferBuilderWalkthrough()) {
-      applyWalkthroughPanelLayout(1);
-      setBuilderWalkthroughStep(1);
-    }
+    // The Quick Tour (BuilderEditorWalkthrough) is opt-in and fully self-driven
+    // — no controller auto-start here.
   }
 
   function updateChromeSettings(next: Partial<PageChromeSettings>) {
@@ -1567,6 +1501,17 @@ export function useSeoPageEditorController(
       setIsAiInserting(false);
     }
   }
+}
+
+// Reveal the SEO panel's Settings tab by clicking its rendered tab button —
+// SeoPanelTabs owns activeId, so going through its own onClick keeps the WAI
+// tablist state (aria-selected, roving tabindex) consistent. A graceful no-op
+// when the panel is collapsed/unmounted, matching the getElementById idiom of
+// the surrounding focus helpers.
+function activateSeoSettingsPanelTab() {
+  document
+    .querySelector<HTMLButtonElement>('[data-seo-panel-tab="settings"]')
+    ?.click();
 }
 
 const advancedSeoFieldIds = new Set([

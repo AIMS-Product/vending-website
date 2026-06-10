@@ -50,7 +50,7 @@ export function isPlainNavigationClick(event: MouseEvent): boolean {
 // Resolves the anchor a click landed on, when it is a same-origin internal
 // link that would navigate away (not a new tab, not a download, not a hash on
 // the current page).
-export function internalNavTargetFromClick(event: MouseEvent): string | null {
+function internalNavTargetFromClick(event: MouseEvent): string | null {
   const path = event.composedPath?.() ?? [];
   const anchor = (path.find(
     (node): node is HTMLAnchorElement => node instanceof HTMLAnchorElement,
@@ -78,6 +78,27 @@ export function internalNavTargetFromClick(event: MouseEvent): string | null {
   }
 
   return `${url.pathname}${url.search}${url.hash}`;
+}
+
+// The editor form's real Save submit button — the same affordance the
+// keyboard shortcut and top rail use.
+const SAVE_BUTTON_SELECTOR =
+  'button[type="submit"][name="intent"][value="save"]';
+
+// Decides whether the "Save draft" dialog choice may proceed to navigation.
+// `onSaveDraft` is fire-and-forget (it requestSubmits the editor form), so if
+// the form would fail native validation the submit silently never happens and
+// navigating away would lose the draft. Surfaces the browser's field hints via
+// `reportValidity()` and returns false so the dialog stays open. A missing
+// form (shouldn't happen while the editor is mounted) falls back to allowing
+// navigation rather than trapping the user.
+export function formPassesSaveValidation(
+  form: Pick<HTMLFormElement, "checkValidity" | "reportValidity"> | null,
+): boolean {
+  if (!form) return true;
+  if (form.checkValidity()) return true;
+  form.reportValidity();
+  return false;
 }
 
 export function useUnsavedExitGuard({
@@ -133,11 +154,33 @@ export function useUnsavedExitGuard({
       event.returnValue = "";
     }
 
+    // The editor's own URL, captured at arm time so popstate can restore it
+    // (by the time popstate fires, location already points at the popped
+    // entry).
+    const editorHref = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+    // Best-effort SPA back/forward interception. popstate cannot be cancelled,
+    // and the App Router's own popstate handler has already started restoring
+    // the popped route by the time ours runs, so the intended destination is
+    // not recoverable and the rendered content may briefly be the previous
+    // page. We restore the editor's history entry and show the dialog:
+    // "stay" simply remains, "save"/"discard" navigate via their normal paths
+    // (discard falls back to the dialog's default /admin/pages destination).
+    function handlePopState() {
+      if (!armedRef.current) return;
+      window.history.pushState(null, "", editorHref);
+      pendingHrefRef.current = null;
+      setErrorMessage(null);
+      setIsOpen(true);
+    }
+
     document.addEventListener("click", handleClickCapture, true);
     window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("popstate", handlePopState);
     return () => {
       document.removeEventListener("click", handleClickCapture, true);
       window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("popstate", handlePopState);
     };
   }, [armed]);
 
@@ -151,11 +194,21 @@ export function useUnsavedExitGuard({
       }
 
       if (choice === "save") {
+        // `onSaveDraft` requestSubmits the editor form, which native
+        // validation can silently block — so check the form would actually
+        // submit before navigating away, otherwise the draft would be lost.
+        const form =
+          document.querySelector<HTMLButtonElement>(SAVE_BUTTON_SELECTOR)?.form;
+        if (!formPassesSaveValidation(form ?? null)) {
+          setErrorMessage("Fix the highlighted field, then save.");
+          return;
+        }
         // Persist via the editor's own Save draft submit, then continue to the
         // pending destination once it has navigated/remounted. Closing the
         // dialog and following the link keeps the in-app flow intact.
         const href = pendingHrefRef.current;
         setIsOpen(false);
+        setErrorMessage(null);
         onSaveDraft();
         if (href) router.push(href);
         pendingHrefRef.current = null;

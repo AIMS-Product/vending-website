@@ -1,4 +1,5 @@
 import { formatPacificDateTime } from "@/lib/page-builder/datetime-format";
+import { countWordsInValue } from "@/lib/page-builder/word-count";
 
 // N16 / issue I18: shared presentation for the revision history (list panel +
 // detail page) so labels and timestamps are consistent in one place.
@@ -51,29 +52,12 @@ export function revisionBlockStats(snapshot: unknown): RevisionBlockStats {
       if (!Array.isArray(blocks)) continue;
       for (const block of blocks) {
         blockCount += 1;
+        // Word counting shared with the editor's thin-page advisory via
+        // `@/lib/page-builder/word-count` (string leaves only).
         wordCount += countWordsInValue((block as { props?: unknown })?.props);
       }
     }
   }
 
   return { blockCount, wordCount };
-}
-
-// Walk a block's props collecting words from string leaves only. Bounded by the
-// snapshot size already in memory; ignores non-string scalars and structure.
-function countWordsInValue(value: unknown): number {
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    return trimmed ? trimmed.split(/\s+/).length : 0;
-  }
-  if (Array.isArray(value)) {
-    return value.reduce((sum, item) => sum + countWordsInValue(item), 0);
-  }
-  if (value && typeof value === "object") {
-    return Object.values(value).reduce(
-      (sum, item) => sum + countWordsInValue(item),
-      0,
-    );
-  }
-  return 0;
 }

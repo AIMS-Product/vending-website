@@ -224,7 +224,7 @@ describe("updateBuilderRedirectAction", () => {
     const result = await updateBuilderRedirectAction(
       { status: "idle" },
       form({
-        id: "r-missing",
+        id: "55555555-5555-4555-8555-555555555555",
         sourcePath: "/blog/old",
         destinationPath: "/blog/new",
         statusCode: "301",
@@ -241,12 +241,14 @@ describe("updateBuilderRedirectAction", () => {
   });
 
   it("redirects on a successful update", async () => {
-    mocks.adminUpdateBuilderRedirect.mockResolvedValueOnce({ id: "r1" });
+    mocks.adminUpdateBuilderRedirect.mockResolvedValueOnce({
+      id: "55555555-5555-4555-8555-555555555555",
+    });
 
     await updateBuilderRedirectAction(
       { status: "idle" },
       form({
-        id: "r1",
+        id: "55555555-5555-4555-8555-555555555555",
         sourcePath: "/blog/old",
         destinationPath: "/blog/new",
         statusCode: "302",
@@ -254,7 +256,7 @@ describe("updateBuilderRedirectAction", () => {
     );
 
     expect(mocks.adminUpdateBuilderRedirect).toHaveBeenCalledWith({
-      id: "r1",
+      id: "55555555-5555-4555-8555-555555555555",
       sourcePath: "/blog/old",
       destinationPath: "/blog/new",
       statusCode: 302,
@@ -277,11 +279,18 @@ describe("deleteBuilderRedirectAction", () => {
   });
 
   it("deletes, revalidates, and redirects on success", async () => {
-    mocks.adminDeleteBuilderRedirect.mockResolvedValueOnce({ id: "r1" });
+    mocks.adminDeleteBuilderRedirect.mockResolvedValueOnce({
+      id: "55555555-5555-4555-8555-555555555555",
+    });
 
-    await deleteBuilderRedirectAction({ status: "idle" }, form({ id: "r1" }));
+    await deleteBuilderRedirectAction(
+      { status: "idle" },
+      form({ id: "55555555-5555-4555-8555-555555555555" }),
+    );
 
-    expect(mocks.adminDeleteBuilderRedirect).toHaveBeenCalledWith("r1");
+    expect(mocks.adminDeleteBuilderRedirect).toHaveBeenCalledWith(
+      "55555555-5555-4555-8555-555555555555",
+    );
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/pages/redirects");
     expect(mocks.redirect).toHaveBeenCalledWith(
       "/admin/pages/redirects?deleted=1",
@@ -301,12 +310,61 @@ describe("deleteBuilderRedirectAction", () => {
 
     const result = await deleteBuilderRedirectAction(
       { status: "idle" },
-      form({ id: "r-missing" }),
+      form({ id: "55555555-5555-4555-8555-555555555555" }),
     );
 
     expect(result).toEqual({
       status: "error",
       message: "That redirect no longer exists. Refresh and try again.",
     });
+  });
+});
+
+describe("uuid validation floor", () => {
+  it("rejects a non-UUID page ID on create with a field error, no service call", async () => {
+    const result = await createBuilderRedirectAction(
+      { status: "idle" },
+      form({
+        sourcePath: "/blog/old",
+        destinationPath: "/blog/new",
+        statusCode: "301",
+        pageId: "junk",
+      }),
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "error",
+        fieldErrors: expect.objectContaining({
+          pageId: "Enter a valid page ID or leave blank.",
+        }),
+      }),
+    );
+    expect(mocks.adminCreateBuilderRedirect).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-UUID id on update without calling the service", async () => {
+    const result = await updateBuilderRedirectAction(
+      { status: "idle" },
+      form({
+        id: "junk",
+        sourcePath: "/blog/old",
+        destinationPath: "/blog/new",
+        statusCode: "301",
+      }),
+    );
+
+    expect(result.status).toBe("error");
+    expect(mocks.adminUpdateBuilderRedirect).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-UUID id on delete without calling the service", async () => {
+    const result = await deleteBuilderRedirectAction(
+      { status: "idle" },
+      form({ id: "junk" }),
+    );
+
+    expect(result.status).toBe("error");
+    expect(mocks.adminDeleteBuilderRedirect).not.toHaveBeenCalled();
   });
 });

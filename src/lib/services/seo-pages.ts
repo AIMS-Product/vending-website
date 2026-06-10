@@ -1661,7 +1661,7 @@ function validateRedirectPaths(sourcePath: string, destinationPath: string) {
 
 function normalizeDestinationPath(path: string) {
   const trimmed = path.trim();
-  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) {
+  if (isRootRelativePath(trimmed)) {
     return normalizeInternalPath(trimmed);
   }
 
@@ -1683,9 +1683,22 @@ function normalizeDestinationPath(path: string) {
   ]);
 }
 
+// Backslashes (raw or percent-encoded as %5C) are rejected because browsers
+// normalize "\" to "/" in redirect targets, so "/\evil.com" resolves like the
+// protocol-relative "//evil.com" and escapes the site despite looking like an
+// internal path.
+function isRootRelativePath(value: string) {
+  return (
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !value.includes("\\") &&
+    !value.toLowerCase().includes("%5c")
+  );
+}
+
 function normalizeInternalPath(path: string) {
   const trimmed = path.trim();
-  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) {
+  if (!isRootRelativePath(trimmed)) {
     throw new SeoPageValidationError([
       {
         code: "invalid_path",

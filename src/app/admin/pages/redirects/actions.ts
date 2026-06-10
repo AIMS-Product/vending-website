@@ -15,6 +15,7 @@ export type RedirectFieldErrors = {
   sourcePath?: string;
   destinationPath?: string;
   statusCode?: string;
+  pageId?: string;
 };
 
 // The raw strings the admin submitted, echoed back so the form can re-render
@@ -54,15 +55,26 @@ const createSchema = z.object({
     .refine((value) => REDIRECT_STATUS_CODES.includes(value as 301), {
       message: "Choose a supported redirect status.",
     }),
-  pageId: z.string().trim().optional(),
+  // Optional page association: blank means "no page", anything else must be a
+  // real UUID so junk never reaches the redirects table's page_id column.
+  // Shaped as transform→pipe because Zod 4's preprocess rejects an absent key
+  // ("expected nonoptional") even when the inner schema is optional.
+  pageId: z
+    .string()
+    .optional()
+    .transform((value) => {
+      const trimmed = value?.trim() ?? "";
+      return trimmed === "" ? undefined : trimmed;
+    })
+    .pipe(z.uuid("Enter a valid page ID or leave blank.").optional()),
 });
 
 const updateSchema = createSchema.extend({
-  id: z.string().trim().min(1, "Choose which redirect to update."),
+  id: z.uuid("Choose which redirect to update."),
 });
 
 const deleteSchema = z.object({
-  id: z.string().trim().min(1, "Choose which redirect to delete."),
+  id: z.uuid("Choose which redirect to delete."),
 });
 
 // Maps a service-layer validation issue path onto the form field the admin
@@ -217,6 +229,7 @@ function zodErrorState(
     else if (key === "destinationPath")
       fieldErrors.destinationPath = issue.message;
     else if (key === "statusCode") fieldErrors.statusCode = issue.message;
+    else if (key === "pageId") fieldErrors.pageId = issue.message;
   }
   return {
     status: "error",

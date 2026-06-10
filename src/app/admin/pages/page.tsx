@@ -16,6 +16,7 @@ import {
   adminPrimaryButtonClass,
   adminSecondaryButtonClass,
 } from "@/components/admin/AdminUi";
+import { firstParam, type SearchParamValue } from "@/lib/admin/list-state";
 import {
   adminPagesHref,
   buildSeoPageListState,
@@ -92,16 +93,23 @@ const workflowFilters: Array<{
   },
 ];
 
+type AdminPagesSearchParams = SeoPageSearchParams & {
+  archived?: SearchParamValue;
+  failed?: SearchParamValue;
+  error?: SearchParamValue;
+};
+
 export default async function AdminPagesPage({
   searchParams,
 }: {
-  searchParams: Promise<SeoPageSearchParams>;
+  searchParams: Promise<AdminPagesSearchParams>;
 }) {
   const [{ user, role }, params] = await Promise.all([
     requireAdmin(),
     searchParams,
   ]);
   const listParams = parseSeoPageListParams(params);
+  const bulkArchiveResult = parseBulkArchiveResult(params);
 
   const allPages = await adminListSeoPages();
   const listState = buildSeoPageListState(allPages, listParams);
@@ -115,8 +123,71 @@ export default async function AdminPagesPage({
       userRole={role}
       actions={<AdminPagesActions />}
     >
+      <BulkArchiveResultBanner result={bulkArchiveResult} />
       <SeoPagesAdminSurface state={listState} />
     </AdminShell>
+  );
+}
+
+type BulkArchiveResult =
+  | { kind: "success"; archived: number }
+  | { kind: "partial"; archived: number; failed: number }
+  | { kind: "error" }
+  | null;
+
+// The bulk-archive action redirects back here with `archived=N` (+ `failed=M`
+// on partial failure) or `error=bulk-archive` when nothing was archived.
+function parseBulkArchiveResult(
+  params: AdminPagesSearchParams,
+): BulkArchiveResult {
+  if (firstParam(params.error) === "bulk-archive") return { kind: "error" };
+
+  const archived = parseCountParam(params.archived);
+  if (archived === null) return null;
+
+  const failed = parseCountParam(params.failed);
+  if (failed !== null) return { kind: "partial", archived, failed };
+  return { kind: "success", archived };
+}
+
+function parseCountParam(value: SearchParamValue): number | null {
+  const parsed = Number(firstParam(value));
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function BulkArchiveResultBanner({ result }: { result: BulkArchiveResult }) {
+  if (!result) return null;
+
+  if (result.kind === "error") {
+    return (
+      <p
+        role="alert"
+        className="mb-5 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700"
+      >
+        Could not archive the selected pages. Check the logs and try again.
+      </p>
+    );
+  }
+
+  if (result.kind === "partial") {
+    return (
+      <p
+        role="alert"
+        className="mb-5 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800"
+      >
+        Archived {result.archived} {result.archived === 1 ? "page" : "pages"} —{" "}
+        {result.failed} failed, check logs.
+      </p>
+    );
+  }
+
+  return (
+    <p
+      role="status"
+      className="mb-5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700"
+    >
+      Archived {result.archived} {result.archived === 1 ? "page" : "pages"}.
+    </p>
   );
 }
 

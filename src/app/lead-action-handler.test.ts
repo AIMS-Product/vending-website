@@ -1,12 +1,28 @@
 import { describe, expect, it, vi } from "vitest";
 import { submitPublicLeadAction } from "@/app/lead-action-handler";
 
-// The handler reads request headers for referrer/user-agent. Validation runs
-// before any Supabase client is constructed (submitLead parses the input first
-// and throws LeadValidationError before createAdminClient is reached), so an
-// invalid payload never touches the database — no Supabase mock is required.
+// The handler reads request headers for referrer/user-agent.
 vi.mock("next/headers", () => ({
   headers: async () => new Headers(),
+}));
+
+// A valid payload gets past validation and reaches the Supabase admin client,
+// so the boundary must be mocked or the test makes a real network call (which
+// hangs in offline runs). The stub fails the first query deterministically:
+// validation has already passed by then, which is all these tests assert.
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({
+            data: null,
+            error: { message: "stubbed: no database in unit tests" },
+          }),
+        }),
+      }),
+    }),
+  }),
 }));
 
 function applyFormData(overrides: Record<string, string> = {}): FormData {
@@ -38,6 +54,8 @@ describe("submitPublicLeadAction", () => {
     // "Not sure yet" must clear the apply qualification requirement: the
     // server treats these as non-empty free-text, so validation should not
     // report stage/budget/timeline as missing when that option is chosen.
+    // The stubbed DB then fails the idempotency check, so the action returns
+    // the generic submission error — with no validation field errors.
     const state = await submitPublicLeadAction(
       "apply",
       applyFormData({
@@ -50,11 +68,9 @@ describe("submitPublicLeadAction", () => {
       }),
     );
 
-    if (state.status === "error") {
-      const fieldErrors = state.fieldErrors ?? {};
-      expect(fieldErrors.businessStage).toBeUndefined();
-      expect(fieldErrors.budget).toBeUndefined();
-      expect(fieldErrors.timeline).toBeUndefined();
-    }
+    expect(state.status).toBe("error");
+    if (state.status !== "error") throw new Error("expected error state");
+    expect(state.message).toMatch(/couldn't submit/i);
+    expect(state.fieldErrors).toBeUndefined();
   });
 });

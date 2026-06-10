@@ -52,7 +52,13 @@ export function buildSeoPageAutosavePayload({
 }: SeoPageAutosavePayloadInput): PageAutosavePayload {
   const formValue = (name: string, fallback = "") =>
     String(formData?.get(name) ?? fallback);
-  const formChecked = (name: string) => formData?.get(name) === "on";
+
+  // Scheduler columns are owned by explicit saves only. Autosave submits the
+  // BASELINE value for scheduledPublishAt (and never cancels), so the server's
+  // scheduledPublishMetadataFromPageForm sees value === baseline and treats the
+  // schedule as unchanged — a half-typed schedule field can never be armed or
+  // cancelled by a background save.
+  const scheduledPublishAtBaseline = formValue("scheduledPublishAtBaseline");
 
   return {
     title,
@@ -76,9 +82,9 @@ export function buildSeoPageAutosavePayload({
     ),
     ogTitle: formValue("ogTitle", page?.og_title ?? ""),
     ogDescription: formValue("ogDescription", page?.og_description ?? ""),
-    scheduledPublishAt: formValue("scheduledPublishAt"),
-    scheduledPublishAtBaseline: formValue("scheduledPublishAtBaseline"),
-    cancelScheduledPublish: formChecked("cancelScheduledPublish"),
+    scheduledPublishAt: scheduledPublishAtBaseline,
+    scheduledPublishAtBaseline,
+    cancelScheduledPublish: false,
     noindex,
     sitemapEnabled,
     structuredDataSettings: {

@@ -21,6 +21,7 @@ import {
 import { editorPublishConfirmMessage } from "@/components/admin/seo-page-editor/editor-publish-confirmation";
 import { thinPageWarning } from "@/components/admin/seo-page-editor/SeoReadinessHelpers";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
+import { formatPacificDate } from "@/lib/page-builder/datetime-format";
 import {
   SCHEDULED_PUBLISH_TIME_ZONE,
   SCHEDULED_PUBLISH_TIME_ZONE_LABEL,
@@ -310,14 +311,14 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
         <div className="flex items-center justify-between gap-3">
           <dt className="font-medium">Last updated</dt>
           <dd className="font-semibold text-slate-700">
-            {page?.updated_at ? formatPanelDate(page.updated_at) : "—"}
+            {page?.updated_at ? formatPacificDate(page.updated_at) : "—"}
           </dd>
         </div>
         <div className="flex items-center justify-between gap-3">
           <dt className="font-medium">Published</dt>
           <dd className="font-semibold text-slate-700">
             {page?.published_at
-              ? formatPanelDate(page.published_at)
+              ? formatPacificDate(page.published_at)
               : "Not yet"}
           </dd>
         </div>
@@ -326,14 +327,11 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
   );
 }
 
-function formatPanelDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
+// Note: no `required` on these inputs. The Settings tabpanel stays mounted but
+// hidden when another tab is active, and Chrome silently aborts form submission
+// on an invalid hidden control — a save/publish click would no-op with zero
+// feedback. The server action validates title/slug and the manual-submit toast
+// surfaces its message, matching the collapsed-panel path.
 function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
   return (
     <div className="space-y-5">
@@ -345,7 +343,6 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
           value={editor.title}
           id="page-title-field"
           onChange={(event) => editor.setTitle(event.target.value)}
-          required
           className={compactInputClass}
           placeholder="Internal page title and SEO fallback"
         />
@@ -378,7 +375,6 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
             id="page-slug-field"
             value={editor.visibleSlug}
             onChange={(event) => editor.updateSlugFromInput(event.target.value)}
-            required
             aria-label="URL ending (slug)"
             className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-300"
             placeholder="page-slug"

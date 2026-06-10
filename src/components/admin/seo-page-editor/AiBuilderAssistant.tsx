@@ -124,8 +124,7 @@ export function AiBuilderAssistant({
   editor: SeoPageEditorController;
 }) {
   const [isUserOpen, setIsUserOpen] = useState(false);
-  const isWalkthroughAiStep = editor.builderWalkthroughStep === 3;
-  const isOpen = isUserOpen || isWalkthroughAiStep;
+  const isOpen = isUserOpen;
   const sidePanelOpenOnNarrow =
     editor.isNarrowEditor &&
     (!editor.isBlockSidebarCollapsed || !editor.isSeoSidebarCollapsed);
@@ -560,10 +559,7 @@ export function AiBuilderAssistant({
         aria-label={isOpen ? "Close AI assistant" : "Open AI assistant"}
         aria-expanded={isOpen}
         className="fixed right-4 bottom-6 z-[70] inline-flex items-center gap-2 rounded-full border border-violet-400 bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-xl transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none"
-        onClick={() => {
-          if (isWalkthroughAiStep) return;
-          setIsUserOpen((open) => !open);
-        }}
+        onClick={() => setIsUserOpen((open) => !open)}
       >
         <SparkIcon />
         <span>AI</span>

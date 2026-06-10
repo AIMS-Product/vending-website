@@ -58,6 +58,10 @@ export function SeoPanelTabs({ tabs }: { tabs: SeoPanelTab[] }) {
               type="button"
               role="tab"
               id={`${baseId}-tab-${tab.id}`}
+              // Stable hook for imperative tab activation (click-to-fix flows
+              // in the controller). Clicking the button keeps the WAI tablist
+              // state consistent because this component owns its own onClick.
+              data-seo-panel-tab={tab.id}
               aria-selected={selected}
               aria-controls={`${baseId}-panel-${tab.id}`}
               tabIndex={selected ? 0 : -1}

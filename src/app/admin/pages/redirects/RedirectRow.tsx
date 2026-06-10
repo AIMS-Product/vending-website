@@ -9,6 +9,7 @@ import {
   adminSmallButtonClass,
   AdminIcon,
 } from "@/components/admin/AdminUi";
+import { formatPacificDate } from "@/lib/page-builder/datetime-format";
 import {
   deleteBuilderRedirectAction,
   updateBuilderRedirectAction,
@@ -30,15 +31,6 @@ export type RedirectRowData = {
 };
 
 const initialState: RedirectFormState = { status: "idle" };
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-}
 
 function SaveButton() {
   const { pending } = useFormStatus();
@@ -83,7 +75,7 @@ export function RedirectRow({ redirect }: { redirect: RedirectRowData }) {
       </td>
       <td className="px-5 py-3">{redirectStatusLabel(redirect.status_code)}</td>
       <td className="px-5 py-3">{redirect.created_reason}</td>
-      <td className="px-5 py-3">{formatDate(redirect.created_at)}</td>
+      <td className="px-5 py-3">{formatPacificDate(redirect.created_at)}</td>
       <td className="px-5 py-3">
         <div className="flex items-center justify-end gap-2">
           <button

@@ -26,16 +26,13 @@ import type { SeoPageEditorController } from "@/components/admin/seo-page-editor
 const SAVE_BUTTON_SELECTOR =
   'button[type="submit"][name="intent"][value="save"]';
 const BLOCK_PICKER_TRIGGER_SELECTOR = '[data-testid="block-picker-trigger"]';
+// Stable hook on the real Publish button in SeoPublishPanel — copy-proof,
+// unlike matching the button's visible label text.
+const PUBLISH_BUTTON_SELECTOR = '[data-testid="seo-publish-button"]';
 
-function clickRealPublishButton(
-  form: HTMLFormElement,
-  publishButtonLabel: string,
-): boolean {
-  const buttons = Array.from(
-    form.querySelectorAll<HTMLButtonElement>("button"),
-  );
-  const publishButton = buttons.find(
-    (button) => button.textContent?.trim() === publishButtonLabel,
+function clickRealPublishButton(form: HTMLFormElement): boolean {
+  const publishButton = form.querySelector<HTMLButtonElement>(
+    PUBLISH_BUTTON_SELECTOR,
   );
   if (!publishButton) return false;
   publishButton.click();
@@ -55,8 +52,7 @@ function getEditorForm(): HTMLFormElement | null {
 }
 
 export function useEditorKeyboardShortcuts(editor: SeoPageEditorController) {
-  const { isSeoSidebarCollapsed, publishButtonLabel, toggleSeoSidebar } =
-    editor;
+  const { isSeoSidebarCollapsed, toggleSeoSidebar } = editor;
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -84,13 +80,13 @@ export function useEditorKeyboardShortcuts(editor: SeoPageEditorController) {
 
       if (action === "publish") {
         event.preventDefault();
-        if (clickRealPublishButton(form, publishButtonLabel)) return;
+        if (clickRealPublishButton(form)) return;
         // Panel collapsed → reveal it, then click the now-mounted button.
         if (isSeoSidebarCollapsed) {
           toggleSeoSidebar();
           requestAnimationFrame(() => {
             const current = getEditorForm();
-            if (current) clickRealPublishButton(current, publishButtonLabel);
+            if (current) clickRealPublishButton(current);
           });
         }
         return;
@@ -107,5 +103,5 @@ export function useEditorKeyboardShortcuts(editor: SeoPageEditorController) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isSeoSidebarCollapsed, publishButtonLabel, toggleSeoSidebar]);
+  }, [isSeoSidebarCollapsed, toggleSeoSidebar]);
 }

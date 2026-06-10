@@ -18,8 +18,19 @@ function buildClient({
   count?: number | null;
   countError?: unknown;
 }) {
-  const deleteEq = vi.fn().mockResolvedValue({ error: null });
-  const deleteBuilder = { eq: deleteEq };
+  // The delete chain re-asserts the floor conditions (.eq/.is) and is awaited
+  // as a thenable, mirroring the real Supabase builder.
+  const deleteBuilder: {
+    eq: ReturnType<typeof vi.fn>;
+    is: ReturnType<typeof vi.fn>;
+    then: (resolve: (value: { error: null }) => void) => void;
+  } = {
+    eq: vi.fn(() => deleteBuilder),
+    is: vi.fn(() => deleteBuilder),
+    then: (resolve) => resolve({ error: null }),
+  };
+  const deleteEq = deleteBuilder.eq;
+  const deleteIs = deleteBuilder.is;
 
   const seoPagesQuery = {
     select: vi.fn().mockReturnThis(),
@@ -37,7 +48,7 @@ function buildClient({
     table === "page_revisions" ? revisionsQuery : seoPagesQuery,
   );
 
-  return { from, seoPagesQuery, revisionsQuery, deleteEq };
+  return { from, seoPagesQuery, revisionsQuery, deleteEq, deleteIs };
 }
 
 describe("adminDeleteNeverSavedSeoPageDraft", () => {
@@ -58,7 +69,11 @@ describe("adminDeleteNeverSavedSeoPageDraft", () => {
 
     expect(result).toEqual({ status: "deleted" });
     expect(client.seoPagesQuery.delete).toHaveBeenCalledTimes(1);
+    // The DELETE itself re-asserts the never-saved floor, not just the check.
     expect(client.deleteEq).toHaveBeenCalledWith("id", PAGE_ID);
+    expect(client.deleteEq).toHaveBeenCalledWith("status", "draft");
+    expect(client.deleteIs).toHaveBeenCalledWith("published_at", null);
+    expect(client.deleteIs).toHaveBeenCalledWith("published_revision_id", null);
   });
 
   it("refuses to delete a published page and never calls delete", async () => {
