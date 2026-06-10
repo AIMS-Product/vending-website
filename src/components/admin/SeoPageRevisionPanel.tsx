@@ -190,7 +190,11 @@ export function SeoPageRevisionPanel({
         )}
       </section>
 
-      <aside className={adminCardClass}>
+      {/* N17 / I12: a side card, not a page-level complementary landmark.
+          Nesting <aside> inside the admin content region tripped
+          landmark-complementary-is-top-level; a div keeps the layout and the
+          heading provides the structure. */}
+      <div className={adminCardClass}>
         <h2 className="text-sm font-semibold text-slate-950">Draft preview</h2>
         <form action={refreshSeoPageLibraryReferences} className="mt-4">
           <input type="hidden" name="pageId" value={pageId} />
@@ -257,7 +261,7 @@ export function SeoPageRevisionPanel({
             );
           })}
         </div>
-      </aside>
+      </div>
       {restoreRevision && (
         <div
           ref={restoreDialogRef}
@@ -338,7 +342,7 @@ function RevisionContext({ snapshot }: { snapshot?: Json }) {
   const { blockCount, wordCount } = revisionBlockStats(snapshot ?? null);
   if (blockCount === 0 && wordCount === 0) return null;
   return (
-    <p className="mt-0.5 text-xs text-slate-400">
+    <p className="mt-0.5 text-xs text-slate-500">
       {blockCount} {blockCount === 1 ? "block" : "blocks"} · {wordCount}{" "}
       {wordCount === 1 ? "word" : "words"}
     </p>

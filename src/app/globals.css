@@ -70,6 +70,15 @@ body {
   border-radius: 4px;
 }
 
+/* N17 / I12: the Next.js dev-overlay host (`nextjs-portal`) is a focusable
+   custom element that matches none of the selectors above, so it was
+   focusable-but-invisible. Give it the same visible focus outline. */
+nextjs-portal:focus-visible {
+  outline: 3px solid #066a99;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /* Skip-to-content link: visually hidden until it receives keyboard focus,
    then pinned to the top-left as the first actionable control. */
 .skip-to-content {

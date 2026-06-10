@@ -203,10 +203,15 @@ function ChoiceCard({
 export function EditorPublicHeader() {
   return (
     <header className="sticky inset-x-0 top-0 z-20 border-b-2 border-[#111111] bg-[#f5fbff]/95 backdrop-blur-md">
+      {/* N17 / I12: this header is an inert preview of the public site chrome
+          (its links preventDefault and go nowhere). Keep it out of the keyboard
+          tab order so the real SEO fields are reachable early — the links are
+          decorative here, not navigable. */}
       <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-8 px-5 py-4 lg:px-10">
         <Link
           href="/"
-          aria-label="Vendingpreneurs home"
+          aria-label="Vendingpreneurs home (preview)"
+          tabIndex={-1}
           onClick={(event) => event.preventDefault()}
         >
           <Wordmark height={48} />
@@ -221,6 +226,7 @@ export function EditorPublicHeader() {
         </nav>
         <Link
           href="/apply"
+          tabIndex={-1}
           onClick={(event) => event.preventDefault()}
           className="hidden min-h-12 items-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] lg:inline-flex"
         >

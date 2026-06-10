@@ -56,7 +56,10 @@ export default async function AdminRevisionPreviewPage({
   };
 
   return (
-    <main>
+    // N17 / I12: the root layout already provides the `main` landmark, so this
+    // preview is a plain container — a nested <main> created a duplicate-main
+    // landmark violation.
+    <div>
       <div className="border-b border-slate-200 bg-white px-6 py-4 text-slate-950 shadow-sm lg:px-10">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
           <div>
@@ -67,7 +70,7 @@ export default async function AdminRevisionPreviewPage({
               {revisionTypeLabel(revision.revision_type)} ·{" "}
               {formatRevisionDateTime(revision.created_at)}
             </p>
-            <p className="mt-0.5 text-xs text-slate-400">
+            <p className="mt-0.5 text-xs text-slate-500">
               {stats.blockCount} {stats.blockCount === 1 ? "block" : "blocks"} ·{" "}
               {stats.wordCount} {stats.wordCount === 1 ? "word" : "words"}
             </p>
@@ -84,7 +87,7 @@ export default async function AdminRevisionPreviewPage({
         page={previewPage}
         idempotencyKeyPrefix={randomUUID()}
       />
-    </main>
+    </div>
   );
 }
 

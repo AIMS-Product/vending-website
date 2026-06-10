@@ -81,4 +81,21 @@ describe("AdminRevisionPreviewPage", () => {
     expect(html).toContain("1 block");
     expect(html).toMatch(/\d+ words?/);
   });
+
+  it("does not render its own <main> (root layout already owns the main landmark)", async () => {
+    vi.mocked(adminGetSeoPageRevision).mockResolvedValue({
+      id: "rev_1",
+      revision_type: "publish",
+      created_at: "2026-06-03T16:30:00.000Z",
+      content_snapshot: content,
+      seo_snapshot: {},
+    } as never);
+
+    const page = await AdminRevisionPreviewPage({
+      params: Promise.resolve({ id: "page_1", revisionId: "rev_1" }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).not.toContain("<main");
+  });
 });
