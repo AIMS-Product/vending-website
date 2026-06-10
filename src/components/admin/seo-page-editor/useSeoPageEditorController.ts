@@ -93,6 +93,11 @@ import {
 } from "@/components/admin/seo-page-editor/schedule-status";
 import { isPublishJustSucceeded } from "@/components/admin/seo-page-editor/publish-success-state";
 import {
+  autosaveFailureMessage,
+  autosaveFailureMode,
+  nextAutosaveRetryDelayMs,
+} from "@/components/admin/seo-page-editor/autosave-retry-policy";
+import {
   getNarrowEditorServerSnapshot,
   getNarrowEditorSnapshot,
   subscribeToNarrowEditorChange,
@@ -284,6 +289,10 @@ export function useSeoPageEditorController(
   >(null);
   const autosaveReady = useRef(false);
   const autosaveInFlight = useRef<Promise<unknown>>(Promise.resolve());
+  // I6: how many automatic retries the CURRENT failure run has used. Reset to 0
+  // on every edit-triggered attempt and on success; capped by the retry policy
+  // so a persistent failure rests instead of storming the server.
+  const autosaveRetryCount = useRef(0);
   const hasRefreshedAfterManualPublish = useRef(false);
   const visibleSlug = slugTouched ? slug : slugify(title);
   const draftContentJson = useMemo(() => JSON.stringify(content), [content]);
@@ -584,6 +593,12 @@ export function useSeoPageEditorController(
       if (submitter.value !== "save" && submitter.value !== "publish") return;
 
       setLastManualSubmitIntent(submitter.value);
+      // I6: a manual save/publish persists the whole row, superseding any
+      // pending autosave failure. Clear the stale "couldn't save" indicator and
+      // re-arm the retry budget so the error doesn't linger after the user has
+      // taken the manual fallback the failure message told them to use.
+      autosaveRetryCount.current = 0;
+      setAutosave(null);
       if (submitter.value === "publish") {
         hasRefreshedAfterManualPublish.current = false;
         // The confirm dialog has done its job once the user submits the
@@ -657,24 +672,61 @@ export function useSeoPageEditorController(
       return;
     }
 
-    const timer = window.setTimeout(() => {
+    const pageId = effectivePageId;
+    // A fresh edit re-arms the retry budget: this run is a brand-new attempt,
+    // not a continuation of an exhausted failure.
+    autosaveRetryCount.current = 0;
+    let cancelled = false;
+    const timers: number[] = [];
+
+    function runAttempt() {
       // Serialize requests: the draft save is a blind full-row update, so two
       // overlapping autosaves can commit out of order and silently regress
       // the draft. The payload is built after the previous request settles so
       // each save carries the freshest state.
       autosaveInFlight.current = autosaveInFlight.current
         .catch(() => undefined)
-        .then(() =>
-          autosaveSeoPageDraft(effectivePageId, buildAutosavePayload()),
-        )
-        .then(setAutosave)
+        .then(() => autosaveSeoPageDraft(pageId, buildAutosavePayload()))
+        .then((result) => {
+          if (cancelled) return;
+          if (result.status === "error") {
+            scheduleRetryOrRest();
+            return;
+          }
+          autosaveRetryCount.current = 0;
+          setAutosave(result);
+        })
         .catch((error: unknown) => {
+          if (cancelled) return;
           console.error("seo page autosave failed", error);
-          setAutosave({ status: "error", message: "Autosave failed." });
+          scheduleRetryOrRest();
         });
-    }, 1200);
+    }
 
-    return () => window.clearTimeout(timer);
+    function scheduleRetryOrRest() {
+      const used = autosaveRetryCount.current;
+      const delay = nextAutosaveRetryDelayMs(used);
+      // Surface the honest failure state immediately (never claims "saved").
+      setAutosave({
+        status: "error",
+        message: autosaveFailureMessage(autosaveFailureMode(used)),
+      });
+      if (delay === null) return; // cap reached — rest until next edit/manual save
+      autosaveRetryCount.current = used + 1;
+      const retryTimer = window.setTimeout(() => {
+        if (cancelled) return;
+        runAttempt();
+      }, delay);
+      timers.push(retryTimer);
+    }
+
+    const debounceTimer = window.setTimeout(runAttempt, 1200);
+    timers.push(debounceTimer);
+
+    return () => {
+      cancelled = true;
+      for (const id of timers) window.clearTimeout(id);
+    };
   }, [buildAutosavePayload, effectivePageId, metadataAutosaveVersion]);
 
   // S3b: once the user starts a brand-new page (a real title exists), create a
