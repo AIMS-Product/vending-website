@@ -1,0 +1,1095 @@
+{
+  "unfixed_full": [
+    {
+      "id": "C117",
+      "band": "P1",
+      "status": "PARTIAL",
+      "page": "/apply",
+      "note": "Issue C117 requested making Business stage, budget, and timeline optional with a 'Not sure yet' option. The code implements the 'Not sure yet' option in all three dropdowns, allowing users uncertain of their decision to proceed. However, the fields remain marked required=true at the HTML level. This partial implementation was intentional per D4: 'Not sure yet' added as interim solution, final optional/required decision deferred to Kody (K4) pending business input on what sales data should collect.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/forms/PublicLeadForm.tsx:227-268 (all three selects have required=true and 'Not sure yet' option)",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/decisions.md:15 (D4 decision: 'Fields STAY required (interim). Final required-vs-optional policy → Kody (K4)')",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/decisions.md:42 (K4 deferred decision table)"
+      ],
+      "finding": "Three required fields are commitments I may not have made yet: Business stage, Available startup budget, and Launch timeline are all required",
+      "fix": {
+        "current": "Business stage, budget, and timeline marked '(required)'",
+        "proposed": "Make only Name + Email required; mark stage/budget/timeline optional with a 'Not sure yet' option in each dropdown"
+      }
+    },
+    {
+      "id": "C014",
+      "band": "P1",
+      "status": "PARTIAL",
+      "page": "/apply",
+      "note": "Form now suppresses native bubbles and provides per-field aria-invalid + aria-describedby with persistent inline error messages and an assertive aria-live region. However, the suggested fix specifically requested an error summary \"at the top of the form listing each failed field with anchor links\" — the current implementation lacks this structured summary list and places the message region at the bottom instead.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:162 (noValidate)",
+        "src/components/forms/PublicLeadForm.tsx:374-375 (aria-invalid + aria-describedby on TextField)",
+        "src/components/forms/PublicLeadForm.tsx:410-411 (aria-invalid + aria-describedby on SelectField)",
+        "src/components/forms/PublicLeadForm.tsx:457-458 (aria-invalid + aria-describedby on TextareaField)",
+        "src/components/forms/PublicLeadForm.tsx:469-473 (FieldError inline messages)",
+        "src/components/forms/PublicLeadForm.tsx:481-482 (aria-live=assertive role=alert)",
+        "src/app/lead-action-handler.ts:60 (generic error message, not field list)"
+      ],
+      "finding": "Form errors rely solely on native browser bubbles ('Please fill out this field.') with no programmatic error summary and no in-page, persistent, screen-reader-announced error list. The exploration log records 'no visible validation errors after empty submit' for the custom layer.",
+      "fix": {
+        "current": "Native-only required validation, transient bubbles, no error summary",
+        "proposed": "Add aria-invalid + aria-describedby per field with persistent inline messages, and an aria-live='assertive' error summary at the top of the form listing each failed field with anchor links"
+      }
+    },
+    {
+      "id": "C005",
+      "band": "P2",
+      "status": "NOT_FIXED",
+      "page": "/news",
+      "note": "The only code change is swapping next/image to ImageWithFallback, which handles image load failure via onError. The original issue describes cards appearing \"blank on first paint until scrolled into view\", which suggests initial image loading delay causes blank/empty cards. The fix does not address slow image loading or initial visibility — it only provides a fallback when images fail completely (onError). The suggested fix (\"Render the first row visible on load\") was not implemented.",
+      "evidence": [
+        "src/components/sections/NewsList.tsx: Image → ImageWithFallback only addresses onError fallback",
+        "git diff 9cdfbed..HEAD -- src/components/sections/NewsList.tsx: only change is component swap, no visibility/animation changes",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:65 claims C005 'handled-this-round' but disposition is generic 'scroll-reveal blank cards / CLS dims'"
+      ],
+      "finding": "On first load the article cards render as blank outlines until the user scrolls (scroll-reveal animation), so the page looks broken or half-loaded above the fold.",
+      "fix": {
+        "current": "Article cards are invisible until scrolled into view",
+        "proposed": "Render the first row of article cards visible on load; only apply reveal animation to cards genuinely below the fold"
+      }
+    },
+    {
+      "id": "C096",
+      "band": "P2",
+      "status": "NOT_FIXED",
+      "page": "/",
+      "note": "C096 (CLS 0.263 across pages) was dispositioned as \"handled-this-round\" in N13 triage but N10 (the responsible node) made zero code changes to fix CLS. The footer shift—identified as the actual cause—was explicitly marked out-of-scope. Current production still exhibits 0.263 CLS on cold start per verification.md. The suggested fix (reserve space via explicit dimensions, font-display swap, fixed-height header) is not present in the code.",
+      "evidence": [
+        "plans/ux-review-fixes/agent-runs/n10-1.md:60-72: N10 agent confirms footer shift is 'out of scope' and 'not fixed by design'; 'I confirmed the candidate culprits above the footer... so this is not a missing-image-dimension bug in any component. The footer shift is a dev-mode streaming/hydration artifact. REPORTED, not fixed (out of scope)'",
+        "src/components/site/Footer.tsx:15: Footer has no min-height, height, or layout stabilization CSS",
+        "src/app/globals.css:109-111: Only display:none toggle exists; no CLS-prevention CSS",
+        "plans/ux-review-fixes/verification.md:37: 'One 0.263 observation on the very first cold hit after server start (matches dev footer shift)' — acknowledges 0.263 CLS persists on cold start"
+      ],
+      "finding": "The homepage has a Cumulative Layout Shift of 0.263, well above the 0.1 'good' threshold; the same 0.263 CLS recurs on /about, /news, and every news article page, indicating a shared layout component shifts after load.",
+      "fix": {
+        "current": "CLS 0.263 on /, /about, /news, and article pages",
+        "proposed": "Reserve space for the shifting element (explicit width/height on hero/logo images, font-display swap with metric-matched fallback, fixed-height header) to bring CLS under 0.1"
+      }
+    },
+    {
+      "id": "C050",
+      "band": "P2",
+      "status": "PARTIAL",
+      "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "note": "Byline meta text contrast FIXED (raised from #55b8e8 to #066a99, achieving 5.70:1). Underlines ADDED to body links. However, article body link color remains #2d9fd6 on light background, achieving ~2.40:1 contrast which FAILS AA requirement (needs 4.5:1). N12 reported excluding article-body pages from their scope; body link color was never raised to meet 4.5:1 threshold.",
+      "evidence": [
+        "src/components/sections/NewsArticle.tsx:105 — byline uses text-[#066a99] achieving 5.70:1 on #f5fbff",
+        "src/app/globals.css:.public-news-prose a — body links use color: #2d9fd6 with underline, but #2d9fd6 on #f5fbff achieves only ~2.40:1 contrast (fails AA)",
+        "plans/ux-review-fixes/agent-runs/n12-1.md:66-69 — N12 explicitly excluded /news/* article-body pages from scope",
+        "commit 136a549 — meta text changed from #55b8e8 to #066a99"
+      ],
+      "finding": "Serious color-contrast failure on article meta text (.mt-5, the date / '13 min read' line) and, on sibling articles, on inline body links (p > a). Article body links fail AA.",
+      "fix": {
+        "current": "Faint gray meta text and low-contrast inline link color",
+        "proposed": "Raise meta and inline-link colors to meet 4.5:1; underline inline links so they are distinguishable without relying on color"
+      }
+    },
+    {
+      "id": "C099",
+      "band": "P2",
+      "status": "PARTIAL",
+      "page": "global",
+      "note": "Hero image space is partially addressed via aspect-ratio (good), but font-display:optional was not implemented as suggested. Verification confirms CLS remained 0.263 on production cold starts. Work was marked \"handled\" but incomplete.",
+      "evidence": [
+        "src/components/sections/Hero.tsx:29 (aspect-square/lg:aspect-[5/4] reserves image space)",
+        "src/app/layout.tsx:10-13 (Inter font config lacks font-display property)",
+        "plans/ux-review-fixes/agent-runs/n10-1.md:3, 68 (N10 explicitly reports no width/height fix applied; CLS out-of-scope)",
+        "plans/ux-review-fixes/verification.md:37 (final prod CLS still 0.263 on cold starts)"
+      ],
+      "finding": "Nearly every public page reports a Cumulative Layout Shift of 0.263 (home, about, news, all three articles, privacy-free pages excepted). A CLS of 0.263 is well above Google's 0.1 'good' threshold and indicates a consistent, repeatable jump as the page settles.",
+      "fix": {
+        "current": "CLS 0.263 on most public routes from a shared above-fold element / font swap",
+        "proposed": "Reserve space for the shifting element (explicit hero image dimensions) and use next/font with font-display:optional or a size-adjust fallback to remove the swap-driven reflow"
+      }
+    },
+    {
+      "id": "C100",
+      "band": "P2",
+      "status": "NOT_FIXED",
+      "page": "/this-page-does-not-exist",
+      "note": "C100 requires the 404 heading to use the brand display face (font-black) and uppercase styling, and the button to use the standard orange brand button (bg-[#f47b3b], border-2, font-black). The current code still shows font-semibold heading and a white rounded pill button. N12's accessibility wave addressed contrast but explicitly excluded brand/visual design changes; C100 fell through the gap.",
+      "evidence": [
+        "src/app/not-found.tsx:9 (font-semibold instead of font-black; text-slate-900 instead of text-[#111111])",
+        "src/app/not-found.tsx:15-20 (rounded-full white button instead of brand button with bg-[#f47b3b], border-2 border-[#111111])",
+        "plans/ux-review-fixes/agent-runs/n12-1.md:1-7 (N12 scope: video focus, skip link, contrast only — no brand design work)",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:38 (C100 routed to N12-owned but N12 did not address brand design)"
+      ],
+      "finding": "The 404 page is the only public page that abandons the brand. 'Page not found' is set in a rounded system sans-serif at a modest size with a thin outline 'Back to home' pill, sitting inside the otherwise-branded header/footer. Every other public page uses the heavy black display face and the orange/black brand button.",
+      "fix": {
+        "current": "Default sans 'Page not found' heading + thin outline 'Back to home' pill",
+        "proposed": "Set the 404 heading in the brand display face (e.g. 'PAGE NOT FOUND.') and use the standard orange brand button for 'Back to home' so it matches the rest of the site"
+      }
+    },
+    {
+      "id": "C141",
+      "band": "P2",
+      "status": "NOT_FIXED",
+      "page": "/admin/news",
+      "note": "The news list PostRow component still only has an Edit link (line 369-375). No dropdown menu exists, unlike the pages list which has PageActionsMenu. Row-level Archive/Delete affordances are not implemented; archiving still requires opening the editor.",
+      "evidence": [
+        "src/app/admin/news/page.tsx:368-376",
+        "src/app/admin/news/page.tsx:343-379",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:58"
+      ],
+      "finding": "The news list rows offer no delete/archive affordance; archiving requires opening each post's editor.",
+      "fix": {
+        "current": "No row-level delete/archive in /admin/news; editor-only",
+        "proposed": "Add row actions (Edit / Archive / Delete) and bulk select to the news list"
+      }
+    },
+    {
+      "id": "C153",
+      "band": "P2",
+      "status": "PARTIAL",
+      "page": "/this-page-does-not-exist",
+      "note": "The fix added links to News, Apply, and About, but is missing the explicit Contact link and search box requested in the UX review. The implementation provides 2 of 3 requested link types and completely omits search functionality.",
+      "evidence": [
+        "src/app/not-found.tsx:21-35 (news, about, apply links present; contact and search box missing)",
+        "commit 8de67ea — fix(ux): 404 page recovery links (C153)",
+        "plans/ux-review-fixes/verification.md:66 (acknowledges news/about/apply links)",
+        "reports/ux-review-status-2026-06-11/slim-full-p0p1p2.json (requested: search box and links to News, Apply, Contact)"
+      ],
+      "finding": "The 404 page offers only a 'Back to home' link — no search, no contact/help link, and no suggestion of where content moved.",
+      "fix": {
+        "current": "404 with only 'Back to home'",
+        "proposed": "Add a search box and links to News, Apply, and Contact on the 404 page"
+      }
+    },
+    {
+      "id": "C020",
+      "band": "P2",
+      "status": "PARTIAL",
+      "page": "/",
+      "note": "AnimatedStatValue now seeds state with real value (500+, $3M+, 3,000+) instead of zeroed variant, preventing text-value jumps. All image containers (hero aspect-square, brand-strip explicit dims, accelerator aspect-[16/10]) already existed on main branch—no new space reservation was added. Production CLS improved to 0.000 on warmed runs but remains 0.263 on first cold hit (attributed to footer streaming artifact, not hero/logo/stat dimensions).",
+      "evidence": [
+        "src/components/sections/AnimatedStatValue.tsx:48-57",
+        "src/components/sections/Hero.tsx:29",
+        "src/components/sections/AcceleratorProgram.tsx:69",
+        "plans/ux-review-fixes/verification.md:37"
+      ],
+      "finding": "Homepage layout shift on load is high (CLS 0.263) — content jumps as the page settles.",
+      "fix": {
+        "current": "CLS 0.263 on homepage load",
+        "proposed": "Reserve space for hero image, logo strip, and stat row (explicit width/height or aspect-ratio) to bring CLS under 0.1"
+      }
+    },
+    {
+      "id": "C010",
+      "band": "P3",
+      "status": "PARTIAL",
+      "page": "/admin/pages",
+      "note": "The status/readiness badges still render a 10px dot, but now include an adjacent text label ('Readiness: x', 'Status: y'), which improves accessibility and discoverability. The original suggestion for 44x44px is not met, but the text label adds significant context.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:1069-1094 (StatusBadge component)",
+        "Line 1088: Status dot still size-2.5 (10px)",
+        "Line 1091: Text label now paired with dot"
+      ],
+      "finding": "Page status and SEO-readiness indicators are 10x10px buttons and row actions hide behind small three-dot summaries.",
+      "fix": {
+        "current": "10x10px status dots and icon-only '⋮' action buttons",
+        "proposed": "Enlarge interactive status/action targets to at least 44x44px and pair status dots with a visible text label"
+      }
+    },
+    {
+      "id": "C013",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/, /pre-call-resources",
+      "note": "The nav item 'Resources' still points to /pre-call-resources (a pre-call-prep checklist), not a general resource/guide library. The label and destination remain unchanged from the original review.",
+      "evidence": [
+        "src/lib/content/nav.ts:11 (primaryNav array)",
+        "Line 11: { label: 'Resources', href: '/pre-call-resources' }"
+      ],
+      "finding": "The header nav item \"RESOURCES\" links to /pre-call-resources, a page headed \"PRE-CALL RESOURCES / PREPARE FOR YOUR VENDING STRATEGY CALL.\" — a checklist meant for people who have already booked a call, not the general resource library a visitor expects.",
+      "fix": {
+        "current": "Nav \"RESOURCES\" → /pre-call-resources (call-prep checklist)",
+        "proposed": "Either rename the nav item to \"Pre-Call Prep\" or point \"Resources\" at a genuine resource/guide library"
+      }
+    },
+    {
+      "id": "C027",
+      "band": "P3",
+      "status": "PARTIAL",
+      "page": "/contact",
+      "note": "The State field is correctly required-only on /apply via the conditional required={isApply}. However, on /contact it displays as plain 'State' with no visual indicator that it's optional, leaving a gap in the suggested fix (should add '(optional)' text).",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:214-222 (State field definition)",
+        "Line 218: required={isApply} makes State required on /apply, optional on /contact",
+        "Lines 396-404 in SelectField: only shows asterisk if required, no '(optional)' label"
+      ],
+      "finding": "The same 'State' field is required on /apply ('State*' with '(required)') but optional on /contact (plain 'State', no asterisk). The two forms otherwise share an identical Name/Email/Phone/City/State layout, so the differing requiredness of the identical field is an inconsistency in the form system.",
+      "fix": {
+        "current": "State is required on /apply but optional on /contact",
+        "proposed": "Decide one rule for the State field and apply it to both forms (most likely required on apply, optional on contact is defensible — but then label contact's State 'State (optional)' to make the choice intentional)"
+      }
+    },
+    {
+      "id": "C017",
+      "band": "P3",
+      "status": "PARTIAL",
+      "page": "/admin/pages",
+      "note": "Archive action IS now discoverable from the pages list row '⋮' menu with a confirmation dialog, addressing the main gap. However, the page editor itself still does not expose an archive control, leaving the secondary suggestion (editor archive button) unmet.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:985-992 (Archive in row menu)",
+        "No archive control found in page editor files (SeoPageEditorForm, SeoPublishPanel, [id]/page.tsx)"
+      ],
+      "finding": "There is no discoverable archive/delete path for a page from the editor or the list row menu, so an admin cannot retire a page they created.",
+      "fix": {
+        "current": "No visible Archive/Delete in the page editor or list row actions",
+        "proposed": "Add an explicit 'Archive page' control in the editor and an 'Archive' item in the list row '⋮' menu, with a confirm dialog"
+      }
+    },
+    {
+      "id": "C025",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/apply",
+      "note": "The Name input on /apply and the first field on /contact do not have autofocus or autoFocus attribute, meaning the page loads with no field focused.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:174-182 (Name field definition)",
+        "No autoFocus attribute found on the first field or any field in the form"
+      ],
+      "finding": "No autofocus on the first form field; the page loads with no field focused.",
+      "fix": {
+        "current": "No focused field on load",
+        "proposed": "autofocus the Name input on /apply (and the first field on /contact)"
+      }
+    },
+    {
+      "id": "C033",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/admin/news",
+      "note": "News list rows only expose an 'Edit' action via a link (line 369-375). No delete/archive affordance is available on the row itself; retiring a post still requires opening the editor.",
+      "evidence": ["src/app/admin/news/page.tsx:343-379 (PostRow function)"],
+      "finding": "News list rows have no delete/archive affordance; retiring a post requires opening each post's editor to find the Archive control.",
+      "fix": {
+        "current": "Archive only inside each post editor",
+        "proposed": "Add a per-row actions menu (Edit / Archive / Delete) on the news list, matching the SEO pages list pattern"
+      }
+    },
+    {
+      "id": "C040",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/",
+      "note": "The header nav button is labeled 'Step inside' (lines 45, 107 of Header.tsx) while the hero CTA is labeled 'Apply Now' (line 32 of home.ts). The two CTAs to /apply remain inconsistently labeled.",
+      "evidence": [
+        "src/components/site/Header.tsx:45,107",
+        "src/lib/content/home.ts:32"
+      ],
+      "finding": "Two differently-labelled CTAs ('STEP INSIDE' in the nav and 'APPLY NOW' in the hero) both link to /apply, which is ambiguous about whether they lead to the same place.",
+      "fix": {
+        "current": "'STEP INSIDE' (nav) and 'APPLY NOW' (hero) both go to /apply",
+        "proposed": "Use one consistent label 'APPLY NOW' for both, or differentiate destinations if they are meant to differ"
+      }
+    },
+    {
+      "id": "C052",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "note": "The complementary landmarks (ShareRail aside on line 144 and ArticleSidebar aside on line 182) are both nested inside the <article> landmark (lines 22-81), not at the top level as required.",
+      "evidence": ["src/components/sections/NewsArticle.tsx:22,24,79,81"],
+      "finding": "Complementary/aside landmark is not at the top level (nested inside another landmark) on all three news articles.",
+      "fix": {
+        "current": "<aside>/complementary nested inside main",
+        "proposed": "Move the complementary landmark to top level (direct child of body) or remove the redundant landmark role"
+      }
+    },
+    {
+      "id": "C053",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/case-studies",
+      "note": "CaseStudiesHero has an h1 heading; CaseStudyQuotes immediately has h3 headings for card titles with no intervening h2 section heading, violating heading hierarchy.",
+      "evidence": [
+        "src/components/sections/CaseStudiesHero.tsx:10",
+        "src/components/sections/CaseStudyQuotes.tsx:35"
+      ],
+      "finding": "Heading order is broken — an <h3> appears in a card header without a preceding <h2> in the section hierarchy.",
+      "fix": {
+        "current": "Card headings start at h3 with no h2 section heading",
+        "proposed": "Introduce a section h2 for the case-study list or demote card headings so the order is sequential (h1 > h2 > h3)"
+      }
+    },
+    {
+      "id": "C057",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/admin/news/new",
+      "note": "The aside.space-y-5 at line 214 of NewsEditorForm is nested inside the <section> landmark at line 509 of AdminShell.tsx, not at the top level of the document.",
+      "evidence": [
+        "src/components/admin/NewsEditorForm.tsx:214",
+        "src/components/admin/AdminShell.tsx:509"
+      ],
+      "finding": "Complementary/aside landmark not at top level on the new-post editor (.space-y-5).",
+      "fix": {
+        "current": "Complementary landmark nested inside another landmark",
+        "proposed": "Hoist the aside to top level or drop the complementary role"
+      }
+    },
+    {
+      "id": "C063",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/news",
+      "note": "News page intro text still contains the idioms 'compound' (used as a verb) and 'posts drop here' (non-literal phrase). Lines read: '...the back-office work that makes a vending route compound. New posts drop here as we publish them.'",
+      "evidence": ["src/components/sections/NewsHero.tsx:12-14"],
+      "finding": "Intro copy uses an idiom and a non-literal verb: \"...the back-office work that makes a vending route compound. New posts drop here as we publish them.\" \"compound\" used as a verb and \"posts drop\" are not literal and do not translate.",
+      "fix": {
+        "current": "...makes a vending route compound. New posts drop here as we publish them.",
+        "proposed": "...helps a vending route grow steadily. We add new posts here when we publish them."
+      }
+    },
+    {
+      "id": "C084",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/about",
+      "note": "Personal financial figures ($1,200/mo job, $70k fixer-upper, $250k condo, 'thousands of dollars in monthly income') remain unsubstantiated in the about page. Issue is listed as P3 out-of-scope in P3-BACKLOG.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/lib/content/about.ts:18",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/P3-BACKLOG.md:37"
+      ],
+      "finding": "Specific personal financial figures are presented as proof of credibility with no substantiation ($1,200/mo job, $70k fixer-upper, $250k condo, 'thousands of dollars in monthly income').",
+      "fix": {
+        "current": "Personal income/asset figures stated as narrative",
+        "proposed": "Either substantiate (screenshots, a route count that matches a public record, a named business) or shift the emphasis from the founder's personal wealth to documented member outcomes"
+      }
+    },
+    {
+      "id": "C088",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/apply",
+      "note": "Apply form has no privacy/consent statement beneath the submit button. Form jumps directly from button to ActionMessage with no Privacy Policy link or consent text.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/forms/PublicLeadForm.tsx:287-297",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/P3-BACKLOG.md:40"
+      ],
+      "finding": "The apply form collects name, email, phone, location and budget tier but shows no privacy/consent statement or link to the Privacy Policy at the point of submission.",
+      "fix": {
+        "current": "Submit button with no consent/privacy text",
+        "proposed": "Add a short consent line beneath the submit button: 'By applying you agree to our Privacy Policy. We never sell your data.' with Privacy Policy linked"
+      }
+    },
+    {
+      "id": "C092",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "global (header nav)",
+      "note": "Contact is absent from header navigation. primaryNav array contains only About, Resources, Case Studies, News. Contact only appears in footer, not in mobile hamburger menu.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/lib/content/nav.ts:9-14",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/P3-BACKLOG.md:35"
+      ],
+      "finding": "Contact is not in the header navigation on any page; the only in-app path is the footer 'CONTACT US' link. On mobile that means opening the hamburger gives no Contact option — I have to scroll to the very bottom of every page.",
+      "fix": {
+        "current": "Contact only in footer; absent from header/hamburger menu",
+        "proposed": "Add 'CONTACT' to the header navigation (and therefore the mobile hamburger menu)"
+      }
+    },
+    {
+      "id": "C093",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "global (footer nav)",
+      "note": "Footer navigation links use text-sm class (~14px) with standard line-height, resulting in tap targets approximately 17px tall, well below the 44px mobile minimum.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/site/Footer.tsx:54",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/P3-BACKLOG.md:36"
+      ],
+      "finding": "Footer link tap targets are far below the 44x44px mobile minimum — e.g. 'HOME' is 43x17px, 'TERMS' 50x17px, 'CONTACT US' 93x17px, 'PRIVACY POLICY' 120x17px. Only ~17px tall.",
+      "fix": {
+        "current": "Footer links ~17px tall (well under 44px)",
+        "proposed": "Increase footer link line-height/padding to a minimum 44px tap height on mobile (e.g. py-2.5 block links)"
+      }
+    },
+    {
+      "id": "C102",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/admin",
+      "note": "Admin breadcrumb/eyebrow labels still vary inconsistently across sections ('SEO pages', 'CMS Assets', 'Studio Settings', 'Blog and news'). No standardization work mentioned in fix plans.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/admin/AdminShell.tsx:80-101",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/P3-BACKLOG.md:39"
+      ],
+      "finding": "The admin studio's eyebrow/breadcrumb label changes on every section with no consistent scheme: 'SEO pages' (no eyebrow), 'CMS Assets' (media), 'Studio Settings' (settings), 'CMS Governance' (libraries), 'Blog CMS' (news), 'SEO PAGE BUILDER' (create wizard). Five different naming conventions for one studio.",
+      "fix": {
+        "current": "Per-page eyebrows: CMS Assets / Studio Settings / CMS Governance / Blog CMS / (none)",
+        "proposed": "Standardise on one breadcrumb pattern, e.g. 'Studio › Media library', 'Studio › Settings › Users', 'Studio › SEO pages' across every admin route"
+      }
+    },
+    {
+      "id": "C103",
+      "band": "P3",
+      "status": "PARTIAL",
+      "page": "/admin",
+      "note": "Stat-card tones are consistently defined (blue=All, amber=Drafts, green=Published, slate=Archived/other) across SEO pages and News sections. However, Libraries section uses the same tones with different semantic intent (blue=CTAs, green=approved proofs, slate=sources, amber=claims), indicating colors map differently by section rather than by stable meaning.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/app/admin/pages/page.tsx:235-294",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/app/admin/news/page.tsx:98-113",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/app/admin/libraries/page.tsx:136-165"
+      ],
+      "finding": "The four-up stat-card row appears on SEO pages, Users, and Libraries with the same shape but inconsistent icon-tile colours and no consistent semantic mapping. SEO pages: blue/amber/green/gray. Users: green/amber/purple/blue. Libraries: blue/green/gray/amber. The colour of each tile does not map to a stable meaning across screens.",
+      "fix": {
+        "current": "Stat-card tile colours assigned ad-hoc per screen with no consistent semantics",
+        "proposed": "Define semantic colour tokens (success/warning/neutral/info) and assign each metric a token by meaning, so green always = good/live and amber always = needs work across all stat cards"
+      }
+    },
+    {
+      "id": "C104",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/admin",
+      "note": "Primary buttons across admin pages and public site still have inconsistent styling (different colors, padding, icons, widths). The suggested unified Button component with consistent variants is not implemented.",
+      "evidence": [
+        "src/components/admin/AdminUi.tsx: adminPrimaryButtonClass / adminSecondaryButtonClass still uses distinct button styles",
+        "src/components/sections/ApplyPageContent.tsx:29-52: apply form submit uses orange (#f47b3b) button with shadow",
+        "src/app/admin/pages/page.tsx:202-207: 'Create page' uses adminPrimaryButtonClass with icon"
+      ],
+      "finding": "Primary buttons in the studio have no consistent shape. 'Create page' and 'Invite user' are auto-width blue with a leading '+'; 'Save CTA preset' is full-width solid blue with no icon; 'Save draft' and 'Publish' in the blog editor are two identical full-width blue rectangles; the SEO page editor toolbar uses pill-shaped outline buttons ('Save draft', 'Save & preview', 'Share'). The same conceptual 'primary action' is styled four different ways.",
+      "fix": {
+        "current": "Four primary-button variants (auto-width +icon, full-width solid, identical pair, outline pill) across admin",
+        "proposed": "Ship one Button component with documented primary/secondary/ghost variants and a single radius, and use it everywhere in the studio"
+      }
+    },
+    {
+      "id": "C107",
+      "band": "P3",
+      "status": "PARTIAL",
+      "page": "/admin/pages",
+      "note": "Readiness/Status now have text labels and a legend, partially addressing the issue. However, the dot size remains 2.5px (10px), not enlarged to 24px minimum hit area as suggested.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:1069-1094: StatusBadge now renders text label next to 2.5px dot",
+        "src/app/admin/pages/page.tsx:1096-1110: StatusLegend component shows both Status and Readiness with labels",
+        "src/app/admin/pages/page.tsx:502: StatusLegend rendered above table results"
+      ],
+      "finding": "The SEO pages list communicates two separate statuses per row as tiny coloured dots (READINESS and STATUS columns, ~10x10px) with no on-page legend. Readiness uses red/blue/amber and Status uses amber, but the meaning of each colour is only decodable by reading the per-row hidden button labels ('SEO readiness: Blocked / Opportunities / Needs work').",
+      "fix": {
+        "current": "Readiness/Status shown only as ~10px coloured dots with no legend or text",
+        "proposed": "Add a short text label or pill next to each dot (e.g. 'Blocked', 'Draft') and a one-line legend above the table; enlarge the dot hit area to >=24px"
+      }
+    },
+    {
+      "id": "C110",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "global",
+      "note": "Nav and footer links remain undersized (~17-20px tall). No padding adjustments to meet 44px minimum touch target height. This P3 item was explicitly deferred from the ux-review-fixes round.",
+      "evidence": [
+        "src/components/site/Header.tsx:36,132-135: header nav links use 'text-sm' with no padding adjustment for touch target minimum",
+        "src/components/site/Footer.tsx:53-56: footer links use 'text-sm font-black' with no touch-target sizing",
+        "P3-BACKLOG.md row 43: Issue listed as out-of-scope P3 polish item"
+      ],
+      "finding": "Every public-site nav and footer link is an undersized touch/click target (e.g. ABOUT 51x20px, NEWS 44x20px, HOME 43x17px, TERMS 50x17px, PRIVACY POLICY 120x17px), all under the 24px minimum height. The admin studio repeats this with 10x10px status dots and 32x32px icon-only action buttons.",
+      "fix": {
+        "current": "Nav/footer links ~17-20px tall; admin status dots 10px; admin icon actions 32px",
+        "proposed": "Set a minimum 44px tappable height on nav/footer links (extend padding without changing visual text size) and a 24px+ hit area on admin dots/icon buttons"
+      }
+    },
+    {
+      "id": "C118",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/",
+      "note": "Hero copy and body text remain corporate/buzzwordy. Suggested plain human language ('Start a vending business without the guesswork...') not implemented. This P3 item was explicitly deferred.",
+      "evidence": [
+        "src/lib/content/home.ts: hero copy still contains 'launch and scale a profitable vending machine business with minimal time investment'",
+        "src/app/layout.tsx: metadata description uses same corporate language",
+        "P3-BACKLOG.md row 44: Issue listed as out-of-scope P3 polish item"
+      ],
+      "finding": "Hero copy and body are corporate/buzzwordy — 'launch and scale a profitable vending machine business with minimal time investment', 'Automation & scaling strategies to maximize your time and revenue', 'structured roadmap to success'.",
+      "fix": {
+        "current": "'launch and scale a profitable vending machine business with minimal time investment'",
+        "proposed": "Plain, human line like 'Start a vending business without the guesswork — we show you exactly how, step by step.'"
+      }
+    },
+    {
+      "id": "C121",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/",
+      "note": "Homepage still renders all ~15 testimonials in a long inline scroll. No collapsible 'See more stories' toggle or CTA repositioning. This P3 item was explicitly deferred.",
+      "evidence": [
+        "src/components/sections/Testimonials.tsx:31-36: all caseStudyQuotes are mapped and rendered inline with no 'See more' toggle",
+        "src/components/sections/Testimonials.tsx:23-29: all caseStudyVideos rendered directly with no limit",
+        "P3-BACKLOG.md row 46: Issue listed as out-of-scope P3 polish item"
+      ],
+      "finding": "Homepage is a very long single scroll of ~15 testimonials before the final 'Take Action' CTA",
+      "fix": {
+        "current": "All ~15 full-length testimonials stacked inline before the closing CTA",
+        "proposed": "Show 3-4 testimonials with a 'See more stories' toggle, and place a CTA higher up so the action is reachable without a long scroll"
+      }
+    },
+    {
+      "id": "C125",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/apply",
+      "note": "Apply form submit button remains below fold after tall hero on mobile with no sticky CTA bar. Suggested sticky 'Submit application' bar not implemented. This P3 item was explicitly deferred.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:160-299: form element renders with no sticky positioning or fixed bottom CTA bar",
+        "src/components/sections/ApplyPageContent.tsx:29-52: mobile layout stacks form below tall hero with no sticky affordance",
+        "P3-BACKLOG.md row 47: Issue listed as out-of-scope P3 polish item"
+      ],
+      "finding": "On mobile the submit button is far below the fold after a tall hero, with no sticky CTA",
+      "fix": {
+        "current": "Tall hero pushes form down; submit button only reachable after long scroll",
+        "proposed": "Tighten the mobile hero and add a sticky 'Submit application' bar once the form is in view"
+      }
+    },
+    {
+      "id": "C134",
+      "band": "P3",
+      "status": "NOT_CODE_VERIFIABLE",
+      "page": "/",
+      "note": "Layout shift (CLS 0.263) is a runtime/visual metric. Code changes include ImageWithFallback component and overflow containment, but actual CLS improvement is runtime-verifiable only. Current code suggests space is reserved but verification requires real load metrics.",
+      "evidence": [
+        "src/components/sections/Hero.tsx:1: overflow-hidden applied to section",
+        "plans/ux-review-fixes/agent-runs/n10-1.md: ImageWithFallback component added with dimensions",
+        "plans/ux-review-fixes/verification.md:37: 'CLS on production... 0.263 observation on very first cold hit after server start... monitored'"
+      ],
+      "finding": "Homepage above-the-fold renders at a cramped, downscaled width compared to other pages (header nav squeezed) and has a high layout shift.",
+      "fix": {
+        "current": "Hero/header renders narrow with CLS 0.263 on load",
+        "proposed": "Reserve space for hero image and partner logos to eliminate the shift, and ensure the header lays out at full viewport width on first paint"
+      }
+    },
+    {
+      "id": "C139",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/admin/pages",
+      "note": "Global cross-content search not implemented; search remains scoped per-CMS (SEO pages only). This is a P3 item explicitly out of scope.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:443 'Search SEO pages' search box only scoped to pages list"
+      ],
+      "finding": "There is no global search across content types; search is scoped per-CMS ('Search SEO pages' only).",
+      "fix": {
+        "current": "Per-CMS search box ('Search SEO pages') with no cross-content search",
+        "proposed": "Add a studio-level global search that returns SEO pages, blog posts, and media in one result list"
+      }
+    },
+    {
+      "id": "C140",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/admin/pages",
+      "note": "Revalidatepath ensures list updates, but no user-facing toast with direct link shown. P3 not in scope for ux-review-fixes.",
+      "evidence": [
+        "src/app/admin/pages/actions.ts revalidatePath called on page creation",
+        "No success toast or direct link to new page row implemented"
+      ],
+      "finding": "After saving a new SEO page the list verification raced and the page did not reliably appear; one run reported the created page 'not visible in /admin/pages list'.",
+      "fix": {
+        "current": "New page does not reliably/immediately appear at top of list after save",
+        "proposed": "Revalidate the list on save and show a success toast with a direct link to the new page row"
+      }
+    },
+    {
+      "id": "C145",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/admin/news/new",
+      "note": "Save draft button is visible and persistent in the editor sidebar. Original issue complained of intermittent invisibility; current code shows no visibility issue. P3 out of scope; reproduction failed or already resolved.",
+      "evidence": [
+        "src/components/admin/NewsEditorForm.tsx:229-236 'Save draft' button in Publish card sidebar"
+      ],
+      "finding": "The news editor's Save control was not findable on one corrected run ('FAILED: no visible Save control'), indicating an inconsistent/low-visibility save affordance.",
+      "fix": {
+        "current": "Save draft control intermittently not visible in news editor",
+        "proposed": "Pin a persistent 'Save draft' button in the editor header alongside Publish, always in view"
+      }
+    },
+    {
+      "id": "C149",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/apply",
+      "note": "Confirmation number not displayed on thank-you page or contact success panel. P3 polish item, not in scope for ux-review-fixes.",
+      "evidence": [
+        "src/app/thank-you-for-applying/page.tsx no reference ID displayed",
+        "src/components/forms/PublicLeadForm.tsx:302-322 ContactSuccessPanel shows only email, no reference number"
+      ],
+      "finding": "No application reference or confirmation number is issued, so a user cannot quote anything when following up.",
+      "fix": {
+        "current": "Confirmation text with no reference identifier",
+        "proposed": "Show a confirmation/reference ID on the success page and include it in the confirmation email"
+      }
+    },
+    {
+      "id": "C152",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/contact",
+      "note": "No statement of response time expectation added to contact form intro. P3 not scheduled for fixing in this round.",
+      "evidence": [
+        "src/app/contact/page.tsx:36-39 contact intro copy unchanged: 'Send the team a note about...' with no response-time statement"
+      ],
+      "finding": "No statement of when or whether anyone will reply; the prompt 'Send the team a note' sets no expectation.",
+      "fix": {
+        "current": "'Send the team a note about...'",
+        "proposed": "Add a response-time expectation, e.g. 'We reply within 1 business day.'"
+      }
+    },
+    {
+      "id": "C155",
+      "band": "P3",
+      "status": "PARTIAL",
+      "page": "/admin/forgot-password",
+      "note": "Confirms password reset email is coming but wording differs from suggested 'reset link is on its way — check your inbox and spam.' Partial alignment; not fully matching suggestion. P3 not in scope.",
+      "evidence": [
+        "src/app/admin/forgot-password/ForgotPasswordForm.tsx:40 'If {email} has Studio access, a password reset email is on its way'"
+      ],
+      "finding": "Password reset copy hedges ('If it has admin access, we'll send a password reset link') and no on-screen confirmation flow was observed, so a locked-out admin can't tell whether the email is coming.",
+      "fix": {
+        "current": "'If it has admin access, we'll send a password reset link' with no confirmed success state",
+        "proposed": "After submit, show a clear confirmation: 'If that email has admin access, a reset link is on its way — check your inbox and spam.'"
+      }
+    },
+    {
+      "id": "C047",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/",
+      "note": "Desktop nav links lack explicit 44x44px touch target sizing. Mobile nav link padding on line 98 (py-3) is ~12px, still below 44px guideline. P3 not in scope.",
+      "evidence": [
+        "src/components/site/Header.tsx:132 nav links use 'text-sm font-black' with no explicit 44x44px minimum height/padding"
+      ],
+      "finding": "Top-nav links are very short touch targets (~17-20px tall), making them fiddly to tap on the phone a social-media visitor arrives with.",
+      "fix": {
+        "current": "Nav link hit areas ~17-20px tall",
+        "proposed": "Increase tappable area to at least 44x44px (extra vertical padding on nav links) per touch-target guidelines"
+      }
+    },
+    {
+      "id": "C086",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/case-studies",
+      "note": "Heading hierarchy skips h2 (h1 → h3), violating sequential heading-level requirement. P3 accessibility polish item, not fixed.",
+      "evidence": [
+        "src/components/sections/CaseStudiesHero.tsx:10 h1 opens page",
+        "src/components/sections/CaseStudyQuotes.tsx:35 h3 used for card names with no h2 between them"
+      ],
+      "finding": "The case studies page has a heading-order (skipped heading levels) violation.",
+      "fix": {
+        "current": "Non-sequential heading levels on /case-studies",
+        "proposed": "Reorder headings so levels do not skip (h1 → h2 → h3 in document order)"
+      }
+    },
+    {
+      "id": "C012",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/",
+      "note": "primaryNav does not include a 'Home' item. Only footer has 'Home' link; top nav lacks it.",
+      "evidence": ["src/lib/content/nav.ts:9-14"],
+      "finding": "The top navigation has no 'Home' link; returning home depends on knowing the logo is clickable.",
+      "fix": {
+        "current": "No 'Home' item in the top nav (logo links home but isn't an obvious link)",
+        "proposed": "Add a 'Home' item to the top nav, or add visible hover styling so the logo reads as clickable"
+      }
+    },
+    {
+      "id": "C019",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/admin/news",
+      "note": "PostRow actions show only a 'more' icon button linking to editor; no inline archive affordance in the row itself.",
+      "evidence": ["src/app/admin/news/page.tsx:369-375"],
+      "finding": "News list rows offer no archive/delete affordance; retiring a post requires opening each post's editor to find the Archive button.",
+      "fix": {
+        "current": "No archive/delete in the news list row",
+        "proposed": "Add an 'Archive' action to each news list row with a confirmation prompt"
+      }
+    },
+    {
+      "id": "C028",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/apply",
+      "note": "Form has no onKeyDown handler for Cmd/Ctrl+Enter; submit is button-only.",
+      "evidence": ["src/components/forms/PublicLeadForm.tsx:160-299"],
+      "finding": "No keyboard submit (Cmd/Ctrl+Enter) on the application form; submitting requires tabbing to or clicking the button.",
+      "fix": {
+        "current": "Submit only via button click/tab",
+        "proposed": "Add Cmd/Ctrl+Enter keyboard submit handler to the apply and contact forms"
+      }
+    },
+    {
+      "id": "C029",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/apply",
+      "note": "SelectField uses native <select> without combobox or typeahead; State remains a 50-option dropdown.",
+      "evidence": ["src/components/forms/PublicLeadForm.tsx:405-427"],
+      "finding": "State is a 50-option native <select> with no typeahead-by-name UX beyond default browser behavior; budget/stage/timeline are all 'Select' placeholder dropdowns with no smart default.",
+      "fix": {
+        "current": "Native 50-item State select + 3 unselected dropdowns",
+        "proposed": "Use a searchable combobox for State (type 'TX' to jump); consider geo-prefilling State from IP as an editable default"
+      }
+    },
+    {
+      "id": "C043",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/apply",
+      "note": "Apply page headline still reads 'Apply to build your vending business with Mike.' with no introduction or context for Mike.",
+      "evidence": ["src/components/sections/ApplyPageContent.tsx:24"],
+      "finding": "The apply headline references 'Mike' by first name with no introduction for someone landing directly on /apply.",
+      "fix": {
+        "current": "'Apply to build your vending business with Mike.'",
+        "proposed": "'Apply to build your vending business with Mike Hoffman, founder of Vendingpreneurs.' or add a one-line 'who is Mike' sub-caption"
+      }
+    },
+    {
+      "id": "C059",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/",
+      "note": "Two identical adjacent buttons both link to /apply (labeled 'Step inside' in desktop and mobile nav). Core issue of duplicate CTAs persists.",
+      "evidence": ["src/components/site/Header.tsx:41-46,102-108"],
+      "finding": "The header navigation contains two adjacent identical 'APPLY NOW' links (tab stops 7 and 8) and 'Contact' is absent from the header (footer only).",
+      "fix": {
+        "current": "Two consecutive identical 'APPLY NOW' links in the header; no header Contact link",
+        "proposed": "Remove the duplicate Apply link (or differentiate its label/purpose) and consider adding Contact to the primary nav"
+      }
+    },
+    {
+      "id": "C072",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/",
+      "note": "Accelerator bonus text still says 'increase your bottom line' instead of 'increase your profit'.",
+      "evidence": ["src/lib/content/home.ts:139"],
+      "finding": "Body copy uses the idiom \"increase your bottom line\" and the metaphor \"eliminate the guesswork\". \"bottom line\" is a financial idiom that does not translate literally.",
+      "fix": {
+        "current": "increase your bottom line",
+        "proposed": "increase your profit"
+      }
+    },
+    {
+      "id": "C073",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/news/top-5-questions-vending-entrepreneurship-program",
+      "note": "Article preview copy about '300% boost via vetted options' remains unchanged. This P3 item was explicitly deferred — not part of the ux-review-fixes scope.",
+      "evidence": [
+        "P3-BACKLOG.md:1-2 (93 P3s out of scope)",
+        "No code changes for article copy in src/lib/services/news.ts or news post content"
+      ],
+      "finding": "Article preview compresses meaning into ambiguous shorthand: \"success track record (300% boost via vetted options)\". \"vetted options\" and \"300% boost\" with no baseline are unclear without context.",
+      "fix": {
+        "current": "300% boost via vetted options",
+        "proposed": "up to 300% higher sales using pre-checked machine and location choices"
+      }
+    },
+    {
+      "id": "C075",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/apply",
+      "note": "Field label remains original vague copy. P3 item was out of scope for the ux-review-fixes round.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:280 (label={isApply ? \"What are you trying to build?\" : \"Message\"})",
+        "P3-BACKLOG.md:1-2 (93 P3s out of scope)"
+      ],
+      "finding": "Open-text field label \"What are you trying to build?\" is vague for a second-language reader and overlaps with the intro line \"...what kind of support would move the business forward.\" It is unclear what answer is expected.",
+      "fix": {
+        "current": "What are you trying to build?",
+        "proposed": "Tell us about your vending goals (optional) — e.g. \"I want 5 machines in offices within a year.\""
+      }
+    },
+    {
+      "id": "C094",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "global (header nav)",
+      "note": "Desktop header nav links still only have font-size, no padding to reach 44px tap target. P3 item deferred — not in scope.",
+      "evidence": [
+        "src/components/site/Header.tsx:36 (className=\"text-sm\" on nav links, no padding)",
+        "git diff main -- src/components/site/Header.tsx (no changes)"
+      ],
+      "finding": "Desktop header nav links ('ABOUT' 51x20px, 'CASE STUDIES' 102x20px, etc.) are only ~20px tall. The mobile hamburger button itself is a good size, but on tablet/landscape where the inline nav shows, the targets are thumb-hostile.",
+      "fix": {
+        "current": "Inline header nav links ~20px tall",
+        "proposed": "Give header nav links a minimum 44px tap height via vertical padding for the inline (non-hamburger) layout"
+      }
+    },
+    {
+      "id": "C106",
+      "band": "P3",
+      "status": "PARTIAL",
+      "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "note": "Aria-labels are now descriptive ('Share on X', 'Share on LinkedIn', etc.), addressing accessibility. Visual text remains abbreviated — partial fix for visual consistency stated in the issue.",
+      "evidence": [
+        "src/components/sections/NewsArticle.tsx:150,161 (aria-label={link.label} with proper descriptive labels)",
+        "src/components/sections/NewsArticle.tsx:155,164 (text still shows abbreviated 'X', 'in', 'f', 'link')"
+      ],
+      "finding": "The article-page share buttons are four individually-bordered black pill chips with inconsistent labels — single uppercase letters and abbreviations ('X', 'in', 'f', 'link') rather than a consistent icon set. Mixing a brand glyph (X), a lowercase initialism (in, f), and a word ('link') in one control group is inconsistent.",
+      "fix": {
+        "current": "Share chips labelled 'X', 'in', 'f', 'link' (mixed letters/abbreviations/word)",
+        "proposed": "Use a single consistent icon set (X, LinkedIn, Facebook, copy-link icons) with aria-labels, all in one chip style"
+      }
+    },
+    {
+      "id": "C108",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/admin/news/new",
+      "note": "Blog post editor textarea still has no placeholder text. P3 item was out of scope.",
+      "evidence": [
+        "src/components/admin/NewsEditorForm.tsx:189-197 (textarea with no placeholder attribute)",
+        "P3-BACKLOG.md:77 (line number for C108 in backlog)"
+      ],
+      "finding": "The blog post body editor is a large empty textarea with no placeholder text, no toolbar, and no empty-state guidance, occupying most of the viewport as blank white space. The Excerpt and Title fields are also placeholder-free.",
+      "fix": {
+        "current": "Blog body is a bare empty textarea with no placeholder/toolbar/empty-state",
+        "proposed": "Add placeholder/helper text ('Write your post in Markdown...'), a minimal formatting hint, and match the designed empty-state treatment used by the SEO page builder"
+      }
+    },
+    {
+      "id": "C111",
+      "band": "P3",
+      "status": "PARTIAL",
+      "page": "/case-studies",
+      "note": "Cards now have `h-full` for equal height and all include avatars. The visual inconsistency (ragged bottoms mentioned in issue) may not be fully addressed; grid gap may still cause visible variance depending on content.",
+      "evidence": [
+        "src/components/sections/CaseStudyQuotes.tsx:23 (h-full flex-col ensures equal height)",
+        "src/components/sections/CaseStudyQuotes.tsx:25-32 (all cards include avatar images)",
+        "git diff shows only min-w-0 addition, no ragged-height fix"
+      ],
+      "finding": "The case-studies testimonial grid mixes card states inconsistently: some cards show a leading avatar circle and others do not, and card heights vary widely with ragged bottom alignment within the same row because content length is not normalised.",
+      "fix": {
+        "current": "Testimonial cards have ragged heights and inconsistent avatar presence within a row",
+        "proposed": "Either equalise card heights per row (align-items:stretch with internal scroll/clamp) or adopt an intentional masonry layout, and standardise the avatar slot (placeholder when absent)"
+      }
+    },
+    {
+      "id": "C120",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/about",
+      "note": "The About page hero still renders multiple dense paragraphs ('I walked away from 60-hour workweeks...') with no 3-bullet summary at the top as suggested.",
+      "evidence": [
+        "src/lib/content/about.ts:1-39 — About content has only 'hero.paragraphs' and 'how' and 'approach' sections, no 'summary' or bullet points",
+        "src/components/sections/AboutHero.tsx:16-20 — Hero maps about.hero.paragraphs without a separate summary/bullets section"
+      ],
+      "finding": "The About page is several dense paragraphs of life story ('How I Escaped The Rat Race', 'Mike's Unique Approach') with no short summary or skimmable highlights.",
+      "fix": {
+        "current": "Multi-paragraph founder essay with no summary",
+        "proposed": "Add a 3-bullet 'the short version' at the top (e.g. 'Quit a 60-hr job', 'Built passive income with vending', '12+ machines now') above the full story"
+      }
+    },
+    {
+      "id": "C126",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/contact",
+      "note": "Message textarea has no placeholder guidance text; fix would require adding placeholder='Tell us where you are and your main question (a sentence or two is fine)' or similar.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:450-460 — TextareaField renders without placeholder prop passed"
+      ],
+      "finding": "Required Message field gives no guidance on what to include or expected length",
+      "fix": {
+        "current": "Empty Message textarea with no placeholder",
+        "proposed": "Add placeholder guidance, e.g. 'Tell us where you are and your main question (a sentence or two is fine)'"
+      }
+    },
+    {
+      "id": "C127",
+      "band": "P3",
+      "status": "PARTIAL",
+      "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "note": "Images now declare explicit dimensions (fill + sizes), which helps with CLS, but production verification notes CLS 0.263 on cold start still occurs, though warmed runs show 0.000.",
+      "evidence": [
+        "src/components/sections/NewsArticle.tsx:61-70 — Image has fill + sizes + priority set for explicit dimensions",
+        "verification.md:37 — 'CLS 0.263 observation on the very first cold hit after server start (matches dev footer shift)' noted as monitored but not fully resolved"
+      ],
+      "finding": "Article page loads slowly (~1.7s DCL) with CLS 0.263, so content shifts while reading",
+      "fix": {
+        "current": "~2s load and CLS 0.263 on article pages",
+        "proposed": "Reserve image dimensions and reduce blocking work to bring CLS under 0.1 and speed first paint"
+      }
+    },
+    {
+      "id": "C129",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/",
+      "note": "Nav links remain text-sm sized (~14px font) without explicit touch-target padding; WCAG 44px guidance not implemented.",
+      "evidence": [
+        "src/components/site/Header.tsx:131-135 — HeaderNavLink renders with classes 'text-sm font-black ... focus-visible:ring' but no min-h or min-w padding for 44px touch target",
+        "P3-BACKLOG.md:86 — Item lists 'Header and footer navigation links are only 17-20px tall'"
+      ],
+      "finding": "Header and footer navigation links are only 17-20px tall, below comfortable touch-target size",
+      "fix": {
+        "current": "Nav links ~17-20px tall",
+        "proposed": "Increase tappable height to at least 44px per WCAG target-size guidance"
+      }
+    },
+    {
+      "id": "C132",
+      "band": "P3",
+      "status": "NOT_CODE_VERIFIABLE",
+      "page": "/admin/pages/new",
+      "note": "The page-type wizard structure is complex and would require axe/accessibility testing to verify landmark uniqueness; code inspection shows no obvious duplicate landmarks but full audit needed.",
+      "evidence": [
+        "src/app/admin/pages/new/page.tsx:29 — Page rendered with immersive=true in AdminShell",
+        "src/components/admin/SeoPageEditorWorkspace.tsx:41 — Layout contains nested divs but no explicit landmark structure"
+      ],
+      "finding": "The page-type wizard at /admin/pages/new has a moderate 'landmark-unique' axe violation (non-unique landmark on a .p-0 element).",
+      "fix": {
+        "current": "Two landmarks with the same role and no distinguishing label",
+        "proposed": "Give each landmark a unique aria-label or collapse the duplicate landmark"
+      }
+    },
+    {
+      "id": "C137",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/admin/pages",
+      "note": "Schedule-failed filter exists but no evidence of KPI card summation; deferred as P3 polish (out-of-scope for P2 fixes).",
+      "evidence": [
+        "P3-BACKLOG.md:88 — Item states 'A \"Schedule failed\" state is exposed as a filter but is not summarized in the top KPI cards'",
+        "verification.md:4-12 — Verification table lists D1-D13 requirements, no D14/D15 for Schedule-failed KPI card"
+      ],
+      "finding": "A \"Schedule failed\" state is exposed as a filter but is not summarized in the top KPI cards, so a failure isn't visible at a glance.",
+      "fix": {
+        "current": "\"Schedule failed\" only appears as a workflow filter link",
+        "proposed": "Surface a count of schedule failures in the KPI card strip when greater than zero"
+      }
+    },
+    {
+      "id": "C142",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/admin/libraries",
+      "note": "Content libraries (/admin/libraries) is not surfaced as a sidebar item; still requires accessing via Media library header link only.",
+      "evidence": [
+        "src/components/admin/AdminShell.tsx:38-54 — contentSections array contains pages, blogSection, and media only; libraries type defined at line 9 but not added to sidebar",
+        "src/components/admin/AdminShell.tsx:66 — sections = [...contentSections, ...accountSections] excludes libraries"
+      ],
+      "finding": "Content libraries (/admin/libraries) is reachable only via a 'Content libraries' link in the Media library header, not from the sidebar.",
+      "fix": {
+        "current": "/admin/libraries linked only from the Media library header",
+        "proposed": "Surface 'Content libraries' as its own sidebar item under CONTENT"
+      }
+    },
+    {
+      "id": "C143",
+      "band": "P3",
+      "status": "NOT_FIXED",
+      "page": "/pre-call-resources",
+      "note": "Pre-call resources page renders a text-based checklist with no embedded videos; component would need iframe/video support added.",
+      "evidence": [
+        "src/app/pre-call-resources/page.tsx:14-24 — SupportPage called with items (text list only), no embedded media prop",
+        "src/components/sections/SupportPage.tsx:21-30 — Renders ul of text items, no video/iframe support in the component"
+      ],
+      "finding": "The pre-call resources page contains 14 links and 0 embedded videos/iframes.",
+      "fix": {
+        "current": "Pre-call page is a list of 14 links, no embedded media",
+        "proposed": "Embed the key prep video(s) inline on /pre-call-resources"
+      }
+    },
+    {
+      "id": "C154",
+      "band": "P3",
+      "status": "PARTIAL",
+      "page": "/this-page-does-not-exist",
+      "note": "Item #93 in P3-BACKLOG explicitly deferred as low-priority. Code shows mixed fix: 'moved' language persists on line 13, but suggested-fix goal (offer key links) is now addressed via news/about/apply links on lines 22-34. Partial match to suggested fix intent.",
+      "evidence": [
+        "plans/ux-review-fixes/P3-BACKLOG.md:1 (93 low-priority findings out of scope)",
+        "src/app/not-found.tsx:13, 22-34 (moved language retained; helpful links added as fallback)"
+      ],
+      "finding": "The 404 text says content may have 'moved' but provides no destination or link to where it moved.",
+      "fix": {
+        "current": "'...doesn't exist or has moved.'",
+        "proposed": "Either redirect known moved paths, or drop the 'or has moved' clause and offer a search + key links"
+      }
+    }
+  ],
+  "unfixed_seo": [
+    {
+      "id": "P2-3",
+      "band": "P2",
+      "status": "PARTIAL",
+      "page": "/admin/pages/redirects",
+      "note": "The redirect form now displays inline field errors (not top banner) and preserves entered values. Empty paths show the user-friendly message 'Start the path with /...'. However, non-empty invalid paths (e.g., 'foo') pass the incomplete Zod schema and hit the backend with jargon message 'Path must be root-relative.' The Zod schema needs a `.refine()` check for paths starting with '/' to fully resolve the issue.",
+      "evidence": [
+        "src/app/admin/pages/redirects/actions.ts:45-48 (Zod schema validates empty path but not path format)",
+        "src/app/admin/pages/redirects/RedirectCreateForm.tsx:63-68 (inline FieldError component displays next to field)",
+        "src/app/admin/pages/redirects/actions.ts:103-114 (validationErrorState preserves submitted values)",
+        "src/lib/services/seo-pages.ts:1706 (backend 'Path must be root-relative' jargon message)"
+      ],
+      "finding": "Redirect form error 'Path must be root-relative.' is jargon, renders as a top banner, and clears the entered values",
+      "title": "Redirect form error 'Path must be root-relative.' is jargon, renders as a top banner, and clears the entered values",
+      "fix": {
+        "current": "'Path must be root-relative.' + cleared fields",
+        "proposed": "'Start the path with / (for example /resources/old-page)' shown next to the field, preserving entered values"
+      }
+    },
+    {
+      "id": "P2-4",
+      "band": "P2",
+      "status": "NOT_FIXED",
+      "page": "/admin/pages/[id]",
+      "note": "P2-4 (\"New-page canvas is all grey placeholder text with no cue which fields are required to publish\") is out of scope for this fix round. The round covers I1-I20 which map to various findings, but P2-4 is not mapped to any of those issues. I19 (placeholder cues) was folded into I1 but addressed only blocker checklist copy/presentation, not field-level \"Required to publish\" markers or a structured empty-state checklist on the canvas as P2-4 requests.",
+      "evidence": [
+        "plans/seo-builder-ux-fixes/fix-strategy.md:79 (I19 folded into I1, covers blocker copy not canvas markers)",
+        "src/components/admin/seo-page-editor/SeoPageEditorCanvas.tsx:238-245 (canvas empty state mentions CTA requirement in text only, no field markers or checklist interface)",
+        "plans/seo-builder-ux-fixes/plan.md:54 (issue coverage I1→I20, P2-4 not mapped)"
+      ],
+      "finding": "New-page canvas is all grey placeholder text with no cue which fields are required to publish",
+      "title": "New-page canvas is all grey placeholder text with no cue which fields are required to publish",
+      "fix": {
+        "current": "Ghost text 'Hero headline' etc. with no affordance",
+        "proposed": "Mark publish-required fields ('Required to publish') and add an empty-state checklist"
+      }
+    }
+  ],
+  "unfixed_seoP3": [
+    {
+      "id": "Toast/save-confirmation inconsistency — three different treatments incl. double 'Draft saved' (Claire, Alex)",
+      "status": "PARTIAL",
+      "note": "N4 fixed duplicate announcements via toast keying. However, multiple distinct message texts exist (Draft saved, Draft saved and preview opened, Save failed) appearing inconsistently across save paths.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/SeoEditorManualSubmitToast.tsx:23",
+        "plans/seo-builder-ux-fixes/agent-runs/N4-1.md:44-54",
+        "src/app/admin/pages/actions.ts:245-258"
+      ]
+    },
+    {
+      "id": "Row URLs in tiny grey monospace read as 'computer errors' (Betty)",
+      "status": "NOT_FIXED",
+      "note": "URLs remain in tiny grey monospace styling. Visual treatment unchanged, not addressed.",
+      "evidence": ["src/app/admin/pages/page.tsx:802-807"]
+    },
+    {
+      "id": "No-results state: full-width 'Create page' dwarfs 'Clear search' (Claire)",
+      "status": "NOT_FIXED",
+      "note": "Create page button takes w-full dominating Clear search in empty search state. Not addressed.",
+      "evidence": ["src/app/admin/pages/page.tsx:532-554"]
+    },
+    {
+      "id": "Create-gate click target flaky under automation — possible hydration race (Alex)",
+      "status": "NOT_CODE_VERIFIABLE",
+      "note": "N13 rewrote create gate to single static panel; N19 verified no hydration errors on reload. Runtime flakiness was automation-specific and cannot be definitively verified in static code.",
+      "evidence": [
+        "src/app/admin/pages/new/page.tsx:14-37",
+        "plans/seo-builder-ux-fixes/agent-runs/N19-1.md:33"
+      ]
+    }
+  ]
+}

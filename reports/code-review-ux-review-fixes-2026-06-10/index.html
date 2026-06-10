@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Code Review — ux-review-fixes round 2 (090ece2..4d497da) — 2026-06-10</title>
+<style>
+  :root {
+    --ink: #0f172a; --muted: #64748b; --line: #e2e8f0; --bg: #f8fafc;
+    --blocker: #dc2626; --major: #ea580c; --moderate: #ca8a04; --minor: #64748b;
+    --ok: #059669; --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.55; }
+  main { max-width: 940px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  h2 { font-size: 1.15rem; margin: 40px 0 12px; border-bottom: 2px solid var(--line); padding-bottom: 6px; }
+  .sub { color: var(--muted); font-size: .9rem; margin-bottom: 20px; }
+  code { background: #eef2f7; border-radius: 4px; padding: 1px 5px; font-size: .85em; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .verdict { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
+  .verdict .pill { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; flex: 1 1 200px; }
+  .pill .k { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+  .pill .v { font-size: 1.05rem; font-weight: 700; margin-top: 2px; }
+  .fail { color: var(--blocker); }
+  .ok { color: var(--ok); }
+  details.finding { background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--minor); border-radius: 10px; margin: 10px 0; padding: 0; }
+  details.finding[data-sev="MAJOR"] { border-left-color: var(--major); }
+  details.finding[data-sev="MODERATE"] { border-left-color: var(--moderate); }
+  details.finding[data-sev="MINOR"] { border-left-color: var(--minor); }
+  details.finding > summary { cursor: pointer; padding: 14px 16px; font-weight: 600; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+  details.finding > summary::-webkit-details-marker { display: none; }
+  details.finding > summary::after { content: "▸"; margin-left: auto; color: var(--muted); transition: transform .15s; }
+  details.finding[open] > summary::after { transform: rotate(90deg); }
+  .sev { font-size: .68rem; font-weight: 800; letter-spacing: .05em; padding: 2px 8px; border-radius: 99px; color: #fff; flex-shrink: 0; }
+  .sev.MAJOR { background: var(--major); }
+  .sev.MODERATE { background: var(--moderate); }
+  .sev.MINOR { background: var(--minor); }
+  .tag { font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: #eef2f7; color: var(--muted); flex-shrink: 0; }
+  .body { padding: 0 16px 16px; border-top: 1px solid var(--line); }
+  .body h4 { margin: 14px 0 4px; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .body p { margin: 4px 0; font-size: .95rem; }
+  .explain { background: #f1f5f9; border-radius: 8px; padding: 10px 14px; margin-top: 12px; font-size: .95rem; }
+  .explain b { color: var(--ink); }
+  ul.clean { padding-left: 20px; }
+  ul.clean li { margin: 8px 0; font-size: .95rem; }
+  ul.clean li b { color: var(--ok); }
+  .note { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 14px; font-size: .9rem; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; background: var(--card); }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f1f5f9; }
+  footer { color: var(--muted); font-size: .8rem; margin-top: 50px; border-top: 1px solid var(--line); padding-top: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Code Review — SEO Page Builder UX fixes, round 2</h1>
+  <p class="sub">Branch <code>ux-review-fixes</code> · commits <code>090ece2..4d497da</code> (20 commits, ~6.6k changed lines across 82 src/supabase files) · reviewed 2026-06-10 · full mode, 4 lanes (correctness, security/destructive, structural/fallow, tests/UI) · agent-run reports deliberately ignored — everything below verified against code.</p>
+
+  <div class="verdict">
+    <div class="pill"><div class="k">Verdict</div><div class="v fail">FAIL</div><div class="sub">→ PASS WITH RISKS once the two MAJORs land</div></div>
+    <div class="pill"><div class="k">Test suite</div><div class="v ok">584 / 584 pass</div><div class="sub">97 files · <code>tsc --noEmit</code> clean</div></div>
+    <div class="pill"><div class="k">Behavior preservation</div><div class="v">75 / 100</div><div class="sub">gate identity + server floors verified directly</div></div>
+    <div class="pill"><div class="k">Structural quality</div><div class="v">62 / 100</div><div class="sub">controller grew 1416 → 1600 lines</div></div>
+  </div>
+
+  <div class="explain"><b>One-paragraph take:</b> The round's architecture is genuinely good — pure derivation modules with real tests, server-side floors behind every destructive path, a correctly-scoped migration. But the I14 tabs change shipped two regressions that defeat the round's own headline fixes (a silent save no-op, and dead click-to-fix navigation on the blocker checklist), and the new mobile action bar promoted a pre-existing metadata-wipe hazard into a default save path. Both MAJORs live in <code>SeoPanelTabs</code> + two focus functions and are one small slice to fix.</div>
+
+  <h2>Findings (ranked)</h2>
+
+  <details class="finding" data-sev="MAJOR" open>
+    <summary><span class="sev MAJOR">MAJOR</span> "Save draft" silently does nothing when the title is empty and the Readiness tab is active <span class="tag">regression · I14</span></summary>
+    <div class="body">
+      <h4>Where</h4><p><code>SeoPanelTabs.tsx:81-93</code> · <code>SeoPublishPanel.tsx:342-385</code> · <code>SeoPageEditorForm.tsx:66-71</code></p>
+      <h4>What happens</h4>
+      <p>The new tabs keep the Settings panel mounted but <code>hidden</code>. It contains <code>&lt;input name="title" required&gt;</code> and <code>&lt;input name="slug" required&gt;</code>. The browser still validates hidden controls — but when an invalid control can't be focused, Chrome aborts the form submission with only a console warning. No toast, no bubble, nothing. Affects the top-rail Save, the mobile bar, Cmd+S, and the unsaved-exit dialog's "Save draft".</p>
+      <div class="explain"><b>Explainer:</b> before this round the settings fields were always visible, so an empty title produced a browser validation bubble pointing at the field. Now the field is invisible, the browser refuses to submit a form with an invisible invalid field, and it tells no one. Weirdly, if you collapse the SEO panel entirely the save <i>works</i> (only validation-exempt <code>type="hidden"</code> mirrors remain) and the server replies "Title needs at least 3 characters." — so the feedback depends on which panel state you happen to be in.</div>
+      <h4>Fix direction</h4><p>Drop <code>required</code> from those two inputs — the server already validates and the toast surfaces the message (matches the collapsed-panel path). Alternatives: <code>noValidate</code> on the form, or an <code>invalid</code>-event handler that activates the Settings tab.</p>
+      <h4>Verify</h4><p>New page → leave title empty → Readiness tab active → click Save draft → must produce visible feedback.</p>
+    </div>
+  </details>
+
+  <details class="finding" data-sev="MAJOR" open>
+    <summary><span class="sev MAJOR">MAJOR</span> Publish-blocker checklist click-to-fix is a no-op for every SEO-settings blocker <span class="tag">regression · I14 vs I1/I19</span></summary>
+    <div class="body">
+      <h4>Where</h4><p><code>useSeoPageEditorController.ts:1175-1188</code> (focusPublishBlocker) · <code>:1207-1220</code> (focusSeoSetting) · <code>SeoPanelTabs.tsx</code></p>
+      <h4>What happens</h4>
+      <p>Checklist items like "Add a page title" target element ids (<code>page-title-field</code>, <code>seo-title-field</code>, …) that live inside the hidden Settings tab. <code>scrollIntoView()</code> and <code>focus()</code> on a <code>display:none</code> element do nothing — and <code>SeoPanelTabs</code> owns its active tab internally with no API to switch it. Same dead end for the verdict card's "fix next" and the readiness findings' "Open settings".</p>
+      <div class="explain"><b>Explainer:</b> the canonical checklist (the flagship I1/I19 fix) is correct — count, list, and disabled button can't disagree. But its whole point is "click the item, land in the field that fixes it", and that navigation is dead in the panel's <i>default</i> state (Readiness tab first). Canvas/block targets and the "save first" item still work; it's specifically the SEO-settings class — the most common blockers — that go nowhere.</div>
+      <h4>Fix direction</h4><p>Make <code>SeoPanelTabs</code> controllable (<code>activeId</code> / <code>onActiveIdChange</code>) and have both focus functions activate the Settings tab before the rAF focus.</p>
+      <h4>Verify</h4><p>Empty SEO title, Readiness tab active → click "Add an SEO title" in the checklist → focus must land in the SEO title field.</p>
+    </div>
+  </details>
+
+  <details class="finding" data-sev="MODERATE">
+    <summary><span class="sev MODERATE">MODERATE</span> Saving with the SEO panel collapsed wipes governance &amp; social metadata <span class="tag">pre-existing · exposure ↑ this round</span></summary>
+    <div class="body">
+      <h4>Where</h4><p><code>SeoPageEditorWorkspace.tsx:62-64</code> · <code>actions.ts:816-824, 943-954</code> · <code>SeoPublishPanel.tsx:588-718</code></p>
+      <h4>What happens</h4>
+      <p>Collapsing the panel <i>unmounts</i> it. The governance fields (internal tags, topic cluster, campaign, funnel stage, lifecycle, review period/date, OG title/description) are uncontrolled and exist only there — no hidden mirrors. <code>parsePageFormData</code> defaults the missing values and the save writes them: tags → <code>[]</code>, lifecycle → <code>drafting</code>, review period → 6.</p>
+      <div class="explain"><b>Explainer:</b> autosave was protected on purpose (it falls back to the loaded row's values — proof the authors knew unmounted fields vanish) and the scheduler is protected by its baseline trick. The manual-save path just never got the same treatment. The unmount predates this round, but N11's always-visible mobile Save button (panel collapsed is the <i>default</i> on phones) and the new Cmd+S make "save while the panel is unmounted" a first-class path now.</div>
+      <h4>Fix direction</h4><p>Mirror governance into controlled state + hidden inputs like the SEO fields, or make the server treat absent governance keys as "no change".</p>
+      <h4>Verify</h4><p>Set internal tags → save → collapse panel → save again → tags must survive.</p>
+    </div>
+  </details>
+
+  <details class="finding" data-sev="MODERATE">
+    <summary><span class="sev MODERATE">MODERATE</span> Never-saved-delete floor depends on a best-effort revision snapshot <span class="tag">Tier 1 · narrow</span></summary>
+    <div class="body">
+      <h4>Where</h4><p><code>actions.ts:852-864</code> · <code>seo-page-drafts.ts:42-55</code> · <code>unsaved-exit-guard-state.ts:73-82</code></p>
+      <h4>What happens</h4>
+      <p>The server decides "never explicitly saved" mainly via <code>revisionCount === 0</code> — and the manual-save revision snapshot that creates that count deliberately swallows failures ("must never fail the user's save"). If that insert fails once, an explicitly-saved draft looks never-saved and Discard would hard-delete it.</p>
+      <div class="explain"><b>Explainer:</b> real mitigations exist — the client disarms Discard after a successful save, and the check-then-delete race is closed at the DB (the <code>page_revisions.page_id</code> FK has no CASCADE, so a page that gains a revision mid-race fails the delete). Exploiting this needs a snapshot failure <i>plus</i> a stale client or a misused action. Still, a Tier-1 delete floor shouldn't rest on a write that's allowed to fail.</div>
+      <h4>Fix direction</h4><p>Persist an explicit <code>first_saved_at</code>-style fact transactionally with the save, or make the snapshot non-optional for the first manual save.</p>
+      <h4>Verify</h4><p>Unit test: mock the revision insert to fail during <code>saveSeoPage(intent: "save")</code>, then assert <code>deleteNeverSavedSeoPageDraft</code> returns <code>protected</code>.</p>
+    </div>
+  </details>
+
+  <details class="finding" data-sev="MODERATE">
+    <summary><span class="sev MODERATE">MODERATE</span> Legacy walkthrough auto-start still fires, with orphaned state <span class="tag">dead wiring</span></summary>
+    <div class="body">
+      <h4>Where</h4><p><code>useSeoPageEditorController.ts:1265-1278</code> · <code>AiBuilderAssistant.tsx:127-128</code></p>
+      <h4>What happens</h4>
+      <p>The Quick Tour is now opt-in and self-driven, but <code>onChoosePageTemplate</code> still runs the legacy auto-start: it force-opens the blocks sidebar (full-screen overlay on mobile) and sets <code>builderWalkthroughStep = 1</code> — which nothing ever completes or clears. <code>finish/dismiss/advanceBuilderWalkthrough</code> have no callers; the AI assistant's step-3 auto-open is unreachable.</p>
+      <div class="explain"><b>Explainer:</b> until a user finishes the tour once (writing the seen-flag), every new-page template choice mutates the panel layout with no tour visible to explain why. On a phone that means the blocks overlay covers the canvas immediately after choosing a template.</div>
+      <h4>Fix direction</h4><p>Delete the legacy auto-start block and the dead controller walkthrough functions (also shrinks the 1600-line controller for free).</p>
+      <h4>Verify</h4><p>Clear <code>page-builder-editor-walkthrough-seen</code>, create a new page at mobile width → the blocks overlay must not auto-cover the canvas.</p>
+    </div>
+  </details>
+
+  <details class="finding" data-sev="MODERATE">
+    <summary><span class="sev MODERATE">MODERATE</span> Typing in the schedule field arms the schedule via autosave — no save needed, and the new status card won't show it <span class="tag">pre-existing · undermines I2</span></summary>
+    <div class="body">
+      <h4>Where</h4><p><code>useSeoPageEditorController.ts:135-147</code> (autosave metadata field list) · <code>actions.ts:973-999</code></p>
+      <h4>What happens</h4>
+      <p><code>scheduledPublishAt</code> is in the autosave metadata listener, so editing it triggers a debounced autosave whose value differs from the mount baseline → the server writes <code>scheduledPublishStatus: "scheduled"</code>. Clearing the field symmetrically cancels. The UI copy says "Save the draft to arm the schedule", and the new <code>ScheduleStatusCard</code> reads server props that don't refresh on autosave — so the honesty surface can be silently stale against the DB while a publish is armed.</p>
+      <div class="explain"><b>Explainer:</b> worst case: an admin types a tentative time while thinking, navigates away without saving, believes nothing is scheduled — and the page publishes itself at that time. The root cause predates this round (field list and server path are unchanged), but it directly contradicts the I2 "schedule status honesty" deliverable this round shipped.</div>
+      <h4>Fix direction</h4><p>Remove <code>scheduledPublishAt</code> / <code>cancelScheduledPublish</code> from <code>autosaveMetadataFieldNames</code> so only explicit saves carry schedule changes.</p>
+      <h4>Verify</h4><p>Type a future time, don't save, wait 2s → DB row must still show no schedule.</p>
+    </div>
+  </details>
+
+  <details class="finding" data-sev="MODERATE">
+    <summary><span class="sev MODERATE">MODERATE</span> Two date formatters dodge the round's own Pacific unification <span class="tag">N16/N21 incomplete</span></summary>
+    <div class="body">
+      <h4>Where</h4><p><code>RedirectRow.tsx:34-41</code> (anchored to <b>UTC</b>) · <code>SeoPublishPanel.tsx:329-335</code> (runtime-local)</p>
+      <h4>What happens</h4>
+      <p>A redirect created in the Pacific evening displays as the next day's date; the publish panel's "Last updated / Published" dates float with the viewer's machine timezone — while this same diff established <code>datetime-format.ts</code> as the single Pacific-anchored formatter.</p>
+      <h4>Fix direction</h4><p>Add a Pacific date-only formatter to <code>datetime-format.ts</code> and use it in both places.</p>
+    </div>
+  </details>
+
+  <details class="finding" data-sev="MODERATE">
+    <summary><span class="sev MODERATE">MODERATE</span> Bulk archive: silent partial failure, no cap, no dedup <span class="tag">N19/I20</span></summary>
+    <div class="body">
+      <h4>Where</h4><p><code>actions.ts:765-793</code></p>
+      <h4>What happens</h4>
+      <p>If any id succeeds you're redirected back to the list with no indication which failed (failures live only in server logs); invalid ids are silently dropped; the id list is unbounded and un-deduplicated (sequential RPCs — a timeout leaves a half-archived batch with no visible record).</p>
+      <h4>Fix direction</h4><p><code>new Set(ids)</code>, cap (~50), and carry <code>?archived=N&amp;failed=M</code> in the redirect.</p>
+    </div>
+  </details>
+
+  <details class="finding" data-sev="MINOR">
+    <summary><span class="sev MINOR">MINOR</span> Redirect "internal path" classification bypassable with a backslash</summary>
+    <div class="body">
+      <h4>Where</h4><p><code>seo-pages.ts:1686-1701</code> · served via <code>redirects.ts:5</code> / <code>proxy.ts:103-106</code></p>
+      <p><code>/\evil.com</code> passes the leading-<code>/</code> check and the DB CHECK, but <code>new URL("/\\evil.com", base)</code> resolves to <code>https://evil.com/</code> — a 301 off-site from a path stored and displayed as internal. Writers are admins and external http(s) destinations are allowed by design, so this defeats classification, not access control. Fix: reject <code>\</code> (and <code>%5C</code>) in <code>normalizeInternalPath</code>.</p>
+    </div>
+  </details>
+
+  <details class="finding" data-sev="MINOR">
+    <summary><span class="sev MINOR">MINOR</span> Redirect schemas don't UUID-validate <code>pageId</code> / <code>id</code></summary>
+    <div class="body">
+      <h4>Where</h4><p><code>redirects/actions.ts:57, 61-66</code></p>
+      <p>Free-text <code>pageId</code> and non-UUID update/delete <code>id</code> reach Postgres and surface as generic errors instead of field errors. Sibling pages actions use <code>z.uuid()</code> — align. No injection risk (parameterized throughout).</p>
+    </div>
+  </details>
+
+  <details class="finding" data-sev="MINOR">
+    <summary><span class="sev MINOR">MINOR</span> Unsaved-exit guard misses SPA back/forward; "Save &amp; leave" doesn't await the save</summary>
+    <div class="body">
+      <h4>Where</h4><p><code>useUnsavedExitGuard.ts:112-162</code></p>
+      <p>The guard intercepts anchor clicks and <code>beforeunload</code> only — browser Back is a <code>popstate</code> SPA navigation and bypasses it (impact bounded to an orphan draft; autosave protects content). The "save" branch calls <code>onSaveDraft()</code> then <code>router.push(href)</code> unconditionally — if the submit is blocked (MAJOR #1) or fails, navigation proceeds anyway. Cheap fix: add a popstate listener while armed; gate the push on the save starting/succeeding.</p>
+    </div>
+  </details>
+
+  <details class="finding" data-sev="MINOR">
+    <summary><span class="sev MINOR">MINOR</span> Cmd+Enter publish finds the button by exact visible text</summary>
+    <div class="body">
+      <h4>Where</h4><p><code>useEditorKeyboardShortcuts.ts:30-43</code></p>
+      <p>Any copy change breaks the shortcut silently. The button already has <code>data-testid="seo-publish-button"</code> — select on that instead.</p>
+    </div>
+  </details>
+
+  <h2>Structural (fallow + manual)</h2>
+  <p><b>Fallow evidence:</b> <code>npx fallow audit --base 090ece2</code> (fallow 2.91.0, 355 changed files) → <b>fail</b>, effectively <b>warn</b>: 28 of 29 dead-code hits are <code>plans/**</code> orchestrator artifacts (config gap — add <code>plans/**</code> to <code>fallow.toml</code> ignorePatterns). 0 unresolved imports · 0 unlisted deps · 0 circular imports.</p>
+  <ul class="clean">
+    <li><code>useSeoPageEditorController.ts</code> worsened <b>1416 → 1600 lines</b> (cyclomatic 105). Five more concerns landed in it this round. Deleting the dead walkthrough block is the free first cut; confirm-state, schedule, and autosave-retry wiring are all separable.</li>
+    <li><code>SeoPublishPanel.tsx</code> at 919 lines, approaching the 1000 threshold — <code>GovernanceFields</code> (cyclomatic 18) and <code>SeoMetadataFields</code> are natural extractions.</li>
+    <li><code>revision-display.ts:64-78</code> forks <code>countWordsInValue</code> verbatim from <code>SeoReadinessHelpers.ts:42-56</code> — revision and readiness word counts can silently diverge. Hoist to <code>src/lib/page-builder/</code>.</li>
+    <li><code>UnsavedExitDialog.tsx</code> clones ~39 lines of focus-trap/Escape/Tab-cycle scaffolding from <code>BlockSettingsModal.tsx</code> — extract a <code>useFocusTrap</code> hook.</li>
+    <li>Trivial: <code>internalNavTargetFromClick</code> exported but unimported (<code>useUnsavedExitGuard.ts:53</code>).</li>
+  </ul>
+
+  <h2>Verified clean — the things you asked me to distrust</h2>
+  <ul class="clean">
+    <li><b>Publish gate identity:</b> old <code>!canPublish || blockers.length &gt; 0</code> ≡ new <code>checklist.length &gt; 0</code> (checklist = all blockers + save-first item iff <code>!canPublish</code>). Boolean-identical. Verdict card and next-step derive from the same list, never independently. <b>And</b> <code>adminPublishSeoPage</code> re-runs <code>assessSeoReadiness</code> server-side and throws on blockers — a real server floor that also covers the list-page publish path.</li>
+    <li><b>Poller lifecycle:</b> <code>PublishSuccessCard</code> aborts + cancels on unmount, keyed by URL; <code>pollUntilLive</code> checks the signal between every sleep/probe. No leak.</li>
+    <li><b>Autosave retry wiring:</b> requests serialized through the in-flight chain, payload built after the previous settles, retry budget capped and re-armed correctly; timers cleaned on every payload change. Only quirk: a pending retry timer survives a manual submit (benign given the serialization).</li>
+    <li><b>Scheduler write-guard:</b> mount-time baseline means collapsed-panel and stale-tab <i>saves</i> never re-arm or clear schedules; the one-shot cancel field is serialized synchronously by <code>requestSubmit</code> before disarm. (Live-edit autosave is the MODERATE above.)</li>
+    <li><b>Migration <code>20260610100000</code> (applied to prod):</b> <code>ALTER TABLE DISABLE TRIGGER</code> takes an ACCESS EXCLUSIVE lock held to transaction end, so the trigger-off window is not observable by concurrent transactions; exception path re-enables; delete scoped to one page + <code>manual_save</code> only; EXECUTE revoked from public, granted to <code>service_role</code> only; sole caller is the admin client with server-controlled <code>keep</code>. The <code>database.ts</code> hand-edit matches the SQL signature exactly. Cost note: each manual save briefly serializes all <code>page_revisions</code> access — fine at admin volume.</li>
+    <li><b>Redirect deletes:</b> the table can only contain builder paths (DB CHECK <code>^/(resources|blog|landing|videos|solutions)/…</code>) so no non-builder redirect can exist to be deleted; <code>requireAdmin</code> (via <code>getUser()</code> + role lookup) is the first statement of every new action; no <code>select('*')</code>, no raw SQL, no error-detail leakage (tested). Note: system-generated <code>slug_changed</code>/<code>page_archived</code> rows <i>are</i> deletable — consistent with the accepted "disable = delete" decision, but it covers system rows, not just manual ones.</li>
+    <li><b>Delete-floor TOCTOU:</b> closed at the DB — no CASCADE on <code>page_revisions.page_id</code>, so a page that gains a revision mid-race fails the delete on FK.</li>
+    <li><b>Auto-create-draft vs first manual save race:</b> the unique partial index on active <code>route_path</code> turns the collision into a recoverable error, not duplicate rows.</li>
+    <li><b>SeoPanelTabs form participation:</b> panels stay mounted-hidden; hidden mirrors are state-driven and consistent; no stale-value submission (the two MAJORs are the actual edge cases).</li>
+    <li><b>Also clean:</b> <code>duplicate-slug.ts</code> (bounded loop, <code>-copy-N</code> stripping, length cap), keyboard shortcut matrix + listener cleanup, walkthrough localStorage SSR-safety, mobile bar form association (duplicate submitters are safe — only the clicked one serializes), revision labels, bulk-archive <code>returnTo</code> allowlist.</li>
+  </ul>
+
+  <h2>Test adequacy gaps (Tier-1 behaviors without a real-boundary test)</h2>
+  <ul class="clean">
+    <li><b>Unsaved-exit (I5):</b> only pure helpers tested; no DOM/hook test exercises real link interception, dialog resolve flows, or disarm-after-save. (Server delete floor <i>is</i> well covered.)</li>
+    <li><b>Publish gating wiring:</b> derivation is tested, but nothing asserts the blocked button doesn't submit, that Confirm publish sends <code>intent=publish</code>, or that confirm dismisses on submit.</li>
+    <li><b>SeoPanelTabs form contract:</b> a jsdom/RTL test rendering panel + form and submitting with an empty title would have caught both MAJORs.</li>
+  </ul>
+
+  <h2>Suggested next step</h2>
+  <p><b><code>/issue-fix-strategy</code></b> to triage the 12 findings — or go straight to <b><code>/safe-feature-slice</code></b> for the two SeoPanelTabs regressions if you want the merge-blockers gone first (they're one small slice: drop <code>required</code> on two inputs + make the tabs controllable from the two focus functions).</p>
+
+  <h2>Accepted decisions honored (not flagged)</h2>
+  <table>
+    <tr><th>Decision</th><th>Status in review</th></tr>
+    <tr><td>Pacific Time everywhere (US West Coast business)</td><td>Honored — timezone handling untouched; the two formatter findings are about surfaces that <i>missed</i> the Pacific unification, not about changing it.</td></tr>
+    <tr><td>Redirect "disable" = delete</td><td>Honored — noted only that system-generated rows are also deletable.</td></tr>
+    <tr><td>Create-on-start drafts + Discard deletes auto-row</td><td>Honored — floor mechanics reviewed, not the decision.</td></tr>
+    <tr><td>Keep-last-20 manual-save revisions</td><td>Honored — prune scope verified.</td></tr>
+    <tr><td>Known residuals (heading-order axe, types-regen drift, legacy walkthrough fns)</td><td>Not re-flagged — except where the legacy walkthrough code actively misbehaves (MODERATE above), which goes beyond "unused".</td></tr>
+  </table>
+
+  <footer>Generated by Claude Code · /code-review full · branch ux-review-fixes @ 4d497da vs 090ece2 · 2026-06-10 · Lanes: local critical-path review + security/destructive agent + fallow structural agent + tests/UI agent · Fallow 2.91.0 audit: fail (effective warn — plans/** config gap) · Vitest 584/584 · tsc clean.</footer>
+</main>
+</body>
+</html>

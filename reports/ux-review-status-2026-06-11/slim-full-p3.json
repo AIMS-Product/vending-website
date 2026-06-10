@@ -1,0 +1,1025 @@
+[
+  {
+    "cid": "C138",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Navigation & Flow",
+    "finding": "The pages list row '⋮' menu (a native details/summary in admin/pages/page.tsx PageActionsMenu) DOES expose Edit, View live, Duplicate, Publish/Move-to-draft, and Archive — automation could not open the native details element so the menu appeared empty. The only genuine gaps are no hard Delete (Archive is the intentional soft-delete) and no checkbox multi-select / bulk actions.",
+    "suggested_fix": {
+      "current": "'⋮' row menu with no visible Delete/Duplicate; no bulk select",
+      "proposed": "Expose Edit / Duplicate / Archive / Delete in the row menu and add checkbox multi-select with bulk archive/delete"
+    }
+  },
+  {
+    "cid": "C010",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Accessibility & Inclusion",
+    "finding": "Page status and SEO-readiness indicators are 10x10px buttons and row actions hide behind small three-dot summaries.",
+    "suggested_fix": {
+      "current": "10x10px status dots and icon-only '⋮' action buttons",
+      "proposed": "Enlarge interactive status/action targets to at least 44x44px and pair status dots with a visible text label"
+    }
+  },
+  {
+    "cid": "C013",
+    "band": "P3",
+    "page": "/, /pre-call-resources",
+    "category": "Copy & Labels",
+    "finding": "The header nav item \"RESOURCES\" links to /pre-call-resources, a page headed \"PRE-CALL RESOURCES / PREPARE FOR YOUR VENDING STRATEGY CALL.\" — a checklist meant for people who have already booked a call, not the general resource library a visitor expects.",
+    "suggested_fix": {
+      "current": "Nav \"RESOURCES\" → /pre-call-resources (call-prep checklist)",
+      "proposed": "Either rename the nav item to \"Pre-Call Prep\" or point \"Resources\" at a genuine resource/guide library"
+    }
+  },
+  {
+    "cid": "C027",
+    "band": "P3",
+    "page": "/contact",
+    "category": "Forms & Input",
+    "finding": "The same 'State' field is required on /apply ('State*' with '(required)') but optional on /contact (plain 'State', no asterisk). The two forms otherwise share an identical Name/Email/Phone/City/State layout, so the differing requiredness of the identical field is an inconsistency in the form system.",
+    "suggested_fix": {
+      "current": "State is required on /apply but optional on /contact",
+      "proposed": "Decide one rule for the State field and apply it to both forms (most likely required on apply, optional on contact is defensible — but then label contact's State 'State (optional)' to make the choice intentional)"
+    }
+  },
+  {
+    "cid": "C045",
+    "band": "P3",
+    "page": "/news",
+    "category": "Feedback & State",
+    "finding": "On first paint the article cards render as blank outlines until scrolled into view, and a cover image fails with a 500 error (broken-image alt text is shown). A non-native user sees an empty/broken page and no message explaining it.",
+    "suggested_fix": {
+      "current": "Blank scroll-reveal cards + failing cover image (500) on load",
+      "proposed": "Render card content on first paint (reveal only the animation, not the content) and fix or replace the broken cover image so no broken-image placeholder shows."
+    }
+  },
+  {
+    "cid": "C015",
+    "band": "P3",
+    "page": "/admin/forgot-password",
+    "category": "Feedback & State",
+    "finding": "Submitting the forgot-password form with empty or invalid input shows no visible validation feedback.",
+    "suggested_fix": {
+      "current": "No visible error or confirmation after submitting the reset form",
+      "proposed": "Show a clear confirmation ('If that email exists, we've sent a reset link') and an inline error for an empty/invalid email"
+    }
+  },
+  {
+    "cid": "C016",
+    "band": "P3",
+    "page": "/contact",
+    "category": "Feedback & State",
+    "finding": "The contact form's success/failure feedback could not be observed (submit was skipped for safety), and the apply form's known-weak inline-only confirmation suggests contact likely shares the same pattern.",
+    "suggested_fix": {
+      "current": "Contact submit feedback unverified; apply form uses a small inline note",
+      "proposed": "Ensure the contact form shows a prominent success confirmation (banner or dedicated thank-you state) on submit"
+    }
+  },
+  {
+    "cid": "C017",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Trust & Safety",
+    "finding": "There is no discoverable archive/delete path for a page from the editor or the list row menu, so an admin cannot retire a page they created.",
+    "suggested_fix": {
+      "current": "No visible Archive/Delete in the page editor or list row actions",
+      "proposed": "Add an explicit 'Archive page' control in the editor and an 'Archive' item in the list row '⋮' menu, with a confirm dialog"
+    }
+  },
+  {
+    "cid": "C025",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "finding": "No autofocus on the first form field; the page loads with no field focused.",
+    "suggested_fix": {
+      "current": "No focused field on load",
+      "proposed": "autofocus the Name input on /apply (and the first field on /contact)"
+    }
+  },
+  {
+    "cid": "C026",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "finding": "Phone field is a plain text input rather than type=tel, so it offers no numeric keypad and no input affordance.",
+    "suggested_fix": {
+      "current": "<input> (text) for Phone",
+      "proposed": "<input type=\"tel\" inputmode=\"tel\"> for Phone on /apply and /contact"
+    }
+  },
+  {
+    "cid": "C031",
+    "band": "P3",
+    "page": "/admin/pages/new",
+    "category": "Navigation & Flow",
+    "finding": "Creating an SEO page is a 3-step wizard (Page type -> Starting point -> Ready to build) before the editor opens.",
+    "suggested_fix": {
+      "current": "Mandatory 3-step wizard on every Create page",
+      "proposed": "Default 'Create page' to SEO/Resource + blank, opening the editor directly; keep the wizard behind a 'Choose a template' secondary option"
+    }
+  },
+  {
+    "cid": "C033",
+    "band": "P3",
+    "page": "/admin/news",
+    "category": "Feedback & State",
+    "finding": "News list rows have no delete/archive affordance; retiring a post requires opening each post's editor to find the Archive control.",
+    "suggested_fix": {
+      "current": "Archive only inside each post editor",
+      "proposed": "Add a per-row actions menu (Edit / Archive / Delete) on the news list, matching the SEO pages list pattern"
+    }
+  },
+  {
+    "cid": "C040",
+    "band": "P3",
+    "page": "/",
+    "category": "Navigation & Flow",
+    "finding": "Two differently-labelled CTAs ('STEP INSIDE' in the nav and 'APPLY NOW' in the hero) both link to /apply, which is ambiguous about whether they lead to the same place.",
+    "suggested_fix": {
+      "current": "'STEP INSIDE' (nav) and 'APPLY NOW' (hero) both go to /apply",
+      "proposed": "Use one consistent label 'APPLY NOW' for both, or differentiate destinations if they are meant to differ"
+    }
+  },
+  {
+    "cid": "C051",
+    "band": "P3",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Accessibility & Inclusion",
+    "finding": "Article social-share controls are icon-only links exposed to the accessible tree as single characters 'X', 'in', 'f', 'link' with no descriptive label.",
+    "suggested_fix": {
+      "current": "Icon links with accessible names 'X', 'in', 'f', 'link'",
+      "proposed": "Add aria-label='Share on X', 'Share on LinkedIn', 'Share on Facebook', 'Copy link' to each share control"
+    }
+  },
+  {
+    "cid": "C052",
+    "band": "P3",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Accessibility & Inclusion",
+    "finding": "Complementary/aside landmark is not at the top level (nested inside another landmark) on all three news articles.",
+    "suggested_fix": {
+      "current": "<aside>/complementary nested inside main",
+      "proposed": "Move the complementary landmark to top level (direct child of body) or remove the redundant landmark role"
+    }
+  },
+  {
+    "cid": "C053",
+    "band": "P3",
+    "page": "/case-studies",
+    "category": "Accessibility & Inclusion",
+    "finding": "Heading order is broken — an <h3> appears in a card header without a preceding <h2> in the section hierarchy.",
+    "suggested_fix": {
+      "current": "Card headings start at h3 with no h2 section heading",
+      "proposed": "Introduce a section h2 for the case-study list or demote card headings so the order is sequential (h1 > h2 > h3)"
+    }
+  },
+  {
+    "cid": "C056",
+    "band": "P3",
+    "page": "/admin/pages/new",
+    "category": "Accessibility & Inclusion",
+    "finding": "Duplicate (non-unique) landmark on the SEO page creation wizard (.p-0) — two landmarks of the same type without distinguishing labels.",
+    "suggested_fix": {
+      "current": "Two same-type landmarks with no labels",
+      "proposed": "Give each landmark a distinct aria-label, or remove the redundant landmark role"
+    }
+  },
+  {
+    "cid": "C057",
+    "band": "P3",
+    "page": "/admin/news/new",
+    "category": "Accessibility & Inclusion",
+    "finding": "Complementary/aside landmark not at top level on the new-post editor (.space-y-5).",
+    "suggested_fix": {
+      "current": "Complementary landmark nested inside another landmark",
+      "proposed": "Hoist the aside to top level or drop the complementary role"
+    }
+  },
+  {
+    "cid": "C058",
+    "band": "P3",
+    "page": "/",
+    "category": "Copy & Labels",
+    "finding": "Credibility statistics render as literal zeros — '0+' Entrepreneurs launched, '$0M+' sales, '0+' Vending locations — read verbatim by a screen reader as 'zero plus'.",
+    "suggested_fix": {
+      "current": "Stat DOM value is '0+' / '$0M+' (animation start value)",
+      "proposed": "Render the real final value in the DOM (e.g. '500+') and animate via a visual-only technique, or add an aria-label with the true figure"
+    }
+  },
+  {
+    "cid": "C063",
+    "band": "P3",
+    "page": "/news",
+    "category": "Copy & Labels",
+    "finding": "Intro copy uses an idiom and a non-literal verb: \"...the back-office work that makes a vending route compound. New posts drop here as we publish them.\" \"compound\" used as a verb and \"posts drop\" are not literal and do not translate.",
+    "suggested_fix": {
+      "current": "...makes a vending route compound. New posts drop here as we publish them.",
+      "proposed": "...helps a vending route grow steadily. We add new posts here when we publish them."
+    }
+  },
+  {
+    "cid": "C064",
+    "band": "P3",
+    "page": "/about",
+    "category": "Copy & Labels",
+    "finding": "The about page uses the idiom \"the Rat Race\" as a section heading: \"How I Escaped The Rat Race\". This is a culturally specific idiom with no literal meaning.",
+    "suggested_fix": {
+      "current": "How I Escaped The Rat Race",
+      "proposed": "How I Left the Traditional 9-to-5 Job"
+    }
+  },
+  {
+    "cid": "C065",
+    "band": "P3",
+    "page": "/case-studies",
+    "category": "Copy & Labels",
+    "finding": "Testimonials are dense with idioms and slang that a second-language reader must decode: \"game changer\", \"hard charging\", \"learning the biz\", \"In just a blink of time\", \"Namaste, indeed, to the journey ahead!\". These are the trust-building proof, but the meaning is locked behind colloquialisms.",
+    "suggested_fix": {
+      "current": "Verbatim slang-heavy testimonials with no plain-language summary",
+      "proposed": "Add a one-line plain-English takeaway under each testimonial (e.g. \"Result: 10 locations in 6 months\") so meaning is accessible even when the quote uses slang."
+    }
+  },
+  {
+    "cid": "C066",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "finding": "The State dropdown lists only US states (Alabama...Wyoming) with no country context, and budget options use the abbreviation \"k\" (\"Under $5k\", \"$5k-$10k\", \"$25k+\") and currency without a code. A non-American reader may not recognise \"$25k+\" or know whether \"$\" means USD.",
+    "suggested_fix": {
+      "current": "Under $5k / $5k-$10k / $25k+ (state list US-only, no country)",
+      "proposed": "Spell amounts with currency code, e.g. \"Under US$5,000\", and add a Country field or label the State field \"State (US)\"."
+    }
+  },
+  {
+    "cid": "C067",
+    "band": "P3",
+    "page": "/contact",
+    "category": "Copy & Labels",
+    "finding": "Contact intro copy uses the noun phrase \"accelerator fit\" with no explanation: \"Send the team a note about vending locations, machine decisions, partnerships, or accelerator fit.\" \"accelerator fit\" is jargon a second-language reader cannot parse.",
+    "suggested_fix": {
+      "current": "...partnerships, or accelerator fit.",
+      "proposed": "...partnerships, or whether the Accelerator program is right for you."
+    }
+  },
+  {
+    "cid": "C068",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Copy & Labels",
+    "finding": "Workflow filter labels are terse jargon with no tooltips: \"Needs review\", \"Updating\", \"Needs links\", \"Metadata issues\", \"Scheduled\", \"Schedule failed\". \"SEO readiness\" states are likewise abbreviated to single words \"Blocked\", \"Opportunities\", \"Needs work\".",
+    "suggested_fix": {
+      "current": "Opportunities / Needs links / Metadata issues",
+      "proposed": "Use full descriptive labels with a tooltip, e.g. \"Some SEO improvements available\", \"Missing internal links\", \"Page metadata needs fixing\"."
+    }
+  },
+  {
+    "cid": "C069",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Copy & Labels",
+    "finding": "The page description mixes jargon: \"Manage structured SEO pages with the same CMS shell ready for resource content.\" \"CMS shell\" and \"structured SEO pages\" are unexplained technical noun phrases.",
+    "suggested_fix": {
+      "current": "Manage structured SEO pages with the same CMS shell ready for resource content.",
+      "proposed": "Create and edit SEO and resource pages for the website."
+    }
+  },
+  {
+    "cid": "C071",
+    "band": "P3",
+    "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Navigation & Flow",
+    "finding": "A legacy /blog/... article URL returns a 404. Because the public page heading is \"BLOG\", a non-native user who guesses the URL from the heading word lands on a dead page.",
+    "suggested_fix": {
+      "current": "/blog/{slug} returns 404",
+      "proposed": "Add a 301 redirect from /blog/{slug} to /news/{slug} so the word users see (\"Blog\") maps to a working URL."
+    }
+  },
+  {
+    "cid": "C079",
+    "band": "P3",
+    "page": "/",
+    "category": "Trust & Safety",
+    "finding": "Testimonials carry no dates, several use first-name-plus-initial only, and none link to a verifiable profile — making the social proof unfalsifiable.",
+    "suggested_fix": {
+      "current": "Name-only testimonials, no dates, no links (e.g. 'ADAM S')",
+      "proposed": "Add a month/year and, where possible, a linked LinkedIn/business profile or named full attribution to each testimonial"
+    }
+  },
+  {
+    "cid": "C081",
+    "band": "P3",
+    "page": "/",
+    "category": "Trust & Safety",
+    "finding": "A 'Featured partners' logo wall (PepsiCo, Doritos, Poppi, Prime, Cantaloupe, 365 Retail Markets) implies major-brand endorsement without stating the actual relationship.",
+    "suggested_fix": {
+      "current": "Unlabeled 'Featured partners' brand logos",
+      "proposed": "Relabel honestly to the real relationship, e.g. 'Brands you can source through our supplier network' or 'Products our members stock'"
+    }
+  },
+  {
+    "cid": "C083",
+    "band": "P3",
+    "page": "/about",
+    "category": "Copy & Labels",
+    "finding": "An explicit 'I'm not here to sell a dream' line on the About page reads as protesting too much and raises rather than lowers suspicion.",
+    "suggested_fix": {
+      "current": "I'm not here to sell a dream, I'm here to show you a system that works.",
+      "proposed": "Replace the assertion with evidence: a concrete, dated outcome ('Here's the 4-step system, and here are three members who used it in the last 12 months — see case studies')"
+    }
+  },
+  {
+    "cid": "C084",
+    "band": "P3",
+    "page": "/about",
+    "category": "Trust & Safety",
+    "finding": "Specific personal financial figures are presented as proof of credibility with no substantiation ($1,200/mo job, $70k fixer-upper, $250k condo, 'thousands of dollars in monthly income').",
+    "suggested_fix": {
+      "current": "Personal income/asset figures stated as narrative",
+      "proposed": "Either substantiate (screenshots, a route count that matches a public record, a named business) or shift the emphasis from the founder's personal wealth to documented member outcomes"
+    }
+  },
+  {
+    "cid": "C085",
+    "band": "P3",
+    "page": "/case-studies",
+    "category": "Trust & Safety",
+    "finding": "The four featured 'case studies' are video thumbnails with names only and no written outcome or context; the page never provides concrete, dated metrics (machines placed, revenue, time-to-first-location) for any member.",
+    "suggested_fix": {
+      "current": "Video tiles + name/company only, no written metrics",
+      "proposed": "Give each case study a short structured summary: starting point, time elapsed, machines/locations, and a verifiable outcome figure beneath the video"
+    }
+  },
+  {
+    "cid": "C087",
+    "band": "P3",
+    "page": "/case-studies",
+    "category": "Copy & Labels",
+    "finding": "Every testimonial across the home and case-studies pages is a uniform '5 out of 5 stars' with no mixed or critical feedback, which reads as curated rather than authentic.",
+    "suggested_fix": {
+      "current": "10+ testimonials all '5 out of 5 stars'",
+      "proposed": "Either drop the star ratings (the quotes stand alone) or surface aggregate/third-party reviews (e.g. a Trustpilot or Skool community rating) that include the real distribution"
+    }
+  },
+  {
+    "cid": "C088",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Trust & Safety",
+    "finding": "The apply form collects name, email, phone, location and budget tier but shows no privacy/consent statement or link to the Privacy Policy at the point of submission.",
+    "suggested_fix": {
+      "current": "Submit button with no consent/privacy text",
+      "proposed": "Add a short consent line beneath the submit button: 'By applying you agree to our Privacy Policy. We never sell your data.' with Privacy Policy linked"
+    }
+  },
+  {
+    "cid": "C092",
+    "band": "P3",
+    "page": "global (header nav)",
+    "category": "Navigation & Flow",
+    "finding": "Contact is not in the header navigation on any page; the only in-app path is the footer 'CONTACT US' link. On mobile that means opening the hamburger gives no Contact option — I have to scroll to the very bottom of every page.",
+    "suggested_fix": {
+      "current": "Contact only in footer; absent from header/hamburger menu",
+      "proposed": "Add 'CONTACT' to the header navigation (and therefore the mobile hamburger menu)"
+    }
+  },
+  {
+    "cid": "C093",
+    "band": "P3",
+    "page": "global (footer nav)",
+    "category": "Accessibility & Inclusion",
+    "finding": "Footer link tap targets are far below the 44x44px mobile minimum — e.g. 'HOME' is 43x17px, 'TERMS' 50x17px, 'CONTACT US' 93x17px, 'PRIVACY POLICY' 120x17px. Only ~17px tall.",
+    "suggested_fix": {
+      "current": "Footer links ~17px tall (well under 44px)",
+      "proposed": "Increase footer link line-height/padding to a minimum 44px tap height on mobile (e.g. py-2.5 block links)"
+    }
+  },
+  {
+    "cid": "C095",
+    "band": "P3",
+    "page": "/apply, /contact, /admin/forgot-password",
+    "category": "Forms & Input",
+    "finding": "Forms show no inline validation. Empty submit and invalid-data submit produce no visible field errors — values are just preserved with nothing telling me what's wrong.",
+    "suggested_fix": {
+      "current": "No visible field-level validation on empty/invalid submit",
+      "proposed": "Show inline per-field error messages on submit (the form already collects fieldErrors in state) and scroll the first error into view on mobile"
+    }
+  },
+  {
+    "cid": "C097",
+    "band": "P3",
+    "page": "/news (and article images)",
+    "category": "Feedback & State",
+    "finding": "An article image fails to load with a 500 from the Next image optimizer pointing at a legacy Webflow CDN URL; the failure shows as raw alt text rather than a graceful placeholder.",
+    "suggested_fix": {
+      "current": "Failing website-files.com image returns 500 from /_next/image; shows raw alt text",
+      "proposed": "Replace/migrate the legacy CDN image to a working source and add a neutral image placeholder fallback so a single failed image doesn't look like a page error"
+    }
+  },
+  {
+    "cid": "C102",
+    "band": "P3",
+    "page": "/admin",
+    "category": "Copy & Labels",
+    "finding": "The admin studio's eyebrow/breadcrumb label changes on every section with no consistent scheme: 'SEO pages' (no eyebrow), 'CMS Assets' (media), 'Studio Settings' (settings), 'CMS Governance' (libraries), 'Blog CMS' (news), 'SEO PAGE BUILDER' (create wizard). Five different naming conventions for one studio.",
+    "suggested_fix": {
+      "current": "Per-page eyebrows: CMS Assets / Studio Settings / CMS Governance / Blog CMS / (none)",
+      "proposed": "Standardise on one breadcrumb pattern, e.g. 'Studio › Media library', 'Studio › Settings › Users', 'Studio › SEO pages' across every admin route"
+    }
+  },
+  {
+    "cid": "C103",
+    "band": "P3",
+    "page": "/admin",
+    "category": "Visual & Layout",
+    "finding": "The four-up stat-card row appears on SEO pages, Users, and Libraries with the same shape but inconsistent icon-tile colours and no consistent semantic mapping. SEO pages: blue/amber/green/gray. Users: green/amber/purple/blue. Libraries: blue/green/gray/amber. The colour of each tile does not map to a stable meaning across screens.",
+    "suggested_fix": {
+      "current": "Stat-card tile colours assigned ad-hoc per screen with no consistent semantics",
+      "proposed": "Define semantic colour tokens (success/warning/neutral/info) and assign each metric a token by meaning, so green always = good/live and amber always = needs work across all stat cards"
+    }
+  },
+  {
+    "cid": "C104",
+    "band": "P3",
+    "page": "/admin",
+    "category": "Visual & Layout",
+    "finding": "Primary buttons in the studio have no consistent shape. 'Create page' and 'Invite user' are auto-width blue with a leading '+'; 'Save CTA preset' is full-width solid blue with no icon; 'Save draft' and 'Publish' in the blog editor are two identical full-width blue rectangles; the SEO page editor toolbar uses pill-shaped outline buttons ('Save draft', 'Save & preview', 'Share'). The same conceptual 'primary action' is styled four different ways.",
+    "suggested_fix": {
+      "current": "Four primary-button variants (auto-width +icon, full-width solid, identical pair, outline pill) across admin",
+      "proposed": "Ship one Button component with documented primary/secondary/ghost variants and a single radius, and use it everywhere in the studio"
+    }
+  },
+  {
+    "cid": "C107",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Feedback & State",
+    "finding": "The SEO pages list communicates two separate statuses per row as tiny coloured dots (READINESS and STATUS columns, ~10x10px) with no on-page legend. Readiness uses red/blue/amber and Status uses amber, but the meaning of each colour is only decodable by reading the per-row hidden button labels ('SEO readiness: Blocked / Opportunities / Needs work').",
+    "suggested_fix": {
+      "current": "Readiness/Status shown only as ~10px coloured dots with no legend or text",
+      "proposed": "Add a short text label or pill next to each dot (e.g. 'Blocked', 'Draft') and a one-line legend above the table; enlarge the dot hit area to >=24px"
+    }
+  },
+  {
+    "cid": "C110",
+    "band": "P3",
+    "page": "global",
+    "category": "Accessibility & Inclusion",
+    "finding": "Every public-site nav and footer link is an undersized touch/click target (e.g. ABOUT 51x20px, NEWS 44x20px, HOME 43x17px, TERMS 50x17px, PRIVACY POLICY 120x17px), all under the 24px minimum height. The admin studio repeats this with 10x10px status dots and 32x32px icon-only action buttons.",
+    "suggested_fix": {
+      "current": "Nav/footer links ~17-20px tall; admin status dots 10px; admin icon actions 32px",
+      "proposed": "Set a minimum 44px tappable height on nav/footer links (extend padding without changing visual text size) and a 24px+ hit area on admin dots/icon buttons"
+    }
+  },
+  {
+    "cid": "C118",
+    "band": "P3",
+    "page": "/",
+    "category": "Copy & Labels",
+    "finding": "Hero copy and body are corporate/buzzwordy — 'launch and scale a profitable vending machine business with minimal time investment', 'Automation & scaling strategies to maximize your time and revenue', 'structured roadmap to success'.",
+    "suggested_fix": {
+      "current": "'launch and scale a profitable vending machine business with minimal time investment'",
+      "proposed": "Plain, human line like 'Start a vending business without the guesswork — we show you exactly how, step by step.'"
+    }
+  },
+  {
+    "cid": "C119",
+    "band": "P3",
+    "page": "/",
+    "category": "Visual & Layout",
+    "finding": "Mobile homepage has horizontal scrolling — the page can be dragged sideways, which feels glitchy on a phone.",
+    "suggested_fix": {
+      "current": "Horizontal scroll present at 375px width on the homepage",
+      "proposed": "Constrain content to 100% viewport width / fix the overflowing element so the page only scrolls vertically on mobile"
+    }
+  },
+  {
+    "cid": "C121",
+    "band": "P3",
+    "page": "/",
+    "category": "Visual & Layout",
+    "finding": "Homepage is a very long single scroll of ~15 testimonials before the final 'Take Action' CTA",
+    "suggested_fix": {
+      "current": "All ~15 full-length testimonials stacked inline before the closing CTA",
+      "proposed": "Show 3-4 testimonials with a 'See more stories' toggle, and place a CTA higher up so the action is reachable without a long scroll"
+    }
+  },
+  {
+    "cid": "C125",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Visual & Layout",
+    "finding": "On mobile the submit button is far below the fold after a tall hero, with no sticky CTA",
+    "suggested_fix": {
+      "current": "Tall hero pushes form down; submit button only reachable after long scroll",
+      "proposed": "Tighten the mobile hero and add a sticky 'Submit application' bar once the form is in view"
+    }
+  },
+  {
+    "cid": "C131",
+    "band": "P3",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Visual & Layout",
+    "finding": "The first news article is slow to load relative to the rest of the site (1743ms DCL / 2055ms load) and carries CLS 0.263 plus a serious color-contrast violation and a 'landmark-complementary-is-top-level' axe violation.",
+    "suggested_fix": {
+      "current": "Article ~2s load, CLS 0.263, aside nested below a landmark, low-contrast link",
+      "proposed": "Profile and fix the slow article render (likely the remote image), hoist the complementary aside to top level, and fix the link contrast to AA"
+    }
+  },
+  {
+    "cid": "C133",
+    "band": "P3",
+    "page": "/news",
+    "category": "Feedback & State",
+    "finding": "A News-section 500 server error from the image optimizer surfaces in the console on page load with no client-side handling, so the failure is silent to the user beyond a broken image.",
+    "suggested_fix": {
+      "current": "Image optimizer 500 logged to console, no UI handling",
+      "proposed": "Add an image error fallback and route the optimizer failure to error monitoring so it is observable and the user sees a placeholder rather than a broken element"
+    }
+  },
+  {
+    "cid": "C134",
+    "band": "P3",
+    "page": "/",
+    "category": "Visual & Layout",
+    "finding": "Homepage above-the-fold renders at a cramped, downscaled width compared to other pages (header nav squeezed) and has a high layout shift.",
+    "suggested_fix": {
+      "current": "Hero/header renders narrow with CLS 0.263 on load",
+      "proposed": "Reserve space for hero image and partner logos to eliminate the shift, and ensure the header lays out at full viewport width on first paint"
+    }
+  },
+  {
+    "cid": "C136",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Visual & Layout",
+    "finding": "The Readiness and Status columns are shown as bare colored dots (red/blue/amber) with no visible legend, so a color's meaning is only available on hover per row.",
+    "suggested_fix": {
+      "current": "Readiness/Status rendered as unlabeled colored dots; meaning only in hover/aria text",
+      "proposed": "Add a short legend above the table and/or text labels beside the dots (e.g. \"Blocked\", \"Needs work\", \"Ready\")"
+    }
+  },
+  {
+    "cid": "C139",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Navigation & Flow",
+    "finding": "There is no global search across content types; search is scoped per-CMS ('Search SEO pages' only).",
+    "suggested_fix": {
+      "current": "Per-CMS search box ('Search SEO pages') with no cross-content search",
+      "proposed": "Add a studio-level global search that returns SEO pages, blog posts, and media in one result list"
+    }
+  },
+  {
+    "cid": "C140",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Feedback & State",
+    "finding": "After saving a new SEO page the list verification raced and the page did not reliably appear; one run reported the created page 'not visible in /admin/pages list'.",
+    "suggested_fix": {
+      "current": "New page does not reliably/immediately appear at top of list after save",
+      "proposed": "Revalidate the list on save and show a success toast with a direct link to the new page row"
+    }
+  },
+  {
+    "cid": "C145",
+    "band": "P3",
+    "page": "/admin/news/new",
+    "category": "Forms & Input",
+    "finding": "The news editor's Save control was not findable on one corrected run ('FAILED: no visible Save control'), indicating an inconsistent/low-visibility save affordance.",
+    "suggested_fix": {
+      "current": "Save draft control intermittently not visible in news editor",
+      "proposed": "Pin a persistent 'Save draft' button in the editor header alongside Publish, always in view"
+    }
+  },
+  {
+    "cid": "C149",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "finding": "No application reference or confirmation number is issued, so a user cannot quote anything when following up.",
+    "suggested_fix": {
+      "current": "Confirmation text with no reference identifier",
+      "proposed": "Show a confirmation/reference ID on the success page and include it in the confirmation email"
+    }
+  },
+  {
+    "cid": "C152",
+    "band": "P3",
+    "page": "/contact",
+    "category": "Copy & Labels",
+    "finding": "No statement of when or whether anyone will reply; the prompt 'Send the team a note' sets no expectation.",
+    "suggested_fix": {
+      "current": "'Send the team a note about...'",
+      "proposed": "Add a response-time expectation, e.g. 'We reply within 1 business day.'"
+    }
+  },
+  {
+    "cid": "C155",
+    "band": "P3",
+    "page": "/admin/forgot-password",
+    "category": "Copy & Labels",
+    "finding": "Password reset copy hedges ('If it has admin access, we'll send a password reset link') and no on-screen confirmation flow was observed, so a locked-out admin can't tell whether the email is coming.",
+    "suggested_fix": {
+      "current": "'If it has admin access, we'll send a password reset link' with no confirmed success state",
+      "proposed": "After submit, show a clear confirmation: 'If that email has admin access, a reset link is on its way — check your inbox and spam.'"
+    }
+  },
+  {
+    "cid": "C038",
+    "band": "P3",
+    "page": "/admin/settings, /admin/settings/users",
+    "category": "Navigation & Flow",
+    "finding": "The Settings sidebar link deep-links straight to /admin/settings/users; /admin/settings itself only resolves by redirect, so there's no settings landing/index.",
+    "suggested_fix": {
+      "current": "/admin/settings redirects to /users with no index",
+      "proposed": "Keep the redirect for now but plan a settings index/landing once a second settings section exists"
+    }
+  },
+  {
+    "cid": "C047",
+    "band": "P3",
+    "page": "/",
+    "category": "Accessibility & Inclusion",
+    "finding": "Top-nav links are very short touch targets (~17-20px tall), making them fiddly to tap on the phone a social-media visitor arrives with.",
+    "suggested_fix": {
+      "current": "Nav link hit areas ~17-20px tall",
+      "proposed": "Increase tappable area to at least 44x44px (extra vertical padding on nav links) per touch-target guidelines"
+    }
+  },
+  {
+    "cid": "C086",
+    "band": "P3",
+    "page": "/case-studies",
+    "category": "Accessibility & Inclusion",
+    "finding": "The case studies page has a heading-order (skipped heading levels) violation.",
+    "suggested_fix": {
+      "current": "Non-sequential heading levels on /case-studies",
+      "proposed": "Reorder headings so levels do not skip (h1 → h2 → h3 in document order)"
+    }
+  },
+  {
+    "cid": "C012",
+    "band": "P3",
+    "page": "/",
+    "category": "Navigation & Flow",
+    "finding": "The top navigation has no 'Home' link; returning home depends on knowing the logo is clickable.",
+    "suggested_fix": {
+      "current": "No 'Home' item in the top nav (logo links home but isn't an obvious link)",
+      "proposed": "Add a 'Home' item to the top nav, or add visible hover styling so the logo reads as clickable"
+    }
+  },
+  {
+    "cid": "C019",
+    "band": "P3",
+    "page": "/admin/news",
+    "category": "Trust & Safety",
+    "finding": "News list rows offer no archive/delete affordance; retiring a post requires opening each post's editor to find the Archive button.",
+    "suggested_fix": {
+      "current": "No archive/delete in the news list row",
+      "proposed": "Add an 'Archive' action to each news list row with a confirmation prompt"
+    }
+  },
+  {
+    "cid": "C028",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "finding": "No keyboard submit (Cmd/Ctrl+Enter) on the application form; submitting requires tabbing to or clicking the button.",
+    "suggested_fix": {
+      "current": "Submit only via button click/tab",
+      "proposed": "Add Cmd/Ctrl+Enter keyboard submit handler to the apply and contact forms"
+    }
+  },
+  {
+    "cid": "C029",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "finding": "State is a 50-option native <select> with no typeahead-by-name UX beyond default browser behavior; budget/stage/timeline are all 'Select' placeholder dropdowns with no smart default.",
+    "suggested_fix": {
+      "current": "Native 50-item State select + 3 unselected dropdowns",
+      "proposed": "Use a searchable combobox for State (type 'TX' to jump); consider geo-prefilling State from IP as an editable default"
+    }
+  },
+  {
+    "cid": "C032",
+    "band": "P3",
+    "page": "/admin/pages/new",
+    "category": "Feedback & State",
+    "finding": "Publish is gated behind readiness warnings ('Fix SEO title', 'Fix URL slug') with no inline jump-to-field link.",
+    "suggested_fix": {
+      "current": "Static 'Fix SEO title / Fix URL slug' text",
+      "proposed": "Make each readiness warning a link that focuses/scrolls to the relevant field"
+    }
+  },
+  {
+    "cid": "C034",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Feedback & State",
+    "finding": "SEO pages list row actions menu did not expose Archive/Delete to keyboard/automation, and the editor exposes no archive control either — page retirement path is unclear despite 2 archived pages existing.",
+    "suggested_fix": {
+      "current": "Archive/Delete hard to reach from row menu and absent from editor",
+      "proposed": "Ensure the row '⋮' menu reliably exposes Archive/Delete and keyboard-opens; add an Archive control in the page editor"
+    }
+  },
+  {
+    "cid": "C043",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Copy & Labels",
+    "finding": "The apply headline references 'Mike' by first name with no introduction for someone landing directly on /apply.",
+    "suggested_fix": {
+      "current": "'Apply to build your vending business with Mike.'",
+      "proposed": "'Apply to build your vending business with Mike Hoffman, founder of Vendingpreneurs.' or add a one-line 'who is Mike' sub-caption"
+    }
+  },
+  {
+    "cid": "C046",
+    "band": "P3",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Navigation & Flow",
+    "finding": "Inside an article the back link is labelled 'BLOG' while the nav item that leads to the same destination is 'NEWS'.",
+    "suggested_fix": {
+      "current": "In-article back link 'BLOG' vs nav 'NEWS' (both -> /news)",
+      "proposed": "Use the same label everywhere for /news"
+    }
+  },
+  {
+    "cid": "C059",
+    "band": "P3",
+    "page": "/",
+    "category": "Navigation & Flow",
+    "finding": "The header navigation contains two adjacent identical 'APPLY NOW' links (tab stops 7 and 8) and 'Contact' is absent from the header (footer only).",
+    "suggested_fix": {
+      "current": "Two consecutive identical 'APPLY NOW' links in the header; no header Contact link",
+      "proposed": "Remove the duplicate Apply link (or differentiate its label/purpose) and consider adding Contact to the primary nav"
+    }
+  },
+  {
+    "cid": "C072",
+    "band": "P3",
+    "page": "/",
+    "category": "Copy & Labels",
+    "finding": "Body copy uses the idiom \"increase your bottom line\" and the metaphor \"eliminate the guesswork\". \"bottom line\" is a financial idiom that does not translate literally.",
+    "suggested_fix": {
+      "current": "increase your bottom line",
+      "proposed": "increase your profit"
+    }
+  },
+  {
+    "cid": "C073",
+    "band": "P3",
+    "page": "/news/top-5-questions-vending-entrepreneurship-program",
+    "category": "Copy & Labels",
+    "finding": "Article preview compresses meaning into ambiguous shorthand: \"success track record (300% boost via vetted options)\". \"vetted options\" and \"300% boost\" with no baseline are unclear without context.",
+    "suggested_fix": {
+      "current": "300% boost via vetted options",
+      "proposed": "up to 300% higher sales using pre-checked machine and location choices"
+    }
+  },
+  {
+    "cid": "C074",
+    "band": "P3",
+    "page": "/thank-you-for-applying",
+    "category": "Copy & Labels",
+    "finding": "The thank-you page exists with clear copy (\"Watch your inbox for the next step.\") but the apply form never routes to it, so non-native users get the unclear inline message instead of this readable page.",
+    "suggested_fix": {
+      "current": "Apply form shows inline text and stays on /apply",
+      "proposed": "Redirect a successful apply submission to /thank-you-for-applying, which already has clearer next-step copy."
+    }
+  },
+  {
+    "cid": "C075",
+    "band": "P3",
+    "page": "/apply",
+    "category": "Copy & Labels",
+    "finding": "Open-text field label \"What are you trying to build?\" is vague for a second-language reader and overlaps with the intro line \"...what kind of support would move the business forward.\" It is unclear what answer is expected.",
+    "suggested_fix": {
+      "current": "What are you trying to build?",
+      "proposed": "Tell us about your vending goals (optional) — e.g. \"I want 5 machines in offices within a year.\""
+    }
+  },
+  {
+    "cid": "C094",
+    "band": "P3",
+    "page": "global (header nav)",
+    "category": "Accessibility & Inclusion",
+    "finding": "Desktop header nav links ('ABOUT' 51x20px, 'CASE STUDIES' 102x20px, etc.) are only ~20px tall. The mobile hamburger button itself is a good size, but on tablet/landscape where the inline nav shows, the targets are thumb-hostile.",
+    "suggested_fix": {
+      "current": "Inline header nav links ~20px tall",
+      "proposed": "Give header nav links a minimum 44px tap height via vertical padding for the inline (non-hamburger) layout"
+    }
+  },
+  {
+    "cid": "C101",
+    "band": "P3",
+    "page": "/contact",
+    "category": "Visual & Layout",
+    "finding": "The /apply and /contact form cards share the same brutalist shadowed-card treatment, but the offset drop shadow and the submit-button shadow are not rendered identically: the contact 'SEND MESSAGE' button shows a heavier visible offset/border than the flush 'SUBMIT APPLICATION' button on /apply.",
+    "suggested_fix": {
+      "current": "Apply and Contact submit buttons render with different shadow/offset depth",
+      "proposed": "Extract a single brand submit-button component and use it on both forms so shadow, border, padding and radius are identical"
+    }
+  },
+  {
+    "cid": "C106",
+    "band": "P3",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Visual & Layout",
+    "finding": "The article-page share buttons are four individually-bordered black pill chips with inconsistent labels — single uppercase letters and abbreviations ('X', 'in', 'f', 'link') rather than a consistent icon set. Mixing a brand glyph (X), a lowercase initialism (in, f), and a word ('link') in one control group is inconsistent.",
+    "suggested_fix": {
+      "current": "Share chips labelled 'X', 'in', 'f', 'link' (mixed letters/abbreviations/word)",
+      "proposed": "Use a single consistent icon set (X, LinkedIn, Facebook, copy-link icons) with aria-labels, all in one chip style"
+    }
+  },
+  {
+    "cid": "C108",
+    "band": "P3",
+    "page": "/admin/news/new",
+    "category": "Visual & Layout",
+    "finding": "The blog post body editor is a large empty textarea with no placeholder text, no toolbar, and no empty-state guidance, occupying most of the viewport as blank white space. The Excerpt and Title fields are also placeholder-free.",
+    "suggested_fix": {
+      "current": "Blog body is a bare empty textarea with no placeholder/toolbar/empty-state",
+      "proposed": "Add placeholder/helper text ('Write your post in Markdown...'), a minimal formatting hint, and match the designed empty-state treatment used by the SEO page builder"
+    }
+  },
+  {
+    "cid": "C109",
+    "band": "P3",
+    "page": "/admin/pages/new",
+    "category": "Navigation & Flow",
+    "finding": "The Create-page wizard advertises four page types (SEO / Resource, Blog page, Landing page, Video page) but the SEO pages list and broader studio only surface 'SEO pages' content; meanwhile the create wizard's 'Blog page' overlaps conceptually with the separate /admin/news 'New blog post' editor — two different ways to create a blog-style page with different editors.",
+    "suggested_fix": {
+      "current": "'Blog page' (SEO builder wizard) and 'New blog post' (News editor) are two separate blog-creation paths with different editors",
+      "proposed": "Clarify the distinction in the wizard copy, or consolidate so one editor owns article-style content and the wizard links to it"
+    }
+  },
+  {
+    "cid": "C111",
+    "band": "P3",
+    "page": "/case-studies",
+    "category": "Visual & Layout",
+    "finding": "The case-studies testimonial grid mixes card states inconsistently: some cards show a leading avatar circle and others do not, and card heights vary widely with ragged bottom alignment within the same row because content length is not normalised.",
+    "suggested_fix": {
+      "current": "Testimonial cards have ragged heights and inconsistent avatar presence within a row",
+      "proposed": "Either equalise card heights per row (align-items:stretch with internal scroll/clamp) or adopt an intentional masonry layout, and standardise the avatar slot (placeholder when absent)"
+    }
+  },
+  {
+    "cid": "C116",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Trust & Safety",
+    "finding": "On the admin pages list a \"Schedule failed\" link is present, indicating a failed scheduled-publish state surfaced in the UI.",
+    "suggested_fix": {
+      "current": "\"Schedule failed\" state shown as a link in admin pages list",
+      "proposed": "Investigate the failed scheduled publish and surface a clear retry/error explanation in the admin UI"
+    }
+  },
+  {
+    "cid": "C120",
+    "band": "P3",
+    "page": "/about",
+    "category": "Copy & Labels",
+    "finding": "The About page is several dense paragraphs of life story ('How I Escaped The Rat Race', 'Mike's Unique Approach') with no short summary or skimmable highlights.",
+    "suggested_fix": {
+      "current": "Multi-paragraph founder essay with no summary",
+      "proposed": "Add a 3-bullet 'the short version' at the top (e.g. 'Quit a 60-hr job', 'Built passive income with vending', '12+ machines now') above the full story"
+    }
+  },
+  {
+    "cid": "C122",
+    "band": "P3",
+    "page": "/",
+    "category": "Navigation & Flow",
+    "finding": "Mobile navigation is an icon-only hamburger with no text label",
+    "suggested_fix": {
+      "current": "Hamburger icon with no accessible/visible label",
+      "proposed": "Add a 'Menu' label or aria-label to the hamburger button"
+    }
+  },
+  {
+    "cid": "C126",
+    "band": "P3",
+    "page": "/contact",
+    "category": "Forms & Input",
+    "finding": "Required Message field gives no guidance on what to include or expected length",
+    "suggested_fix": {
+      "current": "Empty Message textarea with no placeholder",
+      "proposed": "Add placeholder guidance, e.g. 'Tell us where you are and your main question (a sentence or two is fine)'"
+    }
+  },
+  {
+    "cid": "C127",
+    "band": "P3",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Visual & Layout",
+    "finding": "Article page loads slowly (~1.7s DCL) with CLS 0.263, so content shifts while reading",
+    "suggested_fix": {
+      "current": "~2s load and CLS 0.263 on article pages",
+      "proposed": "Reserve image dimensions and reduce blocking work to bring CLS under 0.1 and speed first paint"
+    }
+  },
+  {
+    "cid": "C128",
+    "band": "P3",
+    "page": "/thank-you-for-applying",
+    "category": "Feedback & State",
+    "finding": "The thank-you page is clear and reassuring, but it is orphaned because the apply form never sends users to it",
+    "suggested_fix": {
+      "current": "Good confirmation page exists but is unreachable from the apply flow",
+      "proposed": "Wire the apply form's success path to this page"
+    }
+  },
+  {
+    "cid": "C129",
+    "band": "P3",
+    "page": "/",
+    "category": "Accessibility & Inclusion",
+    "finding": "Header and footer navigation links are only 17-20px tall, below comfortable touch-target size",
+    "suggested_fix": {
+      "current": "Nav links ~17-20px tall",
+      "proposed": "Increase tappable height to at least 44px per WCAG target-size guidance"
+    }
+  },
+  {
+    "cid": "C132",
+    "band": "P3",
+    "page": "/admin/pages/new",
+    "category": "Accessibility & Inclusion",
+    "finding": "The page-type wizard at /admin/pages/new has a moderate 'landmark-unique' axe violation (non-unique landmark on a .p-0 element).",
+    "suggested_fix": {
+      "current": "Two landmarks with the same role and no distinguishing label",
+      "proposed": "Give each landmark a unique aria-label or collapse the duplicate landmark"
+    }
+  },
+  {
+    "cid": "C137",
+    "band": "P3",
+    "page": "/admin/pages",
+    "category": "Feedback & State",
+    "finding": "A \"Schedule failed\" state is exposed as a filter but is not summarized in the top KPI cards, so a failure isn't visible at a glance.",
+    "suggested_fix": {
+      "current": "\"Schedule failed\" only appears as a workflow filter link",
+      "proposed": "Surface a count of schedule failures in the KPI card strip when greater than zero"
+    }
+  },
+  {
+    "cid": "C142",
+    "band": "P3",
+    "page": "/admin/libraries",
+    "category": "Navigation & Flow",
+    "finding": "Content libraries (/admin/libraries) is reachable only via a 'Content libraries' link in the Media library header, not from the sidebar.",
+    "suggested_fix": {
+      "current": "/admin/libraries linked only from the Media library header",
+      "proposed": "Surface 'Content libraries' as its own sidebar item under CONTENT"
+    }
+  },
+  {
+    "cid": "C143",
+    "band": "P3",
+    "page": "/pre-call-resources",
+    "category": "Copy & Labels",
+    "finding": "The pre-call resources page contains 14 links and 0 embedded videos/iframes.",
+    "suggested_fix": {
+      "current": "Pre-call page is a list of 14 links, no embedded media",
+      "proposed": "Embed the key prep video(s) inline on /pre-call-resources"
+    }
+  },
+  {
+    "cid": "C146",
+    "band": "P3",
+    "page": "/admin/pages/new",
+    "category": "Navigation & Flow",
+    "finding": "While building, the editor URL stays /admin/pages/new until the first save, so there is no shareable/bookmarkable page URL mid-edit.",
+    "suggested_fix": {
+      "current": "URL stays /admin/pages/new until first save",
+      "proposed": "Create the draft record (and its URL) on entering the builder so the page is addressable immediately"
+    }
+  },
+  {
+    "cid": "C147",
+    "band": "P3",
+    "page": "/admin/pages/block-preview-audit",
+    "category": "Navigation & Flow",
+    "finding": "/admin/pages/block-preview-audit is an internal tool reachable only by URL with no inbound links.",
+    "suggested_fix": {
+      "current": "block-preview-audit internal route present in admin with no nav",
+      "proposed": "Gate internal audit tools behind a dev flag or remove them from the production admin build"
+    }
+  },
+  {
+    "cid": "C154",
+    "band": "P3",
+    "page": "/this-page-does-not-exist",
+    "category": "Copy & Labels",
+    "finding": "The 404 text says content may have 'moved' but provides no destination or link to where it moved.",
+    "suggested_fix": {
+      "current": "'...doesn't exist or has moved.'",
+      "proposed": "Either redirect known moved paths, or drop the 'or has moved' clause and offer a search + key links"
+    }
+  }
+]
