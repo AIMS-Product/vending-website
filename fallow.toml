@@ -1,0 +1,19 @@
+# Fallow structural-analysis config.
+# Manual operational scripts are real entry points the static graph can't see.
+entry = ["scripts/*.mjs", "stryker.conf.mjs"]
+
+# One-off report artifacts; not part of the app graph.
+ignorePatterns = ["reports/**"]
+
+# Provided transitively (@stryker-mutator/core) or run via npx in smoke scripts.
+ignoreDependencies = ["@stryker-mutator/api", "playwright"]
+
+# Acknowledged exports: framework conventions, generated types, and prepared
+# backends for planned UI (media editor picker, comment resolve/reopen).
+ignoreExports = [
+  { file = "src/app/sitemap.ts", exports = ["revalidate"] },
+  { file = "src/types/database.ts", exports = ["*"] },
+  { file = "src/app/admin/media/actions.ts", exports = ["fetchEditorMediaAssets"] },
+  { file = "src/lib/services/seo-pages.ts", exports = ["adminResolvePageComment"] },
+  { file = "src/lib/supabase/auth.ts", exports = ["isAdminRole"] },
+]
