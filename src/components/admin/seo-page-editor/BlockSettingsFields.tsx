@@ -50,12 +50,12 @@ export function BlockSidebarSettingsPanel({
           <OptionalBlockField
             block={block}
             field="eyebrow"
-            label="Eyebrow"
+            label="Overline (eyebrow)"
             onChange={onChange}
           >
             <TextInput
               hideLabel
-              label="Eyebrow"
+              label="Overline (eyebrow)"
               value={block.props.eyebrow}
               placeholder={blockCanvasPlaceholders.rich_text.eyebrow}
               onChange={(value) =>
@@ -103,12 +103,12 @@ export function BlockSidebarSettingsPanel({
           <OptionalBlockField
             block={block}
             field="eyebrow"
-            label="Eyebrow"
+            label="Overline (eyebrow)"
             onChange={onChange}
           >
             <TextInput
               hideLabel
-              label="Eyebrow"
+              label="Overline (eyebrow)"
               value={block.props.eyebrow}
               placeholder={blockCanvasPlaceholders.hero.eyebrow}
               onChange={(value) =>
@@ -151,7 +151,7 @@ export function BlockSidebarSettingsPanel({
           <OptionalBlockField
             block={block}
             field="cta"
-            label="CTA"
+            label="Call to action (CTA)"
             onChange={onChange}
           >
             <div className="grid gap-4 sm:grid-cols-2">
@@ -794,12 +794,12 @@ export function BlockSidebarSettingsPanel({
           <OptionalBlockField
             block={block}
             field="eyebrow"
-            label="Eyebrow"
+            label="Overline (eyebrow)"
             onChange={onChange}
           >
             <TextInput
               hideLabel
-              label="Eyebrow"
+              label="Overline (eyebrow)"
               value={block.props.eyebrow}
               placeholder={blockCanvasPlaceholders.proof.eyebrow}
               onChange={(value) =>

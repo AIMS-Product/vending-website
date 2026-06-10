@@ -15,6 +15,10 @@ import {
   type RedirectFormState,
 } from "./actions";
 import { FieldError } from "./FieldError";
+import {
+  REDIRECT_STATUS_OPTIONS,
+  redirectStatusLabel,
+} from "./redirect-status-labels";
 
 export type RedirectRowData = {
   id: string;
@@ -77,7 +81,7 @@ export function RedirectRow({ redirect }: { redirect: RedirectRowData }) {
       <td className="px-5 py-3 font-mono text-xs text-slate-700">
         {redirect.destination_path}
       </td>
-      <td className="px-5 py-3">{redirect.status_code}</td>
+      <td className="px-5 py-3">{redirectStatusLabel(redirect.status_code)}</td>
       <td className="px-5 py-3">{redirect.created_reason}</td>
       <td className="px-5 py-3">{formatDate(redirect.created_at)}</td>
       <td className="px-5 py-3">
@@ -170,10 +174,11 @@ function RedirectEditForm({
               aria-invalid={Boolean(fieldErrors.statusCode)}
               className={adminInputClass}
             >
-              <option value="301">301</option>
-              <option value="302">302</option>
-              <option value="307">307</option>
-              <option value="308">308</option>
+              {REDIRECT_STATUS_OPTIONS.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
+              ))}
             </select>
             <FieldError message={fieldErrors.statusCode} />
           </label>

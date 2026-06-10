@@ -10,6 +10,7 @@ import {
 } from "@/components/admin/AdminUi";
 import { createBuilderRedirectAction, type RedirectFormState } from "./actions";
 import { FieldError } from "./FieldError";
+import { REDIRECT_STATUS_OPTIONS } from "./redirect-status-labels";
 
 const initialState: RedirectFormState = { status: "idle" };
 
@@ -86,10 +87,11 @@ export function RedirectCreateForm() {
             aria-invalid={Boolean(fieldErrors.statusCode)}
             className={adminInputClass}
           >
-            <option value="301">Permanent move (301)</option>
-            <option value="302">Temporary move (302)</option>
-            <option value="307">Temporary redirect (307)</option>
-            <option value="308">Permanent redirect (308)</option>
+            {REDIRECT_STATUS_OPTIONS.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.label}
+              </option>
+            ))}
           </select>
           <span className="mt-1 block text-xs leading-5 text-slate-500">
             Use permanent for most renamed or moved pages.

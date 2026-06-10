@@ -85,10 +85,10 @@ export function HeroInlineContentFields({
         compact
       >
         <label htmlFor={heroEyebrowInputId} className="block">
-          <span className="sr-only">Eyebrow</span>
+          <span className="sr-only">Overline (eyebrow)</span>
           <AutoResizeTextarea
             id={heroEyebrowInputId}
-            aria-label="Eyebrow"
+            aria-label="Overline (eyebrow)"
             value={block.props.eyebrow}
             placeholder={blockCanvasPlaceholders.hero.eyebrow}
             onChange={(event) =>

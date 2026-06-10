@@ -223,9 +223,9 @@ function RichTextCanvasEditor({
         compact
       >
         <label className="block">
-          <span className="sr-only">Eyebrow</span>
+          <span className="sr-only">Overline (eyebrow)</span>
           <input
-            aria-label="Eyebrow"
+            aria-label="Overline (eyebrow)"
             value={block.props.eyebrow}
             placeholder={blockCanvasPlaceholders.rich_text.eyebrow}
             onChange={(event) =>
@@ -667,7 +667,7 @@ export function BlockEditor({
                     >
                       <TextInput
                         hideLabel
-                        label="Eyebrow"
+                        label="Overline (eyebrow)"
                         placeholder={blockCanvasPlaceholders.proof.eyebrow}
                         value={block.props.eyebrow}
                         onChange={(value) =>
