@@ -35,6 +35,7 @@ import {
   buildSeoSnapshot,
   seoPatchFromSnapshot,
 } from "@/lib/services/seo-page-snapshots";
+import { deriveCopySlug } from "@/lib/services/duplicate-slug";
 import { validateMediaAssetReferences } from "@/lib/services/media-assets";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables, TablesInsert } from "@/types/database";
@@ -233,12 +234,16 @@ export async function adminDuplicateSeoPage(
   const source = await adminGetSeoPageById(pageId, { client });
   if (!source) throw new Error("Could not load SEO page.");
 
-  const shortId = randomBytes(4).toString("hex");
-  const slug = `draft-${shortId}`;
   const title = `Copy of ${source.title}`;
   const routePrefix = normalizeRoutePrefix(
     source.route_prefix,
     source.page_type,
+  );
+  // Human-readable duplicate slug ({source}-copy, -copy-2, …). Collision scope
+  // matches the DB's seo_pages_active_route_path_unique_idx: route_path among
+  // non-archived pages (archived pages do not reserve a slug).
+  const slug = await deriveCopySlug(source.slug, async (candidate) =>
+    isActiveRoutePathTaken(client, pagePathForSlug(candidate, routePrefix)),
   );
 
   const duplicated = await adminCreateSeoPage(
@@ -1244,6 +1249,24 @@ async function deleteArchivedPageRedirects(
     .match({ page_id: pageId, created_reason: "page_archived" });
 
   if (error) throw new Error("Could not clear archived SEO page redirect.");
+}
+
+// True when a non-archived page already owns this route_path — the exact scope
+// of seo_pages_active_route_path_unique_idx, so a duplicate slug we hand back
+// can be inserted without tripping the unique index.
+async function isActiveRoutePathTaken(
+  client: SeoPageClient,
+  routePath: string,
+): Promise<boolean> {
+  const { data, error } = await client
+    .from("seo_pages")
+    .select("id")
+    .eq("route_path", routePath)
+    .neq("status", "archived")
+    .maybeSingle();
+
+  if (error) throw new Error("Could not check duplicate slug availability.");
+  return data !== null;
 }
 
 async function findRedirectBySourcePath(

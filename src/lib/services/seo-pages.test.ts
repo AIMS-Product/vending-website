@@ -7,6 +7,7 @@ import {
   adminDeleteBuilderRedirect,
   adminUpdateBuilderRedirect,
   adminSnapshotManualSaveRevision,
+  adminDuplicateSeoPage,
   adminCreateSeoPage,
   adminGetSeoPageById,
   adminListSeoPages,
@@ -107,6 +108,15 @@ function matchMaybeSingleSelect(data: unknown, error: unknown = null) {
   const match = vi.fn().mockReturnValue({ maybeSingle });
   const select = vi.fn().mockReturnValue({ match });
   return { table: { select }, mocks: { select, match, maybeSingle } };
+}
+
+// select(...).eq("route_path", x).neq("status","archived").maybeSingle()
+function routePathTakenSelect(data: unknown, error: unknown = null) {
+  const maybeSingle = vi.fn().mockResolvedValue({ data, error });
+  const neq = vi.fn().mockReturnValue({ maybeSingle });
+  const eq = vi.fn().mockReturnValue({ neq });
+  const select = vi.fn().mockReturnValue({ eq });
+  return { table: { select }, mocks: { select, eq, neq, maybeSingle } };
 }
 
 function insertSingle(data: unknown, error: unknown = null) {
@@ -2117,5 +2127,91 @@ describe("seo page service", () => {
       ),
     ).rejects.toThrow();
     expect(client.rpc).not.toHaveBeenCalled();
+  });
+
+  it("duplicates a page with a {source-slug}-copy slug when free", async () => {
+    const source = {
+      id: "page_1",
+      slug: "start-vending",
+      route_prefix: "/resources",
+      page_type: "resource",
+      template_key: "blank",
+      title: "Start Vending",
+      target_keyword: null,
+      seo_title: null,
+      meta_description: null,
+      canonical_url: null,
+      noindex: false,
+      sitemap_enabled: true,
+      structured_data_settings: { breadcrumb: true, faq: true },
+      draft_content: { version: 1, sections: [] },
+    };
+    const read = maybeSingleSelect(source);
+    const collision = routePathTakenSelect(null); // -copy is free
+    const insert = insertSingle({ id: "page_2", slug: "start-vending-copy" });
+    const update = updateSingle({ id: "page_2", slug: "start-vending-copy" });
+    const client = buildClient(
+      read.table,
+      collision.table,
+      insert.table,
+      update.table,
+    );
+
+    const result = await adminDuplicateSeoPage("page_1", {
+      client,
+      actorId: "admin-1",
+    });
+
+    expect(result).toEqual({ id: "page_2", slug: "start-vending-copy" });
+    expect(collision.mocks.eq).toHaveBeenCalledWith(
+      "route_path",
+      "/resources/start-vending-copy",
+    );
+    expect(collision.mocks.neq).toHaveBeenCalledWith("status", "archived");
+    expect(insert.mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: "start-vending-copy",
+        title: "Copy of Start Vending",
+        route_path: "/resources/start-vending-copy",
+      }),
+    );
+  });
+
+  it("increments to -copy-2 when the -copy route path is taken", async () => {
+    const source = {
+      id: "page_1",
+      slug: "start-vending",
+      route_prefix: "/resources",
+      page_type: "resource",
+      template_key: "blank",
+      title: "Start Vending",
+      structured_data_settings: { breadcrumb: true, faq: true },
+      draft_content: { version: 1, sections: [] },
+    };
+    const read = maybeSingleSelect(source);
+    const collisionTaken = routePathTakenSelect({ id: "existing" }); // -copy taken
+    const collisionFree = routePathTakenSelect(null); // -copy-2 free
+    const insert = insertSingle({ id: "page_2", slug: "start-vending-copy-2" });
+    const update = updateSingle({ id: "page_2", slug: "start-vending-copy-2" });
+    const client = buildClient(
+      read.table,
+      collisionTaken.table,
+      collisionFree.table,
+      insert.table,
+      update.table,
+    );
+
+    const result = await adminDuplicateSeoPage("page_1", {
+      client,
+      actorId: "admin-1",
+    });
+
+    expect(result).toEqual({ id: "page_2", slug: "start-vending-copy-2" });
+    expect(insert.mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: "start-vending-copy-2",
+        route_path: "/resources/start-vending-copy-2",
+      }),
+    );
   });
 });
