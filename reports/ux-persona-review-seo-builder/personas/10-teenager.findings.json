@@ -1,0 +1,392 @@
+[
+  {
+    "id": "10-teenager-001",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "Publish blockers are revealed one at a time — fix the SEO title and a new blocker appears, fix that and another appears (\"Fix content 1 · Destination URL\"). It is whack-a-mole with no full list shown up front.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "status chip: draft · Fix SEO title, Publish disabled"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "readiness blockers that are revealed ONE AT A TIME in the status chip"
+      }
+    ],
+    "persona_rationale": "I'd think I was almost done, then another problem appears out of nowhere. After three surprise blockers I'd give up — apps I use never hide the finish line from me.",
+    "suggested_fix": {
+      "current": "Status chip 'draft · Fix SEO title' showing one blocker at a time",
+      "proposed": "Show ALL blockers at once as a checklist: 'Before you can publish: ☐ Add a headline ☐ Add a button label ☐ Add a button link'"
+    }
+  },
+  {
+    "id": "10-teenager-002",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The chip says 'Fix SEO title' but the SEO title field's own placeholder says 'Leave blank to use page headline' — telling me to fix something it also says is optional.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "chip 'Fix SEO title' with field placeholder 'Leave blank to use page headline'"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Leave blank to use page headline"
+      }
+    ],
+    "persona_rationale": "Two messages fighting each other on the same screen. I'd fill the box, it'd stay angry, and I'd have no idea why.",
+    "suggested_fix": {
+      "current": "Chip 'Fix SEO title' while the field is marked optional",
+      "proposed": "Chip 'Add your keyword to the page title or headline', and stop demanding the SEO title when the field says it can be left blank"
+    }
+  },
+  {
+    "id": "10-teenager-003",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Navigation & Flow",
+    "severity": "critical",
+    "finding": "'Fix content 1 · Destination URL' points at a field that is not on the page — it is hidden inside Block actions → Edit settings modal — and the error gives no hint where to go.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the destination field is NOT on the canvas; it lives in Block actions → Edit settings modal... The blocker text gives no hint where the field is"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-11-block-settings-modal.png",
+        "quote": "CTA destination URL only in block settings modal"
+      }
+    ],
+    "persona_rationale": "I hunted everywhere for 'Destination URL' and it didn't exist on screen. A 16-year-old does not know to dig into a hidden menu. Dead stop.",
+    "suggested_fix": {
+      "current": "'Fix content 1 · Destination URL' with no location hint",
+      "proposed": "'Your button needs a link — tap the button, then Edit settings to add where it goes' (or surface the field inline on the block)"
+    }
+  },
+  {
+    "id": "10-teenager-004",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After Confirm publish, a 'Changes published.' toast appears but the yellow confirm card stays open asking to publish again, so I can't tell if it actually worked.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "'Changes published.' toast appears BUT the confirm card remains open asking to publish again"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-13-confirm-card.png",
+        "quote": "Confirm publish card with 'This will make this draft visible at /resources/...' still showing"
+      }
+    ],
+    "persona_rationale": "Did it post or not? On Insta when I post, the screen changes and I see my post. Here it just sits there asking again. Confusing and a little scary.",
+    "suggested_fix": {
+      "current": "Confirm card stays open after success with 'This will replace the current live version'",
+      "proposed": "Close the confirm card on success and show 'Published! View your live page →'"
+    }
+  },
+  {
+    "id": "10-teenager-005",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "Setting a schedule date/time and saving re-renders the field empty with no 'Scheduled for...' confirmation anywhere — no way to know it worked.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the field re-rendered EMPTY and no 'Scheduled for ...' status appeared anywhere in the editor"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-03-set-schedule.png",
+        "quote": "Scheduled publish field with 11/06/2026, 12:00 PM before save"
+      }
+    ],
+    "persona_rationale": "If I schedule a TikTok it shows me 'scheduled for...' right there. A blank box tells me nothing. I'd assume it broke.",
+    "suggested_fix": {
+      "current": "Schedule field blanks out silently after save",
+      "proposed": "Show a clear banner after saving: 'Scheduled to go live Jun 11, 12:00 PM'"
+    }
+  },
+  {
+    "id": "10-teenager-006",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "schedule-publish",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The schedule field says 'Uses Pacific Time (America/Los_Angeles)' for an Australian business — the wrong timezone is shown to everyone scheduling a page.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-03-set-schedule.png",
+        "quote": "Uses Pacific Time (America/Los_Angeles). Leave blank unless this page should publish later."
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Label says 'Uses Pacific Time (America/Los_Angeles)' — for an Australian business"
+      }
+    ],
+    "persona_rationale": "Why is an Aussie business on California time? I'd schedule something for noon and it'd post at like 5am. That's a real mess-up.",
+    "suggested_fix": {
+      "current": "'Uses Pacific Time (America/Los_Angeles)'",
+      "proposed": "Use the business's actual timezone (Australia), e.g. 'Goes live at this time, Adelaide time'"
+    }
+  },
+  {
+    "id": "10-teenager-007",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "revision-restore",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "Drafts have no undo before the first publish — 'Revisions appear after publishing, library refreshes, or draft restores.' If I wreck my draft, it's gone.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "revisions do NOT exist while drafting... a user who mangles a draft before first publish has no undo at the page level"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-revision-restore-04-preview-revision.png",
+        "quote": "Empty revision state before publish"
+      }
+    ],
+    "persona_rationale": "Every app I use has undo / 'recently deleted.' Knowing one wrong move can't be taken back makes me afraid to even touch anything.",
+    "suggested_fix": {
+      "current": "Empty state 'Revisions appear after publishing, library refreshes, or draft restores.'",
+      "proposed": "Add draft autosave history so there is always an undo point, even before first publish"
+    }
+  },
+  {
+    "id": "10-teenager-008",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "Created redirects have no delete or edit control — a typo is permanent from this screen.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the redirects table offers no edit or delete control — mistakes are permanent from this UI"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-redirects-001-load.png",
+        "quote": "redirects table with OLD PATH/DESTINATION/STATUS/SOURCE/CREATED columns and no actions column"
+      }
+    ],
+    "persona_rationale": "If I typo the address there's no backspace. Nothing I use traps me with a permanent mistake like that.",
+    "suggested_fix": {
+      "current": "Redirects table has no per-row controls",
+      "proposed": "Add a delete (and edit) action to each redirect row"
+    }
+  },
+  {
+    "id": "10-teenager-009",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "'301', '302', '307', '308' status codes and the word 'Redirects' are pure dev/boomer jargon with no plain explanation.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-redirects-text.md",
+        "quote": "Permanent move (301) Temporary move (302) Temporary redirect (307) Permanent redirect (308)"
+      }
+    ],
+    "persona_rationale": "I have literally no idea what 307 vs 308 is and I'm not going to Google it. Just give me 'moved for good' or 'moved for now.'",
+    "suggested_fix": {
+      "current": "Four near-identical numbered options (301/302/307/308)",
+      "proposed": "Default to 'Permanent move' with the number hidden, plus a one-line 'Use this when a page changed address'"
+    }
+  },
+  {
+    "id": "10-teenager-010",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "create-first-page",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "The new-page canvas is all grey ghost text ('Hero headline', 'Hero body copy', 'CTA label') with nothing saying these are required or where to start typing.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "/placeholder: Hero headline ... /placeholder: Hero body copy"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-create-first-page-06-add-rich-text-block.png",
+        "quote": "ghost placeholder text in hero block"
+      }
+    ],
+    "persona_rationale": "It just looks like a half-loaded page. I didn't know the grey words were tappable or that I had to fill them before posting.",
+    "suggested_fix": {
+      "current": "Silent grey placeholders only",
+      "proposed": "Add a starter hint 'Tap the grey text to write your headline' or pre-fill an example"
+    }
+  },
+  {
+    "id": "10-teenager-011",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "create-first-page",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "The right-side panel is a wall of stacked sections — Readiness, Page title, Slug, Target keyword, SEO title, Meta description, Advanced SEO, Search Preview, Action Items, Governance comments — far too much at once.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-002-full.png",
+        "quote": "full editor showing stacked SEO/Action Items/Governance panels"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Action Items ... Builder support ... Governance comments"
+      }
+    ],
+    "persona_rationale": "This is the definition of 'boomer software' — fifty options screaming at me. I don't know what 80% of it does and I freeze.",
+    "suggested_fix": {
+      "current": "Every section expanded and stacked by default",
+      "proposed": "Show only Title + Publish first, collapse advanced sections behind a 'More options' toggle"
+    }
+  },
+  {
+    "id": "10-teenager-012",
+    "page": "/admin/pages",
+    "journey": "find-duplicate-archive",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "Coloured dots in the 'Readiness' and 'Status' columns have no visible text labels — I can't tell what red/yellow/blue/green mean without hovering.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "colour-only dots under Readiness and Status columns"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "cell 'SEO readiness: Needs work': button 'SEO readiness: Needs work'"
+      }
+    ],
+    "persona_rationale": "Colours with no words is a guessing game. Is red bad? Is blue good? I shouldn't have to mouse over to find out.",
+    "suggested_fix": {
+      "current": "Colour-only status dots",
+      "proposed": "Add a short text label next to each dot ('Needs work', 'Draft', 'Published')"
+    }
+  },
+  {
+    "id": "10-teenager-013",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The header 'SEO PAGE BUILDER' and the field word 'Slug' are jargon a teen won't understand.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-new-text.md",
+        "quote": "SEO PAGE BUILDER"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Slug"
+      }
+    ],
+    "persona_rationale": "'Slug' sounds like a bug from my garden, not a web thing. SEO means nothing to me. Plain words please.",
+    "suggested_fix": {
+      "current": "'Slug' field label and bare 'SEO' references",
+      "proposed": "'Slug' → 'Page web address' with an example; add '(this helps Google find your page)' to first-time SEO mentions"
+    }
+  },
+  {
+    "id": "10-teenager-014",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "After publishing there is no obvious 'Open live page' link in the default panel — the live URL had to be typed by hand.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "No 'Open live page' link was visible after publishing in the default panel state — the live URL had to be typed manually"
+      }
+    ],
+    "persona_rationale": "The payoff of posting is seeing it live. Hiding that link removes the one satisfying moment and makes me think it didn't work.",
+    "suggested_fix": {
+      "current": "No live-page link surfaced after publish",
+      "proposed": "Show a 'View your live page →' button immediately after publishing"
+    }
+  },
+  {
+    "id": "10-teenager-015",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "A floating black 'N' circle button overlaps the 'Sign out' button in the bottom-left corner, looking glitchy.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "black 'N' circle widget overlapping 'Sign out' label"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-mobile.png",
+        "quote": "same 'N' widget overlap on mobile"
+      }
+    ],
+    "persona_rationale": "It looks broken/glitchy, like two things crashed into each other. Sloppy — and on a real app that screams 'don't trust me.'",
+    "suggested_fix": {
+      "current": "Floating widget sits on top of the 'Sign out' label",
+      "proposed": "Reposition the floating widget so it never covers the sign-out control"
+    }
+  },
+  {
+    "id": "10-teenager-016",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "Typing a title then leaving the unsaved new-page editor navigates away with no 'unsaved changes' warning — typed work is silently lost.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "navigated straight to /admin/pages with NO unsaved-changes warning — typed title silently lost"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-014-leave-unsaved.png",
+        "quote": "navigated away from unsaved editor"
+      }
+    ],
+    "persona_rationale": "I tapped away for one second and my title vanished. Apps I use always go 'wait, save first?' This one just eats your work.",
+    "suggested_fix": {
+      "current": "Silent navigation away from unsaved editor",
+      "proposed": "Add a 'Leave without saving? Your changes will be lost' confirmation prompt"
+    }
+  }
+]

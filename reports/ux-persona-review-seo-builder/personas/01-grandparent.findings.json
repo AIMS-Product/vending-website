@@ -1,0 +1,533 @@
+[
+  {
+    "id": "01-grandparent-001",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "The Readiness and Status columns are just coloured dots (red/orange/blue/green) with no words, so I can't tell what each one means.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "Readiness and Status columns show coloured dots with no text label"
+      }
+    ],
+    "persona_rationale": "I read every word to feel safe; a dot with no label tells me nothing, so I can't tell whether a page is healthy or about to break.",
+    "suggested_fix": {
+      "current": "Coloured dot only in Readiness/Status cells",
+      "proposed": "Show a word beside each dot, e.g. a green dot with 'Published' and an orange dot with 'Needs work'"
+    }
+  },
+  {
+    "id": "01-grandparent-002",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "Page web addresses are shown in tiny grey code that looks like a computer error rather than a page name.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "/resources/ux-seo-review-test-1781071765035"
+      }
+    ],
+    "persona_rationale": "Long code-looking addresses make me think something is broken; I'd rather see the plain page name.",
+    "suggested_fix": {
+      "current": "/resources/ux-seo-review-test-1781071765035 shown in monospace grey",
+      "proposed": "Lead with the friendly page title and show the address smaller and de-emphasised, or labelled 'Web address:'"
+    }
+  },
+  {
+    "id": "01-grandparent-003",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The page is titled 'SEO pages'; I don't know what 'SEO' means, so I wouldn't know this is where my website pages live.",
+    "evidence": [
+      { "type": "text", "ref": "admin-pages-text.md", "quote": "SEO pages" }
+    ],
+    "persona_rationale": "An abbreviation I've never seen makes me unsure I'm even in the right place to edit my website.",
+    "suggested_fix": {
+      "current": "Heading 'SEO pages'",
+      "proposed": "'Website pages' with a small subtitle, e.g. 'Pages people find on search (SEO)'"
+    }
+  },
+  {
+    "id": "01-grandparent-004",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "Step 1 of the create-page gate has a 'Continue' but no 'Cancel' or 'Back to pages', so if I opened it by mistake I don't see how to leave.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-001-load.png",
+        "quote": "Only a 'Continue' button at the bottom of step 1"
+      }
+    ],
+    "persona_rationale": "If I land somewhere by accident I need an obvious way out; without it I'm afraid pressing anything will start something I can't stop.",
+    "suggested_fix": {
+      "current": "Step 1 shows only 'Continue'",
+      "proposed": "Add a 'Cancel' or 'Back to pages' link beside 'Continue' on every step"
+    }
+  },
+  {
+    "id": "01-grandparent-005",
+    "page": "/admin/pages/{id}",
+    "journey": "create-first-page",
+    "category": "Forms & Input",
+    "severity": "blocker",
+    "finding": "Leaving the brand-new editor after typing a page title returns me to the list with no 'unsaved changes' warning, and my typing is silently lost.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "navigated straight to /admin/pages with NO unsaved-changes warning — typed title silently lost"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-014-leave-unsaved.png",
+        "quote": "Back on pages list after leaving unsaved editor"
+      }
+    ],
+    "persona_rationale": "Losing my work with no warning is the exact thing I'm terrified of; once it happens I'd never trust the tool again.",
+    "suggested_fix": {
+      "current": "Navigating away from an unsaved new page discards typing with no prompt",
+      "proposed": "Show a confirm dialog: 'You have unsaved changes. Leave without saving?' with 'Stay' and 'Leave' options"
+    }
+  },
+  {
+    "id": "01-grandparent-006",
+    "page": "/admin/pages/{id}",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "'Eyebrow' is used as a field label; I have no idea what that means on a web page.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Eyebrow"
+      }
+    ],
+    "persona_rationale": "An unfamiliar word as a label stops me cold — I won't type into a box when I don't know what it's for.",
+    "suggested_fix": {
+      "current": "Field label 'Eyebrow'",
+      "proposed": "'Small label above the headline (optional)'"
+    }
+  },
+  {
+    "id": "01-grandparent-007",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The publish chip shows a terse riddle ('Improve SEO title' / 'Fix SEO title') instead of telling me plainly what to type and where.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-001-load.png",
+        "quote": "Improve SEO title"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Fix SEO title"
+      }
+    ],
+    "persona_rationale": "'Fix SEO title' is a command with no instructions; I don't know what an SEO title is, what's wrong, or where to go.",
+    "suggested_fix": {
+      "current": "'Fix SEO title' chip",
+      "proposed": "'Add a search title — write a short page name here, then it can go live' with a button that scrolls to and highlights the field"
+    }
+  },
+  {
+    "id": "01-grandparent-008",
+    "page": "/admin/pages/{id}",
+    "journey": "create-first-page",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "Faint grey placeholder words on the page ('Hero headline', 'Hero body copy', 'CTA label') look like real text, so I can't tell what I'm supposed to replace versus leave alone.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "Ghosted grey 'Hero headline' and 'Hero body copy' on the canvas"
+      }
+    ],
+    "persona_rationale": "I can't tell instructions from real content; I'm afraid of typing over something important or leaving something blank by mistake.",
+    "suggested_fix": {
+      "current": "Grey placeholder text indistinguishable from content",
+      "proposed": "Mark empty required spots clearly, e.g. a dashed box labelled 'Type your headline here (required)'"
+    }
+  },
+  {
+    "id": "01-grandparent-009",
+    "page": "/admin/pages/{id}",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "'Slug' is the label for the web-address box; that word means nothing to me and sounds unpleasant.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Slug"
+      }
+    ],
+    "persona_rationale": "A strange word as a label makes me distrust the box; I don't know what I'm allowed to change.",
+    "suggested_fix": {
+      "current": "Field label 'Slug'",
+      "proposed": "'Web address (the part after the slash)'"
+    }
+  },
+  {
+    "id": "01-grandparent-010",
+    "page": "/admin/pages/{id}",
+    "journey": null,
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "The editor shows two busy columns plus a floating 'AI' button, 'Share' menu, 'Blocks', 'SEO', and 'Governance comments' all at once, so I don't know where to even start.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-002-full.png",
+        "quote": "Full editor with two crowded panels and many controls"
+      }
+    ],
+    "persona_rationale": "Too much on one screen overwhelms me; I freeze instead of acting because I can't find the one thing I'm meant to do.",
+    "suggested_fix": {
+      "current": "All editor panels and tools shown at once",
+      "proposed": "Add a simple guided 'Finish this page' checklist at the top that walks me through the few steps in order"
+    }
+  },
+  {
+    "id": "01-grandparent-011",
+    "page": "/admin/pages/{id}",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "'Governance comments' and 'Builder support' are headings I don't understand at all.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Governance comments"
+      }
+    ],
+    "persona_rationale": "Corporate-sounding headings make me think this section isn't for me, so I avoid it even when I might need it.",
+    "suggested_fix": {
+      "current": "'Governance comments', 'Builder support'",
+      "proposed": "'Private notes (only your team sees these)' and 'Help and resources'"
+    }
+  },
+  {
+    "id": "01-grandparent-012",
+    "page": "/admin/pages/{id}",
+    "journey": null,
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Some icon-only controls (the small eye and the move handle) have no words beside them, so I can't guess what they do without clicking and risking a change.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-001-load.png",
+        "quote": "Eye/visibility and move icons near the hero block with no text"
+      }
+    ],
+    "persona_rationale": "Mystery icons frighten me; I won't press something I can't read in case it breaks the page.",
+    "suggested_fix": {
+      "current": "Icon-only buttons (eye, move) with no visible label",
+      "proposed": "Add a short visible label or an always-on tooltip, e.g. 'Hide this' and 'Move this block'"
+    }
+  },
+  {
+    "id": "01-grandparent-013",
+    "page": "/admin/pages/{id}/revisions/{rev}",
+    "journey": "revision-restore",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "The revision preview has only a small 'Back to editor' link and nothing else, so I felt stranded and unsure whether I'd left the admin area.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-revisions-7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25-001-load.png",
+        "quote": "Bare page with single 'Back to editor' link top-right"
+      }
+    ],
+    "persona_rationale": "A bare page with one tiny link makes me feel lost; I need clear reassurance that I'm safe and how to get back.",
+    "suggested_fix": {
+      "current": "Single small 'Back to editor' link, no other framing",
+      "proposed": "Add a clear banner: 'This is a saved older version (read-only). Nothing here changes your page.' with a prominent 'Back to editor' button"
+    }
+  },
+  {
+    "id": "01-grandparent-014",
+    "page": "/admin/pages/{id}/revisions/{rev}",
+    "journey": "revision-restore",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The only label is 'Revision preview / publish - Jun 10, 3:49 PM'; the lone word 'publish' doesn't tell me this is an older saved copy I can safely view.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-revisions-7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25-text.md",
+        "quote": "publish - Jun 10, 3:49 PM"
+      }
+    ],
+    "persona_rationale": "'publish' on its own reads like a button or an action I might trigger; I can't tell I'm just looking.",
+    "suggested_fix": {
+      "current": "'publish - Jun 10, 3:49 PM'",
+      "proposed": "'Saved when published on Jun 10 at 3:49 PM — you are only viewing this'"
+    }
+  },
+  {
+    "id": "01-grandparent-015",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "The error 'Path must be root-relative.' is pure jargon and doesn't tell me what to type instead.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-redirects-011-form-invalid-submit.png",
+        "quote": "Path must be root-relative."
+      }
+    ],
+    "persona_rationale": "An error in words I don't understand leaves me stuck with no way forward; I'd abandon the task.",
+    "suggested_fix": {
+      "current": "'Path must be root-relative.'",
+      "proposed": "'Start the address with a slash, like /resources/old-page'"
+    }
+  },
+  {
+    "id": "01-grandparent-016",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "Once a redirect is created there is no delete or edit button in the table, so a typo is permanent from this screen.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Redirects table has no delete/edit controls — created redirects cannot be removed from this UI."
+      }
+    ],
+    "persona_rationale": "If I can't undo a mistake I'm too frightened to try at all; permanence with no undo is exactly what scares me.",
+    "suggested_fix": {
+      "current": "Redirects table has no row controls",
+      "proposed": "Add 'Edit' and 'Delete' (with an 'Are you sure?' confirm) to each redirect row"
+    }
+  },
+  {
+    "id": "01-grandparent-017",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "The status choices ('Permanent move (301)', 'Temporary redirect (307)') include code numbers that confuse me and I don't know which to pick.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-redirects-text.md",
+        "quote": "Permanent move (301)"
+      }
+    ],
+    "persona_rationale": "The bracketed numbers look technical and make me doubt my choice even when the words almost make sense.",
+    "suggested_fix": {
+      "current": "'Permanent move (301)' / 'Temporary redirect (307)'",
+      "proposed": "Default to 'Permanent move' with the recommended option marked, and hide the code numbers behind an 'Advanced' toggle"
+    }
+  },
+  {
+    "id": "01-grandparent-018",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "The page is titled 'Redirects' which I don't understand on its own, though the subtitle helps a little.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-redirects-text.md",
+        "quote": "Send old page addresses to their new destinations."
+      }
+    ],
+    "persona_rationale": "The word 'Redirects' alone is jargon; I rely on the plain subtitle to understand it, so the title should match that plainness.",
+    "suggested_fix": {
+      "current": "Heading 'Redirects'",
+      "proposed": "'Send old links to new pages' with 'Redirects' as a smaller subtitle"
+    }
+  },
+  {
+    "id": "01-grandparent-019",
+    "page": "/admin/pages/block-preview-audit",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The heading and intro ('Compare every picker preview against the real resource-page render using mocked block content') are entirely developer language.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-block-preview-audit-text.md",
+        "quote": "Compare every picker preview against the real resource-page render using mocked block content."
+      }
+    ],
+    "persona_rationale": "This reads like it's written for engineers; I can't tell if I've wandered somewhere I shouldn't be.",
+    "suggested_fix": {
+      "current": "Developer-facing audit copy shown to all admins",
+      "proposed": "Hide this page from ordinary editors, or label it clearly 'Developer tool — not needed for editing pages'"
+    }
+  },
+  {
+    "id": "01-grandparent-020",
+    "page": "/admin/pages/block-preview-audit",
+    "journey": null,
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "finding": "This very long page of repeated 'Picker preview / Actual resource render' pairs has no 'Back' and no explanation of why an editor would need it.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-block-preview-audit-001-load.png",
+        "quote": "Repeated 'Picker preview' / 'Actual resource render' comparison blocks"
+      }
+    ],
+    "persona_rationale": "A long, purpose-less page with no way back makes me feel I've broken something or gotten lost.",
+    "suggested_fix": {
+      "current": "Long audit page with no exit",
+      "proposed": "Add a 'Back to pages' link at the top and a one-line plain explanation of who this page is for"
+    }
+  },
+  {
+    "id": "01-grandparent-021",
+    "page": "/resources/ux-seo-review-test-1781071765035",
+    "journey": "publish-and-view-live",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "The published page is just one headline, one orange button, and one FAQ — it looks empty and unfinished, but nothing warned me a page this thin shouldn't go live.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "resources-ux-seo-review-test-1781071765035-001-load.png",
+        "quote": "Sparse live page: headline, single CTA button, one FAQ"
+      }
+    ],
+    "persona_rationale": "I'd be embarrassed to publish something that looks half-finished; the tool should warn me before it goes public.",
+    "suggested_fix": {
+      "current": "Thin page publishes with no warning",
+      "proposed": "Before publishing show a gentle note: 'This page is quite short. Add more content?' with 'Publish anyway' and 'Keep editing'"
+    }
+  },
+  {
+    "id": "01-grandparent-022",
+    "page": "/resources/preview/2eSNnEXLh0znXOYIrUm2Hjk7ieSeIqY2P1z0wTAPiWw",
+    "journey": "preview-draft",
+    "category": "Trust & Safety",
+    "severity": "low",
+    "finding": "The preview address is a long scramble that looks like a broken or suspicious link, not a safe preview to share.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "/resources/preview/2eSNnEXLh0znXOYIrUm2Hjk7ieSeIqY2P1z0wTAPiWw"
+      }
+    ],
+    "persona_rationale": "A jumbled web address looks dodgy to me; I'd be nervous to send it to anyone in case they think it's spam.",
+    "suggested_fix": {
+      "current": "Raw random token in the preview URL with no framing",
+      "proposed": "When sharing, show a short note 'This is a private preview link' so I trust it before sending"
+    }
+  },
+  {
+    "id": "01-grandparent-023",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Forms & Input",
+    "severity": "critical",
+    "finding": "A required 'CTA destination URL' field needed to publish is not on the page canvas at all — it is hidden inside a 'Block actions -> Edit settings' pop-up, so the publish blocker gave me no way to find it.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-11-block-settings-modal.png",
+        "quote": "CTA destination URL field only present inside the Block settings modal"
+      }
+    ],
+    "persona_rationale": "Being told to fix a field I cannot see anywhere on the page is a dead end; I'd never think to open a hidden settings pop-up.",
+    "suggested_fix": {
+      "current": "Publish blocker 'Fix content 1 · Destination URL' with the field only in a modal",
+      "proposed": "Make the blocker open the settings pop-up and highlight the exact field, e.g. a button 'Fix this — opens CTA link settings'"
+    }
+  },
+  {
+    "id": "01-grandparent-024",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "After pressing 'Confirm publish' and seeing 'Changes published.', the yellow confirm box stays open still asking me to publish again, so I can't tell whether it worked or whether I must press again.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-09-after-publish.png",
+        "quote": "'Changes published.' toast shown while the 'Confirm publish' card remains open asking to replace the live version"
+      }
+    ],
+    "persona_rationale": "Two contradictory messages at once paralyses me; I might publish twice or assume it failed, and I'd be afraid I made a mess.",
+    "suggested_fix": {
+      "current": "Confirm-publish card stays open after a successful publish",
+      "proposed": "Close the confirm card on success and show a single clear state: 'Published. Your page is now live — View live page'"
+    }
+  },
+  {
+    "id": "01-grandparent-025",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After typing a date into 'Scheduled publish' and saving, the box went blank and no 'Scheduled for…' message appeared anywhere, so I couldn't tell if it worked.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "field re-rendered EMPTY and no 'Scheduled for …' status appeared anywhere in the editor"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Scheduled publish box shows empty after saving"
+      }
+    ],
+    "persona_rationale": "With no confirmation I assume I failed and try again, or worse leave it not knowing if my page will publish itself when I'm not looking.",
+    "suggested_fix": {
+      "current": "Schedule field clears after save with no confirmation",
+      "proposed": "Keep the chosen date visible and show a clear banner 'Scheduled to publish on Jun 11 at 12:00 PM (your time)' with a 'Cancel schedule' button"
+    }
+  },
+  {
+    "id": "01-grandparent-026",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The scheduled-publish note says it 'Uses Pacific Time (America/Los_Angeles)', which means nothing to me as an Australian and I can't work out what time my page would go live.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Uses Pacific Time (America/Los_Angeles). Leave blank unless this page should publish later."
+      }
+    ],
+    "persona_rationale": "A foreign timezone makes scheduling a guessing game; I'd be afraid my page goes live at the wrong time, like the middle of the night.",
+    "suggested_fix": {
+      "current": "'Uses Pacific Time (America/Los_Angeles)'",
+      "proposed": "Use the viewer's own timezone (e.g. Australian time) and show it plainly: 'Will publish at this time in your timezone (ACST)'"
+    }
+  }
+]

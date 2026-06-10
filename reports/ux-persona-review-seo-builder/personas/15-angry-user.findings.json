@@ -1,0 +1,302 @@
+[
+  {
+    "id": "15-angry-user-001",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "finding": "The redirects table has no edit or delete control. A 301 created with a typo in the old path or destination is permanent from this UI — there is no way to fix or remove it.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "Redirects table has no delete/edit controls — created redirects cannot be removed from this UI."
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-redirects-002-full.png",
+        "quote": "redirects table rows show OLD PATH / DESTINATION / STATUS / SOURCE / CREATED with no action column"
+      }
+    ],
+    "persona_rationale": "I am here BECAUSE I made a redirect with a typo. This screen shows me my mistake sitting in the table and gives me no button to fix it. That is the single most enraging thing an app can do to a frustrated user — show you the broken thing and refuse to let you touch it.",
+    "suggested_fix": {
+      "current": "Redirects table is read-only (OLD PATH / DESTINATION / STATUS / SOURCE / CREATED, no actions)",
+      "proposed": "Add an Actions column with Edit and Delete per row, with a confirm dialog on delete; allow correcting the old path / destination / status code in place"
+    }
+  },
+  {
+    "id": "15-angry-user-002",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "When the redirect form is submitted with an invalid old path, the error reads 'Path must be root-relative.' (jargon) and the entered values are NOT preserved — the user has to retype everything.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-redirects-011-form-invalid-submit.png",
+        "quote": "Path must be root-relative."
+      },
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "error copy: \"invalid\"; values preserved: false"
+      }
+    ],
+    "persona_rationale": "'Root-relative' means nothing to me. I just want to fix a redirect and now I'm told my path is wrong in language I don't understand AND it wiped what I typed so I have to start over. Re-entering data after an error is exactly the thing that makes me slam the laptop shut.",
+    "suggested_fix": {
+      "current": "'Path must be root-relative.' with form values cleared on error",
+      "proposed": "'The old path must start with a / (for example /resources/old-page).' and keep everything the user already typed in the fields"
+    }
+  },
+  {
+    "id": "15-angry-user-003",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "After confirming publish, a green 'Changes published.' toast appears, but the yellow Confirm-publish card stays open and now reads 'This will replace the current live version…' — making it look like the publish failed or is asking to be re-confirmed.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-09-after-publish.png",
+        "quote": "Changes published. toast shown WHILE confirm card reads 'This will replace the current live version at /resources/ux-seo-review-test-1781071765035.'"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "After confirming, \"Changes published.\" toast appears BUT the confirm card remains open asking to publish again"
+      }
+    ],
+    "persona_rationale": "I already lost trust in this app because a page I scheduled never went live. So when I finally hit publish and it says 'published' but the scary yellow box is STILL sitting there telling me it'll replace the live version, I have no idea if it actually worked. I'll either hammer the button again or give up assuming it's broken — again.",
+    "suggested_fix": {
+      "current": "Confirm-publish card stays open after success; toast and card contradict each other",
+      "proposed": "On successful publish, close the confirm card and show a single clear success state with an 'Open live page' link"
+    }
+  },
+  {
+    "id": "15-angry-user-004",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "Scheduling a publish gives NO confirmation. After filling a date/time and saving, the Scheduled publish field re-renders empty and no 'Scheduled for …' status appears anywhere in the editor. The only hint a schedule exists is a 'Cancel scheduled publish' checkbox.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Scheduled publish field shows 'dd/mm/yyyy, --:-- --' (empty) after saving; no 'Scheduled for' confirmation anywhere"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the field re-rendered EMPTY and no \"Scheduled for …\" status appeared anywhere in the editor"
+      }
+    ],
+    "persona_rationale": "This is the EXACT bug that brought me here — I scheduled a page and it never went live. Now I see why: I set a time, hit save, the field goes blank, and nothing tells me a schedule was saved. I'd reasonably assume it didn't take, set it again, and end up with no idea what's actually queued. There is no proof my schedule exists.",
+    "suggested_fix": {
+      "current": "Scheduled-publish field clears after save with no status shown",
+      "proposed": "After save, keep the chosen date/time in the field and show a persistent 'Scheduled to publish on {date} {time} {timezone}' banner at the top of the publish panel"
+    }
+  },
+  {
+    "id": "15-angry-user-005",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "schedule-publish",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The scheduled-publish field is labelled 'Uses Pacific Time (America/Los_Angeles)' for an Australian business, and it is buried at the bottom of the SEO panel under Advanced SEO.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-09-after-publish.png",
+        "quote": "Uses Pacific Time (America/Los_Angeles). Leave blank unless this page should publish later."
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Label says \"Uses Pacific Time (America/Los_Angeles)\" — for an Australian business."
+      }
+    ],
+    "persona_rationale": "If I scheduled noon and it's secretly Los Angeles noon, that's a 17-hour gap and explains exactly why my page went live at the wrong time — or never, as far as I could tell. Making me do timezone math when I'm already angry is how you lose a customer.",
+    "suggested_fix": {
+      "current": "'Uses Pacific Time (America/Los_Angeles).'",
+      "proposed": "Show the schedule in the site's configured timezone (Australia/Adelaide), and echo back 'Publishes {date} {time} ACST (your local time)'"
+    }
+  },
+  {
+    "id": "15-angry-user-006",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "Publish is blocked by a chain of readiness errors revealed one at a time in terse internal naming, and the status chip ('Fix SEO title') contradicts the readiness panel ('Add a hero headline before publishing.') — two different messages for the same gate.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Chip said \"Fix SEO title\" while readiness panel said \"Add a hero headline before publishing.\" — fixed the wrong thing first."
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "PUBLISH STATUS chip reads 'draft  Fix SEO title' with Publish button disabled"
+      }
+    ],
+    "persona_rationale": "I just want to publish. Instead the app feeds me ONE complaint at a time, and the two messages on screen don't even agree with each other, so I fix the wrong thing first and waste time. By the third hidden blocker I'm convinced this tool is fighting me on purpose.",
+    "suggested_fix": {
+      "current": "Blockers revealed one at a time; chip and panel disagree",
+      "proposed": "List ALL outstanding publish blockers at once as a checklist with one consistent message per gate, each linking directly to the field that fixes it"
+    }
+  },
+  {
+    "id": "15-angry-user-007",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "The publish blocker 'Fix content 1 · Destination URL' points at a field that is not on the canvas — the 'CTA destination URL' lives only inside Block actions → Edit settings modal, with no hint of where to find it.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-11-block-settings-modal.png",
+        "quote": "BLOCK SETTINGS / Hero 1 modal contains the 'CTA destination URL' field"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the destination field is NOT on the canvas; it lives in Block actions → Edit settings modal (\"CTA destination URL\"). The blocker text gives no hint where the field is."
+      }
+    ],
+    "persona_rationale": "It tells me to fix 'content 1 destination URL' and then hides the actual field inside a modal three clicks deep. I hunted all over the page for it. Telling me what's wrong but not where to fix it is just cruelty when I'm already on edge.",
+    "suggested_fix": {
+      "current": "'Fix content 1 · Destination URL' with no path to the field",
+      "proposed": "Make the blocker a button that opens the Hero block's settings modal and focuses the CTA destination URL field directly"
+    }
+  },
+  {
+    "id": "15-angry-user-008",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "finding": "Leaving the editor with unsaved typed content gives NO unsaved-changes warning, and worse, a probe titled 'Unsaved data-loss probe (do not save)' ended up saved as a draft anyway — so unsaved work is silently lost OR silently persisted with no clarity which.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "Leaving unsaved editor: navigated straight to /admin/pages with NO unsaved-changes warning — typed title silently lost"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-014-leave-unsaved.png",
+        "quote": "list shows a page titled 'Unsaved data-loss probe (do not save)' at /resources/unsaved-data-loss-probe-do-not-save"
+      }
+    ],
+    "persona_rationale": "I lost a form once already; that's why I'm furious. An editor that lets me walk away and lose what I typed — with no 'you have unsaved changes' prompt — is the exact betrayal I'm scared of. And the fact a 'do not save' probe got saved anyway means I can't even trust what is and isn't kept.",
+    "suggested_fix": {
+      "current": "No beforeunload/route-change guard on the editor; unsaved state behaviour is unpredictable",
+      "proposed": "Show a 'You have unsaved changes — leave without saving?' confirm on navigating away from a dirty editor, and never persist a draft the user didn't explicitly save"
+    }
+  },
+  {
+    "id": "15-angry-user-009",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "revision-restore",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "Revisions do not exist until after the first publish. While drafting, the empty state reads 'Revisions appear after publishing, library refreshes, or draft restores.' so a user who mangles a draft before first publish has no page-level undo.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-revision-restore-04-preview-revision.png",
+        "quote": "Revision history panel: 'Revisions appear after publishing, library refreshes, or draft restores.'"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Saving a draft creates no restore point — a user who mangles a draft before first publish has no undo at the page level."
+      }
+    ],
+    "persona_rationale": "When I break something I look for the undo / version history first. Being told there's no history until I've published once means if I wreck my draft I'm stuck with the wreck. No safety net is exactly what makes an already-frustrated person panic.",
+    "suggested_fix": {
+      "current": "No revisions captured for drafts before first publish",
+      "proposed": "Snapshot a revision on every manual draft save so there is always a restore point, even pre-publish"
+    }
+  },
+  {
+    "id": "15-angry-user-010",
+    "page": "/admin/pages",
+    "journey": "publish-and-view-live",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "There is a 'Schedule failed' filter for diagnosing failed scheduled publishes, but its label is truncated to 'Schedule faile…' in the default desktop layout, and clicking it leaves the failure with no explanation of WHY it failed or how to retry.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-013-filter-scheduled.png",
+        "quote": "filter chip reads 'Schedule faile…' (truncated) next to 'Scheduled'"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "Scheduled\nSchedule failed"
+      }
+    ],
+    "persona_rationale": "A 'Schedule failed' filter is exactly what I'd reach for since my schedule never fired — but it's chopped off so I'm not even sure that's what it says, and even if I click it, nothing tells me why it failed or lets me retry. It's a dead-end label for my actual problem.",
+    "suggested_fix": {
+      "current": "Truncated 'Schedule faile…' chip that leads to a list with no failure reason",
+      "proposed": "Show the full 'Schedule failed' label and, on each failed page, surface the failure reason plus a 'Retry schedule' action"
+    }
+  },
+  {
+    "id": "15-angry-user-011",
+    "page": "/admin/pages",
+    "journey": "—",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "Nowhere in the SEO Page Builder is there a help link, documentation link, or way to contact support. A stuck user has no escape hatch.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "navigation \"Admin sections\": SEO pages / Blog and news / Media library ... navigation \"Account settings\": Settings / Sign out"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-002-full.png",
+        "quote": "sidebar and header contain no Help, Docs, or Support affordance"
+      }
+    ],
+    "persona_rationale": "When I'm stuck and angry the first thing I hunt for is Help or a Contact Support link. There is nothing — no docs, no chat, no email. My only option is to keep fighting the tool alone, which is precisely when I rage-quit and email someone angrily instead.",
+    "suggested_fix": {
+      "current": "No help/support affordance anywhere in the builder",
+      "proposed": "Add a persistent Help / Support link (docs + contact) in the admin sidebar or header"
+    }
+  },
+  {
+    "id": "15-angry-user-012",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "schedule-publish",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The only way to tell whether a schedule is active is to interpret the presence of a 'Cancel scheduled publish' checkbox whose helper text ('Keeps the draft intact and removes this page from the automatic publishing queue.') describes cancellation, not the current scheduled state.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-09-after-publish.png",
+        "quote": "Cancel scheduled publish — Keeps the draft intact and removes this page from the automatic publishing queue."
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the only hint a schedule might exist is the \"Cancel scheduled publish\" checkbox"
+      }
+    ],
+    "persona_rationale": "I should not have to reverse-engineer whether my page is scheduled by noticing a Cancel checkbox appeared. Tell me plainly 'This page is scheduled for X.' Making me infer state from the existence of a cancel control is exactly the kind of guessing game that has already cost me a missed publish.",
+    "suggested_fix": {
+      "current": "Schedule state inferred from presence of a 'Cancel scheduled publish' checkbox",
+      "proposed": "Show an explicit 'Scheduled to publish on {date} {time}' status line, with Cancel as a clearly secondary action beneath it"
+    }
+  }
+]

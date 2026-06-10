@@ -1,0 +1,282 @@
+[
+  {
+    "id": "04-accessibility-001",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Accessibility & Inclusion",
+    "severity": "critical",
+    "finding": "Hero and FAQ block markers carry aria-label on an element whose role prohibits it, so the label is dropped and the blocks are unnamed to a screen reader.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "aria-prohibited-attr (serious): span[aria-label=\"Hero block\"], span[aria-label=\"FAQ block\"] (count 2)"
+      }
+    ],
+    "persona_rationale": "I navigate blocks by screen reader; an unnamed block marker means I can't tell where one block ends and the next begins.",
+    "suggested_fix": {
+      "current": "<span aria-label=\"Hero block\"> on a role that prohibits aria-label",
+      "proposed": "Move the label to a focusable element with an allowed role, or use a visually-hidden text node: <span><span class=\"sr-only\">Hero block</span>…</span>"
+    }
+  },
+  {
+    "id": "04-accessibility-002",
+    "page": "/admin/pages",
+    "journey": "find-duplicate-archive",
+    "category": "Accessibility & Inclusion",
+    "severity": "critical",
+    "finding": "The Readiness and Status columns convey page state by a bare colored dot alone, with no visible text or shape.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "READINESS and STATUS columns render as bare yellow/red/blue/green dots"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "cell \"SEO readiness: Needs work\": button \"SEO readiness: Needs work\""
+      }
+    ],
+    "persona_rationale": "At 200% zoom with low color discrimination I cannot read the two most important status columns; the dot is invisible signal to me.",
+    "suggested_fix": {
+      "current": "Color dot only",
+      "proposed": "Dot plus a short visible text label (\"Needs work\" / \"Published\") or distinct per-state shapes/icons"
+    }
+  },
+  {
+    "id": "04-accessibility-003",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "The disabled Publish button gives no programmatically-associated reason; the blocker is small orange text and is stuffed into the button's accessible name rather than a navigable description.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "Greyed Publish button with small orange 'Fix SEO title' text"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "button \"Publish status Published Improve SEO title\""
+      }
+    ],
+    "persona_rationale": "A screen reader announces the button name but I can't navigate to or enumerate the blockers; I don't know what to fix or where.",
+    "suggested_fix": {
+      "current": "Greyed button with blocker text crammed into its accessible name",
+      "proposed": "Keep button enabled and add aria-describedby pointing at a focusable, listed 'Why can't I publish?' region enumerating every blocker"
+    }
+  },
+  {
+    "id": "04-accessibility-004",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "create-first-page",
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "finding": "The SEO panel form fields are tab stops 28-33 of 50; publish/SEO controls sit behind the entire rendered page preview and footer nav in tab order.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "tabOrder: stop 28 input 'Page title', stop 33 textarea 'Meta description', stop 27 button 'Publish changes', stop 44 button 'Restore draft'"
+      }
+    ],
+    "persona_rationale": "Keyboard-only, I must tab through ~27 controls I don't want to reach the fields I edit on every single page.",
+    "suggested_fix": {
+      "current": "Single DOM order forcing ~27 stops before the SEO editing panel",
+      "proposed": "Make the SEO panel a top-level landmark early in tab order, or add a 'Skip to SEO settings' skip link"
+    }
+  },
+  {
+    "id": "04-accessibility-005",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378/revisions/7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25",
+    "journey": "revision-restore",
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "finding": "The revision preview page has two nested main landmarks.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "landmark-no-duplicate-main, landmark-main-is-top-level, landmark-unique (moderate) on #main-content / #main-content > main"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-revisions-7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25-text.md",
+        "quote": "- main:\n  - main:"
+      }
+    ],
+    "persona_rationale": "'Jump to main content' is ambiguous with two mains; I land in the wrong region.",
+    "suggested_fix": {
+      "current": "<main><main>…",
+      "proposed": "Single <main>; the inner wrapper becomes a <div> or <section> with a heading"
+    }
+  },
+  {
+    "id": "04-accessibility-006",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "finding": "The sidebar complementary landmark is nested inside main instead of being a top-level document landmark, across the list, redirects, and editor pages.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "landmark-complementary-is-top-level (moderate): aside (editor page)"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "- main:\n  - complementary:\n    - button \"Collapse sidebar\""
+      }
+    ],
+    "persona_rationale": "Screen-reader landmark navigation is how I orient; the nav announcing as 'inside main content' breaks my mental map of the page.",
+    "suggested_fix": {
+      "current": "<main><aside>nav</aside>…",
+      "proposed": "Move the sidebar <aside>/<nav> out of <main> to a top-level document landmark"
+    }
+  },
+  {
+    "id": "04-accessibility-007",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "finding": "A nextjs-portal element receives keyboard focus with no visible focus indicator on every page, at multiple stops per page.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "tabIssues: 'no visible focus indicator' — /admin/pages stop 46; /admin/pages/new stops 6/14/22/30/38/46; revision 8 stops; redirects 3 stops; block-preview 5 stops; public 2 stops"
+      }
+    ],
+    "persona_rationale": "Keyboard-only, an invisible focus stop means my focus vanishes and I don't know where I am on the page.",
+    "suggested_fix": {
+      "current": "Focusable portal element with no outline",
+      "proposed": "Set tabindex=\"-1\" on non-interactive portals, or apply a visible :focus-visible outline"
+    }
+  },
+  {
+    "id": "04-accessibility-008",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After saving a scheduled publish, the field re-renders empty and no 'Scheduled for…' status appears anywhere; no confirmation reaches a screen reader.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-02-open-advanced-sections.png",
+        "quote": "Schedule field buried in Advanced SEO; no status text after save"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the field re-rendered EMPTY and no \"Scheduled for …\" status appeared anywhere in the editor"
+      }
+    ],
+    "persona_rationale": "I rely on announced confirmations; with no status text I cannot tell if the schedule saved, failed, or cleared.",
+    "suggested_fix": {
+      "current": "Silent empty field after save",
+      "proposed": "Persist the value and render a role=\"status\" line ('Scheduled to publish {date} {tz}') announced on save"
+    }
+  },
+  {
+    "id": "04-accessibility-009",
+    "page": "/admin/pages",
+    "journey": "find-duplicate-archive",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "The destructive 'Archive page' item in the row menu is distinguished from non-destructive items by red text alone.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-017-row-menu-open.png",
+        "quote": "Red 'Archive page' item among black 'Edit page' / 'Move to draft' items"
+      }
+    ],
+    "persona_rationale": "At 200% zoom with reduced color perception I can't tell the irreversible item from 'Move to draft' and may archive a live page by mistake.",
+    "suggested_fix": {
+      "current": "Red-text-only 'Archive page'",
+      "proposed": "Add a warning icon and keep the destructive item visually grouped/separated so destructiveness isn't color-dependent"
+    }
+  },
+  {
+    "id": "04-accessibility-010",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "create-first-page",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Field-level show/hide toggles are tiny icon-only eye buttons below a comfortable target size.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-001-load.png",
+        "quote": "Small eye icons next to Eyebrow / Body / CTA fields"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "button \"Show eyebrow\" / button \"Show body\" / button \"Hide cta\""
+      }
+    ],
+    "persona_rationale": "Motor impairment makes small targets a real miss-and-retry cost on a control I use per field.",
+    "suggested_fix": {
+      "current": "~16px eye icon target",
+      "proposed": "Enlarge the hit area to >=24px (AAA 24x24 / touch 44x44) while keeping the existing accessible name"
+    }
+  },
+  {
+    "id": "04-accessibility-011",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "The create-page wizard has duplicate, identically-named 'Create page' region landmarks nested inside each other.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "landmark-unique (moderate): .p-0"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-new-text.md",
+        "quote": "region \"Create page\":\n    - region \"Create page\":"
+      }
+    ],
+    "persona_rationale": "Two identically-named regions in the landmark list give me no way to tell them apart when jumping.",
+    "suggested_fix": {
+      "current": "Two region landmarks named 'Create page'",
+      "proposed": "Make the inner wrapper a non-landmark <div>, keeping a single named region"
+    }
+  },
+  {
+    "id": "04-accessibility-012",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "A publish-required field ('CTA destination URL') exists only inside the Block settings modal, and the publish blocker text never says where to find it.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the destination field is NOT on the canvas; it lives in Block actions → Edit settings modal"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-11-block-settings-modal.png",
+        "quote": "CTA destination URL field only present inside the Block Settings modal"
+      }
+    ],
+    "persona_rationale": "A screen-reader user gets a blocker naming a field that isn't in the reading order; I'd never find it without sighted trial-and-error.",
+    "suggested_fix": {
+      "current": "Blocker 'Fix content 1 · Destination URL' with no location",
+      "proposed": "Make the blocker a link that opens the modal and moves focus into the field, or surface the field on the canvas"
+    }
+  }
+]

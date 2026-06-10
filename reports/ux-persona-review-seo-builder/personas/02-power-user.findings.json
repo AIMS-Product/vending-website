@@ -1,0 +1,352 @@
+[
+  {
+    "id": "02-power-user-001",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "blocker",
+    "finding": "Publish blockers are revealed one at a time in the status chip using terse internal naming (e.g. 'Fix content 1 · Cta Label', then 'Fix content 1 · Destination URL'), so resolving one only surfaces the next. There is no single list of everything that must be fixed before publishing.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "Publish disabled; chip reads 'Fix SEO title'"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Publish is gated behind a chain of readiness blockers that are revealed ONE AT A TIME in the status chip, in terse internal naming"
+      }
+    ],
+    "persona_rationale": "I'll fix one thing, click Publish, get blocked again, fix the next, click again — that's a loop, not a flow. By the third surprise blocker I've lost faith the tool will ever let me ship, and I'm reaching for the URL bar to type it manually.",
+    "suggested_fix": {
+      "current": "Status chip shows the next single blocker in internal naming ('Fix content 1 · Destination URL')",
+      "proposed": "Show all unmet publish requirements at once in a plain-language checklist ('Add a hero headline', 'Add a destination URL to your CTA button'), each line clicking through to the exact field"
+    }
+  },
+  {
+    "id": "02-power-user-002",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Forms & Input",
+    "severity": "critical",
+    "finding": "A required publish field, the CTA 'Destination URL', does not exist on the canvas — it lives only in Block actions → Edit settings → 'CTA destination URL'. The blocker text 'Fix content 1 · Destination URL' gives no hint where to find it.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-11-block-settings-modal.png",
+        "quote": "Block settings modal shows empty 'CTA destination URL' field, not present on the canvas"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the destination field is NOT on the canvas; it lives in Block actions → Edit settings modal (\"CTA destination URL\"). The blocker text gives no hint where the field is."
+      }
+    ],
+    "persona_rationale": "I hunted the entire canvas for a field that doesn't exist there. The blocker named it but pointed nowhere. That's the kind of dead-end that makes me assume the tool is broken rather than that I'm missing a hidden modal.",
+    "suggested_fix": {
+      "current": "CTA destination URL only editable inside the block settings modal; blocker text 'Fix content 1 · Destination URL' is a dead label",
+      "proposed": "Make the blocker line a link that opens the CTA block's settings with the Destination URL field focused, or surface the URL field inline on the CTA block in the canvas"
+    }
+  },
+  {
+    "id": "02-power-user-003",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Forms & Input",
+    "severity": "critical",
+    "finding": "Typing a page title in the unsaved editor and then navigating away discards the input silently — there is no unsaved-changes warning or prompt.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "Leaving unsaved editor: navigated straight to /admin/pages with NO unsaved-changes warning — typed title silently lost"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-014-leave-unsaved.png",
+        "quote": "Returned to /admin/pages with the typed title gone"
+      }
+    ],
+    "persona_rationale": "I move fast and click around. Losing work because the app didn't warn me is the fastest way to make me distrust every other autosave claim it makes.",
+    "suggested_fix": {
+      "current": "Navigating away from an unsaved new page silently drops all entered content",
+      "proposed": "Show a 'You have unsaved changes — leave anyway?' confirm on navigation away, or autosave the new page to a draft on first input"
+    }
+  },
+  {
+    "id": "02-power-user-004",
+    "page": "/admin/pages/{id}",
+    "journey": "create-first-page",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "There are no keyboard shortcuts anywhere in the builder — no Cmd+S to save the draft, no Cmd+Enter to publish, no '/' to insert a block. Every action requires a mouse target.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "button \"Save draft changes\" / button \"Publish changes\" / button \"Add page content\""
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "Header buttons 'Save draft', 'Live preview', 'Share' are all mouse-only"
+      }
+    ],
+    "persona_rationale": "I'm keyboard-first and I save compulsively. Forcing me to mouse up to a 'Save draft changes' button for every save, on every page, is a tax I pay hundreds of times a day.",
+    "suggested_fix": {
+      "current": "Save/publish/insert are mouse-only buttons",
+      "proposed": "Add Cmd/Ctrl+S to save draft, Cmd/Ctrl+Enter to publish (when publishable), and '/' to open the block picker, with a discoverable shortcuts hint"
+    }
+  },
+  {
+    "id": "02-power-user-005",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After confirming publish, a 'Changes published.' toast fires but the yellow 'Confirm publish' card stays open, re-asking to publish again ('This will replace the current live version…'). There is no clear single success state.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-13-confirm-card.png",
+        "quote": "Confirm publish card still open with 'Confirm publish' button after publishing"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "\"Changes published.\" toast appears BUT the confirm card remains open asking to publish again"
+      }
+    ],
+    "persona_rationale": "I clicked publish, it said published, but the UI is still asking me to publish. Now I don't know if it actually went live — so I waste time double-checking instead of moving on.",
+    "suggested_fix": {
+      "current": "Confirm card persists after a successful publish, re-prompting the action",
+      "proposed": "On success, close the confirm card and replace it with a clear published state plus an 'Open live page' link"
+    }
+  },
+  {
+    "id": "02-power-user-006",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "Creating a blank page forces a 3-step wizard (Page type → Starting point → Ready to build, where step 3 is just a review screen) followed by a forced 'QUICK TOUR · STEP 1 OF 3' overlay covering the canvas before any content can be entered.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-012-step3.png",
+        "quote": "Step 3 of 3 'Ready to build your page' only re-shows 'SEO / Resource page' + 'Blank page'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-error.png",
+        "quote": "'QUICK TOUR · STEP 1 OF 3 — Page structure' overlay blocking the editor"
+      }
+    ],
+    "persona_rationale": "Forced tutorials and a review step that tells me nothing I didn't just choose are exactly what I skip. Every new page makes me dismiss ceremony before I can do my actual job.",
+    "suggested_fix": {
+      "current": "3-step wizard with a redundant review step + auto-launched quick tour on first editor open",
+      "proposed": "Collapse to a single 'pick type, start building' step (skip the review screen), make the tour opt-in via a '?' button, and persist 'tour dismissed' so it never re-appears"
+    }
+  },
+  {
+    "id": "02-power-user-007",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "The redirects table offers no edit or delete control, so a mistyped redirect is permanent from this UI.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-redirects-002-full.png",
+        "quote": "Redirects table has OLD PATH / DESTINATION / STATUS / SOURCE / CREATED columns and no row actions"
+      },
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "Redirects table has no delete/edit controls — created redirects cannot be removed from this UI."
+      }
+    ],
+    "persona_rationale": "I'll fat-finger a path eventually. A redirects manager with no undo means my typo silently 301s real traffic to the wrong place forever, and I can't fix it without a DB.",
+    "suggested_fix": {
+      "current": "Redirect rows have no actions",
+      "proposed": "Add an edit and a delete (with confirm) action per redirect row"
+    }
+  },
+  {
+    "id": "02-power-user-008",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After setting a scheduled-publish date/time and saving, the field re-renders empty and no 'Scheduled for {date}' status appears anywhere; the only evidence a schedule exists is the 'Cancel scheduled publish' checkbox. The field is also buried under SEO → Advanced and uses Pacific Time for an Australian business.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Scheduled publish field shows 'dd/mm/yyyy, --:-- --' after save; label 'Uses Pacific Time (America/Los_Angeles)'"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the field re-rendered EMPTY and no \"Scheduled for …\" status appeared anywhere in the editor"
+      }
+    ],
+    "persona_rationale": "I set a schedule and got zero confirmation it stuck — the field went blank. I can't tell if the page will publish tonight or never, and the Pacific Time label means I have to do timezone math for my own market.",
+    "suggested_fix": {
+      "current": "Schedule field clears after save with no confirmation; Pacific Time only",
+      "proposed": "Persist and display the chosen datetime as a 'Scheduled to publish {date/time AEST}' status chip after save, and use/display the site's configured timezone"
+    }
+  },
+  {
+    "id": "02-power-user-009",
+    "page": "/admin/pages/{id}",
+    "journey": "revision-restore",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "Revisions do not exist while drafting — saving a draft creates no restore point. The empty state reads 'Revisions appear after publishing, library refreshes, or draft restores', so a user who mangles a draft before first publish has no page-level undo.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "revisions do NOT exist while drafting. Empty state: \"Revisions appear after publishing, library refreshes, or draft restores.\" Saving a draft creates no restore point"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-revision-restore-04-preview-revision.png",
+        "quote": "Revision history shows only the empty state pre-publish"
+      }
+    ],
+    "persona_rationale": "I save drafts constantly assuming each is a checkpoint. Finding out there's no undo until I've published once means a bad bulk edit during drafting is unrecoverable.",
+    "suggested_fix": {
+      "current": "No revision/restore point created on draft save",
+      "proposed": "Snapshot a revision on each manual draft save (or every N autosaves) so pre-publish drafts have restore points too"
+    }
+  },
+  {
+    "id": "02-power-user-010",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "The Readiness and Status columns in the pages list are unlabeled colored dots with no text label in the static list view, so the at-a-glance state of each page is unreadable without hovering or opening it.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "Readiness and Status columns render as bare colored dots per row"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "cell \"SEO readiness: Needs work\": button \"SEO readiness: Needs work\" ... cell: group: img"
+      }
+    ],
+    "persona_rationale": "I scan a list to triage which pages need work. A column of red/yellow/blue/green dots with no legend means I can't triage at a glance — I have to hover every row, which defeats the point of a list.",
+    "suggested_fix": {
+      "current": "Readiness/Status shown as color-only dots with no visible text",
+      "proposed": "Render a labeled status pill (e.g. 'Blocked', 'Needs work', 'Published') next to or instead of the dot, with a colour for fast scanning"
+    }
+  },
+  {
+    "id": "02-power-user-011",
+    "page": "/admin/pages",
+    "journey": "find-duplicate-archive",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "Archive/publish/duplicate actions are per-row only via the ⋮ menu — there is no bulk select, so managing many pages means repeating the same menu dance per row.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-017-row-menu-open.png",
+        "quote": "Row ⋮ menu offers Edit page / View live page / Duplicate page / Move to draft / Archive page — one row at a time"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Archiving is per-row only; no bulk select."
+      }
+    ],
+    "persona_rationale": "When I clean up I want to multi-select and archive ten stale drafts at once. Doing it one ⋮ menu and confirm dialog at a time is the kind of repetitive friction that makes a tool feel slow even when each step is fast.",
+    "suggested_fix": {
+      "current": "Only per-row actions in the ⋮ menu",
+      "proposed": "Add row checkboxes with a bulk action bar (Archive / Publish / Duplicate / Move to draft) for multi-select operations"
+    }
+  },
+  {
+    "id": "02-power-user-012",
+    "page": "/admin/pages/{id}",
+    "journey": "find-duplicate-archive",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "Duplicating a page does not derive a meaningful slug — it produces an auto slug like 'draft-4020bd0f' instead of deriving from the source slug or title, forcing a manual rename before publish.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "created \"Copy of {title}\" with auto slug \"draft-4020bd0f\" (original slug not preserved/derived)"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-find-duplicate-archive-03-duplicate-page.png",
+        "quote": "Duplicate opens in editor as a copy with a random-looking slug"
+      }
+    ],
+    "persona_rationale": "I duplicate a page to make a near-identical variant fast. A random hex slug means I always have to stop and fix the URL by hand, which is exactly the manual step duplication was supposed to save me.",
+    "suggested_fix": {
+      "current": "Duplicate generates slug 'draft-{hex}'",
+      "proposed": "Derive the duplicate slug from the source (e.g. '{source-slug}-copy') so it's meaningful and only needs editing if I want something different"
+    }
+  },
+  {
+    "id": "02-power-user-013",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The publish chip and the readiness panel show two different messages for the same locked state at the same time — the chip said 'Fix SEO title' while the panel said 'Add a hero headline before publishing.', so I fixed the wrong thing first.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Chip said \"Fix SEO title\" while readiness panel said \"Add a hero headline before publishing.\" — fixed the wrong thing first."
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "Chip 'Fix SEO title' shown alongside SEO title field placeholder 'Leave blank to use page headline'"
+      }
+    ],
+    "persona_rationale": "Two different instructions for one locked button means I waste a cycle resolving the wrong one. And the chip demanding I 'Fix SEO title' when the field itself says 'Leave blank to use page headline' is a flat contradiction.",
+    "suggested_fix": {
+      "current": "Chip and panel surface different blocker text for the same gate",
+      "proposed": "Drive the chip and panel from one ordered blocker list so they always show the same top priority, and stop demanding 'Fix SEO title' when the field is documented as optional"
+    }
+  },
+  {
+    "id": "02-power-user-014",
+    "page": "/admin/pages/{id}",
+    "journey": null,
+    "category": "Accessibility & Inclusion",
+    "severity": "low",
+    "finding": "Block move and block-action controls are icon-only buttons rendering a bare img, and block wrapper spans carry a prohibited aria-label (aria-prohibited-attr, serious), so keyboard/AT users get poor or invalid labelling on the core editing controls.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "aria-prohibited-attr (serious): span[aria-label=\"Hero block\"], span[aria-label=\"FAQ block\"]"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "button \"Move Page content 1\": - img / button \"Block actions\": - img"
+      }
+    ],
+    "persona_rationale": "I keyboard-navigate and I notice when controls are unlabeled or carry invalid ARIA. Icon-only buttons with prohibited aria on the wrapper means the most-used editing controls don't announce cleanly when I tab to them.",
+    "suggested_fix": {
+      "current": "Icon-only block controls with img children; prohibited aria-label on block spans",
+      "proposed": "Move the aria-label to the interactive button (or a role that permits it) and ensure each move/action button has a visible-on-focus accessible name"
+    }
+  }
+]

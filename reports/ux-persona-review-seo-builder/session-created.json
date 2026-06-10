@@ -1,0 +1,29 @@
+{
+  "created": [
+    {
+      "url": "/admin/pages/redirects",
+      "name": "redirect /resources/ux-old-test-1781071681847",
+      "source_page": "/admin/pages/redirects",
+      "created_at_step": 4
+    },
+    {
+      "url": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+      "public_url": "/resources/ux-seo-review-test-1781071765035",
+      "name": "UX SEO Review Test 1781071765035",
+      "source_page": "/admin/pages/new",
+      "created_at_step": 9
+    },
+    {
+      "url": "/admin/pages/redirects",
+      "name": "redirect /resources/ux-old-test-1781071765035",
+      "source_page": "/admin/pages/redirects",
+      "created_at_step": 4
+    },
+    {
+      "url": "(duplicate)",
+      "name": "Duplicate of UX SEO Review Test 1781071765035",
+      "source_page": "/admin/pages",
+      "created_at_step": 3
+    }
+  ]
+}

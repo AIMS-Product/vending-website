@@ -1,0 +1,514 @@
+{
+  "review": "SEO Page Builder — UX Persona Review",
+  "date": "2026-06-10",
+  "raw_findings": 213,
+  "personas": 15,
+  "verification": "all 15 P0/P1 clusters confirmed; 5 demoted in severity; 1 reworded; 0 discarded",
+  "issues": [
+    {
+      "id": "P0-1",
+      "priority": "P0",
+      "severity": "blocker",
+      "personas": 14,
+      "page": "/admin/pages/[id]",
+      "journey": "publish-and-view-live",
+      "category": "Feedback & State",
+      "title": "Publish readiness blockers are revealed one at a time, in internal naming, with no full checklist",
+      "detail": "Chain observed: 'Fix SEO title' → 'Add a hero headline before publishing.' → 'Fix content 1 · Cta Label' → 'Fix content 1 · Destination URL'. Each fix reveals the next; total work is never visible upfront.",
+      "evidence": [
+        "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "journey-publish-and-view-live-08-after-seo-title-fix.png",
+        "publish-chain.json",
+        "journeys.md publish-and-view-live"
+      ],
+      "suggested_fix": {
+        "current": "Single rotating blocker chip ('Fix content 1 · Cta Label')",
+        "proposed": "Show a persistent checklist of ALL remaining publish blockers in plain language, each deep-linking to (and opening) its field"
+      }
+    },
+    {
+      "id": "P0-2",
+      "priority": "P0",
+      "severity": "blocker",
+      "personas": 15,
+      "page": "/admin/pages/[id]",
+      "journey": "schedule-publish",
+      "category": "Feedback & State",
+      "title": "Scheduling a publish gives zero confirmation — the field re-renders empty and no 'Scheduled for …' status exists anywhere",
+      "detail": "After filling the datetime and saving, only a generic 'Draft saved.' toast fires; the field shows 'dd/mm/yyyy, --:-- --'. The only hint a schedule exists is the 'Cancel scheduled publish' checkbox. Flagged by all 15 personas.",
+      "evidence": [
+        "journey-schedule-publish-05-verify-scheduled.png",
+        "journey-results-2.json verify-scheduled ERROR",
+        "journeys.md schedule-publish"
+      ],
+      "suggested_fix": {
+        "current": "Field clears after save; no status indicator",
+        "proposed": "After save, keep the value in the field and show a persistent 'Scheduled to publish {date} {time} ({tz})' status in the Publish Status card with a cancel action"
+      }
+    },
+    {
+      "id": "P0-3",
+      "priority": "P0",
+      "severity": "critical",
+      "personas": 12,
+      "page": "/admin/pages/[id]",
+      "journey": "publish-and-view-live",
+      "category": "Forms & Input",
+      "title": "A publish-required field (CTA destination URL) exists only inside the Block actions → Edit settings modal, and the blocker text never says where it is",
+      "detail": "'Fix content 1 · Destination URL' points at a field that is not on the canvas; users hunt and dead-end.",
+      "evidence": [
+        "journey-publish-and-view-live-11-block-settings-modal.png",
+        "journey-publish-and-view-live-12-block-settings-filled.png"
+      ],
+      "suggested_fix": {
+        "current": "Blocker names a field hidden two menu levels deep",
+        "proposed": "Make the blocker a link that opens the block settings modal at the field, and/or surface CTA destination inline on the canvas next to the CTA label"
+      }
+    },
+    {
+      "id": "P0-4",
+      "priority": "P0",
+      "severity": "critical",
+      "personas": 12,
+      "page": "/admin/pages/[id]",
+      "journey": "publish-and-view-live",
+      "category": "Feedback & State",
+      "title": "After publishing succeeds, the 'Confirm publish' card stays open re-asking to publish",
+      "detail": "'Changes published.' is announced twice (pill + banner) while the yellow confirm card still shows active Cancel/Confirm publish buttons reading 'This will replace the current live version…'. Success is ambiguous and invites a double publish.",
+      "evidence": [
+        "journey-publish-and-view-live-09-after-publish.png",
+        "journey-publish-and-view-live-13-confirm-card.png"
+      ],
+      "suggested_fix": {
+        "current": "Confirm card persists after successful publish",
+        "proposed": "Dismiss the confirm card on success and replace it with a success state containing an 'Open live page' link"
+      }
+    },
+    {
+      "id": "P0-5",
+      "priority": "P0",
+      "severity": "critical",
+      "personas": 11,
+      "page": "/admin/pages/redirects",
+      "journey": "create-redirect",
+      "category": "Trust & Safety",
+      "title": "Redirects cannot be edited or deleted — a mistyped 301 is permanent from the admin UI",
+      "detail": "Table has five columns (Old path/Destination/Status/Source/Created) and no actions. 301s are cached aggressively by browsers and search engines, so mistakes have lasting SEO impact.",
+      "evidence": [
+        "text/admin-pages-redirects-text.md",
+        "admin-pages-redirects-002-full.png",
+        "exploration-log.md redirects notes"
+      ],
+      "suggested_fix": {
+        "current": "No row actions in redirects table",
+        "proposed": "Add per-row Edit and Delete (with confirm) actions; consider a 'disable' state for safe rollback"
+      }
+    },
+    {
+      "id": "P0-6",
+      "priority": "P0",
+      "severity": "critical",
+      "personas": 10,
+      "page": "/admin/pages/new",
+      "journey": "create-first-page",
+      "category": "Trust & Safety",
+      "title": "Leaving the editor with unsaved typed content gives no warning — and silently creates an orphan draft",
+      "detail": "Verified mechanism (corrected in verification): typing a title and navigating away shows no unsaved-changes prompt; the content is silently persisted as a new draft page the user never asked to create ('Unsaved data-loss probe' appeared as a draft with its own /resources/ slug). User cannot tell whether work was lost or saved.",
+      "evidence": [
+        "admin-pages-new-014-leave-unsaved.png",
+        "exploration-log.md supplementary pass",
+        "verification-a.json cluster F"
+      ],
+      "suggested_fix": {
+        "current": "Silent navigation away; orphan draft created without consent",
+        "proposed": "Intercept navigation with an unsaved-changes prompt (Save draft / Discard / Keep editing), and never persist a draft without an explicit save"
+      }
+    },
+    {
+      "id": "P1-1",
+      "priority": "P1",
+      "severity": "critical",
+      "personas": 8,
+      "page": "/admin/pages/[id]",
+      "journey": "publish-and-view-live",
+      "category": "Copy & Labels",
+      "title": "Publish-gate messaging contradicts itself: chip vs readiness panel vs the field's own placeholder",
+      "detail": "One frame shows chip 'Fix SEO title' + pill 'Blocked' while the SEO title field says 'Leave blank to use page headline' (the real gate was the empty hero headline). Chip wording also drifts ('Fix' vs 'Improve SEO title').",
+      "evidence": [
+        "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "text extract line 'Leave blank to use page headline'",
+        "journeys.md wrong turns"
+      ],
+      "suggested_fix": {
+        "current": "Three surfaces with different messages for the same gate",
+        "proposed": "Drive all blocker surfaces from one source of truth, naming the actual missing field ('Add a hero headline')"
+      }
+    },
+    {
+      "id": "P1-2",
+      "priority": "P1",
+      "severity": "high",
+      "personas": 1,
+      "page": "/admin/pages/[id]",
+      "journey": null,
+      "category": "Feedback & State",
+      "title": "Autosave fails silently — 'seo page autosave failed TypeError: Failed to fetch' appears only in the console",
+      "detail": "Editor showed no UI error while autosave failed; user believes work is saved. Severity from impact (silent data-loss class), not frequency.",
+      "evidence": [
+        "journey-results.json consoleErrors",
+        "all-findings.json 12-developer-003"
+      ],
+      "suggested_fix": {
+        "current": "Autosave failure logged to console only",
+        "proposed": "Surface a visible 'Autosave failed — retrying / Save manually' banner and retry with backoff"
+      }
+    },
+    {
+      "id": "P1-3",
+      "priority": "P1",
+      "severity": "critical",
+      "personas": 2,
+      "page": "/admin/pages/[id]",
+      "journey": "publish-and-view-live",
+      "category": "Accessibility & Inclusion",
+      "title": "Disabled Publish button exposes no programmatic reason; blocker is small orange text/title attr only",
+      "detail": "Screen-reader users cannot tell what is gating publish.",
+      "evidence": [
+        "verification-b.json cluster M",
+        "axe-results.json editor tab data"
+      ],
+      "suggested_fix": {
+        "current": "Blocker reason in adjacent text and title attribute",
+        "proposed": "Use aria-describedby from the Publish button to the blocker list and announce blocker changes via a live region"
+      }
+    },
+    {
+      "id": "WITHDRAWN-1",
+      "priority": "withdrawn",
+      "severity": "withdrawn",
+      "personas": 11,
+      "page": "/admin/pages/[id]",
+      "journey": "schedule-publish",
+      "category": "Copy & Labels",
+      "title": "WITHDRAWN — 'Pacific Time for an Australian business' was a wrong premise: Vendingpreneurs is a US West Coast business, so Pacific Time is correct",
+      "detail": "Originally flagged as P1 by 11 personas based on the reviewer's incorrect assumption that the business is Australian. Owner confirmed US West Coast on 2026-06-10. The schedule field's explicit timezone label is good practice. The silent-save problem (P0-2) is unaffected.",
+      "evidence": ["journey-schedule-publish-03-set-schedule.png"],
+      "suggested_fix": {
+        "current": "n/a",
+        "proposed": "n/a — no change needed for timezone"
+      }
+    },
+    {
+      "id": "P1-5",
+      "priority": "P1",
+      "severity": "high",
+      "personas": 11,
+      "page": "/admin/pages",
+      "journey": null,
+      "category": "Visual & Layout",
+      "title": "Readiness and Status columns are colour-only dots with no visible text or legend",
+      "detail": "Verification correction: dots ARE buttons with accessible names (tooltips on hover/focus), so this is a visual/glanceability issue, not an AT blocker.",
+      "evidence": [
+        "admin-pages-001-load.png",
+        "text/admin-pages-text.md ARIA names"
+      ],
+      "suggested_fix": {
+        "current": "Bare coloured dot per row",
+        "proposed": "Dot + visible text label (e.g. 'Needs work', 'Published') or a column legend"
+      }
+    },
+    {
+      "id": "P1-6",
+      "priority": "P1",
+      "severity": "high",
+      "personas": 5,
+      "page": "/admin/pages/[id]",
+      "journey": null,
+      "category": "Accessibility & Inclusion",
+      "title": "aria-prohibited-attr (serious): aria-label on spans for Hero/FAQ block markers is dropped by AT",
+      "evidence": [
+        "axe-results.json editor: aria-prohibited-attr, span[aria-label='Hero block'], span[aria-label='FAQ block']"
+      ],
+      "suggested_fix": {
+        "current": "aria-label on role-less spans",
+        "proposed": "Move the accessible name onto a focusable control or give the wrapper an appropriate role"
+      }
+    },
+    {
+      "id": "P1-7",
+      "priority": "P1",
+      "severity": "high",
+      "personas": 9,
+      "page": "/admin/pages/[id]",
+      "journey": "revision-restore",
+      "category": "Trust & Safety",
+      "title": "No revisions until first publish — a draft mangled before publishing has no page-level undo",
+      "evidence": [
+        "journey-revision-restore-04-preview-revision.png ('Revisions appear after publishing, library refreshes, or draft restores.')",
+        "journeys.md revision-restore"
+      ],
+      "suggested_fix": {
+        "current": "Revisions created only on publish/refresh/restore",
+        "proposed": "Snapshot a revision on every manual 'Save draft' (or periodically) so drafting has restore points"
+      }
+    },
+    {
+      "id": "P2-1",
+      "priority": "P2",
+      "severity": "high",
+      "personas": 6,
+      "page": "/admin/pages/[id]",
+      "journey": "publish-and-view-live",
+      "category": "Navigation & Flow",
+      "title": "No 'Open live page' link surfaces after publishing; public URL 404'd briefly right after publish",
+      "detail": "A Share → 'Copy public URL' affordance exists but is hidden in a dropdown; the URL had to be typed manually and returned 404 on immediate polls.",
+      "evidence": [
+        "journey-publish-and-view-live-09-after-publish.png",
+        "all-findings.json 12-developer-012"
+      ],
+      "suggested_fix": {
+        "current": "Live link only via Share dropdown",
+        "proposed": "Show 'Open live page' in the publish success state and Publish Status card; debounce until route is live"
+      }
+    },
+    {
+      "id": "P2-2",
+      "priority": "P2",
+      "severity": "high",
+      "personas": 2,
+      "page": "/admin/pages/[id]",
+      "journey": null,
+      "category": "Visual & Layout",
+      "title": "Editor on a 375px phone is one marathon scroll: Save/Publish in different scroll regions from content; no mobile layout",
+      "evidence": ["admin-pages-e44f0fc3-…-mobile.png"],
+      "suggested_fix": {
+        "current": "Desktop panels stacked vertically on mobile",
+        "proposed": "Sticky mobile action bar (Save/Publish/status) and collapsible SEO panel"
+      }
+    },
+    {
+      "id": "P2-3",
+      "priority": "P2",
+      "severity": "high",
+      "personas": 6,
+      "page": "/admin/pages/redirects",
+      "journey": "create-redirect",
+      "category": "Forms & Input",
+      "title": "Redirect form error 'Path must be root-relative.' is jargon, renders as a top banner, and clears the entered values",
+      "evidence": [
+        "admin-pages-redirects-011-form-invalid-submit.png",
+        "exploration-log.md redirects form row"
+      ],
+      "suggested_fix": {
+        "current": "'Path must be root-relative.' + cleared fields",
+        "proposed": "'Start the path with / (for example /resources/old-page)' shown next to the field, preserving entered values"
+      }
+    },
+    {
+      "id": "P2-4",
+      "priority": "P2",
+      "severity": "high",
+      "personas": 6,
+      "page": "/admin/pages/[id]",
+      "journey": "create-first-page",
+      "category": "Forms & Input",
+      "title": "New-page canvas is all grey placeholder text with no cue which fields are required to publish",
+      "evidence": [
+        "journey-create-first-page-03-choice-gate.png",
+        "admin-pages-new-013-editor-unsaved.png"
+      ],
+      "suggested_fix": {
+        "current": "Ghost text 'Hero headline' etc. with no affordance",
+        "proposed": "Mark publish-required fields ('Required to publish') and add an empty-state checklist"
+      }
+    },
+    {
+      "id": "P2-5",
+      "priority": "P2",
+      "severity": "high",
+      "personas": 5,
+      "page": "/admin/pages/[id]",
+      "journey": null,
+      "category": "Visual & Layout",
+      "title": "SEO panel is an information dump (readiness, 5 fields, 8 score rows, 7 action items, governance, comments) with no hierarchy",
+      "evidence": ["admin-pages-e44f0fc3-…-002-full.png"],
+      "suggested_fix": {
+        "current": "Seven stacked sections in one scroll",
+        "proposed": "Collapse to readiness verdict + 'what to fix next'; move governance/comments behind tabs"
+      }
+    },
+    {
+      "id": "P2-6",
+      "priority": "P2",
+      "severity": "high",
+      "personas": 3,
+      "page": "/admin/pages/new",
+      "journey": "create-first-page",
+      "category": "Navigation & Flow",
+      "title": "3-step wizard (incl. a review-only step 3) stands between 'Create page' and typing anything",
+      "evidence": ["admin-pages-new-012-step3.png"],
+      "suggested_fix": {
+        "current": "Type → starting point → review → editor",
+        "proposed": "One step (type + starting point combined), straight into the editor"
+      }
+    },
+    {
+      "id": "P2-7",
+      "priority": "P2",
+      "severity": "high",
+      "personas": 1,
+      "page": "/admin/pages/[id]",
+      "journey": null,
+      "category": "Navigation & Flow",
+      "title": "No keyboard shortcuts (save/publish/insert block)",
+      "evidence": ["02-power-user-004"],
+      "suggested_fix": {
+        "current": "None",
+        "proposed": "Cmd+S save, Cmd+Enter publish, '/' block insert"
+      }
+    },
+    {
+      "id": "P2-8",
+      "priority": "P2",
+      "severity": "high",
+      "personas": 1,
+      "page": "/admin/pages/[id]",
+      "journey": "create-first-page",
+      "category": "Navigation & Flow",
+      "title": "Forced 'Quick Tour · Step 1 of 3' overlay covers the canvas on first editor open",
+      "evidence": [
+        "09-pragmatist-006; admin-pages-new-013-editor-unsaved.png shows tour overlay"
+      ],
+      "suggested_fix": {
+        "current": "Auto-opening tour",
+        "proposed": "Dismissible 'Take a tour?' affordance, never auto-blocking"
+      }
+    },
+    {
+      "id": "P2-9",
+      "priority": "P2",
+      "severity": "high",
+      "personas": 6,
+      "page": "/admin/pages/[id]",
+      "journey": null,
+      "category": "Copy & Labels",
+      "title": "Unexplained jargon across the builder: 'Eyebrow', 'Slug', 'CTA', 'Governance comments', 'Builder support'",
+      "evidence": ["text/admin-pages-e44f0fc3-…-text.md verbatim labels"],
+      "suggested_fix": {
+        "current": "'Eyebrow'",
+        "proposed": "'Overline (small label above the heading)' + first-use expansion of CTA; 'Slug' → 'URL ending'"
+      }
+    },
+    {
+      "id": "P2-10",
+      "priority": "P2",
+      "severity": "high",
+      "personas": 1,
+      "page": "/admin/pages/[id]",
+      "journey": null,
+      "category": "Accessibility & Inclusion",
+      "title": "Tab order buries the form: SEO fields are stops 28–33, behind the whole rendered page preview",
+      "evidence": ["axe-results.json editor tabOrder"],
+      "suggested_fix": {
+        "current": "Canvas preview consumes early tab stops",
+        "proposed": "Skip-links to panel/canvas; make preview chrome non-tabbable"
+      }
+    },
+    {
+      "id": "P2-11",
+      "priority": "P2",
+      "severity": "high",
+      "personas": 2,
+      "page": "multiple",
+      "journey": null,
+      "category": "Accessibility & Inclusion",
+      "title": "Landmark violations: nested complementary sidebar, duplicate <main> on revision preview, duplicate named regions in wizard",
+      "evidence": ["axe-results.json landmark-* violations"],
+      "suggested_fix": {
+        "current": "Nested/duplicated landmarks",
+        "proposed": "Single top-level main per page; sidebar complementary at document level"
+      }
+    },
+    {
+      "id": "P2-12",
+      "priority": "P2",
+      "severity": "high",
+      "personas": 1,
+      "page": "all pages",
+      "journey": null,
+      "category": "Accessibility & Inclusion",
+      "title": "A nextjs-portal element receives keyboard focus with no visible focus indicator on every page",
+      "evidence": ["axe-results.json tabIssues"],
+      "suggested_fix": {
+        "current": "Focusable portal wrapper",
+        "proposed": "Remove portal wrapper from tab order or give it a visible focus style"
+      }
+    },
+    {
+      "id": "P2-13",
+      "priority": "P2",
+      "severity": "high",
+      "personas": 2,
+      "page": "global admin shell",
+      "journey": null,
+      "category": "Visual & Layout",
+      "title": "Floating 'N' avatar button overlaps/clips the Sign out button in the sidebar on every page",
+      "evidence": ["admin-pages-001-load.png bottom-left"],
+      "suggested_fix": {
+        "current": "Overlapping FAB",
+        "proposed": "Reposition FAB clear of the sidebar footer"
+      }
+    },
+    {
+      "id": "P2-14",
+      "priority": "P2",
+      "severity": "medium",
+      "personas": 5,
+      "page": "/admin/pages",
+      "journey": "find-duplicate-archive",
+      "category": "Forms & Input",
+      "title": "Duplicate page generates a junk slug ('draft-4020bd0f') instead of deriving from the source",
+      "evidence": ["journey-find-duplicate-archive-03-duplicate-page.png"],
+      "suggested_fix": {
+        "current": "Random hash slug",
+        "proposed": "'{source-slug}-copy' with uniqueness suffix"
+      }
+    },
+    {
+      "id": "P2-15",
+      "priority": "P2",
+      "severity": "medium",
+      "personas": 3,
+      "page": "/admin/pages/[id]/revisions/[rid]",
+      "journey": "revision-restore",
+      "category": "Copy & Labels",
+      "title": "Revision preview is sparse and confusing: lone lowercase 'publish' label, AM/PM time mismatch vs editor, minimal context",
+      "evidence": [
+        "admin-pages-e44f0fc3-…-revisions-…-001-load.png",
+        "05-non-native-012"
+      ],
+      "suggested_fix": {
+        "current": "'Revision preview / publish - Jun 10, 3:49 PM'",
+        "proposed": "'Version {n} — saved when the page was published, {local datetime}' with consistent timezone"
+      }
+    }
+  ],
+  "p3_summary": [
+    "No bulk select on pages list (3 personas)",
+    "No help/support/docs link anywhere in the builder (Karen)",
+    "'Schedule failed' filter label truncates to 'Schedule faile…' (Karen)",
+    "Destructive 'Archive page' distinguished by red text alone (David)",
+    "Icon-only eye/move controls below comfortable target size (David, Betty)",
+    "Workflow filter jargon: 'Needs links', 'Updating', 'Metadata issues' (Yuki, Priya)",
+    "Dev QA route /admin/pages/block-preview-audit exposed with no explanation (4 personas; dev-env only)",
+    "Editor canvas renders full public site chrome (nav + footer) as editable-looking content (Jake)",
+    "Toast/save-confirmation inconsistency — three different treatments incl. double 'Draft saved' (Claire, Alex)",
+    "Share dropdown stays open during unrelated interactions (Claire; partially script-induced screenshot)",
+    "Redirect status copy leads with codes '301/302/307/308' (Betty, Zoe)",
+    "Preview token URL reads as a suspicious scramble for non-technical users (Betty)",
+    "Row URLs in tiny grey monospace read as 'computer errors' (Betty)",
+    "No-results state: full-width 'Create page' dwarfs 'Clear search' (Claire)",
+    "Create-gate click target flaky under automation — possible hydration race (Alex)",
+    "Thin published page ships with no 'this page looks empty' warning (Betty)"
+  ]
+}

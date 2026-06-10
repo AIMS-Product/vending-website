@@ -1,0 +1,2138 @@
+[
+  {
+    "page": "/admin/pages",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "SEO pages: SEO page content"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "Blog and news: Articles and updates"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Media library: Images and source assets"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Settings: Users and access"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "Redirects"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "Create page"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "All5drafts + published"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "Drafts4needs work"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "Published1publicly visible"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "Archived4retired"
+      },
+      {
+        "stop": 12,
+        "tag": "input",
+        "name": "Search SEO pages"
+      },
+      {
+        "stop": 13,
+        "tag": "button",
+        "name": "Search"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "All"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "Drafts"
+      },
+      {
+        "stop": 16,
+        "tag": "a",
+        "name": "Published"
+      },
+      {
+        "stop": 17,
+        "tag": "a",
+        "name": "Archived"
+      },
+      {
+        "stop": 18,
+        "tag": "summary",
+        "name": "Updated newest"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "All metadata"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "Needs review"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "Updating"
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "Needs links"
+      },
+      {
+        "stop": 23,
+        "tag": "a",
+        "name": "Metadata issues"
+      },
+      {
+        "stop": 24,
+        "tag": "a",
+        "name": "Scheduled"
+      },
+      {
+        "stop": 25,
+        "tag": "a",
+        "name": "Schedule failed"
+      },
+      {
+        "stop": 26,
+        "tag": "a",
+        "name": "UX SEO Review Test 1781071765035 v2"
+      },
+      {
+        "stop": 27,
+        "tag": "button",
+        "name": "SEO readiness: Needs work"
+      },
+      {
+        "stop": 28,
+        "tag": "button",
+        "name": "Page status: Published"
+      },
+      {
+        "stop": 29,
+        "tag": "summary",
+        "name": "Open actions for UX SEO Review Test 1781071765035 v2"
+      },
+      {
+        "stop": 30,
+        "tag": "a",
+        "name": "How to Start a Vending Business for Passive Income"
+      },
+      {
+        "stop": 31,
+        "tag": "button",
+        "name": "SEO readiness: Blocked"
+      },
+      {
+        "stop": 32,
+        "tag": "button",
+        "name": "Page status: Draft"
+      },
+      {
+        "stop": 33,
+        "tag": "summary",
+        "name": "Open actions for How to Start a Vending Business for Passive Income"
+      },
+      {
+        "stop": 34,
+        "tag": "a",
+        "name": "Mini Market Vending in Train Stations"
+      },
+      {
+        "stop": 35,
+        "tag": "button",
+        "name": "SEO readiness: Opportunities"
+      },
+      {
+        "stop": 36,
+        "tag": "button",
+        "name": "Page status: Draft"
+      },
+      {
+        "stop": 37,
+        "tag": "summary",
+        "name": "Open actions for Mini Market Vending in Train Stations"
+      },
+      {
+        "stop": 38,
+        "tag": "a",
+        "name": "Micro Market Vending Adelaide for Office Managers"
+      },
+      {
+        "stop": 39,
+        "tag": "button",
+        "name": "SEO readiness: Opportunities"
+      },
+      {
+        "stop": 40,
+        "tag": "button",
+        "name": "Page status: Draft"
+      },
+      {
+        "stop": 41,
+        "tag": "summary",
+        "name": "Open actions for Micro Market Vending Adelaide for Office Managers"
+      },
+      {
+        "stop": 42,
+        "tag": "a",
+        "name": "Vending at Sporting Arenas"
+      },
+      {
+        "stop": 43,
+        "tag": "button",
+        "name": "SEO readiness: Needs work"
+      },
+      {
+        "stop": 44,
+        "tag": "button",
+        "name": "Page status: Draft"
+      },
+      {
+        "stop": 45,
+        "tag": "summary",
+        "name": "Open actions for Vending at Sporting Arenas"
+      },
+      {
+        "stop": 46,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 47,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 48,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 49,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 50,
+        "tag": "a",
+        "name": "SEO pages: SEO page content"
+      }
+    ],
+    "tabIssues": ["stop 46 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/admin/pages/new",
+    "violations": [
+      {
+        "id": "landmark-unique",
+        "impact": "moderate",
+        "description": "Ensure landmarks are unique",
+        "selectors": [".p-0"],
+        "count": 1
+      }
+    ],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "button",
+        "name": "SEO / Resource pageLong-form search page for resources, guid"
+      },
+      {
+        "stop": 2,
+        "tag": "button",
+        "name": "Blog pageArticle-style page with a strong introduction and C"
+      },
+      {
+        "stop": 3,
+        "tag": "button",
+        "name": "Landing pageCampaign page for a focused offer or conversion "
+      },
+      {
+        "stop": 4,
+        "tag": "button",
+        "name": "Video pageVideo-led page with supporting copy and conversion"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Continue"
+      },
+      {
+        "stop": 6,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 7,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 9,
+        "tag": "button",
+        "name": "SEO / Resource pageLong-form search page for resources, guid"
+      },
+      {
+        "stop": 10,
+        "tag": "button",
+        "name": "Blog pageArticle-style page with a strong introduction and C"
+      },
+      {
+        "stop": 11,
+        "tag": "button",
+        "name": "Landing pageCampaign page for a focused offer or conversion "
+      },
+      {
+        "stop": 12,
+        "tag": "button",
+        "name": "Video pageVideo-led page with supporting copy and conversion"
+      },
+      {
+        "stop": 13,
+        "tag": "button",
+        "name": "Continue"
+      },
+      {
+        "stop": 14,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 15,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 16,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 17,
+        "tag": "button",
+        "name": "SEO / Resource pageLong-form search page for resources, guid"
+      },
+      {
+        "stop": 18,
+        "tag": "button",
+        "name": "Blog pageArticle-style page with a strong introduction and C"
+      },
+      {
+        "stop": 19,
+        "tag": "button",
+        "name": "Landing pageCampaign page for a focused offer or conversion "
+      },
+      {
+        "stop": 20,
+        "tag": "button",
+        "name": "Video pageVideo-led page with supporting copy and conversion"
+      },
+      {
+        "stop": 21,
+        "tag": "button",
+        "name": "Continue"
+      },
+      {
+        "stop": 22,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 23,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 24,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 25,
+        "tag": "button",
+        "name": "SEO / Resource pageLong-form search page for resources, guid"
+      },
+      {
+        "stop": 26,
+        "tag": "button",
+        "name": "Blog pageArticle-style page with a strong introduction and C"
+      },
+      {
+        "stop": 27,
+        "tag": "button",
+        "name": "Landing pageCampaign page for a focused offer or conversion "
+      },
+      {
+        "stop": 28,
+        "tag": "button",
+        "name": "Video pageVideo-led page with supporting copy and conversion"
+      },
+      {
+        "stop": 29,
+        "tag": "button",
+        "name": "Continue"
+      },
+      {
+        "stop": 30,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 31,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 32,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 33,
+        "tag": "button",
+        "name": "SEO / Resource pageLong-form search page for resources, guid"
+      },
+      {
+        "stop": 34,
+        "tag": "button",
+        "name": "Blog pageArticle-style page with a strong introduction and C"
+      },
+      {
+        "stop": 35,
+        "tag": "button",
+        "name": "Landing pageCampaign page for a focused offer or conversion "
+      },
+      {
+        "stop": 36,
+        "tag": "button",
+        "name": "Video pageVideo-led page with supporting copy and conversion"
+      },
+      {
+        "stop": 37,
+        "tag": "button",
+        "name": "Continue"
+      },
+      {
+        "stop": 38,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 39,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 40,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 41,
+        "tag": "button",
+        "name": "SEO / Resource pageLong-form search page for resources, guid"
+      },
+      {
+        "stop": 42,
+        "tag": "button",
+        "name": "Blog pageArticle-style page with a strong introduction and C"
+      },
+      {
+        "stop": 43,
+        "tag": "button",
+        "name": "Landing pageCampaign page for a focused offer or conversion "
+      },
+      {
+        "stop": 44,
+        "tag": "button",
+        "name": "Video pageVideo-led page with supporting copy and conversion"
+      },
+      {
+        "stop": 45,
+        "tag": "button",
+        "name": "Continue"
+      },
+      {
+        "stop": 46,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 47,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 48,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 49,
+        "tag": "button",
+        "name": "SEO / Resource pageLong-form search page for resources, guid"
+      },
+      {
+        "stop": 50,
+        "tag": "button",
+        "name": "Blog pageArticle-style page with a strong introduction and C"
+      }
+    ],
+    "tabIssues": [
+      "stop 6 (nextjs-portal ''): no visible focus indicator",
+      "stop 14 (nextjs-portal ''): no visible focus indicator",
+      "stop 22 (nextjs-portal ''): no visible focus indicator",
+      "stop 30 (nextjs-portal ''): no visible focus indicator",
+      "stop 38 (nextjs-portal ''): no visible focus indicator",
+      "stop 46 (nextjs-portal ''): no visible focus indicator"
+    ]
+  },
+  {
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "violations": [
+      {
+        "id": "aria-prohibited-attr",
+        "impact": "serious",
+        "description": "Ensure ARIA attributes are not prohibited for an element's role",
+        "selectors": [
+          "span[aria-label=\"Hero block\"]",
+          "span[aria-label=\"FAQ block\"]"
+        ],
+        "count": 2
+      },
+      {
+        "id": "landmark-complementary-is-top-level",
+        "impact": "moderate",
+        "description": "Ensure the complementary landmark or aside is at top level",
+        "selectors": ["aside"],
+        "count": 1
+      }
+    ],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Pages"
+      },
+      {
+        "stop": 2,
+        "tag": "button",
+        "name": "Expand blocks sidebar"
+      },
+      {
+        "stop": 3,
+        "tag": "button",
+        "name": "Save draft changes"
+      },
+      {
+        "stop": 4,
+        "tag": "button",
+        "name": "Live preview"
+      },
+      {
+        "stop": 5,
+        "tag": "summary",
+        "name": "Share"
+      },
+      {
+        "stop": 6,
+        "tag": "button",
+        "name": "Collapse SEO sidebar"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "Step inside"
+      },
+      {
+        "stop": 9,
+        "tag": "button",
+        "name": "Move Page content 1"
+      },
+      {
+        "stop": 10,
+        "tag": "button",
+        "name": "Block actions"
+      },
+      {
+        "stop": 11,
+        "tag": "textarea",
+        "name": "Eyebrow"
+      },
+      {
+        "stop": 12,
+        "tag": "button",
+        "name": "Show eyebrow"
+      },
+      {
+        "stop": 13,
+        "tag": "textarea",
+        "name": "Heading"
+      },
+      {
+        "stop": 14,
+        "tag": "textarea",
+        "name": "Body"
+      },
+      {
+        "stop": 15,
+        "tag": "button",
+        "name": "Show body"
+      },
+      {
+        "stop": 16,
+        "tag": "input",
+        "name": "CTA label"
+      },
+      {
+        "stop": 17,
+        "tag": "button",
+        "name": "Hide cta"
+      },
+      {
+        "stop": 18,
+        "tag": "button",
+        "name": "Move Page content 2"
+      },
+      {
+        "stop": 19,
+        "tag": "button",
+        "name": "Block actions"
+      },
+      {
+        "stop": 20,
+        "tag": "input",
+        "name": "Heading"
+      },
+      {
+        "stop": 21,
+        "tag": "button",
+        "name": "Show heading"
+      },
+      {
+        "stop": 22,
+        "tag": "input",
+        "name": "Question"
+      },
+      {
+        "stop": 23,
+        "tag": "textarea",
+        "name": "Answer"
+      },
+      {
+        "stop": 24,
+        "tag": "button",
+        "name": "Add FAQ"
+      },
+      {
+        "stop": 25,
+        "tag": "button",
+        "name": "Add page content"
+      },
+      {
+        "stop": 26,
+        "tag": "button",
+        "name": "Publish statusPublishedImprove SEO title"
+      },
+      {
+        "stop": 27,
+        "tag": "button",
+        "name": "Publish changes"
+      },
+      {
+        "stop": 28,
+        "tag": "input",
+        "name": "Page title"
+      },
+      {
+        "stop": 29,
+        "tag": "select",
+        "name": "Route prefix"
+      },
+      {
+        "stop": 30,
+        "tag": "input",
+        "name": "Slug"
+      },
+      {
+        "stop": 31,
+        "tag": "input",
+        "name": "Target keyword"
+      },
+      {
+        "stop": 32,
+        "tag": "input",
+        "name": "SEO title"
+      },
+      {
+        "stop": 33,
+        "tag": "textarea",
+        "name": "Meta description"
+      },
+      {
+        "stop": 34,
+        "tag": "summary",
+        "name": "Advanced SEO"
+      },
+      {
+        "stop": 35,
+        "tag": "button",
+        "name": "Open SEO settings"
+      },
+      {
+        "stop": 36,
+        "tag": "button",
+        "name": "Add text section"
+      },
+      {
+        "stop": 37,
+        "tag": "a",
+        "name": "Go to field"
+      },
+      {
+        "stop": 38,
+        "tag": "a",
+        "name": "Go to field"
+      },
+      {
+        "stop": 39,
+        "tag": "button",
+        "name": "Add image"
+      },
+      {
+        "stop": 40,
+        "tag": "summary",
+        "name": "Media assets"
+      },
+      {
+        "stop": 41,
+        "tag": "summary",
+        "name": "Approved claims and CTAs"
+      },
+      {
+        "stop": 42,
+        "tag": "button",
+        "name": "Open AI assistant"
+      },
+      {
+        "stop": 43,
+        "tag": "a",
+        "name": "Preview"
+      },
+      {
+        "stop": 44,
+        "tag": "button",
+        "name": "Restore draft"
+      },
+      {
+        "stop": 45,
+        "tag": "button",
+        "name": "Refresh libraries"
+      },
+      {
+        "stop": 46,
+        "tag": "button",
+        "name": "Create preview link"
+      },
+      {
+        "stop": 47,
+        "tag": "button",
+        "name": "Revoke"
+      },
+      {
+        "stop": 48,
+        "tag": "input",
+        "name": "Optional block ID"
+      },
+      {
+        "stop": 49,
+        "tag": "textarea",
+        "name": "Add an internal note"
+      },
+      {
+        "stop": 50,
+        "tag": "button",
+        "name": "Add comment"
+      }
+    ],
+    "tabIssues": []
+  },
+  {
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378/revisions/7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25",
+    "violations": [
+      {
+        "id": "landmark-main-is-top-level",
+        "impact": "moderate",
+        "description": "Ensure the main landmark is at top level",
+        "selectors": ["#main-content > main"],
+        "count": 1
+      },
+      {
+        "id": "landmark-no-duplicate-main",
+        "impact": "moderate",
+        "description": "Ensure the document has at most one main landmark",
+        "selectors": ["#main-content"],
+        "count": 1
+      },
+      {
+        "id": "landmark-unique",
+        "impact": "moderate",
+        "description": "Ensure landmarks are unique",
+        "selectors": ["#main-content"],
+        "count": 1
+      }
+    ],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Back to editor"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 3,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 4,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 5,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "Back to editor"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 9,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 10,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 11,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "Back to editor"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 15,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 16,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 17,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 18,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "Back to editor"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 21,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 22,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 23,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 24,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 25,
+        "tag": "a",
+        "name": "Back to editor"
+      },
+      {
+        "stop": 26,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 27,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 28,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 29,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 30,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 31,
+        "tag": "a",
+        "name": "Back to editor"
+      },
+      {
+        "stop": 32,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 33,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 34,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 35,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 36,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 37,
+        "tag": "a",
+        "name": "Back to editor"
+      },
+      {
+        "stop": 38,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 39,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 40,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 41,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 42,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 43,
+        "tag": "a",
+        "name": "Back to editor"
+      },
+      {
+        "stop": 44,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 45,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 46,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 47,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 48,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 49,
+        "tag": "a",
+        "name": "Back to editor"
+      },
+      {
+        "stop": 50,
+        "tag": "a",
+        "name": "UX review test cta label"
+      }
+    ],
+    "tabIssues": [
+      "stop 4 (nextjs-portal ''): no visible focus indicator",
+      "stop 10 (nextjs-portal ''): no visible focus indicator",
+      "stop 16 (nextjs-portal ''): no visible focus indicator",
+      "stop 22 (nextjs-portal ''): no visible focus indicator",
+      "stop 28 (nextjs-portal ''): no visible focus indicator",
+      "stop 34 (nextjs-portal ''): no visible focus indicator",
+      "stop 40 (nextjs-portal ''): no visible focus indicator",
+      "stop 46 (nextjs-portal ''): no visible focus indicator"
+    ]
+  },
+  {
+    "page": "/admin/pages/redirects",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "SEO pages: SEO page content"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "Blog and news: Articles and updates"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Media library: Images and source assets"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Settings: Users and access"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "Back to pages"
+      },
+      {
+        "stop": 7,
+        "tag": "input",
+        "name": "/resources/old-page"
+      },
+      {
+        "stop": 8,
+        "tag": "input",
+        "name": "/blog/new-page"
+      },
+      {
+        "stop": 9,
+        "tag": "select",
+        "name": "Permanent move (301)Temporary move (302)Temporary redirect ("
+      },
+      {
+        "stop": 10,
+        "tag": "button",
+        "name": "Create redirect"
+      },
+      {
+        "stop": 11,
+        "tag": "summary",
+        "name": "Advanced page association"
+      },
+      {
+        "stop": 12,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 13,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 15,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 16,
+        "tag": "a",
+        "name": "SEO pages: SEO page content"
+      },
+      {
+        "stop": 17,
+        "tag": "a",
+        "name": "Blog and news: Articles and updates"
+      },
+      {
+        "stop": 18,
+        "tag": "a",
+        "name": "Media library: Images and source assets"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "Settings: Users and access"
+      },
+      {
+        "stop": 20,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "Back to pages"
+      },
+      {
+        "stop": 22,
+        "tag": "input",
+        "name": "/resources/old-page"
+      },
+      {
+        "stop": 23,
+        "tag": "input",
+        "name": "/blog/new-page"
+      },
+      {
+        "stop": 24,
+        "tag": "select",
+        "name": "Permanent move (301)Temporary move (302)Temporary redirect ("
+      },
+      {
+        "stop": 25,
+        "tag": "button",
+        "name": "Create redirect"
+      },
+      {
+        "stop": 26,
+        "tag": "summary",
+        "name": "Advanced page association"
+      },
+      {
+        "stop": 27,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 28,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 29,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 30,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 31,
+        "tag": "a",
+        "name": "SEO pages: SEO page content"
+      },
+      {
+        "stop": 32,
+        "tag": "a",
+        "name": "Blog and news: Articles and updates"
+      },
+      {
+        "stop": 33,
+        "tag": "a",
+        "name": "Media library: Images and source assets"
+      },
+      {
+        "stop": 34,
+        "tag": "a",
+        "name": "Settings: Users and access"
+      },
+      {
+        "stop": 35,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 36,
+        "tag": "a",
+        "name": "Back to pages"
+      },
+      {
+        "stop": 37,
+        "tag": "input",
+        "name": "/resources/old-page"
+      },
+      {
+        "stop": 38,
+        "tag": "input",
+        "name": "/blog/new-page"
+      },
+      {
+        "stop": 39,
+        "tag": "select",
+        "name": "Permanent move (301)Temporary move (302)Temporary redirect ("
+      },
+      {
+        "stop": 40,
+        "tag": "button",
+        "name": "Create redirect"
+      },
+      {
+        "stop": 41,
+        "tag": "summary",
+        "name": "Advanced page association"
+      },
+      {
+        "stop": 42,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 43,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 44,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 45,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 46,
+        "tag": "a",
+        "name": "SEO pages: SEO page content"
+      },
+      {
+        "stop": 47,
+        "tag": "a",
+        "name": "Blog and news: Articles and updates"
+      },
+      {
+        "stop": 48,
+        "tag": "a",
+        "name": "Media library: Images and source assets"
+      },
+      {
+        "stop": 49,
+        "tag": "a",
+        "name": "Settings: Users and access"
+      },
+      {
+        "stop": 50,
+        "tag": "button",
+        "name": "Sign out"
+      }
+    ],
+    "tabIssues": [
+      "stop 12 (nextjs-portal ''): no visible focus indicator",
+      "stop 27 (nextjs-portal ''): no visible focus indicator",
+      "stop 42 (nextjs-portal ''): no visible focus indicator"
+    ]
+  },
+  {
+    "page": "/admin/pages/block-preview-audit",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "SEO pages: SEO page content"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "Blog and news: Articles and updates"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Media library: Images and source assets"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Settings: Users and access"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 6,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 7,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 9,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "SEO pages: SEO page content"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "Blog and news: Articles and updates"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "Media library: Images and source assets"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "Settings: Users and access"
+      },
+      {
+        "stop": 14,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 15,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 16,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 17,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 18,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "SEO pages: SEO page content"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "Blog and news: Articles and updates"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "Media library: Images and source assets"
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "Settings: Users and access"
+      },
+      {
+        "stop": 23,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 24,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 25,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 26,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 27,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 28,
+        "tag": "a",
+        "name": "SEO pages: SEO page content"
+      },
+      {
+        "stop": 29,
+        "tag": "a",
+        "name": "Blog and news: Articles and updates"
+      },
+      {
+        "stop": 30,
+        "tag": "a",
+        "name": "Media library: Images and source assets"
+      },
+      {
+        "stop": 31,
+        "tag": "a",
+        "name": "Settings: Users and access"
+      },
+      {
+        "stop": 32,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 33,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 34,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 35,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 36,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 37,
+        "tag": "a",
+        "name": "SEO pages: SEO page content"
+      },
+      {
+        "stop": 38,
+        "tag": "a",
+        "name": "Blog and news: Articles and updates"
+      },
+      {
+        "stop": 39,
+        "tag": "a",
+        "name": "Media library: Images and source assets"
+      },
+      {
+        "stop": 40,
+        "tag": "a",
+        "name": "Settings: Users and access"
+      },
+      {
+        "stop": 41,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 42,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 43,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 44,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 45,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 46,
+        "tag": "a",
+        "name": "SEO pages: SEO page content"
+      },
+      {
+        "stop": 47,
+        "tag": "a",
+        "name": "Blog and news: Articles and updates"
+      },
+      {
+        "stop": 48,
+        "tag": "a",
+        "name": "Media library: Images and source assets"
+      },
+      {
+        "stop": 49,
+        "tag": "a",
+        "name": "Settings: Users and access"
+      },
+      {
+        "stop": 50,
+        "tag": "button",
+        "name": "Sign out"
+      }
+    ],
+    "tabIssues": [
+      "stop 6 (nextjs-portal ''): no visible focus indicator",
+      "stop 15 (nextjs-portal ''): no visible focus indicator",
+      "stop 24 (nextjs-portal ''): no visible focus indicator",
+      "stop 33 (nextjs-portal ''): no visible focus indicator",
+      "stop 42 (nextjs-portal ''): no visible focus indicator"
+    ]
+  },
+  {
+    "page": "/resources/ux-seo-review-test-1781071765035",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "About"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Resources"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Case Studies"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "News"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "Step inside"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 8,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "Home"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "About"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "Resources"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "Case Studies"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "News"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "Contact Us"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "Terms"
+      },
+      {
+        "stop": 16,
+        "tag": "a",
+        "name": "Privacy Policy"
+      },
+      {
+        "stop": 17,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 18,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "About"
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "Resources"
+      },
+      {
+        "stop": 23,
+        "tag": "a",
+        "name": "Case Studies"
+      },
+      {
+        "stop": 24,
+        "tag": "a",
+        "name": "News"
+      },
+      {
+        "stop": 25,
+        "tag": "a",
+        "name": "Step inside"
+      },
+      {
+        "stop": 26,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 27,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 28,
+        "tag": "a",
+        "name": "Home"
+      },
+      {
+        "stop": 29,
+        "tag": "a",
+        "name": "About"
+      },
+      {
+        "stop": 30,
+        "tag": "a",
+        "name": "Resources"
+      },
+      {
+        "stop": 31,
+        "tag": "a",
+        "name": "Case Studies"
+      },
+      {
+        "stop": 32,
+        "tag": "a",
+        "name": "News"
+      },
+      {
+        "stop": 33,
+        "tag": "a",
+        "name": "Contact Us"
+      },
+      {
+        "stop": 34,
+        "tag": "a",
+        "name": "Terms"
+      },
+      {
+        "stop": 35,
+        "tag": "a",
+        "name": "Privacy Policy"
+      },
+      {
+        "stop": 36,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 37,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 38,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 39,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 40,
+        "tag": "a",
+        "name": "About"
+      },
+      {
+        "stop": 41,
+        "tag": "a",
+        "name": "Resources"
+      },
+      {
+        "stop": 42,
+        "tag": "a",
+        "name": "Case Studies"
+      },
+      {
+        "stop": 43,
+        "tag": "a",
+        "name": "News"
+      },
+      {
+        "stop": 44,
+        "tag": "a",
+        "name": "Step inside"
+      },
+      {
+        "stop": 45,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 46,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 47,
+        "tag": "a",
+        "name": "Home"
+      },
+      {
+        "stop": 48,
+        "tag": "a",
+        "name": "About"
+      },
+      {
+        "stop": 49,
+        "tag": "a",
+        "name": "Resources"
+      },
+      {
+        "stop": 50,
+        "tag": "a",
+        "name": "Case Studies"
+      }
+    ],
+    "tabIssues": [
+      "stop 17 (nextjs-portal ''): no visible focus indicator",
+      "stop 36 (nextjs-portal ''): no visible focus indicator"
+    ]
+  },
+  {
+    "page": "/resources/preview/2eSNnEXLh0znXOYIrUm2Hjk7ieSeIqY2P1z0wTAPiWw",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "About"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Resources"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Case Studies"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "News"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "Step inside"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 8,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "Home"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "About"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "Resources"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "Case Studies"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "News"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "Contact Us"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "Terms"
+      },
+      {
+        "stop": 16,
+        "tag": "a",
+        "name": "Privacy Policy"
+      },
+      {
+        "stop": 17,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 18,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "About"
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "Resources"
+      },
+      {
+        "stop": 23,
+        "tag": "a",
+        "name": "Case Studies"
+      },
+      {
+        "stop": 24,
+        "tag": "a",
+        "name": "News"
+      },
+      {
+        "stop": 25,
+        "tag": "a",
+        "name": "Step inside"
+      },
+      {
+        "stop": 26,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 27,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 28,
+        "tag": "a",
+        "name": "Home"
+      },
+      {
+        "stop": 29,
+        "tag": "a",
+        "name": "About"
+      },
+      {
+        "stop": 30,
+        "tag": "a",
+        "name": "Resources"
+      },
+      {
+        "stop": 31,
+        "tag": "a",
+        "name": "Case Studies"
+      },
+      {
+        "stop": 32,
+        "tag": "a",
+        "name": "News"
+      },
+      {
+        "stop": 33,
+        "tag": "a",
+        "name": "Contact Us"
+      },
+      {
+        "stop": 34,
+        "tag": "a",
+        "name": "Terms"
+      },
+      {
+        "stop": 35,
+        "tag": "a",
+        "name": "Privacy Policy"
+      },
+      {
+        "stop": 36,
+        "tag": "nextjs-portal",
+        "name": ""
+      },
+      {
+        "stop": 37,
+        "tag": "(body)",
+        "name": ""
+      },
+      {
+        "stop": 38,
+        "tag": "a",
+        "name": "Skip to content"
+      },
+      {
+        "stop": 39,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 40,
+        "tag": "a",
+        "name": "About"
+      },
+      {
+        "stop": 41,
+        "tag": "a",
+        "name": "Resources"
+      },
+      {
+        "stop": 42,
+        "tag": "a",
+        "name": "Case Studies"
+      },
+      {
+        "stop": 43,
+        "tag": "a",
+        "name": "News"
+      },
+      {
+        "stop": 44,
+        "tag": "a",
+        "name": "Step inside"
+      },
+      {
+        "stop": 45,
+        "tag": "a",
+        "name": "UX review test cta label"
+      },
+      {
+        "stop": 46,
+        "tag": "summary",
+        "name": "Is this a UX review test question?"
+      },
+      {
+        "stop": 47,
+        "tag": "a",
+        "name": "Home"
+      },
+      {
+        "stop": 48,
+        "tag": "a",
+        "name": "About"
+      },
+      {
+        "stop": 49,
+        "tag": "a",
+        "name": "Resources"
+      },
+      {
+        "stop": 50,
+        "tag": "a",
+        "name": "Case Studies"
+      }
+    ],
+    "tabIssues": [
+      "stop 17 (nextjs-portal ''): no visible focus indicator",
+      "stop 36 (nextjs-portal ''): no visible focus indicator"
+    ]
+  }
+]

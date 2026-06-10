@@ -1,0 +1,50 @@
+[
+  {
+    "cluster": "A",
+    "title": "Publish blockers drip-fed one at a time in internal naming",
+    "verdict": "confirmed",
+    "final_severity": "blocker",
+    "personas_count": 14,
+    "notes": "Strongly confirmed. journeys.md publish-and-view-live section documents the gate chain revealed one at a time in the PUBLISH STATUS chip in terse internal naming ('Fix SEO title' -> 'Fix content 1 · Cta Label' -> 'Fix content 1 · Destination URL'). Screenshot journey-publish-and-view-live-02-read-publish-blocker.png shows chip 'Fix SEO title' with Publish disabled; journey-publish-and-view-live-08-after-seo-title-fix.png shows the very next blocker 'Fix content 1 · Cta Label' surfacing only after the first was resolved. publish-chain.json records the captured sequence ['Fix content 1 · Cta Label','Fix content 1 · Destination URL']. journeys.md also notes the chip ('Fix SEO title') and the readiness panel ('Add a hero headline before publishing.') disagree for the same gate, and that 'Fix SEO title' fires even though the SEO title field is optional ('Leave blank to use page headline'). 14 of 15 personas flagged this (mobile-07 the only absentee); it is the single biggest friction in the review and blocks the core publish journey. Blocker confirmed."
+  },
+  {
+    "cluster": "B",
+    "title": "Required CTA destination URL exists only in block-settings modal; blocker text gives no location",
+    "verdict": "confirmed",
+    "final_severity": "critical",
+    "personas_count": 12,
+    "notes": "Confirmed. Screenshot journey-publish-and-view-live-11-block-settings-modal.png shows the 'CTA destination URL' field present ONLY inside the Block Settings modal (Hero 1, 'Needs content'), empty, with no equivalent on the canvas. journey-publish-and-view-live-12-block-settings-filled.png shows that filling it ('/about') flips the block to 'Ready' and enables Publish. The blocker copy 'Fix content 1 · Destination URL' gives no hint that the field lives in Block actions -> Edit settings; journeys.md records the explorer 'Hunted on canvas for Destination URL'. This is a sub-instance of Cluster A's drip-fed chain but distinct enough to track: a publish-required field is hidden two menu levels deep with no pointer. 12 distinct personas. Critical rather than blocker — it is discoverable (the modal exists and works) but causes a dead-end hunt; recommend keeping as critical, or folding into Cluster A as its worst single step."
+  },
+  {
+    "cluster": "C",
+    "title": "Scheduled publish saves silently — field re-renders empty, no 'Scheduled for' status anywhere",
+    "verdict": "confirmed",
+    "final_severity": "blocker",
+    "personas_count": 15,
+    "notes": "Confirmed. Screenshot journey-schedule-publish-05-verify-scheduled.png shows the 'Scheduled publish' field reading 'dd/mm/yyyy, --:-- --' (empty) immediately after filling 2026-06-11T12:00 and saving; the status chip still reads 'draft · Fix SEO title' and no 'Scheduled for …' indicator appears anywhere. journeys.md schedule-publish section and 12-developer-001 (blocker) corroborate; journey-results-2.json records 'verify-scheduled result: ERROR: no Scheduled for … indicator found'. The Share menu ('Copy editor link / Copy public URL') is open and overlapping the panel in this screenshot, but per the lead's note that is the explorer's force-open-all-<details> script artifact, not user-caused — the schedule field state is fully visible beneath it and the claim does not depend on the menu. All 15 personas flagged it. A user cannot tell whether a future-dated publish was persisted or dropped — a trust/data-integrity failure on a publishing action. Blocker confirmed. (Also surfaced: the field uses Pacific Time for an Australian business — separate, lower-severity issue.)"
+  },
+  {
+    "cluster": "D",
+    "title": "After publishing, 'Confirm publish' card stays open re-asking to publish; success ambiguous",
+    "verdict": "confirmed",
+    "final_severity": "critical",
+    "personas_count": 12,
+    "notes": "Confirmed. Screenshot journey-publish-and-view-live-09-after-publish.png shows, simultaneously: a green 'Changes published.' pill top-right, a green 'Changes published.' banner inside the panel, the status chip flipped to 'Published', AND the yellow 'Confirm publish — Publish this page? This will replace the current live version at /resources/ux-seo-review-test-1781071765035.' card still open with active Cancel / Confirm publish buttons. So success is announced twice while the confirm dialog re-asks to publish — contradictory signals. 08-perfectionist-004 and 12 other personas flagged it. Confusing and could trigger an accidental double-publish, but the page does publish correctly (live render verified), so it degrades trust rather than blocking the journey. Critical, not blocker."
+  },
+  {
+    "cluster": "E",
+    "title": "Redirects cannot be edited or deleted from the UI",
+    "verdict": "confirmed",
+    "final_severity": "critical",
+    "personas_count": 11,
+    "notes": "Confirmed. text/admin-pages-redirects-text.md ARIA snapshot shows the redirects table has exactly five columns — Old path / Destination / Status / Source / Created — and no actions column, no edit/delete buttons, no row menu; the only controls on the page are the Create redirect form. exploration-log.md states 'Redirects table has no delete/edit controls — created redirects cannot be removed from this UI' and lists redirect cleanup under 'Skipped destructive actions' as 'cleanup impossible from admin'. 14-competitor-001 logged it as a blocker; 11 distinct personas total. A wrong 301 is permanent from the UI and 301s are aggressively cached by browsers/SEO — real harm. Borderline blocker/critical: it does not block the create-redirect journey (which completes), so critical is the defensible final severity, with the data-permanence/trust angle noted. Could be argued up to blocker on the irreversibility of a bad 301."
+  },
+  {
+    "cluster": "F",
+    "title": "Leaving unsaved editor silently discards typed content — no unsaved-changes warning",
+    "verdict": "confirmed",
+    "final_severity": "critical",
+    "personas_count": 10,
+    "notes": "Confirmed, with a corrected mechanism. The 'no unsaved-changes warning' half is solid: exploration-log.md supplementary pass records navigating straight to /admin/pages with NO warning after typing a page title, and admin-pages-new-014-leave-unsaved.png shows the user landed back on the pages list with no intercepting dialog. BUT the 'silently lost' framing in exploration-log.md / 01-grandparent-005 / 02-power-user-003 is contradicted by the same screenshot: the list now shows a NEW draft row 'Unsaved data-loss probe (do not save)' at /resources/unsaved-data-loss-probe-do-not-save, with the Drafts count at 5 — so the typed content was actually SILENTLY PERSISTED as a draft, not discarded. 15-angry-user-008 is the accurate finding: 'silently lost OR silently persisted with no clarity which.' Note admin-pages-new-013-editor-unsaved.png shows an empty title field behind the Quick Tour overlay, so the screenshot pair does not by itself prove what was typed; the persistence is what is actually evidenced. The defect is real either way — no unsaved-changes warning AND an orphan draft created with no user intent or confirmation. Demote from blocker to critical: it is a genuine trust/data-hygiene problem, but the worst-case 'work silently lost' claim is not supported (content persisted); recommend rewording the cluster to 'no unsaved-changes warning; abandoned editor silently creates an orphan draft' and merging 01-grandparent-005's 'silently lost' wording into the more accurate 15-angry-user-008 framing. 10 distinct personas."
+  }
+]

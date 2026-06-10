@@ -1,0 +1,530 @@
+[
+  {
+    "id": "08-perfectionist-001",
+    "page": "global",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "The circular user avatar (\"N\") overlaps and clips the \"Sign out\" button / sidebar bottom edge on every page in the product.",
+    "evidence": [
+      { "type": "screenshot", "ref": "admin-pages-001-load.png", "quote": "" },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-redirects-002-full.png",
+        "quote": ""
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-001-load.png",
+        "quote": ""
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-tablet.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "A widget that overlaps a button on every single screen is the first thing I see and it tells me no one did a final layout pass.",
+    "suggested_fix": {
+      "current": "Floating avatar overlaps the sidebar footer / Sign out button with a clipping z-index",
+      "proposed": "Contain the avatar inside the 'Signed in as' row, or give the sidebar footer the higher stacking context so 'Sign out' is never occluded"
+    }
+  },
+  {
+    "id": "08-perfectionist-002",
+    "page": "/admin/pages/[id]",
+    "journey": "publish-and-view-live",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "Three different colours are used for primary actions: blue (Publish changes, Create redirect, Create page), black (Apply settings, list Search button), and the inline Confirm publish is blue again.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-014-block-settings.png",
+        "quote": "black 'Apply settings' button"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-015-search-no-results.png",
+        "quote": "black 'Search' vs blue 'Create page'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-13-confirm-card.png",
+        "quote": "blue 'Confirm publish'"
+      }
+    ],
+    "persona_rationale": "I genuinely can't tell which button is 'the' primary on a screen when the brand's commit colour changes per component.",
+    "suggested_fix": {
+      "current": "Two competing primary button tokens (blue and black) used across the same product",
+      "proposed": "Define one primary colour (blue) for all confirming actions; demote 'Apply settings' and 'Search' to the same blue, reserve black/neutral for secondary"
+    }
+  },
+  {
+    "id": "08-perfectionist-003",
+    "page": "/admin/pages/[id]",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "The same readiness state is rendered three contradictory ways simultaneously: a 'Blocked' pill (header), a 'Fix SEO title' chip, and 'draft · SEO Blocked' subtext — while the field below reads 'Leave blank to use page headline'.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "SEO title ... /placeholder: Leave blank to use page headline"
+      }
+    ],
+    "persona_rationale": "I fixed the wrong thing first because the chip, the pill, and the field helper all disagreed about what was wrong.",
+    "suggested_fix": {
+      "current": "One state shown with three different labels, plus a contradiction with the field's own optional helper text",
+      "proposed": "Single source of truth: header pill and chip share wording (e.g. 'Blocked — add a hero headline'), and never block on a field whose own helper text says it is optional"
+    }
+  },
+  {
+    "id": "08-perfectionist-004",
+    "page": "/admin/pages/[id]",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "After publishing, the yellow 'Confirm publish' card stays open ('This will replace the current live version…') and success is announced twice — a green toast in the top rail and a banner inside the panel.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-09-after-publish.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "'Changes published.' toast appears BUT the confirm card remains open asking to publish again"
+      }
+    ],
+    "persona_rationale": "A confirmation card that survives its own success, asking me to redo what I just did, is the kind of stale state I file bugs for.",
+    "suggested_fix": {
+      "current": "Stale confirm card persists after success and success is double-announced",
+      "proposed": "On success, dismiss the confirm card and show exactly one toast; the card must not invite re-publishing of an action that already completed"
+    }
+  },
+  {
+    "id": "08-perfectionist-005",
+    "page": "/admin/pages/[id]",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "The 'Builder outline' / 'Page blocks' card is dark-themed (near-black) and sits inside an otherwise entirely light admin shell.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-011-share-menu.png",
+        "quote": ""
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-013-block-actions.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "A single dark card in a light app looks like a component pasted from a different design file.",
+    "suggested_fix": {
+      "current": "One dark surface (Builder outline card) in an otherwise light design system",
+      "proposed": "Reskin the outline card to the light surface tokens used by every other panel, or commit to a documented dark 'structure' zone — not one orphaned card"
+    }
+  },
+  {
+    "id": "08-perfectionist-006",
+    "page": "/admin/pages/[id]",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "Block selection uses an asymmetric ring: a solid black border on the top/left and a thick cyan glow only on the right/bottom edges.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-tablet.png",
+        "quote": ""
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-mobile.png",
+        "quote": ""
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-013-block-actions.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "A focus ring that is black on two sides and blue on two sides is unmistakably an unfinished hover/active state.",
+    "suggested_fix": {
+      "current": "Mismatched border (black) plus an offset glow (cyan) on a selected block",
+      "proposed": "Use a single uniform focus ring — one colour, even width on all four sides"
+    }
+  },
+  {
+    "id": "08-perfectionist-007",
+    "page": "/admin/pages/[id]",
+    "journey": "publish-and-view-live",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "The hero CTA buttons ('STEP INSIDE', the orange CTA) carry a heavy hard-edged drop shadow / skeuomorphic offset, while the entire editor chrome uses flat pill buttons.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-001-load.png",
+        "quote": ""
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-09-after-publish.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "The chrome and the canvas look like they were designed by two people with different shadow tokens.",
+    "suggested_fix": {
+      "current": "Skeuomorphic hard-shadow CTAs on the canvas vs flat chrome buttons",
+      "proposed": "Align the content CTA elevation with the flat system, or document the brand 'raised' button as an intentional content style"
+    }
+  },
+  {
+    "id": "08-perfectionist-008",
+    "page": "/admin/pages/[id]",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "Toolbar pill buttons (Pages, Blocks, Save draft changes, Live preview, Share, SEO) are all identical weight/colour, so the primary save and a passive 'Share' menu look the same.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-001-load.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "When every action in the toolbar has identical emphasis, there is no hierarchy and my eye has nowhere to land.",
+    "suggested_fix": {
+      "current": "All top-rail pills share identical neutral styling",
+      "proposed": "Give 'Save draft changes' (and/or 'Publish') a filled/primary treatment and keep navigation pills neutral"
+    }
+  },
+  {
+    "id": "08-perfectionist-009",
+    "page": "/admin/pages/[id]",
+    "journey": "revision-restore",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "Toasts have no consistent treatment: 'Changes published.' (top-rail green), 'Draft saved.' (panel-anchored green outline pill), and a separate in-panel 'Changes published.' banner all coexist.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-09-after-publish.png",
+        "quote": "Changes published."
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-revision-restore-04-preview-revision.png",
+        "quote": "Draft saved."
+      }
+    ],
+    "persona_rationale": "Three different success treatments in one tool means there is no toast system, just one-offs.",
+    "suggested_fix": {
+      "current": "Three distinct success-toast styles and anchor positions",
+      "proposed": "One toast component, one anchor (e.g. top-right), one style for success"
+    }
+  },
+  {
+    "id": "08-perfectionist-010",
+    "page": "/admin/pages",
+    "journey": "find-duplicate-archive",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "READINESS and STATUS columns are bare coloured dots (amber/red/blue/green) with no legend or text label.",
+    "evidence": [
+      { "type": "screenshot", "ref": "admin-pages-001-load.png", "quote": "" },
+      { "type": "screenshot", "ref": "admin-pages-002-full.png", "quote": "" }
+    ],
+    "persona_rationale": "I can see four colours and have no idea what blue versus amber means without hovering — and colour-only is also an accessibility fail.",
+    "suggested_fix": {
+      "current": "Status encoded only as a coloured dot with no key",
+      "proposed": "Add a text label or tooltip per dot ('Needs work', 'Blocked', 'Published') and a legend; do not encode meaning in colour alone"
+    }
+  },
+  {
+    "id": "08-perfectionist-011",
+    "page": "/admin/pages/[id]",
+    "journey": "schedule-publish",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The scheduled-publish field shows 'Uses Pacific Time (America/Los_Angeles)' for an Australian (Vendingpreneurs) business.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-03-set-schedule.png",
+        "quote": "Uses Pacific Time (America/Los_Angeles)."
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Label says 'Uses Pacific Time (America/Los_Angeles)' — for an Australian business."
+      }
+    ],
+    "persona_rationale": "Scheduling a publish in the wrong hemisphere's timezone is the kind of locale detail that erodes my trust in the whole build.",
+    "suggested_fix": {
+      "current": "Hardcoded 'Uses Pacific Time (America/Los_Angeles)' label",
+      "proposed": "Display the business/admin timezone (e.g. Australia/Adelaide) or let the admin pick, and echo the chosen zone"
+    }
+  },
+  {
+    "id": "08-perfectionist-012",
+    "page": "/admin/pages/[id]",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After saving a schedule, the field re-renders empty and no 'Scheduled for {date}' status appears anywhere — the success state is undesigned.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-03-set-schedule.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "field re-rendered EMPTY and no 'Scheduled for …' status appeared anywhere in the editor"
+      }
+    ],
+    "persona_rationale": "An action with no visible result is indistinguishable from a failure; I would assume the schedule didn't save.",
+    "suggested_fix": {
+      "current": "Schedule field clears with no confirmation after save",
+      "proposed": "After save, persist the value and show a 'Scheduled for {local date/time}' chip near the publish status"
+    }
+  },
+  {
+    "id": "08-perfectionist-013",
+    "page": "/admin/pages/[id]",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "Disclosure iconography is mixed: 'Builder support' sections use a right-triangle, the top-rail 'SEO' / 'Blocks' use a chevron, and 'Advanced SEO' uses yet another caret.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-011-share-menu.png",
+        "quote": "Media assets / Approved claims and CTAs triangle disclosures"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-001-load.png",
+        "quote": "SEO chevron"
+      }
+    ],
+    "persona_rationale": "Mixed disclosure icons in the same panel are exactly the kind of inconsistency I cannot unsee.",
+    "suggested_fix": {
+      "current": "Three disclosure glyphs (triangle, chevron, caret)",
+      "proposed": "Standardise on one chevron for all expand/collapse affordances"
+    }
+  },
+  {
+    "id": "08-perfectionist-014",
+    "page": "/admin/pages/[id]",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "The block 'settings' gear icon is grey on some blocks and solid blue on others depending on selection, inconsistently across states.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-011-share-menu.png",
+        "quote": "blue FAQ gear"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-013-block-actions.png",
+        "quote": "blue Hero gear"
+      }
+    ],
+    "persona_rationale": "The active-state colour jumping between blocks tells me the selected style isn't systematised.",
+    "suggested_fix": {
+      "current": "Gear accent colour tracks selection inconsistently",
+      "proposed": "Tie the accent colour to selection deterministically, or keep the gear neutral and accent only the card"
+    }
+  },
+  {
+    "id": "08-perfectionist-015",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "In the no-results state the primary 'Create page' is a full-width blue bar dwarfing the small adjacent 'Clear search' button — disproportionate button sizing.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-015-search-no-results.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "A primary button stretched to full width next to a compact secondary looks like a layout that never got spacing review.",
+    "suggested_fix": {
+      "current": "Oversized full-width primary next to a small secondary in the empty state",
+      "proposed": "Size the two empty-state buttons to a balanced pair (equal height, content-width)"
+    }
+  },
+  {
+    "id": "08-perfectionist-016",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "The redirects table sits in a small card at the top of an otherwise empty full-height canvas, and rows have no edit/delete controls, so the page reads as unfinished.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-redirects-002-full.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "Redirects table has no delete/edit controls — created redirects cannot be removed from this UI."
+      }
+    ],
+    "persona_rationale": "Acres of empty canvas below a tiny table, with rows you can't act on, looks like a placeholder screen.",
+    "suggested_fix": {
+      "current": "Small top-anchored table on an empty canvas with actionless rows",
+      "proposed": "Add a per-row actions column (edit/delete) and let the table or an empty illustration fill the space intentionally"
+    }
+  },
+  {
+    "id": "08-perfectionist-017",
+    "page": "/admin/pages/[id]",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "The same toolbar button is labelled 'Save draft changes' in some states and 'Save draft' in others.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-001-load.png",
+        "quote": "Save draft changes"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-13-confirm-card.png",
+        "quote": "Save draft"
+      }
+    ],
+    "persona_rationale": "A button that renames itself between states is a small thing, but small inconsistent things are my whole job.",
+    "suggested_fix": {
+      "current": "Inconsistent button label across states ('Save draft changes' vs 'Save draft')",
+      "proposed": "Pick one label ('Save draft') and keep it stable"
+    }
+  },
+  {
+    "id": "08-perfectionist-018",
+    "page": "/admin/pages/[id]",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "The 'Share' dropdown menu stays rendered open, overlapping the SEO panel/status pill, while other interactions (block actions, schedule) happen behind it.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-013-block-actions.png",
+        "quote": ""
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-03-set-schedule.png",
+        "quote": ""
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-011-share-menu.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "An open menu floating over unrelated controls is a clear missing dismiss-on-blur, and it hides the 'Blocked' pill behind it.",
+    "suggested_fix": {
+      "current": "Share popover does not dismiss on outside interaction",
+      "proposed": "Close the Share popover on outside click / when another menu opens"
+    }
+  },
+  {
+    "id": "08-perfectionist-019",
+    "page": "/admin/pages/[id]",
+    "journey": null,
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "The editor exposes a prohibited ARIA attribute and a non-top-level complementary landmark; the revision page has duplicate main landmarks.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "aria-prohibited-attr (serious) on /admin/pages/[id]; landmark-complementary-is-top-level (moderate)"
+      },
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "landmark-no-duplicate-main, landmark-main-is-top-level on the revision route"
+      }
+    ],
+    "persona_rationale": "Structural a11y violations are the invisible counterpart to visual sloppiness — same lack of a final pass.",
+    "suggested_fix": {
+      "current": "Invalid ARIA attribute and duplicate / mis-nested landmarks",
+      "proposed": "Remove the prohibited attribute and ensure a single top-level main per page"
+    }
+  },
+  {
+    "id": "08-perfectionist-020",
+    "page": "/admin/pages/[id]",
+    "journey": "create-first-page",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "A new page canvas renders entirely as light-grey placeholder text ('Hero headline', 'Hero body copy', 'CTA label') with no distinct 'unfilled' styling beyond low opacity, so it's unclear what is real content vs prompt.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "grey 'Hero headline' placeholder"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "New page canvas is entirely placeholder ('Hero headline', 'Hero body copy', 'CTA label') with no guidance"
+      }
+    ],
+    "persona_rationale": "Faint grey text could be real copy at low contrast or a placeholder — an undesigned empty-block state.",
+    "suggested_fix": {
+      "current": "Placeholder text indistinguishable from faint real copy",
+      "proposed": "Give placeholders a clearly non-content treatment (dashed outline / 'Add headline' affordance) so unfilled blocks read as empty states"
+    }
+  },
+  {
+    "id": "08-perfectionist-021",
+    "page": "/admin/pages/[id]",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "A 'Rendering…' / 'Updating' status pill appears bottom-left over the canvas while the AI FAB sits bottom-right — two floating overlays competing for the same canvas corners with different shapes.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-mobile.png",
+        "quote": "Rendering…"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-revision-restore-04-preview-revision.png",
+        "quote": "Rendering…"
+      }
+    ],
+    "persona_rationale": "Two differently shaped floating chips in opposite corners read as two teams' widgets sharing a canvas.",
+    "suggested_fix": {
+      "current": "Two unrelated floating overlays (status pill + AI FAB) in opposing corners",
+      "proposed": "Consolidate transient status into one consistent location/treatment distinct from the persistent AI FAB"
+    }
+  }
+]

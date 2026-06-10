@@ -1,0 +1,362 @@
+[
+  {
+    "id": "09-pragmatist-001",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "Publish is gated behind readiness blockers revealed one at a time in a tiny chip; fixing one surfaces the next, so all required work is not visible up front.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "Fix SEO title; Publish greyed out"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "chip → 'Fix content 1 · Cta Label' … chip → 'Fix content 1 · Destination URL'"
+      }
+    ],
+    "persona_rationale": "I'll click Publish, get one error, fix it, click again, get a new error, four times over. I'd assume the tool is broken or give up and call support.",
+    "suggested_fix": {
+      "current": "Blockers revealed one at a time in a chip",
+      "proposed": "A checklist that lists every publish blocker at once with a jump-link to each field, fixed in one pass"
+    }
+  },
+  {
+    "id": "09-pragmatist-002",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Forms & Input",
+    "severity": "critical",
+    "finding": "A required-to-publish field (CTA destination URL) is not on the canvas; it only exists in the Block actions → Edit settings modal, and the blocker text gives no hint where to find it.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-11-block-settings-modal.png",
+        "quote": "CTA destination URL field inside Block Settings modal"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the destination field is NOT on the canvas; it lives in Block actions → Edit settings modal"
+      }
+    ],
+    "persona_rationale": "The page told me to fix Destination URL but there was no such field anywhere I could see. I hunted the whole canvas. That's a dead stop.",
+    "suggested_fix": {
+      "current": "Required CTA destination URL hidden in block settings modal",
+      "proposed": "Surface CTA destination on the canvas next to the CTA label, or make the blocker link open that exact field"
+    }
+  },
+  {
+    "id": "09-pragmatist-003",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After confirming publish, a 'Changes published.' toast appears but the inline confirm card stays open asking to publish again, making it look like it failed.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-13-confirm-card.png",
+        "quote": "Confirm publish card still showing after success"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "'Changes published.' toast appears BUT the confirm card remains open asking to publish again"
+      }
+    ],
+    "persona_rationale": "I clicked Confirm, it said published, but the same 'Publish this page?' box was still sitting there. I'd click it again thinking the first failed.",
+    "suggested_fix": {
+      "current": "Confirm card stays open after a successful publish",
+      "proposed": "Close the card on success and show 'Published — view live page [link]'"
+    }
+  },
+  {
+    "id": "09-pragmatist-004",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "No 'Open live page' link appears after publishing in the default panel; the public URL had to be typed by hand.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "No 'Open live page' link was visible after publishing in the default panel state — the live URL had to be typed manually"
+      }
+    ],
+    "persona_rationale": "I just published. Obviously I want to look at it. Making me copy a URL out of a menu or type it is silly.",
+    "suggested_fix": {
+      "current": "No post-publish link to the live page",
+      "proposed": "Show a 'View live page' button linking to the public URL the moment it goes live"
+    }
+  },
+  {
+    "id": "09-pragmatist-005",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "Three wizard steps stand between 'Create page' and an editable canvas for what is just a blank page.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-001-load.png",
+        "quote": "Step 1 of 3 — What kind of page are you creating?"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "3-step choice gate (Resource → Blank page → Start building)"
+      }
+    ],
+    "persona_rationale": "I clicked Create page to make a page, not to answer a quiz. Three Continues before I can type is three too many.",
+    "suggested_fix": {
+      "current": "Three-step type/start wizard before the editor",
+      "proposed": "Single screen: pick a type and land in the editor, or default to Resource and go straight in with a type switcher inside"
+    }
+  },
+  {
+    "id": "09-pragmatist-006",
+    "page": "/admin/pages/{id}",
+    "journey": "create-first-page",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "The editor opens with a forced 'Quick Tour · Step 1 of 3' overlay covering the canvas.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-013-editor-unsaved.png",
+        "quote": "QUICK TOUR · STEP 1 OF 3 / Page structure / This is where the structure of the page is."
+      }
+    ],
+    "persona_rationale": "A forced tutorial is exactly the thing I skip. Don't make me dismiss three popups before I can work.",
+    "suggested_fix": {
+      "current": "Auto-popping three-step quick tour on first editor load",
+      "proposed": "No auto-tour; provide a small '?' / 'Take a tour' button I can ignore"
+    }
+  },
+  {
+    "id": "09-pragmatist-007",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "After setting a schedule and saving, the date field re-renders empty and no 'Scheduled for…' status appears anywhere, so there's no way to tell whether it worked.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the field re-rendered EMPTY and no 'Scheduled for …' status appeared anywhere in the editor"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-03-set-schedule.png",
+        "quote": "Scheduled publish field"
+      }
+    ],
+    "persona_rationale": "If I schedule a page to go live Monday and the field shows blank, I have no idea if it's set. I'd re-do it or assume it failed. That's a launch I can't trust.",
+    "suggested_fix": {
+      "current": "Schedule field blanks after save with no confirmation",
+      "proposed": "After save, show a clear 'Scheduled to publish {date} {time}' banner near the publish button"
+    }
+  },
+  {
+    "id": "09-pragmatist-008",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "Scheduled-publish help text says 'Uses Pacific Time (America/Los_Angeles)' for an Australian business.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-03-set-schedule.png",
+        "quote": "Uses Pacific Time (America/Los_Angeles). Leave blank unless this page should publish later."
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Label says 'Uses Pacific Time (America/Los_Angeles)' — for an Australian business"
+      }
+    ],
+    "persona_rationale": "I'd type 9am thinking my time and the page would go live in the middle of my night. A real mistake waiting to happen.",
+    "suggested_fix": {
+      "current": "Schedule fixed to Pacific Time (America/Los_Angeles)",
+      "proposed": "Use the business's own timezone (Australia) or show local time with the offset"
+    }
+  },
+  {
+    "id": "09-pragmatist-009",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "The scheduled-publish control is buried at the bottom of the SEO panel inside 'Advanced SEO', far from the Publish button.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Scheduled publish field is buried at the bottom of SEO panel → Advanced SEO governance area"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-03-set-schedule.png",
+        "quote": "Scheduled publish under Social description in Advanced SEO"
+      }
+    ],
+    "persona_rationale": "Scheduling a publish is a publishing decision, not an 'advanced SEO' setting. I'd never think to look under there.",
+    "suggested_fix": {
+      "current": "Schedule buried under Advanced SEO",
+      "proposed": "Put 'Publish now / Schedule for later' together as one choice at the publish control"
+    }
+  },
+  {
+    "id": "09-pragmatist-010",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "The redirects table has no edit or delete control, so a typo'd redirect is permanent from this screen.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "Redirects table has no delete/edit controls — created redirects cannot be removed from this UI."
+      }
+    ],
+    "persona_rationale": "If I send an old URL to the wrong place, I can't fix it here. A bad redirect can break traffic and I'd be stuck.",
+    "suggested_fix": {
+      "current": "Read-only redirects table",
+      "proposed": "Add Edit and Delete per row, with a confirm on delete"
+    }
+  },
+  {
+    "id": "09-pragmatist-011",
+    "page": "/admin/pages/{id}",
+    "journey": "revision-restore",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "No revision history or page-level undo exists until after the first publish, so wrecking a draft before publishing cannot be rolled back.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "revisions do NOT exist while drafting … 'Revisions appear after publishing, library refreshes, or draft restores.'"
+      }
+    ],
+    "persona_rationale": "I'd assume 'Save draft' gives me a history to fall back on. If I mangle a draft and there's no undo, that's lost work I can't get back.",
+    "suggested_fix": {
+      "current": "Restore points only exist after first publish",
+      "proposed": "Snapshot on each draft save so there's always something to roll back to"
+    }
+  },
+  {
+    "id": "09-pragmatist-012",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "Typing a page title then navigating away discards it silently with no unsaved-changes warning.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "navigated straight to /admin/pages with NO unsaved-changes warning — typed title silently lost"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-014-leave-unsaved.png",
+        "quote": "leave unsaved editor"
+      }
+    ],
+    "persona_rationale": "I get interrupted constantly. If clicking away throws out what I typed with no warning, I lose work without even knowing.",
+    "suggested_fix": {
+      "current": "Silent data loss when leaving an unsaved new page",
+      "proposed": "Prompt 'You have unsaved changes — leave anyway?' before discarding"
+    }
+  },
+  {
+    "id": "09-pragmatist-013",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The blocker chip and the readiness panel show two different messages for the same gate at the same time ('Fix SEO title' vs 'Add a hero headline before publishing').",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Chip said 'Fix SEO title' while readiness panel said 'Add a hero headline before publishing.' — fixed the wrong thing first"
+      }
+    ],
+    "persona_rationale": "One spot tells me to fix the title, another tells me to fix the headline. I fixed the wrong thing first and wasted clicks. Just tell me one thing.",
+    "suggested_fix": {
+      "current": "Chip and panel show conflicting blocker messages",
+      "proposed": "Use one consistent blocker label in both the chip and the panel"
+    }
+  },
+  {
+    "id": "09-pragmatist-014",
+    "page": "/admin/pages/{id}",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "The right-hand SEO/readiness panel scrolls through seven stacked sections (Readiness, Action Items, Search Preview, Builder support, Revision history, Draft preview, Governance comments), heavy chrome around a simple page.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-002-full.png",
+        "quote": "Long stacked SEO panel: Readiness, Action Items, Search Preview, Builder support, Revision history, Draft preview, Governance comments"
+      }
+    ],
+    "persona_rationale": "I put a headline and an FAQ on a page. I don't need 'Governance comments' and an 'Approved claims and CTAs' library staring at me. It's clutter around the two things I actually do.",
+    "suggested_fix": {
+      "current": "All SEO/governance sections always open in one long panel",
+      "proposed": "Collapse advanced sections (Governance comments, Builder support) by default; keep publish + readiness on top"
+    }
+  },
+  {
+    "id": "09-pragmatist-015",
+    "page": "/admin/pages/{id}",
+    "journey": "find-duplicate-archive",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "Duplicating a page produces a junk auto-slug ('draft-4020bd0f') instead of one derived from the title.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "created 'Copy of {title}' with auto slug 'draft-4020bd0f' (original slug not preserved/derived)"
+      }
+    ],
+    "persona_rationale": "A URL like 'draft-4020bd0f' is meaningless and I'd have to fix it by hand every time I copy a page.",
+    "suggested_fix": {
+      "current": "Duplicate gets a random slug like 'draft-4020bd0f'",
+      "proposed": "Derive the duplicate slug from the title, e.g. 'copy-of-{slug}'"
+    }
+  },
+  {
+    "id": "09-pragmatist-016",
+    "page": "/admin/pages",
+    "journey": "find-duplicate-archive",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "finding": "Archive and other row actions are one-row-at-a-time only; there is no bulk select to tidy several pages at once.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Archiving is per-row only; no bulk select"
+      }
+    ],
+    "persona_rationale": "When I'm cleaning up old test pages, doing them one menu at a time is tedious. Not a blocker, just annoying.",
+    "suggested_fix": {
+      "current": "Per-row archive only",
+      "proposed": "Add checkboxes and a bulk archive action"
+    }
+  }
+]
