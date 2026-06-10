@@ -1,0 +1,8 @@
+PUBLISH_DISABLED: null
+CONFIRM_CARD_VISIBLE: true
+CONFIRM_HAS_THIN_ADVISORY: true
+CONFIRM_TEXT: Confirm publish | Publish this page? | This will make this draft visible at /resources/zzz-n12-thin. | This page has very little content (about 10 words). Thin pages tend to rank poorly — you can still publish, but consider adding more before you do. | Cancel 
+CONFIRM_SUBMIT_ENABLED: true
+DONE
+CLEANUP 300ceee4-8aeb-4621-8bd3-65bdbd6e77ce -> deleted
+ACTIVE_THROWAWAY_REMAINING: []

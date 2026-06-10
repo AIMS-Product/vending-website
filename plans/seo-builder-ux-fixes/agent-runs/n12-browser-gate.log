@@ -1,0 +1,18 @@
+VERDICT_NOT_READY_VISIBLE: true
+VERDICT_TEXT: Not ready — 3 things to fix | Fix next: Add an SEO title | Take me there
+VERDICT_HAS_FIX_NEXT: true
+TABLIST_PRESENT: true
+TAB_COUNT: 2
+READINESS_SELECTED_DEFAULT: true
+SETTINGS_SELECTED_AFTER_CLICK: true
+SLUG_RELABELED_VISIBLE: true
+GOVERNANCE_RELABELED_VISIBLE: true
+ARROW_NAV_SELECTS_READINESS: true
+PUBLISH_TESTID_PRESENT: true
+AXE_SERIOUS_CRITICAL: [{"id":"color-contrast","impact":"serious","n":1}]
+VERDICT_READY_VISIBLE: true
+READY_VERDICT_TEXT: Ready to publish — 1 improvement suggested | Fix next: Add more useful detail before treating this as a strong SEO page.
+DONE
+CLEANUP d6752cf4-5205-4838-8569-505935e5824b -> deleted
+CLEANUP f78800ba-e53f-44a9-a55a-1b9529893c88 -> deleted
+ACTIVE_THROWAWAY_REMAINING: []
