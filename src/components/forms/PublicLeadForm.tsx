@@ -1,8 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   initialLeadActionState,
+  resolveLeadSuccessTransition,
   type PublicLeadActionState,
 } from "@/app/lead-action-state";
 import type { LeadAttribution } from "@/lib/lead-attribution";
@@ -97,14 +99,48 @@ export function PublicLeadForm({
   intent,
   layout = "standard",
 }: PublicLeadFormProps) {
-  const [state, formAction, pending] = useActionState(
+  const router = useRouter();
+  const [submittedEmail, setSubmittedEmail] = useState("");
+
+  const [state, dispatch, pending] = useActionState(
     action,
     initialLeadActionState,
   );
+
+  // Capture the submitted email before delegating to the server action so a
+  // successful contact submission can echo it back in the success panel. This
+  // runs in the submit event, not during render, and the wrapper returns the
+  // action's value unchanged, so the {success/error} contract is untouched.
+  const formAction = (formData: FormData) => {
+    const email = formData.get("email");
+    setSubmittedEmail(typeof email === "string" ? email : "");
+    return dispatch(formData);
+  };
+
+  const transition = resolveLeadSuccessTransition(
+    state,
+    intent,
+    submittedEmail,
+  );
+  const redirectHref =
+    transition?.kind === "redirect" ? transition.href : undefined;
+
+  // Apply submissions navigate to a dedicated thank-you page. Navigation is a
+  // true external side-effect, so it belongs in an effect rather than render.
+  useEffect(() => {
+    if (redirectHref) {
+      router.push(redirectHref);
+    }
+  }, [redirectHref, router]);
+
   const errors = state.status === "error" ? state.fieldErrors : undefined;
   const isApply = intent === "apply";
   const isCompact = layout === "compact";
   const showQualificationFields = isApply || !isCompact;
+
+  if (transition?.kind === "panel") {
+    return <ContactSuccessPanel email={transition.email} />;
+  }
 
   return (
     <form
@@ -228,6 +264,28 @@ export function PublicLeadForm({
         <ActionMessage state={state} />
       </div>
     </form>
+  );
+}
+
+function ContactSuccessPanel({ email }: { email: string }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="grid gap-4 rounded-[12px] border-2 border-[#111111] bg-white p-7 shadow-[8px_8px_0_#55b8e8]"
+    >
+      <p className="inline-flex w-fit rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
+        Message sent
+      </p>
+      <h3 className="text-2xl font-black text-[#111111] uppercase">
+        Thanks. We have your message.
+      </h3>
+      <p className="text-base leading-7 font-semibold text-slate-700">
+        {email
+          ? `The team will follow up at ${email} shortly.`
+          : "The team will follow up shortly."}
+      </p>
+    </div>
   );
 }
 

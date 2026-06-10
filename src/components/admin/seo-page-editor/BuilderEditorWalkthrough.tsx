@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useState } from "react";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
+import { computeWalkthroughCardPlacement } from "@/components/admin/seo-page-editor/walkthrough-card-position";
 
 const walkthroughSteps = {
   1: {
@@ -156,17 +157,10 @@ function WalkthroughCard({
   onContinue: () => void;
   onSkip: () => void;
 }) {
-  const cardWidth = 320;
-  const viewportPadding = 16;
-  const preferredTop = targetRect.bottom + 16;
-  const fitsBelow = preferredTop + 180 <= window.innerHeight - viewportPadding;
-  const top = fitsBelow
-    ? preferredTop
-    : Math.max(viewportPadding, targetRect.top - 180);
-  const left = Math.min(
-    Math.max(viewportPadding, targetRect.left),
-    window.innerWidth - cardWidth - viewportPadding,
-  );
+  const { top, left } = computeWalkthroughCardPlacement(targetRect, {
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
 
   return (
     <div

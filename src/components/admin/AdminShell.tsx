@@ -42,6 +42,7 @@ const contentSections: AdminNavSection[] = [
     description: "SEO page content",
     icon: "file",
   },
+  blogSection,
   {
     id: "media",
     label: "Media library",

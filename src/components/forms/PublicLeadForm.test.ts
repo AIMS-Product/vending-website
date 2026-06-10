@@ -1,9 +1,17 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PublicLeadForm, type PublicLeadFormAction } from "./PublicLeadForm";
 import { initialLeadActionState } from "@/app/lead-action-state";
 import type { LeadAttribution } from "@/lib/lead-attribution";
+
+// PublicLeadForm calls useRouter() for the apply-success redirect; SSR has no
+// app-router context, so provide a minimal mock. The redirect/panel decision
+// itself is covered by resolveLeadSuccessTransition in lead-action-state.test.ts
+// and exercised end-to-end by the Playwright browser gate.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+}));
 
 const attribution: LeadAttribution = {
   source_path: "/resources/start-vending",
@@ -58,5 +66,21 @@ describe("PublicLeadForm", () => {
     expect(html).toContain("Email");
     expect(html).not.toContain("Business stage");
     expect(html).not.toContain("Available startup budget");
+  });
+
+  it("renders the live form (not a success panel) on first paint", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        idempotencyKey: "lead-contact-initial",
+        intent: "contact",
+        submitLabel: "Send message",
+      }),
+    );
+
+    expect(html).toContain("<form");
+    expect(html).toContain("Send message");
+    expect(html).not.toContain("Message sent");
   });
 });
