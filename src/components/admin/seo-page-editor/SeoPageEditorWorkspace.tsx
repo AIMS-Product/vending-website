@@ -10,6 +10,7 @@ import { SeoPageEditorCanvasPanel } from "@/components/admin/seo-page-editor/Seo
 import { SeoPageEditorHiddenFields } from "@/components/admin/seo-page-editor/SeoPageEditorHiddenFields";
 import { SeoPageEditorTopRail } from "@/components/admin/seo-page-editor/SeoPageEditorTopRail";
 import { SeoPublishPanel } from "@/components/admin/seo-page-editor/SeoPublishPanel";
+import { useEditorKeyboardShortcuts } from "@/components/admin/seo-page-editor/useEditorKeyboardShortcuts";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 
 export function SeoPageEditorWorkspace({
@@ -17,6 +18,8 @@ export function SeoPageEditorWorkspace({
 }: {
   editor: SeoPageEditorController;
 }) {
+  useEditorKeyboardShortcuts(editor);
+
   return (
     <>
       <SeoEditorManualSubmitToast toast={editor.manualSubmitToast} />
