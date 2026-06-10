@@ -61,6 +61,10 @@ PASS
 - Evidence: full suite green each wave; targeted regression tests added (initial-paint form render, error-contract preservation, builder-page-wins redirect precedence, nav links unchanged test).
 - Confidence: 92/100. Held back by: admin flows not re-proven on prod build (bypass constraint), CLS/console "monitored" items, latent long-word title risk.
 
+## Post-proof addendum (2026-06-10)
+
+- C153 (404 page lacked recovery links) had slipped between N12 (contrast-only on 404) and N13 (routed it to N12) — caught via N13's handoff flag. Fixed: not-found.tsx now offers news / about / apply links. Verified: content rendered live, landmarks tests 3/3, tsc + eslint clean.
+
 ## Residual Risk
 
 - 10 P2 rows deferred to Kody (K1–K6 themes) and 2 deferred to new nodes: C098 public/admin design-system unification, C124 apply-form draft persistence.

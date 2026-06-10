@@ -18,6 +18,21 @@ export default function NotFound() {
       >
         Back to home
       </Link>
+      <p className="mt-4 max-w-md text-sm text-slate-600">
+        Looking for something specific? Try the{" "}
+        <Link href="/news" className="font-medium text-sky-700 underline">
+          news
+        </Link>
+        , read{" "}
+        <Link href="/about" className="font-medium text-sky-700 underline">
+          about the program
+        </Link>
+        , or{" "}
+        <Link href="/apply" className="font-medium text-sky-700 underline">
+          apply now
+        </Link>
+        .
+      </p>
     </div>
   );
 }
