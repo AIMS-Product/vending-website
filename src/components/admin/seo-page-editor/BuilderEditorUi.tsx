@@ -274,6 +274,7 @@ export function BlockToolbar({
       <div className="flex min-w-0 items-center gap-2">
         <BuilderTooltip label={`${typeLabel} block`} detail={readyDetail}>
           <span
+            role="img"
             className="flex size-7 shrink-0 items-center justify-center rounded-md bg-slate-50 text-slate-500 ring-1 ring-slate-200/50 ring-inset"
             aria-label={`${typeLabel} block`}
           >
@@ -296,6 +297,7 @@ export function BlockToolbar({
           {status !== "Ready" && (
             <BuilderTooltip label={status} detail={statusDetail ?? description}>
               <span
+                role="img"
                 className="size-2 shrink-0 rounded-full bg-amber-400"
                 aria-label={status}
               />

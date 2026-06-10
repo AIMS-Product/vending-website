@@ -28,6 +28,16 @@ import {
 import { assessSeoReadiness } from "@/lib/page-builder/seo-readiness";
 import { adminListSeoPages } from "@/lib/services/seo-pages";
 import { requireAdmin } from "@/lib/supabase/auth";
+import {
+  dotToneClass,
+  pageStatusDotTone,
+  pageStatusLabel,
+  pageStatusLegend,
+  readinessDotTone,
+  readinessLegend,
+  type StatusDotTone,
+  type StatusLegendEntry,
+} from "@/app/admin/pages/seo-pages-status-labels";
 import type { Tables } from "@/types/database";
 
 export const metadata: Metadata = {
@@ -417,6 +427,7 @@ function SeoPagesResults({ state }: { state: SeoPagesListState }) {
 
   return (
     <>
+      <StatusLegend />
       <div className="grid gap-3 p-4 md:hidden">
         {state.visiblePages.map((page) => (
           <PageMobileCard key={page.id} page={page} returnTo={state.returnTo} />
@@ -712,15 +723,19 @@ function PageRow({
         {page.target_keyword || "-"}
       </td>
       <td className="px-5 py-4 text-center">
-        <StatusDot
-          label={`SEO readiness: ${readiness.label}`}
+        <StatusBadge
+          accessibleLabel={`SEO readiness: ${readiness.label}`}
+          label={readiness.label}
           tone={readinessDotTone(readiness.status)}
+          align="center"
         />
       </td>
       <td className="px-5 py-4 text-center">
-        <StatusDot
-          label={`Page status: ${formatStatus(page.status)}`}
-          tone={statusDotTone(page.status)}
+        <StatusBadge
+          accessibleLabel={`Page status: ${pageStatusLabel(page.status)}`}
+          label={pageStatusLabel(page.status)}
+          tone={pageStatusDotTone(page.status)}
+          align="center"
         />
       </td>
       <td className="px-5 py-4 text-right">
@@ -769,14 +784,16 @@ function PageMobileCard({
         <PageActionsMenu page={page} returnTo={returnTo} variant="card" />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <StatusDot
-          label={`SEO readiness: ${readiness.label}`}
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <StatusBadge
+          accessibleLabel={`SEO readiness: ${readiness.label}`}
+          label={readiness.label}
           tone={readinessDotTone(readiness.status)}
         />
-        <StatusDot
-          label={`Page status: ${formatStatus(page.status)}`}
-          tone={statusDotTone(page.status)}
+        <StatusBadge
+          accessibleLabel={`Page status: ${pageStatusLabel(page.status)}`}
+          label={pageStatusLabel(page.status)}
+          tone={pageStatusDotTone(page.status)}
         />
       </div>
 
@@ -956,59 +973,78 @@ function metricToneClass(tone: "amber" | "blue" | "green" | "slate") {
   return "bg-[#e9f1ff] text-[#0b63f6]";
 }
 
-function formatStatus(status: string) {
-  return status.charAt(0).toUpperCase() + status.slice(1);
-}
-
-type DotTone = "amber" | "blue" | "green" | "red" | "slate";
-
-function StatusDot({ label, tone }: { label: string; tone: DotTone }) {
+// N7 / issue I7: a status dot paired with a visible text label so the state is
+// readable at a glance without decoding colour. `accessibleLabel` keeps the
+// fuller "Page status: Published" name for assistive tech; `label` is the
+// short word shown next to the dot.
+function StatusBadge({
+  accessibleLabel,
+  label,
+  tone,
+  align = "start",
+}: {
+  accessibleLabel: string;
+  label: string;
+  tone: StatusDotTone;
+  align?: "start" | "center";
+}) {
   return (
-    <span className="group/dot relative inline-flex">
-      <button
-        type="button"
-        aria-label={label}
-        className={`size-2.5 cursor-help appearance-none rounded-full border-0 p-0 ${dotToneClass(
-          tone,
-        )} ring-2 ring-transparent hover:ring-slate-200 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none`}
-      />
+    <span
+      className={`inline-flex items-center gap-2 text-xs font-semibold text-slate-700 ${
+        align === "center" ? "justify-center" : ""
+      }`}
+      aria-label={accessibleLabel}
+    >
       <span
-        role="tooltip"
-        className="pointer-events-none absolute bottom-[calc(100%+6px)] left-1/2 z-20 hidden -translate-x-1/2 rounded-md bg-slate-900 px-2 py-1 text-xs font-medium whitespace-nowrap text-white shadow-md group-focus-within/dot:block group-hover/dot:block"
-      >
-        {label}
-      </span>
+        className={`size-2.5 shrink-0 rounded-full ${dotToneClass(tone)}`}
+        aria-hidden="true"
+      />
+      <span>{label}</span>
     </span>
   );
 }
 
-function statusDotTone(status: string): DotTone {
-  if (status === "published") return "green";
-  if (status === "archived") return "slate";
-  return "amber";
+function StatusLegend() {
+  return (
+    <div
+      className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-slate-200 bg-slate-50/60 px-4 py-3 text-xs text-slate-600 sm:px-5"
+      aria-label="Status and readiness legend"
+    >
+      <LegendGroup title="Status" entries={pageStatusLegend} />
+      <span
+        aria-hidden="true"
+        className="hidden h-4 w-px bg-slate-200 sm:block"
+      />
+      <LegendGroup title="Readiness" entries={readinessLegend} />
+    </div>
+  );
 }
 
-function readinessDotTone(status: string): DotTone {
-  if (status === "strong") return "green";
-  if (status === "blocked") return "red";
-  if (status === "needs_work") return "amber";
-  return "blue";
-}
-
-function dotToneClass(tone: DotTone) {
-  if (tone === "green") {
-    return "bg-emerald-500";
-  }
-  if (tone === "amber") {
-    return "bg-amber-400";
-  }
-  if (tone === "red") {
-    return "bg-rose-500";
-  }
-  if (tone === "slate") {
-    return "bg-slate-400";
-  }
-  return "bg-sky-500";
+function LegendGroup({
+  title,
+  entries,
+}: {
+  title: string;
+  entries: readonly StatusLegendEntry[];
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      <span className="font-semibold tracking-wider text-slate-500 uppercase">
+        {title}
+      </span>
+      {entries.map((entry) => (
+        <span key={entry.label} className="inline-flex items-center gap-1.5">
+          <span
+            className={`size-2.5 shrink-0 rounded-full ${dotToneClass(
+              entry.tone,
+            )}`}
+            aria-hidden="true"
+          />
+          <span className="font-medium text-slate-700">{entry.label}</span>
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function PageChevron() {

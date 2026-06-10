@@ -82,6 +82,61 @@ describe("AdminPagesPage", () => {
     expect(html).toContain('href="/admin/pages/redirects"');
     expect(html).toContain(">Redirects</a>");
   });
+
+  it("shows a visible page-status text label beside the status dot (not colour-only)", async () => {
+    vi.mocked(adminListSeoPages).mockResolvedValue([
+      seoPage({ status: "published" }),
+    ]);
+
+    const page = await AdminPagesPage({ searchParams: Promise.resolve({}) });
+    const html = renderToStaticMarkup(page);
+
+    // The visible status label renders as its own text node, not only as an
+    // aria-label attribute or a hidden tooltip.
+    expect(html).toContain(">Published</span>");
+  });
+
+  it("shows a visible readiness text label beside the readiness dot", async () => {
+    vi.mocked(adminListSeoPages).mockResolvedValue([seoPage()]);
+
+    const page = await AdminPagesPage({ searchParams: Promise.resolve({}) });
+    const html = renderToStaticMarkup(page);
+
+    // Readiness label words appear as visible text. A blank-content draft is
+    // "Blocked"; assert at least one readiness vocabulary word renders.
+    expect(html).toMatch(/>(Strong|Opportunities|Needs work|Blocked)<\/span>/);
+  });
+
+  it("renders a status/readiness legend explaining the dot vocabulary", async () => {
+    vi.mocked(adminListSeoPages).mockResolvedValue([seoPage()]);
+
+    const page = await AdminPagesPage({ searchParams: Promise.resolve({}) });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain('aria-label="Status and readiness legend"');
+    // Legend covers every page-status and readiness state by name.
+    for (const word of [
+      "Published",
+      "Draft",
+      "Archived",
+      "Strong",
+      "Needs work",
+      "Blocked",
+    ]) {
+      expect(html).toContain(word);
+    }
+  });
+
+  it("keeps an accessible name on each status dot", async () => {
+    vi.mocked(adminListSeoPages).mockResolvedValue([
+      seoPage({ status: "published" }),
+    ]);
+
+    const page = await AdminPagesPage({ searchParams: Promise.resolve({}) });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain('aria-label="Page status: Published"');
+  });
 });
 
 function seoPage(

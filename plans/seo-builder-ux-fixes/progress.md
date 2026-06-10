@@ -7,29 +7,29 @@ Owner: feature-orchestrator
 
 ## Graph Summary
 
-| Node | Title                                 | Issues  | Tier   | Depends On   | Parallel Group | Owner        | Status                                                       |
-| ---- | ------------------------------------- | ------- | ------ | ------------ | -------------- | ------------ | ------------------------------------------------------------ |
-| N0   | Pre-flight: commit review artifacts   | —       | ops    | none         | W0 (single)    | orchestrator | DONE                                                         |
-| N1   | Canonical publish-blocker checklist   | I1, I19 | T1     | N0           | W1-A 1/4       | worker-n1    | DONE                                                         |
-| N2   | Schedule status honesty               | I2      | T1     | N1           | W1-A 2/4       | worker-n1    | IN_PROGRESS                                                  |
-| N3   | Publish success state                 | I3      | T2     | N2           | W1-A 3/4       | unassigned   | PENDING                                                      |
-| N4   | Autosave failure surfacing + dedupe   | I6      | T2     | N3           | W1-A 4/4       | unassigned   | PENDING                                                      |
-| N5   | Redirect CRUD (risky surface)         | I4      | T1     | N0           | W1-B           | worker-n5    | DONE                                                         |
-| N6   | Unsaved-exit guard / orphan drafts    | I5      | T2     | N0           | W1-C           | worker-n6    | DONE                                                         |
-| N7   | Pages-list status labels/legend       | I7      | T3     | W1 int.      | W2-A           | worker-n6    | IN_PROGRESS (pulled forward — disjoint from in-flight N2/N5) |
-| N8   | aria-prohibited-attr fix              | I8      | T2     | W1 int.      | W2-B           | worker-n8    | IN_PROGRESS (pulled forward — disjoint from in-flight N2/N5) |
-| N9   | Manual-save revisions + prune         | I9      | T2     | W1 int.      | W2-C 1/2       | unassigned   | PENDING                                                      |
-| N10  | Duplicate slug -copy-n                | I13     | T3     | N9           | W2-C 2/2       | unassigned   | PENDING                                                      |
-| N11  | Mobile sticky bar + collapsible panel | I10     | T3     | W1 int.      | W2-D           | unassigned   | PENDING                                                      |
-| N12  | SEO panel verdict + tabs              | I14     | T3     | W2 int.      | W3-A           | unassigned   | PENDING                                                      |
-| N13  | One-step create wizard                | I15     | T3     | W2 int.      | W3-B           | unassigned   | PENDING                                                      |
-| N14  | Keyboard shortcuts                    | I16     | T3     | W2 int.      | W3-C           | unassigned   | PENDING                                                      |
-| N15  | Quick Tour opt-in                     | I17     | T3     | W2 int.      | W3-D           | unassigned   | PENDING                                                      |
-| N16  | Revision page labels/AM-PM/context    | I18     | T3     | N9 + W2 int. | W3-E           | unassigned   | PENDING                                                      |
-| N17  | A11y batch                            | I12     | T2     | N11, N16     | W4 1/3         | unassigned   | PENDING                                                      |
-| N18  | Jargon/copy sweep                     | I11     | T3     | N17          | W4 2/3         | unassigned   | PENDING                                                      |
-| N19  | P3 batch                              | I20     | T3     | N18          | W4 3/3         | unassigned   | PENDING                                                      |
-| N20  | Final proof + verification.md         | all     | verif. | all          | W5             | orchestrator | PENDING                                                      |
+| Node | Title                                 | Issues  | Tier   | Depends On   | Parallel Group | Owner        | Status                                                      |
+| ---- | ------------------------------------- | ------- | ------ | ------------ | -------------- | ------------ | ----------------------------------------------------------- |
+| N0   | Pre-flight: commit review artifacts   | —       | ops    | none         | W0 (single)    | orchestrator | DONE                                                        |
+| N1   | Canonical publish-blocker checklist   | I1, I19 | T1     | N0           | W1-A 1/4       | worker-n1    | DONE                                                        |
+| N2   | Schedule status honesty               | I2      | T1     | N1           | W1-A 2/4       | worker-n1    | IN_PROGRESS                                                 |
+| N3   | Publish success state                 | I3      | T2     | N2           | W1-A 3/4       | unassigned   | PENDING                                                     |
+| N4   | Autosave failure surfacing + dedupe   | I6      | T2     | N3           | W1-A 4/4       | unassigned   | PENDING                                                     |
+| N5   | Redirect CRUD (risky surface)         | I4      | T1     | N0           | W1-B           | worker-n5    | DONE                                                        |
+| N6   | Unsaved-exit guard / orphan drafts    | I5      | T2     | N0           | W1-C           | worker-n6    | DONE                                                        |
+| N7   | Pages-list status labels/legend       | I7      | T3     | W1 int.      | W2-A           | worker-n6    | DONE                                                        |
+| N8   | aria-prohibited-attr fix              | I8      | T2     | W1 int.      | W2-B           | worker-n8    | DONE                                                        |
+| N9   | Manual-save revisions + prune         | I9      | T2     | W1 int.      | W2-C 1/2       | worker-n5    | IN_PROGRESS (launched after N5+N6 landed freed its surface) |
+| N10  | Duplicate slug -copy-n                | I13     | T3     | N9           | W2-C 2/2       | unassigned   | PENDING                                                     |
+| N11  | Mobile sticky bar + collapsible panel | I10     | T3     | W1 int.      | W2-D           | unassigned   | PENDING                                                     |
+| N12  | SEO panel verdict + tabs              | I14     | T3     | W2 int.      | W3-A           | unassigned   | PENDING                                                     |
+| N13  | One-step create wizard                | I15     | T3     | W2 int.      | W3-B           | unassigned   | PENDING                                                     |
+| N14  | Keyboard shortcuts                    | I16     | T3     | W2 int.      | W3-C           | unassigned   | PENDING                                                     |
+| N15  | Quick Tour opt-in                     | I17     | T3     | W2 int.      | W3-D           | unassigned   | PENDING                                                     |
+| N16  | Revision page labels/AM-PM/context    | I18     | T3     | N9 + W2 int. | W3-E           | unassigned   | PENDING                                                     |
+| N17  | A11y batch                            | I12     | T2     | N11, N16     | W4 1/3         | unassigned   | PENDING                                                     |
+| N18  | Jargon/copy sweep                     | I11     | T3     | N17          | W4 2/3         | unassigned   | PENDING                                                     |
+| N19  | P3 batch                              | I20     | T3     | N18          | W4 3/3         | unassigned   | PENDING                                                     |
+| N20  | Final proof + verification.md         | all     | verif. | all          | W5             | orchestrator | PENDING                                                     |
 
 ## Gate Progress
 
@@ -42,8 +42,8 @@ Owner: feature-orchestrator
 | N4   | TODO | TODO  | TODO     | TODO      | TODO         | n/a           | none                                                                                                                                                                                                                                                                                                            | TBD        |
 | N5   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | agent-runs/N5-1.md; 3 sanctioned redirects deleted via new UI → 404s; resolution files empty diff; control redirect identical before/after; orchestrator fresh tsc+vitest (redirects surface green; only in-flight N7/N8 RED tests fail); "disable"=delete accepted (no enabled column; migration out of scope) | 98%        |
 | N6   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | agent-runs/N6-1.md; 55/55 node tests; browser 9/9 (n6-screens/); server never-saved floor unit-proven; orchestrator re-ran gates fresh; scope deviation accepted: mounted in SeoPageEditorForm.tsx (collision-free)                                                                                             | 95%        |
-| N7   | TODO | TODO  | TODO     | TODO      | TODO         | n/a           | none                                                                                                                                                                                                                                                                                                            | TBD        |
-| N8   | TODO | TODO  | TODO     | TODO      | TODO         | n/a           | none                                                                                                                                                                                                                                                                                                            | TBD        |
+| N7   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/N7-1.md; visible labels + legend; 13/13 browser, axe 0 serious/critical on list; sr-only names kept; orchestrator fresh tsc+vitest 500/500                                                                                                                                                           | 97%        |
+| N8   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/N8-1.md; role="img" 2-line fix; axe aria-prohibited-attr 0; names still announced; out-of-scope finding logged: landmark-complementary-is-top-level → N17; orchestrator fresh tsc+vitest 500/500                                                                                                     | 98%        |
 | N9   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                                                                                                                                                                                                                                                                                                            | TBD        |
 | N10  | TODO | TODO  | TODO     | TODO      | TODO         | n/a           | none                                                                                                                                                                                                                                                                                                            | TBD        |
 | N11  | TODO | TODO  | TODO     | TODO      | TODO         | n/a           | none                                                                                                                                                                                                                                                                                                            | TBD        |

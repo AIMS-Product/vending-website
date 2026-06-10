@@ -15,6 +15,11 @@ Source of authority: `reports/ux-persona-review-seo-builder/fix-strategy.md` (is
 - I5: KEEP create-on-start draft row. Add navigation/beforeunload guard (Save draft / Discard draft / Keep editing) where Discard deletes the never-explicitly-saved auto-row. Add visible "Draft created" notice at editor open. (Rejected alternative: defer creation to first save — breaks autosave/preview-token assumptions.)
 - I9: Snapshot a revision on every manual "Save draft" reusing `page_revisions` with `revision_type='manual_save'` (already in the CHECK constraint — no schema migration). Prune keep-last-20 manual-save revisions per page.
 
+## Scope Adjustments During Execution
+
+- 2026-06-10 (N2/I2): the schedule-field round-trip bug (part a) does NOT reproduce on current code — already fixed by the June 10 scheduler-ownership rework (20260610091000), which postdates the review evidence. Disposition: regression-lock test added; sub-behavior ALREADY_RESOLVED; N2 ships part (b) only (always-visible scheduled status + Cancel + failed state + de-burial). Verified by worker-n1 code trace + browser repro.
+- 2026-06-10 (N5/I4): "enable/disable" realized as delete — redirects table has no enabled column and adding one would require a resolution-touching migration on a risky surface. Edit + delete fully cover correction and removal. Reversible-disable would be a new migration node if product wants it later.
+
 ## Open Questions
 
 - None blocking. (Both intake items above were resolved with defaults at triage.)
