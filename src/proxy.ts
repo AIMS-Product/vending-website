@@ -114,6 +114,18 @@ export async function proxy(request: NextRequest) {
     }
     const exists = await hasPublishedSeoPagePath(routePath);
     if (!exists) {
+      // Legacy /blog/{slug} links permanently redirect to the matching
+      // published news article. A published builder page at the same path
+      // wins (handled above); only otherwise do we fall back to news.
+      if (routePath.startsWith("/blog/")) {
+        const slug = routePath.replace(/^\/blog\//, "");
+        if (await hasPublishedPostSlug(slug)) {
+          return NextResponse.redirect(
+            new URL(`/news/${slug}`, request.url),
+            308,
+          );
+        }
+      }
       return notFoundResponse();
     }
 

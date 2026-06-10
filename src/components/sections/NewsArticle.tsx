@@ -38,7 +38,7 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
               href="/news"
               className="text-sm font-black text-[#066a99] uppercase transition hover:text-[#2d9fd6]"
             >
-              Blog
+              News
             </Link>
             <span className="rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-xs font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
               {category}

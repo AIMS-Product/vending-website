@@ -57,6 +57,18 @@ describe("AdminPagesPage", () => {
     expect(html).not.toContain("/admin/pages?page=3");
     expect(html).not.toContain("/admin/pages/authors");
   });
+
+  it("exposes a Redirects link in the list header actions", async () => {
+    vi.mocked(adminListSeoPages).mockResolvedValue([seoPage()]);
+
+    const page = await AdminPagesPage({
+      searchParams: Promise.resolve({}),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain('href="/admin/pages/redirects"');
+    expect(html).toContain(">Redirects</a>");
+  });
 });
 
 function seoPage(

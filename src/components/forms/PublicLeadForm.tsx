@@ -17,6 +17,9 @@ type PublicLeadFormProps = {
   submitLabel: string;
   intent: "apply" | "contact";
   layout?: "standard" | "compact";
+  // Override the initial action state. Production always uses the idle default;
+  // this exists so SSR-rendered tests can exercise the field-error layer.
+  initialState?: PublicLeadActionState;
 };
 
 export type PublicLeadFormAction = (
@@ -33,6 +36,9 @@ type FieldProps = {
   autoComplete?: string;
   placeholder?: string;
   errors?: Record<string, string[]>;
+  // Last submitted values, keyed by field name. Re-seeds defaultValue after a
+  // failed submit so the user does not lose what they typed.
+  values?: Record<string, string>;
 };
 
 const inputClass =
@@ -98,22 +104,30 @@ export function PublicLeadForm({
   submitLabel,
   intent,
   layout = "standard",
+  initialState = initialLeadActionState,
 }: PublicLeadFormProps) {
   const router = useRouter();
   const [submittedEmail, setSubmittedEmail] = useState("");
+  const [submittedValues, setSubmittedValues] = useState<
+    Record<string, string>
+  >({});
 
-  const [state, dispatch, pending] = useActionState(
-    action,
-    initialLeadActionState,
-  );
+  const [state, dispatch, pending] = useActionState(action, initialState);
 
-  // Capture the submitted email before delegating to the server action so a
-  // successful contact submission can echo it back in the success panel. This
-  // runs in the submit event, not during render, and the wrapper returns the
-  // action's value unchanged, so the {success/error} contract is untouched.
+  // Capture the submitted values before delegating to the server action. React
+  // resets uncontrolled inputs once a form action resolves, so on a validation
+  // failure we re-seed each field's defaultValue from this snapshot to preserve
+  // what the user typed. The email is also surfaced in the contact success
+  // panel. This runs in the submit event, not during render, and the wrapper
+  // returns the action's value unchanged, so the {success/error} contract is
+  // untouched.
   const formAction = (formData: FormData) => {
-    const email = formData.get("email");
-    setSubmittedEmail(typeof email === "string" ? email : "");
+    const values: Record<string, string> = {};
+    for (const [name, value] of formData.entries()) {
+      if (typeof value === "string") values[name] = value;
+    }
+    setSubmittedValues(values);
+    setSubmittedEmail(values.email ?? "");
     return dispatch(formData);
   };
 
@@ -145,6 +159,7 @@ export function PublicLeadForm({
   return (
     <form
       action={formAction}
+      noValidate
       className={cn(
         "grid gap-5 rounded-[12px] border-2 border-[#111111] bg-white p-5 shadow-[8px_8px_0_#55b8e8]",
         !isCompact && "sm:p-7",
@@ -163,6 +178,7 @@ export function PublicLeadForm({
           autoComplete="name"
           required
           errors={errors}
+          values={submittedValues}
         />
         <TextField
           name="email"
@@ -172,6 +188,7 @@ export function PublicLeadForm({
           autoComplete="email"
           required
           errors={errors}
+          values={submittedValues}
         />
         {showQualificationFields && (
           <>
@@ -182,6 +199,7 @@ export function PublicLeadForm({
               type="tel"
               autoComplete="tel"
               errors={errors}
+              values={submittedValues}
             />
             <TextField
               name="city"
@@ -189,6 +207,7 @@ export function PublicLeadForm({
               label="City"
               autoComplete="address-level2"
               errors={errors}
+              values={submittedValues}
             />
             {/* State renders as the same dropdown on both forms; only
                 /apply requires it (matching server-side validation). */}
@@ -198,6 +217,7 @@ export function PublicLeadForm({
               label="State"
               required={isApply}
               errors={errors}
+              values={submittedValues}
               options={US_STATES}
             />
             {isApply && (
@@ -208,11 +228,13 @@ export function PublicLeadForm({
                   label="Business stage"
                   required
                   errors={errors}
+                  values={submittedValues}
                   options={[
                     "Researching vending",
                     "Buying first machine",
                     "Already operating",
                     "Scaling locations",
+                    "Not sure yet",
                   ]}
                 />
                 <SelectField
@@ -221,7 +243,14 @@ export function PublicLeadForm({
                   label="Available startup budget"
                   required
                   errors={errors}
-                  options={["Under $5k", "$5k-$10k", "$10k-$25k", "$25k+"]}
+                  values={submittedValues}
+                  options={[
+                    "Under $5k",
+                    "$5k-$10k",
+                    "$10k-$25k",
+                    "$25k+",
+                    "Not sure yet",
+                  ]}
                 />
                 <SelectField
                   name="timeline"
@@ -229,11 +258,13 @@ export function PublicLeadForm({
                   label="Launch timeline"
                   required
                   errors={errors}
+                  values={submittedValues}
                   options={[
                     "Immediately",
                     "Next 30 days",
                     "Next 90 days",
                     "Still deciding",
+                    "Not sure yet",
                   ]}
                 />
               </>
@@ -249,6 +280,7 @@ export function PublicLeadForm({
           label={isApply ? "What are you trying to build?" : "Message"}
           required={!isApply}
           errors={errors}
+          values={submittedValues}
         />
       )}
 
@@ -315,6 +347,7 @@ function TextField({
   autoComplete,
   placeholder,
   errors,
+  values,
 }: FieldProps) {
   const error = errors?.[errorKey]?.[0];
   const id = `lead-${name}`;
@@ -337,6 +370,7 @@ function TextField({
         required={required}
         autoComplete={autoComplete}
         placeholder={placeholder}
+        defaultValue={values?.[name] ?? ""}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
         className={cn(inputClass, error && "border-red-300 focus:ring-red-200")}
@@ -353,6 +387,7 @@ function SelectField({
   required,
   options,
   errors,
+  values,
 }: FieldProps & { options: readonly string[] }) {
   const error = errors?.[errorKey]?.[0];
   const id = `lead-${name}`;
@@ -375,7 +410,7 @@ function SelectField({
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
         className={cn(inputClass, error && "border-red-300 focus:ring-red-200")}
-        defaultValue=""
+        defaultValue={values?.[name] ?? ""}
       >
         <option value="" disabled>
           Select
@@ -397,6 +432,7 @@ function TextareaField({
   label,
   required,
   errors,
+  values,
 }: FieldProps) {
   const error = errors?.[errorKey]?.[0];
   const id = `lead-${name}`;
@@ -417,6 +453,7 @@ function TextareaField({
         aria-label={label}
         required={required}
         rows={5}
+        defaultValue={values?.[name] ?? ""}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
         className={cn(inputClass, "resize-y")}
@@ -437,12 +474,15 @@ function FieldError({ id, error }: { id: string; error?: string }) {
 
 function ActionMessage({ state }: { state: PublicLeadActionState }) {
   if (state.status === "idle") return null;
+  const isError = state.status === "error";
   return (
     <p
-      aria-live="polite"
+      // Errors announce assertively via role="alert"; success stays polite.
+      role={isError ? "alert" : undefined}
+      aria-live={isError ? "assertive" : "polite"}
       className={cn(
         "text-sm font-medium",
-        state.status === "success" ? "text-emerald-700" : "text-red-600",
+        isError ? "text-red-600" : "text-emerald-700",
       )}
     >
       {state.message}

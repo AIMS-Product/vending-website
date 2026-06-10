@@ -6,7 +6,7 @@ export function NewsHero() {
           Insights from the route
         </p>
         <h1 className="mt-8 max-w-4xl text-[clamp(3.5rem,9vw,8rem)] leading-[0.9] font-black text-[#111111] uppercase">
-          Blog
+          News
         </h1>
         <p className="mt-7 max-w-2xl text-xl leading-8 font-semibold text-slate-700">
           Strategies on locations, machine selection, products, and the

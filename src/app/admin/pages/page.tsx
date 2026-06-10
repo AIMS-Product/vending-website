@@ -78,9 +78,12 @@ export default async function AdminPagesPage({
 function AdminPagesActions() {
   return (
     <div className="flex w-full flex-wrap gap-2">
+      <Link href="/admin/pages/redirects" className={adminSecondaryButtonClass}>
+        Redirects
+      </Link>
       <Link
         href="/admin/pages/new"
-        className={`${adminPrimaryButtonClass} w-full`}
+        className={`${adminPrimaryButtonClass} flex-1`}
       >
         <span aria-hidden="true">
           <PageIcon icon="plus" />

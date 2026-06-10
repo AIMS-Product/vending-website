@@ -68,6 +68,62 @@ describe("PublicLeadForm", () => {
     expect(html).not.toContain("Available startup budget");
   });
 
+  it("offers a 'Not sure yet' choice in all three apply qualification selects", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        idempotencyKey: "lead-apply-unsure",
+        intent: "apply",
+        submitLabel: "Apply now",
+      }),
+    );
+
+    // One <option> per qualification select (stage, budget, timeline). Match
+    // the rendered text node specifically; the value attribute also carries the
+    // string, so a bare substring count would double up.
+    const matches = html.match(/>Not sure yet</g) ?? [];
+    expect(matches.length).toBe(3);
+  });
+
+  it("opts out of native validation so server field errors can render", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        idempotencyKey: "lead-apply-novalidate",
+        intent: "apply",
+        submitLabel: "Apply now",
+      }),
+    );
+
+    expect(html).toContain("novalidate");
+  });
+
+  it("shows inline errors and aria-invalid from a pre-populated error state", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        idempotencyKey: "lead-apply-errorstate",
+        intent: "apply",
+        submitLabel: "Apply now",
+        initialState: {
+          status: "error",
+          message: "Check the highlighted fields and try again.",
+          fieldErrors: {
+            fullName: ["Name is required."],
+            email: ["Enter a valid email."],
+          },
+        },
+      }),
+    );
+
+    expect(html).toContain("Name is required.");
+    expect(html).toContain("Enter a valid email.");
+    expect(html).toContain('aria-invalid="true"');
+  });
+
   it("renders the live form (not a success panel) on first paint", () => {
     const html = renderToStaticMarkup(
       createElement(PublicLeadForm, {

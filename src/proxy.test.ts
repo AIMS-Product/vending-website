@@ -88,3 +88,45 @@ describe("proxy admin auth gate", () => {
     expect(mocks.hasPublishedSeoPagePath).not.toHaveBeenCalled();
   });
 });
+
+describe("proxy legacy blog redirects", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.isDevAdminAuthBypassEnabled.mockReturnValue(false);
+    mocks.getBuilderRedirectBySourcePath.mockResolvedValue(null);
+    mocks.hasPublishedSeoPagePath.mockResolvedValue(false);
+  });
+
+  it("permanently redirects legacy /blog/{slug} to the published news article", async () => {
+    const { hasPublishedPostSlug } = await import("@/lib/services/news");
+    vi.mocked(hasPublishedPostSlug).mockResolvedValue(true);
+
+    const response = await proxy(request("/blog/some-published-article"));
+
+    expect(response.status).toBe(308);
+    expect(response.headers.get("location")).toBe(
+      "https://vending-website.vercel.app/news/some-published-article",
+    );
+  });
+
+  it("keeps unknown legacy /blog slugs as 404", async () => {
+    const { hasPublishedPostSlug } = await import("@/lib/services/news");
+    vi.mocked(hasPublishedPostSlug).mockResolvedValue(false);
+
+    const response = await proxy(request("/blog/junk-slug"));
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("lets a published builder page at /blog/{slug} win over the redirect", async () => {
+    const { hasPublishedPostSlug } = await import("@/lib/services/news");
+    vi.mocked(hasPublishedPostSlug).mockResolvedValue(true);
+    mocks.hasPublishedSeoPagePath.mockResolvedValue(true);
+
+    const response = await proxy(request("/blog/some-published-article"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
+});
