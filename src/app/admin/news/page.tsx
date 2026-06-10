@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdminPaginationLink } from "@/components/admin/AdminPaginationLink";
 import { AdminShell } from "@/components/admin/AdminShell";
 import {
   AdminIcon,
@@ -308,7 +309,7 @@ export default async function AdminNewsPage({
             </span>
           </div>
           <nav className="flex items-center gap-2" aria-label="Pagination">
-            <PaginationLink
+            <AdminPaginationLink
               label="Previous page"
               disabled={currentPage <= 1}
               href={adminNewsHref({
@@ -321,7 +322,7 @@ export default async function AdminNewsPage({
             <span className="flex h-9 min-w-9 items-center justify-center rounded-md border border-[#0b63f6] bg-white px-3 font-semibold text-[#0b63f6]">
               {currentPage}
             </span>
-            <PaginationLink
+            <AdminPaginationLink
               label="Next page"
               disabled={currentPage >= totalPages}
               href={adminNewsHref({
@@ -374,57 +375,6 @@ function PostRow({ post, isFirst }: { post: NewsListPost; isFirst: boolean }) {
         </Link>
       </td>
     </tr>
-  );
-}
-
-function PaginationLink({
-  href,
-  label,
-  disabled,
-  next = false,
-}: {
-  href: string;
-  label: string;
-  disabled: boolean;
-  next?: boolean;
-}) {
-  const icon = (
-    <svg
-      aria-hidden="true"
-      className="size-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d={next ? "m9 18 6-6-6-6" : "m15 18-6-6 6-6"}
-      />
-    </svg>
-  );
-
-  if (disabled) {
-    return (
-      <span
-        aria-disabled="true"
-        aria-label={label}
-        className="flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-300"
-      >
-        {icon}
-      </span>
-    );
-  }
-
-  return (
-    <Link
-      href={href}
-      aria-label={label}
-      className="flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-    >
-      {icon}
-    </Link>
   );
 }
 

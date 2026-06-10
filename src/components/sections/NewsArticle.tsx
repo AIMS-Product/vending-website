@@ -46,7 +46,7 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
           </div>
 
           <header className="mt-10">
-            <h1 className="max-w-[900px] text-[clamp(2.75rem,6vw,5.4rem)] leading-[0.96] font-black text-[#111111] uppercase">
+            <h1 className="max-w-[900px] text-[clamp(2.75rem,6vw,5.4rem)] leading-[0.96] font-black break-words text-[#111111] uppercase">
               {post.title}
             </h1>
             {post.excerpt && (

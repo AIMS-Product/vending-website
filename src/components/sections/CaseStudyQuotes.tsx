@@ -9,7 +9,7 @@ export function CaseStudyQuotes() {
     <section className="bg-[#f5fbff] px-5 py-16 lg:px-10 lg:py-20">
       <ul className="mx-auto grid max-w-[1500px] gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {caseStudyQuotes.map((quote) => (
-          <li key={quote.id}>
+          <li key={quote.id} className="min-w-0">
             <QuoteCard quote={quote} />
           </li>
         ))}

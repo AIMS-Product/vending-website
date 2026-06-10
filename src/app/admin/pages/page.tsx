@@ -6,6 +6,7 @@ import {
   moveSeoPageToDraftFromList,
   publishSeoPageFromList,
 } from "@/app/admin/pages/actions";
+import { AdminPaginationLink } from "@/components/admin/AdminPaginationLink";
 import {
   AdminPageActionButton,
   AdminShell,
@@ -37,14 +38,47 @@ export const metadata: Metadata = {
 type SeoPagesListState = ReturnType<typeof buildSeoPageListState>;
 type SeoPageWorkflowView = SeoPagesListState["view"];
 
-const workflowFilters: Array<{ value: SeoPageWorkflowView; label: string }> = [
-  { value: "all", label: "All metadata" },
-  { value: "needs-review", label: "Needs review" },
-  { value: "updating", label: "Updating" },
-  { value: "orphaned", label: "Needs links" },
-  { value: "metadata-issues", label: "Metadata issues" },
-  { value: "scheduled", label: "Scheduled" },
-  { value: "schedule-failed", label: "Schedule failed" },
+const workflowFilters: Array<{
+  value: SeoPageWorkflowView;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "all",
+    label: "All metadata",
+    description: "Every page in this list",
+  },
+  {
+    value: "needs-review",
+    label: "Needs review",
+    description: "Pages whose review date has passed",
+  },
+  {
+    value: "updating",
+    label: "Updating",
+    description: "Pages with unpublished draft changes",
+  },
+  {
+    value: "orphaned",
+    label: "Needs links",
+    description: "Pages with no internal links pointing to them",
+  },
+  {
+    value: "metadata-issues",
+    label: "Metadata issues",
+    description: "Pages missing SEO title, description, or other metadata",
+  },
+  {
+    value: "scheduled",
+    label: "Scheduled",
+    description: "Pages queued to publish automatically at a set time",
+  },
+  {
+    value: "schedule-failed",
+    label: "Schedule failed",
+    description:
+      "Pages whose scheduled publish did not go through and need attention",
+  },
 ];
 
 export default async function AdminPagesPage({
@@ -323,33 +357,44 @@ function SeoPagesSortMenu({ state }: { state: SeoPagesListState }) {
 
 function SeoPagesWorkflowFilters({ state }: { state: SeoPagesListState }) {
   const { perPage, q: searchQuery, sort, status, view: activeView } = state;
+  const activeFilter = workflowFilters.find(
+    (filter) => filter.value === activeView,
+  );
 
   return (
-    <nav
-      className="mt-4 flex max-w-full flex-wrap gap-2"
-      aria-label="Workflow filters"
-    >
-      {workflowFilters.map((filter) => (
-        <Link
-          key={filter.value}
-          href={adminPagesHref({
-            status,
-            view: filter.value,
-            q: searchQuery,
-            sort,
-            perPage,
-          })}
-          aria-current={activeView === filter.value ? "page" : undefined}
-          className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
-            activeView === filter.value
-              ? "border-[#0b63f6] bg-[#f4f8ff] text-[#0b63f6]"
-              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950"
-          }`}
-        >
-          {filter.label}
-        </Link>
-      ))}
-    </nav>
+    <>
+      <nav
+        className="mt-4 flex max-w-full flex-wrap gap-2"
+        aria-label="Workflow filters"
+      >
+        {workflowFilters.map((filter) => (
+          <Link
+            key={filter.value}
+            href={adminPagesHref({
+              status,
+              view: filter.value,
+              q: searchQuery,
+              sort,
+              perPage,
+            })}
+            aria-current={activeView === filter.value ? "page" : undefined}
+            title={filter.description}
+            className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+              activeView === filter.value
+                ? "border-[#0b63f6] bg-[#f4f8ff] text-[#0b63f6]"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+            }`}
+          >
+            {filter.label}
+          </Link>
+        ))}
+      </nav>
+      {activeFilter && activeFilter.value !== "all" ? (
+        <p className="mt-2 text-xs text-slate-500">
+          {activeFilter.description}
+        </p>
+      ) : null}
+    </>
   );
 }
 
@@ -538,7 +583,7 @@ function SeoPagesPagination({ state }: { state: SeoPagesListState }) {
         Page {currentPage} of {totalPages}
       </span>
       <nav className="flex items-center gap-2" aria-label="Pagination">
-        <PaginationLink
+        <AdminPaginationLink
           label="Previous page"
           disabled={currentPage <= 1}
           href={adminPagesHref({
@@ -565,7 +610,7 @@ function SeoPagesPagination({ state }: { state: SeoPagesListState }) {
             })}
           />
         ))}
-        <PaginationLink
+        <AdminPaginationLink
           label="Next page"
           disabled={currentPage >= totalPages}
           href={adminPagesHref({
@@ -871,57 +916,6 @@ function PageActionForm({
         confirmMessage={confirmMessage}
       />
     </form>
-  );
-}
-
-function PaginationLink({
-  href,
-  label,
-  disabled,
-  next = false,
-}: {
-  href: string;
-  label: string;
-  disabled: boolean;
-  next?: boolean;
-}) {
-  const icon = (
-    <svg
-      aria-hidden="true"
-      className="size-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d={next ? "m9 18 6-6-6-6" : "m15 18-6-6 6-6"}
-      />
-    </svg>
-  );
-
-  if (disabled) {
-    return (
-      <span
-        aria-disabled="true"
-        aria-label={label}
-        className="flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-300"
-      >
-        {icon}
-      </span>
-    );
-  }
-
-  return (
-    <Link
-      href={href}
-      aria-label={label}
-      className="flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-    >
-      {icon}
-    </Link>
   );
 }
 

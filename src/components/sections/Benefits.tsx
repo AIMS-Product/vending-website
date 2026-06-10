@@ -16,8 +16,8 @@ export function Benefits() {
           />
         </div>
 
-        <div className="flex h-full flex-col justify-center">
-          <h2 className="text-4xl leading-tight font-black text-[#111111] uppercase sm:text-5xl">
+        <div className="flex h-full min-w-0 flex-col justify-center">
+          <h2 className="text-4xl leading-tight font-black break-words text-[#111111] uppercase sm:text-5xl">
             {benefits.title}
           </h2>
           <p className="mt-6 max-w-md text-lg leading-8 font-semibold text-slate-700">

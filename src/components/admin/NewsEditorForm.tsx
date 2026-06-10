@@ -228,7 +228,7 @@ export function NewsEditorForm({
             <div className="mt-5 grid gap-2">
               <button
                 type="submit"
-                className={adminPrimaryButtonClass}
+                className={adminSecondaryButtonClass}
                 name="intent"
                 value="save"
               >

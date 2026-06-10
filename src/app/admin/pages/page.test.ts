@@ -58,6 +58,19 @@ describe("AdminPagesPage", () => {
     expect(html).not.toContain("/admin/pages/authors");
   });
 
+  it("explains what the Schedule failed workflow filter means", async () => {
+    vi.mocked(adminListSeoPages).mockResolvedValue([seoPage()]);
+
+    const page = await AdminPagesPage({
+      searchParams: Promise.resolve({}),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain(
+      'title="Pages whose scheduled publish did not go through and need attention"',
+    );
+  });
+
   it("exposes a Redirects link in the list header actions", async () => {
     vi.mocked(adminListSeoPages).mockResolvedValue([seoPage()]);
 
