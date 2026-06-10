@@ -11,12 +11,15 @@ import {
 } from "@/components/admin/seo-page-editor/PublishBlockerChecklist";
 import { ScheduleStatusCard } from "@/components/admin/seo-page-editor/ScheduleStatusCard";
 import { PublishSuccessCard } from "@/components/admin/seo-page-editor/PublishSuccessCard";
+import { PublishVerdictCard } from "@/components/admin/seo-page-editor/PublishVerdictCard";
+import { SeoPanelTabs } from "@/components/admin/seo-page-editor/SeoPanelTabs";
 import {
   compactInputClass,
   primaryButtonClass,
   textareaClass,
 } from "@/components/admin/seo-page-editor/editor-styles";
 import { editorPublishConfirmMessage } from "@/components/admin/seo-page-editor/editor-publish-confirmation";
+import { thinPageWarning } from "@/components/admin/seo-page-editor/SeoReadinessHelpers";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 import {
   SCHEDULED_PUBLISH_TIME_ZONE,
@@ -49,17 +52,38 @@ export function SeoPublishPanel({
         isExpanded={isStatusExpanded}
         onExpandedChange={setIsStatusExpanded}
       />
-      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
-        <SeoMetadataFields editor={editor} />
-        <SeoReadinessPanel
-          content={editor.content}
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
+        <PublishVerdictCard
+          blockers={editor.publishBlockerChecklist}
           summary={editor.seoReadiness}
-          internalLinkSuggestions={editor.internalLinkSuggestions}
-          linkSuggestionMessage={editor.linkSuggestionMessage}
-          onApplyInternalLinkSuggestion={editor.applyLinkSuggestion}
-          onAddSuggestedBlock={editor.addSuggestedBlock}
-          onOpenSettings={editor.focusSeoSetting}
-          mediaAssetCount={editor.mediaAssets.length}
+          onFixNext={editor.focusPublishBlocker}
+        />
+        {/* Verdict leads; the readiness findings and the settings info-dump
+            move behind tabs so the panel doesn't open as a wall of fields. */}
+        <SeoPanelTabs
+          tabs={[
+            {
+              id: "readiness",
+              label: "Readiness",
+              content: (
+                <SeoReadinessPanel
+                  content={editor.content}
+                  summary={editor.seoReadiness}
+                  internalLinkSuggestions={editor.internalLinkSuggestions}
+                  linkSuggestionMessage={editor.linkSuggestionMessage}
+                  onApplyInternalLinkSuggestion={editor.applyLinkSuggestion}
+                  onAddSuggestedBlock={editor.addSuggestedBlock}
+                  onOpenSettings={editor.focusSeoSetting}
+                  mediaAssetCount={editor.mediaAssets.length}
+                />
+              ),
+            },
+            {
+              id: "settings",
+              label: "Settings",
+              content: <SeoMetadataFields editor={editor} />,
+            },
+          ]}
         />
       </div>
     </section>
@@ -332,7 +356,9 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
       </label>
 
       <label className="block">
-        <span className="text-sm font-semibold text-slate-900">Slug</span>
+        <span className="text-sm font-semibold text-slate-900">
+          URL ending (slug)
+        </span>
         <div className="mt-1.5 flex items-center rounded-lg border border-slate-200 bg-white shadow-sm transition focus-within:border-[#0b63f6] focus-within:ring-4 focus-within:ring-[#0b63f6]/10">
           <select
             name="routePrefix"
@@ -353,7 +379,7 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
             value={editor.visibleSlug}
             onChange={(event) => editor.updateSlugFromInput(event.target.value)}
             required
-            aria-label="Slug"
+            aria-label="URL ending (slug)"
             className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-300"
             placeholder="page-slug"
           />
@@ -564,9 +590,11 @@ function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
   return (
     <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
       <div>
-        <p className="text-sm font-semibold text-slate-900">Governance</p>
+        <p className="text-sm font-semibold text-slate-900">
+          Internal &amp; social
+        </p>
         <p className="mt-0.5 text-xs leading-5 text-slate-500">
-          Internal tags, review timing, and social metadata.
+          Internal tags, review timing, and how this page looks when shared.
         </p>
       </div>
       <label className="block">
@@ -782,6 +810,7 @@ function PublishButton({
   return (
     <button
       type="button"
+      data-testid="seo-publish-button"
       className={`shrink-0 ${
         editor.publishDisabled ? disabledPublishButtonClass : primaryButtonClass
       }`}
@@ -820,6 +849,10 @@ function PublishConfirmDialog({
     routePrefix: editor.routePrefix,
     visibleSlug: editor.visibleSlug,
   });
+  // I20 follow-up: surface the SAME non-blocking thin-page advisory (n6's
+  // thinPageWarning helper) at the moment of commitment. It is a soft cue, not
+  // a blocker — Confirm publish stays enabled and publishDisabled is untouched.
+  const thinWarning = thinPageWarning(editor.content);
 
   return (
     <div
@@ -842,6 +875,28 @@ function PublishConfirmDialog({
           {publishConfirmMessage}
         </p>
       </div>
+      {thinWarning ? (
+        <p
+          role="note"
+          className="flex items-start gap-2 rounded-lg border border-amber-300 bg-white/70 px-3 py-2 text-xs leading-5 text-amber-900"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="mt-0.5 size-4 shrink-0"
+          >
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+            <path d="M12 9v4" />
+            <path d="M12 17h.01" />
+          </svg>
+          <span>{thinWarning}</span>
+        </p>
+      ) : null}
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <button
           type="button"
