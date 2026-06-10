@@ -759,6 +759,39 @@ export async function archiveSeoPageFromList(formData: FormData) {
   redirect(redirectPath);
 }
 
+// N19 / I20 item 1: archive several pages at once from the list. Minimal —
+// reuses the existing single-page archive service per id (no new bulk service),
+// requireAdmin + per-id UUID validation, and returns to the preserved list view.
+export async function bulkArchiveSeoPagesFromList(formData: FormData) {
+  const admin = await requireAuth();
+  const returnTo = adminPageListReturnPath(formData);
+  const rawIds = formData.getAll("ids").map((value) => String(value));
+  const ids = rawIds.filter((id) => z.uuid().safeParse(id).success);
+
+  if (ids.length === 0) {
+    redirect(`${ADMIN_PAGES_PATH}?error=bulk-archive`);
+  }
+
+  let archivedAny = false;
+  for (const pageId of ids) {
+    try {
+      const page = await adminArchiveSeoPage(pageId, {
+        actorId: admin.user.id,
+      });
+      revalidatePagePaths(page.route_path);
+      archivedAny = true;
+    } catch (error) {
+      console.error("failed to bulk-archive SEO page from list", {
+        adminUserId: admin.user.id,
+        pageId,
+        error,
+      });
+    }
+  }
+
+  redirect(archivedAny ? returnTo : `${ADMIN_PAGES_PATH}?error=bulk-archive`);
+}
+
 function parsePageFormData(formData: FormData) {
   const contentRaw = String(formData.get("draftContent") ?? "");
   let draftContent: unknown;

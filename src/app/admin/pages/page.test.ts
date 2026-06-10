@@ -7,6 +7,7 @@ import type { Tables } from "@/types/database";
 
 vi.mock("@/app/admin/pages/actions", () => ({
   archiveSeoPageFromList: vi.fn(),
+  bulkArchiveSeoPagesFromList: vi.fn(),
   duplicateSeoPageFromList: vi.fn(),
   moveSeoPageToDraftFromList: vi.fn(),
   publishSeoPageFromList: vi.fn(),
@@ -81,6 +82,34 @@ describe("AdminPagesPage", () => {
 
     expect(html).toContain('href="/admin/pages/redirects"');
     expect(html).toContain(">Redirects</a>");
+  });
+
+  it("renders a bulk-select checkbox on non-archived rows, wired to the bulk-archive form", async () => {
+    vi.mocked(adminListSeoPages).mockResolvedValue([
+      seoPage({ id: "page_draft", slug: "draft-page", status: "draft" }),
+    ]);
+
+    const page = await AdminPagesPage({ searchParams: Promise.resolve({}) });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain('name="ids"');
+    expect(html).toContain('form="bulk-archive-form"');
+    expect(html).toContain('value="page_draft"');
+  });
+
+  it("does not render a bulk-select checkbox on archived rows", async () => {
+    vi.mocked(adminListSeoPages).mockResolvedValue([
+      seoPage({ id: "page_arch", slug: "arch-page", status: "archived" }),
+    ]);
+
+    const page = await AdminPagesPage({
+      searchParams: Promise.resolve({ status: "archived" }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    // No bulk-select checkbox (name="ids") for archived rows — they can't be
+    // archived again. (The per-row actions hidden id input is unrelated.)
+    expect(html).not.toContain('name="ids"');
   });
 
   it("shows a visible page-status text label beside the status dot (not colour-only)", async () => {

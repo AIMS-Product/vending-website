@@ -39,6 +39,13 @@ export function SeoPageEditorCanvasPanel({
     <div className="order-1 min-w-0 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-100 shadow-sm xl:order-none xl:h-[calc(100dvh-7rem)]">
       <EditorStatusBar editor={editor} />
 
+      {/* N19 / I20 item 9: orient the user that the canvas mirrors the public
+          page (the header/footer chrome below is an inert preview, de-tabbed in
+          N17) so the rendered site chrome is not mistaken for editable admin UI. */}
+      <p className="bg-slate-100 px-4 pt-3 text-center text-[11px] font-medium tracking-wide text-slate-500 uppercase">
+        Preview of the public page — edit the content blocks below
+      </p>
+
       <div className="mx-auto max-w-[1500px] bg-[#f5fbff] shadow-sm">
         {chromeSettings.showHeader ? <EditorPublicHeader /> : null}
         <article className="bg-[#f5fbff]">

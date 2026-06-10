@@ -10,6 +10,52 @@ export type NextPublishStep = {
   tone: "blocked" | "work" | "ready";
 };
 
+// N19 / I20 item 8: a NON-BLOCKING thin-page advisory. This is deliberately
+// separate from `assessSeoReadiness` — it adds no readiness rule, never appears
+// in `summary.blockers`/`warnings`, and never affects `publishDisabled`, so the
+// N1 rule-parity contract is preserved. It is a soft "are you sure?" cue shown
+// next to the existing improvements when a page has very little body copy.
+const THIN_PAGE_WORD_THRESHOLD = 50;
+
+export function thinPageWarning(content: PageContent): string | null {
+  const wordCount = countContentWords(content);
+  if (wordCount >= THIN_PAGE_WORD_THRESHOLD) return null;
+  return `This page has very little content (about ${wordCount} ${
+    wordCount === 1 ? "word" : "words"
+  }). Thin pages tend to rank poorly — you can still publish, but consider adding more before you do.`;
+}
+
+// Rough word count over the text leaves of every block's props. Bounded by the
+// content already in memory; ignores structure and non-string values.
+function countContentWords(content: PageContent): number {
+  let total = 0;
+  for (const section of content.sections) {
+    for (const column of section.columns) {
+      for (const block of column.blocks) {
+        total += countWordsInValue(block.props);
+      }
+    }
+  }
+  return total;
+}
+
+function countWordsInValue(value: unknown): number {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed.split(/\s+/).length : 0;
+  }
+  if (Array.isArray(value)) {
+    return value.reduce((sum, item) => sum + countWordsInValue(item), 0);
+  }
+  if (value && typeof value === "object") {
+    return Object.values(value).reduce(
+      (sum, item) => sum + countWordsInValue(item),
+      0,
+    );
+  }
+  return 0;
+}
+
 export function scrollToBuilderBlockId(blockId: string) {
   window.setTimeout(() => {
     document

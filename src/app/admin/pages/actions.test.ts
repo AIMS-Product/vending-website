@@ -3,6 +3,7 @@ import type { PageContent } from "@/lib/page-builder/blocks";
 import {
   acceptAiSeoProposalBlocks,
   archiveSeoPageFromList,
+  bulkArchiveSeoPagesFromList,
   createSeoPageComment,
   createSeoPageDraftForEditor,
   deleteNeverSavedSeoPageDraft,
@@ -989,6 +990,43 @@ describe("admin page actions", () => {
     expect(mocks.revalidatePath).not.toHaveBeenCalledWith("/admin/pages");
     expect(mocks.redirect).toHaveBeenCalledWith(
       `/admin/pages/${pageId}?error=archive`,
+    );
+  });
+
+  it("bulk-archives every selected page and returns to the preserved list view", async () => {
+    const secondId = "44444444-4444-4444-8444-444444444444";
+    const formData = new FormData();
+    formData.append("ids", pageId);
+    formData.append("ids", secondId);
+    formData.set("returnTo", "/admin/pages?view=metadata-issues");
+    mocks.adminArchiveSeoPage.mockResolvedValue({
+      id: pageId,
+      route_path: "/resources/x",
+    });
+
+    await bulkArchiveSeoPagesFromList(formData);
+
+    expect(mocks.adminArchiveSeoPage).toHaveBeenCalledWith(pageId, {
+      actorId: "admin_1",
+    });
+    expect(mocks.adminArchiveSeoPage).toHaveBeenCalledWith(secondId, {
+      actorId: "admin_1",
+    });
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      "/admin/pages?view=metadata-issues",
+    );
+  });
+
+  it("ignores invalid ids and errors when no valid id is selected", async () => {
+    const formData = new FormData();
+    formData.append("ids", "../settings");
+    formData.append("ids", "not-a-uuid");
+
+    await bulkArchiveSeoPagesFromList(formData);
+
+    expect(mocks.adminArchiveSeoPage).not.toHaveBeenCalled();
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      "/admin/pages?error=bulk-archive",
     );
   });
 

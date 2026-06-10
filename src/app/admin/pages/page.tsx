@@ -7,6 +7,7 @@ import {
   publishSeoPageFromList,
 } from "@/app/admin/pages/actions";
 import { AdminPaginationLink } from "@/components/admin/AdminPaginationLink";
+import { BulkArchiveControls } from "@/app/admin/pages/BulkArchiveControls";
 import {
   AdminPageActionButton,
   AdminShell,
@@ -428,6 +429,9 @@ function SeoPagesResults({ state }: { state: SeoPagesListState }) {
   return (
     <>
       <StatusLegend />
+      <div className="hidden md:block">
+        <BulkArchiveControls returnTo={state.returnTo} />
+      </div>
       <div className="grid gap-3 p-4 md:hidden">
         {state.visiblePages.map((page) => (
           <PageMobileCard key={page.id} page={page} returnTo={state.returnTo} />
@@ -705,19 +709,33 @@ function PageRow({
   return (
     <tr className="align-middle transition focus-within:bg-slate-50 hover:bg-slate-50 [&:has(details[open])]:relative [&:has(details[open])]:z-20 [&:has(details[open])]:bg-[#f8fbff]">
       <td className="border-l-4 border-transparent px-7 py-4">
-        <Link
-          href={`/admin/pages/${page.id}`}
-          className="block truncate font-semibold text-[#0b63f6] underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-          title={page.title}
-        >
-          {page.title}
-        </Link>
-        <p
-          className="mt-1 max-w-[36rem] truncate font-mono text-xs text-slate-500"
-          title={page.route_path}
-        >
-          {page.route_path}
-        </p>
+        <div className="flex items-start gap-3">
+          {page.status !== "archived" ? (
+            <input
+              type="checkbox"
+              name="ids"
+              value={page.id}
+              form="bulk-archive-form"
+              aria-label={`Select ${page.title} for bulk actions`}
+              className="mt-1 size-4 shrink-0 rounded border-slate-300 text-[#0b63f6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+            />
+          ) : null}
+          <div className="min-w-0">
+            <Link
+              href={`/admin/pages/${page.id}`}
+              className="block truncate font-semibold text-[#0b63f6] underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+              title={page.title}
+            >
+              {page.title}
+            </Link>
+            <p
+              className="mt-1 max-w-[36rem] truncate font-mono text-xs text-slate-500"
+              title={page.route_path}
+            >
+              {page.route_path}
+            </p>
+          </div>
+        </div>
       </td>
       <td className="px-5 py-4 break-words text-slate-700">
         {page.target_keyword || "-"}
@@ -866,7 +884,7 @@ function PageActionsMenu({
           pageId={page.id}
           returnTo={returnTo}
           label="Duplicate page"
-          confirmMessage={`Duplicate "${page.title}" as a draft? The copy will use a temporary draft slug until you edit it.`}
+          confirmMessage={`Duplicate "${page.title}" as a draft? The copy gets a "-copy" URL ending you can change before publishing.`}
         />
         {!isPublished ? (
           <PageActionForm

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   copyRailUrl,
   type CopyMessage,
@@ -27,6 +27,26 @@ export function SeoPageEditorTopRail({
   editor: SeoPageEditorController;
 }) {
   const [copyMessage, setCopyMessage] = useState<CopyMessage | null>(null);
+  // N19 / I20 item 6: the Share menu is a <details>; it stayed open after a
+  // copy and after clicking elsewhere. Close it on select and on outside click.
+  const shareMenuRef = useRef<HTMLDetailsElement>(null);
+  const closeShareMenu = () => {
+    if (shareMenuRef.current) shareMenuRef.current.open = false;
+  };
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      const menu = shareMenuRef.current;
+      if (
+        menu?.open &&
+        event.target instanceof Node &&
+        !menu.contains(event.target)
+      ) {
+        menu.open = false;
+      }
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
   const {
     autosave,
     blockSidebarExpandTitle,
@@ -135,28 +155,29 @@ export function SeoPageEditorTopRail({
               </a>
             )}
             {(canCopyEditorUrl || canCopyPublicUrl) && (
-              <details className="relative">
+              <details className="relative" ref={shareMenuRef}>
                 <summary
                   className={`${railCommandClass} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
                   title="Copy editor or public page links"
                 >
                   Share
                 </summary>
-                <div className="absolute top-full left-1/2 z-[70] mt-2 grid w-56 -translate-x-1/2 gap-1 rounded-xl border border-slate-200 bg-white p-2 text-left shadow-xl">
+                <div className="absolute top-full left-1/2 z-[70] mt-2 grid w-64 -translate-x-1/2 gap-1 rounded-xl border border-slate-200 bg-white p-2 text-left shadow-xl">
                   {canCopyEditorUrl && (
                     <button
                       type="button"
                       className={railMenuItemClass}
                       title="Copy this editor page link"
-                      onClick={() =>
+                      onClick={() => {
                         void copyRailUrl(
                           () =>
                             typeof window === "undefined"
                               ? null
                               : window.location.href,
                           "Editor link copied.",
-                        ).then(setCopyMessage)
-                      }
+                        ).then(setCopyMessage);
+                        closeShareMenu();
+                      }}
                     >
                       Copy editor link
                     </button>
@@ -166,7 +187,7 @@ export function SeoPageEditorTopRail({
                       type="button"
                       className={railMenuItemClass}
                       title="Copy the public resource URL for this page"
-                      onClick={() =>
+                      onClick={() => {
                         void copyRailUrl(
                           () =>
                             publicPath && typeof window !== "undefined"
@@ -176,8 +197,9 @@ export function SeoPageEditorTopRail({
                                 ).toString()
                               : null,
                           "Public URL copied.",
-                        ).then(setCopyMessage)
-                      }
+                        ).then(setCopyMessage);
+                        closeShareMenu();
+                      }}
                     >
                       Copy public URL
                     </button>
@@ -203,6 +225,14 @@ export function SeoPageEditorTopRail({
               }`}
             >
               {previewLinkMessage}
+            </p>
+          )}
+          {/* N19 / I20 item 7: tell the user the preview link carries a private
+              access token so they understand it is shareable-but-private. */}
+          {previewLinkPath && previewLinkTone !== "error" && (
+            <p className="text-[11px] text-slate-400">
+              This preview link includes a private access token — anyone with it
+              can view the draft until the link is revoked.
             </p>
           )}
           {copyMessage && (

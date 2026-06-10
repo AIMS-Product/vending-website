@@ -11,6 +11,7 @@ type AdminIcon =
   | "archive"
   | "book"
   | "file"
+  | "help"
   | "image"
   | "layers"
   | "log-out"
@@ -454,6 +455,22 @@ function AdminAccountBlock({
           </p>
         </div>
       ) : null}
+      {/* N19 / I20 item 2: a minimal help/support entry point. (Round 1 dropped
+          this as "internal tool"; the round-2 triage re-included it.) A mailto
+          keeps it dependency-free until a docs site exists. */}
+      <a
+        href="mailto:support@vendingpreneurs.com?subject=SEO%20Page%20Builder%20help"
+        title="Help & support"
+        className={clsx(
+          "mb-2 flex w-full items-center rounded-md py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
+          collapsed ? "justify-center px-2" : "gap-2 px-3",
+        )}
+      >
+        <span className="text-slate-500" aria-hidden="true">
+          <AdminIconGlyph icon="help" />
+        </span>
+        <span className={clsx(collapsed && "hidden")}>Help &amp; support</span>
+      </a>
       <form action={signOut}>
         <button
           type="submit"
@@ -827,6 +844,14 @@ function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
           <path d="m17.3 17.3 1.8 1.8" />
           <path d="m4.9 19.1 1.8-1.8" />
           <path d="m17.3 6.7 1.8-1.8" />
+        </svg>
+      );
+    case "help":
+      return (
+        <svg {...adminIconGlyphCommonProps}>
+          <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
+          <path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3" />
+          <path d="M12 17h.01" />
         </svg>
       );
     case "log-out":
