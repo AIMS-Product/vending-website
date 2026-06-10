@@ -38,4 +38,14 @@ describe("NewsList card", () => {
     expect(html).not.toContain("<img");
     expect(html).toContain("First Post Title");
   });
+
+  it("renders cards visible on first paint (no scroll-reveal hidden state)", () => {
+    // C005 guard: cards must not start hidden behind a scroll-reveal
+    // animation, which made the page look blank/half-loaded above the fold.
+    const html = renderToStaticMarkup(<NewsList posts={[post]} />);
+
+    expect(html).not.toContain("opacity-0");
+    expect(html).not.toContain("invisible");
+    expect(html).not.toContain('data-reveal="false"');
+  });
 });

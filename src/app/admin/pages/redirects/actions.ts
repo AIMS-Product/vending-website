@@ -41,15 +41,44 @@ const REDIRECT_STATUS_CODES = [301, 302, 307, 308] as const;
 
 const REDIRECTS_PATH = "/admin/pages/redirects";
 
+const SOURCE_PATH_HINT = "Start the path with /, e.g. /resources/old-page";
+const DESTINATION_PATH_HINT =
+  "Start the path with /, e.g. /blog/new-page, or paste a full https:// link";
+
+// Mirrors the service's isRootRelativePath floor (seo-pages.ts): a value the
+// service will accept always begins with "/". Stricter checks (builder-route
+// shape for sources, self-redirect, backslash escapes) stay in the service so
+// its specific messages still surface — this only catches the common "foo"
+// typo before it hits the service's jargon error.
+function isRootRelativeLike(value: string) {
+  return value.startsWith("/");
+}
+
+// The service accepts an http(s) URL as a redirect destination, so the form
+// must not reject one as "missing the leading slash".
+function isHttpUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 const createSchema = z.object({
   sourcePath: z
     .string()
     .trim()
-    .min(1, "Start the path with /, e.g. /resources/old-page"),
+    .min(1, SOURCE_PATH_HINT)
+    .refine(isRootRelativeLike, SOURCE_PATH_HINT),
   destinationPath: z
     .string()
     .trim()
-    .min(1, "Add where this path should send people, e.g. /blog/new-page"),
+    .min(1, "Add where this path should send people, e.g. /blog/new-page")
+    .refine(
+      (value) => isRootRelativeLike(value) || isHttpUrl(value),
+      DESTINATION_PATH_HINT,
+    ),
   statusCode: z.coerce
     .number()
     .refine((value) => REDIRECT_STATUS_CODES.includes(value as 301), {

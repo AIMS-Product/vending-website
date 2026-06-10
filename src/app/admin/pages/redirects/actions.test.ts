@@ -126,11 +126,15 @@ describe("createBuilderRedirectAction", () => {
       ]),
     );
 
+    // A backslash path passes the form's leading-slash floor but the service
+    // rejects it (browsers normalize "\" to "/", so "/blog\evil" escapes the
+    // site). This keeps the service reachable so the issue→field mapping is
+    // exercised without the form short-circuiting first.
     const result = await createBuilderRedirectAction(
       { status: "idle" },
       form({
         sourcePath: "/blog/old",
-        destinationPath: "not-a-path",
+        destinationPath: "/blog\\evil",
         statusCode: "301",
       }),
     );
@@ -317,6 +321,93 @@ describe("deleteBuilderRedirectAction", () => {
       status: "error",
       message: "That redirect no longer exists. Refresh and try again.",
     });
+  });
+});
+
+describe("path format floor", () => {
+  it("rejects a source path missing the leading slash with an inline error, no service call", async () => {
+    const result = await createBuilderRedirectAction(
+      { status: "idle" },
+      form({
+        sourcePath: "foo",
+        destinationPath: "/blog/new",
+        statusCode: "301",
+      }),
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "error",
+        fieldErrors: expect.objectContaining({
+          sourcePath: "Start the path with /, e.g. /resources/old-page",
+        }),
+        values: expect.objectContaining({ sourcePath: "foo" }),
+      }),
+    );
+    expect(mocks.adminCreateBuilderRedirect).not.toHaveBeenCalled();
+  });
+
+  it("rejects a destination path missing the leading slash with an inline error, no service call", async () => {
+    const result = await createBuilderRedirectAction(
+      { status: "idle" },
+      form({
+        sourcePath: "/blog/old",
+        destinationPath: "foo",
+        statusCode: "301",
+      }),
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "error",
+        fieldErrors: expect.objectContaining({
+          destinationPath: expect.stringContaining("Start the path with /"),
+        }),
+        values: expect.objectContaining({ destinationPath: "foo" }),
+      }),
+    );
+    expect(mocks.adminCreateBuilderRedirect).not.toHaveBeenCalled();
+  });
+
+  it("accepts an absolute http(s) URL as a destination (no false reject)", async () => {
+    mocks.adminCreateBuilderRedirect.mockResolvedValueOnce({ id: "r1" });
+
+    await createBuilderRedirectAction(
+      { status: "idle" },
+      form({
+        sourcePath: "/blog/old",
+        destinationPath: "https://example.com/new",
+        statusCode: "301",
+      }),
+    );
+
+    expect(mocks.adminCreateBuilderRedirect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        destinationPath: "https://example.com/new",
+      }),
+    );
+  });
+
+  it("rejects a non-leading-slash source on update without calling the service", async () => {
+    const result = await updateBuilderRedirectAction(
+      { status: "idle" },
+      form({
+        id: "55555555-5555-4555-8555-555555555555",
+        sourcePath: "foo",
+        destinationPath: "/blog/new",
+        statusCode: "301",
+      }),
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "error",
+        fieldErrors: expect.objectContaining({
+          sourcePath: "Start the path with /, e.g. /resources/old-page",
+        }),
+      }),
+    );
+    expect(mocks.adminUpdateBuilderRedirect).not.toHaveBeenCalled();
   });
 });
 
