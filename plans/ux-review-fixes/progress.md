@@ -1,28 +1,28 @@
 # Feature Progress: ux-review-fixes
 
-Status: IN_PROGRESS
-Current wave: W5 (final proof)
+Status: COMPLETE
+Current wave: complete
 Last updated: 2026-06-10
 Owner: feature-orchestrator
 
 ## Graph Summary
 
-| Node | Title                                  | Tier | Depends On | Parallel Group | Owner        | Status  |
-| ---- | -------------------------------------- | ---- | ---------- | -------------- | ------------ | ------- |
-| N1   | Admin sidebar Blog/News link           | T3   | none       | W1-A           | w-n1         | DONE    |
-| N2   | Lead form success states               | T1   | none       | W1-B           | w-n2         | DONE    |
-| N3   | Hero stats SSR real values             | T3   | none       | W1-C           | w-n3         | DONE    |
-| N4   | Quick Tour reposition                  | T3   | none       | W1-D           | w-n4         | DONE    |
-| N5   | Form validation + "Not sure yet"       | T2   | N2         | W2-A           | w-n5         | DONE    |
-| N6   | Redirects link + menu verify + archive | T3   | none       | W2-B           | w-n6         | DONE    |
-| N7   | Public News naming                     | T3   | none       | W2-C           | w-n7         | DONE    |
-| N8   | /blog 301 → /news                      | T2   | none       | W2-D           | w-n8         | DONE    |
-| N9   | Mobile h-scroll + H1 break             | T3   | N7         | W3-A           | w-n9         | DONE    |
-| N10  | News image fallback + CLS              | T3   | N7         | W3-B           | w-n10        | DONE    |
-| N11  | Admin P2 sweep                         | T3   | N1,N4,N6   | W3-C           | w-n11        | DONE    |
-| N12  | Public a11y sweep                      | T3   | N9         | W4-A           | w-n12        | DONE    |
-| N13  | P2 remainder triage                    | T3   | N9,N10,N11 | W4-B           | w-n13        | DONE    |
-| N14  | Final proof                            | —    | all        | W5             | orchestrator | PENDING |
+| Node | Title                                  | Tier | Depends On | Parallel Group | Owner        | Status |
+| ---- | -------------------------------------- | ---- | ---------- | -------------- | ------------ | ------ |
+| N1   | Admin sidebar Blog/News link           | T3   | none       | W1-A           | w-n1         | DONE   |
+| N2   | Lead form success states               | T1   | none       | W1-B           | w-n2         | DONE   |
+| N3   | Hero stats SSR real values             | T3   | none       | W1-C           | w-n3         | DONE   |
+| N4   | Quick Tour reposition                  | T3   | none       | W1-D           | w-n4         | DONE   |
+| N5   | Form validation + "Not sure yet"       | T2   | N2         | W2-A           | w-n5         | DONE   |
+| N6   | Redirects link + menu verify + archive | T3   | none       | W2-B           | w-n6         | DONE   |
+| N7   | Public News naming                     | T3   | none       | W2-C           | w-n7         | DONE   |
+| N8   | /blog 301 → /news                      | T2   | none       | W2-D           | w-n8         | DONE   |
+| N9   | Mobile h-scroll + H1 break             | T3   | N7         | W3-A           | w-n9         | DONE   |
+| N10  | News image fallback + CLS              | T3   | N7         | W3-B           | w-n10        | DONE   |
+| N11  | Admin P2 sweep                         | T3   | N1,N4,N6   | W3-C           | w-n11        | DONE   |
+| N12  | Public a11y sweep                      | T3   | N9         | W4-A           | w-n12        | DONE   |
+| N13  | P2 remainder triage                    | T3   | N9,N10,N11 | W4-B           | w-n13        | DONE   |
+| N14  | Final proof                            | —    | all        | W5             | orchestrator | DONE   |
 
 ## Gate Progress
 
@@ -41,7 +41,7 @@ Owner: feature-orchestrator
 | N11  | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/n11-1.md          | 94         |
 | N12  | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/n12-1.md          | 94         |
 | N13  | n/a  | n/a   | n/a      | DONE      | n/a          | n/a           | agent-runs/n13-1.md          | 95         |
-| N14  | n/a  | n/a   | n/a      | TODO      | TODO         | TODO          | none                         | TBD        |
+| N14  | n/a  | n/a   | n/a      | DONE      | DONE         | DONE          | verification.md              | 92         |
 
 ## Blockers
 
