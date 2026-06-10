@@ -42,7 +42,7 @@ export function SeoPageEditorCanvasPanel({
       {/* N19 / I20 item 9: orient the user that the canvas mirrors the public
           page (the header/footer chrome below is an inert preview, de-tabbed in
           N17) so the rendered site chrome is not mistaken for editable admin UI. */}
-      <p className="bg-slate-100 px-4 pt-3 text-center text-[11px] font-medium tracking-wide text-slate-500 uppercase">
+      <p className="bg-slate-100 px-4 pt-3 text-center text-[11px] font-medium tracking-wide text-slate-600 uppercase">
         Preview of the public page — edit the content blocks below
       </p>
 

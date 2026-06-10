@@ -1,0 +1,235 @@
+{
+  "ts": 1781085378325,
+  "base": "http://localhost:3001",
+  "publish": {
+    "journey": "publish",
+    "steps": [
+      {
+        "n": 1,
+        "action": "observe-blockers-upfront",
+        "result": "blockers visible upfront: 3; verdict=false; fix-next links=8",
+        "screenshot": "publish-01-observe-blockers-upfront.png"
+      },
+      {
+        "n": 2,
+        "action": "resolve-blockers",
+        "result": "blocker: Add your first block below: a hero or text section to introduce the page. A CTA or lead-form block is required before you can publish. | blocker: Add your first block below: a hero or text section to introduce the page. A CTA or lead-form block is required before you can publish. | blocker: Add your first block below: a hero or text section to introduce the page. A CTA or lead-form block is required before you can publish. | blocker: Add your first block below: a hero or text section to introduce the page. A CTA or lead-form block is required before you can publish. | blocker: Add your first block below: a hero or text section to introduce the page. A CTA or lead-form block is required before you can publish. | blocker: Add your first block below: a hero or text section to introduce the page. A CTA or lead-form block is required before you can publish.",
+        "screenshot": "publish-02-resolve-blockers.png"
+      },
+      {
+        "n": 3,
+        "action": "click-publish",
+        "result": "ERROR: Publish still disabled after fixes",
+        "screenshot": "publish-03-click-publish.png"
+      },
+      {
+        "n": 4,
+        "action": "confirm-step",
+        "result": "ERROR: no confirm step shown",
+        "screenshot": "publish-04-confirm-step.png"
+      },
+      {
+        "n": 5,
+        "action": "verify-success-block",
+        "result": "ERROR: no 'Published' success feedback after publish",
+        "screenshot": "publish-05-verify-success-block.png"
+      },
+      {
+        "n": 6,
+        "action": "open-live-page",
+        "result": "ERROR: no 'Open live page' link (orig friction point)",
+        "screenshot": "publish-06-open-live-page.png"
+      },
+      {
+        "n": 7,
+        "action": "verify-live-200",
+        "result": "ERROR: live route status 404",
+        "screenshot": "publish-07-verify-live-200.png"
+      },
+      {
+        "n": 8,
+        "action": "republish-needs-fresh-confirm",
+        "result": "ERROR: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /^Publish( changes| page)?$/i }).first()\u001b",
+        "screenshot": "publish-08-republish-needs-fresh-confirm.png"
+      }
+    ],
+    "friction": ["No visible 'Open live page' link after publishing"],
+    "upfront": {
+      "blockerCount": 3,
+      "blockerSample": [
+        "Add an SEO titleGo to field",
+        "Add a meta descriptionGo to field",
+        "Add a call-to-action, hero button, or lead form so visitors can actShow in page"
+      ],
+      "fixNextCount": 8,
+      "hasVerdict": false
+    }
+  },
+  "schedule": {
+    "journey": "schedule",
+    "steps": [
+      {
+        "n": 1,
+        "action": "open-editor",
+        "result": "ok",
+        "screenshot": "schedule-01-open-editor.png"
+      },
+      {
+        "n": 2,
+        "action": "schedule-control-reachable-without-advanced",
+        "result": "schedule field visible on Settings tab: true; inside Advanced <details>: false",
+        "screenshot": "schedule-02-schedule-control-reachable-without-advanced.png"
+      },
+      {
+        "n": 3,
+        "action": "set-schedule",
+        "result": "filled 2026-06-11T12:00",
+        "screenshot": "schedule-03-set-schedule.png"
+      },
+      {
+        "n": 4,
+        "action": "save-schedule",
+        "result": "ok",
+        "screenshot": "schedule-04-save-schedule.png"
+      },
+      {
+        "n": 5,
+        "action": "verify-scheduled-indicator",
+        "result": "scheduled indicator present; Pacific-labelled=true",
+        "screenshot": "schedule-05-verify-scheduled-indicator.png"
+      },
+      {
+        "n": 6,
+        "action": "reload-persists",
+        "result": "after reload: field='2026-06-11T12:00'; indicator=true",
+        "screenshot": "schedule-06-reload-persists.png"
+      },
+      {
+        "n": 7,
+        "action": "cancel-schedule",
+        "result": "cancel triggered",
+        "screenshot": "schedule-07-cancel-schedule.png"
+      },
+      {
+        "n": 8,
+        "action": "verify-cleared",
+        "result": "schedule visibly cleared after cancel",
+        "screenshot": "schedule-08-verify-cleared.png"
+      }
+    ],
+    "friction": [],
+    "scheduleReachable": {
+      "visibleOnSettingsTab": true,
+      "insideAdvancedDetails": false
+    },
+    "scheduledValue": "2026-06-11T12:00",
+    "scheduledIndicatorPacific": true
+  },
+  "axe": [
+    {
+      "label": "editor",
+      "url": "/admin/pages/2618c2f4-cd67-4588-8037-9a050ac0dcf3",
+      "byImpact": {
+        "critical": 0,
+        "serious": 1,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "count": 1
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "label": "pages-list",
+      "url": "/admin/pages",
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 0,
+        "minor": 0
+      },
+      "violations": []
+    },
+    {
+      "label": "redirects",
+      "url": "/admin/pages/redirects",
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 0,
+        "minor": 0
+      },
+      "violations": []
+    },
+    {
+      "label": "revisions-list",
+      "url": "/admin/pages/2618c2f4-cd67-4588-8037-9a050ac0dcf3/revisions",
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 0,
+        "minor": 0
+      },
+      "violations": []
+    },
+    {
+      "label": "revision-detail",
+      "url": "(no revision link found)",
+      "byImpact": {},
+      "violations": [],
+      "note": "no revision to open"
+    }
+  ],
+  "cleanup": {
+    "steps": [
+      {
+        "action": "archive-throwaway-page",
+        "result": "archived"
+      },
+      {
+        "action": "verify-no-active-throwaway",
+        "result": "no active throwaway row (archived/removed)"
+      }
+    ]
+  },
+  "anomalies": [],
+  "create": {
+    "journey": "create",
+    "steps": [
+      {
+        "n": 1,
+        "action": "open-pages-list",
+        "result": "ok",
+        "screenshot": "create-01-open-pages-list.png"
+      },
+      {
+        "n": 2,
+        "action": "start-building",
+        "result": "editor mounted; Settings tab open",
+        "screenshot": "create-02-start-building.png"
+      },
+      {
+        "n": 3,
+        "action": "fill-title-slug-triggers-autocreate",
+        "result": "title='N20 Proof Page 1781085378325' slug='n20-proof-1781085378325' -> /admin/pages/2618c2f4-cd67-4588-8037-9a050ac0dcf3",
+        "screenshot": "create-03-fill-title-slug-triggers-autocreate.png"
+      },
+      {
+        "n": 4,
+        "action": "save-draft",
+        "result": "url after save: /admin/pages/2618c2f4-cd67-4588-8037-9a050ac0dcf3",
+        "screenshot": "create-04-save-draft.png"
+      }
+    ],
+    "friction": []
+  }
+}

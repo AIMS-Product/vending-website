@@ -1,7 +1,7 @@
 # Feature Progress: seo-builder-ux-fixes (round 2)
 
-Status: IN_PROGRESS
-Current wave: W1
+Status: COMPLETE
+Current wave: W5 (final proof PASSED — see verification.md)
 Last updated: 2026-06-10
 Owner: feature-orchestrator
 
@@ -30,7 +30,7 @@ Owner: feature-orchestrator
 | N17  | A11y batch                            | I12     | T2     | N11, N16     | W4 1/3         | worker-n6    | DONE                                        |
 | N18  | Jargon/copy sweep                     | I11     | T3     | N17          | W4 2/3         | worker-n8    | DONE (panel copy handed to N12)             |
 | N19  | P3 batch                              | I20     | T3     | N18          | W4 3/3         | worker-n6    | DONE (after 1 integration rejection→fix)    |
-| N20  | Final proof + verification.md         | all     | verif. | all          | W5             | orchestrator | PENDING                                     |
+| N20  | Final proof + verification.md         | all     | verif. | all          | W5             | orchestrator | DONE — PASS                                 |
 
 ## Gate Progress
 
@@ -57,7 +57,7 @@ Owner: feature-orchestrator
 | N17  | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/N17-1.md; per-item table: tab stops 17→15 (de-tabbed preview chrome), dup main fixed, nested complementary fixed, wizard regions ALREADY_RESOLVED (N13), portal outline fixed, archive glyph cue, targets ≥24px verified; bonus contrast fix; axe 0 on editor/revisions/list; residual: pre-existing heading-order (moderate) | 96%        |
 | N18  | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/N18-1.md; Overline (eyebrow), Call to action (CTA), words-first redirect codes via shared redirect-status-labels.ts; identifiers untouched; handoffs to N12 (panel Slug/Governance copy) + N19 (page.tsx:869 stale duplicate copy — crossed message); orchestrator fresh tsc clean + vitest 564/564                           | TBD        |
 | N19  | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/N19-1.md; 6 fixed (bulk archive, help link, share-menu close, preview trust copy, thin-page warning, canvas cue) + 6 verified already-resolved; first DONE claim rejected (mock omission broke 7 tests — root-caused, fixed, lesson memorized); orchestrator re-verified 581/581                                              | TBD        |
-| N20  | n/a  | n/a   | n/a      | TODO      | TODO         | TODO          | none                                                                                                                                                                                                                                                                                                                                     | TBD        |
+| N20  | n/a  | n/a   | n/a      | DONE      | DONE         | DONE          | verification.md; publish journey 1.2→~4.5 PASS, schedule 1.3→5/5 PASS; tsc clean, vitest 584/584, build pass; axe serious/critical 0 on all surfaces after final contrast fix; PROD cleanup verified                                                                                                                                     | 95%        |
 
 ## Blockers
 

@@ -1,0 +1,85 @@
+{
+  "ts": 1781085927941,
+  "createdPageId": "55b0ca77-a481-4150-aac5-f0e2cdced0b5",
+  "publicUrl": "/resources/n20-publish-1781085927941",
+  "steps": [
+    {
+      "n": 1,
+      "action": "create-page",
+      "result": "created 55b0ca77-a481-4150-aac5-f0e2cdced0b5",
+      "screenshot": "publishB-01-create-page.png"
+    },
+    {
+      "n": 2,
+      "action": "add-hero-block",
+      "result": "hero block added",
+      "screenshot": "publishB-02-add-hero-block.png"
+    },
+    {
+      "n": 3,
+      "action": "fill-hero-heading-and-cta",
+      "result": "heading, cta label, cta destination, cta label (modal) filled",
+      "screenshot": "publishB-03-fill-hero-heading-and-cta.png"
+    },
+    {
+      "n": 4,
+      "action": "fill-seo-title-and-meta",
+      "result": "seo title + meta filled",
+      "screenshot": "publishB-04-fill-seo-title-and-meta.png"
+    },
+    {
+      "n": 5,
+      "action": "save-draft",
+      "result": "saved",
+      "screenshot": "publishB-05-save-draft.png"
+    },
+    {
+      "n": 6,
+      "action": "publish-enabled-then-click",
+      "result": "publish clicked (was enabled)",
+      "screenshot": "publishB-06-publish-enabled-then-click.png"
+    },
+    {
+      "n": 7,
+      "action": "confirm-step-appears",
+      "result": "confirm step shown (gated)",
+      "screenshot": "publishB-07-confirm-step-appears.png"
+    },
+    {
+      "n": 8,
+      "action": "confirm-publish",
+      "result": "published; success feedback visible",
+      "screenshot": "publishB-08-confirm-publish.png"
+    },
+    {
+      "n": 9,
+      "action": "open-live-page-link",
+      "result": "live tab opened (175 chars)",
+      "screenshot": "publishB-09-open-live-page-link.png"
+    },
+    {
+      "n": 10,
+      "action": "verify-live-200",
+      "result": "live route 200 (143 chars)",
+      "screenshot": "publishB-10-verify-live-200.png"
+    },
+    {
+      "n": 11,
+      "action": "republish-needs-fresh-confirm",
+      "result": "re-publish requires a FRESH confirm step",
+      "screenshot": "publishB-11-republish-needs-fresh-confirm.png"
+    },
+    {
+      "n": 12,
+      "action": "cleanup-archive",
+      "result": "archive/unpublish attempted",
+      "screenshot": "publishB-12-cleanup-archive.png"
+    },
+    {
+      "n": 13,
+      "action": "verify-cleanup",
+      "result": "no active throwaway row",
+      "screenshot": "publishB-13-verify-cleanup.png"
+    }
+  ]
+}
