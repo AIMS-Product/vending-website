@@ -32,6 +32,9 @@ export function SeoPageEditorHiddenFields({
       {editor.structuredDataFaq && (
         <input type="hidden" name="structuredDataFaq" value="on" />
       )}
+      {editor.isCancellingSchedule && (
+        <input type="hidden" name="cancelScheduledPublish" value="on" />
+      )}
     </>
   );
 }

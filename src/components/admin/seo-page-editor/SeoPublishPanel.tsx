@@ -9,6 +9,7 @@ import {
   PUBLISH_BLOCKER_LIST_ID,
   PublishBlockerChecklist,
 } from "@/components/admin/seo-page-editor/PublishBlockerChecklist";
+import { ScheduleStatusCard } from "@/components/admin/seo-page-editor/ScheduleStatusCard";
 import {
   compactInputClass,
   primaryButtonClass,
@@ -20,7 +21,6 @@ import {
   SCHEDULED_PUBLISH_TIME_ZONE,
   SCHEDULED_PUBLISH_TIME_ZONE_LABEL,
   formatDateTimeLocalInTimeZone,
-  formatScheduledPublishDisplay,
 } from "@/lib/page-builder/scheduled-publishing";
 
 // S7: a clearly-disabled (greyed) variant for the Publish button so a blocked
@@ -157,6 +157,16 @@ function PublishStatusSection({
         </div>
       ) : null}
 
+      {editor.scheduleStatus.kind !== "none" ? (
+        <div className="mt-3">
+          <ScheduleStatusCard
+            status={editor.scheduleStatus}
+            isCancelling={editor.isCancellingSchedule}
+            onCancelSchedule={editor.requestCancelSchedule}
+          />
+        </div>
+      ) : null}
+
       {isExpanded ? (
         <div id="publish-status-content" className="mt-3 space-y-3">
           <PublishStatusCard editor={editor} />
@@ -248,21 +258,8 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
       <p className="text-xs leading-5 font-medium text-slate-500">
         {publishStateHelp}
       </p>
-      {page?.scheduled_publish_status === "scheduled" &&
-      page.scheduled_publish_at ? (
-        <p className="rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-xs leading-5 font-semibold text-sky-800">
-          Scheduled for{" "}
-          {formatScheduledPublishDisplay(page.scheduled_publish_at)}
-        </p>
-      ) : null}
-      {page?.scheduled_publish_status === "failed" ? (
-        <p className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs leading-5 font-semibold text-rose-700">
-          Scheduled publish failed
-          {page.scheduled_publish_error
-            ? `: ${page.scheduled_publish_error}`
-            : "."}
-        </p>
-      ) : null}
+      {/* Scheduled / failed schedule state is rendered once, in the always-
+          visible ScheduleStatusCard above — not duplicated here. */}
       {page?.status === "published" && (
         <a
           href={page.route_path}
@@ -389,9 +386,48 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
         />
       </label>
 
+      <ScheduleField editor={editor} />
       <AdvancedSeoFields editor={editor} />
       <SearchPreviewCard editor={editor} />
     </div>
+  );
+}
+
+function ScheduleField({ editor }: { editor: SeoPageEditorController }) {
+  const page = editor.page;
+  // Mount-time baseline for the uncontrolled schedule input: the server only
+  // writes scheduler state when the submitted value differs from this, so
+  // routine saves and stale tabs never re-arm or unlock a schedule.
+  const [scheduledPublishBaseline] = useState(() =>
+    formatDateTimeLocalInTimeZone(
+      page?.scheduled_publish_at,
+      SCHEDULED_PUBLISH_TIME_ZONE,
+    ),
+  );
+
+  return (
+    <label className="block rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <span className="text-sm font-semibold text-slate-900">
+        Schedule publish
+      </span>
+      <input
+        type="datetime-local"
+        name="scheduledPublishAt"
+        aria-label="Scheduled publish"
+        defaultValue={scheduledPublishBaseline}
+        className={compactInputClass}
+      />
+      <input
+        type="hidden"
+        name="scheduledPublishAtBaseline"
+        value={scheduledPublishBaseline}
+      />
+      <span className="mt-1.5 block text-xs leading-5 text-slate-500">
+        Uses {SCHEDULED_PUBLISH_TIME_ZONE_LABEL} ({SCHEDULED_PUBLISH_TIME_ZONE}
+        ). Leave blank unless this page should publish later. Save the draft to
+        arm the schedule.
+      </span>
+    </label>
   );
 }
 
@@ -513,24 +549,12 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
 
 function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
   const page = editor.page;
-  // Mount-time baseline for the uncontrolled schedule input: the server only
-  // writes scheduler state when the submitted value differs from this, so
-  // routine saves and stale tabs never re-arm or unlock a schedule.
-  const [scheduledPublishBaseline] = useState(() =>
-    formatDateTimeLocalInTimeZone(
-      page?.scheduled_publish_at,
-      SCHEDULED_PUBLISH_TIME_ZONE,
-    ),
-  );
-  const hasScheduledState =
-    page?.scheduled_publish_status === "scheduled" ||
-    page?.scheduled_publish_status === "failed";
   return (
     <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
       <div>
         <p className="text-sm font-semibold text-slate-900">Governance</p>
         <p className="mt-0.5 text-xs leading-5 text-slate-500">
-          Internal tags, review timing, social metadata, and scheduling.
+          Internal tags, review timing, and social metadata.
         </p>
       </div>
       <label className="block">
@@ -652,53 +676,6 @@ function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
           placeholder="Leave blank to use meta description"
         />
       </label>
-      <label className="block">
-        <span className="text-sm font-semibold text-slate-900">
-          Scheduled publish
-        </span>
-        <input
-          type="datetime-local"
-          name="scheduledPublishAt"
-          aria-label="Scheduled publish"
-          defaultValue={scheduledPublishBaseline}
-          className={compactInputClass}
-        />
-        <input
-          type="hidden"
-          name="scheduledPublishAtBaseline"
-          value={scheduledPublishBaseline}
-        />
-        <span className="mt-1.5 block text-xs leading-5 text-slate-500">
-          Uses {SCHEDULED_PUBLISH_TIME_ZONE_LABEL} (
-          {SCHEDULED_PUBLISH_TIME_ZONE}). Leave blank unless this page should
-          publish later.
-        </span>
-      </label>
-      {hasScheduledState ? (
-        <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm font-medium text-slate-700">
-          <input
-            name="cancelScheduledPublish"
-            aria-label="Cancel scheduled publish"
-            type="checkbox"
-            className="mt-1 size-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
-          />
-          <span>
-            <span className="block font-semibold text-slate-900">
-              Cancel scheduled publish
-            </span>
-            <span className="mt-0.5 block text-xs leading-5 font-normal text-slate-500">
-              Keeps the draft intact and removes this page from the automatic
-              publishing queue.
-            </span>
-          </span>
-        </label>
-      ) : null}
-      {page?.scheduled_publish_status === "failed" ? (
-        <p className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs leading-5 font-semibold text-rose-700">
-          {page.scheduled_publish_error ??
-            "Scheduled publish failed. Save a new time to retry."}
-        </p>
-      ) : null}
     </div>
   );
 }

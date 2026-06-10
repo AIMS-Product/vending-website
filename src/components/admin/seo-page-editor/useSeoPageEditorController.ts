@@ -88,6 +88,10 @@ import {
   type PublishBlockerChecklistItem,
 } from "@/components/admin/seo-page-editor/publish-blocker-checklist";
 import {
+  deriveScheduleStatus,
+  type ScheduleStatus,
+} from "@/components/admin/seo-page-editor/schedule-status";
+import {
   getNarrowEditorServerSnapshot,
   getNarrowEditorSnapshot,
   subscribeToNarrowEditorChange,
@@ -248,6 +252,11 @@ export function useSeoPageEditorController(
   const closeBlockSettings = useCallback(() => {
     setEditingBlockId(null);
   }, []);
+  // I2: inline "Cancel scheduled publish" arms a one-shot hidden field, then
+  // submits the normal Save action so the existing server cancel path
+  // (cancelScheduledPublish -> cancelledScheduledPublishMetadata) runs. No new
+  // write path to the scheduler columns is introduced.
+  const [isCancellingSchedule, setIsCancellingSchedule] = useState(false);
   const isNarrowEditor = useSyncExternalStore(
     subscribeToNarrowEditorChange,
     getNarrowEditorSnapshot,
@@ -313,16 +322,27 @@ export function useSeoPageEditorController(
   const hasUnpublishedDraftChanges =
     isPublishedPage &&
     (draftContentDiffersFromLive || draftSettingsDifferFromLoadedPage);
+  // I2: a draft that is queued for automatic publishing must not read as a
+  // plain "Draft" in the collapsed status row — it has a pending future action.
+  const scheduleStatus: ScheduleStatus = deriveScheduleStatus(page);
   const publishStateLabel = isPublishedPage
     ? hasUnpublishedDraftChanges
       ? "Published with draft changes"
       : "Published"
-    : (page?.status ?? "Draft");
+    : scheduleStatus.kind === "scheduled"
+      ? "Scheduled"
+      : scheduleStatus.kind === "failed"
+        ? "Schedule failed"
+        : (page?.status ?? "Draft");
   const publishStateHelp = isPublishedPage
     ? hasUnpublishedDraftChanges
       ? "The live page is still the last published version. Save draft changes to keep editing later, or publish changes to update the live page."
       : "Saving draft changes keeps the live page unchanged. Publish changes only when this working copy should replace the live page."
-    : "This page is not live yet. Save the draft now, then publish when it is ready.";
+    : scheduleStatus.kind === "scheduled"
+      ? `This draft is queued to publish automatically on ${scheduleStatus.display}.`
+      : scheduleStatus.kind === "failed"
+        ? "The scheduled publish did not run. Review the error, then save a new time to retry."
+        : "This page is not live yet. Save the draft now, then publish when it is ready.";
   const saveDraftLabel = isPublishedPage ? "Save draft changes" : "Save draft";
   const publishButtonLabel = isPublishedPage ? "Publish changes" : "Publish";
   const chromeSettings = pageChromeSettings(content);
@@ -789,6 +809,7 @@ export function useSeoPageEditorController(
     focusPublishBlocker,
     formAction,
     focusSeoSetting,
+    isCancellingSchedule,
     handleEditorFormSubmit,
     insertAiProposalBlocks,
     insertDocumentImportBlocks,
@@ -834,7 +855,9 @@ export function useSeoPageEditorController(
     removeSection,
     replaceBlock,
     redirectError,
+    requestCancelSchedule,
     runAiSeoAgent,
+    scheduleStatus,
     saveDraftLabel,
     saveMessage,
     savedFromRedirect,
@@ -1037,6 +1060,26 @@ export function useSeoPageEditorController(
   function updateSlugFromInput(nextSlug: string) {
     setSlugTouched(true);
     setSlug(slugify(nextSlug));
+  }
+
+  function requestCancelSchedule() {
+    if (isCancellingSchedule) return;
+    setIsCancellingSchedule(true);
+    // Render the armed hidden field (next frame), submit the standard Save so
+    // the server runs the existing cancel path, then disarm on the following
+    // frame. requestSubmit() serializes the form synchronously, so the hidden
+    // field is captured before we disarm — and it never lingers into later
+    // saves.
+    window.requestAnimationFrame(() => {
+      const form = formRef.current;
+      const saveButton = form?.querySelector<HTMLButtonElement>(
+        'button[type="submit"][name="intent"][value="save"]',
+      );
+      if (form && saveButton) {
+        form.requestSubmit(saveButton);
+      }
+      window.requestAnimationFrame(() => setIsCancellingSchedule(false));
+    });
   }
 
   function focusPublishBlocker(item: PublishBlockerChecklistItem) {
