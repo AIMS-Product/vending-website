@@ -40,7 +40,7 @@ export function Testimonials() {
   );
 }
 
-function VideoTestimonialCard({ video }: { video: CaseStudyVideo }) {
+export function VideoTestimonialCard({ video }: { video: CaseStudyVideo }) {
   return (
     <article className="flex h-full flex-col gap-4 rounded-[10px] border-2 border-[#111111] bg-white p-5 text-left shadow-[7px_7px_0_#55b8e8]">
       <video
@@ -62,7 +62,7 @@ function VideoTestimonialCard({ video }: { video: CaseStudyVideo }) {
   );
 }
 
-function QuoteTestimonialCard({ quote }: { quote: CaseStudyQuote }) {
+export function QuoteTestimonialCard({ quote }: { quote: CaseStudyQuote }) {
   return (
     <article className="flex h-full flex-col gap-4 rounded-[10px] border-2 border-[#111111] bg-white p-6 text-left shadow-[7px_7px_0_#55b8e8]">
       <header>

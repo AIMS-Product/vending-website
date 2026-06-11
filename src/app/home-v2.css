@@ -1,0 +1,128 @@
+/* Styles for the /home-v2 redesign preview. Everything is namespaced with
+   v2-* class names so nothing leaks into the live pages. */
+
+.v2-display {
+  font-family: var(--font-anton), "Arial Narrow", "Helvetica Neue", sans-serif;
+  letter-spacing: 0.015em;
+}
+
+/* Halftone dot washes — texture without images. */
+.v2-dots {
+  background-image: radial-gradient(#b6e1ff 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+.v2-dots-ink {
+  background-image: radial-gradient(
+    rgba(17, 17, 17, 0.16) 1.5px,
+    transparent 1.5px
+  );
+  background-size: 22px 22px;
+}
+
+/* Outlined display type for ghost words and numerals. */
+.v2-outline {
+  color: transparent;
+  -webkit-text-stroke: 2px #111111;
+}
+.v2-outline-light {
+  color: transparent;
+  -webkit-text-stroke: 2px rgba(255, 255, 255, 0.85);
+}
+
+/* Marker-style highlight inside the hero headline. */
+.v2-highlight {
+  background: #f47b3b;
+  box-shadow: 0.1em 0.1em 0 #111111;
+  padding: 0 0.1em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* --- Load-in choreography (hero only — everything below the fold uses
+   the scroll-reveal system instead) --- */
+@keyframes v2-rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* Transform-only on purpose: the hero image is the LCP candidate and must
+   never start at opacity 0. */
+@keyframes v2-settle {
+  from {
+    transform: translateY(2rem) rotate(2deg);
+  }
+  to {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+@keyframes v2-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--v2-tilt, -4deg));
+  }
+  50% {
+    transform: translateY(-9px) rotate(var(--v2-tilt, -4deg));
+  }
+}
+
+.v2-rise {
+  animation: v2-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--v2-delay, 0s);
+}
+.v2-settle {
+  animation: v2-settle 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.v2-float {
+  animation: v2-float 5.5s ease-in-out infinite;
+  animation-delay: var(--v2-delay, 0s);
+}
+
+/* --- Ticker marquees --- */
+/* Content is rendered twice, so -50% loops seamlessly; the extra offset
+   is half the flex gap between the two copies. */
+@keyframes v2-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 1.25rem));
+  }
+}
+.v2-marquee {
+  animation: v2-marquee 26s linear infinite;
+}
+
+/* --- Scroll-triggered reveals --- */
+/* The hidden state only applies when JS can run AND motion is allowed, so
+   no-JS visitors and reduced-motion users always get visible content. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(1.75rem);
+    transition:
+      opacity 0.65s ease,
+      transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--v2-delay, 0s);
+  }
+  [data-reveal="pop"] {
+    transform: translateY(1rem) scale(0.95);
+  }
+  [data-reveal].is-inview {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-rise,
+  .v2-settle,
+  .v2-float,
+  .v2-marquee {
+    animation: none;
+  }
+}

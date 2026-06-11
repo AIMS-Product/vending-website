@@ -54,7 +54,7 @@ function BenefitRow({ item }: { item: Benefit }) {
   );
 }
 
-function BenefitIcon({ icon }: { icon: Benefit["icon"] }) {
+export function BenefitIcon({ icon }: { icon: Benefit["icon"] }) {
   switch (icon) {
     case "trend":
       return (
