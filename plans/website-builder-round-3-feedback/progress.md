@@ -1,35 +1,35 @@
 # Feature Progress: website-builder-round-3-feedback
 
 Status: IN_PROGRESS
-Current wave: W3
+Current wave: W4
 Last updated: 2026-06-11
 Owner: feature-orchestrator
 
 ## Graph Summary
 
-| Node | Title                                         | Tier | Depends On | Parallel Group | Owner      | Status  |
-| ---- | --------------------------------------------- | ---- | ---------- | -------------- | ---------- | ------- |
-| S1   | Published list bullet/number styling (I1)     | T3   | none       | W1-A           | worker-s1  | DONE    |
-| S2   | Substring link selection (I2)                 | T3   | none       | W1-B           | worker-s2  | DONE    |
-| S3   | Meta description 155 alignment + counter (I3) | T2   | none       | W1-C           | worker-s3  | DONE    |
-| S4   | Outline up/down reorder (I4)                  | T3   | none       | W1-D           | worker-s4  | DONE    |
-| S5   | Proof point imagery end-to-end (I5)           | T2   | none       | W2-A           | worker-s5  | DONE    |
-| S7   | Importer truncation warning (I7)              | T3   | none       | W2-B           | worker-s7  | DONE    |
-| S6a  | Route prefix settings table + admin UI (I6)   | T2   | none       | W3-A           | unassigned | PENDING |
-| S6b  | Dynamic prefix route + lookup validation (I6) | T2   | S6a        | W4-A           | unassigned | PENDING |
+| Node | Title                                         | Tier | Depends On | Parallel Group | Owner      | Status      |
+| ---- | --------------------------------------------- | ---- | ---------- | -------------- | ---------- | ----------- |
+| S1   | Published list bullet/number styling (I1)     | T3   | none       | W1-A           | worker-s1  | DONE        |
+| S2   | Substring link selection (I2)                 | T3   | none       | W1-B           | worker-s2  | DONE        |
+| S3   | Meta description 155 alignment + counter (I3) | T2   | none       | W1-C           | worker-s3  | DONE        |
+| S4   | Outline up/down reorder (I4)                  | T3   | none       | W1-D           | worker-s4  | DONE        |
+| S5   | Proof point imagery end-to-end (I5)           | T2   | none       | W2-A           | worker-s5  | DONE        |
+| S7   | Importer truncation warning (I7)              | T3   | none       | W2-B           | worker-s7  | DONE        |
+| S6a  | Route prefix settings table + admin UI (I6)   | T2   | none       | W3-A           | worker-s6a | DONE        |
+| S6b  | Dynamic prefix route + lookup validation (I6) | T2   | S6a        | W4-A           | worker-s6b | IN_PROGRESS |
 
 ## Gate Progress
 
-| Node | RED  | GREEN | REFACTOR | Repo Gate | Browser Gate | Boundary Gate | Evidence           | Confidence |
-| ---- | ---- | ----- | -------- | --------- | ------------ | ------------- | ------------------ | ---------- |
-| S1   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/S1-1.md | High       |
-| S2   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/S2-1.md | High       |
-| S3   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/S3-1.md | High       |
-| S4   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/S4-1.md | High       |
-| S5   | DONE | DONE  | DONE     | DONE      | DONE\*       | DONE          | agent-runs/S5-1.md | High       |
-| S7   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/S7-1.md | High       |
-| S6a  | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none               | TBD        |
-| S6b  | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none               | TBD        |
+| Node | RED  | GREEN | REFACTOR | Repo Gate | Browser Gate | Boundary Gate | Evidence            | Confidence |
+| ---- | ---- | ----- | -------- | --------- | ------------ | ------------- | ------------------- | ---------- |
+| S1   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/S1-1.md  | High       |
+| S2   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/S2-1.md  | High       |
+| S3   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/S3-1.md  | High       |
+| S4   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/S4-1.md  | High       |
+| S5   | DONE | DONE  | DONE     | DONE      | DONE\*       | DONE          | agent-runs/S5-1.md  | High       |
+| S7   | DONE | DONE  | DONE     | DONE      | DONE         | n/a           | agent-runs/S7-1.md  | High       |
+| S6a  | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | agent-runs/S6a-1.md | High       |
+| S6b  | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                | TBD        |
 
 Browser gates run serially by the orchestrator at wave integration (shared dev
 server; workers do code + repo gates only).
@@ -93,3 +93,16 @@ server; workers do code + repo gates only).
   /apply paragraph link, meta restored to original 116-char text
   (`/tmp/r3-final-draft-preview.png`). Lesson recorded in ~/.claude/lessons.md and
   project memory; remaining gates use throwaway pages only.
+
+- W3 / S6a (2026-06-11, orchestrator integration): fresh repo gate 169 tests PASS
+  (route-prefixes service, settings actions, AdminShell), typecheck clean.
+  Migration `20260611090000_page_builder_route_prefixes.sql` reviewed line-by-line
+  (additive + idempotent only: create table if not exists, RLS via existing
+  `is_app_admin()`, on-conflict-do-nothing seed) and applied to the linked
+  Supabase project via `supabase db push` per the decisions.md precedent.
+  Browser proof on `/admin/settings/routes` as super-admin: five defaults listed
+  Built-in/non-deletable; throwaway `/r3-test-prefix` added then deleted (cleanup
+  verified — no longer present); reserved `/admin` rejected with inline error
+  "That route prefix is reserved and cannot be used."
+  (`/tmp/r3-s6a-settings-page.png`, `/tmp/r3-s6a-added.png`,
+  `/tmp/r3-s6a-reserved-error.png`, `/tmp/r3-s6a-cleaned.png`).

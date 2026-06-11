@@ -6,7 +6,13 @@ import Link from "next/link";
 import { clsx } from "clsx";
 import { signOut } from "@/app/admin/actions";
 
-type AdminSection = "pages" | "posts" | "media" | "libraries" | "settings";
+type AdminSection =
+  | "pages"
+  | "posts"
+  | "media"
+  | "libraries"
+  | "settings"
+  | "routes";
 type AdminIcon =
   | "archive"
   | "book"
@@ -67,6 +73,13 @@ const accountSections: AdminNavSection[] = [
     href: "/admin/settings/users",
     description: "Users and access",
     icon: "settings",
+  },
+  {
+    id: "routes",
+    label: "Route prefixes",
+    href: "/admin/settings/routes",
+    description: "Builder URL prefixes",
+    icon: "layers",
   },
 ];
 

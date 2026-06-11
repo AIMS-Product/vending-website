@@ -52,6 +52,23 @@ describe("AdminShell navigation", () => {
     expect(librariesLink?.[0]).toContain('aria-current="page"');
   });
 
+  it("renders the Route prefixes link in the Account nav", () => {
+    const html = renderShell("pages");
+
+    expect(html).toContain('href="/admin/settings/routes"');
+    expect(html).toContain("Route prefixes");
+  });
+
+  it("marks Route prefixes as the active page when on /admin/settings/routes", () => {
+    const html = renderShell("routes");
+
+    const routesLink = html.match(
+      /<a[^>]*href="\/admin\/settings\/routes"[^>]*>/,
+    );
+    expect(routesLink).not.toBeNull();
+    expect(routesLink?.[0]).toContain('aria-current="page"');
+  });
+
   it("keeps the existing Content and Account nav links rendering", () => {
     const html = renderShell("pages");
 

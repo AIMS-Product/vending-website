@@ -204,6 +204,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      page_builder_route_prefixes: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_default: boolean;
+          label: string;
+          prefix: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_default?: boolean;
+          label?: string;
+          prefix: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_default?: boolean;
+          label?: string;
+          prefix?: string;
+        };
+        Relationships: [];
+      };
       lead_submissions: {
         Row: {
           budget: string | null;

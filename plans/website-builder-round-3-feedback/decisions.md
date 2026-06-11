@@ -25,6 +25,16 @@
   deferred (documented in review doc as importer-hardening candidates).
 - S5 proof imagery: no new migration — `proof_items.asset_id` already exists.
 
+- 2026-06-11 (orchestrator safe default): S6a/S6b migrations are additive-only and
+  applied to the linked production Supabase project via `supabase db push`,
+  matching the June 9-10 round precedent (migration list shows all prior rounds
+  applied remotely). The prefix service falls back to the five built-in prefixes
+  if the settings table is missing, so app code never hard-depends on the
+  migration. Workers never push migrations; only the orchestrator does.
+- 2026-06-11 (post-incident rule): all remaining browser gates use throwaway
+  records with guaranteed cleanup; never a real page (editor autosaves to the
+  production Supabase draft — see progress.md incident note).
+
 ## Open Questions
 
 - None blocking. I6 prefix policy is a labeled default the user can override.
