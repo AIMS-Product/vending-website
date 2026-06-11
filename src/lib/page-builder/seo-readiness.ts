@@ -8,7 +8,10 @@ import {
   type PagePublishMeta,
 } from "./blocks";
 import { assessSeoCopyQuality } from "./copy-quality";
-import { SEO_COPY_STANDARDS } from "./copy-standards";
+import {
+  META_DESCRIPTION_MAX_LENGTH,
+  SEO_COPY_STANDARDS,
+} from "./copy-standards";
 import {
   parseStructuredDataSettings,
   type StructuredDataSettings,
@@ -273,7 +276,7 @@ function softFindings(
       evidence: `${metaLength} characters`,
     });
   }
-  if (metaLength > 160) {
+  if (metaLength > META_DESCRIPTION_MAX_LENGTH) {
     findings.push({
       code: "meta_description_may_truncate",
       category: "serp",

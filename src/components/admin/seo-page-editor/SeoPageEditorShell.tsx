@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Wordmark } from "@/components/site/Wordmark";
 import type { PageBlock, PageChromeSettings } from "@/lib/page-builder/blocks";
 import type { BlockVariant } from "@/lib/page-builder/block-options";
+import type { MoveDirection } from "@/lib/page-builder/editor-state";
 import {
   type SavedPageTemplateOption,
   type PageTypeId,
@@ -322,6 +323,7 @@ export function BuilderBlockSidebar({
   onEditBlock,
   onCreateBlock,
   onCreateBlockAfter,
+  onMoveBlock,
 }: {
   entries: BuilderBlockEntry[];
   selectedEntry: BuilderBlockEntry | null;
@@ -333,7 +335,16 @@ export function BuilderBlockSidebar({
     type: PageBlock["type"],
     variant?: BlockVariant,
   ) => void;
+  onMoveBlock: (entry: BuilderBlockEntry, direction: MoveDirection) => void;
 }) {
+  // Issue I4 / R3-5: moveBlock reorders within a column, so the up/down
+  // boundaries are the first/last block of each column — count per column.
+  const columnBlockCounts = new Map<string, number>();
+  for (const entry of entries) {
+    const key = `${entry.sectionId}:${entry.columnId}`;
+    columnBlockCounts.set(key, (columnBlockCounts.get(key) ?? 0) + 1);
+  }
+
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-900 bg-slate-950 text-white shadow-xl">
       <div className="border-b border-white/10 p-4">
@@ -357,6 +368,16 @@ export function BuilderBlockSidebar({
               const isSelected = selectedEntry?.block.id === entry.block.id;
               const hasWarnings =
                 completionMessagesForBlock(entry.block).length > 0;
+              const columnBlockCount =
+                columnBlockCounts.get(`${entry.sectionId}:${entry.columnId}`) ??
+                1;
+              const isFirstInColumn = entry.blockIndex === 0;
+              const isLastInColumn = entry.blockIndex === columnBlockCount - 1;
+              const moveButtonClass = `flex size-9 shrink-0 items-center justify-center rounded-lg transition focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-35 ${
+                isSelected
+                  ? "bg-slate-100 text-slate-600 enabled:hover:bg-slate-200"
+                  : "bg-white/10 text-slate-200 enabled:hover:bg-white/20"
+              }`;
 
               return (
                 <div
@@ -408,6 +429,28 @@ export function BuilderBlockSidebar({
                       </span>
                     </span>
                   </button>
+                  <div className="my-2 flex shrink-0 flex-col gap-1">
+                    <button
+                      type="button"
+                      aria-label={`Move block ${entry.blockNumber} up`}
+                      title={`Move ${blockLabel(entry.block.type)} up`}
+                      disabled={isFirstInColumn}
+                      className={moveButtonClass}
+                      onClick={() => onMoveBlock(entry, "up")}
+                    >
+                      <BuilderGlyph name="up" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Move block ${entry.blockNumber} down`}
+                      title={`Move ${blockLabel(entry.block.type)} down`}
+                      disabled={isLastInColumn}
+                      className={moveButtonClass}
+                      onClick={() => onMoveBlock(entry, "down")}
+                    >
+                      <BuilderGlyph name="down" />
+                    </button>
+                  </div>
                   <button
                     type="button"
                     aria-label={`Edit ${blockLabel(entry.block.type)} settings`}

@@ -366,7 +366,9 @@ describe("page builder AI chat tools", () => {
     expect(result.seoPatch.slug?.length).toBeLessThanOrEqual(120);
     expect(result.seoPatch.targetKeyword).toBe("managed workplace vending");
     expect(result.seoPatch.seoTitle?.length).toBeLessThanOrEqual(80);
-    expect(result.seoPatch.metaDescription?.length).toBeLessThanOrEqual(180);
+    // AI writes new copy, so it is truncated to the 155-character target cap,
+    // not the 180-character legacy save ceiling.
+    expect(result.seoPatch.metaDescription?.length).toBeLessThanOrEqual(155);
   });
 
   it("normalizes overlong AI block payloads before applying them", () => {

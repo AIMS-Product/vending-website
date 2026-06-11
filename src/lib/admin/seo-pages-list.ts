@@ -8,6 +8,7 @@ import {
   paginateItems,
   type SearchParamValue,
 } from "@/lib/admin/list-state";
+import { META_DESCRIPTION_MAX_LENGTH } from "@/lib/page-builder/copy-standards";
 import type { Tables } from "@/types/database";
 
 export type SeoPageSearchParams = {
@@ -201,7 +202,7 @@ function matchesGovernanceFilter(
       !page.seo_title ||
       page.seo_title.length > 70 ||
       !page.meta_description ||
-      page.meta_description.length > 160 ||
+      page.meta_description.length > META_DESCRIPTION_MAX_LENGTH ||
       (page.noindex && page.sitemap_enabled)
     );
   }

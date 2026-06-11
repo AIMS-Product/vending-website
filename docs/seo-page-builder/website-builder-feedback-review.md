@@ -161,3 +161,67 @@ This is a fresh intake over the completed `plans/website-builder-feedback-v2/` g
 3. Outline insertion workflow: add block controls from the outline, including insertion position and mobile behavior.
 4. Content import and doc-to-block mapping: copy/upload document content, analyze it, and map research/draft sections to approved page modules.
 5. Attribution and lifecycle integrations: author path decision, video thumbnail overrides, GTM/dataLayer contract, content-review reporting, and research trigger cues.
+
+### Round 2 Resolution
+
+The follow-up graph `plans/website-builder-round-2-feedback/` (S0-S8) completed on
+2026-06-05 with repo and browser evidence, superseding the "Initial Status" column
+above. Shipped: h2/h3/h4 rich-text hierarchy (S1), structured paragraph/heading/list/
+link authoring controls with auto-sizing fields (S2), outline add-below insertion (S3),
+browser-verified image upload (S4), video thumbnail override (S5), `/authors/{slug}`
+public path with `/blog/author/{slug}` 308 redirect (S6), proposal-only pasted-document
+import with module mapping (S7), and the v1 attribution/review-reporting contract (S8).
+Evidence lives in `plans/website-builder-round-2-feedback/agent-runs/`.
+
+## Round 3 Intake
+
+Source: user-relayed tester feedback, received 2026-06-11, after hands-on use of the
+Round 2 follow-up graph output. Several items are direct reactions to S2/S3/S7 work.
+
+Review status: code-reviewed 2026-06-11 (repo inspection; statuses below updated with
+file-level evidence).
+
+### Round 3 Triage
+
+| #    | Feedback                                                                                                                                         | Status                         | Evidence / Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R3-1 | URL insert for inline text must allow choosing which text in the paragraph is hyperlinked; currently the link applies to the full block.         | Confirmed issue (UI-only gap)  | The data model already supports per-span links: `richTextSpanSchema` is `{ text, href? }` and paragraphs accept up to 40 spans (`src/lib/page-builder/blocks.ts:84-103`). The public renderer already emits inline per-span `<a>` elements (`src/components/sections/resource-blocks/shared.tsx:76-105`). The gap is `updateParagraphHref` in `src/components/admin/seo-page-editor/RichTextBodyEditor.tsx:305-312`, which wraps the entire paragraph text in a single span with the href. Smallest fix: add a "Link text" input next to the manual-link URL field and split the paragraph into before/link/after spans (~15 LOC, no schema change).                                                                                                                                                                                                                                               |
+| R3-2 | Slug subfolder dropdown is great; need custom subfolder paths (e.g. `/landing` should be `/services`) configurable at an account-settings level. | Not found (medium effort)      | The dropdown ships 5 hardcoded prefixes (`/resources`, `/blog`, `/landing`, `/videos`, `/solutions`) defined in `src/lib/page-builder/page-paths.ts:4-23` and duplicated in the server-action Zod regex (`src/app/admin/pages/actions.ts:114-121`), three SQL CHECK constraints (`supabase/migrations/20260602103000_seo_page_route_paths.sql:22-42`), and five static App Router folders (`src/app/{resources,blog,landing,videos,solutions}/[slug]/`). No account/site-settings table or surface exists yet (`/admin/settings` redirects to `/users`). Custom prefixes need: a settings table + admin UI, a consolidated dynamic `[prefix]/[slug]` route, and validation moved from hardcoded enums to lookups. Good news: slug-change 301 redirects and full-path uniqueness already work generically (`supabase/migrations/20260602103200_update_slug_route_path_fn.sql`). Estimated 3-5 days. |
+| R3-3 | Adding a list-items block directly in the editor does not render the bulleted or numbered list design when published.                            | Confirmed issue (one-line bug) | Root cause: the public list renderer applies `"ml-5 list-outside space-y-2"` without `list-disc`/`list-decimal` (`src/components/sections/resource-blocks/RichTextBlock.tsx:78`). Tailwind preflight resets `list-style` to none, so bullets/numbers never render. Checklist variant is unaffected (`list-none` is intentional there). Fix: branch the className on `node.style` to add `list-disc`/`list-decimal`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| R3-4 | Add a 155-character limit (including spaces) to the meta description.                                                                            | Confirmed inconsistency        | Three different thresholds exist today: hard 180 limits in `src/app/admin/pages/actions.ts:124`, `src/lib/page-builder/ai-chat.ts:106,430,439`, `src/lib/page-builder/ai-proposals.ts:29`, `src/lib/services/openai-seo-agent.ts:837`; soft 160 warnings in `src/lib/page-builder/seo-readiness.ts:276` and `src/lib/admin/seo-pages-list.ts:204`; the AI prompt already says "under 155" (`src/lib/page-builder/ai-chat-prompt.ts:113`). The editor textarea (`src/components/admin/seo-page-editor/SeoPublishPanel.tsx:407-421`) has no maxLength and no counter. Fix: align all thresholds to 155 and add a live counter + maxLength to the editor field. Small.                                                                                                                                                                                                                                |
+| R3-5 | Left-hand block editor: shift sections up and down in the outline.                                                                               | Not found (controller ready)   | `moveBlock`/`moveBlockToIndex` actions are fully implemented and used by canvas controls (`src/components/admin/seo-page-editor/useSeoPageEditorController.ts:1308-1336`, reducer in `src/lib/page-builder/editor-state.ts:239-268`, canvas `MovePositionMenu` in `BuilderEditorUi.tsx:54-132`). The outline rows (`SeoPageEditorShell.tsx:370-441`) only have select / edit-settings / add-below. Fix: add up/down icon buttons to outline rows wired to the existing controller action. Low effort (~2-4h); drag-reorder optional later.                                                                                                                                                                                                                                                                                                                                                         |
+| R3-6 | Proof point options need the ability to add imagery.                                                                                             | Schema-only                    | `proof_items.asset_id` exists in DB and types (`supabase/migrations/20260506130000_page_builder_libraries.sql:9`, `src/types/database.ts:378`) but nothing uses it: the library form has no picker (`src/app/admin/libraries/page.tsx:124-150`, `CreateProofItemInput` omits assetId), the proof block schema has no media props (`src/lib/page-builder/blocks.ts:300-316`), block settings expose none (`BlockSettingsFields.tsx:792-872`), and no proof variant (quote/stat/logo) renders an image (`src/components/sections/ResourcePageContent.tsx:422-520`). Reusable `MediaPickerProvider`/`MediaLibrarySelectButton` and `applyMediaAssetTo*` patterns exist to copy (`src/components/admin/MediaPickerProvider.tsx:632-646`, `seo-page-editor/editor-media.ts`). Small-to-medium: service input + form picker + block props + settings UI + renderers, alt text carried through.           |
+| R3-7 | AI upload and block-insert format worked great; determine what specific md-file formatting leads to accurate mapping and copy.                   | Done (guidance below)          | The importer is deterministic, not AI (`src/lib/page-builder/document-import.ts`, tests in `document-import.test.ts`). Mapping rules and limits are now documented in "Document Import Authoring Guidance" below. Known parser gaps that guidance cannot work around: no bold/italic/inline-code preservation, no nested lists, H1 reserved for the title, max 8 imported blocks / 30 nodes per block with silent truncation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+
+### Document Import Authoring Guidance (R3-7)
+
+Markdown conventions that map accurately through the document importer
+(`src/lib/page-builder/document-import.ts`):
+
+- `# Title` — exactly one, first line: becomes the document/page title, not a section.
+- `## Section` — starts a new rich-text block; one block per `##` section (max 8 blocks
+  imported per paste; extra sections are dropped with only a warning).
+- `### Sub` / `#### Detail` — heading nodes inside the current block (deeper levels are
+  clamped to h4; `#####`+ is not recognized).
+- `- item` / `* item` — bulleted list node; `1. item` / `1)` — numbered list node.
+  Unindented, consecutive lines only; max 12 items per list. Don't mix bullet and
+  numbered styles in one run (they split into separate lists — usually what you want).
+- `[label](/path)` or `[label](https://...)` — inline link spans. `javascript:`,
+  `data:`, and protocol-relative URLs are stripped to plain text.
+- Blank lines separate paragraphs and terminate lists — use them deliberately.
+
+Constructs to avoid (degrade or silently flatten): bold/italic/inline code (kept as
+literal `**text**`), tables, images (`![](...)` becomes plain text), raw HTML, nested
+or indented lists, YAML frontmatter, and documents longer than ~8 sections.
+
+### Round 3 Follow-Up Candidates
+
+1. Quick fixes (one slice): R3-3 list-style bug, R3-4 meta-description 155 alignment +
+   counter, R3-5 outline up/down controls, R3-1 link-text selection. All four are
+   small, independent, and confirmed against code.
+2. Proof point imagery (R3-6): end-to-end slice reusing the existing media picker.
+3. Custom route prefixes in account settings (R3-2): needs a settings data model and a
+   consolidated dynamic public route — plan as its own graph; decide whether arbitrary
+   prefixes are allowed or admins manage a curated list.
+4. Importer hardening (optional, post R3-7 guidance): bold/italic span support, nested
+   lists, and a visible "N sections dropped" warning instead of silent truncation.

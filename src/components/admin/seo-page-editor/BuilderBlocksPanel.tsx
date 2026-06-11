@@ -24,6 +24,7 @@ export function BuilderBlocksPanel({
     builderBlockEntries,
     chromeSettings,
     editBlockEntry,
+    moveBlock,
     selectedBlockEntry,
     selectBlockEntry,
     updateChromeSettings,
@@ -66,6 +67,14 @@ export function BuilderBlocksPanel({
               type,
               variant,
               entry.blockIndex + 1,
+            )
+          }
+          onMoveBlock={(entry, direction) =>
+            moveBlock(
+              entry.sectionId,
+              entry.columnId,
+              entry.block.id,
+              direction,
             )
           }
         />

@@ -582,6 +582,50 @@ describe("admin page actions", () => {
     );
   });
 
+  it("still accepts a legacy 156-180 character meta description on save", async () => {
+    // Pages written before the 155-character target cap can hold 156-180 char
+    // descriptions. Saving them unchanged must not be blocked — the readiness
+    // panel warns instead.
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+    const legacyDescription = "m".repeat(170);
+
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ id: pageId, metaDescription: legacyDescription }),
+    );
+
+    expect(result).toEqual({ status: "saved", message: "Draft saved." });
+    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({ metaDescription: legacyDescription }),
+    );
+  });
+
+  it("rejects meta descriptions beyond the 180-character legacy ceiling", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ id: pageId, metaDescription: "m".repeat(181) }),
+    );
+
+    expect(result.status).toBe("error");
+    expect(result.message).toContain("Meta description is too long.");
+    expect(mocks.adminSaveSeoPageDraft).not.toHaveBeenCalled();
+  });
+
   it("saves scheduled publish metadata as UTC from Pacific Time input", async () => {
     mocks.adminGetSeoPageById.mockResolvedValue({
       id: pageId,

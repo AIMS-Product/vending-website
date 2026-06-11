@@ -1,6 +1,11 @@
 "use client";
 
-import { useLayoutEffect, useRef, type TextareaHTMLAttributes } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type TextareaHTMLAttributes,
+} from "react";
 import {
   richTextNodePlainText,
   type PageBlock,
@@ -14,6 +19,12 @@ import {
   miniButtonClass,
   textareaClass,
 } from "@/components/admin/seo-page-editor/editor-styles";
+import {
+  buildParagraphLinkNode,
+  isSafeLinkHrefInput,
+  paragraphHref,
+  paragraphLinkText,
+} from "@/components/admin/seo-page-editor/rich-text-link-spans";
 
 type RichTextBlock = Extract<PageBlock, { type: "rich_text" }>;
 type RichTextNodeKind =
@@ -171,26 +182,11 @@ export function RichTextBodyEditor({
                   ) : null}
                 </div>
                 {node.type === "paragraph" ? (
-                  <label className="block">
-                    <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
-                      Manual link
-                    </span>
-                    <input
-                      data-testid="rich-text-link-href"
-                      aria-label={`Manual link path ${index + 1}`}
-                      value={paragraphHref(node)}
-                      placeholder="/resources/example"
-                      onChange={(event) => {
-                        const href = event.target.value.trim();
-                        if (!isSafeLinkHrefInput(href)) return;
-                        replaceNode(index, updateParagraphHref(node, href));
-                      }}
-                      className={compactInputClass}
-                    />
-                    <span className="mt-1 block text-xs text-slate-500">
-                      Use a root-relative path or an http(s) URL.
-                    </span>
-                  </label>
+                  <ParagraphLinkControls
+                    index={index}
+                    node={node}
+                    onReplace={(nextNode) => replaceNode(index, nextNode)}
+                  />
                 ) : null}
               </div>
             </details>
@@ -225,6 +221,102 @@ export function RichTextBodyEditor({
           Add list
         </button>
       </div>
+    </div>
+  );
+}
+
+function ParagraphLinkControls({
+  index,
+  node,
+  onReplace,
+}: {
+  index: number;
+  node: Extract<RichTextNode, { type: "paragraph" }>;
+  onReplace: (node: RichTextNode) => void;
+}) {
+  // Editing these controls re-derives spans from the paragraph's plain text
+  // (the existing model): href + link text are the only formatting inputs.
+  const [linkText, setLinkText] = useState(() => paragraphLinkText(node));
+  const [linkTextError, setLinkTextError] = useState<string | null>(null);
+  const errorId = `rich-text-link-text-error-${index}`;
+
+  function applyLink(nextHref: string, nextLinkText: string) {
+    const result = buildParagraphLinkNode({
+      text: richTextNodePlainText(node),
+      href: nextHref,
+      linkText: nextLinkText,
+    });
+    if (!result.ok) {
+      if (result.error === "link_text_not_found") {
+        setLinkTextError(
+          "That text isn't in this paragraph, so the link wasn't changed. Match the paragraph text exactly (case-sensitive).",
+        );
+      }
+      return;
+    }
+    setLinkTextError(null);
+    onReplace(result.node);
+  }
+
+  return (
+    <div className="space-y-2">
+      <label className="block">
+        <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+          Manual link
+        </span>
+        <input
+          data-testid="rich-text-link-href"
+          aria-label={`Manual link path ${index + 1}`}
+          value={paragraphHref(node)}
+          placeholder="/resources/example"
+          onChange={(event) => {
+            const href = event.target.value.trim();
+            if (!isSafeLinkHrefInput(href)) return;
+            applyLink(href, linkText);
+          }}
+          className={compactInputClass}
+        />
+        <span className="mt-1 block text-xs text-slate-500">
+          Use a root-relative path or an http(s) URL.
+        </span>
+      </label>
+      <label className="block">
+        <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+          Link text
+        </span>
+        <input
+          data-testid="rich-text-link-text"
+          aria-label={`Link text ${index + 1}`}
+          value={linkText}
+          placeholder="Words to link (optional)"
+          aria-invalid={linkTextError ? true : undefined}
+          aria-describedby={linkTextError ? errorId : undefined}
+          onChange={(event) => {
+            const value = event.target.value;
+            setLinkText(value);
+            const href = paragraphHref(node);
+            if (!href) {
+              setLinkTextError(null);
+              return;
+            }
+            applyLink(href, value);
+          }}
+          className={compactInputClass}
+        />
+        {linkTextError ? (
+          <span
+            id={errorId}
+            role="alert"
+            className="mt-1 block text-xs font-medium text-red-600"
+          >
+            {linkTextError}
+          </span>
+        ) : (
+          <span className="mt-1 block text-xs text-slate-500">
+            Leave blank to link the whole paragraph.
+          </span>
+        )}
+      </label>
     </div>
   );
 }
@@ -297,29 +389,7 @@ function updateNodeText(node: RichTextNode, value: string): RichTextNode {
   return node;
 }
 
-function paragraphHref(node: RichTextNode) {
-  if (node.type !== "paragraph" || !("spans" in node)) return "";
-  return node.spans.find((span) => span.href)?.href ?? "";
-}
-
-function updateParagraphHref(
-  node: Extract<RichTextNode, { type: "paragraph" }>,
-  href: string,
-): RichTextNode {
-  const text = richTextNodePlainText(node);
-  if (!href) return { type: "paragraph", text };
-  return { type: "paragraph", spans: [{ text, href }] };
-}
-
 function listItemsFromText(value: string) {
   const items = value.split(/\r?\n/);
   return items.length > 0 ? items : [""];
-}
-
-function isSafeLinkHrefInput(value: string) {
-  return (
-    value.length === 0 ||
-    (value.startsWith("/") && !value.startsWith("//")) ||
-    /^https?:\/\//i.test(value)
-  );
 }

@@ -56,6 +56,21 @@ export const SEO_COPY_STANDARDS = {
   ],
 } as const;
 
+/**
+ * Two-tier meta description length model:
+ *
+ * - META_DESCRIPTION_MAX_LENGTH (155) is the target cap. It drives the editor
+ *   textarea maxLength + live counter, the readiness truncation warning, the
+ *   pages-list metadata-issues check, and every AI generation schema — AI
+ *   writes new copy, so a hard 155 is correct there.
+ * - META_DESCRIPTION_LEGACY_MAX_LENGTH (180) is the save-path validation
+ *   ceiling. Pages written before the 155 cap can hold 156-180 character
+ *   descriptions and must still save/publish unchanged (warn-only via
+ *   readiness), so server-side save validation keeps the legacy ceiling.
+ */
+export const META_DESCRIPTION_MAX_LENGTH = 155;
+export const META_DESCRIPTION_LEGACY_MAX_LENGTH = 180;
+
 export type SeoCopyStandards = typeof SEO_COPY_STANDARDS;
 
 export function seoCopyPromptRules(

@@ -34,6 +34,7 @@ import {
 } from "@/lib/services/openai-seo-agent";
 import { adminDeleteNeverSavedSeoPageDraft } from "@/lib/services/seo-page-drafts";
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
+import { META_DESCRIPTION_LEGACY_MAX_LENGTH } from "@/lib/page-builder/copy-standards";
 import { pagePathForSlug } from "@/lib/page-builder/page-paths";
 import { zonedDateTimeLocalToUtcIso } from "@/lib/page-builder/scheduled-publishing";
 import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
@@ -121,7 +122,13 @@ const formObjectSchema = z.object({
     .default("/resources"),
   targetKeyword: z.string().trim().max(180, "Target keyword is too long."),
   seoTitle: z.string().trim().max(80, "SEO title is too long."),
-  metaDescription: z.string().trim().max(180, "Meta description is too long."),
+  // Legacy ceiling, not the 155-character target: pages saved before the cap
+  // can hold 156-180 char descriptions and must keep saving/publishing
+  // unchanged. The readiness check warns above 155 instead of blocking.
+  metaDescription: z
+    .string()
+    .trim()
+    .max(META_DESCRIPTION_LEGACY_MAX_LENGTH, "Meta description is too long."),
   canonicalUrl: z.string().trim().max(500, "Canonical URL is too long."),
   internalTags: z.string().trim().max(500).default(""),
   topicCluster: z.string().trim().max(120).default(""),

@@ -488,6 +488,28 @@ describe("assessSeoReadiness", () => {
     expect(summary.blockers).toEqual([]);
   });
 
+  it("warns when the meta description exceeds the 155-character target", () => {
+    const summary = assessSeoReadiness(baseContent, {
+      ...baseMeta,
+      metaDescription: "m".repeat(156),
+    });
+
+    expect(summary.warnings.map((finding) => finding.code)).toContain(
+      "meta_description_may_truncate",
+    );
+  });
+
+  it("does not warn about truncation at exactly 155 characters", () => {
+    const summary = assessSeoReadiness(baseContent, {
+      ...baseMeta,
+      metaDescription: "m".repeat(155),
+    });
+
+    expect(summary.warnings.map((finding) => finding.code)).not.toContain(
+      "meta_description_may_truncate",
+    );
+  });
+
   it("counts visible words after trimming repeated whitespace", () => {
     const content: PageContent = {
       version: 1,

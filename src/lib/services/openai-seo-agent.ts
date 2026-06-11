@@ -13,7 +13,10 @@ import {
   richTextDocumentPlainText,
   type PageBlock,
 } from "@/lib/page-builder/blocks";
-import { seoCopyPromptRules } from "@/lib/page-builder/copy-standards";
+import {
+  META_DESCRIPTION_MAX_LENGTH,
+  seoCopyPromptRules,
+} from "@/lib/page-builder/copy-standards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
 import { adminCreateAiPageProposal } from "./ai-page-proposals";
@@ -834,7 +837,10 @@ const aiPageProposalJsonSchema = {
       properties: {
         title: { type: "string", maxLength: 180 },
         seoTitle: { type: "string", maxLength: 80 },
-        metaDescription: { type: "string", maxLength: 180 },
+        metaDescription: {
+          type: "string",
+          maxLength: META_DESCRIPTION_MAX_LENGTH,
+        },
         suggestedSlug: {
           type: "string",
           maxLength: 120,

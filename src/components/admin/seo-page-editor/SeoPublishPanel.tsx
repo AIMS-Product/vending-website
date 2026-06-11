@@ -18,7 +18,9 @@ import {
   primaryButtonClass,
   textareaClass,
 } from "@/components/admin/seo-page-editor/editor-styles";
+import { EditorCharLimit } from "@/components/admin/seo-page-editor/EditorInputs";
 import { editorPublishConfirmMessage } from "@/components/admin/seo-page-editor/editor-publish-confirmation";
+import { META_DESCRIPTION_MAX_LENGTH } from "@/lib/page-builder/copy-standards";
 import { thinPageWarning } from "@/components/admin/seo-page-editor/SeoReadinessHelpers";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 import { formatPacificDate } from "@/lib/page-builder/datetime-format";
@@ -415,8 +417,13 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
           id="page-meta-description-field"
           onChange={(event) => editor.setMetaDescription(event.target.value)}
           rows={3}
+          maxLength={META_DESCRIPTION_MAX_LENGTH}
           className={textareaClass}
           placeholder="Search result summary for this page."
+        />
+        <EditorCharLimit
+          value={editor.metaDescription}
+          max={META_DESCRIPTION_MAX_LENGTH}
         />
       </label>
 

@@ -75,7 +75,9 @@ export function RichTextBlock({
                   className={
                     block.variant === "checklist"
                       ? "ml-0 list-none space-y-3"
-                      : "ml-5 list-outside space-y-2"
+                      : node.style === "numbered"
+                        ? "ml-5 list-outside list-decimal space-y-2"
+                        : "ml-5 list-outside list-disc space-y-2"
                   }
                 >
                   {node.items.map((item, itemIndex) => (
