@@ -420,9 +420,21 @@ function ResourcePageBlockView({
   }
 
   if (block.type === "proof") {
+    const proofMediaNode = block.props.mediaSrc ? (
+      <Image
+        src={block.props.mediaSrc}
+        alt={block.props.mediaAltText ?? ""}
+        width={224}
+        height={224}
+        sizes="112px"
+        className="mb-4 size-24 rounded-[10px] border-2 border-[#111111] object-cover shadow-[4px_4px_0_#55b8e8] md:size-28"
+      />
+    ) : null;
+
     if (block.variant === "stat") {
       return (
         <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
+          {proofMediaNode}
           {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
             <p className="text-sm font-black text-[#066a99] uppercase">
               {block.props.eyebrow}
@@ -463,6 +475,7 @@ function ResourcePageBlockView({
 
       return (
         <aside className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
+          {proofMediaNode}
           {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
             <p className="text-sm font-black text-[#066a99] uppercase">
               {block.props.eyebrow}
@@ -490,6 +503,7 @@ function ResourcePageBlockView({
 
     return (
       <figure className="rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8]">
+        {proofMediaNode}
         {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
           <p className="text-sm font-black text-[#066a99] uppercase">
             {block.props.eyebrow}

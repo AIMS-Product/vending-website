@@ -56,9 +56,12 @@ export function createDocumentImportProposal({
   const title = sourceTitle?.trim() || firstDocumentTitle(lines);
   const allSections = documentSections(lines, title);
   const sections = allSections.slice(0, MAX_IMPORTED_BLOCKS);
+  const droppedCount = allSections.length - sections.length;
   const warnings =
-    sections.length < allSections.length
-      ? [`Only the first ${MAX_IMPORTED_BLOCKS} sections were imported.`]
+    droppedCount > 0
+      ? [
+          `${droppedCount} ${droppedCount === 1 ? "section" : "sections"} dropped — only the first ${MAX_IMPORTED_BLOCKS} were imported.`,
+        ]
       : [];
 
   return {

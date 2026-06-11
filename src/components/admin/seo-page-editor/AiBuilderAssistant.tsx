@@ -1346,7 +1346,7 @@ type DocumentImportMode = "upload" | "paste";
 const documentImportAccept =
   ".txt,.md,text/plain,text/markdown,application/octet-stream";
 
-function DocumentImportPanel({
+export function DocumentImportPanel({
   embedded = false,
   message,
   proposal,
@@ -1758,7 +1758,10 @@ function DocumentImportReview({
         {proposal.sourceExcerpt}
       </p>
       {proposal.warnings.length > 0 && (
-        <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100">
+        <p
+          role="status"
+          className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100"
+        >
           {proposal.warnings.join(" ")}
         </p>
       )}

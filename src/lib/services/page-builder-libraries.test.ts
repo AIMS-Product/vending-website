@@ -176,6 +176,37 @@ describe("page builder library service", () => {
     ).rejects.toThrow("Proof kind is invalid.");
   });
 
+  it("persists the optional media asset on proof items", async () => {
+    const withAsset = insertSingle({ id: "proof_1" });
+    const withoutAsset = insertSingle({ id: "proof_2" });
+    const client = buildClient(withAsset.table, withoutAsset.table);
+
+    await adminCreateProofItem(
+      {
+        kind: "quote",
+        body: "Cut restock time by 40%.",
+        assetId: "33333333-3333-4333-8333-333333333333",
+      },
+      { client },
+    );
+    await adminCreateProofItem(
+      {
+        kind: "quote",
+        body: "No image on this proof item.",
+      },
+      { client },
+    );
+
+    expect(withAsset.mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        asset_id: "33333333-3333-4333-8333-333333333333",
+      }),
+    );
+    expect(withoutAsset.mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ asset_id: null }),
+    );
+  });
+
   it("creates source documents, approved excerpts, and approved claims", async () => {
     const docInsert = insertSingle({ id: "doc_1" });
     const excerptInsert = insertSingle({ id: "excerpt_1" });

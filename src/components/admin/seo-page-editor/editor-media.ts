@@ -72,6 +72,21 @@ export function applyMediaAssetToVideoThumbnailBlock(
   };
 }
 
+export function applyMediaAssetToProofBlock(
+  block: Extract<PageBlock, { type: "proof" }>,
+  asset: EditorMediaAsset,
+): Extract<PageBlock, { type: "proof" }> {
+  return {
+    ...block,
+    props: {
+      ...block.props,
+      assetId: asset.id,
+      mediaSrc: asset.publicUrl,
+      mediaAltText: asset.altText,
+    },
+  };
+}
+
 export function selectedMediaAssetLabel(
   assets: EditorMediaAsset[],
   assetId?: string,

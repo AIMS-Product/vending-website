@@ -309,6 +309,15 @@ const proofBlockSchema = z
         body: z.string().trim().max(800),
         name: optionalTrimmedText(120),
         context: optionalTrimmedText(160),
+        assetId: z.uuid().optional(),
+        mediaSrc: z
+          .string()
+          .trim()
+          .refine((value) => value.length === 0 || isSafeMediaSource(value), {
+            message: "Use an internal path or an http(s) media URL.",
+          })
+          .optional(),
+        mediaAltText: z.string().trim().max(180).optional(),
         fieldVisibility: blockFieldVisibilitySchema,
       })
       .strict(),
