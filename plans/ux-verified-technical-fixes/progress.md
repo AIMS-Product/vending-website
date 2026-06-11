@@ -1,7 +1,7 @@
 # Feature Progress: ux-verified-technical-fixes
 
-Status: IN_PROGRESS
-Current wave: W1 (S7/S16/S10/S8 parallel; S1 runs solo afterwards — production build needs exclusive .next while the shared dev server is down)
+Status: COMPLETE
+Current wave: complete (W5 final proof PASSED — see verification.md)
 Last updated: 2026-06-11
 Owner: feature-orchestrator
 
@@ -31,7 +31,7 @@ W1 = S7, S16, S10, S8 · W1b = S1 solo · W2 = S14→S13→S12 chain, S9→S15 c
 | S3   | Admin hit areas (I3)                                  | T3   | S15            | W4                           | w-s3         | DONE                             |
 | S6   | Heading order (I6)                                    | T3   | none           | W4-B                         | w-s6         | DONE                             |
 | S20  | Top-rail ?created param (e2e for S9, ex-S9 discovery) | T3   | S9             | W3                           | w-s9         | DONE (click-through owed by S17) |
-| S17  | Final proof                                           | —    | all            | W5                           | orchestrator | PENDING                          |
+| S17  | Final proof                                           | —    | all            | W5                           | orchestrator | DONE — PASS                      |
 
 ## Gate Progress
 
