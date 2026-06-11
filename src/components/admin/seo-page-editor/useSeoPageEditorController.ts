@@ -115,6 +115,9 @@ export type SeoPageEditorControllerProps = {
   aiProposals?: AiPageProposalReview[];
   savedFromRedirect?: boolean;
   redirectError?: string;
+  // Configured route prefixes loaded server-side (defaults + admin-added
+  // customs). Falls back to the five built-ins when not provided.
+  routePrefixOptions?: readonly { value: string; label: string }[];
 };
 
 type MobileEditorPanel = "blocks" | "seo" | null;
@@ -153,6 +156,7 @@ export function useSeoPageEditorController(
     aiProposals = emptyAiProposals,
     savedFromRedirect = false,
     redirectError,
+    routePrefixOptions = builderRoutePrefixOptions,
   }: SeoPageEditorControllerProps,
   formRef: RefObject<HTMLFormElement | null>,
 ) {
@@ -898,7 +902,7 @@ export function useSeoPageEditorController(
     pageType,
     pageTypeOptions,
     routePrefix,
-    routePrefixOptions: builderRoutePrefixOptions,
+    routePrefixOptions,
     previewLinkMessage,
     previewLinkPath,
     previewLinkTone,

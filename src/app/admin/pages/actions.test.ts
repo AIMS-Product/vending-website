@@ -39,6 +39,7 @@ const mocks = vi.hoisted(() => ({
   adminSnapshotManualSaveRevision: vi.fn(),
   adminUnpublishSeoPage: vi.fn(),
   adminUpdateSeoPageSlug: vi.fn(),
+  listRoutePrefixes: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/auth", () => ({
@@ -67,6 +68,24 @@ vi.mock("@/lib/services/openai-seo-agent", async () => {
 vi.mock("@/lib/services/seo-page-drafts", () => ({
   adminDeleteNeverSavedSeoPageDraft: mocks.adminDeleteNeverSavedSeoPageDraft,
 }));
+
+vi.mock("@/lib/services/route-prefixes", () => ({
+  listRoutePrefixes: mocks.listRoutePrefixes,
+}));
+
+const configuredRoutePrefixes = [
+  { prefix: "/resources", label: "Resources", isDefault: true },
+  { prefix: "/blog", label: "Blog", isDefault: true },
+  { prefix: "/landing", label: "Landing", isDefault: true },
+  { prefix: "/videos", label: "Videos", isDefault: true },
+  { prefix: "/solutions", label: "Solutions", isDefault: true },
+];
+
+// Module-level so every describe block sees a configured-prefix baseline even
+// after its own vi.clearAllMocks() (which clears calls, not implementations).
+beforeEach(() => {
+  mocks.listRoutePrefixes.mockResolvedValue(configuredRoutePrefixes);
+});
 
 vi.mock("@/lib/services/ai-page-proposals", async () => {
   const actual = await vi.importActual<
@@ -1372,5 +1391,109 @@ describe("admin page actions", () => {
       status: "error",
       message: "Could not discard the draft. Use Save draft to keep it.",
     });
+  });
+});
+
+describe("route prefix configured-list validation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.requireAdmin.mockResolvedValue({ user: { id: "admin_1" } });
+    mocks.adminCreateSeoPage.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+    });
+  });
+
+  it("accepts a custom route prefix that is configured", async () => {
+    mocks.listRoutePrefixes.mockResolvedValue([
+      ...configuredRoutePrefixes,
+      { prefix: "/services", label: "Services", isDefault: false },
+    ]);
+
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ routePrefix: "/services" }),
+    );
+
+    expect(result.status).not.toBe("error");
+    expect(mocks.adminCreateSeoPage).toHaveBeenCalledWith(
+      expect.objectContaining({ routePrefix: "/services" }),
+    );
+  });
+
+  it("rejects a shape-valid prefix that is not in the configured list", async () => {
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ routePrefix: "/services" }),
+    );
+
+    expect(result.status).toBe("error");
+    expect(result.message).toContain("route prefix");
+    expect(mocks.adminCreateSeoPage).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed route prefixes at the schema layer", async () => {
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ routePrefix: "/Bad_Prefix" }),
+    );
+
+    expect(result.status).toBe("error");
+    expect(result.message).toBe("Choose a supported route prefix.");
+    expect(mocks.listRoutePrefixes).not.toHaveBeenCalled();
+    expect(mocks.adminCreateSeoPage).not.toHaveBeenCalled();
+  });
+
+  it("rejects autosaves that target an unconfigured prefix", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      status: "draft",
+    });
+
+    const result = await autosaveSeoPageDraft(pageId, {
+      title: "Coffee Vending Adelaide",
+      slug: "coffee-vending-adelaide",
+      routePrefix: "/services",
+      targetKeyword: "",
+      seoTitle: "",
+      metaDescription: "",
+      canonicalUrl: "",
+      internalTags: "",
+      topicCluster: "",
+      campaignLabel: "",
+      funnelStage: "",
+      reviewPeriodMonths: 6,
+      nextReviewAt: "",
+      lifecycleStatus: "drafting",
+      ogTitle: "",
+      ogDescription: "",
+      scheduledPublishAt: "",
+      scheduledPublishAtBaseline: "",
+      cancelScheduledPublish: false,
+      noindex: false,
+      sitemapEnabled: true,
+      pageType: "resource",
+      templateKey: "blank",
+      structuredDataSettings: { breadcrumb: true, faq: false },
+      draftContent: validContent,
+    });
+
+    expect(result.status).toBe("error");
+    expect(mocks.adminSaveSeoPageDraft).not.toHaveBeenCalled();
+  });
+
+  it("rejects auto-created drafts that target an unconfigured prefix", async () => {
+    const result = await createSeoPageDraftForEditor({
+      title: "Coffee Vending Adelaide",
+      slug: "coffee-vending-adelaide",
+      routePrefix: "/services",
+      pageType: "resource",
+      templateKey: "blank",
+      draftContent: validContent,
+    });
+
+    expect(result.status).toBe("error");
+    expect(mocks.adminCreateSeoPage).not.toHaveBeenCalled();
   });
 });

@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Round 3 Manual QA Checklist — SEO Page Builder</title>
+<style>
+  :root {
+    --ink: #111111; --muted: #5b6573; --line: #e5e9f0; --bg: #f6f8fb;
+    --card: #ffffff; --blue: #0b63f6; --green: #0a7d33; --amber: #92600a;
+    --red: #b91c1c; --chip-green: #e7f6ec; --chip-amber: #fdf3e1; --chip-red: #fdeaea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: var(--ink); background: var(--bg); }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 18px; }
+  .banner { border: 2px solid var(--red); background: var(--chip-red); color: var(--red); border-radius: 10px; padding: 12px 16px; margin: 0 0 14px; font-weight: 600; }
+  .banner.amber { border-color: var(--amber); background: var(--chip-amber); color: var(--amber); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin: 0 0 16px; }
+  .card h2 { font-size: 18px; margin: 0 0 2px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .id { font-size: 12px; font-weight: 700; color: var(--blue); background: #e8f0fe; border-radius: 999px; padding: 2px 10px; letter-spacing: .04em; }
+  .chip { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 10px; }
+  .chip.fixed { background: var(--chip-green); color: var(--green); }
+  .chip.pending { background: var(--chip-amber); color: var(--amber); }
+  .where { margin: 8px 0 10px; font-size: 14px; }
+  .where a { color: var(--blue); font-weight: 600; text-decoration: none; border-bottom: 1px solid #b7d0fb; }
+  .where a:hover { border-bottom-color: var(--blue); }
+  ol.steps { margin: 8px 0 10px; padding-left: 22px; }
+  ol.steps li { margin: 4px 0; }
+  .expect { border-left: 3px solid var(--green); background: #f3faf5; padding: 8px 12px; border-radius: 0 8px 8px 0; margin: 10px 0 6px; }
+  .expect b { color: var(--green); }
+  .fail { border-left: 3px solid var(--red); background: #fdf6f6; padding: 8px 12px; border-radius: 0 8px 8px 0; margin: 6px 0; }
+  .fail b { color: var(--red); }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+  code { background: #f0f3f8; border-radius: 4px; padding: 1px 5px; }
+  pre { background: #f0f3f8; border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre-wrap; }
+  label.check { display: flex; gap: 10px; align-items: flex-start; margin: 6px 0; cursor: pointer; }
+  label.check input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--blue); }
+  .done-row { color: var(--muted); text-decoration: line-through; }
+  .note { color: var(--muted); font-size: 13.5px; margin-top: 8px; }
+  .progress { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 10px 0; font-weight: 700; }
+  .progress span { color: var(--blue); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Round 3 Manual QA — SEO Page Builder</h1>
+  <p class="sub">Branch <code>ux-review-fixes</code> · run against <code>npm run dev</code> on <code>localhost:3000</code> · checkbox state saves in your browser.</p>
+
+  <div class="banner">
+    ⚠️ The editor AUTOSAVES to the production database. Do NOT test on real pages.
+    Create one throwaway page for all editor checks (steps in item 0) and archive it when done.
+  </div>
+  <div class="banner amber">
+    One known gap still in flight: custom-prefix slug-rename redirects return a soft-404 instead of HTTP 301/308 (fix S6b-2 in progress). Everything else below is expected to pass.
+  </div>
+
+  <div class="progress">Progress: <span id="done">0</span>/<span id="total">0</span> checks</div>
+
+  <!-- 0 -->
+  <div class="card" data-item="setup">
+    <h2><span class="id">SETUP</span> Create one throwaway QA page</h2>
+    <div class="where">Open: <a href="http://localhost:3000/admin/pages/new" target="_blank">/admin/pages/new</a></div>
+    <ol class="steps">
+      <li>Pick <b>SEO / Resource page</b> → <b>Start building page</b>.</li>
+      <li>Right panel → <b>Settings</b> tab → Page title: <code>QA Round 3 Throwaway</code>.</li>
+      <li><b>Save draft changes</b>. Do all editor tests below on this page only.</li>
+    </ol>
+    <label class="check"><input type="checkbox"><span>Throwaway page created and saved (URL is now /admin/pages/&lt;uuid&gt;)</span></label>
+  </div>
+
+  <!-- I1 -->
+  <div class="card" data-item="i1">
+    <h2><span class="id">I1</span> Published lists show bullets &amp; numbers <span class="chip fixed">FIXED</span></h2>
+    <div class="where">Open: <a href="http://localhost:3000/resources/vending-in-colleges" target="_blank">/resources/vending-in-colleges</a> (live published page with 3 bullet lists)</div>
+    <ol class="steps">
+      <li>Scroll the body copy — find the bulleted lists (e.g. under “Planning around space, access and servicing”).</li>
+      <li>On your throwaway page: add a <b>Text</b> block → in the block use <b>Add list</b>, enter 2–3 items → open <b>Live preview</b>.</li>
+    </ol>
+    <div class="expect"><b>Expect:</b> visible round bullets on bulleted lists, digits on numbered lists, on both the live page and the preview.</div>
+    <div class="fail"><b>Fail looks like:</b> list items render as plain indented lines with no markers (the old bug).</div>
+    <div class="note">Checklist-style text blocks intentionally have no bullets (they render ✓ items) — that is correct, not a bug.</div>
+    <label class="check"><input type="checkbox"><span>Bullets visible on the published page</span></label>
+    <label class="check"><input type="checkbox"><span>Bullets/numbers visible in Live preview of a new list</span></label>
+  </div>
+
+  <!-- I2 -->
+  <div class="card" data-item="i2">
+    <h2><span class="id">I2</span> Link only the text you choose <span class="chip fixed">FIXED</span></h2>
+    <div class="where">On your throwaway page (editor)</div>
+    <ol class="steps">
+      <li>Add a <b>Text</b> block with a paragraph, e.g. <code>Vending operators can apply for the program today.</code></li>
+      <li>Expand the paragraph’s options (the small disclosure under the paragraph field).</li>
+      <li><b>Manual link</b>: <code>/apply</code> · <b>Link text</b>: <code>apply for the program</code>.</li>
+      <li>Open <b>Live preview</b> → inspect the paragraph.</li>
+      <li>Back in the editor, change Link text to <code>zzz-not-here</code>.</li>
+    </ol>
+    <div class="expect"><b>Expect:</b> only “apply for the program” is hyperlinked in the preview — not the whole paragraph. With non-matching text, a red inline error appears: “That text isn’t in this paragraph…” and nothing changes.</div>
+    <div class="note">Leaving Link text blank still links the whole paragraph — that’s the intended backward-compatible behavior.</div>
+    <label class="check"><input type="checkbox"><span>Substring-only link in preview</span></label>
+    <label class="check"><input type="checkbox"><span>Clear error for non-matching link text, no data change</span></label>
+    <label class="check"><input type="checkbox"><span>Blank link text still links whole paragraph</span></label>
+  </div>
+
+  <!-- I3 -->
+  <div class="card" data-item="i3">
+    <h2><span class="id">I3</span> Meta description capped at 155 with live counter <span class="chip fixed">FIXED</span></h2>
+    <div class="where">Throwaway page → right panel → <b>Settings</b> tab → <b>Meta description</b></div>
+    <ol class="steps">
+      <li>Type/paste a long text (200+ characters) into Meta description.</li>
+      <li>Watch the counter under the field.</li>
+    </ol>
+    <div class="expect"><b>Expect:</b> input stops at exactly 155 characters; counter shows <code>155/155</code> (red at the cap). AI-generated meta descriptions also come back ≤155 now.</div>
+    <div class="note">Existing pages that already have 156–180 char descriptions still save fine (warning only) — by design, so legacy content is never blocked from publishing.</div>
+    <label class="check"><input type="checkbox"><span>Counter visible and counting</span></label>
+    <label class="check"><input type="checkbox"><span>Hard stop at 155 characters</span></label>
+  </div>
+
+  <!-- I4 -->
+  <div class="card" data-item="i4">
+    <h2><span class="id">I4</span> Reorder blocks from the left outline <span class="chip fixed">FIXED</span></h2>
+    <div class="where">Throwaway page → expand the <b>Blocks</b> sidebar (left edge toggle; on mobile use the <b>Blocks</b> pill at the top)</div>
+    <ol class="steps">
+      <li>Add 3 blocks (any types) so reordering is meaningful.</li>
+      <li>Each outline row now has ↑ / ↓ buttons — click ↓ on the first block.</li>
+      <li>Check the canvas order follows.</li>
+      <li>Narrow the window to phone width → open via the <b>Blocks</b> pill → same buttons work.</li>
+    </ol>
+    <div class="expect"><b>Expect:</b> block moves one position per click; ↑ disabled on the first block of a column, ↓ disabled on the last; selection follows the moved block; existing select / edit-settings / add-below row buttons unchanged.</div>
+    <div class="note">Up/down moves within a section column (same as the canvas move menu). Moving across sections isn’t in scope for this round.</div>
+    <label class="check"><input type="checkbox"><span>Up/down buttons present and reorder works (desktop)</span></label>
+    <label class="check"><input type="checkbox"><span>Boundary buttons disabled correctly</span></label>
+    <label class="check"><input type="checkbox"><span>Works at mobile width via Blocks pill</span></label>
+  </div>
+
+  <!-- I5 -->
+  <div class="card" data-item="i5">
+    <h2><span class="id">I5</span> Proof points can carry an image <span class="chip fixed">FIXED</span></h2>
+    <div class="where">Editor + <a href="http://localhost:3000/admin/libraries" target="_blank">/admin/libraries</a></div>
+    <ol class="steps">
+      <li>Throwaway page → <b>Add page content</b> → <b>Proof</b> → <b>Quote proof</b>.</li>
+      <li>Fill <b>Quote or stat</b> + <b>Name</b> (publish requires content).</li>
+      <li>Outline row → <b>Edit Proof settings</b> → <b>Media library asset</b> → <b>Choose from library</b> → pick an image → set <b>Media alt text</b> → <b>Apply settings</b>.</li>
+      <li>Open <b>Live preview</b> → find the proof card.</li>
+      <li>Also: <a href="http://localhost:3000/admin/libraries" target="_blank">/admin/libraries</a> → Proof items form shows <b>Proof image (optional)</b> with its own <b>Choose from library</b>.</li>
+    </ol>
+    <div class="expect"><b>Expect:</b> the proof card in preview shows the image (square, bordered, above the quote) with your alt text in the markup; proof blocks <i>without</i> an image render exactly as before; <b>Clear media</b> removes it.</div>
+    <label class="check"><input type="checkbox"><span>Image picker in proof block settings, applies and previews</span></label>
+    <label class="check"><input type="checkbox"><span>Proof image field on the libraries form</span></label>
+    <label class="check"><input type="checkbox"><span>Proof block without image looks unchanged</span></label>
+  </div>
+
+  <!-- I6 -->
+  <div class="card" data-item="i6">
+    <h2><span class="id">I6</span> Custom URL subfolders from Settings <span class="chip fixed">FIXED</span> <span class="chip pending">1 sub-item pending</span></h2>
+    <div class="where">Open: <a href="http://localhost:3000/admin/settings/routes" target="_blank">/admin/settings/routes</a> (super-admin only)</div>
+    <ol class="steps">
+      <li>Confirm the five defaults (<code>/resources /blog /landing /videos /solutions</code>) are listed as <b>Built-in</b> with no delete button.</li>
+      <li>Try adding <code>/admin</code> → must be rejected: “That route prefix is reserved and cannot be used.”</li>
+      <li>Add <code>/qa-prefix</code> with any label → appears as <b>Custom</b> with a delete button.</li>
+      <li>Throwaway page → Settings tab → the <b>Route prefix</b> dropdown now lists <code>/qa-prefix</code> → select it, save, fill SEO title + hero CTA label/URL (publish checklist requires them), then <b>Publish</b>.</li>
+      <li>Visit <a href="http://localhost:3000/qa-prefix/qa-round-3-throwaway" target="_blank">/qa-prefix/qa-round-3-throwaway</a> (adjust to your slug).</li>
+      <li>Check <a href="http://localhost:3000/sitemap.xml" target="_blank">/sitemap.xml</a> contains the new URL.</li>
+      <li>Legacy spot-check: <a href="http://localhost:3000/resources/vending-in-colleges" target="_blank">/resources/vending-in-colleges</a> still renders, and <a href="http://localhost:3000/blog/top-10-profitable-products-to-stock-in-your-vending-machine" target="_blank">an old /blog link</a> still lands on /news.</li>
+      <li><b>Cleanup:</b> archive the throwaway page, then delete <code>/qa-prefix</code> in Settings.</li>
+    </ol>
+    <div class="expect"><b>Expect:</b> custom-prefix page renders publicly with canonical <code>https://www.vendingpreneurs.com/qa-prefix/…</code>, appears in the sitemap, and every pre-existing URL behaves exactly as before.</div>
+    <div class="fail"><b>Known pending (S6b-2):</b> renaming the slug of a custom-prefix page creates the redirect record, but the old URL currently soft-404s instead of 301/308 redirecting. Skip that check until the fix lands.</div>
+    <label class="check"><input type="checkbox"><span>Defaults non-deletable; reserved prefix rejected</span></label>
+    <label class="check"><input type="checkbox"><span>Custom prefix add/delete works</span></label>
+    <label class="check"><input type="checkbox"><span>Editor dropdown shows custom prefix; publish works</span></label>
+    <label class="check"><input type="checkbox"><span>Public page + canonical + sitemap correct</span></label>
+    <label class="check"><input type="checkbox"><span>Legacy routes unaffected (resources page + blog→news redirect)</span></label>
+  </div>
+
+  <!-- I7 -->
+  <div class="card" data-item="i7">
+    <h2><span class="id">I7</span> Import warns when sections are dropped <span class="chip fixed">FIXED</span></h2>
+    <div class="where">Throwaway page → <b>AI</b> button (bottom right) → <b>Import document</b> icon (upload symbol next to the chat box)</div>
+    <ol class="steps">
+      <li>Paste the test doc below (1 title + 10 sections) into <b>Paste document text</b>.</li>
+      <li>Click <b>Create block plan</b>.</li>
+    </ol>
+<pre id="md-snippet"># Big Test Doc
+
+## Section 1
+Paragraph one.
+
+## Section 2
+Paragraph two.
+
+## Section 3
+Paragraph three.
+
+## Section 4
+Paragraph four.
+
+## Section 5
+Paragraph five.
+
+## Section 6
+Paragraph six.
+
+## Section 7
+Paragraph seven.
+
+## Section 8
+Paragraph eight.
+
+## Section 9
+Paragraph nine.
+
+## Section 10
+Paragraph ten.</pre>
+    <ol class="steps" start="3">
+      <li>Now delete sections 9–10 from the paste and re-run.</li>
+    </ol>
+    <div class="expect"><b>Expect:</b> first run shows an amber warning with the exact count, e.g. “3 sections dropped — only the first 8 were imported.”; second run (≤8 sections) shows no warning.</div>
+    <div class="note">Authoring guidance for accurate mapping (one <code>#</code> title, <code>##</code> per section, plain lists, no bold/tables/images) is documented in <code>docs/seo-page-builder/website-builder-feedback-review.md</code> → “Document Import Authoring Guidance”.</div>
+    <label class="check"><input type="checkbox"><span>Over-cap paste shows exact dropped-count warning</span></label>
+    <label class="check"><input type="checkbox"><span>At/under cap shows no warning</span></label>
+  </div>
+
+  <!-- teardown -->
+  <div class="card" data-item="teardown">
+    <h2><span class="id">CLEANUP</span> Leave production tidy</h2>
+    <ol class="steps">
+      <li><a href="http://localhost:3000/admin/pages" target="_blank">/admin/pages</a> → archive <code>QA Round 3 Throwaway</code>.</li>
+      <li><a href="http://localhost:3000/admin/settings/routes" target="_blank">/admin/settings/routes</a> → delete <code>/qa-prefix</code> if still present.</li>
+      <li><a href="http://localhost:3000/admin/pages/redirects" target="_blank">/admin/pages/redirects</a> → confirm no leftover QA redirect rows.</li>
+    </ol>
+    <label class="check"><input type="checkbox"><span>All QA records cleaned up</span></label>
+  </div>
+
+</div>
+<script>
+  const KEY = "r3-qa-checklist-v1";
+  const boxes = [...document.querySelectorAll('input[type="checkbox"]')];
+  const saved = JSON.parse(localStorage.getItem(KEY) || "[]");
+  boxes.forEach((b, i) => {
+    b.checked = !!saved[i];
+    b.closest("label").classList.toggle("done-row", b.checked);
+    b.addEventListener("change", () => {
+      b.closest("label").classList.toggle("done-row", b.checked);
+      localStorage.setItem(KEY, JSON.stringify(boxes.map(x => x.checked)));
+      update();
+    });
+  });
+  const update = () => {
+    document.getElementById("done").textContent = boxes.filter(b => b.checked).length;
+    document.getElementById("total").textContent = boxes.length;
+  };
+  update();
+</script>
+</body>
+</html>

@@ -14,6 +14,8 @@ import {
   adminListSeoPageRevisions,
 } from "@/lib/services/seo-pages";
 import { adminListInternalLinkTargets } from "@/lib/services/seo-internal-link-index";
+import { listRoutePrefixes } from "@/lib/services/route-prefixes";
+import { routePrefixOptionsFrom } from "@/lib/page-builder/page-paths";
 import { requireAdmin } from "@/lib/supabase/auth";
 
 type Params = { id: string };
@@ -44,6 +46,7 @@ export default async function EditSeoPagePage({
     aiProposals,
     mediaAssets,
     comments,
+    routePrefixes,
   ] = await Promise.all([
     adminGetSeoPageById(id),
     adminListSeoPageRevisions(id),
@@ -52,6 +55,7 @@ export default async function EditSeoPagePage({
     adminListAiPageProposals(id),
     adminListMediaAssets(),
     adminListPageComments(id),
+    listRoutePrefixes(),
   ]);
   if (!page) notFound();
 
@@ -72,6 +76,7 @@ export default async function EditSeoPagePage({
         aiProposals={aiProposals}
         savedFromRedirect={query.saved === "1"}
         redirectError={pageActionErrorMessage(query.error)}
+        routePrefixOptions={routePrefixOptionsFrom(routePrefixes)}
       />
       <SeoPageRevisionPanel
         pageId={page.id}

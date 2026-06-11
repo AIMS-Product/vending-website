@@ -12,7 +12,7 @@ import {
   type PageContent,
 } from "@/lib/page-builder/blocks";
 import {
-  isBuilderRoutePath,
+  isAssignableBuilderRoutePath,
   normalizeRoutePrefix,
   pagePathForPage,
   pagePathForSlug,
@@ -1633,7 +1633,9 @@ function publishRevisionLabel(
 
 function normalizeSourcePath(path: string) {
   const normalized = normalizeInternalPath(path);
-  if (!isBuilderRoutePath(normalized)) {
+  // Shape-based (not the static five): archived custom-prefix pages must be
+  // able to register redirects too. Reserved app segments stay rejected.
+  if (!isAssignableBuilderRoutePath(normalized)) {
     throw new SeoPageValidationError([
       {
         code: "invalid_redirect_source",

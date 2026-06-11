@@ -1,4 +1,4 @@
-export default function ResourcePageLoading() {
+export default function BuilderPageLoading() {
   return (
     <div
       aria-busy="true"

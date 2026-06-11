@@ -214,6 +214,25 @@ Constructs to avoid (degrade or silently flatten): bold/italic/inline code (kept
 literal `**text**`), tables, images (`![](...)` becomes plain text), raw HTML, nested
 or indented lists, YAML frontmatter, and documents longer than ~8 sections.
 
+### Round 3 Resolution
+
+All seven items closed on 2026-06-11/12 by `plans/website-builder-round-3-feedback/`
+(graph S1-S7, COMPLETE, verification.md PASS). Shipped: published list
+bullet/number styling (R3-3), substring link selection with not-found error and
+whole-paragraph fallback (R3-1), 155-char meta description alignment with live
+editor counter and legacy-save protection (R3-4), outline up/down reorder with
+boundary disabling (R3-5), proof point imagery end-to-end with reusable media
+picker (R3-6), curated super-admin route-prefix settings plus dynamic public
+routing with proxy-served slug-change redirects and two applied additive
+migrations (R3-2), and importer truncation warning plus the authoring guidance
+above (R3-7). Evidence pack: `plans/website-builder-round-3-feedback/evidence/`;
+manual QA checklist: `reports/qa-round-3-2026-06-12/index.html`.
+
+Follow-ups raised during verification (not regressions): block prefix deletion
+while non-archived pages use it (sitemap/404 inconsistency); proxy-level hard
+404 parity for missing pages under custom prefixes; importer bold/italic and
+nested-list support.
+
 ### Round 3 Follow-Up Candidates
 
 1. Quick fixes (one slice): R3-3 list-style bug, R3-4 meta-description 155 alignment +

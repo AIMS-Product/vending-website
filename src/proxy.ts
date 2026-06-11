@@ -5,7 +5,11 @@ import {
   getBuilderRedirectBySourcePath,
   hasPublishedSeoPagePath,
 } from "@/lib/services/seo-page-public";
-import { isBuilderRoutePath } from "@/lib/page-builder/page-paths";
+import {
+  isBuilderRoutePath,
+  splitAssignableBuilderRoutePath,
+} from "@/lib/page-builder/page-paths";
+import { listRoutePrefixes } from "@/lib/services/route-prefixes";
 import { hasActiveSeoPagePreviewToken } from "@/lib/services/seo-pages";
 import {
   ADMIN_FORGOT_PASSWORD_PATH,
@@ -43,6 +47,61 @@ function notFoundResponse() {
 }
 
 const REMOVED_PUBLIC_PATHS = new Set(["/test-leadscore-a"]);
+
+// S6b-2: paths admitted by the shape matcher ("/:prefix([a-z0-9-]+)/:slug")
+// that belong to other proxy flows. /admin, /auth, and /news two-segment
+// paths must keep flowing to their existing branches below byte-identically.
+const TWO_SEGMENT_PATH = /^\/[^/]+\/[^/]+$/;
+
+function isCustomBuilderPathCandidate(path: string) {
+  if (!TWO_SEGMENT_PATH.test(path)) return false;
+  return (
+    !path.startsWith("/admin/") &&
+    !path.startsWith("/auth/") &&
+    !path.startsWith("/news/")
+  );
+}
+
+/**
+ * Serves redirect rows for builder pages under admin-configured custom
+ * prefixes as real HTTP 3xx responses, mirroring the default-prefix branch
+ * above. Custom prefixes cannot appear in the static matcher, so a shape
+ * matcher admits all two-segment kebab-case paths and this branch terminates
+ * every one of them with a redirect or `NextResponse.next()` — nothing here
+ * may ever fall through to the admin auth gate.
+ *
+ * Redirects MUST be emitted here (pre-routing) rather than in the page:
+ * `redirect()`/`permanentRedirect()` inside a streaming render degrade to a
+ * client-side meta tag after the 200 shell has flushed
+ * (node_modules/next/dist/docs/01-app/03-api-reference/04-functions/
+ * permanentRedirect.md — "When used in a streaming context, this will insert
+ * a meta tag to emit the redirect on the client side."), which crawlers and
+ * non-JS clients never follow.
+ */
+async function handleCustomBuilderPath(request: NextRequest, path: string) {
+  // Shape + reservation gate: reserved segments (e.g. /authors, /images) and
+  // non-kebab paths are not builder candidates — no DB lookups for them.
+  const split = splitAssignableBuilderRoutePath(path);
+  if (!split) return NextResponse.next();
+
+  const configured = await listRoutePrefixes();
+  const isConfigured = configured.some(
+    (entry) => entry.prefix === split.routePrefix,
+  );
+  if (!isConfigured) return NextResponse.next();
+
+  const redirect = await getBuilderRedirectBySourcePath(path);
+  if (redirect) {
+    return NextResponse.redirect(
+      resolveRedirectDestination(request, redirect.destination_path),
+      redirect.status_code,
+    );
+  }
+
+  // Existence/404 handling stays with the route (same streamed-shell
+  // behavior as the rest of the app); only redirects need real 3xx here.
+  return NextResponse.next();
+}
 
 /**
  * Next 16 proxy (formerly `middleware.ts`). Two responsibilities:
@@ -130,6 +189,12 @@ export async function proxy(request: NextRequest) {
     }
 
     return NextResponse.next();
+  }
+
+  // Custom builder prefixes (e.g. /services/{slug}) — terminal branch; see
+  // handleCustomBuilderPath. Default prefixes were handled above.
+  if (isCustomBuilderPathCandidate(path)) {
+    return handleCustomBuilderPath(request, path);
   }
 
   // Public news index and RSS feed are always reachable by anonymous
@@ -226,5 +291,11 @@ export const config = {
     "/solutions/:path*",
     "/news/:path*",
     "/test-leadscore-a",
+    // S6b-2: admin-configured custom builder prefixes can't be listed
+    // statically, so admit every two-segment lowercase-kebab path (the only
+    // shape a builder route_path can take). `_next`, dotted hosts/files, and
+    // uppercase paths don't match the [a-z0-9-] shape; everything admitted
+    // here is terminated by handleCustomBuilderPath or an earlier branch.
+    "/:prefix([a-z0-9-]+)/:slug([^/]+)",
   ],
 };

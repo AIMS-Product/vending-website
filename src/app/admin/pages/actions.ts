@@ -36,6 +36,8 @@ import { adminDeleteNeverSavedSeoPageDraft } from "@/lib/services/seo-page-draft
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
 import { META_DESCRIPTION_LEGACY_MAX_LENGTH } from "@/lib/page-builder/copy-standards";
 import { pagePathForSlug } from "@/lib/page-builder/page-paths";
+import { ROUTE_PREFIX_PATTERN } from "@/lib/page-builder/route-prefix-defaults";
+import { listRoutePrefixes } from "@/lib/services/route-prefixes";
 import { zonedDateTimeLocalToUtcIso } from "@/lib/page-builder/scheduled-publishing";
 import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
 
@@ -112,13 +114,13 @@ const formObjectSchema = z.object({
     .trim()
     .toLowerCase()
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use a URL-safe slug."),
+  // Shape-only here; membership in the configured prefix list is enforced
+  // with a live lookup (`configuredRoutePrefixError`) inside each action,
+  // since custom prefixes live in the page_builder_route_prefixes table.
   routePrefix: z
     .string()
     .trim()
-    .regex(
-      /^\/(resources|blog|landing|videos|solutions)$/,
-      "Choose a supported route prefix.",
-    )
+    .regex(ROUTE_PREFIX_PATTERN, "Choose a supported route prefix.")
     .default("/resources"),
   targetKeyword: z.string().trim().max(180, "Target keyword is too long."),
   seoTitle: z.string().trim().max(80, "SEO title is too long."),
@@ -185,6 +187,17 @@ type ParsedPageForm = z.infer<typeof formSchema>;
 
 const ADMIN_PAGES_PATH = "/admin/pages";
 
+// Live lookup against the configured prefix list (seeded defaults plus
+// admin-added customs; the service falls back to the defaults when the table
+// is missing). Returns an error message, or null when the prefix is allowed.
+async function configuredRoutePrefixError(
+  routePrefix: string,
+): Promise<string | null> {
+  const configured = await listRoutePrefixes();
+  if (configured.some((entry) => entry.prefix === routePrefix)) return null;
+  return "That route prefix is not configured. Add it under Settings → Routes first.";
+}
+
 type PersistedPageDraft = {
   pageId: string;
   created: boolean;
@@ -203,6 +216,10 @@ export async function saveSeoPage(
   }
 
   const page = parsed.data;
+  const prefixError = await configuredRoutePrefixError(page.routePrefix);
+  if (prefixError) {
+    return { status: "error", message: prefixError };
+  }
   let redirectTo: string | null = null;
 
   try {
@@ -308,6 +325,11 @@ export async function createSeoPageDraftForEditor(input: {
   const parsed = createDraftForEditorSchema.safeParse(input);
   if (!parsed.success) {
     return { status: "error", message: "Add a title before auto-saving." };
+  }
+
+  const prefixError = await configuredRoutePrefixError(parsed.data.routePrefix);
+  if (prefixError) {
+    return { status: "error", message: prefixError };
   }
 
   try {
@@ -421,6 +443,11 @@ export async function autosaveSeoPageDraft(
     return { status: "error", message: firstIssue(parsed.error) };
   }
 
+  const prefixError = await configuredRoutePrefixError(parsed.data.routePrefix);
+  if (prefixError) {
+    return { status: "error", message: prefixError };
+  }
+
   try {
     const existing = await adminGetSeoPageById(pageId);
     if (!existing) {
@@ -493,6 +520,10 @@ export async function saveSeoPageDraftAndCreatePreviewLink(
   }
 
   const page = parsed.data;
+  const prefixError = await configuredRoutePrefixError(page.routePrefix);
+  if (prefixError) {
+    return { status: "error", message: prefixError };
+  }
 
   try {
     const persisted = await persistPageEditorDraft(

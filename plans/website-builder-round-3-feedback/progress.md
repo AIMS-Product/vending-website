@@ -1,22 +1,22 @@
 # Feature Progress: website-builder-round-3-feedback
 
-Status: IN_PROGRESS
-Current wave: W4
-Last updated: 2026-06-11
+Status: COMPLETE
+Current wave: FINAL
+Last updated: 2026-06-12
 Owner: feature-orchestrator
 
 ## Graph Summary
 
-| Node | Title                                         | Tier | Depends On | Parallel Group | Owner      | Status      |
-| ---- | --------------------------------------------- | ---- | ---------- | -------------- | ---------- | ----------- |
-| S1   | Published list bullet/number styling (I1)     | T3   | none       | W1-A           | worker-s1  | DONE        |
-| S2   | Substring link selection (I2)                 | T3   | none       | W1-B           | worker-s2  | DONE        |
-| S3   | Meta description 155 alignment + counter (I3) | T2   | none       | W1-C           | worker-s3  | DONE        |
-| S4   | Outline up/down reorder (I4)                  | T3   | none       | W1-D           | worker-s4  | DONE        |
-| S5   | Proof point imagery end-to-end (I5)           | T2   | none       | W2-A           | worker-s5  | DONE        |
-| S7   | Importer truncation warning (I7)              | T3   | none       | W2-B           | worker-s7  | DONE        |
-| S6a  | Route prefix settings table + admin UI (I6)   | T2   | none       | W3-A           | worker-s6a | DONE        |
-| S6b  | Dynamic prefix route + lookup validation (I6) | T2   | S6a        | W4-A           | worker-s6b | IN_PROGRESS |
+| Node | Title                                         | Tier | Depends On | Parallel Group | Owner      | Status |
+| ---- | --------------------------------------------- | ---- | ---------- | -------------- | ---------- | ------ |
+| S1   | Published list bullet/number styling (I1)     | T3   | none       | W1-A           | worker-s1  | DONE   |
+| S2   | Substring link selection (I2)                 | T3   | none       | W1-B           | worker-s2  | DONE   |
+| S3   | Meta description 155 alignment + counter (I3) | T2   | none       | W1-C           | worker-s3  | DONE   |
+| S4   | Outline up/down reorder (I4)                  | T3   | none       | W1-D           | worker-s4  | DONE   |
+| S5   | Proof point imagery end-to-end (I5)           | T2   | none       | W2-A           | worker-s5  | DONE   |
+| S7   | Importer truncation warning (I7)              | T3   | none       | W2-B           | worker-s7  | DONE   |
+| S6a  | Route prefix settings table + admin UI (I6)   | T2   | none       | W3-A           | worker-s6a | DONE   |
+| S6b  | Dynamic prefix route + lookup validation (I6) | T2   | S6a        | W4-A           | worker-s6b | DONE   |
 
 ## Gate Progress
 
@@ -106,3 +106,45 @@ server; workers do code + repo gates only).
   "That route prefix is reserved and cannot be used."
   (`/tmp/r3-s6a-settings-page.png`, `/tmp/r3-s6a-added.png`,
   `/tmp/r3-s6a-reserved-error.png`, `/tmp/r3-s6a-cleaned.png`).
+
+- W4 / S6b interim (2026-06-12, orchestrator): migration
+  `20260611100000_relax_route_prefix_checks.sql` reviewed (strictly-weaker CHECK
+  predicates only) and applied via `supabase db push`. Fresh gates: full suite
+  769 tests PASS, typecheck clean, `npm run build` PASS (route table:
+  catch-all + [legacyLeadPath] + /resources/preview/[token] + static all
+  coexist). Live proofs PASSED: legacy /resources page 200; /resources/preview
+  token 200; /blog/{slug} -> /news/{slug} 308; unknown prefixes 404-equivalent
+  (streamed soft-404 with noindex — same pre-existing pattern as single-segment
+  paths); /services added in settings; editor dropdown listed /services from the
+  service; draft + publish under /services succeeded (relaxed CHECK accepted
+  route_path); public /services page rendered with correct canonical + h1;
+  sitemap included the /services URL.
+  BUG FOUND in live verification: slug-rename redirect row for the custom prefix
+  (301, anon-readable, exists in DB) is NOT served as an HTTP redirect — old URL
+  returns streamed 200 soft-404 (suspected shell-flush-before-redirect). Sent
+  back to worker-s6b as S6b-2 for root-cause + fix (real 301/308 required).
+  Throwaway records still live for re-verification: page
+  1698384a-c273-441c-9bb1-e35c8b6f4d5b (/services/r3-services-proof-renamed),
+  one redirect row, /services prefix. Cleanup happens after S6b-2 passes.
+
+- W4 / S6b-2 fix (2026-06-12): root cause CONFIRMED with doc citations — this
+  Next version's permanentRedirect() in a streaming context (root loading.tsx)
+  emits a client-side meta-refresh, never an HTTP 3xx (the streamed body
+  contained `__next-page-redirect`). Fix: custom-prefix redirect rows are now
+  served in src/proxy.ts via a shape-scoped matcher + configured-list check,
+  exactly like the five defaults; defaults pinned byte-identical by test.
+  Orchestrator re-verified live: `curl -I` shows HTTP/1.1 301 + Location ->
+  /services/r3-services-proof-renamed, follows to 200; news/authors/legacy
+  routes unchanged. Fresh final gates: full suite 122 files / 774 tests PASS,
+  typecheck clean, `npm run build` PASS (56 static pages).
+- Cleanup (2026-06-12): redirect row deleted; /services prefix deleted;
+  throwaway page 1698384a archived via the app's own
+  `archive_seo_page_atomically` RPC (page_revisions are immutable append-only,
+  so hard delete is impossible by design — archived record retained, matching
+  product convention). Sitemap contains zero /services entries.
+- Product follow-up discovered (not a Round 3 regression): a page published
+  under a prefix that is later deleted from settings keeps its sitemap entry
+  while publicly 404ing until the page itself is archived. Recommend: block
+  prefix deletion while non-archived pages use it, or auto-archive prompt.
+- Evidence pack: `evidence/README.md` maps every item to screenshots, tests,
+  and curl proofs. Manual QA checklist: `reports/qa-round-3-2026-06-12/index.html`.
