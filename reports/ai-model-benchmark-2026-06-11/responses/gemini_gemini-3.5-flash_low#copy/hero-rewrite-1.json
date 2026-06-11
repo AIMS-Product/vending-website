@@ -1,0 +1,117 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Rewrite the hero headline and body to emphasise hands-off passive income for busy professionals. Keep the CTA unchanged."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Coffee vending machines for offices keep teams stocked with fresh drinks without anyone owning a brewing rota. A managed machine covers restocking, cleaning, and fault response so facilities can stay focused on the building.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "zd6h63dj",
+        "name": "edit_block_1_block_hero",
+        "input": {
+          "body": "Placing automated coffee vending machines for offices lets busy professionals build a hands-off, passive revenue stream. A fully managed service handles the daily refilling, cleaning, and technical maintenance while you collect consistent monthly earnings. Secure your preferred commercial locations today to establish your automatic business.",
+          "eyebrow": "Passive Revenue Streams",
+          "ctaHref": "/apply",
+          "headline": "Passive Income from Office Coffee Vending",
+          "ctaLabel": "Apply now"
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "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"
+                }
+              },
+              "function": {
+                "arguments": "{\"body\":\"Placing automated coffee vending machines for offices lets busy professionals build a hands-off, passive revenue stream. A fully managed service handles the daily refilling, cleaning, and technical maintenance while you collect consistent monthly earnings. Secure your preferred commercial locations today to establish your automatic business.\",\"eyebrow\":\"Passive Revenue Streams\",\"ctaHref\":\"/apply\",\"headline\":\"Passive Income from Office Coffee Vending\",\"ctaLabel\":\"Apply now\"}",
+                "name": "edit_block_1_block_hero"
+              },
+              "id": "zd6h63dj",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781145613,
+    "id": "CSAqat_bFtrFjuMP3KGasQ0",
+    "model": "gemini-3.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 114,
+      "prompt_tokens": 4926,
+      "prompt_tokens_details": {
+        "cached_tokens": 4036
+      },
+      "total_tokens": 5564
+    }
+  }
+}

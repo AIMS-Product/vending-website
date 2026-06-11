@@ -1,0 +1,117 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an image section with text about campus vending."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Coffee vending machines for offices keep teams stocked with fresh drinks without anyone owning a brewing rota. A managed machine covers restocking, cleaning, and fault response so facilities can stay focused on the building.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "c0zolhmj",
+        "name": "request_clarification",
+        "input": {
+          "options": [
+            "Provide a custom image URL for the campus vending section",
+            "Use a placeholder workplace/campus beverage image (/images/campus-vending-placeholder.jpg)",
+            "Create a text-only detailed block about campus vending first"
+          ]
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "ErMICrAIAQw51sckDyUNVp6fsb0AOzL5vvpEi6adtaha09wX+fC1KryTXXR7AuruRaLD203/rUv1Yl1d6pj4uaRGKdHIOK6+NvxI1N6AxBfPt11W4ZeJpjU6KHkfDZpZAEC1MOZuuzoKDDY5RWgT8dH5XNSQ2MMW600ERjhfvEdDAQAsLqtJN9LqjfMWSy0SdwjTIeLzalcZlgikb8Gbk0L0cblmRFbXBSZh/2B3rm/9breYgYXSJGS4JcFJAkfyO9BiEb7jU3TKvhkro1lE9BzzNaDIdzKYJH4158UPvuwsoyvBNYBa4TJMRCTHyt++SyqLYwrQJT3BqQnbiO/IWrdUGfbg5zfKeabeI0Hs3LBfzD69NhOjv/7powHZSqSQUivGFSdWdBhEiBLDYO9iEUm3zXqQeVA3uV9kv+Jz90Y9647nNQkoo/D531c9SYg2I0ZrtpL7gXEOi+sz2VlMiLW7f0uj+t1LpyEgoJ8AmlWt2gSsqBCBSbwCVgHntxZeKpm0Qqx3Sxg2pslPkeY7FTJQsqc7AZWYJLPE9JCc/jNMdhlI6x9KOA1Tk916y3JChsZUISOOEUX0Z4vKXhJaTRIOPXWiiOZ1bsdTURaIosm2vok5crakqdn1uEHbdeNPfEqS9ofgMrUU+WuTRlpBTNXVnGhGnBUNFl6yThqYABkgN+GxQWoHNzpeNW6prWHa4FDMjqJOqsKXmQN1FAyl5TLR/eQnTK1ko6uVTU3Fbgzm8vjXanpZ2ruX0VaNfBr/URPmN0jTjRNf/p5V6A6ZJZknIbEOk7QXcOQC1nhQFlsf/cx7an2aVpNVs6bpuhlNXPeqW0pQnMB+emXH4LzHLm4fHeplVUlyUyF32EgN7Cgmvleva/F3uVgh5GUPlvrKjVQcV1UNbx8wJFWuvgmFQiNFwJNrsLjlkMM+anBYV8pnEnp2HfqxsePu/80my8nElbRlmsPTn0bP21oEVYocJNolH4SGGIfNc8iP7xFiBnmM/3NSgY40qVfrmKLlr3XhsJrh/mmEVvtWKBe2YxF8ijICDCneMY7SR5wsEdMrBBGbTN2wPq4z4sJ/rx0MfJcZ6du9IzX738sUofrMptygGI9rMo/NgkZ12UFqKY/vJ367Vo9u659GnDjxwWoV782ALJAixzol6wcQrhXRQc7k8Yn98GGIvTivynf1RietA3CTmIoiHzeLy1K8VUIl7inQ6iMV//0WNRbrnoEmXgis/OiOUIpOSyqdcJZ/fyDsHwwt6zkLxKvU7hsiN/oq5nFU2bAKBPdiiiibGNAwovaNwvLSZ5gx4QZp1PiS/gr+sOROD90aMN1LWVmseyaUKOmiu95MtdJVFAnA533taI1yCxt0hEW4NhdPfM27BpHU/giMCbZ4TJyJJT7e2I71EUIL6lpgLujswLRQxbp9EtsvrKT84Fum3Q=="
+                }
+              },
+              "function": {
+                "arguments": "{\"options\":[\"Provide a custom image URL for the campus vending section\",\"Use a placeholder workplace/campus beverage image (/images/campus-vending-placeholder.jpg)\",\"Create a text-only detailed block about campus vending first\"]}",
+                "name": "request_clarification"
+              },
+              "id": "c0zolhmj",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781145660,
+    "id": "OSAqau3CMYr5juMPkIja2Qs",
+    "model": "gemini-3.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 63,
+      "prompt_tokens": 4941,
+      "prompt_tokens_details": {
+        "cached_tokens": 4037
+      },
+      "total_tokens": 5241
+    }
+  }
+}

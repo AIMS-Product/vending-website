@@ -1,0 +1,136 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Set an SEO title and meta description optimised for the target keyword 'coffee vending machines for offices'."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Old body copy about machines.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "rr8rmiac",
+        "name": "set_seo_metadata",
+        "input": {
+          "title": "Coffee Vending Machines for Offices",
+          "seoTitle": "Coffee Vending Machines for Offices | Professional Workplace Solutions",
+          "targetKeyword": "coffee vending machines for offices",
+          "metaDescription": "Upgrade your breakroom with premium coffee vending machines for offices. High-quality brews, easy maintenance, and customisable options for every workplace.",
+          "slug": "coffee-vending-machines-offices"
+        }
+      },
+      {
+        "id": "lqods70u",
+        "name": "edit_block_1_block_hero",
+        "input": {
+          "ctaHref": "/contact",
+          "body": "Provide your team with high-quality, barista-style coffee at the touch of a button. Our coffee vending machines for offices are designed for high-traffic workplaces, offering reliability and a variety of premium beverage options.",
+          "headline": "Premium Coffee Vending Machines for Offices",
+          "ctaLabel": "Get a Quote",
+          "eyebrow": "Workplace Refreshments"
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "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"
+                }
+              },
+              "function": {
+                "arguments": "{\"title\":\"Coffee Vending Machines for Offices\",\"seoTitle\":\"Coffee Vending Machines for Offices | Professional Workplace Solutions\",\"targetKeyword\":\"coffee vending machines for offices\",\"metaDescription\":\"Upgrade your breakroom with premium coffee vending machines for offices. High-quality brews, easy maintenance, and customisable options for every workplace.\",\"slug\":\"coffee-vending-machines-offices\"}",
+                "name": "set_seo_metadata"
+              },
+              "id": "rr8rmiac",
+              "type": "function"
+            },
+            {
+              "function": {
+                "arguments": "{\"ctaHref\":\"/contact\",\"body\":\"Provide your team with high-quality, barista-style coffee at the touch of a button. Our coffee vending machines for offices are designed for high-traffic workplaces, offering reliability and a variety of premium beverage options.\",\"headline\":\"Premium Coffee Vending Machines for Offices\",\"ctaLabel\":\"Get a Quote\",\"eyebrow\":\"Workplace Refreshments\"}",
+                "name": "edit_block_1_block_hero"
+              },
+              "id": "lqods70u",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781141230,
+    "id": "6A4qaqmkL4CcjuMPp7Cr-Qo",
+    "model": "gemini-3-flash-preview",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 202,
+      "prompt_tokens": 4409,
+      "prompt_tokens_details": {
+        "cached_tokens": 2019
+      },
+      "total_tokens": 5271
+    }
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an FAQ section with 4 common questions people ask before starting a vending machine business."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Old body copy about machines.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "vhbnxolm",
+        "name": "add_block",
+        "input": {
+          "title": "Frequently Asked Questions About Starting a Vending Business",
+          "ctaLabel": null,
+          "body": null,
+          "faqItems": [
+            {
+              "answer": "Startup costs typically vary depending on whether you purchase new or refurbished machines and how you secure your first locations. Planning for machine acquisition, initial stock, and transport is a key first step.",
+              "question": "How much capital is needed to start a vending machine business?"
+            },
+            {
+              "question": "How do I secure profitable locations for my machines?",
+              "answer": "Securing locations involves identifying high-foot-traffic areas such as offices, warehouses, or waiting rooms, and presenting a professional proposal to property owners or facility managers."
+            },
+            {
+              "answer": "Operating a vending route requires regular visits to restock products, collect revenue, and perform preventative maintenance. The frequency of these visits depends heavily on sales volume.",
+              "question": "What are the ongoing maintenance and restocking requirements?"
+            },
+            {
+              "question": "Should I start independently or buy into a franchise?",
+              "answer": "Starting independently offers maximum flexibility and lower upfront fees, while a franchise model may provide established brand recognition and training support. The choice depends on your business experience and goals."
+            }
+          ],
+          "bulletItems": null,
+          "ctaHref": null,
+          "blockType": "faq",
+          "cards": null
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "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"
+                }
+              },
+              "function": {
+                "arguments": "{\"title\":\"Frequently Asked Questions About Starting a Vending Business\",\"ctaLabel\":null,\"body\":null,\"faqItems\":[{\"answer\":\"Startup costs typically vary depending on whether you purchase new or refurbished machines and how you secure your first locations. Planning for machine acquisition, initial stock, and transport is a key first step.\",\"question\":\"How much capital is needed to start a vending machine business?\"},{\"question\":\"How do I secure profitable locations for my machines?\",\"answer\":\"Securing locations involves identifying high-foot-traffic areas such as offices, warehouses, or waiting rooms, and presenting a professional proposal to property owners or facility managers.\"},{\"answer\":\"Operating a vending route requires regular visits to restock products, collect revenue, and perform preventative maintenance. The frequency of these visits depends heavily on sales volume.\",\"question\":\"What are the ongoing maintenance and restocking requirements?\"},{\"question\":\"Should I start independently or buy into a franchise?\",\"answer\":\"Starting independently offers maximum flexibility and lower upfront fees, while a franchise model may provide established brand recognition and training support. The choice depends on your business experience and goals.\"}],\"bulletItems\":null,\"ctaHref\":null,\"blockType\":\"faq\",\"cards\":null}",
+                "name": "add_block"
+              },
+              "id": "vhbnxolm",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781142566,
+    "id": "IRQqav_mC_CcjuMPrq3K6Aw",
+    "model": "gemini-3.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 273,
+      "prompt_tokens": 4439,
+      "total_tokens": 5242
+    }
+  }
+}

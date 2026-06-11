@@ -1,0 +1,118 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an image section with text about campus vending."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Coffee vending machines for offices keep teams stocked with fresh drinks without anyone owning a brewing rota. A managed machine covers restocking, cleaning, and fault response so facilities can stay focused on the building.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "I can add the image block, but I need the media source first.",
+    "toolCalls": [
+      {
+        "id": "deterministic_media_source_clarification",
+        "name": "request_clarification",
+        "input": {
+          "options": [
+            "Paste a media URL",
+            "Choose from the media library first",
+            "Add a text placeholder instead"
+          ]
+        }
+      }
+    ],
+    "source": "intent-fallback"
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "EjQKMgEMOdbHDEaFRP0CmEevRlLmnkbbZg0m3g7lv98+E+NjiSacpccoTwmo3TM/libSDLf4"
+                }
+              },
+              "function": {
+                "arguments": "{\"imageUrl\":\"/assets/campus-vending.jpg\",\"body\":\"Managing refreshments for a large campus requires reliable, high-volume equipment that can withstand constant daily use. Modern vending options for academic and residential environments focus on accessibility, intuitive payment integration, and consistent product availability to ensure students and staff have options during extended study or work hours. Determining the right placement often involves reviewing foot traffic patterns, power availability, and the specific mix of snacks and beverages that meet the daily needs of your campus community.\",\"heading\":\"Campus-wide vending solutions\",\"imagePosition\":\"right\",\"imageAltText\":\"A modern beverage and snack vending machine in a university student center.\",\"imageCaption\":\"Modern vending hardware provides consistent access to refreshments across campus facilities.\",\"bulletItems\":[\"Integration with existing student and staff ID payment systems\",\"Automated inventory tracking to prevent stock-outs during peak times\",\"Ruggedized hardware designed for high-traffic public areas\",\"Scheduled maintenance routines to ensure consistent performance\"],\"sourceRightsNotes\":\"Internal image library.\"}",
+                "name": "add_image_text_section"
+              },
+              "id": "FQtlEk1G",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781145546,
+    "id": "yB8qasnYOd78juMP-IOPsQs",
+    "model": "gemini-3.1-flash-lite",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 239,
+      "prompt_tokens": 4941,
+      "prompt_tokens_details": {
+        "cached_tokens": 4038
+      },
+      "total_tokens": 5180
+    }
+  }
+}

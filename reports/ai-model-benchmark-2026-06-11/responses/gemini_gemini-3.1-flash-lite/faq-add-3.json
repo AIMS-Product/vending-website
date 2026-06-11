@@ -1,0 +1,137 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an FAQ section with 4 common questions people ask before starting a vending machine business."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Coffee vending machines for offices keep teams stocked with fresh drinks without anyone owning a brewing rota. A managed machine covers restocking, cleaning, and fault response so facilities can stay focused on the building.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "SOAVGiMA",
+        "name": "add_block",
+        "input": {
+          "faqItems": [
+            {
+              "answer": "Choosing the right machine depends on your target location and product type. You should consider whether you need a refrigerated unit for drinks, a dry-goods machine for snacks, or a versatile combo unit. Check site dimensions, power supply availability, and the volume of foot traffic to ensure the hardware fits both your space and the expected demand of your customers.",
+              "question": "How do I choose the right vending machine for my location?"
+            },
+            {
+              "answer": "Successful operators typically secure a contract that clearly outlines the division of responsibilities. This includes the equipment lease or purchase terms, the frequency of scheduled maintenance, and how sales commissions or revenue sharing are handled. Always confirm insurance requirements and how to manage emergency repairs or restocking shortages before signing any long-term placement agreement.",
+              "question": "What should be included in a vending machine placement contract?"
+            },
+            {
+              "answer": "Maintenance is a critical factor in long-term profitability. You need a reliable plan for regular cleaning, mechanical checkups, and inventory replenishment. Many owners start by tracking sales data closely to determine exactly how often their specific machines run low on popular items, which helps reduce unnecessary site visits while preventing stockouts that frustrate users.",
+              "question": "How do I manage machine maintenance and restocking?"
+            },
+            {
+              "question": "What are the primary startup costs and regulatory requirements?",
+              "answer": "Starting a business in this sector involves more than just buying equipment. You must consider local health department requirements for food-based vending, business licenses, and public liability insurance. Additionally, calculate the ongoing costs of electricity, potential commission payments to site owners, and the logistics of sourcing products at wholesale prices to maintain healthy margins."
+            }
+          ],
+          "ctaLabel": "Contact us for guidance",
+          "ctaHref": "/contact",
+          "body": "Get answers to the most common questions about launching a vending operation to help you plan your investment and operational requirements.",
+          "blockType": "faq",
+          "title": "Frequently asked questions about starting a vending business",
+          "cards": [],
+          "bulletItems": []
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "EjQKMgEMOdbHQFjsVUfv5us8IgTWEVtZp/+CVp8kJQ4Fqx/PbA4TjyouRzz2dInS83dnJxdN"
+                }
+              },
+              "function": {
+                "arguments": "{\"faqItems\":[{\"answer\":\"Choosing the right machine depends on your target location and product type. You should consider whether you need a refrigerated unit for drinks, a dry-goods machine for snacks, or a versatile combo unit. Check site dimensions, power supply availability, and the volume of foot traffic to ensure the hardware fits both your space and the expected demand of your customers.\",\"question\":\"How do I choose the right vending machine for my location?\"},{\"answer\":\"Successful operators typically secure a contract that clearly outlines the division of responsibilities. This includes the equipment lease or purchase terms, the frequency of scheduled maintenance, and how sales commissions or revenue sharing are handled. Always confirm insurance requirements and how to manage emergency repairs or restocking shortages before signing any long-term placement agreement.\",\"question\":\"What should be included in a vending machine placement contract?\"},{\"answer\":\"Maintenance is a critical factor in long-term profitability. You need a reliable plan for regular cleaning, mechanical checkups, and inventory replenishment. Many owners start by tracking sales data closely to determine exactly how often their specific machines run low on popular items, which helps reduce unnecessary site visits while preventing stockouts that frustrate users.\",\"question\":\"How do I manage machine maintenance and restocking?\"},{\"question\":\"What are the primary startup costs and regulatory requirements?\",\"answer\":\"Starting a business in this sector involves more than just buying equipment. You must consider local health department requirements for food-based vending, business licenses, and public liability insurance. Additionally, calculate the ongoing costs of electricity, potential commission payments to site owners, and the logistics of sourcing products at wholesale prices to maintain healthy margins.\"}],\"ctaLabel\":\"Contact us for guidance\",\"ctaHref\":\"/contact\",\"body\":\"Get answers to the most common questions about launching a vending operation to help you plan your investment and operational requirements.\",\"blockType\":\"faq\",\"title\":\"Frequently asked questions about starting a vending business\",\"cards\":[],\"bulletItems\":[]}",
+                "name": "add_block"
+              },
+              "id": "SOAVGiMA",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781145479,
+    "id": "hB8qaqarKor5juMPkIja2Qs",
+    "model": "gemini-3.1-flash-lite",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 427,
+      "prompt_tokens": 4891,
+      "prompt_tokens_details": {
+        "cached_tokens": 4038
+      },
+      "total_tokens": 5318
+    }
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an FAQ section with 4 common questions people ask before starting a vending machine business."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Coffee vending machines for offices keep teams stocked with fresh drinks without anyone owning a brewing rota. A managed machine covers restocking, cleaning, and fault response so facilities can stay focused on the building.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "4pzhqjrl",
+        "name": "add_block",
+        "input": {
+          "ctaHref": null,
+          "bulletItems": null,
+          "faqItems": [
+            {
+              "answer": "Initial costs typically range from three thousand to ten thousand dollars per machine when purchasing new or refurbished equipment. You must also budget for initial inventory stock, local business licensing, and transportation costs to haul inventory.",
+              "question": "How much capital is needed to start a vending machine business?"
+            },
+            {
+              "answer": "Securing a location usually involves researching high-foot-traffic areas like warehouses, office parks, or transport hubs. Business owners typically negotiate a commission structure with property managers, offering them five to twenty percent of sales in exchange for floor space and power.",
+              "question": "How do you secure profitable locations for machines?"
+            },
+            {
+              "question": "What are the ongoing maintenance requirements?",
+              "answer": "Operators typically visit each location once or twice a week to restock popular products and collect cash or digital payments. Regular upkeep also includes sanitizing touch points, testing coin mechanisms, and conducting preventive mechanical checks to avoid downtime."
+            },
+            {
+              "question": "How long does it take to see a return on investment?",
+              "answer": "Many operators see machines pay for themselves within twelve to twenty-four months, depending on location traffic and product margins. Refreshment items and cold drinks generally offer reliable returns, though local demand guides your specific timeline."
+            }
+          ],
+          "blockType": "faq",
+          "body": "Before launching a workplace refreshment operation, understanding the operational logistics and initial investment requirements helps set realistic business goals.",
+          "title": "Common Questions Before Starting a Vending Business",
+          "cards": null,
+          "ctaLabel": null
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "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"
+                }
+              },
+              "function": {
+                "arguments": "{\"ctaHref\":null,\"bulletItems\":null,\"faqItems\":[{\"answer\":\"Initial costs typically range from three thousand to ten thousand dollars per machine when purchasing new or refurbished equipment. You must also budget for initial inventory stock, local business licensing, and transportation costs to haul inventory.\",\"question\":\"How much capital is needed to start a vending machine business?\"},{\"answer\":\"Securing a location usually involves researching high-foot-traffic areas like warehouses, office parks, or transport hubs. Business owners typically negotiate a commission structure with property managers, offering them five to twenty percent of sales in exchange for floor space and power.\",\"question\":\"How do you secure profitable locations for machines?\"},{\"question\":\"What are the ongoing maintenance requirements?\",\"answer\":\"Operators typically visit each location once or twice a week to restock popular products and collect cash or digital payments. Regular upkeep also includes sanitizing touch points, testing coin mechanisms, and conducting preventive mechanical checks to avoid downtime.\"},{\"question\":\"How long does it take to see a return on investment?\",\"answer\":\"Many operators see machines pay for themselves within twelve to twenty-four months, depending on location traffic and product margins. Refreshment items and cold drinks generally offer reliable returns, though local demand guides your specific timeline.\"}],\"blockType\":\"faq\",\"body\":\"Before launching a workplace refreshment operation, understanding the operational logistics and initial investment requirements helps set realistic business goals.\",\"title\":\"Common Questions Before Starting a Vending Business\",\"cards\":null,\"ctaLabel\":null}",
+                "name": "add_block"
+              },
+              "id": "4pzhqjrl",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781145635,
+    "id": "HSAqaqvFCYfGjuMPyMeryA4",
+    "model": "gemini-3.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 335,
+      "prompt_tokens": 4953,
+      "prompt_tokens_details": {
+        "cached_tokens": 4037
+      },
+      "total_tokens": 6214
+    }
+  }
+}

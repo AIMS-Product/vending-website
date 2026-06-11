@@ -1,0 +1,135 @@
+{
+  "proposal": {
+    "version": 1,
+    "metadata": {
+      "title": "Start a Vending Business",
+      "seoTitle": "Start a Vending Business",
+      "metaDescription": "Learn how to start a vending business with support.",
+      "suggestedSlug": "start-vending"
+    },
+    "blocks": [
+      {
+        "block": {
+          "id": "ai_hero_001",
+          "type": "hero",
+          "variant": "standard",
+          "props": {
+            "eyebrow": "Vending Business Startup",
+            "heading": "Start Your Vending Business with Confidence",
+            "body": "Turn your entrepreneurial goals into reality with our guided steps for new vending operators.",
+            "ctaLabel": "Start Your Journey",
+            "ctaHref": "#getting-started",
+            "ctaTrackingName": "cta_hero_start"
+          }
+        },
+        "sourceDocumentIds": [],
+        "sourceExcerptIds": [],
+        "approvedClaimIds": [],
+        "warnings": [
+          {
+            "code": "needs_source",
+            "message": "Hero copy is generic and requires supporting brand claims.",
+            "blockId": "ai_hero_001"
+          }
+        ]
+      },
+      {
+        "block": {
+          "id": "ai_steps_001",
+          "type": "rich_text",
+          "variant": "default",
+          "props": {
+            "eyebrow": "Step 1",
+            "heading": "Location Validation",
+            "body": {
+              "version": 1,
+              "nodes": [
+                {
+                  "type": "paragraph",
+                  "text": "Before you invest in hardware, the most critical step is ensuring there is a real need for your machines."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Operators should validate location demand before buying machines. Focus on high foot traffic areas, dwell time, and checking existing competition."
+                }
+              ]
+            }
+          }
+        },
+        "sourceDocumentIds": ["11111111-1111-4111-8111-111111111111"],
+        "sourceExcerptIds": ["22222222-2222-4222-8222-222222222222"],
+        "approvedClaimIds": ["33333333-3333-4333-8333-333333333333"],
+        "warnings": []
+      },
+      {
+        "block": {
+          "id": "ai_faq_001",
+          "type": "faq",
+          "variant": "accordion",
+          "props": {
+            "heading": "Frequently Asked Questions",
+            "items": [
+              {
+                "question": "What is the most important first step?",
+                "answer": "Validating location demand is the priority. Always assess foot traffic and dwell time before purchasing equipment."
+              }
+            ]
+          }
+        },
+        "sourceDocumentIds": ["11111111-1111-4111-8111-111111111111"],
+        "sourceExcerptIds": ["22222222-2222-4222-8222-222222222222"],
+        "approvedClaimIds": ["33333333-3333-4333-8333-333333333333"],
+        "warnings": []
+      },
+      {
+        "block": {
+          "id": "ai_cta_001",
+          "type": "cta",
+          "variant": "primary",
+          "props": {
+            "label": "Get Started Today",
+            "href": "/contact",
+            "trackingName": "cta_bottom_start"
+          }
+        },
+        "sourceDocumentIds": [],
+        "sourceExcerptIds": [],
+        "approvedClaimIds": [],
+        "warnings": [
+          {
+            "code": "needs_source",
+            "message": "CTA placement relies on inferred action flow.",
+            "blockId": "ai_cta_001"
+          }
+        ]
+      }
+    ],
+    "warnings": []
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"version\": 1,\n  \"metadata\": {\n    \"title\": \"Start a Vending Business\",\n    \"seoTitle\": \"Start a Vending Business\",\n    \"metaDescription\": \"Learn how to start a vending business with support.\",\n    \"suggestedSlug\": \"start-vending\"\n  },\n  \"blocks\": [\n    {\n      \"block\": {\n        \"id\": \"ai_hero_001\",\n        \"type\": \"hero\",\n        \"variant\": \"standard\",\n        \"props\": {\n          \"eyebrow\": \"Vending Business Startup\",\n          \"heading\": \"Start Your Vending Business with Confidence\",\n          \"body\": \"Turn your entrepreneurial goals into reality with our guided steps for new vending operators.\",\n          \"ctaLabel\": \"Start Your Journey\",\n          \"ctaHref\": \"#getting-started\",\n          \"ctaTrackingName\": \"cta_hero_start\"\n        }\n      },\n      \"sourceDocumentIds\": [],\n      \"sourceExcerptIds\": [],\n      \"approvedClaimIds\": [],\n      \"warnings\": [\n        {\n          \"code\": \"needs_source\",\n          \"message\": \"Hero copy is generic and requires supporting brand claims.\",\n          \"blockId\": \"ai_hero_001\"\n        }\n      ]\n    },\n    {\n      \"block\": {\n        \"id\": \"ai_steps_001\",\n        \"type\": \"rich_text\",\n        \"variant\": \"default\",\n        \"props\": {\n          \"eyebrow\": \"Step 1\",\n          \"heading\": \"Location Validation\",\n          \"body\": {\n            \"version\": 1,\n            \"nodes\": [\n              {\n                \"type\": \"paragraph\",\n                \"text\": \"Before you invest in hardware, the most critical step is ensuring there is a real need for your machines.\"\n              },\n              {\n                \"type\": \"paragraph\",\n                \"text\": \"Operators should validate location demand before buying machines. Focus on high foot traffic areas, dwell time, and checking existing competition.\"\n              }\n            ]\n          }\n        }\n      },\n      \"sourceDocumentIds\": [\"11111111-1111-4111-8111-111111111111\"],\n      \"sourceExcerptIds\": [\"22222222-2222-4222-8222-222222222222\"],\n      \"approvedClaimIds\": [\"33333333-3333-4333-8333-333333333333\"],\n      \"warnings\": []\n    },\n    {\n      \"block\": {\n        \"id\": \"ai_faq_001\",\n        \"type\": \"faq\",\n        \"variant\": \"accordion\",\n        \"props\": {\n          \"heading\": \"Frequently Asked Questions\",\n          \"items\": [\n            {\n              \"question\": \"What is the most important first step?\",\n              \"answer\": \"Validating location demand is the priority. Always assess foot traffic and dwell time before purchasing equipment.\"\n            }\n          ]\n        }\n      },\n      \"sourceDocumentIds\": [\"11111111-1111-4111-8111-111111111111\"],\n      \"sourceExcerptIds\": [\"22222222-2222-4222-8222-222222222222\"],\n      \"approvedClaimIds\": [\"33333333-3333-4333-8333-333333333333\"],\n      \"warnings\": []\n    },\n    {\n      \"block\": {\n        \"id\": \"ai_cta_001\",\n        \"type\": \"cta\",\n        \"variant\": \"primary\",\n        \"props\": {\n          \"label\": \"Get Started Today\",\n          \"href\": \"/contact\",\n          \"trackingName\": \"cta_bottom_start\"\n        }\n      },\n      \"sourceDocumentIds\": [],\n      \"sourceExcerptIds\": [],\n      \"approvedClaimIds\": [],\n      \"warnings\": [\n        {\n          \"code\": \"needs_source\",\n          \"message\": \"CTA placement relies on inferred action flow.\",\n          \"blockId\": \"ai_cta_001\"\n        }\n      ]\n    }\n  ],\n  \"warnings\": []\n}",
+          "extra_content": {
+            "google": {
+              "thought_signature": "EjQKMgEMOdbHEctAEqACQ53psKAhw0/4m6wGezA92FfvOIgebafXjZoJ3m5nSXwoWYCka7mB"
+            }
+          },
+          "role": "assistant"
+        }
+      }
+    ],
+    "created": 1781141305,
+    "id": "Ng8qatLyI9ipjuMP6e6uyAs",
+    "model": "gemini-3.1-flash-lite",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 1059,
+      "prompt_tokens": 568,
+      "total_tokens": 1627
+    }
+  }
+}

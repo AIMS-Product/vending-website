@@ -1,0 +1,802 @@
+[
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 4555,
+    "outputTokens": 973,
+    "tokensPerSec": 214,
+    "score": 100,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=653 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 4449,
+    "outputTokens": 1003,
+    "tokensPerSec": 225,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=476 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 1066,
+    "outputTokens": 95,
+    "tokensPerSec": 89,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=37 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 956,
+    "outputTokens": 95,
+    "tokensPerSec": 99,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=39 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 1829,
+    "outputTokens": 299,
+    "tokensPerSec": 163,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=179 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 2012,
+    "outputTokens": 323,
+    "tokensPerSec": 161,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=200 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 1100,
+    "outputTokens": 100,
+    "tokensPerSec": 91,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=43 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 971,
+    "outputTokens": 102,
+    "tokensPerSec": 105,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=44 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 733,
+    "outputTokens": 44,
+    "tokensPerSec": 60,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=18 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 834,
+    "outputTokens": 48,
+    "tokensPerSec": 58,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=22 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 5070,
+    "outputTokens": 1139,
+    "tokensPerSec": 225,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=597 bullets=4 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 4968,
+    "outputTokens": 1092,
+    "tokensPerSec": 220,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=564 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 1090,
+    "outputTokens": 117,
+    "tokensPerSec": 107,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=59 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 1072,
+    "outputTokens": 112,
+    "tokensPerSec": 104,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=46 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 2070,
+    "outputTokens": 317,
+    "tokensPerSec": 153,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=193 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 1945,
+    "outputTokens": 296,
+    "tokensPerSec": 152,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=174 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 991,
+    "outputTokens": 94,
+    "tokensPerSec": 95,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=41 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 969,
+    "outputTokens": 94,
+    "tokensPerSec": 97,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=42 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 851,
+    "outputTokens": 48,
+    "tokensPerSec": 56,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=25 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 875,
+    "outputTokens": 60,
+    "tokensPerSec": 69,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=30 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 9437,
+    "outputTokens": 971,
+    "tokensPerSec": 103,
+    "score": 100,
+    "notes": "tools=set_seo_metadata|replace_page_sections|set_seo_metadata applied=3 words=553"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 13135,
+    "outputTokens": 1006,
+    "tokensPerSec": 77,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=544 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 2800,
+    "outputTokens": 86,
+    "tokensPerSec": 31,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=35 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 3329,
+    "outputTokens": 76,
+    "tokensPerSec": 23,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=27 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 4165,
+    "outputTokens": 291,
+    "tokensPerSec": 70,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=191 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 4010,
+    "outputTokens": 313,
+    "tokensPerSec": 78,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=222 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 2511,
+    "outputTokens": 59,
+    "tokensPerSec": 23,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=30 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 2487,
+    "outputTokens": 56,
+    "tokensPerSec": 23,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=30 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 1635,
+    "outputTokens": 43,
+    "tokensPerSec": 26,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=25 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 1921,
+    "outputTokens": 38,
+    "tokensPerSec": 20,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=18 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low#copy",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 8338,
+    "outputTokens": 0,
+    "tokensPerSec": null,
+    "score": 100,
+    "notes": "tools=replace_page_sections applied=1 words=619 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low#copy",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 10169,
+    "outputTokens": 761,
+    "tokensPerSec": 75,
+    "score": 100,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=654 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low#copy",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 5535,
+    "outputTokens": 99,
+    "tokensPerSec": 18,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=49 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low#copy",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 3524,
+    "outputTokens": 103,
+    "tokensPerSec": 29,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=53 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low#copy",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 6020,
+    "outputTokens": 105,
+    "tokensPerSec": 17,
+    "score": 85,
+    "notes": "tools=request_clarification|add_block applied=1 failed=1 words=94"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low#copy",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 2641,
+    "outputTokens": 56,
+    "tokensPerSec": 21,
+    "score": 100,
+    "notes": "tools=request_clarification|add_block applied=2 words=86"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low#copy",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 2939,
+    "outputTokens": 58,
+    "tokensPerSec": 20,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=31 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low#copy",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 2297,
+    "outputTokens": 56,
+    "tokensPerSec": 24,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=28 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low#copy",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 2491,
+    "outputTokens": 39,
+    "tokensPerSec": 16,
+    "score": 50,
+    "notes": "tools=request_clarification applied=0 failed=1 no-clarification words=21 no-message"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash@low#copy",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 2428,
+    "outputTokens": 40,
+    "tokensPerSec": 16,
+    "score": 50,
+    "notes": "tools=request_clarification applied=0 failed=1 no-clarification words=20 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 11146,
+    "outputTokens": 1057,
+    "tokensPerSec": 95,
+    "score": 100,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=662 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 19516,
+    "outputTokens": 1072,
+    "tokensPerSec": 55,
+    "score": 100,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=658 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 3465,
+    "outputTokens": 114,
+    "tokensPerSec": 33,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=51 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 5250,
+    "outputTokens": 100,
+    "tokensPerSec": 19,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=42 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 5215,
+    "outputTokens": 273,
+    "tokensPerSec": 52,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=158 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 6071,
+    "outputTokens": 343,
+    "tokensPerSec": 56,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=220 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 3800,
+    "outputTokens": 93,
+    "tokensPerSec": 24,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=38 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 2791,
+    "outputTokens": 95,
+    "tokensPerSec": 34,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=37 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 2542,
+    "outputTokens": 51,
+    "tokensPerSec": 20,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=28 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 2140,
+    "outputTokens": 55,
+    "tokensPerSec": 26,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=29 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 11968,
+    "outputTokens": 1107,
+    "tokensPerSec": 92,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=523 bullets=4 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 15936,
+    "outputTokens": 1104,
+    "tokensPerSec": 69,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=561 bullets=4 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 2776,
+    "outputTokens": 101,
+    "tokensPerSec": 36,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=42 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 2468,
+    "outputTokens": 104,
+    "tokensPerSec": 42,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=48 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 3759,
+    "outputTokens": 304,
+    "tokensPerSec": 81,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=188 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 5537,
+    "outputTokens": 351,
+    "tokensPerSec": 63,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=232 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 2021,
+    "outputTokens": 92,
+    "tokensPerSec": 46,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=39 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 2818,
+    "outputTokens": 95,
+    "tokensPerSec": 34,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=39 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 2435,
+    "outputTokens": 41,
+    "tokensPerSec": 17,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=20 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 2777,
+    "outputTokens": 62,
+    "tokensPerSec": 22,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=25 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 9288,
+    "outputTokens": 1085,
+    "tokensPerSec": 117,
+    "score": 100,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=653 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 15664,
+    "outputTokens": 1039,
+    "tokensPerSec": 66,
+    "score": 100,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=653 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 2073,
+    "outputTokens": 92,
+    "tokensPerSec": 44,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=44 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 2158,
+    "outputTokens": 101,
+    "tokensPerSec": 47,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=50 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 3655,
+    "outputTokens": 359,
+    "tokensPerSec": 98,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=225 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 3772,
+    "outputTokens": 367,
+    "tokensPerSec": 97,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=240 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 2188,
+    "outputTokens": 96,
+    "tokensPerSec": 44,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=39 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 1941,
+    "outputTokens": 91,
+    "tokensPerSec": 47,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=38 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 1854,
+    "outputTokens": 50,
+    "tokensPerSec": 27,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=26 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 2063,
+    "outputTokens": 50,
+    "tokensPerSec": 24,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=26 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low#copy",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 14553,
+    "outputTokens": 1089,
+    "tokensPerSec": 75,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=484 bullets=4 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low#copy",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 8206,
+    "outputTokens": 1133,
+    "tokensPerSec": 138,
+    "score": 100,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 words=659 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low#copy",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 2128,
+    "outputTokens": 94,
+    "tokensPerSec": 44,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=42 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low#copy",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 2368,
+    "outputTokens": 101,
+    "tokensPerSec": 43,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 words=52 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low#copy",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 3591,
+    "outputTokens": 359,
+    "tokensPerSec": 100,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=237 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low#copy",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 4277,
+    "outputTokens": 388,
+    "tokensPerSec": 91,
+    "score": 85,
+    "notes": "tools=add_block applied=1 words=254 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low#copy",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 2177,
+    "outputTokens": 90,
+    "tokensPerSec": 41,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=37 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low#copy",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 1697,
+    "outputTokens": 95,
+    "tokensPerSec": 56,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=33 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low#copy",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 1802,
+    "outputTokens": 47,
+    "tokensPerSec": 26,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=24 no-message"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview@low#copy",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 1771,
+    "outputTokens": 47,
+    "tokensPerSec": 27,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=26 no-message"
+  }
+]

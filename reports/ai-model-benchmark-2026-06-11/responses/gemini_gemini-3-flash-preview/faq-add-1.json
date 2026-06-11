@@ -1,0 +1,223 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an FAQ section with 4 common questions people ask before starting a vending machine business."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Old body copy about machines.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "exixdobg",
+        "name": "set_seo_metadata",
+        "input": {
+          "slug": "starting-coffee-vending-machine-business-offices",
+          "title": "How to Start an Office Coffee Vending Business",
+          "targetKeyword": "coffee vending machines for offices",
+          "metaDescription": "Learn how to start a successful vending machine business specializing in coffee vending machines for offices. Expert tips on locations, equipment, and restocking.",
+          "seoTitle": "Starting a Coffee Vending Machine Business for Offices | Guide"
+        }
+      },
+      {
+        "id": "xs9ajknq",
+        "name": "edit_block_1_block_hero",
+        "input": {
+          "ctaLabel": "Get Started Guide",
+          "ctaHref": "/contact",
+          "headline": "Start Your Office Coffee Vending Business Today",
+          "eyebrow": "Entrepreneur Guide",
+          "body": "Discover what it takes to launch and scale a profitable service providing coffee vending machines for offices. From choosing the right equipment to securing high-traffic locations, we cover the essentials for new operators."
+        }
+      },
+      {
+        "id": "6uwr1ze5",
+        "name": "add_block",
+        "input": {
+          "ctaLabel": null,
+          "bulletItems": null,
+          "ctaHref": null,
+          "title": "Starting a Vending Business: Frequently Asked Questions",
+          "blockType": "faq",
+          "cards": null,
+          "faqItems": [
+            {
+              "question": "What are the startup costs for a vending machine business?",
+              "answer": "Initial costs typically include the purchase or lease of the machines, initial stock, and any necessary transport or installation fees. Prices vary significantly based on whether you choose bean-to-cup models or standard instant coffee vending machines for offices."
+            },
+            {
+              "question": "How do I find the best office locations?",
+              "answer": "The success of your business depends on foot traffic and the specific needs of the workplace. Look for offices with at least 50 employees or businesses with waiting areas. Consider the existing kitchen facilities and whether a premium coffee option would be a welcome upgrade."
+            },
+            {
+              "answer": "Most operators require public liability insurance and basic business registration. If you are handling fresh milk or food products, you may also need to register with local health authorities and complete food safety certifications.",
+              "question": "What licenses and insurance do I need?"
+            },
+            {
+              "answer": "Refill frequency depends on the volume of the location. High-traffic offices may require daily visits, while smaller sites might only need restocking once or twice a week. Regular maintenance and cleaning are essential to ensure drink quality and machine longevity.",
+              "question": "How often do the machines need to be serviced?"
+            },
+            {
+              "question": "Should I buy or lease my coffee machines?",
+              "answer": "Leasing can lower your upfront costs and often includes maintenance packages, which is great for new starters. Buying outright gives you higher profit margins in the long run and full control over the equipment, though you assume all repair risks."
+            }
+          ],
+          "body": "Starting a new venture in office refreshments involves several key logistical and financial decisions. Here are the most common questions from new operators."
+        }
+      },
+      {
+        "id": "kbsqjwls",
+        "name": "add_block",
+        "input": {
+          "title": "How to Launch Your Vending Service",
+          "body": "### Step-by-Step Launch Plan\\n\\nStarting a business providing coffee vending machines for offices requires a clear strategy to ensure consistent service and profitability. Most successful operators follow these core steps:\\n\\n*   **Market Research:** Identify gaps in the local office market where current coffee options are lacking or low quality.\\n*   **Equipment Selection:** Choose machines that balance drink quality with ease of maintenance. Reliability is key when servicing professional environments.\\n*   **Securing Locations:** Build relationships with office managers and facilities directors to secure placement contracts.\\n*   **Supply Chain Setup:** Source high-quality beans, milks, and consumables to ensure the end product meets office standards.\\n*   **Maintenance Schedule:** Create a proactive cleaning and servicing routine to prevent downtime and machine errors.\\n\\nBy focusing on reliability and quality, you can build a stable recurring revenue stream from corporate clients.",
+          "faqItems": null,
+          "cards": null,
+          "blockType": "rich_text",
+          "ctaLabel": null,
+          "ctaHref": null,
+          "bulletItems": null
+        }
+      },
+      {
+        "id": "5o0mw8fq",
+        "name": "add_block",
+        "input": {
+          "title": "Start Your Journey Today",
+          "cards": null,
+          "blockType": "cta",
+          "faqItems": null,
+          "body": "Ready to take the first step toward launching your office coffee service? Contact our team for advice on equipment selection and business planning.",
+          "ctaLabel": "Speak with an Expert",
+          "bulletItems": null,
+          "ctaHref": "/contact"
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "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"
+                }
+              },
+              "function": {
+                "arguments": "{\"slug\":\"starting-coffee-vending-machine-business-offices\",\"title\":\"How to Start an Office Coffee Vending Business\",\"targetKeyword\":\"coffee vending machines for offices\",\"metaDescription\":\"Learn how to start a successful vending machine business specializing in coffee vending machines for offices. Expert tips on locations, equipment, and restocking.\",\"seoTitle\":\"Starting a Coffee Vending Machine Business for Offices | Guide\"}",
+                "name": "set_seo_metadata"
+              },
+              "id": "exixdobg",
+              "type": "function"
+            },
+            {
+              "function": {
+                "arguments": "{\"ctaLabel\":\"Get Started Guide\",\"ctaHref\":\"/contact\",\"headline\":\"Start Your Office Coffee Vending Business Today\",\"eyebrow\":\"Entrepreneur Guide\",\"body\":\"Discover what it takes to launch and scale a profitable service providing coffee vending machines for offices. From choosing the right equipment to securing high-traffic locations, we cover the essentials for new operators.\"}",
+                "name": "edit_block_1_block_hero"
+              },
+              "id": "xs9ajknq",
+              "type": "function"
+            },
+            {
+              "function": {
+                "arguments": "{\"ctaLabel\":null,\"bulletItems\":null,\"ctaHref\":null,\"title\":\"Starting a Vending Business: Frequently Asked Questions\",\"blockType\":\"faq\",\"cards\":null,\"faqItems\":[{\"question\":\"What are the startup costs for a vending machine business?\",\"answer\":\"Initial costs typically include the purchase or lease of the machines, initial stock, and any necessary transport or installation fees. Prices vary significantly based on whether you choose bean-to-cup models or standard instant coffee vending machines for offices.\"},{\"question\":\"How do I find the best office locations?\",\"answer\":\"The success of your business depends on foot traffic and the specific needs of the workplace. Look for offices with at least 50 employees or businesses with waiting areas. Consider the existing kitchen facilities and whether a premium coffee option would be a welcome upgrade.\"},{\"answer\":\"Most operators require public liability insurance and basic business registration. If you are handling fresh milk or food products, you may also need to register with local health authorities and complete food safety certifications.\",\"question\":\"What licenses and insurance do I need?\"},{\"answer\":\"Refill frequency depends on the volume of the location. High-traffic offices may require daily visits, while smaller sites might only need restocking once or twice a week. Regular maintenance and cleaning are essential to ensure drink quality and machine longevity.\",\"question\":\"How often do the machines need to be serviced?\"},{\"question\":\"Should I buy or lease my coffee machines?\",\"answer\":\"Leasing can lower your upfront costs and often includes maintenance packages, which is great for new starters. Buying outright gives you higher profit margins in the long run and full control over the equipment, though you assume all repair risks.\"}],\"body\":\"Starting a new venture in office refreshments involves several key logistical and financial decisions. Here are the most common questions from new operators.\"}",
+                "name": "add_block"
+              },
+              "id": "6uwr1ze5",
+              "type": "function"
+            },
+            {
+              "function": {
+                "arguments": "{\"title\":\"How to Launch Your Vending Service\",\"body\":\"### Step-by-Step Launch Plan\\\\n\\\\nStarting a business providing coffee vending machines for offices requires a clear strategy to ensure consistent service and profitability. Most successful operators follow these core steps:\\\\n\\\\n*   **Market Research:** Identify gaps in the local office market where current coffee options are lacking or low quality.\\\\n*   **Equipment Selection:** Choose machines that balance drink quality with ease of maintenance. Reliability is key when servicing professional environments.\\\\n*   **Securing Locations:** Build relationships with office managers and facilities directors to secure placement contracts.\\\\n*   **Supply Chain Setup:** Source high-quality beans, milks, and consumables to ensure the end product meets office standards.\\\\n*   **Maintenance Schedule:** Create a proactive cleaning and servicing routine to prevent downtime and machine errors.\\\\n\\\\nBy focusing on reliability and quality, you can build a stable recurring revenue stream from corporate clients.\",\"faqItems\":null,\"cards\":null,\"blockType\":\"rich_text\",\"ctaLabel\":null,\"ctaHref\":null,\"bulletItems\":null}",
+                "name": "add_block"
+              },
+              "id": "kbsqjwls",
+              "type": "function"
+            },
+            {
+              "function": {
+                "arguments": "{\"title\":\"Start Your Journey Today\",\"cards\":null,\"blockType\":\"cta\",\"faqItems\":null,\"body\":\"Ready to take the first step toward launching your office coffee service? Contact our team for advice on equipment selection and business planning.\",\"ctaLabel\":\"Speak with an Expert\",\"bulletItems\":null,\"ctaHref\":\"/contact\"}",
+                "name": "add_block"
+              },
+              "id": "5o0mw8fq",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781141215,
+    "id": "0Q4qaqPFDpvbjuMP287dgA0",
+    "model": "gemini-3-flash-preview",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 941,
+      "prompt_tokens": 4439,
+      "prompt_tokens_details": {
+        "cached_tokens": 2019
+      },
+      "total_tokens": 6532
+    }
+  }
+}

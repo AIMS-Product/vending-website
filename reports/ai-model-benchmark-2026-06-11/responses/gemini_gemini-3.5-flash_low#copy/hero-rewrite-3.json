@@ -1,0 +1,117 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Rewrite the hero headline and body to emphasise hands-off passive income for busy professionals. Keep the CTA unchanged."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Coffee vending machines for offices keep teams stocked with fresh drinks without anyone owning a brewing rota. A managed machine covers restocking, cleaning, and fault response so facilities can stay focused on the building.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "17ymr8d1",
+        "name": "edit_block_1_block_hero",
+        "input": {
+          "headline": "Hands-Off Passive Revenue for Busy Workplaces",
+          "body": "Modern coffee vending machines for offices allow busy professionals to generate steady passive income without handling daily maintenance. A fully managed service handles restocking, cleaning, and customer support so you can earn hassle-free returns on automated workplace refreshments. Contact us to find the right unit today.",
+          "eyebrow": "Automated Workplace Revenue",
+          "ctaLabel": "Apply now",
+          "ctaHref": "/apply"
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "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"
+                }
+              },
+              "function": {
+                "arguments": "{\"headline\":\"Hands-Off Passive Revenue for Busy Workplaces\",\"body\":\"Modern coffee vending machines for offices allow busy professionals to generate steady passive income without handling daily maintenance. A fully managed service handles restocking, cleaning, and customer support so you can earn hassle-free returns on automated workplace refreshments. Contact us to find the right unit today.\",\"eyebrow\":\"Automated Workplace Revenue\",\"ctaLabel\":\"Apply now\",\"ctaHref\":\"/apply\"}",
+                "name": "edit_block_1_block_hero"
+              },
+              "id": "17ymr8d1",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781145621,
+    "id": "ECAqaqeEL63jjuMPtMyhsQs",
+    "model": "gemini-3.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 115,
+      "prompt_tokens": 4926,
+      "prompt_tokens_details": {
+        "cached_tokens": 4036
+      },
+      "total_tokens": 5841
+    }
+  }
+}

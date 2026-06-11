@@ -36,10 +36,6 @@ import { adminDeleteNeverSavedSeoPageDraft } from "@/lib/services/seo-page-draft
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
 import { pagePathForSlug } from "@/lib/page-builder/page-paths";
 import { zonedDateTimeLocalToUtcIso } from "@/lib/page-builder/scheduled-publishing";
-import {
-  defaultSeoAgentProvider,
-  type SeoAgentProvider,
-} from "@/lib/page-builder/seo-agent-provider";
 import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
 
 export type PageEditorActionState =
@@ -181,7 +177,6 @@ const formSchema = formObjectSchema.superRefine((data, ctx) => {
 type ParsedPageForm = z.infer<typeof formSchema>;
 
 const ADMIN_PAGES_PATH = "/admin/pages";
-const seoAgentProviderSchema = z.enum(["openai", "cerebras"]);
 
 type PersistedPageDraft = {
   pageId: string;
@@ -528,29 +523,20 @@ export async function saveSeoPageDraftAndCreatePreviewLink(
 
 export async function generateAiSeoPageProposal(
   pageId: string,
-  providerInput: SeoAgentProvider = defaultSeoAgentProvider,
 ): Promise<PageAiProposalResult> {
   const admin = await requireAuth();
   if (!pageId) {
     return { status: "error", message: "Save the page before running AI." };
   }
 
-  const provider = seoAgentProviderSchema
-    .catch(defaultSeoAgentProvider)
-    .parse(providerInput);
-
   try {
     const proposal = await adminGenerateOpenAiSeoPageProposal(pageId, {
       actorId: admin.user.id,
-      provider,
     });
     revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
     return {
       status: "created",
-      message:
-        provider === "cerebras"
-          ? "Cerebras proposal created for review."
-          : "AI proposal created for review.",
+      message: "AI proposal created for review.",
       proposalId: proposal.id,
     };
   } catch (error) {

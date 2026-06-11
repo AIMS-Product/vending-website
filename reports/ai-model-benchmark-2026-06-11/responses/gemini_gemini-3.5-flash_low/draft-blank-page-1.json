@@ -1,0 +1,250 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a complete draft for this page targeting 'coffee vending machines for offices'. Include a hero, a benefits section, an FAQ, and a closing CTA."
+      }
+    ],
+    "context": {
+      "pageId": null,
+      "status": "draft",
+      "title": "",
+      "slug": "",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "",
+      "metaDescription": "",
+      "selectedBlockId": null,
+      "content": {
+        "version": 1,
+        "sections": []
+      },
+      "publishReadiness": {
+        "blockers": ["Publish requires at least one CTA or lead form block."],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "Rebuilt the page body with a review-safe SEO draft.",
+    "toolCalls": [
+      {
+        "id": "fbgze7ha",
+        "name": "set_seo_metadata",
+        "input": {
+          "title": "Coffee Vending Machines for Offices: The Complete Workplace Guide",
+          "slug": "coffee-vending-machines-for-offices",
+          "metaDescription": "Explore professional coffee vending machines for offices. Find tips on key features, maintenance, and selecting the perfect setup for your workplace.",
+          "seoTitle": "Coffee Vending Machines for Offices | Workplace Guide",
+          "targetKeyword": "coffee vending machines for offices"
+        }
+      },
+      {
+        "id": "deterministic_replace_page_sections",
+        "name": "replace_page_sections",
+        "input": {
+          "replaceExisting": false,
+          "sections": [
+            {
+              "title": "Hero",
+              "blocks": [
+                {
+                  "blockType": "hero",
+                  "title": "Coffee Vending Machines for Offices",
+                  "body": "Coffee Vending Machines for Offices helps site users access food, drinks, and everyday refreshments without turning the site team into an informal catering desk.",
+                  "bulletItems": null,
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": "Book a consultation",
+                  "ctaHref": "/contact"
+                }
+              ]
+            },
+            {
+              "title": "What buyers need to know first",
+              "blocks": [
+                {
+                  "blockType": "rich_text",
+                  "title": "What buyers need to know first",
+                  "body": "For Coffee Vending Machines for Offices, buyers need more than a list of benefits. Explain when the service is a good fit, what products and support are included, what the site needs to provide, and how the enquiry turns into a practical recommendation.",
+                  "bulletItems": [
+                    "Who will use the setup and why",
+                    "What the service needs to include",
+                    "Which questions should be settled before launch"
+                  ],
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "Decision points",
+              "blocks": [
+                {
+                  "blockType": "card_grid",
+                  "title": "Decision points",
+                  "body": null,
+                  "bulletItems": null,
+                  "faqItems": null,
+                  "cards": [
+                    {
+                      "title": "Site fit",
+                      "body": "coffee vending usually works best where there is steady daily traffic, enough room for people to browse, and clear access for refills. Smaller or irregular sites may still work, but they need a tighter product range and a simpler service plan.",
+                      "href": "/contact",
+                      "linkLabel": "Check site fit"
+                    },
+                    {
+                      "title": "Product range",
+                      "body": "Plan the range around what people actually buy during the day: quick lunches, drinks, snacks, coffee, healthier choices, and any site-specific preferences. Review the mix after launch so slow-moving products do not crowd out better options.",
+                      "href": "/contact",
+                      "linkLabel": "Plan the range"
+                    },
+                    {
+                      "title": "Payment and access",
+                      "body": "Confirm how people will pay, where the equipment can sit, and whether visitors as well as staff need access. Access rules affect placement, signage, product choice, and how easy the service is to use during busy periods.",
+                      "href": "/contact",
+                      "linkLabel": "Review access"
+                    },
+                    {
+                      "title": "Restocking plan",
+                      "body": "Restocking should match the site's usage pattern rather than a generic schedule. Ask about staff numbers, busy days, preferred product types, and who can provide access so the refill plan supports demand without overstocking.",
+                      "href": "/contact",
+                      "linkLabel": "Scope refills"
+                    },
+                    {
+                      "title": "Support expectations",
+                      "body": "Set expectations for machine issues, product changes, cleaning responsibilities, and who the site contacts when something is not working. Clear support ownership is what keeps the setup useful after the first week.",
+                      "href": "/contact",
+                      "linkLabel": "Discuss support"
+                    }
+                  ],
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "Process and support expectations",
+              "blocks": [
+                {
+                  "blockType": "rich_text",
+                  "title": "Process and support expectations",
+                  "body": "A practical rollout starts with the site, audience, and service needs, then turns those details into an equipment recommendation, product plan, restocking cadence, and issue-response path. The strongest enquiry includes photos or notes about the space, expected usage windows, and any access constraints for refills.",
+                  "bulletItems": [
+                    "Confirm site requirements",
+                    "Plan stock and refills",
+                    "Review support after launch"
+                  ],
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "FAQs",
+              "blocks": [
+                {
+                  "blockType": "faq",
+                  "title": "Coffee Vending Machines for Offices",
+                  "body": null,
+                  "bulletItems": null,
+                  "faqItems": [
+                    {
+                      "question": "What makes this setup a good fit?",
+                      "answer": "A good fit depends on the audience, space, access, product expectations, and service model. For Coffee Vending Machines for Offices, the useful next step is to compare the site details against those requirements before promising a machine mix or rollout plan."
+                    },
+                    {
+                      "question": "What needs to be confirmed before launch?",
+                      "answer": "Before recommending a setup, confirm the daily audience, available floor space, power access, payment expectations, and who can provide service access. Those details shape whether coffee vending is practical for the site or whether a simpler vending format would be easier to manage."
+                    },
+                    {
+                      "question": "How should products and refills be planned?",
+                      "answer": "Restocking should match the site's usage pattern rather than a generic schedule. Ask about staff numbers, busy days, preferred product types, and who can provide access so the refill plan supports demand without overstocking."
+                    },
+                    {
+                      "question": "Who handles service issues after launch?",
+                      "answer": "Set expectations for machine issues, product changes, cleaning responsibilities, and who the site contacts when something is not working. Clear support ownership is what keeps the setup useful after the first week."
+                    },
+                    {
+                      "question": "How do we get started?",
+                      "answer": "Start with a quick consultation that covers the site type, audience, available space, product preferences, and support expectations. Those details make it easier to recommend a practical setup instead of guessing from a generic vending checklist."
+                    }
+                  ],
+                  "cards": null,
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "CTA",
+              "blocks": [
+                {
+                  "blockType": "cta",
+                  "title": "Ready to plan the setup?",
+                  "body": "Share the site type, estimated daily audience, available space, and preferred product categories so the next recommendation can be scoped around real conditions rather than generic vending assumptions.",
+                  "bulletItems": null,
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": "Book a consultation",
+                  "ctaHref": "/contact"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "source": "intent-fallback"
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "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"
+                }
+              },
+              "function": {
+                "arguments": "{\"title\":\"Coffee Vending Machines for Offices: The Complete Workplace Guide\",\"slug\":\"coffee-vending-machines-for-offices\",\"metaDescription\":\"Explore professional coffee vending machines for offices. Find tips on key features, maintenance, and selecting the perfect setup for your workplace.\",\"seoTitle\":\"Coffee Vending Machines for Offices | Workplace Guide\",\"targetKeyword\":\"coffee vending machines for offices\"}",
+                "name": "set_seo_metadata"
+              },
+              "id": "fbgze7ha",
+              "type": "function"
+            },
+            {
+              "function": {
+                "arguments": "{\"sections\":[{\"blocks\":[{\"bulletItems\":[],\"blockType\":\"hero\",\"faqItems\":[],\"cards\":[],\"body\":\"Keep your team energized, productive, and satisfied with convenient, high-quality coffee vending machines for offices designed to suit any workspace size.\",\"ctaHref\":\"/contact\",\"ctaLabel\":\"Explore Coffee Solutions\",\"title\":\"Premium Coffee Vending Machines for Offices\"}],\"title\":\"Hero Section\"},{\"title\":\"Key Considerations\",\"blocks\":[{\"body\":\"Selecting the ideal coffee setup for your workplace involves balancing convenience, taste variety, and maintenance needs. Modern workplace beverage systems go far beyond traditional instant dispensers, offering barista-quality drinks at the touch of a button. By understanding your team's preferences and space constraints, you can select a system that genuinely enhances the daily work environment.\",\"ctaHref\":\"\",\"ctaLabel\":\"\",\"title\":\"How to Choose the Right Coffee Setup\",\"blockType\":\"rich_text\",\"bulletItems\":[\"Evaluate daily beverage volume and peak morning demand periods.\",\"Check if your breakroom supports a direct plumbed water line or requires a manual tank.\",\"Decide between fresh milk systems and premium, low-maintenance dairy powders.\",\"Consider administrative resources available for daily refilling and basic cleaning.\"],\"faqItems\":[],\"cards\":[]}]},{\"title\":\"Workplace Benefits\",\"blocks\":[{\"body\":\"A great coffee setup contributes directly to workplace culture, convenience, and daily efficiency.\",\"title\":\"Benefits of Quality Office Beverage Solutions\",\"ctaLabel\":\"\",\"ctaHref\":\"\",\"blockType\":\"card_grid\",\"bulletItems\":[],\"cards\":[{\"linkLabel\":\"Learn More\",\"title\":\"Improved Productivity\",\"href\":\"/contact\",\"body\":\"Reduce mid-morning travel times and keep your team onsite with convenient, barista-style options right in the breakroom.\"},{\"linkLabel\":\"Learn More\",\"title\":\"User-Friendly Maintenance\",\"href\":\"/contact\",\"body\":\"Simplify office operations with systems featuring automated rinse cycles, easy capsule or bean refills, and straightforward maintenance schedules.\"},{\"linkLabel\":\"Learn More\",\"title\":\"Diverse Drink Selections\",\"href\":\"/contact\",\"body\":\"From rich espressos and creamy cappuccinos to hot chocolates and herbal teas, cater to every unique preference with versatile drink menus.\"},{\"linkLabel\":\"Learn More\",\"title\":\"Boosted Workplace Morale\",\"href\":\"/contact\",\"body\":\"Providing high-quality refreshments is a simple, highly visible way to show employees their daily comfort and wellbeing are valued.\"}],\"faqItems\":[]}]},{\"title\":\"Frequently Asked Questions\",\"blocks\":[{\"body\":\"Find answers to common questions about selecting, installing, and maintaining coffee equipment in commercial workspaces.\",\"title\":\"Office Coffee FAQs\",\"ctaLabel\":\"\",\"ctaHref\":\"\",\"bulletItems\":[],\"blockType\":\"faq\",\"cards\":[],\"faqItems\":[{\"question\":\"Do office coffee machines use fresh or powdered milk?\",\"answer\":\"Many modern coffee vending machines for offices offer refrigerated milk chambers that texturize milk automatically, while others use premium, highly soluble milk powders to minimize sanitation efforts while preserving a rich, creamy taste.\"},{\"question\":\"Is a plumbed water connection required for installation?\",\"answer\":\"While dedicated water lines are recommended for high-volume offices to eliminate manual refills, many compact and medium models come equipped with internal, manual-fill water reservoirs.\"},{\"question\":\"What are the electrical and space requirements?\",\"answer\":\"Most tabletop and freestanding machines run on standard office power outlets, though larger units with heavy boilers may require dedicated circuits. We recommend checking specifications during planning.\"},{\"question\":\"How often do these machines need to be cleaned?\",\"answer\":\"Systems using fresh milk generally require a quick daily flush (which takes under five minutes), while bean-to-cup and powder systems typically rely on simple weekly automated cleaning cycles.\"}]}]},{\"blocks\":[{\"blockType\":\"cta\",\"bulletItems\":[],\"faqItems\":[],\"cards\":[],\"body\":\"Our workplace specialists are ready to help you plan the perfect coffee station tailored to your headcount, breakroom layout, and beverage preferences.\",\"ctaHref\":\"/contact\",\"ctaLabel\":\"Request a Custom Quote\",\"title\":\"Elevate Your Workplace Coffee Experience Today\"}],\"title\":\"Call to Action\"}],\"replaceExisting\":true}",
+                "name": "replace_page_sections"
+              },
+              "id": "shgjv7ag",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781142532,
+    "id": "-RMqasb6MPLWjuMPv9CQ6Qs",
+    "model": "gemini-3.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 1057,
+      "prompt_tokens": 3970,
+      "total_tokens": 6088
+    }
+  }
+}

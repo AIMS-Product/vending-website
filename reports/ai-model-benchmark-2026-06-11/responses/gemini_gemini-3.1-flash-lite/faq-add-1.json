@@ -1,0 +1,137 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an FAQ section with 4 common questions people ask before starting a vending machine business."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Coffee vending machines for offices keep teams stocked with fresh drinks without anyone owning a brewing rota. A managed machine covers restocking, cleaning, and fault response so facilities can stay focused on the building.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "lg4y6mC8",
+        "name": "add_block",
+        "input": {
+          "body": "Get clarity on the common considerations and operational requirements for launching a coffee machine venture. We address typical questions regarding initial setup, equipment selection, and ongoing service commitments to help you plan your path forward.",
+          "cards": [],
+          "ctaHref": "/contact",
+          "bulletItems": [],
+          "ctaLabel": "Discuss your business plan",
+          "title": "Frequently asked questions about starting a vending business",
+          "blockType": "faq",
+          "faqItems": [
+            {
+              "question": "What are the initial costs to start a coffee vending business?",
+              "answer": "Startup costs vary significantly based on the type of equipment you select. You will need to account for the initial purchase or lease of the coffee vending machines for offices, ongoing inventory procurement, insurance, and potential site commission fees. Developing a detailed budget that covers both the upfront investment and the first six months of operating expenses is a critical first step."
+            },
+            {
+              "question": "How do I find profitable locations for my machines?",
+              "answer": "Choosing the right location is essential for a sustainable business model. High-traffic areas such as large corporate offices, distribution centers, or coworking spaces often provide the necessary volume to make the venture viable. When evaluating potential sites, consider the number of employees, existing drink options in the area, and how the physical space will accommodate both power and plumbing requirements."
+            },
+            {
+              "question": "What is the required maintenance frequency for vending equipment?",
+              "answer": "Reliability is the most important factor in retaining long-term clients. You should have a clear plan for how frequently you will restock supplies and perform maintenance. Many operators choose a regular schedule, such as weekly or bi-weekly visits, and keep a dedicated support line for any technical faults so that office managers do not have to handle day-to-day machine issues themselves."
+            },
+            {
+              "question": "Do I need to manage all cleaning and restocking myself?",
+              "answer": "Yes, most professional providers offer various levels of service to suit your operational capacity. You can opt for a fully managed service where a provider handles everything from restocking ingredients to technical repairs, or a self-service model if you prefer to manage the inventory and cleaning yourself. Your choice depends on your budget and how much time you are willing to dedicate to daily site visits."
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "EjQKMgEMOdbH/LOzZEG4CoMV7t6/SzsAZtJKKDbnwBi532kb5Bohlr4CVIRENJi622T5D2ty"
+                }
+              },
+              "function": {
+                "arguments": "{\"body\":\"Get clarity on the common considerations and operational requirements for launching a coffee machine venture. We address typical questions regarding initial setup, equipment selection, and ongoing service commitments to help you plan your path forward.\",\"cards\":[],\"ctaHref\":\"/contact\",\"bulletItems\":[],\"ctaLabel\":\"Discuss your business plan\",\"title\":\"Frequently asked questions about starting a vending business\",\"blockType\":\"faq\",\"faqItems\":[{\"question\":\"What are the initial costs to start a coffee vending business?\",\"answer\":\"Startup costs vary significantly based on the type of equipment you select. You will need to account for the initial purchase or lease of the coffee vending machines for offices, ongoing inventory procurement, insurance, and potential site commission fees. Developing a detailed budget that covers both the upfront investment and the first six months of operating expenses is a critical first step.\"},{\"question\":\"How do I find profitable locations for my machines?\",\"answer\":\"Choosing the right location is essential for a sustainable business model. High-traffic areas such as large corporate offices, distribution centers, or coworking spaces often provide the necessary volume to make the venture viable. When evaluating potential sites, consider the number of employees, existing drink options in the area, and how the physical space will accommodate both power and plumbing requirements.\"},{\"question\":\"What is the required maintenance frequency for vending equipment?\",\"answer\":\"Reliability is the most important factor in retaining long-term clients. You should have a clear plan for how frequently you will restock supplies and perform maintenance. Many operators choose a regular schedule, such as weekly or bi-weekly visits, and keep a dedicated support line for any technical faults so that office managers do not have to handle day-to-day machine issues themselves.\"},{\"question\":\"Do I need to manage all cleaning and restocking myself?\",\"answer\":\"Yes, most professional providers offer various levels of service to suit your operational capacity. You can opt for a fully managed service where a provider handles everything from restocking ingredients to technical repairs, or a self-service model if you prefer to manage the inventory and cleaning yourself. Your choice depends on your budget and how much time you are willing to dedicate to daily site visits.\"}]}",
+                "name": "add_block"
+              },
+              "id": "lg4y6mC8",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781145473,
+    "id": "fx8qar2wGsy5juMP5cnH0A4",
+    "model": "gemini-3.1-flash-lite",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 473,
+      "prompt_tokens": 4891,
+      "prompt_tokens_details": {
+        "cached_tokens": 4038
+      },
+      "total_tokens": 5364
+    }
+  }
+}

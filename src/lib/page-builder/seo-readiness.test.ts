@@ -445,6 +445,49 @@ describe("assessSeoReadiness", () => {
     ).not.toContain("missing_supporting_subsections");
   });
 
+  it("surfaces copy-quality gate failures as content warnings", () => {
+    const content: PageContent = {
+      ...baseContent,
+      sections: [
+        {
+          ...baseContent.sections[0],
+          columns: [
+            {
+              ...baseContent.sections[0].columns[0],
+              blocks: baseContent.sections[0].columns[0].blocks.map((block) =>
+                block.type === "hero"
+                  ? {
+                      ...block,
+                      props: {
+                        ...block.props,
+                        body: "Our state-of-the-art vending support.",
+                      },
+                    }
+                  : block,
+              ),
+            },
+          ],
+        },
+      ],
+    };
+
+    const summary = assessSeoReadiness(content, baseMeta);
+
+    expect(summary.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "thin_hero_body",
+          category: "content",
+          path: "block_hero",
+        }),
+        expect.objectContaining({ code: "filler_phrase" }),
+        // The single-question FAQ in the base fixture trips the gate too.
+        expect.objectContaining({ code: "thin_faq" }),
+      ]),
+    );
+    expect(summary.blockers).toEqual([]);
+  });
+
   it("counts visible words after trimming repeated whitespace", () => {
     const content: PageContent = {
       version: 1,

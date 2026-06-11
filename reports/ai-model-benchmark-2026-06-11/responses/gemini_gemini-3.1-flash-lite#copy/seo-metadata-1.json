@@ -1,0 +1,117 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Set an SEO title and meta description optimised for the target keyword 'coffee vending machines for offices'."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Coffee vending machines for offices keep teams stocked with fresh drinks without anyone owning a brewing rota. A managed machine covers restocking, cleaning, and fault response so facilities can stay focused on the building.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "rZNIDXCk",
+        "name": "set_seo_metadata",
+        "input": {
+          "seoTitle": "Coffee vending machines for offices: A Guide to Choosing the Right Unit",
+          "targetKeyword": "coffee vending machines for offices",
+          "title": "Coffee vending machines for offices",
+          "slug": "coffee-vending-offices",
+          "metaDescription": "Choose the right coffee vending machines for offices to keep your team energized. Explore key considerations like maintenance, drink variety, and office space."
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "EjQKMgEMOdbHCoZMHpZv3gfrr8tFtByhTKpr0L9mSPYkjWgPKUyc4KzlmUpsVN+lVzrKHmzh"
+                }
+              },
+              "function": {
+                "arguments": "{\"seoTitle\":\"Coffee vending machines for offices: A Guide to Choosing the Right Unit\",\"targetKeyword\":\"coffee vending machines for offices\",\"title\":\"Coffee vending machines for offices\",\"slug\":\"coffee-vending-offices\",\"metaDescription\":\"Choose the right coffee vending machines for offices to keep your team energized. Explore key considerations like maintenance, drink variety, and office space.\"}",
+                "name": "set_seo_metadata"
+              },
+              "id": "rZNIDXCk",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781145540,
+    "id": "wx8qatWQO4ytjuMP8Z62aA",
+    "model": "gemini-3.1-flash-lite",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 97,
+      "prompt_tokens": 4923,
+      "prompt_tokens_details": {
+        "cached_tokens": 4038
+      },
+      "total_tokens": 5020
+    }
+  }
+}

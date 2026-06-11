@@ -9,6 +9,7 @@ import {
   renderPageGuidePrompt,
   selectPageGuide,
 } from "@/lib/page-builder/ai-page-guides";
+import { seoCopyPromptRules } from "@/lib/page-builder/copy-standards";
 import {
   collectBlockToolSpecs,
   nonEmptyStringSchema,
@@ -132,6 +133,8 @@ export function pageBuilderAiSystemPrompt(
     "Use request_clarification only when a real business or design decision blocks a safe edit. Give tappable choices, not a loose open question.",
     "Before saying the page is ready to publish, consider blockers: real H1, clear CTA, SEO title and description, links/forms, alt text, no placeholder copy, and mobile/accessibility risks.",
     "After tool calls, summarize what changed and what the user should review next. Do not tell the user to use internal tool names.",
+    "",
+    seoCopyPromptRules(),
     "",
     renderPageGuidePrompt(pageGuide),
     "",

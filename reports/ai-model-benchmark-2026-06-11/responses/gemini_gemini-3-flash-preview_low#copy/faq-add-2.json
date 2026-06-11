@@ -1,0 +1,137 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an FAQ section with 4 common questions people ask before starting a vending machine business."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Old body copy about machines.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "py8nakrw",
+        "name": "add_block",
+        "input": {
+          "title": "Common questions before starting a vending business",
+          "blockType": "faq",
+          "body": "Starting a vending machine business involves several operational and logistical considerations. These frequently asked questions cover the essentials for prospective operators looking to build a sustainable route.",
+          "bulletItems": [],
+          "ctaLabel": "Enquire about machines",
+          "ctaHref": "/contact",
+          "cards": [],
+          "faqItems": [
+            {
+              "question": "How do I find locations for my machines?",
+              "answer": "Securing high-traffic locations is the most critical factor for success. Common spots include office buildings, warehouses, gyms, and medical centres. Most operators negotiate a small commission or a fixed monthly space rental fee with the property owner in exchange for providing the service."
+            },
+            {
+              "question": "Is a vending machine business actually profitable?",
+              "answer": "Profitability depends on the machine's location, product mix, and maintenance costs. While individual transactions are small, a well-placed machine with popular snack or drink options can generate consistent passive income. Successful operators focus on scaling to multiple machines to cover overhead and increase total margins."
+            },
+            {
+              "question": "What kind of utilities and space do I need?",
+              "answer": "Modern machines typically require a standard power outlet and, if you are installing a coffee or fresh food unit, a dedicated water line. You should also consider the floor space and weight-bearing capacity of the site, as fully stocked machines are heavy and need stable, level ground."
+            },
+            {
+              "question": "How often will I need to restock and service machines?",
+              "answer": "The frequency of restocking depends entirely on sales volume. High-traffic locations may require servicing two or three times a week, while quieter offices might only need a weekly visit. Tracking inventory via remote monitoring software can help you plan your routes efficiently and ensure machines never sit empty."
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "EjQKMgEMOdbH/CENP8gMNOw3toI4w4oRZyGSz23URnnfjhCqH8OwCNPO+3iOT7mFjTMoEBta"
+                }
+              },
+              "function": {
+                "arguments": "{\"title\":\"Common questions before starting a vending business\",\"blockType\":\"faq\",\"body\":\"Starting a vending machine business involves several operational and logistical considerations. These frequently asked questions cover the essentials for prospective operators looking to build a sustainable route.\",\"bulletItems\":[],\"ctaLabel\":\"Enquire about machines\",\"ctaHref\":\"/contact\",\"cards\":[],\"faqItems\":[{\"question\":\"How do I find locations for my machines?\",\"answer\":\"Securing high-traffic locations is the most critical factor for success. Common spots include office buildings, warehouses, gyms, and medical centres. Most operators negotiate a small commission or a fixed monthly space rental fee with the property owner in exchange for providing the service.\"},{\"question\":\"Is a vending machine business actually profitable?\",\"answer\":\"Profitability depends on the machine's location, product mix, and maintenance costs. While individual transactions are small, a well-placed machine with popular snack or drink options can generate consistent passive income. Successful operators focus on scaling to multiple machines to cover overhead and increase total margins.\"},{\"question\":\"What kind of utilities and space do I need?\",\"answer\":\"Modern machines typically require a standard power outlet and, if you are installing a coffee or fresh food unit, a dedicated water line. You should also consider the floor space and weight-bearing capacity of the site, as fully stocked machines are heavy and need stable, level ground.\"},{\"question\":\"How often will I need to restock and service machines?\",\"answer\":\"The frequency of restocking depends entirely on sales volume. High-traffic locations may require servicing two or three times a week, while quieter offices might only need a weekly visit. Tracking inventory via remote monitoring software can help you plan your routes efficiently and ensure machines never sit empty.\"}]}",
+                "name": "add_block"
+              },
+              "id": "py8nakrw",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781142715,
+    "id": "uBQqavDFAq20juMPn9Hk6Qw",
+    "model": "gemini-3-flash-preview",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 388,
+      "prompt_tokens": 4642,
+      "prompt_tokens_details": {
+        "cached_tokens": 4033
+      },
+      "total_tokens": 5030
+    }
+  }
+}

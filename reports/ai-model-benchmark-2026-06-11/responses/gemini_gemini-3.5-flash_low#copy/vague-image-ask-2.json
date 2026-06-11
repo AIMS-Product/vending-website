@@ -1,0 +1,116 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an image section with text about campus vending."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Coffee vending machines for offices keep teams stocked with fresh drinks without anyone owning a brewing rota. A managed machine covers restocking, cleaning, and fault response so facilities can stay focused on the building.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "ldvv2pxi",
+        "name": "request_clarification",
+        "input": {
+          "options": [
+            "Proceed with a text-only section about campus vending first (we can add the image once you have a URL)",
+            "Provide an image URL or file path now to create the paired image-and-text section"
+          ]
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "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"
+                }
+              },
+              "function": {
+                "arguments": "{\"options\":[\"Proceed with a text-only section about campus vending first (we can add the image once you have a URL)\",\"Provide an image URL or file path now to create the paired image-and-text section\"]}",
+                "name": "request_clarification"
+              },
+              "id": "ldvv2pxi",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781145657,
+    "id": "NiAqasCJJNipjuMP6e6uyAs",
+    "model": "gemini-3.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 60,
+      "prompt_tokens": 4941,
+      "prompt_tokens_details": {
+        "cached_tokens": 4037
+      },
+      "total_tokens": 5408
+    }
+  }
+}

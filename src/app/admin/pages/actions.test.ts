@@ -1180,7 +1180,7 @@ describe("admin page actions", () => {
       new SeoAgentConfigurationError("sk-secret is missing"),
     );
 
-    const result = await generateAiSeoPageProposal(pageId, "openai");
+    const result = await generateAiSeoPageProposal(pageId);
 
     expect(result).toEqual({
       status: "error",
@@ -1189,25 +1189,25 @@ describe("admin page actions", () => {
     expect(JSON.stringify(result)).not.toContain("sk-secret");
     expect(mocks.adminGenerateOpenAiSeoPageProposal).toHaveBeenCalledWith(
       pageId,
-      { actorId: "admin_1", provider: "openai" },
+      { actorId: "admin_1" },
     );
   });
 
-  it("passes the selected Cerebras provider to the AI proposal service", async () => {
+  it("creates an AI proposal for review", async () => {
     mocks.adminGenerateOpenAiSeoPageProposal.mockResolvedValue({
       id: proposalId,
     });
 
-    const result = await generateAiSeoPageProposal(pageId, "cerebras");
+    const result = await generateAiSeoPageProposal(pageId);
 
     expect(result).toEqual({
       status: "created",
-      message: "Cerebras proposal created for review.",
+      message: "AI proposal created for review.",
       proposalId,
     });
     expect(mocks.adminGenerateOpenAiSeoPageProposal).toHaveBeenCalledWith(
       pageId,
-      { actorId: "admin_1", provider: "cerebras" },
+      { actorId: "admin_1" },
     );
   });
 

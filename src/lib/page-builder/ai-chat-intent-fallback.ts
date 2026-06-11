@@ -2,6 +2,7 @@ import "server-only";
 
 import { flattenBlocks } from "@/lib/page-builder/blocks";
 import { selectPageGuide } from "@/lib/page-builder/ai-page-guides";
+import { SEO_COPY_STANDARDS } from "@/lib/page-builder/copy-standards";
 import {
   humanBlockType,
   objectInput,
@@ -435,15 +436,18 @@ export function assessReplacementSeoDraftQuality(
     .filter((pattern) => pattern.test(lower))
     .map((pattern) => pattern.source);
 
+  const draftTier = SEO_COPY_STANDARDS.completeDraft;
   const reasons: string[] = [];
-  if (blocks.length < 5) reasons.push("too_few_blocks");
+  if (blocks.length < draftTier.minBlocks) reasons.push("too_few_blocks");
   if (unsupportedBlockType) reasons.push("unsupported_block_type");
   if (emptyVisibleBlock) reasons.push("empty_visible_block");
-  if (cardCount < 4) reasons.push("too_few_cards");
-  if (faqCount < 5) reasons.push("too_few_faqs");
-  if (wordCount < 450) reasons.push("too_few_words");
+  if (cardCount < draftTier.minCards) reasons.push("too_few_cards");
+  if (faqCount < draftTier.minFaqItems) reasons.push("too_few_faqs");
+  if (wordCount < draftTier.minVisibleWords) reasons.push("too_few_words");
   if (normalizedTarget) {
-    if (exactKeywordCount > 5) reasons.push("keyword_overuse");
+    if (exactKeywordCount > draftTier.maxExactKeywordMentions) {
+      reasons.push("keyword_overuse");
+    }
   }
   if (riskMatches.length > 0) reasons.push("review_risk_language");
 

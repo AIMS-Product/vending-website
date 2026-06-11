@@ -9,6 +9,10 @@
   page blocks.
 - 2026-06-09: Cerebras remains a selectable speed-test provider for the chat
   builder, but local editor validation remains the source of truth.
+- 2026-06-11: Superseded — Cerebras fully removed per user decision. OpenAI
+  (gpt-5.5) is the only page builder / SEO agent provider; the provider
+  selector UI, seo-agent-provider module, cerebras-json-schema helper, and
+  CEREBRAS\_\* env vars (local and Vercel) were all deleted.
 
 ## Safe Defaults
 
