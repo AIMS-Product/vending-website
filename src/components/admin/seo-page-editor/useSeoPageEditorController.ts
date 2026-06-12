@@ -48,10 +48,6 @@ import {
   type SeoReadinessFinding,
   type SeoReadinessStatus,
 } from "@/lib/page-builder/seo-readiness";
-import {
-  defaultSeoAgentProvider,
-  type SeoAgentProvider,
-} from "@/lib/page-builder/seo-agent-provider";
 import { parseStructuredDataSettings } from "@/lib/page-builder/structured-data-settings";
 import {
   applyInternalLinkSuggestion,
@@ -84,6 +80,20 @@ import {
   scrollToBuilderBlockId,
 } from "@/components/admin/seo-page-editor/SeoReadinessHelpers";
 import {
+  derivePublishBlockerChecklist,
+  type PublishBlockerChecklistItem,
+} from "@/components/admin/seo-page-editor/publish-blocker-checklist";
+import {
+  deriveScheduleStatus,
+  type ScheduleStatus,
+} from "@/components/admin/seo-page-editor/schedule-status";
+import { isPublishJustSucceeded } from "@/components/admin/seo-page-editor/publish-success-state";
+import {
+  autosaveFailureMessage,
+  autosaveFailureMode,
+  nextAutosaveRetryDelayMs,
+} from "@/components/admin/seo-page-editor/autosave-retry-policy";
+import {
   getNarrowEditorServerSnapshot,
   getNarrowEditorSnapshot,
   subscribeToNarrowEditorChange,
@@ -105,6 +115,9 @@ export type SeoPageEditorControllerProps = {
   aiProposals?: AiPageProposalReview[];
   savedFromRedirect?: boolean;
   redirectError?: string;
+  // Configured route prefixes loaded server-side (defaults + admin-added
+  // customs). Falls back to the five built-ins when not provided.
+  routePrefixOptions?: readonly { value: string; label: string }[];
 };
 
 type MobileEditorPanel = "blocks" | "seo" | null;
@@ -118,6 +131,11 @@ type PreviewLinkTone = "neutral" | "error";
 const emptyInternalLinkTargets: InternalLinkSuggestionTarget[] = [];
 const emptyMediaAssets: SeoPageEditorMediaAsset[] = [];
 const emptyAiProposals: AiPageProposalReview[] = [];
+// Uncontrolled metadata fields whose edits should trigger an autosave. The
+// schedule controls (scheduledPublishAt / cancelScheduledPublish) are
+// deliberately absent: scheduler columns are owned by explicit saves, and the
+// autosave payload is schedule-inert, so a half-typed schedule must never
+// kick off a background save.
 const autosaveMetadataFieldNames = new Set([
   "internalTags",
   "topicCluster",
@@ -128,11 +146,7 @@ const autosaveMetadataFieldNames = new Set([
   "lifecycleStatus",
   "ogTitle",
   "ogDescription",
-  "scheduledPublishAt",
-  "cancelScheduledPublish",
 ]);
-const builderWalkthroughStorageKey = "page-builder-editor-walkthrough-seen";
-type BuilderWalkthroughStep = 1 | 2 | 3;
 
 export function useSeoPageEditorController(
   {
@@ -142,6 +156,7 @@ export function useSeoPageEditorController(
     aiProposals = emptyAiProposals,
     savedFromRedirect = false,
     redirectError,
+    routePrefixOptions = builderRoutePrefixOptions,
   }: SeoPageEditorControllerProps,
   formRef: RefObject<HTMLFormElement | null>,
 ) {
@@ -222,9 +237,6 @@ export function useSeoPageEditorController(
     useState<PageAiProposalResult>(initialAiProposalState);
   const [aiInsertResult, setAiInsertResult] =
     useState<PageAiProposalInsertResult>(initialAiInsertState);
-  const [aiAgentProvider, setAiAgentProvider] = useState<SeoAgentProvider>(
-    defaultSeoAgentProvider,
-  );
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [isAiInserting, setIsAiInserting] = useState(false);
   const [isPreviewOpening, setIsPreviewOpening] = useState(false);
@@ -244,6 +256,15 @@ export function useSeoPageEditorController(
   const closeBlockSettings = useCallback(() => {
     setEditingBlockId(null);
   }, []);
+  // I2: inline "Cancel scheduled publish" arms a one-shot hidden field, then
+  // submits the normal Save action so the existing server cancel path
+  // (cancelScheduledPublish -> cancelledScheduledPublishMetadata) runs. No new
+  // write path to the scheduler columns is introduced.
+  const [isCancellingSchedule, setIsCancellingSchedule] = useState(false);
+  // I3: the publish confirm step. Owned here (not in the panel) so the same
+  // success transition that refreshes the page also dismisses the confirm —
+  // guaranteeing a re-publish must re-open a fresh confirm.
+  const [isConfirmingPublish, setIsConfirmingPublish] = useState(false);
   const isNarrowEditor = useSyncExternalStore(
     subscribeToNarrowEditorChange,
     getNarrowEditorSnapshot,
@@ -258,14 +279,16 @@ export function useSeoPageEditorController(
   const [hasSelectedNewPageMode, setHasSelectedNewPageMode] = useState(
     Boolean(page?.id),
   );
-  const [builderWalkthroughStep, setBuilderWalkthroughStep] =
-    useState<BuilderWalkthroughStep | null>(null);
   const showCreationChoiceModal = !page?.id && !hasSelectedNewPageMode;
   const [linkSuggestionMessage, setLinkSuggestionMessage] = useState<
     string | null
   >(null);
   const autosaveReady = useRef(false);
   const autosaveInFlight = useRef<Promise<unknown>>(Promise.resolve());
+  // I6: how many automatic retries the CURRENT failure run has used. Reset to 0
+  // on every edit-triggered attempt and on success; capped by the retry policy
+  // so a persistent failure rests instead of storming the server.
+  const autosaveRetryCount = useRef(0);
   const hasRefreshedAfterManualPublish = useRef(false);
   const visibleSlug = slugTouched ? slug : slugify(title);
   const draftContentJson = useMemo(() => JSON.stringify(content), [content]);
@@ -309,18 +332,39 @@ export function useSeoPageEditorController(
   const hasUnpublishedDraftChanges =
     isPublishedPage &&
     (draftContentDiffersFromLive || draftSettingsDifferFromLoadedPage);
+  // I2: a draft that is queued for automatic publishing must not read as a
+  // plain "Draft" in the collapsed status row — it has a pending future action.
+  const scheduleStatus: ScheduleStatus = deriveScheduleStatus(page);
   const publishStateLabel = isPublishedPage
     ? hasUnpublishedDraftChanges
       ? "Published with draft changes"
       : "Published"
-    : (page?.status ?? "Draft");
+    : scheduleStatus.kind === "scheduled"
+      ? "Scheduled"
+      : scheduleStatus.kind === "failed"
+        ? "Schedule failed"
+        : (page?.status ?? "Draft");
   const publishStateHelp = isPublishedPage
     ? hasUnpublishedDraftChanges
       ? "The live page is still the last published version. Save draft changes to keep editing later, or publish changes to update the live page."
       : "Saving draft changes keeps the live page unchanged. Publish changes only when this working copy should replace the live page."
-    : "This page is not live yet. Save the draft now, then publish when it is ready.";
+    : scheduleStatus.kind === "scheduled"
+      ? `This draft is queued to publish automatically on ${scheduleStatus.display}.`
+      : scheduleStatus.kind === "failed"
+        ? "The scheduled publish did not run. Review the error, then save a new time to retry."
+        : "This page is not live yet. Save the draft now, then publish when it is ready.";
   const saveDraftLabel = isPublishedPage ? "Save draft changes" : "Save draft";
   const publishButtonLabel = isPublishedPage ? "Publish changes" : "Publish";
+  // I3: a manual publish that has just completed. Drives the success block.
+  const publishJustSucceeded = isPublishJustSucceeded({
+    stateStatus: state.status,
+    lastManualSubmitIntent,
+  });
+  // The public URL to poll/link once the page is published. Only meaningful for
+  // a published page (route_path is set); the success card polls this until the
+  // route actually responds before surfacing the link.
+  const livePageUrl =
+    page?.status === "published" ? (page.route_path ?? null) : null;
   const chromeSettings = pageChromeSettings(content);
   const seoReadiness = useMemo(
     () =>
@@ -447,7 +491,20 @@ export function useSeoPageEditorController(
         : "Expand blocks sidebar - all blocks ready";
   const seoSidebarExpandTitle = `Expand SEO sidebar - SEO ${seoReadiness.label}`;
   const canPublish = Boolean(page?.id);
-  const publishDisabled = !canPublish || seoReadiness.blockers.length > 0;
+  // Single canonical publish-blocker list. The chip count, the rendered
+  // checklist, and the disabled Publish button all read from this one list so
+  // they can never disagree. It reflects the existing readiness rules plus the
+  // pre-existing "save first" precondition — no rule is added or removed here.
+  const publishBlockerChecklist = useMemo(
+    () =>
+      derivePublishBlockerChecklist({
+        content,
+        summary: seoReadiness,
+        canPublish,
+      }),
+    [canPublish, content, seoReadiness],
+  );
+  const publishDisabled = publishBlockerChecklist.length > 0;
   const nextPublishStep = nextRequiredPublishStep({
     canPublish,
     hasUnpublishedDraftChanges,
@@ -532,8 +589,18 @@ export function useSeoPageEditorController(
       if (submitter.value !== "save" && submitter.value !== "publish") return;
 
       setLastManualSubmitIntent(submitter.value);
+      // I6: a manual save/publish persists the whole row, superseding any
+      // pending autosave failure. Clear the stale "couldn't save" indicator and
+      // re-arm the retry budget so the error doesn't linger after the user has
+      // taken the manual fallback the failure message told them to use.
+      autosaveRetryCount.current = 0;
+      setAutosave(null);
       if (submitter.value === "publish") {
         hasRefreshedAfterManualPublish.current = false;
+        // The confirm dialog has done its job once the user submits the
+        // publish. Dismissing it here means a later re-publish must re-open a
+        // fresh confirm — the confirm can never stay armed across publishes.
+        setIsConfirmingPublish(false);
       }
       setShowManualSubmitToast(true);
     },
@@ -601,24 +668,61 @@ export function useSeoPageEditorController(
       return;
     }
 
-    const timer = window.setTimeout(() => {
+    const pageId = effectivePageId;
+    // A fresh edit re-arms the retry budget: this run is a brand-new attempt,
+    // not a continuation of an exhausted failure.
+    autosaveRetryCount.current = 0;
+    let cancelled = false;
+    const timers: number[] = [];
+
+    function runAttempt() {
       // Serialize requests: the draft save is a blind full-row update, so two
       // overlapping autosaves can commit out of order and silently regress
       // the draft. The payload is built after the previous request settles so
       // each save carries the freshest state.
       autosaveInFlight.current = autosaveInFlight.current
         .catch(() => undefined)
-        .then(() =>
-          autosaveSeoPageDraft(effectivePageId, buildAutosavePayload()),
-        )
-        .then(setAutosave)
+        .then(() => autosaveSeoPageDraft(pageId, buildAutosavePayload()))
+        .then((result) => {
+          if (cancelled) return;
+          if (result.status === "error") {
+            scheduleRetryOrRest();
+            return;
+          }
+          autosaveRetryCount.current = 0;
+          setAutosave(result);
+        })
         .catch((error: unknown) => {
+          if (cancelled) return;
           console.error("seo page autosave failed", error);
-          setAutosave({ status: "error", message: "Autosave failed." });
+          scheduleRetryOrRest();
         });
-    }, 1200);
+    }
 
-    return () => window.clearTimeout(timer);
+    function scheduleRetryOrRest() {
+      const used = autosaveRetryCount.current;
+      const delay = nextAutosaveRetryDelayMs(used);
+      // Surface the honest failure state immediately (never claims "saved").
+      setAutosave({
+        status: "error",
+        message: autosaveFailureMessage(autosaveFailureMode(used)),
+      });
+      if (delay === null) return; // cap reached — rest until next edit/manual save
+      autosaveRetryCount.current = used + 1;
+      const retryTimer = window.setTimeout(() => {
+        if (cancelled) return;
+        runAttempt();
+      }, delay);
+      timers.push(retryTimer);
+    }
+
+    const debounceTimer = window.setTimeout(runAttempt, 1200);
+    timers.push(debounceTimer);
+
+    return () => {
+      cancelled = true;
+      for (const id of timers) window.clearTimeout(id);
+    };
   }, [buildAutosavePayload, effectivePageId, metadataAutosaveVersion]);
 
   // S3b: once the user starts a brand-new page (a real title exists), create a
@@ -743,20 +847,17 @@ export function useSeoPageEditorController(
     addBlock,
     addColumn,
     addSuggestedBlock,
-    aiAgentProvider,
     aiInsertResult,
     aiProposalResult,
     aiProposals,
     applyLinkSuggestion,
     applyPageBuilderAiTools,
-    advanceBuilderWalkthrough,
     autosave,
     blockOrdinalById,
     blockSidebarExpandTitle,
     blockSidebarStatus,
     builderBlockEntries,
     builderShellGridClass,
-    builderWalkthroughStep,
     canonicalUrl,
     chromeSettings,
     closeBlockSettings,
@@ -764,13 +865,14 @@ export function useSeoPageEditorController(
     content,
     draftContentJson,
     duplicateBlock,
-    dismissBuilderWalkthrough,
     editBlockEntry,
     effectivePageId,
     editingBlockEntry,
-    finishBuilderWalkthrough,
+    focusPublishBlocker,
     formAction,
     focusSeoSetting,
+    isCancellingSchedule,
+    isConfirmingPublish,
     handleEditorFormSubmit,
     insertAiProposalBlocks,
     insertDocumentImportBlocks,
@@ -800,22 +902,27 @@ export function useSeoPageEditorController(
     pageType,
     pageTypeOptions,
     routePrefix,
-    routePrefixOptions: builderRoutePrefixOptions,
+    routePrefixOptions,
     previewLinkMessage,
     previewLinkPath,
     previewLinkTone,
     primaryColumn,
     primarySection,
+    publishBlockerChecklist,
     publishButtonLabel,
     publishDisabled,
+    publishJustSucceeded,
     publishStateHelp,
     publishStateLabel,
+    livePageUrl,
     removeBlock,
     removeColumn,
     removeSection,
     replaceBlock,
     redirectError,
+    requestCancelSchedule,
     runAiSeoAgent,
+    scheduleStatus,
     saveDraftLabel,
     saveMessage,
     savedFromRedirect,
@@ -827,8 +934,8 @@ export function useSeoPageEditorController(
     selectedBlockEntry,
     setCanonicalUrl,
     setEditingBlockId,
+    setIsConfirmingPublish,
     setMetaDescription,
-    setAiAgentProvider,
     setMobileEditorPanel,
     setNoindex,
     setRoutePrefix,
@@ -937,73 +1044,6 @@ export function useSeoPageEditorController(
     setIsDesktopSeoSidebarCollapsed((isCollapsed) => !isCollapsed);
   }
 
-  function shouldOfferBuilderWalkthrough() {
-    if (page?.id) return false;
-    try {
-      return !window.localStorage.getItem(builderWalkthroughStorageKey);
-    } catch {
-      return false;
-    }
-  }
-
-  function applyWalkthroughPanelLayout(step: BuilderWalkthroughStep) {
-    if (step === 1) {
-      if (isNarrowEditor) {
-        setMobileEditorPanel("blocks");
-      } else {
-        setIsDesktopBlockSidebarCollapsed(false);
-      }
-      return;
-    }
-
-    if (step === 2) {
-      if (isNarrowEditor) {
-        setMobileEditorPanel("seo");
-      } else {
-        setIsDesktopSeoSidebarCollapsed(false);
-      }
-      return;
-    }
-
-    if (isNarrowEditor) {
-      setMobileEditorPanel(null);
-    } else {
-      setIsDesktopBlockSidebarCollapsed(true);
-      setIsDesktopSeoSidebarCollapsed(true);
-    }
-  }
-
-  function completeBuilderWalkthrough() {
-    try {
-      window.localStorage.setItem(builderWalkthroughStorageKey, "1");
-    } catch {
-      // Ignore private browsing storage failures.
-    }
-  }
-
-  function advanceBuilderWalkthrough() {
-    if (builderWalkthroughStep === 1) {
-      applyWalkthroughPanelLayout(2);
-      setBuilderWalkthroughStep(2);
-      return;
-    }
-
-    if (builderWalkthroughStep === 2) {
-      applyWalkthroughPanelLayout(3);
-      setBuilderWalkthroughStep(3);
-    }
-  }
-
-  function finishBuilderWalkthrough() {
-    completeBuilderWalkthrough();
-    setBuilderWalkthroughStep(null);
-  }
-
-  function dismissBuilderWalkthrough() {
-    completeBuilderWalkthrough();
-    setBuilderWalkthroughStep(null);
-  }
-
   function selectBlockEntry(entry: BuilderBlockEntry) {
     setSelectedBlockId(entry.block.id);
     scrollToBuilderBlockId(entry.block.id);
@@ -1020,8 +1060,83 @@ export function useSeoPageEditorController(
     setSlug(slugify(nextSlug));
   }
 
+  function requestCancelSchedule() {
+    if (isCancellingSchedule) return;
+    setIsCancellingSchedule(true);
+    // Render the armed hidden field (next frame), submit the standard Save so
+    // the server runs the existing cancel path, then disarm on the following
+    // frame. requestSubmit() serializes the form synchronously, so the hidden
+    // field is captured before we disarm — and it never lingers into later
+    // saves.
+    window.requestAnimationFrame(() => {
+      const form = formRef.current;
+      const saveButton = form?.querySelector<HTMLButtonElement>(
+        'button[type="submit"][name="intent"][value="save"]',
+      );
+      if (form && saveButton) {
+        form.requestSubmit(saveButton);
+      }
+      window.requestAnimationFrame(() => setIsCancellingSchedule(false));
+    });
+  }
+
+  function focusPublishBlocker(item: PublishBlockerChecklistItem) {
+    const { target } = item;
+    if (target.kind === "save-first") {
+      // The Save draft control lives in the top rail (outside this panel). Move
+      // focus to it so keyboard users land on the action that clears this step.
+      window.requestAnimationFrame(() => {
+        const saveButton = document.querySelector<HTMLElement>(
+          'button[name="intent"][value="save"]',
+        );
+        saveButton?.scrollIntoView({ behavior: "smooth", block: "center" });
+        saveButton?.focus();
+      });
+      return;
+    }
+
+    if (target.kind === "field") {
+      // Settings fields live inside the Settings tabpanel, which stays mounted
+      // but hidden while another tab is active — scrollIntoView/focus are
+      // no-ops on display:none elements. Activate the tab first, then focus
+      // the field on the next frame.
+      activateSeoSettingsPanelTab();
+      if (advancedSeoFieldIds.has(target.elementId)) {
+        const advancedFields = document.getElementById("advanced-seo-fields");
+        if (advancedFields instanceof HTMLDetailsElement) {
+          advancedFields.open = true;
+        }
+      }
+      window.requestAnimationFrame(() => {
+        const field = document.getElementById(target.elementId);
+        field?.scrollIntoView({ behavior: "smooth", block: "center" });
+        field?.focus();
+      });
+      return;
+    }
+
+    if (target.kind === "block-modal") {
+      const entry = builderBlockEntries[target.blockIndex];
+      if (entry) {
+        editBlockEntry(entry);
+      }
+      return;
+    }
+
+    // anchor target: scroll the canvas to the referenced block.
+    const elementId = target.anchor.replace(/^#/, "");
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById(elementId)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
+
   function focusSeoSetting(finding: SeoReadinessFinding) {
     const targetId = seoSettingFieldId(finding.path);
+    // Same hidden-tabpanel rule as focusPublishBlocker: reveal the Settings
+    // tab before focusing one of its fields.
+    activateSeoSettingsPanelTab();
     if (advancedSeoFieldIds.has(targetId)) {
       const advancedFields = document.getElementById("advanced-seo-fields");
       if (advancedFields instanceof HTMLDetailsElement) {
@@ -1087,10 +1202,8 @@ export function useSeoPageEditorController(
     setSelectedBlockId(null);
     setEditingBlockId(null);
     setHasSelectedNewPageMode(true);
-    if (shouldOfferBuilderWalkthrough()) {
-      applyWalkthroughPanelLayout(1);
-      setBuilderWalkthroughStep(1);
-    }
+    // The Quick Tour (BuilderEditorWalkthrough) is opt-in and fully self-driven
+    // — no controller auto-start here.
   }
 
   function updateChromeSettings(next: Partial<PageChromeSettings>) {
@@ -1332,7 +1445,7 @@ export function useSeoPageEditorController(
     setIsAiGenerating(true);
     setAiProposalResult({ status: "idle" });
     try {
-      const result = await generateAiSeoPageProposal(page.id, aiAgentProvider);
+      const result = await generateAiSeoPageProposal(page.id);
       setAiProposalResult(result);
       if (result.status === "created") refresh();
     } catch (error) {
@@ -1383,6 +1496,17 @@ export function useSeoPageEditorController(
       setIsAiInserting(false);
     }
   }
+}
+
+// Reveal the SEO panel's Settings tab by clicking its rendered tab button —
+// SeoPanelTabs owns activeId, so going through its own onClick keeps the WAI
+// tablist state (aria-selected, roving tabindex) consistent. A graceful no-op
+// when the panel is collapsed/unmounted, matching the getElementById idiom of
+// the surrounding focus helpers.
+function activateSeoSettingsPanelTab() {
+  document
+    .querySelector<HTMLButtonElement>('[data-seo-panel-tab="settings"]')
+    ?.click();
 }
 
 const advancedSeoFieldIds = new Set([

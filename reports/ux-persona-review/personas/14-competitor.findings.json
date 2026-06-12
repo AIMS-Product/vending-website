@@ -1,0 +1,504 @@
+[
+  {
+    "id": "14-competitor-001",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "After submitting the application the only confirmation is small green text beside the button; the form is not cleared and there is no redirect, even though a /thank-you-for-applying page exists.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "thank-you-for-applying-text.md",
+        "quote": "/thank-you-for-applying"
+      }
+    ],
+    "persona_rationale": "Every coaching/application funnel I have used on the competitor redirects to a dedicated confirmation page so the prospect knows the action landed; a whisper of green text made even the automation resubmit five times, and a real lead will do the same or assume it failed.",
+    "suggested_fix": {
+      "current": "Inline green text 'Thanks. We received your details and will follow up shortly.' beside Submit, form stays filled, no redirect",
+      "proposed": "Redirect to /thank-you-for-applying on success (and clear the form), matching the existing dedicated confirmation page"
+    }
+  },
+  {
+    "id": "14-competitor-002",
+    "page": "/admin/pages",
+    "journey": "admin-create-news-draft",
+    "category": "Navigation & Flow",
+    "severity": "blocker",
+    "finding": "The Blog/News CMS has no entry in the studio sidebar; the entire content type is only reachable by typing /admin/news.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "navigation \"Admin sections\": link \"SEO pages : SEO page content\" ... link \"Media library : Images and source assets\""
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-news-draft-s02-02-look-for-news-in-studio-nav.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "In WordPress, Posts is a top-level menu item; a CMS that hides an entire content type behind a URL reads as broken to an evaluator and would cost my team productivity every day.",
+    "suggested_fix": {
+      "current": "Sidebar 'Admin sections' = SEO pages, Media library only",
+      "proposed": "Add a 'Blog & News' link (→ /admin/news) to the studio sidebar 'Admin sections' nav"
+    }
+  },
+  {
+    "id": "14-competitor-003",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The same content type is labelled four different ways: route /news, nav 'NEWS', public page H1 'BLOG', admin editor 'Blog CMS' / 'New blog post'.",
+    "evidence": [
+      { "type": "screenshot", "ref": "news-001-load.png", "quote": "" },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "Search SEO pages"
+      }
+    ],
+    "persona_rationale": "On the competitor one content type has one name everywhere; four names for one thing makes me distrust the rest of the information architecture and slows my team onboarding.",
+    "suggested_fix": {
+      "current": "nav 'NEWS' / H1 'BLOG' / editor 'Blog CMS' / route /news",
+      "proposed": "Pick one label (e.g. 'News') and use it across nav, page heading, route, and admin editor"
+    }
+  },
+  {
+    "id": "14-competitor-004",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "Contact is not in the header navigation; the only discoverable path is a footer 'CONTACT US' link.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "navigation \"Primary\": link \"About\" ... link \"Resources\" ... link \"Case Studies\" ... link \"News\""
+      }
+    ],
+    "persona_rationale": "Competitor funnels keep Contact in the header or a sticky CTA; burying it in the footer makes me assume there is no way to reach a human before committing.",
+    "suggested_fix": {
+      "current": "Header Primary nav = About, Resources, Case Studies, News (no Contact)",
+      "proposed": "Add a 'Contact' link to the header Primary nav"
+    }
+  },
+  {
+    "id": "14-competitor-005",
+    "page": "/admin/pages",
+    "journey": "admin-create-seo-page",
+    "category": "Navigation & Flow",
+    "severity": "critical",
+    "finding": "The pages list has no row-level delete/duplicate/bulk actions; the '⋮' actions menu did not expose Archive/Delete and there is no multi-select.",
+    "evidence": [
+      { "type": "screenshot", "ref": "admin-pages-001-load.png", "quote": "" },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "columnheader \"Actions\""
+      }
+    ],
+    "persona_rationale": "WordPress and Webflow let me delete, duplicate, and bulk-manage rows directly from the list; without it, routine content cleanup forces me to open every record, which is slower than my current tool.",
+    "suggested_fix": {
+      "current": "'⋮' row menu with no visible Delete/Duplicate; no bulk select",
+      "proposed": "Expose Edit / Duplicate / Archive / Delete in the row menu and add checkbox multi-select with bulk archive/delete"
+    }
+  },
+  {
+    "id": "14-competitor-006",
+    "page": "/admin/pages/redirects",
+    "journey": "admin-manage-content-ops",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "The Redirects manager is an orphan route with zero inbound links from any explored admin page.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-redirects-text.md",
+        "quote": "Back to pages"
+      }
+    ],
+    "persona_rationale": "Redirect management is a table-stakes SEO feature I rely on; if I can't find it from the UI I'll assume it doesn't exist and count that as a missing feature versus my current tool.",
+    "suggested_fix": {
+      "current": "/admin/pages/redirects reachable only by URL",
+      "proposed": "Link 'Redirects' from the SEO pages screen header and/or the studio sidebar"
+    }
+  },
+  {
+    "id": "14-competitor-007",
+    "page": "/admin/pages/new",
+    "journey": "admin-create-seo-page",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "On first open the editor's 'Quick Tour' overlay (Step 1 of 3) covers the very Builder outline panel it is pointing at and blocks interaction until dismissed.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-r06-06-editor-add-a-block-save.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "A power user switching tools wants to start building immediately; an overlay that obscures the panel it describes is the kind of forced tutorial friction that makes a polished editor feel clumsy.",
+    "suggested_fix": {
+      "current": "Quick Tour Step 1 overlay sits on top of the Builder outline panel it highlights",
+      "proposed": "Position the tour callout beside the panel (not over it) and add a persistent 'Skip tour' that is remembered per user"
+    }
+  },
+  {
+    "id": "14-competitor-008",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "A news listing thumbnail fails to load (500 on a Webflow CDN image).",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com%2F67f65d37ab8dcabf1595af84%2F694bcfaf10178c3a1340c777_ChatGPT%2520Image..."
+      }
+    ],
+    "persona_rationale": "A broken image on the public blog is the first thing I'd screenshot in a switch-evaluation deck as evidence the product isn't production-solid.",
+    "suggested_fix": {
+      "current": "Article thumbnail points at a Webflow CDN URL returning 500",
+      "proposed": "Re-host the image in the Media library and reference the local asset; add a fallback placeholder for failed images"
+    }
+  },
+  {
+    "id": "14-competitor-009",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "Homepage has high layout shift (CLS 0.263) and horizontal scroll at mobile-375.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Layout shift (CLS): 0.263 ... mobile-375 home-003-mobile.png | horizontal scroll present"
+      }
+    ],
+    "persona_rationale": "I judge a tool in the first 3 seconds; content jumping on load and sideways scroll on a phone signal a less mature front-end than the competitor I already use.",
+    "suggested_fix": {
+      "current": "CLS 0.263 on home; mobile horizontal scroll",
+      "proposed": "Reserve dimensions for hero media/fonts to bring CLS under 0.1 and clip the overflowing element at <=375px"
+    }
+  },
+  {
+    "id": "14-competitor-010",
+    "page": "/admin/pages",
+    "journey": "admin-manage-content-ops",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "There is no global search across content types; search is scoped per-CMS ('Search SEO pages' only).",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "textbox \"Search SEO pages\": /placeholder: Search title, keyword, or URL"
+      }
+    ],
+    "persona_rationale": "On the competitor one search box finds any piece of content; having to know whether something is an SEO page or a blog post before I can search for it is friction my team would feel constantly.",
+    "suggested_fix": {
+      "current": "Per-CMS search box ('Search SEO pages') with no cross-content search",
+      "proposed": "Add a studio-level global search that returns SEO pages, blog posts, and media in one result list"
+    }
+  },
+  {
+    "id": "14-competitor-011",
+    "page": "/admin/settings/users",
+    "journey": "admin-manage-content-ops",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "finding": "/admin/settings has no settings home; it only redirects to /admin/settings/users, and the sidebar 'Settings' deep-links straight to Users.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Status: 200 (redirected to /admin/settings/users)"
+      }
+    ],
+    "persona_rationale": "Competitor admins have a Settings landing page (general, integrations, billing, users); a Settings link that is really just Users implies the settings surface is thin.",
+    "suggested_fix": {
+      "current": "/admin/settings → redirect to /admin/settings/users; sidebar label 'Settings : Users and access'",
+      "proposed": "Add a Settings overview page listing all settings sections, or rename the sidebar item to 'Users & access'"
+    }
+  },
+  {
+    "id": "14-competitor-012",
+    "page": "/admin/pages",
+    "journey": "admin-create-seo-page",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "After saving a new SEO page the list verification raced and the page did not reliably appear; one run reported the created page 'not visible in /admin/pages list'.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s09-09-verify-page-in-list.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "Save-then-confirm is the core CMS loop; if I save and the item isn't immediately and obviously in the list I lose trust that my work persisted, which is exactly what makes people abandon a new tool.",
+    "suggested_fix": {
+      "current": "New page does not reliably/immediately appear at top of list after save",
+      "proposed": "Revalidate the list on save and show a success toast with a direct link to the new page row"
+    }
+  },
+  {
+    "id": "14-competitor-013",
+    "page": "/admin/news",
+    "journey": "admin-create-news-draft",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "The news list rows offer no delete/archive affordance; archiving requires opening each post's editor.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "no Delete control found in list row or editor"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-news-draft-s07-07-delete-created-draft-session-created-per.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "Bulk-trashing posts from the list is something I do weekly in WordPress; per-post editor diving to retire content is a real productivity regression for me.",
+    "suggested_fix": {
+      "current": "No row-level delete/archive in /admin/news; editor-only",
+      "proposed": "Add row actions (Edit / Archive / Delete) and bulk select to the news list"
+    }
+  },
+  {
+    "id": "14-competitor-014",
+    "page": "/admin/libraries",
+    "journey": "admin-manage-content-ops",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "finding": "Content libraries (/admin/libraries) is reachable only via a 'Content libraries' link in the Media library header, not from the sidebar.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-media-text.md",
+        "quote": "Content libraries"
+      }
+    ],
+    "persona_rationale": "Reusable content libraries are a feature I'd actively look for when switching; tucking them behind another page's header makes a real feature feel hidden.",
+    "suggested_fix": {
+      "current": "/admin/libraries linked only from the Media library header",
+      "proposed": "Surface 'Content libraries' as its own sidebar item under CONTENT"
+    }
+  },
+  {
+    "id": "14-competitor-015",
+    "page": "/pre-call-resources",
+    "journey": "pre-call-prep",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "The pre-call resources page contains 14 links and 0 embedded videos/iframes.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "0 embedded videos/iframes, 14 visible links"
+      }
+    ],
+    "persona_rationale": "Competitor pre-call pages embed the prep video inline so I don't bounce to YouTube and lose the thread; a wall of outbound links is a weaker prep experience.",
+    "suggested_fix": {
+      "current": "Pre-call page is a list of 14 links, no embedded media",
+      "proposed": "Embed the key prep video(s) inline on /pre-call-resources"
+    }
+  },
+  {
+    "id": "14-competitor-016",
+    "page": "/admin/pages",
+    "journey": "admin-create-seo-page",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Readiness and status indicators in the pages list are 10x10px unlabeled buttons.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "small touch target: button \"SEO readiness: Blocked\" 10x10px ... button \"Page status: Draft\" 10x10px"
+      }
+    ],
+    "persona_rationale": "On the competitor status is a labelled pill I can read at a glance and click reliably; 10px dots force me to hover or guess and are unusable on a trackpad in a meeting.",
+    "suggested_fix": {
+      "current": "10x10px colored-dot buttons for readiness/status",
+      "proposed": "Render readiness/status as labelled pills (e.g. 'Draft', 'SEO: Blocked') with >=24px hit area"
+    }
+  },
+  {
+    "id": "14-competitor-017",
+    "page": "/admin/pages",
+    "journey": "admin-create-seo-page",
+    "category": "Feedback & State",
+    "severity": "low",
+    "finding": "A 'Schedule failed' workflow filter is exposed in the pages list even though scheduling is otherwise not surfaced in the studio.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "link \"Schedule failed\": /url: /admin/pages?view=schedule-failed"
+      }
+    ],
+    "persona_rationale": "An error-state filter visible before I've even seen the scheduling feature makes the studio feel like it's leaking internal states; my competitor only shows scheduling UI once I've scheduled something.",
+    "suggested_fix": {
+      "current": "'Schedule failed' filter always visible in workflow filters",
+      "proposed": "Hide the 'Schedule failed' filter unless at least one page has a failed schedule"
+    }
+  },
+  {
+    "id": "14-competitor-018",
+    "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+    "journey": "read-a-news-article",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "Legacy /blog/* article paths 404 instead of redirecting to the /news/* equivalent.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "404 /blog/how-to-choose-the-perfect-location-for-vending-machine"
+      }
+    ],
+    "persona_rationale": "Migrating from a competitor, preserving old URLs is exactly the kind of thing I check; a 404 on the obvious /blog path tells me link equity and bookmarks will break on cutover.",
+    "suggested_fix": {
+      "current": "/blog/{slug} returns 404",
+      "proposed": "301-redirect /blog/{slug} to /news/{slug} (use the existing redirects manager)"
+    }
+  },
+  {
+    "id": "14-competitor-019",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "Article cards are scroll-reveal animated and render as blank outlines above the fold before scrolling.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-read-a-news-article-r03-03-scroll-to-reveal-article-cards.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "First paint that looks empty makes me think the page is broken or still loading; the competitor renders cards immediately and animates subtly, so this reads as less finished.",
+    "suggested_fix": {
+      "current": "Cards start invisible until scrolled into view",
+      "proposed": "Render cards visible by default and apply a lightweight fade-in, or trigger the reveal on initial paint for above-the-fold cards"
+    }
+  },
+  {
+    "id": "14-competitor-020",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Accessibility & Inclusion",
+    "severity": "low",
+    "finding": "Primary navigation links are short, ~17-20px tall hit targets (e.g. 'NEWS' 44x20px, 'HOME' 43x17px).",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "small touch target: a \"NEWS\" 44x20px ... a \"HOME\" 43x17px"
+      }
+    ],
+    "persona_rationale": "Competitor nav targets are comfortably tappable on mobile; these thin links are easy to miss on a phone and would generate misclicks for my team.",
+    "suggested_fix": {
+      "current": "Header/footer nav links ~17-20px tall",
+      "proposed": "Increase nav link padding to a >=44px tap target on mobile"
+    }
+  },
+  {
+    "id": "14-competitor-021",
+    "page": "/admin/news/new",
+    "journey": "admin-create-news-draft",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "The news editor's Save control was not findable on one corrected run ('FAILED: no visible Save control'), indicating an inconsistent/low-visibility save affordance.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys-rerun.md",
+        "quote": "save draft (NOT publish) | FAILED: no visible Save control"
+      }
+    ],
+    "persona_rationale": "Save must be unmissable in any editor; if even careful navigation can't find it, I'll worry my draft is lost — the cardinal sin for a content tool.",
+    "suggested_fix": {
+      "current": "Save draft control intermittently not visible in news editor",
+      "proposed": "Pin a persistent 'Save draft' button in the editor header alongside Publish, always in view"
+    }
+  },
+  {
+    "id": "14-competitor-022",
+    "page": "/admin/pages/new",
+    "journey": "admin-create-seo-page",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "finding": "While building, the editor URL stays /admin/pages/new until the first save, so there is no shareable/bookmarkable page URL mid-edit.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys-rerun.md",
+        "quote": "Editor URL stays at /admin/pages/new while building (no shareable page URL until saved)"
+      }
+    ],
+    "persona_rationale": "In Webflow I can hand a teammate a link to a draft I'm working on; not having a stable URL until save means I can't collaborate until I commit.",
+    "suggested_fix": {
+      "current": "URL stays /admin/pages/new until first save",
+      "proposed": "Create the draft record (and its URL) on entering the builder so the page is addressable immediately"
+    }
+  },
+  {
+    "id": "14-competitor-023",
+    "page": "/admin/pages/block-preview-audit",
+    "journey": "admin-manage-content-ops",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "finding": "/admin/pages/block-preview-audit is an internal tool reachable only by URL with no inbound links.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Block-preview-audit (/admin/pages/block-preview-audit) is likewise only reachable by URL"
+      }
+    ],
+    "persona_rationale": "Stray internal/debug routes shipping in the admin make me wonder what else is half-wired; the competitor keeps internal tooling out of the production studio.",
+    "suggested_fix": {
+      "current": "block-preview-audit internal route present in admin with no nav",
+      "proposed": "Gate internal audit tools behind a dev flag or remove them from the production admin build"
+    }
+  },
+  {
+    "id": "14-competitor-024",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "low",
+    "finding": "The state dropdown lists US states only, with no validation feedback shown on empty or invalid submit.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "combobox \"State\": option \"Select\" [disabled] [selected] ... option \"Wyoming\""
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "empty: no visible validation errors after empty submit"
+      }
+    ],
+    "persona_rationale": "The brand and case studies read Australian (Adelaide), yet the apply form is US-states-only and gives no inline validation — if my prospects are international this form is a dead end and the silent validation compounds it.",
+    "suggested_fix": {
+      "current": "US-state-only dropdown; no inline validation on empty/invalid submit",
+      "proposed": "Support the actual target geography (or use a country + free-text region) and show inline per-field validation messages on submit"
+    }
+  }
+]

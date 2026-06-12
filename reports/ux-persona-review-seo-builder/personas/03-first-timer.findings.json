@@ -1,0 +1,332 @@
+[
+  {
+    "id": "03-first-timer-001",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "Publish is gated by readiness blockers revealed one at a time in terse internal naming (\"Fix SEO title\" then \"Fix content 1 · Cta Label\" then \"Fix content 1 · Destination URL\"), so the full checklist of what to fix is never shown at once.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "draft · SEO Blocked; chip 'Fix SEO title'; Publish disabled"
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "Publish is gated behind a chain of readiness blockers that are revealed ONE AT A TIME in the status chip, in terse internal naming"
+      }
+    ],
+    "persona_rationale": "As a first-timer I can't fix what I can't see; solving one blocker only to be shown the next feels like the app is hiding the ball and I'd consider giving up.",
+    "suggested_fix": {
+      "current": "Single rotating status chip showing one blocker at a time",
+      "proposed": "Complete plain-language checklist: 'Before publishing: 1. Add a hero headline 2. Add a CTA label 3. Add a CTA destination URL.'"
+    }
+  },
+  {
+    "id": "03-first-timer-002",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Copy & Labels",
+    "severity": "critical",
+    "finding": "The publish chip says 'Fix SEO title' / 'Improve SEO title' while the SEO title field's own placeholder says 'Leave blank to use page headline' — a direct contradiction.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "chip 'Fix SEO title' shown beside field placeholder 'Leave blank to use page headline'"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "/placeholder: Leave blank to use page headline"
+      }
+    ],
+    "persona_rationale": "This contradiction destroyed my trust in the readiness guidance — if the app is wrong about an optional field, why believe any of its other warnings?",
+    "suggested_fix": {
+      "current": "Blocker labelled 'Fix SEO title' on a field marked 'Leave blank to use page headline'",
+      "proposed": "Name the real problem: 'Add the keyword \"vending machine ux review\" to your headline or SEO title'; never flag a field that says it is optional"
+    }
+  },
+  {
+    "id": "03-first-timer-003",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Forms & Input",
+    "severity": "critical",
+    "finding": "A required-to-publish field ('CTA destination URL') is not on the canvas — it exists only inside Block actions → Edit settings modal — yet the blocker 'Fix content 1 · Destination URL' gives no hint where to find it.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-11-block-settings-modal.png",
+        "quote": "'CTA destination URL' field only present in Block settings modal"
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "Hunted on canvas for 'Destination URL' — it is only in the block settings modal"
+      }
+    ],
+    "persona_rationale": "I spent real time hunting the canvas for a field that wasn't there; a first-timer with no mental model of 'block settings' would assume the app is broken.",
+    "suggested_fix": {
+      "current": "Blocker 'Fix content 1 · Destination URL' with no location hint",
+      "proposed": "Deep-link the blocker to the field: 'Add a CTA destination → Open block settings', matching the existing 'Open SEO settings' / 'Go to field' actions"
+    }
+  },
+  {
+    "id": "03-first-timer-004",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After confirming publish, the 'Changes published.' toast appears but the inline confirm card stays open asking to publish again, so it is unclear whether the publish succeeded.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-13-confirm-card.png",
+        "quote": "Confirm publish — This will make this draft visible at /resources/ux-seo-review-test-1781071765035."
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "'Changes published.' toast appears BUT the confirm card remains open asking to publish again"
+      }
+    ],
+    "persona_rationale": "Leaving the 'are you sure?' card open after success made me think it failed and almost click Confirm again.",
+    "suggested_fix": {
+      "current": "Confirm-publish card remains open after the success toast",
+      "proposed": "Close the confirm card on success and replace it with 'Published — View live page →'"
+    }
+  },
+  {
+    "id": "03-first-timer-005",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "No 'View live page' / 'Open live page' link is offered after publishing in the default panel state — the public URL had to be typed manually.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "No 'Open live page' link was visible after publishing in the default panel state — the live URL had to be typed manually."
+      }
+    ],
+    "persona_rationale": "The whole point of publishing is to see it live; making me reconstruct the URL by hand is a basic gap a first-timer wouldn't know how to work around.",
+    "suggested_fix": {
+      "current": "No live-page link after publish",
+      "proposed": "Surface a prominent 'View live page →' button linking to /resources/{slug} immediately after publish"
+    }
+  },
+  {
+    "id": "03-first-timer-006",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The READINESS and STATUS columns show only colored dots with no visible text label in the cell, so the meaning of each color is not discoverable without clicking.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "Readiness and Status columns rendered as colored dots only"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "button \"SEO readiness: Needs work\" / button \"Page status: Published\" (present only as ARIA, not visible cell text)"
+      }
+    ],
+    "persona_rationale": "Color alone is meaningless to a first-timer (and invisible to colour-blind users); I'd have to click each row to learn the page's state.",
+    "suggested_fix": {
+      "current": "Color-only dots in Readiness/Status cells",
+      "proposed": "Show a short text badge next to each dot ('Needs work', 'Published', 'Draft') or a visible legend"
+    }
+  },
+  {
+    "id": "03-first-timer-007",
+    "page": "/admin/pages/{id}",
+    "journey": "revision-restore",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "No revision/undo exists while drafting; the empty state assumes internal terms and a draft mangled before first publish has no page-level undo.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "revisions do NOT exist while drafting. Empty state: 'Revisions appear after publishing, library refreshes, or draft restores.'"
+      }
+    ],
+    "persona_rationale": "As a nervous first-timer I expect an undo before I commit anything; learning there's none only after I've broken my draft is exactly the 'scary, irreversible' moment that makes me distrust the tool.",
+    "suggested_fix": {
+      "current": "Restore points only created on publish; empty state 'Revisions appear after publishing, library refreshes, or draft restores.'",
+      "proposed": "Create a restore point on each draft save and reword to 'Your saved versions will appear here. We save one each time you publish.'"
+    }
+  },
+  {
+    "id": "03-first-timer-008",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After filling a schedule date/time and saving, the field re-renders empty and no 'Scheduled for {date}' status appears anywhere, so the schedule cannot be confirmed.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Scheduled publish field shows 'dd/mm/yyyy, --:-- --' after save"
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "the field re-rendered EMPTY and no 'Scheduled for …' status appeared anywhere in the editor"
+      }
+    ],
+    "persona_rationale": "With no confirmation I genuinely don't know if my page will go live or not — a first-timer would either re-submit or assume it's broken.",
+    "suggested_fix": {
+      "current": "Schedule field clears on save with no confirmation",
+      "proposed": "Persist the value and show 'Scheduled to publish on 11 Jun 2026, 12:00 PM AEST'"
+    }
+  },
+  {
+    "id": "03-first-timer-009",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The schedule field is labelled 'Uses Pacific Time (America/Los_Angeles)' on an Australian business's CMS.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Uses Pacific Time (America/Los_Angeles). Leave blank unless this page should publish later."
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "Label says 'Uses Pacific Time (America/Los_Angeles)' — for an Australian business"
+      }
+    ],
+    "persona_rationale": "I'd have to do timezone math to schedule correctly, and I have no reason to expect a Vendingpreneurs page to run on US West Coast time.",
+    "suggested_fix": {
+      "current": "'Uses Pacific Time (America/Los_Angeles)'",
+      "proposed": "Use the business local timezone (Australia/Adelaide) or show the admin's local time with an explicit label"
+    }
+  },
+  {
+    "id": "03-first-timer-010",
+    "page": "/admin/pages/{id}",
+    "journey": "create-first-page",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "A new page canvas is entirely greyed placeholders ('Hero headline', 'Hero body copy', 'CTA label') with no indication which fields are mandatory before publishing.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "greyed placeholders 'Hero headline', 'Hero body copy', 'CTA label'"
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "New page canvas is entirely placeholder ... with no guidance that these must be completed before publishing."
+      }
+    ],
+    "persona_rationale": "I'd happily fill required fields up front if the app told me which they were, instead of being ambushed by blockers later.",
+    "suggested_fix": {
+      "current": "Placeholder-only canvas with no required markers",
+      "proposed": "Mark required-to-publish fields with a 'Required' tag or asterisk on the canvas"
+    }
+  },
+  {
+    "id": "03-first-timer-011",
+    "page": "/admin/pages/new",
+    "journey": null,
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "Typing a page title then leaving the unsaved editor navigates straight back to the list with no unsaved-changes warning, silently losing the typed input from the editor flow.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Leaving unsaved editor: navigated straight to /admin/pages with NO unsaved-changes warning — typed title silently lost"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-014-leave-unsaved.png",
+        "quote": "returned to pages list after leaving unsaved editor"
+      }
+    ],
+    "persona_rationale": "A first-timer clicking around to explore will lose work without warning, which is exactly the kind of silent loss that makes me abandon a tool.",
+    "suggested_fix": {
+      "current": "No prompt when leaving an unsaved editor",
+      "proposed": "Prompt 'You have unsaved changes — leave anyway?' before navigating away"
+    }
+  },
+  {
+    "id": "03-first-timer-012",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "The redirects table has no edit or delete control, so a mistyped redirect is permanent from this UI.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Redirects table has no delete/edit controls — created redirects cannot be removed from this UI."
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-redirects-011-form-invalid-submit.png",
+        "quote": "redirects table rows with no per-row actions"
+      }
+    ],
+    "persona_rationale": "As a first-timer I make typos; a redirect I can't undo from the screen that created it feels unsafe and would make me afraid to use the feature at all.",
+    "suggested_fix": {
+      "current": "No row actions in redirects table",
+      "proposed": "Add a 'Delete' (and ideally 'Edit') action per redirect row with a confirm step"
+    }
+  },
+  {
+    "id": "03-first-timer-013",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "The validation error 'Path must be root-relative.' is jargon and doesn't tell me how to fix it.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-redirects-011-form-invalid-submit.png",
+        "quote": "Path must be root-relative."
+      }
+    ],
+    "persona_rationale": "'Root-relative' is developer vocabulary; a first-timer marketer doesn't know what's wrong or what a valid value looks like.",
+    "suggested_fix": {
+      "current": "Path must be root-relative.",
+      "proposed": "Paths must start with / — e.g. /resources/old-page"
+    }
+  },
+  {
+    "id": "03-first-timer-014",
+    "page": "/admin/pages/block-preview-audit",
+    "journey": null,
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "finding": "A developer-QA page ('Block preview audit') is reachable in the admin surface with no explanation of why a content editor would use it.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-block-preview-audit-text.md",
+        "quote": "Block preview audit — Compare every picker preview against the real resource-page render using mocked block content."
+      }
+    ],
+    "persona_rationale": "Landing here as a first-timer makes me unsure whether this is part of my job; it adds doubt about what the product actually is.",
+    "suggested_fix": {
+      "current": "Block preview audit exposed in admin surface",
+      "proposed": "Hide behind a dev/internal flag, or label it 'Internal QA — block render parity'"
+    }
+  }
+]

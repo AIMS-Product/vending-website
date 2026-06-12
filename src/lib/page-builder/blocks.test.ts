@@ -129,6 +129,67 @@ describe("page builder block schemas", () => {
     expect(block.props.thumbnailSrc).toBe("/images/video-thumbnail.webp");
   });
 
+  it("accepts optional proof media props and keeps legacy proof blocks valid", () => {
+    const proofContent = (props: Record<string, unknown>) => ({
+      version: 1,
+      sections: [
+        {
+          id: "section_proof",
+          columns: [
+            {
+              id: "column_proof",
+              blocks: [
+                {
+                  id: "block_proof",
+                  type: "proof",
+                  variant: "quote",
+                  props,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      pageContentSchema.safeParse(
+        proofContent({
+          eyebrow: "Proof",
+          body: "The support helped me launch.",
+          name: "Operator",
+          context: "Student",
+        }),
+      ).success,
+    ).toBe(true);
+
+    const withMedia = pageContentSchema.parse(
+      proofContent({
+        body: "Cut restock time by 40%.",
+        assetId: "33333333-3333-4333-8333-333333333333",
+        mediaSrc: "/images/proof-operator.webp",
+        mediaAltText: "Operator restocking a vending machine",
+      }),
+    );
+    const block = withMedia.sections[0]?.columns[0]?.blocks[0];
+    expect(block?.type).toBe("proof");
+    if (block?.type !== "proof") throw new Error("Expected proof block.");
+    expect(block.props.assetId).toBe("33333333-3333-4333-8333-333333333333");
+    expect(block.props.mediaSrc).toBe("/images/proof-operator.webp");
+    expect(block.props.mediaAltText).toBe(
+      "Operator restocking a vending machine",
+    );
+
+    expect(
+      pageContentSchema.safeParse(
+        proofContent({
+          body: "Unsafe media.",
+          mediaSrc: "javascript:alert(1)",
+        }),
+      ).success,
+    ).toBe(false);
+  });
+
   it("caps card grid blocks at the configured card limit", () => {
     const contentWithCardCount = (count: number): PageContent => ({
       version: 1,

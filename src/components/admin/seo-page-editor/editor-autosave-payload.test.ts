@@ -36,8 +36,7 @@ describe("buildSeoPageAutosavePayload", () => {
     formData.set("lifecycleStatus", "needs_review");
     formData.set("ogTitle", "Campus social title");
     formData.set("ogDescription", "Campus social description.");
-    formData.set("scheduledPublishAt", "2026-06-10T09:30");
-    formData.set("cancelScheduledPublish", "on");
+    formData.set("scheduledPublishAtBaseline", "2026-06-10T09:30");
 
     const payload = buildSeoPageAutosavePayload({
       ...baseInput,
@@ -55,10 +54,46 @@ describe("buildSeoPageAutosavePayload", () => {
       ogTitle: "Campus social title",
       ogDescription: "Campus social description.",
       scheduledPublishAt: "2026-06-10T09:30",
-      cancelScheduledPublish: true,
+      scheduledPublishAtBaseline: "2026-06-10T09:30",
+      cancelScheduledPublish: false,
       structuredDataSettings: { breadcrumb: true, faq: false },
       draftContent: content,
     });
+  });
+
+  // Scheduler columns are owned by explicit saves. The autosave payload must
+  // be schedule-inert: even when the form's schedule field differs from the
+  // baseline (a half-typed edit) or the cancel field is armed, autosave sends
+  // value === baseline and never cancels, so the server treats the schedule
+  // as unchanged.
+  it("is schedule-inert even when the form schedule differs from the baseline", () => {
+    const formData = new FormData();
+    formData.set("scheduledPublishAt", "2026-07-04T12:00");
+    formData.set("scheduledPublishAtBaseline", "2026-06-10T09:30");
+    formData.set("cancelScheduledPublish", "on");
+
+    const payload = buildSeoPageAutosavePayload({
+      ...baseInput,
+      formData,
+    });
+
+    expect(payload.scheduledPublishAt).toBe("2026-06-10T09:30");
+    expect(payload.scheduledPublishAtBaseline).toBe("2026-06-10T09:30");
+    expect(payload.cancelScheduledPublish).toBe(false);
+  });
+
+  it("stays schedule-inert when no schedule baseline exists", () => {
+    const formData = new FormData();
+    formData.set("scheduledPublishAt", "2026-07-04T12:00");
+
+    const payload = buildSeoPageAutosavePayload({
+      ...baseInput,
+      formData,
+    });
+
+    expect(payload.scheduledPublishAt).toBe("");
+    expect(payload.scheduledPublishAtBaseline).toBe("");
+    expect(payload.cancelScheduledPublish).toBe(false);
   });
 
   it("falls back to loaded page metadata when form data is unavailable", () => {

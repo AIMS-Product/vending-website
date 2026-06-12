@@ -1,0 +1,2613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UX Review Status — Code Verification — 2026-06-11</title>
+<style>
+  :root { --fixed:#16a34a; --partial:#d97706; --notfixed:#dc2626; --deferred:#6366f1; --ncv:#64748b; --withdrawn:#94a3b8; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background:#f1f5f9; color:#0f172a; }
+  header { background:#0f172a; color:#fff; padding:28px 32px; }
+  header h1 { margin:0 0 6px; font-size:22px; }
+  header p { margin:0; color:#94a3b8; font-size:13px; max-width:900px; line-height:1.5; }
+  main { max-width:1200px; margin:0 auto; padding:24px 32px 60px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin:20px 0 8px; }
+  .card { background:#fff; border-radius:10px; padding:14px 16px; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  .card .n { font-size:26px; font-weight:800; }
+  .card .l { font-size:12px; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+  .legend { font-size:12px; color:#64748b; margin:6px 0 18px; line-height:1.6; }
+  h2 { font-size:16px; margin:30px 0 4px; }
+  h2 + .sub { font-size:12.5px; color:#64748b; margin:0 0 10px; }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0; }
+  .filters button { border:1px solid #cbd5e1; background:#fff; border-radius:999px; padding:5px 14px; font-size:12.5px; font-weight:600; cursor:pointer; color:#334155; }
+  .filters button.active { background:#0f172a; color:#fff; border-color:#0f172a; }
+  table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 2px rgba(0,0,0,.06); font-size:13px; }
+  th { text-align:left; background:#f8fafc; padding:9px 12px; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:#64748b; border-bottom:1px solid #e2e8f0; }
+  td { padding:10px 12px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  .badge { display:inline-block; padding:2px 9px; border-radius:999px; font-size:11px; font-weight:700; color:#fff; white-space:nowrap; }
+  .b-FIXED{background:var(--fixed)} .b-PARTIAL{background:var(--partial)} .b-NOT_FIXED{background:var(--notfixed)}
+  .b-DEFERRED{background:var(--deferred)} .b-NOT_CODE_VERIFIABLE{background:var(--ncv)} .b-WITHDRAWN{background:var(--withdrawn)}
+  .band { font-weight:700; font-size:11px; color:#475569; }
+  .band-P0{color:#dc2626} .band-P1{color:#d97706}
+  .id { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; color:#475569; white-space:nowrap; }
+  .title { font-weight:600; line-height:1.35; }
+  .note { color:#475569; line-height:1.45; margin-top:3px; font-size:12.5px; }
+  .ev { margin-top:5px; }
+  .ev code { display:block; font-size:10.5px; color:#0369a1; font-family:ui-monospace,Menlo,monospace; line-height:1.5; word-break:break-all; }
+  details summary { cursor:pointer; font-size:11.5px; color:#64748b; font-weight:600; }
+  .page { color:#64748b; font-size:11.5px; white-space:nowrap; max-width:160px; overflow:hidden; text-overflow:ellipsis; display:block; }
+  .bar { display:flex; height:10px; border-radius:6px; overflow:hidden; margin-top:8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>UX Review Status — Code Verification</h1>
+  <p>2026-06-11 · Both June 10 UX persona reviews verified issue-by-issue against the current code on <b>ux-review-fixes</b> (working tree). 97 verification agents; verdicts rest on source code, with plan docs admitted only to locate fixes or classify documented deferrals. 195 verdicts, 0 lost.</p>
+</header>
+<main>
+<div id="cards" class="cards"></div>
+<p class="legend">
+  <b style="color:var(--fixed)">FIXED</b> — code implements the fix (cited) ·
+  <b style="color:var(--partial)">PARTIAL</b> — meaningfully addressed, stated gap remains ·
+  <b style="color:var(--notfixed)">NOT_FIXED</b> — no addressing change, no documented deferral ·
+  <b style="color:var(--deferred)">DEFERRED</b> — documented deferral (mostly Kody/business decisions) ·
+  <b style="color:var(--ncv)">NCV</b> — not verifiable from code alone
+</p>
+<div id="sections"></div>
+</main>
+<script>
+const DATA = {
+  "full": [
+    {
+      "id": "C001",
+      "band": "P0",
+      "page": "/apply",
+      "title": "After submitting the application the only confirmation is a small line of green text beside the button; the form does not clear, disable, or redirect, so a non-",
+      "status": "FIXED",
+      "note": "Apply form now redirects to /thank-you-for-applying on success via resolveLeadSuccessTransition (returns redirect kind for apply intent) and useRouter.push in effect hook. Thank-you page exists with clear copy. Unit test confirms behavior and verification.md shows production browser test passed.",
+      "evidence": [
+        "src/app/lead-action-state.ts:35-36",
+        "src/components/forms/PublicLeadForm.tsx:144-148",
+        "src/app/lead-action-state.test.ts:15-19",
+        "plans/ux-review-fixes/verification.md:11"
+      ]
+    },
+    {
+      "id": "C007",
+      "band": "P0",
+      "page": "/admin/pages",
+      "title": "The Blog/News CMS has no entry in the studio sidebar; the entire content type is only reachable by typing /admin/news.",
+      "status": "FIXED",
+      "note": "The Blog/News sidebar link has been properly implemented by adding the pre-existing blogSection object to the contentSections array. The fix is covered by three unit tests (all passing), verified with browser screenshots showing the link active on /admin/news, and formally confirmed in the verification document.",
+      "evidence": [
+        "src/components/admin/AdminShell.tsx:30-46 (blogSection defined and included in contentSections)",
+        "src/components/admin/AdminShell.test.tsx:24-38 (three passing tests covering render, active state, and behavior preservation)",
+        "plans/ux-review-fixes/verification.md:18 (D9 requirement PASS)",
+        "commit 5ac04cf (fix(ux): wave 1 — admin News nav)"
+      ]
+    },
+    {
+      "id": "C148",
+      "band": "P0",
+      "page": "/",
+      "title": "No phone number or email address anywhere on the homepage or in the footer — every contact path routes into a web form, leaving a frustrated user with no way to",
+      "status": "DEFERRED",
+      "note": "C148 is documented as K1 in decisions.md (deferred to Kody/marketing manager). The brief explicitly confirms James's decision that contact detail absence is deliberate funnel design, not a bug. Current code shows footer renders nav links only, contact page renders form only, and email appears only in buried terms page. No code change was attempted; issue explicitly deferred pending Kody's decision between (a) add support email, (b) email + phone, or (c) keep form-only.",
+      "evidence": [
+        "plans/ux-review-fixes/decisions.md:33-44 (K1 deferred-Kody table)",
+        "plans/ux-review-fixes/decisions.md:35 (deliberate funnel design confirmation)",
+        "src/components/site/Footer.tsx:16-40 (nav links only; no contact details)",
+        "src/app/contact/page.tsx:26-51 (form-only; no email/phone visible)"
+      ]
+    },
+    {
+      "id": "C035",
+      "band": "P2",
+      "page": "/, /case-studies",
+      "title": "Homepage (and /case-studies) testimonial videos each produce keyboard tab stops with no visible focus indicator, and the crawler flags a possible focus trap at ",
+      "status": "FIXED",
+      "note": "Video testimonial elements on both / and /case-studies now have visible :focus-visible focus indicators (4px ring in brand color #066a99 with 2px offset at component level, plus global 3px outline fallback), fully addressing the requirement for a high-contrast focus ring.",
+      "evidence": [
+        "src/components/sections/Testimonials.tsx:50 — focus-visible:ring-4 focus-visible:ring-[#066a99] focus-visible:ring-offset-2",
+        "src/components/sections/CaseStudyVideos.tsx:27 — same focus-visible ring classes",
+        "src/app/globals.css:58-71 — :focus-visible outline floor with 3px solid #066a99"
+      ]
+    },
+    {
+      "id": "C076",
+      "band": "P1",
+      "page": "/",
+      "title": "Homepage hero stats default to '0+ / $0M+ / 0+' for no-JS users, crawlers, and anyone whose scroll/IntersectionObserver does not fire; real values (500+, $3M+, ",
+      "status": "FIXED",
+      "note": "Component explicitly initializes React state and SSR output to real stat values (500+ entrepreneurs, $3M+ sales, 3,000+ locations), not 0. The count-up animation is progressive enhancement only. No-JS users, crawlers, and users before hydration all see real values. Verified in ux-review-fixes branch current code.",
+      "evidence": [
+        "src/components/sections/AnimatedStatValue.tsx:48-50 (SSR initialization comment)",
+        "src/components/sections/AnimatedStatValue.tsx:50 (useState initializes to real value)",
+        "src/components/sections/AnimatedStatValue.tsx:99 (renders real value in return)",
+        "src/lib/content/home.ts:125-129 (real stat values defined: 500+, $3M+, 3,000+)",
+        "commit 5ac04cf (fix(ux): wave 1 — SSR stats)"
+      ]
+    },
+    {
+      "id": "C117",
+      "band": "P1",
+      "page": "/apply",
+      "title": "Three required fields are commitments I may not have made yet: Business stage, Available startup budget, and Launch timeline are all required",
+      "status": "PARTIAL",
+      "note": "Issue C117 requested making Business stage, budget, and timeline optional with a 'Not sure yet' option. The code implements the 'Not sure yet' option in all three dropdowns, allowing users uncertain of their decision to proceed. However, the fields remain marked required=true at the HTML level. This partial implementation was intentional per D4: 'Not sure yet' added as interim solution, final optional/required decision deferred to Kody (K4) pending business input on what sales data should collect.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/forms/PublicLeadForm.tsx:227-268 (all three selects have required=true and 'Not sure yet' option)",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/decisions.md:15 (D4 decision: 'Fields STAY required (interim). Final required-vs-optional policy → Kody (K4)')",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/decisions.md:42 (K4 deferred decision table)"
+      ]
+    },
+    {
+      "id": "C004",
+      "band": "P1",
+      "page": "/news, /, /news + /news/* + breadcrumb, /admin/news, /admin/news/new",
+      "title": "The navigation item and route say 'NEWS' but the page heading is 'BLOG', and article breadcrumbs also say 'BLOG' — the same section has two different names.",
+      "status": "FIXED",
+      "note": "The inconsistency between \"NEWS\" (nav), \"BLOG\" (heading/breadcrumb) has been resolved. NewsHero.tsx line 9 now displays \"News\" in the h1 heading, and NewsArticle.tsx line 41 now displays \"News\" in the breadcrumb link. Both pages now use consistent terminology matching the /news route. Verified in commit 95da209 and confirmed present in current working tree.",
+      "evidence": [
+        "src/components/sections/NewsHero.tsx:9",
+        "src/components/sections/NewsArticle.tsx:41",
+        "plans/ux-review-fixes/agent-runs/n7-1.md:9-11",
+        "plans/ux-review-fixes/verification.md:14"
+      ]
+    },
+    {
+      "id": "C003",
+      "band": "P1",
+      "page": "/, /contact",
+      "title": "There is no Contact link in the top navigation; the only way to reach /contact is the small footer link or knowing the URL.",
+      "status": "DEFERRED",
+      "note": "C003 (Contact not in header nav) was explicitly deferred pending decision K2 from Kody (marketing manager) on whether Contact should appear in the header. Interim state is footer-only (unchanged). Current code confirms Contact remains in footer-only, consistent with the deferral decision documented in decisions.md K2 and verified in n13-1.md disposition table.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/decisions.md:40-42 (K2 deferral)",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/agent-runs/n13-1.md:40 (C003 disposition table)",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/lib/content/nav.ts:9-14 (primaryNav has no Contact)",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/lib/content/nav.ts:33-38 (Contact in footer only)"
+      ]
+    },
+    {
+      "id": "C014",
+      "band": "P1",
+      "page": "/apply",
+      "title": "Form errors rely solely on native browser bubbles ('Please fill out this field.') with no programmatic error summary and no in-page, persistent, screen-reader-a",
+      "status": "PARTIAL",
+      "note": "Form now suppresses native bubbles and provides per-field aria-invalid + aria-describedby with persistent inline error messages and an assertive aria-live region. However, the suggested fix specifically requested an error summary \"at the top of the form listing each failed field with anchor links\" — the current implementation lacks this structured summary list and places the message region at the bottom instead.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:162 (noValidate)",
+        "src/components/forms/PublicLeadForm.tsx:374-375 (aria-invalid + aria-describedby on TextField)",
+        "src/components/forms/PublicLeadForm.tsx:410-411 (aria-invalid + aria-describedby on SelectField)",
+        "src/components/forms/PublicLeadForm.tsx:457-458 (aria-invalid + aria-describedby on TextareaField)",
+        "src/components/forms/PublicLeadForm.tsx:469-473 (FieldError inline messages)",
+        "src/components/forms/PublicLeadForm.tsx:481-482 (aria-live=assertive role=alert)",
+        "src/app/lead-action-handler.ts:60 (generic error message, not field list)"
+      ]
+    },
+    {
+      "id": "C030",
+      "band": "P2",
+      "page": "/news",
+      "title": "A transient upstream failure on a Webflow-CDN news thumbnail can surface as a broken image because NewsCard's next/image has no onError/fallback; the host is al",
+      "status": "FIXED",
+      "note": "Issue C030 (transient CDN thumbnail failures surfacing as broken images) is fixed. The ImageWithFallback component provides onError handling that swaps in a branded blue placeholder instead of broken-image glyphs. It is integrated into NewsCard and the CDN host is whitelisted in next.config. Unit tests verify both happy and error paths.",
+      "evidence": [
+        "src/components/ui/ImageWithFallback.tsx:40 (onError handler)",
+        "src/components/ui/ImageWithFallback.tsx:31-32,55-84 (fallback renders branded placeholder)",
+        "src/components/sections/NewsList.tsx:45-51 (applied to NewsCard)",
+        "next.config.ts:94-96 (CDN host whitelisted)",
+        "src/components/ui/ImageWithFallback.test.tsx (tests verify behavior)"
+      ]
+    },
+    {
+      "id": "C006",
+      "band": "P1",
+      "page": "/admin/pages, /admin/pages/new",
+      "title": "On first open of the page editor a 'Quick Tour' overlay sits on top of the outline panel it points at and blocks interaction until dismissed.",
+      "status": "FIXED",
+      "note": "The Quick Tour card positioning has been completely refactored to detect tall targets (≥60% viewport height) and place them beside the target instead of overlapping. The WalkthroughCard component integrates this logic and applies the computed top/left positioning. Skip and advance buttons provide clear dismissal paths.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/admin/seo-page-editor/walkthrough-card-position.ts:42-53",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/admin/seo-page-editor/walkthrough-card-position.ts:74-97",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/admin/seo-page-editor/BuilderEditorWalkthrough.tsx:244-252",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/admin/seo-page-editor/BuilderEditorWalkthrough.tsx:265-267"
+      ]
+    },
+    {
+      "id": "C018",
+      "band": "P1",
+      "page": "/admin/pages/redirects",
+      "title": "The Redirects manager is an orphan route with zero inbound links from any explored admin page.",
+      "status": "FIXED",
+      "note": "The Redirects orphan-route issue is fixed. A \"Redirects\" button link (href=\"/admin/pages/redirects\") now appears in the header actions of the /admin/pages section, satisfying the suggested fix to link Redirects from the SEO pages screen header. The test \"exposes a Redirects link in the list header actions\" passes and verification.md confirms D10 Redirects link PASS.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:197-199",
+        "src/app/admin/pages/page.test.ts:75-85",
+        "plans/ux-review-fixes/verification.md:19"
+      ]
+    },
+    {
+      "id": "C011",
+      "band": "P2",
+      "page": "/apply, /",
+      "title": "The primary nav CTA 'STEP INSIDE' does not communicate what it does (it links to /apply).",
+      "status": "DEFERRED",
+      "note": "C011 is explicitly deferred to the Kody contact/pricing track (K1-K6 themes) as documented in the N13 P2 triage disposition table. Current code still displays \"Step inside\" in the header nav CTA (lines 45 and 107) rather than \"Apply Now\" to match the hero CTA consistency requested in the issue. The fix was not attempted in this round.",
+      "evidence": [
+        "plans/ux-review-fixes/agent-runs/n13-1.md:41",
+        "plans/ux-review-fixes/verification.md:21",
+        "src/components/site/Header.tsx:45",
+        "src/components/site/Header.tsx:107"
+      ]
+    },
+    {
+      "id": "C005",
+      "band": "P2",
+      "page": "/news",
+      "title": "On first load the article cards render as blank outlines until the user scrolls (scroll-reveal animation), so the page looks broken or half-loaded above the fol",
+      "status": "NOT_FIXED",
+      "note": "The only code change is swapping next/image to ImageWithFallback, which handles image load failure via onError. The original issue describes cards appearing \"blank on first paint until scrolled into view\", which suggests initial image loading delay causes blank/empty cards. The fix does not address slow image loading or initial visibility — it only provides a fallback when images fail completely (onError). The suggested fix (\"Render the first row visible on load\") was not implemented.",
+      "evidence": [
+        "src/components/sections/NewsList.tsx: Image → ImageWithFallback only addresses onError fallback",
+        "git diff 9cdfbed..HEAD -- src/components/sections/NewsList.tsx: only change is component swap, no visibility/animation changes",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:65 claims C005 'handled-this-round' but disposition is generic 'scroll-reveal blank cards / CLS dims'"
+      ]
+    },
+    {
+      "id": "C021",
+      "band": "P2",
+      "page": "/admin/news",
+      "title": "No News/Blog item in the studio sidebar; /admin/news is reachable only by typing the URL.",
+      "status": "FIXED",
+      "note": "The sidebar now includes a \"Blog and news\" navigation entry linking to /admin/news in the Content section, visible on both desktop and mobile. The entry is properly integrated into the contentSections array and tested to render correctly.",
+      "evidence": [
+        "src/components/admin/AdminShell.tsx:30-36 (blogSection defined with label 'Blog and news' and href '/admin/news')",
+        "src/components/admin/AdminShell.tsx:46 (blogSection added to contentSections array)",
+        "src/components/admin/AdminShell.test.tsx:24-29 (test verifies href='/admin/news' and 'Blog and news' text exist)"
+      ]
+    },
+    {
+      "id": "C036",
+      "band": "P2",
+      "page": "/",
+      "title": "Serious color-contrast failure on the homepage statistic values (the 'definition' values under the Accelerator Program). Three <dd> elements fail WCAG AA contra",
+      "status": "FIXED",
+      "note": "The stat labels in the Accelerator Program section on the homepage have been darkened from #2d9fd6 to #066a99, raising the contrast ratio from 2.85 (failing) to 5.70 (passing WCAG AA 4.5:1 requirement). The fix is present in the current working tree on the ux-review-fixes branch.",
+      "evidence": [
+        "src/components/sections/AcceleratorProgram.tsx:27 — <dd> element now has text-[#066a99] instead of #2d9fd6",
+        "plans/ux-review-fixes/agent-runs/n12-1.md:56 — color-contrast fix table confirms #2d9fd6 on #f5fbff (2.85) → #066a99 (5.70 ✓ WCAG AA)",
+        "plans/ux-review-fixes/agent-runs/n12-1.md:77 — AcceleratorProgram.tsx stat <dd> color change documented as N12 deliverable"
+      ]
+    },
+    {
+      "id": "C037",
+      "band": "P2",
+      "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+      "title": "Legacy /blog/{slug} paths hard-404 instead of redirecting to the live /news/{slug} article that exists.",
+      "status": "FIXED",
+      "note": "Issue C037 requested that legacy /blog/{slug} paths redirect to /news/{slug} instead of returning 404. The implementation in src/proxy.ts (lines 120-127) checks if a request path starts with /blog/, extracts the slug, verifies a published news post exists with that slug, and returns a 308 permanent redirect to /news/{slug}. Tests confirm this behavior (proxy.test.ts line 106 asserts status 308), and the n13 agent explicitly verified the exact URL from the issue returns 308 instead of 404.",
+      "evidence": [
+        "src/proxy.ts:120-127",
+        "src/proxy.test.ts:100-110",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:93-95"
+      ]
+    },
+    {
+      "id": "C044",
+      "band": "P2",
+      "page": "/news",
+      "title": "The first paint of /news shows article cards as empty outlines (scroll-reveal animation) and one card renders as broken-image alt text instead of an image ('Top",
+      "status": "FIXED",
+      "note": "C044 required two fixes: (1) removing scroll-reveal blank cards, and (2) handling broken images. Code shows no scroll-reveal animation applied to NewsCard (regular content visibility with only hover shadow). ImageWithFallback component catches image onError and renders branded placeholder instead of broken glyph. N10 browser test verified all three card images rendered branded fallback under forced 500 error, zero broken glyphs.",
+      "evidence": [
+        "src/components/ui/ImageWithFallback.tsx:40",
+        "src/components/sections/NewsList.tsx:45",
+        "src/components/ui/ImageWithFallback.test.tsx:12-13",
+        "plans/ux-review-fixes/agent-runs/n10-1.md:42-49"
+      ]
+    },
+    {
+      "id": "C070",
+      "band": "P2",
+      "page": "/",
+      "title": "The hero stat counters render as zeroes in the captured state: '0+' Entrepreneurs launched, '$0M+' Snack/Drink sales, '0+' Vending locations. These are count-up",
+      "status": "FIXED",
+      "note": "AnimatedStatValue component initializes displayValue to the real value passed in props, ensuring SSR and no-JS renders show real numbers (not 0+). The count-up animation is progressive enhancement that runs only after hydration and intersection. prefers-reduced-motion is respected. Tests verify no $0M+ or >0< appears in rendered HTML.",
+      "evidence": [
+        "src/components/sections/AnimatedStatValue.tsx:48-50 (initial render set to real value)",
+        "src/components/sections/AnimatedStatValue.tsx:61-63 (respects prefers-reduced-motion)",
+        "src/components/sections/AnimatedStatValue.test.ts:27-34 (verifies no zeroed values render)",
+        "src/lib/content/home.ts:125-129 (real stat values: 500+, $3M+, 3,000+)"
+      ]
+    },
+    {
+      "id": "C002",
+      "band": "P2",
+      "page": "/",
+      "title": "The three headline statistics render as '0+', '$0M+', '0+' instead of real figures, making the site look broken and untrustworthy.",
+      "status": "FIXED",
+      "note": "AnimatedStatValue now initializes displayValue with the real value instead of a zeroed variant. SSR/no-JS HTML correctly renders real stat values (500+, $3M+, 3,000+) instead of zeros. Tests verify this behavior; all pass. Progressive enhancement ensures animation still runs for JS users after hydration.",
+      "evidence": [
+        "src/components/sections/AnimatedStatValue.tsx:50 (initialization with real value)",
+        "src/components/sections/AnimatedStatValue.test.ts:19-24 (SSR test verifies real values)",
+        "src/lib/content/home.ts:125-128 (stat values defined as 500+, $3M+, 3,000+)",
+        "Test execution: vitest AnimatedStatValue.test.ts — 4/4 passed"
+      ]
+    },
+    {
+      "id": "C042",
+      "band": "P2",
+      "page": "/apply",
+      "title": "Submitting the apply form with empty required fields produces NO visible validation error; the form silently does nothing. A non-native user has no message to r",
+      "status": "FIXED",
+      "note": "The apply form now shows specific inline validation error messages per field when empty required fields are submitted, via noValidate + server-side field error rendering with aria-invalid/aria-describedby. Error messages are generated per field by the Zod schema (e.g., \"Name is required.\", \"Invalid email address\"). This fully addresses the issue's requirement for \"specific inline error per field\" with visible validation feedback.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:162 (noValidate disables browser validation)",
+        "src/components/forms/PublicLeadForm.tsx:150 (fieldErrors extracted from state)",
+        "src/components/forms/PublicLeadForm.tsx:374-378 (aria-invalid and aria-describedby render per-field)",
+        "src/components/forms/PublicLeadForm.test.ts:103-125 (test verifies inline errors render)"
+      ]
+    },
+    {
+      "id": "C054",
+      "band": "P2",
+      "page": "/admin/news",
+      "title": "Serious aria-prohibited-attr violation in the admin news list (.text-slate-300) — an ARIA attribute is applied to an element whose role does not allow it.",
+      "status": "FIXED",
+      "note": "The aria-prohibited-attr violation on disabled pagination was fixed by replacing the span element with a button element that properly supports aria-label. The component is tested and integrated into /admin/news.",
+      "evidence": [
+        "src/components/admin/AdminPaginationLink.tsx:37-46 (disabled button with aria-label)",
+        "src/components/admin/AdminPaginationLink.test.tsx:17-32 (test explicitly confirms button not span)",
+        "src/app/admin/news/page.tsx:3,312-325 (import and usage of fixed component)"
+      ]
+    },
+    {
+      "id": "C096",
+      "band": "P2",
+      "page": "/",
+      "title": "The homepage has a Cumulative Layout Shift of 0.263, well above the 0.1 'good' threshold; the same 0.263 CLS recurs on /about, /news, and every news article pag",
+      "status": "NOT_FIXED",
+      "note": "C096 (CLS 0.263 across pages) was dispositioned as \"handled-this-round\" in N13 triage but N10 (the responsible node) made zero code changes to fix CLS. The footer shift—identified as the actual cause—was explicitly marked out-of-scope. Current production still exhibits 0.263 CLS on cold start per verification.md. The suggested fix (reserve space via explicit dimensions, font-display swap, fixed-height header) is not present in the code.",
+      "evidence": [
+        "plans/ux-review-fixes/agent-runs/n10-1.md:60-72: N10 agent confirms footer shift is 'out of scope' and 'not fixed by design'; 'I confirmed the candidate culprits above the footer... so this is not a missing-image-dimension bug in any component. The footer shift is a dev-mode streaming/hydration artifact. REPORTED, not fixed (out of scope)'",
+        "src/components/site/Footer.tsx:15: Footer has no min-height, height, or layout stabilization CSS",
+        "src/app/globals.css:109-111: Only display:none toggle exists; no CLS-prevention CSS",
+        "plans/ux-review-fixes/verification.md:37: 'One 0.263 observation on the very first cold hit after server start (matches dev footer shift)' — acknowledges 0.263 CLS persists on cold start"
+      ]
+    },
+    {
+      "id": "C144",
+      "band": "P2",
+      "page": "/admin/pages",
+      "title": "A 'Schedule failed' filter is exposed in the workflow navigation with no inline explanation of what failed or how to recover.",
+      "status": "FIXED",
+      "note": "C144 (\"Schedule failed\" filter exposed with no explanation) is fixed. The filter now includes a marketer-facing description (\"Pages whose scheduled publish did not go through and need attention\"), rendered as a tooltip on the filter chip and as a visible muted helper line below the filter row when active. Test confirms the fix and all 9 page tests pass.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:89-93 (description field added to schedule-failed filter)",
+        "src/app/admin/pages/page.tsx:463 (title={filter.description} applied to filter chip)",
+        "src/app/admin/pages/page.tsx:474-478 (visible helper paragraph shown when active filter is not 'all')",
+        "src/app/admin/pages/page.test.ts:62-73 (test confirms description rendered as title attribute)"
+      ]
+    },
+    {
+      "id": "C022",
+      "band": "P2",
+      "page": "/admin/pages/new",
+      "title": "A 'Quick Tour · Step 1 of 3' overlay covers the outline panel on first editor open and blocks interaction until dismissed.",
+      "status": "FIXED",
+      "note": "The tour overlay is now opt-in (never auto-blocks) via a discoverable Quick Tour button, and when displayed, the card is positioned beside full-height targets (like the blocks rail) rather than covering them. Unit tests confirm both positioning logic and opt-in behavior. All tests pass green.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/walkthrough-card-position.ts:42-53 (computeWalkthroughCardPlacement routes tall targets to placeBesideTarget)",
+        "src/components/admin/seo-page-editor/walkthrough-card-position.ts:74-97 (placeBesideTarget positions card right of target with 16px gap, preventing overlap)",
+        "src/components/admin/seo-page-editor/BuilderEditorWalkthrough.tsx:114-140 (QuickTourLauncher shows opt-in button instead of auto-opening)",
+        "src/components/admin/seo-page-editor/BuilderEditorWalkthrough.test.tsx:22-41 (tests verify no auto-render and opt-in affordance present)",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:56 (C022 marked handled-this-round as duplicate of C006)"
+      ]
+    },
+    {
+      "id": "C023",
+      "band": "P2",
+      "page": "/",
+      "title": "Hero stat counters render as '0+', '$0M+', '0+' placeholders.",
+      "status": "FIXED",
+      "note": "Hero stats now server-render real values (500+, $3M+, 3,000+) instead of placeholders (0+, $0M+, 0+). SSR test coverage confirms zeroed variants never appear. Count-up animation preserved as progressive enhancement after hydration.",
+      "evidence": [
+        "src/components/sections/AnimatedStatValue.tsx:50 — useState(value) initializes displayValue to real value",
+        "src/components/sections/AnimatedStatValue.test.ts:19-34 — tests verify SSR renders real values and never zeroed variants",
+        "src/lib/content/home.ts:125-129 — stat values defined as 500+, $3M+, 3,000+",
+        "plans/ux-review-fixes/verification.md:15 — curl prod verification: zero >0+< spans, real values present"
+      ]
+    },
+    {
+      "id": "C041",
+      "band": "P2",
+      "page": "/",
+      "title": "The homepage has horizontal scroll at mobile-375, making the landing page feel broken on the phone a social-media visitor arrives with.",
+      "status": "FIXED",
+      "note": "The homepage horizontal scroll at 375px caused by CSS Grid blowout in Benefits section has been fixed. The root cause (CSS Grid item with default min-width:auto exceeding container) was resolved by adding min-w-0 to the flex container (line 19) and break-words to the h2 heading (line 20). The CaseStudyQuotes component on /case-studies received the same fix pattern. N9 verification confirms both pages pass 375px viewport test with no horizontal scroll.",
+      "evidence": [
+        "src/components/sections/Benefits.tsx:19-20 (min-w-0 on flex container, break-words on h2)",
+        "src/components/sections/CaseStudyQuotes.tsx:12 (min-w-0 on li item)",
+        "plans/ux-review-fixes/agent-runs/n9-1.md:15-16 (reproduction + fix confirmation)",
+        "git log: commit 93c2c7d 'fix(ux): wave 3 — mobile overflow'"
+      ]
+    },
+    {
+      "id": "C048",
+      "band": "P2",
+      "page": "/",
+      "title": "No skip-to-content link. The first tab stop is the logo, followed by all primary nav links and (on the homepage) 12 video tab stops, before any main content or ",
+      "status": "FIXED",
+      "note": "Skip-to-content link fully implemented as first focusable element in root layout, visually hidden by default, revealed on focus, targets main#main-content landmark. Three unit tests validate DOM ordering and contract. Playwright tab-walk confirmed first tab stop is skip link.",
+      "evidence": [
+        "src/app/layout.tsx:41-43",
+        "src/app/globals.css (skip-to-content class and :focus handler)",
+        "src/app/accessibility-landmarks.test.ts (3 contract tests)",
+        "plans/ux-review-fixes/verification.md:35"
+      ]
+    },
+    {
+      "id": "C049",
+      "band": "P2",
+      "page": "/this-page-does-not-exist",
+      "title": "Serious color-contrast failures on the 404 page: the '404' label (.tracking-wide, light blue on white) and the explanatory subtext (.mt-2, light gray on white) ",
+      "status": "FIXED",
+      "note": "The 404 page color-contrast failures on both the '404' label and the \"Back to home\" link have been fixed by N12 (wave 4). Both elements were darkened from lighter sky-tones (sky-500 and sky-600) to sky-700, achieving AA-compliant 5.93:1 contrast ratios. Axe verification in N12 confirms 404 page contrast violations dropped from 2 to 0.",
+      "evidence": [
+        "src/app/not-found.tsx:6-7 (text-sky-700 on 404 label, up from sky-500)",
+        "src/app/not-found.tsx:17 (text-sky-700 on Back-to-home link, up from sky-600)",
+        "plans/ux-review-fixes/agent-runs/n12-1.md:57-58 (N12 contrast fixes: 404 label sky-500→sky-700 at 5.93:1; link sky-600→sky-700 at 5.93:1, both now AA-compliant)"
+      ]
+    },
+    {
+      "id": "C050",
+      "band": "P2",
+      "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "title": "Serious color-contrast failure on article meta text (.mt-5, the date / '13 min read' line) and, on sibling articles, on inline body links (p > a). Article body ",
+      "status": "PARTIAL",
+      "note": "Byline meta text contrast FIXED (raised from #55b8e8 to #066a99, achieving 5.70:1). Underlines ADDED to body links. However, article body link color remains #2d9fd6 on light background, achieving ~2.40:1 contrast which FAILS AA requirement (needs 4.5:1). N12 reported excluding article-body pages from their scope; body link color was never raised to meet 4.5:1 threshold.",
+      "evidence": [
+        "src/components/sections/NewsArticle.tsx:105 — byline uses text-[#066a99] achieving 5.70:1 on #f5fbff",
+        "src/app/globals.css:.public-news-prose a — body links use color: #2d9fd6 with underline, but #2d9fd6 on #f5fbff achieves only ~2.40:1 contrast (fails AA)",
+        "plans/ux-review-fixes/agent-runs/n12-1.md:66-69 — N12 explicitly excluded /news/* article-body pages from scope",
+        "commit 136a549 — meta text changed from #55b8e8 to #066a99"
+      ]
+    },
+    {
+      "id": "C055",
+      "band": "P2",
+      "page": "/admin/media",
+      "title": "Serious color-contrast failures on the media library filter counts (.mr-1) and a description paragraph (.space-y-2 > p), plus a broken heading order (h3 without",
+      "status": "FIXED",
+      "note": "All three components of C055 have been fixed: color contrast of filter labels (Type, Tags) upgraded from text-slate-400 to text-slate-500 (AA), No tags caption also upgraded to text-slate-500, and heading hierarchy corrected by adding sr-only h2 before the asset grid. Fixes verified in current code and confirmed in git commit 93c2c7d.",
+      "evidence": [
+        "src/app/admin/media/page.tsx:269 (Type label text-slate-500)",
+        "src/app/admin/media/page.tsx:396 (Tags label text-slate-500)",
+        "src/components/admin/MediaLibraryManager.tsx:581 (No tags text-slate-500)",
+        "src/app/admin/media/page.tsx:443 (sr-only h2 Media assets)",
+        "plans/ux-review-fixes/agent-runs/n11-1.md:19-20 (C055 disposition and fix confirmation)"
+      ]
+    },
+    {
+      "id": "C060",
+      "band": "P2",
+      "page": "/",
+      "title": "The successful application submission is announced only as a single line of green text beside the submit button, with an empty <alert> region present in the DOM",
+      "status": "FIXED",
+      "note": "The fix addresses both required elements: (1) aria-live='polite' region in ActionMessage component announces success text, and (2) apply submissions redirect to /thank-you-for-applying page via resolveLeadSuccessTransition hook. Both implementations are present and functional in the current working tree.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:475-491 (ActionMessage with aria-live='polite')",
+        "src/components/forms/PublicLeadForm.tsx:134-148 (useEffect routing to thank-you via redirectHref)",
+        "src/app/lead-action-state.ts:35-37 (resolveLeadSuccessTransition redirects apply to /thank-you-for-applying)",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:104-109 (verification of both aria-live and redirect)"
+      ]
+    },
+    {
+      "id": "C061",
+      "band": "P2",
+      "page": "/apply",
+      "title": "After a successful application the only confirmation is a small line of green text beside the button: \"Thanks. We received your details and will follow up short",
+      "status": "FIXED",
+      "note": "The issue reported a small, ambiguous success message. The fix implements Decision D2: redirect to /thank-you-for-applying on successful apply submission, displaying a large, clear confirmation page with eyebrow, title, body text, and actionable bullet points. This addresses the visibility and clarity issues raised and exceeds the suggested fix's scope by providing process guidance alongside confirmation.",
+      "evidence": [
+        "src/app/lead-action-state.ts:35-36 — resolveLeadSuccessTransition returns redirect to /thank-you-for-applying on apply success",
+        "src/components/forms/PublicLeadForm.tsx:134-148 — form uses the redirect logic to navigate after success",
+        "src/app/thank-you-for-applying/page.tsx:14-23 — thank-you page renders large eyebrow (Application received), title (Thanks for applying), body (team reviews details), and 3 bullet-point action items",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:77,104-107 — P2 disposition table marks C061 as handled-this-round; spot-check confirms redirect verified"
+      ]
+    },
+    {
+      "id": "C062",
+      "band": "P2",
+      "page": "/news",
+      "title": "The nav item, the URL and the page heading use three different words for the same section: nav says \"NEWS\", the route is /news, but the page heading is \"BLOG\" w",
+      "status": "FIXED",
+      "note": "The issue reported inconsistent naming across nav/URL/heading: nav said \"NEWS\", route was /news, but page heading was \"BLOG\". The codebase now uses \"News\" consistently in the page heading, breadcrumb, and nav label. All three touchpoints match. Tests explicitly verify the heading is \"News\" and not \"Blog\", and all tests pass.",
+      "evidence": [
+        "src/components/sections/NewsHero.tsx:9 (heading now reads `<h1>News</h1>`)",
+        "src/components/sections/NewsArticle.tsx:41 (breadcrumb links to /news with label `News`)",
+        "src/lib/content/nav.ts:13 (nav label set to `News`)",
+        "src/components/sections/NewsHero.test.tsx:9 (test confirms heading is `News`, not `Blog`)"
+      ]
+    },
+    {
+      "id": "C077",
+      "band": "P2",
+      "page": "/",
+      "title": "No price, price range, or explanation of how pricing works appears anywhere on the public site; the program asks for an application with the cost entirely hidde",
+      "status": "DEFERRED",
+      "note": "C077 (no pricing transparency on public site) is explicitly deferred to the Kody contact/pricing track (K1-K6) as documented in n13-1.md. No code changes were made this round; the issue remains unfixed but is strategically dispositioned rather than abandoned.",
+      "evidence": [
+        "plans/ux-review-fixes/agent-runs/n13-1.md:43",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:153"
+      ]
+    },
+    {
+      "id": "C078",
+      "band": "P2",
+      "page": "/",
+      "title": "The hero and supporting copy lean on 'financial freedom' and 'passive income' with 'minimal time investment' — the exact framing of get-rich-quick funnels that ",
+      "status": "DEFERRED",
+      "note": "C078 (\"financial freedom/passive income\" framing in hero copy) is explicitly deferred to the Kody contact/pricing track (K1-K6) per the N13 P2 triage disposition table. The current code retains both the phrase \"Turn Vending Into Your Path to Financial Freedom\" (line 23) and \"minimal time investment\" (line 26) in src/lib/content/home.ts, confirming no code changes were made to address this issue.",
+      "evidence": [
+        "plans/ux-review-fixes/agent-runs/n13-1.md:45 (explicitly deferred-Kody)",
+        "src/lib/content/home.ts:23 (still contains 'to Financial Freedom')",
+        "src/lib/content/home.ts:26 (still contains 'minimal time investment')"
+      ]
+    },
+    {
+      "id": "C080",
+      "band": "P2",
+      "page": "/",
+      "title": "A specific income figure ('making $10,000 a month in vending machines') is quoted approvingly inside a homepage testimonial with no earnings disclaimer anywhere",
+      "status": "DEFERRED",
+      "note": "C080 is explicitly deferred to the Kody contact/pricing track (K1-K6) per the N13 P2 triage disposition table. The testimonial at case-studies.ts:76 still contains the $10,000/month income claim with no adjacent disclaimer, but this is documented as out-of-scope for the current ux-review-fixes round.",
+      "evidence": [
+        "plans/ux-review-fixes/agent-runs/n13-1.md:46",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:153",
+        "src/lib/content/case-studies.ts:76"
+      ]
+    },
+    {
+      "id": "C082",
+      "band": "P2",
+      "page": "/about",
+      "title": "The founder is presented by first name only ('Mike') with no surname, credentials, company registration, or verifiable identity.",
+      "status": "DEFERRED",
+      "note": "C082 (founder \"Mike\" no surname/credentials) was explicitly deferred to the K1-K6 contact/pricing track (human-identity/trust domain) per N13 triage. Current code shows founder still presented by first name only with no biographical links or credentials. This is a documented deferral, not a regression or oversight.",
+      "evidence": [
+        "plans/ux-review-fixes/agent-runs/n13-1.md:47",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:153",
+        "src/lib/content/about.ts:4",
+        "src/components/sections/AboutHero.tsx:13"
+      ]
+    },
+    {
+      "id": "C089",
+      "band": "P2",
+      "page": "/news/top-5-questions-vending-entrepreneurship-program",
+      "title": "The article H1 overflows the right edge of a 375px phone — the long uppercase word 'ENTREPRENEURSHIP' is not breaking/wrapping, so it runs off-screen and the pa",
+      "status": "FIXED",
+      "note": "The article H1 on news pages now includes the Tailwind `break-words` utility (overflow-wrap: break-word), which allows long words like ENTREPRENEURSHIP to break within the 375px viewport. Fix was validated in N9 agent run with mobile screenshots confirming clean wrapping at 375px. Functionally equivalent to the proposed overflow-wrap:anywhere suggestion.",
+      "evidence": [
+        "src/components/sections/NewsArticle.tsx:49 (break-words class on H1)",
+        "plans/ux-review-fixes/agent-runs/n9-1.md:17 (N9 fix record with reproduction and mobile verification)",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:63 (N13 disposition: handled-this-round)",
+        "plans/ux-review-fixes/progress.md:56 (W3 summary: article H1 break-words added)"
+      ]
+    },
+    {
+      "id": "C090",
+      "band": "P2",
+      "page": "/",
+      "title": "The homepage scrolls horizontally on a 375px phone. Above the fold renders fine (hamburger nav, stacked hero), so the overflow comes from content further down t",
+      "status": "FIXED",
+      "note": "Issue fixed via component-level min-w-0 constraints on Benefits and CaseStudyQuotes grid items, plus break-words on NewsArticle H1. Addresses root cause (CSS Grid blowout with default min-width:auto) more precisely than global overflow-x-hidden wrapper. All gates passed: tests, TypeScript, linting, and browser-verified 375px measurements.",
+      "evidence": [
+        "commit 93c2c7d — fix(ux): wave 3 — mobile overflow, image fallback, admin a11y sweep",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/sections/Benefits.tsx:19 — added min-w-0 to flex container",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/sections/CaseStudyQuotes.tsx:12 — added min-w-0 to list item",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/agent-runs/n9-1.md — verification report confirms all 3 pages fixed (375px scrollWidth ≤ clientWidth)"
+      ]
+    },
+    {
+      "id": "C091",
+      "band": "P2",
+      "page": "/case-studies",
+      "title": "The /case-studies page scrolls horizontally on a 375px phone. The header area fits; overflow is below the fold.",
+      "status": "FIXED",
+      "note": "The /case-studies page horizontal scroll at 375px was caused by CSS Grid items with default min-width:auto exceeding their container. The fix (min-w-0 Tailwind class on the <li>) is committed and verified in the current working tree. The N9 agent documented reproducing the overflow before the fix and confirmed elimination via mobile screenshot.",
+      "evidence": [
+        "src/components/sections/CaseStudyQuotes.tsx:12 — `min-w-0` class added to `<li>` to prevent CSS Grid blowout",
+        "plans/ux-review-fixes/agent-runs/n9-1.md:16 — documented root cause (quote-card items with default min-width:auto exceeded 375px track) and fix",
+        "plans/ux-review-fixes/progress.md:56 — W3 integration report confirms 'case-studies overflow REPRODUCED & fixed'"
+      ]
+    },
+    {
+      "id": "C098",
+      "band": "P2",
+      "page": "global",
+      "title": "The public marketing site and the admin studio are two unrelated design systems. The public site uses heavy black display type, hard black borders, offset drop ",
+      "status": "DEFERRED",
+      "note": "C098 is explicitly dispositioned as deferred-new-node due to its scope as a large cross-app design system refactor requiring token definition and coordinated application across both public and admin sides. No code changes implement unification; the two design systems remain completely separate (admin: rounded cards, slate/blue SaaS; public: neo-brutalist borders, orange, black type).",
+      "evidence": [
+        "plans/ux-review-fixes/agent-runs/n13-1.md:83",
+        "plans/ux-review-fixes/verification.md:70",
+        "plans/ux-review-fixes/progress.md:54"
+      ]
+    },
+    {
+      "id": "C099",
+      "band": "P2",
+      "page": "global",
+      "title": "Nearly every public page reports a Cumulative Layout Shift of 0.263 (home, about, news, all three articles, privacy-free pages excepted). A CLS of 0.263 is well",
+      "status": "PARTIAL",
+      "note": "Hero image space is partially addressed via aspect-ratio (good), but font-display:optional was not implemented as suggested. Verification confirms CLS remained 0.263 on production cold starts. Work was marked \"handled\" but incomplete.",
+      "evidence": [
+        "src/components/sections/Hero.tsx:29 (aspect-square/lg:aspect-[5/4] reserves image space)",
+        "src/app/layout.tsx:10-13 (Inter font config lacks font-display property)",
+        "plans/ux-review-fixes/agent-runs/n10-1.md:3, 68 (N10 explicitly reports no width/height fix applied; CLS out-of-scope)",
+        "plans/ux-review-fixes/verification.md:37 (final prod CLS still 0.263 on cold starts)"
+      ]
+    },
+    {
+      "id": "C100",
+      "band": "P2",
+      "page": "/this-page-does-not-exist",
+      "title": "The 404 page is the only public page that abandons the brand. 'Page not found' is set in a rounded system sans-serif at a modest size with a thin outline 'Back ",
+      "status": "NOT_FIXED",
+      "note": "C100 requires the 404 heading to use the brand display face (font-black) and uppercase styling, and the button to use the standard orange brand button (bg-[#f47b3b], border-2, font-black). The current code still shows font-semibold heading and a white rounded pill button. N12's accessibility wave addressed contrast but explicitly excluded brand/visual design changes; C100 fell through the gap.",
+      "evidence": [
+        "src/app/not-found.tsx:9 (font-semibold instead of font-black; text-slate-900 instead of text-[#111111])",
+        "src/app/not-found.tsx:15-20 (rounded-full white button instead of brand button with bg-[#f47b3b], border-2 border-[#111111])",
+        "plans/ux-review-fixes/agent-runs/n12-1.md:1-7 (N12 scope: video focus, skip link, contrast only — no brand design work)",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:38 (C100 routed to N12-owned but N12 did not address brand design)"
+      ]
+    },
+    {
+      "id": "C105",
+      "band": "P2",
+      "page": "/admin/news/new",
+      "title": "On the New blog post page, 'Save draft' and 'Publish' are rendered as two visually identical full-width blue buttons stacked directly on top of each other. Publ",
+      "status": "FIXED",
+      "note": "C105 is fully fixed. Save draft button now renders as white outline secondary button; Publish renders as solid blue primary button, creating clear visual distinction where the consequential action (Publish) is visually prominent. Test confirms the fix and passes.",
+      "evidence": [
+        "src/components/admin/NewsEditorForm.tsx:231,239 — Save draft uses adminSecondaryButtonClass (white outline); Publish uses adminPrimaryButtonClass (solid blue)",
+        "src/components/admin/AdminUi.tsx:38-42 — adminPrimaryButtonClass is bg-[#0b63f6] solid; adminSecondaryButtonClass is bg-white with border",
+        "src/components/admin/NewsEditorForm.test.tsx:25-36 — test explicitly verifies Publish as primary and Save draft as secondary outline; passes",
+        "plans/ux-review-fixes/agent-runs/n11-1.md line 3 — N11 documents C105 as FIXED"
+      ]
+    },
+    {
+      "id": "C113",
+      "band": "P2",
+      "page": "/",
+      "title": "The header's only call-to-action button is labelled \"STEP INSIDE\" and links to /apply, but nothing says it leads to the application. The clear \"APPLY NOW\" wordi",
+      "status": "DEFERRED",
+      "note": "C113 (header CTA button wording \"STEP INSIDE\" → \"APPLY NOW\") is explicitly deferred to Kody (marketing manager) as decision K3 in decisions.md. The N13 triage confirmed this as a deferred-Kody item with no code change required. Current code still shows \"Step inside\" text on lines 45 and 107 of Header.tsx, matching the interim unchanged state documented in decisions.md.",
+      "evidence": [
+        "plans/ux-review-fixes/decisions.md:41-42 (K3 deferral)",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:42",
+        "src/components/site/Header.tsx:45,107 (current text unchanged)"
+      ]
+    },
+    {
+      "id": "C114",
+      "band": "P2",
+      "page": "/contact",
+      "title": "The contact page offers only a form — no phone number, no email address, no business hours. A pragmatist who wants to call cannot.",
+      "status": "DEFERRED",
+      "note": "C114 requests visible phone number, email, and business hours on the contact page. It was explicitly deferred to Kody's K1 decision (whether human contact details should exist). The interim decision was to keep the form-only design unchanged. Current code confirms no changes made.",
+      "evidence": [
+        "plans/ux-review-fixes/agent-runs/n13-1.md:48 (disposition table lists C114 as deferred-Kody)",
+        "plans/ux-review-fixes/decisions.md:39 (K1 decision: interim state is Form-only unchanged)",
+        "src/app/contact/page.tsx (current code: form-only, no phone/email/hours visible)"
+      ]
+    },
+    {
+      "id": "C115",
+      "band": "P2",
+      "page": "/",
+      "title": "Nowhere on the public site is there any price, cost range, or fee for the Vending Accelerator Program. The only path to find out what it costs is to apply and g",
+      "status": "DEFERRED",
+      "note": "C115 is explicitly deferred to the Kody-owned K1-K6 contact/pricing track in the official P2 disposition table. No pricing, cost range, or fee information was added to the public site in the current codebase (verified via home.ts, AcceleratorProgram component, and comprehensive grep searches). The deferral is documented at the conclusion of N13 triage.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/agent-runs/n13-1.md:44",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/agent-runs/n13-1.md:153"
+      ]
+    },
+    {
+      "id": "C123",
+      "band": "P2",
+      "page": "/apply",
+      "title": "A dedicated /thank-you-for-applying confirmation page exists but the apply form never routes to it",
+      "status": "FIXED",
+      "note": "Apply form now correctly redirects to /thank-you-for-applying on successful submission. The logic is implemented via resolveLeadSuccessTransition helper which explicitly returns a redirect for apply intent, wired into PublicLeadForm with a useEffect that triggers router.push. Tests pass and the destination page exists with proper content.",
+      "evidence": [
+        "src/app/lead-action-state.ts:35-36 (resolveLeadSuccessTransition returns redirect)",
+        "src/components/forms/PublicLeadForm.tsx:144-148 (useEffect triggers router.push)",
+        "src/components/sections/ApplyPageContent.tsx:47 (intent='apply' passed)",
+        "src/app/thank-you-for-applying/page.tsx (destination page exists)"
+      ]
+    },
+    {
+      "id": "C124",
+      "band": "P2",
+      "page": "/apply",
+      "title": "No progress saving on the apply form — an interruption that reloads the tab loses all entered data",
+      "status": "DEFERRED",
+      "note": "C124 (apply form draft persistence via localStorage) was explicitly dispositioned as deferred-new-node in the P2 triage (n13-1.md:84). The current PublicLeadForm.tsx implements only in-memory state preservation during validation errors, with no localStorage implementation. This is a net-new feature requiring its own node.",
+      "evidence": [
+        "plans/ux-review-fixes/agent-runs/n13-1.md:84",
+        "plans/ux-review-fixes/verification.md:70",
+        "src/components/forms/PublicLeadForm.tsx:110-132"
+      ]
+    },
+    {
+      "id": "C130",
+      "band": "P2",
+      "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+      "title": "Legacy /blog/* article paths 404 with a bare, unstyled 'Not found' page that has no header, no footer, and no recovery link — a completely different 404 handler",
+      "status": "FIXED",
+      "note": "The fix implements the proposed solution: legacy /blog/{slug} paths now permanently redirect (308) to /news/{slug} via middleware and app-layer handlers. Unknown blog slugs still 404. All tests pass (proxy 7/7, blog page 3/3). Verified via curl and production build testing.",
+      "evidence": [
+        "src/proxy.ts:120-127 (legacy /blog redirect logic returns 308 to /news)",
+        "src/app/blog/[slug]/page.tsx:21-25 (fallback permanentRedirect implementation)",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:93-95 (verification: curl returns 308)",
+        "plans/ux-review-fixes/verification.md:20 (D11 requirement PASS)"
+      ]
+    },
+    {
+      "id": "C135",
+      "band": "P2",
+      "page": "/thank-you-for-applying",
+      "title": "A clear, well-designed application confirmation page exists but the apply form never routes to it; the real flow instead shows buried inline text.",
+      "status": "FIXED",
+      "note": "The apply form now routes successful submissions to /thank-you-for-applying via client-side router.push(). The thank-you page is properly implemented with confirmation messaging. Browser-gate testing in N2 verified the redirect works on actual submissions. Contact form behavior remains unchanged (inline panel).",
+      "evidence": [
+        "src/app/lead-action-state.ts:35-36 — resolveLeadSuccessTransition() returns redirect to /thank-you-for-applying for apply intent",
+        "src/components/forms/PublicLeadForm.tsx:144-148 — useEffect with router.push() executes the redirect on success",
+        "src/app/thank-you-for-applying/page.tsx:1-25 — dedicated thank-you page exists with proper messaging",
+        "plans/ux-review-fixes/agent-runs/n2-1.md — browser-gate testing confirms apply form redirects to /thank-you-for-applying"
+      ]
+    },
+    {
+      "id": "C141",
+      "band": "P2",
+      "page": "/admin/news",
+      "title": "The news list rows offer no delete/archive affordance; archiving requires opening each post's editor.",
+      "status": "NOT_FIXED",
+      "note": "The news list PostRow component still only has an Edit link (line 369-375). No dropdown menu exists, unlike the pages list which has PageActionsMenu. Row-level Archive/Delete affordances are not implemented; archiving still requires opening the editor.",
+      "evidence": [
+        "src/app/admin/news/page.tsx:368-376",
+        "src/app/admin/news/page.tsx:343-379",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:58"
+      ]
+    },
+    {
+      "id": "C151",
+      "band": "P2",
+      "page": "/contact",
+      "title": "The contact form has no visibly designed success or error region, carrying the same vanishing-confirmation risk seen on /apply.",
+      "status": "FIXED",
+      "note": "Contact form now displays a prominently styled success panel with email confirmation when submission succeeds (replaces form in-place). Error state renders inline per-field error messages with aria-live region (assertive for errors, polite for success). Applied test confirms panel transition on contact intent success. Fixes the vanishing-confirmation risk identified in the finding.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:156-170 (ContactSuccessPanel)",
+        "src/app/contact/page.tsx:46 (intent='contact')",
+        "src/app/lead-action-state.ts:29-39 (resolveLeadSuccessTransition)",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:78,104-107 (N13 disposition and spot-check)"
+      ]
+    },
+    {
+      "id": "C153",
+      "band": "P2",
+      "page": "/this-page-does-not-exist",
+      "title": "The 404 page offers only a 'Back to home' link — no search, no contact/help link, and no suggestion of where content moved.",
+      "status": "PARTIAL",
+      "note": "The fix added links to News, Apply, and About, but is missing the explicit Contact link and search box requested in the UX review. The implementation provides 2 of 3 requested link types and completely omits search functionality.",
+      "evidence": [
+        "src/app/not-found.tsx:21-35 (news, about, apply links present; contact and search box missing)",
+        "commit 8de67ea — fix(ux): 404 page recovery links (C153)",
+        "plans/ux-review-fixes/verification.md:66 (acknowledges news/about/apply links)",
+        "reports/ux-review-status-2026-06-11/slim-full-p0p1p2.json (requested: search box and links to News, Apply, Contact)"
+      ]
+    },
+    {
+      "id": "C008",
+      "band": "P2",
+      "page": "/, /case-studies",
+      "title": "The homepage produces a horizontal scrollbar at mobile width.",
+      "status": "FIXED",
+      "note": "C008 (horizontal scroll at 375px on / and /case-studies) has been fixed via CSS Grid constraint and word-wrapping utilities. Benefits.tsx prevents grid item blowout with min-w-0 and break-words; CaseStudyQuotes.tsx similarly constrains list items. N9 agent run confirms all 3 reproduced overflows fixed with minimal Tailwind utility additions, full repo gates green, browser verification at 375px shows no scrollbars.",
+      "evidence": [
+        "src/components/sections/Benefits.tsx:19-20 (min-w-0 + break-words on flex container and h2)",
+        "src/components/sections/CaseStudyQuotes.tsx:12 (min-w-0 on li)",
+        "plans/ux-review-fixes/agent-runs/n9-1.md (complete reproduction-first investigation and fix confirmation)"
+      ]
+    },
+    {
+      "id": "C020",
+      "band": "P2",
+      "page": "/",
+      "title": "Homepage layout shift on load is high (CLS 0.263) — content jumps as the page settles.",
+      "status": "PARTIAL",
+      "note": "AnimatedStatValue now seeds state with real value (500+, $3M+, 3,000+) instead of zeroed variant, preventing text-value jumps. All image containers (hero aspect-square, brand-strip explicit dims, accelerator aspect-[16/10]) already existed on main branch—no new space reservation was added. Production CLS improved to 0.000 on warmed runs but remains 0.263 on first cold hit (attributed to footer streaming artifact, not hero/logo/stat dimensions).",
+      "evidence": [
+        "src/components/sections/AnimatedStatValue.tsx:48-57",
+        "src/components/sections/Hero.tsx:29",
+        "src/components/sections/AcceleratorProgram.tsx:69",
+        "plans/ux-review-fixes/verification.md:37"
+      ]
+    },
+    {
+      "id": "C009",
+      "band": "P2",
+      "page": "/news",
+      "title": "A news card image fails with a 500 error from a leftover Webflow CDN URL (rendering raw alt text), and the page heading 'BLOG' contradicts the 'NEWS' navigation",
+      "status": "FIXED",
+      "note": "Both parts of the issue are fixed: (1) The News page heading and navigation label are now consistently \"News\" (not \"BLOG\"), verified in NewsHero.tsx:9 and nav.ts:13. (2) News card images use ImageWithFallback component (NewsList.tsx:45) which renders a branded blue placeholder instead of raw alt text on 500 errors (ImageWithFallback.tsx:31-32). All related unit tests pass.",
+      "evidence": [
+        "src/components/sections/NewsHero.tsx:9 — heading renders 'News' (not 'BLOG')",
+        "src/lib/content/nav.ts:13 — primary navigation label is 'News'",
+        "src/components/ui/ImageWithFallback.tsx:31-32 — swaps in branded placeholder on image error",
+        "src/components/sections/NewsList.tsx:45 — uses ImageWithFallback component with fallback onError handler"
+      ]
+    }
+  ],
+  "fullP3": [
+    {
+      "id": "C138",
+      "band": "P3",
+      "page": "/admin/pages",
+      "title": "The pages list row '⋮' menu (a native details/summary in admin/pages/page.tsx PageActionsMenu) DOES expose Edit, View live, Duplicate, Publish/Move-to-draft, an",
+      "status": "FIXED",
+      "note": "The pages list row menu ('⋮' details/summary) now exposes Edit, View live (if published), Duplicate, Publish/Move-to-draft, and Archive actions with proper confirmation dialogs. The menu renders all intended functionality.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:908-998 (PageActionsMenu component)",
+        "Lines 936-941: Edit page link",
+        "Lines 953-959: Duplicate page form",
+        "Lines 985-992: Archive page form"
+      ]
+    },
+    {
+      "id": "C010",
+      "band": "P3",
+      "page": "/admin/pages",
+      "title": "Page status and SEO-readiness indicators are 10x10px buttons and row actions hide behind small three-dot summaries.",
+      "status": "PARTIAL",
+      "note": "The status/readiness badges still render a 10px dot, but now include an adjacent text label ('Readiness: x', 'Status: y'), which improves accessibility and discoverability. The original suggestion for 44x44px is not met, but the text label adds significant context.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:1069-1094 (StatusBadge component)",
+        "Line 1088: Status dot still size-2.5 (10px)",
+        "Line 1091: Text label now paired with dot"
+      ]
+    },
+    {
+      "id": "C013",
+      "band": "P3",
+      "page": "/, /pre-call-resources",
+      "title": "The header nav item \"RESOURCES\" links to /pre-call-resources, a page headed \"PRE-CALL RESOURCES / PREPARE FOR YOUR VENDING STRATEGY CALL.\" — a checklist meant f",
+      "status": "NOT_FIXED",
+      "note": "The nav item 'Resources' still points to /pre-call-resources (a pre-call-prep checklist), not a general resource/guide library. The label and destination remain unchanged from the original review.",
+      "evidence": [
+        "src/lib/content/nav.ts:11 (primaryNav array)",
+        "Line 11: { label: 'Resources', href: '/pre-call-resources' }"
+      ]
+    },
+    {
+      "id": "C027",
+      "band": "P3",
+      "page": "/contact",
+      "title": "The same 'State' field is required on /apply ('State*' with '(required)') but optional on /contact (plain 'State', no asterisk). The two forms otherwise share a",
+      "status": "PARTIAL",
+      "note": "The State field is correctly required-only on /apply via the conditional required={isApply}. However, on /contact it displays as plain 'State' with no visual indicator that it's optional, leaving a gap in the suggested fix (should add '(optional)' text).",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:214-222 (State field definition)",
+        "Line 218: required={isApply} makes State required on /apply, optional on /contact",
+        "Lines 396-404 in SelectField: only shows asterisk if required, no '(optional)' label"
+      ]
+    },
+    {
+      "id": "C045",
+      "band": "P3",
+      "page": "/news",
+      "title": "On first paint the article cards render as blank outlines until scrolled into view, and a cover image fails with a 500 error (broken-image alt text is shown). A",
+      "status": "FIXED",
+      "note": "News card images now use ImageWithFallback, which renders a branded blue placeholder with image icon when the image fails, instead of exposing a broken-image glyph or raw alt text. Cards render immediately with content (no scroll-reveal blanking).",
+      "evidence": [
+        "src/components/sections/NewsList.tsx:45-51 (uses ImageWithFallback)",
+        "src/components/ui/ImageWithFallback.tsx:55-83 (branded fallback component)",
+        "Lines 56-83: Renders branded blue placeholder with image icon on failure, not raw alt text"
+      ]
+    },
+    {
+      "id": "C015",
+      "band": "P3",
+      "page": "/admin/forgot-password",
+      "title": "Submitting the forgot-password form with empty or invalid input shows no visible validation feedback.",
+      "status": "FIXED",
+      "note": "Forgot-password form now displays visible confirmation ('Check your email...') on successful submit and inline error feedback with aria-live announcements on validation failure, addressing the original issue of no visible feedback.",
+      "evidence": [
+        "src/app/admin/forgot-password/ForgotPasswordForm.tsx:30-49 (success state)",
+        "src/app/admin/forgot-password/ForgotPasswordForm.tsx:80-90 (error/validation feedback)",
+        "Lines 30-49: Shows 'Check your email' panel on success",
+        "Lines 80-90: Shows error message with role='alert' on validation failure"
+      ]
+    },
+    {
+      "id": "C016",
+      "band": "P3",
+      "page": "/contact",
+      "title": "The contact form's success/failure feedback could not be observed (submit was skipped for safety), and the apply form's known-weak inline-only confirmation sugg",
+      "status": "FIXED",
+      "note": "Contact form now shows a prominent in-place success panel ('Thanks. We have your message.') when submitted successfully, replacing the tiny inline text. The panel includes the submitted email for reassurance.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:302-321 (ContactSuccessPanel component)",
+        "Lines 309-319: Renders 'Message sent' badge and 'Thanks. We have your message.' confirmation panel",
+        "Lines 155-156: Conditional render of panel on success state"
+      ]
+    },
+    {
+      "id": "C017",
+      "band": "P3",
+      "page": "/admin/pages",
+      "title": "There is no discoverable archive/delete path for a page from the editor or the list row menu, so an admin cannot retire a page they created.",
+      "status": "PARTIAL",
+      "note": "Archive action IS now discoverable from the pages list row '⋮' menu with a confirmation dialog, addressing the main gap. However, the page editor itself still does not expose an archive control, leaving the secondary suggestion (editor archive button) unmet.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:985-992 (Archive in row menu)",
+        "No archive control found in page editor files (SeoPageEditorForm, SeoPublishPanel, [id]/page.tsx)"
+      ]
+    },
+    {
+      "id": "C025",
+      "band": "P3",
+      "page": "/apply",
+      "title": "No autofocus on the first form field; the page loads with no field focused.",
+      "status": "NOT_FIXED",
+      "note": "The Name input on /apply and the first field on /contact do not have autofocus or autoFocus attribute, meaning the page loads with no field focused.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:174-182 (Name field definition)",
+        "No autoFocus attribute found on the first field or any field in the form"
+      ]
+    },
+    {
+      "id": "C026",
+      "band": "P3",
+      "page": "/apply",
+      "title": "Phone field is a plain text input rather than type=tel, so it offers no numeric keypad and no input affordance.",
+      "status": "FIXED",
+      "note": "Phone field now uses type='tel' instead of text, which provides proper input affordance and numeric keypad on mobile devices.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:195-203 (Phone field definition)",
+        "Line 199: type='tel' attribute present"
+      ]
+    },
+    {
+      "id": "C031",
+      "band": "P3",
+      "page": "/admin/pages/new",
+      "title": "Creating an SEO page is a 3-step wizard (Page type -> Starting point -> Ready to build) before the editor opens.",
+      "status": "FIXED",
+      "note": "The 3-step wizard (Page type -> Starting point -> Ready to build) has been collapsed into a single-step creation panel. The comment at lines 26-34 explicitly notes the old 3-step wizard was replaced with one screen where users pick a page type and start building, with optional saved-template chooser shown inline.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/SeoPageEditorShell.tsx:26-34"
+      ]
+    },
+    {
+      "id": "C033",
+      "band": "P3",
+      "page": "/admin/news",
+      "title": "News list rows have no delete/archive affordance; retiring a post requires opening each post's editor to find the Archive control.",
+      "status": "NOT_FIXED",
+      "note": "News list rows only expose an 'Edit' action via a link (line 369-375). No delete/archive affordance is available on the row itself; retiring a post still requires opening the editor.",
+      "evidence": [
+        "src/app/admin/news/page.tsx:343-379 (PostRow function)"
+      ]
+    },
+    {
+      "id": "C040",
+      "band": "P3",
+      "page": "/",
+      "title": "Two differently-labelled CTAs ('STEP INSIDE' in the nav and 'APPLY NOW' in the hero) both link to /apply, which is ambiguous about whether they lead to the same",
+      "status": "NOT_FIXED",
+      "note": "The header nav button is labeled 'Step inside' (lines 45, 107 of Header.tsx) while the hero CTA is labeled 'Apply Now' (line 32 of home.ts). The two CTAs to /apply remain inconsistently labeled.",
+      "evidence": [
+        "src/components/site/Header.tsx:45,107",
+        "src/lib/content/home.ts:32"
+      ]
+    },
+    {
+      "id": "C051",
+      "band": "P3",
+      "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "title": "Article social-share controls are icon-only links exposed to the accessible tree as single characters 'X', 'in', 'f', 'link' with no descriptive label.",
+      "status": "FIXED",
+      "note": "Article social-share controls now have proper aria-label attributes on all links: 'Share on X', 'Share on LinkedIn', 'Share on Facebook', and 'Open article link', replacing the single-character accessible names.",
+      "evidence": [
+        "src/components/sections/NewsArticle.tsx:122-140 (ShareRail function)"
+      ]
+    },
+    {
+      "id": "C052",
+      "band": "P3",
+      "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "title": "Complementary/aside landmark is not at the top level (nested inside another landmark) on all three news articles.",
+      "status": "NOT_FIXED",
+      "note": "The complementary landmarks (ShareRail aside on line 144 and ArticleSidebar aside on line 182) are both nested inside the <article> landmark (lines 22-81), not at the top level as required.",
+      "evidence": [
+        "src/components/sections/NewsArticle.tsx:22,24,79,81"
+      ]
+    },
+    {
+      "id": "C053",
+      "band": "P3",
+      "page": "/case-studies",
+      "title": "Heading order is broken — an <h3> appears in a card header without a preceding <h2> in the section hierarchy.",
+      "status": "NOT_FIXED",
+      "note": "CaseStudiesHero has an h1 heading; CaseStudyQuotes immediately has h3 headings for card titles with no intervening h2 section heading, violating heading hierarchy.",
+      "evidence": [
+        "src/components/sections/CaseStudiesHero.tsx:10",
+        "src/components/sections/CaseStudyQuotes.tsx:35"
+      ]
+    },
+    {
+      "id": "C056",
+      "band": "P3",
+      "page": "/admin/pages/new",
+      "title": "Duplicate (non-unique) landmark on the SEO page creation wizard (.p-0) — two landmarks of the same type without distinguishing labels.",
+      "status": "FIXED",
+      "note": "The NewPageChoiceGate now renders a single <section aria-labelledby='new-page-choice-title'> landmark. No duplicate same-type landmarks are present.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/SeoPageEditorShell.tsx:76-78"
+      ]
+    },
+    {
+      "id": "C057",
+      "band": "P3",
+      "page": "/admin/news/new",
+      "title": "Complementary/aside landmark not at top level on the new-post editor (.space-y-5).",
+      "status": "NOT_FIXED",
+      "note": "The aside.space-y-5 at line 214 of NewsEditorForm is nested inside the <section> landmark at line 509 of AdminShell.tsx, not at the top level of the document.",
+      "evidence": [
+        "src/components/admin/NewsEditorForm.tsx:214",
+        "src/components/admin/AdminShell.tsx:509"
+      ]
+    },
+    {
+      "id": "C058",
+      "band": "P3",
+      "page": "/",
+      "title": "Credibility statistics render as literal zeros — '0+' Entrepreneurs launched, '$0M+' sales, '0+' Vending locations — read verbatim by a screen reader as 'zero p",
+      "status": "FIXED",
+      "note": "Hero stats now render real values ('500+', '$3M+', '3,000+') in SSR HTML. The component initializes displayValue to the real value (line 50), with comment at lines 48-49 confirming the real value is rendered first as progressive enhancement.",
+      "evidence": [
+        "src/components/sections/AnimatedStatValue.tsx:48-50",
+        "src/lib/content/home.ts:126-128"
+      ]
+    },
+    {
+      "id": "C063",
+      "band": "P3",
+      "page": "/news",
+      "title": "Intro copy uses an idiom and a non-literal verb: \"...the back-office work that makes a vending route compound. New posts drop here as we publish them.\" \"compoun",
+      "status": "NOT_FIXED",
+      "note": "News page intro text still contains the idioms 'compound' (used as a verb) and 'posts drop here' (non-literal phrase). Lines read: '...the back-office work that makes a vending route compound. New posts drop here as we publish them.'",
+      "evidence": [
+        "src/components/sections/NewsHero.tsx:12-14"
+      ]
+    },
+    {
+      "id": "C064",
+      "band": "P3",
+      "page": "/about",
+      "title": "The about page uses the idiom \"the Rat Race\" as a section heading: \"How I Escaped The Rat Race\". This is a culturally specific idiom with no literal meaning.",
+      "status": "DEFERRED",
+      "note": "P3 item explicitly deferred — not scheduled for the ux-review-fixes round. The about page still contains the culturally-specific idiom 'How I Escaped The Rat Race' unchanged. Backlog fixture confirms this entire 93-item P3 set is out-of-scope.",
+      "evidence": [
+        "P3-BACKLOG.md:1-3 (all P3s explicitly out of scope for ux-review-fixes)",
+        "src/lib/content/about.ts:15 (phrase still present: 'The Rat Race')"
+      ]
+    },
+    {
+      "id": "C065",
+      "band": "P3",
+      "page": "/case-studies",
+      "title": "Testimonials are dense with idioms and slang that a second-language reader must decode: \"game changer\", \"hard charging\", \"learning the biz\", \"In just a blink of",
+      "status": "DEFERRED",
+      "note": "P3 item explicitly deferred. Case-studies testimonials remain dense with colloquialisms and idioms; no plain-language summaries added. Confirmed deferred per P3-BACKLOG.md.",
+      "evidence": [
+        "P3-BACKLOG.md:1-3 (all P3s out of scope)",
+        "src/lib/content/case-studies.ts:121,139,148 (idioms still present: 'game changer', 'hard charging', 'learning the biz', 'blink of time', 'Namaste')"
+      ]
+    },
+    {
+      "id": "C066",
+      "band": "P3",
+      "page": "/apply",
+      "title": "The State dropdown lists only US states (Alabama...Wyoming) with no country context, and budget options use the abbreviation \"k\" (\"Under $5k\", \"$5k-$10k\", \"$25k",
+      "status": "DEFERRED",
+      "note": "P3 item deferred as out-of-scope. Apply form budget dropdown retains abbreviated currency ('k') and lacks country/currency labeling. State field still US-only with no 'State (US)' label.",
+      "evidence": [
+        "P3-BACKLOG.md:1-3 (all P3s deferred)",
+        "src/components/forms/PublicLeadForm.tsx:248-254 (budget options still 'Under $5k', '$5k-$10k', '$10k-$25k', '$25k+' — no currency code or commas)"
+      ]
+    },
+    {
+      "id": "C067",
+      "band": "P3",
+      "page": "/contact",
+      "title": "Contact intro copy uses the noun phrase \"accelerator fit\" with no explanation: \"Send the team a note about vending locations, machine decisions, partnerships, o",
+      "status": "DEFERRED",
+      "note": "P3 deferred per P3-BACKLOG.md. Contact intro copy still contains undefined jargon 'accelerator fit' with no explanation of what it means.",
+      "evidence": [
+        "P3-BACKLOG.md:1-3 (P3 backlog deferred)",
+        "src/app/contact/page.tsx (jargon 'accelerator fit' still in copy: 'partnerships, or accelerator fit.')"
+      ]
+    },
+    {
+      "id": "C068",
+      "band": "P3",
+      "page": "/admin/pages",
+      "title": "Workflow filter labels are terse jargon with no tooltips: \"Needs review\", \"Updating\", \"Needs links\", \"Metadata issues\", \"Scheduled\", \"Schedule failed\". \"SEO rea",
+      "status": "DEFERRED",
+      "note": "P3 deferred — admin workflow filter labels remain terse jargon ('Needs review', 'Updating', 'Needs links', 'Metadata issues', 'Scheduled', 'Schedule failed') with no tooltips or descriptive text.",
+      "evidence": [
+        "P3-BACKLOG.md:1-3 (93 P3s out of scope)",
+        "src/app/admin/pages/page.tsx (workflow labels 'Needs review', 'Metadata issues' still terse; no tooltips or explanations added)"
+      ]
+    },
+    {
+      "id": "C069",
+      "band": "P3",
+      "page": "/admin/pages",
+      "title": "The page description mixes jargon: \"Manage structured SEO pages with the same CMS shell ready for resource content.\" \"CMS shell\" and \"structured SEO pages\" are ",
+      "status": "DEFERRED",
+      "note": "P3 deferred. Admin pages description still mixes unexplained technical jargon: 'CMS shell' and 'structured SEO pages' — not simplified to plain language.",
+      "evidence": [
+        "P3-BACKLOG.md:1-3 (P3 deferred)",
+        "src/app/admin/pages/page.tsx (description unchanged: 'Manage structured SEO pages with the same CMS shell ready for resource content.')"
+      ]
+    },
+    {
+      "id": "C071",
+      "band": "P3",
+      "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+      "title": "A legacy /blog/... article URL returns a 404. Because the public page heading is \"BLOG\", a non-native user who guesses the URL from the heading word lands on a ",
+      "status": "FIXED",
+      "note": "Despite being a P3 item, the blog-to-news redirect was implemented as part of N8 (a P2 issue fix). Legacy /blog/{slug} URLs now permanently redirect to /news/{slug}.",
+      "evidence": [
+        "src/app/blog/[slug]/page.tsx:24 (permanentRedirect implemented: `permanentRedirect(/news/${slug})`)",
+        "plans/ux-review-fixes/agent-runs/n13-1.md:94-95 (curl verification: 308 redirect confirmed)"
+      ]
+    },
+    {
+      "id": "C079",
+      "band": "P3",
+      "page": "/",
+      "title": "Testimonials carry no dates, several use first-name-plus-initial only, and none link to a verifiable profile — making the social proof unfalsifiable.",
+      "status": "DEFERRED",
+      "note": "P3 deferred per P3-BACKLOG.md. Case-study testimonials on home page still carry no dates, months/years, or linked profiles — social proof remains unverifiable.",
+      "evidence": [
+        "P3-BACKLOG.md:1-3 (P3 deferred)",
+        "src/lib/content/case-studies.ts:10-17 (CaseStudyQuote type has no date field; component unchanged)"
+      ]
+    },
+    {
+      "id": "C081",
+      "band": "P3",
+      "page": "/",
+      "title": "A 'Featured partners' logo wall (PepsiCo, Doritos, Poppi, Prime, Cantaloupe, 365 Retail Markets) implies major-brand endorsement without stating the actual rela",
+      "status": "DEFERRED",
+      "note": "P3 deferred. Featured partner logos (PepsiCo, Doritos, Poppi, Prime, Cantaloupe, 365 Retail Markets) remain unlabeled as to the true nature of the relationship — still implies endorsement without honesty.",
+      "evidence": [
+        "P3-BACKLOG.md:1-3 (93 P3s out of scope)",
+        "src/components/sections/BrandStrip.tsx:7 (aria-label still 'Featured partners' with no explanation of actual relationship)"
+      ]
+    },
+    {
+      "id": "C083",
+      "band": "P3",
+      "page": "/about",
+      "title": "An explicit 'I'm not here to sell a dream' line on the About page reads as protesting too much and raises rather than lowers suspicion.",
+      "status": "DEFERRED",
+      "note": "P3 deferred. About page still contains the defensive phrase 'I'm not here to sell a dream' without replacement by evidence-based alternatives.",
+      "evidence": [
+        "P3-BACKLOG.md:1-3 (P3 deferred)",
+        "src/lib/content/about.ts:7 (phrase unchanged: \"I'm not here to sell a dream, I'm here to show you a system that works.\")"
+      ]
+    },
+    {
+      "id": "C084",
+      "band": "P3",
+      "page": "/about",
+      "title": "Specific personal financial figures are presented as proof of credibility with no substantiation ($1,200/mo job, $70k fixer-upper, $250k condo, 'thousands of do",
+      "status": "NOT_FIXED",
+      "note": "Personal financial figures ($1,200/mo job, $70k fixer-upper, $250k condo, 'thousands of dollars in monthly income') remain unsubstantiated in the about page. Issue is listed as P3 out-of-scope in P3-BACKLOG.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/lib/content/about.ts:18",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/P3-BACKLOG.md:37"
+      ]
+    },
+    {
+      "id": "C085",
+      "band": "P3",
+      "page": "/case-studies",
+      "title": "The four featured 'case studies' are video thumbnails with names only and no written outcome or context; the page never provides concrete, dated metrics (machin",
+      "status": "DEFERRED",
+      "note": "Case-studies page with video thumbnails and no written metrics remains unchanged. Explicitly listed as P3 low-priority item deferred from the ux-review-fixes round.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/P3-BACKLOG.md:38"
+      ]
+    },
+    {
+      "id": "C087",
+      "band": "P3",
+      "page": "/case-studies",
+      "title": "Every testimonial across the home and case-studies pages is a uniform '5 out of 5 stars' with no mixed or critical feedback, which reads as curated rather than ",
+      "status": "DEFERRED",
+      "note": "Uniform 5-out-of-5 star testimonials across home and case-studies pages unchanged. Explicitly listed as P3 item deferred from main fix round.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/P3-BACKLOG.md:39"
+      ]
+    },
+    {
+      "id": "C088",
+      "band": "P3",
+      "page": "/apply",
+      "title": "The apply form collects name, email, phone, location and budget tier but shows no privacy/consent statement or link to the Privacy Policy at the point of submis",
+      "status": "NOT_FIXED",
+      "note": "Apply form has no privacy/consent statement beneath the submit button. Form jumps directly from button to ActionMessage with no Privacy Policy link or consent text.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/forms/PublicLeadForm.tsx:287-297",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/P3-BACKLOG.md:40"
+      ]
+    },
+    {
+      "id": "C092",
+      "band": "P3",
+      "page": "global (header nav)",
+      "title": "Contact is not in the header navigation on any page; the only in-app path is the footer 'CONTACT US' link. On mobile that means opening the hamburger gives no C",
+      "status": "NOT_FIXED",
+      "note": "Contact is absent from header navigation. primaryNav array contains only About, Resources, Case Studies, News. Contact only appears in footer, not in mobile hamburger menu.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/lib/content/nav.ts:9-14",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/P3-BACKLOG.md:35"
+      ]
+    },
+    {
+      "id": "C093",
+      "band": "P3",
+      "page": "global (footer nav)",
+      "title": "Footer link tap targets are far below the 44x44px mobile minimum — e.g. 'HOME' is 43x17px, 'TERMS' 50x17px, 'CONTACT US' 93x17px, 'PRIVACY POLICY' 120x17px. Onl",
+      "status": "NOT_FIXED",
+      "note": "Footer navigation links use text-sm class (~14px) with standard line-height, resulting in tap targets approximately 17px tall, well below the 44px mobile minimum.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/site/Footer.tsx:54",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/P3-BACKLOG.md:36"
+      ]
+    },
+    {
+      "id": "C095",
+      "band": "P3",
+      "page": "/apply, /contact, /admin/forgot-password",
+      "title": "Forms show no inline validation. Empty submit and invalid-data submit produce no visible field errors — values are just preserved with nothing telling me what's",
+      "status": "FIXED",
+      "note": "Form validation is implemented with visible inline error messages. FieldError components render error text conditionally, fields have aria-invalid and aria-describedby attributes linking to error IDs.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/forms/PublicLeadForm.tsx:374-378,410-412,457-459,466-473"
+      ]
+    },
+    {
+      "id": "C097",
+      "band": "P3",
+      "page": "/news (and article images)",
+      "title": "An article image fails to load with a 500 from the Next image optimizer pointing at a legacy Webflow CDN URL; the failure shows as raw alt text rather than a gr",
+      "status": "FIXED",
+      "note": "News images have graceful fallback handling via ImageWithFallback component, which displays a branded blue placeholder with image icon instead of raw alt text on load failure.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/ui/ImageWithFallback.tsx",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/sections/NewsList.tsx:45-51"
+      ]
+    },
+    {
+      "id": "C102",
+      "band": "P3",
+      "page": "/admin",
+      "title": "The admin studio's eyebrow/breadcrumb label changes on every section with no consistent scheme: 'SEO pages' (no eyebrow), 'CMS Assets' (media), 'Studio Settings",
+      "status": "NOT_FIXED",
+      "note": "Admin breadcrumb/eyebrow labels still vary inconsistently across sections ('SEO pages', 'CMS Assets', 'Studio Settings', 'Blog and news'). No standardization work mentioned in fix plans.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/admin/AdminShell.tsx:80-101",
+        "/Users/jamesaims/Desktop/Development/vending-website/plans/ux-review-fixes/P3-BACKLOG.md:39"
+      ]
+    },
+    {
+      "id": "C103",
+      "band": "P3",
+      "page": "/admin",
+      "title": "The four-up stat-card row appears on SEO pages, Users, and Libraries with the same shape but inconsistent icon-tile colours and no consistent semantic mapping. ",
+      "status": "PARTIAL",
+      "note": "Stat-card tones are consistently defined (blue=All, amber=Drafts, green=Published, slate=Archived/other) across SEO pages and News sections. However, Libraries section uses the same tones with different semantic intent (blue=CTAs, green=approved proofs, slate=sources, amber=claims), indicating colors map differently by section rather than by stable meaning.",
+      "evidence": [
+        "/Users/jamesaims/Desktop/Development/vending-website/src/app/admin/pages/page.tsx:235-294",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/app/admin/news/page.tsx:98-113",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/app/admin/libraries/page.tsx:136-165"
+      ]
+    },
+    {
+      "id": "C104",
+      "band": "P3",
+      "page": "/admin",
+      "title": "Primary buttons in the studio have no consistent shape. 'Create page' and 'Invite user' are auto-width blue with a leading '+'; 'Save CTA preset' is full-width ",
+      "status": "NOT_FIXED",
+      "note": "Primary buttons across admin pages and public site still have inconsistent styling (different colors, padding, icons, widths). The suggested unified Button component with consistent variants is not implemented.",
+      "evidence": [
+        "src/components/admin/AdminUi.tsx: adminPrimaryButtonClass / adminSecondaryButtonClass still uses distinct button styles",
+        "src/components/sections/ApplyPageContent.tsx:29-52: apply form submit uses orange (#f47b3b) button with shadow",
+        "src/app/admin/pages/page.tsx:202-207: 'Create page' uses adminPrimaryButtonClass with icon"
+      ]
+    },
+    {
+      "id": "C107",
+      "band": "P3",
+      "page": "/admin/pages",
+      "title": "The SEO pages list communicates two separate statuses per row as tiny coloured dots (READINESS and STATUS columns, ~10x10px) with no on-page legend. Readiness u",
+      "status": "PARTIAL",
+      "note": "Readiness/Status now have text labels and a legend, partially addressing the issue. However, the dot size remains 2.5px (10px), not enlarged to 24px minimum hit area as suggested.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:1069-1094: StatusBadge now renders text label next to 2.5px dot",
+        "src/app/admin/pages/page.tsx:1096-1110: StatusLegend component shows both Status and Readiness with labels",
+        "src/app/admin/pages/page.tsx:502: StatusLegend rendered above table results"
+      ]
+    },
+    {
+      "id": "C110",
+      "band": "P3",
+      "page": "global",
+      "title": "Every public-site nav and footer link is an undersized touch/click target (e.g. ABOUT 51x20px, NEWS 44x20px, HOME 43x17px, TERMS 50x17px, PRIVACY POLICY 120x17p",
+      "status": "NOT_FIXED",
+      "note": "Nav and footer links remain undersized (~17-20px tall). No padding adjustments to meet 44px minimum touch target height. This P3 item was explicitly deferred from the ux-review-fixes round.",
+      "evidence": [
+        "src/components/site/Header.tsx:36,132-135: header nav links use 'text-sm' with no padding adjustment for touch target minimum",
+        "src/components/site/Footer.tsx:53-56: footer links use 'text-sm font-black' with no touch-target sizing",
+        "P3-BACKLOG.md row 43: Issue listed as out-of-scope P3 polish item"
+      ]
+    },
+    {
+      "id": "C118",
+      "band": "P3",
+      "page": "/",
+      "title": "Hero copy and body are corporate/buzzwordy — 'launch and scale a profitable vending machine business with minimal time investment', 'Automation & scaling strate",
+      "status": "NOT_FIXED",
+      "note": "Hero copy and body text remain corporate/buzzwordy. Suggested plain human language ('Start a vending business without the guesswork...') not implemented. This P3 item was explicitly deferred.",
+      "evidence": [
+        "src/lib/content/home.ts: hero copy still contains 'launch and scale a profitable vending machine business with minimal time investment'",
+        "src/app/layout.tsx: metadata description uses same corporate language",
+        "P3-BACKLOG.md row 44: Issue listed as out-of-scope P3 polish item"
+      ]
+    },
+    {
+      "id": "C119",
+      "band": "P3",
+      "page": "/",
+      "title": "Mobile homepage has horizontal scrolling — the page can be dragged sideways, which feels glitchy on a phone.",
+      "status": "FIXED",
+      "note": "Mobile horizontal scroll was fixed in wave 3 (N9 node) by adding min-w-0 to flex containers and break-words to long headings. This was verified live at 375px and is confirmed in the current code.",
+      "evidence": [
+        "src/components/sections/Benefits.tsx:19: min-w-0 added to grid column",
+        "src/components/sections/Benefits.tsx:20: break-words added to h2",
+        "plans/ux-review-fixes/agent-runs/n9-1.md: 'ALL PAGES PASS' at 375px viewport; 'no horizontal scroll' verified in mobile screenshots"
+      ]
+    },
+    {
+      "id": "C121",
+      "band": "P3",
+      "page": "/",
+      "title": "Homepage is a very long single scroll of ~15 testimonials before the final 'Take Action' CTA",
+      "status": "NOT_FIXED",
+      "note": "Homepage still renders all ~15 testimonials in a long inline scroll. No collapsible 'See more stories' toggle or CTA repositioning. This P3 item was explicitly deferred.",
+      "evidence": [
+        "src/components/sections/Testimonials.tsx:31-36: all caseStudyQuotes are mapped and rendered inline with no 'See more' toggle",
+        "src/components/sections/Testimonials.tsx:23-29: all caseStudyVideos rendered directly with no limit",
+        "P3-BACKLOG.md row 46: Issue listed as out-of-scope P3 polish item"
+      ]
+    },
+    {
+      "id": "C125",
+      "band": "P3",
+      "page": "/apply",
+      "title": "On mobile the submit button is far below the fold after a tall hero, with no sticky CTA",
+      "status": "NOT_FIXED",
+      "note": "Apply form submit button remains below fold after tall hero on mobile with no sticky CTA bar. Suggested sticky 'Submit application' bar not implemented. This P3 item was explicitly deferred.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:160-299: form element renders with no sticky positioning or fixed bottom CTA bar",
+        "src/components/sections/ApplyPageContent.tsx:29-52: mobile layout stacks form below tall hero with no sticky affordance",
+        "P3-BACKLOG.md row 47: Issue listed as out-of-scope P3 polish item"
+      ]
+    },
+    {
+      "id": "C131",
+      "band": "P3",
+      "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "title": "The first news article is slow to load relative to the rest of the site (1743ms DCL / 2055ms load) and carries CLS 0.263 plus a serious color-contrast violation",
+      "status": "DEFERRED",
+      "note": "News article slow load (1743ms DCL / 2055ms load) with CLS 0.263 listed as medium-severity P3 item. Explicitly out of scope for the ux-review-fixes round; deferred to future performance/image optimization work.",
+      "evidence": [
+        "plans/ux-review-fixes/P3-BACKLOG.md row 48: Issue marked as medium-priority P3, outside wave scope",
+        "plans/ux-review-fixes/verification.md:71: '93 P3 polish items remain in plans/ux-review-fixes/P3-BACKLOG.md'",
+        "plans/ux-review-fixes/progress.md:54: CLS performance monitoring noted but out-of-scope for this round"
+      ]
+    },
+    {
+      "id": "C133",
+      "band": "P3",
+      "page": "/news",
+      "title": "A News-section 500 server error from the image optimizer surfaces in the console on page load with no client-side handling, so the failure is silent to the user",
+      "status": "DEFERRED",
+      "note": "Image optimizer 500 error on news section with no client-side handling listed as P3. Explicitly deferred from ux-review-fixes round. No image error fallback or monitoring changes visible in current code.",
+      "evidence": [
+        "plans/ux-review-fixes/P3-BACKLOG.md row 49: Issue marked as medium-priority P3, outside wave scope",
+        "plans/ux-review-fixes/verification.md:71: '93 P3 polish items remain in plans/ux-review-fixes/P3-BACKLOG.md'",
+        "src/components/sections/NewsList.tsx: no custom error fallback or error monitoring wired for image optimizer failures"
+      ]
+    },
+    {
+      "id": "C134",
+      "band": "P3",
+      "page": "/",
+      "title": "Homepage above-the-fold renders at a cramped, downscaled width compared to other pages (header nav squeezed) and has a high layout shift.",
+      "status": "NOT_CODE_VERIFIABLE",
+      "note": "Layout shift (CLS 0.263) is a runtime/visual metric. Code changes include ImageWithFallback component and overflow containment, but actual CLS improvement is runtime-verifiable only. Current code suggests space is reserved but verification requires real load metrics.",
+      "evidence": [
+        "src/components/sections/Hero.tsx:1: overflow-hidden applied to section",
+        "plans/ux-review-fixes/agent-runs/n10-1.md: ImageWithFallback component added with dimensions",
+        "plans/ux-review-fixes/verification.md:37: 'CLS on production... 0.263 observation on very first cold hit after server start... monitored'"
+      ]
+    },
+    {
+      "id": "C136",
+      "band": "P3",
+      "page": "/admin/pages",
+      "title": "The Readiness and Status columns are shown as bare colored dots (red/blue/amber) with no visible legend, so a color's meaning is only available on hover per row",
+      "status": "FIXED",
+      "note": "Legend component renders both Status and Readiness with color-coded dots and text labels above the table, providing visible affordance for color meaning without requiring hover.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:502 StatusLegend rendered above table",
+        "src/app/admin/pages/page.tsx:1102 LegendGroup displays Status entries",
+        "src/app/admin/pages/page.tsx:1107 LegendGroup displays Readiness entries"
+      ]
+    },
+    {
+      "id": "C139",
+      "band": "P3",
+      "page": "/admin/pages",
+      "title": "There is no global search across content types; search is scoped per-CMS ('Search SEO pages' only).",
+      "status": "NOT_FIXED",
+      "note": "Global cross-content search not implemented; search remains scoped per-CMS (SEO pages only). This is a P3 item explicitly out of scope.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:443 'Search SEO pages' search box only scoped to pages list"
+      ]
+    },
+    {
+      "id": "C140",
+      "band": "P3",
+      "page": "/admin/pages",
+      "title": "After saving a new SEO page the list verification raced and the page did not reliably appear; one run reported the created page 'not visible in /admin/pages lis",
+      "status": "NOT_FIXED",
+      "note": "Revalidatepath ensures list updates, but no user-facing toast with direct link shown. P3 not in scope for ux-review-fixes.",
+      "evidence": [
+        "src/app/admin/pages/actions.ts revalidatePath called on page creation",
+        "No success toast or direct link to new page row implemented"
+      ]
+    },
+    {
+      "id": "C145",
+      "band": "P3",
+      "page": "/admin/news/new",
+      "title": "The news editor's Save control was not findable on one corrected run ('FAILED: no visible Save control'), indicating an inconsistent/low-visibility save afforda",
+      "status": "NOT_FIXED",
+      "note": "Save draft button is visible and persistent in the editor sidebar. Original issue complained of intermittent invisibility; current code shows no visibility issue. P3 out of scope; reproduction failed or already resolved.",
+      "evidence": [
+        "src/components/admin/NewsEditorForm.tsx:229-236 'Save draft' button in Publish card sidebar"
+      ]
+    },
+    {
+      "id": "C149",
+      "band": "P3",
+      "page": "/apply",
+      "title": "No application reference or confirmation number is issued, so a user cannot quote anything when following up.",
+      "status": "NOT_FIXED",
+      "note": "Confirmation number not displayed on thank-you page or contact success panel. P3 polish item, not in scope for ux-review-fixes.",
+      "evidence": [
+        "src/app/thank-you-for-applying/page.tsx no reference ID displayed",
+        "src/components/forms/PublicLeadForm.tsx:302-322 ContactSuccessPanel shows only email, no reference number"
+      ]
+    },
+    {
+      "id": "C152",
+      "band": "P3",
+      "page": "/contact",
+      "title": "No statement of when or whether anyone will reply; the prompt 'Send the team a note' sets no expectation.",
+      "status": "NOT_FIXED",
+      "note": "No statement of response time expectation added to contact form intro. P3 not scheduled for fixing in this round.",
+      "evidence": [
+        "src/app/contact/page.tsx:36-39 contact intro copy unchanged: 'Send the team a note about...' with no response-time statement"
+      ]
+    },
+    {
+      "id": "C155",
+      "band": "P3",
+      "page": "/admin/forgot-password",
+      "title": "Password reset copy hedges ('If it has admin access, we'll send a password reset link') and no on-screen confirmation flow was observed, so a locked-out admin c",
+      "status": "PARTIAL",
+      "note": "Confirms password reset email is coming but wording differs from suggested 'reset link is on its way — check your inbox and spam.' Partial alignment; not fully matching suggestion. P3 not in scope.",
+      "evidence": [
+        "src/app/admin/forgot-password/ForgotPasswordForm.tsx:40 'If {email} has Studio access, a password reset email is on its way'"
+      ]
+    },
+    {
+      "id": "C038",
+      "band": "P3",
+      "page": "/admin/settings, /admin/settings/users",
+      "title": "The Settings sidebar link deep-links straight to /admin/settings/users; /admin/settings itself only resolves by redirect, so there's no settings landing/index.",
+      "status": "DEFERRED",
+      "note": "Redirect in place as interim decision; final settings landing planned for future when second settings section exists. Deferred per documented decision.",
+      "evidence": [
+        "src/app/admin/settings/page.tsx:4 /admin/settings redirects to /admin/settings/users",
+        "plans/ux-review-fixes/decisions.md:63 'Keep the redirect for now but plan a settings index/landing once a second settings section exists'"
+      ]
+    },
+    {
+      "id": "C047",
+      "band": "P3",
+      "page": "/",
+      "title": "Top-nav links are very short touch targets (~17-20px tall), making them fiddly to tap on the phone a social-media visitor arrives with.",
+      "status": "NOT_FIXED",
+      "note": "Desktop nav links lack explicit 44x44px touch target sizing. Mobile nav link padding on line 98 (py-3) is ~12px, still below 44px guideline. P3 not in scope.",
+      "evidence": [
+        "src/components/site/Header.tsx:132 nav links use 'text-sm font-black' with no explicit 44x44px minimum height/padding"
+      ]
+    },
+    {
+      "id": "C086",
+      "band": "P3",
+      "page": "/case-studies",
+      "title": "The case studies page has a heading-order (skipped heading levels) violation.",
+      "status": "NOT_FIXED",
+      "note": "Heading hierarchy skips h2 (h1 → h3), violating sequential heading-level requirement. P3 accessibility polish item, not fixed.",
+      "evidence": [
+        "src/components/sections/CaseStudiesHero.tsx:10 h1 opens page",
+        "src/components/sections/CaseStudyQuotes.tsx:35 h3 used for card names with no h2 between them"
+      ]
+    },
+    {
+      "id": "C012",
+      "band": "P3",
+      "page": "/",
+      "title": "The top navigation has no 'Home' link; returning home depends on knowing the logo is clickable.",
+      "status": "NOT_FIXED",
+      "note": "primaryNav does not include a 'Home' item. Only footer has 'Home' link; top nav lacks it.",
+      "evidence": [
+        "src/lib/content/nav.ts:9-14"
+      ]
+    },
+    {
+      "id": "C019",
+      "band": "P3",
+      "page": "/admin/news",
+      "title": "News list rows offer no archive/delete affordance; retiring a post requires opening each post's editor to find the Archive button.",
+      "status": "NOT_FIXED",
+      "note": "PostRow actions show only a 'more' icon button linking to editor; no inline archive affordance in the row itself.",
+      "evidence": [
+        "src/app/admin/news/page.tsx:369-375"
+      ]
+    },
+    {
+      "id": "C028",
+      "band": "P3",
+      "page": "/apply",
+      "title": "No keyboard submit (Cmd/Ctrl+Enter) on the application form; submitting requires tabbing to or clicking the button.",
+      "status": "NOT_FIXED",
+      "note": "Form has no onKeyDown handler for Cmd/Ctrl+Enter; submit is button-only.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:160-299"
+      ]
+    },
+    {
+      "id": "C029",
+      "band": "P3",
+      "page": "/apply",
+      "title": "State is a 50-option native <select> with no typeahead-by-name UX beyond default browser behavior; budget/stage/timeline are all 'Select' placeholder dropdowns ",
+      "status": "NOT_FIXED",
+      "note": "SelectField uses native <select> without combobox or typeahead; State remains a 50-option dropdown.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:405-427"
+      ]
+    },
+    {
+      "id": "C032",
+      "band": "P3",
+      "page": "/admin/pages/new",
+      "title": "Publish is gated behind readiness warnings ('Fix SEO title', 'Fix URL slug') with no inline jump-to-field link.",
+      "status": "FIXED",
+      "note": "Publish blockers now render as clickable items with 'Go to field' action verb; focusBlocker callback navigates to the relevant field.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/PublishBlockerChecklist.tsx:12,66",
+        "src/components/admin/seo-page-editor/publish-blocker-checklist.ts:42-71"
+      ]
+    },
+    {
+      "id": "C034",
+      "band": "P3",
+      "page": "/admin/pages",
+      "title": "SEO pages list row actions menu did not expose Archive/Delete to keyboard/automation, and the editor exposes no archive control either — page retirement path is",
+      "status": "FIXED",
+      "note": "PageActionsMenu now reliably exposes 'Archive page' in the row menu for non-archived pages with confirmation.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:982-994"
+      ]
+    },
+    {
+      "id": "C043",
+      "band": "P3",
+      "page": "/apply",
+      "title": "The apply headline references 'Mike' by first name with no introduction for someone landing directly on /apply.",
+      "status": "NOT_FIXED",
+      "note": "Apply page headline still reads 'Apply to build your vending business with Mike.' with no introduction or context for Mike.",
+      "evidence": [
+        "src/components/sections/ApplyPageContent.tsx:24"
+      ]
+    },
+    {
+      "id": "C046",
+      "band": "P3",
+      "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "title": "Inside an article the back link is labelled 'BLOG' while the nav item that leads to the same destination is 'NEWS'.",
+      "status": "FIXED",
+      "note": "Article breadcrumb now correctly labels the /news link as 'News' (not 'Blog'), consistent with nav.",
+      "evidence": [
+        "src/components/sections/NewsArticle.tsx:40"
+      ]
+    },
+    {
+      "id": "C059",
+      "band": "P3",
+      "page": "/",
+      "title": "The header navigation contains two adjacent identical 'APPLY NOW' links (tab stops 7 and 8) and 'Contact' is absent from the header (footer only).",
+      "status": "NOT_FIXED",
+      "note": "Two identical adjacent buttons both link to /apply (labeled 'Step inside' in desktop and mobile nav). Core issue of duplicate CTAs persists.",
+      "evidence": [
+        "src/components/site/Header.tsx:41-46,102-108"
+      ]
+    },
+    {
+      "id": "C072",
+      "band": "P3",
+      "page": "/",
+      "title": "Body copy uses the idiom \"increase your bottom line\" and the metaphor \"eliminate the guesswork\". \"bottom line\" is a financial idiom that does not translate lite",
+      "status": "NOT_FIXED",
+      "note": "Accelerator bonus text still says 'increase your bottom line' instead of 'increase your profit'.",
+      "evidence": [
+        "src/lib/content/home.ts:139"
+      ]
+    },
+    {
+      "id": "C073",
+      "band": "P3",
+      "page": "/news/top-5-questions-vending-entrepreneurship-program",
+      "title": "Article preview compresses meaning into ambiguous shorthand: \"success track record (300% boost via vetted options)\". \"vetted options\" and \"300% boost\" with no b",
+      "status": "NOT_FIXED",
+      "note": "Article preview copy about '300% boost via vetted options' remains unchanged. This P3 item was explicitly deferred — not part of the ux-review-fixes scope.",
+      "evidence": [
+        "P3-BACKLOG.md:1-2 (93 P3s out of scope)",
+        "No code changes for article copy in src/lib/services/news.ts or news post content"
+      ]
+    },
+    {
+      "id": "C074",
+      "band": "P3",
+      "page": "/thank-you-for-applying",
+      "title": "The thank-you page exists with clear copy (\"Watch your inbox for the next step.\") but the apply form never routes to it, so non-native users get the unclear inl",
+      "status": "FIXED",
+      "note": "Apply form now redirects to /thank-you-for-applying on success via the lead-action-state transition, confirmed in N2 implementation.",
+      "evidence": [
+        "src/app/lead-action-state.ts:35-37 (resolveLeadSuccessTransition redirect)",
+        "src/components/forms/PublicLeadForm.tsx:133-144 (useEffect + router.push(redirectHref))"
+      ]
+    },
+    {
+      "id": "C075",
+      "band": "P3",
+      "page": "/apply",
+      "title": "Open-text field label \"What are you trying to build?\" is vague for a second-language reader and overlaps with the intro line \"...what kind of support would move",
+      "status": "NOT_FIXED",
+      "note": "Field label remains original vague copy. P3 item was out of scope for the ux-review-fixes round.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:280 (label={isApply ? \"What are you trying to build?\" : \"Message\"})",
+        "P3-BACKLOG.md:1-2 (93 P3s out of scope)"
+      ]
+    },
+    {
+      "id": "C094",
+      "band": "P3",
+      "page": "global (header nav)",
+      "title": "Desktop header nav links ('ABOUT' 51x20px, 'CASE STUDIES' 102x20px, etc.) are only ~20px tall. The mobile hamburger button itself is a good size, but on tablet/",
+      "status": "NOT_FIXED",
+      "note": "Desktop header nav links still only have font-size, no padding to reach 44px tap target. P3 item deferred — not in scope.",
+      "evidence": [
+        "src/components/site/Header.tsx:36 (className=\"text-sm\" on nav links, no padding)",
+        "git diff main -- src/components/site/Header.tsx (no changes)"
+      ]
+    },
+    {
+      "id": "C101",
+      "band": "P3",
+      "page": "/contact",
+      "title": "The /apply and /contact form cards share the same brutalist shadowed-card treatment, but the offset drop shadow and the submit-button shadow are not rendered id",
+      "status": "FIXED",
+      "note": "Apply and contact forms share the single PublicLeadForm component, so buttons have identical shadow. Technically fixed via component consolidation.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:291 (both apply and contact use same component with shadow-[5px_5px_0_#111111])"
+      ]
+    },
+    {
+      "id": "C106",
+      "band": "P3",
+      "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "title": "The article-page share buttons are four individually-bordered black pill chips with inconsistent labels — single uppercase letters and abbreviations ('X', 'in',",
+      "status": "PARTIAL",
+      "note": "Aria-labels are now descriptive ('Share on X', 'Share on LinkedIn', etc.), addressing accessibility. Visual text remains abbreviated — partial fix for visual consistency stated in the issue.",
+      "evidence": [
+        "src/components/sections/NewsArticle.tsx:150,161 (aria-label={link.label} with proper descriptive labels)",
+        "src/components/sections/NewsArticle.tsx:155,164 (text still shows abbreviated 'X', 'in', 'f', 'link')"
+      ]
+    },
+    {
+      "id": "C108",
+      "band": "P3",
+      "page": "/admin/news/new",
+      "title": "The blog post body editor is a large empty textarea with no placeholder text, no toolbar, and no empty-state guidance, occupying most of the viewport as blank w",
+      "status": "NOT_FIXED",
+      "note": "Blog post editor textarea still has no placeholder text. P3 item was out of scope.",
+      "evidence": [
+        "src/components/admin/NewsEditorForm.tsx:189-197 (textarea with no placeholder attribute)",
+        "P3-BACKLOG.md:77 (line number for C108 in backlog)"
+      ]
+    },
+    {
+      "id": "C109",
+      "band": "P3",
+      "page": "/admin/pages/new",
+      "title": "The Create-page wizard advertises four page types (SEO / Resource, Blog page, Landing page, Video page) but the SEO pages list and broader studio only surface '",
+      "status": "DEFERRED",
+      "note": "The page creation flow has been refactored to use the SEO page builder directly rather than a multi-type wizard. The stated issue (confusion between 'Blog page' wizard option and '/admin/news' editor) is now moot — deferred via design change.",
+      "evidence": [
+        "src/app/admin/pages/new/page.tsx now uses SeoPageEditorForm (no wizard with page-type options)",
+        "plan.md:9 (scope excludes 93 P3s)"
+      ]
+    },
+    {
+      "id": "C111",
+      "band": "P3",
+      "page": "/case-studies",
+      "title": "The case-studies testimonial grid mixes card states inconsistently: some cards show a leading avatar circle and others do not, and card heights vary widely with",
+      "status": "PARTIAL",
+      "note": "Cards now have `h-full` for equal height and all include avatars. The visual inconsistency (ragged bottoms mentioned in issue) may not be fully addressed; grid gap may still cause visible variance depending on content.",
+      "evidence": [
+        "src/components/sections/CaseStudyQuotes.tsx:23 (h-full flex-col ensures equal height)",
+        "src/components/sections/CaseStudyQuotes.tsx:25-32 (all cards include avatar images)",
+        "git diff shows only min-w-0 addition, no ragged-height fix"
+      ]
+    },
+    {
+      "id": "C116",
+      "band": "P3",
+      "page": "/admin/pages",
+      "title": "On the admin pages list a \"Schedule failed\" link is present, indicating a failed scheduled-publish state surfaced in the UI.",
+      "status": "FIXED",
+      "note": "The 'Schedule failed' filter now has a descriptive tooltip explaining the state. Implemented in N11 (Admin P2 sweep).",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:88-93 (workflowFilters now includes description: \"Pages whose scheduled publish did not go through and need attention\")",
+        "plans/ux-review-fixes/progress.md:56 (N11: Schedule-failed filter explanation Task #3)"
+      ]
+    },
+    {
+      "id": "C120",
+      "band": "P3",
+      "page": "/about",
+      "title": "The About page is several dense paragraphs of life story ('How I Escaped The Rat Race', 'Mike's Unique Approach') with no short summary or skimmable highlights.",
+      "status": "NOT_FIXED",
+      "note": "The About page hero still renders multiple dense paragraphs ('I walked away from 60-hour workweeks...') with no 3-bullet summary at the top as suggested.",
+      "evidence": [
+        "src/lib/content/about.ts:1-39 — About content has only 'hero.paragraphs' and 'how' and 'approach' sections, no 'summary' or bullet points",
+        "src/components/sections/AboutHero.tsx:16-20 — Hero maps about.hero.paragraphs without a separate summary/bullets section"
+      ]
+    },
+    {
+      "id": "C122",
+      "band": "P3",
+      "page": "/",
+      "title": "Mobile navigation is an icon-only hamburger with no text label",
+      "status": "FIXED",
+      "note": "Mobile hamburger button now has proper aria-label attribute describing the action.",
+      "evidence": [
+        "src/components/site/Header.tsx:50-51 — Hamburger button has aria-label={menuOpen ? \"Close navigation menu\" : \"Open navigation menu\"}"
+      ]
+    },
+    {
+      "id": "C126",
+      "band": "P3",
+      "page": "/contact",
+      "title": "Required Message field gives no guidance on what to include or expected length",
+      "status": "NOT_FIXED",
+      "note": "Message textarea has no placeholder guidance text; fix would require adding placeholder='Tell us where you are and your main question (a sentence or two is fine)' or similar.",
+      "evidence": [
+        "src/components/forms/PublicLeadForm.tsx:450-460 — TextareaField renders without placeholder prop passed"
+      ]
+    },
+    {
+      "id": "C127",
+      "band": "P3",
+      "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "title": "Article page loads slowly (~1.7s DCL) with CLS 0.263, so content shifts while reading",
+      "status": "PARTIAL",
+      "note": "Images now declare explicit dimensions (fill + sizes), which helps with CLS, but production verification notes CLS 0.263 on cold start still occurs, though warmed runs show 0.000.",
+      "evidence": [
+        "src/components/sections/NewsArticle.tsx:61-70 — Image has fill + sizes + priority set for explicit dimensions",
+        "verification.md:37 — 'CLS 0.263 observation on the very first cold hit after server start (matches dev footer shift)' noted as monitored but not fully resolved"
+      ]
+    },
+    {
+      "id": "C128",
+      "band": "P3",
+      "page": "/thank-you-for-applying",
+      "title": "The thank-you page is clear and reassuring, but it is orphaned because the apply form never sends users to it",
+      "status": "FIXED",
+      "note": "Apply form successfully navigates to /thank-you-for-applying on submission via resolveLeadSuccessTransition.",
+      "evidence": [
+        "src/app/lead-action-state.ts:16,35-36 — Apply submissions return redirect { kind: \"redirect\", href: APPLY_THANK_YOU_PATH } which points to '/thank-you-for-applying'",
+        "src/app/thank-you-for-applying/page.tsx exists"
+      ]
+    },
+    {
+      "id": "C129",
+      "band": "P3",
+      "page": "/",
+      "title": "Header and footer navigation links are only 17-20px tall, below comfortable touch-target size",
+      "status": "NOT_FIXED",
+      "note": "Nav links remain text-sm sized (~14px font) without explicit touch-target padding; WCAG 44px guidance not implemented.",
+      "evidence": [
+        "src/components/site/Header.tsx:131-135 — HeaderNavLink renders with classes 'text-sm font-black ... focus-visible:ring' but no min-h or min-w padding for 44px touch target",
+        "P3-BACKLOG.md:86 — Item lists 'Header and footer navigation links are only 17-20px tall'"
+      ]
+    },
+    {
+      "id": "C132",
+      "band": "P3",
+      "page": "/admin/pages/new",
+      "title": "The page-type wizard at /admin/pages/new has a moderate 'landmark-unique' axe violation (non-unique landmark on a .p-0 element).",
+      "status": "NOT_CODE_VERIFIABLE",
+      "note": "The page-type wizard structure is complex and would require axe/accessibility testing to verify landmark uniqueness; code inspection shows no obvious duplicate landmarks but full audit needed.",
+      "evidence": [
+        "src/app/admin/pages/new/page.tsx:29 — Page rendered with immersive=true in AdminShell",
+        "src/components/admin/SeoPageEditorWorkspace.tsx:41 — Layout contains nested divs but no explicit landmark structure"
+      ]
+    },
+    {
+      "id": "C137",
+      "band": "P3",
+      "page": "/admin/pages",
+      "title": "A \"Schedule failed\" state is exposed as a filter but is not summarized in the top KPI cards, so a failure isn't visible at a glance.",
+      "status": "NOT_FIXED",
+      "note": "Schedule-failed filter exists but no evidence of KPI card summation; deferred as P3 polish (out-of-scope for P2 fixes).",
+      "evidence": [
+        "P3-BACKLOG.md:88 — Item states 'A \"Schedule failed\" state is exposed as a filter but is not summarized in the top KPI cards'",
+        "verification.md:4-12 — Verification table lists D1-D13 requirements, no D14/D15 for Schedule-failed KPI card"
+      ]
+    },
+    {
+      "id": "C142",
+      "band": "P3",
+      "page": "/admin/libraries",
+      "title": "Content libraries (/admin/libraries) is reachable only via a 'Content libraries' link in the Media library header, not from the sidebar.",
+      "status": "NOT_FIXED",
+      "note": "Content libraries (/admin/libraries) is not surfaced as a sidebar item; still requires accessing via Media library header link only.",
+      "evidence": [
+        "src/components/admin/AdminShell.tsx:38-54 — contentSections array contains pages, blogSection, and media only; libraries type defined at line 9 but not added to sidebar",
+        "src/components/admin/AdminShell.tsx:66 — sections = [...contentSections, ...accountSections] excludes libraries"
+      ]
+    },
+    {
+      "id": "C143",
+      "band": "P3",
+      "page": "/pre-call-resources",
+      "title": "The pre-call resources page contains 14 links and 0 embedded videos/iframes.",
+      "status": "NOT_FIXED",
+      "note": "Pre-call resources page renders a text-based checklist with no embedded videos; component would need iframe/video support added.",
+      "evidence": [
+        "src/app/pre-call-resources/page.tsx:14-24 — SupportPage called with items (text list only), no embedded media prop",
+        "src/components/sections/SupportPage.tsx:21-30 — Renders ul of text items, no video/iframe support in the component"
+      ]
+    },
+    {
+      "id": "C146",
+      "band": "P3",
+      "page": "/admin/pages/new",
+      "title": "While building, the editor URL stays /admin/pages/new until the first save, so there is no shareable/bookmarkable page URL mid-edit.",
+      "status": "DEFERRED",
+      "note": "Item #91 in P3-BACKLOG explicitly deferred as low-priority, out of scope. Code confirms URL behavior unchanged: SeoPageEditorForm renders in new-page context with no draft-record creation on mount.",
+      "evidence": [
+        "plans/ux-review-fixes/P3-BACKLOG.md:1 (93 low-priority findings out of scope)",
+        "src/app/admin/pages/new/page.tsx:14-37 (renders editor without draft creation; URL remains /admin/pages/new until save)"
+      ]
+    },
+    {
+      "id": "C147",
+      "band": "P3",
+      "page": "/admin/pages/block-preview-audit",
+      "title": "/admin/pages/block-preview-audit is an internal tool reachable only by URL with no inbound links.",
+      "status": "DEFERRED",
+      "note": "Item #92 in P3-BACKLOG explicitly deferred as low-priority, out of scope. Code shows dev-mode gate (line 18: NODE_ENV check) but tool remains directly accessible via URL in dev; no nav links were added or removed to address discoverability.",
+      "evidence": [
+        "plans/ux-review-fixes/P3-BACKLOG.md:1 (93 low-priority findings out of scope)",
+        "src/app/admin/pages/block-preview-audit/page.tsx:18-19 (dev-mode gate present, no nav links removed)"
+      ]
+    },
+    {
+      "id": "C154",
+      "band": "P3",
+      "page": "/this-page-does-not-exist",
+      "title": "The 404 text says content may have 'moved' but provides no destination or link to where it moved.",
+      "status": "PARTIAL",
+      "note": "Item #93 in P3-BACKLOG explicitly deferred as low-priority. Code shows mixed fix: 'moved' language persists on line 13, but suggested-fix goal (offer key links) is now addressed via news/about/apply links on lines 22-34. Partial match to suggested fix intent.",
+      "evidence": [
+        "plans/ux-review-fixes/P3-BACKLOG.md:1 (93 low-priority findings out of scope)",
+        "src/app/not-found.tsx:13, 22-34 (moved language retained; helpful links added as fallback)"
+      ]
+    }
+  ],
+  "seo": [
+    {
+      "id": "P0-1",
+      "band": "P0",
+      "page": "/admin/pages/[id]",
+      "title": "Publish readiness blockers are revealed one at a time, in internal naming, with no full checklist",
+      "status": "FIXED",
+      "note": "The code implements a persistent checklist component rendering ALL blockers upfront (never one-at-a-time), each labeled in plain language via ACTION_LABELS mapping (never internal codes like 'missing_cta_label'), with each item wired to focus its corresponding field or block modal. Tests enforce no internal naming and rule parity. Final proof confirms publish journey improved 1.2→4.5/5 with all blockers visible with deep-links.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/PublishBlockerChecklist.tsx:44-79 — persistent ul with all blockers rendered at once, each with onClick handler for deep-linking",
+        "src/components/admin/seo-page-editor/publish-blocker-checklist.ts:43-71 — ACTION_LABELS map converts all codes to plain language (no internal naming)",
+        "src/components/admin/seo-page-editor/publish-blocker-checklist.ts:80-90 — labelForBlocker() applies human-readable formatting with block disambiguation",
+        "plans/seo-builder-ux-fixes/verification.md:15-17 — final proof shows publish journey 1.2→~4.5 PASS with 'ALL blockers visible upfront at once + verdict/fix-next + deep links'"
+      ]
+    },
+    {
+      "id": "P0-2",
+      "band": "P0",
+      "page": "/admin/pages/[id]",
+      "title": "Scheduling a publish gives zero confirmation — the field re-renders empty and no 'Scheduled for …' status exists anywhere",
+      "status": "FIXED",
+      "note": "The issue identified three gaps: (1) field clearing after save, (2) no status indicator, (3) control buried in Advanced. All three are addressed: the field persists via formatDateTimeLocalInTimeZone baseline and scheduledPublishAtBaseline, an always-visible Pacific-Time status card displays the schedule, and the control is lifted to the main Settings tab. Regression lock ensures hydration doesn't regress. Browser proof shows complete journey pass with persistence and cancel functionality verified.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/ScheduleStatusCard.tsx:1-104 — Always-visible card displaying 'Scheduled to publish {date} (Pacific Time)' with inline cancel",
+        "src/components/admin/seo-page-editor/schedule-status.ts:40-64 — deriveScheduleStatus() and scheduleDisplayLabel() functions properly derive and format schedule state",
+        "src/components/admin/seo-page-editor/SeoPublishPanel.tsx:188-196 — ScheduleStatusCard rendered in always-visible status section; 423-466 — ScheduleField lifted out of Advanced to main Settings tab",
+        "plans/seo-builder-ux-fixes/agent-runs/N2-1.md:115-128 and N20-journeys-1.md — Browser gate and journey proof: SCHEDULED_CARD_VISIBLE=true, persistent after reload, cancel works, 5/5 score (original 1.3)"
+      ]
+    },
+    {
+      "id": "P0-3",
+      "band": "P0",
+      "page": "/admin/pages/[id]",
+      "title": "A publish-required field (CTA destination URL) exists only inside the Block actions → Edit settings modal, and the blocker text never says where it is",
+      "status": "FIXED",
+      "note": "The blocker for missing CTA destination URL is now a clickable button that opens the block settings modal directly. When a user clicks \"Add a destination URL to the call-to-action\" in the publish blocker checklist, focusPublishBlocker routes to the block-modal target, calling editBlockEntry which sets editingBlockId and triggers BlockSettingsModal to render. Browser verification in N1-1.md confirms this flow works: clicking the CTA destination blocker opens \"CTA 1\" modal, and the blocker reappears/reopens the modal when the field is cleared. The fix implements the suggested solution exactly.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/publish-blocker-checklist.ts:56,100",
+        "src/components/admin/seo-page-editor/useSeoPageEditorController.ts:1123-1127",
+        "src/components/admin/seo-page-editor/PublishBlockerChecklist.tsx:56-70",
+        "plans/seo-builder-ux-fixes/agent-runs/N1-1.md:128-136"
+      ]
+    },
+    {
+      "id": "P0-4",
+      "band": "P0",
+      "page": "/admin/pages/[id]",
+      "title": "After publishing succeeds, the 'Confirm publish' card stays open re-asking to publish",
+      "status": "FIXED",
+      "note": "The confirm card is now dismissed immediately on publish submit (not after), replaced by a success card that polls the live URL and only shows 'Open live page' once the route responds 200. Re-publishing requires a fresh confirm. All code is committed and properly tested.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/SeoPublishPanel.tsx:198-205 — PublishSuccessCard rendered conditionally when publishJustSucceeded",
+        "src/components/admin/seo-page-editor/useSeoPageEditorController.ts:606 — setIsConfirmingPublish(false) called on publish submit, dismissing confirm card",
+        "src/components/admin/seo-page-editor/PublishSuccessCard.tsx:10-83 — Success card displays only after polling confirms route is live (200 response)",
+        "src/components/admin/seo-page-editor/live-page-poll.ts:45-63 — Polling logic with backoff waits for route to respond before revealing 'Open live page' link"
+      ]
+    },
+    {
+      "id": "P0-5",
+      "band": "P0",
+      "page": "/admin/pages/redirects",
+      "title": "Redirects cannot be edited or deleted — a mistyped 301 is permanent from the admin UI",
+      "status": "FIXED",
+      "note": "The redirects table now displays per-row Edit and Delete actions. Edit opens an inline form with field validation and error messaging. Delete opens a confirm dialog (role=\"dialog\", aria-modal=\"true\") that permanently removes the redirect. Both actions are admin-protected, Zod-validated server actions with proper error handling and success notifications via URL parameters.",
+      "evidence": [
+        "src/app/admin/pages/redirects/page.tsx:75 (Actions column header)",
+        "src/app/admin/pages/redirects/RedirectRow.tsx:81-90,91-100 (Edit and Delete buttons)",
+        "src/app/admin/pages/redirects/RedirectRow.tsx:114-199 (RedirectEditForm with inline error handling)",
+        "src/app/admin/pages/redirects/RedirectRow.tsx:201-252 (RedirectDeleteDialog with role=dialog, aria-modal)",
+        "src/app/admin/pages/redirects/actions.ts:154-188,190-216 (updateBuilderRedirectAction and deleteBuilderRedirectAction with Zod validation)",
+        "commit 20afcc7: fix(seo-builder): W1 checkpoint 2 — N5 redirect CRUD with safe-slice gates (I4)"
+      ]
+    },
+    {
+      "id": "P0-6",
+      "band": "P0",
+      "page": "/admin/pages/new",
+      "title": "Leaving the editor with unsaved typed content gives no warning — and silently creates an orphan draft",
+      "status": "FIXED",
+      "note": "P0-6 is fully fixed. The implementation addresses all aspects of the issue: (1) navigation is intercepted via click/beforeunload/popstate listeners, (2) a three-option dialog prompts users (Save/Discard/Keep editing), (3) a visible notice explains that drafts are auto-created and can be discarded on exit, (4) the server applies a strict safety floor that only deletes never-saved auto-created drafts (status=draft, no publish history, no revisions). All 55 unit tests and 9 browser verification tests pass. The fix prevents silent orphan draft creation while preserving user consent and data integrity.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/useUnsavedExitGuard.ts:177-179 (navigation interception with click, beforeunload, popstate listeners)",
+        "src/components/admin/seo-page-editor/UnsavedExitDialog.tsx:128-151 (three-option dialog: Save draft, Discard draft, Keep editing)",
+        "src/components/admin/seo-page-editor/DraftCreatedNotice.tsx:35-39 (user-visible notice explaining auto-draft and save/discard options)",
+        "src/lib/services/seo-page-drafts.ts:49-55 (server-side safety floor: only deletes status=draft with no publish history and no revisions)",
+        "src/components/admin/SeoPageEditorForm.tsx (useUnsavedExitGuard hook mounted with UnsavedExitDialog and DraftCreatedNotice rendered)",
+        "plans/seo-builder-ux-fixes/agent-runs/N6-1.md (comprehensive N6 verification: 55/55 unit tests pass, 9/9 browser tests pass)"
+      ]
+    },
+    {
+      "id": "P1-1",
+      "band": "P1",
+      "page": "/admin/pages/[id]",
+      "title": "Publish-gate messaging contradicts itself: chip vs readiness panel vs the field's own placeholder",
+      "status": "FIXED",
+      "note": "The publishing-gate messaging now derives from a single canonical source (derivePublishBlockerChecklist). Blocker messages are human-readable action labels (e.g. 'Add a headline to the hero section' for missing hero) rather than technical field names. All blocker surfaces (chip count, checklist, disabled button state) derive from the same list, eliminating contradictions.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/publish-blocker-checklist.ts:58 — missing_hero_heading label: 'Add a headline to the hero section'",
+        "src/components/admin/seo-page-editor/publish-blocker-checklist.ts:114-147 — derivePublishBlockerChecklist() canonically maps summary.blockers to human-readable items",
+        "src/components/admin/seo-page-editor/PublishBlockerChecklist.tsx:16-82 — single persistent list rendering all blockers from canonical source",
+        "plans/seo-builder-ux-fixes/verification.md:24 — I1 publish blocker communication marked DONE, N20 journey shows all blockers upfront with deep links"
+      ]
+    },
+    {
+      "id": "P1-2",
+      "band": "P1",
+      "page": "/admin/pages/[id]",
+      "title": "Autosave fails silently — 'seo page autosave failed TypeError: Failed to fetch' appears only in the console",
+      "status": "FIXED",
+      "note": "Autosave failures now surface as a visible, honest error message in red on the editor top rail (never claiming work is saved), with automatic retry at capped backoff intervals (2s/5s/10s). Recovery returns to 'Saved automatically' state. All tests passing; N4 agent run verified in browser with screenshots showing failure → recovery → one toast.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/autosave-retry-policy.ts:31-34 (autosaveFailureMessage with honest 'Couldn't save' text)",
+        "src/components/admin/seo-page-editor/useSeoPageEditorController.ts:705-720 (scheduleRetryOrRest implements backoff retry)",
+        "src/components/admin/seo-page-editor/SeoPageEditorTopRail.tsx:216-219 (renders autosave.message in red on error)",
+        "plans/seo-builder-ux-fixes/agent-runs/n4-screens/01-autosave-failure.png (browser proof of visible error banner)"
+      ]
+    },
+    {
+      "id": "P1-3",
+      "band": "P1",
+      "page": "/admin/pages/[id]",
+      "title": "Disabled Publish button exposes no programmatic reason; blocker is small orange text/title attr only",
+      "status": "FIXED",
+      "note": "The Publish button now exposes programmatic blocker reasons via aria-describedby pointing to a persistent, accessible checklist that announces changes via aria-live=\"polite\". Screen-reader users can discover all blockers and fix actions upfront.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/SeoPublishPanel.tsx:814",
+        "src/components/admin/seo-page-editor/PublishBlockerChecklist.tsx:48-50",
+        "plans/seo-builder-ux-fixes/agent-runs/N1-1.md:106-108"
+      ]
+    },
+    {
+      "id": "WITHDRAWN-1",
+      "band": "withdrawn",
+      "page": "/admin/pages/[id]",
+      "title": "WITHDRAWN — 'Pacific Time for an Australian business' was a wrong premise: Vendingpreneurs is a US West Coast business, so Pacific Time is correct",
+      "status": "WITHDRAWN",
+      "note": "Withdrawn in review (wrong premise)",
+      "evidence": []
+    },
+    {
+      "id": "P1-5",
+      "band": "P1",
+      "page": "/admin/pages",
+      "title": "Readiness and Status columns are colour-only dots with no visible text or legend",
+      "status": "FIXED",
+      "note": "Issue fixed. The color-only dots have been replaced with StatusBadge components that pair each colored dot with a visible, bold text label ('Published', 'Draft', 'Strong', 'Needs work', etc.). A column legend (StatusLegend) above the results explains all possible states once. Rendered in both desktop table and mobile cards. No color decoding required for sighted users.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:1069-1094 (StatusBadge component combines dot + visible text label)",
+        "src/app/admin/pages/page.tsx:1096-1137 (StatusLegend component displays legend for all states)",
+        "src/app/admin/pages/page.tsx:815-828 (Status/Readiness columns use StatusBadge with visible labels in desktop table)",
+        "src/app/admin/pages/page.tsx:877-886 (Status/Readiness badges in mobile cards)"
+      ]
+    },
+    {
+      "id": "P1-6",
+      "band": "P1",
+      "page": "/admin/pages/[id]",
+      "title": "aria-prohibited-attr (serious): aria-label on spans for Hero/FAQ block markers is dropped by AT",
+      "status": "FIXED",
+      "note": "Both offending spans in BlockToolbar (hero/FAQ block icon at L277 and status dot at L300) now carry role=\"img\", making aria-label permitted per ARIA spec. Guard test passes; no other aria-labelled spans lack permitting roles in the editor codebase. The fix is minimal, correct, and verified by both unit test and axe scan.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/BuilderEditorUi.tsx:277 (block-type icon span)",
+        "src/components/admin/seo-page-editor/BuilderEditorUi.tsx:300 (status-dot span)",
+        "src/components/admin/seo-page-editor/block-toolbar-aria.test.tsx:40-57 (guard test verifying role present + names preserved)"
+      ]
+    },
+    {
+      "id": "P1-7",
+      "band": "P1",
+      "page": "/admin/pages/[id]",
+      "title": "No revisions until first publish — a draft mangled before publishing has no page-level undo",
+      "status": "FIXED",
+      "note": "Issue P1-7 (\"draft mangled before publishing has no page-level undo\") is FIXED. On every manual 'Save draft' (intent !== 'publish'), saveSeoPage now calls snapshotManualSaveRevisionSafely, which creates a manual_save revision snapshot and prunes to keep only the 20 most recent manual_save revisions per page. Failures are caught and logged but never fail the user's save. This provides restore points throughout the drafting process, not just on first publish.",
+      "evidence": [
+        "src/app/admin/pages/actions.ts:226 (saveSeoPage calls snapshotManualSaveRevisionSafely on manual save)",
+        "src/lib/services/seo-pages.ts:728-764 (adminSnapshotManualSaveRevision inserts manual_save revision and prunes to 20)",
+        "src/lib/services/seo-pages.ts:722 (MANUAL_SAVE_REVISIONS_KEPT constant)",
+        "supabase/migrations/20260610100000_prune_manual_save_revisions_fn.sql (database prune function)"
+      ]
+    },
+    {
+      "id": "P2-1",
+      "band": "P2",
+      "page": "/admin/pages/[id]",
+      "title": "No 'Open live page' link surfaces after publishing; public URL 404'd briefly right after publish",
+      "status": "FIXED",
+      "note": "Issue P2-1 maps to I3 (publish success state, node N3). Implementation includes: (1) PublishSuccessCard that renders only after successful publish, withholds \"Open live page\" button until pollUntilLive() confirms route responds 200 with backoff; (2) PublishStatusCard with persistent \"Open live page\" link for published pages; (3) confirm card dismissed on publish submit, forcing fresh confirm on re-publish. All suggested fixes implemented.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/PublishSuccessCard.tsx:10-83",
+        "src/components/admin/seo-page-editor/live-page-poll.ts:45-63",
+        "src/components/admin/seo-page-editor/SeoPublishPanel.tsx:198-205",
+        "src/components/admin/seo-page-editor/SeoPublishPanel.tsx:300-309"
+      ]
+    },
+    {
+      "id": "P2-2",
+      "band": "P2",
+      "page": "/admin/pages/[id]",
+      "title": "Editor on a 375px phone is one marathon scroll: Save/Publish in different scroll regions from content; no mobile layout",
+      "status": "FIXED",
+      "note": "The mobile editor issue is fully fixed. A sticky (position: fixed) action bar at the viewport bottom keeps Save, autosave status, and a collapsible SEO/Publish entry always reachable on phones (375px+). The bar is hidden on desktop (xl:hidden) via mobile-first responsive design. SEO panel toggles open/closed on narrow widths via toggleSeoSidebar. Content padding (pb-24 xl:pb-0) prevents overlap. All requirements from the issue met.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/MobileEditorActionBar.tsx:35-68 (fixed bottom action bar with Save and SEO/publish entry)",
+        "src/components/admin/seo-page-editor/SeoPageEditorWorkspace.tsx:56 (pb-24 xl:pb-0 padding), line 69 (renders MobileEditorActionBar)",
+        "src/components/admin/seo-page-editor/editor-responsive.ts:32-44 (getMobileActionBarState with collapsible panel labels)",
+        "git log c275128 (commit fix(seo-builder): W2 checkpoint 2 — N11 mobile sticky action bar + collapsible SEO panel (I10))"
+      ]
+    },
+    {
+      "id": "P2-3",
+      "band": "P2",
+      "page": "/admin/pages/redirects",
+      "title": "Redirect form error 'Path must be root-relative.' is jargon, renders as a top banner, and clears the entered values",
+      "status": "PARTIAL",
+      "note": "The redirect form now displays inline field errors (not top banner) and preserves entered values. Empty paths show the user-friendly message 'Start the path with /...'. However, non-empty invalid paths (e.g., 'foo') pass the incomplete Zod schema and hit the backend with jargon message 'Path must be root-relative.' The Zod schema needs a `.refine()` check for paths starting with '/' to fully resolve the issue.",
+      "evidence": [
+        "src/app/admin/pages/redirects/actions.ts:45-48 (Zod schema validates empty path but not path format)",
+        "src/app/admin/pages/redirects/RedirectCreateForm.tsx:63-68 (inline FieldError component displays next to field)",
+        "src/app/admin/pages/redirects/actions.ts:103-114 (validationErrorState preserves submitted values)",
+        "src/lib/services/seo-pages.ts:1706 (backend 'Path must be root-relative' jargon message)"
+      ]
+    },
+    {
+      "id": "P2-4",
+      "band": "P2",
+      "page": "/admin/pages/[id]",
+      "title": "New-page canvas is all grey placeholder text with no cue which fields are required to publish",
+      "status": "NOT_FIXED",
+      "note": "P2-4 (\"New-page canvas is all grey placeholder text with no cue which fields are required to publish\") is out of scope for this fix round. The round covers I1-I20 which map to various findings, but P2-4 is not mapped to any of those issues. I19 (placeholder cues) was folded into I1 but addressed only blocker checklist copy/presentation, not field-level \"Required to publish\" markers or a structured empty-state checklist on the canvas as P2-4 requests.",
+      "evidence": [
+        "plans/seo-builder-ux-fixes/fix-strategy.md:79 (I19 folded into I1, covers blocker copy not canvas markers)",
+        "src/components/admin/seo-page-editor/SeoPageEditorCanvas.tsx:238-245 (canvas empty state mentions CTA requirement in text only, no field markers or checklist interface)",
+        "plans/seo-builder-ux-fixes/plan.md:54 (issue coverage I1→I20, P2-4 not mapped)"
+      ]
+    },
+    {
+      "id": "P2-5",
+      "band": "P2",
+      "page": "/admin/pages/[id]",
+      "title": "SEO panel is an information dump (readiness, 5 fields, 8 score rows, 7 action items, governance, comments) with no hierarchy",
+      "status": "FIXED",
+      "note": "Panel restructured with verdict card leading, followed by two tabbed sections (Readiness and Settings). Governance/comments moved behind Settings tab, eliminating the information-dump layout. Tabs implement WAI pattern with mounted-not-unmounted panels to preserve form field state.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/SeoPublishPanel.tsx:57-88 — PublishVerdictCard leads panel, SeoPanelTabs wraps Readiness + Settings",
+        "src/components/admin/seo-page-editor/PublishVerdictCard.tsx:10-66 — verdict card displays headline + 'Fix next' + actionable button",
+        "src/components/admin/seo-page-editor/SeoPanelTabs.tsx:15-100 — WAI-compliant tabs keep all panels mounted via hidden attribute",
+        "src/components/admin/seo-page-editor/SeoPublishPanel.tsx:589-690 — governance fields relocated to Settings tab under 'Internal & social' label"
+      ]
+    },
+    {
+      "id": "P2-6",
+      "band": "P2",
+      "page": "/admin/pages/new",
+      "title": "3-step wizard (incl. a review-only step 3) stands between 'Create page' and typing anything",
+      "status": "FIXED",
+      "note": "The 3-step wizard has been completely replaced with a one-step choice panel. Users now select a page type and click \"Start building page\" to enter the editor directly, with no intermediate Continue buttons or review screen. The optional template chooser is shown inline when templates exist, preserving all previously-collectable inputs. All acceptance criteria are met and verified in both unit tests (506/506) and browser tests (9/9).",
+      "evidence": [
+        "src/components/admin/seo-page-editor/SeoPageEditorShell.tsx:35-160 (NewPageChoiceGate component: single fieldset for page type selection + optional template chooser + one 'Start building page' button, zero Continue buttons)",
+        "src/components/admin/seo-page-editor/SeoPageEditorShell.test.tsx:8-48 (unit tests confirm no step indicator, no Continue buttons, single Start-building action)",
+        "src/components/admin/seo-page-editor/useSeoPageEditorController.ts:285 (showCreationChoiceModal = !page?.id && !hasSelectedNewPageMode) and 1201-1212 (onChoosePageTemplate sets hasSelectedNewPageMode=true, immediately hiding the choice modal and showing editor)",
+        "plans/seo-builder-ux-fixes/agent-runs/N13-1.md:42-52 (browser verification: 9/9 PASS including 'zero Continue buttons' and N6 guard regression test)"
+      ]
+    },
+    {
+      "id": "P2-7",
+      "band": "P2",
+      "page": "/admin/pages/[id]",
+      "title": "No keyboard shortcuts (save/publish/insert block)",
+      "status": "FIXED",
+      "note": "Keyboard shortcuts fully implemented and working. Pure matcher function (resolveEditorShortcut) handles Cmd/Ctrl+S (save), Cmd/Ctrl+Enter (publish), and '/' (block picker open). Hook useEditorKeyboardShortcuts wires actions to existing affordances, respecting all gates. All 103 tests in seo-page-editor module pass.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/editor-keyboard-shortcuts.ts:34-57",
+        "src/components/admin/seo-page-editor/useEditorKeyboardShortcuts.ts:54-107",
+        "src/components/admin/seo-page-editor/SeoPageEditorWorkspace.tsx:13,21",
+        "plans/seo-builder-ux-fixes/agent-runs/N14-1.md"
+      ]
+    },
+    {
+      "id": "P2-8",
+      "band": "P2",
+      "page": "/admin/pages/[id]",
+      "title": "Forced 'Quick Tour · Step 1 of 3' overlay covers the canvas on first editor open",
+      "status": "FIXED",
+      "note": "The Quick Tour is now fully opt-in with a dismissible launcher button that appears when the component mounts. The tour overlay no longer auto-starts on editor open, and the canvas is never forced under a modal. The local activeStep state starts as null, rendering only the launcher affordance until the user clicks to begin the tour. Unit tests (no auto-render, visible launcher) and browser verification (6/6 passing) confirm the fix.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/BuilderEditorWalkthrough.tsx:46",
+        "src/components/admin/seo-page-editor/BuilderEditorWalkthrough.tsx:94-96",
+        "src/components/admin/seo-page-editor/BuilderEditorWalkthrough.tsx:114-140",
+        "src/components/admin/seo-page-editor/BuilderEditorWalkthrough.test.tsx:22-41",
+        "plans/seo-builder-ux-fixes/agent-runs/N15-1.md"
+      ]
+    },
+    {
+      "id": "P2-9",
+      "band": "P2",
+      "page": "/admin/pages/[id]",
+      "title": "Unexplained jargon across the builder: 'Eyebrow', 'Slug', 'CTA', 'Governance comments', 'Builder support'",
+      "status": "FIXED",
+      "note": "All jargon flagged in P2-9 has been systematically fixed across the editor UI: Eyebrow→Overline (eyebrow), CTA→Call to action (CTA) on first use, Slug→URL ending (slug), Governance comments expanded with context, Builder support expanded with detailed help, Governance→Internal & social (with help text), and bare HTTP redirect codes→words-first labels (301→Permanent move, etc.). Changes deployed across N18 + N12 commits with full test coverage (vitest 584/584, tsc clean). No unexplained jargon remains in the published code.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/BlockSettingsFields.tsx:53-154 (Overline labels + Call to action CTA expansion)",
+        "src/components/admin/seo-page-editor/BlockInlineEditor.tsx:226,228,670 (Overline accessible names)",
+        "src/components/admin/seo-page-editor/MediaBlockCanvasEditors.tsx:88-91 (Overline accessible names)",
+        "src/app/admin/pages/redirects/redirect-status-labels.ts:1-24 (Words-first redirect status codes; shared by RedirectRow.tsx + RedirectCreateForm.tsx)",
+        "src/components/admin/seo-page-editor/SeoPublishPanel.tsx:357-378,590-593 (URL ending label + Internal &amp; social heading with help text)",
+        "src/app/admin/pages/page.tsx:958 (Duplicate confirm uses URL ending terminology)",
+        "src/components/admin/SeoPageCommentsPanel.tsx:23-26 (Governance comments with context)",
+        "src/components/admin/seo-page-editor/SeoReadinessPanel.tsx:229-240 (Builder support with expandable details)",
+        "commit 83f69e8 (N18 jargon/copy sweep)",
+        "commit 6c03bc4 (N12 panel copy handoffs)",
+        "plans/seo-builder-ux-fixes/agent-runs/N18-1.md (comprehensive scope + RGR evidence)",
+        "plans/seo-builder-ux-fixes/verification.md:34 (I11 jargon sweep DONE)"
+      ]
+    },
+    {
+      "id": "P2-10",
+      "band": "P2",
+      "page": "/admin/pages/[id]",
+      "title": "Tab order buries the form: SEO fields are stops 28–33, behind the whole rendered page preview",
+      "status": "FIXED",
+      "note": "Preview header links de-tabbed with tabIndex={-1} to make SEO form fields reachable early. N17 browser verification confirmed first SEO field at tab stop 15 (vs. 28-33 baseline), addressing the tab order burial issue. Code includes explanatory comment referencing N17/I12.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/SeoPageEditorShell.tsx:213-214 (Logo link with tabIndex={-1})",
+        "src/components/admin/seo-page-editor/SeoPageEditorShell.tsx:229-230 (Step inside button with tabIndex={-1})",
+        "plans/seo-builder-ux-fixes/agent-runs/N17-1.md:24 (tab order verification: SEO field reached at stop 15 after fix)",
+        "git commit 85dfcae (N17 a11y batch with code comment explaining the fix)"
+      ]
+    },
+    {
+      "id": "P2-11",
+      "band": "P2",
+      "page": "multiple",
+      "title": "Landmark violations: nested complementary sidebar, duplicate <main> on revision preview, duplicate named regions in wizard",
+      "status": "FIXED",
+      "note": "All three landmark violations fixed: (1) revision preview changed from nested <main> to <div> (line 62); (2) \"Draft preview\" sidebar changed from <aside> to <div> (line 197); (3) create wizard collapsed from 3-step multi-section structure to single labeled section with semantic fieldset/legend groups, eliminating duplicate named regions. Verified in git commits 85dfcae (N17) and a53ab74 (N13).",
+      "evidence": [
+        "src/app/admin/pages/[id]/revisions/[revisionId]/page.tsx:62 (main→div)",
+        "src/components/admin/SeoPageRevisionPanel.tsx:197 (aside→div)",
+        "src/components/admin/seo-page-editor/SeoPageEditorShell.tsx:76-161 (single section with fieldset/legend)",
+        "plans/seo-builder-ux-fixes/agent-runs/N17-1.md:2a,2b",
+        "plans/seo-builder-ux-fixes/agent-runs/N13-1.md:2c"
+      ]
+    },
+    {
+      "id": "P2-12",
+      "band": "P2",
+      "page": "all pages",
+      "title": "A nextjs-portal element receives keyboard focus with no visible focus indicator on every page",
+      "status": "FIXED",
+      "note": "The nextjs-portal custom element now has a visible :focus-visible outline (3px solid #066a99) in globals.css lines 73-80, matching the baseline focus indicator style. N17 agent run (item 3) verified this fix with axe accessibility testing showing proper focus styling applied.",
+      "evidence": [
+        "src/app/globals.css:73-80",
+        "plans/seo-builder-ux-fixes/agent-runs/N17-1.md:28",
+        "commit 85dfcae"
+      ]
+    },
+    {
+      "id": "P2-13",
+      "band": "P2",
+      "page": "global admin shell",
+      "title": "Floating 'N' avatar button overlaps/clips the Sign out button in the sidebar on every page",
+      "status": "DEFERRED",
+      "note": "P2-13 claimed a floating avatar FAB overlaps the Sign out button. N19-1.md (line 28) documents this as ALREADY_RESOLVED/N/A, noting the overlap was a dev-only external overlay, not application code. Code verification confirms: no floating avatar FAB exists in src/; the AI assistant button exists but is context-specific (editor only, not global admin shell). Issue was non-code (external widget/overlay).",
+      "evidence": [
+        "plans/seo-builder-ux-fixes/agent-runs/N19-1.md:28",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/admin/AdminShell.tsx:1-882",
+        "/Users/jamesaims/Desktop/Development/vending-website/src/components/admin/seo-page-editor/AiBuilderAssistant.tsx:555-566"
+      ]
+    },
+    {
+      "id": "P2-14",
+      "band": "P2",
+      "page": "/admin/pages",
+      "title": "Duplicate page generates a junk slug ('draft-4020bd0f') instead of deriving from the source",
+      "status": "FIXED",
+      "note": "The duplicate slug generation has been completely replaced. Old behavior generated random hash slugs like 'draft-4020bd0f'; new code derives '{source-slug}-copy' with sequential collision handling (-copy-2, -copy-3, etc.). Uniqueness scope respects the active-route-path index (non-archived pages only). Implementation verified via 13 unit tests + 2 service tests (all passing), and UI copy updated to reflect new behavior.",
+      "evidence": [
+        "src/lib/services/duplicate-slug.ts:1-52 (deriveCopySlug implementation with {source-slug}-copy and -copy-N collision handling)",
+        "src/lib/services/seo-pages.ts:245-247 (adminDuplicateSeoPage uses deriveCopySlug with isActiveRoutePathTaken predicate)",
+        "src/lib/services/seo-pages.ts:1257-1270 (isActiveRoutePathTaken checks non-archived pages only)",
+        "src/app/admin/pages/page.tsx:958 (updated confirmation message reflects -copy slug pattern)"
+      ]
+    },
+    {
+      "id": "P2-15",
+      "band": "P2",
+      "page": "/admin/pages/[id]/revisions/[rid]",
+      "title": "Revision preview is sparse and confusing: lone lowercase 'publish' label, AM/PM time mismatch vs editor, minimal context",
+      "status": "FIXED",
+      "note": "The revision detail page now displays human-readable type labels (e.g., \"Published\" instead of \"publish\"), Pacific Time with timezone label (e.g., \"Jun 10, 1:34 AM PDT\"), and block/word context. The shared Pacific formatter ensures consistency with the editor's save-time displays (N21). All three stated acceptance criteria met: labels per type, AM/PM consistency, context shown.",
+      "evidence": [
+        "src/app/admin/pages/[id]/revisions/[revisionId]/page.tsx:70-71 (renders revisionTypeLabel and formatRevisionDateTime)",
+        "src/app/admin/pages/[id]/revisions/revision-display.ts:10-19 (revisionTypeLabel function)",
+        "src/lib/page-builder/datetime-format.ts:11-24 (formatPacificDateTime with Pacific timezone)",
+        "src/app/admin/pages/[id]/revisions/[revisionId]/page.test.tsx:61-83 (test expectations for human labels, Pacific time, context line)"
+      ]
+    }
+  ],
+  "seoP3": [
+    {
+      "id": "No bulk select on pages list (3 personas)",
+      "band": "P3",
+      "page": "",
+      "title": "No bulk select on pages list (3 personas)",
+      "status": "FIXED",
+      "note": "Row checkboxes dynamically show bulk archive bar with count and confirm dialog. Action validates UUIDs and reuses proven adminArchiveSeoPage per-id.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:785-792 (row checkboxes with form association)",
+        "src/app/admin/pages/BulkArchiveControls.tsx:1-78 (client island with selection bar)",
+        "src/app/admin/pages/actions.ts:779-815 (bulkArchiveSeoPagesFromList action)"
+      ]
+    },
+    {
+      "id": "No help/support/docs link anywhere in the builder (Karen)",
+      "band": "P3",
+      "page": "",
+      "title": "No help/support/docs link anywhere in the builder (Karen)",
+      "status": "FIXED",
+      "note": "Help & support mailto: link with icon in admin sidebar below user info, above sign-out. Minimal implementation pending docs site.",
+      "evidence": [
+        "src/components/admin/AdminShell.tsx:461-473 (mailto link in sidebar)"
+      ]
+    },
+    {
+      "id": "'Schedule failed' filter label truncates to 'Schedule faile…",
+      "band": "P3",
+      "page": "",
+      "title": "'Schedule failed' filter label truncates to 'Schedule faile…' (Karen)",
+      "status": "FIXED",
+      "note": "Label renders in full without truncation. Prior N2/N7 work removed truncating chip and restructured status column.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:90 (full label text, no truncate class)"
+      ]
+    },
+    {
+      "id": "Destructive 'Archive page' distinguished by red text alone (",
+      "band": "P3",
+      "page": "",
+      "title": "Destructive 'Archive page' distinguished by red text alone (David)",
+      "status": "FIXED",
+      "note": "N17 added triangular warning glyph to all destructive actions via tone='danger'. Color-independent cue present.",
+      "evidence": [
+        "src/components/admin/AdminShell.tsx:638, 702-720 (DangerActionGlyph triangle icon)"
+      ]
+    },
+    {
+      "id": "Icon-only eye/move controls below comfortable target size (D",
+      "band": "P3",
+      "page": "",
+      "title": "Icon-only eye/move controls below comfortable target size (David, Betty)",
+      "status": "FIXED",
+      "note": "Move and visibility controls use size-8 (32px), exceeding 24px minimum target (WCAG 2.5 AAA). Used on block/column chrome.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/editor-styles.ts:78-79 (iconButtonClass size-8 = 32px)"
+      ]
+    },
+    {
+      "id": "Workflow filter jargon: 'Needs links', 'Updating', 'Metadata",
+      "band": "P3",
+      "page": "",
+      "title": "Workflow filter jargon: 'Needs links', 'Updating', 'Metadata issues' (Yuki, Priya)",
+      "status": "FIXED",
+      "note": "All labels are clear, descriptive names. N18 jargon sweep replaced confusing copy with plain language.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:70, 75, 80 (clear labels with descriptions)"
+      ]
+    },
+    {
+      "id": "Dev QA route /admin/pages/block-preview-audit exposed with n",
+      "band": "P3",
+      "page": "",
+      "title": "Dev QA route /admin/pages/block-preview-audit exposed with no explanation (4 personas; dev-env only)",
+      "status": "FIXED",
+      "note": "Dev-only route returns 404 outside NODE_ENV='development' and blocks indexing via metadata. No explanation needed.",
+      "evidence": [
+        "src/app/admin/pages/block-preview-audit/page.tsx:14 (robots: false), 18-19 (notFound on non-dev)"
+      ]
+    },
+    {
+      "id": "Editor canvas renders full public site chrome (nav + footer)",
+      "band": "P3",
+      "page": "",
+      "title": "Editor canvas renders full public site chrome (nav + footer) as editable-looking content (Jake)",
+      "status": "FIXED",
+      "note": "Canvas includes 'Preview of the public page — edit the content blocks below' cue to orient user. Thin-page warning added (50-word threshold, non-blocking advisory).",
+      "evidence": [
+        "src/components/admin/seo-page-editor/SeoPageEditorCanvasPanel.tsx:45-47 (orientation cue)",
+        "src/components/admin/seo-page-editor/SeoReadinessPanel.tsx:74-100 (thin-page warning)",
+        "src/components/admin/seo-page-editor/SeoReadinessHelpers.ts:21-29 (thinPageWarning helper)"
+      ]
+    },
+    {
+      "id": "Toast/save-confirmation inconsistency — three different trea",
+      "band": "P3",
+      "page": "",
+      "title": "Toast/save-confirmation inconsistency — three different treatments incl. double 'Draft saved' (Claire, Alex)",
+      "status": "PARTIAL",
+      "note": "N4 fixed duplicate announcements via toast keying. However, multiple distinct message texts exist (Draft saved, Draft saved and preview opened, Save failed) appearing inconsistently across save paths.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/SeoEditorManualSubmitToast.tsx:23",
+        "plans/seo-builder-ux-fixes/agent-runs/N4-1.md:44-54",
+        "src/app/admin/pages/actions.ts:245-258"
+      ]
+    },
+    {
+      "id": "Share dropdown stays open during unrelated interactions (Cla",
+      "band": "P3",
+      "page": "",
+      "title": "Share dropdown stays open during unrelated interactions (Claire; partially script-induced screenshot)",
+      "status": "FIXED",
+      "note": "Share menu closes on copy clicks and outside clicks via pointerdown listener. N19 item 6.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/SeoPageEditorTopRail.tsx:30-49",
+        "src/components/admin/seo-page-editor/SeoPageEditorTopRail.tsx:179,201"
+      ]
+    },
+    {
+      "id": "Redirect status copy leads with codes '301/302/307/308' (Bet",
+      "band": "P3",
+      "page": "",
+      "title": "Redirect status copy leads with codes '301/302/307/308' (Betty, Zoe)",
+      "status": "FIXED",
+      "note": "Redirect labels show words-first format (Permanent move (301) not bare code). N18 addressed.",
+      "evidence": [
+        "src/app/admin/pages/redirects/redirect-status-labels.ts:14-17"
+      ]
+    },
+    {
+      "id": "Preview token URL reads as a suspicious scramble for non-tec",
+      "band": "P3",
+      "page": "",
+      "title": "Preview token URL reads as a suspicious scramble for non-technical users (Betty)",
+      "status": "FIXED",
+      "note": "Trust cue added explaining preview token access model. N19 item 7.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/SeoPageEditorTopRail.tsx:232-237"
+      ]
+    },
+    {
+      "id": "Row URLs in tiny grey monospace read as 'computer errors' (B",
+      "band": "P3",
+      "page": "",
+      "title": "Row URLs in tiny grey monospace read as 'computer errors' (Betty)",
+      "status": "NOT_FIXED",
+      "note": "URLs remain in tiny grey monospace styling. Visual treatment unchanged, not addressed.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:802-807"
+      ]
+    },
+    {
+      "id": "No-results state: full-width 'Create page' dwarfs 'Clear sea",
+      "band": "P3",
+      "page": "",
+      "title": "No-results state: full-width 'Create page' dwarfs 'Clear search' (Claire)",
+      "status": "NOT_FIXED",
+      "note": "Create page button takes w-full dominating Clear search in empty search state. Not addressed.",
+      "evidence": [
+        "src/app/admin/pages/page.tsx:532-554"
+      ]
+    },
+    {
+      "id": "Create-gate click target flaky under automation — possible h",
+      "band": "P3",
+      "page": "",
+      "title": "Create-gate click target flaky under automation — possible hydration race (Alex)",
+      "status": "NOT_CODE_VERIFIABLE",
+      "note": "N13 rewrote create gate to single static panel; N19 verified no hydration errors on reload. Runtime flakiness was automation-specific and cannot be definitively verified in static code.",
+      "evidence": [
+        "src/app/admin/pages/new/page.tsx:14-37",
+        "plans/seo-builder-ux-fixes/agent-runs/N19-1.md:33"
+      ]
+    },
+    {
+      "id": "Thin published page ships with no 'this page looks empty' wa",
+      "band": "P3",
+      "page": "",
+      "title": "Thin published page ships with no 'this page looks empty' warning (Betty)",
+      "status": "FIXED",
+      "note": "Non-blocking thin-page advisory added showing when <50 words. N19 item 8. Separate from readiness rules.",
+      "evidence": [
+        "src/components/admin/seo-page-editor/SeoReadinessHelpers.ts:21-29",
+        "src/components/admin/seo-page-editor/SeoReadinessPanel.tsx:74-100"
+      ]
+    }
+  ]
+}
+;
+const GROUPS = [
+  { key: 'full',   name: 'Full-app review — P0–P2 (58 issues)',  sub: 'reports/ux-persona-review/UX-REVIEW.md · fix round: plans/ux-review-fixes/' },
+  { key: 'seo',    name: 'SEO builder review — P0–P2 (28 issues)', sub: 'reports/ux-persona-review-seo-builder/UX-REVIEW.md · fix round: plans/seo-builder-ux-fixes/' },
+  { key: 'fullP3', name: 'Full-app review — P3 (93 issues)',     sub: 'Mostly unscheduled; see plans/ux-review-fixes/P3-BACKLOG.md' },
+  { key: 'seoP3',  name: 'SEO builder review — P3 notes (16 items)', sub: 'N19 P3 batch claimed 6 fixed + 6 already-resolved' },
+];
+const ORDER = ['NOT_FIXED','PARTIAL','DEFERRED','NOT_CODE_VERIFIABLE','WITHDRAWN','FIXED'];
+const COLORS = { FIXED:'var(--fixed)', PARTIAL:'var(--partial)', NOT_FIXED:'var(--notfixed)', DEFERRED:'var(--deferred)', NOT_CODE_VERIFIABLE:'var(--ncv)', WITHDRAWN:'var(--withdrawn)' };
+
+const all = GROUPS.flatMap(g => DATA[g.key]);
+const counts = {};
+for (const it of all) counts[it.status] = (counts[it.status] || 0) + 1;
+document.getElementById('cards').innerHTML =
+  `<div class="card"><div class="n">${all.length}</div><div class="l">Issues verified</div></div>` +
+  ORDER.filter(s => counts[s]).map(s =>
+    `<div class="card"><div class="n" style="color:${COLORS[s]}">${counts[s]}</div><div class="l">${s.replace(/_/g,' ')}</div></div>`).join('');
+
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function row(it) {
+  const ev = (it.evidence || []).length
+    ? `<details class="ev"><summary>evidence (${it.evidence.length})</summary>${it.evidence.map(e => `<code>${esc(e)}</code>`).join('')}</details>` : '';
+  return `<tr data-status="${it.status}">
+    <td><span class="id">${esc(it.id)}</span><br><span class="band band-${esc(it.band)}">${esc(it.band)}</span></td>
+    <td><div class="title">${esc(it.title)}</div><div class="note">${esc(it.note)}</div>${ev}<span class="page">${esc(it.page)}</span></td>
+    <td><span class="badge b-${it.status}">${it.status.replace(/_/g,' ')}</span></td>
+  </tr>`;
+}
+
+const sections = document.getElementById('sections');
+for (const g of GROUPS) {
+  const items = [...DATA[g.key]].sort((a,b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status));
+  const gc = {};
+  for (const it of items) gc[it.status] = (gc[it.status] || 0) + 1;
+  const bar = ORDER.filter(s => gc[s]).map(s => `<span style="background:${COLORS[s]};flex:${gc[s]}" title="${s}: ${gc[s]}"></span>`).join('');
+  const filters = ['ALL', ...ORDER.filter(s => gc[s])].map((s,i) =>
+    `<button class="${i===0?'active':''}" data-f="${s}">${s.replace(/_/g,' ')}${s==='ALL'?` (${items.length})`:` (${gc[s]})`}</button>`).join('');
+  const sec = document.createElement('section');
+  sec.innerHTML = `<h2>${g.name}</h2><p class="sub">${g.sub}</p><div class="bar">${bar}</div>
+    <div class="filters">${filters}</div>
+    <table><thead><tr><th style="width:70px">ID</th><th>Issue · verdict note · evidence</th><th style="width:110px">Status</th></tr></thead>
+    <tbody>${items.map(row).join('')}</tbody></table>`;
+  sec.querySelector('.filters').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    sec.querySelectorAll('.filters button').forEach(x => x.classList.toggle('active', x === b));
+    const f = b.dataset.f;
+    sec.querySelectorAll('tbody tr').forEach(tr => tr.style.display = (f === 'ALL' || tr.dataset.status === f) ? '' : 'none');
+  });
+  sections.appendChild(sec);
+}
+</script>
+</body>
+</html>

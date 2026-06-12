@@ -1,0 +1,124 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an FAQ section with 4 common questions people ask before starting a vending machine business."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Old body copy about machines.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "function-call-13672845974075479687",
+        "name": "add_block",
+        "input": {
+          "blockType": "faq",
+          "title": "Frequently Asked Questions About Vending Machines",
+          "faqItems": [
+            {
+              "question": "What are the initial costs to start a vending machine business?",
+              "answer": "Starting a vending machine business typically involves costs for purchasing machines, inventory, and potentially location fees. Expenses can vary widely based on the type and number of machines, as well as the products you choose to offer. It's advisable to create a detailed business plan to estimate your specific startup capital needs."
+            },
+            {
+              "question": "How do I find good locations for my vending machines?",
+              "answer": "Identifying profitable locations is crucial. Good locations often have high foot traffic, limited existing food/drink options, and a captive audience (e.g., offices, factories, schools, hospitals, retail centers). Research potential sites, observe traffic patterns, and be prepared to propose a benefit to the location owner."
+            },
+            {
+              "question": "What kind of products should I sell in my vending machines?",
+              "answer": "Product selection should align with the location's audience and their potential needs. Consider popular snacks, beverages, healthy options, or even specialized items like personal care products or electronics accessories, depending on the venue. Regularly review sales data to adjust your product offerings for maximum appeal and profitability."
+            },
+            {
+              "question": "What ongoing maintenance and operational tasks are involved?",
+              "answer": "Ongoing tasks include regularly restocking machines, collecting cash (if applicable), performing routine cleaning, and addressing any maintenance issues or repairs promptly. Monitoring inventory levels, tracking sales, and managing relationships with location owners are also important for smooth operation."
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "function": {
+                "arguments": "{\"blockType\":\"faq\",\"title\":\"Frequently Asked Questions About Vending Machines\",\"faqItems\":[{\"question\":\"What are the initial costs to start a vending machine business?\",\"answer\":\"Starting a vending machine business typically involves costs for purchasing machines, inventory, and potentially location fees. Expenses can vary widely based on the type and number of machines, as well as the products you choose to offer. It's advisable to create a detailed business plan to estimate your specific startup capital needs.\"},{\"question\":\"How do I find good locations for my vending machines?\",\"answer\":\"Identifying profitable locations is crucial. Good locations often have high foot traffic, limited existing food/drink options, and a captive audience (e.g., offices, factories, schools, hospitals, retail centers). Research potential sites, observe traffic patterns, and be prepared to propose a benefit to the location owner.\"},{\"question\":\"What kind of products should I sell in my vending machines?\",\"answer\":\"Product selection should align with the location's audience and their potential needs. Consider popular snacks, beverages, healthy options, or even specialized items like personal care products or electronics accessories, depending on the venue. Regularly review sales data to adjust your product offerings for maximum appeal and profitability.\"},{\"question\":\"What ongoing maintenance and operational tasks are involved?\",\"answer\":\"Ongoing tasks include regularly restocking machines, collecting cash (if applicable), performing routine cleaning, and addressing any maintenance issues or repairs promptly. Monitoring inventory levels, tracking sales, and managing relationships with location owners are also important for smooth operation.\"}]}",
+                "name": "add_block"
+              },
+              "id": "function-call-13672845974075479687",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781141134,
+    "id": "iw4qarGiGZ_2juMP2_zugQw",
+    "model": "gemini-2.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 333,
+      "prompt_tokens": 4057,
+      "total_tokens": 4452
+    }
+  }
+}

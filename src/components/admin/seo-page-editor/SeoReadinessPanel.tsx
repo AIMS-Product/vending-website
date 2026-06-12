@@ -15,6 +15,7 @@ import {
   friendlyReadinessCategoryLabel,
   requiresSeoSettings,
   suggestedBlockForFinding,
+  thinPageWarning,
   type NextPublishStep,
 } from "@/components/admin/seo-page-editor/SeoReadinessHelpers";
 import {
@@ -63,14 +64,40 @@ export function SeoReadinessPanel({
   onOpenSettings: (finding: SeoReadinessFinding) => void;
   mediaAssetCount: number;
 }) {
-  const topFindings = [
-    ...summary.blockers,
-    ...summary.warnings,
-    ...summary.opportunities,
-  ].slice(0, 6);
+  // Blockers now live in the dedicated, always-visible publish-blocker
+  // checklist above (single source of truth). This list shows the non-blocking
+  // improvements only, so the same issue never appears in two panels.
+  const topFindings = [...summary.warnings, ...summary.opportunities].slice(
+    0,
+    6,
+  );
+  // N19 / I20 item 8: non-blocking thin-page advisory (not a readiness rule).
+  const thinWarning = thinPageWarning(content);
 
   return (
     <section className="flex flex-col gap-6">
+      {thinWarning ? (
+        <div
+          role="status"
+          className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="mt-0.5 size-4 shrink-0"
+          >
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+            <path d="M12 9v4" />
+            <path d="M12 17h.01" />
+          </svg>
+          <span>{thinWarning}</span>
+        </div>
+      ) : null}
       <div className="grid gap-px overflow-hidden rounded-xl border border-slate-100 bg-slate-100 shadow-sm sm:grid-cols-2">
         {summary.categories.map((category) => (
           <div
@@ -96,7 +123,7 @@ export function SeoReadinessPanel({
                 {category.findings[0].message}
               </p>
             ) : (
-              <p className="mt-3 flex items-center gap-1.5 text-sm text-slate-400">
+              <p className="mt-3 flex items-center gap-1.5 text-sm text-slate-500">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="14"

@@ -1,0 +1,117 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an image section with text about campus vending."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Old body copy about machines.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "igz7naa2",
+        "name": "request_clarification",
+        "input": {
+          "options": [
+            "Provide an image URL or file path for the campus vending section",
+            "Add a text-only section about campus vending first (no image)",
+            "Use a standard placeholder graphic for now"
+          ]
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "Eq0HCqoHAQw51sck9Rt5qB1qInRjrcTT3b6CUK6yv8ueGuUPsw2bmej6ZYWBWtWnrRCdHHg6whecaSymqX6um+S0cHiiv/HJa/fbKNN4NyCIjTo7OneKrZB5OwFxXL6LOHPN20qxNP/fKEiw9ouYPuWP8aD1BGgKHughHmt8RQTZ3Q6rWBlAdcHW0W6O003EQQQEOn76vDNyjQSlN8VWNi8drGW6ozI7cERorAzX1JxWBBkB8WwUSZc2jYQxegbZ87b9GZfkvDPW2WJUG42nPLCpbA0rgU+Czq+A+1pOsOeIfGJ8N1Ci4ZX+bj3AvGK80ZZqtUdVcGcHRBedjRILxYS0RCRMVoYMM5NX+5DxX69K6uVV3nTDBLflERAnSmpd0aXh4UnLOQAmzHPCPTcE7PANIryjx0b+S4D1mXM9lxa1gXC67GaATEMkWcfe1qpJoKUg1JxYATu2tdBioTdpawo+OGUkveMedYL9Kvl/80VNyVC52hz0IPmpA5ixeje15DvRGRLDtgeZH8y+3t54rGHdaJvOroMvyScvnR1+9ujO2ngrMRrXvaUFUUMtNn46iTTdPp1To8CwsZ/UT+sKQyIlO53WeNhBNJdVrKKkiK8A2ebZhqsYy9Otbjf7hD2PIL9f8TkaujmotRSv3xs2eUEKqt8x51EnmuxS0n8TdsAFOmulwHy/D51WKibmuZ/05wAHsWZ09wWOyW3nBOSKkQzIqrYUG6pA1xzxV80U/dEi6xU+4bd3XNAW5dzc1M5Zx6jDyGNZeBHTMpGNeyxFXP4M5L7jENSREzwnY8+raukWz8VG27uvUbwOi0kvZh2ZyCeoZUst+Cab/60XkDWgIKzwoW8yWxYwu6bBS0YCb+RDv/e0Nmij4Pqk/SdGCmftar8Iw1mKC5++W8on7G70AB//xW7axZL1g3qUL6RLIc3K+Ti+RTBEWpWQN13q9PqUnLg7VjbpTIAPp6xCzJkBN1b82oYGsTbpu/qkg/z8emwWMqgeHvP6Xn7IT5EsD105tD+K6ndXKJ9TzL/k86QbrlytqtMzMjNRwkAwPe/vgjLDfKkbtHIvjkSwEBNFNCHjFRwyS5HmE6YHwIaFIaKPEwpTDLyeZx5WCD0NRXFL2BDrSFURJNN7VX8TQ+hl1vuwo9iF7CwLJfGCUeBXI4NmWyXVjD0qZm/GeS7tBK9IIMuvI/hm75k73amMt26fHulMnxQDrCrdslqa/PzjJ6ZQD8TRSOsG4o8EuSHP1rTWM7o="
+                }
+              },
+              "function": {
+                "arguments": "{\"options\":[\"Provide an image URL or file path for the campus vending section\",\"Add a text-only section about campus vending first (no image)\",\"Use a standard placeholder graphic for now\"]}",
+                "name": "request_clarification"
+              },
+              "id": "igz7naa2",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781142583,
+    "id": "NRQqarbyJca-juMP6cjJ2As",
+    "model": "gemini-3.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 55,
+      "prompt_tokens": 4427,
+      "prompt_tokens_details": {
+        "cached_tokens": 4030
+      },
+      "total_tokens": 4682
+    }
+  }
+}

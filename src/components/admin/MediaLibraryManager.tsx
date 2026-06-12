@@ -578,7 +578,7 @@ function UsageBadge({ count }: { count: number }) {
 
 function AssetTagList({ tags }: { tags: string[] }) {
   if (tags.length === 0) {
-    return <p className="text-xs text-slate-400">No tags</p>;
+    return <p className="text-xs text-slate-500">No tags</p>;
   }
   return (
     <div className="flex flex-wrap gap-1">

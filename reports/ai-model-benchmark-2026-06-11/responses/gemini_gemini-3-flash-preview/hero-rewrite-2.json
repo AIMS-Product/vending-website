@@ -1,0 +1,117 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Rewrite the hero headline and body to emphasise hands-off passive income for busy professionals. Keep the CTA unchanged."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Old body copy about machines.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "g5fsx4j8",
+        "name": "edit_block_1_block_hero",
+        "input": {
+          "ctaHref": "/apply",
+          "body": "For busy professionals, coffee vending machines for offices offer a seamless way to build a secondary revenue stream without the daily management. Our solutions are designed to fit into your existing workspace, providing high-quality coffee for staff and clients while you focus on your core business.",
+          "ctaLabel": "Apply now",
+          "headline": "Generate Hands-Off Passive Income with Office Coffee Vending",
+          "eyebrow": ""
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "EsULCsILAQw51seSt+6EwXwMOSe1ajWX2I9AAi3IrU2287pwVn97i5Eaz5rW1oDVR9PLaGSK3zWzcfZpx9AXrDJ+/LNDLIu2sDwmH7xw8jfWN7qIAnBnUDCTi6AjDX0yMnEWdanDX/M8XjGCfnvgwpeRPR1/EZFetfhgEUNyafd8BR3TWzlEhCU3MulkUH6g01jIet6iU78eXssZEuVXZRH+UoOs1Zp6zzSwaQJugIVjn7FELxANQhHbR7vk6+UO10XGXKi5U2HC8Wt8EKWINme7G0V1elOQkiC28zl3KGzfzJ4WI5bk3+K2VEom3rhYUgr/E5Y4zedW/egG3VfMlG3D68YcIkCrtxBJxWXea4aFo62sq0X9P4R5iLypOWKiz/M+fmgEzkwmsC+HgIrVqVuyikdvZBGAB1Le1Jbm2fTnyUs4DaabUPVw7SEfyx4hH1cUt/hFj84QRk+IkVAQFHQ1Da/MIS4FC9+7ccD5KIhI2j366N9dizLFoM60YHBq0JycFQVQUtosq9YyRPsD7oOAz2kUWGCsWSCSpREaHHN6Jtio1W9nXjH/vEUbODRQ54ApnnYA4OgHah5jNgvDCRPV+M/jBv60CmnYsO5J64h9gNbgACSOqbeQ7FhKbtbV5cJ4gqpZAVlIeVsAIDwkMOFDYBr8APX6KSLfFOv1xDm/DuO0eo0udjW+pOKeYRrQBV6NvnWl7+AbazZ3CqOyg4/xQoobAV1aL9fuy1XsbUWoaOUGREp8YXn5lt6octsbbe1Nut3+kNrlxqzJQLVh1FFDYiRCd/tGuFRWFcCNlbs+IE0hV+3NLIYrs+v4q+JHap65DojyJx2utBRPDRb5sKT0d/mSgjWh0USQ9rRZtkAFFs6rDx61f+wvhh9Sd9vTVzOrgNtXtCx0OyY/HHSX1IlQ9Y7kZjkGEfenSnxc9dEoBPQ0kSUrTv4psaP2dLVdwx5XzO9f/SUj1dmKZTa2kSqXTG2egNx4xqtLGg6zC8a+sqQOIV3GzRDa7uw36daLwG21Np5k0UHvZdgfNkvXF8r6NKU2pA5dn/WypXmqUi6tSeyy3mNfXMcs37FUlr6Xc+dHulIzxPoxGDaB3ChAiMm6TacxClRrEaNSLvZWk9dQAzI4tWWCLp2n5znYHTsIpJ6yl/4lSuRrF99LcvBg4VT7TR0XrIcwM7j+J62SqiLF/NEDwSolvldJ5HF2cpNZMQihssVhqpE2nZkztM5qkMccrvlCG8v1oMMGUROjhnSOQOlNCxAnjFDFAymvlv3SCS9jsybLifxe9ZoNvU6l0ugCg5DsRflYpfWozWqx+YfwQiF7ADgrp5uE3u7RbwoQr/ji22QzIj1v3VRbUjvl5XcARyf+Okfg+3nQn8KyCHL8/rQ36bGZZztujC6JQaHQlPdlY4/mQ0KlfXEfMrZa7N5OHEfh+rwfUWnedEQ0dj93vF4zajJfQWZlrrahxl6cSI4zQ499J/gQi0C7XFY0Cz6XR+rBkvCxox6BpG6sgmPowKpnUpnpQBKGUFtM/TxRvC5LJxGrXeDjjhIuma9QVHjc+ildncL4aYchmOtrSj7P3KQoNKRNYM7GxOXJsIizjrLxXCYYGZg7OiTpJuUxi6yKmXsBOcJt7ZlivunRCH7n8WKGmtkY8iSiQh//FxMnvbYRNUnpDLmqEW4Usxt8+1oew0at55rnDzQpiLnPzabbZOu7ZuJicwu9eFKnYeEW254H+7CrsH7A7YtIQKQSFCwEM4xklxsWnR049QhMYCrFd7lShRHxzEHKx3mOsxYPFzIyjJfnxJL/B+ZorC/AVu/9o8G9EHaKgNDbF9twkqUVeoIbQBq18zHgkE7ZcBnaTIpiwwaZAX5lhOb6b31n02wAho1h2L1riyuzPBFNYoiuJoIvyCP6Qx+2nxd/i0k2GGqMo9hpplKkP0lYgCWLkH3GRtAj5QXgvpu8zRv2QlJP+3G0I5BvBQ=="
+                }
+              },
+              "function": {
+                "arguments": "{\"ctaHref\":\"/apply\",\"body\":\"For busy professionals, coffee vending machines for offices offer a seamless way to build a secondary revenue stream without the daily management. Our solutions are designed to fit into your existing workspace, providing high-quality coffee for staff and clients while you focus on your core business.\",\"ctaLabel\":\"Apply now\",\"headline\":\"Generate Hands-Off Passive Income with Office Coffee Vending\",\"eyebrow\":\"\"}",
+                "name": "edit_block_1_block_hero"
+              },
+              "id": "g5fsx4j8",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781141200,
+    "id": "zQ4qavivF8y5juMP5cnH0A4",
+    "model": "gemini-3-flash-preview",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 112,
+      "prompt_tokens": 4412,
+      "prompt_tokens_details": {
+        "cached_tokens": 4039
+      },
+      "total_tokens": 4874
+    }
+  }
+}

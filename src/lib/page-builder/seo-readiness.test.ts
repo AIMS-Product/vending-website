@@ -445,6 +445,71 @@ describe("assessSeoReadiness", () => {
     ).not.toContain("missing_supporting_subsections");
   });
 
+  it("surfaces copy-quality gate failures as content warnings", () => {
+    const content: PageContent = {
+      ...baseContent,
+      sections: [
+        {
+          ...baseContent.sections[0],
+          columns: [
+            {
+              ...baseContent.sections[0].columns[0],
+              blocks: baseContent.sections[0].columns[0].blocks.map((block) =>
+                block.type === "hero"
+                  ? {
+                      ...block,
+                      props: {
+                        ...block.props,
+                        body: "Our state-of-the-art vending support.",
+                      },
+                    }
+                  : block,
+              ),
+            },
+          ],
+        },
+      ],
+    };
+
+    const summary = assessSeoReadiness(content, baseMeta);
+
+    expect(summary.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "thin_hero_body",
+          category: "content",
+          path: "block_hero",
+        }),
+        expect.objectContaining({ code: "filler_phrase" }),
+        // The single-question FAQ in the base fixture trips the gate too.
+        expect.objectContaining({ code: "thin_faq" }),
+      ]),
+    );
+    expect(summary.blockers).toEqual([]);
+  });
+
+  it("warns when the meta description exceeds the 155-character target", () => {
+    const summary = assessSeoReadiness(baseContent, {
+      ...baseMeta,
+      metaDescription: "m".repeat(156),
+    });
+
+    expect(summary.warnings.map((finding) => finding.code)).toContain(
+      "meta_description_may_truncate",
+    );
+  });
+
+  it("does not warn about truncation at exactly 155 characters", () => {
+    const summary = assessSeoReadiness(baseContent, {
+      ...baseMeta,
+      metaDescription: "m".repeat(155),
+    });
+
+    expect(summary.warnings.map((finding) => finding.code)).not.toContain(
+      "meta_description_may_truncate",
+    );
+  });
+
   it("counts visible words after trimming repeated whitespace", () => {
     const content: PageContent = {
       version: 1,

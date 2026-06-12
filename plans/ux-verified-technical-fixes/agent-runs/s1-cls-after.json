@@ -1,0 +1,21 @@
+{
+  "results": [
+    {
+      "path": "/about",
+      "cls": 0,
+      "shifts": []
+    },
+    {
+      "path": "/news",
+      "cls": 0,
+      "shifts": []
+    },
+    {
+      "path": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      "cls": 0,
+      "shifts": []
+    }
+  ],
+  "baseUrl": "http://localhost:3000",
+  "settleMs": 8000
+}

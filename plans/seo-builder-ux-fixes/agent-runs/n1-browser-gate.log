@@ -1,0 +1,16 @@
+BLOCKER_ITEMS_VISIBLE: 6
+BLOCKER_LABELS:
+  - Add a valid page URL slug Go to field
+  - Add a page title Go to field
+  - Add an SEO title Go to field
+  - Add a meta description Go to field
+  - Add a call-to-action, hero button, or lead form so visitors can act Show in page
+  - Save this draft to create the page before publishing Save draft
+PUBLISH_ARIA_DESCRIBEDBY: publish-blocker-checklist
+PUBLISH_ARIA_DISABLED: true
+CHECKLIST_ARIA_LIVE: polite
+AFTER_TITLE_DEEPLINK_ACTIVE_ELEMENT_ID: 
+BLOCKERS_AFTER_META:
+  - Add a call-to-action, hero button, or lead form so visitors can act Show in page
+AXE_VIOLATIONS: []
+DONE

@@ -21,6 +21,7 @@ import {
   adminRevokeSeoPagePreviewToken,
   adminRollbackSeoPageRevision,
   adminSaveSeoPageDraft,
+  adminSnapshotManualSaveRevision,
   adminUnpublishSeoPage,
   adminUpdateSeoPageSlug,
   type SeoPageDraftSettings,
@@ -31,13 +32,13 @@ import {
   SeoAgentSourceError,
   adminGenerateOpenAiSeoPageProposal,
 } from "@/lib/services/openai-seo-agent";
+import { adminDeleteNeverSavedSeoPageDraft } from "@/lib/services/seo-page-drafts";
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
+import { META_DESCRIPTION_LEGACY_MAX_LENGTH } from "@/lib/page-builder/copy-standards";
 import { pagePathForSlug } from "@/lib/page-builder/page-paths";
+import { ROUTE_PREFIX_PATTERN } from "@/lib/page-builder/route-prefix-defaults";
+import { listRoutePrefixes } from "@/lib/services/route-prefixes";
 import { zonedDateTimeLocalToUtcIso } from "@/lib/page-builder/scheduled-publishing";
-import {
-  defaultSeoAgentProvider,
-  type SeoAgentProvider,
-} from "@/lib/page-builder/seo-agent-provider";
 import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
 
 export type PageEditorActionState =
@@ -113,17 +114,23 @@ const formObjectSchema = z.object({
     .trim()
     .toLowerCase()
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use a URL-safe slug."),
+  // Shape-only here; membership in the configured prefix list is enforced
+  // with a live lookup (`configuredRoutePrefixError`) inside each action,
+  // since custom prefixes live in the page_builder_route_prefixes table.
   routePrefix: z
     .string()
     .trim()
-    .regex(
-      /^\/(resources|blog|landing|videos|solutions)$/,
-      "Choose a supported route prefix.",
-    )
+    .regex(ROUTE_PREFIX_PATTERN, "Choose a supported route prefix.")
     .default("/resources"),
   targetKeyword: z.string().trim().max(180, "Target keyword is too long."),
   seoTitle: z.string().trim().max(80, "SEO title is too long."),
-  metaDescription: z.string().trim().max(180, "Meta description is too long."),
+  // Legacy ceiling, not the 155-character target: pages saved before the cap
+  // can hold 156-180 char descriptions and must keep saving/publishing
+  // unchanged. The readiness check warns above 155 instead of blocking.
+  metaDescription: z
+    .string()
+    .trim()
+    .max(META_DESCRIPTION_LEGACY_MAX_LENGTH, "Meta description is too long."),
   canonicalUrl: z.string().trim().max(500, "Canonical URL is too long."),
   internalTags: z.string().trim().max(500).default(""),
   topicCluster: z.string().trim().max(120).default(""),
@@ -179,7 +186,17 @@ const formSchema = formObjectSchema.superRefine((data, ctx) => {
 type ParsedPageForm = z.infer<typeof formSchema>;
 
 const ADMIN_PAGES_PATH = "/admin/pages";
-const seoAgentProviderSchema = z.enum(["openai", "cerebras"]);
+
+// Live lookup against the configured prefix list (seeded defaults plus
+// admin-added customs; the service falls back to the defaults when the table
+// is missing). Returns an error message, or null when the prefix is allowed.
+async function configuredRoutePrefixError(
+  routePrefix: string,
+): Promise<string | null> {
+  const configured = await listRoutePrefixes();
+  if (configured.some((entry) => entry.prefix === routePrefix)) return null;
+  return "That route prefix is not configured. Add it under Settings → Routes first.";
+}
 
 type PersistedPageDraft = {
   pageId: string;
@@ -199,10 +216,18 @@ export async function saveSeoPage(
   }
 
   const page = parsed.data;
+  const prefixError = await configuredRoutePrefixError(page.routePrefix);
+  if (prefixError) {
+    return { status: "error", message: prefixError };
+  }
   let redirectTo: string | null = null;
 
   try {
-    const persisted = await persistPageEditorDraft(page, admin.user.id);
+    const persisted = await persistPageEditorDraft(
+      page,
+      admin.user.id,
+      parsed.governanceFieldsPresent,
+    );
     if (!persisted) {
       return { status: "error", message: "Page not found." };
     }
@@ -212,6 +237,12 @@ export async function saveSeoPage(
         actorId: admin.user.id,
         publishNote: page.publishNote,
       });
+    } else {
+      // Snapshot a manual_save revision for every explicit "Save draft" (not
+      // publish, which records its own revision; not autosave, a separate
+      // action). The draft has already committed above, so a snapshot/prune
+      // failure must never fail the user's save — log and move on.
+      await snapshotManualSaveRevisionSafely(persisted.pageId, admin.user.id);
     }
 
     if (persisted.created) {
@@ -296,6 +327,11 @@ export async function createSeoPageDraftForEditor(input: {
     return { status: "error", message: "Add a title before auto-saving." };
   }
 
+  const prefixError = await configuredRoutePrefixError(parsed.data.routePrefix);
+  if (prefixError) {
+    return { status: "error", message: prefixError };
+  }
+
   try {
     const page = await adminCreateSeoPage({
       title: parsed.data.title,
@@ -319,6 +355,51 @@ export async function createSeoPageDraftForEditor(input: {
     return {
       status: "error",
       message: "Could not start the draft automatically — use Save draft.",
+    };
+  }
+}
+
+export type DiscardNeverSavedDraftResult =
+  | { status: "deleted" }
+  | { status: "error"; message: string };
+
+// N6 / issue I5: discard a draft row that S3b auto-created but the user never
+// explicitly saved. Called from the unsaved-exit guard's "Discard draft"
+// option. The service re-derives a server-side safety floor (never deletes a
+// published or revision-bearing page), so a stale client or spoofed id can
+// never cause data loss.
+export async function deleteNeverSavedSeoPageDraft(
+  pageId: string,
+): Promise<DiscardNeverSavedDraftResult> {
+  const admin = await requireAuth();
+  const parsedPageId = z.uuid().safeParse(pageId);
+  if (!parsedPageId.success) {
+    return { status: "error", message: "Invalid page reference." };
+  }
+
+  try {
+    const result = await adminDeleteNeverSavedSeoPageDraft(parsedPageId.data);
+    if (result.status === "deleted") {
+      revalidatePath(ADMIN_PAGES_PATH);
+      return { status: "deleted" };
+    }
+    if (result.status === "not_found") {
+      // Already gone — treat as success so the guard lets the user leave.
+      return { status: "deleted" };
+    }
+    return {
+      status: "error",
+      message: "This page was already saved, so it was kept.",
+    };
+  } catch (error) {
+    console.error("failed to discard never-saved SEO page draft", {
+      adminUserId: admin.user.id,
+      pageId: parsedPageId.data,
+      error,
+    });
+    return {
+      status: "error",
+      message: "Could not discard the draft. Use Save draft to keep it.",
     };
   }
 }
@@ -360,6 +441,11 @@ export async function autosaveSeoPageDraft(
 
   if (!parsed.success) {
     return { status: "error", message: firstIssue(parsed.error) };
+  }
+
+  const prefixError = await configuredRoutePrefixError(parsed.data.routePrefix);
+  if (prefixError) {
+    return { status: "error", message: prefixError };
   }
 
   try {
@@ -434,9 +520,17 @@ export async function saveSeoPageDraftAndCreatePreviewLink(
   }
 
   const page = parsed.data;
+  const prefixError = await configuredRoutePrefixError(page.routePrefix);
+  if (prefixError) {
+    return { status: "error", message: prefixError };
+  }
 
   try {
-    const persisted = await persistPageEditorDraft(page, admin.user.id);
+    const persisted = await persistPageEditorDraft(
+      page,
+      admin.user.id,
+      parsed.governanceFieldsPresent,
+    );
     if (!persisted) {
       return { status: "error", message: "Page not found." };
     }
@@ -467,29 +561,20 @@ export async function saveSeoPageDraftAndCreatePreviewLink(
 
 export async function generateAiSeoPageProposal(
   pageId: string,
-  providerInput: SeoAgentProvider = defaultSeoAgentProvider,
 ): Promise<PageAiProposalResult> {
   const admin = await requireAuth();
   if (!pageId) {
     return { status: "error", message: "Save the page before running AI." };
   }
 
-  const provider = seoAgentProviderSchema
-    .catch(defaultSeoAgentProvider)
-    .parse(providerInput);
-
   try {
     const proposal = await adminGenerateOpenAiSeoPageProposal(pageId, {
       actorId: admin.user.id,
-      provider,
     });
     revalidatePath(`${ADMIN_PAGES_PATH}/${pageId}`);
     return {
       status: "created",
-      message:
-        provider === "cerebras"
-          ? "Cerebras proposal created for review."
-          : "AI proposal created for review.",
+      message: "AI proposal created for review.",
       proposalId: proposal.id,
     };
   } catch (error) {
@@ -706,7 +791,74 @@ export async function archiveSeoPageFromList(formData: FormData) {
   redirect(redirectPath);
 }
 
+// Caps a single bulk archive so one submit cannot fan out into hundreds of
+// sequential archive RPCs. Extras beyond the cap are skipped and reported as
+// failed in the result banner so the admin knows to re-run for the remainder.
+const BULK_ARCHIVE_LIMIT = 50;
+
+// N19 / I20 item 1: archive several pages at once from the list. Minimal —
+// reuses the existing single-page archive service per id (no new bulk service),
+// requireAdmin + per-id UUID validation, and returns to the preserved list view
+// with explicit archived/failed counts so partial failures are visible.
+export async function bulkArchiveSeoPagesFromList(formData: FormData) {
+  const admin = await requireAuth();
+  const returnTo = adminPageListReturnPath(formData);
+  const rawIds = formData.getAll("ids").map((value) => String(value));
+  const uniqueIds = [
+    ...new Set(rawIds.filter((id) => z.uuid().safeParse(id).success)),
+  ];
+
+  if (uniqueIds.length === 0) {
+    redirect(`${ADMIN_PAGES_PATH}?error=bulk-archive`);
+  }
+
+  const ids = uniqueIds.slice(0, BULK_ARCHIVE_LIMIT);
+  let archived = 0;
+  let failed = uniqueIds.length - ids.length;
+  for (const pageId of ids) {
+    try {
+      const page = await adminArchiveSeoPage(pageId, {
+        actorId: admin.user.id,
+      });
+      revalidatePagePaths(page.route_path);
+      archived += 1;
+    } catch (error) {
+      console.error("failed to bulk-archive SEO page from list", {
+        adminUserId: admin.user.id,
+        pageId,
+        error,
+      });
+      failed += 1;
+    }
+  }
+
+  if (archived === 0) {
+    redirect(`${ADMIN_PAGES_PATH}?error=bulk-archive`);
+  }
+  redirect(bulkArchiveResultPath(returnTo, archived, failed));
+}
+
+// returnTo is allowlisted to "/admin/pages" or "/admin/pages?..." by
+// adminPageListReturnPath, so appending only needs to pick the separator.
+function bulkArchiveResultPath(
+  returnTo: string,
+  archived: number,
+  failed: number,
+) {
+  const separator = returnTo.includes("?") ? "&" : "?";
+  const failedParam = failed > 0 ? `&failed=${failed}` : "";
+  return `${returnTo}${separator}archived=${archived}${failedParam}`;
+}
+
 function parsePageFormData(formData: FormData) {
+  // The governance/social fields are uncontrolled inputs that unmount with the
+  // collapsible SEO panel — a manual save submitted while the panel is closed
+  // has none of them in the FormData. They render together as one group, so a
+  // single sentinel field is enough to detect presence. When absent, the
+  // governance keys are omitted from the service patch entirely (the service
+  // treats absent keys as no-change) instead of wiping persisted values with
+  // schema defaults.
+  const governanceFieldsPresent = formData.has("internalTags");
   const contentRaw = String(formData.get("draftContent") ?? "");
   let draftContent: unknown;
   try {
@@ -757,12 +909,43 @@ function parsePageFormData(formData: FormData) {
     return { success: false as const, message: firstIssue(parsed.error) };
   }
 
-  return { success: true as const, data: parsed.data };
+  return { success: true as const, data: parsed.data, governanceFieldsPresent };
+}
+
+// Snapshots the just-saved draft as a manual_save revision and prunes old
+// ones. Retries once after a brief delay so a transient hiccup does not
+// silently lose the user's only delete-protecting revision, then deliberately
+// swallows failures: the draft is already persisted, so a revision-history
+// hiccup must not turn a successful save into an error.
+async function snapshotManualSaveRevisionSafely(
+  pageId: string,
+  actorId: string,
+): Promise<void> {
+  try {
+    await adminSnapshotManualSaveRevision(pageId, { actorId });
+    return;
+  } catch (error) {
+    console.error("manual_save revision snapshot failed; retrying once", {
+      pageId,
+      error,
+    });
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  try {
+    await adminSnapshotManualSaveRevision(pageId, { actorId });
+  } catch (error) {
+    console.error("manual_save revision snapshot failed after retry", {
+      pageId,
+      error,
+    });
+  }
 }
 
 async function persistPageEditorDraft(
   page: ParsedPageForm,
   actorId: string,
+  governanceFieldsPresent: boolean,
 ): Promise<PersistedPageDraft | null> {
   if (!page.id) {
     const created = await adminCreateSeoPage({
@@ -777,7 +960,7 @@ async function persistPageEditorDraft(
     });
 
     await adminSaveSeoPageDraft(created.id, {
-      ...draftMetadataFromPageForm(page),
+      ...draftMetadataFromPageForm(page, governanceFieldsPresent),
       updatedBy: actorId,
     });
 
@@ -795,7 +978,7 @@ async function persistPageEditorDraft(
     await adminSaveSeoPageDraft(page.id, {
       draftContent: page.draftContent,
       draftSettings: draftSettingsFromPageForm(page),
-      ...governanceMetadataFromPageForm(page),
+      ...(governanceFieldsPresent ? governanceMetadataFromPageForm(page) : {}),
       ...scheduledPublishMetadataFromPageForm(page),
       updatedBy: actorId,
     });
@@ -815,7 +998,7 @@ async function persistPageEditorDraft(
       routePrefix: page.routePrefix,
       title: page.title,
       targetKeyword: nullable(page.targetKeyword),
-      ...draftMetadataFromPageForm(page),
+      ...draftMetadataFromPageForm(page, governanceFieldsPresent),
       draftContent: page.draftContent,
       updatedBy: actorId,
     });
@@ -829,10 +1012,16 @@ async function persistPageEditorDraft(
   };
 }
 
-function draftMetadataFromPageForm(page: ParsedPageForm) {
+// `governanceFieldsPresent` defaults to true for callers that always build a
+// complete payload (autosave constructs it client-side with fallbacks to the
+// loaded row, so its governance values are always real, never schema defaults).
+function draftMetadataFromPageForm(
+  page: ParsedPageForm,
+  governanceFieldsPresent = true,
+) {
   return {
     ...seoDraftMetadataFromPageForm(page),
-    ...governanceMetadataFromPageForm(page),
+    ...(governanceFieldsPresent ? governanceMetadataFromPageForm(page) : {}),
     ...scheduledPublishMetadataFromPageForm(page),
   };
 }

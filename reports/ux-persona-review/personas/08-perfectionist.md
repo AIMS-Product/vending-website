@@ -1,130 +1,146 @@
-# Persona Review: Claire — Detail-Obsessed Perfectionist
+# Persona Review — 08 · Claire, Detail-Obsessed Perfectionist (37)
+
+UX designer at a Fortune 500. I notice every pixel, every inconsistency, every
+violation of design-system norms. My lens for this review: is there _one_ design
+system, or several? Are spacings, button shapes, type scales, and colour
+semantics consistent across the public site and the admin studio? Are
+loading / empty / error states actually designed, or left as defaults?
 
 ## Summary
 
-- Pages reviewed: 6
-- Issues found: 41
-- Blockers: 1
-- Overall gut feel: 3/5
+- **Pages reviewed**: 28 (all public routes + admin studio), plus 8 journeys
+- **Findings**: 22
+- **Blockers**: 0
+- **Severity spread**: 0 blocker · 0 critical · 8 high · 8 medium · 6 low
+- **Overall gut feel**: **2.5 / 5** — Individually most screens are competent, but
+  the product is visibly built from two unrelated design systems (brutalist public
+  site, generic SaaS admin) with no shared tokens, and several designed states
+  (success page, count-up stats, scroll-reveal cards) are wired wrong or render as
+  defaults. As a perfectionist I cannot unsee it.
 
-> I want to love this. The bones are genuinely good — generous whitespace, a calm
-> neutral palette, real readability. But I cannot unsee the things that are wrong:
-> two entirely different design languages living in the same product (flat-blue
-> admin chrome vs a neo-brutalist orange-with-hard-shadow brand kit), a stray "N"
-> avatar that physically overlaps the "Sign out" label on _every single page_,
-> required fields with no required markers, native browser validation tooltips
-> bolted onto otherwise-custom forms, raw OS `<select>` dropdowns next to lovingly
-> styled text inputs, and undesigned empty states sitting under styled table
-> headers. These aren't catastrophes. They're a thousand small betrayals of the
-> design system, and collectively they make a polished product read as unfinished.
+The single thing I cannot get past: **the public marketing site and the admin
+studio do not share a design system** — different type, button shapes, radii,
+colour semantics, and shadow language. Everything else is downstream of that.
 
 ---
 
-## Page-by-Page Review
+## Journey Review
 
-### /admin/pages (Pages List)
+| #   | Journey                  | Score | Could I complete it?                     | Where I'd give up / wince                                                                                                                                                 |
+| --- | ------------------------ | :---: | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | discover-and-apply       |  2/5  | Yes                                      | Hero stats read '0+ / $0M+ / 0+'; on submit I get tiny inline green text instead of the _designed_ /thank-you-for-applying page that already exists but is never reached. |
+| 2   | contact-the-team         |  3/5  | Up to submit (submit skipped for safety) | Same form pattern as /apply but the 'State' field's requiredness silently differs; submit button shadow doesn't match /apply's.                                           |
+| 3   | read-a-news-article      |  2/5  | Yes                                      | Listing paints as three empty card outlines above the fold (scroll-reveal at rest) and one cover image 500s into raw alt text; section is called 'NEWS' then 'BLOG'.      |
+| 4   | evaluate-trust           |  3/5  | Yes                                      | Reachable and real, but case-studies grid has ragged card heights / inconsistent avatars.                                                                                 |
+| 5   | pre-call-prep            |  3/5  | Yes                                      | Loads cleanly; nothing egregious, just the same nav under-sizing.                                                                                                         |
+| 6   | admin-create-news-draft  |  2/5  | Yes (via direct URL)                     | No News item in the sidebar; 'Save draft' and 'Publish' are two identical blue buttons; body editor is an undesigned empty textarea.                                      |
+| 7   | admin-create-seo-page    |  2/5  | With friction                            | Quick Tour overlay sits on top of the 'Add your first block' panel it points at; editor toolbar uses a _third_ button style (outline pills).                              |
+| 8   | admin-manage-content-ops |  2/5  | Partly                                   | Per-section eyebrow labels are five different conventions; stat-card colours carry no consistent semantics; Redirects/News are orphaned routes.                           |
 
-**Gut feel: 3/5** — "A clean, well-spaced list view sabotaged by a floating avatar that collides with the sign-out control and status badges reduced to cryptic colored dots."
+### Per-journey notes
 
-| #   | Category                 | Finding                                                                                                                                                                                                                                                                        | Severity | Why this matters to me                                                                                                                                                                                                             |
-| --- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Visual & Layout          | The dark circular "N" avatar floats in the bottom-left and physically overlaps the "Sign out" label — the glyph sits on top of the "S" in "Sign out".                                                                                                                          | High     | This is the first thing my eye lands on and it is unambiguously broken layering. A floating element overlapping a control is a z-index/positioning bug, not a style choice. I cannot trust the rest of the layout once I see this. |
-| 2   | Feedback & State         | READINESS and STATUS columns render as bare colored dots (a teal "+" circle and an amber "D" circle) with no legend, no label, no tooltip visible in the static view.                                                                                                          | High     | Two identically-shaped circular badges in different colors with single-letter glyphs is the definition of an undeciphered visual system. Similar elements must read the same; these read as decorative noise.                      |
-| 3   | Visual & Layout          | Three different button treatments coexist in the header region: black solid "Search", blue solid "New SEO page", white-outline pills "Authors"/"Redirects".                                                                                                                    | High     | Three button styles competing for primary-action attention on one screen. There can be exactly one primary style. This is a design-system violation, full stop.                                                                    |
-| 4   | Visual & Layout          | The four stat cards (All / Drafts / Published / Archived) each use a different pastel icon-tile color (blue, amber, green, gray) — no systematic color meaning, just decoration.                                                                                               | Medium   | If color carried status meaning (green=published) it would be defensible, but Archived-gray and All-blue are arbitrary. Inconsistent color semantics make me distrust every other color on the page.                               |
-| 5   | Copy & Labels            | Filter pills "Needs review / Updating / Needs links / Metadata issues / Scheduled / Schedule failed" sit on one row while a separate tab row (All/Drafts/Published/Archived) AND a sort dropdown all stack — three filtering paradigms (tabs, pills, dropdown) in one toolbar. | Medium   | Three different control metaphors for filtering the same list is a hierarchy failure. A perfectionist wants one consistent filter pattern.                                                                                         |
-| 6   | Visual & Layout          | The single table row "Vending in Colleges" has generous vertical padding but the footer summary ("0 published • 1 drafts") is right-aligned and floats with no visual anchor to the table.                                                                                     | Low      | The footer count feels orphaned — not aligned to any column, just drifting at the bottom-right.                                                                                                                                    |
-| 7   | Copy & Labels            | "1 drafts" — singular count with plural noun. Should read "1 draft".                                                                                                                                                                                                           | Low      | Grammatical agreement. I notice every one of these.                                                                                                                                                                                |
-| 8   | Visual & Layout (mobile) | On mobile the stat cards stack but the divider/active-indicator (blue underline) only appears under the first "All" card, leaving the others looking unselected/inconsistent.                                                                                                  | Medium   | The active-state underline treatment doesn't translate to the stacked layout — it looks like a rendering accident.                                                                                                                 |
-| 9   | Visual & Layout (tablet) | At 768px the table's STATUS column header ("STAT…") and the amber status dot are clipped at the right edge — the table overflows its container.                                                                                                                                | High     | Horizontal clipping of a data column is a responsive breakpoint that was never tuned. The table doesn't fit and nothing was done about it.                                                                                         |
-| 10  | Accessibility            | Status conveyed by color-only dots with no text label fails WCAG 1.4.1 (use of color).                                                                                                                                                                                         | High     | A colorblind user cannot distinguish the teal vs amber status circles. This is both an a11y failure and a consistency failure.                                                                                                     |
+- **discover-and-apply** — The proof numbers in the hero are the loudest thing on
+  the page and they say zero (`0+ ENTREPRENEURS LAUNCHED`, `$0M+`, `0+`,
+  home-text.md). That is a count-up animation captured at its start frame — the
+  exact designed-vs-default failure I hunt for. Then on submit the team's own
+  `/thank-you-for-applying` page (a fully designed success state) is bypassed in
+  favour of one line of inline green text. The right artefact exists and isn't wired.
+- **read-a-news-article** — First paint of /news is empty outlined boxes
+  (news-001-load.png) because the cards are hidden until scrolled into view, and
+  the third card shows broken-image alt text from a 500ing CDN cover. Two visible
+  defects on the entry screen of a content section.
+- **admin-create-seo-page** — The builder is a different visual world again (dark
+  'PAGE BLOCKS' panel, outline-pill toolbar) and the onboarding tour occludes the
+  one control a new user needs.
 
-### /admin/pages/new (Create New Page)
+---
 
-**Gut feel: 4/5** — "The cleanest screen in the product — consistent cards, clear selection states — let down only by a heading that contradicts the page's own title and a 'filled' state that looks identical to the empty one."
+## Page-by-Page Review (selected; full findings in findings.json)
 
-| #   | Category         | Finding                                                                                                                                                                                                                           | Severity | Why this matters to me                                                                                                                                                       |
-| --- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 11  | Copy & Labels    | The on-screen H1 reads "Create page" but the document title / breadcrumb context is "New SEO page" (per page metadata). Two names for the same screen.                                                                            | Medium   | Same screen, two names. A design system has one canonical title per view. This inconsistency would drive me to grep the codebase.                                            |
-| 12  | Feedback & State | The "form-filled" screenshot (005) is pixel-identical to the load screenshot (004) — there is no visible text input on this step, so "filling" produced no visible state change.                                                  | Medium   | A creation step with no visible inputs and no diff between empty and filled states is confusing — I can't tell what my action did.                                           |
-| 13  | Visual & Layout  | The two "Coming soon" cards (From template / AI-assisted) sit in a full-width band below the main grid with a different internal padding rhythm than the page-type cards above.                                                   | Low      | Disabled/coming-soon cards use a slightly looser padding and lighter border than the active cards — the disabled treatment isn't a systematic variant, just a faded version. |
-| 14  | Visual & Layout  | Selected cards ("SEO / Resource page", "Blank page") use a blue border + tinted fill, but the right-hand "SELECTED SETUP" summary panel uses a gray border + gray fill — the selection accent (blue) isn't echoed in the summary. | Low      | The selected state's blue should carry through to the confirmation panel for visual continuity. The mismatch is subtle but it's there.                                       |
-| 15  | Visual & Layout  | The "N" avatar floats bottom-left overlapping the card content area edge.                                                                                                                                                         | High     | Same global floating-avatar bug. On a centered-modal layout it's even more jarring because there's no sidebar for it to belong to.                                           |
-| 16  | Copy & Labels    | "Coming soon" badges are gray pills, but the same gray-pill treatment is used for the "draft" status elsewhere — same component, two unrelated meanings.                                                                          | Low      | Reusing the neutral pill for both "disabled/future" and "status" muddies the component's meaning.                                                                            |
+### / (homepage) — gut feel 2/5
 
-### /admin/pages/[id] (Page Builder Editor)
+Bold, confident hero, but the stat band renders zeroes and CLS is 0.263. Mobile
+has horizontal scroll.
 
-**Gut feel: 2/5** — "A powerful editor drowning in its own feedback — three simultaneous 'saved' notifications in three places, an error shown as unstyled gray text, two clashing design languages, and a hero block that clips its own text on mobile."
+- Stat counters frozen at `0+ / $0M+ / 0+` (08-perfectionist-002).
+- CLS 0.263 — a consistent quarter-viewport jump (08-perfectionist-003).
+- Horizontal scroll at 375px (08-perfectionist-021).
 
-| #   | Category                 | Finding                                                                                                                                                                                                                                                                                   | Severity | Why this matters to me                                                                                                                                                                                                  |
-| --- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 17  | Feedback & State         | On save, THREE redundant confirmations appear at once: a center-top stacked text block ("Saved automatically · 3:51 PM" / "Preview link created." / "Could not copy link."), a green "Draft saved." pill top-right, and a green "Draft saved. Autosaved 3:51 PM" full-width banner below. | Critical | Three feedback surfaces for one action, in three visual styles, two of them overlapping the toolbar. This is a feedback-architecture failure — the user can't tell which message is authoritative.                      |
-| 18  | Feedback & State         | "Could not copy link." — an ERROR — is rendered as plain centered gray text identical in style to the success messages above it.                                                                                                                                                          | High     | An error styled identically to success is dangerous. Errors must be visually distinct (red, icon). This one is invisible. There is no designed error state at all.                                                      |
-| 19  | Visual & Layout          | The "SEO" button (top-right) is partially clipped/overlapped by the green "Draft saved." pill when both render.                                                                                                                                                                           | High     | Two top-bar elements occupy the same space and collide. The toolbar layout doesn't reserve room for the transient pill.                                                                                                 |
-| 20  | Visual & Layout          | TWO entirely different design languages on one screen: the admin chrome (flat blue pills, soft shadows) vs the brand canvas (neo-brutalist orange "STEP INSIDE" button with hard black offset shadow + black border).                                                                     | Critical | This is the single biggest thing I cannot unsee. The product literally contains two design systems. Even granting that the canvas previews the public site, the visual whiplash on this screen is severe and unmanaged. |
-| 21  | Visual & Layout          | At least four accent colors compete: blue (primary buttons), purple (eyebrow "CAMPUS VENDING SOLUTIONS" + floating "AI" button), orange (brand CTA), green (status/saved). Black (avatar).                                                                                                | High     | A design system has one primary + one or two semantic accents. Five distinct accent hues with no clear semantic mapping is chromatic chaos.                                                                             |
-| 22  | Visual & Layout          | The floating purple "AI" button (bottom-right) and the floating black "N" avatar (bottom-left) are two unrelated FABs in two unrelated colors/shapes.                                                                                                                                     | Medium   | Two floating action buttons, two visual languages, no shared system. If both must float they should at least share a treatment.                                                                                         |
-| 23  | Feedback & State         | Two near-identical eye/visibility icons float to the far right of the hero eyebrow and body, disconnected from the elements they control.                                                                                                                                                 | Medium   | Icon-only controls floating in the right margin with no label and unclear association to their target. Which eye toggles which?                                                                                         |
-| 24  | Visual & Layout (mobile) | At 375px the hero block clips its own text: "CAMPUS VENDING SOLUT[IONS]" and "Vending in Colleges That [Works…]" are cut off — the canvas frame doesn't let the hero reflow.                                                                                                              | Critical | Content clipping at mobile width is a hard responsive failure. The headline is literally truncated mid-word by the container.                                                                                           |
-| 25  | Visual & Layout (mobile) | The "N" avatar overlaps the hero body copy on mobile.                                                                                                                                                                                                                                     | High     | Floating avatar again, now obscuring actual editable content.                                                                                                                                                           |
-| 26  | Visual & Layout (tablet) | An orphaned slice of the orange CTA peeks above the bottom edge at 768px, and a stray "329/500" character counter floats with no adjacent field label.                                                                                                                                    | Medium   | The character counter is detached from any visible input and the orange element bleeds in — both look like layout leftovers.                                                                                            |
-| 27  | Copy & Labels            | Buttons abbreviate inconsistently across breakpoints: "Copy editor link" / "Copy public URL" on desktop become "Editor link" / "Public URL" on mobile.                                                                                                                                    | Low      | Responsive label truncation that changes the verb (drops "Copy") changes meaning. Pick one label and keep it.                                                                                                           |
-| 28  | Visual & Layout          | The "STATUS draft" pill (amber dot) and the "NEXT REQUIRED STEP / Ready to publish" green card sit adjacent with different corner radii and border weights.                                                                                                                               | Low      | Adjacent status cards with mismatched radius/border. Similar containers should share geometry.                                                                                                                          |
-| 29  | Feedback & State         | The 008 full-page thumbnail shows the entire editor crammed into a tiny scaled view — the right rail (Readiness, Revision history, Draft preview, Governance comments) is an enormous vertical stack with no progressive disclosure.                                                      | Medium   | Everything is always expanded. A perfectionist wants collapsible sections, not an endlessly scrolling rail of equal-weight panels.                                                                                      |
+### /apply & /contact — gut feel 3/5
 
-### /admin/pages/authors (Authors)
+Same brutalist shadowed-card form pattern, but not the same components.
 
-**Gut feel: 2/5** — "A naked form floating above a vast empty void, with required fields that look optional and validation borrowed straight from the 1990s browser default."
+- 'State' required on /apply, optional on /contact (08-perfectionist-006).
+- Submit-button shadow depth differs between the two (08-perfectionist-007).
+- The designed /thank-you-for-applying success page is never reached
+  (08-perfectionist-005).
 
-| #   | Category        | Finding                                                                                                                                                                                   | Severity | Why this matters to me                                                                                                                                              |
-| --- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 30  | Forms & Input   | "Display name" and "Slug" are required (per schema) but have NO required indicator — no asterisk, no "(required)", visually identical to optional "Role/title", "Avatar asset ID", "Bio". | High     | Required and optional fields must be visually distinguishable. Making them identical guarantees failed submissions. This is a basic form-design rule violated.      |
-| 31  | Forms & Input   | Validation is the native browser tooltip "⚠ Please fill out this field." — a yellow OS-default bubble, not an in-app designed error.                                                      | High     | A custom-styled form with a browser-default validation popup is the clearest possible "we ran out of time" signal. It clashes with every other pixel on the screen. |
-| 32  | Forms & Input   | The native validation tooltip overlaps and obscures the "Bio" field label beneath it.                                                                                                     | Medium   | The error bubble covers an adjacent label — so triggering one field's error hides another field's name.                                                             |
-| 33  | Visual & Layout | Below the form, the entire lower ~60% of the page is empty gray void — no list of existing authors, no empty state ("No authors yet"), nothing.                                           | High     | An undesigned empty state. There's clearly meant to be an authors list here and it's just... absent. A blank void under a form reads as a broken/half-built page.   |
-| 34  | Visual & Layout | A faint horizontal divider line sits below the form card with nothing beneath it — a divider separating content from nothing.                                                             | Low      | A divider implies content on both sides. This one borders the void.                                                                                                 |
-| 35  | Visual & Layout | The "N" avatar overlaps "Sign out" in the sidebar (global).                                                                                                                               | High     | Same global bug, present here too.                                                                                                                                  |
-| 36  | Forms & Input   | "Avatar asset ID" is a free-text field expecting an opaque ID, while the editor offers a media library picker — inconsistent input paradigms for the same concept (choosing an image).    | Medium   | Asking the user to paste an asset ID here when a picker exists elsewhere is an inconsistency in how the same task is handled across the app.                        |
+### /news + article — gut feel 2/5
 
-### /admin/pages/redirects (Redirects)
+- Empty card outlines above the fold at first paint (08-perfectionist-012).
+- Cover image 500s into raw alt text, no fallback (08-perfectionist-013).
+- 'NEWS' vs 'BLOG' naming split (08-perfectionist-014).
+- Share rail mixes 'X / in / f / link' conventions (08-perfectionist-015).
 
-**Gut feel: 2/5** — "Same blank-void-under-a-form problem as Authors, plus a raw operating-system dropdown sitting smugly between two carefully styled text inputs."
+### /this-page-does-not-exist (404) — gut feel 2/5
 
-| #   | Category        | Finding                                                                                                                                                                                                                                   | Severity | Why this matters to me                                                                                                                                                         |
-| --- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 37  | Visual & Layout | The "Status" field is a raw native `<select>` (OS-default chevron, default height/border) sitting directly between the custom-styled "Old path" and "Page ID" text inputs.                                                                | High     | One native control in a row of custom-styled inputs is the most jarring possible design-system break. The heights don't even match. I would reject this in review immediately. |
-| 38  | Visual & Layout | The redirects table has a fully-styled header row (OLD PATH / DESTINATION / STATUS / SOURCE / CREATED) with NO body and NO empty-state message — just an empty bordered box.                                                              | High     | A table header floating above nothing, with no "No redirects yet" message. Undesigned empty state, identical sin to the Authors page.                                          |
-| 39  | Forms & Input   | "Old path" and "Destination" are required (per schema) with no required markers; validation is again the native browser "Please fill out this field" tooltip overlapping the table header below.                                          | High     | Same required-indicator gap and same native-validation clash as Authors — and here the tooltip overlaps the table header. Consistent in its inconsistency.                     |
-| 40  | Visual & Layout | The "N" avatar overlaps "Sign out" (global).                                                                                                                                                                                              | High     | Global avatar bug, fifth occurrence.                                                                                                                                           |
-| 41  | Copy & Labels   | Placeholder examples ("/resources/old-page", "/blog/new-page") are good, but the Status select's options string per the log ("301 permanent302 temporary…") suggests the option labels run together without separators in the data layer. | Low      | Worth verifying the option labels render with proper spacing — the concatenated source hints at a formatting gap.                                                              |
+The only public page that drops the brand: default sans 'Page not found' and a
+thin outline pill inside the branded shell (08-perfectionist-004).
 
-### /admin/pages/block-preview-audit (Block Preview Audit)
+### /case-studies — gut feel 3/5
 
-**Gut feel: 3/5** — "Conceptually a perfectionist's dream — a side-by-side QA grid of every block — but it exposes the exact thing it's auditing: the brand blocks overflow and clip at non-desktop widths."
+Ragged testimonial-card heights and inconsistent avatar presence within rows
+(08-perfectionist-022).
 
-| #   | Category                 | Finding                                                                                                                                                                                                                | Severity | Why this matters to me                                                                                                                                                                    |
-| --- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 42  | Visual & Layout (tablet) | At 768px the "ACTUAL RESOURCE RENDER" panel overflows horizontally — the H1 "LAUNCH A VENDING ROUTE WITH A P[ROVEN] PLAN" and body copy are cut off at the right edge, requiring horizontal scroll.                    | High     | The audit page meant to catch block defects is itself clipping block content. The full-width public render isn't constrained to the audit column.                                         |
-| 43  | Visual & Layout          | "PICKER PREVIEW" eyebrow and the in-block "RESOURCE GUIDE" eyebrow are both small-caps blue but at clearly different weights/sizes — two eyebrow treatments in adjacent contexts.                                      | Medium   | The eyebrow component should be one consistent style. Seeing two weights of the same pattern side by side is exactly the inconsistency this page exists to surface.                       |
-| 44  | Visual & Layout          | The orange hard-shadow "START AN ENQUIRY" button (brand style) is rendered at two wildly different scales — tiny in the picker preview, huge in the actual render — with the shadow offset not scaling proportionally. | Medium   | The drop-shadow offset is a fixed pixel value, so at the small preview scale it looks like a thin line and at full scale it's a chunky slab. The button doesn't scale as a coherent unit. |
-| 45  | Visual & Layout          | The repeating "PICKER PREVIEW / ACTUAL RESOURCE RENDER" section dividers use a hairline border, but the spacing above each block label is inconsistent between block types down the long page.                         | Low      | Vertical rhythm drifts as you scroll the audit. Section gaps should be a fixed token; they vary.                                                                                          |
-| 46  | Visual & Layout          | The "N" avatar overlaps content bottom-left (global).                                                                                                                                                                  | High     | Sixth and final appearance. It is on every page I reviewed without exception.                                                                                                             |
+### Admin studio (pages / news / media / libraries / settings / redirects) — gut feel 2/5
+
+This is where the lack of a system shows most.
+
+- Public vs admin are two design languages with no shared tokens (08-perfectionist-001).
+- Five different eyebrow/breadcrumb naming conventions (08-perfectionist-008).
+- Stat-card icon-tile colours carry no consistent semantics (08-perfectionist-009).
+- Four different primary-button shapes across the studio (08-perfectionist-010).
+- 'Save draft' and 'Publish' are identical blue buttons (08-perfectionist-011).
+- Blog body editor is an undesigned empty textarea (08-perfectionist-017).
+- Quick Tour overlay occludes the panel it describes (08-perfectionist-018).
+- READINESS/STATUS encoded only as 10px dots, no legend (08-perfectionist-016).
+- 'Blog page' (wizard) vs 'New blog post' (News) are redundant entry points (08-perfectionist-019).
+
+### Global
+
+- Interactive targets systematically undersized (nav ~17–20px, dots 10px, icon
+  actions 32px) (08-perfectionist-020).
 
 ---
 
 ## Blockers
 
-- **#24 — Mobile hero block clips its own headline mid-word.** At 375px the editor canvas truncates "CAMPUS VENDING SOLUT…" and "Vending in Colleges That…". A page builder whose preview canvas cannot render its own flagship block at mobile width is functionally broken for anyone editing on a small screen, and it undermines confidence that what you build will render correctly. This is the one finding I'd call a hard blocker rather than polish.
+None. Nothing here stops a user dead — these are consistency, polish, and
+designed-state failures, which is exactly my remit. The highest-impact items
+(unwired success page, zeroed stats, two-design-systems split, broken news image)
+are 'high', not blockers, because the underlying task still completes.
+
+---
 
 ## My Top 10 Issues
 
-1. **Two design systems in one product (#20).** Flat-blue admin chrome vs neo-brutalist orange-hard-shadow brand kit, colliding most violently in the editor. The single most damaging consistency problem in the entire app.
-2. **The floating "N" avatar overlaps "Sign out" / page content on every single page (#1, #15, #25, #35, #40, #46).** A global positioning bug, six for six. Nothing screams "unfinished" louder than the same element broken everywhere.
-3. **Triple-redundant save feedback in the editor (#17).** Three "saved" notifications in three styles in three locations for one action. Pick one toast and delete the other two.
-4. **Errors styled identically to success — or as native browser tooltips (#18, #31, #39).** "Could not copy link" looks like a success message; form validation is the OS-default yellow bubble. There is no designed error state anywhere in the product.
-5. **Mobile hero clips its own text (#24).** See Blockers. Hard responsive failure in the core editor.
-6. **Required fields have no required indicators (#30, #39).** Authors and Redirects forms make required and optional fields visually identical. Basic form hygiene, missing.
-7. **Raw native `<select>` among custom inputs (#37).** The Redirects "Status" dropdown is an un-styled OS control sitting between styled text fields. Heights don't even match.
-8. **Undesigned empty states (#33, #38).** Authors page = blank void under the form. Redirects table = styled header above nothing. No "Nothing here yet" anywhere.
-9. **Status conveyed by cryptic color-only dots (#2, #10).** READINESS/STATUS reduced to single-letter colored circles with no legend — unreadable and a WCAG color-only failure.
-10. **Three button styles + five accent colors with no semantic system (#3, #4, #21).** Black, blue, white-outline buttons on one toolbar; blue/purple/orange/green/black accents with no consistent meaning. The palette needs to be tokenized and disciplined down to one primary plus semantic accents.
+1. **Two unrelated design systems** — public brutalist vs admin generic SaaS, no
+   shared tokens (08-perfectionist-001, high).
+2. **Hero stats render as `0+ / $0M+ / 0+`** — count-up frozen at start frame
+   (08-perfectionist-002, high).
+3. **Designed success page (/thank-you-for-applying) is never reached** — apply
+   shows tiny inline green text instead (08-perfectionist-005, high).
+4. **`Save draft` and `Publish` are identical buttons** — no hierarchy on a
+   consequential action (08-perfectionist-011, high).
+5. **/news first paint is empty card outlines** — scroll-reveal at rest
+   (08-perfectionist-012, high).
+6. **News cover image 500s into raw alt text** — no broken-image fallback
+   (08-perfectionist-013, high).
+7. **404 page abandons the brand** — default sans + outline pill in branded shell
+   (08-perfectionist-004, high).
+8. **CLS 0.263 across most public pages** — a repeatable layout jump
+   (08-perfectionist-003, high).
+9. **Four primary-button shapes across the admin studio** — clearest sign there is
+   no Button component (08-perfectionist-010, medium).
+10. **Five eyebrow/breadcrumb naming conventions in the studio** — CMS Assets /
+    Studio Settings / CMS Governance / Blog CMS / (none) (08-perfectionist-008, medium).

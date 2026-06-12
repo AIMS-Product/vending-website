@@ -6,6 +6,8 @@ import {
   moveSeoPageToDraftFromList,
   publishSeoPageFromList,
 } from "@/app/admin/pages/actions";
+import { AdminPaginationLink } from "@/components/admin/AdminPaginationLink";
+import { BulkArchiveControls } from "@/app/admin/pages/BulkArchiveControls";
 import {
   AdminPageActionButton,
   AdminShell,
@@ -14,6 +16,7 @@ import {
   adminPrimaryButtonClass,
   adminSecondaryButtonClass,
 } from "@/components/admin/AdminUi";
+import { firstParam, type SearchParamValue } from "@/lib/admin/list-state";
 import {
   adminPagesHref,
   buildSeoPageListState,
@@ -27,6 +30,16 @@ import {
 import { assessSeoReadiness } from "@/lib/page-builder/seo-readiness";
 import { adminListSeoPages } from "@/lib/services/seo-pages";
 import { requireAdmin } from "@/lib/supabase/auth";
+import {
+  dotToneClass,
+  pageStatusDotTone,
+  pageStatusLabel,
+  pageStatusLegend,
+  readinessDotTone,
+  readinessLegend,
+  type StatusDotTone,
+  type StatusLegendEntry,
+} from "@/app/admin/pages/seo-pages-status-labels";
 import type { Tables } from "@/types/database";
 
 export const metadata: Metadata = {
@@ -37,29 +50,76 @@ export const metadata: Metadata = {
 type SeoPagesListState = ReturnType<typeof buildSeoPageListState>;
 type SeoPageWorkflowView = SeoPagesListState["view"];
 
-const workflowFilters: Array<{ value: SeoPageWorkflowView; label: string }> = [
-  { value: "all", label: "All metadata" },
-  { value: "needs-review", label: "Needs review" },
-  { value: "updating", label: "Updating" },
-  { value: "orphaned", label: "Needs links" },
-  { value: "metadata-issues", label: "Metadata issues" },
-  { value: "scheduled", label: "Scheduled" },
-  { value: "schedule-failed", label: "Schedule failed" },
+const workflowFilters: Array<{
+  value: SeoPageWorkflowView;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "all",
+    label: "All metadata",
+    description: "Every page in this list",
+  },
+  {
+    value: "needs-review",
+    label: "Needs review",
+    description: "Pages whose review date has passed",
+  },
+  {
+    value: "updating",
+    label: "Updating",
+    description: "Pages with unpublished draft changes",
+  },
+  {
+    value: "orphaned",
+    label: "Needs links",
+    description: "Pages with no internal links pointing to them",
+  },
+  {
+    value: "metadata-issues",
+    label: "Metadata issues",
+    description: "Pages missing SEO title, description, or other metadata",
+  },
+  {
+    value: "scheduled",
+    label: "Scheduled",
+    description: "Pages queued to publish automatically at a set time",
+  },
+  {
+    value: "schedule-failed",
+    label: "Schedule failed",
+    description:
+      "Pages whose scheduled publish did not go through and need attention",
+  },
 ];
+
+type AdminPagesSearchParams = SeoPageSearchParams & {
+  archived?: SearchParamValue;
+  failed?: SearchParamValue;
+  error?: SearchParamValue;
+  created?: SearchParamValue;
+};
 
 export default async function AdminPagesPage({
   searchParams,
 }: {
-  searchParams: Promise<SeoPageSearchParams>;
+  searchParams: Promise<AdminPagesSearchParams>;
 }) {
   const [{ user, role }, params] = await Promise.all([
     requireAdmin(),
     searchParams,
   ]);
   const listParams = parseSeoPageListParams(params);
+  const bulkArchiveResult = parseBulkArchiveResult(params);
 
   const allPages = await adminListSeoPages();
   const listState = buildSeoPageListState(allPages, listParams);
+
+  // S9 / C140: a deterministic success banner driven by `?created=<id>`, so
+  // returning to the list after creating a page always confirms it landed and
+  // links straight back to its editor — no racing the list to find the row.
+  const createdPage = resolveCreatedPage(allPages, params.created);
+  const scheduleFailedCount = countScheduleFailed(allPages);
 
   return (
     <AdminShell
@@ -70,17 +130,125 @@ export default async function AdminPagesPage({
       userRole={role}
       actions={<AdminPagesActions />}
     >
-      <SeoPagesAdminSurface state={listState} />
+      <BulkArchiveResultBanner result={bulkArchiveResult} />
+      <CreatedPageBanner page={createdPage} />
+      <SeoPagesAdminSurface
+        state={listState}
+        scheduleFailedCount={scheduleFailedCount}
+        createdId={createdPage?.id ?? null}
+      />
     </AdminShell>
+  );
+}
+
+// Resolves the `?created=<id>` param to an actual row so a stale or spoofed id
+// renders nothing rather than a banner pointing at a page that does not exist.
+function resolveCreatedPage(
+  pages: Tables<"seo_pages">[],
+  created: SearchParamValue,
+): Tables<"seo_pages"> | null {
+  const id = firstParam(created);
+  if (!id) return null;
+  return pages.find((page) => page.id === id) ?? null;
+}
+
+function countScheduleFailed(pages: Tables<"seo_pages">[]): number {
+  return pages.filter((page) => page.scheduled_publish_status === "failed")
+    .length;
+}
+
+function CreatedPageBanner({ page }: { page: Tables<"seo_pages"> | null }) {
+  if (!page) return null;
+
+  return (
+    <div
+      role="status"
+      className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700"
+    >
+      <span>
+        Created &ldquo;{page.title}&rdquo;. It is at the top of the list below.
+      </span>
+      <Link
+        href={`/admin/pages/${page.id}`}
+        className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-600/40 focus-visible:outline-none"
+      >
+        Open page
+      </Link>
+    </div>
+  );
+}
+
+type BulkArchiveResult =
+  | { kind: "success"; archived: number }
+  | { kind: "partial"; archived: number; failed: number }
+  | { kind: "error" }
+  | null;
+
+// The bulk-archive action redirects back here with `archived=N` (+ `failed=M`
+// on partial failure) or `error=bulk-archive` when nothing was archived.
+function parseBulkArchiveResult(
+  params: AdminPagesSearchParams,
+): BulkArchiveResult {
+  if (firstParam(params.error) === "bulk-archive") return { kind: "error" };
+
+  const archived = parseCountParam(params.archived);
+  if (archived === null) return null;
+
+  const failed = parseCountParam(params.failed);
+  if (failed !== null) return { kind: "partial", archived, failed };
+  return { kind: "success", archived };
+}
+
+function parseCountParam(value: SearchParamValue): number | null {
+  const parsed = Number(firstParam(value));
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function BulkArchiveResultBanner({ result }: { result: BulkArchiveResult }) {
+  if (!result) return null;
+
+  if (result.kind === "error") {
+    return (
+      <p
+        role="alert"
+        className="mb-5 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700"
+      >
+        Could not archive the selected pages. Check the logs and try again.
+      </p>
+    );
+  }
+
+  if (result.kind === "partial") {
+    return (
+      <p
+        role="alert"
+        className="mb-5 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800"
+      >
+        Archived {result.archived} {result.archived === 1 ? "page" : "pages"} —{" "}
+        {result.failed} failed, check logs.
+      </p>
+    );
+  }
+
+  return (
+    <p
+      role="status"
+      className="mb-5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700"
+    >
+      Archived {result.archived} {result.archived === 1 ? "page" : "pages"}.
+    </p>
   );
 }
 
 function AdminPagesActions() {
   return (
     <div className="flex w-full flex-wrap gap-2">
+      <Link href="/admin/pages/redirects" className={adminSecondaryButtonClass}>
+        Redirects
+      </Link>
       <Link
         href="/admin/pages/new"
-        className={`${adminPrimaryButtonClass} w-full`}
+        className={`${adminPrimaryButtonClass} flex-1`}
       >
         <span aria-hidden="true">
           <PageIcon icon="plus" />
@@ -91,28 +259,42 @@ function AdminPagesActions() {
   );
 }
 
-function SeoPagesAdminSurface({ state }: { state: SeoPagesListState }) {
+function SeoPagesAdminSurface({
+  state,
+  scheduleFailedCount,
+  createdId,
+}: {
+  state: SeoPagesListState;
+  scheduleFailedCount: number;
+  createdId: string | null;
+}) {
   return (
     <>
-      <SeoPagesSummary state={state} />
+      <SeoPagesSummary
+        state={state}
+        scheduleFailedCount={scheduleFailedCount}
+      />
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <SeoPagesToolbar state={state} />
-        <SeoPagesResults state={state} />
+        <SeoPagesResults state={state} createdId={createdId} />
         <SeoPagesFooter state={state} />
       </section>
     </>
   );
 }
 
-function SeoPagesSummary({ state }: { state: SeoPagesListState }) {
+function SeoPagesSummary({
+  state,
+  scheduleFailedCount,
+}: {
+  state: SeoPagesListState;
+  scheduleFailedCount: number;
+}) {
   const { pageCounts, perPage, q: searchQuery, sort, status, view } = state;
 
   return (
-    <section
-      className="mb-5 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
-      aria-label="SEO page summary"
-    >
-      <div className="grid divide-y divide-slate-200 md:grid-cols-4 md:divide-x md:divide-y-0">
+    <section className="mb-5 space-y-3" aria-label="SEO page summary">
+      <div className="grid divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:grid-cols-4 md:divide-x md:divide-y-0">
         <MetricPanel
           icon="file"
           tone="blue"
@@ -174,7 +356,31 @@ function SeoPagesSummary({ state }: { state: SeoPagesListState }) {
           active={status === "archived"}
         />
       </div>
+      <ScheduleFailedKpi count={scheduleFailedCount} />
     </section>
+  );
+}
+
+// S15 / C137: surface the schedule-failed count alongside the status metrics so
+// a failed scheduled publish is visible without opening the workflow filter.
+// Reuses the same `?view=schedule-failed` filter and renders nothing at zero.
+function ScheduleFailedKpi({ count }: { count: number }) {
+  if (count <= 0) return null;
+
+  return (
+    <Link
+      href="/admin/pages?view=schedule-failed"
+      data-kpi="schedule-failed"
+      className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 focus-visible:ring-2 focus-visible:ring-red-600/40 focus-visible:outline-none"
+    >
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-red-100 text-lg font-semibold text-red-700">
+        {count}
+      </span>
+      <span>
+        Schedule failed — {count === 1 ? "1 page" : `${count} pages`} need
+        attention
+      </span>
+    </Link>
   );
 }
 
@@ -320,33 +526,44 @@ function SeoPagesSortMenu({ state }: { state: SeoPagesListState }) {
 
 function SeoPagesWorkflowFilters({ state }: { state: SeoPagesListState }) {
   const { perPage, q: searchQuery, sort, status, view: activeView } = state;
+  const activeFilter = workflowFilters.find(
+    (filter) => filter.value === activeView,
+  );
 
   return (
-    <nav
-      className="mt-4 flex max-w-full flex-wrap gap-2"
-      aria-label="Workflow filters"
-    >
-      {workflowFilters.map((filter) => (
-        <Link
-          key={filter.value}
-          href={adminPagesHref({
-            status,
-            view: filter.value,
-            q: searchQuery,
-            sort,
-            perPage,
-          })}
-          aria-current={activeView === filter.value ? "page" : undefined}
-          className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
-            activeView === filter.value
-              ? "border-[#0b63f6] bg-[#f4f8ff] text-[#0b63f6]"
-              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950"
-          }`}
-        >
-          {filter.label}
-        </Link>
-      ))}
-    </nav>
+    <>
+      <nav
+        className="mt-4 flex max-w-full flex-wrap gap-2"
+        aria-label="Workflow filters"
+      >
+        {workflowFilters.map((filter) => (
+          <Link
+            key={filter.value}
+            href={adminPagesHref({
+              status,
+              view: filter.value,
+              q: searchQuery,
+              sort,
+              perPage,
+            })}
+            aria-current={activeView === filter.value ? "page" : undefined}
+            title={filter.description}
+            className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+              activeView === filter.value
+                ? "border-[#0b63f6] bg-[#f4f8ff] text-[#0b63f6]"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+            }`}
+          >
+            {filter.label}
+          </Link>
+        ))}
+      </nav>
+      {activeFilter && activeFilter.value !== "all" ? (
+        <p className="mt-2 text-xs text-slate-500">
+          {activeFilter.description}
+        </p>
+      ) : null}
+    </>
   );
 }
 
@@ -362,21 +579,37 @@ function SeoPagesResultCount({ state }: { state: SeoPagesListState }) {
   );
 }
 
-function SeoPagesResults({ state }: { state: SeoPagesListState }) {
+function SeoPagesResults({
+  state,
+  createdId,
+}: {
+  state: SeoPagesListState;
+  createdId: string | null;
+}) {
   if (state.visiblePages.length === 0) {
     return <SeoPagesEmptyState state={state} />;
   }
 
   return (
     <>
+      <StatusLegend />
+      <div className="hidden md:block">
+        <BulkArchiveControls returnTo={state.returnTo} />
+      </div>
       <div className="grid gap-3 p-4 md:hidden">
         {state.visiblePages.map((page) => (
-          <PageMobileCard key={page.id} page={page} returnTo={state.returnTo} />
+          <PageMobileCard
+            key={page.id}
+            page={page}
+            returnTo={state.returnTo}
+            justCreated={page.id === createdId}
+          />
         ))}
       </div>
       <SeoPagesDesktopTable
         pages={state.visiblePages}
         returnTo={state.returnTo}
+        createdId={createdId}
       />
     </>
   );
@@ -426,9 +659,11 @@ function SeoPagesEmptyState({ state }: { state: SeoPagesListState }) {
 function SeoPagesDesktopTable({
   pages,
   returnTo,
+  createdId,
 }: {
   pages: Tables<"seo_pages">[];
   returnTo: string;
+  createdId: string | null;
 }) {
   return (
     <div className="hidden min-h-[28rem] overflow-x-auto md:block">
@@ -444,7 +679,12 @@ function SeoPagesDesktopTable({
         </thead>
         <tbody className="divide-y divide-slate-200">
           {pages.map((page) => (
-            <PageRow key={page.id} page={page} returnTo={returnTo} />
+            <PageRow
+              key={page.id}
+              page={page}
+              returnTo={returnTo}
+              justCreated={page.id === createdId}
+            />
           ))}
         </tbody>
       </table>
@@ -535,7 +775,7 @@ function SeoPagesPagination({ state }: { state: SeoPagesListState }) {
         Page {currentPage} of {totalPages}
       </span>
       <nav className="flex items-center gap-2" aria-label="Pagination">
-        <PaginationLink
+        <AdminPaginationLink
           label="Previous page"
           disabled={currentPage <= 1}
           href={adminPagesHref({
@@ -562,7 +802,7 @@ function SeoPagesPagination({ state }: { state: SeoPagesListState }) {
             })}
           />
         ))}
-        <PaginationLink
+        <AdminPaginationLink
           label="Next page"
           disabled={currentPage >= totalPages}
           href={adminPagesHref({
@@ -627,9 +867,11 @@ function MetricPanel({
 function PageRow({
   page,
   returnTo,
+  justCreated = false,
 }: {
   page: Tables<"seo_pages">;
   returnTo: string;
+  justCreated?: boolean;
 }) {
   const readiness = assessSeoReadiness(page.draft_content, {
     slug: page.slug,
@@ -644,35 +886,70 @@ function PageRow({
   });
 
   return (
-    <tr className="align-middle transition focus-within:bg-slate-50 hover:bg-slate-50 [&:has(details[open])]:relative [&:has(details[open])]:z-20 [&:has(details[open])]:bg-[#f8fbff]">
-      <td className="border-l-4 border-transparent px-7 py-4">
-        <Link
-          href={`/admin/pages/${page.id}`}
-          className="block truncate font-semibold text-[#0b63f6] underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-          title={page.title}
-        >
-          {page.title}
-        </Link>
-        <p
-          className="mt-1 max-w-[36rem] truncate font-mono text-xs text-slate-500"
-          title={page.route_path}
-        >
-          {page.route_path}
-        </p>
+    <tr
+      data-created-row={justCreated ? "true" : undefined}
+      className={`align-middle transition focus-within:bg-slate-50 hover:bg-slate-50 [&:has(details[open])]:relative [&:has(details[open])]:z-20 [&:has(details[open])]:bg-[#f8fbff] ${
+        justCreated ? "bg-emerald-50/70" : ""
+      }`}
+    >
+      <td
+        className={`border-l-4 px-7 py-4 ${
+          justCreated ? "border-emerald-400" : "border-transparent"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          {page.status !== "archived" ? (
+            // S3 / WCAG 2.5.8: the checkbox stays a 16px visual box, but a
+            // label wrapper gives it a 24px-square hit area (clicking the
+            // padding toggles the box). `-m-1` cancels the padding's layout
+            // effect so visual density and the `mt-1` offset are unchanged.
+            <label className="-mx-1 mt-0 -mb-1 flex shrink-0 cursor-pointer items-start p-1">
+              <span className="sr-only">
+                Select {page.title} for bulk actions
+              </span>
+              <input
+                type="checkbox"
+                name="ids"
+                value={page.id}
+                form="bulk-archive-form"
+                className="size-4 rounded border-slate-300 text-[#0b63f6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+              />
+            </label>
+          ) : null}
+          <div className="min-w-0">
+            <Link
+              href={`/admin/pages/${page.id}`}
+              className="block truncate font-semibold text-[#0b63f6] underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+              title={page.title}
+            >
+              {page.title}
+            </Link>
+            <p
+              className="mt-1 max-w-[36rem] truncate font-mono text-xs text-slate-500"
+              title={page.route_path}
+            >
+              {page.route_path}
+            </p>
+          </div>
+        </div>
       </td>
       <td className="px-5 py-4 break-words text-slate-700">
         {page.target_keyword || "-"}
       </td>
       <td className="px-5 py-4 text-center">
-        <StatusDot
-          label={`SEO readiness: ${readiness.label}`}
+        <StatusBadge
+          accessibleLabel={`SEO readiness: ${readiness.label}`}
+          label={readiness.label}
           tone={readinessDotTone(readiness.status)}
+          align="center"
         />
       </td>
       <td className="px-5 py-4 text-center">
-        <StatusDot
-          label={`Page status: ${formatStatus(page.status)}`}
-          tone={statusDotTone(page.status)}
+        <StatusBadge
+          accessibleLabel={`Page status: ${pageStatusLabel(page.status)}`}
+          label={pageStatusLabel(page.status)}
+          tone={pageStatusDotTone(page.status)}
+          align="center"
         />
       </td>
       <td className="px-5 py-4 text-right">
@@ -685,9 +962,11 @@ function PageRow({
 function PageMobileCard({
   page,
   returnTo,
+  justCreated = false,
 }: {
   page: Tables<"seo_pages">;
   returnTo: string;
+  justCreated?: boolean;
 }) {
   const readiness = assessSeoReadiness(page.draft_content, {
     slug: page.slug,
@@ -702,7 +981,14 @@ function PageMobileCard({
   });
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <article
+      data-created-row={justCreated ? "true" : undefined}
+      className={`rounded-lg border bg-white p-4 shadow-sm ${
+        justCreated
+          ? "border-emerald-300 ring-1 ring-emerald-200"
+          : "border-slate-200"
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Link
@@ -721,14 +1007,16 @@ function PageMobileCard({
         <PageActionsMenu page={page} returnTo={returnTo} variant="card" />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <StatusDot
-          label={`SEO readiness: ${readiness.label}`}
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <StatusBadge
+          accessibleLabel={`SEO readiness: ${readiness.label}`}
+          label={readiness.label}
           tone={readinessDotTone(readiness.status)}
         />
-        <StatusDot
-          label={`Page status: ${formatStatus(page.status)}`}
-          tone={statusDotTone(page.status)}
+        <StatusBadge
+          accessibleLabel={`Page status: ${pageStatusLabel(page.status)}`}
+          label={pageStatusLabel(page.status)}
+          tone={pageStatusDotTone(page.status)}
         />
       </div>
 
@@ -801,7 +1089,7 @@ function PageActionsMenu({
           pageId={page.id}
           returnTo={returnTo}
           label="Duplicate page"
-          confirmMessage={`Duplicate "${page.title}" as a draft? The copy will use a temporary draft slug until you edit it.`}
+          confirmMessage={`Duplicate "${page.title}" as a draft? The copy gets a "-copy" URL ending you can change before publishing.`}
         />
         {!isPublished ? (
           <PageActionForm
@@ -871,57 +1159,6 @@ function PageActionForm({
   );
 }
 
-function PaginationLink({
-  href,
-  label,
-  disabled,
-  next = false,
-}: {
-  href: string;
-  label: string;
-  disabled: boolean;
-  next?: boolean;
-}) {
-  const icon = (
-    <svg
-      aria-hidden="true"
-      className="size-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d={next ? "m9 18 6-6-6-6" : "m15 18-6-6 6-6"}
-      />
-    </svg>
-  );
-
-  if (disabled) {
-    return (
-      <span
-        aria-disabled="true"
-        aria-label={label}
-        className="flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-300"
-      >
-        {icon}
-      </span>
-    );
-  }
-
-  return (
-    <Link
-      href={href}
-      aria-label={label}
-      className="flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-    >
-      {icon}
-    </Link>
-  );
-}
-
 function PaginationNumber({
   pageNumber,
   current,
@@ -959,59 +1196,78 @@ function metricToneClass(tone: "amber" | "blue" | "green" | "slate") {
   return "bg-[#e9f1ff] text-[#0b63f6]";
 }
 
-function formatStatus(status: string) {
-  return status.charAt(0).toUpperCase() + status.slice(1);
-}
-
-type DotTone = "amber" | "blue" | "green" | "red" | "slate";
-
-function StatusDot({ label, tone }: { label: string; tone: DotTone }) {
+// N7 / issue I7: a status dot paired with a visible text label so the state is
+// readable at a glance without decoding colour. `accessibleLabel` keeps the
+// fuller "Page status: Published" name for assistive tech; `label` is the
+// short word shown next to the dot.
+function StatusBadge({
+  accessibleLabel,
+  label,
+  tone,
+  align = "start",
+}: {
+  accessibleLabel: string;
+  label: string;
+  tone: StatusDotTone;
+  align?: "start" | "center";
+}) {
   return (
-    <span className="group/dot relative inline-flex">
-      <button
-        type="button"
-        aria-label={label}
-        className={`size-2.5 cursor-help appearance-none rounded-full border-0 p-0 ${dotToneClass(
-          tone,
-        )} ring-2 ring-transparent hover:ring-slate-200 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none`}
-      />
+    <span
+      className={`inline-flex items-center gap-2 text-xs font-semibold text-slate-700 ${
+        align === "center" ? "justify-center" : ""
+      }`}
+      aria-label={accessibleLabel}
+    >
       <span
-        role="tooltip"
-        className="pointer-events-none absolute bottom-[calc(100%+6px)] left-1/2 z-20 hidden -translate-x-1/2 rounded-md bg-slate-900 px-2 py-1 text-xs font-medium whitespace-nowrap text-white shadow-md group-focus-within/dot:block group-hover/dot:block"
-      >
-        {label}
-      </span>
+        className={`size-2.5 shrink-0 rounded-full ${dotToneClass(tone)}`}
+        aria-hidden="true"
+      />
+      <span>{label}</span>
     </span>
   );
 }
 
-function statusDotTone(status: string): DotTone {
-  if (status === "published") return "green";
-  if (status === "archived") return "slate";
-  return "amber";
+function StatusLegend() {
+  return (
+    <div
+      className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-slate-200 bg-slate-50/60 px-4 py-3 text-xs text-slate-600 sm:px-5"
+      aria-label="Status and readiness legend"
+    >
+      <LegendGroup title="Status" entries={pageStatusLegend} />
+      <span
+        aria-hidden="true"
+        className="hidden h-4 w-px bg-slate-200 sm:block"
+      />
+      <LegendGroup title="Readiness" entries={readinessLegend} />
+    </div>
+  );
 }
 
-function readinessDotTone(status: string): DotTone {
-  if (status === "strong") return "green";
-  if (status === "blocked") return "red";
-  if (status === "needs_work") return "amber";
-  return "blue";
-}
-
-function dotToneClass(tone: DotTone) {
-  if (tone === "green") {
-    return "bg-emerald-500";
-  }
-  if (tone === "amber") {
-    return "bg-amber-400";
-  }
-  if (tone === "red") {
-    return "bg-rose-500";
-  }
-  if (tone === "slate") {
-    return "bg-slate-400";
-  }
-  return "bg-sky-500";
+function LegendGroup({
+  title,
+  entries,
+}: {
+  title: string;
+  entries: readonly StatusLegendEntry[];
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      <span className="font-semibold tracking-wider text-slate-500 uppercase">
+        {title}
+      </span>
+      {entries.map((entry) => (
+        <span key={entry.label} className="inline-flex items-center gap-1.5">
+          <span
+            className={`size-2.5 shrink-0 rounded-full ${dotToneClass(
+              entry.tone,
+            )}`}
+            aria-hidden="true"
+          />
+          <span className="font-medium text-slate-700">{entry.label}</span>
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function PageChevron() {

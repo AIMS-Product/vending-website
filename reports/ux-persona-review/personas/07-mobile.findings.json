@@ -1,0 +1,302 @@
+[
+  {
+    "id": "07-mobile-001",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "After submitting the application, the only confirmation is a small green line of text next to the SUBMIT button (text-sm, aria-live polite). There is no redirect, no scroll-to-confirmation, no banner, and the form silently resets its selects to 'Select'. On a phone, after tapping submit and glancing away, I cannot tell it worked.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "small green text 'Thanks. We received your details and will follow up shortly.' beside SUBMIT APPLICATION; selects show 'Select'"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Automation itself missed the success state and re-submitted 5 more times — evidence of how subtle the confirmation is."
+      },
+      {
+        "type": "screenshot",
+        "ref": "PublicLeadForm.tsx",
+        "quote": "ActionMessage renders a single <p className=\"text-sm font-medium\"> with no redirect to /thank-you-for-applying"
+      }
+    ],
+    "persona_rationale": "I'm tapping submit between texts and a TikTok. A tiny green line off to the side of a button is invisible to me — I'd assume it failed and tap submit again, exactly like the automation did 6 times. A dedicated /thank-you-for-applying page already exists and isn't used.",
+    "suggested_fix": {
+      "current": "Inline text-sm green message beside the button, form resets in place, no navigation",
+      "proposed": "On success, redirect to the existing /thank-you-for-applying page (or render a full-width confirmation card above the form and scroll it into view, hiding the form)"
+    }
+  },
+  {
+    "id": "07-mobile-002",
+    "page": "/news/top-5-questions-vending-entrepreneurship-program",
+    "journey": "read-a-news-article",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "The article H1 overflows the right edge of a 375px phone — the long uppercase word 'ENTREPRENEURSHIP' is not breaking/wrapping, so it runs off-screen and the page scrolls horizontally.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-top-5-questions-vending-entrepreneurship-program-004-mobile.png",
+        "quote": "H1 'TOP 5 QUESTIONS TO ASK BEFORE JOINING A VENDING ENTREPRENEURS[HIP]' clipped at right edge"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | news-top-5-questions-...-004-mobile.png | horizontal scroll present"
+      }
+    ],
+    "persona_rationale": "On my phone I read everything in portrait. A headline that runs off the edge and makes the whole page slide sideways under my thumb is the single most annoying mobile bug — it feels broken before I've read a word.",
+    "suggested_fix": {
+      "current": "Article H1 with no word-break on long words; overflows at 375px",
+      "proposed": "Add overflow-wrap:anywhere / hyphens:auto (or clamp font-size with clamp()) to the article H1 so long words break within the viewport"
+    }
+  },
+  {
+    "id": "07-mobile-003",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "The homepage scrolls horizontally on a 375px phone. Above the fold renders fine (hamburger nav, stacked hero), so the overflow comes from content further down the page.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | home-003-mobile.png | horizontal scroll present"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-003-mobile.png",
+        "quote": "above-fold hero fits, but page is flagged horizontal-scroll"
+      }
+    ],
+    "persona_rationale": "The homepage is the first thing I see after tapping a link from Instagram. If the page wobbles sideways when I scroll, I read that as 'cheap, broken site' and bounce in a couple of seconds.",
+    "suggested_fix": {
+      "current": "A below-fold section on / exceeds the 375px viewport width",
+      "proposed": "Audit home sections for fixed widths / negative margins / oversized images and constrain with max-w-full + overflow-x-hidden on the page wrapper"
+    }
+  },
+  {
+    "id": "07-mobile-004",
+    "page": "/case-studies",
+    "journey": "evaluate-trust",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "The /case-studies page scrolls horizontally on a 375px phone. The header area fits; overflow is below the fold.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | case-studies-003-mobile.png | horizontal scroll present"
+      },
+      {
+        "type": "screenshot",
+        "ref": "case-studies-003-mobile.png",
+        "quote": "header fits viewport; page flagged horizontal-scroll"
+      }
+    ],
+    "persona_rationale": "Case studies are exactly what I'd skim on my phone to decide if this is legit. Side-scrolling on the proof page undercuts the trust the page is supposed to build.",
+    "suggested_fix": {
+      "current": "A case-study card/quote section exceeds 375px width",
+      "proposed": "Constrain the case-study cards/testimonial rows to max-w-full and verify no fixed-width child forces overflow at 375px"
+    }
+  },
+  {
+    "id": "07-mobile-005",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "The first paint of /news shows article cards as empty outlines (scroll-reveal animation) and one card renders as broken-image alt text instead of an image ('Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Items, Niche Products)').",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "third card shows alt text 'Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Items, Niche Products)' in place of an image"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=...cdn.prod.website-files.com...ChatGPT%2520Image..."
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "article cards are scroll-reveal animated — they render as BLANK card outlines until scrolled into view"
+      }
+    ],
+    "persona_rationale": "I scroll fast and don't wait for animations. Blank card outlines plus a broken image with raw alt text dumped on screen reads as 'this page didn't load' — I'd swipe back to Instagram before the reveal kicks in.",
+    "suggested_fix": {
+      "current": "Scroll-reveal cards paint empty; one image returns 500 from /_next/image (legacy website-files.com CDN)",
+      "proposed": "Render card content visible by default (reveal as enhancement only) and fix/replace the failing website-files.com image source so /_next/image returns 200"
+    }
+  },
+  {
+    "id": "07-mobile-006",
+    "page": "global (header nav)",
+    "journey": "contact-the-team",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "Contact is not in the header navigation on any page; the only in-app path is the footer 'CONTACT US' link. On mobile that means opening the hamburger gives no Contact option — I have to scroll to the very bottom of every page.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "click Contact link | navigated to /contact (link is in the FOOTER only — \"CONTACT US\"; not in the header nav)"
+      },
+      {
+        "type": "screenshot",
+        "ref": "contact-005-mobile.png",
+        "quote": "Contact page reachable, but no header-nav entry"
+      }
+    ],
+    "persona_rationale": "When I want to ask a quick question on my phone I tap the menu first. Contact isn't there, so I'd assume there's no way to reach a human and give up rather than scroll the whole page to find a footer link.",
+    "suggested_fix": {
+      "current": "Contact only in footer; absent from header/hamburger menu",
+      "proposed": "Add 'CONTACT' to the header navigation (and therefore the mobile hamburger menu)"
+    }
+  },
+  {
+    "id": "07-mobile-007",
+    "page": "/news + /news/* + breadcrumb",
+    "journey": "read-a-news-article",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The same section is called three different things: the header/hamburger nav item is 'NEWS', the listing page heading is 'BLOG', and the article breadcrumb reads 'HOME / BLOG'. The route is /news.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-003-mobile.png",
+        "quote": "mobile listing heading reads 'BLOG'"
+      },
+      {
+        "type": "screenshot",
+        "ref": "news-top-5-questions-vending-entrepreneurship-program-004-mobile.png",
+        "quote": "breadcrumb 'HOME / BLOG'"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Page is headed \"BLOG\" while the nav item that leads here says \"NEWS\" and the route is /news."
+      }
+    ],
+    "persona_rationale": "I tapped 'NEWS' in the menu and landed on a page titled 'BLOG'. On a small screen with no breadcrumb in view at first, that mismatch makes me think I tapped the wrong thing or got bounced somewhere else.",
+    "suggested_fix": {
+      "current": "Nav 'NEWS' -> heading 'BLOG' -> breadcrumb 'BLOG'",
+      "proposed": "Pick one label (e.g. 'News') and use it for the nav item, page heading, and breadcrumb consistently"
+    }
+  },
+  {
+    "id": "07-mobile-008",
+    "page": "global (footer nav)",
+    "journey": null,
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Footer link tap targets are far below the 44x44px mobile minimum — e.g. 'HOME' is 43x17px, 'TERMS' 50x17px, 'CONTACT US' 93x17px, 'PRIVACY POLICY' 120x17px. Only ~17px tall.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "NOTE: small touch target: a \"HOME\" 43x17px / a \"CONTACT US\" 93x17px / a \"PRIVACY POLICY\" 120x17px"
+      }
+    ],
+    "persona_rationale": "These footer links are the ONLY way to reach Contact, Terms and Privacy. Thumb-tapping a 17px-tall target while walking means I keep hitting the wrong link or missing entirely.",
+    "suggested_fix": {
+      "current": "Footer links ~17px tall (well under 44px)",
+      "proposed": "Increase footer link line-height/padding to a minimum 44px tap height on mobile (e.g. py-2.5 block links)"
+    }
+  },
+  {
+    "id": "07-mobile-009",
+    "page": "global (header nav)",
+    "journey": null,
+    "category": "Accessibility & Inclusion",
+    "severity": "low",
+    "finding": "Desktop header nav links ('ABOUT' 51x20px, 'CASE STUDIES' 102x20px, etc.) are only ~20px tall. The mobile hamburger button itself is a good size, but on tablet/landscape where the inline nav shows, the targets are thumb-hostile.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "NOTE: small touch target: a \"ABOUT\" 51x20px / a \"CASE STUDIES\" 102x20px"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-003-mobile.png",
+        "quote": "375px uses a hamburger (good); inline nav appears at wider widths"
+      }
+    ],
+    "persona_rationale": "On my phone in landscape, or on a friend's tablet, the inline nav links are short enough that I mis-tap. The hamburger on portrait is fine, so this is the secondary case.",
+    "suggested_fix": {
+      "current": "Inline header nav links ~20px tall",
+      "proposed": "Give header nav links a minimum 44px tap height via vertical padding for the inline (non-hamburger) layout"
+    }
+  },
+  {
+    "id": "07-mobile-010",
+    "page": "/apply, /contact, /admin/forgot-password",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "Forms show no inline validation. Empty submit and invalid-data submit produce no visible field errors — values are just preserved with nothing telling me what's wrong.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "empty: no visible validation errors after empty submit / invalid: no visible validation errors on invalid data — entered values preserved"
+      }
+    ],
+    "persona_rationale": "If I fat-finger my email on the mobile keyboard and tap submit, nothing turns red and nothing scrolls me to the problem. I'd sit staring at a form wondering why nothing happened, then close the tab.",
+    "suggested_fix": {
+      "current": "No visible field-level validation on empty/invalid submit",
+      "proposed": "Show inline per-field error messages on submit (the form already collects fieldErrors in state) and scroll the first error into view on mobile"
+    }
+  },
+  {
+    "id": "07-mobile-011",
+    "page": "/",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "The homepage has a high layout-shift score (CLS 0.263), shared by /about, /news and the article pages.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Layout shift (CLS): 0.263"
+      }
+    ],
+    "persona_rationale": "On a phone over patchy 4G, content jumping after first paint means I tap a link just as it shifts and hit the wrong thing — classic mobile mis-tap from layout shift.",
+    "suggested_fix": {
+      "current": "CLS 0.263 on /, /about, /news, article pages (above Google's 0.1 'good' threshold)",
+      "proposed": "Reserve space for late-loading hero/images (set width/height or aspect-ratio) to bring CLS under 0.1"
+    }
+  },
+  {
+    "id": "07-mobile-012",
+    "page": "/news (and article images)",
+    "journey": "read-a-news-article",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "An article image fails to load with a 500 from the Next image optimizer pointing at a legacy Webflow CDN URL; the failure shows as raw alt text rather than a graceful placeholder.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com%2F...ChatGPT%2520Image..."
+      }
+    ],
+    "persona_rationale": "On mobile, a broken image that dumps its full caption as plain text looks like the page failed to load. There's no friendly placeholder to reassure me the rest of the page is fine.",
+    "suggested_fix": {
+      "current": "Failing website-files.com image returns 500 from /_next/image; shows raw alt text",
+      "proposed": "Replace/migrate the legacy CDN image to a working source and add a neutral image placeholder fallback so a single failed image doesn't look like a page error"
+    }
+  }
+]

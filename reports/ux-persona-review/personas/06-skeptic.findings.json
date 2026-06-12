@@ -1,0 +1,393 @@
+[
+  {
+    "id": "06-skeptic-001",
+    "page": "/",
+    "journey": "evaluate-trust",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "finding": "The three hero proof-statistics render as literal zeros — '0+' entrepreneurs launched, '$0M+' sales, '0+' vending locations — so the site's headline social proof communicates that nothing has happened.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "0+\nENTREPRENEURS LAUNCHED\n$0M+\nSNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\n0+\nVENDING LOCATIONS W/OUR GUIDANCE"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-002-full.png",
+        "quote": "stat block shows 0+ and $0M+"
+      }
+    ],
+    "persona_rationale": "Proof numbers are the first thing I check before believing any program works. Stats that read as zeros are worse than no stats — they tell me either the program has zero results or the team ships broken pages. Either way I'm out.",
+    "suggested_fix": {
+      "current": "0+ Entrepreneurs launched / $0M+ Snack-drink sales / 0+ Vending locations",
+      "proposed": "Populate real verified figures (e.g. '600+ entrepreneurs launched', '$12M+ in machine sales', '2,000+ locations'); if the count-up animation is failing, render the final value server-side as a fallback so it never shows 0"
+    }
+  },
+  {
+    "id": "06-skeptic-002",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "No price, price range, or explanation of how pricing works appears anywhere on the public site; the program asks for an application with the cost entirely hidden.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "THE VENDING ACCELERATOR PROGRAM"
+      },
+      {
+        "type": "text",
+        "ref": "text/terms-text.md",
+        "quote": "All fees for courses, memberships, and digital products are stated at the time of purchase."
+      }
+    ],
+    "persona_rationale": "Hidden pricing is my number-one walk-away trigger. If I have to book a call to find out what it costs, I assume the price is high enough that they don't want it compared. I won't apply blind.",
+    "suggested_fix": {
+      "current": "No pricing anywhere; cost revealed only after an application/call",
+      "proposed": "Add a Pricing or 'What it costs' section (a 'from $X' figure, a price band, or at minimum 'investment discussed on your call, typically $X-$Y range, no obligation')"
+    }
+  },
+  {
+    "id": "06-skeptic-003",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The hero and supporting copy lean on 'financial freedom' and 'passive income' with 'minimal time investment' — the exact framing of get-rich-quick funnels that a skeptical buyer is trained to distrust.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "TURN VENDING INTO YOUR PATH TO FINANCIAL FREEDOM"
+      },
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "launch and scale a profitable vending machine business with minimal time investment."
+      }
+    ],
+    "persona_rationale": "'Financial freedom with minimal time investment' is the sentence every overselling course uses. It makes me assume the substance is thin and the marketing is doing the heavy lifting.",
+    "suggested_fix": {
+      "current": "Turn Vending Into Your Path to Financial Freedom … with minimal time investment",
+      "proposed": "Lead with a concrete, defensible promise (e.g. 'Learn the exact system to place your first profitable vending machine in 90 days') and drop 'minimal time investment'"
+    }
+  },
+  {
+    "id": "06-skeptic-004",
+    "page": "/",
+    "journey": "evaluate-trust",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "Testimonials carry no dates, several use first-name-plus-initial only, and none link to a verifiable profile — making the social proof unfalsifiable.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "ADAM S\n\nOwner, Emporio Vending LLC\n\n5 out of 5 stars"
+      },
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "ABBY C\n\nVan Pelt Vending\n\n5 out of 5 stars"
+      }
+    ],
+    "persona_rationale": "I can't verify a testimonial with no date and a half-name. Anonymous, undated praise is the cheapest thing to fabricate, so it counts for almost nothing in my evaluation.",
+    "suggested_fix": {
+      "current": "Name-only testimonials, no dates, no links (e.g. 'ADAM S')",
+      "proposed": "Add a month/year and, where possible, a linked LinkedIn/business profile or named full attribution to each testimonial"
+    }
+  },
+  {
+    "id": "06-skeptic-005",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "A specific income figure ('making $10,000 a month in vending machines') is quoted approvingly inside a homepage testimonial with no earnings disclaimer anywhere near it.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "I've had an article about a successful entrepreneur (making $10,000 a month in vending machines) bookmarked on my phone"
+      }
+    ],
+    "persona_rationale": "Dangling a $10k/month number with no 'results not typical' caveat is exactly the FTC-risky overselling that's burned me before. It tells me the marketing outruns the substance, and it's a legal liability red flag.",
+    "suggested_fix": {
+      "current": "$10,000/month figure in a testimonial, no disclaimer nearby",
+      "proposed": "Add a visible earnings disclaimer adjacent to any income claim ('Individual results vary; this is not a guarantee of income') and link it to the Terms income-disclaimer section"
+    }
+  },
+  {
+    "id": "06-skeptic-006",
+    "page": "/",
+    "journey": null,
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "The homepage has a serious color-contrast violation flagged by axe.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "/ … color-contrast | serious | Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum"
+      }
+    ],
+    "persona_rationale": "A serious contrast failure on the front page is the kind of polish gap that tells me the team didn't QA carefully — and if they skipped that, what else did they skip on the product I'd be paying for?",
+    "suggested_fix": {
+      "current": "Foreground/background pair below WCAG AA 4.5:1 on the homepage",
+      "proposed": "Adjust the offending text/background colors to meet at least 4.5:1 contrast"
+    }
+  },
+  {
+    "id": "06-skeptic-007",
+    "page": "/",
+    "journey": "evaluate-trust",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "A 'Featured partners' logo wall (PepsiCo, Doritos, Poppi, Prime, Cantaloupe, 365 Retail Markets) implies major-brand endorsement without stating the actual relationship.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "region \"Featured partners\":\n    - img \"365 Retail Markets\" … \"PepsiCo\" … \"Doritos\" … \"Poppi\""
+      }
+    ],
+    "persona_rationale": "Plastering Pepsi and Doritos logos without saying 'these are products we help you source' vs 'these companies endorse us' is borrowed credibility. As a marketer I know the trick, and it makes me trust the rest of the page less.",
+    "suggested_fix": {
+      "current": "Unlabeled 'Featured partners' brand logos",
+      "proposed": "Relabel honestly to the real relationship, e.g. 'Brands you can source through our supplier network' or 'Products our members stock'"
+    }
+  },
+  {
+    "id": "06-skeptic-008",
+    "page": "/about",
+    "journey": "evaluate-trust",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "The founder is presented by first name only ('Mike') with no surname, credentials, company registration, or verifiable identity.",
+    "evidence": [
+      { "type": "text", "ref": "text/about-text.md", "quote": "MEET MIKE" },
+      {
+        "type": "text",
+        "ref": "text/about-text.md",
+        "quote": "img \"Mike, founder of Vendingpreneurs\""
+      }
+    ],
+    "persona_rationale": "I'm being asked to trust this person with my money and my contact details, but I can't even Google him — there's no last name. Anonymity at the top of a paid program is a major credibility hole.",
+    "suggested_fix": {
+      "current": "Founder identified only as 'Mike'",
+      "proposed": "Use his full name, a one-line verifiable bio, and link to a LinkedIn/business profile and the registered company entity (Modern Amenities) named in the legal pages"
+    }
+  },
+  {
+    "id": "06-skeptic-009",
+    "page": "/about",
+    "journey": "evaluate-trust",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "An explicit 'I'm not here to sell a dream' line on the About page reads as protesting too much and raises rather than lowers suspicion.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/about-text.md",
+        "quote": "I'm not here to sell a dream, I'm here to show you a system that works."
+      }
+    ],
+    "persona_rationale": "When a sales page tells me it isn't selling me anything, that's exactly when I tighten my grip on my wallet. Trust is shown through proof, not asserted in copy.",
+    "suggested_fix": {
+      "current": "I'm not here to sell a dream, I'm here to show you a system that works.",
+      "proposed": "Replace the assertion with evidence: a concrete, dated outcome ('Here's the 4-step system, and here are three members who used it in the last 12 months — see case studies')"
+    }
+  },
+  {
+    "id": "06-skeptic-010",
+    "page": "/about",
+    "journey": "evaluate-trust",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "Specific personal financial figures are presented as proof of credibility with no substantiation ($1,200/mo job, $70k fixer-upper, $250k condo, 'thousands of dollars in monthly income').",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/about-text.md",
+        "quote": "I was working a 60-hour per week job that paid me only $1,200/month. I used my emergency fund to invest 20% down on a $70,000 fixer upper."
+      },
+      {
+        "type": "text",
+        "ref": "text/about-text.md",
+        "quote": "a Vending route that includes over a dozen machines and thousands of dollars in monthly income."
+      }
+    ],
+    "persona_rationale": "A rags-to-riches dollar narrative with no documentation is just a story. It's the standard 'I escaped the rat race' template, and unbacked numbers are easy to invent.",
+    "suggested_fix": {
+      "current": "Personal income/asset figures stated as narrative",
+      "proposed": "Either substantiate (screenshots, a route count that matches a public record, a named business) or shift the emphasis from the founder's personal wealth to documented member outcomes"
+    }
+  },
+  {
+    "id": "06-skeptic-011",
+    "page": "/case-studies",
+    "journey": "evaluate-trust",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "The four featured 'case studies' are video thumbnails with names only and no written outcome or context; the page never provides concrete, dated metrics (machines placed, revenue, time-to-first-location) for any member.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "case-studies-001-load.png",
+        "quote": "four video tiles labeled with names only (Thomas Rohlader, Joe Natoli, Jason Priest, Anthony)"
+      },
+      {
+        "type": "text",
+        "ref": "text/case-studies-text.md",
+        "quote": "THOMAS ROHLADER\n\nOwner, TR Vending\n\nJOE NATOLI\n\nOwner — Stryker300 Vending"
+      }
+    ],
+    "persona_rationale": "A 'case study' to me means numbers and a before/after, not a face and a play button. Without dated, specific outcomes I can't judge whether these people made money or just appeared in a video.",
+    "suggested_fix": {
+      "current": "Video tiles + name/company only, no written metrics",
+      "proposed": "Give each case study a short structured summary: starting point, time elapsed, machines/locations, and a verifiable outcome figure beneath the video"
+    }
+  },
+  {
+    "id": "06-skeptic-012",
+    "page": "/case-studies",
+    "journey": null,
+    "category": "Accessibility & Inclusion",
+    "severity": "low",
+    "finding": "The case studies page has a heading-order (skipped heading levels) violation.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "/case-studies … heading-order | moderate | Ensure the order of headings is semantically correct"
+      }
+    ],
+    "persona_rationale": "Minor on its own, but it adds to the pile of small build-quality slips that collectively tell me this site wasn't carefully finished.",
+    "suggested_fix": {
+      "current": "Non-sequential heading levels on /case-studies",
+      "proposed": "Reorder headings so levels do not skip (h1 → h2 → h3 in document order)"
+    }
+  },
+  {
+    "id": "06-skeptic-013",
+    "page": "/case-studies",
+    "journey": "evaluate-trust",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "Every testimonial across the home and case-studies pages is a uniform '5 out of 5 stars' with no mixed or critical feedback, which reads as curated rather than authentic.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/case-studies-text.md",
+        "quote": "5 out of 5 stars"
+      }
+    ],
+    "persona_rationale": "A perfect-score wall with zero nuance is a tell. Real customer bases have a spread; an unbroken row of 5-stars looks hand-picked, which makes me discount all of it.",
+    "suggested_fix": {
+      "current": "10+ testimonials all '5 out of 5 stars'",
+      "proposed": "Either drop the star ratings (the quotes stand alone) or surface aggregate/third-party reviews (e.g. a Trustpilot or Skool community rating) that include the real distribution"
+    }
+  },
+  {
+    "id": "06-skeptic-014",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "Submitting the application form with empty or invalid data produces no visible validation errors at all.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "form#1 … empty: no visible validation errors after empty submit"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "invalid: no visible validation errors on invalid data — entered values preserved"
+      }
+    ],
+    "persona_rationale": "A form that doesn't react to a bad submit makes me doubt it works at all. If I can't trust the form to validate, I won't trust it to actually deliver my application to a human.",
+    "suggested_fix": {
+      "current": "No inline validation on empty/invalid submit",
+      "proposed": "Show field-level error messages on submit ('Email is required', 'Enter a valid email') and prevent submission until required fields are valid"
+    }
+  },
+  {
+    "id": "06-skeptic-015",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After a successful application the only confirmation is a small green line of text beside the button; the form stays full, nothing is disabled, and there is no redirect to the existing /thank-you-for-applying page.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "Thanks. We received your details and will follow up shortly."
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "The page does not redirect to the existing /thank-you-for-applying page, does not clear or disable the form, and shows no prominent confirmation."
+      }
+    ],
+    "persona_rationale": "I just gave a company I'm unsure about my name, email, phone and budget. A whisper-quiet green line isn't reassurance — I'd assume it failed and either give up or resubmit, exactly as the automation did five times.",
+    "suggested_fix": {
+      "current": "Inline green text 'Thanks. We received your details…', form left intact, no redirect",
+      "proposed": "Redirect to the existing /thank-you-for-applying page (or render a full-width success panel) that states what happens next and the expected response time"
+    }
+  },
+  {
+    "id": "06-skeptic-016",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "The apply form collects name, email, phone, location and budget tier but shows no privacy/consent statement or link to the Privacy Policy at the point of submission.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/apply-text.md",
+        "quote": "What are you trying to build?\nSUBMIT APPLICATION"
+      }
+    ],
+    "persona_rationale": "I read the fine print before I hand over contact details and my budget. No 'by submitting you agree to our privacy policy' line at the form means I have to leave the page to find out what happens to my data — friction at the exact moment trust matters most.",
+    "suggested_fix": {
+      "current": "Submit button with no consent/privacy text",
+      "proposed": "Add a short consent line beneath the submit button: 'By applying you agree to our Privacy Policy. We never sell your data.' with Privacy Policy linked"
+    }
+  },
+  {
+    "id": "06-skeptic-017",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "A news card image fails with a 500 error from a leftover Webflow CDN URL (rendering raw alt text), and the page heading 'BLOG' contradicts the 'NEWS' navigation label and /news route.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com%2F…ChatGPT%2520Image…"
+      },
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "third card shows broken image with raw alt text 'Top 10 Profitable Products to Stock…'"
+      }
+    ],
+    "persona_rationale": "A broken image pulling from an old Webflow CDN plus a heading that doesn't match the menu tells me this is a half-migrated site held together with tape. That undercuts every confident claim made elsewhere.",
+    "suggested_fix": {
+      "current": "Broken image from cdn.prod.website-files.com (500); heading 'BLOG' vs nav 'NEWS'",
+      "proposed": "Re-host the article images on the app's own storage/CDN and fix the 500; rename the page heading to 'NEWS' (or rename the nav item) so the section has one consistent name"
+    }
+  }
+]

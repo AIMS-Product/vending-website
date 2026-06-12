@@ -1,0 +1,379 @@
+[
+  {
+    "id": "15-angry-user-001",
+    "page": "/",
+    "journey": "contact-the-team",
+    "category": "Trust & Safety",
+    "severity": "blocker",
+    "finding": "No phone number or email address anywhere on the homepage or in the footer — every contact path routes into a web form, leaving a frustrated user with no way to reach a human.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "HOME\nABOUT\nRESOURCES\nCASE STUDIES\nNEWS\nCONTACT US\nTERMS\nPRIVACY POLICY"
+      }
+    ],
+    "persona_rationale": "I'm already angry and something has gone wrong. The first thing I look for is a phone number or email so I can talk to a person NOW. There is none — only a form. That is the worst possible answer when I have an urgent problem, and it would make me give up and badmouth the company.",
+    "suggested_fix": {
+      "current": "Footer and site offer only nav links and a contact form; no phone/email",
+      "proposed": "Add a visible support email (e.g. support@vendingpreneurs.com) and/or phone number to the footer and contact page, plus a stated response time"
+    }
+  },
+  {
+    "id": "15-angry-user-002",
+    "page": "/",
+    "journey": "evaluate-trust",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "Headline proof stats render as zeros, making the site look half-built and untrustworthy.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "0+\nENTREPRENEURS LAUNCHED\n$0M+\nSNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\n0+\nVENDING LOCATIONS W/OUR GUIDANCE"
+      }
+    ],
+    "persona_rationale": "I'm low on trust to begin with. Stat counters showing 0+ and $0M+ read as placeholders to me, and combined with no findable phone number I conclude I'll never be able to reach these people if something goes wrong.",
+    "suggested_fix": {
+      "current": "Counters display \"0+\" / \"$0M+\" / \"0+\"",
+      "proposed": "Populate real figures, or remove the counters until real data exists rather than shipping zeros"
+    }
+  },
+  {
+    "id": "15-angry-user-003",
+    "page": "/",
+    "journey": "contact-the-team",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "Contact/Help is absent from the header navigation; the only path is a footer link or knowing the URL.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "- navigation \"Primary\":\n    - link \"About\":\n    - link \"Resources\":\n    - link \"Case Studies\":\n    - link \"News\":"
+      }
+    ],
+    "persona_rationale": "When I'm frustrated I scan the top of the page for 'help' or 'contact' and click the first thing I see. Finding nothing in the header and having to scroll to the footer is exactly the kind of friction that tips me over the edge.",
+    "suggested_fix": {
+      "current": "Header nav: About / Resources / Case Studies / News only",
+      "proposed": "Add a 'Contact' link to the primary header navigation"
+    }
+  },
+  {
+    "id": "15-angry-user-004",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "Application success state is a single faint green line beside the submit button — no redirect, the form is not cleared, and it is easy to miss and resubmit.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "Thanks. We received your details and will follow up shortly."
+      },
+      {
+        "type": "text",
+        "ref": "reports/ux-persona-review/journeys.md",
+        "quote": "Automation itself missed the success state and re-submitted 5 more times — evidence of how subtle the confirmation is."
+      }
+    ],
+    "persona_rationale": "When I don't see clear confirmation, I click again — and again. The test automation literally did this six times, which is exactly my behaviour. A faint line of text next to the button is not enough to tell an impatient, frustrated user that the job is done.",
+    "suggested_fix": {
+      "current": "Inline green text 'Thanks. We received your details and will follow up shortly.' next to button; form remains filled",
+      "proposed": "Redirect to /thank-you-for-applying on success (a prominent full-page confirmation) or replace the form with a large success panel and disable resubmission"
+    }
+  },
+  {
+    "id": "15-angry-user-005",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "A finished /thank-you-for-applying confirmation page already exists in the app but the apply form never routes to it.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/thank-you-for-applying-text.md",
+        "quote": "APPLICATION RECEIVED\n\nTHANKS FOR APPLYING.\n\nThe team reviews application details before the next conversation."
+      },
+      {
+        "type": "text",
+        "ref": "reports/ux-persona-review/journeys.md",
+        "quote": "A dedicated `/thank-you-for-applying` page EXISTS in the app but the apply form does not route to it."
+      }
+    ],
+    "persona_rationale": "The exact fix for my biggest apply complaint is sitting unused. A clear 'Application received' page would have stopped me resubmitting and reassured me the thing went through.",
+    "suggested_fix": {
+      "current": "Apply form stays in place with inline text on success",
+      "proposed": "On successful submit, navigate to the existing /thank-you-for-applying page"
+    }
+  },
+  {
+    "id": "15-angry-user-006",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "No application reference or confirmation number is issued, so a user cannot quote anything when following up.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "Thanks. We received your details and will follow up shortly."
+      }
+    ],
+    "persona_rationale": "If I have to chase this later, I want a reference number to say 'application #1234'. Without one, when I do reach someone (if I can) I have nothing to point to and the frustration starts over.",
+    "suggested_fix": {
+      "current": "Confirmation text with no reference identifier",
+      "proposed": "Show a confirmation/reference ID on the success page and include it in the confirmation email"
+    }
+  },
+  {
+    "id": "15-angry-user-007",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "Validation relies entirely on browser-default bubbles ('Please fill out this field.') that surface one field at a time and are not tied to a styled, persistent inline label.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "apply-003-form-empty-submit.png",
+        "quote": "Please fill out this field."
+      }
+    ],
+    "persona_rationale": "Generic browser tooltips that pop one field at a time make me fix-and-retry repeatedly. When I'm already irritated, having errors revealed only one at a time on each submit attempt is a slow, infuriating loop.",
+    "suggested_fix": {
+      "current": "Browser-native validation bubble, one field per submit",
+      "proposed": "Show all missing/invalid fields at once with inline messages next to each field on submit"
+    }
+  },
+  {
+    "id": "15-angry-user-008",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "finding": "The contact page offers only a web form — no phone number, no email address, no chat, and no alternative channel.",
+    "evidence": [
+      { "type": "screenshot", "ref": "contact-002-full.png", "quote": "" },
+      {
+        "type": "text",
+        "ref": "text/contact-text.md",
+        "quote": "Name*\n(required)\nEmail*\n(required)\nPhone\nCity\nState\n...\nMessage*\n(required)\nSEND MESSAGE"
+      }
+    ],
+    "persona_rationale": "I navigated to the page literally called 'Contact' to reach a human, and all I get is another box to type into and wait. For an urgent problem, a form with no phone or email fallback is not contact — it's a brush-off.",
+    "suggested_fix": {
+      "current": "Contact page = form only",
+      "proposed": "Add a support email and/or phone number prominently on the contact page alongside the form"
+    }
+  },
+  {
+    "id": "15-angry-user-009",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "The contact form has no visibly designed success or error region, carrying the same vanishing-confirmation risk seen on /apply.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "external-bucket form: filled for visual review, NOT submitted (outbound side effects)"
+      },
+      { "type": "screenshot", "ref": "contact-002-full.png", "quote": "" }
+    ],
+    "persona_rationale": "If submitting this contact form gives me the same faint inline text as the apply form, I won't believe my message sent and I'll send it again — or assume it failed and walk away even angrier.",
+    "suggested_fix": {
+      "current": "No prominent success/error state visible on the contact form",
+      "proposed": "Show a clear, prominent success confirmation (and a clear inline error on failure that preserves entered data) after submit"
+    }
+  },
+  {
+    "id": "15-angry-user-010",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "No statement of when or whether anyone will reply; the prompt 'Send the team a note' sets no expectation.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/contact-text.md",
+        "quote": "Send the team a note about vending locations, machine decisions, partnerships, or accelerator fit."
+      }
+    ],
+    "persona_rationale": "I have no patience and no idea if this disappears into a void. Telling me 'we reply within one business day' would at least give me something to hold onto; right now I'm sending into silence.",
+    "suggested_fix": {
+      "current": "'Send the team a note about...'",
+      "proposed": "Add a response-time expectation, e.g. 'We reply within 1 business day.'"
+    }
+  },
+  {
+    "id": "15-angry-user-011",
+    "page": "/this-page-does-not-exist",
+    "journey": null,
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "The 404 page offers only a 'Back to home' link — no search, no contact/help link, and no suggestion of where content moved.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "this-page-does-not-exist-001-load.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "text/this-page-does-not-exist-text.md",
+        "quote": "Page not found\n\nThe page you're looking for doesn't exist or has moved.\n\nBack to home"
+      }
+    ],
+    "persona_rationale": "I'm already lost and frustrated, and the recovery option is to dump me back at square one. No search, no 'contact us', nothing to actually find what I was after — a dead end on top of the original problem.",
+    "suggested_fix": {
+      "current": "404 with only 'Back to home'",
+      "proposed": "Add a search box and links to News, Apply, and Contact on the 404 page"
+    }
+  },
+  {
+    "id": "15-angry-user-012",
+    "page": "/this-page-does-not-exist",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "The 404 text says content may have 'moved' but provides no destination or link to where it moved.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/this-page-does-not-exist-text.md",
+        "quote": "The page you're looking for doesn't exist or has moved."
+      }
+    ],
+    "persona_rationale": "If it moved, then take me there or link it. Telling me it moved and then offering nothing but 'home' is worse than saying nothing — it implies the page exists somewhere I can't reach.",
+    "suggested_fix": {
+      "current": "'...doesn't exist or has moved.'",
+      "proposed": "Either redirect known moved paths, or drop the 'or has moved' clause and offer a search + key links"
+    }
+  },
+  {
+    "id": "15-angry-user-013",
+    "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+    "journey": "read-a-news-article",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "Legacy /blog/{slug} paths hard-404 instead of redirecting to the live /news/{slug} article that exists.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "404 /blog/how-to-choose-the-perfect-location-for-vending-machine"
+      }
+    ],
+    "persona_rationale": "If a link I bookmarked or got in an email points at /blog/, it just breaks — and the matching article clearly exists at /news/. A broken old link with no redirect is exactly the 'confusing email led me here' scenario that put me in a bad mood in the first place.",
+    "suggested_fix": {
+      "current": "/blog/{slug} returns 404",
+      "proposed": "301-redirect /blog/{slug} to the corresponding /news/{slug} article"
+    }
+  },
+  {
+    "id": "15-angry-user-014",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "Above-the-fold on /news renders three empty card outlines before scroll (scroll-reveal animation), so first paint looks broken.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "reports/ux-persona-review/journeys.md",
+        "quote": "Above-the-fold on /news shows three empty card outlines before any scrolling (see news-001-load.png) — first paint looks broken/unfinished."
+      }
+    ],
+    "persona_rationale": "I already assume things are broken. Landing on a page of empty outlines confirms my suspicion before I even scroll, and I'm primed to leave.",
+    "suggested_fix": {
+      "current": "Article cards hidden until scrolled into view, leaving empty outlines on first paint",
+      "proposed": "Render the first row of cards visible by default; only apply scroll-reveal to content below the fold"
+    }
+  },
+  {
+    "id": "15-angry-user-015",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "The section is labelled 'NEWS' in the nav and URL but the page heading reads 'BLOG' — the same section under two names.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "reports/ux-persona-review/journeys.md",
+        "quote": "Page is headed \"BLOG\" while the nav item that leads here says \"NEWS\" and the route is /news. Same section, two names."
+      }
+    ],
+    "persona_rationale": "When I'm irritated, inconsistency makes me wonder if I clicked the wrong thing. 'News' then 'Blog' makes me second-guess where I am.",
+    "suggested_fix": {
+      "current": "Nav 'NEWS' / page heading 'BLOG'",
+      "proposed": "Use one label consistently — make the page heading 'NEWS' to match the nav and URL"
+    }
+  },
+  {
+    "id": "15-angry-user-016",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "A news thumbnail image returns 500 on load, leaving a broken image and a console error.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com%2F...png&w=640&q=75"
+      }
+    ],
+    "persona_rationale": "A broken image is one more thing that screams 'this site doesn't work', reinforcing my expectation that I'll have trouble here too.",
+    "suggested_fix": {
+      "current": "Thumbnail proxied through /_next/image fails with 500 (dead CDN source)",
+      "proposed": "Fix or replace the broken source asset and add a fallback image so a failed load doesn't show a broken/blank tile"
+    }
+  },
+  {
+    "id": "15-angry-user-017",
+    "page": "/admin/pages",
+    "journey": "admin-manage-content-ops",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "A 'Schedule failed' filter is exposed in the workflow navigation with no inline explanation of what failed or how to recover.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/admin-login-text.md",
+        "quote": "Scheduled\nSchedule failed"
+      }
+    ],
+    "persona_rationale": "As a frustrated admin coming in to fix something, seeing 'Schedule failed' staring at me with no detail about what failed or how to retry is salt in the wound — it tells me something broke but gives me nothing to act on.",
+    "suggested_fix": {
+      "current": "'Schedule failed' filter link with no context",
+      "proposed": "When the filter has results, show what failed and a Retry action per item; hide or de-emphasise the filter when there are zero failures"
+    }
+  },
+  {
+    "id": "15-angry-user-018",
+    "page": "/admin/forgot-password",
+    "journey": "admin-manage-content-ops",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "Password reset copy hedges ('If it has admin access, we'll send a password reset link') and no on-screen confirmation flow was observed, so a locked-out admin can't tell whether the email is coming.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/admin-forgot-password-text.md",
+        "quote": "Enter your Studio email. If it has admin access, we'll send a password reset link."
+      }
+    ],
+    "persona_rationale": "If I'm locked out and already angry, I need to KNOW the reset email is on its way. A conditional 'if it has admin access' with no clear post-submit confirmation leaves me wondering whether anything happened.",
+    "suggested_fix": {
+      "current": "'If it has admin access, we'll send a password reset link' with no confirmed success state",
+      "proposed": "After submit, show a clear confirmation: 'If that email has admin access, a reset link is on its way — check your inbox and spam.'"
+    }
+  }
+]

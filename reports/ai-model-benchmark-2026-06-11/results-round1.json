@@ -1,0 +1,602 @@
+[
+  {
+    "model": "openai:gpt-5.5@medium",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 700,
+    "outputTokens": null,
+    "tokensPerSec": null,
+    "score": 0,
+    "notes": "OpenAI rejected the page-builder assistant request (insufficient_quota)."
+  },
+  {
+    "model": "openai:gpt-5.5@medium",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 1032,
+    "outputTokens": null,
+    "tokensPerSec": null,
+    "score": 0,
+    "notes": "OpenAI rejected the page-builder assistant request (insufficient_quota)."
+  },
+  {
+    "model": "openai:gpt-5.5@medium",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 572,
+    "outputTokens": null,
+    "tokensPerSec": null,
+    "score": 0,
+    "notes": "OpenAI rejected the page-builder assistant request (insufficient_quota)."
+  },
+  {
+    "model": "openai:gpt-5.5@medium",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 899,
+    "outputTokens": null,
+    "tokensPerSec": null,
+    "score": 0,
+    "notes": "OpenAI rejected the page-builder assistant request (insufficient_quota)."
+  },
+  {
+    "model": "openai:gpt-5.5@medium",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 616,
+    "outputTokens": null,
+    "tokensPerSec": null,
+    "score": 0,
+    "notes": "OpenAI rejected the page-builder assistant request (insufficient_quota)."
+  },
+  {
+    "model": "openai:gpt-5.5@medium",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 656,
+    "outputTokens": null,
+    "tokensPerSec": null,
+    "score": 0,
+    "notes": "OpenAI rejected the page-builder assistant request (insufficient_quota)."
+  },
+  {
+    "model": "openai:gpt-5.5@medium",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 651,
+    "outputTokens": null,
+    "tokensPerSec": null,
+    "score": 0,
+    "notes": "OpenAI rejected the page-builder assistant request (insufficient_quota)."
+  },
+  {
+    "model": "openai:gpt-5.5@medium",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 632,
+    "outputTokens": null,
+    "tokensPerSec": null,
+    "score": 0,
+    "notes": "OpenAI rejected the page-builder assistant request (insufficient_quota)."
+  },
+  {
+    "model": "openai:gpt-5.5@medium",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 722,
+    "outputTokens": null,
+    "tokensPerSec": null,
+    "score": 0,
+    "notes": "OpenAI rejected the page-builder assistant request (insufficient_quota)."
+  },
+  {
+    "model": "openai:gpt-5.5@medium",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 608,
+    "outputTokens": null,
+    "tokensPerSec": null,
+    "score": 0,
+    "notes": "OpenAI rejected the page-builder assistant request (insufficient_quota)."
+  },
+  {
+    "model": "openai:gpt-5.5@medium",
+    "task": "seo-proposal",
+    "run": 1,
+    "ms": 999,
+    "outputTokens": null,
+    "tokensPerSec": null,
+    "score": 0,
+    "notes": "OpenAI rejected the SEO agent request (insufficient_quota)."
+  },
+  {
+    "model": "openai:gpt-5.5@medium",
+    "task": "seo-proposal",
+    "run": 2,
+    "ms": 517,
+    "outputTokens": null,
+    "tokensPerSec": null,
+    "score": 0,
+    "notes": "OpenAI rejected the SEO agent request (insufficient_quota)."
+  },
+  {
+    "model": "gemini:gemini-2.5-flash",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 15536,
+    "outputTokens": 1082,
+    "tokensPerSec": 70,
+    "score": 100,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 13908,
+    "outputTokens": 1008,
+    "tokensPerSec": 72,
+    "score": 100,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 1887,
+    "outputTokens": 81,
+    "tokensPerSec": 43,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 2401,
+    "outputTokens": 90,
+    "tokensPerSec": 37,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 3522,
+    "outputTokens": 293,
+    "tokensPerSec": 83,
+    "score": 85,
+    "notes": "tools=add_block applied=1"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 3626,
+    "outputTokens": 333,
+    "tokensPerSec": 92,
+    "score": 85,
+    "notes": "tools=add_block applied=1"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 2395,
+    "outputTokens": 50,
+    "tokensPerSec": 21,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 2595,
+    "outputTokens": 55,
+    "tokensPerSec": 21,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 2029,
+    "outputTokens": 43,
+    "tokensPerSec": 21,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 2278,
+    "outputTokens": 42,
+    "tokensPerSec": 18,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1"
+  },
+  {
+    "model": "gemini:gemini-2.5-flash",
+    "task": "seo-proposal",
+    "run": 1,
+    "ms": 13453,
+    "outputTokens": 1351,
+    "tokensPerSec": 100,
+    "score": 10,
+    "notes": "invalid: Use an internal path or an http(s) URL."
+  },
+  {
+    "model": "gemini:gemini-2.5-flash",
+    "task": "seo-proposal",
+    "run": 2,
+    "ms": 5777,
+    "outputTokens": 813,
+    "tokensPerSec": 141,
+    "score": 80,
+    "notes": "blocks=3 unsupported-claims"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 17032,
+    "outputTokens": 1059,
+    "tokensPerSec": 62,
+    "score": 100,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 11964,
+    "outputTokens": 1024,
+    "tokensPerSec": 86,
+    "score": 100,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 4578,
+    "outputTokens": 196,
+    "tokensPerSec": 43,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero|set_seo_metadata applied=2"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 3844,
+    "outputTokens": 112,
+    "tokensPerSec": 29,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 14313,
+    "outputTokens": 941,
+    "tokensPerSec": 66,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|edit_block_1_block_hero|add_block|add_block|add_block applied=5"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 9216,
+    "outputTokens": 354,
+    "tokensPerSec": 38,
+    "score": 85,
+    "notes": "tools=add_block applied=1"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 5835,
+    "outputTokens": 202,
+    "tokensPerSec": 35,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|edit_block_1_block_hero applied=2"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 20889,
+    "outputTokens": 1001,
+    "tokensPerSec": 48,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 2908,
+    "outputTokens": 54,
+    "tokensPerSec": 19,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 3821,
+    "outputTokens": 46,
+    "tokensPerSec": 12,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1"
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview",
+    "task": "seo-proposal",
+    "run": 1,
+    "ms": 11783,
+    "outputTokens": 1327,
+    "tokensPerSec": 113,
+    "score": 10,
+    "notes": "invalid: Use an internal path or an http(s) URL."
+  },
+  {
+    "model": "gemini:gemini-3-flash-preview",
+    "task": "seo-proposal",
+    "run": 2,
+    "ms": 11258,
+    "outputTokens": 1408,
+    "tokensPerSec": 125,
+    "score": 10,
+    "notes": "invalid: Use an internal path or an http(s) URL."
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 4426,
+    "outputTokens": 1013,
+    "tokensPerSec": 229,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 4257,
+    "outputTokens": 1053,
+    "tokensPerSec": 247,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 1129,
+    "outputTokens": 103,
+    "tokensPerSec": 91,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 974,
+    "outputTokens": 106,
+    "tokensPerSec": 109,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 1929,
+    "outputTokens": 288,
+    "tokensPerSec": 149,
+    "score": 85,
+    "notes": "tools=add_block applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 1778,
+    "outputTokens": 297,
+    "tokensPerSec": 167,
+    "score": 85,
+    "notes": "tools=add_block applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 1086,
+    "outputTokens": 92,
+    "tokensPerSec": 85,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 867,
+    "outputTokens": 90,
+    "tokensPerSec": 104,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 835,
+    "outputTokens": 43,
+    "tokensPerSec": 51,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 839,
+    "outputTokens": 48,
+    "tokensPerSec": 57,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "seo-proposal",
+    "run": 1,
+    "ms": 3406,
+    "outputTokens": 1052,
+    "tokensPerSec": 309,
+    "score": 100,
+    "notes": "blocks=4"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "seo-proposal",
+    "run": 2,
+    "ms": 3277,
+    "outputTokens": 1059,
+    "tokensPerSec": 323,
+    "score": 10,
+    "notes": "invalid: Use an internal path or an http(s) URL."
+  },
+  {
+    "model": "gemini:gemini-3.5-flash",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 14181,
+    "outputTokens": 1125,
+    "tokensPerSec": 79,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 22564,
+    "outputTokens": 1207,
+    "tokensPerSec": 53,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 6432,
+    "outputTokens": 98,
+    "tokensPerSec": 15,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 3964,
+    "outputTokens": 107,
+    "tokensPerSec": 27,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 9279,
+    "outputTokens": 371,
+    "tokensPerSec": 40,
+    "score": 85,
+    "notes": "tools=add_block applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 6828,
+    "outputTokens": 340,
+    "tokensPerSec": 50,
+    "score": 85,
+    "notes": "tools=add_block applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 4683,
+    "outputTokens": 96,
+    "tokensPerSec": 21,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 7017,
+    "outputTokens": 199,
+    "tokensPerSec": 28,
+    "score": 85,
+    "notes": "tools=set_seo_metadata|edit_block_1_block_hero applied=2"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 4184,
+    "outputTokens": 56,
+    "tokensPerSec": 13,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 4579,
+    "outputTokens": 61,
+    "tokensPerSec": 13,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash",
+    "task": "seo-proposal",
+    "run": 1,
+    "ms": 17078,
+    "outputTokens": 1575,
+    "tokensPerSec": 92,
+    "score": 80,
+    "notes": "blocks=5 unsupported-claims"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash",
+    "task": "seo-proposal",
+    "run": 2,
+    "ms": 11916,
+    "outputTokens": 1174,
+    "tokensPerSec": 99,
+    "score": 80,
+    "notes": "blocks=4 unsupported-claims"
+  }
+]

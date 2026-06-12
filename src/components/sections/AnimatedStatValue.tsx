@@ -45,7 +45,9 @@ function formatStat({ prefix, suffix, decimals }: ParsedStat, value: number) {
 
 export function AnimatedStatValue({ value }: AnimatedStatValueProps) {
   const parsed = useMemo(() => parseStat(value), [value]);
-  const [displayValue, setDisplayValue] = useState(() => formatStat(parsed, 0));
+  // Initialize to the real value so the SSR/no-JS HTML shows the truth.
+  // The count-up is progressive enhancement that runs after hydration.
+  const [displayValue, setDisplayValue] = useState(value);
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -54,9 +56,10 @@ export function AnimatedStatValue({ value }: AnimatedStatValueProps) {
 
     let frame = 0;
 
+    // The real value is already rendered (SSR + initial state). With reduced
+    // motion there is nothing to animate, so leave it untouched.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      frame = requestAnimationFrame(() => setDisplayValue(value));
-      return () => cancelAnimationFrame(frame);
+      return;
     }
 
     let started = false;

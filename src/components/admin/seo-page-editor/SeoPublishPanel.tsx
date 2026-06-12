@@ -6,17 +6,28 @@ import {
   SeoReadinessPanel,
 } from "@/components/admin/seo-page-editor/SeoReadinessPanel";
 import {
+  PUBLISH_BLOCKER_LIST_ID,
+  PublishBlockerChecklist,
+} from "@/components/admin/seo-page-editor/PublishBlockerChecklist";
+import { ScheduleStatusCard } from "@/components/admin/seo-page-editor/ScheduleStatusCard";
+import { PublishSuccessCard } from "@/components/admin/seo-page-editor/PublishSuccessCard";
+import { PublishVerdictCard } from "@/components/admin/seo-page-editor/PublishVerdictCard";
+import { SeoPanelTabs } from "@/components/admin/seo-page-editor/SeoPanelTabs";
+import {
   compactInputClass,
   primaryButtonClass,
   textareaClass,
 } from "@/components/admin/seo-page-editor/editor-styles";
+import { EditorCharLimit } from "@/components/admin/seo-page-editor/EditorInputs";
 import { editorPublishConfirmMessage } from "@/components/admin/seo-page-editor/editor-publish-confirmation";
+import { META_DESCRIPTION_MAX_LENGTH } from "@/lib/page-builder/copy-standards";
+import { thinPageWarning } from "@/components/admin/seo-page-editor/SeoReadinessHelpers";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
+import { formatPacificDate } from "@/lib/page-builder/datetime-format";
 import {
   SCHEDULED_PUBLISH_TIME_ZONE,
   SCHEDULED_PUBLISH_TIME_ZONE_LABEL,
   formatDateTimeLocalInTimeZone,
-  formatScheduledPublishDisplay,
 } from "@/lib/page-builder/scheduled-publishing";
 
 // S7: a clearly-disabled (greyed) variant for the Publish button so a blocked
@@ -44,17 +55,38 @@ export function SeoPublishPanel({
         isExpanded={isStatusExpanded}
         onExpandedChange={setIsStatusExpanded}
       />
-      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
-        <SeoMetadataFields editor={editor} />
-        <SeoReadinessPanel
-          content={editor.content}
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
+        <PublishVerdictCard
+          blockers={editor.publishBlockerChecklist}
           summary={editor.seoReadiness}
-          internalLinkSuggestions={editor.internalLinkSuggestions}
-          linkSuggestionMessage={editor.linkSuggestionMessage}
-          onApplyInternalLinkSuggestion={editor.applyLinkSuggestion}
-          onAddSuggestedBlock={editor.addSuggestedBlock}
-          onOpenSettings={editor.focusSeoSetting}
-          mediaAssetCount={editor.mediaAssets.length}
+          onFixNext={editor.focusPublishBlocker}
+        />
+        {/* Verdict leads; the readiness findings and the settings info-dump
+            move behind tabs so the panel doesn't open as a wall of fields. */}
+        <SeoPanelTabs
+          tabs={[
+            {
+              id: "readiness",
+              label: "Readiness",
+              content: (
+                <SeoReadinessPanel
+                  content={editor.content}
+                  summary={editor.seoReadiness}
+                  internalLinkSuggestions={editor.internalLinkSuggestions}
+                  linkSuggestionMessage={editor.linkSuggestionMessage}
+                  onApplyInternalLinkSuggestion={editor.applyLinkSuggestion}
+                  onAddSuggestedBlock={editor.addSuggestedBlock}
+                  onOpenSettings={editor.focusSeoSetting}
+                  mediaAssetCount={editor.mediaAssets.length}
+                />
+              ),
+            },
+            {
+              id: "settings",
+              label: "Settings",
+              content: <SeoMetadataFields editor={editor} />,
+            },
+          ]}
         />
       </div>
     </section>
@@ -70,7 +102,9 @@ function PublishStatusSection({
   isExpanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
 }) {
-  const [isConfirmingPublish, setIsConfirmingPublish] = useState(false);
+  // I3: confirm state lives in the controller so the publish submit dismisses
+  // it — guaranteeing a re-publish must re-open a fresh confirm.
+  const { isConfirmingPublish, setIsConfirmingPublish } = editor;
   const { nextPublishStep, page, publishStateLabel } = editor;
   const statusDotClass =
     page?.status === "published" ? "bg-emerald-500" : "bg-amber-500";
@@ -82,8 +116,17 @@ function PublishStatusSection({
         : "text-sky-700";
 
   function revealPublishBlocker() {
-    onExpandedChange(true);
+    // Move attention to the canonical blocker checklist (the single source of
+    // truth for what blocks publish), focusing its first actionable item.
     requestAnimationFrame(() => {
+      const list = document.getElementById(PUBLISH_BLOCKER_LIST_ID);
+      const firstItem = list?.querySelector<HTMLElement>("button");
+      if (firstItem) {
+        list?.scrollIntoView({ behavior: "smooth", block: "center" });
+        firstItem.focus();
+        return;
+      }
+      onExpandedChange(true);
       const reason = document.getElementById("publish-next-step");
       reason?.scrollIntoView({ behavior: "smooth", block: "center" });
       reason?.focus();
@@ -133,6 +176,34 @@ function PublishStatusSection({
           editor={editor}
           onCancel={() => setIsConfirmingPublish(false)}
         />
+      ) : null}
+
+      {editor.publishBlockerChecklist.length > 0 ? (
+        <div className="mt-3">
+          <PublishBlockerChecklist
+            items={editor.publishBlockerChecklist}
+            onFocusBlocker={editor.focusPublishBlocker}
+          />
+        </div>
+      ) : null}
+
+      {editor.scheduleStatus.kind !== "none" ? (
+        <div className="mt-3">
+          <ScheduleStatusCard
+            status={editor.scheduleStatus}
+            isCancelling={editor.isCancellingSchedule}
+            onCancelSchedule={editor.requestCancelSchedule}
+          />
+        </div>
+      ) : null}
+
+      {editor.publishJustSucceeded && editor.livePageUrl ? (
+        <div className="mt-3">
+          <PublishSuccessCard
+            key={editor.livePageUrl}
+            livePageUrl={editor.livePageUrl}
+          />
+        </div>
       ) : null}
 
       {isExpanded ? (
@@ -226,21 +297,8 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
       <p className="text-xs leading-5 font-medium text-slate-500">
         {publishStateHelp}
       </p>
-      {page?.scheduled_publish_status === "scheduled" &&
-      page.scheduled_publish_at ? (
-        <p className="rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-xs leading-5 font-semibold text-sky-800">
-          Scheduled for{" "}
-          {formatScheduledPublishDisplay(page.scheduled_publish_at)}
-        </p>
-      ) : null}
-      {page?.scheduled_publish_status === "failed" ? (
-        <p className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs leading-5 font-semibold text-rose-700">
-          Scheduled publish failed
-          {page.scheduled_publish_error
-            ? `: ${page.scheduled_publish_error}`
-            : "."}
-        </p>
-      ) : null}
+      {/* Scheduled / failed schedule state is rendered once, in the always-
+          visible ScheduleStatusCard above — not duplicated here. */}
       {page?.status === "published" && (
         <a
           href={page.route_path}
@@ -255,14 +313,14 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
         <div className="flex items-center justify-between gap-3">
           <dt className="font-medium">Last updated</dt>
           <dd className="font-semibold text-slate-700">
-            {page?.updated_at ? formatPanelDate(page.updated_at) : "—"}
+            {page?.updated_at ? formatPacificDate(page.updated_at) : "—"}
           </dd>
         </div>
         <div className="flex items-center justify-between gap-3">
           <dt className="font-medium">Published</dt>
           <dd className="font-semibold text-slate-700">
             {page?.published_at
-              ? formatPanelDate(page.published_at)
+              ? formatPacificDate(page.published_at)
               : "Not yet"}
           </dd>
         </div>
@@ -271,14 +329,11 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
   );
 }
 
-function formatPanelDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
+// Note: no `required` on these inputs. The Settings tabpanel stays mounted but
+// hidden when another tab is active, and Chrome silently aborts form submission
+// on an invalid hidden control — a save/publish click would no-op with zero
+// feedback. The server action validates title/slug and the manual-submit toast
+// surfaces its message, matching the collapsed-panel path.
 function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
   return (
     <div className="space-y-5">
@@ -290,7 +345,6 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
           value={editor.title}
           id="page-title-field"
           onChange={(event) => editor.setTitle(event.target.value)}
-          required
           className={compactInputClass}
           placeholder="Internal page title and SEO fallback"
         />
@@ -301,7 +355,9 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
       </label>
 
       <label className="block">
-        <span className="text-sm font-semibold text-slate-900">Slug</span>
+        <span className="text-sm font-semibold text-slate-900">
+          URL ending (slug)
+        </span>
         <div className="mt-1.5 flex items-center rounded-lg border border-slate-200 bg-white shadow-sm transition focus-within:border-[#0b63f6] focus-within:ring-4 focus-within:ring-[#0b63f6]/10">
           <select
             name="routePrefix"
@@ -321,8 +377,7 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
             id="page-slug-field"
             value={editor.visibleSlug}
             onChange={(event) => editor.updateSlugFromInput(event.target.value)}
-            required
-            aria-label="Slug"
+            aria-label="URL ending (slug)"
             className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-300"
             placeholder="page-slug"
           />
@@ -362,14 +417,58 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
           id="page-meta-description-field"
           onChange={(event) => editor.setMetaDescription(event.target.value)}
           rows={3}
+          maxLength={META_DESCRIPTION_MAX_LENGTH}
           className={textareaClass}
           placeholder="Search result summary for this page."
         />
+        <EditorCharLimit
+          value={editor.metaDescription}
+          max={META_DESCRIPTION_MAX_LENGTH}
+        />
       </label>
 
+      <ScheduleField editor={editor} />
       <AdvancedSeoFields editor={editor} />
       <SearchPreviewCard editor={editor} />
     </div>
+  );
+}
+
+function ScheduleField({ editor }: { editor: SeoPageEditorController }) {
+  const page = editor.page;
+  // Mount-time baseline for the uncontrolled schedule input: the server only
+  // writes scheduler state when the submitted value differs from this, so
+  // routine saves and stale tabs never re-arm or unlock a schedule.
+  const [scheduledPublishBaseline] = useState(() =>
+    formatDateTimeLocalInTimeZone(
+      page?.scheduled_publish_at,
+      SCHEDULED_PUBLISH_TIME_ZONE,
+    ),
+  );
+
+  return (
+    <label className="block rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <span className="text-sm font-semibold text-slate-900">
+        Schedule publish
+      </span>
+      <input
+        type="datetime-local"
+        name="scheduledPublishAt"
+        aria-label="Scheduled publish"
+        defaultValue={scheduledPublishBaseline}
+        className={compactInputClass}
+      />
+      <input
+        type="hidden"
+        name="scheduledPublishAtBaseline"
+        value={scheduledPublishBaseline}
+      />
+      <span className="mt-1.5 block text-xs leading-5 text-slate-500">
+        Uses {SCHEDULED_PUBLISH_TIME_ZONE_LABEL} ({SCHEDULED_PUBLISH_TIME_ZONE}
+        ). Leave blank unless this page should publish later. Save the draft to
+        arm the schedule.
+      </span>
+    </label>
   );
 }
 
@@ -491,24 +590,14 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
 
 function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
   const page = editor.page;
-  // Mount-time baseline for the uncontrolled schedule input: the server only
-  // writes scheduler state when the submitted value differs from this, so
-  // routine saves and stale tabs never re-arm or unlock a schedule.
-  const [scheduledPublishBaseline] = useState(() =>
-    formatDateTimeLocalInTimeZone(
-      page?.scheduled_publish_at,
-      SCHEDULED_PUBLISH_TIME_ZONE,
-    ),
-  );
-  const hasScheduledState =
-    page?.scheduled_publish_status === "scheduled" ||
-    page?.scheduled_publish_status === "failed";
   return (
     <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
       <div>
-        <p className="text-sm font-semibold text-slate-900">Governance</p>
+        <p className="text-sm font-semibold text-slate-900">
+          Internal &amp; social
+        </p>
         <p className="mt-0.5 text-xs leading-5 text-slate-500">
-          Internal tags, review timing, social metadata, and scheduling.
+          Internal tags, review timing, and how this page looks when shared.
         </p>
       </div>
       <label className="block">
@@ -630,53 +719,6 @@ function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
           placeholder="Leave blank to use meta description"
         />
       </label>
-      <label className="block">
-        <span className="text-sm font-semibold text-slate-900">
-          Scheduled publish
-        </span>
-        <input
-          type="datetime-local"
-          name="scheduledPublishAt"
-          aria-label="Scheduled publish"
-          defaultValue={scheduledPublishBaseline}
-          className={compactInputClass}
-        />
-        <input
-          type="hidden"
-          name="scheduledPublishAtBaseline"
-          value={scheduledPublishBaseline}
-        />
-        <span className="mt-1.5 block text-xs leading-5 text-slate-500">
-          Uses {SCHEDULED_PUBLISH_TIME_ZONE_LABEL} (
-          {SCHEDULED_PUBLISH_TIME_ZONE}). Leave blank unless this page should
-          publish later.
-        </span>
-      </label>
-      {hasScheduledState ? (
-        <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm font-medium text-slate-700">
-          <input
-            name="cancelScheduledPublish"
-            aria-label="Cancel scheduled publish"
-            type="checkbox"
-            className="mt-1 size-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6]"
-          />
-          <span>
-            <span className="block font-semibold text-slate-900">
-              Cancel scheduled publish
-            </span>
-            <span className="mt-0.5 block text-xs leading-5 font-normal text-slate-500">
-              Keeps the draft intact and removes this page from the automatic
-              publishing queue.
-            </span>
-          </span>
-        </label>
-      ) : null}
-      {page?.scheduled_publish_status === "failed" ? (
-        <p className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs leading-5 font-semibold text-rose-700">
-          {page.scheduled_publish_error ??
-            "Scheduled publish failed. Save a new time to retry."}
-        </p>
-      ) : null}
     </div>
   );
 }
@@ -767,16 +809,21 @@ function PublishButton({
   onRevealPublishBlocker: () => void;
   onRequestConfirm: () => void;
 }) {
+  const blockerCount = editor.publishBlockerChecklist.length;
   return (
     <button
       type="button"
+      data-testid="seo-publish-button"
       className={`shrink-0 ${
         editor.publishDisabled ? disabledPublishButtonClass : primaryButtonClass
       }`}
       aria-disabled={editor.publishDisabled || undefined}
+      aria-describedby={blockerCount > 0 ? PUBLISH_BLOCKER_LIST_ID : undefined}
       title={
-        editor.seoReadiness.blockers.length > 0
-          ? "Resolve SEO blockers before publishing."
+        blockerCount > 0
+          ? `Resolve ${blockerCount} ${
+              blockerCount === 1 ? "item" : "items"
+            } in the checklist before publishing.`
           : undefined
       }
       onClick={(event) => {
@@ -805,6 +852,10 @@ function PublishConfirmDialog({
     routePrefix: editor.routePrefix,
     visibleSlug: editor.visibleSlug,
   });
+  // I20 follow-up: surface the SAME non-blocking thin-page advisory (n6's
+  // thinPageWarning helper) at the moment of commitment. It is a soft cue, not
+  // a blocker — Confirm publish stays enabled and publishDisabled is untouched.
+  const thinWarning = thinPageWarning(editor.content);
 
   return (
     <div
@@ -827,6 +878,28 @@ function PublishConfirmDialog({
           {publishConfirmMessage}
         </p>
       </div>
+      {thinWarning ? (
+        <p
+          role="note"
+          className="flex items-start gap-2 rounded-lg border border-amber-300 bg-white/70 px-3 py-2 text-xs leading-5 text-amber-900"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="mt-0.5 size-4 shrink-0"
+          >
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+            <path d="M12 9v4" />
+            <path d="M12 17h.01" />
+          </svg>
+          <span>{thinWarning}</span>
+        </p>
+      ) : null}
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <button
           type="button"

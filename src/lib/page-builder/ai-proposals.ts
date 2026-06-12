@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { pageBlockSchema } from "@/lib/page-builder/blocks";
+import { META_DESCRIPTION_MAX_LENGTH } from "@/lib/page-builder/copy-standards";
 
 const aiProposalWarningSchema = z
   .object({
@@ -26,7 +27,11 @@ const aiPageProposalSchema = z
       .object({
         title: z.string().trim().max(180).optional(),
         seoTitle: z.string().trim().max(80).optional(),
-        metaDescription: z.string().trim().max(180).optional(),
+        metaDescription: z
+          .string()
+          .trim()
+          .max(META_DESCRIPTION_MAX_LENGTH)
+          .optional(),
         suggestedSlug: z.string().trim().max(120).optional(),
       })
       .strict()

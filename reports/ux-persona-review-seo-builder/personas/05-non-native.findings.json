@@ -1,0 +1,332 @@
+[
+  {
+    "id": "05-non-native-001",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Copy & Labels",
+    "severity": "critical",
+    "finding": "Scheduling uses Pacific Time for an Australian business, forcing the user to do timezone math to know when the page will publish",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Uses Pacific Time (America/Los_Angeles). Leave blank unless this page should publish later."
+      }
+    ],
+    "persona_rationale": "I already translate language in my head; making me also convert Pacific Time to my own timezone to know when my page goes live is a real risk of publishing at the wrong hour.",
+    "suggested_fix": {
+      "current": "Uses Pacific Time (America/Los_Angeles). Leave blank unless this page should publish later.",
+      "proposed": "Uses your local time (Australia/Adelaide). The page will go live at this time."
+    }
+  },
+  {
+    "id": "05-non-native-002",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After saving a schedule the date/time field clears and no 'Scheduled for {date}' confirmation appears anywhere",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "field shows empty after save, no confirmation"
+      }
+    ],
+    "persona_rationale": "Without a confirmation sentence I cannot tell success from failure, so I assume it failed and try again, risking a duplicate schedule.",
+    "suggested_fix": {
+      "current": "(field re-renders empty, no status shown)",
+      "proposed": "Show explicit text after save: 'Scheduled to publish on Wed 11 Jun 2026, 12:00 (Australia/Adelaide)'"
+    }
+  },
+  {
+    "id": "05-non-native-003",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Copy & Labels",
+    "severity": "critical",
+    "finding": "Two different messages describe the same publish gate at the same moment",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Chip said \"Fix SEO title\" while readiness panel said \"Add a hero headline before publishing.\""
+      }
+    ],
+    "persona_rationale": "Conflicting English sentences make me distrust my own reading and fix the wrong thing first.",
+    "suggested_fix": {
+      "current": "Chip 'Fix SEO title' vs panel 'Add a hero headline before publishing.'",
+      "proposed": "Show one consistent message listing all gates in both places: 'Before publishing: add a hero headline and an SEO title.'"
+    }
+  },
+  {
+    "id": "05-non-native-004",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "Blocker text 'Fix content 1 · Cta Label' uses an internal block index and an unexpanded abbreviation",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Fix content 1 · Cta Label"
+      }
+    ],
+    "persona_rationale": "'content 1' is not a name I gave anything and 'Cta' reads as a typo rather than 'CTA', so I cannot map the message to a field.",
+    "suggested_fix": {
+      "current": "Fix content 1 · Cta Label",
+      "proposed": "Add a button label to the Hero section"
+    }
+  },
+  {
+    "id": "05-non-native-005",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "Blocker names a 'Destination URL' field that is not on the canvas — it is hidden in a block settings modal, and the message gives no location",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the destination field is NOT on the canvas; it lives in Block actions → Edit settings modal"
+      }
+    ],
+    "persona_rationale": "The message gives no location hint; without it a non-native reader cannot find the field at all.",
+    "suggested_fix": {
+      "current": "Fix content 1 · Destination URL",
+      "proposed": "Add a destination URL — open Block actions → Edit settings on the Hero block"
+    }
+  },
+  {
+    "id": "05-non-native-006",
+    "page": "/admin/pages/{id}",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "'Eyebrow' is used as a content-field label with no explanation",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Eyebrow"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "EYEBROW"
+      }
+    ],
+    "persona_rationale": "'Eyebrow' is a culturally-specific design metaphor; translated literally it is a body part and means nothing as a field name.",
+    "suggested_fix": {
+      "current": "Eyebrow",
+      "proposed": "Overline (small label above the heading)"
+    }
+  },
+  {
+    "id": "05-non-native-007",
+    "page": "/admin/pages/{id}",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "'CTA' appears throughout the tool but is never expanded on first use",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "CTA LABEL"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-new-text.md",
+        "quote": "Article-style page with a strong introduction and CTA."
+      }
+    ],
+    "persona_rationale": "An unexpanded abbreviation forces me to guess; expanding it once removes the guesswork.",
+    "suggested_fix": {
+      "current": "CTA (used unexpanded everywhere)",
+      "proposed": "Call to action (CTA) button on first use, then 'CTA' thereafter"
+    }
+  },
+  {
+    "id": "05-non-native-008",
+    "page": "/admin/pages",
+    "journey": "find-duplicate-archive",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "Readiness is communicated only by colored dots in the table cell, with no visible text label",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "Readiness column shows only colored dots, no text"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "cell \"SEO readiness: Needs work\": button \"SEO readiness: Needs work\""
+      }
+    ],
+    "persona_rationale": "Color carries different cultural meaning and I cannot read a dot; I need the word printed on screen, not only in an aria label or tooltip.",
+    "suggested_fix": {
+      "current": "Colored dot only (text in aria label)",
+      "proposed": "Show a visible text label beside the dot: yellow → 'Needs work', red → 'Blocked', green → 'Ready'"
+    }
+  },
+  {
+    "id": "05-non-native-009",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "Workflow filter and readiness labels are ambiguous internal states ('Updating', 'Needs links', 'Opportunities')",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "All metadata Needs review Updating Needs links Metadata issues Scheduled Schedule failed"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "SEO readiness: Opportunities"
+      }
+    ],
+    "persona_rationale": "'Updating' could mean the system is busy, and 'Opportunities' as a status is a business idiom I cannot map to a page's health.",
+    "suggested_fix": {
+      "current": "Updating / Needs links / Opportunities",
+      "proposed": "Being edited / Missing internal links / Could be improved"
+    }
+  },
+  {
+    "id": "05-non-native-010",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "Invalid-path error message is engineer jargon, not actionable for a normal user",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-redirects-011-form-invalid-submit.png",
+        "quote": "Path must be root-relative."
+      }
+    ],
+    "persona_rationale": "'root-relative' is a developer term; the message should restate the placeholder example so anyone can fix it without that knowledge.",
+    "suggested_fix": {
+      "current": "Path must be root-relative.",
+      "proposed": "The path must start with a slash, like /resources/old-page"
+    }
+  },
+  {
+    "id": "05-non-native-011",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "On invalid submit the entered Old path / Destination values are cleared instead of preserved",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "error copy: \"invalid\"; values preserved: false"
+      }
+    ],
+    "persona_rationale": "Re-typing after an error is doubly costly for me because I read and type English slowly; losing my input is punishing.",
+    "suggested_fix": {
+      "current": "Form clears the typed values on validation error",
+      "proposed": "Keep the typed Old path and Destination values after a validation error"
+    }
+  },
+  {
+    "id": "05-non-native-012",
+    "page": "/admin/pages/{id}/revisions/{rid}",
+    "journey": "revision-restore",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "Same publish event shows two different times (AM vs PM) across editor and revision preview",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Published - Jun 10, 6:19 AM"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-revisions-7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25-text.md",
+        "quote": "publish - Jun 10, 3:49 PM"
+      }
+    ],
+    "persona_rationale": "Two different times for one event make me think I'm looking at different versions, so I cannot trust which revision is which.",
+    "suggested_fix": {
+      "current": "Editor 'Jun 10, 6:19 AM' vs revision page 'Jun 10, 3:49 PM'",
+      "proposed": "Use one timestamp format and timezone everywhere, e.g. 'Published 10 Jun 2026, 16:19 (Australia/Adelaide)'"
+    }
+  },
+  {
+    "id": "05-non-native-013",
+    "page": "/admin/pages/{id}/revisions/{rid}",
+    "journey": "revision-restore",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "Revision label is a bare lowercase verb that reads like an unfinished code string",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-revisions-7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25-text.md",
+        "quote": "publish - Jun 10, 3:49 PM"
+      }
+    ],
+    "persona_rationale": "A lowercase bare 'publish' looks like a code key leaked into the UI; I cannot tell if it is a label or a bug.",
+    "suggested_fix": {
+      "current": "publish - Jun 10, 3:49 PM",
+      "proposed": "Published on 10 Jun 2026, 3:49 PM"
+    }
+  },
+  {
+    "id": "05-non-native-014",
+    "page": "/admin/pages/{id}",
+    "journey": "revision-restore",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "Revisions empty state uses stacked noun-phrase triggers that are hard to parse for a non-native reader",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Revisions appear after publishing, library refreshes, or draft restores."
+      }
+    ],
+    "persona_rationale": "'library refreshes' and 'draft restores' as nouns are ambiguous; verb-form sentences are clearer for me.",
+    "suggested_fix": {
+      "current": "Revisions appear after publishing, library refreshes, or draft restores.",
+      "proposed": "A revision is saved each time you publish the page, refresh its content libraries, or restore a draft."
+    }
+  },
+  {
+    "id": "05-non-native-015",
+    "page": "/admin/pages/{id}",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "'Governance comments' and 'Builder support' are abstract corporate phrases",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Governance comments"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Builder support"
+      }
+    ],
+    "persona_rationale": "'Governance' is an abstract business word; 'Internal notes' tells me plainly what the box is for.",
+    "suggested_fix": {
+      "current": "Governance comments / Builder support",
+      "proposed": "Internal notes / Content sources"
+    }
+  }
+]

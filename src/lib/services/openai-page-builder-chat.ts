@@ -7,14 +7,12 @@ import {
   type PageBuilderAiChatRequest,
   type PageBuilderAiChatResponse,
 } from "@/lib/page-builder/ai-chat";
+import { generateWithCopyRepair } from "@/lib/page-builder/ai-chat-copy-repair";
 import { normalizePageBuilderAiChatResponseForIntent } from "@/lib/page-builder/ai-chat-intent-fallback";
 import {
   buildPageBuilderAiToolDefinitions,
   pageBuilderAiSystemPrompt,
 } from "@/lib/page-builder/ai-chat-prompt";
-import { toCerebrasJsonSchema } from "@/lib/page-builder/cerebras-json-schema";
-import { defaultSeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
-import type { SeoAgentProvider } from "@/lib/page-builder/seo-agent-provider";
 
 type FetchLike = (
   input: string | URL | Request,
@@ -23,9 +21,7 @@ type FetchLike = (
 
 export type OpenAiPageBuilderChatOptions = {
   apiKey?: string;
-  cerebrasApiKey?: string;
   fetchFn?: FetchLike;
-  provider?: SeoAgentProvider;
   model?: string;
   reasoningEffort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh";
 };
@@ -50,40 +46,35 @@ export class PageBuilderAiGenerationError extends Error {
 }
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
-const CEREBRAS_CHAT_COMPLETIONS_URL =
-  "https://api.cerebras.ai/v1/chat/completions";
 
 export async function generateOpenAiPageBuilderChatResponse(
   request: PageBuilderAiChatRequest,
   options: OpenAiPageBuilderChatOptions = {},
 ): Promise<PageBuilderAiChatResponse> {
-  const provider = options.provider ?? defaultSeoAgentProvider;
   const apiKey =
-    provider === "cerebras"
-      ? options.cerebrasApiKey !== undefined
-        ? options.cerebrasApiKey.trim()
-        : config.CEREBRAS_API_KEY?.trim()
-      : options.apiKey !== undefined
-        ? options.apiKey.trim()
-        : config.OPENAI_API_KEY?.trim();
+    options.apiKey !== undefined
+      ? options.apiKey.trim()
+      : config.OPENAI_API_KEY?.trim();
   if (!apiKey) {
     throw new PageBuilderAiConfigurationError(
-      provider === "cerebras"
-        ? "Cerebras API key is not configured for the page builder assistant."
-        : "OpenAI API key is not configured for the page builder assistant.",
+      "OpenAI API key is not configured for the page builder assistant.",
     );
   }
 
-  if (provider === "cerebras") {
-    return generateCerebrasPageBuilderChatResponse(request, {
-      apiKey,
-      fetchFn: options.fetchFn ?? fetch,
-      model: options.model ?? config.CEREBRAS_SEO_MODEL,
-      reasoningEffort:
-        options.reasoningEffort ?? config.OPENAI_SEO_REASONING_EFFORT,
-    });
-  }
+  // Generate, verify against the copy-quality gate, and give the model one
+  // round-trip to fix its own flagged copy before intent normalization
+  // decides whether a fallback is still needed.
+  const { response } = await generateWithCopyRepair(request, (attempt) =>
+    requestOpenAiChatResponse(attempt, apiKey, options),
+  );
+  return normalizePageBuilderAiChatResponseForIntent(request, response);
+}
 
+async function requestOpenAiChatResponse(
+  request: PageBuilderAiChatRequest,
+  apiKey: string,
+  options: OpenAiPageBuilderChatOptions,
+): Promise<PageBuilderAiChatResponse> {
   const response = await (options.fetchFn ?? fetch)(OPENAI_RESPONSES_URL, {
     method: "POST",
     headers: {
@@ -130,96 +121,25 @@ export async function generateOpenAiPageBuilderChatResponse(
     );
   }
 
-  return normalizePageBuilderAiChatResponseForIntent(request, normalized.data);
-}
-
-async function generateCerebrasPageBuilderChatResponse(
-  request: PageBuilderAiChatRequest,
-  options: {
-    apiKey: string;
-    fetchFn: FetchLike;
-    model: string;
-    reasoningEffort: OpenAiPageBuilderChatOptions["reasoningEffort"];
-  },
-): Promise<PageBuilderAiChatResponse> {
-  const response = await options.fetchFn(CEREBRAS_CHAT_COMPLETIONS_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${options.apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: options.model,
-      messages: [
-        {
-          role: "system",
-          content: pageBuilderAiSystemPrompt(
-            request.context,
-            latestUserMessage(request),
-          ),
-        },
-        ...request.messages.map((message) => ({
-          role: message.role,
-          content: message.content,
-        })),
-      ],
-      tools: buildPageBuilderChatCompletionTools(request.context),
-      tool_choice: "auto",
-      parallel_tool_calls: true,
-      reasoning_effort: cerebrasReasoningEffort(
-        options.reasoningEffort ?? "medium",
-      ),
-      max_completion_tokens: 8000,
-    }),
-  });
-
-  const payload = await readProviderResponse(response, "Cerebras");
-  if (!response.ok) {
-    throw generationErrorFromPayload(response.status, payload, "Cerebras");
-  }
-
-  const normalized = pageBuilderAiChatResponseSchema.safeParse({
-    message: clampAssistantMessage(extractCerebrasOutputText(payload)),
-    toolCalls: extractCerebrasToolCalls(payload),
-  });
-  if (!normalized.success) {
-    throw new PageBuilderAiGenerationError(
-      `Cerebras returned an invalid page-builder chat response: ${
-        normalized.error.issues[0]?.message ?? "Invalid response"
-      }`,
-    );
-  }
-
-  return normalizePageBuilderAiChatResponseForIntent(request, normalized.data);
+  return normalized.data;
 }
 
 async function readOpenAiResponse(response: Response) {
-  return readProviderResponse(response, "OpenAI");
-}
-
-async function readProviderResponse(response: Response, provider: string) {
   const body = await response.text();
   try {
     return JSON.parse(body) as unknown;
   } catch {
-    throw new PageBuilderAiGenerationError(
-      `${provider} returned invalid JSON.`,
-      {
-        status: response.status,
-      },
-    );
+    throw new PageBuilderAiGenerationError("OpenAI returned invalid JSON.", {
+      status: response.status,
+    });
   }
 }
 
-function generationErrorFromPayload(
-  status: number,
-  payload: unknown,
-  provider = "OpenAI",
-) {
+function generationErrorFromPayload(status: number, payload: unknown) {
   const code = errorCodeFromPayload(payload);
   const detail = code ? ` (${code})` : "";
   return new PageBuilderAiGenerationError(
-    `${provider} rejected the page-builder assistant request${detail}.`,
+    `OpenAI rejected the page-builder assistant request${detail}.`,
     { status, code },
   );
 }
@@ -317,108 +237,10 @@ function extractOpenAiFunctionCalls(payload: unknown) {
               ? call.id
               : `tool_call_${index + 1}`,
         name: call.name,
-        input: parseArguments(call.arguments, "OpenAI"),
+        input: parseArguments(call.arguments),
       },
     ];
   });
-}
-
-function extractCerebrasOutputText(payload: unknown) {
-  const message = firstCerebrasMessage(payload);
-  const content = message?.content;
-  if (typeof content === "string") return content.trim();
-  if (Array.isArray(content)) {
-    return content
-      .map((part) =>
-        typeof part === "object" &&
-        part &&
-        "text" in part &&
-        typeof (part as { text?: unknown }).text === "string"
-          ? (part as { text: string }).text
-          : "",
-      )
-      .join("")
-      .trim();
-  }
-  return "";
-}
-
-function extractCerebrasToolCalls(payload: unknown) {
-  const message = firstCerebrasMessage(payload);
-  const toolCalls = message?.tool_calls;
-  if (!Array.isArray(toolCalls)) return [];
-
-  return toolCalls.flatMap((toolCall, index) => {
-    if (
-      typeof toolCall !== "object" ||
-      !toolCall ||
-      (toolCall as { type?: unknown }).type !== "function"
-    ) {
-      return [];
-    }
-    const call = toolCall as {
-      id?: unknown;
-      function?: { name?: unknown; arguments?: unknown };
-    };
-    if (typeof call.function?.name !== "string") return [];
-    if (typeof call.function.arguments !== "string") return [];
-    return [
-      {
-        id: typeof call.id === "string" ? call.id : `tool_call_${index + 1}`,
-        name: call.function.name,
-        input: parseArguments(call.function.arguments, "Cerebras"),
-      },
-    ];
-  });
-}
-
-function firstCerebrasMessage(payload: unknown) {
-  const choices =
-    typeof payload === "object" && payload && "choices" in payload
-      ? (payload as { choices?: unknown }).choices
-      : null;
-  if (!Array.isArray(choices)) return null;
-  for (const choice of choices) {
-    if (
-      typeof choice === "object" &&
-      choice &&
-      "message" in choice &&
-      typeof (choice as { message?: unknown }).message === "object" &&
-      (choice as { message?: unknown }).message
-    ) {
-      return (
-        choice as {
-          message: {
-            content?: unknown;
-            tool_calls?: unknown;
-          };
-        }
-      ).message;
-    }
-  }
-  return null;
-}
-
-function buildPageBuilderChatCompletionTools(
-  context: PageBuilderAiChatRequest["context"],
-) {
-  return buildPageBuilderAiToolDefinitions(context).map((tool) => ({
-    type: "function",
-    function: {
-      name: tool.name,
-      description: tool.description,
-      strict: tool.strict,
-      parameters: toCerebrasJsonSchema(tool.parameters),
-    },
-  }));
-}
-
-function cerebrasReasoningEffort(
-  effort: NonNullable<OpenAiPageBuilderChatOptions["reasoningEffort"]>,
-) {
-  if (effort === "high" || effort === "xhigh") return "high";
-  if (effort === "medium") return "medium";
-  return "low";
 }
 
 function latestUserMessage(request: PageBuilderAiChatRequest) {
@@ -436,13 +258,13 @@ function clampAssistantMessage(text: string) {
     : text;
 }
 
-function parseArguments(value: string, provider: string) {
+function parseArguments(value: string) {
   if (!value.trim()) return {};
   try {
     return JSON.parse(value) as unknown;
   } catch {
     throw new PageBuilderAiGenerationError(
-      `${provider} returned a tool call with invalid JSON arguments.`,
+      "OpenAI returned a tool call with invalid JSON arguments.",
     );
   }
 }

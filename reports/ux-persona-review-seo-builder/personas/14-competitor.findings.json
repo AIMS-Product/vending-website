@@ -1,0 +1,312 @@
+[
+  {
+    "id": "14-competitor-001",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Trust & Safety",
+    "severity": "blocker",
+    "finding": "Redirects table has no edit or delete control — created redirects are permanent from the UI.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Redirects table has no delete/edit controls — created redirects cannot be removed from this UI."
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-redirects-001-load.png",
+        "quote": "Table columns OLD PATH / DESTINATION / STATUS / SOURCE / CREATED with no actions column"
+      }
+    ],
+    "persona_rationale": "A redirect manager I can't edit or undo from is not a redirect manager — every competitor lets me fix a typo'd 301; here one mistake is permanent and I'd never trust it for a site migration.",
+    "suggested_fix": {
+      "current": "Table columns end at \"Created\" with no action controls",
+      "proposed": "Add a per-row Edit/Delete action column (with confirm on delete) like Yoast Premium / Rank Math redirect managers"
+    }
+  },
+  {
+    "id": "14-competitor-002",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Copy & Labels",
+    "severity": "critical",
+    "finding": "Publish blockers are revealed one at a time in serialized internal phrasing, and the named field (CTA destination URL) lives only in a block-settings modal, not on the canvas.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "Fix content 1 · Destination URL\" — the destination field is NOT on the canvas; it lives in Block actions → Edit settings modal"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-11-block-settings-modal.png",
+        "quote": "CTA destination URL field present only inside the Block settings modal"
+      }
+    ],
+    "persona_rationale": "In Webflow I get a publish-readiness panel listing everything at once with jump links; here I fixed one blocker only to discover another, then hunted the canvas for a field that lives in a modal. That's minutes of lost time per page.",
+    "suggested_fix": {
+      "current": "One-at-a-time cryptic chip e.g. \"Fix content 1 · Destination URL\"",
+      "proposed": "Show a complete plain-English readiness checklist with deep-links that open the exact field/modal, like Yoast's checklist and Webflow's pre-publish panel"
+    }
+  },
+  {
+    "id": "14-competitor-003",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After the \"Changes published\" toast, the inline confirm-publish card stays open and re-prompts to publish again; no \"Open live page\" link is offered.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "\"Changes published.\" toast appears BUT the confirm card remains open asking to publish again (\"This will replace the current live version…\")."
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-13-confirm-card.png",
+        "quote": "Confirm publish card still visible after publish"
+      }
+    ],
+    "persona_rationale": "Every competitor closes the publish dialog and shows me a \"View live\" link on success. Here I couldn't tell if my second look at the card meant it failed, and there was no live-page link — I had to type the URL by hand.",
+    "suggested_fix": {
+      "current": "Confirm card persists and re-prompts after a successful publish",
+      "proposed": "Dismiss the card on success and show a success state with an \"Open live page\" link"
+    }
+  },
+  {
+    "id": "14-competitor-004",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "Scheduled-publish datetime field clears after save with no \"Scheduled for…\" confirmation anywhere in the editor.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "the field re-rendered EMPTY and no \"Scheduled for …\" status appeared anywhere in the editor"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Empty dd/mm/yyyy datetime field, status still shows draft"
+      }
+    ],
+    "persona_rationale": "WordPress and Webflow both surface the scheduled time prominently; here I had no idea whether my schedule saved, which for a launch-day publish is unacceptable — I'd have to babysit it manually.",
+    "suggested_fix": {
+      "current": "Field empties after save with no scheduled-state confirmation",
+      "proposed": "Persist the chosen datetime in the field and show \"Scheduled for {date/time}\" on the Publish control and in the pages-list Status column, like WordPress"
+    }
+  },
+  {
+    "id": "14-competitor-005",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "schedule-publish",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "Schedule timezone is hardcoded to Pacific Time for an Australian business, with no timezone control.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Uses Pacific Time (America/Los_Angeles)"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Uses Pacific Time (America/Los_Angeles). Leave blank unless this page should publish later."
+      }
+    ],
+    "persona_rationale": "WordPress schedules in the site's configured timezone. Asking an Adelaide operator to mentally convert their launch time to LA time is exactly the kind of friction that makes me distrust a tool's localisation.",
+    "suggested_fix": {
+      "current": "Fixed \"Uses Pacific Time (America/Los_Angeles)\" with no control",
+      "proposed": "Respect the site/business timezone (or add a timezone selector) and label accordingly, e.g. \"Publishes at 12:00pm ACST\""
+    }
+  },
+  {
+    "id": "14-competitor-006",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "No unsaved-changes warning when leaving the editor — typed content is silently lost.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Leaving unsaved editor: navigated straight to /admin/pages with NO unsaved-changes warning — typed title silently lost"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-014-leave-unsaved.png",
+        "quote": "Returned to pages list after leaving unsaved editor"
+      }
+    ],
+    "persona_rationale": "Every editor I've used in two years warns me before discarding work. Losing a typed page because I clicked \"Pages\" is the kind of thing that makes me close the tab and not come back.",
+    "suggested_fix": {
+      "current": "Navigating away from an unsaved editor proceeds silently",
+      "proposed": "Add a \"You have unsaved changes — leave anyway?\" guard like Webflow / WordPress / Framer"
+    }
+  },
+  {
+    "id": "14-competitor-007",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "revision-restore",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "Revision history does not exist until the page is first published — no page-level undo while drafting.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "revisions do NOT exist while drafting. Empty state: \"Revisions appear after publishing, library refreshes, or draft restores.\""
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-revision-restore-04-preview-revision.png",
+        "quote": "Revisions empty state shown before first publish"
+      }
+    ],
+    "persona_rationale": "WordPress keeps revisions of drafts I've never published; Webflow has backups. Here if I rework a draft before first publish and want the earlier version back, I'm stuck — that's a real regression from what I rely on.",
+    "suggested_fix": {
+      "current": "No restore points exist before first publish",
+      "proposed": "Autosave draft revisions from the first save, as WordPress (autosave + revisions) and Framer (version history) do"
+    }
+  },
+  {
+    "id": "14-competitor-008",
+    "page": "/admin/pages",
+    "journey": "find-duplicate-archive",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "Duplicate does not preserve or derive the source slug — it generates a random \"draft-{hash}\" slug.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "\"Duplicate page\" (confirm dialog) created \"Copy of {title}\" with auto slug \"draft-4020bd0f\" (original slug not preserved/derived)"
+      }
+    ],
+    "persona_rationale": "When I duplicate in WordPress I get a predictable \"-copy\" slug; a random hash means I have to re-slug every duplicate by hand, which defeats the point of duplicating a near-identical SEO page.",
+    "suggested_fix": {
+      "current": "Duplicate assigns a random slug \"draft-4020bd0f\"",
+      "proposed": "Derive the slug from the title/source, e.g. \"copy-of-{slug}\", matching WordPress's \"{slug}-copy\" convention"
+    }
+  },
+  {
+    "id": "14-competitor-009",
+    "page": "/admin/pages",
+    "journey": "find-duplicate-archive",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "No bulk-select — archive and other row actions are per-row only.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "Archiving is per-row only; no bulk select."
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-017-row-menu-open.png",
+        "quote": "Single-row ⋮ menu: Edit page / View live page / Duplicate page / Move to draft / Archive page"
+      }
+    ],
+    "persona_rationale": "WordPress's bulk-actions are muscle memory for me — archiving 10 stale pages one menu at a time is exactly the productivity tax that would make switching feel like a downgrade.",
+    "suggested_fix": {
+      "current": "Per-row ⋮ menu only, no checkbox column",
+      "proposed": "Add row checkboxes + a bulk action bar (Archive / Move to draft) like WordPress's bulk-actions dropdown and Webflow's multi-select"
+    }
+  },
+  {
+    "id": "14-competitor-010",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "Readiness and Status columns are colour-coded dots with no visible legend in the list view.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "READINESS and STATUS columns rendered as coloured dots only"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "button \"SEO readiness: Needs work\" / button \"Page status: Published\" (labels only in hover/accessible name)"
+      }
+    ],
+    "persona_rationale": "I shouldn't have to hover every dot to learn that red=blocked and amber=draft; WordPress just writes \"Draft\" / \"Published\" in the column. At a glance I can't triage which pages need work.",
+    "suggested_fix": {
+      "current": "Bare coloured dots with hover-only meaning",
+      "proposed": "Add a text label or status pill (e.g. \"Draft\" / \"Published\") in the column, like WordPress's status text and Webflow's status badges"
+    }
+  },
+  {
+    "id": "14-competitor-011",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": null,
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Editor block labels carry a prohibited ARIA attribute (serious axe violation).",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "id \"aria-prohibited-attr\", impact \"serious\", selectors span[aria-label=\"Hero block\"], span[aria-label=\"FAQ block\"], count 2"
+      }
+    ],
+    "persona_rationale": "A serious a11y violation on the core editing surface signals the tool isn't held to the same bar as the mature CMS I'd be leaving; it makes me doubt overall build quality.",
+    "suggested_fix": {
+      "current": "aria-label on a span whose role prohibits it",
+      "proposed": "Move the accessible name onto the labelled control, or wrap in an element whose role permits aria-label"
+    }
+  },
+  {
+    "id": "14-competitor-012",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "\"Template\" starting point offers \"No templates created\" — a dead-end card for a first-time user.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "a \"Template\" option exists with \"No templates created\" (dead-end card for a first-time user)"
+      }
+    ],
+    "persona_rationale": "Offering me a template path that leads nowhere on day one is the kind of unfinished edge Webflow polished years ago; small, but it sets a \"not quite done\" tone.",
+    "suggested_fix": {
+      "current": "Empty Template option presented as a selectable card",
+      "proposed": "Hide the option until templates exist, or make it a \"Save your first template\" CTA, like Webflow only showing the gallery when populated"
+    }
+  },
+  {
+    "id": "14-competitor-013",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Feedback & State",
+    "severity": "low",
+    "finding": "New-page canvas is all greyed placeholder text with no guidance that fields must be filled before publishing.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "New page canvas is entirely placeholder (\"Hero headline\", \"Hero body copy\", \"CTA label\") with no guidance that these must be completed before publishing."
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-013-editor-unsaved.png",
+        "quote": "Editor opened with placeholder-only hero content"
+      }
+    ],
+    "persona_rationale": "Webflow eases a new user in; here I'm staring at grey text guessing which are required, then getting blindsided by publish blockers later. A small nudge up front would prevent the whack-a-mole downstream.",
+    "suggested_fix": {
+      "current": "Placeholder-only canvas with no onboarding",
+      "proposed": "Add a first-run hint or checklist (\"Fill the hero headline to get started\"), like Webflow's onboarding overlays"
+    }
+  }
+]

@@ -19,11 +19,11 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
   const category = getCategoryLabel(post.title);
 
   return (
-    <article className="bg-[#f5fbff] px-5 pt-28 pb-20 lg:px-10 lg:pt-32">
+    <div className="bg-[#f5fbff] px-5 pt-28 pb-20 lg:px-10 lg:pt-32">
       <div className="mx-auto grid max-w-[1500px] gap-12 xl:grid-cols-[64px_minmax(0,920px)_360px] xl:gap-14">
         <ShareRail title={post.title} url={articleUrl} />
 
-        <div className="min-w-0">
+        <article className="min-w-0">
           <div className="flex flex-wrap items-center gap-4">
             <Link
               href="/"
@@ -38,7 +38,7 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
               href="/news"
               className="text-sm font-black text-[#066a99] uppercase transition hover:text-[#2d9fd6]"
             >
-              Blog
+              News
             </Link>
             <span className="rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-xs font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
               {category}
@@ -46,7 +46,7 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
           </div>
 
           <header className="mt-10">
-            <h1 className="max-w-[900px] text-[clamp(2.75rem,6vw,5.4rem)] leading-[0.96] font-black text-[#111111] uppercase">
+            <h1 className="max-w-[900px] text-[clamp(2.75rem,6vw,5.4rem)] leading-[0.96] font-black break-words text-[#111111] uppercase">
               {post.title}
             </h1>
             {post.excerpt && (
@@ -74,11 +74,11 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
             className="public-news-prose mt-14"
             dangerouslySetInnerHTML={{ __html: html }}
           />
-        </div>
+        </article>
 
         <ArticleSidebar headings={headings} />
       </div>
-    </article>
+    </div>
   );
 }
 
@@ -199,7 +199,7 @@ function ArticleSidebar({ headings }: { headings: string[] }) {
           <h2 className="text-3xl leading-tight font-black uppercase">
             Build your route today.
           </h2>
-          <p className="mt-5 text-lg leading-7 font-semibold text-[#066a99]">
+          <p className="mt-5 text-lg leading-7 font-semibold text-white">
             Get the complete A-Z blueprint to passive income.
           </p>
           <Link

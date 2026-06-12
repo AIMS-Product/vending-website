@@ -1,0 +1,197 @@
+{
+  "ts": 1781071765035,
+  "createdPageUrl": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+  "publicUrl": "/resources/ux-seo-review-test-1781071765035",
+  "results": [
+    {
+      "journey": "publish-and-view-live",
+      "status": "blocked",
+      "clicks": 4,
+      "pageLoads": 3,
+      "steps": [
+        {
+          "n": 1,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "open-editor",
+          "result": "ok",
+          "screenshot": "journey-publish-and-view-live-01-open-editor.png"
+        },
+        {
+          "n": 2,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "read-publish-blocker",
+          "result": "publish disabled; blocker: Add a hero headline before publishing.",
+          "screenshot": "journey-publish-and-view-live-02-read-publish-blocker.png"
+        },
+        {
+          "n": 3,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "resolve-blockers",
+          "result": "blocker: Add a hero headline before publishing. | filled hero Heading textarea | blocker: Add FAQ | filled FAQ question/answer | blocker: Add FAQ | filled FAQ question/answer | blocker: Add FAQ | filled FAQ question/answer",
+          "screenshot": "journey-publish-and-view-live-03-resolve-blockers.png"
+        },
+        {
+          "n": 4,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "click-publish",
+          "result": "ERROR: Publish still disabled after fixes",
+          "screenshot": "journey-publish-and-view-live-04-click-publish.png"
+        },
+        {
+          "n": 5,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "verify-published",
+          "result": "ERROR: no 'Published' text after publish",
+          "screenshot": "journey-publish-and-view-live-05-verify-published.png"
+        },
+        {
+          "n": 6,
+          "page": "/resources/ux-seo-review-test-1781071765035",
+          "action": "open-live-page",
+          "result": "manual goto /resources/ux-seo-review-test-1781071765035",
+          "screenshot": "journey-publish-and-view-live-06-open-live-page.png"
+        },
+        {
+          "n": 7,
+          "page": "/resources/ux-seo-review-test-1781071765035",
+          "action": "verify-live-content",
+          "result": "ERROR: public URL looks like 404",
+          "screenshot": "journey-publish-and-view-live-07-verify-live-content.png"
+        }
+      ],
+      "wrongTurns": [],
+      "friction": [
+        "Publish disabled with blocker: \"Add a hero headline before publishing.\"",
+        "No visible 'Open live page' link after publishing — typed URL manually"
+      ],
+      "blockedAt": "click-publish: ERROR: Publish still disabled after fixes"
+    },
+    {
+      "journey": "revision-restore",
+      "status": "blocked",
+      "clicks": 0,
+      "pageLoads": 2,
+      "steps": [
+        {
+          "n": 1,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "open-editor",
+          "result": "ok",
+          "screenshot": "journey-revision-restore-01-open-editor.png"
+        },
+        {
+          "n": 2,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "find-revision-history",
+          "result": "still shows empty state after publish",
+          "screenshot": "journey-revision-restore-02-find-revision-history.png"
+        },
+        {
+          "n": 3,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "preview-revision",
+          "result": "ERROR: no revision Preview link",
+          "screenshot": "journey-revision-restore-03-preview-revision.png"
+        },
+        {
+          "n": 4,
+          "page": "/resources/ux-seo-review-test-1781071765035",
+          "action": "back-to-editor",
+          "result": "browser back",
+          "screenshot": "journey-revision-restore-04-back-to-editor.png"
+        },
+        {
+          "n": 5,
+          "page": "/resources/ux-seo-review-test-1781071765035",
+          "action": "restore-revision",
+          "result": "ERROR: locator.scrollIntoViewIfNeeded: Timeout 8000ms exceeded.",
+          "screenshot": "journey-revision-restore-05-restore-revision.png"
+        },
+        {
+          "n": 6,
+          "page": "/resources/ux-seo-review-test-1781071765035",
+          "action": "verify-restored",
+          "result": "no clear restore confirmation",
+          "screenshot": "journey-revision-restore-06-verify-restored.png"
+        }
+      ],
+      "wrongTurns": [
+        "revision preview: no 'Back to editor' control, used browser back"
+      ],
+      "friction": [],
+      "blockedAt": "preview-revision: ERROR: no revision Preview link"
+    },
+    {
+      "journey": "schedule-publish",
+      "status": "completed-with-friction",
+      "clicks": 3,
+      "pageLoads": 1,
+      "steps": [
+        {
+          "n": 1,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "open-editor",
+          "result": "ok",
+          "screenshot": "journey-schedule-publish-01-open-editor.png"
+        },
+        {
+          "n": 2,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "open-advanced-sections",
+          "result": "all details opened; field visible",
+          "screenshot": "journey-schedule-publish-02-open-advanced-sections.png"
+        },
+        {
+          "n": 3,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "set-schedule",
+          "result": "filled 2026-06-11T12:00",
+          "screenshot": "journey-schedule-publish-03-set-schedule.png"
+        },
+        {
+          "n": 4,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "save-schedule",
+          "result": "ok",
+          "screenshot": "journey-schedule-publish-04-save-schedule.png"
+        },
+        {
+          "n": 5,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "verify-scheduled",
+          "result": "ERROR: no 'Scheduled for …' indicator found",
+          "screenshot": "journey-schedule-publish-05-verify-scheduled.png"
+        },
+        {
+          "n": 6,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "cancel-schedule",
+          "result": "cancel toggled and saved",
+          "screenshot": "journey-schedule-publish-06-cancel-schedule.png"
+        },
+        {
+          "n": 7,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "verify-cancelled",
+          "result": "schedule cleared",
+          "screenshot": "journey-schedule-publish-07-verify-cancelled.png"
+        }
+      ],
+      "wrongTurns": [],
+      "friction": [
+        "Scheduled publish field is buried: SEO panel → Advanced SEO governance section"
+      ],
+      "blockedAt": null
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "failedRequests": [
+    "404 http://localhost:3000/resources/ux-seo-review-test-1781071765035",
+    "404 http://localhost:3000/resources/ux-seo-review-test-1781071765035",
+    "404 http://localhost:3000/resources/ux-seo-review-test-1781071765035"
+  ]
+}

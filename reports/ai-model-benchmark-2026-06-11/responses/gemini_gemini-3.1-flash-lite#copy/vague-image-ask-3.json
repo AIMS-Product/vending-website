@@ -1,0 +1,118 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an image section with text about campus vending."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Coffee vending machines for offices keep teams stocked with fresh drinks without anyone owning a brewing rota. A managed machine covers restocking, cleaning, and fault response so facilities can stay focused on the building.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "I can add the image block, but I need the media source first.",
+    "toolCalls": [
+      {
+        "id": "deterministic_media_source_clarification",
+        "name": "request_clarification",
+        "input": {
+          "options": [
+            "Paste a media URL",
+            "Choose from the media library first",
+            "Add a text placeholder instead"
+          ]
+        }
+      }
+    ],
+    "source": "intent-fallback"
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "EjQKMgEMOdbHErVx/F2xRGDWsCeoQH3kgKrWcERh5TlBz6PgAxcfJXZiVZoCWpnFVgtWJIMJ"
+                }
+              },
+              "function": {
+                "arguments": "{\"imageCaption\":\"Coffee vending machines in university common areas support student and faculty needs.\",\"body\":\"Placing coffee vending machines for offices on university campuses requires consideration of high-traffic locations and varied student schedules. Machines located in libraries, study halls, or faculty lounges can provide a consistent drink option during long study sessions or between lectures. Evaluating power access, security requirements for the space, and expected usage volumes will help determine the most suitable machine type and refill frequency for your specific campus environment.\",\"imageAltText\":\"Coffee vending machine in a university library setting\",\"sourceRightsNotes\":\"Unsplash image used for illustration.\",\"imagePosition\":\"right\",\"bulletItems\":[\"Identify high-traffic student hubs and faculty break areas\",\"Assess power supply and floor space requirements for installation\",\"Plan for increased service frequency during peak academic periods\",\"Consider secure placement options in shared common areas\"],\"imageUrl\":\"https://images.unsplash.com/photo-1554744512-706598801d9f?q=80&w=1200&auto=format&fit=crop\",\"heading\":\"Planning Campus Coffee Vending Installations\"}",
+                "name": "add_image_text_section"
+              },
+              "id": "tOXGFMPv",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781145548,
+    "id": "yh8qasL6K9-AqfkPucmk4A0",
+    "model": "gemini-3.1-flash-lite",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 272,
+      "prompt_tokens": 4941,
+      "prompt_tokens_details": {
+        "cached_tokens": 4038
+      },
+      "total_tokens": 5213
+    }
+  }
+}

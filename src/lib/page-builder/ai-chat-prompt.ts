@@ -10,6 +10,10 @@ import {
   selectPageGuide,
 } from "@/lib/page-builder/ai-page-guides";
 import {
+  META_DESCRIPTION_MAX_LENGTH,
+  seoCopyPromptRules,
+} from "@/lib/page-builder/copy-standards";
+import {
   collectBlockToolSpecs,
   nonEmptyStringSchema,
   nullableStringSchema,
@@ -109,7 +113,7 @@ export function pageBuilderAiSystemPrompt(
     "For FAQ blocks in a complete first draft, include 5-7 specific questions. Answers should be useful enough to reduce a real buyer objection and should usually be more than one sentence.",
     "Use the exact target keyword naturally in the SEO title, meta description, hero heading or body, and one other visible body location. After that, use natural variations. Do not repeat the exact keyword in every heading, card, FAQ, or paragraph.",
     "Keep public-facing page titles and SEO titles professionally cased and readable. Exact keyword matching is normalized, so do not leave awkward lowercase title text just because the target keyword was supplied in lowercase.",
-    "Write meta descriptions as concise search snippets under 155 characters when possible, with the exact target keyword included once and a specific value proposition.",
+    `Write meta descriptions as concise search snippets under ${META_DESCRIPTION_MAX_LENGTH} characters when possible, with the exact target keyword included once and a specific value proposition.`,
     "People-first SEO standard: prioritize substantial, complete, helpful content for the intended buyer. Do not write search-engine-first copy, keyword stuffing, or shallow summaries that leave the reader needing to search again.",
     "Public page copy must never mention prompt mechanics or SEO mechanics: do not write phrases like target keyword, exact phrase, search intent, this page, this SEO page, or appears throughout.",
     "Do not invent concrete commercial or operational claims. Avoid unsupported prices, fees, savings, cost reductions, square metres, timelines, reporting cadences, dedicated teams, exact product menus, local tastes, free consultations, guarantees, or performance outcomes unless the user supplied them.",
@@ -132,6 +136,8 @@ export function pageBuilderAiSystemPrompt(
     "Use request_clarification only when a real business or design decision blocks a safe edit. Give tappable choices, not a loose open question.",
     "Before saying the page is ready to publish, consider blockers: real H1, clear CTA, SEO title and description, links/forms, alt text, no placeholder copy, and mobile/accessibility risks.",
     "After tool calls, summarize what changed and what the user should review next. Do not tell the user to use internal tool names.",
+    "",
+    seoCopyPromptRules(),
     "",
     renderPageGuidePrompt(pageGuide),
     "",
@@ -451,7 +457,7 @@ function setSeoMetadataTool(): PageBuilderAiFunctionTool {
         slug: nullableStringSchema(120),
         targetKeyword: nullableStringSchema(180),
         seoTitle: nullableStringSchema(80),
-        metaDescription: nullableStringSchema(180),
+        metaDescription: nullableStringSchema(META_DESCRIPTION_MAX_LENGTH),
       },
     },
   };

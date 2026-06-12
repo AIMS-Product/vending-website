@@ -1,0 +1,16 @@
+=== S20 e2e wiring evidence (server-render, :3001) ===
+Loaded existing page editor back-link (expect plain /admin/pages):
+href="/admin/pages"
+
+/admin/pages/new initial paint created= count (expect 0; top rail gated behind template picker until a page is started):
+0
+
+S9 list banner still fires for ?created=<realId> (end of chain):
+2
+  ^ count of highlighted rows (desktop + mobile render of the same row = 2)
+
+NOTE: the param-bearing back-link is produced client-side once S3b autosave
+turns effectivePageId from null->id after a title is typed. That live
+transition needs browser automation (not available in this env). The helper
+logic (backToPagesHref) is unit-proven for all 3 states; the wiring compiles
+(tsc 0) and reads page + effectivePageId from the controller.

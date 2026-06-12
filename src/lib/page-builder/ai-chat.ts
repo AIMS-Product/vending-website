@@ -16,6 +16,10 @@ import {
   ensureEditablePageContent,
 } from "@/lib/page-builder/content-ops";
 import {
+  META_DESCRIPTION_LEGACY_MAX_LENGTH,
+  META_DESCRIPTION_MAX_LENGTH,
+} from "@/lib/page-builder/copy-standards";
+import {
   slugify,
   trackingNameForLabel,
 } from "@/lib/page-builder/editor-helpers";
@@ -103,7 +107,10 @@ export const pageBuilderAiContextSchema = z
     templateKey: z.string().trim().max(120).default("blank"),
     targetKeyword: z.string().trim().max(180),
     seoTitle: z.string().trim().max(80),
-    metaDescription: z.string().trim().max(180),
+    // Request context carries the page's existing stored value, so it uses the
+    // legacy ceiling — pages with 156-180 char descriptions must still be able
+    // to use AI chat. AI-written output is capped at the 155 target below.
+    metaDescription: z.string().trim().max(META_DESCRIPTION_LEGACY_MAX_LENGTH),
     selectedBlockId: blockIdSchema.nullable().optional(),
     content: pageContentSchema,
     publishReadiness: z
@@ -427,7 +434,7 @@ const setSeoMetadataInputSchema = z
     slug: nullableText(120),
     targetKeyword: nullableText(180),
     seoTitle: nullableText(80),
-    metaDescription: nullableText(180),
+    metaDescription: nullableText(META_DESCRIPTION_MAX_LENGTH),
   })
   .strict();
 
@@ -436,7 +443,7 @@ const seoMetadataInputLimits = {
   slug: 120,
   targetKeyword: 180,
   seoTitle: 80,
-  metaDescription: 180,
+  metaDescription: META_DESCRIPTION_MAX_LENGTH,
 } as const;
 
 const reorderBlocksInputSchema = z

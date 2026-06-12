@@ -6,11 +6,18 @@ import Link from "next/link";
 import { clsx } from "clsx";
 import { signOut } from "@/app/admin/actions";
 
-type AdminSection = "pages" | "posts" | "media" | "libraries" | "settings";
+type AdminSection =
+  | "pages"
+  | "posts"
+  | "media"
+  | "libraries"
+  | "settings"
+  | "routes";
 type AdminIcon =
   | "archive"
   | "book"
   | "file"
+  | "help"
   | "image"
   | "layers"
   | "log-out"
@@ -42,12 +49,20 @@ const contentSections: AdminNavSection[] = [
     description: "SEO page content",
     icon: "file",
   },
+  blogSection,
   {
     id: "media",
     label: "Media library",
     href: "/admin/media",
     description: "Images and source assets",
     icon: "image",
+  },
+  {
+    id: "libraries",
+    label: "Content libraries",
+    href: "/admin/libraries",
+    description: "Reusable content collections",
+    icon: "archive",
   },
 ];
 
@@ -58,6 +73,13 @@ const accountSections: AdminNavSection[] = [
     href: "/admin/settings/users",
     description: "Users and access",
     icon: "settings",
+  },
+  {
+    id: "routes",
+    label: "Route prefixes",
+    href: "/admin/settings/routes",
+    description: "Builder URL prefixes",
+    icon: "layers",
   },
 ];
 
@@ -453,6 +475,22 @@ function AdminAccountBlock({
           </p>
         </div>
       ) : null}
+      {/* N19 / I20 item 2: a minimal help/support entry point. (Round 1 dropped
+          this as "internal tool"; the round-2 triage re-included it.) A mailto
+          keeps it dependency-free until a docs site exists. */}
+      <a
+        href="mailto:support@vendingpreneurs.com?subject=SEO%20Page%20Builder%20help"
+        title="Help & support"
+        className={clsx(
+          "mb-2 flex w-full items-center rounded-md py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
+          collapsed ? "justify-center px-2" : "gap-2 px-3",
+        )}
+      >
+        <span className="text-slate-500" aria-hidden="true">
+          <AdminIconGlyph icon="help" />
+        </span>
+        <span className={clsx(collapsed && "hidden")}>Help &amp; support</span>
+      </a>
       <form action={signOut}>
         <button
           type="submit"
@@ -609,12 +647,15 @@ export function AdminPageActionButton({
           }
         }}
         className={clsx(
-          "block w-full rounded-md px-3 py-2 text-left text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+          "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
           tone === "danger"
             ? "text-red-700 hover:bg-red-50"
             : "text-slate-700 hover:bg-slate-50 hover:text-slate-950",
         )}
       >
+        {/* N17 / I12: a non-colour cue for destructive actions so the danger
+            state does not rely on red text alone. */}
+        {tone === "danger" ? <DangerActionGlyph /> : null}
         {pending ? pendingLabel : label}
       </button>
       {isConfirmOpen &&
@@ -673,6 +714,27 @@ export function AdminPageActionButton({
           document.body,
         )}
     </>
+  );
+}
+
+// N17 / I12: small triangular warning glyph that gives destructive menu
+// actions a non-colour cue alongside the red text.
+function DangerActionGlyph() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-4 shrink-0"
+    >
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </svg>
   );
 }
 
@@ -802,6 +864,14 @@ function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
           <path d="m17.3 17.3 1.8 1.8" />
           <path d="m4.9 19.1 1.8-1.8" />
           <path d="m17.3 6.7 1.8-1.8" />
+        </svg>
+      );
+    case "help":
+      return (
+        <svg {...adminIconGlyphCommonProps}>
+          <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
+          <path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3" />
+          <path d="M12 17h.01" />
         </svg>
       );
     case "log-out":

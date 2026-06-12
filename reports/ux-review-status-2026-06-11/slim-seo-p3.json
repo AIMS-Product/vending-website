@@ -1,0 +1,18 @@
+[
+  "No bulk select on pages list (3 personas)",
+  "No help/support/docs link anywhere in the builder (Karen)",
+  "'Schedule failed' filter label truncates to 'Schedule faile…' (Karen)",
+  "Destructive 'Archive page' distinguished by red text alone (David)",
+  "Icon-only eye/move controls below comfortable target size (David, Betty)",
+  "Workflow filter jargon: 'Needs links', 'Updating', 'Metadata issues' (Yuki, Priya)",
+  "Dev QA route /admin/pages/block-preview-audit exposed with no explanation (4 personas; dev-env only)",
+  "Editor canvas renders full public site chrome (nav + footer) as editable-looking content (Jake)",
+  "Toast/save-confirmation inconsistency — three different treatments incl. double 'Draft saved' (Claire, Alex)",
+  "Share dropdown stays open during unrelated interactions (Claire; partially script-induced screenshot)",
+  "Redirect status copy leads with codes '301/302/307/308' (Betty, Zoe)",
+  "Preview token URL reads as a suspicious scramble for non-technical users (Betty)",
+  "Row URLs in tiny grey monospace read as 'computer errors' (Betty)",
+  "No-results state: full-width 'Create page' dwarfs 'Clear search' (Claire)",
+  "Create-gate click target flaky under automation — possible hydration race (Alex)",
+  "Thin published page ships with no 'this page looks empty' warning (Betty)"
+]

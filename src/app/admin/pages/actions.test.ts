@@ -3,8 +3,10 @@ import type { PageContent } from "@/lib/page-builder/blocks";
 import {
   acceptAiSeoProposalBlocks,
   archiveSeoPageFromList,
+  bulkArchiveSeoPagesFromList,
   createSeoPageComment,
   createSeoPageDraftForEditor,
+  deleteNeverSavedSeoPageDraft,
   duplicateSeoPageFromList,
   generateAiSeoPageProposal,
   moveSeoPageToDraftFromList,
@@ -20,6 +22,7 @@ const mocks = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
   revalidatePath: vi.fn(),
   redirect: vi.fn(),
+  adminDeleteNeverSavedSeoPageDraft: vi.fn(),
   adminGenerateOpenAiSeoPageProposal: vi.fn(),
   adminAcceptAiProposalBlocks: vi.fn(),
   adminArchiveSeoPage: vi.fn(),
@@ -33,8 +36,10 @@ const mocks = vi.hoisted(() => ({
   adminRevokeSeoPagePreviewToken: vi.fn(),
   adminRollbackSeoPageRevision: vi.fn(),
   adminSaveSeoPageDraft: vi.fn(),
+  adminSnapshotManualSaveRevision: vi.fn(),
   adminUnpublishSeoPage: vi.fn(),
   adminUpdateSeoPageSlug: vi.fn(),
+  listRoutePrefixes: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/auth", () => ({
@@ -58,6 +63,28 @@ vi.mock("@/lib/services/openai-seo-agent", async () => {
     adminGenerateOpenAiSeoPageProposal:
       mocks.adminGenerateOpenAiSeoPageProposal,
   };
+});
+
+vi.mock("@/lib/services/seo-page-drafts", () => ({
+  adminDeleteNeverSavedSeoPageDraft: mocks.adminDeleteNeverSavedSeoPageDraft,
+}));
+
+vi.mock("@/lib/services/route-prefixes", () => ({
+  listRoutePrefixes: mocks.listRoutePrefixes,
+}));
+
+const configuredRoutePrefixes = [
+  { prefix: "/resources", label: "Resources", isDefault: true },
+  { prefix: "/blog", label: "Blog", isDefault: true },
+  { prefix: "/landing", label: "Landing", isDefault: true },
+  { prefix: "/videos", label: "Videos", isDefault: true },
+  { prefix: "/solutions", label: "Solutions", isDefault: true },
+];
+
+// Module-level so every describe block sees a configured-prefix baseline even
+// after its own vi.clearAllMocks() (which clears calls, not implementations).
+beforeEach(() => {
+  mocks.listRoutePrefixes.mockResolvedValue(configuredRoutePrefixes);
 });
 
 vi.mock("@/lib/services/ai-page-proposals", async () => {
@@ -88,6 +115,7 @@ vi.mock("@/lib/services/seo-pages", async () => {
     adminRevokeSeoPagePreviewToken: mocks.adminRevokeSeoPagePreviewToken,
     adminRollbackSeoPageRevision: mocks.adminRollbackSeoPageRevision,
     adminSaveSeoPageDraft: mocks.adminSaveSeoPageDraft,
+    adminSnapshotManualSaveRevision: mocks.adminSnapshotManualSaveRevision,
     adminUnpublishSeoPage: mocks.adminUnpublishSeoPage,
     adminUpdateSeoPageSlug: mocks.adminUpdateSeoPageSlug,
   };
@@ -130,7 +158,24 @@ type PageFormOverrides = {
   scheduledPublishAtBaseline?: string;
   cancelScheduledPublish?: boolean;
   intent?: "save" | "publish";
+  // Simulates a manual save submitted while the collapsible SEO panel is
+  // closed: its uncontrolled governance inputs unmount, so none of them are
+  // present in the FormData.
+  omitGovernanceFields?: boolean;
 };
+
+// Same names in the FormData and in the service patch.
+const GOVERNANCE_FIELDS = [
+  "internalTags",
+  "topicCluster",
+  "campaignLabel",
+  "funnelStage",
+  "reviewPeriodMonths",
+  "nextReviewAt",
+  "lifecycleStatus",
+  "ogTitle",
+  "ogDescription",
+] as const;
 
 function pageForm(overrides: PageFormOverrides = {}) {
   const values = {
@@ -252,6 +297,118 @@ describe("admin page actions", () => {
     expect(mocks.redirect).toHaveBeenCalledWith(
       `/admin/pages/${pageId}?saved=1`,
     );
+  });
+
+  it("snapshots a manual_save revision when a new page is saved", async () => {
+    mocks.adminCreateSeoPage.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+    });
+
+    await saveSeoPage({ status: "idle" }, pageForm());
+
+    expect(mocks.adminSnapshotManualSaveRevision).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({ actorId: "admin_1" }),
+    );
+  });
+
+  it("snapshots a manual_save revision when an existing draft is saved", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+
+    await saveSeoPage({ status: "idle" }, pageForm({ id: pageId }));
+
+    expect(mocks.adminSnapshotManualSaveRevision).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({ actorId: "admin_1" }),
+    );
+  });
+
+  it("does NOT snapshot a manual_save revision on publish intent", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+    mocks.adminPublishSeoPage.mockResolvedValue({
+      page: { id: pageId },
+      revision: { id: "rev_pub" },
+    });
+
+    await saveSeoPage(
+      { status: "idle" },
+      pageForm({ id: pageId, intent: "publish" }),
+    );
+
+    expect(mocks.adminPublishSeoPage).toHaveBeenCalled();
+    expect(mocks.adminSnapshotManualSaveRevision).not.toHaveBeenCalled();
+  });
+
+  it("does NOT snapshot a manual_save revision on autosave", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      status: "draft",
+    });
+
+    await autosaveSeoPageDraft(pageId, {
+      title: "Coffee Vending Adelaide",
+      slug: "coffee-vending-adelaide",
+      routePrefix: "/resources",
+      targetKeyword: "coffee vending",
+      seoTitle: "Coffee vending machines",
+      metaDescription: "Coffee vending machines for Adelaide workplaces.",
+      canonicalUrl: "",
+      internalTags: "",
+      topicCluster: "",
+      campaignLabel: "",
+      funnelStage: "",
+      reviewPeriodMonths: 6,
+      nextReviewAt: "",
+      lifecycleStatus: "drafting",
+      ogTitle: "",
+      ogDescription: "",
+      scheduledPublishAt: "",
+      scheduledPublishAtBaseline: "",
+      cancelScheduledPublish: false,
+      noindex: false,
+      sitemapEnabled: true,
+      pageType: "resource",
+      templateKey: "blank",
+      structuredDataSettings: { breadcrumb: true, faq: false },
+      draftContent: validContent,
+    });
+
+    expect(mocks.adminSnapshotManualSaveRevision).not.toHaveBeenCalled();
+  });
+
+  it("still reports the save as successful when the snapshot fails", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+    mocks.adminSnapshotManualSaveRevision.mockRejectedValue(
+      new Error("snapshot boom"),
+    );
+
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ id: pageId }),
+    );
+
+    expect(result.status).toBe("saved");
+    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalled();
   });
 
   it("auto-creates a new editor draft with AI-generated SEO fields", async () => {
@@ -442,6 +599,50 @@ describe("admin page actions", () => {
     expect(mocks.revalidatePath).toHaveBeenCalledWith(
       "/resources/old-coffee-vending",
     );
+  });
+
+  it("still accepts a legacy 156-180 character meta description on save", async () => {
+    // Pages written before the 155-character target cap can hold 156-180 char
+    // descriptions. Saving them unchanged must not be blocked — the readiness
+    // panel warns instead.
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+    const legacyDescription = "m".repeat(170);
+
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ id: pageId, metaDescription: legacyDescription }),
+    );
+
+    expect(result).toEqual({ status: "saved", message: "Draft saved." });
+    expect(mocks.adminSaveSeoPageDraft).toHaveBeenCalledWith(
+      pageId,
+      expect.objectContaining({ metaDescription: legacyDescription }),
+    );
+  });
+
+  it("rejects meta descriptions beyond the 180-character legacy ceiling", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      route_prefix: "/resources",
+      route_path: "/resources/coffee-vending-adelaide",
+      status: "draft",
+    });
+
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ id: pageId, metaDescription: "m".repeat(181) }),
+    );
+
+    expect(result.status).toBe("error");
+    expect(result.message).toContain("Meta description is too long.");
+    expect(mocks.adminSaveSeoPageDraft).not.toHaveBeenCalled();
   });
 
   it("saves scheduled publish metadata as UTC from Pacific Time input", async () => {
@@ -872,6 +1073,64 @@ describe("admin page actions", () => {
     );
   });
 
+  it("bulk-archives every selected page and returns to the preserved list view", async () => {
+    const secondId = "44444444-4444-4444-8444-444444444444";
+    const formData = new FormData();
+    formData.append("ids", pageId);
+    formData.append("ids", secondId);
+    formData.set("returnTo", "/admin/pages?view=metadata-issues");
+    mocks.adminArchiveSeoPage.mockResolvedValue({
+      id: pageId,
+      route_path: "/resources/x",
+    });
+
+    await bulkArchiveSeoPagesFromList(formData);
+
+    expect(mocks.adminArchiveSeoPage).toHaveBeenCalledWith(pageId, {
+      actorId: "admin_1",
+    });
+    expect(mocks.adminArchiveSeoPage).toHaveBeenCalledWith(secondId, {
+      actorId: "admin_1",
+    });
+    // The result redirect carries an explicit archived count for the banner.
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      "/admin/pages?view=metadata-issues&archived=2",
+    );
+  });
+
+  it("dedupes ids and reports partial failures in the result redirect", async () => {
+    const failingId = "44444444-4444-4444-8444-444444444444";
+    const formData = new FormData();
+    formData.append("ids", pageId);
+    formData.append("ids", pageId); // duplicate — must archive once
+    formData.append("ids", failingId);
+    formData.set("returnTo", "/admin/pages");
+    mocks.adminArchiveSeoPage.mockImplementation((id: string) => {
+      if (id === failingId) return Promise.reject(new Error("rpc failed"));
+      return Promise.resolve({ id, route_path: "/resources/x" });
+    });
+
+    await bulkArchiveSeoPagesFromList(formData);
+
+    expect(mocks.adminArchiveSeoPage).toHaveBeenCalledTimes(2);
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      "/admin/pages?archived=1&failed=1",
+    );
+  });
+
+  it("ignores invalid ids and errors when no valid id is selected", async () => {
+    const formData = new FormData();
+    formData.append("ids", "../settings");
+    formData.append("ids", "not-a-uuid");
+
+    await bulkArchiveSeoPagesFromList(formData);
+
+    expect(mocks.adminArchiveSeoPage).not.toHaveBeenCalled();
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      "/admin/pages?error=bulk-archive",
+    );
+  });
+
   it("publishes a page from the list and revalidates the public path", async () => {
     const formData = new FormData();
     formData.set("id", pageId);
@@ -984,7 +1243,7 @@ describe("admin page actions", () => {
       new SeoAgentConfigurationError("sk-secret is missing"),
     );
 
-    const result = await generateAiSeoPageProposal(pageId, "openai");
+    const result = await generateAiSeoPageProposal(pageId);
 
     expect(result).toEqual({
       status: "error",
@@ -993,25 +1252,25 @@ describe("admin page actions", () => {
     expect(JSON.stringify(result)).not.toContain("sk-secret");
     expect(mocks.adminGenerateOpenAiSeoPageProposal).toHaveBeenCalledWith(
       pageId,
-      { actorId: "admin_1", provider: "openai" },
+      { actorId: "admin_1" },
     );
   });
 
-  it("passes the selected Cerebras provider to the AI proposal service", async () => {
+  it("creates an AI proposal for review", async () => {
     mocks.adminGenerateOpenAiSeoPageProposal.mockResolvedValue({
       id: proposalId,
     });
 
-    const result = await generateAiSeoPageProposal(pageId, "cerebras");
+    const result = await generateAiSeoPageProposal(pageId);
 
     expect(result).toEqual({
       status: "created",
-      message: "Cerebras proposal created for review.",
+      message: "AI proposal created for review.",
       proposalId,
     });
     expect(mocks.adminGenerateOpenAiSeoPageProposal).toHaveBeenCalledWith(
       pageId,
-      { actorId: "admin_1", provider: "cerebras" },
+      { actorId: "admin_1" },
     );
   });
 
@@ -1071,5 +1330,170 @@ describe("admin page actions", () => {
       proposalId,
       message: "AI proposals can only use selected approved source data.",
     });
+  });
+
+  it("discards a never-saved auto-draft and revalidates the pages list", async () => {
+    mocks.adminDeleteNeverSavedSeoPageDraft.mockResolvedValue({
+      status: "deleted",
+    });
+
+    const result = await deleteNeverSavedSeoPageDraft(pageId);
+
+    expect(result).toEqual({ status: "deleted" });
+    expect(mocks.adminDeleteNeverSavedSeoPageDraft).toHaveBeenCalledWith(
+      pageId,
+    );
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/pages");
+  });
+
+  it("treats an already-gone draft as discarded so the user can leave", async () => {
+    mocks.adminDeleteNeverSavedSeoPageDraft.mockResolvedValue({
+      status: "not_found",
+    });
+
+    const result = await deleteNeverSavedSeoPageDraft(pageId);
+
+    expect(result).toEqual({ status: "deleted" });
+  });
+
+  it("refuses to discard a page the server reports as already saved", async () => {
+    mocks.adminDeleteNeverSavedSeoPageDraft.mockResolvedValue({
+      status: "protected",
+    });
+
+    const result = await deleteNeverSavedSeoPageDraft(pageId);
+
+    expect(result).toEqual({
+      status: "error",
+      message: "This page was already saved, so it was kept.",
+    });
+    expect(mocks.revalidatePath).not.toHaveBeenCalledWith("/admin/pages");
+  });
+
+  it("rejects an invalid page id without calling the delete service", async () => {
+    const result = await deleteNeverSavedSeoPageDraft("../settings");
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Invalid page reference.",
+    });
+    expect(mocks.adminDeleteNeverSavedSeoPageDraft).not.toHaveBeenCalled();
+  });
+
+  it("maps an unexpected delete failure to a safe message", async () => {
+    mocks.adminDeleteNeverSavedSeoPageDraft.mockRejectedValue(
+      new Error("delete exploded"),
+    );
+
+    const result = await deleteNeverSavedSeoPageDraft(pageId);
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Could not discard the draft. Use Save draft to keep it.",
+    });
+  });
+});
+
+describe("route prefix configured-list validation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.requireAdmin.mockResolvedValue({ user: { id: "admin_1" } });
+    mocks.adminCreateSeoPage.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+    });
+  });
+
+  it("accepts a custom route prefix that is configured", async () => {
+    mocks.listRoutePrefixes.mockResolvedValue([
+      ...configuredRoutePrefixes,
+      { prefix: "/services", label: "Services", isDefault: false },
+    ]);
+
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ routePrefix: "/services" }),
+    );
+
+    expect(result.status).not.toBe("error");
+    expect(mocks.adminCreateSeoPage).toHaveBeenCalledWith(
+      expect.objectContaining({ routePrefix: "/services" }),
+    );
+  });
+
+  it("rejects a shape-valid prefix that is not in the configured list", async () => {
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ routePrefix: "/services" }),
+    );
+
+    expect(result.status).toBe("error");
+    expect(result.message).toContain("route prefix");
+    expect(mocks.adminCreateSeoPage).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed route prefixes at the schema layer", async () => {
+    const result = await saveSeoPage(
+      { status: "idle" },
+      pageForm({ routePrefix: "/Bad_Prefix" }),
+    );
+
+    expect(result.status).toBe("error");
+    expect(result.message).toBe("Choose a supported route prefix.");
+    expect(mocks.listRoutePrefixes).not.toHaveBeenCalled();
+    expect(mocks.adminCreateSeoPage).not.toHaveBeenCalled();
+  });
+
+  it("rejects autosaves that target an unconfigured prefix", async () => {
+    mocks.adminGetSeoPageById.mockResolvedValue({
+      id: pageId,
+      slug: "coffee-vending-adelaide",
+      status: "draft",
+    });
+
+    const result = await autosaveSeoPageDraft(pageId, {
+      title: "Coffee Vending Adelaide",
+      slug: "coffee-vending-adelaide",
+      routePrefix: "/services",
+      targetKeyword: "",
+      seoTitle: "",
+      metaDescription: "",
+      canonicalUrl: "",
+      internalTags: "",
+      topicCluster: "",
+      campaignLabel: "",
+      funnelStage: "",
+      reviewPeriodMonths: 6,
+      nextReviewAt: "",
+      lifecycleStatus: "drafting",
+      ogTitle: "",
+      ogDescription: "",
+      scheduledPublishAt: "",
+      scheduledPublishAtBaseline: "",
+      cancelScheduledPublish: false,
+      noindex: false,
+      sitemapEnabled: true,
+      pageType: "resource",
+      templateKey: "blank",
+      structuredDataSettings: { breadcrumb: true, faq: false },
+      draftContent: validContent,
+    });
+
+    expect(result.status).toBe("error");
+    expect(mocks.adminSaveSeoPageDraft).not.toHaveBeenCalled();
+  });
+
+  it("rejects auto-created drafts that target an unconfigured prefix", async () => {
+    const result = await createSeoPageDraftForEditor({
+      title: "Coffee Vending Adelaide",
+      slug: "coffee-vending-adelaide",
+      routePrefix: "/services",
+      pageType: "resource",
+      templateKey: "blank",
+      draftContent: validContent,
+    });
+
+    expect(result.status).toBe("error");
+    expect(mocks.adminCreateSeoPage).not.toHaveBeenCalled();
   });
 });

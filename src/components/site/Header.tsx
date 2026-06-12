@@ -33,7 +33,7 @@ export function Header() {
               key={item.label}
               item={item}
               pathname={pathname}
-              className="text-sm"
+              className="-my-3 py-3 text-sm"
             />
           ))}
         </nav>

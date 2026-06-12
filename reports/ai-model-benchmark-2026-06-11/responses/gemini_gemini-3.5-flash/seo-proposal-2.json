@@ -1,0 +1,137 @@
+{
+  "proposal": {
+    "version": 1,
+    "metadata": {
+      "title": "Start a Vending Business",
+      "seoTitle": "Start a Vending Business",
+      "metaDescription": "Learn how to start a vending business with support.",
+      "suggestedSlug": "start-vending"
+    },
+    "blocks": [
+      {
+        "block": {
+          "id": "ai_hero_vending",
+          "type": "hero",
+          "variant": "standard",
+          "props": {
+            "eyebrow": "Vending Startup Guide",
+            "heading": "How to Start a Vending Business",
+            "body": "Launch your business with practical strategies and secure high-demand locations before you purchase equipment.",
+            "ctaLabel": "Get Started",
+            "ctaHref": "/start-vending#guide",
+            "ctaTrackingName": "hero_get_started"
+          }
+        },
+        "sourceDocumentIds": ["11111111-1111-4111-8111-111111111111"],
+        "sourceExcerptIds": [],
+        "approvedClaimIds": [],
+        "warnings": []
+      },
+      {
+        "block": {
+          "id": "ai_rich_text_steps",
+          "type": "rich_text",
+          "variant": "default",
+          "props": {
+            "eyebrow": "Key Strategy",
+            "heading": "Validate Location Demand First",
+            "body": {
+              "version": 1,
+              "nodes": [
+                {
+                  "type": "paragraph",
+                  "text": "Before purchasing vending machines, successful operators emphasize validating demand at potential locations. Acquiring machines without a secured, high-traffic site is a common startup pitfall."
+                },
+                {
+                  "type": "heading",
+                  "level": 3,
+                  "text": "Primary Demand Signals to Watch"
+                },
+                {
+                  "type": "list",
+                  "style": "bullet",
+                  "items": [
+                    "Foot traffic: Active pedestrian movement in the immediate area.",
+                    "Dwell time: Locations where people naturally wait or gather.",
+                    "Existing food options: Gaps in local dining choices make vending highly attractive."
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "sourceDocumentIds": ["11111111-1111-4111-8111-111111111111"],
+        "sourceExcerptIds": ["22222222-2222-4222-8222-222222222222"],
+        "approvedClaimIds": ["33333333-3333-4333-8333-333333333333"],
+        "warnings": []
+      },
+      {
+        "block": {
+          "id": "ai_faq_vending",
+          "type": "faq",
+          "variant": "accordion",
+          "props": {
+            "heading": "Frequently Asked Questions",
+            "items": [
+              {
+                "question": "Should I buy vending machines before finding a location?",
+                "answer": "No. New vending operators should validate location demand before buying machines to ensure an active customer base."
+              },
+              {
+                "question": "What are the strongest indicators of location demand?",
+                "answer": "The strongest signals of location demand are foot traffic, dwell time, and the lack of existing nearby food options."
+              }
+            ]
+          }
+        },
+        "sourceDocumentIds": ["11111111-1111-4111-8111-111111111111"],
+        "sourceExcerptIds": ["22222222-2222-4222-8222-222222222222"],
+        "approvedClaimIds": ["33333333-3333-4333-8333-333333333333"],
+        "warnings": []
+      },
+      {
+        "block": {
+          "id": "ai_cta_vending",
+          "type": "cta",
+          "variant": "primary",
+          "props": {
+            "label": "Build Your Vending Business",
+            "href": "/contact",
+            "trackingName": "bottom_cta_contact"
+          }
+        },
+        "sourceDocumentIds": [],
+        "sourceExcerptIds": [],
+        "approvedClaimIds": [],
+        "warnings": []
+      }
+    ],
+    "warnings": []
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"version\": 1,\n  \"metadata\": {\n    \"title\": \"Start a Vending Business\",\n    \"seoTitle\": \"Start a Vending Business\",\n    \"metaDescription\": \"Learn how to start a vending business with support.\",\n    \"suggestedSlug\": \"start-vending\"\n  },\n  \"blocks\": [\n    {\n      \"block\": {\n        \"id\": \"ai_hero_vending\",\n        \"type\": \"hero\",\n        \"variant\": \"standard\",\n        \"props\": {\n          \"eyebrow\": \"Vending Startup Guide\",\n          \"heading\": \"How to Start a Vending Business\",\n          \"body\": \"Launch your business with practical strategies and secure high-demand locations before you purchase equipment.\",\n          \"ctaLabel\": \"Get Started\",\n          \"ctaHref\": \"/start-vending#guide\",\n          \"ctaTrackingName\": \"hero_get_started\"\n        }\n      },\n      \"sourceDocumentIds\": [\n        \"11111111-1111-4111-8111-111111111111\"\n      ],\n      \"sourceExcerptIds\": [],\n      \"approvedClaimIds\": [],\n      \"warnings\": []\n    },\n    {\n      \"block\": {\n        \"id\": \"ai_rich_text_steps\",\n        \"type\": \"rich_text\",\n        \"variant\": \"default\",\n        \"props\": {\n          \"eyebrow\": \"Key Strategy\",\n          \"heading\": \"Validate Location Demand First\",\n          \"body\": {\n            \"version\": 1,\n            \"nodes\": [\n              {\n                \"type\": \"paragraph\",\n                \"text\": \"Before purchasing vending machines, successful operators emphasize validating demand at potential locations. Acquiring machines without a secured, high-traffic site is a common startup pitfall.\"\n              },\n              {\n                \"type\": \"heading\",\n                \"level\": 3,\n                \"text\": \"Primary Demand Signals to Watch\"\n              },\n              {\n                \"type\": \"list\",\n                \"style\": \"bullet\",\n                \"items\": [\n                  \"Foot traffic: Active pedestrian movement in the immediate area.\",\n                  \"Dwell time: Locations where people naturally wait or gather.\",\n                  \"Existing food options: Gaps in local dining choices make vending highly attractive.\"\n                ]\n              }\n            ]\n          }\n        }\n      },\n      \"sourceDocumentIds\": [\n        \"11111111-1111-4111-8111-111111111111\"\n      ],\n      \"sourceExcerptIds\": [\n        \"22222222-2222-4222-8222-222222222222\"\n      ],\n      \"approvedClaimIds\": [\n        \"33333333-3333-4333-8333-333333333333\"\n      ],\n      \"warnings\": []\n    },\n    {\n      \"block\": {\n        \"id\": \"ai_faq_vending\",\n        \"type\": \"faq\",\n        \"variant\": \"accordion\",\n        \"props\": {\n          \"heading\": \"Frequently Asked Questions\",\n          \"items\": [\n            {\n              \"question\": \"Should I buy vending machines before finding a location?\",\n              \"answer\": \"No. New vending operators should validate location demand before buying machines to ensure an active customer base.\"\n            },\n            {\n              \"question\": \"What are the strongest indicators of location demand?\",\n              \"answer\": \"The strongest signals of location demand are foot traffic, dwell time, and the lack of existing nearby food options.\"\n            }\n          ]\n        }\n      },\n      \"sourceDocumentIds\": [\n        \"11111111-1111-4111-8111-111111111111\"\n      ],\n      \"sourceExcerptIds\": [\n        \"22222222-2222-4222-8222-222222222222\"\n      ],\n      \"approvedClaimIds\": [\n        \"33333333-3333-4333-8333-333333333333\"\n      ],\n      \"warnings\": []\n    },\n    {\n      \"block\": {\n        \"id\": \"ai_cta_vending\",\n        \"type\": \"cta\",\n        \"variant\": \"primary\",\n        \"props\": {\n          \"label\": \"Build Your Vending Business\",\n          \"href\": \"/contact\",\n          \"trackingName\": \"bottom_cta_contact\"\n        }\n      },\n      \"sourceDocumentIds\": [],\n      \"sourceExcerptIds\": [],\n      \"approvedClaimIds\": [],\n      \"warnings\": []\n    }\n  ],\n  \"warnings\": []\n}",
+          "extra_content": {
+            "google": {
+              "thought_signature": "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"
+            }
+          },
+          "role": "assistant"
+        }
+      }
+    ],
+    "created": 1781141418,
+    "id": "ng8qau6vKtqwjuMPsKrNgQw",
+    "model": "gemini-3.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 1174,
+      "prompt_tokens": 568,
+      "total_tokens": 2942
+    }
+  }
+}

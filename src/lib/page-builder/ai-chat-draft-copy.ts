@@ -371,15 +371,18 @@ function faqDraftSection(pageTopic: string) {
           },
           {
             question: "What needs to be confirmed before launch?",
-            answer: bodyForTopic(pageTopic, "fit"),
+            answer:
+              "Walk the site and confirm available space, power access, and how refill visits will get in. Then settle the people questions: who approves the placement, who owns day-to-day contact, and what payment options the audience actually needs.",
           },
           {
             question: "How should products and refills be planned?",
-            answer: bodyForTopic(pageTopic, "restockingPlan"),
+            answer:
+              "Map expected daily usage to a starting product list, then agree who reviews what is selling and how often refills happen. Most sites settle into a weekly or fortnightly cadence once real demand is visible, so build the first plan around easy adjustment rather than a fixed menu.",
           },
           {
             question: "Who handles service issues after launch?",
-            answer: bodyForTopic(pageTopic, "supportExpectations"),
+            answer:
+              "Agree a single reporting contact and a response window for faults before launch. Clear escalation expectations stop small problems like payment errors or stock gaps from sitting unresolved, and they make it obvious whether the service plan or the site team owns each task.",
           },
           {
             question: "How do we get started?",
@@ -605,7 +608,7 @@ function bodyForTopic(topic: string, angle: DraftCopyAngle = "overview") {
   const siteLabel = siteLabelForTopic(cleaned);
 
   if (angle === "hero") {
-    return `${displayTopic} helps ${audience} access food, drinks, and everyday refreshments without turning the site team into an informal catering desk.`;
+    return `${displayTopic} helps ${audience} access food, drinks, and everyday refreshments without turning the site team into an informal catering desk. A managed plan covers placement, product range, restocking cadence, and issue response so the site keeps running between visits.`;
   }
 
   if (angle === "fit") {

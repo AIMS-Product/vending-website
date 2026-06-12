@@ -7,10 +7,40 @@ import {
   type PageContent,
   type PagePublishMeta,
 } from "./blocks";
+import { assessSeoCopyQuality } from "./copy-quality";
+import {
+  META_DESCRIPTION_MAX_LENGTH,
+  SEO_COPY_STANDARDS,
+} from "./copy-standards";
 import {
   parseStructuredDataSettings,
   type StructuredDataSettings,
 } from "./structured-data-settings";
+
+// Copy-quality gate findings surfaced through the readiness panel. Hard
+// failures become warnings (publish stays possible), advisories become
+// opportunities. Page-level codes already covered by readiness checks are
+// dropped to avoid double-reporting.
+const duplicateCopyQualityCodes = new Set(["thin_page_copy", "keyword_absent"]);
+
+function copyQualityFindings(
+  content: PageContent,
+  targetKeyword: string | null | undefined,
+): SeoReadinessFinding[] {
+  return assessSeoCopyQuality(content, { targetKeyword, scope: "page" })
+    .findings.filter((finding) => !duplicateCopyQualityCodes.has(finding.code))
+    .map((finding) => ({
+      code: finding.code,
+      category: "content" as const,
+      severity:
+        finding.severity === "fail"
+          ? ("warning" as const)
+          : ("opportunity" as const),
+      path: finding.blockId ?? "sections",
+      message: finding.message,
+      evidence: finding.evidence,
+    }));
+}
 
 export type SeoReadinessCategory =
   | "indexing"
@@ -131,6 +161,9 @@ export function assessSeoReadiness(
   findings.push(
     ...softFindings(meta, visibleText, blocks, metrics, structuredDataSettings),
   );
+  if (parsedContent) {
+    findings.push(...copyQualityFindings(parsedContent, meta.targetKeyword));
+  }
 
   const blockers = findings.filter((finding) => finding.severity === "blocker");
   const warnings = findings.filter((finding) => finding.severity === "warning");
@@ -243,7 +276,7 @@ function softFindings(
       evidence: `${metaLength} characters`,
     });
   }
-  if (metaLength > 160) {
+  if (metaLength > META_DESCRIPTION_MAX_LENGTH) {
     findings.push({
       code: "meta_description_may_truncate",
       category: "serp",
@@ -254,7 +287,10 @@ function softFindings(
     });
   }
 
-  if (metrics.visibleWordCount > 0 && metrics.visibleWordCount < 250) {
+  if (
+    metrics.visibleWordCount > 0 &&
+    metrics.visibleWordCount < SEO_COPY_STANDARDS.pageMinVisibleWords
+  ) {
     findings.push({
       code: "content_depth_light",
       category: "content",

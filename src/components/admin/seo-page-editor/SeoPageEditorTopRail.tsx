@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   copyRailUrl,
   type CopyMessage,
 } from "@/components/admin/seo-page-editor/editor-copy-url";
 import { ChevronIcon } from "@/components/admin/seo-page-editor/SeoPageEditorShell";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
+import { formatPacificDateTime } from "@/lib/page-builder/datetime-format";
 import { pagePathForSlug } from "@/lib/page-builder/page-paths";
 
 // S6: labelled panel toggles with neutral styling (no status-coloured ring).
@@ -20,12 +21,19 @@ const railCommandClass =
 const railMenuItemClass =
   "rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/25 focus-visible:outline-none";
 
-// S8: format the autosave timestamp for the top-rail "Saved automatically" hint.
-function formatRailTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+// S20 / C140 e2e: a page is "just created in-session" when there is no loaded
+// page (the editor opened on /admin/pages/new) but a draft row now exists
+// (S3b auto-created it, or the first save did). In that case the "Pages"
+// back-link carries `?created=<id>` so the list's S9 success banner + row
+// highlight fire. Editing an already-loaded page returns to a plain list.
+export function backToPagesHref(
+  page: { id: string } | null | undefined,
+  effectivePageId: string | null | undefined,
+): string {
+  if (!page?.id && effectivePageId) {
+    return `/admin/pages?created=${effectivePageId}`;
+  }
+  return "/admin/pages";
 }
 
 export function SeoPageEditorTopRail({
@@ -34,9 +42,30 @@ export function SeoPageEditorTopRail({
   editor: SeoPageEditorController;
 }) {
   const [copyMessage, setCopyMessage] = useState<CopyMessage | null>(null);
+  // N19 / I20 item 6: the Share menu is a <details>; it stayed open after a
+  // copy and after clicking elsewhere. Close it on select and on outside click.
+  const shareMenuRef = useRef<HTMLDetailsElement>(null);
+  const closeShareMenu = () => {
+    if (shareMenuRef.current) shareMenuRef.current.open = false;
+  };
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      const menu = shareMenuRef.current;
+      if (
+        menu?.open &&
+        event.target instanceof Node &&
+        !menu.contains(event.target)
+      ) {
+        menu.open = false;
+      }
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
   const {
     autosave,
     blockSidebarExpandTitle,
+    effectivePageId,
     isBlockSidebarCollapsed,
     isNarrowEditor,
     isPreviewOpening,
@@ -79,7 +108,10 @@ export function SeoPageEditorTopRail({
     <div className="sticky top-0 z-50 border-b border-slate-200/70 bg-slate-100/95 px-4 pt-4 pb-3 backdrop-blur">
       <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-center gap-2 sm:grid sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-3">
         <div className="order-1 flex flex-wrap justify-center gap-2 sm:order-none sm:justify-start">
-          <Link href="/admin/pages" className={railCommandClass}>
+          <Link
+            href={backToPagesHref(page, effectivePageId)}
+            className={railCommandClass}
+          >
             <ChevronIcon direction="left" />
             <span>Pages</span>
           </Link>
@@ -142,28 +174,29 @@ export function SeoPageEditorTopRail({
               </a>
             )}
             {(canCopyEditorUrl || canCopyPublicUrl) && (
-              <details className="relative">
+              <details className="relative" ref={shareMenuRef}>
                 <summary
                   className={`${railCommandClass} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
                   title="Copy editor or public page links"
                 >
                   Share
                 </summary>
-                <div className="absolute top-full left-1/2 z-[70] mt-2 grid w-56 -translate-x-1/2 gap-1 rounded-xl border border-slate-200 bg-white p-2 text-left shadow-xl">
+                <div className="absolute top-full left-1/2 z-[70] mt-2 grid w-64 -translate-x-1/2 gap-1 rounded-xl border border-slate-200 bg-white p-2 text-left shadow-xl">
                   {canCopyEditorUrl && (
                     <button
                       type="button"
                       className={railMenuItemClass}
                       title="Copy this editor page link"
-                      onClick={() =>
+                      onClick={() => {
                         void copyRailUrl(
                           () =>
                             typeof window === "undefined"
                               ? null
                               : window.location.href,
                           "Editor link copied.",
-                        ).then(setCopyMessage)
-                      }
+                        ).then(setCopyMessage);
+                        closeShareMenu();
+                      }}
                     >
                       Copy editor link
                     </button>
@@ -173,7 +206,7 @@ export function SeoPageEditorTopRail({
                       type="button"
                       className={railMenuItemClass}
                       title="Copy the public resource URL for this page"
-                      onClick={() =>
+                      onClick={() => {
                         void copyRailUrl(
                           () =>
                             publicPath && typeof window !== "undefined"
@@ -183,8 +216,9 @@ export function SeoPageEditorTopRail({
                                 ).toString()
                               : null,
                           "Public URL copied.",
-                        ).then(setCopyMessage)
-                      }
+                        ).then(setCopyMessage);
+                        closeShareMenu();
+                      }}
                     >
                       Copy public URL
                     </button>
@@ -195,7 +229,7 @@ export function SeoPageEditorTopRail({
           </div>
           {autosave?.status === "saved" && (
             <p className="text-xs font-medium text-slate-500">
-              Saved automatically · {formatRailTime(autosave.savedAt)}
+              Saved automatically · {formatPacificDateTime(autosave.savedAt)}
             </p>
           )}
           {autosave?.status === "error" && (
@@ -210,6 +244,14 @@ export function SeoPageEditorTopRail({
               }`}
             >
               {previewLinkMessage}
+            </p>
+          )}
+          {/* N19 / I20 item 7: tell the user the preview link carries a private
+              access token so they understand it is shareable-but-private. */}
+          {previewLinkPath && previewLinkTone !== "error" && (
+            <p className="text-[11px] text-slate-400">
+              This preview link includes a private access token — anyone with it
+              can view the draft until the link is revoked.
             </p>
           )}
           {copyMessage && (

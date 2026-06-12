@@ -1,0 +1,162 @@
+{
+  "proposal": {
+    "version": 1,
+    "metadata": {
+      "title": "Start a Vending Business",
+      "seoTitle": "Start a Vending Business",
+      "metaDescription": "Learn how to start a vending business with support.",
+      "suggestedSlug": "start-vending"
+    },
+    "blocks": [
+      {
+        "block": {
+          "id": "ai_hero_1",
+          "type": "hero",
+          "variant": "standard",
+          "props": {
+            "eyebrow": "Your Guide to Entrepreneurship",
+            "heading": "Launch Your Vending Business Today",
+            "body": "Discover the essential steps to successfully starting and growing your own vending machine enterprise.",
+            "ctaLabel": "Get Started",
+            "ctaHref": "#key-steps",
+            "ctaTrackingName": "hero-get-started"
+          }
+        },
+        "sourceDocumentIds": [],
+        "sourceExcerptIds": [],
+        "approvedClaimIds": [],
+        "warnings": []
+      },
+      {
+        "block": {
+          "id": "ai_rich_text_intro",
+          "type": "rich_text",
+          "variant": "intro",
+          "props": {
+            "eyebrow": "Begin Your Journey",
+            "heading": "Essential Steps to Starting Your Vending Business",
+            "body": {
+              "version": 1,
+              "nodes": [
+                {
+                  "type": "paragraph",
+                  "text": "Starting a vending machine business can be a rewarding venture. To set yourself up for success, it's crucial to follow a methodical approach, beginning with market research and strategic planning."
+                }
+              ]
+            }
+          }
+        },
+        "sourceDocumentIds": [],
+        "sourceExcerptIds": [],
+        "approvedClaimIds": [],
+        "warnings": []
+      },
+      {
+        "block": {
+          "id": "ai_rich_text_location_validation",
+          "type": "rich_text",
+          "variant": "default",
+          "props": {
+            "eyebrow": "Critical First Step",
+            "heading": "Validate Location Demand Before Buying Machines",
+            "body": {
+              "version": 1,
+              "nodes": [
+                {
+                  "type": "paragraph",
+                  "text": "Operators should validate location demand before buying machines. New vending operators should prioritize understanding their market. The strongest signals for high location demand include significant foot traffic, the average dwell time of people in the location, and an assessment of existing food and beverage options already available."
+                }
+              ]
+            }
+          }
+        },
+        "sourceDocumentIds": ["11111111-1111-4111-8111-111111111111"],
+        "sourceExcerptIds": ["22222222-2222-4222-8222-222222222222"],
+        "approvedClaimIds": ["33333333-3333-4333-8333-333333333333"],
+        "warnings": []
+      },
+      {
+        "block": {
+          "id": "ai_faq_1",
+          "type": "faq",
+          "variant": "accordion",
+          "props": {
+            "heading": "Frequently Asked Questions About Starting a Vending Business",
+            "items": [
+              {
+                "question": "What kind of vending machines should I start with?",
+                "answer": "The type of vending machine depends on your validated location demand. Consider snack, drink, or specialized product machines based on your market research."
+              },
+              {
+                "question": "How do I find good locations for my vending machines?",
+                "answer": "Identifying high-traffic areas with suitable demographics and limited existing options is key. Public spaces, offices, and waiting rooms are common targets, but always validate demand as a priority."
+              },
+              {
+                "question": "What are the initial costs involved in starting a vending business?",
+                "answer": "Initial costs typically include purchasing machines, inventory, and potentially location fees or permits. Budgeting for maintenance and operational expenses is also important."
+              }
+            ]
+          }
+        },
+        "sourceDocumentIds": [],
+        "sourceExcerptIds": [],
+        "approvedClaimIds": [],
+        "warnings": [
+          {
+            "code": "needs_source",
+            "message": "Answer for 'What kind of vending machines should I start with?' needs a source.",
+            "blockId": "ai_faq_1"
+          },
+          {
+            "code": "needs_source",
+            "message": "Answer for 'How do I find good locations for my vending machines?' needs a source.",
+            "blockId": "ai_faq_1"
+          },
+          {
+            "code": "needs_source",
+            "message": "Answer for 'What are the initial costs involved in starting a vending business?' needs a source.",
+            "blockId": "ai_faq_1"
+          }
+        ]
+      },
+      {
+        "block": {
+          "id": "ai_cta_1",
+          "type": "cta",
+          "variant": "primary",
+          "props": {
+            "label": "Plan Your Vending Venture",
+            "href": "/contact",
+            "trackingName": "plan-vending-venture"
+          }
+        },
+        "sourceDocumentIds": [],
+        "sourceExcerptIds": [],
+        "approvedClaimIds": [],
+        "warnings": []
+      }
+    ],
+    "warnings": []
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"version\": 1,\n  \"metadata\": {\n    \"title\": \"Start a Vending Business\",\n    \"seoTitle\": \"Start a Vending Business\",\n    \"metaDescription\": \"Learn how to start a vending business with support.\",\n    \"suggestedSlug\": \"start-vending\"\n  },\n  \"blocks\": [\n    {\n      \"block\": {\n        \"id\": \"ai_hero_1\",\n        \"type\": \"hero\",\n        \"variant\": \"standard\",\n        \"props\": {\n          \"eyebrow\": \"Your Guide to Entrepreneurship\",\n          \"heading\": \"Launch Your Vending Business Today\",\n          \"body\": \"Discover the essential steps to successfully starting and growing your own vending machine enterprise.\",\n          \"ctaLabel\": \"Get Started\",\n          \"ctaHref\": \"#key-steps\",\n          \"ctaTrackingName\": \"hero-get-started\"\n        }\n      },\n      \"sourceDocumentIds\": [],\n      \"sourceExcerptIds\": [],\n      \"approvedClaimIds\": [],\n      \"warnings\": []\n    },\n    {\n      \"block\": {\n        \"id\": \"ai_rich_text_intro\",\n        \"type\": \"rich_text\",\n        \"variant\": \"intro\",\n        \"props\": {\n          \"eyebrow\": \"Begin Your Journey\",\n          \"heading\": \"Essential Steps to Starting Your Vending Business\",\n          \"body\": {\n            \"version\": 1,\n            \"nodes\": [\n              {\n                \"type\": \"paragraph\",\n                \"text\": \"Starting a vending machine business can be a rewarding venture. To set yourself up for success, it's crucial to follow a methodical approach, beginning with market research and strategic planning.\"\n              }\n            ]\n          }\n        }\n      },\n      \"sourceDocumentIds\": [],\n      \"sourceExcerptIds\": [],\n      \"approvedClaimIds\": [],\n      \"warnings\": []\n    },\n    {\n      \"block\": {\n        \"id\": \"ai_rich_text_location_validation\",\n        \"type\": \"rich_text\",\n        \"variant\": \"default\",\n        \"props\": {\n          \"eyebrow\": \"Critical First Step\",\n          \"heading\": \"Validate Location Demand Before Buying Machines\",\n          \"body\": {\n            \"version\": 1,\n            \"nodes\": [\n              {\n                \"type\": \"paragraph\",\n                \"text\": \"Operators should validate location demand before buying machines. New vending operators should prioritize understanding their market. The strongest signals for high location demand include significant foot traffic, the average dwell time of people in the location, and an assessment of existing food and beverage options already available.\"\n              }\n            ]\n          }\n        }\n      },\n      \"sourceDocumentIds\": [\n        \"11111111-1111-4111-8111-111111111111\"\n      ],\n      \"sourceExcerptIds\": [\n        \"22222222-2222-4222-8222-222222222222\"\n      ],\n      \"approvedClaimIds\": [\n        \"33333333-3333-4333-8333-333333333333\"\n      ],\n      \"warnings\": []\n    },\n    {\n      \"block\": {\n        \"id\": \"ai_faq_1\",\n        \"type\": \"faq\",\n        \"variant\": \"accordion\",\n        \"props\": {\n          \"heading\": \"Frequently Asked Questions About Starting a Vending Business\",\n          \"items\": [\n            {\n              \"question\": \"What kind of vending machines should I start with?\",\n              \"answer\": \"The type of vending machine depends on your validated location demand. Consider snack, drink, or specialized product machines based on your market research.\"\n            },\n            {\n              \"question\": \"How do I find good locations for my vending machines?\",\n              \"answer\": \"Identifying high-traffic areas with suitable demographics and limited existing options is key. Public spaces, offices, and waiting rooms are common targets, but always validate demand as a priority.\"\n            },\n            {\n              \"question\": \"What are the initial costs involved in starting a vending business?\",\n              \"answer\": \"Initial costs typically include purchasing machines, inventory, and potentially location fees or permits. Budgeting for maintenance and operational expenses is also important.\"\n            }\n          ]\n        }\n      },\n      \"sourceDocumentIds\": [],\n      \"sourceExcerptIds\": [],\n      \"approvedClaimIds\": [],\n      \"warnings\": [\n        {\n          \"code\": \"needs_source\",\n          \"message\": \"Answer for 'What kind of vending machines should I start with?' needs a source.\",\n          \"blockId\": \"ai_faq_1\"\n        },\n        {\n          \"code\": \"needs_source\",\n          \"message\": \"Answer for 'How do I find good locations for my vending machines?' needs a source.\",\n          \"blockId\": \"ai_faq_1\"\n        },\n        {\n          \"code\": \"needs_source\",\n          \"message\": \"Answer for 'What are the initial costs involved in starting a vending business?' needs a source.\",\n          \"blockId\": \"ai_faq_1\"\n        }\n      ]\n    },\n    {\n      \"block\": {\n        \"id\": \"ai_cta_1\",\n        \"type\": \"cta\",\n        \"variant\": \"primary\",\n        \"props\": {\n          \"label\": \"Plan Your Vending Venture\",\n          \"href\": \"/contact\",\n          \"trackingName\": \"plan-vending-venture\"\n        }\n      },\n      \"sourceDocumentIds\": [],\n      \"sourceExcerptIds\": [],\n      \"approvedClaimIds\": [],\n      \"warnings\": []\n    }\n  ],\n  \"warnings\": []\n}",
+          "role": "assistant"
+        }
+      }
+    ],
+    "created": 1781141157,
+    "id": "mA4qauS_E7GK4-EPivHMqA8",
+    "model": "gemini-2.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 1351,
+      "prompt_tokens": 568,
+      "total_tokens": 3154
+    }
+  }
+}

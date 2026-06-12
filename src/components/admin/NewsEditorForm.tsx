@@ -21,6 +21,7 @@ import {
   MediaPickerProvider,
   useMediaPicker,
 } from "@/components/admin/MediaPickerProvider";
+import { NewsMobileSaveBar } from "@/components/admin/NewsMobileSaveBar";
 import type { EditorMediaAsset } from "@/lib/media/editor-asset";
 import type { NewsPost } from "@/lib/services/news";
 
@@ -111,8 +112,9 @@ export function NewsEditorForm({
   return (
     <MediaPickerProvider initialAssets={mediaAssets}>
       <form
+        id="news-editor-form"
         action={formAction}
-        className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]"
+        className="grid gap-8 pb-24 lg:grid-cols-[minmax(0,1fr)_320px] lg:pb-0"
       >
         {post?.id && <input type="hidden" name="id" value={post.id} />}
 
@@ -211,7 +213,7 @@ export function NewsEditorForm({
           </div>
         </div>
 
-        <aside className="space-y-5">
+        <div className="space-y-5">
           <div className={adminCardClass}>
             <h2 className="text-sm font-semibold text-slate-950">Publish</h2>
             {(state.status !== "idle" || savedFromRedirect) && (
@@ -228,7 +230,7 @@ export function NewsEditorForm({
             <div className="mt-5 grid gap-2">
               <button
                 type="submit"
-                className={adminPrimaryButtonClass}
+                className={adminSecondaryButtonClass}
                 name="intent"
                 value="save"
               >
@@ -316,8 +318,9 @@ export function NewsEditorForm({
               />
             </label>
           </div>
-        </aside>
+        </div>
       </form>
+      <NewsMobileSaveBar formId="news-editor-form" />
     </MediaPickerProvider>
   );
 }

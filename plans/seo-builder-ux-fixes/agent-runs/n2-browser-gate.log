@@ -1,0 +1,15 @@
+SEEDED_DRAFT: 2bd514af-8d36-47f9-97ca-6f15eaea25c1
+SCHEDULE_REACHABLE_WITHOUT_ADVANCED: true
+SET_SCHEDULE: 2026-06-12T09:00
+FIELD_AFTER_RELOAD: 2026-06-12T09:00
+SCHEDULED_CARD_VISIBLE: true
+SCHEDULED_CARD_HAS_PACIFIC: true
+SCHEDULED_CARD_TEXT: Scheduled to publish | Jun 12, 2026, 9:00 AM PDT (Pacific Time) | This draft publishes automatically at that time. The live page is not updated until then. | Cancel scheduled publish
+SCHEDULED_CARD_AFTER_CANCEL_VISIBLE: false
+DB_AFTER_CANCEL: {"scheduled_publish_at":null,"scheduled_publish_status":"cancelled"}
+FAILED_CARD_VISIBLE: true
+FAILED_CARD_SHOWS_ERROR: true
+FAILED_CARD_TEXT: Scheduled publish failed | Was scheduled for Jun 10, 2026, 12:48 AM PDT (Pacific Time). | Slug already taken by a live page. | Save a new scheduled time below to retry, or cancel the schedule. | Cancel scheduled publish
+DONE
+CLEANUP 2bd514af-8d36-47f9-97ca-6f15eaea25c1 -> archived
+CLEANUP 344456cc-8af6-4f9c-9d45-a8b46b5540b4 -> deleted

@@ -1,114 +1,108 @@
-# Persona Review: Tom — "Just Get It Done" Pragmatist
+# Persona Review — Tom, "Just Get It Done" Pragmatist (50)
+
+Plumber who runs a small business. I'm only here because I heard vending might be a side income. I want to know what this is, what it costs, and how to get hold of someone — in the fewest clicks — then get back to work. I don't read paragraphs of marketing and I don't trust fluff.
 
 ## Summary
 
-- Pages reviewed: 6
-- Issues found: 28
-- Blockers: 1
-- Overall gut feel: 2/5
+- **Pages reviewed:** 9 public pages (/, /about, /apply, /case-studies, /contact, /news, a news article, /pre-call-resources, /thank-you-for-applying) + the news listing; admin studio glanced at only (irrelevant to me as a prospect).
+- **Issues found:** 11
+- **Blockers:** 0 (I can technically complete the core tasks — but several leave me unsure or distrustful)
+- **Overall gut feel:** **2.5 / 5** — the site works, but the headline shows "0 entrepreneurs launched", the main button says "STEP INSIDE" instead of "Apply", there's no price and no phone number, and the apply confirmation is a tiny line I'd miss. It does the job only if you already trust it.
 
-I run a plumbing business. I came here to change some words on a web page and get
-back to a job site. The list page and the simple forms are fine. But the actual
-editor — the thing I'd actually use most — is a wall of 82 buttons and 58 boxes
-that made me want to close the laptop and call my nephew. If the main job isn't
-fast, the rest doesn't matter.
+## Journey Review
+
+| Journey             | Score | Could I complete it?         | Where I'd give up                                                                                                         |
+| ------------------- | ----- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| discover-and-apply  | 3/5   | Yes                          | The "0+ entrepreneurs launched" stats nearly made me leave before I found the form; success message so faint I'd resubmit |
+| contact-the-team    | 2/5   | Only if I keep looking       | No Contact in the top nav and no phone number — I'd assume there's no way to reach them and bail                          |
+| read-a-news-article | 3/5   | Yes                          | First paint looks broken (empty cards + a broken image showing raw text); "NEWS" leads to a page titled "BLOG"            |
+| evaluate-trust      | 2/5   | Yes, mechanically            | No price anywhere and zeroed-out stats — I can reach the pages but they don't earn my trust                               |
+| pre-call-prep       | 3/5   | Yes (if I had a call booked) | "RESOURCES" in the nav sends me to a call-prep checklist I didn't ask for                                                 |
+
+### Per-journey notes
+
+**Discover & Apply (3/5).** Two clicks to a filled application is fine — that part respects my time. But the orange header button says "STEP INSIDE", which tells me nothing; I had to scroll to find the word "APPLY NOW". Worse, right under the program section the counters read `0+ ENTREPRENEURS LAUNCHED`, `$0M+ SNACK/DRINK SALES`, `0+ VENDING LOCATIONS`. That reads as "nobody has done this." When I did submit, the only confirmation was a small green line beside the button while the form stayed full — I'd think it failed and click again.
+
+**Contact the Team (2/5).** There's no "Contact" at the top of the page. I had to scroll to the footer to find "CONTACT US". When I got there it's a form and nothing else — no phone, no email. I run a business off my phone; if I can't call you, I'll call the next outfit.
+
+**Read a News Article (3/5).** The articles are readable once you get into them, but the listing looks half-broken on arrival: blank card outlines and one card showing the raw text "Top 10 Profitable Products to Stock in Your Vending Machine..." because the image errored (HTTP 500). And clicking "NEWS" lands me on a page headed "BLOG" — made me think I mis-clicked.
+
+**Evaluate Trust (2/5).** I can get to About, Case Studies, Terms, and Privacy, so the bones are there. But there's no price for the program anywhere, and the homepage numbers are zeros. To a guy who reads quotes all day, hidden price + zero results = walk away.
+
+**Pre-Call Prep (3/5).** Fine page if you've actually booked a call. Problem is the top-nav "RESOURCES" dumps you here — a "prepare for your call" checklist — when I expected general info to size up the offer.
 
 ## Page-by-Page Review
 
-### /admin/pages (Pages List)
+### / (homepage) — gut feel 2/5
 
-**Gut feel: 4/5** — "This page I get — one big blue button, a list, done."
+The hero is clear enough ("Turn Vending Into Your Path to Financial Freedom"), but the stat block undercuts everything by showing zeros, the only header CTA is the vague "STEP INSIDE", there's no price, and the page jumps on load.
 
-| #   | Category          | Finding                                                                                                                                                                      | Severity       | Why this matters to me                                                                                                          |
-| --- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Navigation & Flow | "New SEO page" is one clear blue button, list is right there — primary task is obvious                                                                                       | Low (positive) | This is how I want every screen: the thing I came to do is the biggest button.                                                  |
-| 2   | Copy & Labels     | Six filter chips (Needs review, Updating, Needs links, Metadata issues, Scheduled, Schedule failed) plus four tabs plus a sort dropdown — that's a lot of knobs for one list | Medium         | I have one page in the list. All these filters are for someone who has 200 pages, not me — feels like clutter I'll never touch. |
-| 3   | Copy & Labels     | Four stat cards (All / Drafts / Published / Archived) — useful at a glance, but "needs work" and "retired" are vague                                                         | Low            | "Needs work" on what? I'd want it to just tell me what to fix.                                                                  |
-| 4   | Feedback & State  | The three-dot "Actions" menu is the only way to act on a row and it's tiny on the far right                                                                                  | Medium         | I almost missed it. Common actions (edit, publish) should be visible, not hidden behind dots.                                   |
+| #   | Category        | Finding                                                            | Evidence                        | Severity |
+| --- | --------------- | ------------------------------------------------------------------ | ------------------------------- | -------- |
+| 001 | Trust & Safety  | Stats show `0+ ENTREPRENEURS LAUNCHED / $0M+ SALES / 0+ LOCATIONS` | home-002-full.png; home-text.md | critical |
+| 002 | Copy & Labels   | Header CTA is "STEP INSIDE", not "Apply"                           | home-001-load.png; home-text.md | high     |
+| 006 | Trust & Safety  | No price/cost shown anywhere for the program                       | home-text.md; about-text.md     | high     |
+| 010 | Visual & Layout | CLS 0.263 on load; horizontal scroll on mobile                     | exploration-log.md              | medium   |
 
-### /admin/pages/new (Create New Page)
+### /apply — gut feel 3/5
 
-**Gut feel: 3/5** — "Two sets of choices before I can even start — just let me make a page."
+Form is short and sensible (dropdowns for state/budget/stage/timeline, only Name/Email/State/stage/budget/timeline required). Native "Please fill out this field" validation works. The weak spot is the success state.
 
-| #   | Category          | Finding                                                                                                          | Severity | Why this matters to me                                                                                                        |
-| --- | ----------------- | ---------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| 5   | Navigation & Flow | Must pick a "Page type" AND a "Starting point" before "Start building" — two decisions before I've done anything | Medium   | I don't know the difference between a "Resource page" and a "Landing page." Just give me a sensible default and let me start. |
-| 6   | Copy & Labels     | "Page type" descriptions are marketing-speak ("conversion path," "proof blocks")                                 | Medium   | I'm a plumber. "Conversion path" means nothing. Tell me "page that sells a service."                                          |
-| 7   | Visual & Layout   | Two "Coming soon" cards (From template, AI-assisted) take up the whole bottom of the screen                      | Low      | Why show me two big boxes I can't use? It's wasted space advertising stuff that doesn't exist yet.                            |
-| 8   | Forms & Input     | No back/cancel link visible on this screen                                                                       | Medium   | If I landed here by mistake I don't see an obvious way out without the browser back button.                                   |
+| #   | Category         | Finding                                                                                      | Evidence                                          | Severity |
+| --- | ---------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------- | -------- |
+| 005 | Feedback & State | Success = tiny green line; form not cleared, no redirect to existing /thank-you-for-applying | journey-discover-and-apply-004...png; journeys.md | high     |
 
-### /admin/pages/[id] (Page Builder Editor)
+### /contact — gut feel 2/5
 
-**Gut feel: 1/5** — "82 buttons and 58 boxes to change some text — this is exactly the kind of thing that makes me hate software."
+Form-only. No phone, no email, and not in the top nav.
 
-| #   | Category                  | Finding                                                                                                                                                                        | Severity | Why this matters to me                                                                                                                                           |
-| --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 9   | Visual & Layout           | Three columns crammed in: block outline on left, live page in middle, "Readiness and publish" + SEO + revision history + governance on the right                               | Critical | My eyes don't know where to land. I just want to click the text and type. Everything competes for attention.                                                     |
-| 10  | Navigation & Flow         | Top bar alone has Pages, Blocks, Save draft, Live preview, Copy editor link, Copy public URL, SEO — seven controls before the content even starts                              | High     | Too many doors. "Copy editor link" vs "Copy public URL" — I have no idea which one to send my web guy.                                                           |
-| 11  | Feedback & State          | There are TWO save concepts: "Save draft" button AND "Drafts save automatically" text at the bottom                                                                            | High     | So do I need to save or not? Mixed messages make me nervous I'll lose work. Pick one.                                                                            |
-| 12  | Copy & Labels             | Right rail has "Readiness and publish," "Next required step," "Action items," "Builder support," "Governance comments," "Revision history" — corporate words for a one-man job | Critical | "Governance comments"? I'm the only one here. This is enterprise bloat I'll never use and have to scroll past every time.                                        |
-| 13  | Forms & Input             | 58 input fields on one screen (SEO title, canonical URL, topic cluster, funnel stage, lifecycle, review period, OG title, structured data checkboxes...)                       | Critical | I need maybe three: page title, the words, and "publish." The other 55 are for an SEO specialist, not me.                                                        |
-| 14  | Navigation & Flow         | Each block has "Move up / Move down / Remove / Edit settings / Hide eyebrow / Hide body / Hide cta / Block actions / Section and block actions"                                | High     | Two different "actions" menus per block plus a pile of hide/show toggles. I can't tell "Block actions" from "Section and block actions."                         |
-| 15  | Copy & Labels             | "Eyebrow," "Card grid," "Rich text block," "CTA," "FAQ schema" — jargon everywhere                                                                                             | High     | "Eyebrow" is the little text above a heading? Nobody outside an office knows that. Plain words, please.                                                          |
-| 16  | Feedback & State          | A floating purple "AI" bubble sits over the content                                                                                                                            | Medium   | One more mystery widget. Floats on top of what I'm reading. I don't know what it does and didn't ask for it.                                                     |
-| 17  | Visual & Layout           | "Add page content" opens a modal with 9 content types and then 4 hero layout variations to choose from                                                                         | High     | I clicked "add content" and got hit with a second wall of choices. Standard vs Split vs Compact vs Editorial hero — just give me one and let me change it later. |
-| 18  | Feedback & State          | Disabled "Up" and "Down" buttons appear on blocks with no explanation                                                                                                          | Medium   | Greyed-out buttons everywhere with no reason given. Is it broken or just the top item? I shouldn't have to guess.                                                |
-| 19  | Trust & Safety            | "Publish" is a big blue button right next to draft notes, "Remove" buttons scattered through blocks                                                                            | High     | One wrong click and I've published a half-finished page or deleted a section. With this much crammed together, a mistake feels one slip away.                    |
-| 20  | Accessibility & Inclusion | Tiny eye icons next to content for show/hide, small text labels everywhere                                                                                                     | Medium   | My eyes aren't 25 anymore. Lots of small icons and dense text — hard to hit the right thing on the first try.                                                    |
+| #   | Category          | Finding                                       | Evidence                              | Severity |
+| --- | ----------------- | --------------------------------------------- | ------------------------------------- | -------- |
+| 003 | Navigation & Flow | Contact missing from header nav (footer only) | home-text.md; journeys.md             | high     |
+| 004 | Copy & Labels     | No phone number or email on the contact page  | contact-text.md; contact-001-load.png | high     |
 
-### /admin/pages/[id] (Editor — Mobile)
+### /news + article — gut feel 3/5
 
-**Gut feel: 1/5** — "On my phone it's a pile of floating pill buttons — useless on a job site."
+Readable once you're in, but first impression looks broken and the naming is inconsistent.
 
-| #   | Category          | Finding                                                                                                                                            | Severity | Why this matters to me                                                                                                                                                           |
-| --- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 21  | Visual & Layout   | Mobile shows 7 floating pill buttons stacked at the top (Pages, Blocks, SEO, Save draft, Live preview, Editor link, Public URL) before any content | Blocker  | I do half my admin from my phone in the van. I can barely see the page for all the buttons, and editing a block this way would be a nightmare. This kills mobile editing for me. |
-| 22  | Navigation & Flow | The right-rail publish/SEO panel is gone or buried on mobile — unclear how I publish from a phone                                                  | High     | If I can't finish and publish from my phone, the mobile view is just a preview, not a tool.                                                                                      |
-| 23  | Feedback & State  | The purple "AI" bubble covers the bottom-left content on mobile                                                                                    | Medium   | On a small screen that floating bubble eats real estate I need for the actual words.                                                                                             |
+| #   | Category         | Finding                                                  | Evidence                              | Severity |
+| --- | ---------------- | -------------------------------------------------------- | ------------------------------------- | -------- |
+| 007 | Feedback & State | Blank cards on first paint; image 500 shows raw alt text | news-001-load.png; exploration-log.md | high     |
+| 008 | Copy & Labels    | "NEWS" nav → page titled "BLOG" → breadcrumb "BLOG"      | news-001-load.png; news-text.md       | medium   |
 
-### /admin/pages/authors (Authors)
+### /pre-call-resources — gut feel 3/5
 
-**Gut feel: 4/5** — "Finally, a plain form — name, slug, bio, one button. This I can do."
+Fine for its purpose; wrong target for the "Resources" nav item.
 
-| #   | Category      | Finding                                                   | Severity | Why this matters to me                                                                                                                    |
-| --- | ------------- | --------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| 24  | Copy & Labels | "Slug" and "Avatar asset ID" with no hint of what to type | Medium   | "Avatar asset ID"? Where do I get an ID? I'd just leave it blank and hope. A "browse images" button would be obvious; an ID field is not. |
-| 25  | Forms & Input | No placeholder examples in any field                      | Low      | Half a second of "oh, that's what goes here" saves me a wrong guess. The redirects page does this right; this one doesn't.                |
+| #   | Category      | Finding                                                       | Evidence                                 | Severity |
+| --- | ------------- | ------------------------------------------------------------- | ---------------------------------------- | -------- |
+| 009 | Copy & Labels | Nav "RESOURCES" → call-prep checklist, not a resource library | pre-call-resources-text.md; home-text.md | medium   |
 
-### /admin/pages/redirects (Redirects)
+### /about, /case-studies, /terms, /privacy, /thank-you-for-applying — gut feel 3/5
 
-**Gut feel: 4/5** — "Clear table, example text in the boxes, one button. Good."
+These load fine and read fine. Case studies are plentiful and specific (real names, real routes), which is the one place this site actually earns trust. No new pragmatist findings beyond the site-wide pricing gap (006) already logged.
 
-| #   | Category        | Finding                                                                                  | Severity       | Why this matters to me                                                                                                               |
-| --- | --------------- | ---------------------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| 26  | Copy & Labels   | "301 permanent / 302 temporary / 307 / 308" status codes in a dropdown                   | Medium         | I have no idea what those numbers mean. Default it to the right one and hide the rest, or say "use this one unless you know better." |
-| 27  | Visual & Layout | Placeholder text in the path fields (/resources/old-page) actually shows me what to type | Low (positive) | This is the difference. Show me an example and I know what to do without thinking. The editor should learn from this page.           |
+### /admin/\* — not my concern
 
-### /admin/pages/block-preview-audit (Block Preview Audit)
+As a vending prospect I never touch the admin studio. One thing leaked into a public-adjacent view worth noting:
 
-**Gut feel: 2/5** — "A giant scrolling catalog of every block style — interesting, but why am I looking at this?"
-
-| #   | Category          | Finding                                                                                                                        | Severity | Why this matters to me                                                                                                                                      |
-| --- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 28  | Navigation & Flow | An endless page showing every variation of every block (4 heroes, 4 text styles, 3 FAQs, 3 forms, etc.) with no action buttons | Medium   | This looks like an internal developer reference, not something I should ever see. If I landed here I'd be lost — no "use this" button, just scroll forever. |
+| #   | Category       | Finding                                             | Evidence           | Severity |
+| --- | -------------- | --------------------------------------------------- | ------------------ | -------- |
+| 011 | Trust & Safety | "Schedule failed" state visible in admin pages list | exploration-log.md | low      |
 
 ## Blockers
 
-- **#21 — Editor is unusable on mobile.** Seven floating pill buttons stacked over
-  the content, no clear way to edit a block or publish from a phone, AI bubble
-  covering the screen. I do real work from my phone in the van. If I can't make a
-  quick text fix and publish on mobile, this tool fails at the one thing I'd use
-  it for most.
+None that stop me outright — but contact (no phone, buried link) and trust (zeroed stats, no price) are close. I _can_ complete every core task; I just wouldn't _want_ to, because the site keeps giving me reasons to doubt it.
 
 ## My Top 10 Issues
 
-1. **Editor unusable on mobile (#21)** — floating button pile, can't realistically edit or publish from a phone. Blocker for a guy who works from a van.
-2. **58 input fields to edit one page (#13)** — I need title, words, publish. The other 55 are specialist clutter I have to scroll past every single time.
-3. **Right rail is enterprise bloat (#12)** — "Governance comments," "Action items," "Builder support," "Revision history." I'm a one-man shop; none of this applies to me.
-4. **No clear visual hierarchy in the editor (#9)** — three competing columns, my eyes don't know where to go. I just want to click text and type.
-5. **Two conflicting save messages (#11)** — "Save draft" button vs "saves automatically." Mixed signals make me scared I'll lose work.
-6. **Too many top-bar controls (#10)** — seven buttons before content; "Copy editor link" vs "Copy public URL" with no clue which is which.
-7. **Jargon everywhere (#15)** — "Eyebrow," "Rich text block," "FAQ schema," "conversion path." Use plain words a tradesperson understands.
-8. **Add-content is a wall of choices on a wall of choices (#17)** — 9 types, then 4 hero variations. Just give me a default and let me change it later.
-9. **Two decisions before I can even start a page (#5)** — page type AND starting point, both in marketing-speak. Let me start and pick later.
-10. **Hidden row actions on the list (#4)** — common actions buried behind a tiny three-dot menu on the far right. Make the things I do most visible.
+1. **(001, critical)** Homepage stats show `0+` entrepreneurs, `$0M+` sales, `0+` locations — reads as a dead or broken program.
+2. **(002, high)** Main header button says "STEP INSIDE" instead of "Apply" — I shouldn't hunt for the obvious action.
+3. **(004, high)** No phone number or email on the contact page — I want to call, not fill a form.
+4. **(003, high)** Contact link is footer-only, missing from the top nav.
+5. **(006, high)** No price anywhere — I have to apply and take a sales call just to learn what it costs.
+6. **(005, high)** Apply success is a faint green line; form stays full, no redirect — easy to miss and resubmit.
+7. **(007, high)** /news first paint looks broken: empty cards and a 500'd image showing raw text.
+8. **(008, medium)** "NEWS" nav lands on a page titled "BLOG" — inconsistent naming.
+9. **(009, medium)** "RESOURCES" nav goes to a pre-call checklist, not a resource library.
+10. **(010, medium)** Homepage jumps on load (CLS 0.263) and scrolls sideways on mobile.

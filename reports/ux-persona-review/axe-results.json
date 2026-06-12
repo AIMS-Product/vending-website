@@ -1,0 +1,3276 @@
+[
+  {
+    "page": "/",
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "selectors": [
+          ".grid-cols-\\[auto_1fr\\].items-baseline.py-5:nth-child(1) > dd",
+          ".grid-cols-\\[auto_1fr\\].items-baseline.py-5:nth-child(2) > dd",
+          ".grid-cols-\\[auto_1fr\\].items-baseline.py-5:nth-child(3) > dd"
+        ],
+        "count": 3
+      }
+    ],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "APPLY NOW"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "APPLY NOW"
+      },
+      {
+        "stop": 9,
+        "tag": "video",
+        "name": "Video testimonial from Thomas Rohlader"
+      },
+      {
+        "stop": 10,
+        "tag": "video",
+        "name": "Video testimonial from Thomas Rohlader"
+      },
+      {
+        "stop": 11,
+        "tag": "video",
+        "name": "Video testimonial from Thomas Rohlader"
+      },
+      {
+        "stop": 12,
+        "tag": "video",
+        "name": "Video testimonial from Joe Natoli"
+      },
+      {
+        "stop": 13,
+        "tag": "video",
+        "name": "Video testimonial from Joe Natoli"
+      },
+      {
+        "stop": 14,
+        "tag": "video",
+        "name": "Video testimonial from Joe Natoli"
+      },
+      {
+        "stop": 15,
+        "tag": "video",
+        "name": "Video testimonial from Jason Priest"
+      },
+      {
+        "stop": 16,
+        "tag": "video",
+        "name": "Video testimonial from Jason Priest"
+      },
+      {
+        "stop": 17,
+        "tag": "video",
+        "name": "Video testimonial from Jason Priest"
+      },
+      {
+        "stop": 18,
+        "tag": "video",
+        "name": "Video testimonial from Anthony, CEO"
+      },
+      {
+        "stop": 19,
+        "tag": "video",
+        "name": "Video testimonial from Anthony, CEO"
+      },
+      {
+        "stop": 20,
+        "tag": "video",
+        "name": "Video testimonial from Anthony, CEO"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "APPLY NOW"
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 23,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 24,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 25,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 26,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 27,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 28,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 29,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 30,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": [
+      "stop 10 (video 'Video testimonial from Thomas Rohlader'): no visible focus indicator",
+      "stop 11 (video 'Video testimonial from Thomas Rohlader'): no visible focus indicator",
+      "possible focus trap around stop 11 on video 'Video testimonial from Thomas Rohlader'",
+      "stop 13 (video 'Video testimonial from Joe Natoli'): no visible focus indicator",
+      "stop 14 (video 'Video testimonial from Joe Natoli'): no visible focus indicator",
+      "possible focus trap around stop 14 on video 'Video testimonial from Joe Natoli'",
+      "stop 16 (video 'Video testimonial from Jason Priest'): no visible focus indicator",
+      "stop 17 (video 'Video testimonial from Jason Priest'): no visible focus indicator",
+      "possible focus trap around stop 17 on video 'Video testimonial from Jason Priest'",
+      "stop 19 (video 'Video testimonial from Anthony, CEO'): no visible focus indicator",
+      "stop 20 (video 'Video testimonial from Anthony, CEO'): no visible focus indicator",
+      "possible focus trap around stop 20 on video 'Video testimonial from Anthony, CEO'",
+      "stop 30 (nextjs-portal ''): no visible focus indicator"
+    ]
+  },
+  {
+    "page": "/about",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "APPLY NOW"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 16,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 16 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/apply",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "input",
+        "name": "Name"
+      },
+      {
+        "stop": 8,
+        "tag": "input",
+        "name": "Email"
+      },
+      {
+        "stop": 9,
+        "tag": "input",
+        "name": "Phone"
+      },
+      {
+        "stop": 10,
+        "tag": "input",
+        "name": "City"
+      },
+      {
+        "stop": 11,
+        "tag": "select",
+        "name": "State"
+      },
+      {
+        "stop": 12,
+        "tag": "select",
+        "name": "Business stage"
+      },
+      {
+        "stop": 13,
+        "tag": "select",
+        "name": "Available startup budget"
+      },
+      {
+        "stop": 14,
+        "tag": "select",
+        "name": "Launch timeline"
+      },
+      {
+        "stop": 15,
+        "tag": "textarea",
+        "name": "What are you trying to build?"
+      },
+      {
+        "stop": 16,
+        "tag": "button",
+        "name": "SUBMIT APPLICATION"
+      },
+      {
+        "stop": 17,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 18,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 23,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 24,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 25,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 25 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/case-studies",
+    "violations": [
+      {
+        "id": "heading-order",
+        "impact": "moderate",
+        "description": "Ensure the order of headings is semantically correct",
+        "selectors": ["li:nth-child(1) > .p-5 > header > h3"],
+        "count": 1
+      }
+    ],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "video",
+        "name": "Video case study from Thomas Rohlader"
+      },
+      {
+        "stop": 8,
+        "tag": "video",
+        "name": "Video case study from Thomas Rohlader"
+      },
+      {
+        "stop": 9,
+        "tag": "video",
+        "name": "Video case study from Thomas Rohlader"
+      },
+      {
+        "stop": 10,
+        "tag": "video",
+        "name": "Video case study from Joe Natoli"
+      },
+      {
+        "stop": 11,
+        "tag": "video",
+        "name": "Video case study from Joe Natoli"
+      },
+      {
+        "stop": 12,
+        "tag": "video",
+        "name": "Video case study from Joe Natoli"
+      },
+      {
+        "stop": 13,
+        "tag": "video",
+        "name": "Video case study from Jason Priest"
+      },
+      {
+        "stop": 14,
+        "tag": "video",
+        "name": "Video case study from Jason Priest"
+      },
+      {
+        "stop": 15,
+        "tag": "video",
+        "name": "Video case study from Jason Priest"
+      },
+      {
+        "stop": 16,
+        "tag": "video",
+        "name": "Video case study from Anthony, CEO"
+      },
+      {
+        "stop": 17,
+        "tag": "video",
+        "name": "Video case study from Anthony, CEO"
+      },
+      {
+        "stop": 18,
+        "tag": "video",
+        "name": "Video case study from Anthony, CEO"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "APPLY NOW"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 23,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 24,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 25,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 26,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 27,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 28,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": [
+      "stop 8 (video 'Video case study from Thomas Rohlader'): no visible focus indicator",
+      "stop 9 (video 'Video case study from Thomas Rohlader'): no visible focus indicator",
+      "possible focus trap around stop 9 on video 'Video case study from Thomas Rohlader'",
+      "stop 11 (video 'Video case study from Joe Natoli'): no visible focus indicator",
+      "stop 12 (video 'Video case study from Joe Natoli'): no visible focus indicator",
+      "possible focus trap around stop 12 on video 'Video case study from Joe Natoli'",
+      "stop 14 (video 'Video case study from Jason Priest'): no visible focus indicator",
+      "stop 15 (video 'Video case study from Jason Priest'): no visible focus indicator",
+      "possible focus trap around stop 15 on video 'Video case study from Jason Priest'",
+      "stop 17 (video 'Video case study from Anthony, CEO'): no visible focus indicator",
+      "stop 18 (video 'Video case study from Anthony, CEO'): no visible focus indicator",
+      "possible focus trap around stop 18 on video 'Video case study from Anthony, CEO'",
+      "stop 28 (nextjs-portal ''): no visible focus indicator"
+    ]
+  },
+  {
+    "page": "/contact",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "input",
+        "name": "Name"
+      },
+      {
+        "stop": 8,
+        "tag": "input",
+        "name": "Email"
+      },
+      {
+        "stop": 9,
+        "tag": "input",
+        "name": "Phone"
+      },
+      {
+        "stop": 10,
+        "tag": "input",
+        "name": "City"
+      },
+      {
+        "stop": 11,
+        "tag": "select",
+        "name": "State"
+      },
+      {
+        "stop": 12,
+        "tag": "textarea",
+        "name": "Message"
+      },
+      {
+        "stop": 13,
+        "tag": "button",
+        "name": "SEND MESSAGE"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 16,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 17,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 18,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 22,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 22 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/news",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "HOW TO CHOOSE THE PERFECT LOCATION FOR YOUR VENDING MACHINE "
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "TOP 5 QUESTIONS TO ASK BEFORE JOINING A VENDING ENTREPRENEUR"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "TOP 10 PROFITABLE PRODUCTS TO STOCK IN YOUR VENDING MACHINE "
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "APPLY NOW"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 16,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 17,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 18,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 19,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 19 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "selectors": [".mt-5"],
+        "count": 1
+      },
+      {
+        "id": "landmark-complementary-is-top-level",
+        "impact": "moderate",
+        "description": "Ensure the complementary landmark or aside is at top level",
+        "selectors": [".lg\\:block"],
+        "count": 1
+      }
+    ],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "Share on X"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "Share on LinkedIn"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "Share on Facebook"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "Open article link"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "BLOG"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "APPLY NOW"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 16,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 17,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 18,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 23,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 23 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/news/top-5-questions-vending-entrepreneurship-program",
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "selectors": ["p:nth-child(48) > a", ".mt-5"],
+        "count": 2
+      },
+      {
+        "id": "landmark-complementary-is-top-level",
+        "impact": "moderate",
+        "description": "Ensure the complementary landmark or aside is at top level",
+        "selectors": [".lg\\:block"],
+        "count": 1
+      }
+    ],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "Share on X"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "Share on LinkedIn"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "Share on Facebook"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "Open article link"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "BLOG"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "vending entrepreneurship program"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "APPLY NOW"
+      },
+      {
+        "stop": 16,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 17,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 18,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 23,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 24,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 24 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/news/top-10-profitable-products-to-stock-in-your-vending-machine",
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "selectors": ["p:nth-child(118) > a", ".mt-5"],
+        "count": 2
+      },
+      {
+        "id": "landmark-complementary-is-top-level",
+        "impact": "moderate",
+        "description": "Ensure the complementary landmark or aside is at top level",
+        "selectors": [".lg\\:block"],
+        "count": 1
+      }
+    ],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "Share on X"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "Share on LinkedIn"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "Share on Facebook"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "Open article link"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "BLOG"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "Vending Preneurs"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "APPLY NOW"
+      },
+      {
+        "stop": 16,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 17,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 18,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 23,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 24,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 24 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+    "violations": [],
+    "tabOrder": [],
+    "tabIssues": []
+  },
+  {
+    "page": "/pre-call-resources",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 15,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 15 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/privacy",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "APPLY NOW"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 16,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 16 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/terms",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "APPLY NOW"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 16,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 16 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/thank-you-for-applying",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 15,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 15 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/resources/vending-sporting-arenas",
+    "violations": [],
+    "tabOrder": [],
+    "tabIssues": []
+  },
+  {
+    "page": "/this-page-does-not-exist",
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "selectors": [".tracking-wide", ".mt-2"],
+        "count": 2
+      }
+    ],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "a",
+        "name": "Vendingpreneurs home"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 5,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "STEP INSIDE"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "Back to home"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "HOME"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "ABOUT"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "RESOURCES"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "CASE STUDIES"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "NEWS"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "CONTACT US"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "TERMS"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "PRIVACY POLICY"
+      },
+      {
+        "stop": 16,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 16 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/admin/pages",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "SEO pages\n: SEO page content"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Media library\n: Images and source assets"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Settings\n: Users and access"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "Create page"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "All\n\n4\n\ndrafts + published"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "Drafts\n\n4\n\nneeds work"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "Published\n\n0\n\npublicly visible"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "Archived\n\n2\n\nretired"
+      },
+      {
+        "stop": 11,
+        "tag": "input",
+        "name": "Search SEO pages"
+      },
+      {
+        "stop": 12,
+        "tag": "button",
+        "name": "Search"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "All"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "Drafts"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "Published"
+      },
+      {
+        "stop": 16,
+        "tag": "a",
+        "name": "Archived"
+      },
+      {
+        "stop": 17,
+        "tag": "summary",
+        "name": "Updated newest"
+      },
+      {
+        "stop": 18,
+        "tag": "a",
+        "name": "All metadata"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "Needs review"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "Updating"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "Needs links"
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "Metadata issues"
+      },
+      {
+        "stop": 23,
+        "tag": "a",
+        "name": "Scheduled"
+      },
+      {
+        "stop": 24,
+        "tag": "a",
+        "name": "Schedule failed"
+      },
+      {
+        "stop": 25,
+        "tag": "a",
+        "name": "How to Start a Vending Business for Passive Income"
+      },
+      {
+        "stop": 26,
+        "tag": "button",
+        "name": "SEO readiness: Blocked"
+      },
+      {
+        "stop": 27,
+        "tag": "button",
+        "name": "Page status: Draft"
+      },
+      {
+        "stop": 28,
+        "tag": "summary",
+        "name": "Open actions for How to Start a Vending Business for Passive Income"
+      },
+      {
+        "stop": 29,
+        "tag": "a",
+        "name": "Mini Market Vending in Train Stations"
+      },
+      {
+        "stop": 30,
+        "tag": "button",
+        "name": "SEO readiness: Opportunities"
+      },
+      {
+        "stop": 31,
+        "tag": "button",
+        "name": "Page status: Draft"
+      },
+      {
+        "stop": 32,
+        "tag": "summary",
+        "name": "Open actions for Mini Market Vending in Train Stations"
+      },
+      {
+        "stop": 33,
+        "tag": "a",
+        "name": "Micro Market Vending Adelaide for Office Managers"
+      },
+      {
+        "stop": 34,
+        "tag": "button",
+        "name": "SEO readiness: Opportunities"
+      },
+      {
+        "stop": 35,
+        "tag": "button",
+        "name": "Page status: Draft"
+      },
+      {
+        "stop": 36,
+        "tag": "summary",
+        "name": "Open actions for Micro Market Vending Adelaide for Office Managers"
+      },
+      {
+        "stop": 37,
+        "tag": "a",
+        "name": "Vending at Sporting Arenas"
+      },
+      {
+        "stop": 38,
+        "tag": "button",
+        "name": "SEO readiness: Needs work"
+      },
+      {
+        "stop": 39,
+        "tag": "button",
+        "name": "Page status: Draft"
+      },
+      {
+        "stop": 40,
+        "tag": "summary",
+        "name": "Open actions for Vending at Sporting Arenas"
+      }
+    ],
+    "tabIssues": []
+  },
+  {
+    "page": "/admin/forgot-password",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "input",
+        "name": "Email"
+      },
+      {
+        "stop": 2,
+        "tag": "button",
+        "name": "Send password reset"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Back to sign in"
+      },
+      {
+        "stop": 4,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 4 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/admin/pages",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "SEO pages\n: SEO page content"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Media library\n: Images and source assets"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Settings\n: Users and access"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "Create page"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "All\n\n4\n\ndrafts + published"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "Drafts\n\n4\n\nneeds work"
+      },
+      {
+        "stop": 9,
+        "tag": "a",
+        "name": "Published\n\n0\n\npublicly visible"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "Archived\n\n2\n\nretired"
+      },
+      {
+        "stop": 11,
+        "tag": "input",
+        "name": "Search SEO pages"
+      },
+      {
+        "stop": 12,
+        "tag": "button",
+        "name": "Search"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "All"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "Drafts"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "Published"
+      },
+      {
+        "stop": 16,
+        "tag": "a",
+        "name": "Archived"
+      },
+      {
+        "stop": 17,
+        "tag": "summary",
+        "name": "Updated newest"
+      },
+      {
+        "stop": 18,
+        "tag": "a",
+        "name": "All metadata"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "Needs review"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "Updating"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "Needs links"
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "Metadata issues"
+      },
+      {
+        "stop": 23,
+        "tag": "a",
+        "name": "Scheduled"
+      },
+      {
+        "stop": 24,
+        "tag": "a",
+        "name": "Schedule failed"
+      },
+      {
+        "stop": 25,
+        "tag": "a",
+        "name": "How to Start a Vending Business for Passive Income"
+      },
+      {
+        "stop": 26,
+        "tag": "button",
+        "name": "SEO readiness: Blocked"
+      },
+      {
+        "stop": 27,
+        "tag": "button",
+        "name": "Page status: Draft"
+      },
+      {
+        "stop": 28,
+        "tag": "summary",
+        "name": "Open actions for How to Start a Vending Business for Passive Income"
+      },
+      {
+        "stop": 29,
+        "tag": "a",
+        "name": "Mini Market Vending in Train Stations"
+      },
+      {
+        "stop": 30,
+        "tag": "button",
+        "name": "SEO readiness: Opportunities"
+      },
+      {
+        "stop": 31,
+        "tag": "button",
+        "name": "Page status: Draft"
+      },
+      {
+        "stop": 32,
+        "tag": "summary",
+        "name": "Open actions for Mini Market Vending in Train Stations"
+      },
+      {
+        "stop": 33,
+        "tag": "a",
+        "name": "Micro Market Vending Adelaide for Office Managers"
+      },
+      {
+        "stop": 34,
+        "tag": "button",
+        "name": "SEO readiness: Opportunities"
+      },
+      {
+        "stop": 35,
+        "tag": "button",
+        "name": "Page status: Draft"
+      },
+      {
+        "stop": 36,
+        "tag": "summary",
+        "name": "Open actions for Micro Market Vending Adelaide for Office Managers"
+      },
+      {
+        "stop": 37,
+        "tag": "a",
+        "name": "Vending at Sporting Arenas"
+      },
+      {
+        "stop": 38,
+        "tag": "button",
+        "name": "SEO readiness: Needs work"
+      },
+      {
+        "stop": 39,
+        "tag": "button",
+        "name": "Page status: Draft"
+      },
+      {
+        "stop": 40,
+        "tag": "summary",
+        "name": "Open actions for Vending at Sporting Arenas"
+      }
+    ],
+    "tabIssues": []
+  },
+  {
+    "page": "/admin/pages/new",
+    "violations": [
+      {
+        "id": "landmark-unique",
+        "impact": "moderate",
+        "description": "Ensure landmarks are unique",
+        "selectors": [".p-0"],
+        "count": 1
+      }
+    ],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "button",
+        "name": "SEO / Resource page\nLong-form search page for resources, gui"
+      },
+      {
+        "stop": 2,
+        "tag": "button",
+        "name": "Blog page\nArticle-style page with a strong introduction and "
+      },
+      {
+        "stop": 3,
+        "tag": "button",
+        "name": "Landing page\nCampaign page for a focused offer or conversion"
+      },
+      {
+        "stop": 4,
+        "tag": "button",
+        "name": "Video page\nVideo-led page with supporting copy and conversio"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Continue"
+      },
+      {
+        "stop": 6,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 6 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/admin/pages/redirects",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "SEO pages\n: SEO page content"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Media library\n: Images and source assets"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Settings\n: Users and access"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "Back to pages"
+      },
+      {
+        "stop": 7,
+        "tag": "input",
+        "name": "/resources/old-page"
+      },
+      {
+        "stop": 8,
+        "tag": "input",
+        "name": "/blog/new-page"
+      },
+      {
+        "stop": 9,
+        "tag": "select",
+        "name": "Permanent move (301)\nTemporary move (302)\nTemporary redirect"
+      },
+      {
+        "stop": 10,
+        "tag": "button",
+        "name": "Create redirect"
+      },
+      {
+        "stop": 11,
+        "tag": "summary",
+        "name": "Advanced page association"
+      },
+      {
+        "stop": 12,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 12 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/admin/pages/block-preview-audit",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "SEO pages\n: SEO page content"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Media library\n: Images and source assets"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Settings\n: Users and access"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 6,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 6 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/admin/news",
+    "violations": [
+      {
+        "id": "aria-prohibited-attr",
+        "impact": "serious",
+        "description": "Ensure ARIA attributes are not prohibited for an element's role",
+        "selectors": [".text-slate-300"],
+        "count": 1
+      }
+    ],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "SEO pages\n: SEO page content"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Media library\n: Images and source assets"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Settings\n: Users and access"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "Resource pages"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "New blog post"
+      },
+      {
+        "stop": 8,
+        "tag": "input",
+        "name": "Search blog posts"
+      },
+      {
+        "stop": 9,
+        "tag": "button",
+        "name": "Search"
+      },
+      {
+        "stop": 10,
+        "tag": "a",
+        "name": "All"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "Drafts"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "Published"
+      },
+      {
+        "stop": 13,
+        "tag": "a",
+        "name": "Archived"
+      },
+      {
+        "stop": 14,
+        "tag": "summary",
+        "name": "Updated newest"
+      },
+      {
+        "stop": 15,
+        "tag": "summary",
+        "name": "Filters"
+      },
+      {
+        "stop": 16,
+        "tag": "summary",
+        "name": "Table view options"
+      },
+      {
+        "stop": 17,
+        "tag": "a",
+        "name": "How to Choose the Perfect Location for Your Vending Machine "
+      },
+      {
+        "stop": 18,
+        "tag": "a",
+        "name": "Edit How to Choose the Perfect Location for Your Vending Machine in 2025"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "Top 5 Questions to Ask Before Joining a Vending Entrepreneur"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "Edit Top 5 Questions to Ask Before Joining a Vending Entrepreneurship Program"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "Top 10 Profitable Products to Stock in Your Vending Machine "
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "Edit Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Items, Niche Products)"
+      },
+      {
+        "stop": 23,
+        "tag": "a",
+        "name": "Step-by-Step Guide: From Zero to First Vending Machine — Wha"
+      },
+      {
+        "stop": 24,
+        "tag": "a",
+        "name": "Edit Step-by-Step Guide: From Zero to First Vending Machine — What You Need to Do to Launch"
+      },
+      {
+        "stop": 25,
+        "tag": "a",
+        "name": "How to Build a Self-Managed Route So You Can Work Less"
+      },
+      {
+        "stop": 26,
+        "tag": "a",
+        "name": "Edit How to Build a Self-Managed Route So You Can Work Less"
+      },
+      {
+        "stop": 27,
+        "tag": "a",
+        "name": "Pros and Cons of Hiring Vending Business Mentorship vs. Lear"
+      },
+      {
+        "stop": 28,
+        "tag": "a",
+        "name": "Edit Pros and Cons of Hiring Vending Business Mentorship vs. Learning On Your Own"
+      },
+      {
+        "stop": 29,
+        "tag": "a",
+        "name": "Seasonal Vending Machine Ideas (Winter, Summer, Back-to-Scho"
+      },
+      {
+        "stop": 30,
+        "tag": "a",
+        "name": "Edit Seasonal Vending Machine Ideas (Winter, Summer, Back-to-School)"
+      },
+      {
+        "stop": 31,
+        "tag": "a",
+        "name": "Next page"
+      },
+      {
+        "stop": 32,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 32 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/admin/news/new",
+    "violations": [
+      {
+        "id": "landmark-complementary-is-top-level",
+        "impact": "moderate",
+        "description": "Ensure the complementary landmark or aside is at top level",
+        "selectors": [".space-y-5"],
+        "count": 1
+      }
+    ],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "SEO pages\n: SEO page content"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Media library\n: Images and source assets"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Settings\n: Users and access"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "Blog and news"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "Resource pages"
+      },
+      {
+        "stop": 8,
+        "tag": "a",
+        "name": "Back to posts"
+      },
+      {
+        "stop": 9,
+        "tag": "input",
+        "name": "Title"
+      },
+      {
+        "stop": 10,
+        "tag": "input",
+        "name": "Slug"
+      },
+      {
+        "stop": 11,
+        "tag": "textarea",
+        "name": "Excerpt"
+      },
+      {
+        "stop": 12,
+        "tag": "button",
+        "name": "Write"
+      },
+      {
+        "stop": 13,
+        "tag": "button",
+        "name": "Preview"
+      },
+      {
+        "stop": 14,
+        "tag": "textarea",
+        "name": "Body"
+      },
+      {
+        "stop": 15,
+        "tag": "button",
+        "name": "Save draft"
+      },
+      {
+        "stop": 16,
+        "tag": "button",
+        "name": "Publish"
+      },
+      {
+        "stop": 17,
+        "tag": "button",
+        "name": "Choose from media library"
+      },
+      {
+        "stop": 18,
+        "tag": "input",
+        "name": "Cover image URL"
+      },
+      {
+        "stop": 19,
+        "tag": "input",
+        "name": "Upload cover image"
+      },
+      {
+        "stop": 20,
+        "tag": "input",
+        "name": "Cover image alt text"
+      },
+      {
+        "stop": 21,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 21 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/admin/media",
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "selectors": [".mr-1", ".space-y-2 > p"],
+        "count": 2
+      },
+      {
+        "id": "heading-order",
+        "impact": "moderate",
+        "description": "Ensure the order of headings is semantically correct",
+        "selectors": ["h3"],
+        "count": 1
+      }
+    ],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "SEO pages\n: SEO page content"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Media library\n: Images and source assets"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Settings\n: Users and access"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "Content libraries"
+      },
+      {
+        "stop": 7,
+        "tag": "input",
+        "name": "Search media assets"
+      },
+      {
+        "stop": 8,
+        "tag": "button",
+        "name": "Search"
+      },
+      {
+        "stop": 9,
+        "tag": "button",
+        "name": "Upload media"
+      },
+      {
+        "stop": 10,
+        "tag": "button",
+        "name": "More upload options"
+      },
+      {
+        "stop": 11,
+        "tag": "a",
+        "name": "Grid view"
+      },
+      {
+        "stop": 12,
+        "tag": "a",
+        "name": "List view"
+      },
+      {
+        "stop": 13,
+        "tag": "summary",
+        "name": "Newest first"
+      },
+      {
+        "stop": 14,
+        "tag": "a",
+        "name": "All assets\n1"
+      },
+      {
+        "stop": 15,
+        "tag": "a",
+        "name": "In use\n0"
+      },
+      {
+        "stop": 16,
+        "tag": "a",
+        "name": "Unused\n1"
+      },
+      {
+        "stop": 17,
+        "tag": "a",
+        "name": "Needs metadata\n1"
+      },
+      {
+        "stop": 18,
+        "tag": "a",
+        "name": "Stored\n0"
+      },
+      {
+        "stop": 19,
+        "tag": "a",
+        "name": "All"
+      },
+      {
+        "stop": 20,
+        "tag": "a",
+        "name": "Images"
+      },
+      {
+        "stop": 21,
+        "tag": "a",
+        "name": "Video"
+      },
+      {
+        "stop": 22,
+        "tag": "a",
+        "name": "Embeds"
+      },
+      {
+        "stop": 23,
+        "tag": "summary",
+        "name": "Purpose: All"
+      },
+      {
+        "stop": 24,
+        "tag": "summary",
+        "name": "More filters"
+      },
+      {
+        "stop": 25,
+        "tag": "input",
+        "name": "Select Real Vending Locations That Do $3-5K/Month"
+      },
+      {
+        "stop": 26,
+        "tag": "button",
+        "name": "Edit"
+      },
+      {
+        "stop": 27,
+        "tag": "button",
+        "name": "Usage"
+      },
+      {
+        "stop": 28,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 28 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/admin/libraries",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "SEO pages\n: SEO page content"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Media library\n: Images and source assets"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Settings\n: Users and access"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 6,
+        "tag": "a",
+        "name": "Media library"
+      },
+      {
+        "stop": 7,
+        "tag": "a",
+        "name": "New resource page"
+      },
+      {
+        "stop": 8,
+        "tag": "input",
+        "name": "Label"
+      },
+      {
+        "stop": 9,
+        "tag": "input",
+        "name": "Href"
+      },
+      {
+        "stop": 10,
+        "tag": "select",
+        "name": "Style"
+      },
+      {
+        "stop": 11,
+        "tag": "input",
+        "name": "Tracking name"
+      },
+      {
+        "stop": 12,
+        "tag": "button",
+        "name": "Save CTA preset"
+      },
+      {
+        "stop": 13,
+        "tag": "select",
+        "name": "Kind"
+      },
+      {
+        "stop": 14,
+        "tag": "textarea",
+        "name": "Proof body"
+      },
+      {
+        "stop": 15,
+        "tag": "input",
+        "name": "Name"
+      },
+      {
+        "stop": 16,
+        "tag": "input",
+        "name": "Role or context"
+      },
+      {
+        "stop": 17,
+        "tag": "input",
+        "name": "Source and rights notes"
+      },
+      {
+        "stop": 18,
+        "tag": "input",
+        "name": "Approved for publishing"
+      },
+      {
+        "stop": 19,
+        "tag": "button",
+        "name": "Save proof item"
+      },
+      {
+        "stop": 20,
+        "tag": "input",
+        "name": "Title"
+      },
+      {
+        "stop": 21,
+        "tag": "select",
+        "name": "Source type"
+      },
+      {
+        "stop": 22,
+        "tag": "textarea",
+        "name": "Body"
+      },
+      {
+        "stop": 23,
+        "tag": "input",
+        "name": "Tags"
+      },
+      {
+        "stop": 24,
+        "tag": "button",
+        "name": "Save source document"
+      },
+      {
+        "stop": 25,
+        "tag": "select",
+        "name": "Source document"
+      },
+      {
+        "stop": 26,
+        "tag": "textarea",
+        "name": "Excerpt"
+      },
+      {
+        "stop": 27,
+        "tag": "input",
+        "name": "Topic tags"
+      },
+      {
+        "stop": 28,
+        "tag": "input",
+        "name": "Approved source excerpt"
+      },
+      {
+        "stop": 29,
+        "tag": "button",
+        "name": "Save source excerpt"
+      },
+      {
+        "stop": 30,
+        "tag": "select",
+        "name": "Approved excerpt"
+      },
+      {
+        "stop": 31,
+        "tag": "textarea",
+        "name": "Claim"
+      },
+      {
+        "stop": 32,
+        "tag": "input",
+        "name": "Claim type"
+      },
+      {
+        "stop": 33,
+        "tag": "select",
+        "name": "Risk"
+      },
+      {
+        "stop": 34,
+        "tag": "textarea",
+        "name": "Usage notes"
+      },
+      {
+        "stop": 35,
+        "tag": "button",
+        "name": "Save approved claim"
+      },
+      {
+        "stop": 36,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 36 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/admin/settings/users",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "SEO pages\n: SEO page content"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Media library\n: Images and source assets"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Settings\n: Users and access"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 6,
+        "tag": "input",
+        "name": "User email"
+      },
+      {
+        "stop": 7,
+        "tag": "select",
+        "name": "User role"
+      },
+      {
+        "stop": 8,
+        "tag": "button",
+        "name": "Invite user"
+      },
+      {
+        "stop": 9,
+        "tag": "select",
+        "name": "Role for alysia@modern-amenities.com"
+      },
+      {
+        "stop": 10,
+        "tag": "button",
+        "name": "Save role for alysia@modern-amenities.com"
+      },
+      {
+        "stop": 11,
+        "tag": "button",
+        "name": "Send reset for alysia@modern-amenities.com"
+      },
+      {
+        "stop": 12,
+        "tag": "button",
+        "name": "Remove access for alysia@modern-amenities.com"
+      },
+      {
+        "stop": 13,
+        "tag": "select",
+        "name": "Role for james@modern-amenities.com"
+      },
+      {
+        "stop": 14,
+        "tag": "button",
+        "name": "Save role for james@modern-amenities.com"
+      },
+      {
+        "stop": 15,
+        "tag": "button",
+        "name": "Send reset for james@modern-amenities.com"
+      },
+      {
+        "stop": 16,
+        "tag": "button",
+        "name": "Remove access for james@modern-amenities.com"
+      },
+      {
+        "stop": 17,
+        "tag": "select",
+        "name": "Role for jamesv@aimanagingservices.com"
+      },
+      {
+        "stop": 18,
+        "tag": "button",
+        "name": "Save role for jamesv@aimanagingservices.com"
+      },
+      {
+        "stop": 19,
+        "tag": "button",
+        "name": "Send reset for jamesv@aimanagingservices.com"
+      },
+      {
+        "stop": 20,
+        "tag": "button",
+        "name": "Remove access for jamesv@aimanagingservices.com"
+      },
+      {
+        "stop": 21,
+        "tag": "select",
+        "name": "Role for jeffery@modern-amenities.com"
+      },
+      {
+        "stop": 22,
+        "tag": "button",
+        "name": "Save role for jeffery@modern-amenities.com"
+      },
+      {
+        "stop": 23,
+        "tag": "button",
+        "name": "Send reset for jeffery@modern-amenities.com"
+      },
+      {
+        "stop": 24,
+        "tag": "button",
+        "name": "Remove access for jeffery@modern-amenities.com"
+      },
+      {
+        "stop": 25,
+        "tag": "select",
+        "name": "Role for jess@modern-amenities.com"
+      },
+      {
+        "stop": 26,
+        "tag": "button",
+        "name": "Save role for jess@modern-amenities.com"
+      },
+      {
+        "stop": 27,
+        "tag": "button",
+        "name": "Resend setup for jess@modern-amenities.com"
+      },
+      {
+        "stop": 28,
+        "tag": "button",
+        "name": "Remove access for jess@modern-amenities.com"
+      },
+      {
+        "stop": 29,
+        "tag": "select",
+        "name": "Role for joshua.stein@modern-amenities.com"
+      },
+      {
+        "stop": 30,
+        "tag": "button",
+        "name": "Save role for joshua.stein@modern-amenities.com"
+      },
+      {
+        "stop": 31,
+        "tag": "button",
+        "name": "Send reset for joshua.stein@modern-amenities.com"
+      },
+      {
+        "stop": 32,
+        "tag": "button",
+        "name": "Remove access for joshua.stein@modern-amenities.com"
+      },
+      {
+        "stop": 33,
+        "tag": "select",
+        "name": "Role for kody@modern-amenities.com"
+      },
+      {
+        "stop": 34,
+        "tag": "button",
+        "name": "Save role for kody@modern-amenities.com"
+      },
+      {
+        "stop": 35,
+        "tag": "button",
+        "name": "Send reset for kody@modern-amenities.com"
+      },
+      {
+        "stop": 36,
+        "tag": "button",
+        "name": "Remove access for kody@modern-amenities.com"
+      },
+      {
+        "stop": 37,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 37 (nextjs-portal ''): no visible focus indicator"]
+  },
+  {
+    "page": "/admin/settings/users",
+    "violations": [],
+    "tabOrder": [
+      {
+        "stop": 1,
+        "tag": "button",
+        "name": "Collapse sidebar"
+      },
+      {
+        "stop": 2,
+        "tag": "a",
+        "name": "SEO pages\n: SEO page content"
+      },
+      {
+        "stop": 3,
+        "tag": "a",
+        "name": "Media library\n: Images and source assets"
+      },
+      {
+        "stop": 4,
+        "tag": "a",
+        "name": "Settings\n: Users and access"
+      },
+      {
+        "stop": 5,
+        "tag": "button",
+        "name": "Sign out"
+      },
+      {
+        "stop": 6,
+        "tag": "input",
+        "name": "User email"
+      },
+      {
+        "stop": 7,
+        "tag": "select",
+        "name": "User role"
+      },
+      {
+        "stop": 8,
+        "tag": "button",
+        "name": "Invite user"
+      },
+      {
+        "stop": 9,
+        "tag": "select",
+        "name": "Role for alysia@modern-amenities.com"
+      },
+      {
+        "stop": 10,
+        "tag": "button",
+        "name": "Save role for alysia@modern-amenities.com"
+      },
+      {
+        "stop": 11,
+        "tag": "button",
+        "name": "Send reset for alysia@modern-amenities.com"
+      },
+      {
+        "stop": 12,
+        "tag": "button",
+        "name": "Remove access for alysia@modern-amenities.com"
+      },
+      {
+        "stop": 13,
+        "tag": "select",
+        "name": "Role for james@modern-amenities.com"
+      },
+      {
+        "stop": 14,
+        "tag": "button",
+        "name": "Save role for james@modern-amenities.com"
+      },
+      {
+        "stop": 15,
+        "tag": "button",
+        "name": "Send reset for james@modern-amenities.com"
+      },
+      {
+        "stop": 16,
+        "tag": "button",
+        "name": "Remove access for james@modern-amenities.com"
+      },
+      {
+        "stop": 17,
+        "tag": "select",
+        "name": "Role for jamesv@aimanagingservices.com"
+      },
+      {
+        "stop": 18,
+        "tag": "button",
+        "name": "Save role for jamesv@aimanagingservices.com"
+      },
+      {
+        "stop": 19,
+        "tag": "button",
+        "name": "Send reset for jamesv@aimanagingservices.com"
+      },
+      {
+        "stop": 20,
+        "tag": "button",
+        "name": "Remove access for jamesv@aimanagingservices.com"
+      },
+      {
+        "stop": 21,
+        "tag": "select",
+        "name": "Role for jeffery@modern-amenities.com"
+      },
+      {
+        "stop": 22,
+        "tag": "button",
+        "name": "Save role for jeffery@modern-amenities.com"
+      },
+      {
+        "stop": 23,
+        "tag": "button",
+        "name": "Send reset for jeffery@modern-amenities.com"
+      },
+      {
+        "stop": 24,
+        "tag": "button",
+        "name": "Remove access for jeffery@modern-amenities.com"
+      },
+      {
+        "stop": 25,
+        "tag": "select",
+        "name": "Role for jess@modern-amenities.com"
+      },
+      {
+        "stop": 26,
+        "tag": "button",
+        "name": "Save role for jess@modern-amenities.com"
+      },
+      {
+        "stop": 27,
+        "tag": "button",
+        "name": "Resend setup for jess@modern-amenities.com"
+      },
+      {
+        "stop": 28,
+        "tag": "button",
+        "name": "Remove access for jess@modern-amenities.com"
+      },
+      {
+        "stop": 29,
+        "tag": "select",
+        "name": "Role for joshua.stein@modern-amenities.com"
+      },
+      {
+        "stop": 30,
+        "tag": "button",
+        "name": "Save role for joshua.stein@modern-amenities.com"
+      },
+      {
+        "stop": 31,
+        "tag": "button",
+        "name": "Send reset for joshua.stein@modern-amenities.com"
+      },
+      {
+        "stop": 32,
+        "tag": "button",
+        "name": "Remove access for joshua.stein@modern-amenities.com"
+      },
+      {
+        "stop": 33,
+        "tag": "select",
+        "name": "Role for kody@modern-amenities.com"
+      },
+      {
+        "stop": 34,
+        "tag": "button",
+        "name": "Save role for kody@modern-amenities.com"
+      },
+      {
+        "stop": 35,
+        "tag": "button",
+        "name": "Send reset for kody@modern-amenities.com"
+      },
+      {
+        "stop": 36,
+        "tag": "button",
+        "name": "Remove access for kody@modern-amenities.com"
+      },
+      {
+        "stop": 37,
+        "tag": "nextjs-portal",
+        "name": ""
+      }
+    ],
+    "tabIssues": ["stop 37 (nextjs-portal ''): no visible focus indicator"]
+  }
+]

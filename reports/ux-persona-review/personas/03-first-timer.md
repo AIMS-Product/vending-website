@@ -1,110 +1,107 @@
-# Persona Review: Sam — First-Time Visitor
+# Persona Review — Sam, First-Time Visitor (28)
+
+**Persona:** Clicked a link from social media. Zero context about what this is. 10-second patience. Will leave the moment I'm confused or it feels fake.
 
 ## Summary
 
-- Pages reviewed: 6
-- Issues found: 28
-- Blockers: 2
-- Overall gut feel: 2.5/5
+- **Pages reviewed:** 9 public pages (/, /about, /apply, /case-studies, /contact, /news, /news/[article], /pre-call-resources, 404) + the Discover & Apply journey
+- **Issues found:** 14
+- **Blockers:** 0 (nothing 404'd on me on the core path, but two findings are critical enough to make me leave or doubt the site)
+- **Overall gut feel:** 3/5 — The homepage actually tells me what this is in the first 5 seconds, which is rare and good. But the "0+ / $0M+ / 0+" stat counters read as either fake or broken and almost made me bounce, and after I apply I genuinely can't tell if anything happened.
 
-> I clicked a link and landed in something called "Studio / Admin CMS." Some screens
-> told me what they were for in one line, which I appreciated. But the moment I opened
-> the actual page builder I had no idea what I was looking at, what "readiness," "governance,"
-> or "block" meant, and there was no tour, no "start here," and no explanation of the jargon.
-> I'd have bounced inside 10 seconds on the editor screen. The list, authors, and redirects
-> screens are calmer and clearer.
+The good news for a site like this: I landed and within my 10 seconds I understood "this is a coaching program to start a vending machine business." That's the single most important thing and it works. What loses points is trust signals that backfire (zeroed-out stats), a primary nav CTA whose label ("STEP INSIDE") doesn't tell me where it goes, and an application success message so quiet I'd assume the form broke.
+
+---
+
+## Journey Review
+
+| Journey            | Score | Could I complete it?                                 | Where I'd give up                                                                                                                                   |
+| ------------------ | ----- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| discover-and-apply | 2/5   | Technically yes, but I wouldn't trust that it worked | At the submit step — the success message is a tiny line of green text and the form stays full, so I'd assume it failed and either resubmit or leave |
+
+### discover-and-apply — notes
+
+Finding the form was easy: the homepage hero has a clear "APPLY NOW" button and the program is explained above it, so I knew what I was applying for. The form itself is short and the fields make sense for a first-timer (name, email, where I'm at in my vending journey). All good up to clicking submit.
+
+The problem is the ending. After "SUBMIT APPLICATION", all that happens is a small green sentence appears to the _right_ of the button — "Thanks. We received your details and will follow up shortly." (`journey-discover-and-apply-004-04-submit-continue-round-1-.png`). The form doesn't clear, doesn't disable, and the page doesn't change or scroll. As someone with a 10-second attention span who probably glanced at my phone the second I clicked, I would never see that line. I'd conclude the form didn't work — exactly what the automation did when it resubmitted five more times. A real `/thank-you-for-applying` page exists in this app but the form never sends me there. For the one conversion action this entire site is built around, the payoff is invisible.
 
 ---
 
 ## Page-by-Page Review
 
-### /admin/pages (Pages List)
+### / (Homepage) — Gut feel 2/5
 
-**Gut feel: 3/5** — "I can tell it's a list of pages and there's a big blue 'New SEO page' button, but I don't actually know what 'SEO page' means or why I'd make one."
+The hero nails the value prop, but the stat counters showing 0/$0M and the vague nav CTA undercut trust badly for a cold visitor.
 
-| #   | Category          | Finding                                                                                                                                                                                                                             | Severity | Why this matters to me                                                                                                                           |
-| --- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Copy & Labels     | The product is called "Studio" / "Admin CMS" with no one-line statement of what the whole tool is or who it's for. The subhead "Manage structured SEO pages with the same CMS shell ready for resource content" is internal jargon. | High     | I clicked a link with zero context — "the same CMS shell ready for resource content" means nothing to me and doesn't tell me what I can do here. |
-| 2   | Copy & Labels     | "SEO page," "keyword," "governance," "readiness" appear as column headers with no tooltip or explanation.                                                                                                                           | High     | I don't know what "governance" or "readiness" measure, so the most data-rich part of the table is noise to me.                                   |
-| 3   | Feedback & State  | The status filter chips (Needs review, Updating, Needs links, Metadata issues, Scheduled, Schedule failed) assume I already understand the page lifecycle.                                                                          | Medium   | As a newcomer these read like error codes; I can't tell which are problems vs normal states.                                                     |
-| 4   | Navigation & Flow | The clearest "do something" action for a first-timer is "New SEO page," but there's no onboarding hint pointing me to it or explaining what happens after.                                                                          | Medium   | I'd want a nudge — "Start by creating your first page" — instead of guessing the blue button is the main path.                                   |
-| 5   | Visual & Layout   | The READINESS and STATUS columns use single-letter colored circle badges ("+", "D") with no legend.                                                                                                                                 | Medium   | A colored "D" circle tells me nothing; I can't decode the page's state at a glance.                                                              |
-| 6   | Trust & Safety    | The kebab (three-dot) ACTIONS menu hides what are likely destructive options (duplicate/publish/archive per the log) behind an unlabeled icon.                                                                                      | Low      | I'm cautious clicking a mystery menu when I don't know if something irreversible is inside.                                                      |
-| 7   | Copy & Labels     | "super_admin access" badge top-right is developer-speak shown to the user.                                                                                                                                                          | Low      | It reads like leaked internal role plumbing, slightly eroding the "polished product" feeling.                                                    |
+| #   | Category          | Finding                                                                                                                                  | Evidence                                                                                                         | Severity            |
+| --- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------- | -------------------------- | ---- |
+| 1   | Trust & Safety    | Stat counters render as "0+", "$0M+", "0+" — to a cold visitor this reads as a fake or broken site                                       | `home-002-full.png`; text: "0+ / ENTREPRENEURS LAUNCHED ... $0M+ / SNACK/DRINK SALES ... 0+ / VENDING LOCATIONS" | critical            |
+| 2   | Copy & Labels     | Primary nav CTA "STEP INSIDE" doesn't say what it does (it goes to /apply)                                                               | text: "STEP INSIDE"; ARIA: `link "Step inside": /url: /apply`                                                    | high                |
+| 3   | Navigation & Flow | Two differently-labelled CTAs ("STEP INSIDE" and "APPLY NOW") both go to /apply, which is confusing about whether they're the same thing | text: "STEP INSIDE" and "APPLY NOW"; both `/url: /apply`                                                         | medium              |
+| 4   | Visual & Layout   | Mobile homepage has horizontal scroll — the page feels broken on the phone I arrived on                                                  | exploration-log: "mobile-375                                                                                     | home-003-mobile.png | horizontal scroll present" | high |
+| 5   | Visual & Layout   | Layout shift on load (CLS 0.263) — content jumps as I land, which on a slow social-media tap feels janky                                 | exploration-log: "/ ... Layout shift (CLS): 0.263"                                                               | medium              |
 
-### /admin/pages/new (Create New Page)
+### /apply — Gut feel 3/5
 
-**Gut feel: 4/5** — "This is the best-explained screen — clear title, each option has a plain-English description, and the live 'Selected setup' panel told me exactly what I'd get."
+Short, sensible form for a newcomer, but the success state is the journey-killer above.
 
-| #   | Category         | Finding                                                                                                                                                           | Severity | Why this matters to me                                                                                  |
-| --- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------- |
-| 8   | Copy & Labels    | The intro "Choose the page path first so the builder can start with scoped templates and AI context" uses jargon ("page path," "scoped templates," "AI context"). | Medium   | The card descriptions are great, but the one sentence meant to orient me is the one I don't understand. |
-| 9   | Feedback & State | Two options ("From template," "AI-assisted template") are greyed with "Coming soon" but still look like clickable cards.                                          | Low      | Mild tease — I might try clicking them and feel stalled, though the label does soften it.               |
-| 10  | Forms & Input    | "Start building" is the commit action but there's no indication of how much work follows or whether I can back out.                                               | Low      | As a first-timer I hesitate to commit when I can't see what's on the other side of the button.          |
-| 11  | Visual & Layout  | On mobile the right-hand "Selected setup" summary panel disappears below the fold, so the live confirmation of my choice is lost on phones.                       | Medium   | On mobile I lose the one element that reassured me I picked the right thing.                            |
+| #   | Category         | Finding                                                                                                         | Evidence                                                                                                                                             | Severity |
+| --- | ---------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 6   | Feedback & State | Success confirmation after submit is a tiny green line beside the button; form stays full and nothing redirects | `journey-discover-and-apply-004-04-submit-continue-round-1-.png`; journeys.md: "small green inline text ... NO redirect, NO page-level confirmation" | critical |
+| 7   | Forms & Input    | Submitting empty or invalid shows no validation errors at all, so I don't know which field I missed             | exploration-log: "/apply ... empty: no visible validation errors after empty submit ... invalid: no visible validation errors on invalid data"       | high     |
+| 8   | Copy & Labels    | Form headline "Apply to build your vending business with Mike." assumes I know who "Mike" is on first arrival   | text: "APPLY TO BUILD YOUR VENDING BUSINESS WITH MIKE."                                                                                              | low      |
 
-### /admin/pages/[id] (Page Builder Editor)
+### /news (Blog) — Gut feel 2/5
 
-**Gut feel: 1/5** — "I opened this and was instantly overwhelmed — three dense panels, jargon everywhere, an 'AI' bubble, and no 'here's how this works.' I'd leave."
+Article cards are blank/half-loaded above the fold and the page name fights its own nav label.
 
-| #   | Category                  | Finding                                                                                                                                                                                | Severity | Why this matters to me                                                                                                    |
-| --- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
-| 12  | Visual & Layout           | Three-column wall of controls (block outline, live preview, SEO/readiness/publish sidebar) loads at once with no progressive disclosure or first-run tour.                             | Blocker  | I have 10 seconds and zero context; this screen gives me nothing to anchor on and I'd bounce immediately.                 |
-| 13  | Copy & Labels             | "Readiness and publish," "Governance comments," "Revision history," "Next required step," "Opportunities," "draft · SEO Opportunities" — heavy CMS/SEO vocabulary with no definitions. | Blocker  | I literally cannot tell what most of these sections do; the page assumes I already run an SEO content operation.          |
-| 14  | Copy & Labels             | "Block," "section," "eyebrow" are core to the builder but never explained for a newcomer.                                                                                              | Critical | If I don't know what a "block" or "eyebrow" is, I can't add or edit content — the primary job is gated behind vocabulary. |
-| 15  | Navigation & Flow         | The top bar offers "Pages, Blocks, Save draft, Live preview, Copy editor link, Copy public URL, SEO" with no clear "what do I do first."                                               | Critical | Six peer actions and no obvious starting point — I freeze rather than act.                                                |
-| 16  | Feedback & State          | A floating purple "AI" bubble appears with no label of what it does or that it's safe to press.                                                                                        | Medium   | Mystery floating buttons make me wary; I don't know if it'll rewrite my whole page.                                       |
-| 17  | Forms & Input             | The SEO sidebar exposes ~50 fields (canonical URL, noindex, structured data, funnel stage, topic cluster, lifecycle, review period). None marked optional vs essential for a beginner. | Critical | This looks like a tax form. As a first-timer I can't tell which 2 fields matter and which 48 I can ignore.                |
-| 18  | Copy & Labels             | "Add page content" and "Add card" are decent, but adjacent icon-only controls (move, eye/hide, kebab) are unlabeled.                                                                   | High     | I can't tell what the eye icon or the up/down arrows do without clicking and risking breaking the page.                   |
-| 19  | Feedback & State          | "Drafts save automatically. Use Save draft to save manually." — contradicts itself (auto AND manual) without saying why I'd ever need manual.                                          | Medium   | Mixed message makes me unsure whether my work is actually being saved.                                                    |
-| 20  | Trust & Safety            | A big blue "Publish" button sits in the sidebar; for a newcomer it's unclear this pushes content live to the public site.                                                              | High     | I might publish a half-finished test page to the real website because nothing warns me it's a live, public action.        |
-| 21  | Accessibility & Inclusion | At default zoom the right sidebar text and the preview are dense and small; the mobile view stacks everything into a long scroll with floating pills overlapping content.              | Medium   | On my phone the "AI" pill overlaps the body text and the layout feels cramped and hard to read.                           |
-| 22  | Visual & Layout           | The thumbnail load screenshot shows everything crammed to near-illegibility at first paint.                                                                                            | High     | First impression is "this is for experts," which is exactly when a brand-new user gives up.                               |
+| #   | Category         | Finding                                                                                                                          | Evidence                                                                                                                       | Severity |
+| --- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| 9   | Copy & Labels    | I clicked "NEWS" in the nav but the page heading says "BLOG" — same place, two names, makes me wonder if I'm where I meant to be | text: "BLOG"; ARIA nav: `link "News": /url: /news`                                                                             | medium   |
+| 10  | Visual & Layout  | Above the fold, article cards show as bare outlines / alt-text placeholders before scrolling — first paint looks broken          | `news-001-load.png` (cards show alt text e.g. "Top 10 Profitable Products to Stock in Your Vending Machine" instead of images) | high     |
+| 11  | Feedback & State | A cover image fails to load (500) on the news listing, leaving a broken-image slot                                               | exploration-log: "/news ... 500 /\_next/image?url=...website-files.com..."                                                     | medium   |
 
-### /admin/pages/authors (Authors)
+### /news/[article] — Gut feel 3/5
 
-**Gut feel: 3/5** — "Clean form, and the one-line subhead actually explained the point, but it drops me straight into a blank create form with no list and no example."
+Readable once open, but the section is called "BLOG" in the in-article back link while the nav called it "NEWS".
 
-| #   | Category      | Finding                                                                                                                                        | Severity | Why this matters to me                                                                               |
-| --- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------- |
-| 23  | Copy & Labels | "Avatar asset ID" expects me to paste an ID with no picker, no explanation of where to get one, and no example.                                | High     | I have no idea what an "asset ID" is or where to find one — this field is a dead end for a newcomer. |
-| 24  | Forms & Input | Required fields (Display name, Slug) aren't visually marked as required on screen; "Slug" itself is jargon with no helper text.                | Medium   | I don't know what a "slug" is or that I must fill it, so I'd hit an error I didn't see coming.       |
-| 25  | Copy & Labels | No empty state or existing-authors list — the page is just a form, so I can't tell if authors already exist or what a finished one looks like. | Medium   | Without an example I'm guessing at what good input looks like.                                       |
+| #   | Category          | Finding                                                                                                                         | Evidence                                                                                   | Severity |
+| --- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | -------- |
+| 12  | Navigation & Flow | In-article back link is "BLOG" while the nav item that brought me here is "NEWS" — inconsistent naming for the same destination | exploration-log article inventory: `a "BLOG" links to /news` and `a "NEWS" links to /news` | low      |
 
-### /admin/pages/redirects (Redirects)
+### /contact — Gut feel 2/5
 
-**Gut feel: 2/5** — "I have genuinely no idea what a redirect is or why I'd create one — this page assumes I'm a technical web person."
+I'd struggle to even find this — it's not in the top nav, only the footer.
 
-| #   | Category      | Finding                                                                                                                                                  | Severity | Why this matters to me                                                                     |
-| --- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------ |
-| 26  | Copy & Labels | "Create and inspect builder redirects across page prefixes" — every word here assumes web/SEO knowledge I don't have.                                    | High     | As a first-timer this is the most opaque screen; I can't tell if it's even relevant to me. |
-| 27  | Forms & Input | Fields "Old path," "Destination," "Status (301 permanent…)," "Page ID" expect technical URL/HTTP knowledge with no explanation of what 301 vs 302 means. | High     | "301 permanent" is HTTP jargon; I'd be afraid to pick the wrong one and break a link.      |
-| 28  | Copy & Labels | Empty table with headers but no empty-state message ("No redirects yet — here's what one does").                                                         | Medium   | A blank table under jargon headers leaves me with nothing to learn from.                   |
+| #   | Category          | Finding                                                                                                                                                              | Evidence                                                                                          | Severity |
+| --- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | -------- |
+| 13  | Navigation & Flow | "Contact" is not in the header nav, only the footer — if I have a quick question before applying, I have to scroll all the way down to find any way to reach a human | journeys.md (Contact journey): "link is in the FOOTER only — 'CONTACT US'; not in the header nav" | medium   |
+
+### / (general, all pages) — Gut feel 3/5
+
+| #   | Category                  | Finding                                                                                                | Evidence                                                                            | Severity |
+| --- | ------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | -------- |
+| 14  | Accessibility & Inclusion | All top-nav links are ~17–20px tall touch targets — on the phone I arrived with, they're fiddly to tap | exploration-log: "NOTE: small touch target: a 'ABOUT' 51x20px ... a 'NEWS' 44x20px" | low      |
 
 ---
 
 ## Blockers
 
-1. **Editor information overload (Issue #12)** — The page builder editor loads three dense panels of controls and data with no first-run tour, no "start here," and no progressive disclosure. A brand-new user has nothing to anchor on and would bounce within seconds.
-2. **Unexplained CMS/SEO vocabulary on the editor (Issue #13)** — "Readiness," "Governance," "Next required step," "Opportunities," "blocks," "eyebrow," "noindex," "topic cluster," "funnel stage" appear with zero definitions. The core workflow is gated behind specialist language a first-timer cannot decode.
+None hard-blocked me, but two findings are functionally as bad for a first-timer:
+
+- **#1 / #6 — Zeroed stats + invisible apply confirmation.** The "0 entrepreneurs / $0M" counters would make me bounce before applying, and if I push through, I can't tell the application worked. Together these gut the one job this site has: convert a cold visitor into an applicant.
 
 ---
 
 ## My Top 10 Issues
 
-1. (Blocker) Page builder editor is a three-panel wall of controls with no onboarding or "start here" — instant bounce. (#12)
-2. (Blocker) Pervasive CMS/SEO jargon on the editor with no definitions or tooltips — "readiness," "governance," "blocks," "eyebrow." (#13)
-3. (Critical) ~50 SEO sidebar fields with no separation of essential vs optional for a beginner — looks like a tax form. (#17)
-4. (Critical) Core builder concepts "block," "section," "eyebrow" never explained — can't add content without the vocabulary. (#14)
-5. (Critical) Editor top bar shows six peer actions with no obvious first step. (#15)
-6. (High) "Publish" button doesn't clearly warn it pushes content live to the public site. (#20)
-7. (High) No top-level statement of what "Studio / Admin CMS" is or who it's for — I land with zero context. (#1)
-8. (High) "Avatar asset ID" and "Slug" fields with no picker, example, or explanation of where values come from. (#23)
-9. (High) Redirects screen assumes HTTP/SEO expertise (301 vs 302, "page prefixes") with no plain-English help. (#26, #27)
-10. (Medium) READINESS/STATUS use single-letter colored badges with no legend on the list. (#5)
-
----
-
-**File written:** `reports/ux-persona-review/personas/03-first-timer.md`
-**Overall gut feel:** 2.5/5
-**Top 3 concerns:** (1) The page builder editor is an instant-bounce wall of controls with no onboarding; (2) specialist CMS/SEO jargon ("readiness," "governance," "blocks," "eyebrow," "slug," "301") is everywhere with no definitions; (3) no top-level explanation of what the tool is or what a first-timer should do first.
+1. **Stat counters show 0+ / $0M+ / 0+** (#1, critical) — reads as fake or broken; biggest trust-killer for a cold visitor.
+2. **Apply success is invisible** (#6, critical) — tiny green text, form stays full, no redirect; I'd assume it failed.
+3. **No form validation feedback on /apply** (#7, high) — empty/invalid submit shows nothing, I can't tell what I missed.
+4. **"STEP INSIDE" nav CTA is unclear** (#2, high) — doesn't tell me it's the application.
+5. **News cards blank/broken on first paint** (#10, high) — the section looks unfinished.
+6. **Homepage horizontal scroll on mobile** (#4, high) — feels broken on the device I came from.
+7. **"NEWS" nav vs "BLOG" heading** (#9, medium) — same section, two names, makes me doubt I'm in the right place.
+8. **Two CTAs ("STEP INSIDE" + "APPLY NOW") to the same page** (#3, medium) — ambiguous whether they're the same thing.
+9. **Contact buried in footer only** (#13, medium) — no quick way to reach a human before committing.
+10. **Layout shift on load** (#5, medium) — content jumps as I land.

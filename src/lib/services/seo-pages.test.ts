@@ -4,6 +4,10 @@ import {
   SeoPageValidationError,
   adminArchiveSeoPage,
   adminCreateBuilderRedirect,
+  adminDeleteBuilderRedirect,
+  adminUpdateBuilderRedirect,
+  adminSnapshotManualSaveRevision,
+  adminDuplicateSeoPage,
   adminCreateSeoPage,
   adminGetSeoPageById,
   adminListSeoPages,
@@ -106,6 +110,15 @@ function matchMaybeSingleSelect(data: unknown, error: unknown = null) {
   return { table: { select }, mocks: { select, match, maybeSingle } };
 }
 
+// select(...).eq("route_path", x).neq("status","archived").maybeSingle()
+function routePathTakenSelect(data: unknown, error: unknown = null) {
+  const maybeSingle = vi.fn().mockResolvedValue({ data, error });
+  const neq = vi.fn().mockReturnValue({ maybeSingle });
+  const eq = vi.fn().mockReturnValue({ neq });
+  const select = vi.fn().mockReturnValue({ eq });
+  return { table: { select }, mocks: { select, eq, neq, maybeSingle } };
+}
+
 function insertSingle(data: unknown, error: unknown = null) {
   const single = vi.fn().mockResolvedValue({ data, error });
   const select = vi.fn().mockReturnValue({ single });
@@ -144,6 +157,24 @@ function deleteMatch(error: unknown = null) {
   return {
     table: { delete: deleteMock },
     mocks: { delete: deleteMock, match },
+  };
+}
+
+function updateMaybeSingle(data: unknown, error: unknown = null) {
+  const maybeSingle = vi.fn().mockResolvedValue({ data, error });
+  const select = vi.fn().mockReturnValue({ maybeSingle });
+  const eq = vi.fn().mockReturnValue({ select });
+  const update = vi.fn().mockReturnValue({ eq });
+  return { table: { update }, mocks: { update, eq, select, maybeSingle } };
+}
+
+function deleteEqSelect(data: unknown, error: unknown = null) {
+  const select = vi.fn().mockResolvedValue({ data, error });
+  const eq = vi.fn().mockReturnValue({ select });
+  const deleteMock = vi.fn().mockReturnValue({ eq });
+  return {
+    table: { delete: deleteMock },
+    mocks: { delete: deleteMock, eq, select },
   };
 }
 
@@ -1857,6 +1888,330 @@ describe("seo page service", () => {
         },
         p_actor_id: "admin-1",
       },
+    );
+  });
+
+  it("updates a builder redirect with normalized paths and a supported status", async () => {
+    const updated = {
+      id: "redirect_1",
+      source_path: "/resources/old",
+      destination_path: "/blog/new",
+      status_code: 302,
+    };
+    const update = updateMaybeSingle(updated);
+    const client = buildClient(update.table);
+
+    const result = await adminUpdateBuilderRedirect(
+      {
+        id: "  redirect_1  ",
+        sourcePath: " /resources/old/// ",
+        destinationPath: "/blog/new",
+        statusCode: 302,
+      },
+      { client },
+    );
+
+    expect(result).toBe(updated);
+    expect(client.from).toHaveBeenCalledWith("redirects");
+    expect(update.mocks.update).toHaveBeenCalledWith({
+      source_path: "/resources/old",
+      destination_path: "/blog/new",
+      status_code: 302,
+    });
+    expect(update.mocks.eq).toHaveBeenCalledWith("id", "redirect_1");
+  });
+
+  it("rejects an update with an unsupported status before touching Supabase", async () => {
+    const client = buildClient();
+
+    await expect(
+      adminUpdateBuilderRedirect(
+        {
+          id: "redirect_1",
+          sourcePath: "/resources/old",
+          destinationPath: "/blog/new",
+          statusCode: 418,
+        },
+        { client },
+      ),
+    ).rejects.toBeInstanceOf(SeoPageValidationError);
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects an update whose source is not a canonical builder path", async () => {
+    const client = buildClient();
+
+    await expect(
+      adminUpdateBuilderRedirect(
+        {
+          id: "redirect_1",
+          sourcePath: "/about",
+          destinationPath: "/blog/new",
+          statusCode: 301,
+        },
+        { client },
+      ),
+    ).rejects.toBeInstanceOf(SeoPageValidationError);
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects an update when the redirect row is gone", async () => {
+    const update = updateMaybeSingle(null);
+    const client = buildClient(update.table);
+
+    await expect(
+      adminUpdateBuilderRedirect(
+        {
+          id: "redirect_missing",
+          sourcePath: "/resources/old",
+          destinationPath: "/blog/new",
+          statusCode: 301,
+        },
+        { client },
+      ),
+    ).rejects.toMatchObject({
+      issues: [expect.objectContaining({ code: "redirect_not_found" })],
+    });
+  });
+
+  it("deletes a builder redirect by id and reports the removed id", async () => {
+    const remove = deleteEqSelect([{ id: "redirect_1" }]);
+    const client = buildClient(remove.table);
+
+    const result = await adminDeleteBuilderRedirect("  redirect_1  ", {
+      client,
+    });
+
+    expect(result).toEqual({ id: "redirect_1" });
+    expect(client.from).toHaveBeenCalledWith("redirects");
+    expect(remove.mocks.eq).toHaveBeenCalledWith("id", "redirect_1");
+  });
+
+  it("rejects a delete with a blank id before touching Supabase", async () => {
+    const client = buildClient();
+
+    await expect(
+      adminDeleteBuilderRedirect("   ", { client }),
+    ).rejects.toBeInstanceOf(SeoPageValidationError);
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects a delete when no row matched the id", async () => {
+    const remove = deleteEqSelect([]);
+    const client = buildClient(remove.table);
+
+    await expect(
+      adminDeleteBuilderRedirect("redirect_missing", { client }),
+    ).rejects.toMatchObject({
+      issues: [expect.objectContaining({ code: "redirect_not_found" })],
+    });
+  });
+
+  it("snapshots a manual_save revision from the saved draft then prunes", async () => {
+    const savedPage = {
+      id: "page_1",
+      slug: "start-vending",
+      route_prefix: "/resources",
+      route_path: "/resources/start-vending",
+      title: "Start Vending",
+      target_keyword: null,
+      seo_title: null,
+      meta_description: null,
+      canonical_url: null,
+      noindex: false,
+      sitemap_enabled: true,
+      structured_data_settings: { breadcrumb: true, faq: true },
+      internal_tags: [],
+      topic_cluster: null,
+      campaign_label: null,
+      funnel_stage: null,
+      review_period_months: null,
+      next_review_at: null,
+      lifecycle_status: "active",
+      og_title: null,
+      og_description: null,
+      draft_content: { version: 1, sections: [] },
+    };
+    const read = maybeSingleSelect(savedPage);
+    const insert = insertSingle({ id: "rev_1", revision_type: "manual_save" });
+    const client = buildClient(read.table, insert.table);
+    client.rpc.mockResolvedValue({ data: 3, error: null });
+
+    const result = await adminSnapshotManualSaveRevision(
+      "page_1",
+      { actorId: "admin-1", now: () => new Date("2026-06-10T17:00:00Z") },
+      { client },
+    );
+
+    expect(result.revision).toEqual({
+      id: "rev_1",
+      revision_type: "manual_save",
+    });
+    expect(result.pruned).toBe(3);
+    expect(client.from).toHaveBeenNthCalledWith(1, "seo_pages");
+    expect(client.from).toHaveBeenNthCalledWith(2, "page_revisions");
+    expect(insert.mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        page_id: "page_1",
+        revision_type: "manual_save",
+        content_snapshot: { version: 1, sections: [] },
+        created_by: "admin-1",
+      }),
+    );
+    expect(client.rpc).toHaveBeenCalledWith(
+      "prune_seo_page_manual_save_revisions",
+      { p_page_id: "page_1", p_keep: 20 },
+    );
+  });
+
+  it("throws when the page to snapshot is missing", async () => {
+    const read = maybeSingleSelect(null);
+    const client = buildClient(read.table);
+
+    await expect(
+      adminSnapshotManualSaveRevision(
+        "ghost",
+        { actorId: "admin-1" },
+        { client },
+      ),
+    ).rejects.toThrow();
+    expect(client.rpc).not.toHaveBeenCalled();
+  });
+
+  it("passes a custom keep count through to the prune RPC", async () => {
+    const savedPage = {
+      id: "page_1",
+      slug: "s",
+      route_prefix: "/resources",
+      route_path: "/resources/s",
+      title: "S",
+      structured_data_settings: { breadcrumb: true, faq: true },
+      draft_content: { version: 1, sections: [] },
+    };
+    const read = maybeSingleSelect(savedPage);
+    const insert = insertSingle({ id: "rev_2", revision_type: "manual_save" });
+    const client = buildClient(read.table, insert.table);
+    client.rpc.mockResolvedValue({ data: 0, error: null });
+
+    await adminSnapshotManualSaveRevision(
+      "page_1",
+      { actorId: "admin-1", keepRevisions: 5 },
+      { client },
+    );
+
+    expect(client.rpc).toHaveBeenCalledWith(
+      "prune_seo_page_manual_save_revisions",
+      { p_page_id: "page_1", p_keep: 5 },
+    );
+  });
+
+  it("surfaces a failed revision insert before pruning", async () => {
+    const savedPage = {
+      id: "page_1",
+      slug: "s",
+      route_prefix: "/resources",
+      route_path: "/resources/s",
+      title: "S",
+      structured_data_settings: { breadcrumb: true, faq: true },
+      draft_content: { version: 1, sections: [] },
+    };
+    const read = maybeSingleSelect(savedPage);
+    const insert = insertSingle(null, { message: "insert failed" });
+    const client = buildClient(read.table, insert.table);
+
+    await expect(
+      adminSnapshotManualSaveRevision(
+        "page_1",
+        { actorId: "admin-1" },
+        { client },
+      ),
+    ).rejects.toThrow();
+    expect(client.rpc).not.toHaveBeenCalled();
+  });
+
+  it("duplicates a page with a {source-slug}-copy slug when free", async () => {
+    const source = {
+      id: "page_1",
+      slug: "start-vending",
+      route_prefix: "/resources",
+      page_type: "resource",
+      template_key: "blank",
+      title: "Start Vending",
+      target_keyword: null,
+      seo_title: null,
+      meta_description: null,
+      canonical_url: null,
+      noindex: false,
+      sitemap_enabled: true,
+      structured_data_settings: { breadcrumb: true, faq: true },
+      draft_content: { version: 1, sections: [] },
+    };
+    const read = maybeSingleSelect(source);
+    const collision = routePathTakenSelect(null); // -copy is free
+    const insert = insertSingle({ id: "page_2", slug: "start-vending-copy" });
+    const update = updateSingle({ id: "page_2", slug: "start-vending-copy" });
+    const client = buildClient(
+      read.table,
+      collision.table,
+      insert.table,
+      update.table,
+    );
+
+    const result = await adminDuplicateSeoPage("page_1", {
+      client,
+      actorId: "admin-1",
+    });
+
+    expect(result).toEqual({ id: "page_2", slug: "start-vending-copy" });
+    expect(collision.mocks.eq).toHaveBeenCalledWith(
+      "route_path",
+      "/resources/start-vending-copy",
+    );
+    expect(collision.mocks.neq).toHaveBeenCalledWith("status", "archived");
+    expect(insert.mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: "start-vending-copy",
+        title: "Copy of Start Vending",
+        route_path: "/resources/start-vending-copy",
+      }),
+    );
+  });
+
+  it("increments to -copy-2 when the -copy route path is taken", async () => {
+    const source = {
+      id: "page_1",
+      slug: "start-vending",
+      route_prefix: "/resources",
+      page_type: "resource",
+      template_key: "blank",
+      title: "Start Vending",
+      structured_data_settings: { breadcrumb: true, faq: true },
+      draft_content: { version: 1, sections: [] },
+    };
+    const read = maybeSingleSelect(source);
+    const collisionTaken = routePathTakenSelect({ id: "existing" }); // -copy taken
+    const collisionFree = routePathTakenSelect(null); // -copy-2 free
+    const insert = insertSingle({ id: "page_2", slug: "start-vending-copy-2" });
+    const update = updateSingle({ id: "page_2", slug: "start-vending-copy-2" });
+    const client = buildClient(
+      read.table,
+      collisionTaken.table,
+      collisionFree.table,
+      insert.table,
+      update.table,
+    );
+
+    const result = await adminDuplicateSeoPage("page_1", {
+      client,
+      actorId: "admin-1",
+    });
+
+    expect(result).toEqual({ id: "page_2", slug: "start-vending-copy-2" });
+    expect(insert.mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: "start-vending-copy-2",
+        route_path: "/resources/start-vending-copy-2",
+      }),
     );
   });
 });

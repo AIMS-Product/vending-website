@@ -1,0 +1,362 @@
+[
+  {
+    "id": "12-developer-001",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "blocker",
+    "finding": "After filling and saving the 'Scheduled publish' datetime, the field re-renders empty (dd/mm/yyyy, --:-- --) and no 'Scheduled for …' status appears anywhere — the UI cannot confirm whether the schedule was persisted or silently dropped.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Scheduled publish field shows 'dd/mm/yyyy, --:-- --' immediately after save with no schedule status"
+      },
+      {
+        "type": "console",
+        "ref": "journey-results-2.json",
+        "quote": "verify-scheduled result: ERROR: no 'Scheduled for …' indicator found"
+      }
+    ],
+    "persona_rationale": "This is textbook state dishonesty: the form accepted my input, the save 'succeeded', and the field came back empty with no status. I have no way to know if the schedule exists without re-opening the record — I'd open a P0 bug on this immediately.",
+    "suggested_fix": {
+      "current": "Datetime input re-renders empty after save; no persisted-schedule indicator",
+      "proposed": "Echo the saved value back into the field and render an explicit 'Scheduled to publish {date/time AEST}' status chip; if persistence failed, show an inline error instead of a blank field"
+    }
+  },
+  {
+    "id": "12-developer-002",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "After a successful publish (chip flips to 'Published', toast reads 'Changes published.'), the inline yellow 'Confirm publish' card stays open and re-words to 'This will replace the current live version…' — the UI asks me to perform an action that already completed; a second click republishes.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-09-after-publish.png",
+        "quote": "Toast 'Changes published.' and chip 'Published' shown while 'Confirm publish' card remains open saying 'This will replace the current live version at /resources/ux-seo-review-test-1781071765035.'"
+      }
+    ],
+    "persona_rationale": "A confirm dialog that survives the action it confirmed is a classic stale-state bug. It invites an accidental double-publish and tells me the component isn't resetting its state on success — exactly the kind of race/optimistic-UI sloppiness I judge harshly.",
+    "suggested_fix": {
+      "current": "Confirm-publish card persists after publish success",
+      "proposed": "Dismiss the confirm card on publish success and collapse the publish control back to its idle 'Publish changes' state; only re-show confirm on a fresh publish intent"
+    }
+  },
+  {
+    "id": "12-developer-003",
+    "page": "/admin/pages/{id}",
+    "journey": "create-first-page",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "Autosave throws a runtime error ('seo page autosave failed TypeError: Failed to fetch') that surfaces only in the console — the editor continues to present a saved/idle state, so a failed autosave is invisible to the user.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journey-results.json",
+        "quote": "seo page autosave failed TypeError: Failed to fetch\\n    at .../node_modules_%40sentry_core_build_esm... fetchServerAction"
+      }
+    ],
+    "persona_rationale": "A 'Failed to fetch' on autosave with no UI surface is the worst kind of silent failure — the user thinks their work is saved and it isn't. I only caught it because I had the console open.",
+    "suggested_fix": {
+      "current": "Autosave failure logged to console/Sentry only; UI shows no error",
+      "proposed": "On autosave failure, surface a persistent 'Couldn't autosave — your last changes aren't saved. Retry' banner and pause the 'Autosaved {time}' affordance until a save succeeds"
+    }
+  },
+  {
+    "id": "12-developer-004",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The publish blocker chip says 'Fix SEO title' / 'Improve SEO title' but the SEO title field's own placeholder says 'Leave blank to use page headline' — the gate flags an explicitly optional field, and the same gate is described with three different strings (chip 'Fix SEO title', panel 'SEO Needs work', row 'Search result · Needs work').",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "textbox \"SEO title\": /placeholder: Leave blank to use page headline"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-13-confirm-card.png",
+        "quote": "chip 'Improve SEO title' next to panel header 'SEO Needs work'"
+      }
+    ],
+    "persona_rationale": "Telling me to fix a field the same UI says is optional is a logic contradiction, and three different labels for one gate means I have to reverse-engineer which message is authoritative. That's wasted debugging time.",
+    "suggested_fix": {
+      "current": "Chip 'Fix SEO title' / 'Improve SEO title' for an optional field; inconsistent gate wording",
+      "proposed": "Use one canonical message per gate; if SEO title is optional, reword to 'Add target keyword to title or page (optional for publish)' and never block publish on it"
+    }
+  },
+  {
+    "id": "12-developer-005",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "Publish blockers are revealed one at a time and one of them ('Fix content 1 · Destination URL') points to a field that is not on the canvas — it lives only in Block actions → Edit settings, with no link from the blocker to the field.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journey-results-2.json",
+        "quote": "resolve-blockers: blocker 'Add a hero headline before publishing.' ... blocker 'Add FAQ' ... ; click-publish result: ERROR: Publish still disabled after fixes"
+      }
+    ],
+    "persona_rationale": "One-at-a-time blockers with no deep-link to the offending field turn publishing into a guessing game; the automated agent got fully blocked here twice. A readiness panel should enumerate all gates at once and link each to its field.",
+    "suggested_fix": {
+      "current": "Sequential single blocker strings; Destination URL only reachable via block settings modal",
+      "proposed": "List all unmet publish requirements simultaneously, each as a deep link that opens the exact field (including block-settings fields) and scrolls to it"
+    }
+  },
+  {
+    "id": "12-developer-006",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "Typing a Page title in the editor and navigating away discards the typed value with no unsaved-changes warning.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Leaving unsaved editor: navigated straight to /admin/pages with NO unsaved-changes warning — typed title silently lost"
+      }
+    ],
+    "persona_rationale": "No beforeunload / route guard on a content editor is a data-loss bug. Combined with the autosave-failed-silently issue, I can't trust that my work survives.",
+    "suggested_fix": {
+      "current": "No unsaved-changes guard on editor navigation",
+      "proposed": "Add a navigation guard (beforeunload + Next.js route interception) that prompts 'You have unsaved changes — leave anyway?' when dirty state exists"
+    }
+  },
+  {
+    "id": "12-developer-007",
+    "page": "/admin/pages/{id}",
+    "journey": "revision-restore",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "Revisions do not exist until the first publish (empty state: 'Revisions appear after publishing, library refreshes, or draft restores.'), so a draft mangled before first publish has no page-level undo.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journey-results-2.json",
+        "quote": "find-revision-history result: still shows empty state after publish"
+      }
+    ],
+    "persona_rationale": "A builder with no restore point during initial drafting is a data-loss trap; the one safety net (revisions) only switches on after publish, which is backwards from how I'd build it.",
+    "suggested_fix": {
+      "current": "Revision history empty until first publish",
+      "proposed": "Snapshot a revision on each manual draft save (and periodic autosave) so a restore point exists from the first save onward"
+    }
+  },
+  {
+    "id": "12-developer-008",
+    "page": "/admin/pages/{id}",
+    "journey": null,
+    "category": "Accessibility & Inclusion",
+    "severity": "high",
+    "finding": "Serious axe violation: aria-prohibited-attr — aria-label applied to spans whose role prohibits it (span[aria-label=\"Hero block\"], span[aria-label=\"FAQ block\"]).",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "aria-prohibited-attr (serious) — selectors span[aria-label=\"Hero block\"], span[aria-label=\"FAQ block\"]"
+      }
+    ],
+    "persona_rationale": "A 'serious' aria-prohibited-attr means the label is being dropped by assistive tech — it's both an a11y failure and a sign nobody ran axe against the editor before shipping.",
+    "suggested_fix": {
+      "current": "aria-label on a <span> with a prohibited role",
+      "proposed": "Move the label onto an element that permits a name (e.g. role=img with aria-label, or a visually-hidden text node) and remove aria-label from the bare span"
+    }
+  },
+  {
+    "id": "12-developer-009",
+    "page": "/admin/pages/{id}/revisions/{rev}",
+    "journey": "revision-restore",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Revision preview page renders two <main> landmarks, tripping three moderate axe violations: landmark-main-is-top-level, landmark-no-duplicate-main, landmark-unique.",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "landmark-no-duplicate-main (moderate) selector #main-content; landmark-main-is-top-level selector #main-content > main; landmark-unique selector #main-content"
+      }
+    ],
+    "persona_rationale": "Two <main> elements is a DOM structure bug — the public page's <main> is being nested inside the admin shell's <main>. Screen-reader landmark nav breaks and it signals a layout-composition mistake.",
+    "suggested_fix": {
+      "current": "Public-page <main> rendered inside admin shell #main-content > main",
+      "proposed": "Render the revision preview in an iframe or strip the inner <main> so exactly one top-level main landmark exists"
+    }
+  },
+  {
+    "id": "12-developer-010",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "On a redirect validation error ('Path must be root-relative.') the form clears the entered values, and the error renders as a single top-of-form banner rather than next to the offending field.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-redirects-011-form-invalid-submit.png",
+        "quote": "Banner 'Path must be root-relative.' above empty Old path / Destination fields"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "error copy: \"invalid\"; values preserved: false"
+      }
+    ],
+    "persona_rationale": "Wiping my input on a validation error is hostile — I have to retype everything to fix a single character — and a top banner doesn't tell me which field is wrong. Standard form-state preservation is table stakes.",
+    "suggested_fix": {
+      "current": "Form resets on validation error; single top banner",
+      "proposed": "Preserve all field values on error and attach the message inline to the field that failed (aria-describedby on the Old path input)"
+    }
+  },
+  {
+    "id": "12-developer-011",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Trust & Safety",
+    "severity": "medium",
+    "finding": "The redirects table has no edit or delete control — a mistyped 301 is permanent from this UI.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Redirects table has no delete/edit controls — created redirects cannot be removed from this UI."
+      }
+    ],
+    "persona_rationale": "Create-only with no remove means a bad redirect (e.g. a loop or a typo'd destination) is unfixable without DB access. I'd never ship a redirects manager without delete.",
+    "suggested_fix": {
+      "current": "No row-level edit/delete on redirects table",
+      "proposed": "Add per-row Edit and Delete (with confirm) actions wired to the redirects service"
+    }
+  },
+  {
+    "id": "12-developer-012",
+    "page": "/resources/{slug}",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "The public URL returned three 404s while polling immediately after publish, and the editor provided no 'live in a moment' signal or an 'Open live page' link — propagation to the public route is not instant and the UI doesn't acknowledge it.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journey-results.json",
+        "quote": "failedRequests: 404 http://localhost:3000/resources/ux-seo-review-test-1781071765035 (x3)"
+      },
+      {
+        "type": "console",
+        "ref": "journey-results.json",
+        "quote": "friction: No visible 'Open live page' link after publishing — had to type the URL manually"
+      }
+    ],
+    "persona_rationale": "If publish→live isn't instant, the UI must say so; otherwise a user (or a monitoring script) hits a 404 and assumes publishing failed. And making me hand-type the live URL after publishing is a missing-affordance smell.",
+    "suggested_fix": {
+      "current": "No live-page link post-publish; public route 404s briefly after publish",
+      "proposed": "Show an 'Open live page ↗' link on publish success that becomes active once the route resolves (poll/revalidate before enabling), so the link never lands on a 404"
+    }
+  },
+  {
+    "id": "12-developer-013",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "A click target on the /admin/pages/new gate is flaky enough to exceed a 30s automation timeout (locator.click: Timeout 30000ms exceeded), suggesting an unstable mount or a control that isn't reliably interactive on load.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Status: Error: locator.click: Timeout 30000ms exceeded."
+      }
+    ],
+    "persona_rationale": "A 30s click timeout on a wizard step means something is mounting late or blocking interaction — hydration delay or an overlay. That's the kind of intermittent flakiness that produces support tickets I can't reproduce.",
+    "suggested_fix": {
+      "current": "Choice-gate control intermittently non-interactive on load",
+      "proposed": "Investigate the hydration/mount timing of the wizard step buttons; ensure they're interactive on first paint and not gated behind an async overlay"
+    }
+  },
+  {
+    "id": "12-developer-014",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Visual & Layout",
+    "severity": "low",
+    "finding": "The editor shows two simultaneous, redundant save confirmations (a top-of-canvas banner 'Draft saved. Autosaved 3:45 PM' and a top-right pill 'Draft saved.') plus a persistent 'Rendering . .' pill bottom-left with no completion state.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Banner 'Draft saved. Autosaved 3:45 PM', pill 'Draft saved.', and 'Rendering . .' pill all visible at once"
+      }
+    ],
+    "persona_rationale": "Two save toasts for one save and a 'Rendering…' pill that never resolves is UI noise that erodes my trust in the status indicators — if half of them are decorative, I stop believing any of them.",
+    "suggested_fix": {
+      "current": "Duplicate 'Draft saved' surfaces + non-terminating 'Rendering . .' pill",
+      "proposed": "Consolidate to a single save-status indicator and give the render/preview pill a terminal state (hide on complete or show 'Preview ready')"
+    }
+  },
+  {
+    "id": "12-developer-015",
+    "page": "/admin/pages/{id}",
+    "journey": null,
+    "category": "Feedback & State",
+    "severity": "low",
+    "finding": "The editor's ARIA tree ends with a bare, empty live-region <alert> node, rendered with no content.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "- alert"
+      }
+    ],
+    "persona_rationale": "An empty role=alert sitting in the DOM is the leftover scaffolding of a toast/announcer that isn't wired up — harmless visually but it tells me the live-region pattern is half-implemented, which lines up with the silent-failure findings.",
+    "suggested_fix": {
+      "current": "Empty role=alert live region always present",
+      "proposed": "Only mount the alert region when there's a message to announce, and route autosave/publish/schedule status through it so state changes are announced to screen readers"
+    }
+  },
+  {
+    "id": "12-developer-016",
+    "page": "/admin/pages",
+    "journey": "find-duplicate-archive",
+    "category": "Navigation & Flow",
+    "severity": "low",
+    "finding": "Duplicating a page produces an auto slug of random hex form (e.g. 'draft-4020bd0f') rather than a slug derived from the source page's slug.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "created 'Copy of {title}' with auto slug 'draft-4020bd0f' (original slug not preserved/derived)"
+      }
+    ],
+    "persona_rationale": "A random-hex URL for a duplicate is non-deterministic and meaningless; I'd expect 'copy-of-{source-slug}' so the URL is at least guessable and review-friendly.",
+    "suggested_fix": {
+      "current": "Duplicate slug = 'draft-{random-hex}'",
+      "proposed": "Derive the duplicate slug from the source ('copy-of-{source-slug}', de-duplicated with a numeric suffix) instead of random hex"
+    }
+  },
+  {
+    "id": "12-developer-017",
+    "page": "/admin/pages/block-preview-audit",
+    "journey": null,
+    "category": "Trust & Safety",
+    "severity": "low",
+    "finding": "A dev/QA route (block-preview-audit, '30 block preview parity cases') is exposed in the production /admin/pages/ route tree with no 'internal only' labelling or flag gate.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Page: /admin/pages/block-preview-audit (Block preview audit (dev QA)) ... 30 block preview parity cases rendered"
+      }
+    ],
+    "persona_rationale": "A QA-only audit page living next to real admin routes is the kind of thing that ships to prod by accident and confuses admins who stumble into it. It should be flag-gated or excluded from the prod build.",
+    "suggested_fix": {
+      "current": "block-preview-audit reachable under /admin/pages in all environments",
+      "proposed": "Gate it behind a dev/preview flag or move it out of the prod route tree, and label it 'Internal QA' if it must stay"
+    }
+  }
+]

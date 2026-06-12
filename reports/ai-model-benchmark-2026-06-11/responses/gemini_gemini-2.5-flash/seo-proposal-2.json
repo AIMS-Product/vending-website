@@ -1,0 +1,111 @@
+{
+  "proposal": {
+    "version": 1,
+    "metadata": {
+      "title": "Start a Vending Business",
+      "seoTitle": "Start a Vending Business – Your Guide to Launching Successfully",
+      "metaDescription": "Learn how to start a vending business with essential steps and expert support.",
+      "suggestedSlug": "start-vending-business"
+    },
+    "blocks": [
+      {
+        "block": {
+          "id": "ai_hero_1",
+          "type": "hero",
+          "variant": "standard",
+          "props": {
+            "eyebrow": "Vending Business Startup",
+            "heading": "Launch Your Vending Business",
+            "body": "Discover the essential steps to successfully start and grow your vending machine business.",
+            "ctaLabel": "Get Started Today",
+            "ctaHref": "/contact",
+            "ctaTrackingName": "hero-get-started"
+          }
+        },
+        "sourceDocumentIds": [],
+        "sourceExcerptIds": [],
+        "approvedClaimIds": [],
+        "warnings": []
+      },
+      {
+        "block": {
+          "id": "ai_rich_text_1",
+          "type": "rich_text",
+          "variant": "default",
+          "props": {
+            "eyebrow": "First Steps",
+            "heading": "Validate Location Demand Before Investing",
+            "body": {
+              "version": 1,
+              "nodes": [
+                {
+                  "type": "paragraph",
+                  "text": "Before purchasing vending machines, operators should validate location demand. This critical step helps ensure your business has a strong foundation for success."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Key indicators for strong demand include:"
+                },
+                {
+                  "type": "list",
+                  "style": "bullet",
+                  "items": [
+                    "High foot traffic",
+                    "Significant dwell time",
+                    "Limited existing food or beverage options"
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "By carefully assessing these factors, you can make informed decisions and avoid unnecessary investment in unproven locations."
+                }
+              ]
+            }
+          }
+        },
+        "sourceDocumentIds": ["11111111-1111-4111-8111-111111111111"],
+        "sourceExcerptIds": ["22222222-2222-4222-8222-222222222222"],
+        "approvedClaimIds": ["33333333-3333-4333-8333-333333333333"],
+        "warnings": []
+      },
+      {
+        "block": {
+          "id": "ai_cta_1",
+          "type": "cta",
+          "variant": "primary",
+          "props": {
+            "label": "Speak with a Vending Expert",
+            "href": "/contact-sales",
+            "trackingName": "speak-expert-cta"
+          }
+        },
+        "sourceDocumentIds": [],
+        "sourceExcerptIds": [],
+        "approvedClaimIds": [],
+        "warnings": []
+      }
+    ],
+    "warnings": []
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"version\": 1,\n  \"metadata\": {\n    \"title\": \"Start a Vending Business\",\n    \"seoTitle\": \"Start a Vending Business – Your Guide to Launching Successfully\",\n    \"metaDescription\": \"Learn how to start a vending business with essential steps and expert support.\",\n    \"suggestedSlug\": \"start-vending-business\"\n  },\n  \"blocks\": [\n    {\n      \"block\": {\n        \"id\": \"ai_hero_1\",\n        \"type\": \"hero\",\n        \"variant\": \"standard\",\n        \"props\": {\n          \"eyebrow\": \"Vending Business Startup\",\n          \"heading\": \"Launch Your Vending Business\",\n          \"body\": \"Discover the essential steps to successfully start and grow your vending machine business.\",\n          \"ctaLabel\": \"Get Started Today\",\n          \"ctaHref\": \"/contact\",\n          \"ctaTrackingName\": \"hero-get-started\"\n        }\n      },\n      \"sourceDocumentIds\": [],\n      \"sourceExcerptIds\": [],\n      \"approvedClaimIds\": [],\n      \"warnings\": []\n    },\n    {\n      \"block\": {\n        \"id\": \"ai_rich_text_1\",\n        \"type\": \"rich_text\",\n        \"variant\": \"default\",\n        \"props\": {\n          \"eyebrow\": \"First Steps\",\n          \"heading\": \"Validate Location Demand Before Investing\",\n          \"body\": {\n            \"version\": 1,\n            \"nodes\": [\n              {\n                \"type\": \"paragraph\",\n                \"text\": \"Before purchasing vending machines, operators should validate location demand. This critical step helps ensure your business has a strong foundation for success.\"\n              },\n              {\n                \"type\": \"paragraph\",\n                \"text\": \"Key indicators for strong demand include:\"\n              },\n              {\n                \"type\": \"list\",\n                \"style\": \"bullet\",\n                \"items\": [\n                  \"High foot traffic\",\n                  \"Significant dwell time\",\n                  \"Limited existing food or beverage options\"\n                ]\n              },\n              {\n                \"type\": \"paragraph\",\n                \"text\": \"By carefully assessing these factors, you can make informed decisions and avoid unnecessary investment in unproven locations.\"\n              }\n            ]\n          }\n        }\n      },\n      \"sourceDocumentIds\": [\n        \"11111111-1111-4111-8111-111111111111\"\n      ],\n      \"sourceExcerptIds\": [\n        \"22222222-2222-4222-8222-222222222222\"\n      ],\n      \"approvedClaimIds\": [\n        \"33333333-3333-4333-8333-333333333333\"\n      ],\n      \"warnings\": []\n    },\n    {\n      \"block\": {\n        \"id\": \"ai_cta_1\",\n        \"type\": \"cta\",\n        \"variant\": \"primary\",\n        \"props\": {\n          \"label\": \"Speak with a Vending Expert\",\n          \"href\": \"/contact-sales\",\n          \"trackingName\": \"speak-expert-cta\"\n        }\n      },\n      \"sourceDocumentIds\": [],\n      \"sourceExcerptIds\": [],\n      \"approvedClaimIds\": [],\n      \"warnings\": []\n    }\n  ],\n  \"warnings\": []\n}",
+          "role": "assistant"
+        }
+      }
+    ],
+    "created": 1781141163,
+    "id": "pQ4qarT0L_ay4-EPj5G00Qs",
+    "model": "gemini-2.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 813,
+      "prompt_tokens": 568,
+      "total_tokens": 1587
+    }
+  }
+}

@@ -1,0 +1,216 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a complete draft for this page targeting 'coffee vending machines for offices'. Include a hero, a benefits section, an FAQ, and a closing CTA."
+      }
+    ],
+    "context": {
+      "pageId": null,
+      "status": "draft",
+      "title": "",
+      "slug": "",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "",
+      "metaDescription": "",
+      "selectedBlockId": null,
+      "content": {
+        "version": 1,
+        "sections": []
+      },
+      "publishReadiness": {
+        "blockers": ["Publish requires at least one CTA or lead form block."],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "Built the page body draft.",
+    "toolCalls": [
+      {
+        "id": "deterministic_replace_page_sections",
+        "name": "replace_page_sections",
+        "input": {
+          "replaceExisting": false,
+          "sections": [
+            {
+              "title": "Hero",
+              "blocks": [
+                {
+                  "blockType": "hero",
+                  "title": "Coffee Vending Machines for Offices",
+                  "body": "Coffee Vending Machines for Offices helps site users access food, drinks, and everyday refreshments without turning the site team into an informal catering desk.",
+                  "bulletItems": null,
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": "Book a consultation",
+                  "ctaHref": "/contact"
+                }
+              ]
+            },
+            {
+              "title": "What buyers need to know first",
+              "blocks": [
+                {
+                  "blockType": "rich_text",
+                  "title": "What buyers need to know first",
+                  "body": "For Coffee Vending Machines for Offices, buyers need more than a list of benefits. Explain when the service is a good fit, what products and support are included, what the site needs to provide, and how the enquiry turns into a practical recommendation.",
+                  "bulletItems": [
+                    "Who will use the setup and why",
+                    "What the service needs to include",
+                    "Which questions should be settled before launch"
+                  ],
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "Decision points",
+              "blocks": [
+                {
+                  "blockType": "card_grid",
+                  "title": "Decision points",
+                  "body": null,
+                  "bulletItems": null,
+                  "faqItems": null,
+                  "cards": [
+                    {
+                      "title": "Site fit",
+                      "body": "coffee vending usually works best where there is steady daily traffic, enough room for people to browse, and clear access for refills. Smaller or irregular sites may still work, but they need a tighter product range and a simpler service plan.",
+                      "href": "/contact",
+                      "linkLabel": "Check site fit"
+                    },
+                    {
+                      "title": "Product range",
+                      "body": "Plan the range around what people actually buy during the day: quick lunches, drinks, snacks, coffee, healthier choices, and any site-specific preferences. Review the mix after launch so slow-moving products do not crowd out better options.",
+                      "href": "/contact",
+                      "linkLabel": "Plan the range"
+                    },
+                    {
+                      "title": "Payment and access",
+                      "body": "Confirm how people will pay, where the equipment can sit, and whether visitors as well as staff need access. Access rules affect placement, signage, product choice, and how easy the service is to use during busy periods.",
+                      "href": "/contact",
+                      "linkLabel": "Review access"
+                    },
+                    {
+                      "title": "Restocking plan",
+                      "body": "Restocking should match the site's usage pattern rather than a generic schedule. Ask about staff numbers, busy days, preferred product types, and who can provide access so the refill plan supports demand without overstocking.",
+                      "href": "/contact",
+                      "linkLabel": "Scope refills"
+                    },
+                    {
+                      "title": "Support expectations",
+                      "body": "Set expectations for machine issues, product changes, cleaning responsibilities, and who the site contacts when something is not working. Clear support ownership is what keeps the setup useful after the first week.",
+                      "href": "/contact",
+                      "linkLabel": "Discuss support"
+                    }
+                  ],
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "Process and support expectations",
+              "blocks": [
+                {
+                  "blockType": "rich_text",
+                  "title": "Process and support expectations",
+                  "body": "A practical rollout starts with the site, audience, and service needs, then turns those details into an equipment recommendation, product plan, restocking cadence, and issue-response path. The strongest enquiry includes photos or notes about the space, expected usage windows, and any access constraints for refills.",
+                  "bulletItems": [
+                    "Confirm site requirements",
+                    "Plan stock and refills",
+                    "Review support after launch"
+                  ],
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "FAQs",
+              "blocks": [
+                {
+                  "blockType": "faq",
+                  "title": "Coffee Vending Machines for Offices",
+                  "body": null,
+                  "bulletItems": null,
+                  "faqItems": [
+                    {
+                      "question": "What makes this setup a good fit?",
+                      "answer": "A good fit depends on the audience, space, access, product expectations, and service model. For Coffee Vending Machines for Offices, the useful next step is to compare the site details against those requirements before promising a machine mix or rollout plan."
+                    },
+                    {
+                      "question": "What needs to be confirmed before launch?",
+                      "answer": "Before recommending a setup, confirm the daily audience, available floor space, power access, payment expectations, and who can provide service access. Those details shape whether coffee vending is practical for the site or whether a simpler vending format would be easier to manage."
+                    },
+                    {
+                      "question": "How should products and refills be planned?",
+                      "answer": "Restocking should match the site's usage pattern rather than a generic schedule. Ask about staff numbers, busy days, preferred product types, and who can provide access so the refill plan supports demand without overstocking."
+                    },
+                    {
+                      "question": "Who handles service issues after launch?",
+                      "answer": "Set expectations for machine issues, product changes, cleaning responsibilities, and who the site contacts when something is not working. Clear support ownership is what keeps the setup useful after the first week."
+                    },
+                    {
+                      "question": "How do we get started?",
+                      "answer": "Start with a quick consultation that covers the site type, audience, available space, product preferences, and support expectations. Those details make it easier to recommend a practical setup instead of guessing from a generic vending checklist."
+                    }
+                  ],
+                  "cards": null,
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "CTA",
+              "blocks": [
+                {
+                  "blockType": "cta",
+                  "title": "Ready to plan the setup?",
+                  "body": "Share the site type, estimated daily audience, available space, and preferred product categories so the next recommendation can be scoped around real conditions rather than generic vending assumptions.",
+                  "bulletItems": null,
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": "Book a consultation",
+                  "ctaHref": "/contact"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "source": "intent-fallback"
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "function_call_filter: MALFORMED_FUNCTION_CALL",
+        "index": 0,
+        "message": {
+          "role": "assistant"
+        }
+      }
+    ],
+    "created": 1781142483,
+    "id": "yxMqapfSGM-ejuMPqNCxkA4",
+    "model": "gemini-2.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 0,
+      "prompt_tokens": 3841,
+      "total_tokens": 3841
+    }
+  }
+}

@@ -2,8 +2,8 @@
 # Manual operational scripts are real entry points the static graph can't see.
 entry = ["scripts/*.mjs", "stryker.conf.mjs"]
 
-# One-off report artifacts; not part of the app graph.
-ignorePatterns = ["reports/**"]
+# One-off report artifacts and orchestrator plan evidence; not part of the app graph.
+ignorePatterns = ["reports/**", "plans/**"]
 
 # Provided transitively (@stryker-mutator/core) or run via npx in smoke scripts.
 ignoreDependencies = ["@stryker-mutator/api", "playwright"]

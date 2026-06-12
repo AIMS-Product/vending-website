@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 import type { NewsPost } from "@/lib/services/news";
 
 type NewsListProps = {
@@ -42,7 +42,7 @@ function NewsCard({ post }: { post: NewsListProps["posts"][number] }) {
       <Link href={`/news/${post.slug}`} className="flex h-full flex-col">
         {post.cover_url ? (
           <div className="relative aspect-[16/9] w-full overflow-hidden border-b-2 border-[#111111] bg-[#eaf8ff]">
-            <Image
+            <ImageWithFallback
               src={post.cover_url}
               alt={post.cover_alt ?? post.title}
               fill

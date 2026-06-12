@@ -1,0 +1,272 @@
+[
+  {
+    "id": "10-teenager-001",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "After submitting the application the only confirmation is one tiny line of green text next to the button — no full-screen 'you're in!' moment, no redirect, the form doesn't clear. It looks like nothing happened.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "small green text 'Thanks. We received your details and will follow up shortly.' beside the SUBMIT APPLICATION button"
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "Automation itself missed the success state and re-submitted 5 more times — evidence of how subtle the confirmation is."
+      }
+    ],
+    "persona_rationale": "When I send a Snap or post a TikTok I get a big obvious 'Sent!' or a checkmark animation. A thin grey-green sentence I have to hunt for next to the button reads as 'error/did it even work?' — I'd tap submit again and again or just close the tab thinking it's broken.",
+    "suggested_fix": {
+      "current": "Inline green line 'Thanks. We received your details and will follow up shortly.' next to the submit button, form stays filled",
+      "proposed": "Redirect to the existing /thank-you-for-applying page (or swap the form for a full-width success card with a big check icon and 'You're in — Mike's team will reach out')"
+    }
+  },
+  {
+    "id": "10-teenager-002",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "The apply form is long for a first touch — 9 fields including 4 'Select' dropdowns (State, Business stage, Budget, Launch timeline), three of them required, before anyone has even talked to me.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/apply-text.md",
+        "quote": "Name* / Email* / Phone / City / State* / Business stage* / Available startup budget* / Launch timeline* / What are you trying to build?"
+      },
+      {
+        "type": "screenshot",
+        "ref": "apply-003-form-empty-submit.png",
+        "quote": "four side-by-side 'Select' dropdowns plus name/email/phone/city and a large textarea"
+      }
+    ],
+    "persona_rationale": "Apps I use never ask me to fill out a wall of dropdowns to start something — TikTok signup is basically a phone number and a tap. Being asked my 'available startup budget' and 'launch timeline' on the very first screen feels like a job application, not 'step inside.' I'd bounce.",
+    "suggested_fix": {
+      "current": "Single 9-field form with 4 required dropdowns on first contact",
+      "proposed": "Ask only Name + Email + a one-tap 'where are you at?' on step 1, then reveal budget/timeline on a step 2 — or clearly mark the dropdowns as optional"
+    }
+  },
+  {
+    "id": "10-teenager-003",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "The big hero stats all show zeros: '0+ Entrepreneurs launched', '$0M+ Snack/Drink sales', '0+ Vending locations'. The proof numbers are literally zero.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "0+\nENTREPRENEURS LAUNCHED\n$0M+\nSNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\n0+\nVENDING LOCATIONS W/OUR GUIDANCE"
+      }
+    ],
+    "persona_rationale": "A '0' follower/like count is the universal teen signal for 'this is dead / fake / nobody is here.' Seeing '0+ entrepreneurs launched' on the homepage instantly makes me think this is a scam or unfinished, even though there are real reviews lower down.",
+    "suggested_fix": {
+      "current": "'0+', '$0M+', '0+' stat counters",
+      "proposed": "Populate real numbers (e.g. '500+', '$5M+', '1,200+'); if data isn't ready, hide the stat block instead of showing zeros"
+    }
+  },
+  {
+    "id": "10-teenager-004",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "On the blog/news page the article cards render as empty white outlines above the fold, and one card shows broken-image alt text instead of a picture — the page looks unfinished/broken on first paint.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "blank card outlines and visible alt text 'Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Items, Niche Products)' where an image should be"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=...694bcfaf10178c3a1340c777_ChatGPT%2520Image... (Internal Server Error)"
+      }
+    ],
+    "persona_rationale": "A broken thumbnail with the file caption showing through is the exact thing that makes a site feel sketchy or abandoned — like an old expired link. My feed apps never show me a busted image; if I saw this I'd assume the whole site is broken and leave.",
+    "suggested_fix": {
+      "current": "Blog cards show blank outlines on first paint and a failing /_next/image (500) renders alt text",
+      "proposed": "Fix the failing image source/loader, add a fallback placeholder image, and render card content immediately instead of waiting for scroll-reveal"
+    }
+  },
+  {
+    "id": "10-teenager-005",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The same section is called 'NEWS' in the menu but the page title is 'BLOG' — two different names for one thing.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/news-text.md",
+        "quote": "heading \"Blog\" [level=1]"
+      },
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "link \"News\": /url: /news"
+      }
+    ],
+    "persona_rationale": "I tap 'News' expecting news and land on a giant 'BLOG' header — small thing, but it makes me second-guess whether I clicked the right thing. Apps I use keep the label the same from tab to screen.",
+    "suggested_fix": {
+      "current": "Nav label 'NEWS' leads to a page titled 'BLOG'",
+      "proposed": "Pick one name — rename the page heading to 'News' (or the nav item to 'Blog') so they match"
+    }
+  },
+  {
+    "id": "10-teenager-006",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "Hero copy and body are corporate/buzzwordy — 'launch and scale a profitable vending machine business with minimal time investment', 'Automation & scaling strategies to maximize your time and revenue', 'structured roadmap to success'.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "we provide aspiring entrepreneurs with the mentorship, tools, and exclusive discounts they need to launch and scale a profitable vending machine business with minimal time investment."
+      }
+    ],
+    "persona_rationale": "This reads like a LinkedIn ad my dad would screenshot, not something made for me. 'Mentorship, tools, and exclusive discounts to launch and scale' is the kind of stacked business-speak my eyes slide right off. Brands I follow talk like a person.",
+    "suggested_fix": {
+      "current": "'launch and scale a profitable vending machine business with minimal time investment'",
+      "proposed": "Plain, human line like 'Start a vending business without the guesswork — we show you exactly how, step by step.'"
+    }
+  },
+  {
+    "id": "10-teenager-007",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The primary nav CTA is labelled 'STEP INSIDE' — it's vague and doesn't say it opens an application form.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "link \"Step inside\": /url: /apply"
+      }
+    ],
+    "persona_rationale": "'STEP INSIDE' sounds like a vibe, not a button — I have no idea it's the apply form until I tap it. Buttons I'm used to say exactly what happens ('Sign up', 'Get started'). The bright orange button screaming 'STEP INSIDE' is mysterious in a way that makes me not tap it.",
+    "suggested_fix": {
+      "current": "Nav button 'STEP INSIDE' → /apply",
+      "proposed": "'Apply now' or 'Get started' to match the page it opens"
+    }
+  },
+  {
+    "id": "10-teenager-008",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "There's no way to reach Contact from the top menu — it only exists as a link in the footer, so you have to scroll all the way to the bottom of the page to find it.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "navigation \"Primary\": link \"About\" / link \"Resources\" / link \"Case Studies\" / link \"News\" (no Contact)"
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "Contact is not in the header navigation; the only paths are the footer link and knowing the URL."
+      }
+    ],
+    "persona_rationale": "I never scroll to the bottom of anything — the footer is dead space to me. If I wanted to ask a question I'd look at the top, not find Contact, and assume there's no way to message them. Social apps put DM/message right up top.",
+    "suggested_fix": {
+      "current": "Contact link only in the footer",
+      "proposed": "Add 'Contact' to the primary header nav (or a persistent message/chat affordance)"
+    }
+  },
+  {
+    "id": "10-teenager-009",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "Mobile homepage has horizontal scrolling — the page can be dragged sideways, which feels glitchy on a phone.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | home-003-mobile.png | horizontal scroll present"
+      }
+    ],
+    "persona_rationale": "Everything I use is locked to vertical scroll. When a page slides sideways under my thumb it feels broken and cheap — like a website that wasn't actually made for phones, which is the only thing I use.",
+    "suggested_fix": {
+      "current": "Horizontal scroll present at 375px width on the homepage",
+      "proposed": "Constrain content to 100% viewport width / fix the overflowing element so the page only scrolls vertically on mobile"
+    }
+  },
+  {
+    "id": "10-teenager-010",
+    "page": "/",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "Noticeable content jump on load — layout shift (CLS) of 0.263 on the homepage and most public pages.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Layout shift (CLS): 0.263"
+      }
+    ],
+    "persona_rationale": "When stuff jumps around as a page loads I end up tapping the wrong thing — I'm used to feeds that lock in place instantly. A page that shoves itself around for a second feels old and laggy.",
+    "suggested_fix": {
+      "current": "CLS 0.263 on homepage (and /about, /news, /case-studies)",
+      "proposed": "Reserve space for the hero image and partner-logo strip (set width/height) so nothing shifts after paint; target CLS < 0.1"
+    }
+  },
+  {
+    "id": "10-teenager-011",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "low",
+    "finding": "Empty/invalid form submit only shows the browser's default 'Please fill out this field.' tooltip — no styled inline errors next to each field.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "apply-003-form-empty-submit.png",
+        "quote": "default browser bubble 'Please fill out this field.' pointing at Phone"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "empty: no visible validation errors after empty submit"
+      }
+    ],
+    "persona_rationale": "The little grey browser bubble looks like a system pop-up, not part of the app — it's the boomer-software default. Forms I use highlight the field in red right where the problem is. This feels unfinished.",
+    "suggested_fix": {
+      "current": "Relies on native browser validation tooltips only",
+      "proposed": "Add styled inline field-level errors (red outline + message under the field) for required fields"
+    }
+  },
+  {
+    "id": "10-teenager-012",
+    "page": "/about",
+    "journey": "evaluate-trust",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "The About page is several dense paragraphs of life story ('How I Escaped The Rat Race', 'Mike's Unique Approach') with no short summary or skimmable highlights.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/about-text.md",
+        "quote": "At the time, I was working a 60-hour per week job that paid me only $1,200/month. I used my emergency fund to invest 20% down on a $70,000 fixer upper..."
+      }
+    ],
+    "persona_rationale": "That's a wall of text. I don't read paragraphs — I skim for the gist in two seconds like a caption. There's no TL;DR, no bullet highlights, so I'd scroll straight past and never learn who Mike is.",
+    "suggested_fix": {
+      "current": "Multi-paragraph founder essay with no summary",
+      "proposed": "Add a 3-bullet 'the short version' at the top (e.g. 'Quit a 60-hr job', 'Built passive income with vending', '12+ machines now') above the full story"
+    }
+  }
+]

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdminPaginationLink } from "@/components/admin/AdminPaginationLink";
 import { AdminShell } from "@/components/admin/AdminShell";
 import {
   AdminIcon,
@@ -265,7 +266,7 @@ export default async function AdminMediaPage({
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="mr-1 text-xs font-semibold tracking-wide text-slate-400 uppercase">
+              <span className="mr-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">
                 Type
               </span>
               {mediaTypeFilters.map((filter) => (
@@ -392,7 +393,7 @@ export default async function AdminMediaPage({
               className="mt-3 flex flex-wrap gap-1.5 border-t border-slate-100 pt-3"
               aria-label="Filter by tag"
             >
-              <span className="mr-1 self-center text-xs font-semibold tracking-wide text-slate-400 uppercase">
+              <span className="mr-1 self-center text-xs font-semibold tracking-wide text-slate-500 uppercase">
                 Tags
               </span>
               {allTags.map((tag) => (
@@ -439,6 +440,7 @@ export default async function AdminMediaPage({
           </div>
         ) : (
           <>
+            <h2 className="sr-only">Media assets</h2>
             <MediaLibraryManager
               assets={visibleAssets.map((asset) =>
                 toListItem(asset, usageIndex[asset.id] ?? 0),
@@ -489,7 +491,7 @@ export default async function AdminMediaPage({
                     className="flex items-center gap-2"
                     aria-label="Pagination"
                   >
-                    <PaginationLink
+                    <AdminPaginationLink
                       label="Previous page"
                       disabled={currentPage <= 1}
                       href={adminMediaHref({
@@ -508,7 +510,7 @@ export default async function AdminMediaPage({
                         })}
                       />
                     ))}
-                    <PaginationLink
+                    <AdminPaginationLink
                       label="Next page"
                       disabled={currentPage >= totalPages}
                       href={adminMediaHref({
@@ -582,57 +584,6 @@ function SortChevron() {
     >
       <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
     </svg>
-  );
-}
-
-function PaginationLink({
-  href,
-  label,
-  disabled,
-  next = false,
-}: {
-  href: string;
-  label: string;
-  disabled: boolean;
-  next?: boolean;
-}) {
-  const icon = (
-    <svg
-      aria-hidden="true"
-      className="size-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d={next ? "m9 18 6-6-6-6" : "m15 18-6-6 6-6"}
-      />
-    </svg>
-  );
-
-  if (disabled) {
-    return (
-      <span
-        aria-disabled="true"
-        aria-label={label}
-        className="flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-300"
-      >
-        {icon}
-      </span>
-    );
-  }
-
-  return (
-    <Link
-      href={href}
-      aria-label={label}
-      className="flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
-    >
-      {icon}
-    </Link>
   );
 }
 

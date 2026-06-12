@@ -1,0 +1,16 @@
+import { chromium } from "playwright";
+const b = await chromium.launch();
+const ctx = await b.newContext({ viewport:{width:1440,height:900}});
+const page = await ctx.newPage();
+let navigated=false; page.on("framenavigated",f=>{if(f===page.mainFrame())navigated=true;});
+let dialog=false; page.on("dialog",async d=>{dialog=true; await d.dismiss().catch(()=>{});});
+await page.goto("http://localhost:3001/admin/pages",{waitUntil:"networkidle",timeout:60000});
+await page.waitForTimeout(1200); navigated=false;
+await page.evaluate(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur(); document.body.focus();});
+await page.keyboard.press("/");
+await page.keyboard.press("Meta+s");
+await page.keyboard.press("Meta+Enter");
+await page.waitForTimeout(600);
+const picker = await page.getByRole("heading",{name:"Add page content"}).first().isVisible().catch(()=>false);
+console.log(JSON.stringify({onListPage:{noPickerOpened:!picker, noNavigation:!navigated, noDialog:!dialog}},null,2));
+await b.close();

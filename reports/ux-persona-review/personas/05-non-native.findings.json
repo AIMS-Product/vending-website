@@ -1,0 +1,478 @@
+[
+  {
+    "id": "05-non-native-001",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After a successful application the only confirmation is a small line of green text beside the button: \"Thanks. We received your details and will follow up shortly.\" For a non-native reader this is easy to miss and the phrase \"follow up\" is a phrasal verb that is ambiguous (will they email me? call me? when?).",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "Thanks. We received your details and will follow up shortly."
+      }
+    ],
+    "persona_rationale": "I read English carefully and slowly, so a tiny inline message that does not redirect or change the page makes me unsure whether my application actually went through; \"follow up shortly\" tells me neither the channel nor the timeframe, so I cannot plan.",
+    "suggested_fix": {
+      "current": "Thanks. We received your details and will follow up shortly.",
+      "proposed": "Redirect to /thank-you-for-applying, or show a large confirmation: \"Application received. We will email you within 2 business days.\""
+    }
+  },
+  {
+    "id": "05-non-native-002",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The nav item, the URL and the page heading use three different words for the same section: nav says \"NEWS\", the route is /news, but the page heading is \"BLOG\" with the eyebrow \"Insights from the route\". A non-native reader cannot tell whether News and Blog are the same place.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "news-text.md",
+        "quote": "Insights from the route"
+      },
+      {
+        "type": "text",
+        "ref": "news-text.md",
+        "quote": "heading \"Blog\" [level=1]"
+      },
+      { "type": "screenshot", "ref": "news-001-load.png", "quote": "BLOG" }
+    ],
+    "persona_rationale": "When I click \"NEWS\" and arrive on a page titled \"BLOG\", I assume I clicked the wrong link or got redirected; in my language News and Blog are different concepts, so the mismatch makes me distrust the navigation.",
+    "suggested_fix": {
+      "current": "nav \"NEWS\" -> page heading \"BLOG\"",
+      "proposed": "Use one word everywhere: heading \"News\" to match the nav item and /news route."
+    }
+  },
+  {
+    "id": "05-non-native-003",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "Intro copy uses an idiom and a non-literal verb: \"...the back-office work that makes a vending route compound. New posts drop here as we publish them.\" \"compound\" used as a verb and \"posts drop\" are not literal and do not translate.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "news-text.md",
+        "quote": "Strategies on locations, machine selection, products, and the back-office work that makes a vending route compound. New posts drop here as we publish them."
+      }
+    ],
+    "persona_rationale": "I know \"compound\" as a noun (a fenced area) and \"drop\" as the action of falling; using them as slang for \"grow\" and \"are added\" forces me to stop and guess the meaning.",
+    "suggested_fix": {
+      "current": "...makes a vending route compound. New posts drop here as we publish them.",
+      "proposed": "...helps a vending route grow steadily. We add new posts here when we publish them."
+    }
+  },
+  {
+    "id": "05-non-native-004",
+    "page": "/about",
+    "journey": "evaluate-trust",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The about page uses the idiom \"the Rat Race\" as a section heading: \"How I Escaped The Rat Race\". This is a culturally specific idiom with no literal meaning.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "about-text.md",
+        "quote": "How I Escaped The Rat Race"
+      }
+    ],
+    "persona_rationale": "\"Rat Race\" translated literally means a competition between rats; I have to already know the American idiom for the daily corporate grind to understand the heading, which is the most prominent text on the section.",
+    "suggested_fix": {
+      "current": "How I Escaped The Rat Race",
+      "proposed": "How I Left the Traditional 9-to-5 Job"
+    }
+  },
+  {
+    "id": "05-non-native-005",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The primary header CTA reads \"STEP INSIDE\" while the same destination /apply is also reached by buttons labelled \"APPLY NOW\". \"Step inside\" is figurative (you cannot literally step into a website) and does not tell me it leads to an application form.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "link \"Step inside\":\n    - /url: /apply"
+      },
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "link \"Apply Now\":\n    - /url: /apply"
+      }
+    ],
+    "persona_rationale": "Two different labels for the same action confuse me about whether they go to the same place; \"Step inside\" reads like an invitation to a room, not a button that opens an application form.",
+    "suggested_fix": {
+      "current": "STEP INSIDE (header button) -> /apply",
+      "proposed": "Use one consistent label for the apply action everywhere, e.g. \"Apply Now\"."
+    }
+  },
+  {
+    "id": "05-non-native-006",
+    "page": "/case-studies",
+    "journey": "evaluate-trust",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "Testimonials are dense with idioms and slang that a second-language reader must decode: \"game changer\", \"hard charging\", \"learning the biz\", \"In just a blink of time\", \"Namaste, indeed, to the journey ahead!\". These are the trust-building proof, but the meaning is locked behind colloquialisms.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "case-studies-text.md",
+        "quote": "Vendingpreneur has been an absolute game changer for us!"
+      },
+      {
+        "type": "text",
+        "ref": "case-studies-text.md",
+        "quote": "so many hard charging, intelligent entrepreneurs"
+      },
+      {
+        "type": "text",
+        "ref": "case-studies-text.md",
+        "quote": "an invaluable resource for learning the biz"
+      },
+      {
+        "type": "text",
+        "ref": "case-studies-text.md",
+        "quote": "In just a blink of time, Mike Hoffman and Vendingpreneurs transformed my journey"
+      },
+      {
+        "type": "text",
+        "ref": "case-studies-text.md",
+        "quote": "Namaste, indeed, to the journey ahead!"
+      }
+    ],
+    "persona_rationale": "These quotes are the evidence I rely on to trust the program, but I cannot fully understand them; \"learning the biz\", \"hard charging\" and \"Namaste, indeed\" are slang/cultural references that make the proof feel exclusionary to non-Americans.",
+    "suggested_fix": {
+      "current": "Verbatim slang-heavy testimonials with no plain-language summary",
+      "proposed": "Add a one-line plain-English takeaway under each testimonial (e.g. \"Result: 10 locations in 6 months\") so meaning is accessible even when the quote uses slang."
+    }
+  },
+  {
+    "id": "05-non-native-007",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "Submitting the apply form with empty required fields produces NO visible validation error; the form silently does nothing. A non-native user has no message to read and cannot tell what is wrong.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "empty: no visible validation errors after empty submit"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "invalid: no visible validation errors on invalid data — entered values preserved"
+      }
+    ],
+    "persona_rationale": "When nothing appears after I press Submit, I do not know if the site is broken, slow, or rejecting my data; without any error text I have no words to translate and no way to fix the problem.",
+    "suggested_fix": {
+      "current": "No validation message on empty/invalid submit",
+      "proposed": "Show a specific inline error per field, e.g. \"Email is required\" / \"Enter a valid email address like name@example.com\"."
+    }
+  },
+  {
+    "id": "05-non-native-008",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "The State dropdown lists only US states (Alabama...Wyoming) with no country context, and budget options use the abbreviation \"k\" (\"Under $5k\", \"$5k-$10k\", \"$25k+\") and currency without a code. A non-American reader may not recognise \"$25k+\" or know whether \"$\" means USD.",
+    "evidence": [
+      { "type": "text", "ref": "apply-text.md", "quote": "Under $5k" },
+      { "type": "text", "ref": "apply-text.md", "quote": "$5k-$10k" },
+      { "type": "text", "ref": "apply-text.md", "quote": "$25k+" }
+    ],
+    "persona_rationale": "\"k\" as shorthand for thousand and a bare \"$\" sign are not universal; I have to pause to confirm \"$5k\" means five thousand US dollars, and the US-only state list signals the form does not expect someone like me.",
+    "suggested_fix": {
+      "current": "Under $5k / $5k-$10k / $25k+ (state list US-only, no country)",
+      "proposed": "Spell amounts with currency code, e.g. \"Under US$5,000\", and add a Country field or label the State field \"State (US)\"."
+    }
+  },
+  {
+    "id": "05-non-native-009",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "Contact intro copy uses the noun phrase \"accelerator fit\" with no explanation: \"Send the team a note about vending locations, machine decisions, partnerships, or accelerator fit.\" \"accelerator fit\" is jargon a second-language reader cannot parse.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "contact-text.md",
+        "quote": "Send the team a note about vending locations, machine decisions, partnerships, or accelerator fit."
+      }
+    ],
+    "persona_rationale": "\"accelerator fit\" combines a program name with the noun \"fit\" in a way that has no clear meaning to me; I would not know whether my question belongs in this category.",
+    "suggested_fix": {
+      "current": "...partnerships, or accelerator fit.",
+      "proposed": "...partnerships, or whether the Accelerator program is right for you."
+    }
+  },
+  {
+    "id": "05-non-native-010",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "Contact is only reachable from the footer link \"CONTACT US\"; it is not in the header navigation. A non-native user scanning the prominent top menu for a familiar word will not find a way to ask a question.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "contact-text.md",
+        "quote": "navigation \"Primary\":\n    - link \"About\"\n    - link \"Resources\"\n    - link \"Case Studies\"\n    - link \"News\""
+      }
+    ],
+    "persona_rationale": "When I am unsure of the English on a page, the first thing I look for is a Contact link in the main menu so I can ask; hiding it in the footer means I may give up before scrolling to the very bottom.",
+    "suggested_fix": {
+      "current": "Contact link only in footer",
+      "proposed": "Add \"Contact\" to the header Primary navigation alongside About, Resources, Case Studies, News."
+    }
+  },
+  {
+    "id": "05-non-native-011",
+    "page": "/admin/news/new",
+    "journey": "admin-create-news-draft",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The same content type is named four different ways in the admin: sidebar/route is \"News\", the editor breadcrumb is \"Blog CMS\", the heading is \"New blog post\", and the public nav calls it \"NEWS\" / public heading \"BLOG\". \"CMS\" is also an unexplained abbreviation.",
+    "evidence": [
+      { "type": "text", "ref": "admin-news-new-text.md", "quote": "Blog CMS" },
+      {
+        "type": "text",
+        "ref": "admin-news-new-text.md",
+        "quote": "heading \"New blog post\" [level=1]"
+      },
+      {
+        "type": "text",
+        "ref": "admin-news-new-text.md",
+        "quote": "Create an article or announcement from the shared CMS backend."
+      }
+    ],
+    "persona_rationale": "As an admin I must hold four different labels in my head for one thing while also translating; the abbreviation \"CMS\" and \"backend\" are technical English with no plain-language fallback.",
+    "suggested_fix": {
+      "current": "Blog CMS / New blog post / News (route) / shared CMS backend",
+      "proposed": "Pick one term (\"News\") and use it consistently; replace \"shared CMS backend\" with \"Create a news article or announcement.\""
+    }
+  },
+  {
+    "id": "05-non-native-012",
+    "page": "/admin/pages",
+    "journey": "admin-manage-content-ops",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "Workflow filter labels are terse jargon with no tooltips: \"Needs review\", \"Updating\", \"Needs links\", \"Metadata issues\", \"Scheduled\", \"Schedule failed\". \"SEO readiness\" states are likewise abbreviated to single words \"Blocked\", \"Opportunities\", \"Needs work\".",
+    "evidence": [
+      { "type": "text", "ref": "admin-pages-text.md", "quote": "Needs review" },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "Metadata issues"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "SEO readiness: Opportunities"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "SEO readiness: Needs work"
+      }
+    ],
+    "persona_rationale": "\"Opportunities\" as a status does not tell me if it is good or bad, and \"Needs links\" is too compressed to parse without context; for a second-language admin these one-word states are guesswork.",
+    "suggested_fix": {
+      "current": "Opportunities / Needs links / Metadata issues",
+      "proposed": "Use full descriptive labels with a tooltip, e.g. \"Some SEO improvements available\", \"Missing internal links\", \"Page metadata needs fixing\"."
+    }
+  },
+  {
+    "id": "05-non-native-013",
+    "page": "/admin/pages",
+    "journey": "admin-manage-content-ops",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The page description mixes jargon: \"Manage structured SEO pages with the same CMS shell ready for resource content.\" \"CMS shell\" and \"structured SEO pages\" are unexplained technical noun phrases.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "Manage structured SEO pages with the same CMS shell ready for resource content."
+      }
+    ],
+    "persona_rationale": "\"CMS shell\" is opaque even to many native speakers; for me it is two abstract nouns I cannot map to anything on screen, so the description does not help me understand the page.",
+    "suggested_fix": {
+      "current": "Manage structured SEO pages with the same CMS shell ready for resource content.",
+      "proposed": "Create and edit SEO and resource pages for the website."
+    }
+  },
+  {
+    "id": "05-non-native-014",
+    "page": "/",
+    "journey": "evaluate-trust",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "Headline stat counters display literal placeholder zeros: \"0+\" Entrepreneurs launched, \"$0M+\" Snack/Drink sales, \"0+\" Vending locations. A reader who takes text literally sees the proof numbers as zero.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "term: 0+\n  - definition: Entrepreneurs launched"
+      },
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "term: $0M+\n  - definition: Snack/Drink sales in Vendingpreneur machines"
+      }
+    ],
+    "persona_rationale": "I read numbers literally and do not assume they are animated counters that will rise; \"0+ entrepreneurs launched\" reads to me as \"nobody has launched\", which undermines trust.",
+    "suggested_fix": {
+      "current": "0+ / $0M+ / 0+ (animated-from-zero counters)",
+      "proposed": "Render the real final figures server-side so the static text shows actual numbers (e.g. \"500+\"), not \"0+\"."
+    }
+  },
+  {
+    "id": "05-non-native-015",
+    "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+    "journey": "read-a-news-article",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "A legacy /blog/... article URL returns a 404. Because the public page heading is \"BLOG\", a non-native user who guesses the URL from the heading word lands on a dead page.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "404 /blog/how-to-choose-the-perfect-location-for-vending-machine"
+      }
+    ],
+    "persona_rationale": "I learned the section is called \"Blog\", so typing /blog/... feels logical; getting a 404 makes me think the article was deleted rather than that the path simply moved.",
+    "suggested_fix": {
+      "current": "/blog/{slug} returns 404",
+      "proposed": "Add a 301 redirect from /blog/{slug} to /news/{slug} so the word users see (\"Blog\") maps to a working URL."
+    }
+  },
+  {
+    "id": "05-non-native-016",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "On first paint the article cards render as blank outlines until scrolled into view, and a cover image fails with a 500 error (broken-image alt text is shown). A non-native user sees an empty/broken page and no message explaining it.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "broken image showing alt text 'Top 10 Profitable Products to Stock in Your Vending Machine...'"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com..."
+      }
+    ],
+    "persona_rationale": "A broken image plus blank cards reads to me as a loading failure or an error in my own browser; with no English message to confirm the content is just loading, I assume the site is broken and may leave.",
+    "suggested_fix": {
+      "current": "Blank scroll-reveal cards + failing cover image (500) on load",
+      "proposed": "Render card content on first paint (reveal only the animation, not the content) and fix or replace the broken cover image so no broken-image placeholder shows."
+    }
+  },
+  {
+    "id": "05-non-native-017",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "Body copy uses the idiom \"increase your bottom line\" and the metaphor \"eliminate the guesswork\". \"bottom line\" is a financial idiom that does not translate literally.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "bulk product deals to increase your bottom line."
+      },
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "We eliminate the guesswork by providing a structured roadmap to success."
+      }
+    ],
+    "persona_rationale": "\"bottom line\" literally means the last line of a page; I must already know it is American business slang for profit, which adds friction to otherwise clear marketing copy.",
+    "suggested_fix": {
+      "current": "increase your bottom line",
+      "proposed": "increase your profit"
+    }
+  },
+  {
+    "id": "05-non-native-018",
+    "page": "/news/top-5-questions-vending-entrepreneurship-program",
+    "journey": "read-a-news-article",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "Article preview compresses meaning into ambiguous shorthand: \"success track record (300% boost via vetted options)\". \"vetted options\" and \"300% boost\" with no baseline are unclear without context.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "news-text.md",
+        "quote": "success track record (300% boost via vetted options), ongoing tools. L..."
+      }
+    ],
+    "persona_rationale": "\"vetted\" is an uncommon word for me and \"300% boost\" gives a percentage with no baseline, so I cannot tell what improved by 300% or compared to what.",
+    "suggested_fix": {
+      "current": "300% boost via vetted options",
+      "proposed": "up to 300% higher sales using pre-checked machine and location choices"
+    }
+  },
+  {
+    "id": "05-non-native-019",
+    "page": "/thank-you-for-applying",
+    "journey": "discover-and-apply",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "The thank-you page exists with clear copy (\"Watch your inbox for the next step.\") but the apply form never routes to it, so non-native users get the unclear inline message instead of this readable page.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "thank-you-for-applying-text.md",
+        "quote": "Watch your inbox for the next step."
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "Thanks. We received your details and will follow up shortly."
+      }
+    ],
+    "persona_rationale": "This page would answer all my questions in plain steps (\"Watch your inbox\", \"Have your goals ready\"), but I never see it because the form does not navigate here; the clearer copy is wasted.",
+    "suggested_fix": {
+      "current": "Apply form shows inline text and stays on /apply",
+      "proposed": "Redirect a successful apply submission to /thank-you-for-applying, which already has clearer next-step copy."
+    }
+  },
+  {
+    "id": "05-non-native-020",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "Open-text field label \"What are you trying to build?\" is vague for a second-language reader and overlaps with the intro line \"...what kind of support would move the business forward.\" It is unclear what answer is expected.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "What are you trying to build?"
+      },
+      {
+        "type": "text",
+        "ref": "apply-text.md",
+        "quote": "Share where you are now, where you want to launch, and what kind of support would move the business forward."
+      }
+    ],
+    "persona_rationale": "\"What are you trying to build?\" is abstract; I am not sure if it means a vending business, a website, or something else, and there is no example to guide a non-native writer.",
+    "suggested_fix": {
+      "current": "What are you trying to build?",
+      "proposed": "Tell us about your vending goals (optional) — e.g. \"I want 5 machines in offices within a year.\""
+    }
+  }
+]

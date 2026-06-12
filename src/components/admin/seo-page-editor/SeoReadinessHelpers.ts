@@ -3,12 +3,30 @@ import type {
   SeoReadinessFinding,
   SeoReadinessSummary,
 } from "@/lib/page-builder/seo-readiness";
+import { countContentWords } from "@/lib/page-builder/word-count";
 
 export type NextPublishStep = {
   title: string;
   detail: string;
   tone: "blocked" | "work" | "ready";
 };
+
+// N19 / I20 item 8: a NON-BLOCKING thin-page advisory. This is deliberately
+// separate from `assessSeoReadiness` — it adds no readiness rule, never appears
+// in `summary.blockers`/`warnings`, and never affects `publishDisabled`, so the
+// N1 rule-parity contract is preserved. It is a soft "are you sure?" cue shown
+// next to the existing improvements when a page has very little body copy.
+const THIN_PAGE_WORD_THRESHOLD = 50;
+
+export function thinPageWarning(content: PageContent): string | null {
+  // Word counting is shared with the revision stats via
+  // `@/lib/page-builder/word-count` so both surfaces agree on what counts.
+  const wordCount = countContentWords(content);
+  if (wordCount >= THIN_PAGE_WORD_THRESHOLD) return null;
+  return `This page has very little content (about ${wordCount} ${
+    wordCount === 1 ? "word" : "words"
+  }). Thin pages tend to rank poorly — you can still publish, but consider adding more before you do.`;
+}
 
 export function scrollToBuilderBlockId(blockId: string) {
   window.setTimeout(() => {

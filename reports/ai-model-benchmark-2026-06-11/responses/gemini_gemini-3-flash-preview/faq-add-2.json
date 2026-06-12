@@ -1,0 +1,137 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an FAQ section with 4 common questions people ask before starting a vending machine business."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Old body copy about machines.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "nkp327m2",
+        "name": "add_block",
+        "input": {
+          "title": "Vending Business FAQs",
+          "bulletItems": [],
+          "faqItems": [
+            {
+              "answer": "Most modern office coffee vending machines require about 1 square metre of floor space. It is important to ensure there is enough clearance for the front door to open fully for restocking and that there is adequate ventilation at the rear of the unit.",
+              "question": "How much space is required for an office coffee vending machine?"
+            },
+            {
+              "answer": "Standard machines typically run on a standard 10-amp power outlet. For high-capacity bean-to-cup machines, a dedicated plumbed water line is often recommended to ensure consistent quality and reduce manual refilling, though some models use internal water tanks.",
+              "question": "What are the power and plumbing requirements for installation?"
+            },
+            {
+              "question": "How often do machines need to be restocked and serviced?",
+              "answer": "Cleaning and restocking frequency depends entirely on the volume of users. In a busy office, daily cleaning of milk lines and brewers is standard practice to maintain hygiene and taste. Restocking of beans, milk powder, or sugar can range from daily to twice weekly."
+            },
+            {
+              "answer": "Modern office environments increasingly prefer cashless options. Implementing credit card readers, mobile pay (like Apple Pay or Google Pay), and even integration with employee ID badges can help increase usage and simplify transaction management.",
+              "question": "What payment methods should I offer to office employees?"
+            }
+          ],
+          "ctaHref": "/contact",
+          "ctaLabel": "Ask another question",
+          "cards": [],
+          "blockType": "faq",
+          "body": "Find answers to the most common questions entrepreneurs and office managers ask before installing or starting a coffee vending service."
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "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"
+                }
+              },
+              "function": {
+                "arguments": "{\"title\":\"Vending Business FAQs\",\"bulletItems\":[],\"faqItems\":[{\"answer\":\"Most modern office coffee vending machines require about 1 square metre of floor space. It is important to ensure there is enough clearance for the front door to open fully for restocking and that there is adequate ventilation at the rear of the unit.\",\"question\":\"How much space is required for an office coffee vending machine?\"},{\"answer\":\"Standard machines typically run on a standard 10-amp power outlet. For high-capacity bean-to-cup machines, a dedicated plumbed water line is often recommended to ensure consistent quality and reduce manual refilling, though some models use internal water tanks.\",\"question\":\"What are the power and plumbing requirements for installation?\"},{\"question\":\"How often do machines need to be restocked and serviced?\",\"answer\":\"Cleaning and restocking frequency depends entirely on the volume of users. In a busy office, daily cleaning of milk lines and brewers is standard practice to maintain hygiene and taste. Restocking of beans, milk powder, or sugar can range from daily to twice weekly.\"},{\"answer\":\"Modern office environments increasingly prefer cashless options. Implementing credit card readers, mobile pay (like Apple Pay or Google Pay), and even integration with employee ID badges can help increase usage and simplify transaction management.\",\"question\":\"What payment methods should I offer to office employees?\"}],\"ctaHref\":\"/contact\",\"ctaLabel\":\"Ask another question\",\"cards\":[],\"blockType\":\"faq\",\"body\":\"Find answers to the most common questions entrepreneurs and office managers ask before installing or starting a coffee vending service.\"}",
+                "name": "add_block"
+              },
+              "id": "nkp327m2",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781141224,
+    "id": "3w4qapTgIKGqjuMP2Juy-Q0",
+    "model": "gemini-3-flash-preview",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 354,
+      "prompt_tokens": 4439,
+      "prompt_tokens_details": {
+        "cached_tokens": 4039
+      },
+      "total_tokens": 5665
+    }
+  }
+}

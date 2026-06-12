@@ -38,6 +38,7 @@ export type CreateProofItemInput = {
   name?: string | null;
   roleOrContext?: string | null;
   sourceRightsNotes?: string | null;
+  assetId?: string | null;
   approved?: boolean;
 };
 
@@ -162,6 +163,7 @@ export async function adminCreateProofItem(
     name: nullableText(input.name),
     role_or_context: nullableText(input.roleOrContext),
     source_rights_notes: rightsNotes,
+    asset_id: nullableText(input.assetId),
     approved,
   };
 

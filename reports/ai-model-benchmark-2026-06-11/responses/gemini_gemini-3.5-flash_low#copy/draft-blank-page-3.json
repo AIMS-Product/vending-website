@@ -1,0 +1,208 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a complete draft for this page targeting 'coffee vending machines for offices'. Include a hero, a benefits section, an FAQ, and a closing CTA."
+      }
+    ],
+    "context": {
+      "pageId": null,
+      "status": "draft",
+      "title": "",
+      "slug": "",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "",
+      "metaDescription": "",
+      "selectedBlockId": null,
+      "content": {
+        "version": 1,
+        "sections": []
+      },
+      "publishReadiness": {
+        "blockers": ["Publish requires at least one CTA or lead form block."],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "9zlj5yua",
+        "name": "set_seo_metadata",
+        "input": {
+          "metaDescription": "Discover the best coffee vending machines for offices. Explore flexible rental options, custom menus, and reliable service plans for your workplace.",
+          "seoTitle": "Coffee Vending Machines for Offices | Professional Breakroom Solutions",
+          "targetKeyword": "coffee vending machines for offices",
+          "slug": "coffee-vending-machines-offices",
+          "title": "Coffee Vending Machines for Offices"
+        }
+      },
+      {
+        "id": "yy09vxk2",
+        "name": "replace_page_sections",
+        "input": {
+          "sections": [
+            {
+              "blocks": [
+                {
+                  "title": "Premium Coffee Vending Machines for Offices",
+                  "ctaHref": "/contact",
+                  "ctaLabel": "Request a Quote",
+                  "faqItems": [],
+                  "bulletItems": [],
+                  "blockType": "hero",
+                  "cards": [],
+                  "body": "Provide your team with fresh, hot beverages without the daily cafe run. Selecting the right coffee vending machines for offices can improve workplace satisfaction, reduce downtime, and provide delicious drinks at the touch of a button. Explore our flexible rental and purchase options to find your ideal breakroom solution."
+                },
+                {
+                  "title": "Why Office Coffee Vending Is Changing Modern Workplaces",
+                  "bulletItems": [
+                    "Choose between bean-to-cup models or rapid-dispense fresh brew systems.",
+                    "Minimize cleaning times with automated self-rinsing cycles.",
+                    "Offer diverse options including espresso, lattes, hot chocolate, and tea.",
+                    "Implement cashless payment terminals or set up complimentary employee modes."
+                  ],
+                  "faqItems": [],
+                  "ctaHref": null,
+                  "ctaLabel": null,
+                  "cards": [],
+                  "blockType": "rich_text",
+                  "body": "Providing reliable beverage options keeps employees refreshed and focused throughout the workday. Instead of managing complex espresso setups or constantly cleaning messy drip pots, modern automatic dispensers deliver consistent taste with minimal maintenance. Our systems are chosen for their reliability and simplicity, allowing your administrative team to focus on their core priorities."
+                },
+                {
+                  "ctaLabel": null,
+                  "ctaHref": null,
+                  "faqItems": [],
+                  "bulletItems": [],
+                  "title": "How to Choose Your Office Beverage Setup",
+                  "body": null,
+                  "blockType": "card_grid",
+                  "cards": [
+                    {
+                      "body": "Evaluate how many cups your staff consumes each day. Smaller workplaces with under thirty employees benefit from compact countertop units, while busier corporate hubs require high-capacity, freestanding machines that handle back-to-back brewing without delay.",
+                      "href": "/contact",
+                      "title": "Daily Drink Volume",
+                      "linkLabel": "Analyze Your Volume"
+                    },
+                    {
+                      "title": "Payment & Access Setup",
+                      "linkLabel": "Explore Payment Options",
+                      "body": "Decide whether you want to offer completely free drinks to your team, or if you prefer to implement card and mobile payment systems. Many systems support hybrid setups where clients pay while employees receive daily complimentary credits.",
+                      "href": "/contact"
+                    },
+                    {
+                      "linkLabel": "View Service Plans",
+                      "title": "Maintenance & Restocking",
+                      "href": "/contact",
+                      "body": "Consider who will manage daily upkeep. Many companies opt for fully managed service agreements where external professionals handle cleaning, product replenishment, and routine maintenance, preventing your office staff from taking on extra chores."
+                    },
+                    {
+                      "linkLabel": "See Menu Varieties",
+                      "title": "Beverage Menu Customization",
+                      "href": "/contact",
+                      "body": "Modern drink machines do not just brew black coffee. You can customize menu options to offer authentic espressos, creamy cappuccinos, hot chocolates, and even herbal teas, satisfying the diverse taste profiles of your entire workforce."
+                    }
+                  ]
+                },
+                {
+                  "body": null,
+                  "blockType": "faq",
+                  "cards": [],
+                  "ctaHref": null,
+                  "ctaLabel": null,
+                  "faqItems": [
+                    {
+                      "answer": "Most coffee vending machines for offices require a standard electrical outlet and a dedicated mains water connection for continuous operation. If direct plumbing is not available in your breakroom, some compact models can operate using an internal refillable water tank instead.",
+                      "question": "What are the power and plumbing requirements for these systems?"
+                    },
+                    {
+                      "answer": "Daily maintenance is simple and usually takes less than ten minutes, focusing on emptying grounds drawers and rinsing drip trays. For major cleanings, modern dispensers feature automatic descaling and rinsing programs that run during off-hours to preserve beverage taste.",
+                      "question": "How often do the machines need to be cleaned and serviced?"
+                    },
+                    {
+                      "question": "Can we rent a system before deciding on a purchase?",
+                      "answer": "Yes, we offer flexible operating leases and rental plans that let you trial a machine without upfront capital expenses. This allows you to assess actual employee usage and adjust your machine size or beverage selections before committing to a permanent purchase."
+                    },
+                    {
+                      "answer": "Depending on the model, systems use fresh whole coffee beans, freeze-dried granulated milk, premium cocoa powders, and loose leaf tea blends. Using commercial-grade granulated milk ensures optimal hygiene and rich froth without the daily hassle of handling fresh dairy bottles.",
+                      "question": "What types of beans or ingredients do the machines use?"
+                    },
+                    {
+                      "answer": "Under our standard rental and fully managed service contracts, regular servicing and wear-and-tear repairs are completely covered at no additional cost. For outright purchases, we offer optional preventative maintenance plans to ensure your equipment remains in optimal working condition.",
+                      "question": "Who pays for repairs and mechanical servicing?"
+                    }
+                  ],
+                  "bulletItems": [],
+                  "title": "Frequently Asked Questions About Office Beverage Systems"
+                },
+                {
+                  "title": "Transform Your Office Breakroom Today",
+                  "faqItems": [],
+                  "ctaHref": "/contact",
+                  "ctaLabel": "Request an Office Consultation",
+                  "bulletItems": [],
+                  "blockType": "cta",
+                  "cards": [],
+                  "body": "Get a personalized beverage solution tailored to your team size, budget, and favorite drinks. Our experts will help you evaluate water access, electrical setups, and payment methods to deliver the perfect system."
+                }
+              ],
+              "title": "Main Page Body"
+            }
+          ],
+          "replaceExisting": true
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "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"
+                }
+              },
+              "function": {
+                "arguments": "{\"metaDescription\":\"Discover the best coffee vending machines for offices. Explore flexible rental options, custom menus, and reliable service plans for your workplace.\",\"seoTitle\":\"Coffee Vending Machines for Offices | Professional Breakroom Solutions\",\"targetKeyword\":\"coffee vending machines for offices\",\"slug\":\"coffee-vending-machines-offices\",\"title\":\"Coffee Vending Machines for Offices\"}",
+                "name": "set_seo_metadata"
+              },
+              "id": "9zlj5yua",
+              "type": "function"
+            },
+            {
+              "function": {
+                "arguments": "{\"sections\":[{\"blocks\":[{\"title\":\"Premium Coffee Vending Machines for Offices\",\"ctaHref\":\"/contact\",\"ctaLabel\":\"Request a Quote\",\"faqItems\":[],\"bulletItems\":[],\"blockType\":\"hero\",\"cards\":[],\"body\":\"Provide your team with fresh, hot beverages without the daily cafe run. Selecting the right coffee vending machines for offices can improve workplace satisfaction, reduce downtime, and provide delicious drinks at the touch of a button. Explore our flexible rental and purchase options to find your ideal breakroom solution.\"},{\"title\":\"Why Office Coffee Vending Is Changing Modern Workplaces\",\"bulletItems\":[\"Choose between bean-to-cup models or rapid-dispense fresh brew systems.\",\"Minimize cleaning times with automated self-rinsing cycles.\",\"Offer diverse options including espresso, lattes, hot chocolate, and tea.\",\"Implement cashless payment terminals or set up complimentary employee modes.\"],\"faqItems\":[],\"ctaHref\":null,\"ctaLabel\":null,\"cards\":[],\"blockType\":\"rich_text\",\"body\":\"Providing reliable beverage options keeps employees refreshed and focused throughout the workday. Instead of managing complex espresso setups or constantly cleaning messy drip pots, modern automatic dispensers deliver consistent taste with minimal maintenance. Our systems are chosen for their reliability and simplicity, allowing your administrative team to focus on their core priorities.\"},{\"ctaLabel\":null,\"ctaHref\":null,\"faqItems\":[],\"bulletItems\":[],\"title\":\"How to Choose Your Office Beverage Setup\",\"body\":null,\"blockType\":\"card_grid\",\"cards\":[{\"body\":\"Evaluate how many cups your staff consumes each day. Smaller workplaces with under thirty employees benefit from compact countertop units, while busier corporate hubs require high-capacity, freestanding machines that handle back-to-back brewing without delay.\",\"href\":\"/contact\",\"title\":\"Daily Drink Volume\",\"linkLabel\":\"Analyze Your Volume\"},{\"title\":\"Payment & Access Setup\",\"linkLabel\":\"Explore Payment Options\",\"body\":\"Decide whether you want to offer completely free drinks to your team, or if you prefer to implement card and mobile payment systems. Many systems support hybrid setups where clients pay while employees receive daily complimentary credits.\",\"href\":\"/contact\"},{\"linkLabel\":\"View Service Plans\",\"title\":\"Maintenance & Restocking\",\"href\":\"/contact\",\"body\":\"Consider who will manage daily upkeep. Many companies opt for fully managed service agreements where external professionals handle cleaning, product replenishment, and routine maintenance, preventing your office staff from taking on extra chores.\"},{\"linkLabel\":\"See Menu Varieties\",\"title\":\"Beverage Menu Customization\",\"href\":\"/contact\",\"body\":\"Modern drink machines do not just brew black coffee. You can customize menu options to offer authentic espressos, creamy cappuccinos, hot chocolates, and even herbal teas, satisfying the diverse taste profiles of your entire workforce.\"}]},{\"body\":null,\"blockType\":\"faq\",\"cards\":[],\"ctaHref\":null,\"ctaLabel\":null,\"faqItems\":[{\"answer\":\"Most coffee vending machines for offices require a standard electrical outlet and a dedicated mains water connection for continuous operation. If direct plumbing is not available in your breakroom, some compact models can operate using an internal refillable water tank instead.\",\"question\":\"What are the power and plumbing requirements for these systems?\"},{\"answer\":\"Daily maintenance is simple and usually takes less than ten minutes, focusing on emptying grounds drawers and rinsing drip trays. For major cleanings, modern dispensers feature automatic descaling and rinsing programs that run during off-hours to preserve beverage taste.\",\"question\":\"How often do the machines need to be cleaned and serviced?\"},{\"question\":\"Can we rent a system before deciding on a purchase?\",\"answer\":\"Yes, we offer flexible operating leases and rental plans that let you trial a machine without upfront capital expenses. This allows you to assess actual employee usage and adjust your machine size or beverage selections before committing to a permanent purchase.\"},{\"answer\":\"Depending on the model, systems use fresh whole coffee beans, freeze-dried granulated milk, premium cocoa powders, and loose leaf tea blends. Using commercial-grade granulated milk ensures optimal hygiene and rich froth without the daily hassle of handling fresh dairy bottles.\",\"question\":\"What types of beans or ingredients do the machines use?\"},{\"answer\":\"Under our standard rental and fully managed service contracts, regular servicing and wear-and-tear repairs are completely covered at no additional cost. For outright purchases, we offer optional preventative maintenance plans to ensure your equipment remains in optimal working condition.\",\"question\":\"Who pays for repairs and mechanical servicing?\"}],\"bulletItems\":[],\"title\":\"Frequently Asked Questions About Office Beverage Systems\"},{\"title\":\"Transform Your Office Breakroom Today\",\"faqItems\":[],\"ctaHref\":\"/contact\",\"ctaLabel\":\"Request an Office Consultation\",\"bulletItems\":[],\"blockType\":\"cta\",\"cards\":[],\"body\":\"Get a personalized beverage solution tailored to your team size, budget, and favorite drinks. Our experts will help you evaluate water access, electrical setups, and payment methods to deliver the perfect system.\"}],\"title\":\"Main Page Body\"}],\"replaceExisting\":true}",
+                "name": "replace_page_sections"
+              },
+              "id": "yy09vxk2",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781145607,
+    "id": "-B8qasvoNaGqjuMP2Juy-Q0",
+    "model": "gemini-3.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 1207,
+      "prompt_tokens": 4420,
+      "prompt_tokens_details": {
+        "cached_tokens": 4033
+      },
+      "total_tokens": 7599
+    }
+  }
+}

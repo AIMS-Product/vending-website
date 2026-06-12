@@ -39,7 +39,9 @@ const request: PageBuilderAiChatRequest = {
                   props: {
                     eyebrow: "",
                     heading: "Old headline",
-                    body: "Old body",
+                    // Long enough to pass the copy-quality gate so tests that
+                    // edit other fields do not trigger the repair round-trip.
+                    body: "Coffee vending keeps Adelaide teams stocked with fresh drinks without anyone owning a brewing rota. A managed machine covers restocking, cleaning, and fault response so facilities can stay focused on the building.",
                     ctaLabel: "Apply now",
                     ctaHref: "/apply",
                     ctaTrackingName: "apply-now",
@@ -98,31 +100,6 @@ function openAiMessageOnlyResponse(message: string, init: ResponseInit = {}) {
   );
 }
 
-function cerebrasToolResponse(output: unknown, init: ResponseInit = {}) {
-  return new Response(
-    JSON.stringify({
-      choices: [
-        {
-          message: {
-            content: "Updated the hero.",
-            tool_calls: [
-              {
-                id: "call_1",
-                type: "function",
-                function: {
-                  name: "edit_block_1_block_hero",
-                  arguments: JSON.stringify(output),
-                },
-              },
-            ],
-          },
-        },
-      ],
-    }),
-    { status: 200, ...init },
-  );
-}
-
 describe("OpenAI page builder chat", () => {
   it("calls the Responses API with page-builder tools and normalizes tool calls", async () => {
     const fetchFn = vi.fn().mockResolvedValue(
@@ -136,7 +113,6 @@ describe("OpenAI page builder chat", () => {
     );
 
     const result = await generateOpenAiPageBuilderChatResponse(request, {
-      provider: "openai",
       apiKey: "sk-test",
       fetchFn,
       model: "gpt-5.5",
@@ -206,7 +182,6 @@ describe("OpenAI page builder chat", () => {
       {
         apiKey: "sk-test",
         fetchFn,
-        provider: "openai",
       },
     );
 
@@ -235,74 +210,11 @@ describe("OpenAI page builder chat", () => {
 
     await expect(
       generateOpenAiPageBuilderChatResponse(request, {
-        provider: "openai",
         apiKey: "",
         fetchFn,
       }),
     ).rejects.toBeInstanceOf(PageBuilderAiConfigurationError);
     expect(fetchFn).not.toHaveBeenCalled();
-  });
-
-  it("calls Cerebras chat completions with page-builder tools", async () => {
-    const fetchFn = vi.fn().mockResolvedValue(
-      cerebrasToolResponse({
-        eyebrow: null,
-        headline: "Better vending for Adelaide teams",
-        body: null,
-        ctaLabel: null,
-        ctaHref: null,
-      }),
-    );
-
-    const result = await generateOpenAiPageBuilderChatResponse(request, {
-      provider: "cerebras",
-      cerebrasApiKey: "csk-test",
-      fetchFn,
-      model: "gpt-oss-120b",
-      reasoningEffort: "medium",
-    });
-
-    expect(result).toEqual({
-      message: "Updated the hero.",
-      toolCalls: [
-        {
-          id: "call_1",
-          name: "edit_block_1_block_hero",
-          input: {
-            eyebrow: null,
-            headline: "Better vending for Adelaide teams",
-            body: null,
-            ctaLabel: null,
-            ctaHref: null,
-          },
-        },
-      ],
-    });
-    expect(fetchFn).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchFn.mock.calls[0]!;
-    const body = JSON.parse(String(init?.body));
-    expect(String(url)).toBe("https://api.cerebras.ai/v1/chat/completions");
-    expect(body).toEqual(
-      expect.objectContaining({
-        model: "gpt-oss-120b",
-        reasoning_effort: "medium",
-        max_completion_tokens: 8000,
-        tool_choice: "auto",
-      }),
-    );
-    expect(body.messages[0]).toEqual(
-      expect.objectContaining({ role: "system" }),
-    );
-    expect(body.tools[0]).toEqual(
-      expect.objectContaining({
-        type: "function",
-        function: expect.objectContaining({
-          name: expect.any(String),
-          strict: true,
-        }),
-      }),
-    );
-    expect(JSON.stringify(body)).not.toContain("csk-test");
   });
 
   it("surfaces invalid tool-call JSON", async () => {
@@ -324,47 +236,63 @@ describe("OpenAI page builder chat", () => {
 
     await expect(
       generateOpenAiPageBuilderChatResponse(request, {
-        provider: "openai",
         apiKey: "sk-test",
         fetchFn,
       }),
     ).rejects.toBeInstanceOf(PageBuilderAiGenerationError);
   });
 
-  it("labels invalid Cerebras tool-call JSON as a Cerebras failure", async () => {
-    const fetchFn = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          choices: [
-            {
-              message: {
-                content: "Updated the hero.",
-                tool_calls: [
-                  {
-                    id: "call_1",
-                    type: "function",
-                    function: {
-                      name: "edit_block_1_block_hero",
-                      arguments: "{truncated",
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        }),
-      ),
+  it("repairs a draft that fails the copy-quality gate", async () => {
+    const thinBody = "Quick coffee for teams.";
+    const goodBody =
+      "Hand the whole coffee routine to a managed machine that covers restocking, cleaning, and fault response. Most offices are pouring drinks within two weeks of a site walk-through, so book the assessment now.";
+    const heroEdit = (body: string) =>
+      openAiResponse({
+        eyebrow: null,
+        headline: null,
+        body,
+        ctaLabel: null,
+        ctaHref: null,
+      });
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(heroEdit(thinBody))
+      .mockResolvedValueOnce(heroEdit(goodBody));
+
+    const result = await generateOpenAiPageBuilderChatResponse(request, {
+      apiKey: "sk-test",
+      fetchFn,
+    });
+
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    const [, repairInit] = fetchFn.mock.calls[1]!;
+    const repairBody = JSON.parse(String(repairInit?.body));
+    const repairMessages = JSON.stringify(repairBody.input);
+    expect(repairMessages).toContain("copy-quality gate rejected");
+    expect(repairMessages).toContain("Hero body has");
+    expect(result.toolCalls[0]?.input).toMatchObject({ body: goodBody });
+  });
+
+  it("keeps the original response when the repair attempt does not improve", async () => {
+    const fetchFn = vi.fn().mockImplementation(async () =>
+      openAiResponse({
+        eyebrow: null,
+        headline: "Better vending",
+        body: "Quick coffee for teams.",
+        ctaLabel: null,
+        ctaHref: null,
+      }),
     );
 
-    await expect(
-      generateOpenAiPageBuilderChatResponse(request, {
-        provider: "cerebras",
-        cerebrasApiKey: "csk-test",
-        fetchFn,
-      }),
-    ).rejects.toThrow(
-      "Cerebras returned a tool call with invalid JSON arguments.",
-    );
+    const result = await generateOpenAiPageBuilderChatResponse(request, {
+      apiKey: "sk-test",
+      fetchFn,
+    });
+
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    expect(result.toolCalls[0]?.input).toMatchObject({
+      headline: "Better vending",
+    });
   });
 
   it("keeps valid tool calls when the assistant message exceeds the transport cap", async () => {
@@ -397,7 +325,6 @@ describe("OpenAI page builder chat", () => {
     );
 
     const result = await generateOpenAiPageBuilderChatResponse(request, {
-      provider: "openai",
       apiKey: "sk-test",
       fetchFn,
     });

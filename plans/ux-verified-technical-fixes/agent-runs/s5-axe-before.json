@@ -1,0 +1,34 @@
+{
+  "article": {
+    "url": "http://localhost:3001/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "violations": [
+      {
+        "id": "landmark-complementary-is-top-level",
+        "impact": "moderate",
+        "nodes": [
+          {
+            "target": [".lg\\:block"],
+            "html": "<aside class=\"hidden lg:block\">"
+          }
+        ]
+      }
+    ],
+    "violationCount": 1
+  },
+  "admin-news-new": {
+    "url": "http://localhost:3001/admin/news/new",
+    "violations": [
+      {
+        "id": "landmark-complementary-is-top-level",
+        "impact": "moderate",
+        "nodes": [
+          {
+            "target": [".space-y-5"],
+            "html": "<aside class=\"space-y-5\">"
+          }
+        ]
+      }
+    ],
+    "violationCount": 1
+  }
+}

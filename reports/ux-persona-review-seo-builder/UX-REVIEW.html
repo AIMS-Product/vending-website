@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UX Persona Review — SEO Page Builder — 2026-06-10</title>
+<style>
+  :root{
+    --p0:#c0392b; --p1:#d35400; --p2:#b7950b; --p3:#7f8c8d;
+    --ink:#1c2733; --muted:#5d6b7a; --line:#dde3e9; --bg:#f6f8fa; --card:#ffffff;
+    --good:#1e8449; --warn:#b9770e; --bad:#c0392b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1100px;margin:0 auto;padding:32px 24px 80px}
+  header.head{border-bottom:3px solid var(--ink);padding-bottom:18px;margin-bottom:28px}
+  header.head h1{margin:0 0 6px;font-size:30px;letter-spacing:-.02em}
+  header.head .meta{color:var(--muted);font-size:14px}
+  h2{font-size:22px;margin:48px 0 14px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  h3{font-size:16.5px;margin:24px 0 8px}
+  p{max-width:80ch}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;margin:22px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 12px;text-align:center}
+  .card .n{font-size:26px;font-weight:700;line-height:1.1}
+  .card .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:4px}
+  .card.p0 .n{color:var(--p0)} .card.p1 .n{color:var(--p1)} .card.p2 .n{color:var(--p2)} .card.p3 .n{color:var(--p3)}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;overflow:hidden;font-size:14px;margin:14px 0}
+  th{position:sticky;top:0;background:var(--ink);color:#fff;text-align:left;padding:9px 12px;font-size:12.5px;
+    text-transform:uppercase;letter-spacing:.04em}
+  td{padding:9px 12px;vertical-align:top;border-top:1px solid var(--line)}
+  tbody tr:nth-child(even){background:#fbfcfd}
+  .chip{display:inline-block;padding:2px 10px;border-radius:999px;color:#fff;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .chip.p0{background:var(--p0)} .chip.p1{background:var(--p1)} .chip.p2{background:var(--p2)} .chip.p3{background:var(--p3)}
+  .chip.ghost{background:#eef1f4;color:#33414f}
+  .bar{background:#e8ecef;border-radius:6px;height:14px;min-width:130px;position:relative;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:6px}
+  .bar.bad i{background:var(--bad)} .bar.warn i{background:var(--warn)} .bar.good i{background:var(--good)}
+  .score{font-weight:700;font-variant-numeric:tabular-nums}
+  details{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:14px 0;padding:0 16px}
+  details>summary{cursor:pointer;font-weight:700;padding:13px 0;font-size:15.5px;list-style-position:inside}
+  details[open]>summary{border-bottom:1px solid var(--line)}
+  details table{border:none;margin:10px 0 16px}
+  a{color:#1a5276}
+  .issue{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--p3);
+    border-radius:10px;padding:18px 22px;margin:18px 0}
+  .issue.p0{border-left-color:var(--p0)} .issue.p1{border-left-color:var(--p1)}
+  .issue h3{margin:0 0 10px;font-size:17.5px}
+  .issue .tags{margin:0 0 12px}
+  .issue .tags .chip{margin-right:6px}
+  .issue dl{margin:0}
+  .issue dt{font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 0 3px}
+  .issue dd{margin:0;max-width:82ch}
+  .quote{border-left:3px solid var(--line);padding:4px 14px;margin:10px 0;color:#41505f;font-style:italic;max-width:78ch}
+  .quote .who{font-style:normal;font-size:12.5px;color:var(--muted)}
+  .fix{background:#f0f7f1;border:1px solid #cde3d1;border-radius:8px;padding:10px 14px;margin-top:6px}
+  .fix b{color:var(--good)}
+  .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin:16px 0}
+  .thumbs figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px}
+  .thumbs img{max-width:100%;border-radius:6px;display:block}
+  .thumbs figcaption{font-size:12px;color:var(--muted);padding:6px 2px 2px}
+  .note{background:#fdf6e3;border:1px solid #e8d8a8;border-radius:10px;padding:12px 16px;font-size:14px;margin:14px 0}
+  .howto{background:#eef4fa;border:1px solid #cfe0ef;border-radius:10px;padding:16px 20px;font-size:14.5px;margin:20px 0}
+  .howto p{margin:8px 0}
+  code{background:#eef1f4;border-radius:4px;padding:1px 5px;font-size:13px}
+  .ev{font-size:12.5px;color:var(--muted);margin-top:12px}
+  @media print{
+    details{border:none}
+    details:not([open])>*{display:block}
+    .bar{border:1px solid #999}
+    tr,.issue{page-break-inside:avoid}
+    a{color:inherit;text-decoration:none}
+    body{background:#fff}
+  }
+</style>
+</head>
+<body><div class="wrap">
+
+<header class="head">
+  <h1>UX Persona Review — SEO Page Builder</h1>
+  <div class="meta">
+    Vendingpreneurs website · scoped to <code>/admin/pages</code> + published output · 2026-06-10 ·
+    http://localhost:3000 (branch <code>ux-review-fixes</code>, dev auth bypass) ·
+    15 personas + 2 evidence verifiers
+  </div>
+</header>
+
+<div class="howto">
+  <strong>How to read this report.</strong>
+  <p>We tested the page builder the way real people would: a robot walked every screen, clicked every safe
+  button, filled every form, and attempted 7 realistic tasks ("journeys") end-to-end — creating, publishing,
+  previewing, scheduling a page, and so on. Then 15 simulated reviewers ("personas" — a grandmother, a power
+  user, a screen-reader user, a phone-only user, an angry customer, etc.) each independently studied the
+  recordings and flagged everything that confused or blocked them. Two verifier agents then re-checked every
+  serious claim against the screenshots before it was allowed into this report.</p>
+  <p><span class="chip p0">P0</span> = fix first: it breaks or badly damages a core task, or nearly every
+  reviewer hit it. &nbsp;<span class="chip p1">P1</span> = serious: damages trust or shuts out a group of
+  users. &nbsp;<span class="chip p2">P2</span> = real friction people will work around. &nbsp;
+  <span class="chip p3">P3</span> = polish. "11/15 personas" means 11 of the 15 reviewers independently
+  flagged the same problem — a strong signal it's not a matter of taste.</p>
+</div>
+
+<div class="cards">
+  <div class="card"><div class="n">8</div><div class="l">Pages tested</div></div>
+  <div class="card"><div class="n">7</div><div class="l">Journeys</div></div>
+  <div class="card"><div class="n">~80</div><div class="l">Interactions</div></div>
+  <div class="card"><div class="n">126</div><div class="l">Screenshots</div></div>
+  <div class="card"><div class="n">43</div><div class="l">Unique issues</div></div>
+  <div class="card p0"><div class="n">6</div><div class="l">P0</div></div>
+  <div class="card p1"><div class="n">6</div><div class="l">P1</div></div>
+  <div class="card p2"><div class="n">15</div><div class="l">P2</div></div>
+  <div class="card p3"><div class="n">16</div><div class="l">P3</div></div>
+  <div class="card"><div class="n">2.2<span style="font-size:14px;color:var(--muted)">/5</span></div><div class="l">Avg gut feel</div></div>
+</div>
+
+<h2>The Story in Three Sentences</h2>
+<p>The builder is genuinely good at the creative part: picking blocks, editing content on the canvas, and
+previewing a draft all work well — the share-a-preview-link flow is better than what Webflow or WordPress
+offer. But the moment a page needs to <em>go live</em>, the tool stops communicating: publishing is a
+guessing game of one-at-a-time error messages, scheduling gives no confirmation at all, redirects can never
+be undone, and abandoned edits silently turn into ghost draft pages. In short: <strong>the machine does the
+work correctly, but it doesn't tell you the truth about what it just did — and that's exactly where users
+need certainty most.</strong></p>
+
+<h2>Journey Results</h2>
+<p>A "journey" is a complete real-world task attempted from start to finish, the way a new staff member
+would do it — no insider knowledge, only what the screen offers. Scores are the average across all
+personas (1 = broken/hostile, 5 = excellent).</p>
+<table>
+  <thead><tr><th>Journey</th><th>Avg score</th><th style="width:160px">Score</th><th>Completion</th><th>Clicks</th></tr></thead>
+  <tbody>
+    <tr><td>create-first-page</td><td class="score">2.7</td><td><div class="bar warn"><i style="width:54%"></i></div></td><td>completed-with-friction</td><td>13</td></tr>
+    <tr><td><strong>publish-and-view-live</strong></td><td class="score">1.2</td><td><div class="bar bad"><i style="width:24%"></i></div></td><td>completed-with-friction (heavy)</td><td>~12</td></tr>
+    <tr><td>preview-draft</td><td class="score">4.0</td><td><div class="bar good"><i style="width:80%"></i></div></td><td>completed</td><td>1</td></tr>
+    <tr><td>revision-restore</td><td class="score">2.2</td><td><div class="bar warn"><i style="width:44%"></i></div></td><td>completed-with-friction</td><td>4</td></tr>
+    <tr><td><strong>schedule-publish</strong></td><td class="score">1.3</td><td><div class="bar bad"><i style="width:26%"></i></div></td><td>completed-with-friction</td><td>5</td></tr>
+    <tr><td>create-redirect</td><td class="score">2.8</td><td><div class="bar warn"><i style="width:56%"></i></div></td><td>completed</td><td>2</td></tr>
+    <tr><td>find-duplicate-archive</td><td class="score">2.9</td><td><div class="bar warn"><i style="width:58%"></i></div></td><td>completed-with-friction</td><td>8</td></tr>
+  </tbody>
+</table>
+
+<h3>What each journey was, in plain English</h3>
+<table>
+  <thead><tr><th>Journey</th><th>The task</th><th>What actually happened</th></tr></thead>
+  <tbody>
+    <tr><td>create-first-page</td><td>Make a brand-new page with some content and save it as a draft.</td><td>Worked, but took a 3-screen wizard, a tour popup, and the new page was a wall of grey placeholder text with no hint of what's required.</td></tr>
+    <tr><td>publish-and-view-live</td><td>Take that draft live on the public website and look at it.</td><td>Eventually worked — after solving four error messages revealed one at a time, one of which pointed at a field that isn't on the screen. See P0-1, P0-3, P0-4.</td></tr>
+    <tr><td>preview-draft</td><td>Check what the draft will look like before publishing.</td><td>One click. A preview opened in a new tab. The best flow in the product.</td></tr>
+    <tr><td>revision-restore</td><td>Make an edit, then go back to an earlier version of the page.</td><td>Works — but only after the page has been published once. Before that there is no version history at all (P1-6).</td></tr>
+    <tr><td>schedule-publish</td><td>Set the page to publish itself tomorrow at noon, then cancel that.</td><td>The schedule saved, but the screen never said so — the date box went blank and no "Scheduled for…" appeared anywhere (P0-2).</td></tr>
+    <tr><td>create-redirect</td><td>Forward an old web address to the new page.</td><td>Creating it was easy. Fixing or removing it is impossible — there is no edit or delete (P0-5).</td></tr>
+    <tr><td>find-duplicate-archive</td><td>Search for the page, make a copy, then archive both.</td><td>All worked via the row "⋮" menu, with confirm dialogs. The copy got a gibberish web address ("draft-4020bd0f") and archiving is one row at a time.</td></tr>
+  </tbody>
+</table>
+
+<h2>Key Evidence</h2>
+<div class="thumbs">
+  <figure><a href="screenshots/journey-publish-and-view-live-02-read-publish-blocker.png" target="_blank"><img src="screenshots/journey-publish-and-view-live-02-read-publish-blocker.png" alt="Publish blocked: chip says Fix SEO title while field says leave blank"></a><figcaption>P0-1/P1-1 — three contradictory messages about why Publish is blocked, in one frame</figcaption></figure>
+  <figure><a href="screenshots/journey-publish-and-view-live-09-after-publish.png" target="_blank"><img src="screenshots/journey-publish-and-view-live-09-after-publish.png" alt="Changes published toast with confirm card still open"></a><figcaption>P0-4 — “Changes published.” while the confirm box still asks to publish</figcaption></figure>
+  <figure><a href="screenshots/journey-publish-and-view-live-11-block-settings-modal.png" target="_blank"><img src="screenshots/journey-publish-and-view-live-11-block-settings-modal.png" alt="CTA destination URL hidden in block settings modal"></a><figcaption>P0-3 — the required “CTA destination URL” lives only in this hidden popup</figcaption></figure>
+  <figure><a href="screenshots/journey-schedule-publish-05-verify-scheduled.png" target="_blank"><img src="screenshots/journey-schedule-publish-05-verify-scheduled.png" alt="Schedule field empty after save"></a><figcaption>P0-2 — schedule box empty again right after saving a date (open Share menu = test artifact)</figcaption></figure>
+  <figure><a href="screenshots/admin-pages-new-014-leave-unsaved.png" target="_blank"><img src="screenshots/admin-pages-new-014-leave-unsaved.png" alt="Orphan draft created after leaving unsaved editor"></a><figcaption>P0-6 — left without saving, no warning — and a ghost draft appeared in the list</figcaption></figure>
+  <figure><a href="screenshots/admin-pages-redirects-002-full.png" target="_blank"><img src="screenshots/admin-pages-redirects-002-full.png" alt="Redirects table with no row actions"></a><figcaption>P0-5 — the redirects table: no edit, no delete, anywhere</figcaption></figure>
+</div>
+
+<h2>P0 — Fix These First</h2>
+
+<div class="issue p0">
+  <h3>P0-1 · Publishing is a guessing game: requirements are revealed one error at a time</h3>
+  <div class="tags"><span class="chip p0">P0</span><span class="chip ghost">Editor</span><span class="chip ghost">14 of 15 personas</span></div>
+  <dl>
+    <dt>What happens</dt>
+    <dd>When you finish a page and try to publish it, the Publish button is greyed out. The only explanation
+    is a small orange note beside it — for example <code>Fix SEO title</code>. You fix that and click Save…
+    and instead of unlocking, a <em>new</em> note appears: <code>Fix content 1 · Cta Label</code>. Fix that,
+    and another appears: <code>Fix content 1 · Destination URL</code>. The tool knows the full list of
+    requirements the entire time — it just never shows it. Our test run needed <strong>four rounds</strong>
+    of "fix one thing, discover the next" before the button unlocked. The messages are also written in the
+    system's internal naming ("content 1", "Cta") rather than words a person uses.</dd>
+    <dt>Why it matters</dt>
+    <dd>You can never tell how close you are to done. Each "fixed it!" moment is punished with a new demand,
+    which is exactly the pattern that makes people abandon software. This is the single most-flagged issue
+    in the review and the reason the publish journey scored 1.2/5.</dd>
+  </dl>
+  <div class="quote">"It made me fix one hidden riddle after another, in words I didn't understand, and one
+  field wasn't even on the page." <div class="who">— Betty (78, non-technical)</div></div>
+  <div class="quote">"This is where I'd literally throw my phone." <div class="who">— Zoe (16)</div></div>
+  <div class="fix"><b>Fix:</b> Replace the single rotating message with a visible checklist of <em>everything</em>
+  still required before publishing — in plain language ("Add a headline to the Hero section"), each item
+  clickable so it jumps to (and opens) the right field. The user should see the list shrink as they work.</div>
+  <div class="ev">Evidence: <a href="screenshots/journey-publish-and-view-live-02-read-publish-blocker.png" target="_blank">blocker chip</a> ·
+  <a href="screenshots/journey-publish-and-view-live-08-after-seo-title-fix.png" target="_blank">next blocker appears</a> · publish-chain.json</div>
+</div>
+
+<div class="issue p0">
+  <h3>P0-2 · Scheduling a page to publish later gives zero confirmation it worked</h3>
+  <div class="tags"><span class="chip p0">P0</span><span class="chip ghost">Editor</span><span class="chip ghost">15 of 15 personas — unanimous</span></div>
+  <dl>
+    <dt>What happens</dt>
+    <dd>There's a "Scheduled publish" box where you can pick a date and time for the page to go live
+    automatically. We typed tomorrow at 12:00 and clicked "Save draft". The toast said "Draft saved." —
+    and the date box was <strong>empty again</strong>, showing <code>dd/mm/yyyy, --:-- --</code>. Nowhere on
+    the entire screen does it say "This page will publish on 11 June at 12:00". The only clue that a schedule
+    exists at all is that a checkbox labelled "Cancel scheduled publish" quietly appears further down.</dd>
+    <dt>Why it matters</dt>
+    <dd>Scheduling is an unattended action — you set it and walk away. If you can't see proof it was accepted,
+    you either don't trust it (and publish manually anyway) or you do trust it and discover the failure when
+    a client asks why the page never went live. One of our personas, Karen, was written as "an angry user
+    whose scheduled page never went live and she doesn't know why" — and the review reproduced her exact
+    scenario. Every single reviewer flagged this.</dd>
+  </dl>
+  <div class="quote">"I have no evidence my site is queued to go live. For an unattended action, that's
+  disqualifying." <div class="who">— Rachel (skeptical marketing director)</div></div>
+  <div class="fix"><b>Fix:</b> After saving, keep the chosen date in the box and show a persistent status —
+  "Scheduled to publish Wed 11 Jun, 12:00 PM (Pacific Time)" — in the Publish Status card, with a clear
+  Cancel button next to it.</div>
+  <div class="ev">Evidence: <a href="screenshots/journey-schedule-publish-05-verify-scheduled.png" target="_blank">empty field after save</a> · journeys.md schedule-publish</div>
+</div>
+
+<div class="issue p0">
+  <h3>P0-3 · A field you MUST fill to publish doesn't exist anywhere on the page</h3>
+  <div class="tags"><span class="chip p0">P0</span><span class="chip ghost">Editor</span><span class="chip ghost">12 of 15 personas</span></div>
+  <dl>
+    <dt>What happens</dt>
+    <dd>One of the publish requirements is <code>Fix content 1 · Destination URL</code> — the hero section's
+    button needs a link target. Reasonable rule. The problem: you can scroll the entire editor top to bottom
+    and there is <strong>no field called "Destination URL" anywhere</strong>. It only exists inside a hidden
+    popup: hover the hero block → click the "⋮ Block actions" button → choose "Edit settings" → and there,
+    in a modal, is "CTA destination URL". The error message never mentions any of that. Our automated tester
+    — which methodically clicks everything — took three attempts to find it; a human gets no such patience.</dd>
+    <dt>Why it matters</dt>
+    <dd>This is a dead end disguised as an instruction. The user is told to fix something they cannot find,
+    which reads as "the software is broken" and ends sessions. Several personas independently called it the
+    point where they'd give up or phone someone.</dd>
+  </dl>
+  <div class="quote">"The message gives no location; without that hint I cannot find the field at all."
+  <div class="who">— Yuki (non-native English speaker)</div></div>
+  <div class="fix"><b>Fix:</b> Two options, ideally both: (1) make the error message a link that opens the
+  block-settings popup with the field focused; (2) show the destination field inline on the canvas right
+  next to the button label it belongs to.</div>
+  <div class="ev">Evidence: <a href="screenshots/journey-publish-and-view-live-11-block-settings-modal.png" target="_blank">the hidden modal</a> ·
+  <a href="screenshots/journey-publish-and-view-live-12-block-settings-filled.png" target="_blank">filled → publish unlocks</a></div>
+</div>
+
+<div class="issue p0">
+  <h3>P0-4 · After you publish, the "Confirm publish" box stays open and asks you to publish again</h3>
+  <div class="tags"><span class="chip p0">P0</span><span class="chip ghost">Editor</span><span class="chip ghost">12 of 15 personas</span></div>
+  <dl>
+    <dt>What happens</dt>
+    <dd>Clicking Publish shows a yellow confirmation card: "Publish this page? This will make this draft
+    visible at /resources/…" with Cancel and Confirm buttons. Good. You click "Confirm publish". A green
+    "Changes published." message appears — but the yellow card <strong>does not close</strong>. It stays on
+    screen, buttons still active, now reading "This will <em>replace the current live version</em>…". So the
+    screen simultaneously says "you published it" and "do you want to publish it?"</dd>
+    <dt>Why it matters</dt>
+    <dd>The user's very next thought is "did it actually work, or do I need to click again?" Clicking again
+    is harmless today but the user doesn't know that — and a UI that contradicts itself at the moment of
+    highest stakes (changing the live website) torches trust in everything else it says.</dd>
+  </dl>
+  <div class="quote">"The success toast fires while the scary 'this will replace the live version' card stays
+  open, so I can't tell if it worked." <div class="who">— Karen (angry user)</div></div>
+  <div class="fix"><b>Fix:</b> When publishing succeeds, dismiss the confirm card and swap in a success state:
+  "✓ Published — <u>Open live page</u>". (That link also fixes issue #14.)</div>
+  <div class="ev">Evidence: <a href="screenshots/journey-publish-and-view-live-09-after-publish.png" target="_blank">both states on screen at once</a></div>
+</div>
+
+<div class="issue p0">
+  <h3>P0-5 · Redirects can be created but never edited or deleted — typos are permanent</h3>
+  <div class="tags"><span class="chip p0">P0</span><span class="chip ghost">Redirects screen</span><span class="chip ghost">11 of 15 personas</span></div>
+  <dl>
+    <dt>What happens</dt>
+    <dd>A redirect forwards an old web address to a new one (e.g. so links to a renamed page don't break).
+    The Redirects screen has a form to create them and a table listing them — and that's it. The table rows
+    have <strong>no edit button, no delete button, no menu</strong>. Whatever you type, the moment you click
+    "Create redirect", it is permanent as far as this screen is concerned.</dd>
+    <dt>Why it matters</dt>
+    <dd>Redirects are exactly the kind of thing people typo (they're raw URLs), and a "301" redirect
+    specifically tells browsers and Google "this move is permanent — remember it", so they cache it
+    aggressively. A mistyped redirect can silently send visitors to the wrong place for months with no way
+    to stop it from the admin. We know it's real because <em>this review's own three test redirects are now
+    stuck in that table</em> — cleaning them up requires going into the database directly.</dd>
+  </dl>
+  <div class="quote">"I came here because I made a redirect with a typo — and this screen shows me the typo
+  and won't let me fix it." <div class="who">— Karen (angry user)</div></div>
+  <div class="fix"><b>Fix:</b> Add Edit and Delete (with a confirm step) to each row. A "disable" toggle would
+  be even safer than delete for accidental-removal recovery.</div>
+  <div class="ev">Evidence: <a href="screenshots/admin-pages-redirects-002-full.png" target="_blank">the table — five columns, no actions</a></div>
+</div>
+
+<div class="issue p0">
+  <h3>P0-6 · Leave the editor without saving: no warning — and a ghost draft is silently created</h3>
+  <div class="tags"><span class="chip p0">P0</span><span class="chip ghost">New-page editor</span><span class="chip ghost">10 of 15 personas</span></div>
+  <dl>
+    <dt>What happens</dt>
+    <dd>We opened "Create page", typed a title, and then clicked back to the pages list <em>without saving</em> —
+    the classic "phone rang, came back later" moment. Two things went wrong at once. First, there was
+    <strong>no "you have unsaved changes" warning</strong> — the editor just let us walk away. Second, and
+    stranger: verification showed the typed content wasn't thrown away — the tool had <strong>silently saved
+    it as a brand-new draft page</strong>, with its own web address, sitting in the drafts list. Nobody ever
+    pressed Save. (Our probe page, literally titled "Unsaved data-loss probe (do not save)", appeared as
+    draft #5.)</dd>
+    <dt>Why it matters</dt>
+    <dd>Either behaviour alone is bad; together they're worse, because the user can't predict which one they
+    got. Someone who wanted to keep their work believes it's gone. Someone who wanted to discard a false
+    start has unknowingly littered the site with a half-named draft page that has a publishable URL. Over
+    months this produces a drafts list full of ghosts nobody remembers creating.</dd>
+  </dl>
+  <div class="quote">"Two places where my work vanished or where I couldn't tell if something saved."
+  <div class="who">— Betty</div></div>
+  <div class="fix"><b>Fix:</b> Intercept navigation away from an editor with unsaved changes: "Save draft /
+  Discard / Keep editing". And never persist a draft to the database before the user explicitly saves
+  (or, if autosave-on-create is intentional, say so on screen: "Draft created automatically").</div>
+  <div class="ev">Evidence: <a href="screenshots/admin-pages-new-014-leave-unsaved.png" target="_blank">back on the list, ghost draft visible, no warning shown</a></div>
+</div>
+
+<h2>P1 — Serious</h2>
+
+<div class="issue p1">
+  <h3>P1-1 · The tool gives three different explanations for why publishing is blocked — at the same time</h3>
+  <div class="tags"><span class="chip p1">P1</span><span class="chip ghost">Editor</span><span class="chip ghost">8 of 15 personas</span></div>
+  <dl>
+    <dt>What happens</dt>
+    <dd>In one screenshot — one moment in time — the status chip says <code>Fix SEO title</code>, the
+    readiness panel says <code>Add a hero headline before publishing.</code>, and the SEO title field itself
+    says <code>Leave blank to use page headline</code> — i.e. "this field is optional". Three surfaces, three
+    stories. The actual problem was the empty headline, but we (like a real user) fixed the SEO title first
+    because that's what the chip demanded. The chip's wording even drifts between "Fix SEO title" and
+    "Improve SEO title" in different states.</dd>
+    <dt>Why it matters</dt>
+    <dd>When messages contradict each other, users stop believing any of them — and they waste effort fixing
+    the wrong thing, which compounds the P0-1 whack-a-mole feeling.</dd>
+  </dl>
+  <div class="fix"><b>Fix:</b> Drive every blocker display from one source of truth, and name the actual
+  missing thing ("Add a hero headline"). If a field is optional, never name it in a blocker.</div>
+  <div class="ev">Evidence: <a href="screenshots/journey-publish-and-view-live-02-read-publish-blocker.png" target="_blank">all three messages in one frame</a></div>
+</div>
+
+<div class="issue p1">
+  <h3>P1-2 · Autosave can fail and the editor doesn't tell you</h3>
+  <div class="tags"><span class="chip p1">P1</span><span class="chip ghost">Editor</span><span class="chip ghost">1 persona (developer) — verified real</span></div>
+  <dl>
+    <dt>What happens</dt>
+    <dd>The editor saves your work automatically as you type and shows "Saved automatically · 3:45 PM".
+    During testing, one of those background saves failed with a network error. The editor showed
+    <strong>nothing</strong> — no banner, no change to the "saved" indicator. The failure was only recorded
+    in the browser's hidden developer console: <code>seo page autosave failed TypeError: Failed to fetch</code>.</dd>
+    <dt>Why it matters</dt>
+    <dd>An autosave indicator is a promise: "you don't need to worry about saving." If it can silently break,
+    the user keeps typing for an hour believing they're protected, closes the laptop, and the work is gone.
+    Only one reviewer caught this (the one simulating a developer with the console open) — that's precisely
+    why it's dangerous: normal users have no way to see it. Severity comes from the damage, not the count.</dd>
+  </dl>
+  <div class="fix"><b>Fix:</b> When an autosave fails, show a visible warning — "Couldn't save — retrying…
+  / Save manually" — and retry automatically. Flip the "Saved" indicator to a "Not saved" state.</div>
+  <div class="ev">Evidence: journey-results.json console log (verified verbatim by verifier-b)</div>
+</div>
+
+<div class="issue p1">
+  <h3>P1-3 · A blind user can't find out why the Publish button is disabled</h3>
+  <div class="tags"><span class="chip p1">P1</span><span class="chip ghost">Editor</span><span class="chip ghost">Accessibility</span></div>
+  <dl>
+    <dt>What happens</dt>
+    <dd>Sighted users at least see the small orange blocker note next to the greyed-out Publish button.
+    A screen reader (software that reads the page aloud for blind users) just announces "Publish, button,
+    dimmed" — the <em>reason</em> isn't programmatically attached to the button, so it's never read out.
+    The user knows publishing is blocked but has no way to learn why.</dd>
+    <dt>Why it matters</dt>
+    <dd>Combined with P0-1, a screen-reader user isn't playing whack-a-mole — they can't even see the mole.
+    Publishing becomes literally impossible without sighted help.</dd>
+  </dl>
+  <div class="fix"><b>Fix:</b> Associate the blocker text with the button (<code>aria-describedby</code>)
+  so it's announced together with it, and announce blocker changes via a live region.</div>
+  <div class="ev">Evidence: verification-b.json cluster M; editor ARIA snapshot</div>
+</div>
+
+<div class="issue p1">
+  <h3>P1-4 · The pages list shows status as unlabelled coloured dots</h3>
+  <div class="tags"><span class="chip p1">P1</span><span class="chip ghost">Pages list</span><span class="chip ghost">11 of 15 personas</span></div>
+  <dl>
+    <dt>What happens</dt>
+    <dd>Each page row has two columns — "Readiness" and "Status" — whose entire content is a small coloured
+    dot: red, amber, green, blue, or grey. There are no words next to the dots and no legend anywhere on the
+    page. To learn what a dot means you must hover your mouse over each one and read a tooltip, one at a time.
+    (For screen-reader users the dots do carry hidden text names — so this is a visual problem, not a total
+    accessibility block; the verifiers checked.)</dd>
+    <dt>Why it matters</dt>
+    <dd>The one thing a manager wants from this list — "which pages are live, which are in trouble?" — can't
+    be answered at a glance, which is the entire point of a status column. Colour-only signals also fail for
+    the ~8% of men with colour-vision deficiency.</dd>
+  </dl>
+  <div class="quote">"Page status is not glanceable from the list." <div class="who">— Victoria (executive with 30 seconds)</div></div>
+  <div class="fix"><b>Fix:</b> Put the word next to the dot ("● Published", "● Needs work") or add a one-line
+  legend above the table.</div>
+  <div class="ev">Evidence: <a href="screenshots/admin-pages-001-load.png" target="_blank">the list view</a></div>
+</div>
+
+<div class="issue p1">
+  <h3>P1-5 · Screen readers can't hear the names of the page blocks in the editor</h3>
+  <div class="tags"><span class="chip p1">P1</span><span class="chip ghost">Editor</span><span class="chip ghost">Accessibility — "serious" automated violation</span></div>
+  <dl>
+    <dt>What happens</dt>
+    <dd>The blocks on the canvas (Hero, FAQ, …) are labelled for assistive technology using a technique that
+    HTML doesn't actually allow (<code>aria-label</code> on a plain <code>span</code>). The result: screen
+    readers are required to <em>ignore</em> those labels, so the building blocks of the page are nameless to
+    a blind user. The industry-standard automated checker (axe) flags this at "serious" severity.</dd>
+    <dt>Why it matters</dt>
+    <dd>Without block names, a screen-reader user can't tell which section of the page they're in while
+    editing — navigation of the canvas becomes guesswork.</dd>
+  </dl>
+  <div class="fix"><b>Fix:</b> Move the label onto an element that's allowed to carry one (the block's
+  focusable wrapper or a heading), or give the span an appropriate role.</div>
+  <div class="ev">Evidence: axe-results.json — <code>aria-prohibited-attr</code>, <code>span[aria-label="Hero block"]</code>, <code>span[aria-label="FAQ block"]</code></div>
+</div>
+
+<div class="issue p1">
+  <h3>P1-6 · There is no undo for drafts until the page has been published once</h3>
+  <div class="tags"><span class="chip p1">P1</span><span class="chip ghost">Editor</span><span class="chip ghost">9 of 15 personas</span></div>
+  <dl>
+    <dt>What happens</dt>
+    <dd>The editor has a "Revision history" panel — a list of earlier versions you can restore. But while
+    you're still drafting a new page, that list is empty and stays empty: saving a draft does <em>not</em>
+    create a restore point. The empty-state text confirms it: <em>"Revisions appear after publishing, library
+    refreshes, or draft restores."</em> So during the riskiest period — building the page, deleting and
+    re-adding blocks, experimenting — there is no safety net. Delete the wrong section and save? It's gone.</dd>
+    <dt>Why it matters</dt>
+    <dd>People assume a CMS with a "Revision history" panel is protecting them. It isn't, precisely when
+    they're most likely to make a destructive mistake. Every major competitor (WordPress, Webflow, Framer)
+    snapshots drafts.</dd>
+  </dl>
+  <div class="quote">"That's the safety net I came looking for, and it isn't there until it's too late."
+  <div class="who">— Karen</div></div>
+  <div class="fix"><b>Fix:</b> Create a revision on every manual "Save draft" (or every N minutes of changes),
+  so drafting has restore points from the first save.</div>
+  <div class="ev">Evidence: <a href="screenshots/journey-revision-restore-04-preview-revision.png" target="_blank">the empty revisions panel during drafting</a></div>
+</div>
+
+<h2>P2 — Real Friction</h2>
+<details open>
+<summary>15 issues — each one sentence of what happens + why it matters</summary>
+<table>
+  <thead><tr><th style="width:32px">#</th><th>Where</th><th>What happens, in plain English</th><th>Personas</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td>14</td><td>Editor</td><td>After publishing, there's no obvious "view your live page" link — the only path is buried in the Share dropdown, so we had to type the URL by hand; and for a few seconds right after publishing, the public page returned "not found", with no "going live now…" hint.</td><td>6</td><td>Put "Open live page" in the success state; wait until the page is actually live before offering it</td></tr>
+    <tr><td>15</td><td>Editor (phone)</td><td>On a phone the whole editor becomes one enormous single-column scroll: the Save and Publish buttons live in completely different scroll regions from the content you're editing, so you thumb-scroll for ages between "change a word" and "save it".</td><td>2</td><td>Sticky action bar (Save/Publish/status) on small screens; collapsible side panel</td></tr>
+    <tr><td>16</td><td>Redirects</td><td>If you mistype a path, the error says "Path must be root-relative." (engineer-speak for "start it with /"), it appears at the top of the page instead of next to the field, and the form wipes everything you typed — you start over.</td><td>6</td><td>Plain error next to the field ("Start the path with /, e.g. /resources/old-page") and keep the typed values</td></tr>
+    <tr><td>17</td><td>Editor</td><td>A new page is a wall of light-grey ghost text ("Hero headline", "CTA label") with nothing marking which parts are required before the page can publish — you only find out via the P0-1 error chain later.</td><td>6</td><td>Badge required-to-publish fields ("Required to publish") and show a starter checklist</td></tr>
+    <tr><td>18</td><td>Editor</td><td>The right-hand SEO panel piles up seven sections (readiness scores, 5 form fields, 8 signal rows, 7 action items, governance, comments) into one scroll with no hierarchy — overwhelmed users can't tell which two fields actually matter.</td><td>5</td><td>Lead with a one-line verdict + "fix this next"; move governance/comments behind tabs</td></tr>
+    <tr><td>19</td><td>Create page</td><td>Three wizard screens stand between clicking "Create page" and typing anything — and the third screen is just a "ready to build" review with nothing to decide.</td><td>3</td><td>Collapse to one screen (type + starting point), go straight to the editor</td></tr>
+    <tr><td>20</td><td>Editor</td><td>No keyboard shortcuts at all — no Cmd+S to save, no Cmd+Enter to publish, no "/" to add a block; everything is mouse-only, which power users feel within the first minute.</td><td>1</td><td>Add the standard trio: Cmd+S, Cmd+Enter, "/" block picker</td></tr>
+    <tr><td>21</td><td>Editor</td><td>A "Quick Tour · Step 1 of 3" popup auto-opens over the canvas the first time the editor loads, blocking the thing you came to do until you dismiss it.</td><td>1</td><td>Make the tour an offered button, never an auto-opening overlay</td></tr>
+    <tr><td>22</td><td>Everywhere</td><td>The interface speaks insider jargon with no explanations: "Eyebrow" (the small text above a headline), "Slug" (the page's URL ending), "CTA" (call-to-action button), "Governance comments" — non-marketing users genuinely don't know these words.</td><td>6</td><td>Plain-language labels with the jargon in brackets, e.g. "Overline (eyebrow)" / "URL ending (slug)"</td></tr>
+    <tr><td>23</td><td>Editor</td><td>Keyboard-only users must press Tab ~28 times — through the entire page preview and even its footer links — before reaching the first real form field; the page preview soaks up the whole tab order.</td><td>1</td><td>Skip-links to panel/canvas; take preview chrome out of the tab order</td></tr>
+    <tr><td>24</td><td>Several pages</td><td>The invisible page structure that screen readers navigate by is malformed in places (the revision-preview page declares two "main" regions; the sidebar is nested where it shouldn't be) — like a building with two front doors and a misprinted floor plan.</td><td>2</td><td>One main region per page; sidebar as a top-level landmark</td></tr>
+    <tr><td>25</td><td>Every page</td><td>Pressing Tab lands focus, at some point, on an invisible technical element with no visible outline — the keyboard focus just "disappears" for a press before coming back.</td><td>1</td><td>Remove the element from the tab order</td></tr>
+    <tr><td>26</td><td>Whole admin</td><td>A floating circular "N" button sits on top of the Sign out button in the bottom corner of every page, half-covering it — it looks broken and makes Sign out harder to click.</td><td>2</td><td>Move the floating button clear of the sidebar footer</td></tr>
+    <tr><td>27</td><td>Pages list</td><td>Duplicating a page called "My Landing Page" produces a copy whose web address is random gibberish ("draft-4020bd0f") instead of something like "my-landing-page-copy" — publish it without noticing and the gibberish is your live URL.</td><td>5</td><td>Derive the copy's address from the original ("…-copy")</td></tr>
+    <tr><td>28</td><td>Revision page</td><td>The version-preview page is nearly unlabelled — its title is just the lowercase word "publish" plus a timestamp — and that timestamp disagrees with the editor's (one says AM, the other PM, for the same event).</td><td>3</td><td>"Version 3 — saved when published, 10 Jun 3:49 pm" with one consistent clock</td></tr>
+  </tbody>
+</table>
+</details>
+
+<h2>P3 — Polish</h2>
+<details>
+<summary>16 smaller issues</summary>
+<table>
+  <thead><tr><th style="width:32px">#</th><th>What happens, in plain English</th><th>Flagged by</th></tr></thead>
+  <tbody>
+    <tr><td>29</td><td>Everything in the pages list is one-row-at-a-time — there's no way to tick five old pages and archive them together.</td><td>Marcus, Mike, Tom</td></tr>
+    <tr><td>30</td><td>There is no Help link, documentation, or "contact support" anywhere in the builder — a stuck user has no escape hatch except leaving the app.</td><td>Karen</td></tr>
+    <tr><td>31</td><td>The filter for diagnosing failed scheduled publishes is cut off mid-word ("Schedule faile…") at default width — the one label an anxious user is hunting for.</td><td>Karen</td></tr>
+    <tr><td>32</td><td>In the row menu, the dangerous "Archive page" option looks identical to the safe options except for being red — colour is the only warning.</td><td>David</td></tr>
+    <tr><td>33</td><td>The little eye (show/hide) and drag-handle icons in the editor are tiny, unlabelled, and easy to mis-tap.</td><td>David, Betty</td></tr>
+    <tr><td>34</td><td>Filter chips use internal workflow jargon — "Needs links", "Updating", "Metadata issues" — that new users can't decode.</td><td>Yuki, Priya</td></tr>
+    <tr><td>35</td><td>A developer-only QA page ("Block preview audit") is reachable in the admin with no explanation of what it is or why an editor would ever open it. (It's development-environment only.)</td><td>4 personas</td></tr>
+    <tr><td>36</td><td>The editing canvas renders the full public website around your content — top navigation, entire footer — and it all looks clickable/editable even though it isn't.</td><td>Jake</td></tr>
+    <tr><td>37</td><td>Saving triggers two different "saved" confirmations in two places with two designs, and publishing uses a third style — there's no consistent way the app says "done".</td><td>Claire, Alex</td></tr>
+    <tr><td>38</td><td>The "Share" dropdown stays open while you do other things elsewhere on the page, floating over the panel until you remember to close it.</td><td>Claire</td></tr>
+    <tr><td>39</td><td>The redirect type dropdown leads with bare codes — "Permanent move (301)", "Temporary redirect (307)" — which mean nothing to non-technical users choosing between them.</td><td>Betty, Zoe</td></tr>
+    <tr><td>40</td><td>Draft preview links are long random scrambles (/resources/preview/2eSNnEXLh0z…) that look like phishing links to cautious recipients.</td><td>Betty</td></tr>
+    <tr><td>41</td><td>Each page's web address is shown in tiny grey computer-font under the title — older users read it as an error code, not an address.</td><td>Betty</td></tr>
+    <tr><td>42</td><td>When a search finds nothing, the screen offers a huge full-width "Create page" button next to a tiny "Clear search" — the wrong action shouts loudest.</td><td>Claire</td></tr>
+    <tr><td>43</td><td>One button on the create-page wizard intermittently wouldn't accept a click for 30 seconds during automated testing — likely the page looks ready before it actually is.</td><td>Alex</td></tr>
+    <tr><td>44</td><td>You can publish an almost-empty page (one headline, one button, one FAQ) and nothing warns you it might look unfinished to visitors.</td><td>Betty</td></tr>
+  </tbody>
+</table>
+</details>
+
+<h2>Page-by-Page Gut Feel</h2>
+<p>"Gut feel" is each persona's 1–5 answer to "does using this page feel good?" — averaged.</p>
+<table>
+  <thead><tr><th>Page</th><th>Avg</th><th>Range</th><th>In short</th></tr></thead>
+  <tbody>
+    <tr><td>/admin/pages (list)</td><td class="score">~3.2</td><td>2–4</td><td>Best-understood surface; the unlabelled dots and jargon filters drag it down</td></tr>
+    <tr><td>/admin/pages/new (wizard)</td><td class="score">~3.8</td><td>3–5</td><td>The friendliest screens in the product (Sam: 5/5) — just one step too many</td></tr>
+    <tr><td>/admin/pages/[id] (editor)</td><td class="score">~2.1</td><td>1–3</td><td>Where every serious issue lives</td></tr>
+    <tr><td>Revision preview</td><td class="score">~2.8</td><td>2–3</td><td>Works; sparse and disorienting</td></tr>
+    <tr><td>/admin/pages/redirects</td><td class="score">~2.3</td><td>1–4</td><td>Pleasant form, great on mobile — but the un-deletable rows poison trust</td></tr>
+    <tr><td>block-preview-audit</td><td class="score">~2.5</td><td>2–3</td><td>Dev tool; fine that it exists, odd that it's visible</td></tr>
+    <tr><td>Published page (public)</td><td class="score">~3.9</td><td>3–5</td><td>The output renders correctly and cleanly at every screen size</td></tr>
+    <tr><td>Token draft preview</td><td class="score">~4.1</td><td>3–5</td><td>Shareable preview links — genuinely better than the big competitors</td></tr>
+  </tbody>
+</table>
+
+<h2>What Each Reviewer Cared About Most</h2>
+<table>
+  <thead><tr><th>Persona</th><th>Findings</th><th>Their headline, in their words</th></tr></thead>
+  <tbody>
+    <tr><td>Betty — 78, non-technical</td><td>26</td><td>Publishing is "hidden riddles"; the grey ghost text scared her; twice she couldn't tell if her work was saved</td></tr>
+    <tr><td>Marcus — impatient power user</td><td>14</td><td>13 clicks of ceremony before typing a single character; not one keyboard shortcut</td></tr>
+    <tr><td>Sam — brand-new user, no context</td><td>14</td><td>The wizard made a great first impression (5/5) that the publish gate then destroyed (1/5)</td></tr>
+    <tr><td>David — blind / keyboard-only</td><td>12</td><td>Block names are silent, the disabled Publish button never says why, and the form is 28 tab-presses away</td></tr>
+    <tr><td>Yuki — non-native English</td><td>15</td><td>"Eyebrow", "Cta", "content 1" aren't English she can map to the screen — error copy assumes insider vocabulary</td></tr>
+    <tr><td>Rachel — skeptical buyer</td><td>11</td><td>The two highest-stakes actions (publish, schedule) confirm dishonestly; the one permanent action (redirects) can't be undone</td></tr>
+    <tr><td>Jake — phone-only user</td><td>6</td><td>The editor is a thumb-scrolling marathon at phone size; the redirects form is ironically the best mobile screen</td></tr>
+    <tr><td>Claire — pixel-perfect designer</td><td>21</td><td>The same status is drawn three contradictory ways at once; there's no consistent toast/feedback system</td></tr>
+    <tr><td>Tom — "just get it done"</td><td>16</td><td>~12 clicks and four dead-ends to put ONE page live — "the one that would make me phone someone"</td></tr>
+    <tr><td>Zoe — 16, social-media native</td><td>16</td><td>Publishing is whack-a-mole; "Archive" sounds permanent and scary with no visible undo</td></tr>
+    <tr><td>Priya — overwhelmed business owner</td><td>13</td><td>A 10-minute window between customers isn't enough to get a page published</td></tr>
+    <tr><td>Alex — judging developer</td><td>17</td><td>The save/publish/schedule machinery works but lies about its state; autosave fails silently</td></tr>
+    <tr><td>Victoria — executive, 30 seconds</td><td>~10</td><td>Cannot glance-verify that a scheduled page is actually scheduled — the one thing she'd check</td></tr>
+    <tr><td>Mike — switching from Webflow/WordPress</td><td>13</td><td>Preview links beat the competition; scheduling and redirects are below table stakes</td></tr>
+    <tr><td>Karen — already angry</td><td>12</td><td>Her exact complaint ("my scheduled page never went live") is reproducible; and there's no Help link anywhere</td></tr>
+  </tbody>
+</table>
+
+<h2>What We Deliberately Didn't Touch (safety policy)</h2>
+<table>
+  <thead><tr><th>Where</th><th>Action</th><th>Why we skipped it</th></tr></thead>
+  <tbody>
+    <tr><td>/admin/pages</td><td>Duplicate / Publish / Archive on pre-existing pages</td><td>Never run destructive or state-changing actions on real data — we only photographed the menus</td></tr>
+    <tr><td>Editor</td><td>"Remove content" (deleting a block)</td><td>Kept our test page intact for later steps; the delete flow was screenshotted</td></tr>
+    <tr><td>Editor</td><td>Revoking the preview link</td><td>Kept it alive to test the preview page (it auto-expires 13 Jun)</td></tr>
+    <tr><td>Redirects</td><td>Deleting our test redirects</td><td>Impossible — no delete exists (that's finding P0-5)</td></tr>
+  </tbody>
+</table>
+<p>Everything destructive we DID do (archiving 3 pages, duplicating, restoring) was done only to records this
+review created itself.</p>
+
+<h2>Verification Honesty Box</h2>
+<p>Every P0 and P1 claim above was re-checked against the screenshots by two independent verifier agents
+before making this report. Five claims were <em>softened</em>: the redirects and unsaved-exit issues were
+downgraded from "completely blocks the task" to "critical"; the mobile-editor, colour-dots and block-naming
+issues from "critical" to "serious". One claim was corrected outright: the unsaved-exit issue originally
+said typed work was <em>lost</em> — the screenshots prove it was actually silently <em>saved as a ghost
+draft</em>, which is its own kind of problem. One persona claim (that the status dots are invisible to
+screen readers) was found to be wrong — the dots do have hidden text names — so that issue is recorded as
+visual-only.</p>
+<p><strong>Withdrawn after owner correction:</strong> the review originally flagged "scheduling uses Pacific
+Time (America/Los_Angeles)" as a wrong-timezone defect, on the assumption that Vendingpreneurs is an
+Australian business. The owner has confirmed it is a <strong>US West Coast business — Pacific Time is the
+correct timezone</strong>, so that finding (11 personas flagged it) is withdrawn entirely. The schedule
+field's clear timezone label is in fact good practice. The silent-save problem with scheduling (P0-2) is
+unaffected and stands.</p>
+
+<div class="note">
+<strong>Leftover test records (manual cleanup):</strong> 3 test redirects that cannot be deleted via the UI
+(<code>/resources/ux-old-test-1781071681847</code>, <code>/resources/ux-old-test-1781071765035</code>,
+<code>/resources/ux-explore-old-1781071765035</code>) — remove via the database when convenient. Archived
+(harmless, in the Archived tab): “UX SEO Review Test 1781071765035 v2”, its “Copy of…” duplicate, and
+“Unsaved data-loss probe (do not save)”. One test governance comment on the archived page. Preview token
+auto-expires 2026-06-13.
+</div>
+
+<h2>Next Steps</h2>
+<p>1. The six P0s are really one theme — <strong>make the publish/schedule machinery tell the user the
+truth</strong> — plus giving redirects an edit/delete and guarding unsaved exits.<br>
+2. <strong>Recommended flow:</strong> run <code>/issue-fix-strategy</code> on this report first — it triages
+each issue in plain English (what it is, why it matters, how to fix, what proof is needed) and decides the
+right workflow per issue. From there, broad multi-slice work flows into <code>/feature-orchestrator</code>
+for tracked, dependency-ordered implementation.<br>
+3. After fixes, re-run journeys 2 and 5 (publish, schedule) as the regression benchmark — they currently
+score 1.2 and 1.3; anything below 3.5 means the gating still isn't communicating.</p>
+
+<p style="color:var(--muted);font-size:13px;margin-top:40px">
+Markdown source: <a href="UX-REVIEW.md">UX-REVIEW.md</a> · machine-readable findings:
+<a href="final-findings.json">final-findings.json</a> · per-persona reviews: <code>personas/</code> ·
+full evidence: <code>screenshots/</code>, <code>exploration-log.md</code>, <code>journeys.md</code>,
+<code>axe-results.json</code></p>
+
+</div></body>
+</html>

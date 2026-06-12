@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Wordmark } from "@/components/site/Wordmark";
 import type { PageBlock, PageChromeSettings } from "@/lib/page-builder/blocks";
 import type { BlockVariant } from "@/lib/page-builder/block-options";
+import type { MoveDirection } from "@/lib/page-builder/editor-state";
 import {
   type SavedPageTemplateOption,
   type PageTypeId,
@@ -23,15 +24,15 @@ import {
 import { BlockPicker } from "@/components/admin/seo-page-editor/BlockPicker";
 import { footerColumns, primaryNav } from "@/lib/content/nav";
 
-type CreationStep = 1 | 2 | 3;
-type StartingPoint = "blank" | "template";
-
-const creationSteps = [
-  { step: 1 as const, label: "Page type" },
-  { step: 2 as const, label: "Starting point" },
-  { step: 3 as const, label: "Ready to build" },
-];
-
+// N13 / issue I15: a single-step create panel. The old 3-step wizard forced
+// two "Continue" clicks plus a review screen for effectively one real choice
+// (page type — the "starting point" step only ever offered Blank unless saved
+// templates existed). This collapses everything into one screen: pick a page
+// type and start building. The optional saved-template chooser is still shown
+// inline when templates exist for the selected type, so no previously
+// collectable input is lost; otherwise it defaults to a blank canvas. Every
+// other field (title, slug, SEO, blocks) is set in the editor afterward, as
+// before. onChoosePageTemplate is unchanged — only how we reach it changed.
 export function NewPageChoiceGate({
   pageTypeOptions,
   savedTemplates = [],
@@ -41,10 +42,8 @@ export function NewPageChoiceGate({
   savedTemplates?: readonly SavedPageTemplateOption[];
   onChoosePageTemplate: (pageType: string, templateKey: string) => void;
 }) {
-  const [step, setStep] = useState<CreationStep>(1);
   const [selectedPageType, setSelectedPageType] =
     useState<PageTypeId>("resource");
-  const [startingPoint, setStartingPoint] = useState<StartingPoint>("blank");
   const [selectedSavedTemplateId, setSelectedSavedTemplateId] = useState<
     string | null
   >(null);
@@ -57,45 +56,30 @@ export function NewPageChoiceGate({
     [savedTemplates, selectedPageType],
   );
   const hasSavedTemplates = templatesForPageType.length > 0;
-  const selectedPageTypeOption =
-    pageTypeOptions.find((option) => option.id === selectedPageType) ??
-    pageTypeOptions[0];
   const selectedSavedTemplate =
     templatesForPageType.find(
       (template) => template.id === selectedSavedTemplateId,
     ) ?? null;
-  const startingPointLabel =
-    startingPoint === "blank"
-      ? "Blank page"
-      : (selectedSavedTemplate?.label ?? "Template");
 
-  const canContinueFromStep2 =
-    startingPoint === "blank" ||
-    (startingPoint === "template" &&
-      hasSavedTemplates &&
-      selectedSavedTemplate !== null);
-
-  function goToStep2() {
-    setStartingPoint("blank");
+  function selectPageType(nextPageType: PageTypeId) {
+    setSelectedPageType(nextPageType);
+    // Reset any template selection that no longer applies to the new type.
     setSelectedSavedTemplateId(null);
-    setStep(2);
   }
 
   function handleStartBuilding() {
-    const templateKey =
-      startingPoint === "blank"
-        ? "blank"
-        : (selectedSavedTemplate?.templateKey ?? "blank");
+    const templateKey = selectedSavedTemplate?.templateKey ?? "blank";
     onChoosePageTemplate(selectedPageType, templateKey);
   }
 
   return (
     <div className="grid min-h-[calc(100dvh-4rem)] place-items-center border border-slate-200 bg-slate-100 px-4 py-8">
-      <section
-        className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl ring-1 ring-black/5 sm:p-8"
-        aria-labelledby="new-page-choice-title"
-      >
-        <div className="mb-8">
+      {/* C132: a plain <div>, not a named <section>. AdminShell already wraps
+          this route in a `region` landmark (<section aria-labelledby="admin-shell-title">),
+          so adding a second named region here nested inside it tripped axe's
+          landmark-unique rule. The heading below keeps the panel's structure. */}
+      <div className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl ring-1 ring-black/5 sm:p-8">
+        <div className="mb-6">
           <p className="text-xs font-semibold tracking-wider text-[#0b63f6] uppercase">
             SEO Page Builder
           </p>
@@ -105,217 +89,79 @@ export function NewPageChoiceGate({
           >
             Create page
           </h2>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
+            Choose the page type that best matches your goal, then start
+            building. You can adjust every detail in the editor.
+          </p>
         </div>
 
-        <CreationStepIndicator currentStep={step} />
+        <fieldset className="space-y-3">
+          <legend className="text-sm font-semibold text-slate-950">
+            What kind of page are you creating?
+          </legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {pageTypeOptions.map((option) => {
+              const isSelected = option.id === selectedPageType;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={`rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none ${
+                    isSelected
+                      ? "border-[#0b63f6] bg-[#f4f8ff] shadow-sm"
+                      : "border-slate-200 bg-white hover:border-slate-300"
+                  }`}
+                  aria-pressed={isSelected}
+                  onClick={() => selectPageType(option.id)}
+                >
+                  <span className="block text-sm font-semibold text-slate-950">
+                    {option.label}
+                  </span>
+                  <span className="mt-1 block text-sm leading-5 text-slate-600">
+                    {option.description}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
 
-        <div className="mt-8 min-h-[280px]">
-          {step === 1 ? (
-            <div className="space-y-5">
-              <div>
-                <p className="text-sm font-medium text-slate-500">
-                  Step 1 of 3
-                </p>
-                <h3 className="mt-2 text-xl font-semibold text-slate-950 sm:text-2xl">
-                  What kind of page are you creating?
-                </h3>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
-                  Choose the page type that best matches your goal. You can
-                  adjust details later in the builder.
-                </p>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {pageTypeOptions.map((option) => {
-                  const isSelected = option.id === selectedPageType;
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      className={`rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none ${
-                        isSelected
-                          ? "border-[#0b63f6] bg-[#f4f8ff] shadow-sm"
-                          : "border-slate-200 bg-white hover:border-slate-300"
-                      }`}
-                      aria-pressed={isSelected}
-                      onClick={() => setSelectedPageType(option.id)}
-                    >
-                      <span className="block text-sm font-semibold text-slate-950">
-                        {option.label}
-                      </span>
-                      <span className="mt-1 block text-sm leading-5 text-slate-600">
-                        {option.description}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-
-          {step === 2 ? (
-            <div className="space-y-5">
-              <div>
-                <p className="text-sm font-medium text-slate-500">
-                  Step 2 of 3
-                </p>
-                <h3 className="mt-2 text-xl font-semibold text-slate-950 sm:text-2xl">
-                  How would you like to start?
-                </h3>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
-                  Start from scratch or reuse a saved template for this page
-                  type.
-                </p>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
+        {hasSavedTemplates ? (
+          <fieldset className="mt-6 space-y-3">
+            <legend className="text-sm font-semibold text-slate-950">
+              Start from a template (optional)
+            </legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <ChoiceCard
+                label="Blank page"
+                description="Start with an empty editable canvas."
+                selected={selectedSavedTemplateId === null}
+                onClick={() => setSelectedSavedTemplateId(null)}
+              />
+              {templatesForPageType.map((template) => (
                 <ChoiceCard
-                  label="Blank page"
-                  description="Start with an empty editable canvas."
-                  selected={startingPoint === "blank"}
-                  onClick={() => {
-                    setStartingPoint("blank");
-                    setSelectedSavedTemplateId(null);
-                  }}
+                  key={template.id}
+                  label={template.label}
+                  description={template.description}
+                  selected={template.id === selectedSavedTemplateId}
+                  onClick={() => setSelectedSavedTemplateId(template.id)}
                 />
-                <ChoiceCard
-                  label="Template"
-                  description={
-                    hasSavedTemplates
-                      ? "Start from a saved page template."
-                      : "No templates created"
-                  }
-                  selected={startingPoint === "template"}
-                  disabled={!hasSavedTemplates}
-                  onClick={() => {
-                    if (!hasSavedTemplates) return;
-                    setStartingPoint("template");
-                    setSelectedSavedTemplateId(
-                      templatesForPageType[0]?.id ?? null,
-                    );
-                  }}
-                />
-              </div>
-              {startingPoint === "template" && hasSavedTemplates ? (
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-slate-950">
-                    Choose a template
-                  </p>
-                  <div className="grid gap-2">
-                    {templatesForPageType.map((template) => {
-                      const isSelected =
-                        template.id === selectedSavedTemplateId;
-                      return (
-                        <button
-                          key={template.id}
-                          type="button"
-                          className={`rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none ${
-                            isSelected
-                              ? "border-[#0b63f6] bg-[#f4f8ff] shadow-sm"
-                              : "border-slate-200 bg-white hover:border-slate-300"
-                          }`}
-                          aria-pressed={isSelected}
-                          onClick={() =>
-                            setSelectedSavedTemplateId(template.id)
-                          }
-                        >
-                          <span className="block text-sm font-semibold text-slate-950">
-                            {template.label}
-                          </span>
-                          <span className="mt-1 block text-sm leading-5 text-slate-600">
-                            {template.description}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
+              ))}
             </div>
-          ) : null}
+          </fieldset>
+        ) : null}
 
-          {step === 3 ? (
-            <div className="space-y-5">
-              <div>
-                <p className="text-sm font-medium text-slate-500">
-                  Step 3 of 3
-                </p>
-                <h3 className="mt-2 text-xl font-semibold text-slate-950 sm:text-2xl">
-                  Ready to build your page
-                </h3>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
-                  Review your choices, then open the builder when you are ready.
-                </p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                <dl className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <dt className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
-                      Page type
-                    </dt>
-                    <dd className="mt-1 text-base font-semibold text-slate-950">
-                      {selectedPageTypeOption?.label}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
-                      Starting point
-                    </dt>
-                    <dd className="mt-1 text-base font-semibold text-slate-950">
-                      {startingPointLabel}
-                    </dd>
-                    {startingPoint === "template" &&
-                    selectedSavedTemplate?.description ? (
-                      <dd className="mt-1 text-sm leading-6 text-slate-600">
-                        {selectedSavedTemplate.description}
-                      </dd>
-                    ) : null}
-                  </div>
-                </dl>
-              </div>
-            </div>
-          ) : null}
+        <div className="mt-8 flex justify-end border-t border-slate-200 pt-6">
+          <button
+            type="button"
+            className="min-h-11 rounded-lg border border-[#0b63f6] bg-[#0b63f6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+            onClick={handleStartBuilding}
+          >
+            Start building page
+          </button>
         </div>
-
-        <CreationStepActions
-          step={step}
-          canContinueFromStep2={canContinueFromStep2}
-          onBack={() => setStep((current) => (current - 1) as CreationStep)}
-          onContinueFromStep1={goToStep2}
-          onContinueFromStep2={() => setStep(3)}
-          onStartBuilding={handleStartBuilding}
-        />
-      </section>
+      </div>
     </div>
-  );
-}
-
-function CreationStepIndicator({ currentStep }: { currentStep: CreationStep }) {
-  return (
-    <ol
-      aria-label="Create page progress"
-      className="grid grid-cols-3 gap-2 sm:gap-3"
-    >
-      {creationSteps.map(({ step, label }) => {
-        const isComplete = step < currentStep;
-        const isCurrent = step === currentStep;
-        return (
-          <li key={step} className="min-w-0">
-            <div
-              className={`h-1.5 rounded-full transition ${
-                isComplete || isCurrent ? "bg-[#0b63f6]" : "bg-slate-200"
-              }`}
-              aria-hidden="true"
-            />
-            <p
-              className={`mt-2 truncate text-xs font-medium ${
-                isCurrent ? "text-[#0b63f6]" : "text-slate-500"
-              }`}
-            >
-              {label}
-            </p>
-          </li>
-        );
-      })}
-    </ol>
   );
 }
 
@@ -356,76 +202,18 @@ function ChoiceCard({
   );
 }
 
-function CreationStepActions({
-  step,
-  canContinueFromStep2,
-  onBack,
-  onContinueFromStep1,
-  onContinueFromStep2,
-  onStartBuilding,
-}: {
-  step: CreationStep;
-  canContinueFromStep2: boolean;
-  onBack: () => void;
-  onContinueFromStep1: () => void;
-  onContinueFromStep2: () => void;
-  onStartBuilding: () => void;
-}) {
-  return (
-    <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-6">
-      {step > 1 ? (
-        <button
-          type="button"
-          className="min-h-11 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
-          onClick={onBack}
-        >
-          Back
-        </button>
-      ) : (
-        <span aria-hidden="true" />
-      )}
-
-      {step === 1 ? (
-        <button
-          type="button"
-          className="min-h-11 rounded-lg border border-[#0b63f6] bg-[#0b63f6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
-          onClick={onContinueFromStep1}
-        >
-          Continue
-        </button>
-      ) : null}
-
-      {step === 2 ? (
-        <button
-          type="button"
-          disabled={!canContinueFromStep2}
-          className="min-h-11 rounded-lg border border-[#0b63f6] bg-[#0b63f6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500"
-          onClick={onContinueFromStep2}
-        >
-          Continue
-        </button>
-      ) : null}
-
-      {step === 3 ? (
-        <button
-          type="button"
-          className="min-h-11 rounded-lg border border-[#0b63f6] bg-[#0b63f6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
-          onClick={onStartBuilding}
-        >
-          Start building page
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
 export function EditorPublicHeader() {
   return (
     <header className="sticky inset-x-0 top-0 z-20 border-b-2 border-[#111111] bg-[#f5fbff]/95 backdrop-blur-md">
+      {/* N17 / I12: this header is an inert preview of the public site chrome
+          (its links preventDefault and go nowhere). Keep it out of the keyboard
+          tab order so the real SEO fields are reachable early — the links are
+          decorative here, not navigable. */}
       <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-8 px-5 py-4 lg:px-10">
         <Link
           href="/"
-          aria-label="Vendingpreneurs home"
+          aria-label="Vendingpreneurs home (preview)"
+          tabIndex={-1}
           onClick={(event) => event.preventDefault()}
         >
           <Wordmark height={48} />
@@ -440,6 +228,7 @@ export function EditorPublicHeader() {
         </nav>
         <Link
           href="/apply"
+          tabIndex={-1}
           onClick={(event) => event.preventDefault()}
           className="hidden min-h-12 items-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] lg:inline-flex"
         >
@@ -534,6 +323,7 @@ export function BuilderBlockSidebar({
   onEditBlock,
   onCreateBlock,
   onCreateBlockAfter,
+  onMoveBlock,
 }: {
   entries: BuilderBlockEntry[];
   selectedEntry: BuilderBlockEntry | null;
@@ -545,7 +335,16 @@ export function BuilderBlockSidebar({
     type: PageBlock["type"],
     variant?: BlockVariant,
   ) => void;
+  onMoveBlock: (entry: BuilderBlockEntry, direction: MoveDirection) => void;
 }) {
+  // Issue I4 / R3-5: moveBlock reorders within a column, so the up/down
+  // boundaries are the first/last block of each column — count per column.
+  const columnBlockCounts = new Map<string, number>();
+  for (const entry of entries) {
+    const key = `${entry.sectionId}:${entry.columnId}`;
+    columnBlockCounts.set(key, (columnBlockCounts.get(key) ?? 0) + 1);
+  }
+
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-900 bg-slate-950 text-white shadow-xl">
       <div className="border-b border-white/10 p-4">
@@ -569,6 +368,16 @@ export function BuilderBlockSidebar({
               const isSelected = selectedEntry?.block.id === entry.block.id;
               const hasWarnings =
                 completionMessagesForBlock(entry.block).length > 0;
+              const columnBlockCount =
+                columnBlockCounts.get(`${entry.sectionId}:${entry.columnId}`) ??
+                1;
+              const isFirstInColumn = entry.blockIndex === 0;
+              const isLastInColumn = entry.blockIndex === columnBlockCount - 1;
+              const moveButtonClass = `flex size-9 shrink-0 items-center justify-center rounded-lg transition focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-35 ${
+                isSelected
+                  ? "bg-slate-100 text-slate-600 enabled:hover:bg-slate-200"
+                  : "bg-white/10 text-slate-200 enabled:hover:bg-white/20"
+              }`;
 
               return (
                 <div
@@ -620,6 +429,28 @@ export function BuilderBlockSidebar({
                       </span>
                     </span>
                   </button>
+                  <div className="my-2 flex shrink-0 flex-col gap-1">
+                    <button
+                      type="button"
+                      aria-label={`Move block ${entry.blockNumber} up`}
+                      title={`Move ${blockLabel(entry.block.type)} up`}
+                      disabled={isFirstInColumn}
+                      className={moveButtonClass}
+                      onClick={() => onMoveBlock(entry, "up")}
+                    >
+                      <BuilderGlyph name="up" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Move block ${entry.blockNumber} down`}
+                      title={`Move ${blockLabel(entry.block.type)} down`}
+                      disabled={isLastInColumn}
+                      className={moveButtonClass}
+                      onClick={() => onMoveBlock(entry, "down")}
+                    >
+                      <BuilderGlyph name="down" />
+                    </button>
+                  </div>
                   <button
                     type="button"
                     aria-label={`Edit ${blockLabel(entry.block.type)} settings`}

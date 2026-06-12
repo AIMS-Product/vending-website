@@ -1,0 +1,302 @@
+[
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 5233,
+    "outputTokens": 1074,
+    "tokensPerSec": 205,
+    "score": 75,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 gate=thin(thin_hero_body|duplicated_copy) words=662 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 10819,
+    "outputTokens": 957,
+    "tokensPerSec": 88,
+    "score": 75,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 gate=thin(thin_hero_body|duplicated_copy) words=662 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 1153,
+    "outputTokens": 99,
+    "tokensPerSec": 86,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 gate=pass words=56 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 1143,
+    "outputTokens": 109,
+    "tokensPerSec": 95,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 gate=pass words=63 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 2627,
+    "outputTokens": 404,
+    "tokensPerSec": 154,
+    "score": 85,
+    "notes": "tools=add_block applied=1 gate=pass words=269 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 2664,
+    "outputTokens": 442,
+    "tokensPerSec": 166,
+    "score": 85,
+    "notes": "tools=add_block applied=1 gate=pass words=306 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 1025,
+    "outputTokens": 94,
+    "tokensPerSec": 92,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=41 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 1204,
+    "outputTokens": 99,
+    "tokensPerSec": 82,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=43 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 1885,
+    "outputTokens": 263,
+    "tokensPerSec": 140,
+    "score": 100,
+    "notes": "tools=request_clarification applied=1 words=15"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 727,
+    "outputTokens": 42,
+    "tokensPerSec": 58,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=19 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 9572,
+    "outputTokens": 1155,
+    "tokensPerSec": 121,
+    "score": 75,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 gate=thin(thin_hero_body|duplicated_copy) words=663 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 4543,
+    "outputTokens": 968,
+    "tokensPerSec": 213,
+    "score": 75,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 gate=thin(thin_hero_body|duplicated_copy) words=662 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 1146,
+    "outputTokens": 125,
+    "tokensPerSec": 109,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 gate=pass words=63 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 1213,
+    "outputTokens": 120,
+    "tokensPerSec": 99,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 gate=pass words=64 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 2577,
+    "outputTokens": 394,
+    "tokensPerSec": 153,
+    "score": 85,
+    "notes": "tools=add_block applied=1 gate=pass words=261 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 2320,
+    "outputTokens": 355,
+    "tokensPerSec": 153,
+    "score": 85,
+    "notes": "tools=add_block applied=1 gate=pass words=234 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 1198,
+    "outputTokens": 97,
+    "tokensPerSec": 81,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=41 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 876,
+    "outputTokens": 99,
+    "tokensPerSec": 113,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=42 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 1785,
+    "outputTokens": 261,
+    "tokensPerSec": 146,
+    "score": 100,
+    "notes": "tools=request_clarification applied=1 words=15"
+  },
+  {
+    "model": "gemini:gemini-3.1-flash-lite#copy",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 1895,
+    "outputTokens": 271,
+    "tokensPerSec": 143,
+    "score": 100,
+    "notes": "tools=request_clarification applied=1 words=15"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "draft-blank-page",
+    "run": 1,
+    "ms": 12226,
+    "outputTokens": 933,
+    "tokensPerSec": 76,
+    "score": 75,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 gate=thin(thin_hero_body|duplicated_copy) words=659 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "draft-blank-page",
+    "run": 2,
+    "ms": 14337,
+    "outputTokens": 1005,
+    "tokensPerSec": 70,
+    "score": 75,
+    "notes": "tools=set_seo_metadata|replace_page_sections applied=2 gate=thin(thin_hero_body|duplicated_copy) words=660 bullets=6"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "hero-rewrite",
+    "run": 1,
+    "ms": 3973,
+    "outputTokens": 117,
+    "tokensPerSec": 29,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 gate=pass words=61 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "hero-rewrite",
+    "run": 2,
+    "ms": 4692,
+    "outputTokens": 107,
+    "tokensPerSec": 23,
+    "score": 85,
+    "notes": "tools=edit_block_1_block_hero applied=1 gate=pass words=48 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "faq-add",
+    "run": 1,
+    "ms": 7089,
+    "outputTokens": 345,
+    "tokensPerSec": 49,
+    "score": 85,
+    "notes": "tools=add_block applied=1 gate=pass words=226 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "faq-add",
+    "run": 2,
+    "ms": 9416,
+    "outputTokens": 380,
+    "tokensPerSec": 40,
+    "score": 85,
+    "notes": "tools=add_block applied=1 gate=pass words=248 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "seo-metadata",
+    "run": 1,
+    "ms": 3319,
+    "outputTokens": 88,
+    "tokensPerSec": 27,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=37 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "seo-metadata",
+    "run": 2,
+    "ms": 3653,
+    "outputTokens": 94,
+    "tokensPerSec": 26,
+    "score": 85,
+    "notes": "tools=set_seo_metadata applied=1 words=39 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "vague-image-ask",
+    "run": 1,
+    "ms": 2615,
+    "outputTokens": 52,
+    "tokensPerSec": 20,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=29 no-message"
+  },
+  {
+    "model": "gemini:gemini-3.5-flash@low#copy",
+    "task": "vague-image-ask",
+    "run": 2,
+    "ms": 2335,
+    "outputTokens": 48,
+    "tokensPerSec": 21,
+    "score": 85,
+    "notes": "tools=request_clarification applied=1 words=26 no-message"
+  }
+]

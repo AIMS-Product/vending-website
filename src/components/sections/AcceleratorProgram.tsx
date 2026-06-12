@@ -24,7 +24,7 @@ export function AcceleratorProgram() {
                 <dt className="text-4xl font-black text-[#111111] sm:text-5xl">
                   <AnimatedStatValue value={stat.value} />
                 </dt>
-                <dd className="text-sm font-black text-[#2d9fd6] uppercase">
+                <dd className="text-sm font-black text-[#066a99] uppercase">
                   {stat.label}
                 </dd>
               </div>

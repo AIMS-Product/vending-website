@@ -47,7 +47,7 @@ export function VideoTestimonialCard({ video }: { video: CaseStudyVideo }) {
         controls
         preload="none"
         poster={video.posterUrl}
-        className="aspect-video w-full rounded-[8px] border-2 border-[#111111] bg-slate-100 object-contain"
+        className="aspect-video w-full rounded-[8px] border-2 border-[#111111] bg-slate-100 object-contain focus-visible:ring-4 focus-visible:ring-[#066a99] focus-visible:ring-offset-2 focus-visible:outline-none"
         aria-label={`Video testimonial from ${video.name}`}
       >
         <source src={video.videoUrl} type="video/mp4" />

@@ -1,0 +1,388 @@
+{
+  "ts": 1781071765035,
+  "pageTitle": "UX SEO Review Test 1781071765035",
+  "slug": "ux-seo-review-test-1781071765035",
+  "publicUrl": "/resources/ux-seo-review-test-1781071765035",
+  "createdPageUrl": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+  "results": [
+    {
+      "journey": "create-first-page",
+      "status": "completed-with-friction",
+      "clicks": 13,
+      "pageLoads": 4,
+      "steps": [
+        {
+          "n": 1,
+          "page": "/admin/pages",
+          "action": "open-pages-list",
+          "result": "ok",
+          "screenshot": "journey-create-first-page-01-open-pages-list.png"
+        },
+        {
+          "n": 2,
+          "page": "/admin/pages/new",
+          "action": "click-create-page",
+          "result": "ok",
+          "screenshot": "journey-create-first-page-02-click-create-page.png"
+        },
+        {
+          "n": 3,
+          "page": "/admin/pages/new",
+          "action": "choice-gate",
+          "result": "Continue (step 1); chose Blank page; Continue (step 2); Start building",
+          "screenshot": "journey-create-first-page-03-choice-gate.png"
+        },
+        {
+          "n": 4,
+          "page": "/admin/pages/new",
+          "action": "open-seo-panel",
+          "result": "already open",
+          "screenshot": "journey-create-first-page-04-open-seo-panel.png"
+        },
+        {
+          "n": 5,
+          "page": "/admin/pages/new",
+          "action": "fill-title-slug-keyword",
+          "result": "ok",
+          "screenshot": "journey-create-first-page-05-fill-title-slug-keyword.png"
+        },
+        {
+          "n": 6,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "add-rich-text-block",
+          "result": "block added",
+          "screenshot": "journey-create-first-page-06-add-rich-text-block.png"
+        },
+        {
+          "n": 7,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "add-faq-block",
+          "result": "faq block added",
+          "screenshot": "journey-create-first-page-07-add-faq-block.png"
+        },
+        {
+          "n": 8,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "save-draft",
+          "result": "url after save: /admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "screenshot": "journey-create-first-page-08-save-draft.png"
+        },
+        {
+          "n": 9,
+          "page": "/admin/pages?q=1781071765035",
+          "action": "verify-in-list",
+          "result": "ERROR: created page not found in list",
+          "screenshot": "journey-create-first-page-09-verify-in-list.png"
+        }
+      ],
+      "wrongTurns": [],
+      "friction": [],
+      "blockedAt": null
+    },
+    {
+      "journey": "publish-and-view-live",
+      "status": "blocked",
+      "clicks": 0,
+      "pageLoads": 3,
+      "steps": [
+        {
+          "n": 1,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "open-editor",
+          "result": "ok",
+          "screenshot": "journey-publish-and-view-live-01-open-editor.png"
+        },
+        {
+          "n": 2,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "find-publish-button",
+          "result": "visible",
+          "screenshot": "journey-publish-and-view-live-02-find-publish-button.png"
+        },
+        {
+          "n": 3,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "click-publish",
+          "result": "ERROR: locator.click: Timeout 8000ms exceeded.",
+          "screenshot": "journey-publish-and-view-live-03-click-publish.png"
+        },
+        {
+          "n": 4,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "verify-published",
+          "result": "ERROR: no 'Published' text found after publish",
+          "screenshot": "journey-publish-and-view-live-04-verify-published.png"
+        },
+        {
+          "n": 5,
+          "page": "/resources/ux-seo-review-test-1781071765035",
+          "action": "open-live-page",
+          "result": "manual goto /resources/ux-seo-review-test-1781071765035",
+          "screenshot": "journey-publish-and-view-live-05-open-live-page.png"
+        },
+        {
+          "n": 6,
+          "page": "/resources/ux-seo-review-test-1781071765035",
+          "action": "verify-live-content",
+          "result": "ERROR: public URL looks like 404",
+          "screenshot": "journey-publish-and-view-live-06-verify-live-content.png"
+        }
+      ],
+      "wrongTurns": [],
+      "friction": [
+        "No visible 'Open live page' link after publishing — had to type the URL manually"
+      ],
+      "blockedAt": "click-publish: ERROR: locator.click: Timeout 8000ms exceeded."
+    },
+    {
+      "journey": "preview-draft",
+      "status": "completed",
+      "clicks": 1,
+      "pageLoads": 1,
+      "steps": [
+        {
+          "n": 1,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "open-editor",
+          "result": "ok",
+          "screenshot": "journey-preview-draft-01-open-editor.png"
+        },
+        {
+          "n": 2,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "make-small-edit",
+          "result": "meta description edited",
+          "screenshot": "journey-preview-draft-02-make-small-edit.png"
+        },
+        {
+          "n": 3,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "click-live-preview",
+          "result": "preview tab: /resources/preview/2eSNnEXLh0znXOYIrUm2Hjk7ieSeIqY2P1z0wTAPiWw (133 chars)",
+          "screenshot": "journey-preview-draft-03-click-live-preview.png"
+        }
+      ],
+      "wrongTurns": [],
+      "friction": [],
+      "blockedAt": null
+    },
+    {
+      "journey": "revision-restore",
+      "status": "completed-with-friction",
+      "clicks": 1,
+      "pageLoads": 2,
+      "steps": [
+        {
+          "n": 1,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "open-editor",
+          "result": "ok",
+          "screenshot": "journey-revision-restore-01-open-editor.png"
+        },
+        {
+          "n": 2,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "edit-and-save",
+          "result": "ok",
+          "screenshot": "journey-revision-restore-02-edit-and-save.png"
+        },
+        {
+          "n": 3,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "find-revision-history",
+          "result": "revision history section found",
+          "screenshot": "journey-revision-restore-03-find-revision-history.png"
+        },
+        {
+          "n": 4,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "preview-revision",
+          "result": "ERROR: no revision Preview link",
+          "screenshot": "journey-revision-restore-04-preview-revision.png"
+        },
+        {
+          "n": 5,
+          "page": "/resources/ux-seo-review-test-1781071765035",
+          "action": "back-to-editor",
+          "result": "used browser back",
+          "screenshot": "journey-revision-restore-05-back-to-editor.png"
+        },
+        {
+          "n": 6,
+          "page": "/resources/ux-seo-review-test-1781071765035",
+          "action": "restore-revision",
+          "result": "ERROR: locator.scrollIntoViewIfNeeded: Timeout 8000ms exceeded.",
+          "screenshot": "journey-revision-restore-06-restore-revision.png"
+        }
+      ],
+      "wrongTurns": [
+        "revision preview: no Back to editor control found, used browser back"
+      ],
+      "friction": [],
+      "blockedAt": null
+    },
+    {
+      "journey": "schedule-publish",
+      "status": "blocked",
+      "clicks": 3,
+      "pageLoads": 1,
+      "steps": [
+        {
+          "n": 1,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "open-editor",
+          "result": "ok",
+          "screenshot": "journey-schedule-publish-01-open-editor.png"
+        },
+        {
+          "n": 2,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "open-advanced-seo",
+          "result": "advanced section toggled",
+          "screenshot": "journey-schedule-publish-02-open-advanced-seo.png"
+        },
+        {
+          "n": 3,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "set-schedule",
+          "result": "ERROR: locator.scrollIntoViewIfNeeded: Timeout 8000ms exceeded.",
+          "screenshot": "journey-schedule-publish-03-set-schedule.png"
+        },
+        {
+          "n": 4,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "save-schedule",
+          "result": "ok",
+          "screenshot": "journey-schedule-publish-04-save-schedule.png"
+        },
+        {
+          "n": 5,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "verify-scheduled",
+          "result": "Scheduled indicator present",
+          "screenshot": "journey-schedule-publish-05-verify-scheduled.png"
+        },
+        {
+          "n": 6,
+          "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+          "action": "cancel-schedule",
+          "result": "ERROR: Cancel scheduled publish control not found",
+          "screenshot": "journey-schedule-publish-06-cancel-schedule.png"
+        }
+      ],
+      "wrongTurns": [],
+      "friction": [],
+      "blockedAt": "set-schedule: ERROR: locator.scrollIntoViewIfNeeded: Timeout 8000ms exceeded."
+    },
+    {
+      "journey": "create-redirect",
+      "status": "completed",
+      "clicks": 2,
+      "pageLoads": 2,
+      "steps": [
+        {
+          "n": 1,
+          "page": "/admin/pages",
+          "action": "open-pages-list",
+          "result": "ok",
+          "screenshot": "journey-create-redirect-01-open-pages-list.png"
+        },
+        {
+          "n": 2,
+          "page": "/admin/pages/redirects",
+          "action": "click-redirects",
+          "result": "ok",
+          "screenshot": "journey-create-redirect-02-click-redirects.png"
+        },
+        {
+          "n": 3,
+          "page": "/admin/pages/redirects",
+          "action": "fill-redirect-form",
+          "result": "ok",
+          "screenshot": "journey-create-redirect-03-fill-redirect-form.png"
+        },
+        {
+          "n": 4,
+          "page": "/admin/pages/redirects?created=1",
+          "action": "submit-redirect",
+          "result": "ok",
+          "screenshot": "journey-create-redirect-04-submit-redirect.png"
+        },
+        {
+          "n": 5,
+          "page": "/admin/pages/redirects?created=1",
+          "action": "verify-redirect-listed",
+          "result": "redirect row present",
+          "screenshot": "journey-create-redirect-05-verify-redirect-listed.png"
+        }
+      ],
+      "wrongTurns": [],
+      "friction": [],
+      "blockedAt": null
+    },
+    {
+      "journey": "find-duplicate-archive",
+      "status": "completed-with-friction",
+      "clicks": 8,
+      "pageLoads": 5,
+      "steps": [
+        {
+          "n": 1,
+          "page": "/admin/pages?q=1781071765035",
+          "action": "search-for-page",
+          "result": "ERROR: search did not surface the session page",
+          "screenshot": "journey-find-duplicate-archive-01-search-for-page.png"
+        },
+        {
+          "n": 2,
+          "page": "/admin/pages?q=1781071765035",
+          "action": "open-row-menu",
+          "result": "menu opened via details summary",
+          "screenshot": "journey-find-duplicate-archive-02-open-row-menu.png"
+        },
+        {
+          "n": 3,
+          "page": "/admin/pages/23d69429-4c5d-49ec-a034-89073c62a739?saved=1",
+          "action": "duplicate-page",
+          "result": "confirmed via dialog",
+          "screenshot": "journey-find-duplicate-archive-03-duplicate-page.png"
+        },
+        {
+          "n": 4,
+          "page": "/admin/pages?q=1781071765035",
+          "action": "verify-duplicate",
+          "result": "6 matching row text nodes after duplicate",
+          "screenshot": "journey-find-duplicate-archive-04-verify-duplicate.png"
+        },
+        {
+          "n": 5,
+          "page": "/admin/pages?q=1781071765035",
+          "action": "archive-session-pages",
+          "result": "archived 1 session-created page(s)",
+          "screenshot": "journey-find-duplicate-archive-05-archive-session-pages.png"
+        },
+        {
+          "n": 6,
+          "page": "/admin/pages?status=archived&q=1781071765035",
+          "action": "verify-archived",
+          "result": "session pages visible under Archived",
+          "screenshot": "journey-find-duplicate-archive-06-verify-archived.png"
+        }
+      ],
+      "wrongTurns": [],
+      "friction": [],
+      "blockedAt": null
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "seo page autosave failed TypeError: Failed to fetch\n    at http://localhost:3000/_next/static/chunks/node_modules_%40sentry_core_build_esm_0-870rs._.js:9087:34\n    at fetchServerAction (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0.0dnbh._.js:12332:23)"
+  ],
+  "failedRequests": [
+    "404 http://localhost:3000/resources/ux-seo-review-test-1781071765035",
+    "404 http://localhost:3000/resources/ux-seo-review-test-1781071765035",
+    "404 http://localhost:3000/resources/ux-seo-review-test-1781071765035"
+  ]
+}

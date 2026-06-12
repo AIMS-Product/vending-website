@@ -1,109 +1,128 @@
-# Persona Review: Karen — Angry Frustrated User
+# Persona Review — 15. Karen, Angry Frustrated User (47)
+
+**Context I bring:** Something already went wrong before I got here — a payment, a lost form, a confusing email — and I have zero patience. I'm not browsing. I'm here to FIX something and get out. The first thing I look for is "how do I reach a human." The second is "did the thing I just did actually work, or do I have to do it again."
 
 ## Summary
 
-- Pages reviewed: 6
-- Issues found: 24
-- Blockers: 2
-- Overall gut feel: 2/5
+- **Pages reviewed:** 28 (8 public + 404 + 404 CMS draft + legacy blog 404 + 16 admin)
+- **Issues found:** 18
+- **Blockers:** 1 (no human contact channel anywhere — no phone, no email, no live support; a frustrated user with an urgent problem has nowhere to go)
+- **Overall gut feel:** **2 / 5** — Pages load and forms technically submit, but for a frustrated user this app is a wall: you cannot phone anyone, you cannot email anyone, and after you submit the one form available you can't tell whether it worked. It compounds frustration instead of relieving it.
 
-I came in already burned — a page wouldn't publish and I think I lost work. I need three things: an UNDO, a way to RECOVER what I lost, and a HELP/SUPPORT button to yell at a human. This builder gives me none of them in any obvious way. It autosaves (fine), it has a "Revision history" panel (good!) — but the panel is EMPTY and says revisions only "appear after publishing" — the exact thing that just failed for me. So the one tool that could save me does nothing. There is no support link anywhere. And it silently flashed "Could not copy link" at me in tiny gray text with zero explanation. That is the whole experience: things fail quietly and there is no exit door.
-
-## Page-by-Page Review
-
-### /admin/pages (Pages List)
-
-**Gut feel: 3/5** — "I can find my page and its status, but when something's gone wrong there's no 'get help' button anywhere on the screen."
-
-| #   | Category          | Finding                                                                                                                         | Severity | Why this matters to me                                                                                                  |
-| --- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------- |
-| 1   | Trust & Safety    | No Help / Support / Contact link anywhere on the page or in the sidebar (only SEO pages, Media library, Settings, Sign out)     | High     | My page failed to publish and there is literally nobody to ask and nothing to click — I'm stuck with my own frustration |
-| 2   | Feedback & State  | "Published 0 publicly visible" stat — if my publish failed, this just silently shows 0 with no link to "why didn't it publish?" | High     | This confirms my page isn't live but offers zero explanation or recovery path, which is exactly what enraged me         |
-| 3   | Navigation & Flow | There's a "Schedule failed" filter tab — implying publishing CAN fail — but no inline explanation of what to do when it does    | Medium   | They KNOW publishing fails (they built a whole filter for it) yet give me no recovery instructions                      |
-| 4   | Feedback & State  | Row "ACTIONS" column is a bare 3-dot kebab (⋮) with no labels — I have no idea if "undo" or "restore" is hiding in there        | Medium   | When I'm panicking I need obvious buttons, not a mystery menu                                                           |
-| 5   | Copy & Labels     | "Archived 5 retired" — is archiving reversible? Nothing tells me if I can un-archive                                            | Low      | If I archived something by mistake I'd have no idea it's recoverable                                                    |
-
-### /admin/pages/new (Create New Page)
-
-**Gut feel: 3/5** — "Clean enough, but two of the options are dead 'Coming soon' tiles and there's no Cancel/back-out, so if I landed here by mistake I'm hunting for the exit."
-
-| #   | Category          | Finding                                                                                                          | Severity | Why this matters to me                                                                       |
-| --- | ----------------- | ---------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------- |
-| 6   | Navigation & Flow | No visible "Cancel" or "Back to pages" button — the only way out is the browser back button                      | High     | I came here by accident while flustered and there's no clear escape hatch back to my list    |
-| 7   | Feedback & State  | "From template" and "AI-assisted template" are greyed "Coming soon" tiles that still look clickable              | Medium   | I'd click a dead option, nothing happens, and that's one more thing not working for me today |
-| 8   | Copy & Labels     | No guarantee that "Start building" creates a draft I can later delete — nothing says "you can change this later" | Low      | After losing a draft, I'm scared to commit to choices I can't reverse                        |
-
-### /admin/pages/[id] (Page Builder Editor)
-
-**Gut feel: 1/5** — "This is where my work lives and it is a wall of 82 buttons with no Undo, an empty revision panel that won't help me, no support link, and a 'Could not copy link' error it threw without explaining anything."
-
-| #   | Category         | Finding                                                                                                                                                                      | Severity    | Why this matters to me                                                                                                                |
-| --- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 9   | Trust & Safety   | NO UNDO anywhere — no Ctrl+Z affordance, no "Undo" button after edits, deletes, or block moves (Remove, Move, Hide buttons everywhere with no reversal)                      | **Blocker** | I deleted/moved a block by accident and there is no way back — this is the single thing a frustrated user needs and it does not exist |
-| 10  | Trust & Safety   | "Revision history" panel says revisions only appear "after publishing, library refreshes, or draft restores" and is otherwise EMPTY                                          | **Blocker** | The ONE recovery tool is empty precisely because my publish failed — it cannot restore the work I lost, which is infuriating          |
-| 11  | Feedback & State | Silent "Could not copy link" error shown as tiny gray text under the toolbar with no reason and no retry                                                                     | Critical    | A failure flashed at me, told me nothing about why, and gave me no way to fix it — classic "make it worse" moment                     |
-| 12  | Trust & Safety   | No Help / Support / Contact affordance — there's a "Builder support" heading in the SEO rail but it's buried, not a clear "get help" button                                  | Critical    | When everything is breaking I have no human to reach and no documentation link                                                        |
-| 13  | Feedback & State | "Remove" buttons on cards delete content with no confirmation dialog and no undo shown                                                                                       | Critical    | One misclick while frustrated wipes a card permanently — no "are you sure", no recovery                                               |
-| 14  | Visual & Layout  | 82 buttons crammed into one screen (per exploration log) — overwhelming when I'm already stressed and just want to fix one thing                                             | High        | I can't find the one control I need in the noise; cognitive overload on top of frustration                                            |
-| 15  | Feedback & State | "Saving draft…" / "Draft saved" autosave is good, but copy says "Drafts save automatically" AND there's a manual "Save draft" — unclear which one actually persisted my work | High        | After losing a draft I don't trust "automatic" anything; mixed messaging makes me trust it less                                       |
-| 16  | Copy & Labels    | Publish flow has a green "Ready to publish / No hard blockers remain" box — but offers no explanation when publishing actually FAILS                                         | High        | It tells me everything's fine right up until it isn't, then goes silent                                                               |
-| 17  | Forms & Input    | Dozens of inputs (58) with my content; if a save fails mid-edit, nothing reassures me my typing is preserved                                                                 | High        | Re-entering all that copy after a failure is the exact thing that makes me rage-quit                                                  |
-| 18  | Trust & Safety   | "Revoke" buttons on preview links have no confirmation — and once revoked there's no obvious "re-create / undo" beside them                                                  | Medium      | I'd revoke the wrong link, break a share, and not know how to put it back                                                             |
-| 19  | Accessibility    | Icon-only eye buttons and kebab menus with no visible labels — hard to tell what's clickable when I'm scanning fast in a panic                                               | Medium      | I waste time hovering blind controls when I need answers now                                                                          |
-
-### /admin/pages/authors (Authors)
-
-**Gut feel: 3/5** — "A plain create form, but no Cancel, no required-field markers visible, and no sign anything I create here can be edited or deleted later."
-
-| #   | Category       | Finding                                                                                                                     | Severity | Why this matters to me                                                                             |
-| --- | -------------- | --------------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------- |
-| 20  | Forms & Input  | Required fields (displayName, slug) show no asterisk or "required" marker visually                                          | Medium   | I'll submit, get rejected, and have to figure out what I missed — more friction when I'm impatient |
-| 21  | Trust & Safety | No Cancel button and no list of existing authors with edit/delete — once I "Create author" it's unclear if I can fix a typo | Medium   | If I fat-finger a name there's no visible undo or edit path                                        |
-| 22  | Trust & Safety | No Help/Support link here either (consistent absence across the app)                                                        | Low      | Same dead-end problem everywhere                                                                   |
-
-### /admin/pages/redirects (Redirect Manager)
-
-**Gut feel: 3/5** — "Functional form, but redirects are dangerous and there's no confirmation, no edit, and the empty table gives me no comfort that my old broken link is even handled."
-
-| #   | Category       | Finding                                                                                                                | Severity | Why this matters to me                                                                             |
-| --- | -------------- | ---------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------- |
-| 23  | Trust & Safety | Creating a redirect (a destructive routing change) has no confirmation and the empty table shows no edit/delete column | High     | A wrong redirect breaks live URLs and there's no visible way to undo or fix one I created in haste |
-| 24  | Copy & Labels  | Empty redirects table is just blank column headers — no "No redirects yet" empty state to reassure me nothing's broken | Low      | Blank space makes me wonder if it failed to load, adding to my anxiety                             |
-
-### /admin/pages/block-preview-audit (Block Preview Audit)
-
-**Gut feel: 3/5** — "A long read-only catalogue of block styles; harmless, but it's clearly a dev/internal page and the only nav out is the sidebar — no help, no breadcrumb."
-
-| #   | Category          | Finding                                                                                                              | Severity | Why this matters to me                                         |
-| --- | ----------------- | -------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------- |
-| —   | Navigation & Flow | Read-only audit page with no Back/help control; fine to view but a confusing place to land if I got here by accident | Low      | One more page with no escape hatch or support link if I'm lost |
-
-## Blockers
-
-1. **No Undo anywhere in the editor (Editor).** Remove, Move, and Hide buttons act immediately with no reversal. A frustrated user who misclicks has zero recovery — this is the #1 thing my persona needs and it's entirely absent.
-2. **Revision history cannot recover a failed publish (Editor).** The panel is empty and explicitly only populates "after publishing, library refreshes, or draft restores." Since my problem IS a failed publish / lost draft, the one recovery tool is useless exactly when I need it.
-
-## My Top 10 Issues
-
-1. **No Undo in the editor** — Remove/Move/Hide are instant and irreversible. (Blocker)
-2. **Revision history is empty and only fills "after publishing"** — useless for recovering a failed publish or lost draft. (Blocker)
-3. **No Help / Support / Contact link anywhere in the entire app** — when things break I have no human and no docs to reach. (Critical)
-4. **Silent "Could not copy link" error** in tiny gray text with no reason and no retry. (Critical)
-5. **"Remove" on cards deletes with no confirmation and no undo** — one panicked misclick wipes content. (Critical)
-6. **"Builder support" is a buried heading, not an obvious support button** — help is hidden where a stressed user won't find it. (Critical)
-7. **Mixed save messaging** ("Drafts save automatically" + a manual "Save draft") — I can't trust which one preserved my work after I already lost a draft. (High)
-8. **Redirect creation has no confirmation, no edit, no undo** — a destructive routing change with no safety net. (High)
-9. **No Cancel / Back-out on Create New Page and Authors forms** — no clear escape hatch when I land somewhere by mistake. (High)
-10. **"Schedule failed" / "Published 0" states exist but offer no inline explanation or recovery instructions** — the app knows publishing fails but never tells me what to do about it. (High)
+The single thing that defines this app for me: **there is no phone number and no email address on the entire public site.** The homepage, the contact page, and the footer all route every question into a web form that, when I submit it, shows nothing more than a faint green sentence I'll probably miss. For someone who is already angry, that is the worst possible experience — I have a problem, I want to talk to someone NOW, and the app's answer is "fill out this form and hope."
 
 ---
 
-**File written:** `reports/ux-persona-review/personas/15-angry-user.md`
+## Journey Review
 
-**Overall gut feel: 2/5** — Functional CMS, but actively hostile to someone trying to recover from a failure: no undo, no working recovery path, no support link.
+| #   | Journey                  | Score | Could I complete it?                     | Where I'd give up                                                                                                                                                                                                                  |
+| --- | ------------------------ | ----- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Discover & Apply         | 2/5   | Technically yes, but I'd think it failed | After clicking SUBMIT — the only confirmation is a tiny green line beside the button; nothing redirects, the form doesn't clear, no reference number. I'd assume it broke and either rage-resubmit or leave.                       |
+| 2   | Contact the Team         | 1/5   | No — not the way I need to               | Immediately. There's no Contact in the top nav, and when I finally find it in the footer it's ANOTHER form with no phone/email. I came here to talk to a person; this gives me a contact box and a prayer.                         |
+| 3   | Read a News Article      | 3/5   | Yes                                      | Not really blocked, but /news first paints as three empty card outlines (looks broken to an already-suspicious user) and the page is titled "BLOG" while the nav said "NEWS". Minor friction, but it makes me trust the site less. |
+| 4   | Evaluate Trust           | 2/5   | Yes, the pages load                      | Trust is exactly what I'm low on. Stats read "0+ Entrepreneurs launched / $0M+ sales / 0+ locations" and there's no phone or company contact — to an angry skeptic this screams "placeholder / can't reach anyone."                |
+| 5   | Pre-Call Resources       | 3/5   | Yes                                      | Page loads fine; it's a wall of 14 links with no embedded media. If I'm prepping in a hurry and frustrated, I don't know which link matters. Not a blocker.                                                                        |
+| 6   | Admin: Create News Draft | 2/5   | Yes, but only by guessing the URL        | The studio sidebar has no News/Blog section at all — I'd have to already KNOW /admin/news exists. A frustrated admin trying to fix a post can't find where posts live.                                                             |
+| 7   | Admin: Create SEO Page   | 2/5   | Eventually                               | First-open "Quick Tour" overlay covers the very panel it points at and blocks me. When I'm in a hurry an unskippable tour over a broken-looking panel is exactly what sets me off.                                                 |
+| 8   | Admin: Media & Settings  | 2/5   | Partly                                   | Redirects manager and News CMS are orphaned (no link anywhere). And the SEO list shows a "Schedule failed" filter in the nav — a raw failure state staring at me with no explanation of what failed or how to fix it.              |
 
-**Top 3 concerns:**
+### Per-journey notes
 
-1. No undo anywhere in the editor — destructive Remove/Move/Hide actions are instant and irreversible.
-2. The Revision history panel can't recover a failed publish or lost draft — it's empty and only populates after a successful publish, the exact thing that failed.
-3. Zero Help/Support/Contact affordance across the entire app, plus silent unexplained errors ("Could not copy link") — a frustrated user has no escape hatch and no one to ask.
+**Discover & Apply (2/5).** The journey log itself records that the automation "missed the success state and re-submitted 5 more times." That is not an automation quirk to me — that is the EXACT thing a frustrated human does. When I don't see clear confirmation, I click again. And again. The app even has a finished `/thank-you-for-applying` page sitting there unused — the form just doesn't send me to it. A real confirmation page (with a reference number) is the difference between "okay, handled, I can stop" and "did that even go through?!"
+
+**Contact the Team (1/5).** This is the journey that matters most to me and it's the worst. Contact isn't in the header — only the footer link "CONTACT US". And the contact page (`contact-002-full.png`) is just a form: Name, Email, Phone, City, State, Message, "SEND MESSAGE". No phone number to call. No email to write. No hours. No "we reply within X." If I have an urgent problem, "fill in this box and wait" is not help.
+
+**Evaluate Trust (2/5).** I'm already burned, so I'm hunting for reasons NOT to trust. The homepage hero counters literally say "0+ Entrepreneurs launched" and "$0M+ Snack/Drink sales" — to me that reads as a half-built site. Combined with no findable phone number, an angry skeptic concludes "I'll never be able to reach these people if something goes wrong."
+
+---
+
+## Page-by-Page Review
+
+### / (Home) — Gut feel 2/5
+
+_The pitch is loud but there's no way to reach a person, and the proof numbers read as zeros._
+
+| #   | Category          | Finding                                                                                                             | Evidence                                                                                                             | Severity |
+| --- | ----------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------- |
+| 1   | Trust & Safety    | No phone number or email anywhere on the homepage or in the footer — every path is a web form                       | text/home-text.md footer block (lines 165-172: only Home/About/Resources/Case Studies/News/Contact Us/Terms/Privacy) | blocker  |
+| 2   | Trust & Safety    | Headline proof stats render as zeros: "0+ ENTREPRENEURS LAUNCHED", "$0M+ SNACK/DRINK SALES", "0+ VENDING LOCATIONS" | text/home-text.md lines 23-28                                                                                        | high     |
+| 3   | Navigation & Flow | "CONTACT US" is footer-only; header nav has no Contact/Help/Support entry                                           | text/home-text.md ARIA "navigation Primary" lists only About/Resources/Case Studies/News (lines 180-188)             | high     |
+
+### /apply — Gut feel 2/5
+
+_Submitting feels like nothing happened — and the app already proved a user will resubmit._
+
+| #   | Category         | Finding                                                                                                                                                    | Evidence                                                                                                                                                           | Severity |
+| --- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| 4   | Feedback & State | Success confirmation is a single faint green line beside the button — no redirect, form not cleared, easy to miss and resubmit                             | journey-discover-and-apply-004-04-submit-continue-round-1-.png ("Thanks. We received your details and will follow up shortly."); journeys.md notes 6 submit clicks | critical |
+| 5   | Feedback & State | A finished `/thank-you-for-applying` page exists but the form never routes to it                                                                           | text/thank-you-for-applying-text.md ("THANKS FOR APPLYING."); journeys.md Discover & Apply friction note                                                           | high     |
+| 6   | Forms & Input    | No application reference/confirmation number issued — I can't quote anything when I follow up                                                              | journey-discover-and-apply-004-04-submit-continue-round-1-.png                                                                                                     | medium   |
+| 7   | Forms & Input    | Validation is browser-default only, one field at a time ("Please fill out this field.") — not tied to a visible label, surfaces a single field per attempt | apply-003-form-empty-submit.png                                                                                                                                    | medium   |
+
+### /contact — Gut feel 1/5
+
+_I came to reach a human and got a form with no fallback channel._
+
+| #   | Category         | Finding                                                                                                                                   | Evidence                                                                                                                            | Severity |
+| --- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 8   | Trust & Safety   | Contact page offers ONLY a web form — no phone, no email, no response-time expectation                                                    | contact-002-full.png; text/contact-text.md (only Name/Email/Phone/City/State/Message + "SEND MESSAGE", lines 17-77)                 | critical |
+| 9   | Feedback & State | "SEND MESSAGE" submit was not exercised, but the page shows no success/error region designed — same vanishing-confirmation risk as /apply | exploration-log.md /contact form#1 "external-bucket form: filled for visual review, NOT submitted"; contact-002-full.png            | high     |
+| 10  | Copy & Labels    | No statement of when/whether anyone replies — "Send the team a note" sets no expectation for an impatient user                            | text/contact-text.md line 15 ("Send the team a note about vending locations, machine decisions, partnerships, or accelerator fit.") | medium   |
+
+### /this-page-does-not-exist (404) — Gut feel 2/5
+
+_Clean, but a dead end when I'm already lost._
+
+| #   | Category          | Finding                                                                                                  | Evidence                                                                                                        | Severity |
+| --- | ----------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------- |
+| 11  | Navigation & Flow | 404 offers only "Back to home" — no search, no contact/help link, no suggestion of where the thing moved | this-page-does-not-exist-001-load.png; text/this-page-does-not-exist-text.md (lines 11-17, only "Back to home") | high     |
+| 12  | Copy & Labels     | "doesn't exist or has moved" — if it MOVED, don't tell me; take me there or give me a link               | text/this-page-does-not-exist-text.md line 15 ("The page you're looking for doesn't exist or has moved.")       | low      |
+
+### /blog/... (legacy path) — Gut feel 1/5
+
+_An old bookmarked link 404s with no redirect — classic "the thing in my email is broken" moment._
+
+| #   | Category          | Finding                                                                                                        | Evidence                                                                                                                     | Severity |
+| --- | ----------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 13  | Navigation & Flow | Legacy `/blog/{slug}` returns a hard 404 instead of redirecting to the live `/news/{slug}` article that exists | exploration-log.md /blog/how-to-choose...: "Status: 404", "404 /blog/how-to-choose-the-perfect-location-for-vending-machine" | high     |
+
+### /news — Gut feel 3/5
+
+| #   | Category         | Finding                                                                                            | Evidence                                                                                                                                            | Severity |
+| --- | ---------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 14  | Feedback & State | Above-the-fold renders three empty card outlines before scroll — looks broken to a suspicious user | journeys.md Read a News Article friction note ("empty card outlines before any scrolling … first paint looks broken/unfinished"); news-001-load.png | medium   |
+| 15  | Copy & Labels    | Section is "NEWS" in nav/URL but the page heading is "BLOG" — same thing, two names                | journeys.md Read a News Article friction note ("Page is headed 'BLOG' while the nav item … says 'NEWS'")                                            | low      |
+| 16  | Feedback & State | A news thumbnail 500s on load (broken image) — reinforces "this site is broken" for an angry user  | exploration-log.md /news Console Errors: "500 (Internal Server Error)" on /\_next/image (CDN asset)                                                 | medium   |
+
+### /admin/pages (Studio) — Gut feel 2/5
+
+| #   | Category         | Finding                                                                                                         | Evidence                                                                                                                             | Severity |
+| --- | ---------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| 17  | Feedback & State | A "Schedule failed" filter sits in the workflow nav with no inline explanation of what failed or how to recover | text/admin-login-text.md line 68 ("Schedule failed"); exploration-log.md lists it as a nav link to /admin/pages?view=schedule-failed | high     |
+
+### /admin/forgot-password — Gut feel 3/5
+
+| #   | Category      | Finding                                                                                                                                                                              | Evidence                                                                                                             | Severity |
+| --- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | -------- |
+| 18  | Copy & Labels | Reset copy hedges ("If it has admin access, we'll send a password reset link") with no on-screen confirmation flow tested — a locked-out admin can't tell if the email is on its way | text/admin-forgot-password-text.md line 10; exploration-log.md (Send button skipped, "no visible validation errors") | medium   |
+
+---
+
+## Blockers
+
+1. **No human contact channel anywhere on the public site (Finding 1 + 8).** No phone, no email, no chat — only web forms whose success state is a faint green line. For a frustrated user with an urgent problem, this is a complete dead end. This is the one thing that, on its own, would make me give up and badmouth the company.
+
+---
+
+## My Top 10 Issues
+
+1. **No phone/email anywhere — only forms.** (blocker) I can't reach a human when something's wrong. — _home/contact, Findings 1, 8_
+2. **Apply submit shows a faint green line, no redirect, no cleared form.** (critical) I can't tell it worked, so I resubmit — the test itself did this 6 times. — _Finding 4_
+3. **Contact page is a form with zero fallback channel and no reply-time promise.** (critical) — _Findings 8, 10_
+4. **A finished thank-you page exists but the form never uses it.** (high) The fix is sitting right there unused. — _Finding 5_
+5. **404 is a dead end — only "Back to home", no search/help/contact.** (high) When I'm already lost, you send me back to square one. — _Finding 11_
+6. **Legacy /blog/ links hard-404 with no redirect.** (high) The link in my email is broken and nobody catches it. — _Finding 13_
+7. **Contact is footer-only — not in the header nav.** (high) I scan the top for "help" and find nothing. — _Finding 3_
+8. **"Schedule failed" surfaced as raw admin nav with no recovery.** (high) A failure state with no explanation is salt in the wound. — _Finding 17_
+9. **Proof stats read "0+ / $0M+ / 0+".** (high) Looks like a half-built, untrustworthy site. — _Finding 2_
+10. **/news first-paints as empty card outlines and a thumbnail 500s.** (medium) "Broken" is my default assumption, and the site confirms it. — _Findings 14, 16_

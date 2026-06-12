@@ -1,0 +1,65 @@
+[
+  {
+    "cluster": "G",
+    "verdict": "confirmed",
+    "final_severity": "critical",
+    "personas_count": 3,
+    "notes": "Confirmed on a single frame. journey-publish-and-view-live-02-read-publish-blocker.png shows the chip 'Fix SEO title' (orange) beside a disabled 'Publish' button, header pill 'Blocked', and subtext 'draft · SEO Blocked' — while the SEO-title field below reads placeholder 'Leave blank to use page headline'. The chip demands fixing a field the field itself marks optional. The hero is empty (placeholder 'Hero headline'), so the actual gate is the missing hero headline, yet the chip surfaces 'Fix SEO title' instead. Both verbatim strings verified: chip 'Fix SEO title' in screenshot; '/placeholder: Leave blank to use page headline' at admin-pages-e44f0fc3...-text.md:304 (note: placeholder wording itself varies by state — 'Leave blank to use page headline' vs 'Leave blank to use SEO title' across shots, extra inconsistency). journeys.md:108 records the 'Fix SEO title' vs 'Add a hero headline before publishing' simultaneous contradiction (05-non-native-003). Chip text also drifts to 'Improve SEO title' once published (after-publish shot), so naming is inconsistent across states too. Keep critical: this is the single biggest journey friction and directly blocks the core publish task."
+  },
+  {
+    "cluster": "H",
+    "verdict": "confirmed",
+    "final_severity": "high",
+    "personas_count": 11,
+    "notes": "journey-schedule-publish-03-set-schedule.png shows the Scheduled publish field with verbatim helper text 'Uses Pacific Time (America/Los_Angeles). Leave blank unless this page should publish later.' for an Australian (Vendingpreneurs) business. The datetime input also renders in US MM/DD/YYYY order (11/06/2026). 11 personas raised it (1 critical, 8 high, 2 medium). Demote the cluster headline severity from critical to high: it forces timezone math but does not block any task and there is a workaround (leave blank / publish manually). Real, broadly-felt copy/locale defect."
+  },
+  {
+    "cluster": "I",
+    "verdict": "confirmed",
+    "final_severity": "high",
+    "personas_count": 1,
+    "notes": "The exact string 'seo page autosave failed TypeError: Failed to fetch' is present in journey-results.json:381 (consoleErrors), with a real stack trace through fetchServerAction (a failed Server Action fetch), and the editor showed no UI error. Also documented as finding 12-developer-003 in all-findings.json:555 with verbatim quote. Single persona only, but it is a genuine silent data-loss-class failure (user believes work is saved when autosave failed). Keep as high — severity comes from impact, not from how many personas happened to have the console open."
+  },
+  {
+    "cluster": "J",
+    "verdict": "confirmed",
+    "final_severity": "high",
+    "personas_count": 2,
+    "notes": "admin-pages-e44f0fc3...-mobile.png is a full-page 375px capture that is mid-scroll on a FAQ block with only a 'Rendering…' pill and floating AI button visible — no toolbar, no SEO panel, no Save/Publish in frame. The text extract confirms the DOM order: toolbar Save at top, then full canvas (incl. inline public nav + footer), then the Readiness/Publish region with 'Publish changes' far below. So Save and Publish are genuinely in different scroll regions from the content, and there is no mobile-specific editor layout. Claim holds. Demote headline from critical to high: the editor is hard to use on mobile but not strictly broken, and admin authoring is a desktop-primary task (lower real-world exposure than the publish-flow blockers)."
+  },
+  {
+    "cluster": "K",
+    "verdict": "confirmed",
+    "final_severity": "high",
+    "personas_count": 11,
+    "notes": "PARTIAL — the visual claim holds, the AT claim does not. admin-pages-001-load.png shows Readiness and Status columns rendered as bare coloured dots (yellow/red/blue/green) with no adjacent text and no legend anywhere on the page; this fails WCAG 1.4.1 use-of-colour for sighted and colour-blind users. HOWEVER the ARIA snapshot in admin-pages-text.md (and axe tabOrder) shows each dot IS a button with an accessible name ('SEO readiness: Needs work', 'Page status: Published'), so screen-reader users are NOT cut off — contradicting the implied 'no text' for AT. axe-results.json reports ZERO violations on /admin/pages, so there is no machine-detected a11y violation backing the 'critical' framing. 11 personas (1 critical, 3 high, 7 medium). Demote to high and re-scope as a visual colour-only / colour-blind issue, not a screen-reader blocker."
+  },
+  {
+    "cluster": "L",
+    "verdict": "confirmed",
+    "final_severity": "high",
+    "personas_count": 2,
+    "notes": "axe-results.json editor-page entry verbatim: rule id 'aria-prohibited-attr', impact 'serious', selectors ['span[aria-label=\"Hero block\"]', 'span[aria-label=\"FAQ block\"]'], count 2 — matches the cluster claim exactly. Real machine-detected serious violation: aria-label on a span (generic role) is dropped, leaving the block markers unnamed to AT. Demote from the implied critical to high — it is a genuine serious a11y defect but affects block-marker naming, not a task blocker; severity 'high' aligns with how 12-developer-008 already rated it."
+  },
+  {
+    "cluster": "M",
+    "verdict": "confirmed",
+    "final_severity": "high",
+    "personas_count": 1,
+    "notes": "journey-publish-and-view-live-02-read-publish-blocker.png shows the disabled 'Publish' button with only small orange 'Fix SEO title' text adjacent (not programmatically tied to the button). The editor ARIA snapshot (admin-pages-e44f0fc3...-text.md:282) exposes the blocker inside a SEPARATE control's accessible name — button 'Publish status Published Improve SEO title' — i.e. stuffed into the status chip button, with no aria-describedby linking the reason to the disabled Publish button. Claim holds: a disabled control with no programmatically-associated reason. Single persona (accessibility). Keep high — it is the a11y facet of the same publish-blocker problem as Cluster G and compounds it."
+  },
+  {
+    "cluster": "N",
+    "verdict": "confirmed",
+    "final_severity": "high",
+    "personas_count": 10,
+    "notes": "journey-revision-restore-04-preview-revision.png shows the Revision history empty state with verbatim 'Revisions appear after publishing, library refreshes, or draft restores.' while a 'Draft saved.' toast is simultaneously visible — proving a draft save creates no restore point. journeys.md:126 records the same key discovery: no page-level undo before first publish; revisions only appear post-publish. 10 personas across 8+ (8 high, 1 medium, 1 low). Confirmed at high — real data-loss exposure for a draft mangled before first publish, broadly felt, but with a workaround (publish to create a restore point) so not critical."
+  },
+  {
+    "cluster": "O",
+    "verdict": "confirmed",
+    "final_severity": "high",
+    "personas_count": 7,
+    "notes": "Two parts, both verified. (1) No 'Open live page' link after publish: journey-publish-and-view-live-09-after-publish.png shows the panel with the confirm card still open and NO live-page link; journey-results.json and journey-results-2.json both record 'No visible Open live page link after publishing — had to type the URL manually'. (2) Brief public 404s: both journey JSONs log 3x '404 http://localhost:3000/resources/ux-seo-review-test-1781071765035' immediately after publish (12-developer-012). SOFTENER: a Share dropdown DOES exist with 'Copy public URL' (visible in journey-schedule-publish-03-set-schedule.png), so the public URL is recoverable — but it is hidden behind a dropdown, not surfaced at the moment of publish, and does nothing about the 404 propagation gap. So the affordance softens but does not discard: keep as a confirmed friction. 7 distinct personas (3 high incl. first-timer/pragmatist/executive, plus mediums). Final high."
+  }
+]

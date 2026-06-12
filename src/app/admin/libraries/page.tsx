@@ -21,6 +21,9 @@ import {
   createSourceDocument,
   createSourceExcerpt,
 } from "./actions";
+import { ProofItemMediaField } from "./ProofItemMediaField";
+import { toEditorMediaAsset } from "@/lib/media/editor-asset";
+import { adminListMediaAssets } from "@/lib/services/media-assets";
 import { adminListPageBuilderLibraries } from "@/lib/services/page-builder-libraries";
 import { requireAdmin } from "@/lib/supabase/auth";
 
@@ -31,10 +34,14 @@ export const metadata: Metadata = {
 
 export default async function AdminLibrariesPage() {
   const { user, role } = await requireAdmin();
-  const libraries = await adminListPageBuilderLibraries();
+  const [libraries, mediaAssets] = await Promise.all([
+    adminListPageBuilderLibraries(),
+    adminListMediaAssets({ assetTypes: ["image"] }),
+  ]);
   const approvedExcerpts = libraries.sourceExcerpts.filter(
     (excerpt) => excerpt.approved,
   );
+  const editorMediaAssets = mediaAssets.map(toEditorMediaAsset);
 
   return (
     <AdminShell
@@ -136,6 +143,7 @@ export default async function AdminLibrariesPage() {
               name="sourceRightsNotes"
               label="Source and rights notes"
             />
+            <ProofItemMediaField assets={editorMediaAssets} />
             <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
               <input
                 name="approved"

@@ -1,0 +1,246 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a complete draft for this page targeting 'coffee vending machines for offices'. Include a hero, a benefits section, an FAQ, and a closing CTA."
+      }
+    ],
+    "context": {
+      "pageId": null,
+      "status": "draft",
+      "title": "",
+      "slug": "",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "",
+      "metaDescription": "",
+      "selectedBlockId": null,
+      "content": {
+        "version": 1,
+        "sections": []
+      },
+      "publishReadiness": {
+        "blockers": ["Publish requires at least one CTA or lead form block."],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "call:default_api:replace_page_sections{replaceExisting:true,sections:[{blocks:[{blockType:hero,body:Providing reliable, high-quality coffee is an essential way to support team morale and daily productivity. Our selection of coffee vending machines for offices offers reliable, easy-to-use brewing solutions that cater to various tastes and workspace requirements. Explore our range today to find the perfect fit for your office environment.,bulletItems:[],cards:[],ctaHref:/contact,ctaLabel:Request a consultation,faqItems:[],title:Professional Coffee Vending Machines for Offices}],title:Hero Section},{blocks:[{blockType:rich_text,body:Choosing the right brewing equipment depends on your daily volume, available kitchen space, and the specific coffee preferences of your staff. We focus on providing hardware that simplifies maintenance while ensuring consistent results for every cup. Whether you need a compact unit for a small breakroom or a high-capacity machine for a busy corporate floor, our team helps you assess your needs to find the most suitable option. We also consider utility requirements, such as water access and power supply, to ensure a smooth installation process that avoids disruption to your office routines.,bulletItems:[Automatic self-cleaning cycles to minimize daily maintenance requirements.,Flexible payment options including contactless and employee card integration.,Variety of bean-to-cup and instant options to suit different beverage preferences.,Energy-efficient designs that reduce power consumption during off-hours.],cards:[],ctaHref:/contact,ctaLabel:Get in touch,faqItems:[],title:Selecting the Right Brewing Solution for Your Team},{blockType:card_grid,body:Selecting the right equipment involves balancing staff preferences, space availability, and the level of service required. Use these categories to guide your initial assessment of what will best serve your office.,bulletItems:[],cards:[{body:Designed for high-traffic areas, these machines provide cafe-style drinks at the touch of a button, utilizing fresh beans for every cup brewed.,href:/contact,linkLabel:View options,title:Bean-to-Cup Machines},{body:Perfect for smaller teams or shared spaces, these units deliver quick results with minimal space requirements and straightforward operation.,href:/contact,linkLabel:Explore compact models,title:Compact Instant Dispensers},{body:These versatile machines handle large volumes during morning peaks, offering a wide menu of specialty coffees, teas, and hot chocolate for your team.,href:/contact,linkLabel:See high-capacity units,title:High-Volume Specialty Units}],ctaHref:/contact,ctaLabel:Get expert advice,faqItems:[],title:Types of Office Coffee Systems},{blockType:faq,body:We understand that upgrading your office refreshment service comes with questions about logistics, maintenance, and long-term suitability. Browse these common inquiries to help inform your decision-making process.,bulletItems:[],cards:[],ctaHref:/contact,ctaLabel:Contact our team,faqItems:[{answer:Installation typically requires a standard power outlet and, for most bean-to-cup models, a plumbed water connection. Our technicians will assess your proposed breakroom layout to confirm suitability during a site visit, ensuring proper plumbing and electrical access are in place before delivery.,question:What are the technical requirements for installing a machine?},{answer:We provide maintenance schedules tailored to your office's daily usage volume. This can include regular cleaning, water filter replacements, and scheduled restocking. During your consultation, we will outline how we handle service requests and standard preventive care to minimize downtime.,question:How is maintenance and cleaning handled?},{answer:Yes, modern dispensers can be configured with various payment systems. This includes options for free-vend settings, staff ID card systems, or contactless payment terminals, allowing you to choose the level of accessibility and management that fits your office culture.,question:Can I set up payment or billing for employees?},{answer:The amount of space needed varies by model, ranging from small benchtop units to larger floor-standing dispensers. We recommend evaluating your available breakroom footprint and power access as a first step. Our team can provide exact dimensions and specifications for any models you are interested in.,question:How much space do these machines require?},{answer:Selecting the right machine is based on your daily cup volume and the beverage types your staff prefers. During a consultation, we analyze your current office environment and staff numbers to recommend models that can reliably handle your demand without frequent manual intervention.,question:How do I determine the right machine size for my office?}],title:Common Questions About Office Coffee Services},{blockType:cta,body:Ready to improve your breakroom experience? Our experts are available to discuss your specific office needs and provide recommendations tailored to your team's size and space. Contact us today to start the conversation and learn more about our available machines.,bulletItems:[],cards:[],ctaHref:/contact,ctaLabel:Enquire about a machine,faqItems:[],title:Ready to Upgrade Your Office Coffee?}],title:Main Content}]}",
+    "toolCalls": [
+      {
+        "id": "a57GpSyS",
+        "name": "set_seo_metadata",
+        "input": {
+          "targetKeyword": "coffee vending machines for offices",
+          "metaDescription": "Explore our range of coffee vending machines for offices, designed to provide fresh, convenient coffee solutions that keep your team productive and energized throughout the day.",
+          "title": "Coffee Vending Machines for Offices",
+          "slug": "coffee-vending-machines-for-offices",
+          "seoTitle": "Coffee Vending Machines for Offices | Professional Solutions"
+        }
+      },
+      {
+        "id": "deterministic_replace_page_sections",
+        "name": "replace_page_sections",
+        "input": {
+          "replaceExisting": false,
+          "sections": [
+            {
+              "title": "Hero",
+              "blocks": [
+                {
+                  "blockType": "hero",
+                  "title": "Coffee Vending Machines for Offices",
+                  "body": "Coffee Vending Machines for Offices helps site users access food, drinks, and everyday refreshments without turning the site team into an informal catering desk. A managed plan covers placement, product range, restocking cadence, and issue response so the site keeps running between visits.",
+                  "bulletItems": null,
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": "Book a consultation",
+                  "ctaHref": "/contact"
+                }
+              ]
+            },
+            {
+              "title": "What buyers need to know first",
+              "blocks": [
+                {
+                  "blockType": "rich_text",
+                  "title": "What buyers need to know first",
+                  "body": "For Coffee Vending Machines for Offices, buyers need more than a list of benefits. Explain when the service is a good fit, what products and support are included, what the site needs to provide, and how the enquiry turns into a practical recommendation.",
+                  "bulletItems": [
+                    "Who will use the setup and why",
+                    "What the service needs to include",
+                    "Which questions should be settled before launch"
+                  ],
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "Decision points",
+              "blocks": [
+                {
+                  "blockType": "card_grid",
+                  "title": "Decision points",
+                  "body": null,
+                  "bulletItems": null,
+                  "faqItems": null,
+                  "cards": [
+                    {
+                      "title": "Site fit",
+                      "body": "coffee vending usually works best where there is steady daily traffic, enough room for people to browse, and clear access for refills. Smaller or irregular sites may still work, but they need a tighter product range and a simpler service plan.",
+                      "href": "/contact",
+                      "linkLabel": "Check site fit"
+                    },
+                    {
+                      "title": "Product range",
+                      "body": "Plan the range around what people actually buy during the day: quick lunches, drinks, snacks, coffee, healthier choices, and any site-specific preferences. Review the mix after launch so slow-moving products do not crowd out better options.",
+                      "href": "/contact",
+                      "linkLabel": "Plan the range"
+                    },
+                    {
+                      "title": "Payment and access",
+                      "body": "Confirm how people will pay, where the equipment can sit, and whether visitors as well as staff need access. Access rules affect placement, signage, product choice, and how easy the service is to use during busy periods.",
+                      "href": "/contact",
+                      "linkLabel": "Review access"
+                    },
+                    {
+                      "title": "Restocking plan",
+                      "body": "Restocking should match the site's usage pattern rather than a generic schedule. Ask about staff numbers, busy days, preferred product types, and who can provide access so the refill plan supports demand without overstocking.",
+                      "href": "/contact",
+                      "linkLabel": "Scope refills"
+                    },
+                    {
+                      "title": "Support expectations",
+                      "body": "Set expectations for machine issues, product changes, cleaning responsibilities, and who the site contacts when something is not working. Clear support ownership is what keeps the setup useful after the first week.",
+                      "href": "/contact",
+                      "linkLabel": "Discuss support"
+                    }
+                  ],
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "Process and support expectations",
+              "blocks": [
+                {
+                  "blockType": "rich_text",
+                  "title": "Process and support expectations",
+                  "body": "A practical rollout starts with the site, audience, and service needs, then turns those details into an equipment recommendation, product plan, restocking cadence, and issue-response path. The strongest enquiry includes photos or notes about the space, expected usage windows, and any access constraints for refills.",
+                  "bulletItems": [
+                    "Confirm site requirements",
+                    "Plan stock and refills",
+                    "Review support after launch"
+                  ],
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "FAQs",
+              "blocks": [
+                {
+                  "blockType": "faq",
+                  "title": "Coffee Vending Machines for Offices",
+                  "body": null,
+                  "bulletItems": null,
+                  "faqItems": [
+                    {
+                      "question": "What makes this setup a good fit?",
+                      "answer": "A good fit depends on the audience, space, access, product expectations, and service model. For Coffee Vending Machines for Offices, the useful next step is to compare the site details against those requirements before promising a machine mix or rollout plan."
+                    },
+                    {
+                      "question": "What needs to be confirmed before launch?",
+                      "answer": "Walk the site and confirm available space, power access, and how refill visits will get in. Then settle the people questions: who approves the placement, who owns day-to-day contact, and what payment options the audience actually needs."
+                    },
+                    {
+                      "question": "How should products and refills be planned?",
+                      "answer": "Map expected daily usage to a starting product list, then agree who reviews what is selling and how often refills happen. Most sites settle into a weekly or fortnightly cadence once real demand is visible, so build the first plan around easy adjustment rather than a fixed menu."
+                    },
+                    {
+                      "question": "Who handles service issues after launch?",
+                      "answer": "Agree a single reporting contact and a response window for faults before launch. Clear escalation expectations stop small problems like payment errors or stock gaps from sitting unresolved, and they make it obvious whether the service plan or the site team owns each task."
+                    },
+                    {
+                      "question": "How do we get started?",
+                      "answer": "Start with a quick consultation that covers the site type, audience, available space, product preferences, and support expectations. Those details make it easier to recommend a practical setup instead of guessing from a generic vending checklist."
+                    }
+                  ],
+                  "cards": null,
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "CTA",
+              "blocks": [
+                {
+                  "blockType": "cta",
+                  "title": "Ready to plan the setup?",
+                  "body": "Share the site type, estimated daily audience, available space, and preferred product categories so the next recommendation can be scoped around real conditions rather than generic vending assumptions.",
+                  "bulletItems": null,
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": "Book a consultation",
+                  "ctaHref": "/contact"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "source": "intent-fallback"
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "function_call_filter: MALFORMED_FUNCTION_CALL",
+        "index": 0,
+        "message": {
+          "content": "call:default_api:replace_page_sections{replaceExisting:true,sections:[{blocks:[{blockType:hero,body:Providing reliable, high-quality coffee is an essential way to support team morale and daily productivity. Our selection of coffee vending machines for offices offers reliable, easy-to-use brewing solutions that cater to various tastes and workspace requirements. Explore our range today to find the perfect fit for your office environment.,bulletItems:[],cards:[],ctaHref:/contact,ctaLabel:Request a consultation,faqItems:[],title:Professional Coffee Vending Machines for Offices}],title:Hero Section},{blocks:[{blockType:rich_text,body:Choosing the right brewing equipment depends on your daily volume, available kitchen space, and the specific coffee preferences of your staff. We focus on providing hardware that simplifies maintenance while ensuring consistent results for every cup. Whether you need a compact unit for a small breakroom or a high-capacity machine for a busy corporate floor, our team helps you assess your needs to find the most suitable option. We also consider utility requirements, such as water access and power supply, to ensure a smooth installation process that avoids disruption to your office routines.,bulletItems:[Automatic self-cleaning cycles to minimize daily maintenance requirements.,Flexible payment options including contactless and employee card integration.,Variety of bean-to-cup and instant options to suit different beverage preferences.,Energy-efficient designs that reduce power consumption during off-hours.],cards:[],ctaHref:/contact,ctaLabel:Get in touch,faqItems:[],title:Selecting the Right Brewing Solution for Your Team},{blockType:card_grid,body:Selecting the right equipment involves balancing staff preferences, space availability, and the level of service required. Use these categories to guide your initial assessment of what will best serve your office.,bulletItems:[],cards:[{body:Designed for high-traffic areas, these machines provide cafe-style drinks at the touch of a button, utilizing fresh beans for every cup brewed.,href:/contact,linkLabel:View options,title:Bean-to-Cup Machines},{body:Perfect for smaller teams or shared spaces, these units deliver quick results with minimal space requirements and straightforward operation.,href:/contact,linkLabel:Explore compact models,title:Compact Instant Dispensers},{body:These versatile machines handle large volumes during morning peaks, offering a wide menu of specialty coffees, teas, and hot chocolate for your team.,href:/contact,linkLabel:See high-capacity units,title:High-Volume Specialty Units}],ctaHref:/contact,ctaLabel:Get expert advice,faqItems:[],title:Types of Office Coffee Systems},{blockType:faq,body:We understand that upgrading your office refreshment service comes with questions about logistics, maintenance, and long-term suitability. Browse these common inquiries to help inform your decision-making process.,bulletItems:[],cards:[],ctaHref:/contact,ctaLabel:Contact our team,faqItems:[{answer:Installation typically requires a standard power outlet and, for most bean-to-cup models, a plumbed water connection. Our technicians will assess your proposed breakroom layout to confirm suitability during a site visit, ensuring proper plumbing and electrical access are in place before delivery.,question:What are the technical requirements for installing a machine?},{answer:We provide maintenance schedules tailored to your office's daily usage volume. This can include regular cleaning, water filter replacements, and scheduled restocking. During your consultation, we will outline how we handle service requests and standard preventive care to minimize downtime.,question:How is maintenance and cleaning handled?},{answer:Yes, modern dispensers can be configured with various payment systems. This includes options for free-vend settings, staff ID card systems, or contactless payment terminals, allowing you to choose the level of accessibility and management that fits your office culture.,question:Can I set up payment or billing for employees?},{answer:The amount of space needed varies by model, ranging from small benchtop units to larger floor-standing dispensers. We recommend evaluating your available breakroom footprint and power access as a first step. Our team can provide exact dimensions and specifications for any models you are interested in.,question:How much space do these machines require?},{answer:Selecting the right machine is based on your daily cup volume and the beverage types your staff prefers. During a consultation, we analyze your current office environment and staff numbers to recommend models that can reliably handle your demand without frequent manual intervention.,question:How do I determine the right machine size for my office?}],title:Common Questions About Office Coffee Services},{blockType:cta,body:Ready to improve your breakroom experience? Our experts are available to discuss your specific office needs and provide recommendations tailored to your team's size and space. Contact us today to start the conversation and learn more about our available machines.,bulletItems:[],cards:[],ctaHref:/contact,ctaLabel:Enquire about a machine,faqItems:[],title:Ready to Upgrade Your Office Coffee?}],title:Main Content}]}",
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "EjQKMgEMOdbHuv+HFYU1lbKO4tWv5N8bXDDDrxX0R+irAA1dbeZJc448dcKSFzfL+XoCNsUG"
+                }
+              },
+              "function": {
+                "arguments": "{\"targetKeyword\":\"coffee vending machines for offices\",\"metaDescription\":\"Explore our range of coffee vending machines for offices, designed to provide fresh, convenient coffee solutions that keep your team productive and energized throughout the day.\",\"title\":\"Coffee Vending Machines for Offices\",\"slug\":\"coffee-vending-machines-for-offices\",\"seoTitle\":\"Coffee Vending Machines for Offices | Professional Solutions\"}",
+                "name": "set_seo_metadata"
+              },
+              "id": "a57GpSyS",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781145467,
+    "id": "bx8qap3CEe-kjuMPs9So-Q4",
+    "model": "gemini-3.1-flash-lite",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 1078,
+      "prompt_tokens": 4358,
+      "prompt_tokens_details": {
+        "cached_tokens": 3943
+      },
+      "total_tokens": 5436
+    }
+  }
+}

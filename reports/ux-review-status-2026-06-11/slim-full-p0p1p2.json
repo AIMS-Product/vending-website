@@ -1,0 +1,640 @@
+[
+  {
+    "cid": "C001",
+    "band": "P0",
+    "page": "/apply",
+    "category": "Feedback & State",
+    "finding": "After submitting the application the only confirmation is a small line of green text beside the button; the form does not clear, disable, or redirect, so a non-technical user cannot tell the submission succeeded and will resubmit.",
+    "suggested_fix": {
+      "current": "Small inline green text 'Thanks. We received your details and will follow up shortly.' next to the SUBMIT button; form stays filled, no redirect",
+      "proposed": "On success, redirect to the existing /thank-you-for-applying page (or show a full-width banner above the form), and clear/disable the form"
+    }
+  },
+  {
+    "cid": "C007",
+    "band": "P0",
+    "page": "/admin/pages",
+    "category": "Navigation & Flow",
+    "finding": "The Blog/News CMS has no entry in the studio sidebar; the entire content type is only reachable by typing /admin/news.",
+    "suggested_fix": {
+      "current": "Sidebar 'Admin sections' = SEO pages, Media library only",
+      "proposed": "Add a 'Blog & News' link (→ /admin/news) to the studio sidebar 'Admin sections' nav"
+    }
+  },
+  {
+    "cid": "C148",
+    "band": "P0",
+    "page": "/",
+    "category": "Trust & Safety",
+    "finding": "No phone number or email address anywhere on the homepage or in the footer — every contact path routes into a web form, leaving a frustrated user with no way to reach a human.",
+    "suggested_fix": {
+      "current": "Footer and site offer only nav links and a contact form; no phone/email",
+      "proposed": "Add a visible support email (e.g. support@vendingpreneurs.com) and/or phone number to the footer and contact page, plus a stated response time"
+    }
+  },
+  {
+    "cid": "C035",
+    "band": "P2",
+    "page": "/, /case-studies",
+    "category": "Accessibility & Inclusion",
+    "finding": "Homepage (and /case-studies) testimonial videos each produce keyboard tab stops with no visible focus indicator, and the crawler flags a possible focus trap at the last stop of each of the four video groups; the missing focus indicator is the confirmed defect, the trap is a heuristic flag needing manual keyboard confirmation.",
+    "suggested_fix": {
+      "current": "Custom video players with no managed focus and no visible focus ring",
+      "proposed": "Ensure each video control is reachable and escapable by keyboard (no trap), and add a visible :focus-visible outline (e.g. 2px solid high-contrast ring) on the player and its controls"
+    }
+  },
+  {
+    "cid": "C076",
+    "band": "P1",
+    "page": "/",
+    "category": "Trust & Safety",
+    "finding": "Homepage hero stats default to '0+ / $0M+ / 0+' for no-JS users, crawlers, and anyone whose scroll/IntersectionObserver does not fire; real values (500+, $3M+, 3,000+) only appear via a client-side count-up triggered on scroll into view.",
+    "suggested_fix": {
+      "current": "0+ Entrepreneurs launched / $0M+ Snack-drink sales / 0+ Vending locations",
+      "proposed": "Populate real verified figures (e.g. '600+ entrepreneurs launched', '$12M+ in machine sales', '2,000+ locations'); if the count-up animation is failing, render the final value server-side as a fallback so it never shows 0"
+    }
+  },
+  {
+    "cid": "C117",
+    "band": "P1",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "finding": "Three required fields are commitments I may not have made yet: Business stage, Available startup budget, and Launch timeline are all required",
+    "suggested_fix": {
+      "current": "Business stage, budget, and timeline marked '(required)'",
+      "proposed": "Make only Name + Email required; mark stage/budget/timeline optional with a 'Not sure yet' option in each dropdown"
+    }
+  },
+  {
+    "cid": "C004",
+    "band": "P1",
+    "page": "/news, /, /news + /news/* + breadcrumb, /admin/news, /admin/news/new",
+    "category": "Copy & Labels",
+    "finding": "The navigation item and route say 'NEWS' but the page heading is 'BLOG', and article breadcrumbs also say 'BLOG' — the same section has two different names.",
+    "suggested_fix": {
+      "current": "Nav says 'NEWS', page heading and breadcrumb say 'BLOG'",
+      "proposed": "Use one name everywhere — change the page heading and breadcrumb to 'News' to match the nav item and the /news route"
+    }
+  },
+  {
+    "cid": "C003",
+    "band": "P1",
+    "page": "/, /contact",
+    "category": "Navigation & Flow",
+    "finding": "There is no Contact link in the top navigation; the only way to reach /contact is the small footer link or knowing the URL.",
+    "suggested_fix": {
+      "current": "Top nav: About, Resources, Case Studies, News (no Contact)",
+      "proposed": "Add a 'Contact' link to the top navigation"
+    }
+  },
+  {
+    "cid": "C014",
+    "band": "P1",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "finding": "Form errors rely solely on native browser bubbles ('Please fill out this field.') with no programmatic error summary and no in-page, persistent, screen-reader-announced error list. The exploration log records 'no visible validation errors after empty submit' for the custom layer.",
+    "suggested_fix": {
+      "current": "Native-only required validation, transient bubbles, no error summary",
+      "proposed": "Add aria-invalid + aria-describedby per field with persistent inline messages, and an aria-live='assertive' error summary at the top of the form listing each failed field with anchor links"
+    }
+  },
+  {
+    "cid": "C030",
+    "band": "P2",
+    "page": "/news",
+    "category": "Feedback & State",
+    "finding": "A transient upstream failure on a Webflow-CDN news thumbnail can surface as a broken image because NewsCard's next/image has no onError/fallback; the host is already whitelisted and the proxy now returns 200, so this is a graceful-degradation gap, not a config blocker.",
+    "suggested_fix": {
+      "current": "next/image proxy returns 500 for the cdn.prod.website-files.com source; card renders broken with alt text",
+      "proposed": "Whitelist the CDN host in next.config images.remotePatterns (or migrate the asset into managed media), and add an onError/fallback image so a failed thumbnail degrades gracefully"
+    }
+  },
+  {
+    "cid": "C006",
+    "band": "P1",
+    "page": "/admin/pages, /admin/pages/new",
+    "category": "Feedback & State",
+    "finding": "On first open of the page editor a 'Quick Tour' overlay sits on top of the outline panel it points at and blocks interaction until dismissed.",
+    "suggested_fix": {
+      "current": "Quick Tour overlay obscures the panel/button it references",
+      "proposed": "Position the tour tooltip beside (not over) its target, and let the user dismiss or skip the whole tour with one obvious button"
+    }
+  },
+  {
+    "cid": "C018",
+    "band": "P1",
+    "page": "/admin/pages/redirects",
+    "category": "Navigation & Flow",
+    "finding": "The Redirects manager is an orphan route with zero inbound links from any explored admin page.",
+    "suggested_fix": {
+      "current": "/admin/pages/redirects reachable only by URL",
+      "proposed": "Link 'Redirects' from the SEO pages screen header and/or the studio sidebar"
+    }
+  },
+  {
+    "cid": "C011",
+    "band": "P2",
+    "page": "/apply, /",
+    "category": "Copy & Labels",
+    "finding": "The primary nav CTA 'STEP INSIDE' does not communicate what it does (it links to /apply).",
+    "suggested_fix": {
+      "current": "Nav button label 'STEP INSIDE'",
+      "proposed": "'APPLY NOW' (match the hero CTA so the primary action is named consistently)"
+    }
+  },
+  {
+    "cid": "C005",
+    "band": "P2",
+    "page": "/news",
+    "category": "Feedback & State",
+    "finding": "On first load the article cards render as blank outlines until the user scrolls (scroll-reveal animation), so the page looks broken or half-loaded above the fold.",
+    "suggested_fix": {
+      "current": "Article cards are invisible until scrolled into view",
+      "proposed": "Render the first row of article cards visible on load; only apply reveal animation to cards genuinely below the fold"
+    }
+  },
+  {
+    "cid": "C021",
+    "band": "P2",
+    "page": "/admin/news",
+    "category": "Navigation & Flow",
+    "finding": "No News/Blog item in the studio sidebar; /admin/news is reachable only by typing the URL.",
+    "suggested_fix": {
+      "current": "Sidebar: SEO pages, Media library, Settings only",
+      "proposed": "Add a 'Blog & news' sidebar entry linking to /admin/news alongside SEO pages"
+    }
+  },
+  {
+    "cid": "C036",
+    "band": "P2",
+    "page": "/",
+    "category": "Accessibility & Inclusion",
+    "finding": "Serious color-contrast failure on the homepage statistic values (the 'definition' values under the Accelerator Program). Three <dd> elements fail WCAG AA contrast.",
+    "suggested_fix": {
+      "current": "Stat label/value color below 4.5:1 against background",
+      "proposed": "Darken the <dd> text (or lighten background) to meet at least 4.5:1 contrast"
+    }
+  },
+  {
+    "cid": "C037",
+    "band": "P2",
+    "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Navigation & Flow",
+    "finding": "Legacy /blog/{slug} paths hard-404 instead of redirecting to the live /news/{slug} article that exists.",
+    "suggested_fix": {
+      "current": "/blog/{slug} returns 404",
+      "proposed": "301-redirect /blog/{slug} to the corresponding /news/{slug} article"
+    }
+  },
+  {
+    "cid": "C044",
+    "band": "P2",
+    "page": "/news",
+    "category": "Visual & Layout",
+    "finding": "The first paint of /news shows article cards as empty outlines (scroll-reveal animation) and one card renders as broken-image alt text instead of an image ('Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Items, Niche Products)').",
+    "suggested_fix": {
+      "current": "Scroll-reveal cards paint empty; one image returns 500 from /_next/image (legacy website-files.com CDN)",
+      "proposed": "Render card content visible by default (reveal as enhancement only) and fix/replace the failing website-files.com image source so /_next/image returns 200"
+    }
+  },
+  {
+    "cid": "C070",
+    "band": "P2",
+    "page": "/",
+    "category": "Visual & Layout",
+    "finding": "The hero stat counters render as zeroes in the captured state: '0+' Entrepreneurs launched, '$0M+' Snack/Drink sales, '0+' Vending locations. These are count-up animations frozen at their start value, so the most prominent proof numbers on the homepage read as literal zero.",
+    "suggested_fix": {
+      "current": "Counters animate from 0 with no static fallback, so first paint and reduced-motion show '0+ / $0M+ / 0+'",
+      "proposed": "Render the final value as the default content and only animate as a progressive enhancement; respect prefers-reduced-motion by showing the final number immediately"
+    }
+  },
+  {
+    "cid": "C002",
+    "band": "P2",
+    "page": "/",
+    "category": "Trust & Safety",
+    "finding": "The three headline statistics render as '0+', '$0M+', '0+' instead of real figures, making the site look broken and untrustworthy.",
+    "suggested_fix": {
+      "current": "Counters show '0+', '$0M+', '0+'",
+      "proposed": "Render the real counts (e.g. '500+', '$12M+', '1,200+'); if a count is unknown at load, hide the stat rather than show 0"
+    }
+  },
+  {
+    "cid": "C042",
+    "band": "P2",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "finding": "Submitting the apply form with empty required fields produces NO visible validation error; the form silently does nothing. A non-native user has no message to read and cannot tell what is wrong.",
+    "suggested_fix": {
+      "current": "No validation message on empty/invalid submit",
+      "proposed": "Show a specific inline error per field, e.g. \"Email is required\" / \"Enter a valid email address like name@example.com\"."
+    }
+  },
+  {
+    "cid": "C054",
+    "band": "P2",
+    "page": "/admin/news",
+    "category": "Accessibility & Inclusion",
+    "finding": "Serious aria-prohibited-attr violation in the admin news list (.text-slate-300) — an ARIA attribute is applied to an element whose role does not allow it.",
+    "suggested_fix": {
+      "current": "Prohibited ARIA attribute (e.g. aria-label on a non-interactive/incorrect role element)",
+      "proposed": "Remove the disallowed ARIA attribute or wrap the content in an element with a role that permits it"
+    }
+  },
+  {
+    "cid": "C096",
+    "band": "P2",
+    "page": "/",
+    "category": "Visual & Layout",
+    "finding": "The homepage has a Cumulative Layout Shift of 0.263, well above the 0.1 'good' threshold; the same 0.263 CLS recurs on /about, /news, and every news article page, indicating a shared layout component shifts after load.",
+    "suggested_fix": {
+      "current": "CLS 0.263 on /, /about, /news, and article pages",
+      "proposed": "Reserve space for the shifting element (explicit width/height on hero/logo images, font-display swap with metric-matched fallback, fixed-height header) to bring CLS under 0.1"
+    }
+  },
+  {
+    "cid": "C144",
+    "band": "P2",
+    "page": "/admin/pages",
+    "category": "Feedback & State",
+    "finding": "A 'Schedule failed' filter is exposed in the workflow navigation with no inline explanation of what failed or how to recover.",
+    "suggested_fix": {
+      "current": "'Schedule failed' filter link with no context",
+      "proposed": "When the filter has results, show what failed and a Retry action per item; hide or de-emphasise the filter when there are zero failures"
+    }
+  },
+  {
+    "cid": "C022",
+    "band": "P2",
+    "page": "/admin/pages/new",
+    "category": "Navigation & Flow",
+    "finding": "A 'Quick Tour · Step 1 of 3' overlay covers the outline panel on first editor open and blocks interaction until dismissed.",
+    "suggested_fix": {
+      "current": "Modal tour overlay auto-opens over the builder panel and blocks clicks",
+      "proposed": "Make the tour an opt-in '?' button; never auto-block the panel — or remember dismissal per-user so it shows at most once"
+    }
+  },
+  {
+    "cid": "C023",
+    "band": "P2",
+    "page": "/",
+    "category": "Feedback & State",
+    "finding": "Hero stat counters render as '0+', '$0M+', '0+' placeholders.",
+    "suggested_fix": {
+      "current": "0+ / $0M+ / 0+ stat values",
+      "proposed": "Populate real figures, or remove the stat band until real numbers exist — never ship placeholder zeros"
+    }
+  },
+  {
+    "cid": "C041",
+    "band": "P2",
+    "page": "/",
+    "category": "Visual & Layout",
+    "finding": "The homepage has horizontal scroll at mobile-375, making the landing page feel broken on the phone a social-media visitor arrives with.",
+    "suggested_fix": {
+      "current": "Homepage content overflows viewport width at 375px (horizontal scroll)",
+      "proposed": "Constrain offending element(s) with max-width:100% / overflow-x clipping so the page fits the 375px viewport"
+    }
+  },
+  {
+    "cid": "C048",
+    "band": "P2",
+    "page": "/",
+    "category": "Accessibility & Inclusion",
+    "finding": "No skip-to-content link. The first tab stop is the logo, followed by all primary nav links and (on the homepage) 12 video tab stops, before any main content or the Apply CTA in the body is reachable.",
+    "suggested_fix": {
+      "current": "No skip link; first focusable element is the logo",
+      "proposed": "Add a visually-hidden 'Skip to main content' link as the first focusable element that targets <main> and becomes visible on focus"
+    }
+  },
+  {
+    "cid": "C049",
+    "band": "P2",
+    "page": "/this-page-does-not-exist",
+    "category": "Accessibility & Inclusion",
+    "finding": "Serious color-contrast failures on the 404 page: the '404' label (.tracking-wide, light blue on white) and the explanatory subtext (.mt-2, light gray on white) both fail AA.",
+    "suggested_fix": {
+      "current": "Light-blue '404' and light-gray subtext below 4.5:1",
+      "proposed": "Use darker, AA-compliant colors for the '404' label and the subtext"
+    }
+  },
+  {
+    "cid": "C050",
+    "band": "P2",
+    "page": "/news/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Accessibility & Inclusion",
+    "finding": "Serious color-contrast failure on article meta text (.mt-5, the date / '13 min read' line) and, on sibling articles, on inline body links (p > a). Article body links fail AA.",
+    "suggested_fix": {
+      "current": "Faint gray meta text and low-contrast inline link color",
+      "proposed": "Raise meta and inline-link colors to meet 4.5:1; underline inline links so they are distinguishable without relying on color"
+    }
+  },
+  {
+    "cid": "C055",
+    "band": "P2",
+    "page": "/admin/media",
+    "category": "Accessibility & Inclusion",
+    "finding": "Serious color-contrast failures on the media library filter counts (.mr-1) and a description paragraph (.space-y-2 > p), plus a broken heading order (h3 without preceding h2).",
+    "suggested_fix": {
+      "current": "Faint gray filter counts/description text below 4.5:1; h3 with no h2",
+      "proposed": "Darken the count and description text to AA; fix the heading hierarchy so the section h2 precedes the h3"
+    }
+  },
+  {
+    "cid": "C060",
+    "band": "P2",
+    "page": "/",
+    "category": "Feedback & State",
+    "finding": "The successful application submission is announced only as a single line of green text beside the submit button, with an empty <alert> region present in the DOM but no confirmed live announcement; no redirect to the existing /thank-you-for-applying page.",
+    "suggested_fix": {
+      "current": "Subtle inline green text; empty/unconfirmed alert region; no redirect",
+      "proposed": "Announce success via a populated aria-live='polite' region (or move focus to a success heading) and/or redirect to /thank-you-for-applying"
+    }
+  },
+  {
+    "cid": "C061",
+    "band": "P2",
+    "page": "/apply",
+    "category": "Feedback & State",
+    "finding": "After a successful application the only confirmation is a small line of green text beside the button: \"Thanks. We received your details and will follow up shortly.\" For a non-native reader this is easy to miss and the phrase \"follow up\" is a phrasal verb that is ambiguous (will they email me? call me? when?).",
+    "suggested_fix": {
+      "current": "Thanks. We received your details and will follow up shortly.",
+      "proposed": "Redirect to /thank-you-for-applying, or show a large confirmation: \"Application received. We will email you within 2 business days.\""
+    }
+  },
+  {
+    "cid": "C062",
+    "band": "P2",
+    "page": "/news",
+    "category": "Copy & Labels",
+    "finding": "The nav item, the URL and the page heading use three different words for the same section: nav says \"NEWS\", the route is /news, but the page heading is \"BLOG\" with the eyebrow \"Insights from the route\". A non-native reader cannot tell whether News and Blog are the same place.",
+    "suggested_fix": {
+      "current": "nav \"NEWS\" -> page heading \"BLOG\"",
+      "proposed": "Use one word everywhere: heading \"News\" to match the nav item and /news route."
+    }
+  },
+  {
+    "cid": "C077",
+    "band": "P2",
+    "page": "/",
+    "category": "Trust & Safety",
+    "finding": "No price, price range, or explanation of how pricing works appears anywhere on the public site; the program asks for an application with the cost entirely hidden.",
+    "suggested_fix": {
+      "current": "No pricing anywhere; cost revealed only after an application/call",
+      "proposed": "Add a Pricing or 'What it costs' section (a 'from $X' figure, a price band, or at minimum 'investment discussed on your call, typically $X-$Y range, no obligation')"
+    }
+  },
+  {
+    "cid": "C078",
+    "band": "P2",
+    "page": "/",
+    "category": "Copy & Labels",
+    "finding": "The hero and supporting copy lean on 'financial freedom' and 'passive income' with 'minimal time investment' — the exact framing of get-rich-quick funnels that a skeptical buyer is trained to distrust.",
+    "suggested_fix": {
+      "current": "Turn Vending Into Your Path to Financial Freedom … with minimal time investment",
+      "proposed": "Lead with a concrete, defensible promise (e.g. 'Learn the exact system to place your first profitable vending machine in 90 days') and drop 'minimal time investment'"
+    }
+  },
+  {
+    "cid": "C080",
+    "band": "P2",
+    "page": "/",
+    "category": "Copy & Labels",
+    "finding": "A specific income figure ('making $10,000 a month in vending machines') is quoted approvingly inside a homepage testimonial with no earnings disclaimer anywhere near it.",
+    "suggested_fix": {
+      "current": "$10,000/month figure in a testimonial, no disclaimer nearby",
+      "proposed": "Add a visible earnings disclaimer adjacent to any income claim ('Individual results vary; this is not a guarantee of income') and link it to the Terms income-disclaimer section"
+    }
+  },
+  {
+    "cid": "C082",
+    "band": "P2",
+    "page": "/about",
+    "category": "Trust & Safety",
+    "finding": "The founder is presented by first name only ('Mike') with no surname, credentials, company registration, or verifiable identity.",
+    "suggested_fix": {
+      "current": "Founder identified only as 'Mike'",
+      "proposed": "Use his full name, a one-line verifiable bio, and link to a LinkedIn/business profile and the registered company entity (Modern Amenities) named in the legal pages"
+    }
+  },
+  {
+    "cid": "C089",
+    "band": "P2",
+    "page": "/news/top-5-questions-vending-entrepreneurship-program",
+    "category": "Visual & Layout",
+    "finding": "The article H1 overflows the right edge of a 375px phone — the long uppercase word 'ENTREPRENEURSHIP' is not breaking/wrapping, so it runs off-screen and the page scrolls horizontally.",
+    "suggested_fix": {
+      "current": "Article H1 with no word-break on long words; overflows at 375px",
+      "proposed": "Add overflow-wrap:anywhere / hyphens:auto (or clamp font-size with clamp()) to the article H1 so long words break within the viewport"
+    }
+  },
+  {
+    "cid": "C090",
+    "band": "P2",
+    "page": "/",
+    "category": "Visual & Layout",
+    "finding": "The homepage scrolls horizontally on a 375px phone. Above the fold renders fine (hamburger nav, stacked hero), so the overflow comes from content further down the page.",
+    "suggested_fix": {
+      "current": "A below-fold section on / exceeds the 375px viewport width",
+      "proposed": "Audit home sections for fixed widths / negative margins / oversized images and constrain with max-w-full + overflow-x-hidden on the page wrapper"
+    }
+  },
+  {
+    "cid": "C091",
+    "band": "P2",
+    "page": "/case-studies",
+    "category": "Visual & Layout",
+    "finding": "The /case-studies page scrolls horizontally on a 375px phone. The header area fits; overflow is below the fold.",
+    "suggested_fix": {
+      "current": "A case-study card/quote section exceeds 375px width",
+      "proposed": "Constrain the case-study cards/testimonial rows to max-w-full and verify no fixed-width child forces overflow at 375px"
+    }
+  },
+  {
+    "cid": "C098",
+    "band": "P2",
+    "page": "global",
+    "category": "Visual & Layout",
+    "finding": "The public marketing site and the admin studio are two unrelated design systems. The public site uses heavy black display type, hard black borders, offset drop shadows, and orange CTAs (neo-brutalist); the admin studio uses a soft light-gray SaaS dashboard with rounded cards, hairline borders, and blue primaries. There is no shared component language, type scale, button shape, or colour token between the two halves of the product.",
+    "suggested_fix": {
+      "current": "Two independent visual languages (brutalist public, generic SaaS admin) with no shared tokens",
+      "proposed": "Define one token set (type scale, radius scale, brand orange/blue, shadow scale) and apply brand accents to the studio (e.g. orange primary actions, the brand display face on section headings) so the studio reads as the same product"
+    }
+  },
+  {
+    "cid": "C099",
+    "band": "P2",
+    "page": "global",
+    "category": "Visual & Layout",
+    "finding": "Nearly every public page reports a Cumulative Layout Shift of 0.263 (home, about, news, all three articles, privacy-free pages excepted). A CLS of 0.263 is well above Google's 0.1 'good' threshold and indicates a consistent, repeatable jump as the page settles.",
+    "suggested_fix": {
+      "current": "CLS 0.263 on most public routes from a shared above-fold element / font swap",
+      "proposed": "Reserve space for the shifting element (explicit hero image dimensions) and use next/font with font-display:optional or a size-adjust fallback to remove the swap-driven reflow"
+    }
+  },
+  {
+    "cid": "C100",
+    "band": "P2",
+    "page": "/this-page-does-not-exist",
+    "category": "Visual & Layout",
+    "finding": "The 404 page is the only public page that abandons the brand. 'Page not found' is set in a rounded system sans-serif at a modest size with a thin outline 'Back to home' pill, sitting inside the otherwise-branded header/footer. Every other public page uses the heavy black display face and the orange/black brand button.",
+    "suggested_fix": {
+      "current": "Default sans 'Page not found' heading + thin outline 'Back to home' pill",
+      "proposed": "Set the 404 heading in the brand display face (e.g. 'PAGE NOT FOUND.') and use the standard orange brand button for 'Back to home' so it matches the rest of the site"
+    }
+  },
+  {
+    "cid": "C105",
+    "band": "P2",
+    "page": "/admin/news/new",
+    "category": "Visual & Layout",
+    "finding": "On the New blog post page, 'Save draft' and 'Publish' are rendered as two visually identical full-width blue buttons stacked directly on top of each other. Publish (irreversible, makes content public) and Save draft (safe, private) carry the same colour, size, and weight, so the destructive-leaning action has no visual distinction.",
+    "suggested_fix": {
+      "current": "'Save draft' and 'Publish' are identical full-width blue buttons",
+      "proposed": "Make 'Save draft' a secondary/outline button and 'Publish' the single solid primary, so the consequential action is visually distinct"
+    }
+  },
+  {
+    "cid": "C113",
+    "band": "P2",
+    "page": "/",
+    "category": "Copy & Labels",
+    "finding": "The header's only call-to-action button is labelled \"STEP INSIDE\" and links to /apply, but nothing says it leads to the application. The clear \"APPLY NOW\" wording only appears further down the page in the body.",
+    "suggested_fix": {
+      "current": "Header button text: \"STEP INSIDE\" → /apply",
+      "proposed": "\"APPLY NOW\" → /apply (keep one consistent apply label everywhere)"
+    }
+  },
+  {
+    "cid": "C114",
+    "band": "P2",
+    "page": "/contact",
+    "category": "Copy & Labels",
+    "finding": "The contact page offers only a form — no phone number, no email address, no business hours. A pragmatist who wants to call cannot.",
+    "suggested_fix": {
+      "current": "Contact page: form only",
+      "proposed": "Add a visible phone number, email address, and business hours above the form"
+    }
+  },
+  {
+    "cid": "C115",
+    "band": "P2",
+    "page": "/",
+    "category": "Trust & Safety",
+    "finding": "Nowhere on the public site is there any price, cost range, or fee for the Vending Accelerator Program. The only path to find out what it costs is to apply and get a sales call.",
+    "suggested_fix": {
+      "current": "No pricing anywhere; cost only revealed after applying",
+      "proposed": "Add a pricing or \"what it costs / what's included\" section (even a starting-from range) so a visitor can self-qualify before applying"
+    }
+  },
+  {
+    "cid": "C123",
+    "band": "P2",
+    "page": "/apply",
+    "category": "Navigation & Flow",
+    "finding": "A dedicated /thank-you-for-applying confirmation page exists but the apply form never routes to it",
+    "suggested_fix": {
+      "current": "Apply form shows inline text and stays on /apply",
+      "proposed": "On successful submit, redirect to /thank-you-for-applying"
+    }
+  },
+  {
+    "cid": "C124",
+    "band": "P2",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "finding": "No progress saving on the apply form — an interruption that reloads the tab loses all entered data",
+    "suggested_fix": {
+      "current": "Uncontrolled single-shot form with no persistence",
+      "proposed": "Persist field values to localStorage as the user types and restore them on reload"
+    }
+  },
+  {
+    "cid": "C130",
+    "band": "P2",
+    "page": "/blog/how-to-choose-the-perfect-location-for-vending-machine",
+    "category": "Navigation & Flow",
+    "finding": "Legacy /blog/* article paths 404 with a bare, unstyled 'Not found' page that has no header, no footer, and no recovery link — a completely different 404 handler from the styled site-wide 404. Articles previously lived at /blog and the app links the public article page heading as 'BLOG'.",
+    "suggested_fix": {
+      "current": "/blog/{slug} returns a bare 'Not found' page with no nav/footer/recovery link",
+      "proposed": "Add 301 redirects from /blog/{slug} to /news/{slug}, or route the /blog subtree through the global styled not-found page with a 'Back to home' link"
+    }
+  },
+  {
+    "cid": "C135",
+    "band": "P2",
+    "page": "/thank-you-for-applying",
+    "category": "Navigation & Flow",
+    "finding": "A clear, well-designed application confirmation page exists but the apply form never routes to it; the real flow instead shows buried inline text.",
+    "suggested_fix": {
+      "current": "Apply form shows inline green text; /thank-you-for-applying is never reached",
+      "proposed": "Route successful applications to /thank-you-for-applying"
+    }
+  },
+  {
+    "cid": "C141",
+    "band": "P2",
+    "page": "/admin/news",
+    "category": "Navigation & Flow",
+    "finding": "The news list rows offer no delete/archive affordance; archiving requires opening each post's editor.",
+    "suggested_fix": {
+      "current": "No row-level delete/archive in /admin/news; editor-only",
+      "proposed": "Add row actions (Edit / Archive / Delete) and bulk select to the news list"
+    }
+  },
+  {
+    "cid": "C151",
+    "band": "P2",
+    "page": "/contact",
+    "category": "Feedback & State",
+    "finding": "The contact form has no visibly designed success or error region, carrying the same vanishing-confirmation risk seen on /apply.",
+    "suggested_fix": {
+      "current": "No prominent success/error state visible on the contact form",
+      "proposed": "Show a clear, prominent success confirmation (and a clear inline error on failure that preserves entered data) after submit"
+    }
+  },
+  {
+    "cid": "C153",
+    "band": "P2",
+    "page": "/this-page-does-not-exist",
+    "category": "Navigation & Flow",
+    "finding": "The 404 page offers only a 'Back to home' link — no search, no contact/help link, and no suggestion of where content moved.",
+    "suggested_fix": {
+      "current": "404 with only 'Back to home'",
+      "proposed": "Add a search box and links to News, Apply, and Contact on the 404 page"
+    }
+  },
+  {
+    "cid": "C008",
+    "band": "P2",
+    "page": "/, /case-studies",
+    "category": "Visual & Layout",
+    "finding": "The homepage produces a horizontal scrollbar at mobile width.",
+    "suggested_fix": {
+      "current": "Page content exceeds viewport width at 375px causing horizontal scroll",
+      "proposed": "Constrain full-bleed sections to 100vw / add overflow-x guards so the page fits the screen width"
+    }
+  },
+  {
+    "cid": "C020",
+    "band": "P2",
+    "page": "/",
+    "category": "Visual & Layout",
+    "finding": "Homepage layout shift on load is high (CLS 0.263) — content jumps as the page settles.",
+    "suggested_fix": {
+      "current": "CLS 0.263 on homepage load",
+      "proposed": "Reserve space for hero image, logo strip, and stat row (explicit width/height or aspect-ratio) to bring CLS under 0.1"
+    }
+  },
+  {
+    "cid": "C009",
+    "band": "P2",
+    "page": "/news",
+    "category": "Trust & Safety",
+    "finding": "A news card image fails with a 500 error from a leftover Webflow CDN URL (rendering raw alt text), and the page heading 'BLOG' contradicts the 'NEWS' navigation label and /news route.",
+    "suggested_fix": {
+      "current": "Broken image from cdn.prod.website-files.com (500); heading 'BLOG' vs nav 'NEWS'",
+      "proposed": "Re-host the article images on the app's own storage/CDN and fix the 500; rename the page heading to 'NEWS' (or rename the nav item) so the section has one consistent name"
+    }
+  }
+]

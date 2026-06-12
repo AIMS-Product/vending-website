@@ -1,0 +1,642 @@
+[
+  {
+    "cid": "C001",
+    "band": "P0",
+    "page": "/apply",
+    "category": "Feedback & State",
+    "severity": "blocker",
+    "personaCount": 13,
+    "personas": [
+      "01-grandparent",
+      "02-power-user",
+      "03-first-timer",
+      "06-skeptic",
+      "07-mobile",
+      "08-perfectionist",
+      "09-pragmatist",
+      "10-teenager",
+      "11-business-owner",
+      "12-developer",
+      "13-executive",
+      "14-competitor",
+      "15-angry-user"
+    ],
+    "finding": "After submitting the application the only confirmation is a small line of green text beside the button; the form does not clear, disable, or redirect, so a non-technical user cannot tell the submission succeeded and will resubmit.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Thanks. We received your details and will follow up shortly."
+      }
+    ],
+    "suggested_fix": {
+      "current": "Small inline green text 'Thanks. We received your details and will follow up shortly.' next to the SUBMIT button; form stays filled, no redirect",
+      "proposed": "On success, redirect to the existing /thank-you-for-applying page (or show a full-width banner above the form), and clear/disable the form"
+    },
+    "ids": [
+      "01-grandparent-001",
+      "02-power-user-001",
+      "03-first-timer-006",
+      "06-skeptic-015",
+      "07-mobile-001",
+      "08-perfectionist-005",
+      "09-pragmatist-005",
+      "10-teenager-001",
+      "11-business-owner-006",
+      "12-developer-001",
+      "13-executive-004",
+      "14-competitor-001",
+      "15-angry-user-004",
+      "15-angry-user-005"
+    ]
+  },
+  {
+    "cid": "C007",
+    "band": "P0",
+    "page": "/admin/pages",
+    "category": "Navigation & Flow",
+    "severity": "blocker",
+    "personaCount": 2,
+    "personas": ["01-grandparent", "14-competitor"],
+    "finding": "The Blog/News CMS has no entry in the studio sidebar; the entire content type is only reachable by typing /admin/news.",
+    "journey": "admin-create-news-draft",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "navigation \"Admin sections\": link \"SEO pages : SEO page content\" ... link \"Media library : Images and source assets\""
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-news-draft-s02-02-look-for-news-in-studio-nav.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "Sidebar 'Admin sections' = SEO pages, Media library only",
+      "proposed": "Add a 'Blog & News' link (→ /admin/news) to the studio sidebar 'Admin sections' nav"
+    },
+    "ids": ["01-grandparent-007", "14-competitor-002"]
+  },
+  {
+    "cid": "C148",
+    "band": "P0",
+    "page": "/",
+    "category": "Trust & Safety",
+    "severity": "blocker",
+    "personaCount": 1,
+    "personas": ["15-angry-user"],
+    "finding": "No phone number or email address anywhere on the homepage or in the footer — every contact path routes into a web form, leaving a frustrated user with no way to reach a human.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "HOME\nABOUT\nRESOURCES\nCASE STUDIES\nNEWS\nCONTACT US\nTERMS\nPRIVACY POLICY"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Footer and site offer only nav links and a contact form; no phone/email",
+      "proposed": "Add a visible support email (e.g. support@vendingpreneurs.com) and/or phone number to the footer and contact page, plus a stated response time"
+    },
+    "ids": ["15-angry-user-001"]
+  },
+  {
+    "cid": "C035",
+    "band": "P1",
+    "page": "/, /case-studies",
+    "category": "Accessibility & Inclusion",
+    "severity": "critical",
+    "personaCount": 3,
+    "personas": ["02-power-user", "04-accessibility", "12-developer"],
+    "finding": "Homepage testimonial videos create possible keyboard focus traps with no visible focus indicator. Each of the four testimonial videos produces a tab stop with 'no visible focus indicator' and a 'possible focus trap' is flagged at the last stop of each video group.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "possible focus trap around stop 11 on video 'Video testimonial from Thomas Rohlader'"
+      },
+      {
+        "type": "axe",
+        "ref": "axe-results.json",
+        "quote": "stop 10 (video 'Video testimonial from Thomas Rohlader'): no visible focus indicator"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Custom video players with no managed focus and no visible focus ring",
+      "proposed": "Ensure each video control is reachable and escapable by keyboard (no trap), and add a visible :focus-visible outline (e.g. 2px solid high-contrast ring) on the player and its controls"
+    },
+    "ids": [
+      "02-power-user-021",
+      "04-accessibility-001",
+      "12-developer-011",
+      "04-accessibility-002"
+    ]
+  },
+  {
+    "cid": "C076",
+    "band": "P1",
+    "page": "/",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "personaCount": 3,
+    "personas": ["06-skeptic", "10-teenager", "11-business-owner"],
+    "finding": "The three hero proof-statistics render as literal zeros — '0+' entrepreneurs launched, '$0M+' sales, '0+' vending locations — so the site's headline social proof communicates that nothing has happened.",
+    "journey": "evaluate-trust",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "0+\nENTREPRENEURS LAUNCHED\n$0M+\nSNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\n0+\nVENDING LOCATIONS W/OUR GUIDANCE"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-002-full.png",
+        "quote": "stat block shows 0+ and $0M+"
+      }
+    ],
+    "suggested_fix": {
+      "current": "0+ Entrepreneurs launched / $0M+ Snack-drink sales / 0+ Vending locations",
+      "proposed": "Populate real verified figures (e.g. '600+ entrepreneurs launched', '$12M+ in machine sales', '2,000+ locations'); if the count-up animation is failing, render the final value server-side as a fallback so it never shows 0"
+    },
+    "ids": ["06-skeptic-001", "10-teenager-003", "11-business-owner-001"]
+  },
+  {
+    "cid": "C117",
+    "band": "P1",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "severity": "critical",
+    "personaCount": 2,
+    "personas": ["10-teenager", "11-business-owner"],
+    "finding": "Three required fields are commitments I may not have made yet: Business stage, Available startup budget, and Launch timeline are all required",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/apply-text.md",
+        "quote": "Business stage*\n(required)"
+      },
+      {
+        "type": "text",
+        "ref": "text/apply-text.md",
+        "quote": "Available startup budget*\n(required)"
+      },
+      {
+        "type": "text",
+        "ref": "text/apply-text.md",
+        "quote": "Launch timeline*\n(required)"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Business stage, budget, and timeline marked '(required)'",
+      "proposed": "Make only Name + Email required; mark stage/budget/timeline optional with a 'Not sure yet' option in each dropdown"
+    },
+    "ids": ["10-teenager-002", "11-business-owner-005"]
+  },
+  {
+    "cid": "C039",
+    "band": "P1",
+    "page": "/",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "personaCount": 1,
+    "personas": ["03-first-timer"],
+    "finding": "Homepage stat counters render as '0+', '$0M+', '0+' — to a cold visitor with no context this reads as a fake, brand-new, or broken site, destroying trust before they read the testimonials below.",
+    "journey": null,
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "home-002-full.png",
+        "quote": "stat row shows 0+ / $0M+ / 0+"
+      },
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "0+\nENTREPRENEURS LAUNCHED\n$0M+\nSNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\n0+\nVENDING LOCATIONS W/OUR GUIDANCE"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Counters animating from/stuck at 0 with no real values (0+, $0M+, 0+)",
+      "proposed": "Render real seeded values (e.g. '500+', '$10M+', '1,200+') server-side so they never display as zero, even before any count-up animation runs"
+    },
+    "ids": ["03-first-timer-001"]
+  },
+  {
+    "cid": "C112",
+    "band": "P1",
+    "page": "/",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "personaCount": 1,
+    "personas": ["09-pragmatist"],
+    "finding": "The headline stat block renders literal zeros: \"0+ ENTREPRENEURS LAUNCHED\", \"$0M+ SNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\", \"0+ VENDING LOCATIONS W/OUR GUIDANCE\". To a no-nonsense reader this says the program has launched zero people and done zero sales.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "0+\nENTREPRENEURS LAUNCHED\n$0M+\nSNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\n0+\nVENDING LOCATIONS W/OUR GUIDANCE"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-002-full.png",
+        "quote": "0+ / $0M+ / 0+ stat row under THE VENDING ACCELERATOR PROGRAM"
+      }
+    ],
+    "suggested_fix": {
+      "current": "0+ ENTREPRENEURS LAUNCHED / $0M+ SNACK/DRINK SALES / 0+ VENDING LOCATIONS",
+      "proposed": "Populate the counters with real figures (e.g. \"500+ entrepreneurs launched\", \"$12M+ sales\", \"2,000+ locations\"); if the data can't load, hide the stat block entirely rather than showing zeros"
+    },
+    "ids": ["09-pragmatist-001"]
+  },
+  {
+    "cid": "C138",
+    "band": "P1",
+    "page": "/admin/pages",
+    "category": "Navigation & Flow",
+    "severity": "critical",
+    "personaCount": 1,
+    "personas": ["14-competitor"],
+    "finding": "The pages list has no row-level delete/duplicate/bulk actions; the '⋮' actions menu did not expose Archive/Delete and there is no multi-select.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "columnheader \"Actions\""
+      }
+    ],
+    "suggested_fix": {
+      "current": "'⋮' row menu with no visible Delete/Duplicate; no bulk select",
+      "proposed": "Expose Edit / Duplicate / Archive / Delete in the row menu and add checkbox multi-select with bulk archive/delete"
+    },
+    "ids": ["14-competitor-005"]
+  },
+  {
+    "cid": "C150",
+    "band": "P1",
+    "page": "/contact",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "personaCount": 1,
+    "personas": ["15-angry-user"],
+    "finding": "The contact page offers only a web form — no phone number, no email address, no chat, and no alternative channel.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "contact-002-full.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "text/contact-text.md",
+        "quote": "Name*\n(required)\nEmail*\n(required)\nPhone\nCity\nState\n...\nMessage*\n(required)\nSEND MESSAGE"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Contact page = form only",
+      "proposed": "Add a support email and/or phone number prominently on the contact page alongside the form"
+    },
+    "ids": ["15-angry-user-008"]
+  },
+  {
+    "cid": "C004",
+    "band": "P1",
+    "page": "/news, /, /news + /news/* + breadcrumb, /admin/news, /admin/news/new",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "personaCount": 13,
+    "personas": [
+      "01-grandparent",
+      "02-power-user",
+      "03-first-timer",
+      "08-perfectionist",
+      "09-pragmatist",
+      "10-teenager",
+      "11-business-owner",
+      "13-executive",
+      "14-competitor",
+      "15-angry-user",
+      "12-developer",
+      "07-mobile",
+      "05-non-native"
+    ],
+    "finding": "The navigation item and route say 'NEWS' but the page heading is 'BLOG', and article breadcrumbs also say 'BLOG' — the same section has two different names.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "news-text.md",
+        "quote": "BLOG"
+      },
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": ""
+      },
+      {
+        "type": "screenshot",
+        "ref": "news-how-to-choose-the-perfect-location-for-vending-machine-001-load.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "Nav says 'NEWS', page heading and breadcrumb say 'BLOG'",
+      "proposed": "Use one name everywhere — change the page heading and breadcrumb to 'News' to match the nav item and the /news route"
+    },
+    "ids": [
+      "01-grandparent-004",
+      "02-power-user-006",
+      "03-first-timer-009",
+      "08-perfectionist-014",
+      "09-pragmatist-008",
+      "10-teenager-005",
+      "11-business-owner-013",
+      "13-executive-006",
+      "13-executive-014",
+      "14-competitor-003",
+      "15-angry-user-015",
+      "12-developer-007",
+      "07-mobile-007",
+      "02-power-user-018",
+      "01-grandparent-019",
+      "05-non-native-011"
+    ]
+  },
+  {
+    "cid": "C003",
+    "band": "P1",
+    "page": "/, /contact",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "personaCount": 11,
+    "personas": [
+      "01-grandparent",
+      "13-executive",
+      "15-angry-user",
+      "02-power-user",
+      "03-first-timer",
+      "05-non-native",
+      "09-pragmatist",
+      "10-teenager",
+      "11-business-owner",
+      "12-developer",
+      "14-competitor"
+    ],
+    "finding": "There is no Contact link in the top navigation; the only way to reach /contact is the small footer link or knowing the URL.",
+    "journey": "contact-the-team",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "home-text.md",
+        "quote": "ABOUT\nRESOURCES\nCASE STUDIES\nNEWS\nSTEP INSIDE"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-contact-the-team-002-02-find-and-click-contact-link.png",
+        "quote": ""
+      }
+    ],
+    "suggested_fix": {
+      "current": "Top nav: About, Resources, Case Studies, News (no Contact)",
+      "proposed": "Add a 'Contact' link to the top navigation"
+    },
+    "ids": [
+      "01-grandparent-003",
+      "13-executive-003",
+      "15-angry-user-003",
+      "02-power-user-005",
+      "03-first-timer-013",
+      "05-non-native-010",
+      "09-pragmatist-003",
+      "10-teenager-008",
+      "11-business-owner-011",
+      "12-developer-018",
+      "14-competitor-004"
+    ]
+  },
+  {
+    "cid": "C014",
+    "band": "P1",
+    "page": "/apply",
+    "category": "Forms & Input",
+    "severity": "high",
+    "personaCount": 8,
+    "personas": [
+      "01-grandparent",
+      "04-accessibility",
+      "06-skeptic",
+      "10-teenager",
+      "11-business-owner",
+      "12-developer",
+      "14-competitor",
+      "15-angry-user"
+    ],
+    "finding": "Form errors rely solely on native browser bubbles ('Please fill out this field.') with no programmatic error summary and no in-page, persistent, screen-reader-announced error list. The exploration log records 'no visible validation errors after empty submit' for the custom layer.",
+    "journey": "discover-and-apply",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "apply-003-form-empty-submit.png",
+        "quote": "native tooltip 'Please fill out this field.' anchored to a hidden upper field"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "empty: no visible validation errors after empty submit"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Native-only required validation, transient bubbles, no error summary",
+      "proposed": "Add aria-invalid + aria-describedby per field with persistent inline messages, and an aria-live='assertive' error summary at the top of the form listing each failed field with anchor links"
+    },
+    "ids": [
+      "01-grandparent-014",
+      "04-accessibility-004",
+      "06-skeptic-014",
+      "10-teenager-011",
+      "11-business-owner-009",
+      "12-developer-002",
+      "14-competitor-024",
+      "15-angry-user-007"
+    ]
+  },
+  {
+    "cid": "C024",
+    "band": "P1",
+    "page": "/news",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "personaCount": 6,
+    "personas": [
+      "02-power-user",
+      "08-perfectionist",
+      "10-teenager",
+      "11-business-owner",
+      "13-executive",
+      "14-competitor"
+    ],
+    "finding": "Above the fold on /news the article cards render as empty outlined boxes before any scrolling — the cards are scroll-reveal animated and paint blank until scrolled into view. First paint of the listing page looks broken/unfinished.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "three empty card outlines below the BLOG heading at first paint"
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "article cards are scroll-reveal animated — they render as BLANK card outlines until scrolled into view"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Article cards are hidden (opacity 0) until scrolled into view, so above-fold cards stay blank",
+      "proposed": "Trigger the reveal for in-viewport cards on load, or render content visible by default and use the animation only as enhancement (and honour prefers-reduced-motion)"
+    },
+    "ids": [
+      "02-power-user-007",
+      "08-perfectionist-012",
+      "10-teenager-004",
+      "11-business-owner-014",
+      "13-executive-005",
+      "14-competitor-019"
+    ]
+  },
+  {
+    "cid": "C030",
+    "band": "P1",
+    "page": "/news",
+    "category": "Feedback & State",
+    "severity": "high",
+    "personaCount": 6,
+    "personas": [
+      "02-power-user",
+      "08-perfectionist",
+      "09-pragmatist",
+      "11-business-owner",
+      "12-developer",
+      "15-angry-user"
+    ],
+    "finding": "A news article thumbnail fails to load with a 500 from the Next.js image optimizer; the card falls back to showing raw alt text instead of an image, and a server 500 is logged in the console.",
+    "journey": "read-a-news-article",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=https%3A%2F%2Fcdn.prod.website-files.com%2F...png&w=640&q=75"
+      },
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "third card shows broken-image placeholder with literal alt text 'Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Items, Niche Products)'"
+      }
+    ],
+    "suggested_fix": {
+      "current": "next/image proxy returns 500 for the cdn.prod.website-files.com source; card renders broken with alt text",
+      "proposed": "Whitelist the CDN host in next.config images.remotePatterns (or migrate the asset into managed media), and add an onError/fallback image so a failed thumbnail degrades gracefully"
+    },
+    "ids": [
+      "02-power-user-014",
+      "08-perfectionist-013",
+      "09-pragmatist-007",
+      "11-business-owner-015",
+      "12-developer-005",
+      "15-angry-user-016"
+    ]
+  },
+  {
+    "cid": "C006",
+    "band": "P1",
+    "page": "/admin/pages, /admin/pages/new",
+    "category": "Feedback & State",
+    "severity": "high",
+    "personaCount": 5,
+    "personas": [
+      "01-grandparent",
+      "08-perfectionist",
+      "12-developer",
+      "13-executive",
+      "14-competitor"
+    ],
+    "finding": "On first open of the page editor a 'Quick Tour' overlay sits on top of the outline panel it points at and blocks interaction until dismissed.",
+    "journey": "admin-create-seo-page",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-admin-create-seo-page-s04-04-wizard-starting-point-build.png",
+        "quote": ""
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "a \"Quick Tour\" overlay (Step 1 of 3) covers the outline panel and blocks interaction until dismissed"
+      }
+    ],
+    "suggested_fix": {
+      "current": "Quick Tour overlay obscures the panel/button it references",
+      "proposed": "Position the tour tooltip beside (not over) its target, and let the user dismiss or skip the whole tour with one obvious button"
+    },
+    "ids": [
+      "01-grandparent-006",
+      "08-perfectionist-018",
+      "12-developer-010",
+      "13-executive-012",
+      "14-competitor-007"
+    ]
+  },
+  {
+    "cid": "C018",
+    "band": "P1",
+    "page": "/admin/pages/redirects",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "personaCount": 5,
+    "personas": [
+      "01-grandparent",
+      "02-power-user",
+      "12-developer",
+      "13-executive",
+      "14-competitor"
+    ],
+    "finding": "The Redirects manager is an orphan route with zero inbound links from any explored admin page.",
+    "journey": "admin-manage-content-ops",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-redirects-text.md",
+        "quote": "Back to pages"
+      }
+    ],
+    "suggested_fix": {
+      "current": "/admin/pages/redirects reachable only by URL",
+      "proposed": "Link 'Redirects' from the SEO pages screen header and/or the studio sidebar"
+    },
+    "ids": [
+      "01-grandparent-018",
+      "02-power-user-017",
+      "12-developer-009",
+      "13-executive-013",
+      "14-competitor-006"
+    ]
+  }
+]

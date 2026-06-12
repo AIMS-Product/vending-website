@@ -1,0 +1,246 @@
+{
+  "01-grandparent": {
+    "overall": 2.5,
+    "pages": {
+      "/": 2,
+      "/apply": 2,
+      "/contact": 3,
+      "/news": 2,
+      "/news/how-to-choose": 3,
+      "/thank-you-for-applying": 4,
+      "/this-page-does-not-exist": 4,
+      "/case-studies": 3,
+      "/5": 2
+    },
+    "journeys": {
+      "Discover & Apply": 2,
+      "Contact the Team": 2,
+      "Read a News Article": 3,
+      "Evaluate Trust": 3,
+      "Pre-Call Resources": 3,
+      "Admin: Create News Draft": 1,
+      "Admin: Media & Settings": 2
+    }
+  },
+  "02-power-user": {
+    "overall": 3,
+    "pages": {
+      "/": 2,
+      "/apply": 3,
+      "/contact": 3,
+      "/news": 2,
+      "/admin/pages": 4,
+      "/admin": 2
+    },
+    "journeys": {}
+  },
+  "03-first-timer": {
+    "overall": 3,
+    "pages": {
+      "/": 3,
+      "/apply": 3,
+      "/news": 2,
+      "/news/[article]": 3,
+      "/contact": 2
+    },
+    "journeys": {
+      "Discover & Apply": 2
+    }
+  },
+  "04-accessibility": {
+    "overall": 2,
+    "pages": {
+      "/": 2,
+      "/case-studies": 2,
+      "/apply": 3,
+      "/news": 3,
+      "/news/": 3,
+      "/this-page-does-not-exist": 2,
+      "/admin/news": 2,
+      "/admin/media": 2,
+      "/admin/pages/new": 2,
+      "/admin/news/new": 2
+    },
+    "journeys": {
+      "Discover & Apply": 2,
+      "Contact the Team": 3,
+      "Read a News Article": 3,
+      "Evaluate Trust": 2,
+      "Pre-Call Resources": 4,
+      "Admin: News Draft": 2,
+      "Admin: Ops Walkthrough": 2
+    }
+  },
+  "05-non-native": {
+    "overall": 3,
+    "pages": {},
+    "journeys": {
+      "Discover & Apply": 3,
+      "Contact the Team": 2,
+      "Read a News Article": 3,
+      "Evaluate Trust": 3,
+      "Pre-Call Resources": 4,
+      "Admin: Create News Draft": 2,
+      "Admin: Media & Settings": 3
+    }
+  },
+  "06-skeptic": {
+    "overall": 2,
+    "pages": {
+      "/": 2,
+      "/about": 2,
+      "/case-studies": 3,
+      "/apply": 2,
+      "/news": 2,
+      "/privacy": 4,
+      "/pre-call-resources": 2
+    },
+    "journeys": {
+      "Discover & Apply": 2,
+      "Contact the Team": 3,
+      "Read a News Article": 3,
+      "Evaluate Trust": 2,
+      "Pre-Call Resources": 2
+    }
+  },
+  "07-mobile": {
+    "overall": 2.5,
+    "pages": {},
+    "journeys": {
+      "Discover & Apply": 2,
+      "Contact the Team": 3,
+      "Read a News Article": 2,
+      "Evaluate Trust": 3,
+      "Pre-Call Resources": 4
+    }
+  },
+  "08-perfectionist": {
+    "overall": 2.5,
+    "pages": {
+      "/": 2,
+      "/apply": 3,
+      "/news": 2,
+      "/this-page-does-not-exist": 2,
+      "/case-studies": 3
+    },
+    "journeys": {}
+  },
+  "09-pragmatist": {
+    "overall": 2.5,
+    "pages": {
+      "/": 2,
+      "/apply": 3,
+      "/contact": 2,
+      "/news": 3,
+      "/pre-call-resources": 3,
+      "/about": 3
+    },
+    "journeys": {
+      "Discover & Apply": 3,
+      "Contact the Team": 2,
+      "Read a News Article": 3,
+      "Evaluate Trust": 2,
+      "Pre-Call Resources": 3
+    }
+  },
+  "10-teenager": {
+    "overall": 2.5,
+    "pages": {
+      "/": 2,
+      "/apply": 2,
+      "/news": 2,
+      "/contact": 2,
+      "/about": 3,
+      "/case-studies": 3
+    },
+    "journeys": {
+      "Discover & Apply": 2,
+      "Contact the Team": 2,
+      "Read a News Article": 3,
+      "Evaluate Trust": 3,
+      "Pre-Call Resources": 3
+    }
+  },
+  "11-business-owner": {
+    "overall": 2.5,
+    "pages": {
+      "/": 2,
+      "/apply": 2,
+      "/contact": 3,
+      "/news": 2,
+      "/5": 3,
+      "/thank-you-for-applying": 4
+    },
+    "journeys": {
+      "Discover & Apply": 2,
+      "Contact the Team": 3,
+      "Read a News Article": 3,
+      "Evaluate Trust": 3,
+      "Pre-Call Resources": 4
+    }
+  },
+  "12-developer": {
+    "overall": 2.5,
+    "pages": {},
+    "journeys": {
+      "Discover & Apply": 2,
+      "Contact the Team": 3,
+      "Read a News Article": 2,
+      "Evaluate Trust": 4,
+      "Pre-Call Resources": 3,
+      "Admin: News Draft": 2,
+      "Admin: Ops Walkthrough": 3
+    }
+  },
+  "13-executive": {
+    "overall": 3.5,
+    "pages": {},
+    "journeys": {
+      "Discover & Apply": 3,
+      "Contact the Team": 3,
+      "Read a News Article": 3,
+      "Evaluate Trust": 4,
+      "Pre-Call Resources": 4,
+      "Admin: Create News Draft": 3,
+      "Admin: Media & Settings": 4
+    }
+  },
+  "14-competitor": {
+    "overall": 3,
+    "pages": {
+      "/": 3,
+      "/apply": 3,
+      "/news": 2,
+      "/contact": 3,
+      "/pre-call-resources": 3,
+      "/admin/pages": 3,
+      "/admin/pages/new": 4,
+      "/admin/media": 4,
+      "/admin/pages/redirects": 1,
+      "/admin/settings/users": 3
+    },
+    "journeys": {
+      "Discover & Apply": 3,
+      "Contact the Team": 2,
+      "Read a News Article": 3,
+      "Evaluate Trust": 4,
+      "Pre-Call Resources": 3,
+      "Admin: News Draft": 2,
+      "Admin: Ops Walkthrough": 2
+    }
+  },
+  "15-angry-user": {
+    "overall": 2,
+    "pages": {
+      "/": 2,
+      "/apply": 2,
+      "/contact": 1,
+      "/this-page-does-not-exist": 2,
+      "/blog/": 1,
+      "/news": 3,
+      "/admin/pages": 2,
+      "/admin/forgot-password": 3
+    },
+    "journeys": {}
+  }
+}

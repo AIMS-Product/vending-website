@@ -1,0 +1,117 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Rewrite the hero headline and body to emphasise hands-off passive income for busy professionals. Keep the CTA unchanged."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Coffee vending machines for offices keep teams stocked with fresh drinks without anyone owning a brewing rota. A managed machine covers restocking, cleaning, and fault response so facilities can stay focused on the building.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "l1pmapg3",
+        "name": "edit_block_1_block_hero",
+        "input": {
+          "body": "Host modern coffee vending machines for offices to secure steady, hands-off passive income without the daily operational hassle. Let our team handle setup, restocking, and maintenance while you collect predictable revenue and provide busy professionals with premium beverage options.",
+          "eyebrow": "Passive Revenue Opportunity",
+          "ctaLabel": "Apply now",
+          "ctaHref": "/apply",
+          "headline": "Passive Income with Coffee Vending Machines for Offices"
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "ErMSCrASAQw51sdGzTUOJ3gJKrfimvDpQKXM5cLwUvFm741hn3em0a6HtGzka6ZPsvkdhGw5rDtkrCXHld8nQUtFMXGY1cDMduQ2UI7Fh9V3VULnUjehfyRpgFYui7eD9CTKOaESTguZOgq/+Hm7AmwzwkMWo0sM9suWxYdCQoxYE+XeVbWkwhxGLOo5uoxjgeTaH4/WYgXjLPbg297O4okzZxp3mLqmTv/Q1NNKlwdth47Z+siLg62IfMGVjfRF2bVey/jiSKl/xJOfpZG4nWBAmp/viS0zAfgDfdz5YdeWLLDO6fWuSozDjbDH19JEDhdupNK7poLMXG2CiB3UHKKj6LNptEqbk7XPYqSo5NMDlGJb9sVkDhXvf7ci/B574JtsnnSX3eFB4nNEPf0KA/0xDBOGwHec95caC/hNS9zD+Ma+KdC4LlTE8YiIWOe5BbNo+/4tj3DIjnSgoGupILiw32y494QJh74No6M/1y9yeNtTDr8vghCP36PPNmlXEYlwxta7Xds7pTM0BwfBJ6PkHCzLmCsY6hGUJn27f+PH96phlVFvbDNObZaKlafdvTORhnLEtCBT6ZKWgHTqUcO6xPHZVv7/r0uD5H/wyzOn86S+ymLF1fuspetCxiy3V8ymCRWY66m6l0mjYbXQH1z4OE9nIF6aPVm7JtNS20ZrquUzykVy+nephilDs0L89LaXTPttUe5y8Cr5qVyckOfel6u3ZKZ+UiOOiKHq7HvSs0lHcNNyFxQVFroItXT3PVzXZ77B0Xr0v+onKri+YViHuA4sTaY/OWHv6TAGZrbrVZ9JROOSjd1n2jORfXFzSKG9rVfNJ+i0uQvsz0sCbvhYx+kOuXVOkwFKqVbPdYldJ3gquMzYQTRgHaoaw8SKl48cizLEvUt7Ktge7o0J6mLCCj+yxy+1CDhfXQdpANc6AwaaMdUaW/0rb2N5U/bcqnD5l1XNeVUamRfwSFuJIf1e/+xz1qWaEMQKKcQ4FS8ZPdRvXRjzIXduVFGUVFln1KHsO1cbA5dxvwMwF9NYoxva13gkl0kCHDXOwN7Jd7iSCQ4y5ToWSX08Pl3NQfn83pRErJ+Zib/RU5qXmKPsYpchlRvFC7WdLZcU4TzFdecc8IJSG5I/lHRcKW2yx/0VHQOG7q/aKLdW/ZfOQpwTx2Akt2MqIM0XNOltByVi7O8PrSqNK93C2dis8JP1B8P4wGa8OsUcj3mC4fcWSxi8bs+xAM5xaHj2KJF231IdO67s0xyKAIF/E15XOCwTqCwQV8EQG9G9yNf5RHmWV8NvPBkPCDsxW+jOY17NYzwy0auz8uMcBcslsxXKYbNVI4srll5t08fU9zfOqYhPBTzkXRtXFX8up4qys0wvzVA5SOzle5n1bYRkZQ/s0XtJfJ9BorLyj2VvqzCAXaDluo3xKJoUUEqRH0O2LICgbMC0uexrbOBD6fl9nPlR8t/PwWRZt/7R1Cersmm8DgxAy7bb4F1vCZnR0Fxnp5fmXXvNGnqe6CJJHM2oJem6Jsoa6UMHrqdGm3ZTIE0tqzA74GRZ6YNdz9rEnWjx2m4H0z9hkuz26Jslwpm6WAWljedhttpsKyNrSxLnsIN+de8fnPP8MMuH44zd/kZKMkZLmxU2e3nT+r2wsrIfrFe7V3f7Pqiuc/JGGhJzGY3vD5eBz6MjQCKcA7C6MdyiYJtzKAV+NCDDwpVLjC/9FzKITTOoq9PDuHDsQqLtiJfJsRoj0gXf2TxgFn3PbokR+hEUBBp0jWVNcUxPCZHV0JWSbdJD2hCQ0j8bWQdGTskILHRsUh128iiGkdDqofEB5C21xCwqMjJvZs55Dx3ZmQKbh+sux5xdqwZJqXTge6ErjtiSQWtCe9Lq5OgAOQHPcGJvlUxFs37DIhPRDuU7wPsnicnZOlmbNBc3Vv/+xFVNEAjscQZZ4bhhsE+Szii/z8HAk6J4B1mNDi+2cHC/ilKenjnW1EiqVrVY+ChVQ0Ux6iAaO3ffacMTgPG/KOv2WSWiNWBtvrYLg6VLqI/TO4bLJLoPUk3na+BSpxFxxb6K0yJVQ78PUpXtWZoK2cIZ24j6A9d8K6LaFZk43yEJT7y3J5knHLg28W1VaEdsjtz8kmz6Ybv0l2vshWihb9t7kc7G2s9rm4eqGK6a4gH6ANSopRuKPe8ua9AxXeMnTiDzr1Jr3KmkPZAx4yxms19PPNiGEg/dnLlooXf4rxOMyoYEBP3m/CJFUPCI2rfmLp4noXrQ7AyGVtyly+7rCTn+p6eBhfiaQg3HYw1ZQp1Iyb0MVYEgTzDGYgDcszlvc/QKWxDg1iJ1WLVplgy3NAAyPa7sEjMkceOuEFpi4FBmReKr1on6itL2IJmlhqPT9sI0Dm/MicMpGqesIOGjasRW7apDMwnwB3DbOfBTOpkWBo6AGVXfiog74HizM8KuolVvviWq7006XZJDTJHZ/0buTWm8nNRJ5aYRT+RU04tp9Zr72D0VvWVOnDYAXXPihKYhyNzZWjzI1O5jFnLqiYt9eXvmmX4XWmRFOhenRi5Ogrm0tIQ/ESZob/jAIYUhN6e5COqPIISiy8AXirFLd9H32UjG4OWvAIoZoqijLvacgTefgBdMyQmboPnp+BLTnDj6TUV+FI2J/UPf9xi2yaW4yI84L8b0ROsg7ihiwA4ifZp4p90UuAQPLHJ/uGVRgiNh0oZn8dWNwcmz8yzEckrWEcK0SrMnPKXEjv3WU8crT7RZgGFwJZFgafDky+mT0SNxqcSWUnJkIjYvQHta7TozQA54V0PluEo0KKifu89aFEEWNldjY0fRDLeNd4LDVlH6M4r637f8V/sanH9Rm2r2eWcPIil5FAux2c2R0BIHCRxHMLEci+4m+1lYmx7QIg9+V/8OxkknlGdxqjUYW/cfKttNI7rekP6XGU9RYtKYYwpLQvu8DSRwnp0Krpz++eketb0XjIjkIM+E0PGEPaS8nA/2aQfS2jVllsjTsB6MMUWsnA755tFJpo+VOgOOutQHfIMKtJXvij1Fi6OlpOH2W0KiDPFU2FE8T8YIfSlFfCjYBjqSY3AFFK0Eh+AkfqqB8iD4tShdv5MfdIzVuufi6gtiCgicaBNv3wkML08cwr6vDTdgauCSbh4gFBsM"
+                }
+              },
+              "function": {
+                "arguments": "{\"body\":\"Host modern coffee vending machines for offices to secure steady, hands-off passive income without the daily operational hassle. Let our team handle setup, restocking, and maintenance while you collect predictable revenue and provide busy professionals with premium beverage options.\",\"eyebrow\":\"Passive Revenue Opportunity\",\"ctaLabel\":\"Apply now\",\"ctaHref\":\"/apply\",\"headline\":\"Passive Income with Coffee Vending Machines for Offices\"}",
+                "name": "edit_block_1_block_hero"
+              },
+              "id": "l1pmapg3",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781145616,
+    "id": "DSAqaunqD53ZjuMPzdrE-QY",
+    "model": "gemini-3.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 107,
+      "prompt_tokens": 4926,
+      "prompt_tokens_details": {
+        "cached_tokens": 4036
+      },
+      "total_tokens": 5538
+    }
+  }
+}

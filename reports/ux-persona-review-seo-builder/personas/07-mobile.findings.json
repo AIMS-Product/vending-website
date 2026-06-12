@@ -1,0 +1,147 @@
+[
+  {
+    "id": "07-mobile-001",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "create-first-page",
+    "category": "Visual & Layout",
+    "severity": "critical",
+    "finding": "The editor's desktop two-pane layout (canvas + SEO panel side by side) collapses on a 375px phone into one enormous single-column scroll: toolbar, full canvas (including the public nav and footer rendered inline), the entire SEO/Readiness panel, revision history, then a comments form. There is no mobile-specific editor layout.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-mobile.png",
+        "quote": "Mobile shot is mid-scroll on a FAQ block with a 'Rendering…' pill and floating AI button — no toolbar, no SEO panel, no Save/Publish in view"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-tablet.png",
+        "quote": "Public site footer (HOME / ABOUT / CASE STUDIES / CONTACT US) rendered inline inside the editing surface, below the editable blocks"
+      }
+    ],
+    "persona_rationale": "I edit on my phone between classes. A desktop layout dumped into one long vertical scroll means I'm thumb-scrolling forever just to get from a block to the panel that controls it; this is the core surface and it's the worst mobile experience in the tool.",
+    "suggested_fix": {
+      "current": "Single responsive reflow of the desktop two-pane editor into one long column on mobile",
+      "proposed": "A mobile editor layout that splits canvas and SEO panel into tabbed/segmented views (e.g. 'Content' | 'SEO' | 'History') so each is its own short screen instead of one marathon scroll"
+    }
+  },
+  {
+    "id": "07-mobile-002",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Navigation & Flow",
+    "severity": "critical",
+    "finding": "Save draft changes and Publish changes are in completely different scroll regions from the content being edited. On mobile the toolbar Save sits above the canvas while 'Publish changes' lives inside the SEO panel far below the footer, so the user must scroll far away from the block they just edited to save or publish it.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-mobile.png",
+        "quote": "Mid-page edit view shows neither Save draft changes nor Publish changes"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "button \"Save draft changes\" ... button \"Publish changes\" (appears far below in the Readiness and publish region)"
+      }
+    ],
+    "persona_rationale": "On a phone I lose my place constantly while multitasking. If the Save button isn't visible while I'm editing, I won't know if my changes are committed before I switch apps — and I'll assume my work is lost.",
+    "suggested_fix": {
+      "current": "Save/Publish controls only at fixed positions in the toolbar and deep in the SEO panel",
+      "proposed": "Add a sticky bottom action bar on mobile with Save draft and Publish always visible while editing"
+    }
+  },
+  {
+    "id": "07-mobile-003",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "Leaving the unsaved editor navigates straight back to /admin/pages with NO unsaved-changes warning, silently discarding a typed page title. On mobile this is far more likely because app-switching and accidental back-swipes are constant.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Leaving unsaved editor: navigated straight to /admin/pages with NO unsaved-changes warning — typed title silently lost"
+      }
+    ],
+    "persona_rationale": "I switch between texting and this app every 30 seconds; a back-swipe or app-switch that wipes my typed title with no warning is exactly the 'lost state on navigation' that makes me rage-quit a mobile tool.",
+    "suggested_fix": {
+      "current": "No guard when leaving an unsaved editor",
+      "proposed": "Prompt 'You have unsaved changes — leave anyway?' (or autosave the draft) before navigating away from an editor with unsaved edits"
+    }
+  },
+  {
+    "id": "07-mobile-004",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After setting a schedule and saving, the field re-renders empty and no 'Scheduled for {date/time}' status appears anywhere in the editor. On a phone, with the field buried at the bottom of SEO → Advanced, there is no way to tell whether the schedule was saved.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "field shows empty after save, no confirmation"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the field re-rendered EMPTY and no \"Scheduled for …\" status appeared anywhere in the editor"
+      }
+    ],
+    "persona_rationale": "On mobile I can't quickly eyeball the whole page to confirm a setting stuck; without an explicit 'Scheduled for…' confirmation I have zero feedback that my action worked, and I'd assume it failed.",
+    "suggested_fix": {
+      "current": "Scheduled-publish field clears after save with no status shown",
+      "proposed": "Persist the scheduled value in the field and show a clear 'Scheduled for {local date/time}' badge in the publish/readiness area after save"
+    }
+  },
+  {
+    "id": "07-mobile-005",
+    "page": "/admin/pages",
+    "journey": "find-duplicate-archive",
+    "category": "Accessibility & Inclusion",
+    "severity": "medium",
+    "finding": "Row actions live inside a 5-column data table (Title / Keyword / Readiness / Status / Actions) behind a small ⋮ menu. On a 375px screen the table is cramped and the ⋮ trigger is a small touch target.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "TITLE\tKEYWORD\tREADINESS\tSTATUS\tACTIONS"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-mobile.png",
+        "quote": "Summary cards stack well, but the row table below must squeeze 5 columns plus a per-row ⋮ menu into 375px"
+      }
+    ],
+    "persona_rationale": "Thumb-only on a tiny ⋮ inside a squeezed table row is exactly the kind of tiny-target tap I keep missing while distracted; on mobile this should be a stacked card list, not a desktop table.",
+    "suggested_fix": {
+      "current": "Desktop 5-column table with a small ⋮ actions menu per row",
+      "proposed": "On mobile, render each page as a stacked card with title, status badge, and a full-width or large-touch actions button instead of a table row"
+    }
+  },
+  {
+    "id": "07-mobile-006",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "create-first-page",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "The editor canvas renders the full public site chrome — the primary nav bar and the entire footer (Home/About/Resources/Case Studies/News/Contact/Terms/Privacy) — inline as part of the scrollable editing surface. On mobile this adds a large band of non-editable chrome the user must scroll past between the editable blocks and the SEO controls.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-tablet.png",
+        "quote": "Add page content dashed button, then the full public footer (HOME / ABOUT / RESOURCES / CASE STUDIES / NEWS / CONTACT US / TERMS / PRIVACY POLICY) inside the editing surface"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "navigation \"Footer\": ... listitem: Home ... listitem: Privacy Policy"
+      }
+    ],
+    "persona_rationale": "On a phone every extra screen-height of dead chrome between my content and the Save/SEO controls is more scrolling while I'm distracted — the full footer baked into the canvas is pure scroll tax.",
+    "suggested_fix": {
+      "current": "Full public nav + footer rendered inline in the editable canvas",
+      "proposed": "On mobile, collapse the public chrome to a thin non-interactive preview strip (or hide it) so editable blocks sit adjacent to the controls"
+    }
+  }
+]

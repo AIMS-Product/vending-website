@@ -1,106 +1,103 @@
-# Persona Review: Mike — Competitor's User
+# Persona Review — Mike, Competitor's User (33)
 
-_33, project manager. Two years on Webflow + a stint in WordPress/Sanity. I'm here to decide if my team switches. Everything below is measured against "would this slow us down vs. what we already pay for?"_
+**Persona**: Project manager, 2 years on the leading competitor, evaluating a switch. Public-site mental model = polished course/coaching "apply" funnels. Admin mental model = WordPress / Webflow / Notion-grade CMS editors.
 
 ## Summary
 
-- Pages reviewed: 6
-- Issues found: 27
-- Blockers: 1
-- Overall gut feel: 3/5
+- **Pages reviewed**: 28 (all routes in the exploration log) + 8 journeys
+- **Issues found**: 24
+- **Blockers**: 2 (News CMS has no sidebar entry; created SEO page list verification raced/unclear + no list-level delete)
+- **Overall gut feel**: 3 / 5 — The bones are genuinely competitive: the SEO Page Builder's 3-step create wizard, three-pane editor, readiness gating, and the filterable Media library would not embarrass Webflow. But the content model is split across two disconnected CMSes (SEO pages vs Blog/News) with no nav bridge, list rows have no row actions I'd expect (delete/duplicate/archive), there's no global content search, no bulk operations, and the public apply funnel "succeeds" with a whisper. As a switcher I'd be impressed by the editor and immediately nervous about the missing table-stakes plumbing.
 
-The bones are surprisingly good — the readiness/governance panel and the block-variant gallery are genuinely ahead of stock WordPress. But the core building experience is missing table-stakes interactions I've had for two years (drag-and-drop reordering, a clipboard that actually works, an import path, search-driven block insertion), and there's no migration story at all. It's a competent v1, not a switch-today product.
+---
+
+## Journey Review
+
+| Journey                  | Score | Could I complete it?              | Where I'd give up                                                                                        |
+| ------------------------ | ----- | --------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| discover-and-apply       | 3     | Yes                               | Almost resubmitted — success is a tiny green line; my competitor redirects to a real thank-you page      |
+| contact-the-team         | 2     | Only because I guessed the footer | No Contact in the header nav — every funnel I know puts it there or in a sticky CTA                      |
+| read-a-news-article      | 3     | Yes                               | "NEWS" in nav vs "BLOG" heading made me think I'd mis-clicked; one article thumbnail is a broken image   |
+| evaluate-trust           | 4     | Yes                               | Fine — About/Case Studies in header, legal in footer is the convention                                   |
+| pre-call-prep            | 3     | Yes                               | Page is just links; competitor pre-call pages embed the video so I don't bounce to YouTube               |
+| admin-create-news-draft  | 2     | Only via typed URL                | No News/Blog item in the studio sidebar — a CMS hiding a whole content type is disqualifying             |
+| admin-create-seo-page    | 3     | Yes, with friction                | Quick Tour overlay covered the panel; couldn't confirm the new page in the list without a manual recheck |
+| admin-manage-content-ops | 2     | Partially                         | Redirects manager is an orphan route with zero inbound links; Settings only deep-links to Users          |
+
+### Per-journey notes
+
+**discover-and-apply** — The form itself is good: typed selects for state/stage/budget/timeline, clear required markers. But after "SUBMIT APPLICATION" the only feedback is "Thanks. We received your details and will follow up shortly." in small green text beside the button (`journey-discover-and-apply-004-04-submit-continue-round-1-.png`), the form does not clear, and there is no redirect — even though a `/thank-you-for-applying` page exists in the app. Every coaching/application funnel I've used routes to a dedicated confirmation page. The automation itself resubmitted 5 times because the success state was so subtle; a real prospect will too.
+
+**contact-the-team** — Contact lives only in the footer ("CONTACT US"), not in the header nav (`apply-text.md` ARIA: Primary nav = About, Resources, Case Studies, News only). My competitor and essentially every B2B funnel keeps Contact in the header or a persistent CTA. I'd assume there was no way to reach a human.
+
+**read-a-news-article** — Works, but the section is called "NEWS" in the nav and "BLOG" as the page H1 (`news-001-load.png` shows "BLOG"). On a competitor I'd expect one consistent label. The listing also shipped a broken thumbnail (500 on a Webflow CDN image, exploration log /news Console Errors).
+
+**admin-create-news-draft** — Functionally complete (title/excerpt/body, Save draft persists), but the studio sidebar shows only "SEO pages" and "Media library" (`admin-pages-text.md` ARIA navigation "Admin sections"). The entire Blog/News CMS is reachable only by typing `/admin/news`. In WordPress, Posts is a top-level menu item; hiding a content type behind a URL is something I'd flag as broken, not "not built."
+
+**admin-create-seo-page** — The strongest flow. The create wizard (`admin-pages-new-001-load.png`) and three-pane editor (`journey-admin-create-seo-page-r06-06-editor-add-a-block-save.png`) with live preview + SEO readiness/publish gating is genuinely competitive with Webflow's designer. Two things hurt: a "Quick Tour" overlay covers the very panel it points at on first open, and after saving I couldn't cleanly confirm the page in the list (the check raced) — and there's no Delete in the row actions menu.
+
+---
 
 ## Page-by-Page Review
 
-### /admin/pages (Pages List)
+### / (home) — gut feel 3/5
 
-**Gut feel: 4/5** — "Cleaner and more focused than the WP posts table; the readiness/governance columns are something Webflow doesn't even have."
+Clear value prop above the fold ("TURN VENDING INTO YOUR PATH TO FINANCIAL FREEDOM", `home-001-load.png`), standard hero + CTA. But CLS 0.263 and horizontal scroll on mobile-375 (exploration log) are things a competitor switcher notices immediately.
 
-| #   | Category          | Finding                                                                                                                                                 | Severity | Why this matters to me                                                                                                       |
-| --- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Navigation & Flow | Only two top-level CMS sections (SEO pages, Media library) plus Authors/Redirects buttons; no global page search across collections, no folders/nesting | Medium   | In Webflow I organize 200+ pages into folders. A flat list with one record won't scale and there's no obvious nesting model. |
-| 2   | Forms & Input     | Status filter, view filter, and sort are all separate link rows that each reload the URL — no combined multi-facet filtering                            | Low      | Contentful lets me stack filters in one view; here each click is a full navigation, which feels dated.                       |
-| 3   | Copy & Labels     | "Needs links / Orphaned", "Updating", "Metadata issues" filter chips are great, but undefined — no tooltip explaining the threshold                     | Low      | I'd want to know what triggers "Needs links" before I trust it as a workflow gate.                                           |
-| 4   | Visual & Layout   | The four stat cards (All/Drafts/Published/Archived) are large and eat the top third of the page for one row of data                                     | Low      | Webflow's collection view is denser; I scan more records per screen.                                                         |
-| 5   | Feedback & State  | No bulk-select / bulk actions (publish, archive, tag multiple pages)                                                                                    | High     | Bulk publishing is daily in my current tool. Doing this one row at a time would cost real productivity.                      |
-| 6   | Trust & Safety    | Row-level kebab actions (Duplicate/Publish/Archive) exist — good, and Archive over Delete is a safer default than WP's trash                            | Low      | Reassuring; archive-not-delete is the right call.                                                                            |
+### /apply — gut feel 3/5
 
-### /admin/pages/new (Create New Page)
+Good form ergonomics; weak success state (see journey note).
 
-**Gut feel: 4/5** — "The scoped page-type + starting-point picker is a nicer onboarding than Webflow's blank canvas, but two of the best options are 'Coming soon'."
+### /news — gut feel 2/5
 
-| #   | Category          | Finding                                                                                                                       | Severity | Why this matters to me                                                                                                                                                     |
-| --- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7   | Copy & Labels     | "From template" and "AI-assisted template" both disabled with "Coming soon"                                                   | High     | Reusable templates are how my team keeps brand consistency. Shipping the page-creation screen with the template path greyed out signals the workflow I rely on isn't done. |
-| 8   | Navigation & Flow | No "Import" or "Duplicate from existing" entry point anywhere in the create flow                                              | Critical | This is the migration question. There is zero path to bring my existing Webflow/WP content in. That alone is a switching blocker for a team with content already live.     |
-| 9   | Forms & Input     | The screenshot labelled "form-filled" is identical to "load" — no slug/title fields appear on this step; naming happens later | Medium   | In Contentful I name and slug at creation. Deferring it is fine, but I couldn't tell from this screen that nothing was actually fillable here.                             |
-| 10  | Visual & Layout   | "Selected setup" summary panel restates the choice clearly with a single primary "Start building" CTA                         | Low      | Good pattern — unambiguous next step, matches what I'd expect.                                                                                                             |
-| 11  | Feedback & State  | Selected cards get a blue ring; disabled cards are visually muted                                                             | Low      | Clear affordance, no complaints.                                                                                                                                           |
+"BLOG" heading vs "NEWS" nav; broken CDN thumbnail (500); cards are scroll-reveal so above-fold can look empty.
 
-### /admin/pages/[id] (Page Builder Editor)
+### /contact — gut feel 3/5
 
-**Gut feel: 3/5** — "Three-pane layout is familiar and the readiness panel is excellent, but the actual block editing is form-fields-in-a-sidebar, not the direct-manipulation canvas I'm used to — and a copy action literally failed in front of me."
+Form is fine; discoverability is the problem (footer-only).
 
-| #   | Category          | Finding                                                                                                                     | Severity     | Why this matters to me                                                                                                                                                             |
-| --- | ----------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 12  | Feedback & State  | "Could not copy link." error shown after clicking Copy editor link / Copy public URL                                        | **Blocker**  | Copy-link is a core sharing action. In two years of Webflow I've never had the copy button just fail. If sharing a preview is unreliable, my review loop with stakeholders breaks. |
-| 13  | Forms & Input     | Block reordering is via "Up/Down/Move section" buttons, not drag-and-drop                                                   | Critical     | Every competitor — Webflow, Wix, even WP Gutenberg — has drag-to-reorder. Clicking Up/Down to move a section past five others is the single biggest productivity regression here.  |
-| 14  | Navigation & Flow | Editing is done in the right SEO/settings rail with stacked form fields (Eyebrow, Heading, Body…), not inline on the canvas | High         | Webflow edits text where it sits. Hunting for the matching field in a 58-input sidebar to change a headline is slow and error-prone on long pages.                                 |
-| 15  | Forms & Input     | 58 inputs and 82 buttons render on one editor screen with no block-level collapse-by-default                                | High         | Cognitive overload. I want the selected block's fields, not every block's fields at once.                                                                                          |
-| 16  | Copy & Labels     | Two buttons read "Save draft" and the panel says "Drafts save automatically… use Save draft to save manually"               | Medium       | Mixed mental model — is it autosave or manual? Webflow is unambiguously autosave. I'd second-guess whether my work is actually saved.                                              |
-| 17  | Feedback & State  | "Add page content" modal block picker has no search/filter field                                                            | Medium       | Notion/Webflow let me type "/faq" to insert. With 9 block types × multiple variants, scanning a scrolling list is slower than typing.                                              |
-| 18  | Visual & Layout   | Block picker modal previews are genuinely good — Standard/Split/Compact/Editorial hero thumbnails show real layouts         | Low (praise) | This beats Gutenberg's text-only block list. Surprisingly better.                                                                                                                  |
-| 19  | Feedback & State  | "Live preview" / "Open preview" / "Rendering…" toast flow works and shows a faithful render                                 | Low (praise) | Preview fidelity is on par with what I expect.                                                                                                                                     |
-| 20  | Trust & Safety    | Revision history section present ("revisions appear after publishing, library refreshes, or draft saves")                   | Low          | Revisions are table-stakes and they're here — good. But I can't tell from the UI if I can diff or one-click restore a version the way Webflow's backups do.                        |
-| 21  | Accessibility     | No visible keyboard shortcuts anywhere (save, insert block, undo/redo, move block)                                          | High         | I live on Cmd+Z and Cmd+S. A builder with zero shortcuts means every action is a mouse trip — a measurable daily tax.                                                              |
-| 22  | Forms & Input     | Scheduled publish (datetime-local) and publish notes are present                                                            | Low (praise) | Scheduling + version notes is parity with the paid tier of my current stack. Nice to see.                                                                                          |
-| 23  | Visual & Layout   | Mobile editor stacks the toolbar into pill rows and shows the canvas, but you clearly can't seriously build on a phone      | Low          | Acceptable — nobody builds on mobile. Webflow doesn't pretend to either.                                                                                                           |
+### /pre-call-resources — gut feel 3/5
 
-### /admin/pages/authors (Authors)
+14 links, 0 embedded videos (exploration log) — competitor pre-call pages embed media inline.
 
-**Gut feel: 3/5** — "A bare create form with no list of existing authors visible — functional, but feels like a half-built collection editor."
+### /admin/pages — gut feel 3/5
 
-| #   | Category        | Finding                                                                                                             | Severity | Why this matters to me                                                                                                             |
-| --- | --------------- | ------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| 24  | Forms & Input   | "Avatar asset ID" is a raw text field — I have to know/paste an internal asset ID instead of a media-library picker | High     | Webflow/WP give me an image picker. Asking a content editor to paste an asset ID is a developer-grade UX leak.                     |
-| 25  | Visual & Layout | No list of existing authors rendered on load — just an empty create form                                            | Medium   | I can't tell if this is an empty state or if the list is below the fold. A real CMS shows me the collection first, then "add new". |
-| 26  | Copy & Labels   | Field labels have no helper text (what's "Slug" used for on an author? does it create a /authors/x page?)           | Low      | Minor, but I'd guess instead of knowing.                                                                                           |
+Polished list with status tabs, workflow filters, readiness dots (`admin-pages-001-load.png`). But: row "Actions" is a single "⋮" that didn't expose delete/duplicate to automation; no bulk select; the readiness/status dots are 10×10px unlabeled buttons (exploration log small-target notes); there's a "Schedule failed" filter exposed even though scheduling is barely surfaced.
 
-### /admin/pages/redirects (Redirects)
+### /admin/pages/new — gut feel 4/5
 
-**Gut feel: 4/5** — "A real redirect manager with 301/302/307/308 options — this is more honest than Webflow's redirect tab and better than needing a WP plugin."
+Clean, conventional 3-step wizard with progress bar (`admin-pages-new-001-load.png`). Best-in-class moment for this app.
 
-| #   | Category        | Finding                                                                                     | Severity     | Why this matters to me                                                                                                          |
-| --- | --------------- | ------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| 27  | Forms & Input   | No bulk import (CSV/paste) of redirects                                                     | High         | Migrating from another platform means importing hundreds of redirects. One-at-a-time entry is a non-starter for a real cutover. |
-| 28  | Trust & Safety  | Full 301/302/307/308 status-code control exposed                                            | Low (praise) | This is more granular than Webflow, which only does 301. Genuinely better for SEO-conscious migrations.                         |
-| 29  | Visual & Layout | Empty redirect table with clear column headers (Old path/Destination/Status/Source/Created) | Low          | Clean, predictable. "Source" column hinting at auto vs manual redirects is a nice touch.                                        |
+### /admin/media — gut feel 4/5
 
-### /admin/pages/block-preview-audit (Block Preview Audit)
+Filter chips (type, purpose, in-use/unused/needs-metadata), grid/list toggle, Upload (`admin-media-001-load.png`). Competitive with a real DAM. Minor: "Content libraries" is the only path to /admin/libraries (not in sidebar).
 
-**Gut feel: 4/5** — "An internal gallery of every block variant rendered top-to-bottom — I wish more CMS products shipped this; it's basically a living component catalog."
+### /admin/pages/redirects — gut feel 1/5
 
-| #   | Category          | Finding                                                                                                                         | Severity     | Why this matters to me                                                                                                    |
-| --- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| 30  | Visual & Layout   | Comprehensive: hero (4 variants), text (4), image (4), CTA (3), FAQ (3), cards (3), proof (3), video (3), form (3) all rendered | Low (praise) | This tells me the block library breadth is respectable — close to a Webflow starter component set. Reassuring for parity. |
-| 31  | Navigation & Flow | It's a flat scroll with no in-page jump nav / anchor index for 40+ sections                                                     | Low          | Minor; it's clearly an internal audit page, not a primary workflow.                                                       |
+Functional redirects manager with **zero inbound links from any explored admin page** (journeys.md sidebar-truth table). Orphan route = looks broken to an evaluator.
+
+### /admin/settings/users — gut feel 3/5
+
+Real RBAC user table (roles, reset, remove, invite). Good for a switcher. But every row action button is 32×32px (exploration log) and /admin/settings itself only redirects to /users — there's no settings home.
+
+---
 
 ## Blockers
 
-1. **(Editor) "Could not copy link." on Copy editor link / Copy public URL** — a core preview-sharing action visibly failed during the session. Sharing a draft for stakeholder review is daily work; an unreliable copy button breaks the review loop. _(Finding #12)_
+1. **Blog/News CMS has no studio-sidebar entry** — an entire content type is invisible unless you know the URL (`admin-pages-text.md` ARIA, journey 6). For a CMS this is disqualifying, not a polish item.
+2. **No list-level delete/duplicate, and new-page list verification is unreliable** — I cannot confidently manage content from the list view the way I can in WordPress/Webflow (journeys.md SEO-page result, admin-pages "⋮" actions).
 
-_Note: #8 (no import path) and #13 (no drag-and-drop) I've scored Critical rather than Blocker because the product technically functions without them — but for my specific decision (switching a team with existing content) the missing import path is the real dealbreaker._
+---
 
 ## My Top 10 Issues
 
-1. **No content import / migration path** (#8) — there's no way to bring existing Webflow/WP pages in. For a team with live content, this is the switch-killer.
-2. **"Could not copy link." failure** (#12) — a core sharing action broke in front of me.
-3. **No drag-and-drop block/section reordering** (#13) — Up/Down buttons are a real productivity regression vs. every competitor.
-4. **No keyboard shortcuts** (#21) — no Cmd+S/Cmd+Z/insert/move; every action is a mouse trip.
-5. **No bulk redirect import** (#27) — a cutover needs CSV/paste import of hundreds of redirects; one-by-one won't fly.
-6. **No bulk page actions** (#5) — can't multi-select to publish/archive/tag; daily work in my current tool.
-7. **Editing happens in a 58-field sidebar, not on the canvas** (#14, #15) — slow and error-prone vs. Webflow's inline editing.
-8. **Template creation paths are "Coming soon"** (#7) — reusable templates are how teams stay on-brand; shipping the create screen with them greyed out undercuts the workflow.
-9. **Author avatar is a raw "asset ID" text field** (#24) — needs a media-library picker; pasting internal IDs is developer-grade UX.
-10. **Block picker has no search/type-to-insert** (#17) — scanning a scrolling variant list is slower than the "/" insert I'm used to.
+1. Apply success state is a whisper; no redirect to existing `/thank-you-for-applying` (blocker-adjacent for conversion). `journey-discover-and-apply-004`.
+2. Blog/News CMS absent from studio sidebar — content type hidden behind a URL. `admin-pages-text.md`.
+3. Same content type named four ways: route "News", nav "NEWS", page H1 "BLOG", editor "Blog CMS"/"New blog post". journeys.md.
+4. Contact not in header nav — only footer. `apply-text.md` ARIA Primary nav.
+5. No row-level delete/duplicate/bulk actions in /admin/pages list. `admin-pages-001-load.png`.
+6. Redirects manager is an orphan route (no inbound links). journeys.md sidebar-truth table.
+7. Quick Tour overlay covers the panel it describes on first editor open. `journey-admin-create-seo-page-r06`.
+8. Broken article thumbnail on /news (500 from Webflow CDN). exploration log /news Console Errors.
+9. Home CLS 0.263 + mobile horizontal scroll. exploration log /.
+10. No global content search across pages + news; search is per-CMS only. `admin-pages-text.md` ("Search SEO pages").

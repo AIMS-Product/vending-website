@@ -22,6 +22,16 @@ export const caseStudiesHero = {
   body: "Members from across the country share how Vendingpreneurs took them from zero vending experience to a working route — in their own words.",
 } as const;
 
+/**
+ * Screen-reader-only section labels. The case-studies page has no visible
+ * section headings between the h1 and the per-card h3s; these give the
+ * document a sequential h1 → h2 → h3 outline without altering the visual design.
+ */
+export const caseStudySectionHeadings = {
+  videos: "Video case studies",
+  quotes: "Written testimonials",
+} as const;
+
 export const caseStudyVideos: ReadonlyArray<CaseStudyVideo> = [
   {
     id: "thomas-rohlader",

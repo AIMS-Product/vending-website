@@ -1,0 +1,268 @@
+[
+  {
+    "id": "09-pragmatist-001",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "finding": "The headline stat block renders literal zeros: \"0+ ENTREPRENEURS LAUNCHED\", \"$0M+ SNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\", \"0+ VENDING LOCATIONS W/OUR GUIDANCE\". To a no-nonsense reader this says the program has launched zero people and done zero sales.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "0+\nENTREPRENEURS LAUNCHED\n$0M+\nSNACK/DRINK SALES IN VENDINGPRENEUR MACHINES\n0+\nVENDING LOCATIONS W/OUR GUIDANCE"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-002-full.png",
+        "quote": "0+ / $0M+ / 0+ stat row under THE VENDING ACCELERATOR PROGRAM"
+      }
+    ],
+    "persona_rationale": "I read the numbers before the fluff. \"Zero entrepreneurs launched, zero sales\" tells me this outfit either hasn't done anything or can't keep its own website working. Either way I close the tab and call someone who's actually done the job.",
+    "suggested_fix": {
+      "current": "0+ ENTREPRENEURS LAUNCHED / $0M+ SNACK/DRINK SALES / 0+ VENDING LOCATIONS",
+      "proposed": "Populate the counters with real figures (e.g. \"500+ entrepreneurs launched\", \"$12M+ sales\", \"2,000+ locations\"); if the data can't load, hide the stat block entirely rather than showing zeros"
+    }
+  },
+  {
+    "id": "09-pragmatist-002",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The header's only call-to-action button is labelled \"STEP INSIDE\" and links to /apply, but nothing says it leads to the application. The clear \"APPLY NOW\" wording only appears further down the page in the body.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "link \"Step inside\":\n    - /url: /apply"
+      },
+      {
+        "type": "screenshot",
+        "ref": "home-001-load.png",
+        "quote": "Orange \"STEP INSIDE\" button top-right is the only header CTA"
+      }
+    ],
+    "persona_rationale": "I want the button that starts the job, labelled what it does. \"STEP INSIDE\" is marketing fluff — I don't know if it's apply, a tour, or a login. I shouldn't have to scroll the whole page hunting for the word \"Apply\".",
+    "suggested_fix": {
+      "current": "Header button text: \"STEP INSIDE\" → /apply",
+      "proposed": "\"APPLY NOW\" → /apply (keep one consistent apply label everywhere)"
+    }
+  },
+  {
+    "id": "09-pragmatist-003",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "Contact is reachable only from the footer (\"CONTACT US\") — there is no Contact link in the header navigation. The header nav is About / Resources / Case Studies / News only.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "navigation \"Primary\":\n    - link \"About\":\n    - link \"Resources\":\n    - link \"Case Studies\":\n    - link \"News\":"
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "click Contact link | navigated to /contact (link is in the FOOTER only — \"CONTACT US\"; not in the header nav)"
+      }
+    ],
+    "persona_rationale": "When I have a question I look at the top of the page for \"Contact\" and expect it there like every other business site. Making me scroll all the way to the bottom to find it is the kind of thing that makes me give up and not bother.",
+    "suggested_fix": {
+      "current": "Header nav: About / Resources / Case Studies / News (no Contact)",
+      "proposed": "Add \"Contact\" to the header nav alongside the others"
+    }
+  },
+  {
+    "id": "09-pragmatist-004",
+    "page": "/contact",
+    "journey": "contact-the-team",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The contact page offers only a form — no phone number, no email address, no business hours. A pragmatist who wants to call cannot.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/contact-text.md",
+        "quote": "TALK WITH VENDINGPRENEURS.\nSend the team a note about vending locations, machine decisions, partnerships, or accelerator fit."
+      },
+      {
+        "type": "screenshot",
+        "ref": "contact-001-load.png",
+        "quote": "Contact page shows form fields only, no phone/email listed"
+      }
+    ],
+    "persona_rationale": "I'd rather pick up the phone and get a straight answer than type my life story into a form and wait. No phone number on a contact page tells me they don't want to talk to me, which is a red flag for a service I'd be paying for.",
+    "suggested_fix": {
+      "current": "Contact page: form only",
+      "proposed": "Add a visible phone number, email address, and business hours above the form"
+    }
+  },
+  {
+    "id": "09-pragmatist-005",
+    "page": "/apply",
+    "journey": "discover-and-apply",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After submitting the application the only confirmation is a small green line of text beside the button: \"Thanks. We received your details and will follow up shortly.\" The form is not cleared, the button stays active, and there is no redirect — even though a dedicated /thank-you-for-applying page exists.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-discover-and-apply-004-04-submit-continue-round-1-.png",
+        "quote": "Form still filled, SUBMIT APPLICATION still active, tiny green text \"Thanks. We received your details and will follow up shortly.\" to the right"
+      },
+      {
+        "type": "console",
+        "ref": "journeys.md",
+        "quote": "The success state is a single small line of green text next to the submit button ... A user who scrolled or glanced away can easily believe nothing happened and resubmit."
+      }
+    ],
+    "persona_rationale": "I fill the form, hit submit, and I need it to obviously say DONE so I can get back to work. A faint green line off to the side is easy to miss — I'd assume it failed and hammer the button again, which is exactly what the automation did.",
+    "suggested_fix": {
+      "current": "Inline green line beside the button; form stays filled; no redirect",
+      "proposed": "Redirect to the existing /thank-you-for-applying page on success (or replace the form with a prominent full-width confirmation panel)"
+    }
+  },
+  {
+    "id": "09-pragmatist-006",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "Nowhere on the public site is there any price, cost range, or fee for the Vending Accelerator Program. The only path to find out what it costs is to apply and get a sales call.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "Our flagship Vending Accelerator Program is designed for both beginners and experienced entrepreneurs looking to optimize their vending routes."
+      },
+      {
+        "type": "text",
+        "ref": "text/about-text.md",
+        "quote": "I'm not here to sell a dream, I'm here to show you a system that works."
+      }
+    ],
+    "persona_rationale": "First thing I want to know is what it costs. If I have to hand over my name, phone, and budget just to get a number, that's a sales funnel, not an honest price. I deal with quotes all day — give me a ballpark or I assume you're hiding it.",
+    "suggested_fix": {
+      "current": "No pricing anywhere; cost only revealed after applying",
+      "proposed": "Add a pricing or \"what it costs / what's included\" section (even a starting-from range) so a visitor can self-qualify before applying"
+    }
+  },
+  {
+    "id": "09-pragmatist-007",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "On first load the /news article cards render as blank outlines until scrolled into view, and one card shows raw alt text instead of an image (\"Top 10 Profitable Products to Stock in Your Vending Machine (Snacks, Healthy Items, Niche Products)\") because the image returned HTTP 500.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "Three card areas below the fold; rightmost shows broken-image alt text \"Top 10 Profitable Products to Stock in Your Vending Machine...\""
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "500 /_next/image?url=...694bcfaf10178c3a1340c777_ChatGPT%20Image...png&w=640&q=75"
+      }
+    ],
+    "persona_rationale": "Broken pictures and empty boxes make a site look abandoned. If they can't keep their own blog images loading, I don't trust them to keep my vending business advice current.",
+    "suggested_fix": {
+      "current": "Article image 500s and shows alt text; cards blank until scrolled",
+      "proposed": "Fix the failing image source (the Webflow CDN URL) and render cards with their content on first paint instead of empty outlines"
+    }
+  },
+  {
+    "id": "09-pragmatist-008",
+    "page": "/news",
+    "journey": "read-a-news-article",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The same section is called three different things: the nav item is \"NEWS\", the page heading is \"BLOG\", and article-page breadcrumbs link \"BLOG\" back to /news.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "news-001-load.png",
+        "quote": "Page heading reads \"BLOG\" though nav item that led here says NEWS"
+      },
+      { "type": "text", "ref": "text/news-text.md", "quote": "NEWS" }
+    ],
+    "persona_rationale": "When I click NEWS and land on a page titled BLOG I wonder if I clicked the wrong thing or got bounced somewhere. Pick one word and use it everywhere — I don't want to second-guess where I am.",
+    "suggested_fix": {
+      "current": "Nav \"NEWS\" → page heading \"BLOG\" → breadcrumb \"BLOG\"",
+      "proposed": "Use one name throughout — e.g. heading and breadcrumb both say \"NEWS\" to match the nav and route"
+    }
+  },
+  {
+    "id": "09-pragmatist-009",
+    "page": "/pre-call-resources",
+    "journey": "pre-call-prep",
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "The header nav item \"RESOURCES\" links to /pre-call-resources, a page headed \"PRE-CALL RESOURCES / PREPARE FOR YOUR VENDING STRATEGY CALL.\" — a checklist meant for people who have already booked a call, not the general resource library a visitor expects.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "text/pre-call-resources-text.md",
+        "quote": "PRE-CALL RESOURCES\nPREPARE FOR YOUR VENDING STRATEGY CALL.\nA focused call is easier when the business basics are already clear."
+      },
+      {
+        "type": "text",
+        "ref": "text/home-text.md",
+        "quote": "link \"Resources\":\n      - /url: /pre-call-resources"
+      }
+    ],
+    "persona_rationale": "I click RESOURCES expecting how-to info to size up the program. Instead I get a 'get ready for your call' checklist that assumes I've already signed up for a call I haven't booked. It's the wrong page for where I am.",
+    "suggested_fix": {
+      "current": "Nav \"RESOURCES\" → /pre-call-resources (call-prep checklist)",
+      "proposed": "Either rename the nav item to \"Pre-Call Prep\" or point \"Resources\" at a genuine resource/guide library"
+    }
+  },
+  {
+    "id": "09-pragmatist-010",
+    "page": "/",
+    "journey": "discover-and-apply",
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "The homepage has a high layout shift on load (CLS 0.263) and the mobile homepage has horizontal scroll present.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "Layout shift (CLS): 0.263"
+      },
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "mobile-375 | home-003-mobile.png | horizontal scroll present"
+      }
+    ],
+    "persona_rationale": "On my phone on a job site, the page jumping around as it loads and sliding sideways means I'm chasing the Apply button instead of tapping it. Little things like that waste my time.",
+    "suggested_fix": {
+      "current": "CLS 0.263 on load; horizontal scroll on mobile-375",
+      "proposed": "Reserve space for hero image/stat block to stop the jump; fix the element overflowing the 375px viewport"
+    }
+  },
+  {
+    "id": "09-pragmatist-011",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Trust & Safety",
+    "severity": "low",
+    "finding": "On the admin pages list a \"Schedule failed\" link is present, indicating a failed scheduled-publish state surfaced in the UI.",
+    "evidence": [
+      {
+        "type": "console",
+        "ref": "exploration-log.md",
+        "quote": "a \"Schedule failed\" | external | external: outbound side effect / leaves app"
+      }
+    ],
+    "persona_rationale": "Not my page as a customer, but a public-facing business showing 'failed' anywhere tells me their tooling is shaky — and I judge a service by whether their own house is in order.",
+    "suggested_fix": {
+      "current": "\"Schedule failed\" state shown as a link in admin pages list",
+      "proposed": "Investigate the failed scheduled publish and surface a clear retry/error explanation in the admin UI"
+    }
+  }
+]

@@ -1,0 +1,253 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a complete draft for this page targeting 'coffee vending machines for offices'. Include a hero, a benefits section, an FAQ, and a closing CTA."
+      }
+    ],
+    "context": {
+      "pageId": null,
+      "status": "draft",
+      "title": "",
+      "slug": "",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "",
+      "metaDescription": "",
+      "selectedBlockId": null,
+      "content": {
+        "version": 1,
+        "sections": []
+      },
+      "publishReadiness": {
+        "blockers": ["Publish requires at least one CTA or lead form block."],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "Rebuilt the page body with a review-safe SEO draft.",
+    "toolCalls": [
+      {
+        "id": "0qnuk33d",
+        "name": "set_seo_metadata",
+        "input": {
+          "metaDescription": "Explore reliable coffee vending machines for offices. High-quality brews, low maintenance, and flexible options to keep your team energized all day.",
+          "title": "Coffee Vending Machines for Offices",
+          "targetKeyword": "coffee vending machines for offices",
+          "seoTitle": "Coffee Vending Machines for Offices | Reliable Workplace Solutions",
+          "slug": "coffee-vending-machines-for-offices"
+        }
+      },
+      {
+        "id": "deterministic_replace_page_sections",
+        "name": "replace_page_sections",
+        "input": {
+          "replaceExisting": false,
+          "sections": [
+            {
+              "title": "Hero",
+              "blocks": [
+                {
+                  "blockType": "hero",
+                  "title": "Coffee Vending Machines for Offices",
+                  "body": "Coffee Vending Machines for Offices helps site users access food, drinks, and everyday refreshments without turning the site team into an informal catering desk.",
+                  "bulletItems": null,
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": "Book a consultation",
+                  "ctaHref": "/contact"
+                }
+              ]
+            },
+            {
+              "title": "What buyers need to know first",
+              "blocks": [
+                {
+                  "blockType": "rich_text",
+                  "title": "What buyers need to know first",
+                  "body": "For Coffee Vending Machines for Offices, buyers need more than a list of benefits. Explain when the service is a good fit, what products and support are included, what the site needs to provide, and how the enquiry turns into a practical recommendation.",
+                  "bulletItems": [
+                    "Who will use the setup and why",
+                    "What the service needs to include",
+                    "Which questions should be settled before launch"
+                  ],
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "Decision points",
+              "blocks": [
+                {
+                  "blockType": "card_grid",
+                  "title": "Decision points",
+                  "body": null,
+                  "bulletItems": null,
+                  "faqItems": null,
+                  "cards": [
+                    {
+                      "title": "Site fit",
+                      "body": "coffee vending usually works best where there is steady daily traffic, enough room for people to browse, and clear access for refills. Smaller or irregular sites may still work, but they need a tighter product range and a simpler service plan.",
+                      "href": "/contact",
+                      "linkLabel": "Check site fit"
+                    },
+                    {
+                      "title": "Product range",
+                      "body": "Plan the range around what people actually buy during the day: quick lunches, drinks, snacks, coffee, healthier choices, and any site-specific preferences. Review the mix after launch so slow-moving products do not crowd out better options.",
+                      "href": "/contact",
+                      "linkLabel": "Plan the range"
+                    },
+                    {
+                      "title": "Payment and access",
+                      "body": "Confirm how people will pay, where the equipment can sit, and whether visitors as well as staff need access. Access rules affect placement, signage, product choice, and how easy the service is to use during busy periods.",
+                      "href": "/contact",
+                      "linkLabel": "Review access"
+                    },
+                    {
+                      "title": "Restocking plan",
+                      "body": "Restocking should match the site's usage pattern rather than a generic schedule. Ask about staff numbers, busy days, preferred product types, and who can provide access so the refill plan supports demand without overstocking.",
+                      "href": "/contact",
+                      "linkLabel": "Scope refills"
+                    },
+                    {
+                      "title": "Support expectations",
+                      "body": "Set expectations for machine issues, product changes, cleaning responsibilities, and who the site contacts when something is not working. Clear support ownership is what keeps the setup useful after the first week.",
+                      "href": "/contact",
+                      "linkLabel": "Discuss support"
+                    }
+                  ],
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "Process and support expectations",
+              "blocks": [
+                {
+                  "blockType": "rich_text",
+                  "title": "Process and support expectations",
+                  "body": "A practical rollout starts with the site, audience, and service needs, then turns those details into an equipment recommendation, product plan, restocking cadence, and issue-response path. The strongest enquiry includes photos or notes about the space, expected usage windows, and any access constraints for refills.",
+                  "bulletItems": [
+                    "Confirm site requirements",
+                    "Plan stock and refills",
+                    "Review support after launch"
+                  ],
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "FAQs",
+              "blocks": [
+                {
+                  "blockType": "faq",
+                  "title": "Coffee Vending Machines for Offices",
+                  "body": null,
+                  "bulletItems": null,
+                  "faqItems": [
+                    {
+                      "question": "What makes this setup a good fit?",
+                      "answer": "A good fit depends on the audience, space, access, product expectations, and service model. For Coffee Vending Machines for Offices, the useful next step is to compare the site details against those requirements before promising a machine mix or rollout plan."
+                    },
+                    {
+                      "question": "What needs to be confirmed before launch?",
+                      "answer": "Before recommending a setup, confirm the daily audience, available floor space, power access, payment expectations, and who can provide service access. Those details shape whether coffee vending is practical for the site or whether a simpler vending format would be easier to manage."
+                    },
+                    {
+                      "question": "How should products and refills be planned?",
+                      "answer": "Restocking should match the site's usage pattern rather than a generic schedule. Ask about staff numbers, busy days, preferred product types, and who can provide access so the refill plan supports demand without overstocking."
+                    },
+                    {
+                      "question": "Who handles service issues after launch?",
+                      "answer": "Set expectations for machine issues, product changes, cleaning responsibilities, and who the site contacts when something is not working. Clear support ownership is what keeps the setup useful after the first week."
+                    },
+                    {
+                      "question": "How do we get started?",
+                      "answer": "Start with a quick consultation that covers the site type, audience, available space, product preferences, and support expectations. Those details make it easier to recommend a practical setup instead of guessing from a generic vending checklist."
+                    }
+                  ],
+                  "cards": null,
+                  "ctaLabel": null,
+                  "ctaHref": null
+                }
+              ]
+            },
+            {
+              "title": "CTA",
+              "blocks": [
+                {
+                  "blockType": "cta",
+                  "title": "Ready to plan the setup?",
+                  "body": "Share the site type, estimated daily audience, available space, and preferred product categories so the next recommendation can be scoped around real conditions rather than generic vending assumptions.",
+                  "bulletItems": null,
+                  "faqItems": null,
+                  "cards": null,
+                  "ctaLabel": "Book a consultation",
+                  "ctaHref": "/contact"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "source": "intent-fallback"
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "EjQKMgEMOdbHTGTwpHrVGyR+Lx66oLJD+qGpMsoVQTyh8MvBcpOtp0RJxvCINRrKmUpuJKJP"
+                }
+              },
+              "function": {
+                "arguments": "{\"metaDescription\":\"Explore reliable coffee vending machines for offices. High-quality brews, low maintenance, and flexible options to keep your team energized all day.\",\"title\":\"Coffee Vending Machines for Offices\",\"targetKeyword\":\"coffee vending machines for offices\",\"seoTitle\":\"Coffee Vending Machines for Offices | Reliable Workplace Solutions\",\"slug\":\"coffee-vending-machines-for-offices\"}",
+                "name": "set_seo_metadata"
+              },
+              "id": "0qnuk33d",
+              "type": "function"
+            },
+            {
+              "function": {
+                "arguments": "{\"replaceExisting\":true,\"sections\":[{\"blocks\":[{\"ctaHref\":\"/contact\",\"title\":\"Premium Coffee Vending Machines for Offices\",\"bulletItems\":[],\"blockType\":\"hero\",\"body\":\"Provide your team with café-quality beverages without the hassle of manual brewing. Our coffee vending machines for offices offer a seamless way to boost morale and productivity with a single touch.\",\"faqItems\":null,\"ctaLabel\":\"Request a Quote\",\"cards\":null}],\"title\":\"Hero Section\"},{\"title\":\"Overview Section\",\"blocks\":[{\"faqItems\":null,\"ctaLabel\":null,\"cards\":null,\"body\":\"Maintaining a productive workplace starts with reliable amenities. Modern coffee vending machines for offices have evolved far beyond basic instant options, now delivering fresh-ground beans and specialty drinks that rival local coffee shops. These systems are designed to handle high-volume usage while requiring minimal daily intervention from your facilities team. When selecting a machine, consider your daily cup count, preferred milk options, and available plumbing access to ensure a perfect fit for your breakroom layout.\",\"blockType\":\"rich_text\",\"bulletItems\":[\"Bean-to-cup technology for maximum freshness\",\"User-friendly touchscreens with customizable drink menus\",\"Energy-efficient standby modes to reduce utility costs\",\"Simplified automated cleaning cycles for easy maintenance\"],\"ctaHref\":null,\"title\":\"Smart Coffee Solutions for Busy Workplaces\"}]},{\"title\":\"Benefits Section\",\"blocks\":[{\"faqItems\":null,\"ctaLabel\":null,\"cards\":[{\"title\":\"Reduced Maintenance Admin\",\"href\":\"/contact\",\"body\":\"Free up your administrative staff by choosing machines with automated restocking alerts and self-cleaning cycles that reduce manual labor.\",\"linkLabel\":\"Learn More\"},{\"title\":\"Diverse Beverage Menu\",\"href\":\"/contact\",\"linkLabel\":\"View Drink Options\",\"body\":\"From espresso and long blacks to lattes and hot chocolate, provide a diverse menu that caters to every employee's personal preference.\"},{\"href\":\"/contact\",\"title\":\"Increased Time on Task\",\"linkLabel\":\"Calculate Productivity\",\"body\":\"Minimize the time staff spend leaving the building for coffee runs by providing a high-quality alternative right in the breakroom.\"},{\"linkLabel\":\"Explore Pricing Models\",\"body\":\"Choose from various payment or subsidized models, including tap-and-go card readers or free-vend settings for employee perks.\",\"title\":\"Flexible Payment Integration\",\"href\":\"/contact\"}],\"body\":\"Choosing the right coffee solution depends on your office size and specific culture. Explore the key advantages of integrated vending systems.\",\"blockType\":\"card_grid\",\"bulletItems\":[],\"ctaHref\":null,\"title\":\"Why Upgrade Your Office Coffee?\"}]},{\"title\":\"FAQ Section\",\"blocks\":[{\"body\":\"Common questions about installing and managing coffee vending machines for offices.\",\"cards\":null,\"faqItems\":[{\"question\":\"What are the plumbing and power requirements?\",\"answer\":\"Most professional machines require a standard 10-amp power outlet and a cold water connection. If a mains water line isn't available near your preferred location, we can often utilize internal tank models or portable pump systems.\"},{\"answer\":\"Maintenance schedules depend on your office's daily usage. Typically, a quick daily rinse of the milk system and a weekly deep clean of the internal components are sufficient to keep the machine in top condition and ensure beverage quality.\",\"question\":\"How often do the machines need cleaning?\"},{\"answer\":\"Yes, many modern machines offer contactless payment options, including credit cards, mobile wallets, and employee badge scanning for subsidized or restricted access.\",\"question\":\"Can the machines accept cashless payments?\"},{\"answer\":\"The best machine for your space is usually determined by your total headcount and how many cups are served during peak morning hours. We recommend bean-to-cup machines for teams that value freshness above all else.\",\"question\":\"How do I choose the right size for my team?\"},{\"question\":\"Are these machines energy efficient?\",\"answer\":\"Modern vending systems are built with energy-saving modes that power down heaters during evening and weekend hours, significantly reducing the overall environmental footprint and operating costs.\"}],\"ctaLabel\":null,\"blockType\":\"faq\",\"bulletItems\":[],\"ctaHref\":null,\"title\":\"Frequently Asked Questions\"}]},{\"blocks\":[{\"bulletItems\":[],\"blockType\":\"cta\",\"title\":\"Transform Your Breakroom Today\",\"ctaHref\":\"/contact\",\"body\":\"Ready to upgrade your breakroom experience? Contact our team today to discuss machine options, trial periods, and customized beverage menus tailored to your office needs.\",\"faqItems\":null,\"ctaLabel\":\"Get a Free Consultation\",\"cards\":null}],\"title\":\"Final CTA Section\"}]}",
+                "name": "replace_page_sections"
+              },
+              "id": "7vlo2ias",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781142703,
+    "id": "pxQqaoaiLbfEjuMP4raxiQ0",
+    "model": "gemini-3-flash-preview",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 1133,
+      "prompt_tokens": 4173,
+      "prompt_tokens_details": {
+        "cached_tokens": 4030
+      },
+      "total_tokens": 5306
+    }
+  }
+}

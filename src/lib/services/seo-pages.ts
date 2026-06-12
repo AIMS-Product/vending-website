@@ -12,7 +12,7 @@ import {
   type PageContent,
 } from "@/lib/page-builder/blocks";
 import {
-  isBuilderRoutePath,
+  isAssignableBuilderRoutePath,
   normalizeRoutePrefix,
   pagePathForPage,
   pagePathForSlug,
@@ -35,6 +35,7 @@ import {
   buildSeoSnapshot,
   seoPatchFromSnapshot,
 } from "@/lib/services/seo-page-snapshots";
+import { deriveCopySlug } from "@/lib/services/duplicate-slug";
 import { validateMediaAssetReferences } from "@/lib/services/media-assets";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables, TablesInsert } from "@/types/database";
@@ -98,6 +99,13 @@ export type DuplicateSeoPageOptions = ServiceDeps & {
   now?: () => Date;
 };
 
+export type UpdateBuilderRedirectInput = {
+  id: string;
+  sourcePath: string;
+  destinationPath: string;
+  statusCode?: number;
+};
+
 export type CreateBuilderRedirectInput = {
   sourcePath: string;
   destinationPath: string;
@@ -136,6 +144,9 @@ const PAGE_REVISION_FIELDS =
 
 const PAGE_PREVIEW_TOKEN_FIELDS =
   "id, page_id, token_prefix, expires_at, revoked_at, created_by, created_at" as const;
+
+const BUILDER_REDIRECT_FIELDS =
+  "id, source_path, destination_path, status_code, page_id, created_reason, created_by, created_at" as const;
 
 export async function adminListSeoPages(
   { status }: SeoPageListOptions = {},
@@ -223,12 +234,16 @@ export async function adminDuplicateSeoPage(
   const source = await adminGetSeoPageById(pageId, { client });
   if (!source) throw new Error("Could not load SEO page.");
 
-  const shortId = randomBytes(4).toString("hex");
-  const slug = `draft-${shortId}`;
   const title = `Copy of ${source.title}`;
   const routePrefix = normalizeRoutePrefix(
     source.route_prefix,
     source.page_type,
+  );
+  // Human-readable duplicate slug ({source}-copy, -copy-2, …). Collision scope
+  // matches the DB's seo_pages_active_route_path_unique_idx: route_path among
+  // non-archived pages (archived pages do not reserve a slug).
+  const slug = await deriveCopySlug(source.slug, async (candidate) =>
+    isActiveRoutePathTaken(client, pagePathForSlug(candidate, routePrefix)),
   );
 
   const duplicated = await adminCreateSeoPage(
@@ -704,6 +719,50 @@ export async function adminListSeoPageRevisions(
   return data ?? [];
 }
 
+const MANUAL_SAVE_REVISIONS_KEPT = 20;
+
+// Snapshot the current draft as an immutable `manual_save` revision, then prune
+// older manual_save revisions for the page so only the newest N survive.
+// The save itself has already committed before this runs — callers must treat
+// a thrown error here as non-fatal (the user's draft is safe regardless).
+export async function adminSnapshotManualSaveRevision(
+  pageId: string,
+  options: {
+    actorId?: string | null;
+    keepRevisions?: number;
+    now?: () => Date;
+  } = {},
+  deps: ServiceDeps = {},
+) {
+  const client = deps.client ?? createAdminClient();
+  const now = options.now ?? (() => new Date());
+  const page = await adminGetSeoPageById(pageId, { client });
+  if (!page) throw new Error("Could not load SEO page to snapshot.");
+
+  const { data: revision, error } = await client
+    .from("page_revisions")
+    .insert({
+      page_id: pageId,
+      revision_type: "manual_save",
+      label: `Manual save • ${now().toISOString()}`,
+      content_snapshot: page.draft_content as unknown as Json,
+      seo_snapshot: buildSeoSnapshot(page),
+      created_by: options.actorId ?? null,
+    })
+    .select(PAGE_REVISION_FIELDS)
+    .single();
+  if (error) throw new Error("Could not snapshot manual save revision.");
+
+  const keep = options.keepRevisions ?? MANUAL_SAVE_REVISIONS_KEPT;
+  const { data: pruned, error: pruneError } = await client.rpc(
+    "prune_seo_page_manual_save_revisions",
+    { p_page_id: pageId, p_keep: keep },
+  );
+  if (pruneError) throw new Error("Could not prune manual save revisions.");
+
+  return { revision, pruned: pruned ?? 0 };
+}
+
 export async function adminGetSeoPageRevision(
   pageId: string,
   revisionId: string,
@@ -818,6 +877,98 @@ export async function adminCreateBuilderRedirect(
     throwSeoPageMutationError(error, "Could not create redirect.", sourcePath);
   }
   return data;
+}
+
+export async function adminUpdateBuilderRedirect(
+  input: UpdateBuilderRedirectInput,
+  deps: ServiceDeps = {},
+) {
+  const client = deps.client ?? createAdminClient();
+  const id = input.id.trim();
+  if (!id) {
+    throw new SeoPageValidationError([
+      {
+        code: "missing_redirect_id",
+        path: "id",
+        message: "Choose which redirect to update.",
+      },
+    ]);
+  }
+  const sourcePath = normalizeSourcePath(input.sourcePath);
+  const destinationPath = normalizeDestinationPath(input.destinationPath);
+  validateRedirectPaths(sourcePath, destinationPath);
+  const statusCode = assertRedirectStatusCode(input.statusCode ?? 301);
+
+  const { data, error } = await client
+    .from("redirects")
+    .update({
+      source_path: sourcePath,
+      destination_path: destinationPath,
+      status_code: statusCode,
+    })
+    .eq("id", id)
+    .select(BUILDER_REDIRECT_FIELDS)
+    .maybeSingle();
+  if (error) {
+    throwSeoPageMutationError(error, "Could not update redirect.", sourcePath);
+  }
+  if (!data) {
+    throw new SeoPageValidationError([
+      {
+        code: "redirect_not_found",
+        path: "id",
+        message: "That redirect no longer exists. Refresh and try again.",
+      },
+    ]);
+  }
+  return data;
+}
+
+export async function adminDeleteBuilderRedirect(
+  id: string,
+  deps: ServiceDeps = {},
+) {
+  const client = deps.client ?? createAdminClient();
+  const redirectId = id.trim();
+  if (!redirectId) {
+    throw new SeoPageValidationError([
+      {
+        code: "missing_redirect_id",
+        path: "id",
+        message: "Choose which redirect to delete.",
+      },
+    ]);
+  }
+
+  const { data, error } = await client
+    .from("redirects")
+    .delete()
+    .eq("id", redirectId)
+    .select("id");
+  if (error) throw new Error("Could not delete redirect.");
+  if (!data || data.length === 0) {
+    throw new SeoPageValidationError([
+      {
+        code: "redirect_not_found",
+        path: "id",
+        message: "That redirect no longer exists. Refresh and try again.",
+      },
+    ]);
+  }
+  return { id: redirectId };
+}
+
+function assertRedirectStatusCode(statusCode: number) {
+  if (![301, 302, 307, 308].includes(statusCode)) {
+    throw new SeoPageValidationError([
+      {
+        code: "invalid_redirect_status",
+        path: "status_code",
+        message: "Choose a supported redirect status.",
+      },
+    ]);
+  }
+  return statusCode;
 }
 
 export async function adminListPageComments(
@@ -1098,6 +1249,24 @@ async function deleteArchivedPageRedirects(
     .match({ page_id: pageId, created_reason: "page_archived" });
 
   if (error) throw new Error("Could not clear archived SEO page redirect.");
+}
+
+// True when a non-archived page already owns this route_path — the exact scope
+// of seo_pages_active_route_path_unique_idx, so a duplicate slug we hand back
+// can be inserted without tripping the unique index.
+async function isActiveRoutePathTaken(
+  client: SeoPageClient,
+  routePath: string,
+): Promise<boolean> {
+  const { data, error } = await client
+    .from("seo_pages")
+    .select("id")
+    .eq("route_path", routePath)
+    .neq("status", "archived")
+    .maybeSingle();
+
+  if (error) throw new Error("Could not check duplicate slug availability.");
+  return data !== null;
 }
 
 async function findRedirectBySourcePath(
@@ -1464,7 +1633,9 @@ function publishRevisionLabel(
 
 function normalizeSourcePath(path: string) {
   const normalized = normalizeInternalPath(path);
-  if (!isBuilderRoutePath(normalized)) {
+  // Shape-based (not the static five): archived custom-prefix pages must be
+  // able to register redirects too. Reserved app segments stay rejected.
+  if (!isAssignableBuilderRoutePath(normalized)) {
     throw new SeoPageValidationError([
       {
         code: "invalid_redirect_source",
@@ -1492,7 +1663,7 @@ function validateRedirectPaths(sourcePath: string, destinationPath: string) {
 
 function normalizeDestinationPath(path: string) {
   const trimmed = path.trim();
-  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) {
+  if (isRootRelativePath(trimmed)) {
     return normalizeInternalPath(trimmed);
   }
 
@@ -1514,9 +1685,22 @@ function normalizeDestinationPath(path: string) {
   ]);
 }
 
+// Backslashes (raw or percent-encoded as %5C) are rejected because browsers
+// normalize "\" to "/" in redirect targets, so "/\evil.com" resolves like the
+// protocol-relative "//evil.com" and escapes the site despite looking like an
+// internal path.
+function isRootRelativePath(value: string) {
+  return (
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !value.includes("\\") &&
+    !value.toLowerCase().includes("%5c")
+  );
+}
+
 function normalizeInternalPath(path: string) {
   const trimmed = path.trim();
-  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) {
+  if (!isRootRelativePath(trimmed)) {
     throw new SeoPageValidationError([
       {
         code: "invalid_path",

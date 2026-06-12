@@ -1,0 +1,229 @@
+{
+  "case-studies": {
+    "url": "http://localhost:3001/case-studies",
+    "headingOrder": {
+      "violationCount": 0,
+      "violations": []
+    },
+    "fullViolations": [],
+    "fullViolationCount": 0,
+    "outline": [
+      {
+        "tag": "h1",
+        "text": "Case Studies",
+        "srOnly": false
+      },
+      {
+        "tag": "h2",
+        "text": "Video case studies",
+        "srOnly": true
+      },
+      {
+        "tag": "h3",
+        "text": "Thomas Rohlader",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Joe Natoli",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Jason Priest",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Anthony, CEO",
+        "srOnly": false
+      },
+      {
+        "tag": "h2",
+        "text": "Written testimonials",
+        "srOnly": true
+      },
+      {
+        "tag": "h3",
+        "text": "Charles Wheeler",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Kelsey Corcoran",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Abby C",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Dennis and Michelle Dewitt",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Bret Bourgeois",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Kyle Sharp",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Adam S",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Lonny Carter",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Nolan Mayfield",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Ben Sanders",
+        "srOnly": false
+      },
+      {
+        "tag": "h2",
+        "text": "Take Action Today",
+        "srOnly": false
+      }
+    ]
+  },
+  "home": {
+    "url": "http://localhost:3001/",
+    "headingOrder": {
+      "violationCount": 0,
+      "violations": []
+    },
+    "fullViolations": [],
+    "fullViolationCount": 0,
+    "outline": [
+      {
+        "tag": "h1",
+        "text": "Turn VendingInto Your Pathto Financial Freedom",
+        "srOnly": false
+      },
+      {
+        "tag": "h2",
+        "text": "The Vending Accelerator Program",
+        "srOnly": false
+      },
+      {
+        "tag": "h2",
+        "text": "Why Vendingpreneurs?",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Proven Success Strategies",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Expert Coaching & Support",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Exclusive Discounts",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "A Community of Entrepreneurs",
+        "srOnly": false
+      },
+      {
+        "tag": "h2",
+        "text": "Real People, Real Results",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Thomas Rohlader",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Joe Natoli",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Jason Priest",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Anthony, CEO",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Charles Wheeler",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Kelsey Corcoran",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Abby C",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Dennis and Michelle Dewitt",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Bret Bourgeois",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Kyle Sharp",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Adam S",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Lonny Carter",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Nolan Mayfield",
+        "srOnly": false
+      },
+      {
+        "tag": "h3",
+        "text": "Ben Sanders",
+        "srOnly": false
+      },
+      {
+        "tag": "h2",
+        "text": "Take Action Today",
+        "srOnly": false
+      }
+    ]
+  }
+}

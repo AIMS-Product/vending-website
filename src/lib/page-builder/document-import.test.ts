@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import { pageBlockSchema } from "@/lib/page-builder/blocks";
 import { createDocumentImportProposal } from "@/lib/page-builder/document-import";
 
+function documentWithSections(count: number) {
+  return Array.from(
+    { length: count },
+    (_, index) => `# Section ${index + 1}\nBody for section ${index + 1}`,
+  ).join("\n");
+}
+
 describe("document import mapping", () => {
   it("maps pasted document text into validated rich text blocks with source context", () => {
     let blockIndex = 0;
@@ -44,6 +51,39 @@ Start with the [application guide](/apply) before outreach.
       style: "bullet",
       items: ["Validate location traffic", "Estimate refill cadence"],
     });
+  });
+
+  it("warns with the exact dropped-section count when over the import cap", () => {
+    const proposal = createDocumentImportProposal({
+      makeProposalId: () => "document_import_test",
+      text: documentWithSections(10),
+    });
+
+    expect(proposal.blocks).toHaveLength(8);
+    expect(proposal.warnings).toEqual([
+      "2 sections dropped — only the first 8 were imported.",
+    ]);
+  });
+
+  it("uses singular wording when exactly one section is dropped", () => {
+    const proposal = createDocumentImportProposal({
+      makeProposalId: () => "document_import_test",
+      text: documentWithSections(9),
+    });
+
+    expect(proposal.warnings).toEqual([
+      "1 section dropped — only the first 8 were imported.",
+    ]);
+  });
+
+  it("emits no warning when the document is at or under the import cap", () => {
+    const proposal = createDocumentImportProposal({
+      makeProposalId: () => "document_import_test",
+      text: documentWithSections(8),
+    });
+
+    expect(proposal.blocks).toHaveLength(8);
+    expect(proposal.warnings).toEqual([]);
   });
 
   it("does not preserve unsafe markdown links as href spans", () => {

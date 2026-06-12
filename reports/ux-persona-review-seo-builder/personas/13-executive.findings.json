@@ -1,0 +1,167 @@
+[
+  {
+    "id": "13-executive-001",
+    "page": "/admin/pages",
+    "journey": "find-duplicate-archive",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "Per-row Readiness and Status are unlabelled colour dots with no legend — page status is not glanceable from the list.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "Readiness and Status columns show only coloured dots, no text labels"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "SEO readiness: Needs work ... Page status: Published"
+      }
+    ],
+    "persona_rationale": "I scan a list to know what is live and what is broken; a coloured dot tells me nothing without hovering, and I do not hover.",
+    "suggested_fix": {
+      "current": "Status encoded as an unlabelled coloured dot per row",
+      "proposed": "Coloured status pill with the word visible inline (Published / Draft / Needs work / Blocked)"
+    }
+  },
+  {
+    "id": "13-executive-002",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "After saving a scheduled publish, the field renders empty and no 'Scheduled for {date}' status appears anywhere — a schedule cannot be visually confirmed.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Scheduled publish field shows dd/mm/yyyy placeholder after save; no scheduled-for confirmation"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the field re-rendered EMPTY and no \"Scheduled for …\" status appeared anywhere in the editor"
+      }
+    ],
+    "persona_rationale": "\"Is this going live Monday?\" is a question I must answer in five seconds; right now I cannot confirm a schedule even exists.",
+    "suggested_fix": {
+      "current": "Field empties after save, no confirmation",
+      "proposed": "Persistent 'Scheduled to publish {date}, {time}' banner in the publish panel plus a 'Scheduled' pill in the pages list"
+    }
+  },
+  {
+    "id": "13-executive-003",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Copy & Labels",
+    "severity": "critical",
+    "finding": "Publish is gated behind readiness blockers revealed one at a time in internal jargon (e.g. 'Fix content 1 · Destination URL'), with no overview of what remains.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Publish is gated behind a chain of readiness blockers that are revealed ONE AT A TIME in the status chip, in terse internal naming"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "draft · SEO Blocked / Fix SEO title with Publish disabled"
+      }
+    ],
+    "persona_rationale": "Publishing is the one action I might do myself; a guessing game of one-at-a-time error codes is unusable in a meeting.",
+    "suggested_fix": {
+      "current": "One cryptic blocker shown at a time in the status chip",
+      "proposed": "A single plain-language checklist of all remaining blockers, each with a jump-to-field link"
+    }
+  },
+  {
+    "id": "13-executive-004",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "high",
+    "finding": "After confirming publish, the 'Changes published' toast fires but the confirm card stays open asking to publish again — success state is ambiguous.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "\"Changes published.\" toast appears BUT the confirm card remains open asking to publish again (\"This will replace the current live version…\")"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-13-confirm-card.png",
+        "quote": "Confirm publish card with Cancel / Confirm publish buttons"
+      }
+    ],
+    "persona_rationale": "I can't tell if it worked or whether I'm about to double-publish; ambiguous success states erode trust instantly.",
+    "suggested_fix": {
+      "current": "Success toast fires but confirm card remains open",
+      "proposed": "On success, dismiss the confirm card and flip the status pill to 'Published'"
+    }
+  },
+  {
+    "id": "13-executive-005",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Navigation & Flow",
+    "severity": "high",
+    "finding": "No 'View live page' link surfaces after publishing in the default panel — the live URL had to be typed manually.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "No \"Open live page\" link was visible after publishing in the default panel state — the live URL had to be typed manually"
+      }
+    ],
+    "persona_rationale": "After I publish, the only thing I want is to click through and see it live; making me type a URL is a dead end.",
+    "suggested_fix": {
+      "current": "No live-page link shown after publish",
+      "proposed": "Show a 'View live page →' link in the publish panel the moment status becomes Published"
+    }
+  },
+  {
+    "id": "13-executive-006",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "Per-page readiness is a paragraph-dense report (8 signal rows plus 7 action items) with no one-line verdict.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Search visibility Strong ... Search result Needs work ... Action Items Highest impact first"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-001-load.png",
+        "quote": "Readiness and publish panel dense with signal rows"
+      }
+    ],
+    "persona_rationale": "I will not read seven action items; I need the verdict in one line and the option to delegate the rest.",
+    "suggested_fix": {
+      "current": "Full readiness report shown expanded",
+      "proposed": "One summary line ('Ready to publish' or '2 blockers, 3 suggestions') with the detail collapsed beneath it"
+    }
+  },
+  {
+    "id": "13-executive-007",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": null,
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "The disabled Publish button is not obviously disabled at a glance; the greyed state sits next to small blocker text.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "Publish button greyed with 'Fix SEO title' in small text beside it"
+      }
+    ],
+    "persona_rationale": "I shouldn't have to study the screen to learn why an action won't work; it should announce its own state.",
+    "suggested_fix": {
+      "current": "Subtly greyed Publish button with small blocker text",
+      "proposed": "Clearly disabled button with an inline 'Can't publish yet — 1 blocker' label beside it"
+    }
+  }
+]

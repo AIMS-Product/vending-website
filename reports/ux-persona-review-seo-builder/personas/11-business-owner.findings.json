@@ -1,0 +1,323 @@
+[
+  {
+    "id": "11-business-owner-001",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Forms & Input",
+    "severity": "critical",
+    "finding": "Publish blockers are revealed one at a time in a tiny status chip rather than all at once",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "Fix SEO title"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Publish is gated behind a chain of readiness blockers that are revealed ONE AT A TIME in the status chip"
+      }
+    ],
+    "persona_rationale": "I have 10 minutes between customers; fixing one blocker, re-clicking, hunting for the next, and repeating burns my whole window before the page is live.",
+    "suggested_fix": {
+      "current": "Status chip shows a single blocker (e.g. 'Fix SEO title'), the next only appears after the first is resolved",
+      "proposed": "Show a single 'Before you can publish' checklist listing every remaining blocker at once, each row deep-linking to the field that fixes it"
+    }
+  },
+  {
+    "id": "11-business-owner-002",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The 'Fix SEO title' publish blocker contradicts the SEO title field's own helper text, which says the field can be left blank",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "SEO title ... /placeholder: Leave blank to use page headline"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "'Fix SEO title' (shown even though the SEO title field says 'Leave blank to use page headline')"
+      }
+    ],
+    "persona_rationale": "Being told to fix a field the tool itself says I can leave blank makes me distrust every message the builder shows me.",
+    "suggested_fix": {
+      "current": "Blocker reads 'Fix SEO title' while the field helper reads 'Leave blank to use page headline'",
+      "proposed": "Don't block on a missing SEO title when it falls back to the headline; if the issue is the keyword, reword to 'Add your keyword to the headline or SEO title'"
+    }
+  },
+  {
+    "id": "11-business-owner-003",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Forms & Input",
+    "severity": "critical",
+    "finding": "A required 'Destination URL' publish blocker points at a field that is hidden inside a block-settings modal, not visible on the canvas",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the destination field is NOT on the canvas; it lives in Block actions → Edit settings modal ('CTA destination URL'). The blocker text gives no hint where the field is"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-11-block-settings-modal.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "I'd hunt the visible page for a field that isn't there, run out of time, and give up before publishing.",
+    "suggested_fix": {
+      "current": "'Fix content 1 · Destination URL' with the field only reachable via Block actions → Edit settings",
+      "proposed": "Surface the CTA destination field inline on the block, or make the blocker a button that opens the correct block-settings modal directly"
+    }
+  },
+  {
+    "id": "11-business-owner-004",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "After saving a scheduled publish date the field re-renders empty and no 'Scheduled for…' status appears anywhere",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the field re-rendered EMPTY and no 'Scheduled for …' status appeared anywhere in the editor"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Scheduled publish dd/mm/yyyy, --:-- --"
+      }
+    ],
+    "persona_rationale": "If I can't see that my schedule actually saved, I can't trust the tool to publish on its own while I'm serving customers, so I'd never use scheduling.",
+    "suggested_fix": {
+      "current": "Schedule field blanks after save with no confirmation",
+      "proposed": "After save, show a persistent banner 'Scheduled to publish {date} {time}' with a Cancel button, and reflect 'Scheduled' status in the editor header"
+    }
+  },
+  {
+    "id": "11-business-owner-005",
+    "page": "/admin/pages/{id}",
+    "journey": "schedule-publish",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "Schedule help text says publishing uses Pacific Time for what is an Australian business",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "Uses Pacific Time (America/Los_Angeles). Leave blank unless this page should publish later."
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Label says 'Uses Pacific Time (America/Los_Angeles)' — for an Australian business"
+      }
+    ],
+    "persona_rationale": "I'd have to do US timezone maths to schedule a morning post for my own customers, and I'll get it wrong.",
+    "suggested_fix": {
+      "current": "'Uses Pacific Time (America/Los_Angeles)'",
+      "proposed": "Use the business's local Australian timezone (or let the admin pick) and show the resolved local publish time"
+    }
+  },
+  {
+    "id": "11-business-owner-006",
+    "page": "/admin/pages/{id}",
+    "journey": "revision-restore",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "Saving a draft creates no restore point; revisions only appear after the page has been published",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "revisions do NOT exist while drafting. Empty state: 'Revisions appear after publishing, library refreshes, or draft restores.' Saving a draft creates no restore point"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-revision-restore-04-preview-revision.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "I work in interrupted bursts; the moment I most need an undo is when I come back and accidentally wreck a draft before I've ever published it.",
+    "suggested_fix": {
+      "current": "Restore points only exist after first publish",
+      "proposed": "Snapshot the draft on every save so a pre-publish mistake can be rolled back from the revision panel"
+    }
+  },
+  {
+    "id": "11-business-owner-007",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "Created redirects have no delete or edit control, so a mistyped redirect is permanent from the admin UI",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "Redirects table has no delete/edit controls — created redirects cannot be removed from this UI."
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-redirects-001-load.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "If I fat-finger a path between customers, that mistake becomes a permanent redirect I have no way to undo from where I'm working.",
+    "suggested_fix": {
+      "current": "Redirects table is read-only (Old path / Destination / Status / Source / Created, no actions column)",
+      "proposed": "Add a delete action (with confirm) and an edit action to each redirect row"
+    }
+  },
+  {
+    "id": "11-business-owner-008",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Visual & Layout",
+    "severity": "medium",
+    "finding": "The Readiness column in the pages list is coloured dots only, with no legend or labels",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "READINESS column shows red/amber/blue dots with no labels"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "SEO readiness: Needs work / SEO readiness: Blocked / SEO readiness: Opportunities"
+      }
+    ],
+    "persona_rationale": "Colour-only dots make me anxious without telling me which page needs my attention first or what to do about it.",
+    "suggested_fix": {
+      "current": "Readiness shown as an unlabelled coloured dot per row",
+      "proposed": "Add a visible label or tooltip per dot ('Ready' / 'Needs work' / 'Blocked') and a small legend above the table"
+    }
+  },
+  {
+    "id": "11-business-owner-009",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Copy & Labels",
+    "severity": "medium",
+    "finding": "Two parallel filter rows, the second using internal jargon ('Needs links', 'Updating', 'Metadata issues', 'Schedule failed')",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "All metadata Needs review Updating Needs links Metadata issues Scheduled Schedule failed"
+      },
+      { "type": "screenshot", "ref": "admin-pages-001-load.png", "quote": "" }
+    ],
+    "persona_rationale": "Seven extra jargon buttons I don't understand add mental load when all I want is to find my one page.",
+    "suggested_fix": {
+      "current": "Status filter row plus a separate workflow filter row with terms like 'Needs links' and 'Metadata issues'",
+      "proposed": "Collapse the workflow filters into one 'Filter' control with plain-language labels and tooltips explaining each"
+    }
+  },
+  {
+    "id": "11-business-owner-010",
+    "page": "/admin/pages/{id}",
+    "journey": "create-first-page",
+    "category": "Visual & Layout",
+    "severity": "high",
+    "finding": "The editor's SEO panel is an information dump: readiness chip, five form fields, eight scored rows, seven action items, plus media/governance/AI/comments sections",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+        "quote": "Search visibility ... Search result ... Page content ... FAQ help ... Internal links ... Images ... Enquiries ... Trust proof ... Action Items ... Governance comments"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-001-load.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "I want to write my page and publish it, not read a full SEO audit dashboard before I'm allowed to act.",
+    "suggested_fix": {
+      "current": "Editor defaults to showing the full SEO audit, action items, governance and comments panels",
+      "proposed": "Default to a minimal Title / content / Publish view and tuck the SEO audit behind a collapsible 'SEO score' section"
+    }
+  },
+  {
+    "id": "11-business-owner-011",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "A 3-step wizard (13 clicks) must be completed before any content can be entered",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Clicks: 13 | Page loads: 3 ... 3-step choice gate (Resource → Blank page → Start building)"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-new-text.md",
+        "quote": "Step 1 of 3 ... What kind of page are you creating?"
+      }
+    ],
+    "persona_rationale": "Three screens of choices before I can type a single word is overhead for a quick job between customers.",
+    "suggested_fix": {
+      "current": "Mandatory 3-step page-type wizard before the editor opens",
+      "proposed": "Default to 'Resource page' and drop straight into the editor, with a one-line 'Change page type' link for the rare case it differs"
+    }
+  },
+  {
+    "id": "11-business-owner-012",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "After the 'Changes published.' toast, the inline confirm-publish card stays open asking to publish again",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "'Changes published.' toast appears BUT the confirm card remains open asking to publish again ('This will replace the current live version…')"
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-13-confirm-card.png",
+        "quote": "Confirm publish Publish this page? This will make this draft visible at /resources/ux-seo-review-test-1781071765035."
+      }
+    ],
+    "persona_rationale": "I can't tell whether it actually published or whether I still need to click again, so I'd re-click and worry I double-published.",
+    "suggested_fix": {
+      "current": "Confirm-publish card persists after the success toast",
+      "proposed": "Dismiss the confirm card on success and replace it with 'Published ✓ — View live page'"
+    }
+  },
+  {
+    "id": "11-business-owner-013",
+    "page": "/admin/pages/{id}",
+    "journey": "publish-and-view-live",
+    "category": "Navigation & Flow",
+    "severity": "medium",
+    "finding": "No 'Open live page' link is shown after publishing in the default panel state; the live URL had to be typed manually",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "No 'Open live page' link was visible after publishing in the default panel state — the live URL had to be typed manually."
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-09-after-publish.png",
+        "quote": ""
+      }
+    ],
+    "persona_rationale": "After all that effort I want one click to see my page live, not to remember and type a URL.",
+    "suggested_fix": {
+      "current": "No live-page link surfaced after a successful publish",
+      "proposed": "Show a 'View live page' link in the post-publish success state"
+    }
+  }
+]

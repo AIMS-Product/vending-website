@@ -31,6 +31,7 @@ export async function createProofItem(formData: FormData) {
     name: field(formData, "name"),
     roleOrContext: field(formData, "roleOrContext"),
     sourceRightsNotes: field(formData, "sourceRightsNotes"),
+    assetId: field(formData, "assetId"),
     approved: formData.get("approved") === "on",
   });
   revalidatePath(ADMIN_LIBRARIES_PATH);

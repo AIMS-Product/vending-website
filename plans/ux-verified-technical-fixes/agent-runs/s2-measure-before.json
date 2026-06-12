@@ -1,0 +1,117 @@
+{
+  "label": "before",
+  "baseUrl": "http://localhost:3000",
+  "desktop": {
+    "headerHeight": 82,
+    "navLinks": [
+      {
+        "text": "ABOUT",
+        "height": 20
+      },
+      {
+        "text": "RESOURCES",
+        "height": 20
+      },
+      {
+        "text": "CASE STUDIES",
+        "height": 20
+      },
+      {
+        "text": "NEWS",
+        "height": 20
+      }
+    ],
+    "footerLinks": [
+      {
+        "text": "HOME",
+        "height": 17
+      },
+      {
+        "text": "ABOUT",
+        "height": 17
+      },
+      {
+        "text": "RESOURCES",
+        "height": 17
+      },
+      {
+        "text": "CASE STUDIES",
+        "height": 17
+      },
+      {
+        "text": "NEWS",
+        "height": 17
+      },
+      {
+        "text": "CONTACT US",
+        "height": 17
+      },
+      {
+        "text": "TERMS",
+        "height": 17
+      },
+      {
+        "text": "PRIVACY POLICY",
+        "height": 17
+      }
+    ]
+  },
+  "mobile": {
+    "navLinks": [
+      {
+        "text": "ABOUT",
+        "height": 48
+      },
+      {
+        "text": "RESOURCES",
+        "height": 48
+      },
+      {
+        "text": "CASE STUDIES",
+        "height": 48
+      },
+      {
+        "text": "NEWS",
+        "height": 48
+      },
+      {
+        "text": "STEP INSIDE",
+        "height": 48
+      }
+    ],
+    "footerLinks": [
+      {
+        "text": "HOME",
+        "height": 17
+      },
+      {
+        "text": "ABOUT",
+        "height": 17
+      },
+      {
+        "text": "RESOURCES",
+        "height": 17
+      },
+      {
+        "text": "CASE STUDIES",
+        "height": 17
+      },
+      {
+        "text": "NEWS",
+        "height": 17
+      },
+      {
+        "text": "CONTACT US",
+        "height": 17
+      },
+      {
+        "text": "TERMS",
+        "height": 17
+      },
+      {
+        "text": "PRIVACY POLICY",
+        "height": 17
+      }
+    ]
+  }
+}

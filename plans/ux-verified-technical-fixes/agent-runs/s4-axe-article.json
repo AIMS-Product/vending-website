@@ -1,0 +1,13 @@
+{
+  "url": "http://localhost:3000/news/how-to-choose-the-perfect-location-for-vending-machine",
+  "probeLink": {
+    "color": "rgb(6, 106, 153)",
+    "textDecorationLine": "underline",
+    "fontWeight": "800",
+    "renderedBackground": "rgb(245, 251, 255)"
+  },
+  "totalColorContrastViolations": 0,
+  "seriousOrCritical": 0,
+  "proseScopedSeriousOrCritical": 0,
+  "violations": []
+}

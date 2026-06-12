@@ -23,6 +23,7 @@ import { OptionalBlockField } from "@/components/admin/seo-page-editor/OptionalB
 import { HERO_BODY_MAX_LENGTH } from "@/components/admin/seo-page-editor/editor-limits";
 import {
   applyMediaAssetToImageBlock,
+  applyMediaAssetToProofBlock,
   applyMediaAssetToSplitHeroBlock,
   applyMediaAssetToVideoBlock,
   applyMediaAssetToVideoThumbnailBlock,
@@ -50,12 +51,12 @@ export function BlockSidebarSettingsPanel({
           <OptionalBlockField
             block={block}
             field="eyebrow"
-            label="Eyebrow"
+            label="Overline (eyebrow)"
             onChange={onChange}
           >
             <TextInput
               hideLabel
-              label="Eyebrow"
+              label="Overline (eyebrow)"
               value={block.props.eyebrow}
               placeholder={blockCanvasPlaceholders.rich_text.eyebrow}
               onChange={(value) =>
@@ -103,12 +104,12 @@ export function BlockSidebarSettingsPanel({
           <OptionalBlockField
             block={block}
             field="eyebrow"
-            label="Eyebrow"
+            label="Overline (eyebrow)"
             onChange={onChange}
           >
             <TextInput
               hideLabel
-              label="Eyebrow"
+              label="Overline (eyebrow)"
               value={block.props.eyebrow}
               placeholder={blockCanvasPlaceholders.hero.eyebrow}
               onChange={(value) =>
@@ -151,7 +152,7 @@ export function BlockSidebarSettingsPanel({
           <OptionalBlockField
             block={block}
             field="cta"
-            label="CTA"
+            label="Call to action (CTA)"
             onChange={onChange}
           >
             <div className="grid gap-4 sm:grid-cols-2">
@@ -794,12 +795,12 @@ export function BlockSidebarSettingsPanel({
           <OptionalBlockField
             block={block}
             field="eyebrow"
-            label="Eyebrow"
+            label="Overline (eyebrow)"
             onChange={onChange}
           >
             <TextInput
               hideLabel
-              label="Eyebrow"
+              label="Overline (eyebrow)"
               value={block.props.eyebrow}
               placeholder={blockCanvasPlaceholders.proof.eyebrow}
               onChange={(value) =>
@@ -858,6 +859,59 @@ export function BlockSidebarSettingsPanel({
               }
             />
           </OptionalBlockField>
+          <div>
+            <p className="text-sm font-medium text-slate-700">
+              Media library asset
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {selectedMediaAssetLabel(
+                assets,
+                block.props.assetId,
+                block.props.mediaSrc,
+              )}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <MediaLibrarySelectButton
+                label="Choose from library"
+                onClick={() =>
+                  openMediaPicker({
+                    allowedTypes: ["image"],
+                    onSelect: (asset) =>
+                      onChange(applyMediaAssetToProofBlock(block, asset)),
+                  })
+                }
+              />
+              {(block.props.assetId || block.props.mediaSrc) && (
+                <button
+                  type="button"
+                  className={secondaryButtonClass}
+                  onClick={() =>
+                    onChange({
+                      ...block,
+                      props: {
+                        ...block.props,
+                        assetId: undefined,
+                        mediaSrc: "",
+                        mediaAltText: "",
+                      },
+                    })
+                  }
+                >
+                  Clear media
+                </button>
+              )}
+            </div>
+          </div>
+          <TextInput
+            label="Media alt text"
+            value={block.props.mediaAltText ?? ""}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                props: { ...block.props, mediaAltText: value },
+              })
+            }
+          />
           <TextInput
             label="Proof item ID"
             value={block.props.proofItemId ?? ""}

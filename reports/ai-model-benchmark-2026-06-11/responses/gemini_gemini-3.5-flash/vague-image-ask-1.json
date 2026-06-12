@@ -1,0 +1,113 @@
+{
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add an image section with text about campus vending."
+      }
+    ],
+    "context": {
+      "pageId": "11111111-1111-4111-8111-111111111111",
+      "status": "draft",
+      "title": "Coffee vending for offices",
+      "slug": "coffee-vending-offices",
+      "pageType": "resource",
+      "templateKey": "blank",
+      "targetKeyword": "coffee vending machines for offices",
+      "seoTitle": "Coffee vending for offices",
+      "metaDescription": "Coffee vending machines for modern workplaces.",
+      "selectedBlockId": "block_hero",
+      "content": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "section_1",
+            "preset": "standard",
+            "background": "default",
+            "spacing": "standard",
+            "columns": [
+              {
+                "id": "column_1",
+                "width": "1/1",
+                "blocks": [
+                  {
+                    "id": "block_hero",
+                    "type": "hero",
+                    "variant": "standard",
+                    "props": {
+                      "eyebrow": "",
+                      "heading": "Old headline",
+                      "body": "Old body copy about machines.",
+                      "ctaLabel": "Apply now",
+                      "ctaHref": "/apply",
+                      "ctaTrackingName": "apply-now",
+                      "mediaSrc": "",
+                      "mediaAltText": "",
+                      "mediaCaption": "",
+                      "proofText": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "publishReadiness": {
+        "blockers": [],
+        "warnings": [],
+        "opportunities": []
+      }
+    }
+  },
+  "response": {
+    "message": "",
+    "toolCalls": [
+      {
+        "id": "p87yw1jt",
+        "name": "request_clarification",
+        "input": {
+          "options": [
+            "Proceed with a text-only section about campus vending first (you can add an image later)",
+            "Provide a specific image URL or path now to build the paired image-and-text section"
+          ]
+        }
+      }
+    ]
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "extra_content": {
+                "google": {
+                  "thought_signature": "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"
+                }
+              },
+              "function": {
+                "arguments": "{\"options\":[\"Proceed with a text-only section about campus vending first (you can add an image later)\",\"Provide a specific image URL or path now to build the paired image-and-text section\"]}",
+                "name": "request_clarification"
+              },
+              "id": "p87yw1jt",
+              "type": "function"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1781141384,
+    "id": "hA8qatDWM86kjuMP_ZbdyAo",
+    "model": "gemini-3.5-flash",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 56,
+      "prompt_tokens": 4427,
+      "total_tokens": 4901
+    }
+  }
+}

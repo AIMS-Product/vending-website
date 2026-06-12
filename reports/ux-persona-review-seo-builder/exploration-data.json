@@ -1,0 +1,504 @@
+{
+  "pages": [
+    {
+      "route": "/admin/pages",
+      "label": "Pages list",
+      "slug": "admin-pages",
+      "status": "OK",
+      "screenshots": ["admin-pages-001-load.png", "admin-pages-002-full.png"],
+      "inventory": [
+        {
+          "element": "details/summary",
+          "bucket": "safe",
+          "text": "Sort dropdown",
+          "result": "menu opened",
+          "screenshot": "admin-pages-010-sort-open.png"
+        },
+        {
+          "element": "link",
+          "bucket": "safe",
+          "text": "Status filter: Drafts",
+          "result": "filtered view",
+          "screenshot": "admin-pages-012-filter-drafts.png"
+        },
+        {
+          "element": "link",
+          "bucket": "safe",
+          "text": "Status filter: Published",
+          "result": "filtered view",
+          "screenshot": "admin-pages-012-filter-published.png"
+        },
+        {
+          "element": "link",
+          "bucket": "safe",
+          "text": "Status filter: Archived",
+          "result": "filtered view",
+          "screenshot": "admin-pages-012-filter-archived.png"
+        },
+        {
+          "element": "link",
+          "bucket": "safe",
+          "text": "Status filter: All",
+          "result": "filtered view",
+          "screenshot": "admin-pages-012-filter-all.png"
+        },
+        {
+          "element": "link",
+          "bucket": "safe",
+          "text": "Workflow filter: Scheduled",
+          "result": "filtered view",
+          "screenshot": "admin-pages-013-filter-scheduled.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Clear search",
+          "result": "search cleared",
+          "screenshot": ""
+        },
+        {
+          "element": "details/summary",
+          "bucket": "safe",
+          "text": "Row ⋮ menu (pre-existing page)",
+          "result": "menu opened; destructive items NOT clicked",
+          "screenshot": "admin-pages-017-row-menu-open.png"
+        }
+      ],
+      "forms": [
+        {
+          "form": "pages search",
+          "fields": "search",
+          "bucket": "safe",
+          "emptySubmit": "submitted (see screenshot)",
+          "invalidSubmit": "no-results query → \"No matching SEO pages\"",
+          "validSubmit": "query 'test' submitted",
+          "screenshots": "admin-pages-014-search-empty-submit.png, admin-pages-015-search-no-results.png, admin-pages-016-search-test.png"
+        }
+      ],
+      "responsive": [
+        {
+          "viewport": "mobile",
+          "screenshot": "admin-pages-mobile.png",
+          "issues": "OK"
+        },
+        {
+          "viewport": "tablet",
+          "screenshot": "admin-pages-tablet.png",
+          "issues": "OK"
+        }
+      ],
+      "consoleErrors": [],
+      "failedRequests": [],
+      "notes": [],
+      "perf": {
+        "domContentLoaded": 1446,
+        "load": 1446,
+        "cls": 0
+      },
+      "textExtract": "admin-pages-text.md",
+      "axeCount": 0,
+      "axeIds": []
+    },
+    {
+      "route": "/admin/pages/new",
+      "label": "Create page (choice gate)",
+      "slug": "admin-pages-new",
+      "status": "Error: locator.click: Timeout 30000ms exceeded.",
+      "screenshots": [
+        "admin-pages-new-001-load.png",
+        "admin-pages-new-002-full.png"
+      ],
+      "inventory": [
+        {
+          "element": "wizard",
+          "bucket": "safe",
+          "text": "Step 1: Page type",
+          "result": "Resource preselected",
+          "screenshot": "admin-pages-new-001-load.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Continue → Step 2",
+          "result": "starting point step",
+          "screenshot": "admin-pages-new-010-step2.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Back → Step 1",
+          "result": "returned to step 1",
+          "screenshot": "admin-pages-new-011-back-step1.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Continue → Step 3",
+          "result": "ready-to-build step",
+          "screenshot": "admin-pages-new-012-step3.png"
+        },
+        {
+          "element": "button",
+          "bucket": "creation",
+          "text": "Start building",
+          "result": "editor opened (unsaved)",
+          "screenshot": "admin-pages-new-013-editor-unsaved.png"
+        }
+      ],
+      "forms": [],
+      "responsive": [],
+      "consoleErrors": [],
+      "failedRequests": [],
+      "notes": [],
+      "perf": {
+        "domContentLoaded": 349,
+        "load": 350,
+        "cls": 0
+      },
+      "textExtract": "admin-pages-new-text.md",
+      "axeCount": 1,
+      "axeIds": ["landmark-unique(moderate)"]
+    },
+    {
+      "route": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+      "label": "Page editor (session-created page)",
+      "slug": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378",
+      "status": "OK",
+      "screenshots": [
+        "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-001-load.png",
+        "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-002-full.png"
+      ],
+      "inventory": [
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Blocks panel toggle",
+          "result": "sidebar expanded",
+          "screenshot": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-010-blocks-panel.png"
+        },
+        {
+          "element": "details/summary",
+          "bucket": "safe",
+          "text": "Share menu",
+          "result": "menu opened (Copy editor link / Copy public URL)",
+          "screenshot": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-011-share-menu.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Add page content (block picker)",
+          "result": "picker dialog opened",
+          "screenshot": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-012-block-picker.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Block actions menu",
+          "result": "menu opened (Edit settings / Duplicate content / Remove content)",
+          "screenshot": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-013-block-actions.png"
+        },
+        {
+          "element": "button",
+          "bucket": "safe",
+          "text": "Edit settings (block modal)",
+          "result": "settings modal opened",
+          "screenshot": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-014-block-settings.png"
+        },
+        {
+          "element": "section",
+          "bucket": "safe",
+          "text": "Revision history",
+          "result": "entries visible after publish",
+          "screenshot": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-018-revisions.png"
+        }
+      ],
+      "forms": [
+        {
+          "form": "Governance comments",
+          "fields": "blockId (optional), body",
+          "bucket": "creation",
+          "emptySubmit": "see screenshot",
+          "invalidSubmit": "n/a (single textarea)",
+          "validSubmit": "comment submitted",
+          "screenshots": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-016-comment-empty-submit.png, admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-017-comment-submitted.png"
+        }
+      ],
+      "responsive": [
+        {
+          "viewport": "mobile",
+          "screenshot": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-mobile.png",
+          "issues": "OK"
+        },
+        {
+          "viewport": "tablet",
+          "screenshot": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-tablet.png",
+          "issues": "OK"
+        }
+      ],
+      "consoleErrors": [],
+      "failedRequests": [],
+      "notes": [
+        "Block picker types: Hero, Text, Image, CTA, FAQ, Cards, Proof, Video, Form"
+      ],
+      "perf": {
+        "domContentLoaded": 542,
+        "load": 550,
+        "cls": 0
+      },
+      "textExtract": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-text.md",
+      "axeCount": 3,
+      "axeIds": [
+        "aria-prohibited-attr(serious)",
+        "landmark-complementary-is-top-level(moderate)"
+      ]
+    },
+    {
+      "route": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378/revisions/7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25",
+      "label": "Revision preview",
+      "slug": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-revisions-7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25",
+      "status": "OK",
+      "screenshots": [
+        "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-revisions-7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25-001-load.png",
+        "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-revisions-7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25-002-full.png"
+      ],
+      "inventory": [
+        {
+          "element": "link",
+          "bucket": "safe",
+          "text": "Back to editor",
+          "result": "present",
+          "screenshot": ""
+        }
+      ],
+      "forms": [],
+      "responsive": [
+        {
+          "viewport": "mobile",
+          "screenshot": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-revisions-7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25-mobile.png",
+          "issues": "OK"
+        },
+        {
+          "viewport": "tablet",
+          "screenshot": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-revisions-7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25-tablet.png",
+          "issues": "OK"
+        }
+      ],
+      "consoleErrors": [],
+      "failedRequests": [],
+      "notes": [],
+      "perf": {
+        "domContentLoaded": 576,
+        "load": 577,
+        "cls": 0
+      },
+      "textExtract": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-revisions-7c80faa3-14c9-4f0d-8d2b-af51cb9d7d25-text.md",
+      "axeCount": 3,
+      "axeIds": [
+        "landmark-main-is-top-level(moderate)",
+        "landmark-no-duplicate-main(moderate)",
+        "landmark-unique(moderate)"
+      ]
+    },
+    {
+      "route": "/admin/pages/redirects",
+      "label": "Redirects manager",
+      "slug": "admin-pages-redirects",
+      "status": "OK",
+      "screenshots": [
+        "admin-pages-redirects-001-load.png",
+        "admin-pages-redirects-002-full.png"
+      ],
+      "inventory": [],
+      "forms": [
+        {
+          "form": "Create redirect",
+          "fields": "sourcePath, destinationPath, statusCode, pageId(adv)",
+          "bucket": "creation",
+          "emptySubmit": "see screenshot",
+          "invalidSubmit": "error copy: \"invalid\"; values preserved: false",
+          "validSubmit": "redirect created",
+          "screenshots": "admin-pages-redirects-010-form-empty-submit.png, admin-pages-redirects-011-form-invalid-submit.png, admin-pages-redirects-012-form-valid-submit.png"
+        }
+      ],
+      "responsive": [
+        {
+          "viewport": "mobile",
+          "screenshot": "admin-pages-redirects-mobile.png",
+          "issues": "OK"
+        },
+        {
+          "viewport": "tablet",
+          "screenshot": "admin-pages-redirects-tablet.png",
+          "issues": "OK"
+        }
+      ],
+      "consoleErrors": [],
+      "failedRequests": [],
+      "notes": [
+        "Redirects table has no delete/edit controls — created redirects cannot be removed from this UI."
+      ],
+      "perf": {
+        "domContentLoaded": 316,
+        "load": 317,
+        "cls": 0
+      },
+      "textExtract": "admin-pages-redirects-text.md",
+      "axeCount": 0,
+      "axeIds": []
+    },
+    {
+      "route": "/admin/pages/block-preview-audit",
+      "label": "Block preview audit (dev QA)",
+      "slug": "admin-pages-block-preview-audit",
+      "status": "OK",
+      "screenshots": [
+        "admin-pages-block-preview-audit-001-load.png",
+        "admin-pages-block-preview-audit-002-full.png"
+      ],
+      "inventory": [],
+      "forms": [],
+      "responsive": [
+        {
+          "viewport": "mobile",
+          "screenshot": "admin-pages-block-preview-audit-mobile.png",
+          "issues": "OK"
+        },
+        {
+          "viewport": "tablet",
+          "screenshot": "admin-pages-block-preview-audit-tablet.png",
+          "issues": "OK"
+        }
+      ],
+      "consoleErrors": [],
+      "failedRequests": [],
+      "notes": ["30 block preview parity cases rendered"],
+      "perf": {
+        "domContentLoaded": 1446,
+        "load": 1453,
+        "cls": 0
+      },
+      "textExtract": "admin-pages-block-preview-audit-text.md",
+      "axeCount": 0,
+      "axeIds": []
+    },
+    {
+      "route": "/resources/ux-seo-review-test-1781071765035",
+      "label": "Published page (public)",
+      "slug": "resources-ux-seo-review-test-1781071765035",
+      "status": "OK",
+      "screenshots": [
+        "resources-ux-seo-review-test-1781071765035-001-load.png",
+        "resources-ux-seo-review-test-1781071765035-002-full.png"
+      ],
+      "inventory": [
+        {
+          "element": "link",
+          "bucket": "safe",
+          "text": "Hero CTA",
+          "result": "href=/about",
+          "screenshot": ""
+        },
+        {
+          "element": "disclosure",
+          "bucket": "safe",
+          "text": "FAQ item toggle",
+          "result": "toggled",
+          "screenshot": "resources-ux-seo-review-test-1781071765035-010-faq-toggle.png"
+        }
+      ],
+      "forms": [],
+      "responsive": [
+        {
+          "viewport": "mobile",
+          "screenshot": "resources-ux-seo-review-test-1781071765035-mobile.png",
+          "issues": "OK"
+        },
+        {
+          "viewport": "tablet",
+          "screenshot": "resources-ux-seo-review-test-1781071765035-tablet.png",
+          "issues": "OK"
+        }
+      ],
+      "consoleErrors": [],
+      "failedRequests": [],
+      "notes": [],
+      "perf": {
+        "domContentLoaded": 761,
+        "load": 761,
+        "cls": 0
+      },
+      "textExtract": "resources-ux-seo-review-test-1781071765035-text.md",
+      "axeCount": 0,
+      "axeIds": []
+    },
+    {
+      "route": "/resources/preview/2eSNnEXLh0znXOYIrUm2Hjk7ieSeIqY2P1z0wTAPiWw",
+      "label": "Draft preview (token URL)",
+      "slug": "resources-preview-2eSNnEXLh0znXOYIrUm2Hjk7ieSeIqY2P1z0wTAPiWw",
+      "status": "OK",
+      "screenshots": [
+        "resources-preview-2eSNnEXLh0znXOYIrUm2Hjk7ieSeIqY2P1z0wTAPiWw-001-load.png",
+        "resources-preview-2eSNnEXLh0znXOYIrUm2Hjk7ieSeIqY2P1z0wTAPiWw-002-full.png"
+      ],
+      "inventory": [],
+      "forms": [],
+      "responsive": [
+        {
+          "viewport": "mobile",
+          "screenshot": "resources-preview-2eSNnEXLh0znXOYIrUm2Hjk7ieSeIqY2P1z0wTAPiWw-mobile.png",
+          "issues": "OK"
+        },
+        {
+          "viewport": "tablet",
+          "screenshot": "resources-preview-2eSNnEXLh0znXOYIrUm2Hjk7ieSeIqY2P1z0wTAPiWw-tablet.png",
+          "issues": "OK"
+        }
+      ],
+      "consoleErrors": [],
+      "failedRequests": [],
+      "notes": [
+        "Token-based draft preview; checks that draft content renders for reviewers without login."
+      ],
+      "perf": {
+        "domContentLoaded": 745,
+        "load": 746,
+        "cls": 0
+      },
+      "textExtract": "resources-preview-2eSNnEXLh0znXOYIrUm2Hjk7ieSeIqY2P1z0wTAPiWw-text.md",
+      "axeCount": 0,
+      "axeIds": []
+    }
+  ],
+  "skips": [
+    {
+      "page": "/admin/pages",
+      "element": "Duplicate/Publish/Archive in row menu",
+      "target": "pre-existing pages",
+      "reason": "destructive/creation on pre-existing data",
+      "screenshot": "admin-pages-017-row-menu-open.png"
+    },
+    {
+      "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+      "element": "Remove content (block delete)",
+      "target": "session-created block",
+      "reason": "kept for exploration; destructive flow screenshotted via menu",
+      "screenshot": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-013-block-actions.png"
+    },
+    {
+      "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+      "element": "Revoke (preview token)",
+      "target": "session-created token",
+      "reason": "kept active for preview-page exploration",
+      "screenshot": "admin-pages-e44f0fc3-0dcf-480f-9c99-f3409c690378-018-revisions.png"
+    },
+    {
+      "page": "/admin/pages/redirects",
+      "element": "(no delete control exists)",
+      "target": "test redirects",
+      "reason": "UI offers no way to delete redirects — cleanup impossible from admin",
+      "screenshot": "admin-pages-redirects-012-form-valid-submit.png"
+    }
+  ],
+  "shotCount": 56,
+  "interactions": 22
+}

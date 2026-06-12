@@ -1,0 +1,277 @@
+[
+  {
+    "id": "06-skeptic-001",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "After publishing, the 'Changes published.' success toast fires but the inline 'Confirm publish' card stays open and now reads 'This will replace the current live version at /resources/...' with an active blue 'Confirm publish' button. The UI simultaneously claims success and asks me to publish again, so I cannot tell whether the publish actually happened or whether I'm about to push a second time.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-09-after-publish.png",
+        "quote": "Changes published. + Confirm publish — Publish this page? — This will replace the current live version at /resources/ux-seo-review-test-1781071765035."
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "After confirming, \"Changes published.\" toast appears BUT the confirm card remains open asking to publish again (\"This will replace the current live version…\")."
+      }
+    ],
+    "persona_rationale": "I have been burned by tools that say one thing and do another. A success message next to a live 'Confirm publish' button is exactly the kind of ambiguity that makes me distrust whether my public site is in the state the tool claims — and it tempts an anxious user into double-publishing.",
+    "suggested_fix": {
+      "current": "Success toast shows while the confirm card remains open with an active 'Confirm publish' button reading 'This will replace the current live version'",
+      "proposed": "On successful publish, dismiss the confirm card entirely and replace it with a settled state: 'Published to /resources/... · just now' plus a 'View live page' link. Never leave an active confirm button after the action completed."
+    }
+  },
+  {
+    "id": "06-skeptic-002",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "schedule-publish",
+    "category": "Feedback & State",
+    "severity": "critical",
+    "finding": "Scheduling a publish gives no honest confirmation. After entering a date/time and saving, the only feedback is a generic 'Draft saved.' toast; the Scheduled publish field re-renders EMPTY ('dd/mm/yyyy, --:-- --') and no 'Scheduled for {date}' status appears anywhere in the editor. There is no way to confirm the site is actually queued to go live at a future time.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-05-verify-scheduled.png",
+        "quote": "'Draft saved.' toast with Scheduled publish field showing 'dd/mm/yyyy, --:-- --' (empty) and no scheduled-for status"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "After filling a date/time and saving, the field re-rendered EMPTY and no \"Scheduled for …\" status appeared anywhere in the editor"
+      }
+    ],
+    "persona_rationale": "Scheduling something to publish itself to my live site while I'm not watching is the single highest-trust action in this tool. If it can't even confirm back to me that a schedule was set, I will never use it — I'd assume it silently failed and publish manually instead, which defeats the feature.",
+    "suggested_fix": {
+      "current": "Generic 'Draft saved.' toast; scheduled field clears with no status shown",
+      "proposed": "Persist and echo the value: keep the entered date/time in the field and show a clear banner 'Scheduled to publish on Thu 11 Jun 2026, 12:00 (ACST)' with a visible 'Cancel schedule' button. Also reflect it on the pages list status column."
+    }
+  },
+  {
+    "id": "06-skeptic-003",
+    "page": "/admin/pages/redirects",
+    "journey": "create-redirect",
+    "category": "Trust & Safety",
+    "severity": "critical",
+    "finding": "Created redirects cannot be edited or deleted from the admin UI. The redirects table has only Old path / Destination / Status / Source / Created columns and no Actions column — once a 301 is created it is permanent from this screen. A typo in an old path (e.g. a wrong slug) becomes an unremovable, indexable redirect on the live site.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-create-redirect-05-verify-redirect-listed.png",
+        "quote": "Redirects table columns: OLD PATH / DESTINATION / STATUS / SOURCE / CREATED — no actions/delete column"
+      },
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "Redirects table has no delete/edit controls — created redirects cannot be removed from this UI."
+      }
+    ],
+    "persona_rationale": "301s are permanent by design and search engines cache them — a mistaken redirect on a public page can quietly break SEO for months. A tool that lets me create live redirects but never undo them is a liability I would not trust with my company's pages.",
+    "suggested_fix": {
+      "current": "No edit or delete control on redirect rows",
+      "proposed": "Add an Actions column with 'Edit' and 'Delete' per row, with a confirmation dialog on delete ('Remove redirect from /old to /new? Visitors using the old URL will get a 404.')."
+    }
+  },
+  {
+    "id": "06-skeptic-004",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "Leaving the editor with unsaved work gives no warning and silently discards it. In the supplementary gate pass, a title was typed into a fresh editor, then navigating away to /admin/pages discarded the typed title with no 'unsaved changes' prompt.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "exploration-log.md",
+        "quote": "Leaving unsaved editor: navigated straight to /admin/pages with NO unsaved-changes warning — typed title silently lost"
+      },
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-new-014-leave-unsaved.png",
+        "quote": "navigated back to pages list with no warning dialog"
+      }
+    ],
+    "persona_rationale": "If a tool throws away my work the moment I misclick, I can't trust it with anything that took effort to write. Silent data loss is a classic oversell-underdeliver failure — it 'works' in the demo and bites you in real use.",
+    "suggested_fix": {
+      "current": "Navigating away from an editor with unsaved changes loses them silently",
+      "proposed": "Add a dirty-state guard: on navigation away from an editor with unsaved edits, show 'You have unsaved changes. Leave without saving?' with Stay / Discard options."
+    }
+  },
+  {
+    "id": "06-skeptic-005",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "revision-restore",
+    "category": "Trust & Safety",
+    "severity": "high",
+    "finding": "There is no page-level undo before the first publish. Revision history is empty for a draft and states 'Revisions appear after publishing, library refreshes, or draft restores.' Saving a draft creates no restore point, so a user who mangles an unpublished draft has no way to roll back.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "revisions do NOT exist while drafting. Empty state: \"Revisions appear after publishing, library refreshes, or draft restores.\" Saving a draft creates no restore point — a user who mangles a draft before first publish has no undo at the page level."
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-revision-restore-04-preview-revision.png",
+        "quote": "revision history empty state pre-publish"
+      }
+    ],
+    "persona_rationale": "I evaluate tools on whether mistakes are recoverable. 'No undo until you've already gone live' is backwards — the riskiest editing happens before publish, exactly when this tool offers no safety net.",
+    "suggested_fix": {
+      "current": "No revision snapshots until first publish; draft saves create no restore point",
+      "proposed": "Capture a revision snapshot on each manual draft save (or at least keep the last N draft autosaves), so a draft can be rolled back before it has ever been published."
+    }
+  },
+  {
+    "id": "06-skeptic-006",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The publish-readiness gate reveals blockers one at a time using two contradictory messages for the same gate and terse internal naming. The status chip said 'Fix SEO title' while the readiness panel simultaneously said 'Add a hero headline before publishing.'; later blockers read 'Fix content 1 · Cta Label' and 'Fix content 1 · Destination URL' — internal field names, not where to find them.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Chip said \"Fix SEO title\" while readiness panel said \"Add a hero headline before publishing.\" — fixed the wrong thing first."
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "PUBLISH STATUS chip 'draft · Fix SEO title' with Publish button disabled"
+      }
+    ],
+    "persona_rationale": "When a tool tells me two different things are blocking the same action, I lose confidence that it actually knows the state of my page. 'Fix content 1 · Cta Label' reads like a database column, not guidance — it makes the product feel half-finished and unready for my real pages.",
+    "suggested_fix": {
+      "current": "Chip and panel show different blockers; messages use internal naming like 'Fix content 1 · Cta Label'",
+      "proposed": "Show a single de-duplicated readiness checklist with all outstanding blockers at once, in plain language with a 'Jump to field' link each, e.g. 'Add a CTA button label (Hero block) — Go to field'."
+    }
+  },
+  {
+    "id": "06-skeptic-007",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "publish-and-view-live",
+    "category": "Forms & Input",
+    "severity": "high",
+    "finding": "A publish blocker ('Fix content 1 · Destination URL') points at a field that is not visible on the canvas. The CTA destination lives only inside Block actions → Edit settings → 'CTA destination URL', and the blocker text gives no hint where to find it.",
+    "evidence": [
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "the destination field is NOT on the canvas; it lives in Block actions → Edit settings modal (\"CTA destination URL\"). The blocker text gives no hint where the field is."
+      },
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-11-block-settings-modal.png",
+        "quote": "block settings modal containing CTA destination URL"
+      }
+    ],
+    "persona_rationale": "Being told to fix a field I can't find, with no path to it, is the kind of friction that makes me suspect the tool wasn't tested on real users. I'd hunt, get frustrated, and assume publishing is more broken than it is.",
+    "suggested_fix": {
+      "current": "'Fix content 1 · Destination URL' with no link to the hidden block-settings field",
+      "proposed": "Make each blocker a deep link that opens the relevant block settings modal and focuses the field, e.g. 'Add a destination URL for the CTA button — Open settings'."
+    }
+  },
+  {
+    "id": "06-skeptic-008",
+    "page": "/admin/pages/e44f0fc3-0dcf-480f-9c99-f3409c690378",
+    "journey": "schedule-publish",
+    "category": "Copy & Labels",
+    "severity": "high",
+    "finding": "The scheduled-publish field is labelled 'Uses Pacific Time (America/Los_Angeles)' for what is an Australian business (vendingpreneurs.com, ACST). A user setting a launch time would be off by ~17.5 hours with no warning.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-schedule-publish-04-save-schedule.png",
+        "quote": "'Scheduled publish' field with helper text 'Uses Pacific Time (America/Los_Angeles). Leave blank unless this page should publish later.'"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "Label says \"Uses Pacific Time (America/Los_Angeles)\" — for an Australian business."
+      }
+    ],
+    "persona_rationale": "A scheduling field set to the wrong hemisphere's timezone is a trap that publishes my page at the wrong time. It signals the tool wasn't configured for this client — exactly the sloppiness I look for before deciding whether to trust a vendor.",
+    "suggested_fix": {
+      "current": "Hardcoded helper text 'Uses Pacific Time (America/Los_Angeles)'",
+      "proposed": "Use the business/site timezone (or the admin's local timezone) and label it explicitly, e.g. 'Times are in Australian Central Standard Time (ACST)'; show the resolved publish moment back to the user after they pick a time."
+    }
+  },
+  {
+    "id": "06-skeptic-009",
+    "page": "/admin/pages",
+    "journey": null,
+    "category": "Feedback & State",
+    "severity": "medium",
+    "finding": "The Readiness column on the pages list is a single coloured dot per row with no legend or text label. There is no way to know what red/orange/blue/green means without clicking into each page.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "admin-pages-001-load.png",
+        "quote": "READINESS column rendered as coloured dots only, no legend"
+      },
+      {
+        "type": "text",
+        "ref": "admin-pages-text.md",
+        "quote": "'cell \"SEO readiness: Needs work\"': - 'button \"SEO readiness: Needs work\"'"
+      }
+    ],
+    "persona_rationale": "If I'm scanning a list of pages to decide what's safe to publish, a colour-only signal with no key forces me to click every row. The accessible name exists ('SEO readiness: Needs work') but a visible label would let me trust the list at a glance instead of drilling in.",
+    "suggested_fix": {
+      "current": "Readiness shown as a bare coloured dot per row",
+      "proposed": "Add a visible text label or badge next to the dot (e.g. 'Needs work', 'Blocked', 'Strong') and a one-line legend above the table."
+    }
+  },
+  {
+    "id": "06-skeptic-010",
+    "page": "/admin/pages",
+    "journey": "find-duplicate-archive",
+    "category": "Forms & Input",
+    "severity": "medium",
+    "finding": "Duplicating a page produces an opaque random slug ('draft-4020bd0f') instead of deriving one from the title ('Copy of UX SEO Review Test...'). The title is human-readable but the public-facing slug is gibberish until manually fixed.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-find-duplicate-archive-03-duplicate-page.png",
+        "quote": "Page title 'Copy of UX SEO Review Test 1781071765035 v2' with Slug field showing 'draft-4020bd0f'"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "created \"Copy of {title}\" with auto slug \"draft-4020bd0f\" (original slug not preserved/derived)"
+      }
+    ],
+    "persona_rationale": "A duplicate that ships with a meaningless URL is a quiet way to publish an ugly, un-SEO-friendly link if someone forgets to fix it. The mismatch between a sensible title and a random slug looks unfinished.",
+    "suggested_fix": {
+      "current": "Duplicate slug is a random token like 'draft-4020bd0f'",
+      "proposed": "Derive the duplicate slug from the title with a uniqueness suffix, e.g. 'ux-seo-review-test-1781071765035-copy', so the URL is meaningful before any manual edit."
+    }
+  },
+  {
+    "id": "06-skeptic-011",
+    "page": "/admin/pages/new",
+    "journey": "create-first-page",
+    "category": "Copy & Labels",
+    "severity": "low",
+    "finding": "A new page opens onto an all-placeholder canvas ('Hero headline', 'Hero body copy', 'CTA label') with no indication that these placeholders must be replaced with real content before the page can be published.",
+    "evidence": [
+      {
+        "type": "screenshot",
+        "ref": "journey-publish-and-view-live-02-read-publish-blocker.png",
+        "quote": "canvas shows greyed placeholders 'Hero headline' / 'Hero body copy' / 'CTA label'"
+      },
+      {
+        "type": "text",
+        "ref": "journeys.md",
+        "quote": "New page canvas is entirely placeholder (\"Hero headline\", \"Hero body copy\", \"CTA label\") with no guidance that these must be completed before publishing."
+      }
+    ],
+    "persona_rationale": "Placeholder text that looks like real (greyed) content is how half-baked pages get pushed live by accident. A clearer 'this is a placeholder — replace before publishing' cue would reassure me the tool guards against shipping empty pages.",
+    "suggested_fix": {
+      "current": "Placeholder canvas with no replace-before-publish guidance",
+      "proposed": "Style placeholders distinctly and add an inline hint per empty required block, e.g. 'Replace this placeholder before publishing', tied to the readiness blockers."
+    }
+  }
+]
