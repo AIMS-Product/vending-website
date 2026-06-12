@@ -20,7 +20,11 @@ const record = (id, name, pass, detail) => {
 };
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+// QA_BYPASS: Vercel "Protection Bypass for Automation" secret for protected previews.
+const extraHTTPHeaders = process.env.QA_BYPASS
+  ? { "x-vercel-protection-bypass": process.env.QA_BYPASS, "x-vercel-set-bypass-cookie": "true" }
+  : {};
+const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, extraHTTPHeaders });
 const page = await ctx.newPage();
 
 const domClick = (txt) =>
