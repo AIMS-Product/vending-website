@@ -89,6 +89,21 @@ describe("buildResourcePageStructuredDataGraphs", () => {
     ]);
   });
 
+  it("uses the saved route path for non-resource page prefixes", () => {
+    const breadcrumb = buildResourcePageStructuredDataGraphs({
+      ...page,
+      slug: "start-vending",
+      route_prefix: "/blog",
+      route_path: "/blog/start-vending",
+    }).find(isBreadcrumbGraph);
+
+    expect(breadcrumb?.itemListElement.map((item) => item.item)).toEqual([
+      "https://www.vendingpreneurs.com/",
+      "https://www.vendingpreneurs.com/blog",
+      "https://www.vendingpreneurs.com/blog/start-vending",
+    ]);
+  });
+
   it("preserves FAQ structured data from visible FAQ blocks", () => {
     const faq = buildResourcePageStructuredDataGraphs(page).find(isFaqGraph);
 

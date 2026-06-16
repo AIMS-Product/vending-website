@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { copyRailUrl } from "./editor-copy-url";
-import { backToPagesHref } from "./SeoPageEditorTopRail";
+import { backToPagesHref, readableSourceHref } from "./SeoPageEditorTopRail";
 
 describe("backToPagesHref", () => {
   it("carries the ?created param when a page was just created in-session", () => {
@@ -20,6 +20,18 @@ describe("backToPagesHref", () => {
   it("stays plain for a brand-new page with no draft row yet", () => {
     // Nothing typed yet, so no row exists to link to.
     expect(backToPagesHref(null, null)).toBe("/admin/pages");
+  });
+});
+
+describe("readableSourceHref", () => {
+  it("links loaded pages to the readable source review view", () => {
+    expect(readableSourceHref({ id: "page_1" })).toBe(
+      "/admin/pages/page_1/source",
+    );
+  });
+
+  it("does not link before a page row exists", () => {
+    expect(readableSourceHref(null)).toBeNull();
   });
 });
 

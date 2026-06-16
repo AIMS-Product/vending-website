@@ -1458,6 +1458,16 @@ export function DocumentImportPanel({
           </button>
         </div>
 
+        <p className="rounded-lg bg-white px-3 py-2 text-xs leading-5 text-violet-700 ring-1 ring-violet-100">
+          <span className="font-semibold text-violet-900">
+            Formatting guidelines:
+          </span>{" "}
+          one <code># Title</code>, <code>## Section</code> per block (max 8),{" "}
+          <code>###</code>/<code>####</code> headings, plain <code>-</code> or{" "}
+          <code>1.</code> lists (max 12), and <code>[text](url)</code> links.
+          Avoid tables, raw HTML, images, nested lists, and frontmatter.
+        </p>
+
         {importMode === "upload" ? (
           <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-violet-200 bg-white px-4 py-6 text-center transition focus-within:ring-2 focus-within:ring-violet-200 hover:border-violet-300 hover:bg-violet-50/40">
             <span className="flex size-10 items-center justify-center rounded-full bg-violet-100 text-violet-700">

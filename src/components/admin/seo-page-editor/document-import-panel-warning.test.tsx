@@ -38,6 +38,16 @@ function renderPanel(sectionCount: number) {
 }
 
 describe("DocumentImportPanel truncation warning (issue I7)", () => {
+  it("shows Markdown formatting guidance before import", () => {
+    const html = renderPanel(1);
+
+    expect(html).toContain("Formatting guidelines");
+    expect(html).toContain("# Title");
+    expect(html).toContain("## Section");
+    expect(html).toContain("max 8");
+    expect(html).toContain("[text](url)");
+  });
+
   it("renders the dropped-section warning as a status live region", () => {
     const html = renderPanel(10);
     expect(html).toMatch(

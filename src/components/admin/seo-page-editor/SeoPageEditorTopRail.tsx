@@ -36,6 +36,10 @@ export function backToPagesHref(
   return "/admin/pages";
 }
 
+export function readableSourceHref(page: { id: string } | null | undefined) {
+  return page?.id ? `/admin/pages/${page.id}/source` : null;
+}
+
 export function SeoPageEditorTopRail({
   editor,
 }: {
@@ -88,6 +92,7 @@ export function SeoPageEditorTopRail({
     : null;
   const canCopyEditorUrl = Boolean(page?.id);
   const canCopyPublicUrl = Boolean(publicPath);
+  const sourceHref = readableSourceHref(page);
 
   const blockToggleLabel = isNarrowEditor
     ? isBlockSidebarCollapsed
@@ -222,6 +227,16 @@ export function SeoPageEditorTopRail({
                     >
                       Copy public URL
                     </button>
+                  )}
+                  {sourceHref && (
+                    <Link
+                      href={sourceHref}
+                      className={railMenuItemClass}
+                      title="Open readable source for manual review"
+                      onClick={closeShareMenu}
+                    >
+                      Readable source
+                    </Link>
                   )}
                 </div>
               </details>
