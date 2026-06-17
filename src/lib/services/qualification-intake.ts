@@ -8,6 +8,7 @@ import type { Database, Json, Tables } from "@/types/database";
 import {
   getQualificationFormVersion,
   resolveDefaultQualificationFormVersion,
+  resolvePublishedQualificationFormVersion,
   type QualificationPublishedVersion,
 } from "./qualification-forms";
 
@@ -25,6 +26,7 @@ export type CreateQualificationIntakeInput = {
   fullName: unknown;
   email: unknown;
   phone: unknown;
+  qualificationFormId?: unknown;
   qualificationFormVersionId?: unknown;
   completionRedirectPath?: unknown;
   sourcePath?: unknown;
@@ -107,6 +109,7 @@ const intakeInputSchema = z.object({
     .preprocess(stringifyFormValue, z.email())
     .transform((value) => value.toLowerCase()),
   phone: requiredText("Phone", 60),
+  qualificationFormId: optionalText("Qualification form", 80),
   qualificationFormVersionId: optionalText("Qualification form version", 80),
   completionRedirectPath: optionalText("Completion redirect", 500),
   sourcePath: optionalText("Source path", 500),
@@ -216,6 +219,17 @@ async function resolveFormVersion(
     return getQualificationFormVersion(
       { versionId: intake.qualificationFormVersionId },
       { client },
+    );
+  }
+
+  if (intake.qualificationFormId) {
+    const formVersion = await resolvePublishedQualificationFormVersion(
+      { formId: intake.qualificationFormId },
+      { client },
+    );
+    if (formVersion) return formVersion;
+    throw new QualificationIntakeServiceError(
+      "Selected qualification form is not published.",
     );
   }
 

@@ -54,6 +54,12 @@ chat history.
   persistence, tests, typecheck, lint, React Doctor diff scan, and browser
   page/block settings proof are recorded in `agent-runs/S8-attempt-1.md` and
   `agent-runs/S8-attempt-2.md`.
+- S9 is complete:
+  public opt-in lead-form action and renderer wiring, selected published-form
+  resolution, short name/email/phone form rendering, global default route
+  pass-through, focused tests, typecheck, lint, S9-only React Doctor scan, and
+  desktop/mobile validation/redirect browser proof are recorded in
+  `agent-runs/S9-attempt-1.md`.
 - S10 is complete:
   `/admin/leads` list and detail routes, admin-gated retry action, lead admin
   service list/detail/retry helpers, lead manager/detail components, admin nav
@@ -65,7 +71,7 @@ chat history.
   stopped. The temp proof stack needed a temp-only split of
   `20260610091000_schedule_state_ownership.sql` because Supabase CLI 2.75.0
   rejects multiple dollar-quoted functions in one prepared migration statement.
-- Remaining implementation work is S9 and S11, followed by S12 final proof.
+- Remaining implementation work is S11, followed by S12 final proof.
 - Close credentials are not available yet. This does not block local database,
   mocked Close adapter, retry queue, admin UI, or public runtime work. It blocks
   only final live Close boundary proof.
@@ -86,7 +92,6 @@ chat history.
 
 Continue with the next unblocked nodes:
 
-- S9: Opt-in lead-form public integration.
 - S11: Stale/expired lifecycle jobs and Close tasks.
 
 Use dependency/write-scope checks before deciding whether to run them in the

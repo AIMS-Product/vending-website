@@ -18,6 +18,16 @@ describe("resolveLeadSuccessTransition", () => {
     ).toEqual({ kind: "redirect", href: APPLY_THANK_YOU_PATH });
   });
 
+  it("uses an action-supplied redirect when qualification intake succeeds", () => {
+    expect(
+      resolveLeadSuccessTransition(
+        { ...success, redirectHref: "/qualify/raw_token" },
+        "qualification",
+        "person@example.com",
+      ),
+    ).toEqual({ kind: "redirect", href: "/qualify/raw_token" });
+  });
+
   it("shows an in-place panel echoing the email for contact leads", () => {
     expect(
       resolveLeadSuccessTransition(success, "contact", " Person@Example.com "),

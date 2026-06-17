@@ -9,6 +9,14 @@ vi.mock("@/app/apply/actions", () => ({
   submitApplicationLead: vi.fn(),
 }));
 
+vi.mock("@/app/qualification-intake/actions", () => ({
+  submitQualificationLead: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+}));
+
 const emptyContent: PageContent = {
   version: 1,
   sections: [],
@@ -128,6 +136,47 @@ const videoThumbnailContent = pageContentSchema.parse({
   ],
 });
 
+const leadFormContent = pageContentSchema.parse({
+  version: 1,
+  sections: [
+    {
+      id: "section_form",
+      preset: "standard",
+      background: "default",
+      spacing: "standard",
+      columns: [
+        {
+          id: "column_form",
+          width: "1/1",
+          blocks: [
+            {
+              id: "block_form",
+              type: "lead_form",
+              variant: "standard",
+              props: {
+                heading: "Get the vending checklist",
+                body: "Tell us where to send the next step.",
+                submitLabel: "Continue",
+                trackingName: "resource_lead_form",
+              },
+            },
+          ],
+        },
+      ],
+    },
+  ],
+});
+
+const qualifiedLeadFormContent = pageContentSchema.parse({
+  ...leadFormContent,
+  qualification: {
+    formId: "11111111-1111-4111-8111-111111111111",
+    completionRedirectPath: "/book-call",
+    experimentKey: "post_submit_qualification",
+    variantKey: "page-a",
+  },
+});
+
 function page(content: PageContent): PublishedSeoPage {
   return {
     id: "page_1",
@@ -214,5 +263,64 @@ describe("ResourcePageRenderer", () => {
 
     expect(html).toContain("/images/custom-video-thumbnail.webp");
     expect(html).toContain("Route planning walkthrough");
+  });
+
+  it("keeps non-opt-in lead forms on the legacy application path", () => {
+    const html = renderToStaticMarkup(
+      createElement(ResourcePageRenderer, {
+        page: page(leadFormContent),
+        idempotencyKeyPrefix: "test",
+      }),
+    );
+
+    expect(html).toContain("Business stage");
+    expect(html).toContain("Available startup budget");
+    expect(html).toContain('name="source_block_id"');
+    expect(html).toContain('value="block_form"');
+    expect(html).not.toContain('name="qualification_form_id"');
+  });
+
+  it("renders an opted-in lead form as short qualification intake with resolved attribution", () => {
+    const html = renderToStaticMarkup(
+      createElement(ResourcePageRenderer, {
+        page: page(qualifiedLeadFormContent),
+        idempotencyKeyPrefix: "test",
+      }),
+    );
+
+    expect(html).toContain("Get the vending checklist");
+    expect(html).toContain("Name");
+    expect(html).toContain("Email");
+    expect(html).toContain("Phone");
+    expect(html).not.toContain("Business stage");
+    expect(html).not.toContain("Available startup budget");
+    expect(html).toContain('name="qualification_form_id"');
+    expect(html).toContain('value="11111111-1111-4111-8111-111111111111"');
+    expect(html).toContain('name="qualification_completion_redirect_path"');
+    expect(html).toContain('value="/book-call"');
+    expect(html).toContain('name="qualification_experiment_key"');
+    expect(html).toContain('value="post_submit_qualification"');
+    expect(html).toContain('name="qualification_variant_key"');
+    expect(html).toContain('value="page-a"');
+    expect(html).toContain('name="source_page_id"');
+    expect(html).toContain('value="page_1"');
+    expect(html).toContain('name="source_block_id"');
+    expect(html).toContain('value="block_form"');
+    expect(html).toContain('name="source_cta_tracking_name"');
+    expect(html).toContain('value="resource_lead_form"');
+  });
+
+  it("uses the global default qualification form when page and block do not override it", () => {
+    const html = renderToStaticMarkup(
+      createElement(ResourcePageRenderer, {
+        page: page(leadFormContent),
+        defaultQualificationFormId: "33333333-3333-4333-8333-333333333333",
+        idempotencyKeyPrefix: "test",
+      }),
+    );
+
+    expect(html).toContain('name="qualification_form_id"');
+    expect(html).toContain('value="33333333-3333-4333-8333-333333333333"');
+    expect(html).not.toContain("Business stage");
   });
 });

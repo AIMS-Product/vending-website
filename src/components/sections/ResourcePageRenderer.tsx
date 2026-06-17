@@ -1,14 +1,19 @@
 import { submitApplicationLead } from "@/app/apply/actions";
+import { submitQualificationLead } from "@/app/qualification-intake/actions";
 import { PublicLeadForm } from "@/components/forms/PublicLeadForm";
 import { ResourcePageContentView } from "@/components/sections/ResourcePageContent";
 import { flattenBlocks, pageChromeSettings } from "@/lib/page-builder/blocks";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import type { PublishedSeoPage } from "@/lib/services/seo-page-public";
-import { buildResourceLeadFormAttribution } from "@/lib/page-builder/resource-lead-attribution";
+import {
+  buildResourceLeadFormAttribution,
+  resolveResourceQualificationAttachment,
+} from "@/lib/page-builder/resource-lead-attribution";
 import { buildResourcePageStructuredDataGraphs } from "./resource-page-structured-data";
 
 type ResourcePageRendererProps = {
   page: PublishedSeoPage;
+  defaultQualificationFormId?: string | null;
   leadAttribution?: LeadAttribution;
   idempotencyKeyPrefix: string;
   showPreviewEmptyState?: boolean;
@@ -16,6 +21,7 @@ type ResourcePageRendererProps = {
 
 export function ResourcePageRenderer({
   page,
+  defaultQualificationFormId,
   leadAttribution,
   idempotencyKeyPrefix,
   showPreviewEmptyState = false,
@@ -40,6 +46,35 @@ export function ResourcePageRenderer({
                 page,
                 block,
               });
+              const qualification = resolveResourceQualificationAttachment({
+                page: page.published_content,
+                block,
+                globalDefaultFormId: defaultQualificationFormId,
+              });
+              const layout =
+                block.variant === "compact" || block.variant === "sidebar"
+                  ? "compact"
+                  : "standard";
+
+              if (qualification.formId) {
+                return (
+                  <PublicLeadForm
+                    action={submitQualificationLead}
+                    attribution={attribution}
+                    hiddenFields={{
+                      qualification_form_id: qualification.formId,
+                      qualification_completion_redirect_path:
+                        qualification.completionRedirectPath,
+                      qualification_experiment_key: qualification.experimentKey,
+                      qualification_variant_key: qualification.variantKey,
+                    }}
+                    idempotencyKey={`${idempotencyKeyPrefix}:${block.id}`}
+                    intent="qualification"
+                    layout={layout}
+                    submitLabel={block.props.submitLabel}
+                  />
+                );
+              }
 
               return (
                 <PublicLeadForm
@@ -47,11 +82,7 @@ export function ResourcePageRenderer({
                   attribution={attribution}
                   idempotencyKey={`${idempotencyKeyPrefix}:${block.id}`}
                   intent="apply"
-                  layout={
-                    block.variant === "compact" || block.variant === "sidebar"
-                      ? "compact"
-                      : "standard"
-                  }
+                  layout={layout}
                   submitLabel={block.props.submitLabel}
                 />
               );

@@ -71,7 +71,7 @@ Owner: feature-orchestrator
 | S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | browser-visible UI                        | DONE    |
 | S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | admin UI + form services                  | DONE    |
 | S8   | Page/block attachment settings                | T2   | S2               | W5-C           | page-builder schema/editor                | DONE    |
-| S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | public conversion path                    | PENDING |
+| S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | public conversion path                    | DONE    |
 | S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | admin ops UI                              | DONE    |
 | S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | background state transitions              | PENDING |
 | S12  | End-to-end proof and cleanup                  | T1   | S6,S7,S9,S10,S11 | W8-A           | browser + boundary proof, single-threaded | PENDING |
@@ -532,7 +532,7 @@ Expected files:
 
 ### S9 - Opt-in lead-form public integration
 
-Status: PENDING
+Status: DONE
 Tier: T1
 Type: integration
 Actor/trigger: public visitor submits an opted-in page-builder `lead_form` block.
@@ -557,19 +557,19 @@ Expected files:
 - tests for public render/action behavior
   Write boundaries: public lead form integration files and tests only.
   Acceptance criteria:
-- [ ] Opt-in block renders only required name/email/phone plus hidden
+- [x] Opt-in block renders only required name/email/phone plus hidden
       attribution.
-- [ ] Submit redirects to token route on success.
-- [ ] Error state still returns field errors without losing entered values.
-- [ ] Non-opt-in forms use existing behavior.
-- [ ] Source page/block/CTA/UTM/experiment/variant are preserved.
+- [x] Submit redirects to token route on success.
+- [x] Error state still returns field errors without losing entered values.
+- [x] Non-opt-in forms use existing behavior.
+- [x] Source page/block/CTA/UTM/experiment/variant are preserved.
       Regression guards:
 - Existing `PublicLeadForm` tests pass or are split to preserve legacy behavior.
 - Resource page lead attribution test proves page/block identity still forced.
   RGR:
 - RED: public integration/action tests fail.
 - GREEN: implement opt-in path.
-- REFACTOR: separate legacy and qualification form components if needed.
+- REFACTOR: completed narrow route/test cleanup; no separate component needed.
   Gates:
 - Repo gate: targeted forms/resource tests and typecheck.
 - Browser gate: disposable page/block submit through to `/qualify/[token]`.

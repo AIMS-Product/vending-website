@@ -54,6 +54,10 @@ export type GetQualificationFormVersionInput = {
   versionId: string;
 };
 
+export type ResolvePublishedQualificationFormVersionInput = {
+  formId: string;
+};
+
 export type QualificationPublishedVersion = {
   formId: string;
   versionId: string;
@@ -312,6 +316,23 @@ export async function resolveDefaultQualificationFormVersion(
     );
   }
   if (!form?.current_published_version_id) return null;
+
+  return getQualificationFormVersion(
+    { versionId: form.current_published_version_id },
+    { client },
+  );
+}
+
+export async function resolvePublishedQualificationFormVersion(
+  input: ResolvePublishedQualificationFormVersionInput,
+  deps: ServiceDeps = {},
+): Promise<QualificationPublishedVersion | null> {
+  const client = serviceClient(deps);
+  const form = await getForm(client, input.formId);
+
+  if (form.status !== "published" || !form.current_published_version_id) {
+    return null;
+  }
 
   return getQualificationFormVersion(
     { versionId: form.current_published_version_id },

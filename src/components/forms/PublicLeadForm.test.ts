@@ -68,6 +68,40 @@ describe("PublicLeadForm", () => {
     expect(html).not.toContain("Available startup budget");
   });
 
+  it("renders only short contact fields for qualification intake", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        hiddenFields: {
+          qualification_form_id: "form_1",
+          qualification_completion_redirect_path: "/book-call",
+          qualification_experiment_key: "post_submit",
+          qualification_variant_key: "a",
+        },
+        idempotencyKey: "lead-qualification-short",
+        intent: "qualification",
+        submitLabel: "Continue",
+      }),
+    );
+
+    expect(html).toContain("Name");
+    expect(html).toContain("Email");
+    expect(html).toContain("Phone");
+    expect(html).toMatch(/Name[\s\S]*?\(required\)/);
+    expect(html).toMatch(/Email[\s\S]*?\(required\)/);
+    expect(html).toMatch(/Phone[\s\S]*?\(required\)/);
+    expect(html).toContain('name="qualification_form_id"');
+    expect(html).toContain('value="form_1"');
+    expect(html).not.toContain("City");
+    expect(html).not.toContain("State");
+    expect(html).not.toContain("Business stage");
+    expect(html).not.toContain("Available startup budget");
+    expect(html).not.toContain("Launch timeline");
+    expect(html).not.toContain("What are you trying to build?");
+    expect(html).not.toContain("Message");
+  });
+
   it("offers a 'Not sure yet' choice in all three apply qualification selects", () => {
     const html = renderToStaticMarkup(
       createElement(PublicLeadForm, {

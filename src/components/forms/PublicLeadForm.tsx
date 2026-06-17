@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   initialLeadActionState,
   resolveLeadSuccessTransition,
+  type LeadIntent,
   type PublicLeadActionState,
 } from "@/app/lead-action-state";
 import {
@@ -19,9 +20,10 @@ import { cn } from "@/lib/utils";
 type PublicLeadFormProps = {
   action: PublicLeadFormAction;
   attribution: LeadAttribution;
+  hiddenFields?: Record<string, string | null | undefined>;
   idempotencyKey: string;
   submitLabel: string;
-  intent: "apply" | "contact";
+  intent: LeadIntent;
   layout?: "standard" | "compact";
   // Override the initial action state. Production always uses the idle default;
   // this exists so SSR-rendered tests can exercise the field-error layer.
@@ -53,6 +55,7 @@ const inputClass =
 export function PublicLeadForm({
   action,
   attribution,
+  hiddenFields,
   idempotencyKey,
   submitLabel,
   intent,
@@ -114,8 +117,10 @@ export function PublicLeadForm({
   }, [hasSummary, summarySignature]);
 
   const isApply = intent === "apply";
+  const isQualification = intent === "qualification";
   const isCompact = layout === "compact";
-  const showQualificationFields = isApply || !isCompact;
+  const showQualificationFields = isApply || (!isCompact && !isQualification);
+  const showPhoneField = isQualification || showQualificationFields;
 
   if (transition?.kind === "panel") {
     return <ContactSuccessPanel email={transition.email} />;
@@ -132,6 +137,7 @@ export function PublicLeadForm({
     >
       <HiddenAttribution
         attribution={attribution}
+        hiddenFields={hiddenFields}
         idempotencyKey={idempotencyKey}
       />
 
@@ -164,17 +170,20 @@ export function PublicLeadForm({
           errors={errors}
           values={submittedValues}
         />
+        {showPhoneField && (
+          <TextField
+            name="phone"
+            errorKey="phone"
+            label="Phone"
+            type="tel"
+            autoComplete="tel"
+            required={isQualification}
+            errors={errors}
+            values={submittedValues}
+          />
+        )}
         {showQualificationFields && (
           <>
-            <TextField
-              name="phone"
-              errorKey="phone"
-              label="Phone"
-              type="tel"
-              autoComplete="tel"
-              errors={errors}
-              values={submittedValues}
-            />
             <TextField
               name="city"
               errorKey="city"
@@ -275,11 +284,8 @@ export function PublicLeadForm({
   );
 }
 
-function PrivacyAssurance({ intent }: { intent: "apply" | "contact" }) {
-  const lead =
-    intent === "apply"
-      ? "By applying you agree to our"
-      : "By sending this note you agree to our";
+function PrivacyAssurance({ intent }: { intent: LeadIntent }) {
+  const lead = privacyLeadCopy[intent];
   return (
     <p className="text-xs leading-5 font-medium text-slate-500">
       {lead}{" "}
@@ -294,6 +300,12 @@ function PrivacyAssurance({ intent }: { intent: "apply" | "contact" }) {
   );
 }
 
+const privacyLeadCopy: Record<LeadIntent, string> = {
+  apply: "By applying you agree to our",
+  contact: "By sending this note you agree to our",
+  qualification: "By continuing you agree to our",
+};
+
 function LeadErrorSummary({
   ref,
   items,
@@ -303,9 +315,14 @@ function LeadErrorSummary({
   ref: React.Ref<HTMLDivElement>;
   items: LeadErrorSummaryItem[];
   fieldErrors?: Record<string, string[]>;
-  intent: "apply" | "contact";
+  intent: LeadIntent;
 }) {
-  const noun = intent === "apply" ? "application" : "message";
+  const noun =
+    intent === "apply"
+      ? "application"
+      : intent === "qualification"
+        ? "qualification step"
+        : "message";
   const count = items.length;
   return (
     <div
@@ -359,14 +376,21 @@ function ContactSuccessPanel({ email }: { email: string }) {
 
 function HiddenAttribution({
   attribution,
+  hiddenFields,
   idempotencyKey,
 }: {
   attribution: LeadAttribution;
+  hiddenFields?: Record<string, string | null | undefined>;
   idempotencyKey: string;
 }) {
   return (
     <>
       <input type="hidden" name="idempotency_key" value={idempotencyKey} />
+      {Object.entries(hiddenFields ?? {}).map(([name, value]) =>
+        value ? (
+          <input key={name} type="hidden" name={name} value={value} />
+        ) : null,
+      )}
       {Object.entries(attribution).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}

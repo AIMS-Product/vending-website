@@ -7,6 +7,7 @@ import {
   type LeadSearchParams,
 } from "@/lib/lead-attribution";
 import { normalizeBrandedPageTitle } from "@/lib/metadata-titles";
+import { resolveDefaultQualificationFormVersion } from "@/lib/services/qualification-forms";
 import { getPublishedSeoPageByPath } from "@/lib/services/seo-page-public";
 
 export async function generateBuilderPageMetadata(
@@ -46,11 +47,14 @@ export async function renderBuilderPage({
     searchParams,
   ]);
   if (!page) notFound();
+  const defaultQualificationFormVersion =
+    await resolveDefaultQualificationFormVersion();
   const attribution = buildLeadAttribution(query, page.route_path);
 
   return (
     <ResourcePageRenderer
       page={page}
+      defaultQualificationFormId={defaultQualificationFormVersion?.formId}
       leadAttribution={attribution}
       idempotencyKeyPrefix={randomUUID()}
     />

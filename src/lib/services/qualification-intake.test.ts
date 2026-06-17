@@ -455,4 +455,51 @@ describe("createQualificationIntakeSession", () => {
       }),
     });
   });
+
+  it("uses an explicitly resolved page or block qualification form instead of the global default", async () => {
+    const fake = buildClient({
+      forms: [
+        makeForm(),
+        {
+          ...makeForm(),
+          id: "form_block",
+          name: "Block qualification",
+          current_published_version_id: "version_block_2",
+          is_default: false,
+        },
+      ],
+      versions: [
+        makeVersion(),
+        {
+          ...makeVersion(),
+          id: "version_block_2",
+          form_id: "form_block",
+          version_number: 2,
+        },
+      ],
+    });
+
+    const result = await createQualificationIntakeSession(
+      {
+        idempotencyKey: "short-form-block",
+        fullName: "Block Buyer",
+        email: "buyer@example.com",
+        phone: "555-0123",
+        qualificationFormId: "form_block",
+      },
+      {
+        client: fake.client,
+        tokenFactory: () => "raw_test_token",
+      },
+    );
+
+    expect(result).toMatchObject({
+      formId: "form_block",
+      formVersionId: "version_block_2",
+    });
+    expect(fake.state.sessions[0]).toMatchObject({
+      form_id: "form_block",
+      form_version_id: "version_block_2",
+    });
+  });
 });

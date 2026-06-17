@@ -11,6 +11,7 @@ import {
   publishQualificationForm,
   qualificationFormSchema,
   resolveDefaultQualificationFormVersion,
+  resolvePublishedQualificationFormVersion,
 } from "./qualification-forms";
 import type { Database, Json } from "@/types/database";
 
@@ -604,6 +605,60 @@ describe("qualification form services", () => {
       versionId: "version_1",
       versionNumber: 1,
       questionCount: 3,
+    });
+  });
+
+  it("resolves a selected published form to its current version", async () => {
+    const fake = buildClient({
+      forms: [
+        makeForm({
+          id: "form_default",
+          status: "published",
+          is_default: true,
+          current_published_version_id: "version_1",
+        }),
+        makeForm({
+          id: "form_block",
+          name: "Block qualification",
+          status: "published",
+          current_published_version_id: "version_2",
+        }),
+      ],
+      versions: [
+        {
+          id: "version_1",
+          form_id: "form_default",
+          version_number: 1,
+          schema_snapshot: baseFormSchema as unknown as Json,
+          question_count: 3,
+          normalized_roles: ["state_market", "available_capital", "consent"],
+          published_by: "admin_1",
+          published_at: "2026-06-17T00:00:00.000Z",
+          created_at: "2026-06-17T00:00:00.000Z",
+        },
+        {
+          id: "version_2",
+          form_id: "form_block",
+          version_number: 4,
+          schema_snapshot: baseFormSchema as unknown as Json,
+          question_count: 3,
+          normalized_roles: ["state_market", "available_capital", "consent"],
+          published_by: "admin_2",
+          published_at: "2026-06-17T01:00:00.000Z",
+          created_at: "2026-06-17T01:00:00.000Z",
+        },
+      ],
+    });
+
+    await expect(
+      resolvePublishedQualificationFormVersion(
+        { formId: "form_block" },
+        { client: fake.client },
+      ),
+    ).resolves.toMatchObject({
+      formId: "form_block",
+      versionId: "version_2",
+      versionNumber: 4,
     });
   });
 

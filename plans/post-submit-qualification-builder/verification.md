@@ -4,23 +4,23 @@
 
 IN_PROGRESS
 
-Implementation is in progress. S1-S8 and S10 are complete with evidence in
-`progress.md` and the corresponding `agent-runs/` files. S9, S11, and S12 remain
+Implementation is in progress. S1-S10 are complete with evidence in
+`progress.md` and the corresponding `agent-runs/` files. S11 and S12 remain
 pending. This file remains a final-proof scaffold for S12. Live Close CRM proof
 is blocked until credentials and Close custom-field/status IDs exist.
 
 ## Requirement Audit
 
-| Requirement                                                        | Evidence                                        | Result  |
-| ------------------------------------------------------------------ | ----------------------------------------------- | ------- |
-| Short contact capture creates local lead before Close sync         | S3 service evidence; S9 UI pending              | PARTIAL |
-| Mandatory qualification session appends to same lead/contact       | S3/S5 service evidence; S9 pending              | PARTIAL |
-| Qualification answers persist step-by-step                         | S5/S6 service and browser evidence              | PARTIAL |
-| Admins can build immutable qualification form versions             | S2 service evidence; S7 browser evidence        | PASS    |
-| Page/block settings resolve form/default/override                  | S8 repo and browser evidence                    | PASS    |
-| Close sync is optional, retryable, and non-blocking                | S3/S4 service evidence; S10 browser retry proof | PARTIAL |
-| `/admin/leads` exposes status and retry controls                   | S10 repo and browser evidence                   | PASS    |
-| Existing `/apply`, `/contact`, and non-opt-in lead forms preserved | Pending S9/S12 evidence                         | TODO    |
+| Requirement                                                        | Evidence                                       | Result  |
+| ------------------------------------------------------------------ | ---------------------------------------------- | ------- |
+| Short contact capture creates local lead before Close sync         | S3 service evidence; S9 browser/database proof | PASS    |
+| Mandatory qualification session appends to same lead/contact       | S3/S5 service evidence; S9 browser proof       | PASS    |
+| Qualification answers persist step-by-step                         | S5/S6 service and browser evidence             | PARTIAL |
+| Admins can build immutable qualification form versions             | S2 service evidence; S7 browser evidence       | PASS    |
+| Page/block settings resolve form/default/override                  | S8 repo and browser evidence                   | PASS    |
+| Close sync is optional, retryable, and non-blocking                | S3/S4 service evidence; S9/S10 local proof     | PARTIAL |
+| `/admin/leads` exposes status and retry controls                   | S10 repo and browser evidence                  | PASS    |
+| Existing `/apply`, `/contact`, and non-opt-in lead forms preserved | S9 focused tests; S12 pending                  | PARTIAL |
 
 ## Evidence Table
 
@@ -29,12 +29,13 @@ is blocked until credentials and Close custom-field/status IDs exist.
 | Plan is ready for implementation                       | `plan.md`, `progress.md`, `decisions.md` created 2026-06-17                                                                                                                     | PASS   | Plan still needs execution evidence                                                                          |
 | S1 data model and generated type contract are in place | `agent-runs/S1-attempt-1.md`; `supabase/migrations/20260617090000_post_submit_qualification.sql`; `src/types/database.ts`; `src/types/post-submit-qualification-schema.test.ts` | PASS   | Full repo reset is blocked by an unrelated existing migration under Supabase CLI 2.75.0 before S1 is reached |
 | S2 qualification form service contract is in place     | `agent-runs/S2-attempt-1.md`; `src/lib/qualification/forms.ts`; `src/lib/services/qualification-forms.ts`; `src/lib/services/qualification-forms.test.ts`                       | PASS   | Admin UI proof is complete in S7                                                                             |
-| S3 qualification intake service contract is in place   | `agent-runs/S3-attempt-1.md`; `src/lib/services/qualification-intake.ts`; `src/lib/services/qualification-intake.test.ts`                                                       | PASS   | Public route/action wiring and browser proof remain pending S9                                               |
+| S3 qualification intake service contract is in place   | `agent-runs/S3-attempt-1.md`; `src/lib/services/qualification-intake.ts`; `src/lib/services/qualification-intake.test.ts`                                                       | PASS   | S9 public route/browser integration is complete; S12 final proof still pending                               |
 | S4 mocked Close sync contract is in place              | `agent-runs/S4-attempt-1.md`; `src/lib/close/client.ts`; `src/lib/close/sync.ts`; `src/app/api/admin/close-sync/run/route.ts`; S4 tests                                         | PASS   | Live Close proof remains blocked until credentials and field IDs exist                                       |
-| S5 public qualification backend is in place            | `agent-runs/S5-attempt-1.md`; `src/lib/services/qualification-sessions.ts`; `src/app/qualify/[sessionToken]/actions.ts`; S5 tests                                               | PASS   | Real opt-in lead-form entry into runtime remains pending S9                                                  |
-| S6 public runtime UI is in place                       | `agent-runs/S6-attempt-1.md`; `src/components/qualification/QualificationRuntime.tsx`; S6 tests and screenshots                                                                 | PASS   | Real opt-in lead-form entry into runtime remains pending S9                                                  |
+| S5 public qualification backend is in place            | `agent-runs/S5-attempt-1.md`; `src/lib/services/qualification-sessions.ts`; `src/app/qualify/[sessionToken]/actions.ts`; S5 tests                                               | PASS   | S9 proved real opt-in entry; S12 final proof still pending                                                   |
+| S6 public runtime UI is in place                       | `agent-runs/S6-attempt-1.md`; `src/components/qualification/QualificationRuntime.tsx`; S6 tests and screenshots                                                                 | PASS   | S9 proved real opt-in entry; S12 final proof still pending                                                   |
 | S7 admin forms builder is in place                     | `agent-runs/S7-attempt-1.md`; `agent-runs/S7-attempt-2.md`; focused tests; desktop/mobile create/edit/publish/default/reload screenshots                                        | PASS   | None known for local admin form proof                                                                        |
 | S8 page/block attachment contract is in place          | `agent-runs/S8-attempt-1.md`; `agent-runs/S8-attempt-2.md`; S8 schema/resolver/editor tests; desktop/mobile editor settings screenshots                                         | PASS   | None known for local editor settings proof                                                                   |
+| S9 public opt-in lead form path is in place            | `agent-runs/S9-attempt-1.md`; focused tests; desktop/mobile short-form screenshots; validation screenshot; redirect-to-runtime screenshot; local DB lead/session/event proof    | PASS   | Live Close remains blocked; S12 final proof still pending                                                    |
 | S10 admin leads backstop is in place                   | `agent-runs/S10-attempt-1.md`; `agent-runs/S10-attempt-2.md`; focused tests; list/filter/detail/retry/reload/mobile screenshots                                                 | PASS   | Live Close remains blocked; local retry event proof passed                                                   |
 
 ## Commands
@@ -49,6 +50,7 @@ is blocked until credentials and Close custom-field/status IDs exist.
   `agent-runs/S7-attempt-2.md`.
 - S8 commands are recorded in `agent-runs/S8-attempt-1.md` and
   `agent-runs/S8-attempt-2.md`.
+- S9 commands are recorded in `agent-runs/S9-attempt-1.md`.
 - S10 commands are recorded in `agent-runs/S10-attempt-1.md` and
   `agent-runs/S10-attempt-2.md`.
 
@@ -73,11 +75,15 @@ is blocked until credentials and Close custom-field/status IDs exist.
   request is made.
 - S6 boundary proof: browser verification used the dev/test
   `demo-qualification-runtime` token and in-memory fixture state only.
-- S7/S8/S10 browser proof used an isolated local Supabase stack on alternate
+- S7/S8/S9/S10 browser proof used an isolated local Supabase stack on alternate
   ports with disposable seed data. The unrelated `VendPlacement` stack was not
   stopped. The temp proof stack used a temp-only split of
   `20260610091000_schedule_state_ownership.sql` because Supabase CLI 2.75.0
   rejects multiple dollar-quoted functions in one migration file.
+- S9 browser proof used a disposable published SEO page and submitted through
+  the real public resource route to `/qualify/[token]`. Local database proof
+  confirmed the linked lead, qualification session, attribution, and pending
+  Close sync event.
 - Live Close proof: blocked until credentials and mapping exist.
 
 ## Skipped Checks
@@ -86,11 +92,11 @@ is blocked until credentials and Close custom-field/status IDs exist.
 - S2 browser proof skipped because S2 is schema/service behavior only and has no
   browser-visible UI.
 - S3 browser proof skipped because S3 is service behavior only; public route/UI
-  proof is pending S9.
+  proof is complete in S9.
 - S4 browser proof skipped because S4 is adapter/runner behavior only.
 - S5 browser proof skipped because S5 was backend route/action behavior with a
   minimal route shell. Runtime UI and screenshot proof are complete in S6; real
-  opt-in entry proof remains pending S9.
+  opt-in entry proof is complete in S9.
 - S6 in-app browser check used Playwright fallback because no direct in-app
   browser tool was callable in this turn.
 - S4 live Close proof skipped because credentials, custom-field IDs, status IDs,
@@ -116,14 +122,13 @@ is blocked until credentials and Close custom-field/status IDs exist.
   tests are recorded in `agent-runs/S5-attempt-1.md`. S6 runtime tests plus
   desktop/mobile browser screenshots are recorded in
   `agent-runs/S6-attempt-1.md`. S7, S8, and S10 repo/browser evidence is
-  recorded in their attempt-1 and attempt-2 reports. Full public opt-in flow
-  proof remains pending.
-- Confidence: 70%
+  recorded in their attempt-1 and attempt-2 reports. S9 public opt-in proof is
+  recorded in `agent-runs/S9-attempt-1.md`.
+- Confidence: 82%
 
 ## Residual Risk
 
 - Close API field mapping is unknown until credentials/account configuration are
   available.
-- The real opt-in lead-form entry path still needs browser proof in S9.
 - Stale/expired lifecycle jobs and Close task creation remain pending S11.
 - Migrations are T1 and must be tested locally before any remote DB push.
