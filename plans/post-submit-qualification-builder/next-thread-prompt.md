@@ -34,11 +34,19 @@ Important constraints:
   `plans/post-submit-qualification-builder/agent-runs/S5-attempt-1.md`.
 - S6 is complete. Evidence is in
   `plans/post-submit-qualification-builder/agent-runs/S6-attempt-1.md`.
-- Remaining unblocked W5 nodes are S7 admin forms builder and S8 page/block
-  attachment settings.
+- S8 page/block attachment code and repo gates are complete, but S8 is blocked
+  on browser proof. Evidence is in
+  `plans/post-submit-qualification-builder/agent-runs/S8-attempt-1.md`; the
+  failed route screenshot is
+  `plans/post-submit-qualification-builder/browser-evidence/S8-editor-desktop-initial.png`.
+- S8 browser proof tried `/admin/pages/new`, but the local editor route could
+  not render: placeholder JWTs failed REST auth, the running `VendPlacement`
+  Supabase stack is schema-incompatible, and an isolated temp Supabase stack
+  failed migration setup under Supabase CLI 2.75.0.
+- Remaining W5 work is S7 admin forms builder plus resolving S8 browser proof.
 - Use strict RED -> GREEN -> REFACTOR and record fresh evidence before marking
   any node done.
 
 Begin by reading the files above, confirming the feature state, and reporting
-that the next action is S7 or S8 selection. Do not start implementation until
-the user says to start or continue.
+that the next action is either resolving the S8 browser gate or starting S7. Do
+not start implementation until the user says to start or continue.

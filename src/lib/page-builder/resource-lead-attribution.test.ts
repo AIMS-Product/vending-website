@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { LeadAttribution } from "@/lib/lead-attribution";
-import { buildResourceLeadFormAttribution } from "./resource-lead-attribution";
+import {
+  buildResourceLeadFormAttribution,
+  resolveResourceQualificationAttachment,
+} from "./resource-lead-attribution";
 
 const baseAttribution: LeadAttribution = {
   source_path: "/resources/start-vending?utm_source=google",
@@ -85,6 +88,102 @@ describe("buildResourceLeadFormAttribution", () => {
       utm_campaign: "",
       utm_term: "",
       utm_content: "",
+    });
+  });
+});
+
+describe("resolveResourceQualificationAttachment", () => {
+  it("uses a lead-form block override before page defaults", () => {
+    const attachment = resolveResourceQualificationAttachment({
+      page: {
+        qualification: {
+          formId: "11111111-1111-4111-8111-111111111111",
+          completionRedirectPath: "/page-thanks",
+          experimentKey: "page-experiment",
+          variantKey: "page-a",
+        },
+      },
+      block: {
+        id: "block_form",
+        props: {
+          qualification: {
+            formId: "22222222-2222-4222-8222-222222222222",
+            completionRedirectPath: "/block-thanks",
+            experimentKey: "block-experiment",
+            variantKey: "block-b",
+          },
+        },
+      },
+      globalDefaultFormId: "33333333-3333-4333-8333-333333333333",
+    });
+
+    expect(attachment).toEqual({
+      source: "block",
+      formId: "22222222-2222-4222-8222-222222222222",
+      completionRedirectPath: "/block-thanks",
+      experimentKey: "block-experiment",
+      variantKey: "block-b",
+    });
+  });
+
+  it("falls back from page defaults to the global default form", () => {
+    expect(
+      resolveResourceQualificationAttachment({
+        page: {
+          qualification: {
+            formId: "11111111-1111-4111-8111-111111111111",
+            completionRedirectPath: "/page-thanks",
+            experimentKey: "page-experiment",
+            variantKey: "page-a",
+          },
+        },
+        block: {
+          id: "block_form",
+          props: {},
+        },
+        globalDefaultFormId: "33333333-3333-4333-8333-333333333333",
+      }),
+    ).toEqual({
+      source: "page",
+      formId: "11111111-1111-4111-8111-111111111111",
+      completionRedirectPath: "/page-thanks",
+      experimentKey: "page-experiment",
+      variantKey: "page-a",
+    });
+
+    expect(
+      resolveResourceQualificationAttachment({
+        page: {},
+        block: {
+          id: "block_form",
+          props: {},
+        },
+        globalDefaultFormId: "33333333-3333-4333-8333-333333333333",
+      }),
+    ).toEqual({
+      source: "global",
+      formId: "33333333-3333-4333-8333-333333333333",
+      completionRedirectPath: null,
+      experimentKey: null,
+      variantKey: null,
+    });
+  });
+
+  it("returns null when no page, block, or global qualification form is configured", () => {
+    expect(
+      resolveResourceQualificationAttachment({
+        page: {},
+        block: {
+          id: "block_form",
+          props: {},
+        },
+      }),
+    ).toEqual({
+      source: "none",
+      formId: null,
+      completionRedirectPath: null,
+      experimentKey: null,
+      variantKey: null,
     });
   });
 });

@@ -25,9 +25,11 @@ export function BuilderBlocksPanel({
     chromeSettings,
     editBlockEntry,
     moveBlock,
+    qualificationSettings,
     selectedBlockEntry,
     selectBlockEntry,
     updateChromeSettings,
+    updateQualificationSettings,
   } = editor;
 
   return (
@@ -83,6 +85,8 @@ export function BuilderBlocksPanel({
         <PageChromeControls
           settings={chromeSettings}
           onChange={updateChromeSettings}
+          qualificationSettings={qualificationSettings}
+          onQualificationChange={updateQualificationSettings}
         />
       </div>
       <div className="shrink-0 border-t border-slate-200 p-4">

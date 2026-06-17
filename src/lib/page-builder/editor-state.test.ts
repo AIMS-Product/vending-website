@@ -33,6 +33,29 @@ describe("page builder editor content reducer", () => {
     });
   });
 
+  it("updates page-level qualification settings without touching blocks", () => {
+    const original = singleBlockContent(createPageBlock("lead_form", "block"));
+    const next = pageEditorContentReducer(original, {
+      type: "updateQualificationSettings",
+      settings: {
+        formId: "11111111-1111-4111-8111-111111111111",
+        completionRedirectPath: "/qualification-thanks",
+        experimentKey: "post_submit_qualification",
+        variantKey: "page_default",
+      },
+    });
+
+    expect(next.qualification).toEqual({
+      formId: "11111111-1111-4111-8111-111111111111",
+      completionRedirectPath: "/qualification-thanks",
+      experimentKey: "post_submit_qualification",
+      variantKey: "page_default",
+    });
+    expect(next.sections[0]?.columns[0]?.blocks).toEqual(
+      original.sections[0]?.columns[0]?.blocks,
+    );
+  });
+
   it("adds, replaces, duplicates, moves, and removes blocks immutably", () => {
     const original = singleBlockContent(createPageBlock("cta", "block_cta"));
     const withHero = pageEditorContentReducer(original, {

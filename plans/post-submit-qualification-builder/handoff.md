@@ -42,8 +42,18 @@ chat history.
 - S6 is complete: Image Gen-derived design spec, public Typeform-style runtime,
   all v1 question controls, dev/test demo token, route integration, and
   desktop/mobile browser proof are recorded in `agent-runs/S6-attempt-1.md`.
-- The remaining unblocked W5 nodes are S7 admin forms builder and S8 page/block
-  attachment settings.
+- S8 code/repo gates are complete but the node is blocked on browser proof:
+  page-level and lead-form block qualification settings, internal redirect
+  validation, resolver precedence, editor UI wiring, reducer/form-data
+  persistence, tests, typecheck, lint, and React Doctor diff scan are recorded
+  in `agent-runs/S8-attempt-1.md`.
+- S8 browser proof tried `/admin/pages/new`, but the route could not render
+  locally. Placeholder JWTs failed REST auth, the already-running
+  `VendPlacement` Supabase stack is schema-incompatible, and an isolated temp
+  stack failed migration setup under Supabase CLI 2.75.0. See
+  `browser-evidence/S8-editor-desktop-initial.png`.
+- The remaining W5 work is S7 admin forms builder plus resolving S8 browser
+  proof.
 - Close credentials are not available yet. This does not block local database,
   mocked Close adapter, retry queue, admin UI, or public runtime work. It blocks
   only final live Close boundary proof.
@@ -62,11 +72,13 @@ chat history.
 
 ## Next Action
 
-Choose and launch the next W5 node with strict RED -> GREEN -> REFACTOR:
+Resolve the S8 browser gate or choose the next W5 node with strict RED -> GREEN
+-> REFACTOR:
 
 - S7: admin qualification forms builder. Read the `/admin` design contracts
   before changing UI.
-- S8: page/block attachment settings. Read the page-builder design contracts
-  before changing editor UI.
+- S8 unblock: provide a matching local Supabase stack/env, free the standard
+  Supabase ports for this worktree, or fix the isolated local migration path so
+  `/admin/pages/new` can render and be screenshot.
 
 Update `progress.md` only after fresh evidence is accepted.

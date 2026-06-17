@@ -342,6 +342,106 @@ describe("page builder block schemas", () => {
     });
   });
 
+  it("accepts page-level and lead-form qualification attachment settings", () => {
+    const content = pageContentSchema.parse({
+      version: 1,
+      qualification: {
+        formId: "11111111-1111-4111-8111-111111111111",
+        completionRedirectPath: "/qualification-thanks",
+        experimentKey: "post_submit_qualification",
+        variantKey: "page_default",
+      },
+      sections: [
+        {
+          id: "section_form",
+          columns: [
+            {
+              id: "column_form",
+              blocks: [
+                {
+                  id: "block_form",
+                  type: "lead_form",
+                  variant: "standard",
+                  props: {
+                    heading: "Apply",
+                    body: "Start with your contact details.",
+                    submitLabel: "Continue",
+                    trackingName: "resource_lead_form",
+                    qualification: {
+                      formId: "22222222-2222-4222-8222-222222222222",
+                      completionRedirectPath: "/book-a-call",
+                      experimentKey: "post_submit_qualification",
+                      variantKey: "block_override",
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(content.qualification).toEqual({
+      formId: "11111111-1111-4111-8111-111111111111",
+      completionRedirectPath: "/qualification-thanks",
+      experimentKey: "post_submit_qualification",
+      variantKey: "page_default",
+    });
+
+    const block = content.sections[0]?.columns[0]?.blocks[0];
+    expect(block?.type).toBe("lead_form");
+    if (block?.type !== "lead_form") throw new Error("Expected lead form.");
+    expect(block.props.qualification).toEqual({
+      formId: "22222222-2222-4222-8222-222222222222",
+      completionRedirectPath: "/book-a-call",
+      experimentKey: "post_submit_qualification",
+      variantKey: "block_override",
+    });
+  });
+
+  it("rejects external qualification completion redirects", () => {
+    const unsafeContent = {
+      ...validContent,
+      qualification: {
+        completionRedirectPath: "https://example.com/qualification-thanks",
+      },
+    };
+
+    expect(pageContentSchema.safeParse(unsafeContent).success).toBe(false);
+    expect(
+      pageContentSchema.safeParse({
+        ...validContent,
+        sections: [
+          {
+            ...validContent.sections[0],
+            columns: [
+              {
+                ...validContent.sections[0].columns[0],
+                blocks: [
+                  {
+                    id: "block_form",
+                    type: "lead_form",
+                    variant: "standard",
+                    props: {
+                      heading: "Apply",
+                      body: "Tell us about your goals.",
+                      submitLabel: "Submit application",
+                      trackingName: "resource_lead_form",
+                      qualification: {
+                        completionRedirectPath: "//example.com/thanks",
+                      },
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }).success,
+    ).toBe(false);
+  });
+
   it("rejects arbitrary HTML rich text", () => {
     expect(() =>
       pageContentSchema.parse({

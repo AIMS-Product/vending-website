@@ -28,8 +28,10 @@ import {
 import type { AiPageProposalReview } from "@/lib/services/ai-page-proposals";
 import {
   pageChromeSettings,
+  pageQualificationSettings,
   type PageChromeSettings,
   type PageBlock,
+  type QualificationAttachmentSettings,
 } from "@/lib/page-builder/blocks";
 import {
   builderRoutePrefixOptions,
@@ -366,6 +368,7 @@ export function useSeoPageEditorController(
   const livePageUrl =
     page?.status === "published" ? (page.route_path ?? null) : null;
   const chromeSettings = pageChromeSettings(content);
+  const qualificationSettings = pageQualificationSettings(content);
   const seoReadiness = useMemo(
     () =>
       assessSeoReadiness(content, {
@@ -914,6 +917,7 @@ export function useSeoPageEditorController(
     publishJustSucceeded,
     publishStateHelp,
     publishStateLabel,
+    qualificationSettings,
     livePageUrl,
     removeBlock,
     removeColumn,
@@ -960,6 +964,7 @@ export function useSeoPageEditorController(
     toggleBlockSidebar,
     toggleSeoSidebar,
     updateChromeSettings,
+    updateQualificationSettings,
     updateSlugFromInput,
     usesSimpleBlockStack,
     visibleSlug,
@@ -1208,6 +1213,12 @@ export function useSeoPageEditorController(
 
   function updateChromeSettings(next: Partial<PageChromeSettings>) {
     dispatchContent({ type: "updateChromeSettings", settings: next });
+  }
+
+  function updateQualificationSettings(
+    next: Partial<QualificationAttachmentSettings>,
+  ) {
+    dispatchContent({ type: "updateQualificationSettings", settings: next });
   }
 
   function addBlock(

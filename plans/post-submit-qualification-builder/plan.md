@@ -70,7 +70,7 @@ Owner: feature-orchestrator
 | S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | token/session state                       | DONE    |
 | S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | browser-visible UI                        | DONE    |
 | S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | admin UI + form services                  | PENDING |
-| S8   | Page/block attachment settings                | T2   | S2               | W5-C           | page-builder schema/editor                | PENDING |
+| S8   | Page/block attachment settings                | T2   | S2               | W5-C           | page-builder schema/editor                | BLOCKED |
 | S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | public conversion path                    | PENDING |
 | S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | admin ops UI                              | PENDING |
 | S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | background state transitions              | PENDING |
@@ -427,7 +427,7 @@ Expected files:
 
 ### S7 - Admin qualification forms builder
 
-Status: PENDING
+Status: BLOCKED
 Tier: T2
 Type: behavior
 Actor/trigger: admin manages qualification forms in `/admin/forms`.
@@ -508,11 +508,11 @@ Expected files:
 - tests under page-builder/editor areas
   Write boundaries: page-builder schema/settings/editor files and tests only.
   Acceptance criteria:
-- [ ] Page-level default qualification form and completion redirect persisted.
-- [ ] Lead form block-level override persisted in settings, not prominent canvas.
-- [ ] Experiment/variant fields are optional and stored on session.
-- [ ] Redirect path validation is internal-path only.
-- [ ] Legacy blocks without settings remain valid.
+- [x] Page-level default qualification form and completion redirect persisted.
+- [x] Lead form block-level override persisted in settings, not prominent canvas.
+- [x] Experiment/variant fields are optional and stored for S9 session handoff.
+- [x] Redirect path validation is internal-path only.
+- [x] Legacy blocks without settings remain valid.
       Regression guards:
 - Existing block validation and editor form-data tests pass.
 - Publish readiness still requires CTA/lead form as before.
@@ -528,7 +528,10 @@ Expected files:
   Parallelization: can run with S6/S7.
   Worker role: page-builder attachment worker.
   Exit evidence: settings resolution tests and browser proof.
-  Blocked on: none.
+  Blocked on: browser proof for `/admin/pages/new` in the current local env.
+  Repo/code gates are complete in `agent-runs/S8-attempt-1.md`, but the editor
+  route cannot render locally because no matching Supabase stack/env is
+  available and an isolated temporary stack fails under Supabase CLI 2.75.0.
 
 ### S9 - Opt-in lead-form public integration
 

@@ -58,6 +58,20 @@ const safeHrefSchema = z
     message: "Use an internal path or an http(s) URL.",
   });
 
+const optionalUuidReference = (label: string) =>
+  z
+    .string()
+    .trim()
+    .max(80, `${label} is too long.`)
+    .optional()
+    .transform((value) => value ?? "")
+    .refine(
+      (value) => value.length === 0 || z.uuid().safeParse(value).success,
+      {
+        message: `${label} must be a valid ID.`,
+      },
+    );
+
 const optionalTrimmedText = (max: number) =>
   z
     .string()
@@ -65,6 +79,28 @@ const optionalTrimmedText = (max: number) =>
     .max(max)
     .optional()
     .transform((value) => value ?? "");
+
+const optionalInternalPath = (label: string) =>
+  z
+    .string()
+    .trim()
+    .max(500, `${label} is too long.`)
+    .optional()
+    .transform((value) => value ?? "")
+    .refine(
+      (value) =>
+        value.length === 0 || safeInternalPathSchema.safeParse(value).success,
+      { message: `${label} must be an internal path.` },
+    );
+
+const qualificationAttachmentSettingsSchema = z
+  .object({
+    formId: optionalUuidReference("Qualification form"),
+    completionRedirectPath: optionalInternalPath("Completion redirect"),
+    experimentKey: optionalTrimmedText(120),
+    variantKey: optionalTrimmedText(120),
+  })
+  .strict();
 
 const blockFieldVisibilitySchema = z
   .object({
@@ -335,6 +371,7 @@ const leadFormBlockSchema = z
         body: optionalTrimmedText(500),
         submitLabel: z.string().trim().max(80).default("Submit application"),
         trackingName: optionalTrimmedText(120),
+        qualification: qualificationAttachmentSettingsSchema.optional(),
         fieldVisibility: blockFieldVisibilitySchema,
       })
       .strict(),
@@ -382,6 +419,7 @@ export const pageContentSchema = z
   .object({
     version: z.literal(1),
     chrome: pageChromeSchema.optional(),
+    qualification: qualificationAttachmentSettingsSchema.optional(),
     sections: z.array(pageSectionSchema).max(40),
   })
   .strict();
@@ -393,6 +431,9 @@ export type PageBlock = z.infer<typeof pageBlockSchema>;
 export type PageColumn = z.infer<typeof pageColumnSchema>;
 export type PageSection = z.infer<typeof pageSectionSchema>;
 export type PageChromeSettings = z.infer<typeof pageChromeSchema>;
+export type QualificationAttachmentSettings = z.infer<
+  typeof qualificationAttachmentSettingsSchema
+>;
 export type PageContent = z.infer<typeof pageContentSchema>;
 export type CardGridCard = Extract<
   PageBlock,
@@ -404,8 +445,28 @@ const defaultPageChromeSettings: PageChromeSettings = {
   showFooter: true,
 };
 
+const defaultQualificationAttachmentSettings: QualificationAttachmentSettings =
+  {
+    formId: "",
+    completionRedirectPath: "",
+    experimentKey: "",
+    variantKey: "",
+  };
+
 export function pageChromeSettings(content: PageContent): PageChromeSettings {
   return { ...defaultPageChromeSettings, ...content.chrome };
+}
+
+export function qualificationAttachmentSettings(
+  settings?: Partial<QualificationAttachmentSettings> | null,
+): QualificationAttachmentSettings {
+  return { ...defaultQualificationAttachmentSettings, ...(settings ?? {}) };
+}
+
+export function pageQualificationSettings(
+  content: PageContent,
+): QualificationAttachmentSettings {
+  return qualificationAttachmentSettings(content.qualification);
 }
 
 export function cardGridLinkLabel(card: CardGridCard) {

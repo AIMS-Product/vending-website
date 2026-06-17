@@ -6,10 +6,13 @@ IN_PROGRESS
 
 Implementation has started. S1 schema/type work, S2 qualification form service
 work, S3 qualification intake service work, S4 mocked Close sync work, S5
-public qualification backend work, and S6 public runtime UI work are complete
-and recorded in `progress.md` plus the corresponding `agent-runs/` evidence
-files. This file remains a final-proof scaffold for S12. Live Close CRM proof is
-blocked until credentials and Close custom-field/status IDs exist.
+public qualification backend work, and S6 public runtime UI work are complete.
+S8 page/block attachment code and repo gates are complete, but S8 remains
+blocked on browser proof because the real editor route cannot render against the
+current local Supabase environment. Evidence is recorded in `progress.md` plus
+the corresponding `agent-runs/` files. This file remains a final-proof scaffold
+for S12. Live Close CRM proof is blocked until credentials and Close
+custom-field/status IDs exist.
 
 ## Requirement Audit
 
@@ -19,7 +22,7 @@ blocked until credentials and Close custom-field/status IDs exist.
 | Mandatory qualification session appends to same lead/contact       | S3/S5 service evidence; S9 pending  | PARTIAL |
 | Qualification answers persist step-by-step                         | S5/S6 service and browser evidence  | PARTIAL |
 | Admins can build immutable qualification form versions             | S2 service evidence; S7 UI pending  | PARTIAL |
-| Page/block settings resolve form/default/override                  | Pending S8/S9 evidence              | TODO    |
+| Page/block settings resolve form/default/override                  | S8 repo evidence; browser blocked   | PARTIAL |
 | Close sync is optional, retryable, and non-blocking                | S3/S4 service evidence; S10 pending | PARTIAL |
 | `/admin/leads` exposes status and retry controls                   | Pending S10 evidence                | TODO    |
 | Existing `/apply`, `/contact`, and non-opt-in lead forms preserved | Pending S9/S12 evidence             | TODO    |
@@ -35,6 +38,7 @@ blocked until credentials and Close custom-field/status IDs exist.
 | S4 mocked Close sync contract is in place              | `agent-runs/S4-attempt-1.md`; `src/lib/close/client.ts`; `src/lib/close/sync.ts`; `src/app/api/admin/close-sync/run/route.ts`; S4 tests                                         | PASS   | Live Close proof remains blocked until credentials and field IDs exist                                       |
 | S5 public qualification backend is in place            | `agent-runs/S5-attempt-1.md`; `src/lib/services/qualification-sessions.ts`; `src/app/qualify/[sessionToken]/actions.ts`; S5 tests                                               | PASS   | Real opt-in lead-form entry into runtime remains pending S9                                                  |
 | S6 public runtime UI is in place                       | `agent-runs/S6-attempt-1.md`; `src/components/qualification/QualificationRuntime.tsx`; S6 tests and screenshots                                                                 | PASS   | Real opt-in lead-form entry into runtime remains pending S9                                                  |
+| S8 page/block attachment repo contract is in place     | `agent-runs/S8-attempt-1.md`; S8 schema/resolver/editor tests; typecheck; lint; React Doctor diff scan                                                                          | PASS   | Required real editor browser proof is blocked by local Supabase environment                                  |
 
 ## Commands
 
@@ -44,6 +48,7 @@ blocked until credentials and Close custom-field/status IDs exist.
 - S4 commands are recorded in `agent-runs/S4-attempt-1.md`.
 - S5 commands are recorded in `agent-runs/S5-attempt-1.md`.
 - S6 commands are recorded in `agent-runs/S6-attempt-1.md`.
+- S8 commands are recorded in `agent-runs/S8-attempt-1.md`.
 
 ## Runtime And Boundary Proof
 
@@ -66,6 +71,10 @@ blocked until credentials and Close custom-field/status IDs exist.
   request is made.
 - S6 boundary proof: browser verification used the dev/test
   `demo-qualification-runtime` token and in-memory fixture state only.
+- S8 boundary proof: repo tests used schema/resolver/component coverage only.
+  Browser verification attempted `/admin/pages/new` but is blocked by local
+  Supabase state; see `agent-runs/S8-attempt-1.md` and
+  `browser-evidence/S8-editor-desktop-initial.png`.
 - Live Close proof: blocked until credentials and mapping exist.
 
 ## Skipped Checks
@@ -81,6 +90,9 @@ blocked until credentials and Close custom-field/status IDs exist.
   opt-in entry proof remains pending S9.
 - S6 in-app browser check used Playwright fallback because no direct in-app
   browser tool was callable in this turn.
+- S8 browser proof is blocked, not skipped. Placeholder JWTs failed local REST
+  auth, the running `VendPlacement` Supabase stack is schema-incompatible, and
+  an isolated temp stack failed migration setup under Supabase CLI 2.75.0.
 - S4 live Close proof skipped because credentials, custom-field IDs, status IDs,
   and an approved Close test record are unavailable.
 - Full repo migration reset skipped because an unrelated existing migration fails
@@ -103,12 +115,16 @@ blocked until credentials and Close custom-field/status IDs exist.
   `agent-runs/S4-attempt-1.md`. S5 session/action tests plus S1-S4 regression
   tests are recorded in `agent-runs/S5-attempt-1.md`. S6 runtime tests plus
   desktop/mobile browser screenshots are recorded in
-  `agent-runs/S6-attempt-1.md`. Full public opt-in flow proof remains pending.
-- Confidence: 48%
+  `agent-runs/S6-attempt-1.md`. S8 page/block settings tests, typecheck, lint,
+  and React Doctor diff scan are recorded in `agent-runs/S8-attempt-1.md`, but
+  browser proof is blocked. Full public opt-in flow proof remains pending.
+- Confidence: 52%
 
 ## Residual Risk
 
 - Close API field mapping is unknown until credentials/account configuration are
   available.
 - The real opt-in lead-form entry path still needs browser proof in S9.
+- S8 still needs real `/admin/pages/new` settings screenshot proof before it can
+  be marked done.
 - Migrations are T1 and must be tested locally before any remote DB push.

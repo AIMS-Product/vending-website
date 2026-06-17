@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Wordmark } from "@/components/site/Wordmark";
-import type { PageBlock, PageChromeSettings } from "@/lib/page-builder/blocks";
+import type {
+  PageBlock,
+  PageChromeSettings,
+  QualificationAttachmentSettings,
+} from "@/lib/page-builder/blocks";
 import type { BlockVariant } from "@/lib/page-builder/block-options";
 import type { MoveDirection } from "@/lib/page-builder/editor-state";
 import {
@@ -22,6 +26,7 @@ import {
   SettingsGlyph,
 } from "@/components/admin/seo-page-editor/BuilderEditorUi";
 import { BlockPicker } from "@/components/admin/seo-page-editor/BlockPicker";
+import { TextInput } from "@/components/admin/seo-page-editor/EditorInputs";
 import { footerColumns, primaryNav } from "@/lib/content/nav";
 
 // N13 / issue I15: a single-step create panel. The old 3-step wizard forced
@@ -525,22 +530,67 @@ export function BuilderBlockSidebar({
 export function PageChromeControls({
   settings,
   onChange,
+  qualificationSettings,
+  onQualificationChange,
 }: {
   settings: PageChromeSettings;
   onChange: (settings: Partial<PageChromeSettings>) => void;
+  qualificationSettings: QualificationAttachmentSettings;
+  onQualificationChange: (
+    settings: Partial<QualificationAttachmentSettings>,
+  ) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-      <ChromeToggle
-        label="Show header"
-        checked={settings.showHeader}
-        onChange={(checked) => onChange({ showHeader: checked })}
-      />
-      <ChromeToggle
-        label="Show footer"
-        checked={settings.showFooter}
-        onChange={(checked) => onChange({ showFooter: checked })}
-      />
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+        <ChromeToggle
+          label="Show header"
+          checked={settings.showHeader}
+          onChange={(checked) => onChange({ showHeader: checked })}
+        />
+        <ChromeToggle
+          label="Show footer"
+          checked={settings.showFooter}
+          onChange={(checked) => onChange({ showFooter: checked })}
+        />
+      </div>
+      <details className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+          Qualification follow-up
+        </summary>
+        <div className="mt-3 space-y-3">
+          <TextInput
+            label="Default form"
+            placeholder="Published form ID"
+            value={qualificationSettings.formId}
+            onChange={(formId) => onQualificationChange({ formId })}
+          />
+          <TextInput
+            label="Completion redirect"
+            placeholder="/thank-you"
+            value={qualificationSettings.completionRedirectPath}
+            onChange={(completionRedirectPath) =>
+              onQualificationChange({ completionRedirectPath })
+            }
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <TextInput
+              label="Experiment key"
+              placeholder="Optional"
+              value={qualificationSettings.experimentKey}
+              onChange={(experimentKey) =>
+                onQualificationChange({ experimentKey })
+              }
+            />
+            <TextInput
+              label="Variant key"
+              placeholder="Optional"
+              value={qualificationSettings.variantKey}
+              onChange={(variantKey) => onQualificationChange({ variantKey })}
+            />
+          </div>
+        </div>
+      </details>
     </div>
   );
 }

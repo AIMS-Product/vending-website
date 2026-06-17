@@ -1,8 +1,10 @@
 import {
   pageChromeSettings,
+  qualificationAttachmentSettings,
   type PageBlock,
   type PageChromeSettings,
   type PageContent,
+  type QualificationAttachmentSettings,
 } from "@/lib/page-builder/blocks";
 import type { BlockVariant } from "@/lib/page-builder/block-options";
 import {
@@ -23,6 +25,10 @@ import {
 export type PageEditorContentAction =
   | { type: "replaceContent"; content: PageContent }
   | { type: "updateChromeSettings"; settings: Partial<PageChromeSettings> }
+  | {
+      type: "updateQualificationSettings";
+      settings: Partial<QualificationAttachmentSettings>;
+    }
   | {
       type: "addBlock";
       sectionId: string;
@@ -109,6 +115,16 @@ export function pageEditorContentReducer(
     return {
       ...content,
       chrome: { ...pageChromeSettings(content), ...action.settings },
+    };
+  }
+
+  if (action.type === "updateQualificationSettings") {
+    return {
+      ...content,
+      qualification: qualificationAttachmentSettings({
+        ...content.qualification,
+        ...action.settings,
+      }),
     };
   }
 

@@ -1,6 +1,10 @@
 "use client";
 
-import { CARD_GRID_MAX_CARDS, type PageBlock } from "@/lib/page-builder/blocks";
+import {
+  CARD_GRID_MAX_CARDS,
+  qualificationAttachmentSettings,
+  type PageBlock,
+} from "@/lib/page-builder/blocks";
 import { moveItem } from "@/lib/page-builder/content-ops";
 import { blockCanvasPlaceholders } from "@/lib/page-builder/block-editor-placeholders";
 import {
@@ -994,8 +998,73 @@ export function BlockSidebarSettingsPanel({
               })
             }
           />
+          <LeadFormQualificationSettings block={block} onChange={onChange} />
         </>
       )}
     </div>
+  );
+}
+
+function LeadFormQualificationSettings({
+  block,
+  onChange,
+}: {
+  block: Extract<PageBlock, { type: "lead_form" }>;
+  onChange: (block: PageBlock) => void;
+}) {
+  const settings = qualificationAttachmentSettings(block.props.qualification);
+  const updateQualification = (
+    patch: Partial<typeof settings>,
+  ): Extract<PageBlock, { type: "lead_form" }> => ({
+    ...block,
+    props: {
+      ...block.props,
+      qualification: {
+        ...settings,
+        ...patch,
+      },
+    },
+  });
+
+  return (
+    <details className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+        Qualification follow-up
+      </summary>
+      <div className="mt-3 space-y-3">
+        <TextInput
+          label="Form override"
+          placeholder="Published form ID"
+          value={settings.formId}
+          onChange={(formId) => onChange(updateQualification({ formId }))}
+        />
+        <TextInput
+          label="Completion redirect"
+          placeholder="/thank-you"
+          value={settings.completionRedirectPath}
+          onChange={(completionRedirectPath) =>
+            onChange(updateQualification({ completionRedirectPath }))
+          }
+        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <TextInput
+            label="Experiment key"
+            placeholder="Optional"
+            value={settings.experimentKey}
+            onChange={(experimentKey) =>
+              onChange(updateQualification({ experimentKey }))
+            }
+          />
+          <TextInput
+            label="Variant key"
+            placeholder="Optional"
+            value={settings.variantKey}
+            onChange={(variantKey) =>
+              onChange(updateQualification({ variantKey }))
+            }
+          />
+        </div>
+      </div>
+    </details>
   );
 }
