@@ -1,7 +1,7 @@
 # Feature Progress: post-submit-qualification-builder
 
 Status: IN_PROGRESS
-Current wave: W4
+Current wave: W5
 Last updated: 2026-06-17
 Owner: feature-orchestrator
 
@@ -13,7 +13,7 @@ Owner: feature-orchestrator
 | S2   | Qualification form schema and services        | T1   | S1               | W2-A           | orchestrator | DONE    |
 | S3   | Lead capture to qualification session service | T1   | S1,S2            | W3-A           | orchestrator | DONE    |
 | S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | orchestrator | DONE    |
-| S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | unassigned   | PENDING |
+| S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | orchestrator | DONE    |
 | S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | unassigned   | PENDING |
 | S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | unassigned   | PENDING |
 | S8   | Page/block attachment settings                | T2   | S2               | W5-C           | unassigned   | PENDING |
@@ -30,7 +30,7 @@ Owner: feature-orchestrator
 | S2   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S2-attempt-1.md` | High       |
 | S3   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S3-attempt-1.md` | High       |
 | S4   | DONE | DONE  | DONE     | DONE      | SKIPPED      | SKIPPED       | `agent-runs/S4-attempt-1.md` | High       |
-| S5   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                         | TBD        |
+| S5   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S5-attempt-1.md` | High       |
 | S6   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                         | TBD        |
 | S7   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                         | TBD        |
 | S8   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                         | TBD        |
@@ -40,8 +40,9 @@ Owner: feature-orchestrator
 | S12  | TODO | TODO  | TODO     | TODO      | TODO         | BLOCKED       | none                         | TBD        |
 
 `S4` live Close boundary proof was skipped with accepted reason because
-credentials and field IDs are unavailable. `S12` final live Close proof remains
-blocked on the same external credentials/mapping.
+credentials and field IDs are unavailable. `S5` browser proof was skipped because
+runtime UI/browser behavior is owned by S6/S9. `S12` final live Close proof
+remains blocked on the same external credentials/mapping.
 
 ## Blockers
 
@@ -58,3 +59,4 @@ blocked on the same external credentials/mapping.
 - 2026-06-17: S2 completed. Added qualification form schemas, normalized role support, question/option snapshots, draft update, publish-to-immutable-version, default version resolution, and version-by-id services. RED/GREEN/REFACTOR evidence and targeted tests are recorded in `plans/post-submit-qualification-builder/agent-runs/S2-attempt-1.md`.
 - 2026-06-17: S3 completed. Added short-contact qualification intake service, default/explicit form-version resolution, local lead/session persistence, hashed session-token storage, email-based Close ID reuse, and pending Close sync event enqueueing. RED/GREEN/REFACTOR evidence and targeted tests are recorded in `plans/post-submit-qualification-builder/agent-runs/S3-attempt-1.md`.
 - 2026-06-17: S4 completed. Added optional Close env config, mocked-fetch Close client, retryable sync event processor, duplicate handling, enrichment notes/custom fields, stale follow-up tasks, bounded sanitized errors, and protected Close sync runner route. RED/GREEN/REFACTOR evidence and targeted tests are recorded in `plans/post-submit-qualification-builder/agent-runs/S4-attempt-1.md`.
+- 2026-06-17: S5 completed. Added public qualification token lookup, immutable form loading, answer autosave/update, resume state, required/consent completion validation, safe redirect handling, Close enrichment event enqueueing, server actions, and a minimal noindex route shell. RED/GREEN/REFACTOR evidence and targeted tests are recorded in `plans/post-submit-qualification-builder/agent-runs/S5-attempt-1.md`.

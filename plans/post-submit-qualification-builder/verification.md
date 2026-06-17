@@ -5,18 +5,19 @@
 IN_PROGRESS
 
 Implementation has started. S1 schema/type work, S2 qualification form service
-work, S3 qualification intake service work, and S4 mocked Close sync work are
-complete and recorded in `progress.md` plus the corresponding `agent-runs/`
-evidence files. This file remains a final-proof scaffold for S12. Live Close CRM
-proof is blocked until credentials and Close custom-field/status IDs exist.
+work, S3 qualification intake service work, S4 mocked Close sync work, and S5
+public qualification backend work are complete and recorded in `progress.md`
+plus the corresponding `agent-runs/` evidence files. This file remains a
+final-proof scaffold for S12. Live Close CRM proof is blocked until credentials
+and Close custom-field/status IDs exist.
 
 ## Requirement Audit
 
 | Requirement                                                        | Evidence                            | Result  |
 | ------------------------------------------------------------------ | ----------------------------------- | ------- |
 | Short contact capture creates local lead before Close sync         | S3 service evidence; S9 UI pending  | PARTIAL |
-| Mandatory qualification session appends to same lead/contact       | S3 service evidence; S5/S9 pending  | PARTIAL |
-| Qualification answers persist step-by-step                         | Pending S5/S6 evidence              | TODO    |
+| Mandatory qualification session appends to same lead/contact       | S3/S5 service evidence; S9 pending  | PARTIAL |
+| Qualification answers persist step-by-step                         | S5 service evidence; S6 UI pending  | PARTIAL |
 | Admins can build immutable qualification form versions             | S2 service evidence; S7 UI pending  | PARTIAL |
 | Page/block settings resolve form/default/override                  | Pending S8/S9 evidence              | TODO    |
 | Close sync is optional, retryable, and non-blocking                | S3/S4 service evidence; S10 pending | PARTIAL |
@@ -32,6 +33,7 @@ proof is blocked until credentials and Close custom-field/status IDs exist.
 | S2 qualification form service contract is in place     | `agent-runs/S2-attempt-1.md`; `src/lib/qualification/forms.ts`; `src/lib/services/qualification-forms.ts`; `src/lib/services/qualification-forms.test.ts`                       | PASS   | Admin UI wiring and browser proof remain pending S7                                                          |
 | S3 qualification intake service contract is in place   | `agent-runs/S3-attempt-1.md`; `src/lib/services/qualification-intake.ts`; `src/lib/services/qualification-intake.test.ts`                                                       | PASS   | Public route/action wiring and browser proof remain pending S9                                               |
 | S4 mocked Close sync contract is in place              | `agent-runs/S4-attempt-1.md`; `src/lib/close/client.ts`; `src/lib/close/sync.ts`; `src/app/api/admin/close-sync/run/route.ts`; S4 tests                                         | PASS   | Live Close proof remains blocked until credentials and field IDs exist                                       |
+| S5 public qualification backend is in place            | `agent-runs/S5-attempt-1.md`; `src/lib/services/qualification-sessions.ts`; `src/app/qualify/[sessionToken]/actions.ts`; S5 tests                                               | PASS   | Runtime UI and browser proof remain pending S6/S9                                                            |
 
 ## Commands
 
@@ -39,11 +41,12 @@ proof is blocked until credentials and Close custom-field/status IDs exist.
 - S2 commands are recorded in `agent-runs/S2-attempt-1.md`.
 - S3 commands are recorded in `agent-runs/S3-attempt-1.md`.
 - S4 commands are recorded in `agent-runs/S4-attempt-1.md`.
+- S5 commands are recorded in `agent-runs/S5-attempt-1.md`.
 
 ## Runtime And Boundary Proof
 
-- Browser proof: not run for S1, S2, S3, or S4 because they are
-  schema/service/adapter-only nodes.
+- Browser proof: not run for S1, S2, S3, S4, or S5 because they are
+  schema/service/adapter/backend-only nodes.
 - Local migration proof: focused S1 dependency stack reset passed; see
   `agent-runs/S1-attempt-1.md`.
 - Mocked Close adapter proof: S4 mocked-fetch tests passed for Basic auth,
@@ -55,6 +58,9 @@ proof is blocked until credentials and Close custom-field/status IDs exist.
   assert a pending `close_sync_events` row without live Close credentials.
 - S4 boundary proof: sync tests use mocked fetch and injected fake Supabase
   client; no live Close request is made.
+- S5 boundary proof: session tests use an injected fake Supabase client and
+  assert local `qualification_enrichment` queue insertion only; no live Close
+  request is made.
 - Live Close proof: blocked until credentials and mapping exist.
 
 ## Skipped Checks
@@ -65,6 +71,8 @@ proof is blocked until credentials and Close custom-field/status IDs exist.
 - S3 browser proof skipped because S3 is service behavior only; public route/UI
   proof is pending S9.
 - S4 browser proof skipped because S4 is adapter/runner behavior only.
+- S5 browser proof skipped because S5 is backend route/action behavior with a
+  minimal route shell. Runtime UI and screenshot proof are owned by S6/S9.
 - S4 live Close proof skipped because credentials, custom-field IDs, status IDs,
   and an approved Close test record are unavailable.
 - Full repo migration reset skipped because an unrelated existing migration fails
@@ -84,8 +92,10 @@ proof is blocked until credentials and Close custom-field/status IDs exist.
   S3 targeted intake tests plus S1/S2/legacy lead/attribution regression tests
   are recorded in `agent-runs/S3-attempt-1.md`. S4 targeted Close sync tests
   plus S1/S2/S3 and scheduled-route regression tests are recorded in
-  `agent-runs/S4-attempt-1.md`. Broader flow proof remains pending.
-- Confidence: 32%
+  `agent-runs/S4-attempt-1.md`. S5 session/action tests plus S1-S4 regression
+  tests are recorded in `agent-runs/S5-attempt-1.md`. Browser flow proof remains
+  pending.
+- Confidence: 40%
 
 ## Residual Risk
 

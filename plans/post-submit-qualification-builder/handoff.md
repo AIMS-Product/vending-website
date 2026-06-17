@@ -35,7 +35,12 @@ chat history.
   retryable sync event processor, duplicate handling, enrichment notes/custom
   fields, stale follow-up tasks, bounded sanitized errors, and protected Close
   sync runner route are recorded in `agent-runs/S4-attempt-1.md`.
-- The next unblocked node is S5: Public qualification backend route/actions.
+- S5 is complete: public token lookup, immutable form loading, answer autosave
+  and editing, resume state, required/consent completion validation, safe
+  redirect fallback, Close enrichment event enqueueing, server actions, and a
+  minimal noindex route shell are recorded in `agent-runs/S5-attempt-1.md`.
+- The next unblocked wave is W5: S6 public runtime UI, S7 admin forms builder,
+  and S8 page/block attachment settings.
 - Close credentials are not available yet. This does not block local database,
   mocked Close adapter, retry queue, admin UI, or public runtime work. It blocks
   only final live Close boundary proof.
@@ -54,13 +59,14 @@ chat history.
 
 ## Next Action
 
-Launch or implement S5 with strict RED -> GREEN -> REFACTOR:
+Choose and launch the next W5 node with strict RED -> GREEN -> REFACTOR:
 
-- add token-hash lookup for public qualification sessions,
-- load immutable form versions and existing answers for resume,
-- save answers step-by-step with question/option snapshots and normalized
-  values,
-- require all required answers and consent before completion,
-- enqueue `qualification_enrichment` without requiring Close credentials,
-- reject unsafe external redirect paths,
-- update `progress.md` only after evidence is accepted.
+- S6: public Typeform-style runtime UI. Use
+  `build-web-apps:frontend-app-builder` and `imagegen` before implementation,
+  then browser-verify desktop and mobile screenshots.
+- S7: admin qualification forms builder. Read the `/admin` design contracts
+  before changing UI.
+- S8: page/block attachment settings. Read the page-builder design contracts
+  before changing editor UI.
+
+Update `progress.md` only after fresh evidence is accepted.

@@ -67,7 +67,7 @@ Owner: feature-orchestrator
 | S2   | Qualification form schema and services        | T1   | S1               | W2-A           | shared domain contracts                   | DONE    |
 | S3   | Lead capture to qualification session service | T1   | S1,S2            | W3-A           | lead state transitions                    | DONE    |
 | S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | external adapter, single-threaded         | DONE    |
-| S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | token/session state                       | PENDING |
+| S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | token/session state                       | DONE    |
 | S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | browser-visible UI                        | PENDING |
 | S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | admin UI + form services                  | PENDING |
 | S8   | Page/block attachment settings                | T2   | S2               | W5-C           | page-builder schema/editor                | PENDING |
@@ -319,7 +319,7 @@ Expected files:
 
 ### S5 - Public qualification backend route/actions
 
-Status: PENDING
+Status: DONE
 Tier: T1
 Type: behavior
 Actor/trigger: prospect opens `/qualify/[sessionToken]`, advances steps, or
@@ -344,13 +344,13 @@ Expected files:
 - `src/lib/services/qualification-sessions.test.ts`
   Write boundaries: qualification route/actions/session services/tests.
   Acceptance criteria:
-- [ ] Valid token loads session; expired/unknown token shows branded unavailable
+- [x] Valid token loads session; expired/unknown token shows branded unavailable
       state without PII.
-- [ ] Autosave persists answer snapshots and normalized values per Continue.
-- [ ] Resume chooses first unanswered required question.
-- [ ] Back navigation can edit previous answers.
-- [ ] Completion requires all required answers and consent when present.
-- [ ] Completion enqueues Close enrichment sync and resolves safe redirect path.
+- [x] Autosave persists answer snapshots and normalized values per Continue.
+- [x] Resume chooses first unanswered required question.
+- [x] Back navigation can edit previous answers.
+- [x] Completion requires all required answers and consent when present.
+- [x] Completion enqueues Close enrichment sync and resolves safe redirect path.
       Regression guards:
 - Re-loading completed session does not duplicate completion sync events.
 - Redirect path rejects external URLs.
