@@ -24,7 +24,10 @@ chat history.
 - S1 is complete: data model, RLS, generated types, schema/type test, and
   focused local migration proof are recorded in `progress.md` and
   `agent-runs/S1-attempt-1.md`.
-- The next unblocked node is S2: Qualification form schema and services.
+- S2 is complete: qualification form schemas, normalized roles, snapshots,
+  draft update, immutable publish, default resolution, and version-by-id
+  services are recorded in `agent-runs/S2-attempt-1.md`.
+- The next unblocked node is S3: Lead capture to qualification session service.
 - Close credentials are not available yet. This does not block local database,
   mocked Close adapter, retry queue, admin UI, or public runtime work. It blocks
   only final live Close boundary proof.
@@ -43,10 +46,12 @@ chat history.
 
 ## Next Action
 
-Launch or implement S2 with strict RED -> GREEN -> REFACTOR:
+Launch or implement S3 with strict RED -> GREEN -> REFACTOR:
 
-- add qualification form/question schemas and service contracts,
-- prove draft publish creates immutable versions,
-- prove default-form resolution and snapshot serialization,
-- preserve existing page-builder block validation behavior,
+- add the opt-in short contact intake service,
+- save/reuse the local lead and create a qualification session for the resolved
+  form version,
+- enqueue a retryable Close create/update sync event without requiring Close
+  config,
+- return a safe `/qualify/[token]` URL,
 - update `progress.md` only after evidence is accepted.

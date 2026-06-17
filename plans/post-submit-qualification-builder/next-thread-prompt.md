@@ -24,10 +24,12 @@ Important constraints:
   `plans/post-submit-qualification-builder/agent-runs/`.
 - S1 is complete. Evidence is in
   `plans/post-submit-qualification-builder/agent-runs/S1-attempt-1.md`.
-- Next unblocked node is S2: Qualification form schema and services.
+- S2 is complete. Evidence is in
+  `plans/post-submit-qualification-builder/agent-runs/S2-attempt-1.md`.
+- Next unblocked node is S3: Lead capture to qualification session service.
 - Use strict RED -> GREEN -> REFACTOR and record fresh evidence before marking
   any node done.
 
 Begin by reading the files above, confirming the feature state, and reporting
-that the next action is S2. Do not start implementation until the user says to
+that the next action is S3. Do not start implementation until the user says to
 start or continue.

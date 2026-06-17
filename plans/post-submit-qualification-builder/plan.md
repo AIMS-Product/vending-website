@@ -64,7 +64,7 @@ Owner: feature-orchestrator
 | Node | Title                                         | Tier | Depends On       | Parallel Group | Shared-State Risk                         | Status  |
 | ---- | --------------------------------------------- | ---- | ---------------- | -------------- | ----------------------------------------- | ------- |
 | S1   | Data model, RLS, generated types              | T1   | none             | W1-A           | migrations/types, single-threaded         | DONE    |
-| S2   | Qualification form schema and services        | T1   | S1               | W2-A           | shared domain contracts                   | PENDING |
+| S2   | Qualification form schema and services        | T1   | S1               | W2-A           | shared domain contracts                   | DONE    |
 | S3   | Lead capture to qualification session service | T1   | S1,S2            | W3-A           | lead state transitions                    | PENDING |
 | S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | external adapter, single-threaded         | PENDING |
 | S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | token/session state                       | PENDING |
@@ -157,7 +157,7 @@ Expected files:
 
 ### S2 - Qualification form schema and services
 
-Status: PENDING
+Status: DONE
 Tier: T1
 Type: behavior
 Actor/trigger: admin creates/edits/publishes a qualification form; public flow
@@ -182,11 +182,11 @@ Expected files:
 - optional seed/default-form helper
   Write boundaries: qualification domain/service files and tests only.
   Acceptance criteria:
-- [ ] Zod schema covers approved v1 question types and rejects branching/scripts.
-- [ ] Draft edit and publish flow creates immutable versions.
-- [ ] A single default form can be resolved.
-- [ ] Question and option snapshots are serializable for answer storage.
-- [ ] Normalized roles support budget, timeline, state/market, business stage,
+- [x] Zod schema covers approved v1 question types and rejects branching/scripts.
+- [x] Draft edit and publish flow creates immutable versions.
+- [x] A single default form can be resolved.
+- [x] Question and option snapshots are serializable for answer storage.
+- [x] Normalized roles support budget, timeline, state/market, business stage,
       goal, available capital, location status, machine goal, consent, and contact
       preference.
       Regression guards:
