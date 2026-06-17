@@ -31,8 +31,11 @@ chat history.
   persistence, hashed token URL, Close ID reuse, attribution persistence, and
   pending Close sync event enqueueing are recorded in
   `agent-runs/S3-attempt-1.md`.
-- The next unblocked wave is W4: S4 Close adapter/sync runner and S5 public
-  qualification backend route/actions.
+- S4 is complete: optional Close env config, mocked-fetch Close client,
+  retryable sync event processor, duplicate handling, enrichment notes/custom
+  fields, stale follow-up tasks, bounded sanitized errors, and protected Close
+  sync runner route are recorded in `agent-runs/S4-attempt-1.md`.
+- The next unblocked node is S5: Public qualification backend route/actions.
 - Close credentials are not available yet. This does not block local database,
   mocked Close adapter, retry queue, admin UI, or public runtime work. It blocks
   only final live Close boundary proof.
@@ -51,12 +54,13 @@ chat history.
 
 ## Next Action
 
-Launch W4 with strict RED -> GREEN -> REFACTOR:
+Launch or implement S5 with strict RED -> GREEN -> REFACTOR:
 
-- S4 should add mocked Close adapter behavior, sync-event processing, retry
-  state transitions, and optional env config without live Close credentials.
-- S5 should add token-based public qualification backend route/actions for
-  loading sessions and saving step answers against immutable form versions.
-- S4 and S5 can run in parallel only if write scopes stay disjoint and
-  integration verifies the shared event/session contracts.
+- add token-hash lookup for public qualification sessions,
+- load immutable form versions and existing answers for resume,
+- save answers step-by-step with question/option snapshots and normalized
+  values,
+- require all required answers and consent before completion,
+- enqueue `qualification_enrichment` without requiring Close credentials,
+- reject unsafe external redirect paths,
 - update `progress.md` only after evidence is accepted.

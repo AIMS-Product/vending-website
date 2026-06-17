@@ -12,7 +12,7 @@ Owner: feature-orchestrator
 | S1   | Data model, RLS, generated types              | T1   | none             | W1-A           | orchestrator | DONE    |
 | S2   | Qualification form schema and services        | T1   | S1               | W2-A           | orchestrator | DONE    |
 | S3   | Lead capture to qualification session service | T1   | S1,S2            | W3-A           | orchestrator | DONE    |
-| S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | unassigned   | PENDING |
+| S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | orchestrator | DONE    |
 | S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | unassigned   | PENDING |
 | S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | unassigned   | PENDING |
 | S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | unassigned   | PENDING |
@@ -29,7 +29,7 @@ Owner: feature-orchestrator
 | S1   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S1-attempt-1.md` | High       |
 | S2   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S2-attempt-1.md` | High       |
 | S3   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S3-attempt-1.md` | High       |
-| S4   | TODO | TODO  | TODO     | TODO      | SKIPPED      | BLOCKED       | none                         | TBD        |
+| S4   | DONE | DONE  | DONE     | DONE      | SKIPPED      | SKIPPED       | `agent-runs/S4-attempt-1.md` | High       |
 | S5   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                         | TBD        |
 | S6   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                         | TBD        |
 | S7   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                         | TBD        |
@@ -39,16 +39,15 @@ Owner: feature-orchestrator
 | S11  | TODO | TODO  | TODO     | TODO      | SKIPPED      | TODO          | none                         | TBD        |
 | S12  | TODO | TODO  | TODO     | TODO      | TODO         | BLOCKED       | none                         | TBD        |
 
-`S4` and `S12` boundary gates are blocked only for live Close CRM proof until
-credentials and field IDs exist. Mocked adapter tests and local retry behavior
-remain unblocked.
+`S4` live Close boundary proof was skipped with accepted reason because
+credentials and field IDs are unavailable. `S12` final live Close proof remains
+blocked on the same external credentials/mapping.
 
 ## Blockers
 
-| Node | Blocker                                                                    | Required Decision Or Evidence                                                                         |
-| ---- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| S4   | No Close credentials or account field mapping yet for live boundary proof. | Add `CLOSE_API_KEY`, Close custom-field IDs/status labels, and an approved test Close account/record. |
-| S12  | Final live Close proof cannot run without credentials/mapping.             | Same as S4; otherwise mark live Close proof skipped with accepted reason.                             |
+| Node | Blocker                                                        | Required Decision Or Evidence                                             |
+| ---- | -------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| S12  | Final live Close proof cannot run without credentials/mapping. | Same as S4; otherwise mark live Close proof skipped with accepted reason. |
 
 ## Completed Evidence
 
@@ -58,3 +57,4 @@ remain unblocked.
 - 2026-06-17: S1 completed. Added additive post-submit qualification migration, generated type contract updates, and schema/type regression test. RED evidence, targeted tests, typecheck, focused local Supabase reset proof, RLS/token inspection, and full-reset caveat are recorded in `plans/post-submit-qualification-builder/agent-runs/S1-attempt-1.md`.
 - 2026-06-17: S2 completed. Added qualification form schemas, normalized role support, question/option snapshots, draft update, publish-to-immutable-version, default version resolution, and version-by-id services. RED/GREEN/REFACTOR evidence and targeted tests are recorded in `plans/post-submit-qualification-builder/agent-runs/S2-attempt-1.md`.
 - 2026-06-17: S3 completed. Added short-contact qualification intake service, default/explicit form-version resolution, local lead/session persistence, hashed session-token storage, email-based Close ID reuse, and pending Close sync event enqueueing. RED/GREEN/REFACTOR evidence and targeted tests are recorded in `plans/post-submit-qualification-builder/agent-runs/S3-attempt-1.md`.
+- 2026-06-17: S4 completed. Added optional Close env config, mocked-fetch Close client, retryable sync event processor, duplicate handling, enrichment notes/custom fields, stale follow-up tasks, bounded sanitized errors, and protected Close sync runner route. RED/GREEN/REFACTOR evidence and targeted tests are recorded in `plans/post-submit-qualification-builder/agent-runs/S4-attempt-1.md`.

@@ -28,11 +28,12 @@ Important constraints:
   `plans/post-submit-qualification-builder/agent-runs/S2-attempt-1.md`.
 - S3 is complete. Evidence is in
   `plans/post-submit-qualification-builder/agent-runs/S3-attempt-1.md`.
-- Next unblocked wave is W4: S4 Close adapter/sync runner and S5 public
-  qualification backend route/actions.
+- S4 is complete. Evidence is in
+  `plans/post-submit-qualification-builder/agent-runs/S4-attempt-1.md`.
+- Next unblocked node is S5: Public qualification backend route/actions.
 - Use strict RED -> GREEN -> REFACTOR and record fresh evidence before marking
   any node done.
 
 Begin by reading the files above, confirming the feature state, and reporting
-that the next action is W4. Do not start implementation until the user says to
+that the next action is S5. Do not start implementation until the user says to
 start or continue.

@@ -66,7 +66,7 @@ Owner: feature-orchestrator
 | S1   | Data model, RLS, generated types              | T1   | none             | W1-A           | migrations/types, single-threaded         | DONE    |
 | S2   | Qualification form schema and services        | T1   | S1               | W2-A           | shared domain contracts                   | DONE    |
 | S3   | Lead capture to qualification session service | T1   | S1,S2            | W3-A           | lead state transitions                    | DONE    |
-| S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | external adapter, single-threaded         | PENDING |
+| S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | external adapter, single-threaded         | DONE    |
 | S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | token/session state                       | PENDING |
 | S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | browser-visible UI                        | PENDING |
 | S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | admin UI + form services                  | PENDING |
@@ -260,7 +260,7 @@ Expected files:
 
 ### S4 - Close adapter, sync events, retry runner
 
-Status: PENDING
+Status: DONE
 Tier: T1
 Type: integration
 Actor/trigger: lead intake, qualification completion, stale-session job, or admin
@@ -288,16 +288,16 @@ Expected files:
   Write boundaries: Close integration files, config, protected retry route/actions,
   tests.
   Acceptance criteria:
-- [ ] `CLOSE_API_KEY` optional env added without breaking local dev.
-- [ ] Client uses mocked fetch in tests; no live Close calls in CI/local tests.
-- [ ] Search-by-email duplicate strategy follows decisions: local mapping first,
+- [x] `CLOSE_API_KEY` optional env added without breaking local dev.
+- [x] Client uses mocked fetch in tests; no live Close calls in CI/local tests.
+- [x] Search-by-email duplicate strategy follows decisions: local mapping first,
       single clear Close match second, `needs_review` if ambiguous.
-- [ ] Event statuses: pending, retrying, synced, failed, dead_letter,
+- [x] Event statuses: pending, retrying, synced, failed, dead_letter,
       needs_review.
-- [ ] Backoff updates `attempt_count`, `next_retry_at`, and `last_error`.
-- [ ] Completion writes readable Close note/activity payload and selected custom
+- [x] Backoff updates `attempt_count`, `next_retry_at`, and `last_error`.
+- [x] Completion writes readable Close note/activity payload and selected custom
       fields only when configured.
-- [ ] Stale qualification can enqueue a follow-up task event.
+- [x] Stale qualification can enqueue a follow-up task event.
       Regression guards:
 - Missing Close config degrades to retryable failure, not thrown visitor error.
 - Failed Close response stores bounded error text, not full secret-bearing data.
