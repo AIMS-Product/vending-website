@@ -2,9 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  buildQuestionSnapshots,
   normalizedRolesForForm,
-  parseQualificationFormSchema,
   qualificationFormSchema,
   type QualificationFormDefinition,
 } from "@/lib/qualification/forms";
@@ -30,6 +28,21 @@ export type PublishQualificationFormInput = {
   publishedBy?: string | null;
 };
 
+export type CreateQualificationFormInput = {
+  name: string;
+  createdBy?: string | null;
+  schema?: unknown;
+};
+
+export type GetQualificationFormInput = {
+  formId: string;
+};
+
+export type SetDefaultQualificationFormInput = {
+  formId: string;
+  updatedBy?: string | null;
+};
+
 export type UpdateQualificationFormDraftInput = {
   formId: string;
   name?: string;
@@ -51,6 +64,19 @@ export type QualificationPublishedVersion = {
   publishedAt: string;
 };
 
+export type AdminQualificationForm = {
+  id: string;
+  name: string;
+  slug: string | null;
+  status: string;
+  isDefault: boolean;
+  draftSchema: QualificationFormDefinition;
+  currentPublishedVersionId: string | null;
+  draftQuestionCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export class QualificationFormServiceError extends Error {
   constructor(message: string) {
     super(message);
@@ -59,9 +85,93 @@ export class QualificationFormServiceError extends Error {
 }
 
 const FORM_FIELDS =
-  "id, name, status, is_default, draft_schema, current_published_version_id" as const;
+  "id, name, slug, status, is_default, draft_schema, current_published_version_id, created_at, updated_at" as const;
 const VERSION_FIELDS =
   "id, form_id, version_number, schema_snapshot, question_count, normalized_roles, published_at" as const;
+
+const DEFAULT_DRAFT_SCHEMA: QualificationFormDefinition = {
+  version: 1,
+  questions: [
+    {
+      id: "first_question",
+      type: "short_text",
+      label: "What should we qualify first?",
+      helpText: "",
+      placeholder: "",
+      required: true,
+    },
+  ],
+};
+
+export async function adminListQualificationForms(
+  deps: ServiceDeps = {},
+): Promise<AdminQualificationForm[]> {
+  const client = serviceClient(deps);
+  const { data, error } = await client
+    .from("qualification_forms")
+    .select(FORM_FIELDS)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new QualificationFormServiceError(
+      "Could not list qualification forms.",
+    );
+  }
+
+  return ((data ?? []) as QualificationFormRow[]).map(mapForm);
+}
+
+export async function adminGetQualificationForm(
+  input: GetQualificationFormInput,
+  deps: ServiceDeps = {},
+): Promise<AdminQualificationForm | null> {
+  const client = serviceClient(deps);
+  const { data, error } = await client
+    .from("qualification_forms")
+    .select(FORM_FIELDS)
+    .eq("id", input.formId)
+    .maybeSingle();
+
+  if (error) {
+    throw new QualificationFormServiceError(
+      "Could not load qualification form.",
+    );
+  }
+
+  return data ? mapForm(data as QualificationFormRow) : null;
+}
+
+export async function adminCreateQualificationForm(
+  input: CreateQualificationFormInput,
+  deps: ServiceDeps = {},
+): Promise<AdminQualificationForm> {
+  const name = parseFormName(input.name);
+  const schema = parseEditableSchema(input.schema ?? DEFAULT_DRAFT_SCHEMA);
+  const insert: Database["public"]["Tables"]["qualification_forms"]["Insert"] =
+    {
+      name,
+      status: "draft",
+      is_default: false,
+      draft_schema: schema as Json,
+      created_by: input.createdBy ?? null,
+      updated_by: input.createdBy ?? null,
+    };
+
+  const client = serviceClient(deps);
+  const { data, error } = await client
+    .from("qualification_forms")
+    .insert(insert)
+    .select(FORM_FIELDS)
+    .single();
+
+  if (error || !data) {
+    throw new QualificationFormServiceError(
+      "Could not create qualification form.",
+    );
+  }
+
+  return mapForm(data as QualificationFormRow);
+}
 
 export async function adminUpdateQualificationFormDraft(
   input: UpdateQualificationFormDraftInput,
@@ -71,15 +181,11 @@ export async function adminUpdateQualificationFormDraft(
     {};
 
   if (input.name != null) {
-    const name = input.name.trim();
-    if (!name) {
-      throw new QualificationFormServiceError("Form name is required.");
-    }
-    patch.name = name;
+    patch.name = parseFormName(input.name);
   }
 
   if (input.schema !== undefined) {
-    patch.draft_schema = parseQualificationFormSchema(input.schema) as Json;
+    patch.draft_schema = parseEditableSchema(input.schema) as Json;
   }
 
   if (input.updatedBy !== undefined) {
@@ -101,13 +207,52 @@ export async function adminUpdateQualificationFormDraft(
   }
 }
 
+export async function adminSetDefaultQualificationForm(
+  input: SetDefaultQualificationFormInput,
+  deps: ServiceDeps = {},
+): Promise<void> {
+  const client = serviceClient(deps);
+  const form = await getForm(client, input.formId);
+
+  if (form.status !== "published" || !form.current_published_version_id) {
+    throw new QualificationFormServiceError(
+      "Publish this form before setting it as the default.",
+    );
+  }
+
+  const { error: unsetError } = await client
+    .from("qualification_forms")
+    .update({ is_default: false })
+    .neq("id", form.id);
+
+  if (unsetError) {
+    throw new QualificationFormServiceError(
+      "Could not clear the previous default qualification form.",
+    );
+  }
+
+  const { error: setError } = await client
+    .from("qualification_forms")
+    .update({
+      is_default: true,
+      updated_by: input.updatedBy ?? null,
+    })
+    .eq("id", form.id);
+
+  if (setError) {
+    throw new QualificationFormServiceError(
+      "Could not set default qualification form.",
+    );
+  }
+}
+
 export async function publishQualificationForm(
   input: PublishQualificationFormInput,
   deps: ServiceDeps = {},
 ): Promise<QualificationPublishedVersion> {
   const client = serviceClient(deps);
   const form = await getForm(client, input.formId);
-  const schema = parseQualificationFormSchema(form.draft_schema);
+  const schema = parseEditableSchema(form.draft_schema);
   const latest = await getLatestVersion(client, input.formId);
   const versionNumber = (latest?.version_number ?? 0) + 1;
 
@@ -198,6 +343,29 @@ function serviceClient(deps: ServiceDeps): QualificationFormsClient {
   return deps.client ?? createAdminClient();
 }
 
+function parseFormName(value: string): string {
+  const name = value.trim();
+  if (!name) {
+    throw new QualificationFormServiceError("Form name is required.");
+  }
+  if (name.length > 120) {
+    throw new QualificationFormServiceError(
+      "Form name must be 120 characters or fewer.",
+    );
+  }
+  return name;
+}
+
+function parseEditableSchema(input: unknown): QualificationFormDefinition {
+  const parsed = qualificationFormSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new QualificationFormServiceError(
+      parsed.error.issues[0]?.message ?? "Invalid qualification form.",
+    );
+  }
+  return parsed.data;
+}
+
 async function getForm(
   client: QualificationFormsClient,
   formId: string,
@@ -241,7 +409,7 @@ async function getLatestVersion(
 function mapVersion(
   row: QualificationFormVersionRow,
 ): QualificationPublishedVersion {
-  const schema = parseQualificationFormSchema(row.schema_snapshot);
+  const schema = parseEditableSchema(row.schema_snapshot);
   return {
     formId: row.form_id,
     versionId: row.id,
@@ -250,5 +418,21 @@ function mapVersion(
     questionCount: row.question_count,
     normalizedRoles: row.normalized_roles,
     publishedAt: row.published_at,
+  };
+}
+
+function mapForm(row: QualificationFormRow): AdminQualificationForm {
+  const draftSchema = parseEditableSchema(row.draft_schema);
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    status: row.status,
+    isDefault: row.is_default,
+    draftSchema,
+    currentPublishedVersionId: row.current_published_version_id,
+    draftQuestionCount: draftSchema.questions.length,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }

@@ -52,6 +52,21 @@ describe("AdminShell navigation", () => {
     expect(librariesLink?.[0]).toContain('aria-current="page"');
   });
 
+  it("renders the Qualification forms link in the Content nav", () => {
+    const html = renderShell("pages");
+
+    expect(html).toContain('href="/admin/forms"');
+    expect(html).toContain("Qualification forms");
+  });
+
+  it("marks Qualification forms as the active page when on /admin/forms", () => {
+    const html = renderShell("forms");
+
+    const formsLink = html.match(/<a[^>]*href="\/admin\/forms"[^>]*>/);
+    expect(formsLink).not.toBeNull();
+    expect(formsLink?.[0]).toContain('aria-current="page"');
+  });
+
   it("renders the Route prefixes link in the Account nav", () => {
     const html = renderShell("pages");
 

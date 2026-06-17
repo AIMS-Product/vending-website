@@ -9,6 +9,7 @@ import { signOut } from "@/app/admin/actions";
 type AdminSection =
   | "pages"
   | "posts"
+  | "forms"
   | "media"
   | "libraries"
   | "settings"
@@ -50,6 +51,13 @@ const contentSections: AdminNavSection[] = [
     icon: "file",
   },
   blogSection,
+  {
+    id: "forms",
+    label: "Qualification forms",
+    href: "/admin/forms",
+    description: "Post-submit intake forms",
+    icon: "target",
+  },
   {
     id: "media",
     label: "Media library",

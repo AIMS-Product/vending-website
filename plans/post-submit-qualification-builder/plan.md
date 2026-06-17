@@ -69,7 +69,7 @@ Owner: feature-orchestrator
 | S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | external adapter, single-threaded         | DONE    |
 | S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | token/session state                       | DONE    |
 | S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | browser-visible UI                        | DONE    |
-| S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | admin UI + form services                  | PENDING |
+| S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | admin UI + form services                  | BLOCKED |
 | S8   | Page/block attachment settings                | T2   | S2               | W5-C           | page-builder schema/editor                | BLOCKED |
 | S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | public conversion path                    | PENDING |
 | S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | admin ops UI                              | PENDING |
@@ -477,11 +477,15 @@ Expected files:
   Parallelization: can run with S6/S8.
   Worker role: admin-forms worker.
   Exit evidence: tests, screenshots, save/reload proof.
-  Blocked on: none.
+  Blocked on: Browser proof for `/admin/forms` cannot render in current local env.
+  The route reaches the app but `adminListQualificationForms()` fails without a
+  usable local Supabase env/schema, producing the app error boundary. See
+  `agent-runs/S7-attempt-1.md` and
+  `browser-evidence/S7-admin-forms-desktop.png`.
 
 ### S8 - Page/block attachment settings
 
-Status: PENDING
+Status: BLOCKED
 Tier: T2
 Type: behavior
 Actor/trigger: admin configures qualification form defaults on a page or override

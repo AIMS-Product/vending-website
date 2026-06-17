@@ -42,6 +42,16 @@ chat history.
 - S6 is complete: Image Gen-derived design spec, public Typeform-style runtime,
   all v1 question controls, dev/test demo token, route integration, and
   desktop/mobile browser proof are recorded in `agent-runs/S6-attempt-1.md`.
+- S7 code/repo gates are complete but the node is blocked on browser proof:
+  `/admin/forms` list/editor routes, admin-gated create/save/publish/default
+  actions, admin form list/editor components, form service list/create/get/default
+  helpers, nav registration, focused tests, typecheck, lint, and React Doctor
+  diff scan are recorded in `agent-runs/S7-attempt-1.md`.
+- S7 browser proof tried `/admin/forms` with dev-admin bypass and local-shaped
+  Supabase env values. The route reached the app but rendered the app error
+  boundary because `adminListQualificationForms()` failed without a usable local
+  Supabase env/schema. See `browser-evidence/S7-admin-forms-desktop.png` and
+  `browser-evidence/S7-admin-forms-mobile.png`.
 - S8 code/repo gates are complete but the node is blocked on browser proof:
   page-level and lead-form block qualification settings, internal redirect
   validation, resolver precedence, editor UI wiring, reducer/form-data
@@ -52,8 +62,8 @@ chat history.
   `VendPlacement` Supabase stack is schema-incompatible, and an isolated temp
   stack failed migration setup under Supabase CLI 2.75.0. See
   `browser-evidence/S8-editor-desktop-initial.png`.
-- The remaining W5 work is S7 admin forms builder plus resolving S8 browser
-  proof.
+- The remaining W5 work is resolving S7 and S8 browser proof against a matching
+  local Supabase stack/env/schema.
 - Close credentials are not available yet. This does not block local database,
   mocked Close adapter, retry queue, admin UI, or public runtime work. It blocks
   only final live Close boundary proof.
@@ -72,11 +82,11 @@ chat history.
 
 ## Next Action
 
-Resolve the S8 browser gate or choose the next W5 node with strict RED -> GREEN
--> REFACTOR:
+Resolve the blocked W5 browser gates before marking S7/S8 done:
 
-- S7: admin qualification forms builder. Read the `/admin` design contracts
-  before changing UI.
+- S7 unblock: provide a matching local Supabase stack/env/schema so
+  `/admin/forms` can list forms, then re-run desktop/mobile create, edit,
+  publish, reload proof.
 - S8 unblock: provide a matching local Supabase stack/env, free the standard
   Supabase ports for this worktree, or fix the isolated local migration path so
   `/admin/pages/new` can render and be screenshot.

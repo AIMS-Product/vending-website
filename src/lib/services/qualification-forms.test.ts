@@ -1,6 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  adminCreateQualificationForm,
+  adminGetQualificationForm,
+  adminListQualificationForms,
+  adminSetDefaultQualificationForm,
   adminUpdateQualificationFormDraft,
   buildQuestionSnapshots,
   getQualificationFormVersion,
@@ -149,29 +153,6 @@ class FakeQuery {
     };
   }
 
-  insert(value: Record<string, unknown>) {
-    if (this.table !== "qualification_form_versions") {
-      throw new Error(`Unexpected insert into ${this.table}`);
-    }
-    const row: QualificationFormVersionRow = {
-      id: `version_${this.state.versions.length + 1}`,
-      form_id: value.form_id as string,
-      version_number: value.version_number as number,
-      schema_snapshot: value.schema_snapshot as Json,
-      question_count: value.question_count as number,
-      normalized_roles: value.normalized_roles as string[],
-      published_by: (value.published_by as string | null | undefined) ?? null,
-      published_at: "2026-06-17T00:00:00.000Z",
-      created_at: "2026-06-17T00:00:00.000Z",
-    };
-    this.state.versions.push(row);
-    return {
-      select: () => ({
-        single: async () => ({ data: row, error: null }),
-      }),
-    };
-  }
-
   update(patch: Record<string, unknown>) {
     if (this.table === "qualification_form_versions") {
       this.state.versionUpdates.push({ table: this.table, patch });
@@ -195,6 +176,50 @@ class FakeQuery {
         this.neq(key, value);
         return apply();
       },
+    };
+  }
+
+  insert(value: Record<string, unknown>) {
+    if (this.table === "qualification_forms") {
+      const row = makeForm({
+        id: `form_${this.state.forms.length + 1}`,
+        name: value.name as string,
+        slug: (value.slug as string | null | undefined) ?? null,
+        status: (value.status as string | undefined) ?? "draft",
+        is_default: (value.is_default as boolean | undefined) ?? false,
+        draft_schema:
+          (value.draft_schema as Json | undefined) ??
+          (baseFormSchema as unknown as Json),
+        created_by: (value.created_by as string | null | undefined) ?? null,
+        updated_by: (value.updated_by as string | null | undefined) ?? null,
+      });
+      this.state.forms.push(row);
+      return {
+        select: () => ({
+          single: async () => ({ data: row, error: null }),
+        }),
+      };
+    }
+
+    if (this.table !== "qualification_form_versions") {
+      throw new Error(`Unexpected insert into ${this.table}`);
+    }
+    const row: QualificationFormVersionRow = {
+      id: `version_${this.state.versions.length + 1}`,
+      form_id: value.form_id as string,
+      version_number: value.version_number as number,
+      schema_snapshot: value.schema_snapshot as Json,
+      question_count: value.question_count as number,
+      normalized_roles: value.normalized_roles as string[],
+      published_by: (value.published_by as string | null | undefined) ?? null,
+      published_at: "2026-06-17T00:00:00.000Z",
+      created_at: "2026-06-17T00:00:00.000Z",
+    };
+    this.state.versions.push(row);
+    return {
+      select: () => ({
+        single: async () => ({ data: row, error: null }),
+      }),
     };
   }
 
@@ -393,6 +418,159 @@ describe("qualification form services", () => {
           ?.schema_snapshot as unknown as typeof baseFormSchema
       ).questions[0]?.label,
     ).toBe("Which market should we focus on first?");
+  });
+
+  it("lists qualification forms newest first with draft and published state", async () => {
+    const fake = buildClient({
+      forms: [
+        makeForm({
+          id: "form_old",
+          name: "Old intake",
+          status: "draft",
+          created_at: "2026-06-16T00:00:00.000Z",
+        }),
+        makeForm({
+          id: "form_new",
+          name: "Published intake",
+          status: "published",
+          is_default: true,
+          current_published_version_id: "version_1",
+          created_at: "2026-06-17T00:00:00.000Z",
+        }),
+      ],
+    });
+
+    await expect(
+      adminListQualificationForms({ client: fake.client }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        id: "form_new",
+        name: "Published intake",
+        status: "published",
+        isDefault: true,
+        currentPublishedVersionId: "version_1",
+        draftQuestionCount: 3,
+      }),
+      expect.objectContaining({
+        id: "form_old",
+        name: "Old intake",
+        status: "draft",
+        isDefault: false,
+      }),
+    ]);
+  });
+
+  it("creates a draft qualification form with local admin ownership", async () => {
+    const fake = buildClient({ forms: [] });
+
+    const created = await adminCreateQualificationForm(
+      {
+        name: "Investor intake",
+        createdBy: "admin_1",
+      },
+      { client: fake.client },
+    );
+
+    expect(created).toMatchObject({
+      name: "Investor intake",
+      status: "draft",
+      isDefault: false,
+      draftQuestionCount: 1,
+    });
+    expect(fake.state.forms[0]).toMatchObject({
+      name: "Investor intake",
+      status: "draft",
+      created_by: "admin_1",
+      updated_by: "admin_1",
+    });
+  });
+
+  it("loads one editable qualification form draft for the admin editor", async () => {
+    const fake = buildClient({
+      forms: [
+        makeForm({
+          id: "form_2",
+          name: "Growth intake",
+          is_default: true,
+        }),
+      ],
+    });
+
+    await expect(
+      adminGetQualificationForm({ formId: "form_2" }, { client: fake.client }),
+    ).resolves.toMatchObject({
+      id: "form_2",
+      name: "Growth intake",
+      isDefault: true,
+      draftQuestionCount: 3,
+    });
+  });
+
+  it("sets the default only after a form has a published version", async () => {
+    const fake = buildClient({
+      forms: [
+        makeForm({
+          id: "form_1",
+          status: "published",
+          is_default: true,
+          current_published_version_id: "version_1",
+        }),
+        makeForm({
+          id: "form_2",
+          name: "Growth intake",
+          status: "published",
+          current_published_version_id: "version_2",
+        }),
+      ],
+    });
+
+    await adminSetDefaultQualificationForm(
+      { formId: "form_2", updatedBy: "admin_2" },
+      { client: fake.client },
+    );
+
+    expect(fake.state.forms).toEqual([
+      expect.objectContaining({ id: "form_1", is_default: false }),
+      expect.objectContaining({
+        id: "form_2",
+        is_default: true,
+        updated_by: "admin_2",
+      }),
+    ]);
+  });
+
+  it("blocks default selection for unpublished forms", async () => {
+    const fake = buildClient({
+      forms: [makeForm({ id: "form_2", status: "draft" })],
+    });
+
+    await expect(
+      adminSetDefaultQualificationForm(
+        { formId: "form_2" },
+        { client: fake.client },
+      ),
+    ).rejects.toThrow("Publish this form before setting it as the default.");
+
+    expect(fake.state.forms[0]?.is_default).toBe(false);
+  });
+
+  it("blocks publishing invalid required question drafts", async () => {
+    const fake = buildClient({
+      forms: [
+        makeForm({
+          draft_schema: {
+            version: 1,
+            questions: [{ id: "empty", type: "short_text", label: "" }],
+          } as unknown as Json,
+        }),
+      ],
+    });
+
+    await expect(
+      publishQualificationForm({ formId: "form_1" }, { client: fake.client }),
+    ).rejects.toThrow("Question label is required.");
+
+    expect(fake.state.versions).toEqual([]);
   });
 
   it("resolves the default form to its current published version", async () => {
