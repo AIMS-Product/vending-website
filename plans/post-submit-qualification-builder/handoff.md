@@ -66,12 +66,17 @@ chat history.
   registration, focused tests, typecheck, lint, React Doctor S10-only scan, and
   browser list/filter/detail/retry/reload/mobile proof are recorded in
   `agent-runs/S10-attempt-1.md` and `agent-runs/S10-attempt-2.md`.
+- S11 is complete:
+  protected qualification lifecycle runner route, stale/expired session state
+  transitions, qualified/completed preservation, idempotent stale follow-up task
+  Close sync events, focused tests, typecheck, lint, and scheduled/Close cron
+  route regression proof are recorded in `agent-runs/S11-attempt-1.md`.
 - Browser proof for S7/S8/S10 used an isolated local Supabase stack on alternate
   ports with disposable data. The unrelated `VendPlacement` stack was not
   stopped. The temp proof stack needed a temp-only split of
   `20260610091000_schedule_state_ownership.sql` because Supabase CLI 2.75.0
   rejects multiple dollar-quoted functions in one prepared migration statement.
-- Remaining implementation work is S11, followed by S12 final proof.
+- Remaining work is S12 final proof.
 - Close credentials are not available yet. This does not block local database,
   mocked Close adapter, retry queue, admin UI, or public runtime work. It blocks
   only final live Close boundary proof.
@@ -92,7 +97,7 @@ chat history.
 
 Continue with the next unblocked nodes:
 
-- S11: Stale/expired lifecycle jobs and Close tasks.
+- S12: End-to-end proof and cleanup.
 
-Use dependency/write-scope checks before deciding whether to run them in the
-same wave. Update `progress.md` only after fresh evidence is accepted.
+Run final proof serially. Do not run live Close proof, remote DB migrations,
+pushes, PRs, or Vercel previews without explicit approval.

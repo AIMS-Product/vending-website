@@ -73,7 +73,7 @@ Owner: feature-orchestrator
 | S8   | Page/block attachment settings                | T2   | S2               | W5-C           | page-builder schema/editor                | DONE    |
 | S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | public conversion path                    | DONE    |
 | S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | admin ops UI                              | DONE    |
-| S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | background state transitions              | PENDING |
+| S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | background state transitions              | DONE    |
 | S12  | End-to-end proof and cleanup                  | T1   | S6,S7,S9,S10,S11 | W8-A           | browser + boundary proof, single-threaded | PENDING |
 
 Browser gates must run serially during integration because this repo uses a
@@ -632,7 +632,7 @@ Expected files:
 
 ### S11 - Stale/expired lifecycle jobs and Close tasks
 
-Status: PENDING
+Status: DONE
 Tier: T2
 Type: ops
 Actor/trigger: protected cron/admin runner marks stale/expired sessions and
@@ -655,11 +655,11 @@ Expected files:
 - tests for lifecycle transitions
   Write boundaries: lifecycle service, protected route, tests.
   Acceptance criteria:
-- [ ] Pending sessions older than stale threshold become `qualification_stale`.
-- [ ] Expired sessions become `qualification_expired`.
-- [ ] Qualified/completed sessions are preserved.
-- [ ] Stale task sync events are idempotent.
-- [ ] Protected route follows existing `CRON_SECRET` or admin pattern.
+- [x] Pending sessions older than stale threshold become `qualification_stale`.
+- [x] Expired sessions become `qualification_expired`.
+- [x] Qualified/completed sessions are preserved.
+- [x] Stale task sync events are idempotent.
+- [x] Protected route follows existing `CRON_SECRET` or admin pattern.
       Regression guards:
 - Scheduled publishing cron behavior untouched.
 - Sync event retry statuses unaffected.
@@ -674,7 +674,8 @@ Expected files:
   External docs needed: local Next docs for route handlers if needed.
   Parallelization: after S4/S10 only.
   Worker role: lifecycle worker.
-  Exit evidence: transition tests, auth proof, idempotency tests.
+  Exit evidence: transition tests, auth proof, idempotency tests, and route
+  regression tests recorded in `agent-runs/S11-attempt-1.md`.
   Blocked on: none.
 
 ### S12 - End-to-end proof and cleanup

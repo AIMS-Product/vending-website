@@ -1,7 +1,7 @@
 # Feature Progress: post-submit-qualification-builder
 
 Status: IN_PROGRESS
-Current wave: W7
+Current wave: W8
 Last updated: 2026-06-17
 Owner: feature-orchestrator
 
@@ -19,7 +19,7 @@ Owner: feature-orchestrator
 | S8   | Page/block attachment settings                | T2   | S2               | W5-C           | orchestrator | DONE    |
 | S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | orchestrator | DONE    |
 | S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | orchestrator | DONE    |
-| S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | unassigned   | PENDING |
+| S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | orchestrator | DONE    |
 | S12  | End-to-end proof and cleanup                  | T1   | S6,S7,S9,S10,S11 | W8-A           | unassigned   | PENDING |
 
 ## Gate Progress
@@ -36,7 +36,7 @@ Owner: feature-orchestrator
 | S8   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S8-attempt-2.md`  | High       |
 | S9   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S9-attempt-1.md`  | High       |
 | S10  | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S10-attempt-2.md` | High       |
-| S11  | TODO | TODO  | TODO     | TODO      | SKIPPED      | TODO          | none                          | TBD        |
+| S11  | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S11-attempt-1.md` | High       |
 | S12  | TODO | TODO  | TODO     | TODO      | TODO         | BLOCKED       | none                          | TBD        |
 
 `S4` live Close boundary proof was skipped with accepted reason because
@@ -69,3 +69,4 @@ credentials/mapping.
 - 2026-06-17: S8 browser gate unblocked and completed against the same isolated local Supabase stack. Desktop/mobile `/admin/pages/new` page-level qualification controls and lead-form block override controls are recorded in `plans/post-submit-qualification-builder/agent-runs/S8-attempt-2.md`.
 - 2026-06-17: S10 browser gate unblocked and completed against the same isolated local Supabase stack. `/admin/leads` list, failed-sync filter, detail answer snapshots, retry action, reload-to-pending, and mobile proof are recorded in `plans/post-submit-qualification-builder/agent-runs/S10-attempt-2.md`.
 - 2026-06-17: S9 completed. Added opt-in public lead-form qualification action and renderer wiring, selected published-form resolution, short contact render mode, global default route pass-through, focused RED/GREEN tests, typecheck/lint/React Doctor proof, and desktop/mobile browser submit-through-to-qualification proof. Evidence is recorded in `plans/post-submit-qualification-builder/agent-runs/S9-attempt-1.md`.
+- 2026-06-17: S11 completed. Added protected qualification lifecycle runner route, stale/expired session state transitions, qualified/completed preservation, idempotent stale follow-up Close task event enqueueing, focused RED/GREEN tests, typecheck, scoped lint, and scheduled/Close cron route regression proof. Evidence is recorded in `plans/post-submit-qualification-builder/agent-runs/S11-attempt-1.md`.

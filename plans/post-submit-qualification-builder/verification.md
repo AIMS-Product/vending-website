@@ -4,10 +4,10 @@
 
 IN_PROGRESS
 
-Implementation is in progress. S1-S10 are complete with evidence in
-`progress.md` and the corresponding `agent-runs/` files. S11 and S12 remain
-pending. This file remains a final-proof scaffold for S12. Live Close CRM proof
-is blocked until credentials and Close custom-field/status IDs exist.
+Implementation is in progress. S1-S11 are complete with evidence in
+`progress.md` and the corresponding `agent-runs/` files. S12 remains pending.
+This file remains a final-proof scaffold for S12. Live Close CRM proof is
+blocked until credentials and Close custom-field/status IDs exist.
 
 ## Requirement Audit
 
@@ -20,6 +20,7 @@ is blocked until credentials and Close custom-field/status IDs exist.
 | Page/block settings resolve form/default/override                  | S8 repo and browser evidence                   | PASS    |
 | Close sync is optional, retryable, and non-blocking                | S3/S4 service evidence; S9/S10 local proof     | PARTIAL |
 | `/admin/leads` exposes status and retry controls                   | S10 repo and browser evidence                  | PASS    |
+| Stale/expired lifecycle jobs queue Close follow-up tasks safely    | S11 service and route evidence                 | PASS    |
 | Existing `/apply`, `/contact`, and non-opt-in lead forms preserved | S9 focused tests; S12 pending                  | PARTIAL |
 
 ## Evidence Table
@@ -37,6 +38,7 @@ is blocked until credentials and Close custom-field/status IDs exist.
 | S8 page/block attachment contract is in place          | `agent-runs/S8-attempt-1.md`; `agent-runs/S8-attempt-2.md`; S8 schema/resolver/editor tests; desktop/mobile editor settings screenshots                                         | PASS   | None known for local editor settings proof                                                                   |
 | S9 public opt-in lead form path is in place            | `agent-runs/S9-attempt-1.md`; focused tests; desktop/mobile short-form screenshots; validation screenshot; redirect-to-runtime screenshot; local DB lead/session/event proof    | PASS   | Live Close remains blocked; S12 final proof still pending                                                    |
 | S10 admin leads backstop is in place                   | `agent-runs/S10-attempt-1.md`; `agent-runs/S10-attempt-2.md`; focused tests; list/filter/detail/retry/reload/mobile screenshots                                                 | PASS   | Live Close remains blocked; local retry event proof passed                                                   |
+| S11 lifecycle runner is in place                       | `agent-runs/S11-attempt-1.md`; focused lifecycle tests; qualification lifecycle route tests; scheduled/Close cron route regression tests                                        | PASS   | Live Close task proof remains blocked until credentials and mapping exist                                    |
 
 ## Commands
 
@@ -53,6 +55,7 @@ is blocked until credentials and Close custom-field/status IDs exist.
 - S9 commands are recorded in `agent-runs/S9-attempt-1.md`.
 - S10 commands are recorded in `agent-runs/S10-attempt-1.md` and
   `agent-runs/S10-attempt-2.md`.
+- S11 commands are recorded in `agent-runs/S11-attempt-1.md`.
 
 ## Runtime And Boundary Proof
 
@@ -84,6 +87,9 @@ is blocked until credentials and Close custom-field/status IDs exist.
   the real public resource route to `/qualify/[token]`. Local database proof
   confirmed the linked lead, qualification session, attribution, and pending
   Close sync event.
+- S11 boundary proof used injected fake Supabase clients and asserted only
+  local lifecycle updates plus pending `close_sync_events` rows. No live Close
+  request was made.
 - Live Close proof: blocked until credentials and mapping exist.
 
 ## Skipped Checks
@@ -99,6 +105,8 @@ is blocked until credentials and Close custom-field/status IDs exist.
   opt-in entry proof is complete in S9.
 - S6 in-app browser check used Playwright fallback because no direct in-app
   browser tool was callable in this turn.
+- S11 browser proof skipped because S11 is a backend ops route/service; admin
+  visibility was covered in S10.
 - S4 live Close proof skipped because credentials, custom-field IDs, status IDs,
   and an approved Close test record are unavailable.
 - Full repo migration reset against default ports skipped because the unrelated
@@ -123,12 +131,13 @@ is blocked until credentials and Close custom-field/status IDs exist.
   desktop/mobile browser screenshots are recorded in
   `agent-runs/S6-attempt-1.md`. S7, S8, and S10 repo/browser evidence is
   recorded in their attempt-1 and attempt-2 reports. S9 public opt-in proof is
-  recorded in `agent-runs/S9-attempt-1.md`.
+  recorded in `agent-runs/S9-attempt-1.md`. S11 lifecycle job proof and cron
+  route regression tests are recorded in `agent-runs/S11-attempt-1.md`.
 - Confidence: 82%
 
 ## Residual Risk
 
 - Close API field mapping is unknown until credentials/account configuration are
   available.
-- Stale/expired lifecycle jobs and Close task creation remain pending S11.
+- S12 final end-to-end proof remains pending.
 - Migrations are T1 and must be tested locally before any remote DB push.
