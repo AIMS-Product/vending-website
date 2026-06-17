@@ -65,7 +65,7 @@ Owner: feature-orchestrator
 | ---- | --------------------------------------------- | ---- | ---------------- | -------------- | ----------------------------------------- | ------- |
 | S1   | Data model, RLS, generated types              | T1   | none             | W1-A           | migrations/types, single-threaded         | DONE    |
 | S2   | Qualification form schema and services        | T1   | S1               | W2-A           | shared domain contracts                   | DONE    |
-| S3   | Lead capture to qualification session service | T1   | S1,S2            | W3-A           | lead state transitions                    | PENDING |
+| S3   | Lead capture to qualification session service | T1   | S1,S2            | W3-A           | lead state transitions                    | DONE    |
 | S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | external adapter, single-threaded         | PENDING |
 | S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | token/session state                       | PENDING |
 | S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | browser-visible UI                        | PENDING |
@@ -208,7 +208,7 @@ Expected files:
 
 ### S3 - Lead capture to qualification session service
 
-Status: PENDING
+Status: DONE
 Tier: T1
 Type: behavior
 Actor/trigger: opt-in short contact form submits from a page-builder lead form.
@@ -231,15 +231,15 @@ Expected files:
 - small additions around `src/lib/services/leads.ts` only if needed
   Write boundaries: intake/lead service code and tests; no public UI yet.
   Acceptance criteria:
-- [ ] Required first step is full name, email, phone; all richer fields move to
+- [x] Required first step is full name, email, phone; all richer fields move to
       qualification.
-- [ ] Email dedupe reuses local Close IDs when available and records a new
+- [x] Email dedupe reuses local Close IDs when available and records a new
       submission/session touchpoint.
-- [ ] Attribution captures source path, landing path, UTM, referrer,
+- [x] Attribution captures source path, landing path, UTM, referrer,
       page/block/CTA, experiment, variant, form/version, and completion redirect.
-- [ ] Missing Close config creates retryable sync event without user-facing
+- [x] Missing Close config creates retryable sync event without user-facing
       error.
-- [ ] Token expires after 30 days and stale date is 7 days.
+- [x] Token expires after 30 days and stale date is 7 days.
       Regression guards:
 - Existing `submitLead` apply/contact validation still passes.
 - Duplicate idempotency behavior remains stable for non-opt-in forms.
