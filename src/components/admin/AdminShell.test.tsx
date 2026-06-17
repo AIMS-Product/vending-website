@@ -67,6 +67,21 @@ describe("AdminShell navigation", () => {
     expect(formsLink?.[0]).toContain('aria-current="page"');
   });
 
+  it("renders the Leads link in the Content nav", () => {
+    const html = renderShell("pages");
+
+    expect(html).toContain('href="/admin/leads"');
+    expect(html).toContain("Leads");
+  });
+
+  it("marks Leads as the active page when on /admin/leads", () => {
+    const html = renderShell("leads");
+
+    const leadsLink = html.match(/<a[^>]*href="\/admin\/leads"[^>]*>/);
+    expect(leadsLink).not.toBeNull();
+    expect(leadsLink?.[0]).toContain('aria-current="page"');
+  });
+
   it("renders the Route prefixes link in the Account nav", () => {
     const html = renderShell("pages");
 

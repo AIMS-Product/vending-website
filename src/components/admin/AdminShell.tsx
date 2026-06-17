@@ -10,6 +10,7 @@ type AdminSection =
   | "pages"
   | "posts"
   | "forms"
+  | "leads"
   | "media"
   | "libraries"
   | "settings"
@@ -21,6 +22,7 @@ type AdminIcon =
   | "help"
   | "image"
   | "layers"
+  | "mail"
   | "log-out"
   | "settings"
   | "shield"
@@ -57,6 +59,13 @@ const contentSections: AdminNavSection[] = [
     href: "/admin/forms",
     description: "Post-submit intake forms",
     icon: "target",
+  },
+  {
+    id: "leads",
+    label: "Leads",
+    href: "/admin/leads",
+    description: "Qualification ops",
+    icon: "mail",
   },
   {
     id: "media",
@@ -858,6 +867,13 @@ function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
           <path d="m12 3 9 5-9 5-9-5 9-5Z" />
           <path d="m3 12 9 5 9-5" />
           <path d="m3 16 9 5 9-5" />
+        </svg>
+      );
+    case "mail":
+      return (
+        <svg {...adminIconGlyphCommonProps}>
+          <path d="M4 6h16v12H4V6Z" />
+          <path d="m4 7 8 6 8-6" />
         </svg>
       );
     case "settings":

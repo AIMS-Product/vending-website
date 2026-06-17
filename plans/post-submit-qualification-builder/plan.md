@@ -72,7 +72,7 @@ Owner: feature-orchestrator
 | S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | admin UI + form services                  | BLOCKED |
 | S8   | Page/block attachment settings                | T2   | S2               | W5-C           | page-builder schema/editor                | BLOCKED |
 | S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | public conversion path                    | PENDING |
-| S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | admin ops UI                              | PENDING |
+| S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | admin ops UI                              | BLOCKED |
 | S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | background state transitions              | PENDING |
 | S12  | End-to-end proof and cleanup                  | T1   | S6,S7,S9,S10,S11 | W8-A           | browser + boundary proof, single-threaded | PENDING |
 
@@ -539,7 +539,7 @@ Expected files:
 
 ### S9 - Opt-in lead-form public integration
 
-Status: PENDING
+Status: IN_PROGRESS
 Tier: T1
 Type: integration
 Actor/trigger: public visitor submits an opted-in page-builder `lead_form` block.
@@ -589,7 +589,7 @@ Expected files:
 
 ### S10 - Admin leads backstop and retry controls
 
-Status: PENDING
+Status: BLOCKED
 Tier: T2
 Type: behavior
 Actor/trigger: admin reviews lead capture, qualification, and Close sync state.
@@ -613,11 +613,11 @@ Expected files:
 - tests for service/actions
   Write boundaries: admin leads route/components/actions/services/tests.
   Acceptance criteria:
-- [ ] List includes lead/contact identity, lifecycle status, qualification state,
+- [x] List includes lead/contact identity, lifecycle status, qualification state,
       Close sync state, source/UTM/variant, and created date.
-- [ ] Detail view shows answer snapshots and normalized summary.
-- [ ] Retry action enqueues or advances failed/needs-review Close sync safely.
-- [ ] No CSV, dashboard, A/B winner, or attribution report UI.
+- [x] Detail view shows answer snapshots and normalized summary.
+- [x] Retry action enqueues or advances failed/needs-review Close sync safely.
+- [x] No CSV, dashboard, A/B winner, or attribution report UI.
 - [ ] Mobile/desktop admin layout verified.
       Regression guards:
 - Admin auth required; service/action tests enforce it.
@@ -635,7 +635,8 @@ Expected files:
   Parallelization: can run with S9.
   Worker role: admin-leads worker.
   Exit evidence: tests, screenshots, retry proof.
-  Blocked on: none.
+  Blocked on: local browser proof cannot render `/admin/leads` until a matching
+  local Supabase stack/env/schema can satisfy `adminListLeads()`.
 
 ### S11 - Stale/expired lifecycle jobs and Close tasks
 

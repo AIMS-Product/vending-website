@@ -62,8 +62,19 @@ chat history.
   `VendPlacement` Supabase stack is schema-incompatible, and an isolated temp
   stack failed migration setup under Supabase CLI 2.75.0. See
   `browser-evidence/S8-editor-desktop-initial.png`.
-- The remaining W5 work is resolving S7 and S8 browser proof against a matching
-  local Supabase stack/env/schema.
+- S10 code/repo gates are complete but the node is blocked on browser proof:
+  `/admin/leads` list and detail routes, admin-gated retry action, lead admin
+  service list/detail/retry helpers, lead manager/detail components, admin nav
+  registration, focused tests, typecheck, lint, and React Doctor S10-only scan
+  are recorded in `agent-runs/S10-attempt-1.md`.
+- S10 browser proof tried `/admin/leads` with dev-admin bypass and local-shaped
+  Supabase env values. The route reached the app and set the title to `Leads
+admin | Vendingpreneurs`, but desktop/mobile screenshots rendered the app
+  error boundary because `adminListLeads()` failed without a usable local
+  Supabase env/schema. See `browser-evidence/S10-admin-leads-desktop.png` and
+  `browser-evidence/S10-admin-leads-mobile.png`.
+- The remaining W5/W6 work is resolving S7, S8, and S10 browser proof against a
+  matching local Supabase stack/env/schema.
 - Close credentials are not available yet. This does not block local database,
   mocked Close adapter, retry queue, admin UI, or public runtime work. It blocks
   only final live Close boundary proof.
@@ -82,7 +93,7 @@ chat history.
 
 ## Next Action
 
-Resolve the blocked W5 browser gates before marking S7/S8 done:
+Resolve the blocked browser gates before marking S7/S8/S10 done:
 
 - S7 unblock: provide a matching local Supabase stack/env/schema so
   `/admin/forms` can list forms, then re-run desktop/mobile create, edit,
@@ -90,5 +101,8 @@ Resolve the blocked W5 browser gates before marking S7/S8 done:
 - S8 unblock: provide a matching local Supabase stack/env, free the standard
   Supabase ports for this worktree, or fix the isolated local migration path so
   `/admin/pages/new` can render and be screenshot.
+- S10 unblock: provide a matching local Supabase stack/env/schema so
+  `/admin/leads` can list lead rows, then re-run desktop/mobile filters, detail,
+  and retry proof.
 
 Update `progress.md` only after fresh evidence is accepted.

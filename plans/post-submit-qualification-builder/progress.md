@@ -1,7 +1,7 @@
 # Feature Progress: post-submit-qualification-builder
 
 Status: IN_PROGRESS
-Current wave: W5
+Current wave: W6
 Last updated: 2026-06-17
 Owner: feature-orchestrator
 
@@ -18,26 +18,26 @@ Owner: feature-orchestrator
 | S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | orchestrator | BLOCKED |
 | S8   | Page/block attachment settings                | T2   | S2               | W5-C           | orchestrator | BLOCKED |
 | S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | unassigned   | PENDING |
-| S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | unassigned   | PENDING |
+| S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | orchestrator | BLOCKED |
 | S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | unassigned   | PENDING |
 | S12  | End-to-end proof and cleanup                  | T1   | S6,S7,S9,S10,S11 | W8-A           | unassigned   | PENDING |
 
 ## Gate Progress
 
-| Node | RED  | GREEN | REFACTOR | Repo Gate | Browser Gate | Boundary Gate | Evidence                     | Confidence |
-| ---- | ---- | ----- | -------- | --------- | ------------ | ------------- | ---------------------------- | ---------- |
-| S1   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S1-attempt-1.md` | High       |
-| S2   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S2-attempt-1.md` | High       |
-| S3   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S3-attempt-1.md` | High       |
-| S4   | DONE | DONE  | DONE     | DONE      | SKIPPED      | SKIPPED       | `agent-runs/S4-attempt-1.md` | High       |
-| S5   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S5-attempt-1.md` | High       |
-| S6   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S6-attempt-1.md` | High       |
-| S7   | DONE | DONE  | DONE     | DONE      | BLOCKED      | DONE          | `agent-runs/S7-attempt-1.md` | Medium     |
-| S8   | DONE | DONE  | DONE     | DONE      | BLOCKED      | DONE          | `agent-runs/S8-attempt-1.md` | Medium     |
-| S9   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                         | TBD        |
-| S10  | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                         | TBD        |
-| S11  | TODO | TODO  | TODO     | TODO      | SKIPPED      | TODO          | none                         | TBD        |
-| S12  | TODO | TODO  | TODO     | TODO      | TODO         | BLOCKED       | none                         | TBD        |
+| Node | RED  | GREEN | REFACTOR | Repo Gate | Browser Gate | Boundary Gate | Evidence                      | Confidence |
+| ---- | ---- | ----- | -------- | --------- | ------------ | ------------- | ----------------------------- | ---------- |
+| S1   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S1-attempt-1.md`  | High       |
+| S2   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S2-attempt-1.md`  | High       |
+| S3   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S3-attempt-1.md`  | High       |
+| S4   | DONE | DONE  | DONE     | DONE      | SKIPPED      | SKIPPED       | `agent-runs/S4-attempt-1.md`  | High       |
+| S5   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S5-attempt-1.md`  | High       |
+| S6   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S6-attempt-1.md`  | High       |
+| S7   | DONE | DONE  | DONE     | DONE      | BLOCKED      | DONE          | `agent-runs/S7-attempt-1.md`  | Medium     |
+| S8   | DONE | DONE  | DONE     | DONE      | BLOCKED      | DONE          | `agent-runs/S8-attempt-1.md`  | Medium     |
+| S9   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                          | TBD        |
+| S10  | DONE | DONE  | DONE     | DONE      | BLOCKED      | DONE          | `agent-runs/S10-attempt-1.md` | Medium     |
+| S11  | TODO | TODO  | TODO     | TODO      | SKIPPED      | TODO          | none                          | TBD        |
+| S12  | TODO | TODO  | TODO     | TODO      | TODO         | BLOCKED       | none                          | TBD        |
 
 `S4` live Close boundary proof was skipped with accepted reason because
 credentials and field IDs are unavailable. `S5` browser proof was skipped because
@@ -52,6 +52,7 @@ credentials/mapping.
 | S12  | Final live Close proof cannot run without credentials/mapping.           | Same as S4; otherwise mark live Close proof skipped with accepted reason.                                                                                          |
 | S7   | Browser proof for `/admin/forms` cannot render in current local env.     | Provide a matching local Supabase stack/env/schema so `adminListQualificationForms()` can list forms, then re-run desktop/mobile create/edit/publish/reload proof. |
 | S8   | Browser proof for `/admin/pages/new` cannot render in current local env. | Provide a matching local Supabase stack/env, free the standard ports, or update the local Supabase migration path so an isolated stack can start.                  |
+| S10  | Browser proof for `/admin/leads` cannot render in current local env.     | Provide a matching local Supabase stack/env/schema so `adminListLeads()` can list lead rows, then re-run desktop/mobile filters, detail, and retry proof.          |
 
 ## Completed Evidence
 
@@ -66,3 +67,4 @@ credentials/mapping.
 - 2026-06-17: S6 completed. Added Image Gen-derived runtime design spec, interactive Typeform-style public runtime, all v1 question control types, dev/test demo proof token, desktop/mobile browser screenshots, refresh/resume/back/edit/validation/completion browser proof, and focused route chrome. RED/GREEN/REFACTOR evidence and targeted tests are recorded in `plans/post-submit-qualification-builder/agent-runs/S6-attempt-1.md`.
 - 2026-06-17: S7 code/repo gates completed but browser gate blocked. Added `/admin/forms` list and editor routes, admin-gated create/save/publish/default actions, admin form list/editor components, form service list/create/get/default helpers, nav registration, and focused tests for services/actions/components/navigation. RED/GREEN/REFACTOR evidence, repo gates, React Doctor diff scan, and browser blocker details are recorded in `plans/post-submit-qualification-builder/agent-runs/S7-attempt-1.md`.
 - 2026-06-17: S8 code/repo gates completed but browser gate blocked. Added page-level and lead-form block qualification attachment schema, internal redirect validation, block/page/global resolver, editor settings UI wiring, reducer/controller persistence, and focused tests. RED/GREEN/REFACTOR evidence, repo gates, React Doctor diff scan, and browser blocker details are recorded in `plans/post-submit-qualification-builder/agent-runs/S8-attempt-1.md`.
+- 2026-06-17: S10 code/repo gates completed but browser gate blocked. Added `/admin/leads` list and detail routes, admin-gated retry action, lead admin service list/detail/retry helpers, lead manager/detail components, admin nav registration, and focused tests for service/actions/components/navigation. RED/GREEN/REFACTOR evidence, repo gates, React Doctor S10-only scan, and browser blocker details are recorded in `plans/post-submit-qualification-builder/agent-runs/S10-attempt-1.md`.
