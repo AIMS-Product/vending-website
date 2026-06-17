@@ -15,10 +15,10 @@ Owner: feature-orchestrator
 | S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | orchestrator | DONE    |
 | S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | orchestrator | DONE    |
 | S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | orchestrator | DONE    |
-| S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | orchestrator | BLOCKED |
-| S8   | Page/block attachment settings                | T2   | S2               | W5-C           | orchestrator | BLOCKED |
+| S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | orchestrator | DONE    |
+| S8   | Page/block attachment settings                | T2   | S2               | W5-C           | orchestrator | DONE    |
 | S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | unassigned   | PENDING |
-| S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | orchestrator | BLOCKED |
+| S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | orchestrator | DONE    |
 | S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | unassigned   | PENDING |
 | S12  | End-to-end proof and cleanup                  | T1   | S6,S7,S9,S10,S11 | W8-A           | unassigned   | PENDING |
 
@@ -32,10 +32,10 @@ Owner: feature-orchestrator
 | S4   | DONE | DONE  | DONE     | DONE      | SKIPPED      | SKIPPED       | `agent-runs/S4-attempt-1.md`  | High       |
 | S5   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S5-attempt-1.md`  | High       |
 | S6   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S6-attempt-1.md`  | High       |
-| S7   | DONE | DONE  | DONE     | DONE      | BLOCKED      | DONE          | `agent-runs/S7-attempt-1.md`  | Medium     |
-| S8   | DONE | DONE  | DONE     | DONE      | BLOCKED      | DONE          | `agent-runs/S8-attempt-1.md`  | Medium     |
+| S7   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S7-attempt-2.md`  | High       |
+| S8   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S8-attempt-2.md`  | High       |
 | S9   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                          | TBD        |
-| S10  | DONE | DONE  | DONE     | DONE      | BLOCKED      | DONE          | `agent-runs/S10-attempt-1.md` | Medium     |
+| S10  | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S10-attempt-2.md` | High       |
 | S11  | TODO | TODO  | TODO     | TODO      | SKIPPED      | TODO          | none                          | TBD        |
 | S12  | TODO | TODO  | TODO     | TODO      | TODO         | BLOCKED       | none                          | TBD        |
 
@@ -47,12 +47,9 @@ credentials/mapping.
 
 ## Blockers
 
-| Node | Blocker                                                                  | Required Decision Or Evidence                                                                                                                                      |
-| ---- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| S12  | Final live Close proof cannot run without credentials/mapping.           | Same as S4; otherwise mark live Close proof skipped with accepted reason.                                                                                          |
-| S7   | Browser proof for `/admin/forms` cannot render in current local env.     | Provide a matching local Supabase stack/env/schema so `adminListQualificationForms()` can list forms, then re-run desktop/mobile create/edit/publish/reload proof. |
-| S8   | Browser proof for `/admin/pages/new` cannot render in current local env. | Provide a matching local Supabase stack/env, free the standard ports, or update the local Supabase migration path so an isolated stack can start.                  |
-| S10  | Browser proof for `/admin/leads` cannot render in current local env.     | Provide a matching local Supabase stack/env/schema so `adminListLeads()` can list lead rows, then re-run desktop/mobile filters, detail, and retry proof.          |
+| Node | Blocker                                                        | Required Decision Or Evidence                                             |
+| ---- | -------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| S12  | Final live Close proof cannot run without credentials/mapping. | Same as S4; otherwise mark live Close proof skipped with accepted reason. |
 
 ## Completed Evidence
 
@@ -68,3 +65,6 @@ credentials/mapping.
 - 2026-06-17: S7 code/repo gates completed but browser gate blocked. Added `/admin/forms` list and editor routes, admin-gated create/save/publish/default actions, admin form list/editor components, form service list/create/get/default helpers, nav registration, and focused tests for services/actions/components/navigation. RED/GREEN/REFACTOR evidence, repo gates, React Doctor diff scan, and browser blocker details are recorded in `plans/post-submit-qualification-builder/agent-runs/S7-attempt-1.md`.
 - 2026-06-17: S8 code/repo gates completed but browser gate blocked. Added page-level and lead-form block qualification attachment schema, internal redirect validation, block/page/global resolver, editor settings UI wiring, reducer/controller persistence, and focused tests. RED/GREEN/REFACTOR evidence, repo gates, React Doctor diff scan, and browser blocker details are recorded in `plans/post-submit-qualification-builder/agent-runs/S8-attempt-1.md`.
 - 2026-06-17: S10 code/repo gates completed but browser gate blocked. Added `/admin/leads` list and detail routes, admin-gated retry action, lead admin service list/detail/retry helpers, lead manager/detail components, admin nav registration, and focused tests for service/actions/components/navigation. RED/GREEN/REFACTOR evidence, repo gates, React Doctor S10-only scan, and browser blocker details are recorded in `plans/post-submit-qualification-builder/agent-runs/S10-attempt-1.md`.
+- 2026-06-17: S7 browser gate unblocked and completed against an isolated local Supabase stack on alternate ports with disposable data. Desktop/mobile `/admin/forms`, create, edit, save draft, publish, set default, and reload proof are recorded in `plans/post-submit-qualification-builder/agent-runs/S7-attempt-2.md`.
+- 2026-06-17: S8 browser gate unblocked and completed against the same isolated local Supabase stack. Desktop/mobile `/admin/pages/new` page-level qualification controls and lead-form block override controls are recorded in `plans/post-submit-qualification-builder/agent-runs/S8-attempt-2.md`.
+- 2026-06-17: S10 browser gate unblocked and completed against the same isolated local Supabase stack. `/admin/leads` list, failed-sync filter, detail answer snapshots, retry action, reload-to-pending, and mobile proof are recorded in `plans/post-submit-qualification-builder/agent-runs/S10-attempt-2.md`.

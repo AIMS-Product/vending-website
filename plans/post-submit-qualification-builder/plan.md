@@ -69,10 +69,10 @@ Owner: feature-orchestrator
 | S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | external adapter, single-threaded         | DONE    |
 | S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | token/session state                       | DONE    |
 | S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | browser-visible UI                        | DONE    |
-| S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | admin UI + form services                  | BLOCKED |
-| S8   | Page/block attachment settings                | T2   | S2               | W5-C           | page-builder schema/editor                | BLOCKED |
+| S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | admin UI + form services                  | DONE    |
+| S8   | Page/block attachment settings                | T2   | S2               | W5-C           | page-builder schema/editor                | DONE    |
 | S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | public conversion path                    | PENDING |
-| S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | admin ops UI                              | BLOCKED |
+| S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | admin ops UI                              | DONE    |
 | S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | background state transitions              | PENDING |
 | S12  | End-to-end proof and cleanup                  | T1   | S6,S7,S9,S10,S11 | W8-A           | browser + boundary proof, single-threaded | PENDING |
 
@@ -453,14 +453,14 @@ Expected files:
   Write boundaries: admin forms route/components/actions, admin nav registration,
   tests.
   Acceptance criteria:
-- [ ] Admin list shows draft/published/default state and create action.
-- [ ] Editor supports question labels, help text, placeholder, options,
+- [x] Admin list shows draft/published/default state and create action.
+- [x] Editor supports question labels, help text, placeholder, options,
       required, normalized role, and reorder.
-- [ ] Publish creates immutable version and clear confirmation.
-- [ ] Set default form action is admin-gated.
-- [ ] No visual design controls, scripts, branching, file upload, or payment
+- [x] Publish creates immutable version and clear confirmation.
+- [x] Set default form action is admin-gated.
+- [x] No visual design controls, scripts, branching, file upload, or payment
       fields.
-- [ ] Admin preview exists but cannot create real public submissions.
+- [x] Admin preview exists but cannot create real public submissions.
       Regression guards:
 - Existing admin shell/nav tests continue passing.
 - Publishing invalid/empty required question is blocked with user-facing error.
@@ -477,15 +477,11 @@ Expected files:
   Parallelization: can run with S6/S8.
   Worker role: admin-forms worker.
   Exit evidence: tests, screenshots, save/reload proof.
-  Blocked on: Browser proof for `/admin/forms` cannot render in current local env.
-  The route reaches the app but `adminListQualificationForms()` fails without a
-  usable local Supabase env/schema, producing the app error boundary. See
-  `agent-runs/S7-attempt-1.md` and
-  `browser-evidence/S7-admin-forms-desktop.png`.
+  Blocked on: none. Browser proof completed in `agent-runs/S7-attempt-2.md`.
 
 ### S8 - Page/block attachment settings
 
-Status: BLOCKED
+Status: DONE
 Tier: T2
 Type: behavior
 Actor/trigger: admin configures qualification form defaults on a page or override
@@ -532,14 +528,11 @@ Expected files:
   Parallelization: can run with S6/S7.
   Worker role: page-builder attachment worker.
   Exit evidence: settings resolution tests and browser proof.
-  Blocked on: browser proof for `/admin/pages/new` in the current local env.
-  Repo/code gates are complete in `agent-runs/S8-attempt-1.md`, but the editor
-  route cannot render locally because no matching Supabase stack/env is
-  available and an isolated temporary stack fails under Supabase CLI 2.75.0.
+  Blocked on: none. Browser proof completed in `agent-runs/S8-attempt-2.md`.
 
 ### S9 - Opt-in lead-form public integration
 
-Status: IN_PROGRESS
+Status: PENDING
 Tier: T1
 Type: integration
 Actor/trigger: public visitor submits an opted-in page-builder `lead_form` block.
@@ -589,7 +582,7 @@ Expected files:
 
 ### S10 - Admin leads backstop and retry controls
 
-Status: BLOCKED
+Status: DONE
 Tier: T2
 Type: behavior
 Actor/trigger: admin reviews lead capture, qualification, and Close sync state.
@@ -618,7 +611,7 @@ Expected files:
 - [x] Detail view shows answer snapshots and normalized summary.
 - [x] Retry action enqueues or advances failed/needs-review Close sync safely.
 - [x] No CSV, dashboard, A/B winner, or attribution report UI.
-- [ ] Mobile/desktop admin layout verified.
+- [x] Mobile/desktop admin layout verified.
       Regression guards:
 - Admin auth required; service/action tests enforce it.
 - Retrying a synced event is blocked or no-op.
@@ -635,8 +628,7 @@ Expected files:
   Parallelization: can run with S9.
   Worker role: admin-leads worker.
   Exit evidence: tests, screenshots, retry proof.
-  Blocked on: local browser proof cannot render `/admin/leads` until a matching
-  local Supabase stack/env/schema can satisfy `adminListLeads()`.
+  Blocked on: none. Browser proof completed in `agent-runs/S10-attempt-2.md`.
 
 ### S11 - Stale/expired lifecycle jobs and Close tasks
 

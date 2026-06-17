@@ -42,39 +42,30 @@ chat history.
 - S6 is complete: Image Gen-derived design spec, public Typeform-style runtime,
   all v1 question controls, dev/test demo token, route integration, and
   desktop/mobile browser proof are recorded in `agent-runs/S6-attempt-1.md`.
-- S7 code/repo gates are complete but the node is blocked on browser proof:
+- S7 is complete:
   `/admin/forms` list/editor routes, admin-gated create/save/publish/default
   actions, admin form list/editor components, form service list/create/get/default
-  helpers, nav registration, focused tests, typecheck, lint, and React Doctor
-  diff scan are recorded in `agent-runs/S7-attempt-1.md`.
-- S7 browser proof tried `/admin/forms` with dev-admin bypass and local-shaped
-  Supabase env values. The route reached the app but rendered the app error
-  boundary because `adminListQualificationForms()` failed without a usable local
-  Supabase env/schema. See `browser-evidence/S7-admin-forms-desktop.png` and
-  `browser-evidence/S7-admin-forms-mobile.png`.
-- S8 code/repo gates are complete but the node is blocked on browser proof:
+  helpers, nav registration, focused tests, typecheck, lint, React Doctor diff
+  scan, and browser create/edit/publish/default/reload proof are recorded in
+  `agent-runs/S7-attempt-1.md` and `agent-runs/S7-attempt-2.md`.
+- S8 is complete:
   page-level and lead-form block qualification settings, internal redirect
   validation, resolver precedence, editor UI wiring, reducer/form-data
-  persistence, tests, typecheck, lint, and React Doctor diff scan are recorded
-  in `agent-runs/S8-attempt-1.md`.
-- S8 browser proof tried `/admin/pages/new`, but the route could not render
-  locally. Placeholder JWTs failed REST auth, the already-running
-  `VendPlacement` Supabase stack is schema-incompatible, and an isolated temp
-  stack failed migration setup under Supabase CLI 2.75.0. See
-  `browser-evidence/S8-editor-desktop-initial.png`.
-- S10 code/repo gates are complete but the node is blocked on browser proof:
+  persistence, tests, typecheck, lint, React Doctor diff scan, and browser
+  page/block settings proof are recorded in `agent-runs/S8-attempt-1.md` and
+  `agent-runs/S8-attempt-2.md`.
+- S10 is complete:
   `/admin/leads` list and detail routes, admin-gated retry action, lead admin
   service list/detail/retry helpers, lead manager/detail components, admin nav
-  registration, focused tests, typecheck, lint, and React Doctor S10-only scan
-  are recorded in `agent-runs/S10-attempt-1.md`.
-- S10 browser proof tried `/admin/leads` with dev-admin bypass and local-shaped
-  Supabase env values. The route reached the app and set the title to `Leads
-admin | Vendingpreneurs`, but desktop/mobile screenshots rendered the app
-  error boundary because `adminListLeads()` failed without a usable local
-  Supabase env/schema. See `browser-evidence/S10-admin-leads-desktop.png` and
-  `browser-evidence/S10-admin-leads-mobile.png`.
-- The remaining W5/W6 work is resolving S7, S8, and S10 browser proof against a
-  matching local Supabase stack/env/schema.
+  registration, focused tests, typecheck, lint, React Doctor S10-only scan, and
+  browser list/filter/detail/retry/reload/mobile proof are recorded in
+  `agent-runs/S10-attempt-1.md` and `agent-runs/S10-attempt-2.md`.
+- Browser proof for S7/S8/S10 used an isolated local Supabase stack on alternate
+  ports with disposable data. The unrelated `VendPlacement` stack was not
+  stopped. The temp proof stack needed a temp-only split of
+  `20260610091000_schedule_state_ownership.sql` because Supabase CLI 2.75.0
+  rejects multiple dollar-quoted functions in one prepared migration statement.
+- Remaining implementation work is S9 and S11, followed by S12 final proof.
 - Close credentials are not available yet. This does not block local database,
   mocked Close adapter, retry queue, admin UI, or public runtime work. It blocks
   only final live Close boundary proof.
@@ -93,16 +84,10 @@ admin | Vendingpreneurs`, but desktop/mobile screenshots rendered the app
 
 ## Next Action
 
-Resolve the blocked browser gates before marking S7/S8/S10 done:
+Continue with the next unblocked nodes:
 
-- S7 unblock: provide a matching local Supabase stack/env/schema so
-  `/admin/forms` can list forms, then re-run desktop/mobile create, edit,
-  publish, reload proof.
-- S8 unblock: provide a matching local Supabase stack/env, free the standard
-  Supabase ports for this worktree, or fix the isolated local migration path so
-  `/admin/pages/new` can render and be screenshot.
-- S10 unblock: provide a matching local Supabase stack/env/schema so
-  `/admin/leads` can list lead rows, then re-run desktop/mobile filters, detail,
-  and retry proof.
+- S9: Opt-in lead-form public integration.
+- S11: Stale/expired lifecycle jobs and Close tasks.
 
-Update `progress.md` only after fresh evidence is accepted.
+Use dependency/write-scope checks before deciding whether to run them in the
+same wave. Update `progress.md` only after fresh evidence is accepted.
