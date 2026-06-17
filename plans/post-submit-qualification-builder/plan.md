@@ -68,7 +68,7 @@ Owner: feature-orchestrator
 | S3   | Lead capture to qualification session service | T1   | S1,S2            | W3-A           | lead state transitions                    | DONE    |
 | S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | external adapter, single-threaded         | DONE    |
 | S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | token/session state                       | DONE    |
-| S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | browser-visible UI                        | PENDING |
+| S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | browser-visible UI                        | DONE    |
 | S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | admin UI + form services                  | PENDING |
 | S8   | Page/block attachment settings                | T2   | S2               | W5-C           | page-builder schema/editor                | PENDING |
 | S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | public conversion path                    | PENDING |
@@ -371,7 +371,7 @@ Expected files:
 
 ### S6 - Public Typeform-style runtime design and UI
 
-Status: PENDING
+Status: DONE
 Tier: T2
 Type: behavior
 Actor/trigger: prospect answers qualification questions.
@@ -397,15 +397,15 @@ Expected files:
   Write boundaries: qualification runtime components, styles/tests, and design
   artifacts only.
   Acceptance criteria:
-- [ ] Use `build-web-apps:frontend-app-builder` and `imagegen` before coding the
+- [x] Use `build-web-apps:frontend-app-builder` and `imagegen` before coding the
       runtime UI.
-- [ ] Generate and save an accepted concept/reference for the runtime screen(s).
-- [ ] One question per screen, `n of total` progress, Back/Continue, keyboard and
+- [x] Generate and save an accepted concept/reference for the runtime screen(s).
+- [x] One question per screen, `n of total` progress, Back/Continue, keyboard and
       screen-reader accessible controls.
-- [ ] Supports all v1 question types with polished states.
-- [ ] Desktop and mobile screenshots verified against concept; no overflow or
+- [x] Supports all v1 question types with polished states.
+- [x] Desktop and mobile screenshots verified against concept; no overflow or
       overlap.
-- [ ] Refresh/resume and validation errors are browser-tested.
+- [x] Refresh/resume and validation errors are browser-tested.
       Regression guards:
 - Completed/current answer state renders from server data without hydration
   mismatch.

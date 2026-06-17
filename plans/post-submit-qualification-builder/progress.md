@@ -14,7 +14,7 @@ Owner: feature-orchestrator
 | S3   | Lead capture to qualification session service | T1   | S1,S2            | W3-A           | orchestrator | DONE    |
 | S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | orchestrator | DONE    |
 | S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | orchestrator | DONE    |
-| S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | unassigned   | PENDING |
+| S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | orchestrator | DONE    |
 | S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | unassigned   | PENDING |
 | S8   | Page/block attachment settings                | T2   | S2               | W5-C           | unassigned   | PENDING |
 | S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | unassigned   | PENDING |
@@ -31,7 +31,7 @@ Owner: feature-orchestrator
 | S3   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S3-attempt-1.md` | High       |
 | S4   | DONE | DONE  | DONE     | DONE      | SKIPPED      | SKIPPED       | `agent-runs/S4-attempt-1.md` | High       |
 | S5   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S5-attempt-1.md` | High       |
-| S6   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                         | TBD        |
+| S6   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S6-attempt-1.md` | High       |
 | S7   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                         | TBD        |
 | S8   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                         | TBD        |
 | S9   | TODO | TODO  | TODO     | TODO      | TODO         | TODO          | none                         | TBD        |
@@ -41,8 +41,9 @@ Owner: feature-orchestrator
 
 `S4` live Close boundary proof was skipped with accepted reason because
 credentials and field IDs are unavailable. `S5` browser proof was skipped because
-runtime UI/browser behavior is owned by S6/S9. `S12` final live Close proof
-remains blocked on the same external credentials/mapping.
+runtime UI/browser behavior was owned by S6 and real opt-in entry proof is owned
+by S9. `S12` final live Close proof remains blocked on the same external
+credentials/mapping.
 
 ## Blockers
 
@@ -60,3 +61,4 @@ remains blocked on the same external credentials/mapping.
 - 2026-06-17: S3 completed. Added short-contact qualification intake service, default/explicit form-version resolution, local lead/session persistence, hashed session-token storage, email-based Close ID reuse, and pending Close sync event enqueueing. RED/GREEN/REFACTOR evidence and targeted tests are recorded in `plans/post-submit-qualification-builder/agent-runs/S3-attempt-1.md`.
 - 2026-06-17: S4 completed. Added optional Close env config, mocked-fetch Close client, retryable sync event processor, duplicate handling, enrichment notes/custom fields, stale follow-up tasks, bounded sanitized errors, and protected Close sync runner route. RED/GREEN/REFACTOR evidence and targeted tests are recorded in `plans/post-submit-qualification-builder/agent-runs/S4-attempt-1.md`.
 - 2026-06-17: S5 completed. Added public qualification token lookup, immutable form loading, answer autosave/update, resume state, required/consent completion validation, safe redirect handling, Close enrichment event enqueueing, server actions, and a minimal noindex route shell. RED/GREEN/REFACTOR evidence and targeted tests are recorded in `plans/post-submit-qualification-builder/agent-runs/S5-attempt-1.md`.
+- 2026-06-17: S6 completed. Added Image Gen-derived runtime design spec, interactive Typeform-style public runtime, all v1 question control types, dev/test demo proof token, desktop/mobile browser screenshots, refresh/resume/back/edit/validation/completion browser proof, and focused route chrome. RED/GREEN/REFACTOR evidence and targeted tests are recorded in `plans/post-submit-qualification-builder/agent-runs/S6-attempt-1.md`.

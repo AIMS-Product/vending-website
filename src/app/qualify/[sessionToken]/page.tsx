@@ -1,4 +1,10 @@
 import type { Metadata } from "next";
+import { QualificationRuntime } from "@/components/qualification/QualificationRuntime";
+import {
+  completeQualificationSessionAction,
+  saveQualificationAnswerAction,
+} from "./actions";
+import { getDemoQualificationRuntimeSession } from "@/lib/qualification/demo-runtime";
 import { loadQualificationSessionForToken } from "@/lib/services/qualification-sessions";
 
 type Params = { sessionToken: string };
@@ -16,11 +22,17 @@ export default async function QualificationPage({
   params: Promise<Params>;
 }) {
   const { sessionToken } = await params;
-  const session = await loadQualificationSessionForToken({ sessionToken });
+  const session =
+    getDemoQualificationRuntimeSession(sessionToken) ??
+    (await loadQualificationSessionForToken({ sessionToken }));
 
   if (session.status === "unavailable") {
     return (
-      <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6 py-16 text-slate-950">
+      <div
+        className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6 py-16 text-slate-950"
+        data-hide-site-header="true"
+        data-hide-site-footer="true"
+      >
         <p className="text-sm font-semibold text-[#0b63f6]">Vendingpreneurs</p>
         <h1 className="mt-3 text-3xl font-semibold">
           Qualification unavailable
@@ -33,44 +45,17 @@ export default async function QualificationPage({
     );
   }
 
-  const currentQuestion =
-    session.questions.find(
-      (question) => question.id === session.currentQuestionId,
-    ) ?? session.questions[0];
-
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6 py-16 text-slate-950">
-      <p className="text-sm font-semibold text-[#0b63f6]">Vendingpreneurs</p>
-      <h1 className="mt-3 text-3xl font-semibold">Qualification</h1>
-      {currentQuestion ? (
-        <section className="mt-8">
-          <p className="text-sm text-slate-500">
-            Question{" "}
-            {Math.max(
-              1,
-              session.questions.findIndex(
-                (question) => question.id === currentQuestion.id,
-              ) + 1,
-            )}{" "}
-            of {session.questions.length}
-          </p>
-          <h2 className="mt-3 text-2xl font-semibold">
-            {currentQuestion.label}
-          </h2>
-          {currentQuestion.helpText ? (
-            <p className="mt-2 text-base text-slate-600">
-              {currentQuestion.helpText}
-            </p>
-          ) : null}
-        </section>
-      ) : (
-        <section className="mt-8">
-          <h2 className="text-2xl font-semibold">Ready to submit</h2>
-          <p className="mt-2 text-base text-slate-600">
-            Your qualification answers are ready to complete.
-          </p>
-        </section>
-      )}
+    <div data-hide-site-header="true" data-hide-site-footer="true">
+      <QualificationRuntime
+        session={session}
+        sessionToken={sessionToken}
+        saveAction={saveQualificationAnswerAction.bind(null, sessionToken)}
+        completeAction={completeQualificationSessionAction.bind(
+          null,
+          sessionToken,
+        )}
+      />
     </div>
   );
 }

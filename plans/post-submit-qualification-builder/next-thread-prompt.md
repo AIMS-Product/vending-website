@@ -32,11 +32,13 @@ Important constraints:
   `plans/post-submit-qualification-builder/agent-runs/S4-attempt-1.md`.
 - S5 is complete. Evidence is in
   `plans/post-submit-qualification-builder/agent-runs/S5-attempt-1.md`.
-- Next unblocked wave is W5: S6 public runtime UI, S7 admin forms builder, and
-  S8 page/block attachment settings.
+- S6 is complete. Evidence is in
+  `plans/post-submit-qualification-builder/agent-runs/S6-attempt-1.md`.
+- Remaining unblocked W5 nodes are S7 admin forms builder and S8 page/block
+  attachment settings.
 - Use strict RED -> GREEN -> REFACTOR and record fresh evidence before marking
   any node done.
 
 Begin by reading the files above, confirming the feature state, and reporting
-that the next action is W5 node selection. Do not start implementation until the
-user says to start or continue.
+that the next action is S7 or S8 selection. Do not start implementation until
+the user says to start or continue.

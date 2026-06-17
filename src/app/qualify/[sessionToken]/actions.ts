@@ -6,6 +6,10 @@ import {
   QualificationSessionValidationError,
   saveQualificationAnswer,
 } from "@/lib/services/qualification-sessions";
+import {
+  completeDemoQualificationRuntimeSession,
+  saveDemoQualificationRuntimeAnswer,
+} from "@/lib/qualification/demo-runtime";
 
 export type QualificationAnswerActionState =
   | { status: "idle" }
@@ -29,6 +33,13 @@ export async function saveQualificationAnswerAction(
   _state: QualificationAnswerActionState,
   formData: FormData,
 ): Promise<QualificationAnswerActionState> {
+  const demoResult = saveDemoQualificationRuntimeAnswer({
+    sessionToken,
+    questionId: field(formData, "question_id"),
+    answerValue: answerValue(formData),
+  });
+  if (demoResult) return demoResult;
+
   try {
     const result = await saveQualificationAnswer({
       sessionToken,
@@ -63,6 +74,9 @@ export async function saveQualificationAnswerAction(
 export async function completeQualificationSessionAction(
   sessionToken: string,
 ): Promise<QualificationAnswerActionState> {
+  const demoResult = completeDemoQualificationRuntimeSession(sessionToken);
+  if (demoResult) return demoResult;
+
   const h = await headers();
 
   try {

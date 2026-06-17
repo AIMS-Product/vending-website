@@ -39,8 +39,11 @@ chat history.
   and editing, resume state, required/consent completion validation, safe
   redirect fallback, Close enrichment event enqueueing, server actions, and a
   minimal noindex route shell are recorded in `agent-runs/S5-attempt-1.md`.
-- The next unblocked wave is W5: S6 public runtime UI, S7 admin forms builder,
-  and S8 page/block attachment settings.
+- S6 is complete: Image Gen-derived design spec, public Typeform-style runtime,
+  all v1 question controls, dev/test demo token, route integration, and
+  desktop/mobile browser proof are recorded in `agent-runs/S6-attempt-1.md`.
+- The remaining unblocked W5 nodes are S7 admin forms builder and S8 page/block
+  attachment settings.
 - Close credentials are not available yet. This does not block local database,
   mocked Close adapter, retry queue, admin UI, or public runtime work. It blocks
   only final live Close boundary proof.
@@ -61,9 +64,6 @@ chat history.
 
 Choose and launch the next W5 node with strict RED -> GREEN -> REFACTOR:
 
-- S6: public Typeform-style runtime UI. Use
-  `build-web-apps:frontend-app-builder` and `imagegen` before implementation,
-  then browser-verify desktop and mobile screenshots.
 - S7: admin qualification forms builder. Read the `/admin` design contracts
   before changing UI.
 - S8: page/block attachment settings. Read the page-builder design contracts
