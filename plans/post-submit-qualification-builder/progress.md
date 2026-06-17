@@ -1,55 +1,56 @@
 # Feature Progress: post-submit-qualification-builder
 
-Status: IN_PROGRESS
+Status: COMPLETE
 Current wave: W8
 Last updated: 2026-06-17
 Owner: feature-orchestrator
 
 ## Graph Summary
 
-| Node | Title                                         | Tier | Depends On       | Parallel Group | Owner        | Status  |
-| ---- | --------------------------------------------- | ---- | ---------------- | -------------- | ------------ | ------- |
-| S1   | Data model, RLS, generated types              | T1   | none             | W1-A           | orchestrator | DONE    |
-| S2   | Qualification form schema and services        | T1   | S1               | W2-A           | orchestrator | DONE    |
-| S3   | Lead capture to qualification session service | T1   | S1,S2            | W3-A           | orchestrator | DONE    |
-| S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | orchestrator | DONE    |
-| S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | orchestrator | DONE    |
-| S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | orchestrator | DONE    |
-| S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | orchestrator | DONE    |
-| S8   | Page/block attachment settings                | T2   | S2               | W5-C           | orchestrator | DONE    |
-| S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | orchestrator | DONE    |
-| S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | orchestrator | DONE    |
-| S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | orchestrator | DONE    |
-| S12  | End-to-end proof and cleanup                  | T1   | S6,S7,S9,S10,S11 | W8-A           | unassigned   | PENDING |
+| Node | Title                                         | Tier | Depends On       | Parallel Group | Owner        | Status |
+| ---- | --------------------------------------------- | ---- | ---------------- | -------------- | ------------ | ------ |
+| S1   | Data model, RLS, generated types              | T1   | none             | W1-A           | orchestrator | DONE   |
+| S2   | Qualification form schema and services        | T1   | S1               | W2-A           | orchestrator | DONE   |
+| S3   | Lead capture to qualification session service | T1   | S1,S2            | W3-A           | orchestrator | DONE   |
+| S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | orchestrator | DONE   |
+| S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | orchestrator | DONE   |
+| S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | orchestrator | DONE   |
+| S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | orchestrator | DONE   |
+| S8   | Page/block attachment settings                | T2   | S2               | W5-C           | orchestrator | DONE   |
+| S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | orchestrator | DONE   |
+| S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | orchestrator | DONE   |
+| S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | orchestrator | DONE   |
+| S12  | End-to-end proof and cleanup                  | T1   | S6,S7,S9,S10,S11 | W8-A           | orchestrator | DONE   |
 
 ## Gate Progress
 
-| Node | RED  | GREEN | REFACTOR | Repo Gate | Browser Gate | Boundary Gate | Evidence                      | Confidence |
-| ---- | ---- | ----- | -------- | --------- | ------------ | ------------- | ----------------------------- | ---------- |
-| S1   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S1-attempt-1.md`  | High       |
-| S2   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S2-attempt-1.md`  | High       |
-| S3   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S3-attempt-1.md`  | High       |
-| S4   | DONE | DONE  | DONE     | DONE      | SKIPPED      | SKIPPED       | `agent-runs/S4-attempt-1.md`  | High       |
-| S5   | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S5-attempt-1.md`  | High       |
-| S6   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S6-attempt-1.md`  | High       |
-| S7   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S7-attempt-2.md`  | High       |
-| S8   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S8-attempt-2.md`  | High       |
-| S9   | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S9-attempt-1.md`  | High       |
-| S10  | DONE | DONE  | DONE     | DONE      | DONE         | DONE          | `agent-runs/S10-attempt-2.md` | High       |
-| S11  | DONE | DONE  | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S11-attempt-1.md` | High       |
-| S12  | TODO | TODO  | TODO     | TODO      | TODO         | BLOCKED       | none                          | TBD        |
+| Node | RED     | GREEN   | REFACTOR | Repo Gate | Browser Gate | Boundary Gate | Evidence                      | Confidence |
+| ---- | ------- | ------- | -------- | --------- | ------------ | ------------- | ----------------------------- | ---------- |
+| S1   | DONE    | DONE    | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S1-attempt-1.md`  | High       |
+| S2   | DONE    | DONE    | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S2-attempt-1.md`  | High       |
+| S3   | DONE    | DONE    | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S3-attempt-1.md`  | High       |
+| S4   | DONE    | DONE    | DONE     | DONE      | SKIPPED      | SKIPPED       | `agent-runs/S4-attempt-1.md`  | High       |
+| S5   | DONE    | DONE    | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S5-attempt-1.md`  | High       |
+| S6   | DONE    | DONE    | DONE     | DONE      | DONE         | DONE          | `agent-runs/S6-attempt-1.md`  | High       |
+| S7   | DONE    | DONE    | DONE     | DONE      | DONE         | DONE          | `agent-runs/S7-attempt-2.md`  | High       |
+| S8   | DONE    | DONE    | DONE     | DONE      | DONE         | DONE          | `agent-runs/S8-attempt-2.md`  | High       |
+| S9   | DONE    | DONE    | DONE     | DONE      | DONE         | DONE          | `agent-runs/S9-attempt-1.md`  | High       |
+| S10  | DONE    | DONE    | DONE     | DONE      | DONE         | DONE          | `agent-runs/S10-attempt-2.md` | High       |
+| S11  | DONE    | DONE    | DONE     | DONE      | SKIPPED      | DONE          | `agent-runs/S11-attempt-1.md` | High       |
+| S12  | SKIPPED | SKIPPED | SKIPPED  | DONE      | DONE         | DONE          | `agent-runs/S12-attempt-1.md` | High       |
 
 `S4` live Close boundary proof was skipped with accepted reason because
 credentials and field IDs are unavailable. `S5` browser proof was skipped because
 runtime UI/browser behavior was owned by S6 and real opt-in entry proof is owned
-by S9. `S12` final live Close proof remains blocked on the same external
-credentials/mapping.
+by S9. `S12` RED/GREEN/REFACTOR was skipped because it was a final proof node,
+not an implementation node. `S12` final live Close proof remains blocked on the
+same external credentials/mapping.
 
 ## Blockers
 
-| Node | Blocker                                                        | Required Decision Or Evidence                                             |
-| ---- | -------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| S12  | Final live Close proof cannot run without credentials/mapping. | Same as S4; otherwise mark live Close proof skipped with accepted reason. |
+| Node | Blocker                                                        | Required Decision Or Evidence                                                                                          |
+| ---- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| S12  | Final live Close proof cannot run without credentials/mapping. | Accepted external blocker; mocked Close tests, retry queue, admin failure/retry UI, and local sync-state proof passed. |
 
 ## Completed Evidence
 
@@ -70,3 +71,4 @@ credentials/mapping.
 - 2026-06-17: S10 browser gate unblocked and completed against the same isolated local Supabase stack. `/admin/leads` list, failed-sync filter, detail answer snapshots, retry action, reload-to-pending, and mobile proof are recorded in `plans/post-submit-qualification-builder/agent-runs/S10-attempt-2.md`.
 - 2026-06-17: S9 completed. Added opt-in public lead-form qualification action and renderer wiring, selected published-form resolution, short contact render mode, global default route pass-through, focused RED/GREEN tests, typecheck/lint/React Doctor proof, and desktop/mobile browser submit-through-to-qualification proof. Evidence is recorded in `plans/post-submit-qualification-builder/agent-runs/S9-attempt-1.md`.
 - 2026-06-17: S11 completed. Added protected qualification lifecycle runner route, stale/expired session state transitions, qualified/completed preservation, idempotent stale follow-up Close task event enqueueing, focused RED/GREEN tests, typecheck, scoped lint, and scheduled/Close cron route regression proof. Evidence is recorded in `plans/post-submit-qualification-builder/agent-runs/S11-attempt-1.md`.
+- 2026-06-17: S12 completed. Ran the final repo gate (`npm run test`, `npm run typecheck`, `npm run lint`, and a dummy-local-env `npm run build`), local migration/RLS proof, desktop/mobile public opt-in browser proof, qualification completion proof, admin forms/editor/leads proof, failed Close sync retry proof, legacy `/apply` and `/contact` smoke screenshots, and local disposable data cleanup. Live Close proof remains blocked until credentials and Close custom-field/status IDs exist. Evidence is recorded in `plans/post-submit-qualification-builder/agent-runs/S12-attempt-1.md`.

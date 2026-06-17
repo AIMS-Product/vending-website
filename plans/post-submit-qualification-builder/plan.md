@@ -1,6 +1,6 @@
 # Feature Plan: post-submit-qualification-builder
 
-Status: IN_PROGRESS
+Status: COMPLETE
 Last updated: 2026-06-17
 Owner: feature-orchestrator
 
@@ -61,20 +61,20 @@ Owner: feature-orchestrator
 
 ## Dependency Graph
 
-| Node | Title                                         | Tier | Depends On       | Parallel Group | Shared-State Risk                         | Status  |
-| ---- | --------------------------------------------- | ---- | ---------------- | -------------- | ----------------------------------------- | ------- |
-| S1   | Data model, RLS, generated types              | T1   | none             | W1-A           | migrations/types, single-threaded         | DONE    |
-| S2   | Qualification form schema and services        | T1   | S1               | W2-A           | shared domain contracts                   | DONE    |
-| S3   | Lead capture to qualification session service | T1   | S1,S2            | W3-A           | lead state transitions                    | DONE    |
-| S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | external adapter, single-threaded         | DONE    |
-| S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | token/session state                       | DONE    |
-| S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | browser-visible UI                        | DONE    |
-| S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | admin UI + form services                  | DONE    |
-| S8   | Page/block attachment settings                | T2   | S2               | W5-C           | page-builder schema/editor                | DONE    |
-| S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | public conversion path                    | DONE    |
-| S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | admin ops UI                              | DONE    |
-| S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | background state transitions              | DONE    |
-| S12  | End-to-end proof and cleanup                  | T1   | S6,S7,S9,S10,S11 | W8-A           | browser + boundary proof, single-threaded | PENDING |
+| Node | Title                                         | Tier | Depends On       | Parallel Group | Shared-State Risk                         | Status |
+| ---- | --------------------------------------------- | ---- | ---------------- | -------------- | ----------------------------------------- | ------ |
+| S1   | Data model, RLS, generated types              | T1   | none             | W1-A           | migrations/types, single-threaded         | DONE   |
+| S2   | Qualification form schema and services        | T1   | S1               | W2-A           | shared domain contracts                   | DONE   |
+| S3   | Lead capture to qualification session service | T1   | S1,S2            | W3-A           | lead state transitions                    | DONE   |
+| S4   | Close adapter, sync events, retry runner      | T1   | S1,S3            | W4-A           | external adapter, single-threaded         | DONE   |
+| S5   | Public qualification backend route/actions    | T1   | S2,S3            | W4-B           | token/session state                       | DONE   |
+| S6   | Public Typeform-style runtime design and UI   | T2   | S5               | W5-A           | browser-visible UI                        | DONE   |
+| S7   | Admin qualification forms builder             | T2   | S2               | W5-B           | admin UI + form services                  | DONE   |
+| S8   | Page/block attachment settings                | T2   | S2               | W5-C           | page-builder schema/editor                | DONE   |
+| S9   | Opt-in lead-form public integration           | T1   | S3,S5,S8         | W6-A           | public conversion path                    | DONE   |
+| S10  | Admin leads backstop and retry controls       | T2   | S4,S5            | W6-B           | admin ops UI                              | DONE   |
+| S11  | Stale/expired lifecycle jobs and Close tasks  | T2   | S4,S10           | W7-A           | background state transitions              | DONE   |
+| S12  | End-to-end proof and cleanup                  | T1   | S6,S7,S9,S10,S11 | W8-A           | browser + boundary proof, single-threaded | DONE   |
 
 Browser gates must run serially during integration because this repo uses a
 shared dev server and production-linked Supabase risk has existed in prior
@@ -680,7 +680,7 @@ Expected files:
 
 ### S12 - End-to-end proof and cleanup
 
-Status: PENDING
+Status: DONE
 Tier: T1
 Type: verification
 Actor/trigger: orchestrator verifies the complete opted-in qualification flow.
@@ -703,15 +703,15 @@ Expected files:
 - optional evidence screenshots under reports/evidence if repo pattern requires
   Write boundaries: verification artifacts only unless fixing discovered bugs.
   Acceptance criteria:
-- [ ] All implementation nodes DONE or explicitly SKIPPED/BLOCKED with accepted
+- [x] All implementation nodes DONE or explicitly SKIPPED/BLOCKED with accepted
       reasons.
-- [ ] Full targeted repo gate run over changed areas.
-- [ ] Typecheck and build run when practical.
-- [ ] Browser proof covers public desktop/mobile qualification, admin forms,
+- [x] Full targeted repo gate run over changed areas.
+- [x] Typecheck and build run when practical.
+- [x] Browser proof covers public desktop/mobile qualification, admin forms,
       page/block attachment, admin leads, and legacy apply/contact smoke.
-- [ ] Close live proof is marked skipped/blocked until credentials exist; mocked
+- [x] Close live proof is marked skipped/blocked until credentials exist; mocked
       Close proof is fresh and complete.
-- [ ] Disposable records cleaned up or documented if retained by immutable audit
+- [x] Disposable records cleaned up or documented if retained by immutable audit
       convention.
       Regression guards:
 - Existing lead tests and page-builder tests pass.
@@ -727,6 +727,6 @@ Expected files:
   Parallelization: single-threaded final proof.
   Worker role: feature-proof / orchestrator.
   Exit evidence: completed `verification.md`, screenshots/routes/commands, cleanup
-  summary.
+  summary recorded in `agent-runs/S12-attempt-1.md`.
   Blocked on: live Close CRM proof requires `CLOSE_API_KEY`, Close custom field IDs,
   and approved test Close account/records.

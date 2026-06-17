@@ -2,95 +2,86 @@
 
 ## Final Status
 
-IN_PROGRESS
+COMPLETE WITH ACCEPTED LIVE-CLOSE BLOCKER
 
-Implementation is in progress. S1-S11 are complete with evidence in
-`progress.md` and the corresponding `agent-runs/` files. S12 remains pending.
-This file remains a final-proof scaffold for S12. Live Close CRM proof is
-blocked until credentials and Close custom-field/status IDs exist.
+S1-S12 are complete with evidence in `progress.md` and the corresponding
+`agent-runs/` files. The implementation is locally verified with mocked Close
+tests, retryable sync events, local persistence, admin-visible failure states,
+browser screenshots, and local migration/RLS proof. Live Close CRM proof remains
+blocked until credentials, custom-field/status IDs, and an approved test record
+exist.
 
 ## Requirement Audit
 
-| Requirement                                                        | Evidence                                       | Result  |
-| ------------------------------------------------------------------ | ---------------------------------------------- | ------- |
-| Short contact capture creates local lead before Close sync         | S3 service evidence; S9 browser/database proof | PASS    |
-| Mandatory qualification session appends to same lead/contact       | S3/S5 service evidence; S9 browser proof       | PASS    |
-| Qualification answers persist step-by-step                         | S5/S6 service and browser evidence             | PARTIAL |
-| Admins can build immutable qualification form versions             | S2 service evidence; S7 browser evidence       | PASS    |
-| Page/block settings resolve form/default/override                  | S8 repo and browser evidence                   | PASS    |
-| Close sync is optional, retryable, and non-blocking                | S3/S4 service evidence; S9/S10 local proof     | PARTIAL |
-| `/admin/leads` exposes status and retry controls                   | S10 repo and browser evidence                  | PASS    |
-| Stale/expired lifecycle jobs queue Close follow-up tasks safely    | S11 service and route evidence                 | PASS    |
-| Existing `/apply`, `/contact`, and non-opt-in lead forms preserved | S9 focused tests; S12 pending                  | PARTIAL |
+| Requirement                                                        | Evidence                                      | Result |
+| ------------------------------------------------------------------ | --------------------------------------------- | ------ |
+| Short contact capture creates local lead before Close sync         | S3 service evidence; S9/S12 browser proof     | PASS   |
+| Mandatory qualification session appends to same lead/contact       | S3/S5 service evidence; S9/S12 browser proof  | PASS   |
+| Qualification answers persist step-by-step                         | S5/S6 service proof; S12 admin detail proof   | PASS   |
+| Admins can build immutable qualification form versions             | S2 service evidence; S7/S12 browser evidence  | PASS   |
+| Page/block settings resolve form/default/override                  | S8 repo/browser evidence; S12 editor proof    | PASS   |
+| Close sync is optional, retryable, and non-blocking                | S3/S4/S10/S12 mocked and local retry evidence | PASS   |
+| `/admin/leads` exposes status and retry controls                   | S10 evidence; S12 failed-to-pending proof     | PASS   |
+| Stale/expired lifecycle jobs queue Close follow-up tasks safely    | S11 service and route evidence                | PASS   |
+| Existing `/apply`, `/contact`, and non-opt-in lead forms preserved | Full tests; S12 `/apply` and `/contact` smoke | PASS   |
+| Live Close write proof                                             | Blocked by missing credentials/mappings       | SKIP   |
 
 ## Evidence Table
 
-| Claim                                                  | Fresh evidence                                                                                                                                                                  | Result | Remaining risk                                                                                               |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------ |
-| Plan is ready for implementation                       | `plan.md`, `progress.md`, `decisions.md` created 2026-06-17                                                                                                                     | PASS   | Plan still needs execution evidence                                                                          |
-| S1 data model and generated type contract are in place | `agent-runs/S1-attempt-1.md`; `supabase/migrations/20260617090000_post_submit_qualification.sql`; `src/types/database.ts`; `src/types/post-submit-qualification-schema.test.ts` | PASS   | Full repo reset is blocked by an unrelated existing migration under Supabase CLI 2.75.0 before S1 is reached |
-| S2 qualification form service contract is in place     | `agent-runs/S2-attempt-1.md`; `src/lib/qualification/forms.ts`; `src/lib/services/qualification-forms.ts`; `src/lib/services/qualification-forms.test.ts`                       | PASS   | Admin UI proof is complete in S7                                                                             |
-| S3 qualification intake service contract is in place   | `agent-runs/S3-attempt-1.md`; `src/lib/services/qualification-intake.ts`; `src/lib/services/qualification-intake.test.ts`                                                       | PASS   | S9 public route/browser integration is complete; S12 final proof still pending                               |
-| S4 mocked Close sync contract is in place              | `agent-runs/S4-attempt-1.md`; `src/lib/close/client.ts`; `src/lib/close/sync.ts`; `src/app/api/admin/close-sync/run/route.ts`; S4 tests                                         | PASS   | Live Close proof remains blocked until credentials and field IDs exist                                       |
-| S5 public qualification backend is in place            | `agent-runs/S5-attempt-1.md`; `src/lib/services/qualification-sessions.ts`; `src/app/qualify/[sessionToken]/actions.ts`; S5 tests                                               | PASS   | S9 proved real opt-in entry; S12 final proof still pending                                                   |
-| S6 public runtime UI is in place                       | `agent-runs/S6-attempt-1.md`; `src/components/qualification/QualificationRuntime.tsx`; S6 tests and screenshots                                                                 | PASS   | S9 proved real opt-in entry; S12 final proof still pending                                                   |
-| S7 admin forms builder is in place                     | `agent-runs/S7-attempt-1.md`; `agent-runs/S7-attempt-2.md`; focused tests; desktop/mobile create/edit/publish/default/reload screenshots                                        | PASS   | None known for local admin form proof                                                                        |
-| S8 page/block attachment contract is in place          | `agent-runs/S8-attempt-1.md`; `agent-runs/S8-attempt-2.md`; S8 schema/resolver/editor tests; desktop/mobile editor settings screenshots                                         | PASS   | None known for local editor settings proof                                                                   |
-| S9 public opt-in lead form path is in place            | `agent-runs/S9-attempt-1.md`; focused tests; desktop/mobile short-form screenshots; validation screenshot; redirect-to-runtime screenshot; local DB lead/session/event proof    | PASS   | Live Close remains blocked; S12 final proof still pending                                                    |
-| S10 admin leads backstop is in place                   | `agent-runs/S10-attempt-1.md`; `agent-runs/S10-attempt-2.md`; focused tests; list/filter/detail/retry/reload/mobile screenshots                                                 | PASS   | Live Close remains blocked; local retry event proof passed                                                   |
-| S11 lifecycle runner is in place                       | `agent-runs/S11-attempt-1.md`; focused lifecycle tests; qualification lifecycle route tests; scheduled/Close cron route regression tests                                        | PASS   | Live Close task proof remains blocked until credentials and mapping exist                                    |
+| Claim                                                  | Fresh evidence                                                                                                                                              | Result | Remaining risk                                      |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | --------------------------------------------------- |
+| S1 data model and generated type contract are in place | `agent-runs/S1-attempt-1.md`; `supabase/migrations/20260617090000_post_submit_qualification.sql`; `src/types/database.ts`; S12 local migration/RLS proof    | PASS   | None known locally                                  |
+| S2 qualification form service contract is in place     | `agent-runs/S2-attempt-1.md`; `src/lib/qualification/forms.ts`; `src/lib/services/qualification-forms.ts`; `src/lib/services/qualification-forms.test.ts`   | PASS   | None known locally                                  |
+| S3 qualification intake service contract is in place   | `agent-runs/S3-attempt-1.md`; `src/lib/services/qualification-intake.ts`; `src/lib/services/qualification-intake.test.ts`; S12 browser submit-through proof | PASS   | None known locally                                  |
+| S4 mocked Close sync contract is in place              | `agent-runs/S4-attempt-1.md`; `src/lib/close/client.ts`; `src/lib/close/sync.ts`; `src/app/api/admin/close-sync/run/route.ts`; S12 retry state proof        | PASS   | Live Close account mapping still unproven           |
+| S5 public qualification backend is in place            | `agent-runs/S5-attempt-1.md`; `src/lib/services/qualification-sessions.ts`; `src/app/qualify/[sessionToken]/actions.ts`; S12 completion screenshot          | PASS   | None known locally                                  |
+| S6 public runtime UI is in place                       | `agent-runs/S6-attempt-1.md`; `src/components/qualification/QualificationRuntime.tsx`; S12 desktop/mobile screenshots                                       | PASS   | None known locally                                  |
+| S7 admin forms builder is in place                     | `agent-runs/S7-attempt-1.md`; `agent-runs/S7-attempt-2.md`; S12 `/admin/forms` screenshot                                                                   | PASS   | None known locally                                  |
+| S8 page/block attachment contract is in place          | `agent-runs/S8-attempt-1.md`; `agent-runs/S8-attempt-2.md`; S12 `/admin/pages/new` qualification settings screenshot                                        | PASS   | None known locally                                  |
+| S9 public opt-in lead form path is in place            | `agent-runs/S9-attempt-1.md`; S12 public opt-in desktop/mobile screenshots and redirect-to-qualification proof                                              | PASS   | None known locally                                  |
+| S10 admin leads backstop is in place                   | `agent-runs/S10-attempt-1.md`; `agent-runs/S10-attempt-2.md`; S12 failed sync detail and retry-to-pending screenshots                                       | PASS   | Live Close remains blocked                          |
+| S11 lifecycle runner is in place                       | `agent-runs/S11-attempt-1.md`; focused lifecycle tests; qualification lifecycle route tests; scheduled/Close cron route regression tests                    | PASS   | Deployment cron wiring still needs release approval |
+| S12 final proof is complete                            | `agent-runs/S12-attempt-1.md`; `browser-evidence/S12-*.png`; local cleanup output; repo/build/migration gates                                               | PASS   | Live Close proof deferred                           |
 
 ## Commands
 
-- S1 commands are recorded in `agent-runs/S1-attempt-1.md`.
-- S2 commands are recorded in `agent-runs/S2-attempt-1.md`.
-- S3 commands are recorded in `agent-runs/S3-attempt-1.md`.
-- S4 commands are recorded in `agent-runs/S4-attempt-1.md`.
-- S5 commands are recorded in `agent-runs/S5-attempt-1.md`.
-- S6 commands are recorded in `agent-runs/S6-attempt-1.md`.
-- S7 commands are recorded in `agent-runs/S7-attempt-1.md` and
-  `agent-runs/S7-attempt-2.md`.
-- S8 commands are recorded in `agent-runs/S8-attempt-1.md` and
-  `agent-runs/S8-attempt-2.md`.
-- S9 commands are recorded in `agent-runs/S9-attempt-1.md`.
-- S10 commands are recorded in `agent-runs/S10-attempt-1.md` and
-  `agent-runs/S10-attempt-2.md`.
-- S11 commands are recorded in `agent-runs/S11-attempt-1.md`.
+- `npm run test` passed: 143 files, 873 tests.
+- `npm run typecheck` passed.
+- `npm run lint` passed with four unrelated existing warnings in
+  `plans/ux-verified-technical-fixes/agent-runs/*.mjs` and
+  `src/app/admin/pages/actions.test.ts`.
+- `npm run build` initially failed because Supabase env vars were absent.
+- `npm run build` passed with local dummy Supabase URL/keys; the only notable
+  warning was the expected dummy JWT static slug warning.
+- S12 local migration/RLS proof passed with isolated temporary Supabase project
+  `vending-qualification-s12-proof`.
+- S12 browser proof ran through Playwright against `http://127.0.0.1:3002` and
+  isolated local Supabase stack `vending-browser-proof`.
+- The local Next dev server and `vending-browser-proof` containers were stopped
+  after proof; `VendPlacement` was left running.
 
 ## Runtime And Boundary Proof
 
-- Browser proof: not run for S1, S2, S3, S4, or S5 because they are
-  schema/service/adapter/backend-only nodes. S6 browser proof passed with a
-  dev/test demo token.
-- Local migration proof: focused S1 dependency stack reset passed; see
-  `agent-runs/S1-attempt-1.md`.
+- Browser proof: S12 covers public opt-in desktop/mobile, qualification
+  desktop/mobile, completion, admin failed sync/detail/retry/mobile, admin
+  forms, editor qualification controls, and legacy `/apply`/`/contact`.
+- Local migration proof: S12 isolated reset applied the needed baseline
+  migrations and `20260617090000_post_submit_qualification.sql`; checks passed
+  for table count, RLS, anon-answer policies, token hash storage, no raw token
+  column, and dedupe indexes.
 - Mocked Close adapter proof: S4 mocked-fetch tests passed for Basic auth,
   lead/contact create/update, note/activity enrichment, stale follow-up tasks,
   retry, dead-letter, `needs_review`, and bounded sanitized errors.
-- S2 boundary proof: service tests use an injected fake Supabase client and do
-  not call live Close or a live database.
-- S3 boundary proof: service tests use an injected fake Supabase client and
-  assert a pending `close_sync_events` row without live Close credentials.
-- S4 boundary proof: sync tests use mocked fetch and injected fake Supabase
-  client; no live Close request is made.
-- S5 boundary proof: session tests use an injected fake Supabase client and
-  assert local `qualification_enrichment` queue insertion only; no live Close
-  request is made.
-- S6 boundary proof: browser verification used the dev/test
-  `demo-qualification-runtime` token and in-memory fixture state only.
-- S7/S8/S9/S10 browser proof used an isolated local Supabase stack on alternate
-  ports with disposable seed data. The unrelated `VendPlacement` stack was not
-  stopped. The temp proof stack used a temp-only split of
-  `20260610091000_schedule_state_ownership.sql` because Supabase CLI 2.75.0
-  rejects multiple dollar-quoted functions in one migration file.
-- S9 browser proof used a disposable published SEO page and submitted through
-  the real public resource route to `/qualify/[token]`. Local database proof
-  confirmed the linked lead, qualification session, attribution, and pending
-  Close sync event.
-- S11 boundary proof used injected fake Supabase clients and asserted only
-  local lifecycle updates plus pending `close_sync_events` rows. No live Close
-  request was made.
-- Live Close proof: blocked until credentials and mapping exist.
+- Admin failure proof: S12 manually marked a local Close sync event failed,
+  verified the failed state in `/admin/leads`, clicked retry, and verified the
+  lead/event returned to pending with the error cleared.
+- Cleanup proof: S12 local lead/session/answer/sync records were removed; the
+  proof page was unpublished (`draft:null`), and the proof form was made
+  non-default/non-current (`false:null`).
+- Immutable audit retention: one local proof form version and the proof page
+  revision remain because published form versions and page revisions are
+  append-only by database trigger.
+- Live Close proof: blocked until credentials and mappings exist.
 
 ## Skipped Checks
 
@@ -98,20 +89,21 @@ blocked until credentials and Close custom-field/status IDs exist.
 - S2 browser proof skipped because S2 is schema/service behavior only and has no
   browser-visible UI.
 - S3 browser proof skipped because S3 is service behavior only; public route/UI
-  proof is complete in S9.
+  proof is complete in S9/S12.
 - S4 browser proof skipped because S4 is adapter/runner behavior only.
 - S5 browser proof skipped because S5 was backend route/action behavior with a
-  minimal route shell. Runtime UI and screenshot proof are complete in S6; real
-  opt-in entry proof is complete in S9.
+  minimal route shell. Runtime UI and screenshot proof are complete in S6/S12.
 - S6 in-app browser check used Playwright fallback because no direct in-app
-  browser tool was callable in this turn.
+  browser tool was callable in that turn.
 - S11 browser proof skipped because S11 is a backend ops route/service; admin
-  visibility was covered in S10.
-- S4 live Close proof skipped because credentials, custom-field IDs, status IDs,
-  and an approved Close test record are unavailable.
-- Full repo migration reset against default ports skipped because the unrelated
-  `VendPlacement` stack is using those ports. Browser proof used an isolated
-  alternate-port local stack instead.
+  visibility is covered in S10/S12.
+- S12 RED/GREEN/REFACTOR skipped because it is a final proof node, not an
+  implementation node.
+- S4/S12 live Close proof skipped because credentials, custom-field IDs, status
+  IDs, and an approved Close test record are unavailable.
+- Custom-domain checks skipped because project instructions say
+  `vendingpreneurs.com` / `www.vendingpreneurs.com` are not available to this
+  repo yet.
 
 ## Behavior Preservation
 
@@ -119,25 +111,18 @@ blocked until credentials and Close custom-field/status IDs exist.
   existing SEO page-builder lead form rendering, current admin auth/RLS, and
   existing lead notification behavior.
 - Intentional behavior changes: opt-in post-submit qualification flow, admin
-  forms builder, admin leads backstop, Close sync queue.
-- Evidence: S1 targeted tests and local migration proof are recorded in
-  `agent-runs/S1-attempt-1.md`. S2 targeted service tests plus legacy lead and
-  attribution regression tests are recorded in `agent-runs/S2-attempt-1.md`.
-  S3 targeted intake tests plus S1/S2/legacy lead/attribution regression tests
-  are recorded in `agent-runs/S3-attempt-1.md`. S4 targeted Close sync tests
-  plus S1/S2/S3 and scheduled-route regression tests are recorded in
-  `agent-runs/S4-attempt-1.md`. S5 session/action tests plus S1-S4 regression
-  tests are recorded in `agent-runs/S5-attempt-1.md`. S6 runtime tests plus
-  desktop/mobile browser screenshots are recorded in
-  `agent-runs/S6-attempt-1.md`. S7, S8, and S10 repo/browser evidence is
-  recorded in their attempt-1 and attempt-2 reports. S9 public opt-in proof is
-  recorded in `agent-runs/S9-attempt-1.md`. S11 lifecycle job proof and cron
-  route regression tests are recorded in `agent-runs/S11-attempt-1.md`.
-- Confidence: 82%
+  forms builder, admin leads backstop, Close sync queue, and lifecycle runner.
+- Evidence: S1-S11 evidence is recorded in their agent-run files. S12 adds full
+  test/typecheck/lint/build proof, local migration/RLS proof, fresh browser
+  screenshots, failed-to-pending retry proof, and cleanup evidence.
+- Confidence: 91% locally. Remaining confidence gap is live Close account
+  mapping only.
 
 ## Residual Risk
 
-- Close API field mapping is unknown until credentials/account configuration are
-  available.
-- S12 final end-to-end proof remains pending.
-- Migrations are T1 and must be tested locally before any remote DB push.
+- Close API field/status mapping is unknown until credentials and account
+  configuration are available.
+- Production cron/deployment wiring remains a release step requiring explicit
+  approval.
+- Remote DB migration proof has not been run and must not be run without
+  explicit approval.

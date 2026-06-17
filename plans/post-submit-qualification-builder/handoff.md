@@ -13,91 +13,95 @@ chat history.
   2. `plans/post-submit-qualification-builder/decisions.md`
   3. `plans/post-submit-qualification-builder/plan.md`
   4. `plans/post-submit-qualification-builder/progress.md`
-  5. `docs/design/admin-studio.md`
-  6. `docs/design/page-builder.md`
-  7. `docs/design/page-builder-blocks.md`
-  8. `docs/design/visual-review-checklist.md`
+  5. `plans/post-submit-qualification-builder/verification.md`
 
 ## Current State
 
-- The feature is in progress.
-- S1 is complete: data model, RLS, generated types, schema/type test, and
-  focused local migration proof are recorded in `progress.md` and
-  `agent-runs/S1-attempt-1.md`.
-- S2 is complete: qualification form schemas, normalized roles, snapshots,
-  draft update, immutable publish, default resolution, and version-by-id
-  services are recorded in `agent-runs/S2-attempt-1.md`.
-- S3 is complete: short-contact qualification intake, local lead/session
-  persistence, hashed token URL, Close ID reuse, attribution persistence, and
-  pending Close sync event enqueueing are recorded in
-  `agent-runs/S3-attempt-1.md`.
-- S4 is complete: optional Close env config, mocked-fetch Close client,
-  retryable sync event processor, duplicate handling, enrichment notes/custom
-  fields, stale follow-up tasks, bounded sanitized errors, and protected Close
-  sync runner route are recorded in `agent-runs/S4-attempt-1.md`.
-- S5 is complete: public token lookup, immutable form loading, answer autosave
-  and editing, resume state, required/consent completion validation, safe
-  redirect fallback, Close enrichment event enqueueing, server actions, and a
-  minimal noindex route shell are recorded in `agent-runs/S5-attempt-1.md`.
-- S6 is complete: Image Gen-derived design spec, public Typeform-style runtime,
-  all v1 question controls, dev/test demo token, route integration, and
-  desktop/mobile browser proof are recorded in `agent-runs/S6-attempt-1.md`.
-- S7 is complete:
-  `/admin/forms` list/editor routes, admin-gated create/save/publish/default
-  actions, admin form list/editor components, form service list/create/get/default
-  helpers, nav registration, focused tests, typecheck, lint, React Doctor diff
-  scan, and browser create/edit/publish/default/reload proof are recorded in
-  `agent-runs/S7-attempt-1.md` and `agent-runs/S7-attempt-2.md`.
-- S8 is complete:
-  page-level and lead-form block qualification settings, internal redirect
-  validation, resolver precedence, editor UI wiring, reducer/form-data
-  persistence, tests, typecheck, lint, React Doctor diff scan, and browser
-  page/block settings proof are recorded in `agent-runs/S8-attempt-1.md` and
-  `agent-runs/S8-attempt-2.md`.
-- S9 is complete:
-  public opt-in lead-form action and renderer wiring, selected published-form
-  resolution, short name/email/phone form rendering, global default route
-  pass-through, focused tests, typecheck, lint, S9-only React Doctor scan, and
-  desktop/mobile validation/redirect browser proof are recorded in
-  `agent-runs/S9-attempt-1.md`.
-- S10 is complete:
-  `/admin/leads` list and detail routes, admin-gated retry action, lead admin
-  service list/detail/retry helpers, lead manager/detail components, admin nav
-  registration, focused tests, typecheck, lint, React Doctor S10-only scan, and
-  browser list/filter/detail/retry/reload/mobile proof are recorded in
-  `agent-runs/S10-attempt-1.md` and `agent-runs/S10-attempt-2.md`.
-- S11 is complete:
-  protected qualification lifecycle runner route, stale/expired session state
+- The local implementation and proof graph is complete.
+- S1-S12 are DONE in `plan.md` and `progress.md`.
+- Final proof is recorded in:
+  - `plans/post-submit-qualification-builder/verification.md`
+  - `plans/post-submit-qualification-builder/agent-runs/S12-attempt-1.md`
+  - `plans/post-submit-qualification-builder/browser-evidence/S12-*.png`
+- Latest local commit before S12 docs/screenshots was
+  `caf21df Add qualification lifecycle runner`.
+
+## Completed Nodes
+
+- S1: data model, RLS, generated types, schema/type test, and focused local
+  migration proof.
+- S2: qualification form schemas, normalized roles, snapshots, draft update,
+  immutable publish, default resolution, and version-by-id services.
+- S3: short-contact qualification intake, local lead/session persistence,
+  hashed token URL, Close ID reuse, attribution persistence, and pending Close
+  sync event enqueueing.
+- S4: optional Close env config, mocked-fetch Close client, retryable sync event
+  processor, duplicate handling, enrichment notes/custom fields, stale follow-up
+  tasks, bounded sanitized errors, and protected Close sync runner route.
+- S5: public token lookup, immutable form loading, answer autosave/editing,
+  resume state, required/consent completion validation, safe redirect fallback,
+  Close enrichment event enqueueing, server actions, and noindex route shell.
+- S6: Image Gen-derived design spec, public Typeform-style runtime, all v1
+  question controls, dev/test demo token, route integration, and desktop/mobile
+  browser proof.
+- S7: `/admin/forms` list/editor routes, admin-gated actions, form services,
+  navigation, focused tests, and browser create/edit/publish/default/reload
+  proof.
+- S8: page-level and lead-form block qualification settings, resolver
+  precedence, editor UI wiring, reducer/form-data persistence, tests, and
+  browser page/block settings proof.
+- S9: public opt-in lead-form action and renderer wiring, selected published
+  form resolution, short contact rendering, default route pass-through, tests,
+  and desktop/mobile validation/redirect proof.
+- S10: `/admin/leads` list/detail routes, retry action, lead admin services,
+  navigation, focused tests, and browser list/filter/detail/retry/mobile proof.
+- S11: protected qualification lifecycle runner route, stale/expired session
   transitions, qualified/completed preservation, idempotent stale follow-up task
-  Close sync events, focused tests, typecheck, lint, and scheduled/Close cron
-  route regression proof are recorded in `agent-runs/S11-attempt-1.md`.
-- Browser proof for S7/S8/S10 used an isolated local Supabase stack on alternate
-  ports with disposable data. The unrelated `VendPlacement` stack was not
-  stopped. The temp proof stack needed a temp-only split of
-  `20260610091000_schedule_state_ownership.sql` because Supabase CLI 2.75.0
-  rejects multiple dollar-quoted functions in one prepared migration statement.
-- Remaining work is S12 final proof.
-- Close credentials are not available yet. This does not block local database,
-  mocked Close adapter, retry queue, admin UI, or public runtime work. It blocks
-  only final live Close boundary proof.
+  events, focused tests, and cron-route regression proof.
+- S12: final repo gate, typecheck/lint/build, local migration/RLS proof, public
+  opt-in browser proof, qualification completion proof, admin forms/editor/leads
+  proof, failed Close sync retry proof, legacy apply/contact smoke proof, and
+  local disposable data cleanup.
 
-## How To Continue
+## Verification Summary
 
-- Use `feature-orchestrator` as the canonical flow.
-- Keep `progress.md` authoritative.
-- Workers write reports under `plans/post-submit-qualification-builder/agent-runs/`.
-- Do not push, open a PR, trigger Vercel previews, or run remote DB migrations
-  unless the user explicitly asks.
-- For user-visible UI nodes, use `build-web-apps:frontend-app-builder` and
-  browser screenshot proof before signoff.
-- For Next.js route/action work, read relevant local docs under
-  `node_modules/next/dist/docs/` before coding.
+- `npm run test` passed: 143 files, 873 tests.
+- `npm run typecheck` passed.
+- `npm run lint` passed with four unrelated existing warnings.
+- `npm run build` passed with local dummy Supabase env after an expected missing
+  env failure in the raw shell.
+- Local migration/RLS proof passed against isolated temporary Supabase project
+  `vending-qualification-s12-proof`.
+- S12 browser proof used isolated local Supabase stack `vending-browser-proof`
+  on alternate ports. The unrelated `VendPlacement` stack was not stopped.
+- The local Next dev server and isolated `vending-browser-proof` containers were
+  stopped after S12 proof.
+
+## Cleanup State
+
+- Active S12 local proof lead/session/answer/sync rows were removed:
+  `s12_leads=0`.
+- The S12 proof page was unpublished locally: `s12_page_status=draft:null`.
+- The S12 proof form was made non-default/non-current:
+  `s12_form_state=false:null`.
+- One local proof form version and the proof page revision remain as immutable
+  audit snapshots due database triggers. They are documented in
+  `agent-runs/S12-attempt-1.md`.
+
+## Remaining External Blocker
+
+Live Close CRM proof is still blocked. To run it later, the next thread needs:
+
+- `CLOSE_API_KEY`
+- Close custom-field IDs/status IDs for the qualification mappings
+- an approved disposable Close test account/contact record
+- explicit approval to run live Close writes
+
+Do not push, open a PR, trigger Vercel previews, run remote DB migrations, or
+run live Close writes without explicit approval.
 
 ## Next Action
 
-Continue with the next unblocked nodes:
-
-- S12: End-to-end proof and cleanup.
-
-Run final proof serially. Do not run live Close proof, remote DB migrations,
-pushes, PRs, or Vercel previews without explicit approval.
+No local implementation node remains. The next meaningful action is a
+user-approved release step or a live Close proof pass after credentials and
+field mappings exist.
