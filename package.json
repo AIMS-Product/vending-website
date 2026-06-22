@@ -13,6 +13,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
+    "check:launch": "node scripts/check-launch-readiness.mjs",
+    "check:launch:prereqs": "node scripts/check-launch-prereqs.mjs",
     "mutate": "stryker run",
     "mutate:dry": "stryker run --dryRunOnly",
     "prepare": "husky",

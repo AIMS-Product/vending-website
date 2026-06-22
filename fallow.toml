@@ -5,8 +5,9 @@ entry = ["scripts/*.mjs", "stryker.conf.mjs"]
 # One-off report artifacts and orchestrator plan evidence; not part of the app graph.
 ignorePatterns = ["reports/**", "plans/**"]
 
-# Provided transitively (@stryker-mutator/core) or run via npx in smoke scripts.
-ignoreDependencies = ["@stryker-mutator/api", "playwright"]
+# Provided transitively (@stryker-mutator/core), run via npx in smoke scripts, or
+# used only by ignored plan/report proof artifacts.
+ignoreDependencies = ["@stryker-mutator/api", "playwright", "@axe-core/playwright"]
 
 # Acknowledged exports: framework conventions, generated types, and prepared
 # backends for planned UI (media editor picker, comment resolve/reopen).

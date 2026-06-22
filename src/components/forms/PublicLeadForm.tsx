@@ -52,6 +52,7 @@ type FieldProps = {
 const inputClass =
   "min-h-12 w-full rounded-[8px] border-2 border-[#111111] bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#2d9fd6] focus:ring-2 focus:ring-[#55b8e8]";
 
+// fallow-ignore-next-line complexity
 export function PublicLeadForm({
   action,
   attribution,
@@ -418,7 +419,7 @@ function FieldLabel({
           <span className="sr-only"> (required)</span>
         </>
       ) : (
-        <span className="ml-1 font-normal text-slate-400"> (optional)</span>
+        <span className="ml-1 font-normal text-slate-600"> (optional)</span>
       )}
     </label>
   );

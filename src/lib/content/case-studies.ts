@@ -39,7 +39,7 @@ export const caseStudyVideos: ReadonlyArray<CaseStudyVideo> = [
     role: "Owner, TR Vending",
     videoUrl:
       "https://siladigital.b-cdn.net/Websites%20Videos/Vendingprenuers/Thomas%20Rohladerl.mp4",
-    posterUrl: "/images/testimonials/poster-thomas.png",
+    posterUrl: "/images/testimonials/poster-thomas.jpg",
   },
   {
     id: "joe-natoli",
@@ -47,7 +47,7 @@ export const caseStudyVideos: ReadonlyArray<CaseStudyVideo> = [
     role: "Owner — Stryker300 Vending",
     videoUrl:
       "https://siladigital.b-cdn.net/Websites%20Videos/Vendingprenuers/Joe%20Natoli-all.mp4",
-    posterUrl: "/images/testimonials/poster-joe.png",
+    posterUrl: "/images/testimonials/poster-joe.jpg",
   },
   {
     id: "jason-priest",
@@ -55,7 +55,7 @@ export const caseStudyVideos: ReadonlyArray<CaseStudyVideo> = [
     role: "Owner of Father & Son Vending & Markets",
     videoUrl:
       "https://siladigital.b-cdn.net/Websites%20Videos/Vendingprenuers/Jason%20Priest.mp4",
-    posterUrl: "/images/testimonials/poster-jason.png",
+    posterUrl: "/images/testimonials/poster-jason.jpg",
   },
   {
     id: "anthony",
@@ -63,7 +63,7 @@ export const caseStudyVideos: ReadonlyArray<CaseStudyVideo> = [
     role: "H&H Vending",
     videoUrl:
       "https://siladigital.b-cdn.net/Websites%20Videos/Vendingprenuers/Anthony.mp4",
-    posterUrl: "/images/testimonials/poster-anthony.png",
+    posterUrl: "/images/testimonials/poster-anthony.jpg",
   },
 ];
 

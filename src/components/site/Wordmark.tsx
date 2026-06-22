@@ -5,8 +5,8 @@ type WordmarkProps = {
   className?: string;
   /** Override the default height. Width scales automatically. */
   height?: number;
-  /** Preload only for the above-the-fold public header instance. */
-  preload?: boolean;
+  /** Prioritize only for the above-the-fold public header instance. */
+  eager?: boolean;
 };
 
 /**
@@ -16,17 +16,17 @@ type WordmarkProps = {
 export function Wordmark({
   className,
   height = 36,
-  preload = false,
+  eager = false,
 }: WordmarkProps) {
   const width = Math.round((909 / 274) * height);
-
   return (
     <Image
       src="/brand/wordmark.png"
       alt="Vendingpreneurs"
       width={width}
       height={height}
-      preload={preload}
+      loading={eager ? "eager" : undefined}
+      fetchPriority={eager ? "high" : undefined}
       className={cn("block", className)}
       style={{ width, height }}
     />

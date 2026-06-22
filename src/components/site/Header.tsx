@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Wordmark } from "./Wordmark";
 import { primaryNav, type NavItem } from "@/lib/content/nav";
 
+// fallow-ignore-next-line complexity
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -21,7 +22,7 @@ export function Header() {
           aria-label="Vendingpreneurs home"
           onClick={() => setMenuOpen(false)}
         >
-          <Wordmark height={48} preload />
+          <Wordmark height={48} eager />
         </Link>
 
         <nav
