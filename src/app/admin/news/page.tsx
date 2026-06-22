@@ -56,6 +56,7 @@ export default async function AdminNewsPage({
   const {
     status: active,
     q: searchQuery,
+    updatedFrom,
     sort,
     postCounts,
     filteredPosts,
@@ -71,6 +72,7 @@ export default async function AdminNewsPage({
   const returnTo = adminNewsHref({
     status: active,
     q: searchQuery,
+    updatedFrom,
     sort,
     page: currentPage,
   });
@@ -133,7 +135,7 @@ export default async function AdminNewsPage({
         />
       </AdminMetricStrip>
 
-      <div className="mb-7 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+      <div className="mb-7 flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <form
             action="/admin/news"
@@ -159,13 +161,16 @@ export default async function AdminNewsPage({
             {sort !== "updated-desc" ? (
               <input type="hidden" name="sort" value={sort} />
             ) : null}
+            {updatedFrom ? (
+              <input type="hidden" name="updatedFrom" value={updatedFrom} />
+            ) : null}
             <button type="submit" className="sr-only">
               Search
             </button>
           </form>
 
           <nav
-            className="inline-flex h-12 flex-wrap items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm"
+            className="inline-flex min-h-12 flex-wrap items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm"
             aria-label="Post status filters"
           >
             {newsFilters.map((filter) => (
@@ -174,6 +179,7 @@ export default async function AdminNewsPage({
                 href={adminNewsHref({
                   status: filter.value,
                   q: searchQuery,
+                  updatedFrom,
                   sort,
                 })}
                 aria-current={active === filter.value ? "page" : undefined}
@@ -190,6 +196,52 @@ export default async function AdminNewsPage({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <form
+            action="/admin/news"
+            className="flex h-12 w-full items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm shadow-sm sm:w-auto"
+          >
+            <label
+              className="shrink-0 text-xs font-semibold text-slate-500"
+              htmlFor="admin-news-updated-from"
+            >
+              Updated since
+            </label>
+            <input
+              id="admin-news-updated-from"
+              name="updatedFrom"
+              type="date"
+              defaultValue={updatedFrom}
+              className="h-8 min-w-36 rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-950 outline-none focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15"
+            />
+            {active !== "all" ? (
+              <input type="hidden" name="status" value={active} />
+            ) : null}
+            {searchQuery ? (
+              <input type="hidden" name="q" value={searchQuery} />
+            ) : null}
+            {sort !== "updated-desc" ? (
+              <input type="hidden" name="sort" value={sort} />
+            ) : null}
+            <button
+              type="submit"
+              className="rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+            >
+              Apply
+            </button>
+            {updatedFrom ? (
+              <Link
+                href={adminNewsHref({
+                  status: active,
+                  q: searchQuery,
+                  sort,
+                })}
+                className="rounded px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+              >
+                Clear
+              </Link>
+            ) : null}
+          </form>
+
           <details className="group relative">
             <summary className="flex h-12 cursor-pointer list-none items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none">
               {newsSortLabels[sort]}
@@ -207,6 +259,7 @@ export default async function AdminNewsPage({
                   href={adminNewsHref({
                     status: active,
                     q: searchQuery,
+                    updatedFrom,
                     sort: value as NewsSortKey,
                   })}
                   className="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
@@ -234,6 +287,7 @@ export default async function AdminNewsPage({
                     href={adminNewsHref({
                       status: filter.value,
                       q: searchQuery,
+                      updatedFrom,
                       sort,
                     })}
                     className="rounded-md px-2 py-1.5 font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
@@ -282,7 +336,7 @@ export default async function AdminNewsPage({
               No blog posts found
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Adjust the search or status filters, or create a new draft.
+              Adjust the search, status, or date filters, or create a new draft.
             </p>
             <Link
               href="/admin/news/new"
@@ -346,6 +400,7 @@ export default async function AdminNewsPage({
               href={adminNewsHref({
                 status: active,
                 q: searchQuery,
+                updatedFrom,
                 sort,
                 page: currentPage - 1,
               })}
@@ -359,6 +414,7 @@ export default async function AdminNewsPage({
               href={adminNewsHref({
                 status: active,
                 q: searchQuery,
+                updatedFrom,
                 sort,
                 page: currentPage + 1,
               })}
