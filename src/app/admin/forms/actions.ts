@@ -45,7 +45,7 @@ export async function createQualificationForm(
 
   if (!parsed.success) return validationError(parsed.error);
 
-  let redirectTo: string | null = null;
+  let redirectTo: string;
   try {
     const created = await adminCreateQualificationForm({
       name: parsed.data.name,
@@ -57,8 +57,7 @@ export async function createQualificationForm(
     return actionError(error, "Could not create qualification form.");
   }
 
-  if (redirectTo) redirect(redirectTo);
-  return { status: "saved", message: "Qualification form created." };
+  redirect(redirectTo);
 }
 
 export async function saveQualificationForm(
@@ -158,7 +157,7 @@ function parseSchemaJson(
 function validationError(error: z.ZodError): QualificationFormActionState {
   return {
     status: "error",
-    message: error.issues[0]?.message ?? "Invalid qualification form fields.",
+    message: error.issues[0]!.message,
   };
 }
 

@@ -116,6 +116,47 @@ describe("qualification form admin actions", () => {
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/forms");
   });
 
+  it("returns validation feedback when creating a form without a name", async () => {
+    const result = await createQualificationForm(
+      { status: "idle" },
+      formData({ name: "   " }),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Form name is required.",
+    });
+    expect(mocks.adminCreateQualificationForm).not.toHaveBeenCalled();
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("returns the create fallback when the form cannot be created", async () => {
+    const unexpectedError = new Error("database password leaked");
+    mocks.adminCreateQualificationForm.mockRejectedValue(unexpectedError);
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      const result = await createQualificationForm(
+        { status: "idle" },
+        formData({ name: "Investor qualification" }),
+      );
+
+      expect(result).toEqual({
+        status: "error",
+        message: "Could not create qualification form.",
+      });
+      expect(consoleError).toHaveBeenCalledWith(
+        "qualification form admin action failed",
+        unexpectedError,
+      );
+      expect(mocks.redirect).not.toHaveBeenCalled();
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
   it("saves reordered draft questions without publishing", async () => {
     const result = await saveQualificationForm(
       { status: "idle" },
@@ -149,6 +190,29 @@ describe("qualification form admin actions", () => {
     );
   });
 
+  it("defaults missing editor intent to saving the draft", async () => {
+    const result = await saveQualificationForm(
+      { status: "idle" },
+      formData({
+        id: FORM_ID,
+        name: "Investor qualification",
+        schema: JSON.stringify(draftSchema),
+      }),
+    );
+
+    expect(result).toEqual({
+      status: "saved",
+      message: "Qualification form draft saved.",
+    });
+    expect(mocks.adminUpdateQualificationFormDraft).toHaveBeenCalledWith({
+      formId: FORM_ID,
+      name: "Investor qualification",
+      schema: draftSchema,
+      updatedBy: "admin-1",
+    });
+    expect(mocks.publishQualificationForm).not.toHaveBeenCalled();
+  });
+
   it("saves the current draft before publishing an immutable version", async () => {
     const result = await saveQualificationForm(
       { status: "idle" },
@@ -169,6 +233,42 @@ describe("qualification form admin actions", () => {
       formId: FORM_ID,
       publishedBy: "admin-1",
     });
+  });
+
+  it("returns validation feedback for malformed editor submissions", async () => {
+    const result = await saveQualificationForm(
+      { status: "idle" },
+      formData({
+        id: "not-a-uuid",
+        name: "Investor qualification",
+        schema: JSON.stringify(draftSchema),
+        intent: "save",
+      }),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Invalid qualification form id.",
+    });
+    expect(mocks.adminUpdateQualificationFormDraft).not.toHaveBeenCalled();
+  });
+
+  it("returns a safe error when the draft schema payload is not readable JSON", async () => {
+    const result = await saveQualificationForm(
+      { status: "idle" },
+      formData({
+        id: FORM_ID,
+        name: "Investor qualification",
+        schema: "{not-json",
+        intent: "save",
+      }),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Could not read the question draft. Refresh and try again.",
+    });
+    expect(mocks.adminUpdateQualificationFormDraft).not.toHaveBeenCalled();
   });
 
   it("returns user-facing validation errors without updating draft data", async () => {
@@ -196,6 +296,37 @@ describe("qualification form admin actions", () => {
     expect(mocks.publishQualificationForm).not.toHaveBeenCalled();
   });
 
+  it("returns the fallback save error without leaking unexpected failures", async () => {
+    const unexpectedError = new Error("database password leaked");
+    mocks.adminUpdateQualificationFormDraft.mockRejectedValue(unexpectedError);
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      const result = await saveQualificationForm(
+        { status: "idle" },
+        formData({
+          id: FORM_ID,
+          name: "Investor qualification",
+          schema: JSON.stringify(draftSchema),
+          intent: "save",
+        }),
+      );
+
+      expect(result).toEqual({
+        status: "error",
+        message: "Could not save qualification form.",
+      });
+      expect(consoleError).toHaveBeenCalledWith(
+        "qualification form admin action failed",
+        unexpectedError,
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
   it("sets the default form through an admin-gated action", async () => {
     const result = await setDefaultQualificationForm(
       { status: "idle" },
@@ -212,5 +343,62 @@ describe("qualification form admin actions", () => {
       updatedBy: "admin-1",
     });
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/forms");
+  });
+
+  it("returns validation feedback for invalid default form submissions", async () => {
+    const result = await setDefaultQualificationForm(
+      { status: "idle" },
+      formData({ id: "invalid-id" }),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Invalid qualification form id.",
+    });
+    expect(mocks.adminSetDefaultQualificationForm).not.toHaveBeenCalled();
+  });
+
+  it("returns the service error when default form selection fails validation", async () => {
+    mocks.adminSetDefaultQualificationForm.mockRejectedValue(
+      new mocks.QualificationFormServiceError(
+        "Only published forms can become default.",
+      ),
+    );
+
+    const result = await setDefaultQualificationForm(
+      { status: "idle" },
+      formData({ id: FORM_ID }),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Only published forms can become default.",
+    });
+  });
+
+  it("returns the default-form fallback without leaking unexpected failures", async () => {
+    const unexpectedError = new Error("service role key leaked");
+    mocks.adminSetDefaultQualificationForm.mockRejectedValue(unexpectedError);
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      const result = await setDefaultQualificationForm(
+        { status: "idle" },
+        formData({ id: FORM_ID }),
+      );
+
+      expect(result).toEqual({
+        status: "error",
+        message: "Could not update default qualification form.",
+      });
+      expect(consoleError).toHaveBeenCalledWith(
+        "qualification form admin action failed",
+        unexpectedError,
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 });

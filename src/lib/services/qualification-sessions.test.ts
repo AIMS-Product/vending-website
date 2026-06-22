@@ -21,6 +21,13 @@ type FakeState = {
   events: CloseSyncEventRow[];
   leads: LeadRow[];
 };
+type TestFormSchema = {
+  version: number;
+  questions: ReadonlyArray<{
+    readonly [key: string]: unknown;
+    normalizedRole?: string;
+  }>;
+};
 
 const sessionToken = "raw_session_token";
 const sessionTokenHash =
@@ -64,14 +71,18 @@ const formSchema = {
   ],
 } as const;
 
-function makeVersion(): QualificationFormVersionRow {
+function makeVersion(
+  schema: TestFormSchema = formSchema,
+): QualificationFormVersionRow {
   return {
     id: "version_1",
     form_id: "form_1",
     version_number: 1,
-    schema_snapshot: formSchema as unknown as Json,
-    question_count: formSchema.questions.length,
-    normalized_roles: ["state_market", "available_capital", "consent"],
+    schema_snapshot: schema as unknown as Json,
+    question_count: schema.questions.length,
+    normalized_roles: schema.questions
+      .map((question) => question.normalizedRole)
+      .filter((role): role is string => Boolean(role)),
     published_by: null,
     published_at: "2026-06-17T08:00:00.000Z",
     created_at: "2026-06-17T08:00:00.000Z",
@@ -400,12 +411,76 @@ describe("qualification sessions", () => {
         },
       ),
     ).resolves.toEqual({ status: "unavailable", reason: "expired" });
+
+    const exactlyExpired = buildClient({
+      sessions: [makeSession({ expires_at: "2026-06-17T10:00:00.000Z" })],
+    });
+    await expect(
+      loadQualificationSessionForToken(
+        { sessionToken },
+        {
+          client: exactlyExpired.client,
+          now: () => new Date("2026-06-17T10:00:00.000Z"),
+        },
+      ),
+    ).resolves.toEqual({ status: "unavailable", reason: "expired" });
+  });
+
+  it("maps completed sessions with saved answers and default redirects", async () => {
+    const completed = buildClient({
+      sessions: [
+        makeSession({
+          status: "completed",
+          current_question_id: "state",
+          completed_at: "2026-06-17T11:00:00.000Z",
+          completion_redirect_path: null,
+        }),
+      ],
+      answers: [
+        {
+          id: "answer_1",
+          session_id: "session_1",
+          lead_submission_id: "lead_1",
+          form_version_id: "version_1",
+          question_id: "state",
+          question_type: "state_region",
+          normalized_role: "state_market",
+          question_snapshot: {
+            id: "state",
+            label: "Which state are you focused on?",
+            type: "state_region",
+          },
+          option_snapshots: [{ id: "sa", label: "South Australia" }],
+          answer_value: "SA",
+          normalized_value: { state_market: "SA" },
+          answered_at: "2026-06-17T10:00:00.000Z",
+          created_at: "2026-06-17T10:00:00.000Z",
+          updated_at: "2026-06-17T10:00:00.000Z",
+        },
+      ],
+    });
+
+    await expect(
+      loadQualificationSessionForToken(
+        { sessionToken },
+        {
+          client: completed.client,
+          now: () => new Date("2026-06-17T12:00:00.000Z"),
+        },
+      ),
+    ).resolves.toMatchObject({
+      status: "completed",
+      currentQuestionId: null,
+      answers: { state: "SA" },
+      completedAt: "2026-06-17T11:00:00.000Z",
+      redirectPath: "/thank-you",
+    });
   });
 
   it("autosaves answer snapshots, normalized values, and resume state, and can edit prior answers", async () => {
     const fake = buildClient();
 
-    await saveQualificationAnswer(
+    const firstSave = await saveQualificationAnswer(
       {
         sessionToken,
         questionId: "state",
@@ -417,6 +492,13 @@ describe("qualification sessions", () => {
       },
     );
 
+    expect(firstSave).toEqual({
+      status: "saved",
+      sessionId: "session_1",
+      questionId: "state",
+      currentQuestionId: "budget",
+      answerCount: 1,
+    });
     expect(fake.state.answers).toHaveLength(1);
     expect(fake.state.answers[0]).toMatchObject({
       session_id: "session_1",
@@ -440,7 +522,7 @@ describe("qualification sessions", () => {
       current_question_id: "budget",
     });
 
-    await saveQualificationAnswer(
+    const secondSave = await saveQualificationAnswer(
       {
         sessionToken,
         questionId: "state",
@@ -452,6 +534,13 @@ describe("qualification sessions", () => {
       },
     );
 
+    expect(secondSave).toEqual({
+      status: "saved",
+      sessionId: "session_1",
+      questionId: "state",
+      currentQuestionId: "budget",
+      answerCount: 1,
+    });
     expect(fake.state.answers).toHaveLength(1);
     expect(fake.state.answers[0]).toMatchObject({
       answer_value: "VIC",
@@ -459,6 +548,43 @@ describe("qualification sessions", () => {
       option_snapshots: [{ id: "vic", label: "Victoria", value: "VIC" }],
     });
     expect(fake.state.sessions[0]?.answer_count).toBe(1);
+  });
+
+  it("rejects missing sessions, expired sessions, and unknown questions when saving", async () => {
+    const fake = buildClient();
+
+    await expect(
+      saveQualificationAnswer(
+        { sessionToken: "missing", questionId: "state", answerValue: "SA" },
+        { client: fake.client },
+      ),
+    ).rejects.toMatchObject({
+      fieldErrors: { session: ["Qualification session was not found."] },
+    });
+
+    const expired = buildClient({
+      sessions: [makeSession({ expires_at: "2026-06-16T09:00:00.000Z" })],
+    });
+    await expect(
+      saveQualificationAnswer(
+        { sessionToken, questionId: "state", answerValue: "SA" },
+        {
+          client: expired.client,
+          now: () => new Date("2026-06-17T10:00:00.000Z"),
+        },
+      ),
+    ).rejects.toMatchObject({
+      fieldErrors: { session: ["Qualification session has expired."] },
+    });
+
+    await expect(
+      saveQualificationAnswer(
+        { sessionToken, questionId: "missing", answerValue: "SA" },
+        { client: fake.client },
+      ),
+    ).rejects.toMatchObject({
+      fieldErrors: { missing: ["Question was not found."] },
+    });
   });
 
   it("requires all required answers and consent before completion", async () => {
@@ -515,6 +641,10 @@ describe("qualification sessions", () => {
       { client: fake.client },
     );
     await saveQualificationAnswer(
+      { sessionToken, questionId: "notes", answerValue: 42 },
+      { client: fake.client },
+    );
+    await saveQualificationAnswer(
       { sessionToken, questionId: "consent", answerValue: true },
       { client: fake.client },
     );
@@ -536,7 +666,7 @@ describe("qualification sessions", () => {
       status: "completed",
       completed_at: "2026-06-17T11:00:00.000Z",
       current_question_id: null,
-      answer_count: 3,
+      answer_count: 4,
       normalized_summary: {
         state_market: "SA",
         available_capital: "25000-50000",
@@ -553,6 +683,8 @@ describe("qualification sessions", () => {
         available_capital: "25000-50000",
         consent: true,
       },
+      close_sync_status: "pending",
+      close_sync_next_retry_at: "2026-06-17T11:00:00.000Z",
     });
     expect(fake.state.events).toHaveLength(1);
     expect(fake.state.events[0]).toMatchObject({
@@ -563,25 +695,85 @@ describe("qualification sessions", () => {
       close_lead_id: "close_lead_1",
       close_contact_id: "close_contact_1",
       dedupe_key: "qualification_enrichment:session_1",
-      payload: expect.objectContaining({
-        qualification: expect.objectContaining({
-          status: "qualified",
-          sessionId: "session_1",
-          completedAt: "2026-06-17T11:00:00.000Z",
-        }),
-        normalized: {
-          state_market: "SA",
-          available_capital: "25000-50000",
-          consent: true,
-        },
-      }),
     });
+    const payload = fake.state.events[0]?.payload as Record<string, unknown>;
+    expect(payload.source).toBe("qualification_completion");
+    expect(payload.qualification).toEqual({
+      status: "qualified",
+      sessionId: "session_1",
+      formId: "form_1",
+      formVersionId: "version_1",
+      completedAt: "2026-06-17T11:00:00.000Z",
+      experimentKey: "post_submit_qualification",
+      variantKey: "v1",
+    });
+    expect(payload.attribution).toEqual({
+      source_path: "/start",
+      landing_path: "/start",
+      referrer: "https://google.example/search",
+      source_page_id: "11111111-1111-4111-8111-111111111111",
+      source_page_slug: "start-vending",
+      source_block_id: "lead-block",
+      source_cta_tracking_name: "hero-lead-form",
+      target_keyword: "start vending business",
+      user_agent: "vitest",
+      utm_source: "google",
+      utm_medium: "cpc",
+      utm_campaign: "launch",
+      utm_term: null,
+      utm_content: null,
+      experiment_key: "post_submit_qualification",
+      variant_key: "v1",
+    });
+    expect(payload.normalized).toEqual({
+      state_market: "SA",
+      available_capital: "25000-50000",
+      consent: true,
+    });
+    expect(payload.answers).toEqual([
+      {
+        questionId: "state",
+        questionType: "state_region",
+        normalizedRole: "state_market",
+        label: "Which state are you focused on?",
+        value: "SA",
+        normalizedValue: { state_market: "SA" },
+      },
+      {
+        questionId: "budget",
+        questionType: "budget_range",
+        normalizedRole: "available_capital",
+        label: "How much capital can you access?",
+        value: "25-50",
+        normalizedValue: { available_capital: "25000-50000" },
+      },
+      {
+        questionId: "notes",
+        questionType: "long_text",
+        normalizedRole: null,
+        label: "Any other goals or constraints?",
+        value: "42",
+        normalizedValue: {},
+      },
+      {
+        questionId: "consent",
+        questionType: "consent",
+        normalizedRole: "consent",
+        label: "I agree to be contacted about my vending enquiry.",
+        value: "true",
+        normalizedValue: { consent: true },
+      },
+    ]);
 
     const completedAgain = await completeQualificationSession(
       { sessionToken },
       { client: fake.client },
     );
-    expect(completedAgain.redirectPath).toBe("/thanks");
+    expect(completedAgain).toEqual({
+      status: "completed",
+      sessionId: "session_1",
+      redirectPath: "/thanks",
+    });
     expect(fake.state.events).toHaveLength(1);
 
     const unsafe = buildClient({
@@ -606,5 +798,128 @@ describe("qualification sessions", () => {
     await expect(
       completeQualificationSession({ sessionToken }, { client: unsafe.client }),
     ).resolves.toMatchObject({ redirectPath: "/thank-you" });
+
+    const protocolRelative = buildClient({
+      sessions: [
+        makeSession({
+          completion_redirect_path: "//evil.example/phish",
+        }),
+      ],
+    });
+    await saveQualificationAnswer(
+      { sessionToken, questionId: "state", answerValue: "SA" },
+      { client: protocolRelative.client },
+    );
+    await saveQualificationAnswer(
+      { sessionToken, questionId: "budget", answerValue: "25-50" },
+      { client: protocolRelative.client },
+    );
+    await saveQualificationAnswer(
+      { sessionToken, questionId: "consent", answerValue: true },
+      { client: protocolRelative.client },
+    );
+    await expect(
+      completeQualificationSession(
+        { sessionToken },
+        { client: protocolRelative.client },
+      ),
+    ).resolves.toMatchObject({ redirectPath: "/thank-you" });
+  });
+
+  it("treats numbers, arrays, and objects as required answers but rejects empty objects and null", async () => {
+    const schema = {
+      version: 1,
+      questions: [
+        {
+          id: "number",
+          type: "short_text",
+          label: "Numeric answer",
+          required: true,
+        },
+        {
+          id: "array",
+          type: "short_text",
+          label: "Array answer",
+          required: true,
+        },
+        {
+          id: "object",
+          type: "short_text",
+          label: "Object answer",
+          required: true,
+        },
+        {
+          id: "consent",
+          type: "consent",
+          label: "Consent",
+          required: true,
+          normalizedRole: "consent",
+        },
+      ],
+    } as const;
+    const fake = buildClient({ versions: [makeVersion(schema)] });
+
+    await saveQualificationAnswer(
+      { sessionToken, questionId: "number", answerValue: 0 },
+      { client: fake.client },
+    );
+    await saveQualificationAnswer(
+      { sessionToken, questionId: "array", answerValue: ["", "ready"] },
+      { client: fake.client },
+    );
+    await saveQualificationAnswer(
+      { sessionToken, questionId: "object", answerValue: { ready: true } },
+      { client: fake.client },
+    );
+    await saveQualificationAnswer(
+      { sessionToken, questionId: "consent", answerValue: true },
+      { client: fake.client },
+    );
+
+    expect(fake.state.answers).toEqual([
+      expect.objectContaining({ question_id: "number", answer_value: 0 }),
+      expect.objectContaining({
+        question_id: "array",
+        answer_value: ["", "ready"],
+      }),
+      expect.objectContaining({
+        question_id: "object",
+        answer_value: { ready: true },
+      }),
+      expect.objectContaining({ question_id: "consent", answer_value: true }),
+    ]);
+
+    await expect(
+      completeQualificationSession({ sessionToken }, { client: fake.client }),
+    ).resolves.toMatchObject({ status: "completed" });
+
+    const blank = buildClient({ versions: [makeVersion(schema)] });
+    await saveQualificationAnswer(
+      { sessionToken, questionId: "number", answerValue: null },
+      { client: blank.client },
+    );
+    await saveQualificationAnswer(
+      { sessionToken, questionId: "array", answerValue: [] },
+      { client: blank.client },
+    );
+    await saveQualificationAnswer(
+      { sessionToken, questionId: "object", answerValue: {} },
+      { client: blank.client },
+    );
+    await saveQualificationAnswer(
+      { sessionToken, questionId: "consent", answerValue: false },
+      { client: blank.client },
+    );
+
+    await expect(
+      completeQualificationSession({ sessionToken }, { client: blank.client }),
+    ).rejects.toMatchObject({
+      fieldErrors: {
+        number: ["Numeric answer is required."],
+        array: ["Array answer is required."],
+        object: ["Object answer is required."],
+        consent: ["Consent is required."],
+      },
+    });
   });
 });

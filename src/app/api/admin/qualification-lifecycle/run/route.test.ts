@@ -34,21 +34,34 @@ describe("qualification lifecycle runner route", () => {
       taskEventsCreated: 1,
       taskEventsSkipped: 1,
       skipped: 0,
-      errors: [],
+      errors: [
+        {
+          sessionId: "session_2",
+          message: "Lead submission is missing email.",
+        },
+      ],
     });
   });
 
   it("rejects unauthenticated public requests", async () => {
     const response = await GET(request());
+    const body = await response.json();
 
     expect(response.status).toBe(401);
+    expect(body).toEqual({ ok: false, message: "Unauthorized." });
     expect(mocks.runQualificationLifecycle).not.toHaveBeenCalled();
   });
 
   it("rejects bearer tokens with the wrong value or length", async () => {
-    const response = await GET(request("wrong"));
+    const wrongLengthResponse = await GET(request("wrong"));
+    const wrongLengthBody = await wrongLengthResponse.json();
+    const sameLengthResponse = await GET(request("cron-secret-654321"));
+    const sameLengthBody = await sameLengthResponse.json();
 
-    expect(response.status).toBe(401);
+    expect(wrongLengthResponse.status).toBe(401);
+    expect(wrongLengthBody).toEqual({ ok: false, message: "Unauthorized." });
+    expect(sameLengthResponse.status).toBe(401);
+    expect(sameLengthBody).toEqual({ ok: false, message: "Unauthorized." });
     expect(mocks.runQualificationLifecycle).not.toHaveBeenCalled();
   });
 
@@ -56,8 +69,13 @@ describe("qualification lifecycle runner route", () => {
     mocks.config.CRON_SECRET = undefined;
 
     const response = await GET(request("cron-secret-123456"));
+    const body = await response.json();
 
     expect(response.status).toBe(503);
+    expect(body).toEqual({
+      ok: false,
+      message: "Qualification lifecycle runner is not configured.",
+    });
     expect(mocks.runQualificationLifecycle).not.toHaveBeenCalled();
   });
 
@@ -75,6 +93,9 @@ describe("qualification lifecycle runner route", () => {
       taskEventsSkipped: 1,
       skipped: 0,
     });
+    expect(body.errors).toEqual([
+      { sessionId: "session_2", message: "Lead submission is missing email." },
+    ]);
     expect(mocks.runQualificationLifecycle).toHaveBeenCalledTimes(1);
   });
 
@@ -97,6 +118,35 @@ describe("qualification lifecycle runner route", () => {
       expect(consoleError).toHaveBeenCalledWith(
         "qualification lifecycle runner failed",
         { name: "Error" },
+      );
+      expect(JSON.stringify(consoleError.mock.calls)).not.toContain(
+        "service-role-key leaked",
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
+  it("logs a generic error name for non-Error runner failures", async () => {
+    mocks.runQualificationLifecycle.mockRejectedValue(
+      "service-role-key leaked",
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      const response = await GET(request("cron-secret-123456"));
+      const body = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(body).toEqual({
+        ok: false,
+        message: "Qualification lifecycle runner failed.",
+      });
+      expect(consoleError).toHaveBeenCalledWith(
+        "qualification lifecycle runner failed",
+        { name: "UnknownError" },
       );
       expect(JSON.stringify(consoleError.mock.calls)).not.toContain(
         "service-role-key leaked",

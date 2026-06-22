@@ -669,6 +669,14 @@ function answerValueForStorage(value: unknown): Json {
   if (Array.isArray(value)) {
     return value.map((item) => answerValueForStorage(item));
   }
+  if (typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [
+        key,
+        answerValueForStorage(item),
+      ]),
+    ) as Json;
+  }
   return String(value);
 }
 

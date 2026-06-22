@@ -42,8 +42,23 @@ describe("Close sync runner route", () => {
 
   it("rejects unauthenticated public requests", async () => {
     const response = await GET(request());
+    const body = await response.json();
 
     expect(response.status).toBe(401);
+    expect(body).toEqual({ ok: false, message: "Unauthorized." });
+    expect(mocks.runCloseSync).not.toHaveBeenCalled();
+  });
+
+  it("rejects bearer tokens with the wrong value or length", async () => {
+    const wrongLengthResponse = await GET(request("wrong"));
+    const wrongLengthBody = await wrongLengthResponse.json();
+    const sameLengthResponse = await GET(request("cron-secret-654321"));
+    const sameLengthBody = await sameLengthResponse.json();
+
+    expect(wrongLengthResponse.status).toBe(401);
+    expect(wrongLengthBody).toEqual({ ok: false, message: "Unauthorized." });
+    expect(sameLengthResponse.status).toBe(401);
+    expect(sameLengthBody).toEqual({ ok: false, message: "Unauthorized." });
     expect(mocks.runCloseSync).not.toHaveBeenCalled();
   });
 
@@ -51,8 +66,13 @@ describe("Close sync runner route", () => {
     mocks.config.CRON_SECRET = undefined;
 
     const response = await GET(request("cron-secret-123456"));
+    const body = await response.json();
 
     expect(response.status).toBe(503);
+    expect(body).toEqual({
+      ok: false,
+      message: "Close sync runner is not configured.",
+    });
     expect(mocks.runCloseSync).not.toHaveBeenCalled();
   });
 
@@ -93,6 +113,32 @@ describe("Close sync runner route", () => {
       });
       expect(consoleError).toHaveBeenCalledWith("close sync runner failed", {
         name: "Error",
+      });
+      expect(JSON.stringify(consoleError.mock.calls)).not.toContain(
+        "close_key_123",
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
+  it("logs a generic error name for non-Error runner failures", async () => {
+    mocks.runCloseSync.mockRejectedValue("close_key_123 leaked");
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      const response = await GET(request("cron-secret-123456"));
+      const body = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(body).toEqual({
+        ok: false,
+        message: "Close sync runner failed.",
+      });
+      expect(consoleError).toHaveBeenCalledWith("close sync runner failed", {
+        name: "UnknownError",
       });
       expect(JSON.stringify(consoleError.mock.calls)).not.toContain(
         "close_key_123",

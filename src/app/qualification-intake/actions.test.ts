@@ -109,6 +109,25 @@ describe("submitQualificationLead", () => {
     });
   });
 
+  it("prefers submitted referrer and forwards optional UTM terms", async () => {
+    await submitQualificationLead(
+      initialLeadActionState,
+      qualificationFormData({
+        referrer: "https://partner.example/referral",
+        utm_term: "vending course",
+        utm_content: "hero_cta",
+      }),
+    );
+
+    expect(mocks.createQualificationIntakeSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        referrer: "https://partner.example/referral",
+        utmTerm: "vending course",
+        utmContent: "hero_cta",
+      }),
+    );
+  });
+
   it("returns field errors without creating a redirect target", async () => {
     mocks.createQualificationIntakeSession.mockRejectedValue(
       new QualificationIntakeValidationError({
@@ -130,5 +149,62 @@ describe("submitQualificationLead", () => {
         phone: ["Phone is required."],
       },
     });
+  });
+
+  it("returns a generic failure without leaking unexpected errors", async () => {
+    mocks.createQualificationIntakeSession.mockRejectedValue(
+      new Error("service role key leaked"),
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      const result = await submitQualificationLead(
+        initialLeadActionState,
+        qualificationFormData(),
+      );
+
+      expect(result).toEqual({
+        status: "error",
+        message: "We couldn't submit the form. Try again in a moment.",
+      });
+      expect(consoleError).toHaveBeenCalledWith(
+        "qualification intake action failed",
+        { error: "service role key leaked" },
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
+  it("logs unknown for non-Error intake failures", async () => {
+    mocks.createQualificationIntakeSession.mockRejectedValue(
+      "service role key leaked",
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      const result = await submitQualificationLead(
+        initialLeadActionState,
+        qualificationFormData(),
+      );
+
+      expect(result).toEqual({
+        status: "error",
+        message: "We couldn't submit the form. Try again in a moment.",
+      });
+      expect(consoleError).toHaveBeenCalledWith(
+        "qualification intake action failed",
+        { error: "unknown error" },
+      );
+      expect(JSON.stringify(consoleError.mock.calls)).not.toContain(
+        "service role key leaked",
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 });
