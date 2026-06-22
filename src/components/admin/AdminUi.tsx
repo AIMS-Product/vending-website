@@ -2,13 +2,16 @@ import type { ReactNode } from "react";
 
 export type AdminIconName =
   | "archive"
+  | "book"
   | "check"
   | "crown"
   | "file"
   | "filter"
+  | "help"
   | "image"
   | "layers"
   | "list"
+  | "log-out"
   | "mail"
   | "more"
   | "newspaper"
@@ -18,6 +21,7 @@ export type AdminIconName =
   | "search"
   | "settings"
   | "shield"
+  | "target"
   | "trash"
   | "upload";
 
@@ -124,6 +128,14 @@ export function AdminIcon({ icon }: { icon: AdminIconName }) {
           <path d="M7 4h10l1 3H6l1-3Z" />
         </svg>
       );
+    case "book":
+      return (
+        <svg {...common}>
+          <path d="M6 4h10a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2V4Z" />
+          <path d="M9 8h6" />
+          <path d="M9 12h5" />
+        </svg>
+      );
     case "check":
       return (
         <svg {...common}>
@@ -153,6 +165,14 @@ export function AdminIcon({ icon }: { icon: AdminIconName }) {
           <path d="M4 6h16l-6 7v5l-4 2v-7L4 6Z" />
         </svg>
       );
+    case "help":
+      return (
+        <svg {...common}>
+          <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
+          <path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3" />
+          <path d="M12 17h.01" />
+        </svg>
+      );
     case "image":
       return (
         <svg {...common}>
@@ -178,6 +198,14 @@ export function AdminIcon({ icon }: { icon: AdminIconName }) {
           <path d="M4 6h.01" />
           <path d="M4 12h.01" />
           <path d="M4 18h.01" />
+        </svg>
+      );
+    case "log-out":
+      return (
+        <svg {...common}>
+          <path d="M10 17H5V7h5" />
+          <path d="M14 8l4 4-4 4" />
+          <path d="M18 12H9" />
         </svg>
       );
     case "mail":
@@ -253,6 +281,14 @@ export function AdminIcon({ icon }: { icon: AdminIconName }) {
         <svg {...common}>
           <path d="M12 21s7-3.5 7-10V5l-7-3-7 3v6c0 6.5 7 10 7 10Z" />
           <path d="m9 12 2 2 4-4" />
+        </svg>
+      );
+    case "target":
+      return (
+        <svg {...common}>
+          <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
+          <path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" />
+          <path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
         </svg>
       );
     case "trash":

@@ -1,8 +1,4 @@
 import type { PageBlock } from "@/lib/page-builder/blocks";
-import {
-  ctaBlockDescriptor,
-  descriptorDefaultFieldVisibility,
-} from "@/lib/page-builder/block-descriptors";
 
 export type OptionalBlockFieldKey =
   | "eyebrow"
@@ -27,7 +23,7 @@ const optionalBlockFields: Record<
   rich_text: ["eyebrow", "heading"],
   image: ["caption"],
   video: ["title", "caption"],
-  cta: ctaBlockDescriptor.optionalFields,
+  cta: [],
   faq: ["heading"],
   card_grid: ["heading"],
   proof: ["eyebrow", "name", "context"],
@@ -55,9 +51,6 @@ export function optionalFieldsForBlock(
 export function defaultFieldVisibility(
   block: Pick<PageBlock, "type" | "variant">,
 ): Partial<Record<OptionalBlockFieldKey, boolean>> {
-  const descriptorVisibility = descriptorDefaultFieldVisibility(block);
-  if (descriptorVisibility) return descriptorVisibility;
-
   if (block.type === "hero") {
     return {
       eyebrow: false,

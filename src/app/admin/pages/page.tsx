@@ -13,8 +13,10 @@ import {
   AdminShell,
 } from "@/components/admin/AdminShell";
 import {
+  AdminIcon,
   adminPrimaryButtonClass,
   adminSecondaryButtonClass,
+  type AdminIconName,
 } from "@/components/admin/AdminUi";
 import { firstParam, type SearchParamValue } from "@/lib/admin/list-state";
 import {
@@ -251,7 +253,7 @@ function AdminPagesActions() {
         className={`${adminPrimaryButtonClass} flex-1`}
       >
         <span aria-hidden="true">
-          <PageIcon icon="plus" />
+          <AdminIcon icon="plus" />
         </span>
         Create page
       </Link>
@@ -410,7 +412,7 @@ function SeoPagesSearchForm({ state }: { state: SeoPagesListState }) {
       className="flex h-12 w-full items-center gap-3 rounded-md border border-slate-200 bg-white px-4 shadow-sm lg:w-[26rem] lg:shrink-0"
     >
       <span className="text-slate-500" aria-hidden="true">
-        <PageIcon icon="search" />
+        <AdminIcon icon="search" />
       </span>
       <label className="sr-only" htmlFor="admin-pages-search">
         Search SEO pages
@@ -647,7 +649,7 @@ function SeoPagesEmptyState({ state }: { state: SeoPagesListState }) {
           className={`${adminPrimaryButtonClass} w-full`}
         >
           <span aria-hidden="true">
-            <PageIcon icon="plus" />
+            <AdminIcon icon="plus" />
           </span>
           Create page
         </Link>
@@ -829,7 +831,7 @@ function MetricPanel({
   href,
   active,
 }: {
-  icon: PageIconName;
+  icon: AdminIconName;
   tone: "amber" | "blue" | "green" | "slate";
   label: string;
   value: number;
@@ -851,7 +853,7 @@ function MetricPanel({
         )}`}
         aria-hidden="true"
       >
-        <PageIcon icon={icon} />
+        <AdminIcon icon={icon} />
       </span>
       <div>
         <p className="text-sm font-medium text-slate-500">{label}</p>
@@ -1064,7 +1066,7 @@ function PageActionsMenu({
         className={summaryClass}
         aria-label={`Open actions for ${page.title}`}
       >
-        <PageIcon icon="more" />
+        <AdminIcon icon="more" />
       </summary>
       <div className={menuClass}>
         <Link
@@ -1283,110 +1285,4 @@ function PageChevron() {
       <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
     </svg>
   );
-}
-
-type PageIconName =
-  | "archive"
-  | "check"
-  | "file"
-  | "filter"
-  | "layers"
-  | "list"
-  | "more"
-  | "pencil"
-  | "plus"
-  | "search";
-
-const pageIconCommonProps = {
-  fill: "none",
-  viewBox: "0 0 24 24",
-  stroke: "currentColor",
-  strokeWidth: 1.9,
-  className: "size-5",
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-};
-
-function PageIcon({ icon }: { icon: PageIconName }) {
-  switch (icon) {
-    case "archive":
-      return (
-        <svg {...pageIconCommonProps}>
-          <path d="M4 7h16" />
-          <path d="M6 7v11h12V7" />
-          <path d="M9 11h6" />
-          <path d="M7 4h10l1 3H6l1-3Z" />
-        </svg>
-      );
-    case "check":
-      return (
-        <svg {...pageIconCommonProps}>
-          <path d="M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
-          <path d="m8.8 12.2 2 2 4.4-4.6" />
-        </svg>
-      );
-    case "file":
-      return (
-        <svg {...pageIconCommonProps}>
-          <path d="M7 3h7l4 4v14H7V3Z" />
-          <path d="M14 3v5h5" />
-          <path d="M10 12h5" />
-          <path d="M10 16h4" />
-        </svg>
-      );
-    case "filter":
-      return (
-        <svg {...pageIconCommonProps}>
-          <path d="M4 6h16l-6 7v5l-4 2v-7L4 6Z" />
-        </svg>
-      );
-    case "layers":
-      return (
-        <svg {...pageIconCommonProps}>
-          <path d="m12 3 9 5-9 5-9-5 9-5Z" />
-          <path d="m3 12 9 5 9-5" />
-          <path d="m3 16 9 5 9-5" />
-        </svg>
-      );
-    case "list":
-      return (
-        <svg {...pageIconCommonProps}>
-          <path d="M8 6h12" />
-          <path d="M8 12h12" />
-          <path d="M8 18h12" />
-          <path d="M4 6h.01" />
-          <path d="M4 12h.01" />
-          <path d="M4 18h.01" />
-        </svg>
-      );
-    case "more":
-      return (
-        <svg {...pageIconCommonProps}>
-          <path d="M12 5h.01" />
-          <path d="M12 12h.01" />
-          <path d="M12 19h.01" />
-        </svg>
-      );
-    case "pencil":
-      return (
-        <svg {...pageIconCommonProps}>
-          <path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z" />
-          <path d="m14 7 3 3" />
-        </svg>
-      );
-    case "plus":
-      return (
-        <svg {...pageIconCommonProps}>
-          <path d="M12 5v14" />
-          <path d="M5 12h14" />
-        </svg>
-      );
-    case "search":
-      return (
-        <svg {...pageIconCommonProps}>
-          <path d="m21 21-4.3-4.3" />
-          <path d="M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z" />
-        </svg>
-      );
-  }
 }

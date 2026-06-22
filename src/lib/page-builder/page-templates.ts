@@ -174,7 +174,7 @@ function cloneTemplateOption(template: PageTemplateOption): PageTemplateOption {
 }
 
 function cloneContent(content: PageContent): PageContent {
-  return pageContentSchema.parse(JSON.parse(JSON.stringify(content)));
+  return pageContentSchema.parse(structuredClone(content));
 }
 
 function templateContent(

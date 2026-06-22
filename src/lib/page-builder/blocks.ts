@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { ctaBlockDescriptor } from "@/lib/page-builder/block-descriptors";
 import { isBlockFieldVisible } from "@/lib/page-builder/block-field-visibility";
 import { collectInternalLinks } from "@/lib/page-builder/page-internal-links";
 
@@ -528,9 +527,14 @@ export const blockRegistry = {
     },
   },
   cta: {
-    type: ctaBlockDescriptor.type,
-    allowedVariants: ctaBlockDescriptor.variants.map((variant) => variant.id),
-    defaultProps: ctaBlockDescriptor.defaultProps,
+    type: "cta",
+    allowedVariants: ["primary", "secondary", "text"],
+    defaultProps: {
+      presetId: undefined,
+      label: "",
+      href: "/apply",
+      trackingName: "",
+    },
   },
   faq: {
     type: "faq",

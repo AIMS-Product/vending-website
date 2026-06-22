@@ -16,8 +16,7 @@
     "mutate": "stryker run",
     "mutate:dry": "stryker run --dryRunOnly",
     "prepare": "husky",
-    "doctor": "react-doctor",
-    "ai-benchmark": "vitest run --config vitest.benchmark.config.ts"
+    "doctor": "react-doctor"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

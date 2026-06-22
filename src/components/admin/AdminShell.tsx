@@ -5,6 +5,7 @@ import { createPortal, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { signOut } from "@/app/admin/actions";
+import { AdminIcon, type AdminIconName } from "@/components/admin/AdminUi";
 
 type AdminSection =
   | "pages"
@@ -15,7 +16,8 @@ type AdminSection =
   | "libraries"
   | "settings"
   | "routes";
-type AdminIcon =
+type AdminShellIconName = Extract<
+  AdminIconName,
   | "archive"
   | "book"
   | "file"
@@ -26,14 +28,15 @@ type AdminIcon =
   | "log-out"
   | "settings"
   | "shield"
-  | "target";
+  | "target"
+>;
 
 type AdminNavSection = {
   id: AdminSection;
   label: string;
   href: string;
   description: string;
-  icon: AdminIcon;
+  icon: AdminShellIconName;
 };
 
 const blogSection: AdminNavSection = {
@@ -101,16 +104,6 @@ const accountSections: AdminNavSection[] = [
 ];
 
 const sections = [...contentSections, ...accountSections];
-
-const adminIconGlyphCommonProps = {
-  fill: "none",
-  viewBox: "0 0 24 24",
-  stroke: "currentColor",
-  strokeWidth: 1.8,
-  className: "size-5",
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-};
 
 type AdminShellProps = {
   activeSection: AdminSection;
@@ -233,7 +226,7 @@ function AdminMobileNav({
               className="flex w-full items-center gap-2.5 rounded-md border border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-semibold text-slate-950 shadow-sm"
             >
               <span className="text-slate-700" aria-hidden="true">
-                <AdminIconGlyph icon="log-out" />
+                <AdminIcon icon="log-out" />
               </span>
               Sign out
             </button>
@@ -424,7 +417,7 @@ function AdminDesktopNavItem({
           )}
           aria-hidden="true"
         >
-          <AdminIconGlyph icon={section.icon} />
+          <AdminIcon icon={section.icon} />
         </span>
         <span className={clsx("min-w-0", collapsed && "hidden")}>
           <span className="block font-semibold text-slate-950">
@@ -504,7 +497,7 @@ function AdminAccountBlock({
         )}
       >
         <span className="text-slate-500" aria-hidden="true">
-          <AdminIconGlyph icon="help" />
+          <AdminIcon icon="help" />
         </span>
         <span className={clsx(collapsed && "hidden")}>Help &amp; support</span>
       </a>
@@ -518,7 +511,7 @@ function AdminAccountBlock({
           )}
         >
           <span className="text-slate-700" aria-hidden="true">
-            <AdminIconGlyph icon="log-out" />
+            <AdminIcon icon="log-out" />
           </span>
           <span className={clsx(collapsed && "hidden")}>Sign out</span>
         </button>
@@ -796,7 +789,7 @@ function MobileNavLink({
           className="flex size-6 shrink-0 items-center justify-center rounded-md text-[#0b63f6]"
           aria-hidden="true"
         >
-          <AdminIconGlyph icon={section.icon} />
+          <AdminIcon icon={section.icon} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-semibold">{section.label}</span>
@@ -823,103 +816,4 @@ function AdminChevron() {
       <path strokeLinecap="round" strokeLinejoin="round" d="m9 18 6-6-6-6" />
     </svg>
   );
-}
-
-function AdminIconGlyph({ icon }: { icon: AdminIcon }) {
-  switch (icon) {
-    case "archive":
-      return (
-        <svg {...adminIconGlyphCommonProps}>
-          <path d="M4 7h16" />
-          <path d="M6 7v11h12V7" />
-          <path d="M9 11h6" />
-          <path d="M7 4h10l1 3H6l1-3Z" />
-        </svg>
-      );
-    case "book":
-      return (
-        <svg {...adminIconGlyphCommonProps}>
-          <path d="M6 4h10a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2V4Z" />
-          <path d="M9 8h6" />
-          <path d="M9 12h5" />
-        </svg>
-      );
-    case "file":
-      return (
-        <svg {...adminIconGlyphCommonProps}>
-          <path d="M7 3h7l4 4v14H7V3Z" />
-          <path d="M14 3v5h5" />
-          <path d="M10 12h5" />
-          <path d="M10 16h4" />
-        </svg>
-      );
-    case "image":
-      return (
-        <svg {...adminIconGlyphCommonProps}>
-          <path d="M4 5h16v14H4V5Z" />
-          <path d="m5 17 5-5 4 4 2-2 3 3" />
-          <path d="M15 9h.01" />
-        </svg>
-      );
-    case "layers":
-      return (
-        <svg {...adminIconGlyphCommonProps}>
-          <path d="m12 3 9 5-9 5-9-5 9-5Z" />
-          <path d="m3 12 9 5 9-5" />
-          <path d="m3 16 9 5 9-5" />
-        </svg>
-      );
-    case "mail":
-      return (
-        <svg {...adminIconGlyphCommonProps}>
-          <path d="M4 6h16v12H4V6Z" />
-          <path d="m4 7 8 6 8-6" />
-        </svg>
-      );
-    case "settings":
-      return (
-        <svg {...adminIconGlyphCommonProps}>
-          <circle cx="12" cy="12" r="3.25" />
-          <path d="M12 2v2.5" />
-          <path d="M12 19.5V22" />
-          <path d="M2 12h2.5" />
-          <path d="M19.5 12H22" />
-          <path d="m4.9 4.9 1.8 1.8" />
-          <path d="m17.3 17.3 1.8 1.8" />
-          <path d="m4.9 19.1 1.8-1.8" />
-          <path d="m17.3 6.7 1.8-1.8" />
-        </svg>
-      );
-    case "help":
-      return (
-        <svg {...adminIconGlyphCommonProps}>
-          <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
-          <path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3" />
-          <path d="M12 17h.01" />
-        </svg>
-      );
-    case "log-out":
-      return (
-        <svg {...adminIconGlyphCommonProps}>
-          <path d="M10 17H5V7h5" />
-          <path d="M14 8l4 4-4 4" />
-          <path d="M18 12H9" />
-        </svg>
-      );
-    case "shield":
-      return (
-        <svg {...adminIconGlyphCommonProps}>
-          <path d="M12 3 19 6v5c0 4-2.5 7-7 10-4.5-3-7-6-7-10V6l7-3Z" />
-          <path d="m9.5 12 1.8 1.8 3.7-4" />
-        </svg>
-      );
-    case "target":
-      return (
-        <svg {...adminIconGlyphCommonProps}>
-          <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
-          <path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" />
-          <path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
-        </svg>
-      );
-  }
 }

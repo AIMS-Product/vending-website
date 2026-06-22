@@ -5,7 +5,6 @@ import type {
   PageSection,
 } from "@/lib/page-builder/blocks";
 import { pageBlockSchema } from "@/lib/page-builder/blocks";
-import { createDescriptorPageBlock } from "@/lib/page-builder/block-descriptors";
 
 export type MoveDirection = "up" | "down";
 
@@ -49,9 +48,6 @@ export function createPageBlock(
   type: PageBlock["type"],
   id: string,
 ): PageBlock {
-  const descriptorBlock = createDescriptorPageBlock(type, id);
-  if (descriptorBlock) return descriptorBlock;
-
   if (type === "hero") {
     return {
       id,
@@ -112,6 +108,20 @@ export function createPageBlock(
     };
   }
 
+  if (type === "cta") {
+    return {
+      id,
+      type: "cta",
+      variant: "primary",
+      props: {
+        presetId: undefined,
+        label: "",
+        href: "/apply",
+        trackingName: "",
+      },
+    };
+  }
+
   if (type === "faq") {
     return {
       id,
@@ -165,11 +175,7 @@ export function createPageBlock(
     };
   }
 
-  const ctaBlock = createDescriptorPageBlock("cta", id);
-  if (!ctaBlock) {
-    throw new Error(`Unsupported page block type: ${type}`);
-  }
-  return ctaBlock;
+  throw new Error(`Unsupported page block type: ${type}`);
 }
 
 export function duplicatePageBlock(block: PageBlock, id: string): PageBlock {
@@ -224,5 +230,5 @@ export function reorderItemsById<T extends { id: string }>(
 }
 
 function cloneBlockValue(block: PageBlock): PageBlock {
-  return JSON.parse(JSON.stringify(block)) as PageBlock;
+  return structuredClone(block);
 }

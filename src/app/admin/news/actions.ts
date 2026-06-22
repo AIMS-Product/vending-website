@@ -9,7 +9,7 @@ import {
   adminUpdatePost,
 } from "@/lib/services/news";
 import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createSignedImageStorageUpload } from "@/lib/supabase/signed-upload";
 
 export type EditorActionState =
   | { status: "idle"; message?: string }
@@ -147,30 +147,17 @@ export async function savePost(
 export async function createSignedImageUpload(formData: FormData) {
   await requireAuth();
 
-  const rawName = String(formData.get("filename") ?? "cover").toLowerCase();
-  const extension = rawName.match(/\.(avif|webp|png|jpe?g)$/)?.[1] ?? "jpg";
-  const safeBase =
-    rawName
-      .replace(/\.[^.]+$/, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "")
-      .slice(0, 80) || "cover";
-  const path = `covers/${crypto.randomUUID()}-${safeBase}.${extension}`;
-
-  const supabase = createAdminClient();
-  const { data, error } = await supabase.storage
-    .from("news-images")
-    .createSignedUploadUrl(path);
-  if (error) throw error;
-
-  const { data: publicUrl } = supabase.storage
-    .from("news-images")
-    .getPublicUrl(path);
+  const upload = await createSignedImageStorageUpload({
+    bucket: "news-images",
+    directory: "covers",
+    filename: String(formData.get("filename") ?? "cover"),
+    fallbackBase: "cover",
+  });
 
   return {
-    path,
-    token: data.token,
-    signedUrl: data.signedUrl,
-    publicUrl: publicUrl.publicUrl,
+    path: upload.path,
+    token: upload.token,
+    signedUrl: upload.signedUrl,
+    publicUrl: upload.publicUrl,
   };
 }

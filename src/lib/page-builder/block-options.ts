@@ -1,5 +1,4 @@
 import type { PageBlock } from "@/lib/page-builder/blocks";
-import { ctaBlockDescriptor } from "@/lib/page-builder/block-descriptors";
 
 export type BlockVariant = PageBlock["variant"];
 
@@ -17,14 +16,26 @@ export type BlockPickerOption = {
 };
 
 const ctaPickerOption: BlockPickerOption = {
-  type: ctaBlockDescriptor.type,
-  label: ctaBlockDescriptor.label,
-  description: ctaBlockDescriptor.description,
-  variants: ctaBlockDescriptor.variants.map((variant) => ({
-    id: variant.id,
-    label: variant.label,
-    description: variant.description,
-  })),
+  type: "cta",
+  label: "CTA",
+  description: "Primary conversion button.",
+  variants: [
+    {
+      id: "primary",
+      label: "Primary CTA",
+      description: "Main conversion action.",
+    },
+    {
+      id: "secondary",
+      label: "Secondary CTA",
+      description: "Lower-emphasis conversion action.",
+    },
+    {
+      id: "text",
+      label: "Text link CTA",
+      description: "Inline supporting action.",
+    },
+  ],
 };
 
 export const blockPickerOptions: BlockPickerOption[] = [

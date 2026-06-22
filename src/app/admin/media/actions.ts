@@ -13,8 +13,8 @@ import {
   adminUpdateMediaAsset,
   type MediaAssetType,
 } from "@/lib/services/media-assets";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
+import { createSignedImageStorageUpload } from "@/lib/supabase/signed-upload";
 
 export type MediaAssetActionState =
   | { status: "idle"; message?: string }
@@ -431,36 +431,17 @@ export async function createMediaAssetFromEditor(formData: FormData) {
 export async function createSignedMediaUpload(formData: FormData) {
   await requireAuth();
 
-  const rawName = String(formData.get("filename") ?? "image").toLowerCase();
-  const extension = rawName.match(/\.(avif|webp|png|jpe?g)$/)?.[1] ?? "jpg";
-  const safeBase =
-    rawName
-      .replace(/\.[^.]+$/, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "")
-      .slice(0, 80) || "image";
-  const path = `images/${crypto.randomUUID()}-${safeBase}.${extension}`;
-
-  const supabase = createAdminClient();
-  const { data, error } = await supabase.storage
-    .from(MEDIA_BUCKET)
-    .createSignedUploadUrl(path);
-  if (error) {
+  try {
+    return await createSignedImageStorageUpload({
+      bucket: MEDIA_BUCKET,
+      directory: "images",
+      filename: String(formData.get("filename") ?? "image"),
+      fallbackBase: "image",
+    });
+  } catch (error) {
     console.error("signed media upload creation failed", error);
     throw new Error("Could not prepare upload. Please try again.");
   }
-
-  const { data: publicUrl } = supabase.storage
-    .from(MEDIA_BUCKET)
-    .getPublicUrl(path);
-
-  return {
-    bucket: MEDIA_BUCKET,
-    path,
-    token: data.token,
-    signedUrl: data.signedUrl,
-    publicUrl: publicUrl.publicUrl,
-  };
 }
 
 function nullable(value: string) {
