@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import {
   saveQualificationForm,
   setDefaultQualificationForm,
@@ -67,11 +67,15 @@ const normalizedRoleOptions: NormalizedRoleOption[] = [
   { value: "contact_preference", label: "Contact preference" },
 ];
 
-const optionQuestionTypes = new Set<QualificationQuestionType>(
-  questionTypeOptions
-    .filter((option) => option.requiresOptions)
-    .map((option) => option.value),
-);
+const optionQuestionTypes = new Set<QualificationQuestionType>();
+for (const option of questionTypeOptions) {
+  if (option.requiresOptions) {
+    optionQuestionTypes.add(option.value);
+  }
+}
+
+const addAnotherQuestionButtonClass =
+  "inline-flex h-11 items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
 export function QualificationFormEditor({
   form,
@@ -104,168 +108,270 @@ export function QualificationFormEditor({
     form.status === "published" &&
     Boolean(form.currentPublishedVersionId) &&
     !form.isDefault;
+  const requiredCount = questions.filter(
+    (question) => question.required,
+  ).length;
+  const mappedCount = questions.filter((question) =>
+    Boolean(question.normalizedRole),
+  ).length;
+  const actionRevision = `${state.status}:${state.message ?? ""}:${defaultState.status}:${defaultState.message ?? ""}`;
+  const addQuestion = () => {
+    setQuestions((current) => [...current, newQuestion(current)]);
+  };
+
+  useEffect(() => {
+    if (state.status === "idle" && defaultState.status === "idle") return;
+    document
+      .querySelectorAll<HTMLSelectElement>("[data-controlled-select-value]")
+      .forEach((select) => {
+        const value = select.dataset.controlledSelectValue ?? "";
+        if (select.value !== value) select.value = value;
+      });
+    document
+      .querySelectorAll<HTMLInputElement>("[data-controlled-checkbox-checked]")
+      .forEach((checkbox) => {
+        const checked = checkbox.dataset.controlledCheckboxChecked === "true";
+        if (checkbox.checked !== checked) checkbox.checked = checked;
+      });
+  });
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <form
-        id="qualification-form-editor"
-        action={formAction}
-        className="grid gap-5"
-      >
-        <input type="hidden" name="id" value={form.id} />
-        <input type="hidden" name="schema" value={schemaValue} />
+    <div className="grid gap-5">
+      <QualificationEditorOverview
+        form={form}
+        mappedCount={mappedCount}
+        questionCount={questions.length}
+        requiredCount={requiredCount}
+      />
 
-        <section className={adminCardClass}>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-slate-950">
-                Form details
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Content and sequencing for the follow-up qualification flow.
-              </p>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <form
+          id="qualification-form-editor"
+          action={formAction}
+          className="grid gap-5"
+        >
+          <input type="hidden" name="id" value={form.id} />
+          <input type="hidden" name="schema" value={schemaValue} />
+
+          <section className={adminCardClass}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">
+                  Form details
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Name this follow-up flow so it is easy to pick from pages and
+                  lead blocks.
+                </p>
+              </div>
+              <AdminStatusBadge status={form.status} />
             </div>
-            <AdminStatusBadge status={form.status} />
-          </div>
-          <label className="mt-5 block">
-            <span className={adminLabelClass}>Form name</span>
-            <input
-              name="name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              required
-              className={adminInputClass}
-            />
-          </label>
-        </section>
-
-        <section className={adminCardClass}>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-slate-950">
-                Questions
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Add, remove, and order the questions visitors answer after the
-                short contact form.
-              </p>
-            </div>
-            <button
-              type="button"
-              className={adminSecondaryButtonClass}
-              onClick={() =>
-                setQuestions((current) => [...current, newQuestion(current)])
-              }
-            >
-              <span aria-hidden="true">
-                <AdminIcon icon="plus" />
-              </span>
-              Add question
-            </button>
-          </div>
-
-          <div className="mt-5 grid gap-4">
-            {questions.map((question, index) => (
-              <QuestionEditor
-                key={question.id}
-                index={index}
-                question={question}
-                total={questions.length}
-                onChange={(next) =>
-                  setQuestions((current) =>
-                    current.map((entry, entryIndex) =>
-                      entryIndex === index ? next : entry,
-                    ),
-                  )
-                }
-                onDelete={() =>
-                  setQuestions((current) =>
-                    current.length <= 1
-                      ? current
-                      : current.filter((_, entryIndex) => entryIndex !== index),
-                  )
-                }
-                onMove={(direction) =>
-                  setQuestions((current) =>
-                    moveQuestion(current, index, direction),
-                  )
-                }
+            <label className="mt-5 block">
+              <span className={adminLabelClass}>Form name</span>
+              <input
+                name="name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                required
+                className={adminInputClass}
               />
-            ))}
-          </div>
-        </section>
-      </form>
+            </label>
+          </section>
 
-      <aside className="grid content-start gap-5">
-        <section className={adminCardClass}>
-          <h2 className="text-sm font-semibold text-slate-950">Publish</h2>
-          <ActionMessage state={state} className="mt-3 rounded-md px-3 py-2" />
-          <div className="mt-5 grid gap-2">
-            <button
-              type="submit"
-              form="qualification-form-editor"
-              name="intent"
-              value="save"
-              className={adminSecondaryButtonClass}
-            >
-              <span aria-hidden="true">
-                <AdminIcon icon="save" />
-              </span>
-              Save draft
-            </button>
-            <button
-              type="submit"
-              form="qualification-form-editor"
-              name="intent"
-              value="publish"
-              className={adminPrimaryButtonClass}
-            >
-              <span aria-hidden="true">
-                <AdminIcon icon="check" />
-              </span>
-              Publish version
-            </button>
-          </div>
-        </section>
+          <section className={adminCardClass}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">
+                  Questions
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Write the prospect-facing questions first. Routing fields stay
+                  available in advanced settings when you need them.
+                </p>
+              </div>
+              <button
+                type="button"
+                className={adminSecondaryButtonClass}
+                onClick={addQuestion}
+              >
+                <span aria-hidden="true">
+                  <AdminIcon icon="plus" />
+                </span>
+                Add question
+              </button>
+            </div>
 
-        <section className={adminCardClass}>
-          <h2 className="text-sm font-semibold text-slate-950">Default form</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            {form.isDefault
-              ? "This form is the current global fallback."
-              : "Use this form when a page or block does not override it."}
-          </p>
-          {!form.isDefault ? (
-            <form action={defaultAction} className="mt-4 grid gap-2">
-              <input type="hidden" name="id" value={form.id} />
+            <div className="mt-5 grid gap-4">
+              {questions.map((question, index) => (
+                <QuestionEditor
+                  key={question.id}
+                  actionRevision={actionRevision}
+                  index={index}
+                  question={question}
+                  total={questions.length}
+                  onChange={(next) =>
+                    setQuestions((current) =>
+                      current.map((entry, entryIndex) =>
+                        entryIndex === index ? next : entry,
+                      ),
+                    )
+                  }
+                  onDelete={() =>
+                    setQuestions((current) =>
+                      current.length <= 1
+                        ? current
+                        : current.filter(
+                            (_, entryIndex) => entryIndex !== index,
+                          ),
+                    )
+                  }
+                  onMove={(direction) =>
+                    setQuestions((current) =>
+                      moveQuestion(current, index, direction),
+                    )
+                  }
+                />
+              ))}
+            </div>
+            <div className="mt-4 flex justify-center border-t border-slate-100 pt-4">
+              <button
+                type="button"
+                className={addAnotherQuestionButtonClass}
+                onClick={addQuestion}
+              >
+                <span aria-hidden="true">
+                  <AdminIcon icon="plus" />
+                </span>
+                Add another question
+              </button>
+            </div>
+          </section>
+        </form>
+
+        <aside className="grid content-start gap-5">
+          <section className={adminCardClass}>
+            <h2 className="text-sm font-semibold text-slate-950">Publish</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Save keeps editing open. Publish creates a locked version for new
+              qualification sessions.
+            </p>
+            <ActionMessage
+              state={state}
+              className="mt-3 rounded-md px-3 py-2"
+            />
+            <div className="mt-5 grid gap-2">
               <button
                 type="submit"
-                disabled={!canSetDefault}
+                form="qualification-form-editor"
+                name="intent"
+                value="save"
                 className={adminSecondaryButtonClass}
-                title={
-                  canSetDefault
-                    ? undefined
-                    : "Publish before setting the default"
-                }
               >
-                Set default
+                <span aria-hidden="true">
+                  <AdminIcon icon="save" />
+                </span>
+                Save draft
               </button>
-              <ActionMessage state={defaultState} />
-            </form>
-          ) : (
-            <span className="mt-4 inline-flex rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700">
-              Default
-            </span>
-          )}
-        </section>
+              <button
+                type="submit"
+                form="qualification-form-editor"
+                name="intent"
+                value="publish"
+                className={adminPrimaryButtonClass}
+              >
+                <span aria-hidden="true">
+                  <AdminIcon icon="check" />
+                </span>
+                Publish version
+              </button>
+            </div>
+          </section>
 
-        <QualificationPreview questions={questions} />
-      </aside>
+          <section className={adminCardClass}>
+            <h2 className="text-sm font-semibold text-slate-950">
+              Default form
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              {form.isDefault
+                ? "This form is the fallback when a page or lead block does not choose another form."
+                : "Publish first, then make this the fallback for pages and lead blocks without their own form."}
+            </p>
+            {!form.isDefault ? (
+              <form action={defaultAction} className="mt-4 grid gap-2">
+                <input type="hidden" name="id" value={form.id} />
+                <button
+                  type="submit"
+                  disabled={!canSetDefault}
+                  className={adminSecondaryButtonClass}
+                  title={
+                    canSetDefault
+                      ? undefined
+                      : "Publish before setting the default"
+                  }
+                >
+                  Set default
+                </button>
+                <ActionMessage state={defaultState} />
+              </form>
+            ) : (
+              <span className="mt-4 inline-flex rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700">
+                Default
+              </span>
+            )}
+          </section>
+
+          <QualificationPreview questions={questions} />
+        </aside>
+      </div>
     </div>
   );
 }
 
+function QualificationEditorOverview({
+  form,
+  mappedCount,
+  questionCount,
+  requiredCount,
+}: {
+  form: AdminQualificationForm;
+  mappedCount: number;
+  questionCount: number;
+  requiredCount: number;
+}) {
+  return (
+    <section className={adminCardClass} aria-label="Builder overview">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div>
+          <h2 className="text-base font-semibold text-slate-950">
+            Build the follow-up prospects see after the short lead form
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Edit the questions, check the prospect preview, then save or publish
+            a version for new sessions.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <SummaryBadge label="Questions" value={questionCount} />
+          <SummaryBadge label="Required" value={requiredCount} />
+          <SummaryBadge label="Profile fields" value={mappedCount} />
+          <AdminStatusBadge status={form.status} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SummaryBadge({ label, value }: { label: string; value: number }) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+      <span className="text-slate-500">{label}</span>
+      <span className="text-slate-950">{value}</span>
+    </span>
+  );
+}
+
 function QuestionEditor({
+  actionRevision,
   index,
   onChange,
   onDelete,
@@ -273,6 +379,7 @@ function QuestionEditor({
   question,
   total,
 }: {
+  actionRevision: string;
   index: number;
   onChange: (question: QualificationQuestion) => void;
   onDelete: () => void;
@@ -292,6 +399,20 @@ function QuestionEditor({
           <h3 className="mt-1 text-sm font-semibold text-slate-950">
             {question.label || "Untitled question"}
           </h3>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+              {labelForQuestionType(question.type)}
+            </span>
+            {question.required ? (
+              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                Required
+              </span>
+            ) : (
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                Optional
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -339,6 +460,8 @@ function QuestionEditor({
         <label className="block">
           <span className={adminLabelClass}>Question type</span>
           <select
+            key={`${question.id}-type-${question.type}-${actionRevision}`}
+            data-controlled-select-value={question.type}
             value={question.type}
             onChange={(event) =>
               onChange(changeQuestionType(question, event.target.value))
@@ -373,9 +496,34 @@ function QuestionEditor({
             className={adminInputClass}
           />
         </label>
-        <label className="block">
-          <span className={adminLabelClass}>Normalized role</span>
+        <label className="flex items-center gap-2 self-end rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700">
+          <input
+            key={`${question.id}-required-${question.required}-${actionRevision}`}
+            type="checkbox"
+            data-controlled-checkbox-checked={question.required}
+            checked={question.required}
+            onChange={(event) =>
+              onChange({ ...question, required: event.target.checked })
+            }
+            className="size-4 rounded border-slate-300 text-[#0b63f6]"
+          />
+          Required
+        </label>
+      </div>
+
+      <details className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <summary className="cursor-pointer text-sm font-semibold text-slate-800">
+          Lead routing
+        </summary>
+        <p className="mt-2 text-xs leading-5 text-slate-600">
+          Optional mapping used for lead summaries, filters, and CRM sync. Most
+          copy edits do not need this.
+        </p>
+        <label className="mt-3 block">
+          <span className={adminLabelClass}>Lead profile field</span>
           <select
+            key={`${question.id}-role-${question.normalizedRole ?? "none"}-${actionRevision}`}
+            data-controlled-select-value={question.normalizedRole ?? ""}
             value={question.normalizedRole ?? ""}
             onChange={(event) =>
               onChange({
@@ -388,7 +536,7 @@ function QuestionEditor({
             }
             className={adminInputClass}
           >
-            <option value="">None</option>
+            <option value="">No profile field</option>
             {normalizedRoleOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -396,18 +544,7 @@ function QuestionEditor({
             ))}
           </select>
         </label>
-        <label className="flex items-center gap-2 self-end rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700">
-          <input
-            type="checkbox"
-            checked={question.required}
-            onChange={(event) =>
-              onChange({ ...question, required: event.target.checked })
-            }
-            className="size-4 rounded border-slate-300 text-[#0b63f6]"
-          />
-          Required
-        </label>
-      </div>
+      </details>
 
       {showOptions ? (
         <QuestionOptions question={question} onChange={onChange} />
@@ -426,8 +563,15 @@ function QuestionOptions({
   const options = question.options ?? [];
   return (
     <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-      <div className="flex items-center justify-between gap-3">
-        <h4 className="text-sm font-semibold text-slate-950">Options</h4>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h4 className="text-sm font-semibold text-slate-950">
+            Answer choices
+          </h4>
+          <p className="mt-1 text-xs leading-5 text-slate-600">
+            Labels are shown to prospects. Internal values are optional.
+          </p>
+        </div>
         <button
           type="button"
           className={adminSmallButtonClass}
@@ -448,7 +592,7 @@ function QuestionOptions({
         {options.map((option, index) => (
           <div
             key={option.id}
-            className="grid gap-2 rounded-md border border-slate-200 bg-white p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+            className="grid gap-3 rounded-md border border-slate-200 bg-white p-3 md:grid-cols-[minmax(0,1fr)_auto]"
           >
             <label className="block">
               <span className={adminLabelClass}>Option label</span>
@@ -460,23 +604,6 @@ function QuestionOptions({
                     options: options.map((entry, entryIndex) =>
                       entryIndex === index
                         ? { ...entry, label: event.target.value }
-                        : entry,
-                    ),
-                  })
-                }
-                className={adminInputClass}
-              />
-            </label>
-            <label className="block">
-              <span className={adminLabelClass}>Option value</span>
-              <input
-                value={option.value ?? ""}
-                onChange={(event) =>
-                  onChange({
-                    ...question,
-                    options: options.map((entry, entryIndex) =>
-                      entryIndex === index
-                        ? { ...entry, value: event.target.value }
                         : entry,
                     ),
                   })
@@ -502,6 +629,28 @@ function QuestionOptions({
               </span>
               Remove
             </button>
+            <details className="md:col-span-2">
+              <summary className="cursor-pointer text-xs font-semibold text-slate-600">
+                Internal value
+              </summary>
+              <label className="mt-2 block">
+                <span className={adminLabelClass}>Reporting value</span>
+                <input
+                  value={option.value ?? ""}
+                  onChange={(event) =>
+                    onChange({
+                      ...question,
+                      options: options.map((entry, entryIndex) =>
+                        entryIndex === index
+                          ? { ...entry, value: event.target.value }
+                          : entry,
+                      ),
+                    })
+                  }
+                  className={adminInputClass}
+                />
+              </label>
+            </details>
           </div>
         ))}
       </div>
@@ -514,12 +663,23 @@ function QualificationPreview({
 }: {
   questions: QualificationQuestion[];
 }) {
+  const requiredCount = questions.filter(
+    (question) => question.required,
+  ).length;
+
   return (
-    <section className={adminCardClass} aria-label="Admin preview">
+    <section className={adminCardClass} aria-label="Prospect preview">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-slate-950">Admin preview</h2>
+        <div>
+          <h2 className="text-sm font-semibold text-slate-950">
+            Prospect preview
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-slate-600">
+            {questions.length} questions, {requiredCount} required.
+          </p>
+        </div>
         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-          Preview
+          Prospect view
         </span>
       </div>
       <div className="mt-4 grid gap-4">
@@ -675,6 +835,12 @@ function changeQuestionType(
   const next = { ...question, type };
   delete next.options;
   return next;
+}
+
+function labelForQuestionType(type: QualificationQuestionType) {
+  return (
+    questionTypeOptions.find((option) => option.value === type)?.label ?? type
+  );
 }
 
 function moveQuestion(

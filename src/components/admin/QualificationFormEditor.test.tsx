@@ -57,10 +57,11 @@ describe("QualificationFormEditor", () => {
     expect(html).toContain("Help text");
     expect(html).toContain("Placeholder");
     expect(html).toContain("Required");
-    expect(html).toContain("Normalized role");
+    expect(html).toContain("Lead profile field");
+    expect(html).toContain("Lead routing");
     expect(html).toContain("State or market");
     expect(html).toContain("Option label");
-    expect(html).toContain("Option value");
+    expect(html).toContain("Internal value");
     expect(html).toContain("Move up");
     expect(html).toContain("Move down");
     expect(html).toContain("Delete question");
@@ -68,10 +69,11 @@ describe("QualificationFormEditor", () => {
     expect(html).toContain("Publish version");
   });
 
-  it("renders an admin preview without public submission controls or out-of-scope fields", () => {
+  it("renders a prospect preview without public submission controls or out-of-scope fields", () => {
     const html = renderToStaticMarkup(<QualificationFormEditor form={form} />);
 
-    expect(html).toContain("Admin preview");
+    expect(html).toContain("Prospect preview");
+    expect(html).toContain("Prospect view");
     expect(html).toContain("Which state or market are you focused on?");
     expect(html).toContain("How much capital can you access?");
     expect(html).not.toContain('type="file"');
@@ -80,5 +82,6 @@ describe("QualificationFormEditor", () => {
     expect(html).not.toContain("Script");
     expect(html).not.toContain("Raw JSON");
     expect(html).not.toContain("draft_schema");
+    expect(html).not.toContain("Normalized role");
   });
 });
