@@ -383,6 +383,74 @@ describe("adminRunCloseSync", () => {
     });
   });
 
+  it("updates configured Close source fields on existing Close leads", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          close_lead_id: "lead_close_1",
+          close_contact_id: "cont_close_1",
+          payload: {
+            contact: {
+              full_name: "Jane Buyer",
+              email: "buyer@example.com",
+              phone: "555-0101",
+            },
+            attribution: {
+              source_path: "/resources/start-vending",
+              utm_source: "google",
+              utm_medium: "cpc",
+              gclid: "gclid-123",
+              campaign_id: "camp-123",
+              ad_group_id: "group-123",
+              ad_id: "ad-123",
+              paid_source_key: "google_ads:camp-123:group-123:ad-123",
+            },
+          },
+        }),
+      ],
+      leads: [
+        makeLead({
+          close_lead_id: "lead_close_1",
+          close_contact_id: "cont_close_1",
+        }),
+      ],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ id: "cont_close_1" }))
+      .mockResolvedValueOnce(jsonResponse({ id: "lead_close_1" }));
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({
+        CLOSE_API_KEY: "close_key_123",
+        CLOSE_UTM_SOURCE_FIELD_ID: "cf_utm_source",
+        CLOSE_UTM_MEDIUM_FIELD_ID: "cf_utm_medium",
+        CLOSE_GCLID_FIELD_ID: "cf_gclid",
+        CLOSE_CAMPAIGN_ID_FIELD_ID: "cf_campaign",
+        CLOSE_AD_GROUP_ID_FIELD_ID: "cf_ad_group",
+        CLOSE_AD_ID_FIELD_ID: "cf_ad",
+        CLOSE_PAID_SOURCE_KEY_FIELD_ID: "cf_paid_source",
+      }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    expect(result).toMatchObject({ scanned: 1, synced: 1, failed: 0 });
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      "https://api.close.com/api/v1/lead/lead_close_1/",
+    );
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
+      "custom.cf_utm_source": "google",
+      "custom.cf_utm_medium": "cpc",
+      "custom.cf_gclid": "gclid-123",
+      "custom.cf_campaign": "camp-123",
+      "custom.cf_ad_group": "group-123",
+      "custom.cf_ad": "ad-123",
+      "custom.cf_paid_source": "google_ads:camp-123:group-123:ad-123",
+    });
+  });
+
   it("reuses one clear Close contact match and flags ambiguous matches for review", async () => {
     const single = buildClient();
     const singleFetch = vi
@@ -445,7 +513,37 @@ describe("adminRunCloseSync", () => {
   });
 
   it("creates a Close lead/contact when no existing match is found", async () => {
-    const fake = buildClient();
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          payload: {
+            contact: {
+              full_name: "Jane Buyer",
+              email: "buyer@example.com",
+              phone: "555-0101",
+            },
+            attribution: {
+              vp_session_id: "vp-session-1",
+              source_path: "/resources/start-vending",
+              landing_path: "/apply",
+              first_landing_path: "/resources/start-vending",
+              latest_landing_path: "/apply",
+              source_page_id: "page_1",
+              source_block_id: "block_cta",
+              source_cta_tracking_name: "hero_apply",
+              clicked_href: "/apply",
+              utm_source: "facebook",
+              utm_medium: "paid_social",
+              fbclid: "fbclid-123",
+              campaign_id: "camp-456",
+              adset_id: "set-456",
+              ad_id: "ad-456",
+              paid_source_key: "meta_ads:camp-456:set-456:ad-456",
+            },
+          },
+        }),
+      ],
+    });
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse({ data: [] }))
@@ -459,7 +557,24 @@ describe("adminRunCloseSync", () => {
 
     await adminRunCloseSync({
       client: fake.client,
-      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      closeConfig: closeConfigFromEnv({
+        CLOSE_API_KEY: "close_key_123",
+        CLOSE_VP_SESSION_ID_FIELD_ID: "cf_vp_session",
+        CLOSE_SOURCE_PATH_FIELD_ID: "cf_source_path",
+        CLOSE_LANDING_PATH_FIELD_ID: "cf_landing_path",
+        CLOSE_FIRST_LANDING_PATH_FIELD_ID: "cf_first_landing",
+        CLOSE_LATEST_LANDING_PATH_FIELD_ID: "cf_latest_landing",
+        CLOSE_SOURCE_PAGE_ID_FIELD_ID: "cf_source_page",
+        CLOSE_SOURCE_BLOCK_ID_FIELD_ID: "cf_source_block",
+        CLOSE_SOURCE_CTA_TRACKING_NAME_FIELD_ID: "cf_source_cta",
+        CLOSE_CLICKED_HREF_FIELD_ID: "cf_clicked_href",
+        CLOSE_UTM_SOURCE_FIELD_ID: "cf_utm_source",
+        CLOSE_FBCLID_FIELD_ID: "cf_fbclid",
+        CLOSE_CAMPAIGN_ID_FIELD_ID: "cf_campaign",
+        CLOSE_ADSET_ID_FIELD_ID: "cf_adset",
+        CLOSE_AD_ID_FIELD_ID: "cf_ad",
+        CLOSE_PAID_SOURCE_KEY_FIELD_ID: "cf_paid_source",
+      }),
       fetchImpl: fetchMock as unknown as typeof fetch,
       now: () => new Date("2026-06-17T09:00:00.000Z"),
     });
@@ -470,6 +585,21 @@ describe("adminRunCloseSync", () => {
     expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual(
       expect.objectContaining({
         name: "Jane Buyer",
+        "custom.cf_vp_session": "vp-session-1",
+        "custom.cf_source_path": "/resources/start-vending",
+        "custom.cf_landing_path": "/apply",
+        "custom.cf_first_landing": "/resources/start-vending",
+        "custom.cf_latest_landing": "/apply",
+        "custom.cf_source_page": "page_1",
+        "custom.cf_source_block": "block_cta",
+        "custom.cf_source_cta": "hero_apply",
+        "custom.cf_clicked_href": "/apply",
+        "custom.cf_utm_source": "facebook",
+        "custom.cf_fbclid": "fbclid-123",
+        "custom.cf_campaign": "camp-456",
+        "custom.cf_adset": "set-456",
+        "custom.cf_ad": "ad-456",
+        "custom.cf_paid_source": "meta_ads:camp-456:set-456:ad-456",
         contacts: [
           expect.objectContaining({
             name: "Jane Buyer",

@@ -38,7 +38,7 @@ class QualificationLifecycleServiceError extends Error {
 }
 
 const SESSION_FIELDS =
-  "id,lead_submission_id,form_id,form_version_id,status,completion_redirect_path,source_path,landing_path,referrer,user_agent,utm_source,utm_medium,utm_campaign,utm_term,utm_content,source_page_id,source_page_slug,source_block_id,source_cta_tracking_name,target_keyword,experiment_key,variant_key,current_question_id,answer_count,normalized_summary,stale_at,expires_at,started_at,completed_at,created_at,updated_at" as const;
+  "id,lead_submission_id,form_id,form_version_id,status,completion_redirect_path,source_path,landing_path,referrer,user_agent,utm_source,utm_medium,utm_campaign,utm_term,utm_content,source_page_id,source_page_slug,source_block_id,source_cta_tracking_name,target_keyword,experiment_key,variant_key,current_question_id,answer_count,normalized_summary,consent_source_attribution,stale_at,expires_at,started_at,completed_at,created_at,updated_at" as const;
 const LEAD_FIELDS =
   "id,full_name,email,close_lead_id,close_contact_id,lifecycle_status,close_sync_status,close_sync_next_retry_at" as const;
 const EVENT_FIELDS =
@@ -332,6 +332,7 @@ function staleTaskPayload(
       variantKey: session.variant_key,
     },
     attribution: {
+      ...jsonObject(session.consent_source_attribution),
       source_path: session.source_path,
       landing_path: session.landing_path,
       referrer: session.referrer,
@@ -349,6 +350,11 @@ function staleTaskPayload(
       variant_key: session.variant_key,
     },
   };
+}
+
+function jsonObject(value: Json): Record<string, Json> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, Json>;
 }
 
 function isDuplicateDedupeError(error: unknown) {

@@ -13,6 +13,11 @@ import {
   deriveLeadErrorSummary,
   type LeadErrorSummaryItem,
 } from "./lead-error-summary";
+import {
+  mergeLeadAttributionWithSession,
+  parseAttributionSession,
+  VP_ATTRIBUTION_STORAGE_KEY,
+} from "@/lib/attribution-session";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import { US_STATES } from "@/lib/content/us-states";
 import { cn } from "@/lib/utils";
@@ -79,6 +84,7 @@ export function PublicLeadForm({
   // returns the action's value unchanged, so the {success/error} contract is
   // untouched.
   const formAction = (formData: FormData) => {
+    mergeStoredAttributionIntoFormData(formData, attribution);
     const values: Record<string, string> = {};
     for (const [name, value] of formData.entries()) {
       if (typeof value === "string") values[name] = value;
@@ -283,6 +289,32 @@ export function PublicLeadForm({
       <PrivacyAssurance intent={intent} />
     </form>
   );
+}
+
+function mergeStoredAttributionIntoFormData(
+  formData: FormData,
+  attribution: LeadAttribution,
+) {
+  try {
+    const submittedAttribution = { ...attribution };
+    for (const name of Object.keys(attribution) as Array<
+      keyof LeadAttribution
+    >) {
+      const value = formData.get(name);
+      if (typeof value === "string") submittedAttribution[name] = value;
+    }
+    const merged = mergeLeadAttributionWithSession(
+      submittedAttribution,
+      parseAttributionSession(
+        window.localStorage.getItem(VP_ATTRIBUTION_STORAGE_KEY),
+      ),
+    );
+    for (const [name, value] of Object.entries(merged)) {
+      formData.set(name, value);
+    }
+  } catch {
+    return;
+  }
 }
 
 function PrivacyAssurance({ intent }: { intent: LeadIntent }) {

@@ -1,6 +1,8 @@
 import Image from "next/image";
 import type { PageBlock } from "@/lib/page-builder/blocks";
 import { isBlockFieldVisible } from "@/lib/page-builder/block-field-visibility";
+import type { LeadAttribution } from "@/lib/lead-attribution";
+import type { LeadAttributionLinkContext } from "@/lib/lead-attribution-links";
 import {
   ResourceLink,
   editorFallback,
@@ -12,6 +14,8 @@ import {
 
 type HeroBlockProps = {
   block: Extract<PageBlock, { type: "hero" }>;
+  leadAttribution?: LeadAttribution | null;
+  linkContext?: LeadAttributionLinkContext;
   renderMode: ResourcePageRenderMode;
   linkMode: ResourcePageLinkMode;
   isPrimaryHero?: boolean;
@@ -20,6 +24,8 @@ type HeroBlockProps = {
 
 export function HeroBlock({
   block,
+  leadAttribution,
+  linkContext,
   renderMode,
   linkMode,
   isPrimaryHero = false,
@@ -42,34 +48,15 @@ export function HeroBlock({
           "lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]",
         )}`}
       >
-        <div>
-          {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-            <p className="text-sm font-black text-[#066a99] uppercase">
-              {block.props.eyebrow}
-            </p>
-          )}
-          <HeadingTag className={heroHeadingClass}>
-            {editorFallback(block.props.heading, "Hero headline", renderMode)}
-          </HeadingTag>
-          {isBlockFieldVisible(block, "body") &&
-            (block.props.body || renderMode === "editor") && (
-              <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
-                {editorFallback(block.props.body, "Hero body copy", renderMode)}
-              </p>
-            )}
-          {isBlockFieldVisible(block, "cta") &&
-            ((block.props.ctaLabel && block.props.ctaHref) ||
-              renderMode === "editor") && (
-              <ResourceLink
-                href={block.props.ctaHref || "#"}
-                trackingName={block.props.ctaTrackingName}
-                linkMode={linkMode}
-                className={`${resourceCtaClass("primary")} mt-7`}
-              >
-                {editorFallback(block.props.ctaLabel, "CTA label", renderMode)}
-              </ResourceLink>
-            )}
-        </div>
+        <HeroIntro
+          block={block}
+          HeadingTag={HeadingTag}
+          headingClass={heroHeadingClass}
+          renderMode={renderMode}
+          leadAttribution={leadAttribution}
+          linkContext={linkContext}
+          linkMode={linkMode}
+        />
         <HeroSplitAside block={block} renderMode={renderMode} />
       </div>
     );
@@ -78,32 +65,16 @@ export function HeroBlock({
   if (block.variant === "compact") {
     return (
       <div className={`mx-auto max-w-3xl text-center ${heroSectionClass}`}>
-        {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-          <p className="text-sm font-black text-[#066a99] uppercase">
-            {block.props.eyebrow}
-          </p>
-        )}
-        <HeadingTag className={heroHeadingClass}>
-          {editorFallback(block.props.heading, "Hero headline", renderMode)}
-        </HeadingTag>
-        {isBlockFieldVisible(block, "body") &&
-          (block.props.body || renderMode === "editor") && (
-            <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 font-semibold text-slate-700">
-              {editorFallback(block.props.body, "Hero body copy", renderMode)}
-            </p>
-          )}
-        {isBlockFieldVisible(block, "cta") &&
-          ((block.props.ctaLabel && block.props.ctaHref) ||
-            renderMode === "editor") && (
-            <ResourceLink
-              href={block.props.ctaHref || "#"}
-              trackingName={block.props.ctaTrackingName}
-              linkMode={linkMode}
-              className={`${resourceCtaClass("primary")} mt-7`}
-            >
-              {editorFallback(block.props.ctaLabel, "CTA label", renderMode)}
-            </ResourceLink>
-          )}
+        <HeroIntro
+          block={block}
+          HeadingTag={HeadingTag}
+          headingClass={heroHeadingClass}
+          bodyClass="mx-auto mt-5 max-w-2xl text-lg leading-8 font-semibold text-slate-700"
+          renderMode={renderMode}
+          leadAttribution={leadAttribution}
+          linkContext={linkContext}
+          linkMode={linkMode}
+        />
       </div>
     );
   }
@@ -136,34 +107,112 @@ export function HeroBlock({
 
   return (
     <div className={`max-w-4xl ${heroSectionClass}`}>
-      {isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow && (
-        <p className="text-sm font-black text-[#066a99] uppercase">
-          {block.props.eyebrow}
-        </p>
-      )}
-      <HeadingTag className={heroHeadingClass}>
-        {editorFallback(block.props.heading, "Hero headline", renderMode)}
-      </HeadingTag>
-      {isBlockFieldVisible(block, "body") &&
-        (block.props.body || renderMode === "editor") && (
-          <p className="mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700">
-            {editorFallback(block.props.body, "Hero body copy", renderMode)}
-          </p>
-        )}
-      {isBlockFieldVisible(block, "cta") &&
-        ((block.props.ctaLabel && block.props.ctaHref) ||
-          renderMode === "editor") && (
-          <ResourceLink
-            href={block.props.ctaHref || "#"}
-            trackingName={block.props.ctaTrackingName}
-            linkMode={linkMode}
-            className={`${resourceCtaClass("primary")} mt-7`}
-          >
-            {editorFallback(block.props.ctaLabel, "CTA label", renderMode)}
-          </ResourceLink>
-        )}
+      <HeroIntro
+        block={block}
+        HeadingTag={HeadingTag}
+        headingClass={heroHeadingClass}
+        renderMode={renderMode}
+        leadAttribution={leadAttribution}
+        linkContext={linkContext}
+        linkMode={linkMode}
+      />
     </div>
   );
+}
+
+function HeroIntro({
+  block,
+  bodyClass = "mt-5 max-w-3xl text-lg leading-8 font-semibold text-slate-700",
+  HeadingTag,
+  headingClass,
+  leadAttribution,
+  linkContext,
+  linkMode,
+  renderMode,
+}: {
+  block: Extract<PageBlock, { type: "hero" }>;
+  bodyClass?: string;
+  HeadingTag: "h1" | "h2";
+  headingClass: string;
+  leadAttribution?: LeadAttribution | null;
+  linkContext?: LeadAttributionLinkContext;
+  linkMode: ResourcePageLinkMode;
+  renderMode: ResourcePageRenderMode;
+}) {
+  return (
+    <div>
+      <HeroEyebrow block={block} />
+      <HeadingTag className={headingClass}>
+        {editorFallback(block.props.heading, "Hero headline", renderMode)}
+      </HeadingTag>
+      <HeroBody block={block} className={bodyClass} renderMode={renderMode} />
+      <HeroCta
+        block={block}
+        leadAttribution={leadAttribution}
+        linkContext={linkContext}
+        linkMode={linkMode}
+        renderMode={renderMode}
+      />
+    </div>
+  );
+}
+
+function HeroEyebrow({
+  block,
+}: {
+  block: Extract<PageBlock, { type: "hero" }>;
+}) {
+  return isBlockFieldVisible(block, "eyebrow") && block.props.eyebrow ? (
+    <p className="text-sm font-black text-[#066a99] uppercase">
+      {block.props.eyebrow}
+    </p>
+  ) : null;
+}
+
+function HeroBody({
+  block,
+  className,
+  renderMode,
+}: {
+  block: Extract<PageBlock, { type: "hero" }>;
+  className: string;
+  renderMode: ResourcePageRenderMode;
+}) {
+  return isBlockFieldVisible(block, "body") &&
+    (block.props.body || renderMode === "editor") ? (
+    <p className={className}>
+      {editorFallback(block.props.body, "Hero body copy", renderMode)}
+    </p>
+  ) : null;
+}
+
+function HeroCta({
+  block,
+  leadAttribution,
+  linkContext,
+  linkMode,
+  renderMode,
+}: {
+  block: Extract<PageBlock, { type: "hero" }>;
+  leadAttribution?: LeadAttribution | null;
+  linkContext?: LeadAttributionLinkContext;
+  linkMode: ResourcePageLinkMode;
+  renderMode: ResourcePageRenderMode;
+}) {
+  return isBlockFieldVisible(block, "cta") &&
+    ((block.props.ctaLabel && block.props.ctaHref) ||
+      renderMode === "editor") ? (
+    <ResourceLink
+      href={block.props.ctaHref || "#"}
+      trackingName={block.props.ctaTrackingName}
+      leadAttribution={leadAttribution}
+      linkContext={linkContext}
+      linkMode={linkMode}
+      className={`${resourceCtaClass("primary")} mt-7`}
+    >
+      {editorFallback(block.props.ctaLabel, "CTA label", renderMode)}
+    </ResourceLink>
+  ) : null;
 }
 
 function HeroSplitAside({

@@ -26,18 +26,36 @@ const validLead: SubmitLeadInput = {
   budget: "$10k-$25k",
   timeline: "30 days",
   message: "I am ready to start.",
+  vpSessionId: "vp-session-1",
   sourcePath: "/book-a-call",
   landingPath: "/apply",
   referrer: "https://www.vendingpreneurs.com/book-a-call",
+  firstLandingUrl:
+    "https://www.vendingpreneurs.com/book-a-call?campaign_id=camp-123",
+  firstLandingPath: "/book-a-call",
+  firstReferrer: "https://www.google.com/",
+  firstTouchAt: "2026-05-04T09:00:00.000Z",
+  latestLandingUrl: "https://www.vendingpreneurs.com/apply",
+  latestLandingPath: "/apply",
+  latestReferrer: "https://www.vendingpreneurs.com/book-a-call",
+  latestTouchAt: "2026-05-04T09:05:00.000Z",
   sourcePageId: "11111111-1111-4111-8111-111111111111",
   sourcePageSlug: "start-vending",
   targetKeyword: "start vending business",
   sourceBlockId: "block_lead",
   sourceCtaTrackingName: "resource_lead_form",
+  clickedHref: "/apply",
   userAgent: "vitest",
   utmSource: "google",
   utmMedium: "cpc",
   utmCampaign: "spring",
+  gclid: "gclid-123",
+  campaignId: "camp-123",
+  campaignName: "Spring search",
+  adGroupId: "group-123",
+  adGroupName: "Search group",
+  adId: "ad-123",
+  adName: "Search ad",
 };
 
 function buildLeadClient({
@@ -88,12 +106,14 @@ function buildLeadClient({
   };
 }
 
+function successfulFetchMock() {
+  return vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+}
+
 describe("submitLead", () => {
   it("stores the audit row before sending notifications and marks success", async () => {
     const { client, mocks } = buildLeadClient();
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(new Response("{}", { status: 200 }));
+    const fetchMock = successfulFetchMock();
 
     const result = await submitLead(validLead, {
       client,
@@ -128,6 +148,21 @@ describe("submitLead", () => {
         source_cta_tracking_name: "resource_lead_form",
         utm_source: "google",
         metadata: expect.objectContaining({
+          attribution_session: expect.objectContaining({
+            vp_session_id: "vp-session-1",
+            first_landing_path: "/book-a-call",
+            latest_landing_path: "/apply",
+            clicked_href: "/apply",
+          }),
+          paid_attribution: expect.objectContaining({
+            gclid: "gclid-123",
+            paid_platform: "google_ads",
+            paid_source_key: "google_ads:camp-123:group-123:ad-123",
+            campaign_id: "camp-123",
+            ad_group_id: "group-123",
+            group_id: "group-123",
+            ad_id: "ad-123",
+          }),
           notification_email_configured: true,
         }),
       }),
@@ -345,5 +380,106 @@ describe("submitLead", () => {
         notification_error: "Lead email notification is not configured.",
       }),
     );
+  });
+
+  it("posts accepted leads to Money Page when configured", async () => {
+    const { client, mocks } = buildLeadClient();
+    const fetchMock = successfulFetchMock();
+
+    const result = await submitLead(validLead, {
+      client,
+      env: {
+        MONEY_PAGE_INGEST_URL: "https://money-page.test/api/ingest/connector",
+        MONEY_PAGE_SECRET: "shared-secret",
+      },
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-05-04T09:40:00.000Z"),
+    });
+
+    expect(result.status).toBe("accepted");
+    expect(mocks.insert).toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://money-page.test/api/ingest/connector",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+          "x-webhook-secret": "shared-secret",
+        }),
+      }),
+    );
+    const moneyPageBody = JSON.parse(
+      fetchMock.mock.calls[0]?.[1]?.body as string,
+    ) as {
+      event_type: string;
+      external_id: string;
+      email: string;
+      channel: string;
+      properties: Record<string, unknown>;
+    };
+    expect(moneyPageBody).toEqual(
+      expect.objectContaining({
+        event_type: "lead_captured",
+        external_id: "vending-website:lead_captured:vp-session-1:lead-1",
+        email: "jane@example.com",
+        channel: "google_ads",
+      }),
+    );
+    expect(moneyPageBody.properties).toEqual(
+      expect.objectContaining({
+        form_type: "apply",
+        vp_session_id: "vp-session-1",
+        source_path: "/book-a-call",
+        first_landing_path: "/book-a-call",
+        latest_landing_path: "/apply",
+        source_page_slug: "start-vending",
+        source_cta_tracking_name: "resource_lead_form",
+        clicked_href: "/apply",
+        gclid: "gclid-123",
+        paid_platform: "google_ads",
+        paid_source_key: "google_ads:camp-123:group-123:ad-123",
+        campaign_id: "camp-123",
+        ad_group_id: "group-123",
+        group_id: "group-123",
+        ad_id: "ad-123",
+        message_present: true,
+      }),
+    );
+    expect(moneyPageBody.properties).not.toHaveProperty("message");
+  });
+
+  it("does not fail accepted leads when Money Page tracking fails", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { client, mocks } = buildLeadClient();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response("bad gateway", { status: 502 }));
+
+    const result = await submitLead(validLead, {
+      client,
+      env: {
+        MONEY_PAGE_INGEST_URL: "https://money-page.test/api/ingest/connector",
+        MONEY_PAGE_SECRET: "shared-secret",
+      },
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-05-04T09:45:00.000Z"),
+    });
+
+    expect(result.status).toBe("accepted");
+    expect(result.leadId).toBe("lead-1");
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "notification_failed",
+        notification_error: "Lead email notification is not configured.",
+      }),
+    );
+    expect(warn).toHaveBeenCalledWith(
+      "money page lead tracking failed",
+      expect.objectContaining({
+        leadId: "lead-1",
+        error: expect.stringContaining("502"),
+      }),
+    );
+    warn.mockRestore();
   });
 });

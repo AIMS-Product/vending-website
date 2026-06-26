@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { AttributionSessionTracker } from "@/components/attribution/AttributionSessionTracker";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { siteUrl } from "@/lib/site";
@@ -52,6 +53,7 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
+        <AttributionSessionTracker />
         <Analytics />
         <SpeedInsights />
       </body>

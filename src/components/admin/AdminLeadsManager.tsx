@@ -101,7 +101,7 @@ export function AdminLeadsManager({
 
       <section className={adminPanelClass}>
         <div className="border-b border-slate-200 p-4">
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+          <div className="grid gap-4">
             <div>
               <h2 className="text-base font-semibold text-slate-950">
                 Lead backstop
@@ -111,7 +111,7 @@ export function AdminLeadsManager({
                 attribution, and Close sync recovery state.
               </p>
             </div>
-            <div className="grid gap-2 lg:grid-cols-2">
+            <div className="grid gap-2 xl:grid-cols-2">
               <FilterNav
                 activeValue={activeLifecycleStatus}
                 ariaLabel="Lifecycle filters"
@@ -311,12 +311,29 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
             Source details
           </h2>
           <dl className="mt-4 grid gap-3 text-sm">
+            <DetailMetric label="VP session" value={lead.vpSessionId} />
+            <DetailMetric label="First landing" value={lead.firstLandingPath} />
+            <DetailMetric
+              label="Latest landing"
+              value={lead.latestLandingPath}
+            />
             <DetailMetric label="Landing path" value={lead.landingPath} />
+            <DetailMetric label="Source path" value={lead.sourcePath} />
             <DetailMetric label="Block" value={lead.sourceBlockId} />
             <DetailMetric label="CTA" value={lead.sourceCtaTrackingName} />
+            <DetailMetric label="Clicked href" value={lead.clickedHref} />
             <DetailMetric label="UTM source" value={lead.utmSource} />
             <DetailMetric label="UTM medium" value={lead.utmMedium} />
             <DetailMetric label="UTM campaign" value={lead.utmCampaign} />
+            <DetailMetric label="Paid platform" value={lead.paidPlatform} />
+            <DetailMetric label="Paid key" value={lead.paidSourceKey} />
+            <DetailMetric label="Campaign ID" value={lead.campaignId} />
+            <DetailMetric label="Ad set ID" value={lead.adsetId} />
+            <DetailMetric label="Ad group ID" value={lead.adGroupId} />
+            <DetailMetric label="Group ID" value={lead.groupId} />
+            <DetailMetric label="Ad ID" value={lead.adId} />
+            <DetailMetric label="GCLID" value={lead.gclid} />
+            <DetailMetric label="FBCLID" value={lead.fbclid} />
           </dl>
         </section>
       </aside>

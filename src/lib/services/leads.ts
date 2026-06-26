@@ -3,6 +3,18 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { config } from "@/lib/config";
+import {
+  buildPaidAttributionProperties,
+  channelFromAttributionSignals,
+  paidAttributionMetadata,
+} from "@/lib/paid-attribution";
+import {
+  emailText,
+  leadSourceSchemaFields,
+  optionalText,
+  requiredText,
+  type LeadSourceInputFields,
+} from "@/lib/services/lead-source-fields";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
 
@@ -19,6 +31,8 @@ export type LeadNotificationEnv = {
   LEAD_NOTIFICATION_FROM?: string;
   LEAD_NOTIFICATION_SUBJECT_PREFIX?: string;
   SLACK_WEBHOOK_URL?: string;
+  MONEY_PAGE_INGEST_URL?: string;
+  MONEY_PAGE_SECRET?: string;
 };
 
 export type SubmitLeadResult = {
@@ -37,26 +51,6 @@ export type SubmitLeadDeps = {
   now?: () => Date;
 };
 
-const requiredText = (label: string, max: number) =>
-  z.preprocess(
-    stringifyFormValue,
-    z
-      .string()
-      .trim()
-      .min(1, `${label} is required.`)
-      .max(max, `${label} is too long.`),
-  );
-
-const optionalText = (label: string, max: number) =>
-  z
-    .preprocess(
-      stringifyFormValue,
-      z.string().trim().max(max, `${label} is too long.`),
-    )
-    .transform((value) => (value.length > 0 ? value : null))
-    .optional()
-    .transform((value) => value ?? null);
-
 const metadataSchema = z
   .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
   .optional()
@@ -67,9 +61,7 @@ const leadInputSchema = z
     formType: z.enum(["apply", "contact"]),
     idempotencyKey: optionalText("Submission key", 160),
     fullName: requiredText("Name", 140),
-    email: z
-      .preprocess(stringifyFormValue, z.email())
-      .transform((value) => value.toLowerCase()),
+    email: emailText(),
     phone: optionalText("Phone", 60),
     city: optionalText("City", 120),
     stateRegion: optionalText("State", 120),
@@ -77,20 +69,7 @@ const leadInputSchema = z
     budget: optionalText("Budget", 120),
     timeline: optionalText("Timeline", 120),
     message: optionalText("Message", 3000),
-    sourcePath: optionalText("Source path", 500),
-    landingPath: optionalText("Landing path", 500),
-    referrer: optionalText("Referrer", 1000),
-    sourcePageId: optionalText("Source page ID", 80),
-    sourcePageSlug: optionalText("Source page slug", 160),
-    targetKeyword: optionalText("Target keyword", 180),
-    sourceBlockId: optionalText("Source block ID", 120),
-    sourceCtaTrackingName: optionalText("Source CTA tracking name", 160),
-    userAgent: optionalText("User agent", 1000),
-    utmSource: optionalText("UTM source", 160),
-    utmMedium: optionalText("UTM medium", 160),
-    utmCampaign: optionalText("UTM campaign", 200),
-    utmTerm: optionalText("UTM term", 200),
-    utmContent: optionalText("UTM content", 200),
+    ...leadSourceSchemaFields,
     metadata: metadataSchema,
   })
   .superRefine((lead, ctx) => {
@@ -113,7 +92,7 @@ const applyQualificationFields = [
   { key: "timeline", label: "Timeline" },
 ] as const;
 
-export type SubmitLeadInput = {
+export type SubmitLeadInput = LeadSourceInputFields & {
   formType: LeadActionFormType;
   fullName: unknown;
   email: unknown;
@@ -125,20 +104,6 @@ export type SubmitLeadInput = {
   budget?: unknown;
   timeline?: unknown;
   message?: unknown;
-  sourcePath?: unknown;
-  landingPath?: unknown;
-  referrer?: unknown;
-  sourcePageId?: unknown;
-  sourcePageSlug?: unknown;
-  targetKeyword?: unknown;
-  sourceBlockId?: unknown;
-  sourceCtaTrackingName?: unknown;
-  userAgent?: unknown;
-  utmSource?: unknown;
-  utmMedium?: unknown;
-  utmCampaign?: unknown;
-  utmTerm?: unknown;
-  utmContent?: unknown;
   metadata?: Record<string, string | number | boolean | null>;
 };
 type ValidLeadInput = z.output<typeof leadInputSchema>;
@@ -198,6 +163,16 @@ export async function submitLead(
       };
 
   await updateNotificationStatus(client, inserted.id, patch);
+  const moneyPageTracking = await sendMoneyPageLeadEvent(lead, inserted.id, {
+    env,
+    fetchImpl,
+  });
+  if (!moneyPageTracking.ok) {
+    console.warn("money page lead tracking failed", {
+      leadId: inserted.id,
+      error: moneyPageTracking.error,
+    });
+  }
 
   return {
     status: "accepted",
@@ -206,11 +181,6 @@ export async function submitLead(
     notificationStatus: patch.status ?? "received",
     notificationError: patch.notification_error ?? null,
   };
-}
-
-function stringifyFormValue(value: unknown) {
-  if (value == null) return "";
-  return String(value);
 }
 
 function parseLeadInput(input: SubmitLeadInput) {
@@ -228,6 +198,8 @@ function notificationEnvFromConfig(): LeadNotificationEnv {
     LEAD_NOTIFICATION_FROM: config.LEAD_NOTIFICATION_FROM,
     LEAD_NOTIFICATION_SUBJECT_PREFIX: config.LEAD_NOTIFICATION_SUBJECT_PREFIX,
     SLACK_WEBHOOK_URL: config.SLACK_WEBHOOK_URL,
+    MONEY_PAGE_INGEST_URL: config.MONEY_PAGE_INGEST_URL,
+    MONEY_PAGE_SECRET: config.MONEY_PAGE_SECRET,
   };
 }
 
@@ -283,6 +255,8 @@ async function insertLead(
     utm_content: lead.utmContent,
     metadata: {
       ...lead.metadata,
+      ...paidAttributionMetadata(lead),
+      ...attributionSessionMetadata(lead),
       notification_email_configured: Boolean(
         env.RESEND_API_KEY &&
         env.LEAD_NOTIFICATION_TO &&
@@ -300,6 +274,26 @@ async function insertLead(
 
   if (error) throw new Error("Could not store lead submission.");
   return data;
+}
+
+function attributionSessionMetadata(
+  lead: ValidLeadInput,
+): Record<string, Json> {
+  const attributionSession = compactObject({
+    vp_session_id: lead.vpSessionId,
+    first_landing_url: lead.firstLandingUrl,
+    first_landing_path: lead.firstLandingPath,
+    first_referrer: lead.firstReferrer,
+    first_touch_at: lead.firstTouchAt,
+    latest_landing_url: lead.latestLandingUrl,
+    latest_landing_path: lead.latestLandingPath,
+    latest_referrer: lead.latestReferrer,
+    latest_touch_at: lead.latestTouchAt,
+    clicked_href: lead.clickedHref,
+  });
+  return Object.keys(attributionSession).length
+    ? { attribution_session: attributionSession }
+    : {};
 }
 
 async function updateNotificationStatus(
@@ -420,6 +414,103 @@ async function sendSlackWebhook(
   }
 
   return { ok: true };
+}
+
+async function sendMoneyPageLeadEvent(
+  lead: ValidLeadInput,
+  leadId: string,
+  {
+    env,
+    fetchImpl,
+  }: {
+    env: LeadNotificationEnv;
+    fetchImpl: typeof fetch;
+  },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!env.MONEY_PAGE_INGEST_URL || !env.MONEY_PAGE_SECRET) {
+    return { ok: true };
+  }
+
+  try {
+    const response = await fetchImpl(env.MONEY_PAGE_INGEST_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-webhook-secret": env.MONEY_PAGE_SECRET,
+      },
+      body: JSON.stringify(buildMoneyPagePayload(lead, leadId)),
+    });
+
+    if (!response.ok) {
+      const body = await safeResponseText(response);
+      return {
+        ok: false,
+        error: `Money Page webhook failed with ${response.status}${body ? `: ${body}` : ""}`,
+      };
+    }
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "unknown error",
+    };
+  }
+}
+
+function buildMoneyPagePayload(lead: ValidLeadInput, leadId: string) {
+  return {
+    event_type: "lead_captured",
+    external_id: `vending-website:lead_captured:${lead.vpSessionId ?? leadId}:${leadId}`,
+    occurred_at: new Date().toISOString(),
+    email: lead.email,
+    phone: lead.phone ?? undefined,
+    name: lead.fullName,
+    channel: channelFromAttributionSignals(lead),
+    properties: compactObject({
+      lead_id: leadId,
+      vp_session_id: lead.vpSessionId,
+      form_type: lead.formType,
+      source_path: lead.sourcePath,
+      landing_path: lead.landingPath,
+      referrer: lead.referrer,
+      first_landing_url: lead.firstLandingUrl,
+      first_landing_path: lead.firstLandingPath,
+      first_referrer: lead.firstReferrer,
+      first_touch_at: lead.firstTouchAt,
+      latest_landing_url: lead.latestLandingUrl,
+      latest_landing_path: lead.latestLandingPath,
+      latest_referrer: lead.latestReferrer,
+      latest_touch_at: lead.latestTouchAt,
+      source_page_id: lead.sourcePageId,
+      source_page_slug: lead.sourcePageSlug,
+      target_keyword: lead.targetKeyword,
+      source_block_id: lead.sourceBlockId,
+      source_cta_tracking_name: lead.sourceCtaTrackingName,
+      clicked_href: lead.clickedHref,
+      utm_source: lead.utmSource,
+      utm_medium: lead.utmMedium,
+      utm_campaign: lead.utmCampaign,
+      utm_term: lead.utmTerm,
+      utm_content: lead.utmContent,
+      ...buildPaidAttributionProperties(lead),
+      city: lead.city,
+      state_region: lead.stateRegion,
+      business_stage: lead.businessStage,
+      budget: lead.budget,
+      timeline: lead.timeline,
+      message_present: Boolean(lead.message),
+    }),
+  };
+}
+
+function compactObject(
+  input: Record<string, string | boolean | null | undefined>,
+) {
+  return Object.fromEntries(
+    Object.entries(input).filter(
+      ([, value]) => value !== null && value !== undefined && value !== "",
+    ),
+  );
 }
 
 function parseRecipients(value?: string) {

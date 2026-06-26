@@ -3,6 +3,17 @@ import "server-only";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import {
+  buildPaidAttributionProperties,
+  paidAttributionMetadata,
+} from "@/lib/paid-attribution";
+import {
+  emailText,
+  leadSourceSchemaFields,
+  optionalText,
+  requiredText,
+  type LeadSourceInputFields,
+} from "@/lib/services/lead-source-fields";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
 import {
@@ -21,7 +32,7 @@ type CloseSyncEventInsert =
   Database["public"]["Tables"]["close_sync_events"]["Insert"];
 type QualificationIntakeClient = Pick<SupabaseClient<Database>, "from">;
 
-export type CreateQualificationIntakeInput = {
+export type CreateQualificationIntakeInput = LeadSourceInputFields & {
   idempotencyKey?: unknown;
   fullName: unknown;
   email: unknown;
@@ -29,20 +40,6 @@ export type CreateQualificationIntakeInput = {
   qualificationFormId?: unknown;
   qualificationFormVersionId?: unknown;
   completionRedirectPath?: unknown;
-  sourcePath?: unknown;
-  landingPath?: unknown;
-  referrer?: unknown;
-  userAgent?: unknown;
-  sourcePageId?: unknown;
-  sourcePageSlug?: unknown;
-  targetKeyword?: unknown;
-  sourceBlockId?: unknown;
-  sourceCtaTrackingName?: unknown;
-  utmSource?: unknown;
-  utmMedium?: unknown;
-  utmCampaign?: unknown;
-  utmTerm?: unknown;
-  utmContent?: unknown;
   experimentKey?: unknown;
   variantKey?: unknown;
 };
@@ -82,50 +79,15 @@ export class QualificationIntakeValidationError extends Error {
   }
 }
 
-const requiredText = (label: string, max: number) =>
-  z.preprocess(
-    stringifyFormValue,
-    z
-      .string()
-      .trim()
-      .min(1, `${label} is required.`)
-      .max(max, `${label} is too long.`),
-  );
-
-const optionalText = (label: string, max: number) =>
-  z
-    .preprocess(
-      stringifyFormValue,
-      z.string().trim().max(max, `${label} is too long.`),
-    )
-    .transform((value) => (value.length > 0 ? value : null))
-    .optional()
-    .transform((value) => value ?? null);
-
 const intakeInputSchema = z.object({
   idempotencyKey: optionalText("Submission key", 160),
   fullName: requiredText("Name", 140),
-  email: z
-    .preprocess(stringifyFormValue, z.email())
-    .transform((value) => value.toLowerCase()),
+  email: emailText(),
   phone: requiredText("Phone", 60),
   qualificationFormId: optionalText("Qualification form", 80),
   qualificationFormVersionId: optionalText("Qualification form version", 80),
   completionRedirectPath: optionalText("Completion redirect", 500),
-  sourcePath: optionalText("Source path", 500),
-  landingPath: optionalText("Landing path", 500),
-  referrer: optionalText("Referrer", 1000),
-  userAgent: optionalText("User agent", 1000),
-  sourcePageId: optionalText("Source page ID", 80),
-  sourcePageSlug: optionalText("Source page slug", 160),
-  targetKeyword: optionalText("Target keyword", 180),
-  sourceBlockId: optionalText("Source block ID", 120),
-  sourceCtaTrackingName: optionalText("Source CTA tracking name", 160),
-  utmSource: optionalText("UTM source", 160),
-  utmMedium: optionalText("UTM medium", 160),
-  utmCampaign: optionalText("UTM campaign", 200),
-  utmTerm: optionalText("UTM term", 200),
-  utmContent: optionalText("UTM content", 200),
+  ...leadSourceSchemaFields,
   experimentKey: optionalText("Experiment key", 120),
   variantKey: optionalText("Variant key", 120),
 });
@@ -335,6 +297,8 @@ async function insertQualificationLead(
       completion_redirect_path: intake.completionRedirectPath,
       experiment_key: intake.experimentKey,
       variant_key: intake.variantKey,
+      ...paidAttributionMetadata(intake),
+      ...attributionSessionMetadata(intake),
     } satisfies Json,
   };
 
@@ -493,28 +457,60 @@ async function enqueueLeadCloseSync(
 
 function buildSourceAttribution(intake: ValidIntakeInput): Json {
   return {
+    vp_session_id: intake.vpSessionId,
     source_path: intake.sourcePath,
     landing_path: intake.landingPath,
     referrer: intake.referrer,
+    first_landing_url: intake.firstLandingUrl,
+    first_landing_path: intake.firstLandingPath,
+    first_referrer: intake.firstReferrer,
+    first_touch_at: intake.firstTouchAt,
+    latest_landing_url: intake.latestLandingUrl,
+    latest_landing_path: intake.latestLandingPath,
+    latest_referrer: intake.latestReferrer,
+    latest_touch_at: intake.latestTouchAt,
     source_page_id: intake.sourcePageId,
     source_page_slug: intake.sourcePageSlug,
     target_keyword: intake.targetKeyword,
     source_block_id: intake.sourceBlockId,
     source_cta_tracking_name: intake.sourceCtaTrackingName,
+    clicked_href: intake.clickedHref,
     user_agent: intake.userAgent,
     utm_source: intake.utmSource,
     utm_medium: intake.utmMedium,
     utm_campaign: intake.utmCampaign,
     utm_term: intake.utmTerm,
     utm_content: intake.utmContent,
+    ...buildPaidAttributionProperties(intake),
     experiment_key: intake.experimentKey,
     variant_key: intake.variantKey,
   };
 }
 
-function stringifyFormValue(value: unknown) {
-  if (value == null) return "";
-  return String(value);
+function attributionSessionMetadata(
+  intake: ValidIntakeInput,
+): Record<string, Json> {
+  const attributionSession = compactObject({
+    vp_session_id: intake.vpSessionId,
+    first_landing_url: intake.firstLandingUrl,
+    first_landing_path: intake.firstLandingPath,
+    first_referrer: intake.firstReferrer,
+    first_touch_at: intake.firstTouchAt,
+    latest_landing_url: intake.latestLandingUrl,
+    latest_landing_path: intake.latestLandingPath,
+    latest_referrer: intake.latestReferrer,
+    latest_touch_at: intake.latestTouchAt,
+    clicked_href: intake.clickedHref,
+  });
+  return Object.keys(attributionSession).length
+    ? { attribution_session: attributionSession }
+    : {};
+}
+
+function compactObject(input: Record<string, string | null>) {
+  return Object.fromEntries(
+    Object.entries(input).filter(([, value]) => value !== null && value !== ""),
+  );
 }
 
 function addDays(value: Date, days: number) {

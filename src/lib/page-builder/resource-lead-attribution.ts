@@ -1,4 +1,7 @@
-import type { LeadAttribution } from "@/lib/lead-attribution";
+import {
+  emptyLeadAttribution,
+  type LeadAttribution,
+} from "@/lib/lead-attribution";
 import {
   qualificationAttachmentSettings,
   type QualificationAttachmentSettings,
@@ -48,7 +51,7 @@ export function buildResourceLeadFormAttribution({
   const landingPath = `/resources/${page.slug}`;
 
   return {
-    ...(baseAttribution ?? emptyResourceLeadAttribution(landingPath)),
+    ...(baseAttribution ?? emptyLeadAttribution(landingPath)),
     source_page_id: page.id,
     source_page_slug: page.slug,
     target_keyword: page.target_keyword ?? "",
@@ -89,24 +92,6 @@ export function resolveResourceQualificationAttachment({
     experimentKey:
       blockSettings.experimentKey ?? pageSettings.experimentKey ?? null,
     variantKey: blockSettings.variantKey ?? pageSettings.variantKey ?? null,
-  };
-}
-
-function emptyResourceLeadAttribution(landingPath: string): LeadAttribution {
-  return {
-    source_path: landingPath,
-    landing_path: landingPath,
-    referrer: "",
-    source_page_id: "",
-    source_page_slug: "",
-    target_keyword: "",
-    source_block_id: "",
-    source_cta_tracking_name: "",
-    utm_source: "",
-    utm_medium: "",
-    utm_campaign: "",
-    utm_term: "",
-    utm_content: "",
   };
 }
 

@@ -4,26 +4,23 @@ import { describe, expect, it, vi } from "vitest";
 import { deriveLeadErrorSummary } from "./lead-error-summary";
 import { PublicLeadForm, type PublicLeadFormAction } from "./PublicLeadForm";
 import { initialLeadActionState } from "@/app/lead-action-state";
-import type { LeadAttribution } from "@/lib/lead-attribution";
+import {
+  emptyLeadAttribution,
+  type LeadAttribution,
+} from "@/lib/lead-attribution";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
 const attribution: LeadAttribution = {
+  ...emptyLeadAttribution("/apply"),
   source_path: "/apply",
   landing_path: "/apply",
   referrer: "",
   source_page_id: "page_1",
   source_page_slug: "apply",
   target_keyword: "",
-  source_block_id: "",
-  source_cta_tracking_name: "",
-  utm_source: "",
-  utm_medium: "",
-  utm_campaign: "",
-  utm_term: "",
-  utm_content: "",
 };
 
 const action: PublicLeadFormAction = async () => initialLeadActionState;

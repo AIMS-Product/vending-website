@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
-import type { LeadAttribution } from "@/lib/lead-attribution";
+import {
+  emptyLeadAttribution,
+  type LeadAttribution,
+} from "@/lib/lead-attribution";
 import {
   buildResourceLeadFormAttribution,
   resolveResourceQualificationAttachment,
 } from "./resource-lead-attribution";
 
 const baseAttribution: LeadAttribution = {
+  ...emptyLeadAttribution("/resources/start-vending"),
   source_path: "/resources/start-vending?utm_source=google",
   landing_path: "/resources/start-vending",
   referrer: "https://www.google.com/",
@@ -19,6 +23,22 @@ const baseAttribution: LeadAttribution = {
   utm_campaign: "spring",
   utm_term: "vending route",
   utm_content: "hero",
+  gclid: "test-gclid",
+  fbclid: "",
+  gbraid: "",
+  wbraid: "",
+  paid_platform: "google_ads",
+  paid_source_key: "google_ads:camp-1:group-1:ad-1",
+  campaign_id: "camp-1",
+  campaign_name: "Spring campaign",
+  adset_id: "",
+  adset_name: "",
+  ad_group_id: "group-1",
+  ad_group_name: "Search group",
+  group_id: "",
+  group_name: "",
+  ad_id: "ad-1",
+  ad_name: "Hero ad",
 };
 
 describe("buildResourceLeadFormAttribution", () => {
@@ -73,21 +93,30 @@ describe("buildResourceLeadFormAttribution", () => {
       utm_campaign: "",
       utm_term: "",
       utm_content: "",
+      gclid: "",
+      fbclid: "",
+      gbraid: "",
+      wbraid: "",
+      paid_platform: "",
+      paid_source_key: "",
+      campaign_id: "",
+      campaign_name: "",
+      adset_id: "",
+      adset_name: "",
+      ad_group_id: "",
+      ad_group_name: "",
+      group_id: "",
+      group_name: "",
+      ad_id: "",
+      ad_name: "",
     });
     expect(attribution).toEqual({
-      source_path: "/resources/route-planning",
-      landing_path: "/resources/route-planning",
-      referrer: "",
+      ...emptyLeadAttribution("/resources/route-planning"),
       source_page_id: "22222222-2222-4222-8222-222222222222",
       source_page_slug: "route-planning",
       target_keyword: "",
       source_block_id: "block_form",
       source_cta_tracking_name: "route_planning_form",
-      utm_source: "",
-      utm_medium: "",
-      utm_campaign: "",
-      utm_term: "",
-      utm_content: "",
     });
   });
 });

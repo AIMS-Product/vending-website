@@ -2,6 +2,11 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { config } from "@/lib/config";
+import {
+  jsonArrayAt as arrayAt,
+  jsonObjectAt as objectAt,
+  jsonStringAt as stringAt,
+} from "@/lib/json-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
 import {
@@ -57,9 +62,54 @@ const EVENT_FIELDS =
   "id,lead_submission_id,session_id,event_type,status,dedupe_key,payload,close_lead_id,close_contact_id,attempt_count,max_attempts,next_retry_at,last_attempted_at,synced_at,last_error,created_at,updated_at" as const;
 
 const LEAD_FIELDS =
-  "id,full_name,email,phone,source_path,landing_path,close_lead_id,close_contact_id,close_sync_status,close_sync_attempt_count,close_sync_last_error" as const;
+  "id,full_name,email,phone,source_path,landing_path,referrer,source_page_id,source_page_slug,target_keyword,source_block_id,source_cta_tracking_name,utm_source,utm_medium,utm_campaign,utm_term,utm_content,close_lead_id,close_contact_id,close_sync_status,close_sync_attempt_count,close_sync_last_error" as const;
 
 const RETRYABLE_STATUSES = new Set(["pending", "failed", "retrying"]);
+const LEAD_SOURCE_FIELDS = [
+  ["source_path", "source_path"],
+  ["landing_path", "landing_path"],
+  ["referrer", "referrer"],
+  ["source_page_id", "source_page_id"],
+  ["source_page_slug", "source_page_slug"],
+  ["target_keyword", "target_keyword"],
+  ["source_block_id", "source_block_id"],
+  ["source_cta_tracking_name", "source_cta_tracking_name"],
+  ["utm_source", "utm_source"],
+  ["utm_medium", "utm_medium"],
+  ["utm_campaign", "utm_campaign"],
+  ["utm_term", "utm_term"],
+  ["utm_content", "utm_content"],
+] as const;
+const PAID_ATTRIBUTION_FIELDS = [
+  "gclid",
+  "fbclid",
+  "gbraid",
+  "wbraid",
+  "paid_platform",
+  "paid_source_key",
+  "campaign_id",
+  "campaign_name",
+  "adset_id",
+  "adset_name",
+  "ad_group_id",
+  "ad_group_name",
+  "group_id",
+  "group_name",
+  "ad_id",
+  "ad_name",
+] as const;
+const SESSION_ATTRIBUTION_FIELDS = [
+  "vp_session_id",
+  "first_landing_url",
+  "first_landing_path",
+  "first_referrer",
+  "first_touch_at",
+  "latest_landing_url",
+  "latest_landing_path",
+  "latest_referrer",
+  "latest_touch_at",
+  "clicked_href",
+] as const;
 
 export async function adminRunCloseSync(
   deps: AdminRunCloseSyncDeps = {},
@@ -247,45 +297,149 @@ async function syncLeadCreateOrUpdate(
   },
 ): Promise<CloseContactInfo> {
   const contact = contactPayload(event, lead);
-  const existingLeadId = event.close_lead_id ?? lead?.close_lead_id;
-  const existingContactId = event.close_contact_id ?? lead?.close_contact_id;
-  if (existingLeadId) {
-    if (existingContactId)
-      await close.updateContact(existingContactId, contact);
-    return { leadId: existingLeadId, contactId: existingContactId ?? null };
+  const sourceFields = sourceCustomFields(event, lead, closeConfig);
+  const closeIds = existingCloseIds(event, lead);
+  if (closeIds.leadId) {
+    return updateKnownCloseLead(close, {
+      contact,
+      contactId: closeIds.contactId,
+      leadId: closeIds.leadId,
+      sourceFields,
+    });
   }
 
-  const email = primaryEmail(event, lead);
-  if (email) {
-    const matches = await close.searchContactsByEmail(email);
-    if (matches.data.length > 1) {
-      throw new CloseNeedsReviewError(
-        `Multiple Close contacts matched ${email}.`,
-      );
-    }
-    if (matches.data.length === 1) {
-      const match = matches.data[0];
-      if (!match.lead_id) {
-        throw new CloseNeedsReviewError(
-          `Close contact ${match.id} did not include a parent lead.`,
-        );
-      }
-      await close.updateContact(match.id, contact);
-      return { leadId: match.lead_id, contactId: match.id };
-    }
-  }
-
-  const created = await close.createLead({
-    name: contact.name ?? lead?.full_name ?? email ?? "Website lead",
-    ...(closeConfig.leadStatusId
-      ? { status_id: closeConfig.leadStatusId }
-      : {}),
-    contacts: [contact],
+  return syncUnknownCloseLead(close, {
+    contact,
+    event,
+    lead,
+    sourceFields,
+    closeConfig,
   });
+}
+
+function existingCloseIds(event: CloseSyncEventRow, lead: LeadRow | null) {
+  return {
+    leadId: event.close_lead_id ?? lead?.close_lead_id ?? null,
+    contactId: event.close_contact_id ?? lead?.close_contact_id ?? null,
+  };
+}
+
+async function syncUnknownCloseLead(
+  close: CloseClient,
+  {
+    closeConfig,
+    contact,
+    event,
+    lead,
+    sourceFields,
+  }: {
+    closeConfig: CloseConfig;
+    contact: CloseContactPayload;
+    event: CloseSyncEventRow;
+    lead: LeadRow | null;
+    sourceFields: Record<`custom.${string}`, unknown>;
+  },
+): Promise<CloseContactInfo> {
+  const email = primaryEmail(event, lead);
+  const match = await matchedContactForEmail(close, email);
+  if (match)
+    return updateMatchedCloseContact(close, match, contact, sourceFields);
+
+  const created = await close.createLead(
+    createLeadPayload({ closeConfig, contact, email, lead, sourceFields }),
+  );
   return {
     leadId: created.id,
     contactId: created.contacts?.[0]?.id ?? created.contact_ids?.[0] ?? null,
   };
+}
+
+async function matchedContactForEmail(
+  close: CloseClient,
+  email: string | null,
+) {
+  return email ? findSingleCloseContact(close, email) : null;
+}
+
+function createLeadPayload({
+  closeConfig,
+  contact,
+  email,
+  lead,
+  sourceFields,
+}: {
+  closeConfig: CloseConfig;
+  contact: CloseContactPayload;
+  email: string | null;
+  lead: LeadRow | null;
+  sourceFields: Record<`custom.${string}`, unknown>;
+}) {
+  return {
+    name: contact.name ?? lead?.full_name ?? email ?? "Website lead",
+    ...leadStatusPayload(closeConfig),
+    ...sourceFields,
+    contacts: [contact],
+  };
+}
+
+function leadStatusPayload({ leadStatusId }: CloseConfig) {
+  return leadStatusId ? { status_id: leadStatusId } : {};
+}
+
+async function updateKnownCloseLead(
+  close: CloseClient,
+  {
+    contact,
+    contactId,
+    leadId,
+    sourceFields,
+  }: {
+    contact: CloseContactPayload;
+    contactId?: string | null;
+    leadId: string;
+    sourceFields: Record<`custom.${string}`, unknown>;
+  },
+): Promise<CloseContactInfo> {
+  if (contactId) await close.updateContact(contactId, contact);
+  await updateCloseLeadSourceFields(close, leadId, sourceFields);
+  return { leadId, contactId: contactId ?? null };
+}
+
+async function findSingleCloseContact(close: CloseClient, email: string) {
+  const matches = await close.searchContactsByEmail(email);
+  if (matches.data.length > 1) {
+    throw new CloseNeedsReviewError(
+      `Multiple Close contacts matched ${email}.`,
+    );
+  }
+  return matches.data[0] ?? null;
+}
+
+async function updateMatchedCloseContact(
+  close: CloseClient,
+  match: Awaited<
+    ReturnType<CloseClient["searchContactsByEmail"]>
+  >["data"][number],
+  contact: CloseContactPayload,
+  sourceFields: Record<`custom.${string}`, unknown>,
+): Promise<CloseContactInfo> {
+  if (!match.lead_id) {
+    throw new CloseNeedsReviewError(
+      `Close contact ${match.id} did not include a parent lead.`,
+    );
+  }
+  await close.updateContact(match.id, contact);
+  await updateCloseLeadSourceFields(close, match.lead_id, sourceFields);
+  return { leadId: match.lead_id, contactId: match.id };
+}
+
+async function updateCloseLeadSourceFields(
+  close: CloseClient,
+  leadId: string,
+  sourceFields: Record<`custom.${string}`, unknown>,
+) {
+  if (Object.keys(sourceFields).length)
+    await close.updateLead(leadId, sourceFields);
 }
 
 async function syncQualificationEnrichment(
@@ -480,8 +634,8 @@ function qualificationCustomFields(
   const attribution = objectAt(payload, "attribution");
   return closeCustomFieldPayload(
     {
+      ...sourceAttributionValues(attribution, null),
       status: stringAt(qualification, "status"),
-      source_path: stringAt(attribution, "source_path"),
       experiment_key: stringAt(qualification, "experimentKey"),
       variant_key: stringAt(qualification, "variantKey"),
       state_market: stringAt(normalized, "state_market"),
@@ -497,6 +651,36 @@ function qualificationCustomFields(
     },
     closeConfig.customFields,
   );
+}
+
+function sourceCustomFields(
+  event: CloseSyncEventRow,
+  lead: LeadRow | null,
+  closeConfig: CloseConfig,
+): Record<`custom.${string}`, unknown> {
+  const attribution = objectAt(event.payload, "attribution");
+  return closeCustomFieldPayload(
+    sourceAttributionValues(attribution, lead),
+    closeConfig.customFields,
+  );
+}
+
+function sourceAttributionValues(
+  attribution: Record<string, Json>,
+  lead: LeadRow | null,
+) {
+  const values: Record<string, unknown> = {};
+  for (const [attributionKey, leadKey] of LEAD_SOURCE_FIELDS) {
+    values[attributionKey] =
+      stringAt(attribution, attributionKey) ?? lead?.[leadKey];
+  }
+  for (const key of SESSION_ATTRIBUTION_FIELDS) {
+    values[key] = stringAt(attribution, key);
+  }
+  for (const key of PAID_ATTRIBUTION_FIELDS) {
+    values[key] = stringAt(attribution, key);
+  }
+  return values;
 }
 
 function qualificationNoteHtml(payload: Json) {
@@ -532,28 +716,6 @@ function sanitizeSyncError(error: unknown, apiKey?: string) {
 function nextRetryAt(now: Date, attemptCount: number) {
   const minutes = Math.min(5 * 2 ** Math.max(0, attemptCount - 1), 24 * 60);
   return new Date(now.getTime() + minutes * 60 * 1000);
-}
-
-function objectAt(value: Json, key: string): Record<string, Json> {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  const child = value[key];
-  if (!child || typeof child !== "object" || Array.isArray(child)) return {};
-  return child as Record<string, Json>;
-}
-
-function arrayAt(value: Json, key: string): Json[] {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
-  const child = value[key];
-  return Array.isArray(child) ? child : [];
-}
-
-function stringAt(value: Record<string, Json>, key: string) {
-  const result = value[key];
-  if (typeof result === "string" && result.trim()) return result;
-  if (typeof result === "number" || typeof result === "boolean") {
-    return String(result);
-  }
-  return null;
 }
 
 function escapeHtml(value: string) {

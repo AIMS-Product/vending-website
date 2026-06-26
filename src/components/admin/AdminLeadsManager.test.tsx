@@ -24,6 +24,19 @@ const lead: AdminLeadListItem = {
   sourcePageSlug: "vending-machine-cost",
   sourceBlockId: "lead_block_1",
   sourceCtaTrackingName: "hero-lead-form",
+  vpSessionId: "vp-session-1",
+  firstLandingPath: "/resources/vending-machine-cost",
+  latestLandingPath: "/apply",
+  clickedHref: "/apply",
+  paidPlatform: "google_ads",
+  paidSourceKey: "google_ads:camp-1:group-1:ad-1",
+  campaignId: "camp-1",
+  adsetId: null,
+  adGroupId: "group-1",
+  groupId: "group-1",
+  adId: "ad-1",
+  gclid: "gclid-1",
+  fbclid: null,
   utmSource: "google",
   utmMedium: "cpc",
   utmCampaign: "starter-kit",
@@ -133,5 +146,8 @@ describe("AdminLeadDetailView", () => {
     expect(html).toContain("Retry sync");
     expect(html).toContain("pricing-page");
     expect(html).toContain("hero-a");
+    expect(html).toContain("vp-session-1");
+    expect(html).toContain("google_ads:camp-1:group-1:ad-1");
+    expect(html).toContain("gclid-1");
   });
 });

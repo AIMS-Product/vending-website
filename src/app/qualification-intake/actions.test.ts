@@ -32,16 +32,36 @@ function qualificationFormData(overrides: Record<string, string> = {}) {
   formData.set("qualification_completion_redirect_path", "/book-call");
   formData.set("qualification_experiment_key", "post_submit");
   formData.set("qualification_variant_key", "a");
+  formData.set("vp_session_id", "vp-session-1");
   formData.set("source_path", "/resources/start-vending?utm_source=google");
   formData.set("landing_path", "/resources/start-vending");
+  formData.set(
+    "first_landing_url",
+    "https://vendingpreneurs.com/resources/start-vending?campaign_id=camp-123",
+  );
+  formData.set("first_landing_path", "/resources/start-vending");
+  formData.set("first_referrer", "https://www.google.com/");
+  formData.set("first_touch_at", "2026-06-17T08:55:00.000Z");
+  formData.set("latest_landing_url", "https://vendingpreneurs.com/apply");
+  formData.set("latest_landing_path", "/apply");
+  formData.set(
+    "latest_referrer",
+    "https://vendingpreneurs.com/resources/start-vending",
+  );
+  formData.set("latest_touch_at", "2026-06-17T08:59:00.000Z");
   formData.set("source_page_id", "page_1");
   formData.set("source_page_slug", "start-vending");
   formData.set("target_keyword", "start vending business");
   formData.set("source_block_id", "block_form");
   formData.set("source_cta_tracking_name", "resource_lead_form");
+  formData.set("clicked_href", "/apply");
   formData.set("utm_source", "google");
   formData.set("utm_medium", "cpc");
   formData.set("utm_campaign", "launch");
+  formData.set("gclid", "gclid-123");
+  formData.set("campaign_id", "camp-123");
+  formData.set("ad_group_id", "group-123");
+  formData.set("ad_id", "ad-123");
 
   for (const [key, value] of Object.entries(overrides)) {
     formData.set(key, value);
@@ -90,20 +110,47 @@ describe("submitQualificationLead", () => {
       phone: "555-0123",
       qualificationFormId: "11111111-1111-4111-8111-111111111111",
       completionRedirectPath: "/book-call",
+      vpSessionId: "vp-session-1",
       sourcePath: "/resources/start-vending?utm_source=google",
       landingPath: "/resources/start-vending",
       referrer: "https://vendingpreneurs.com/resources/start-vending",
+      firstLandingUrl:
+        "https://vendingpreneurs.com/resources/start-vending?campaign_id=camp-123",
+      firstLandingPath: "/resources/start-vending",
+      firstReferrer: "https://www.google.com/",
+      firstTouchAt: "2026-06-17T08:55:00.000Z",
+      latestLandingUrl: "https://vendingpreneurs.com/apply",
+      latestLandingPath: "/apply",
+      latestReferrer: "https://vendingpreneurs.com/resources/start-vending",
+      latestTouchAt: "2026-06-17T08:59:00.000Z",
       userAgent: "vitest",
       sourcePageId: "page_1",
       sourcePageSlug: "start-vending",
       targetKeyword: "start vending business",
       sourceBlockId: "block_form",
       sourceCtaTrackingName: "resource_lead_form",
+      clickedHref: "/apply",
       utmSource: "google",
       utmMedium: "cpc",
       utmCampaign: "launch",
       utmTerm: "",
       utmContent: "",
+      gclid: "gclid-123",
+      fbclid: "",
+      gbraid: "",
+      wbraid: "",
+      paidPlatform: "",
+      paidSourceKey: "",
+      campaignId: "camp-123",
+      campaignName: "",
+      adsetId: "",
+      adsetName: "",
+      adGroupId: "group-123",
+      adGroupName: "",
+      groupId: "",
+      groupName: "",
+      adId: "ad-123",
+      adName: "",
       experimentKey: "post_submit",
       variantKey: "a",
     });

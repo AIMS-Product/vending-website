@@ -40,6 +40,13 @@ export function ResourcePageRenderer({
         ) : (
           <ResourcePageContentView
             content={page.published_content}
+            leadAttribution={leadAttribution}
+            linkAttributionContext={{
+              sourcePath: page.route_path,
+              sourcePageId: page.id,
+              sourcePageSlug: page.slug,
+              targetKeyword: page.target_keyword,
+            }}
             renderLeadForm={(block) => {
               const attribution = buildResourceLeadFormAttribution({
                 baseAttribution: leadAttribution,

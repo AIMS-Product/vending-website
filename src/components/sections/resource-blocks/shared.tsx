@@ -1,10 +1,25 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import type { LeadAttribution } from "@/lib/lead-attribution";
+import {
+  appendLeadAttributionToHref,
+  shouldPreserveLeadAttribution,
+  type LeadAttributionLinkContext,
+} from "@/lib/lead-attribution-links";
 import type { PageBlock, RichTextNode } from "@/lib/page-builder/blocks";
 
 export type ResourcePageRenderMode = "public" | "editor";
 export type ResourcePageLinkMode = "live" | "disabled";
 export type LeadFormBlock = Extract<PageBlock, { type: "lead_form" }>;
+type ResourceLinkProps = {
+  href: string;
+  trackingName?: string;
+  leadAttribution?: LeadAttribution | null;
+  linkContext?: LeadAttributionLinkContext;
+  linkMode: ResourcePageLinkMode;
+  className: string;
+  children: ReactNode;
+};
 
 export function previewLayoutClass(
   previewLayout: boolean | undefined,
@@ -14,69 +29,113 @@ export function previewLayoutClass(
   return previewLayout ? previewClass : responsiveClass;
 }
 
-export function ResourceLink({
-  href,
-  trackingName,
-  linkMode,
-  className,
-  children,
-}: {
-  href: string;
-  trackingName?: string;
-  linkMode: ResourcePageLinkMode;
-  className: string;
-  children: ReactNode;
-}) {
-  const disabled = linkMode === "disabled" || href === "#";
+export function ResourceLink(props: ResourceLinkProps) {
+  const state = resourceLinkState(props);
 
-  if (disabled) {
+  if (state.disabled) {
     return (
       <span
-        data-tracking-name={trackingName}
+        data-tracking-name={props.trackingName}
         aria-disabled="true"
-        className={className}
+        className={props.className}
       >
-        {children}
+        {props.children}
       </span>
     );
   }
 
-  if (href.startsWith("/") || href.startsWith("#")) {
+  if (isInternalHref(props.href)) {
     return (
-      <Link href={href} data-tracking-name={trackingName} className={className}>
-        {children}
+      <Link
+        href={state.resolvedHref}
+        data-tracking-name={props.trackingName}
+        data-vp-preserve-attribution={state.preserveAttribution}
+        data-vp-source-page-id={state.context.sourcePageId ?? undefined}
+        data-vp-source-page-slug={state.context.sourcePageSlug ?? undefined}
+        data-vp-target-keyword={state.context.targetKeyword ?? undefined}
+        data-vp-source-block-id={state.context.sourceBlockId ?? undefined}
+        data-vp-source-cta-tracking-name={
+          state.context.sourceCtaTrackingName ?? undefined
+        }
+        className={props.className}
+      >
+        {props.children}
       </Link>
     );
   }
 
   return (
     <a
-      href={href}
-      data-tracking-name={trackingName}
+      href={props.href}
+      data-tracking-name={props.trackingName}
       rel="noopener noreferrer"
-      className={className}
+      className={props.className}
     >
-      {children}
+      {props.children}
     </a>
   );
 }
 
+function resourceLinkState({
+  href,
+  leadAttribution,
+  linkContext,
+  linkMode,
+  trackingName,
+}: ResourceLinkProps) {
+  const context = {
+    ...linkContext,
+    sourceCtaTrackingName:
+      linkContext?.sourceCtaTrackingName ?? trackingName ?? null,
+    clickedHref: linkContext?.clickedHref ?? href,
+  };
+  const shouldPreserve = shouldPreserveLeadAttribution(href);
+  return {
+    context,
+    disabled: linkMode === "disabled" || href === "#",
+    preserveAttribution: shouldPreserve ? "true" : undefined,
+    resolvedHref: shouldPreserve
+      ? appendLeadAttributionToHref({
+          href,
+          attribution: leadAttribution,
+          context,
+        })
+      : href,
+  };
+}
+
+function isInternalHref(href: string) {
+  return href.startsWith("/") || href.startsWith("#");
+}
+
 export function RichTextParagraphContent({
   node,
+  leadAttribution,
+  linkContext,
   linkMode,
   renderMode,
 }: {
   node: Extract<RichTextNode, { type: "paragraph" }>;
+  leadAttribution?: LeadAttribution | null;
+  linkContext?: LeadAttributionLinkContext;
   linkMode: ResourcePageLinkMode;
   renderMode: ResourcePageRenderMode;
 }) {
-  return renderRichTextParagraph(node, linkMode, renderMode);
+  return renderRichTextParagraph(
+    node,
+    linkMode,
+    renderMode,
+    leadAttribution,
+    linkContext,
+  );
 }
 
 function renderRichTextParagraph(
   node: Extract<RichTextNode, { type: "paragraph" }>,
   linkMode: ResourcePageLinkMode,
   renderMode: ResourcePageRenderMode,
+  leadAttribution?: LeadAttribution | null,
+  linkContext?: LeadAttributionLinkContext,
 ) {
   if (!("spans" in node)) {
     return editorFallback(node.text, "Paragraph copy", renderMode);
@@ -95,6 +154,8 @@ function renderRichTextParagraph(
       <ResourceLink
         key={richTextSpanKey(span, index)}
         href={span.href}
+        leadAttribution={leadAttribution}
+        linkContext={linkContext}
         linkMode={linkMode}
         className="text-[#066a99] underline underline-offset-4 hover:text-[#111111]"
       >

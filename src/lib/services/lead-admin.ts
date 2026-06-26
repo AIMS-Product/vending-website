@@ -1,6 +1,10 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  jsonObjectAt as objectAt,
+  jsonStringAt as stringAt,
+} from "@/lib/json-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
 
@@ -55,6 +59,19 @@ export type AdminLeadListItem = {
   sourcePageSlug: string | null;
   sourceBlockId: string | null;
   sourceCtaTrackingName: string | null;
+  vpSessionId: string | null;
+  firstLandingPath: string | null;
+  latestLandingPath: string | null;
+  clickedHref: string | null;
+  paidPlatform: string | null;
+  paidSourceKey: string | null;
+  campaignId: string | null;
+  adsetId: string | null;
+  adGroupId: string | null;
+  groupId: string | null;
+  adId: string | null;
+  gclid: string | null;
+  fbclid: string | null;
   utmSource: string | null;
   utmMedium: string | null;
   utmCampaign: string | null;
@@ -114,7 +131,7 @@ export class LeadAdminServiceError extends Error {
 }
 
 const LEAD_FIELDS =
-  "id,full_name,email,phone,message,state_region,business_stage,budget,timeline,lifecycle_status,qualification_summary,latest_qualification_session_id,close_sync_status,close_sync_last_error,source_path,landing_path,source_page_slug,source_block_id,source_cta_tracking_name,utm_source,utm_medium,utm_campaign,created_at" as const;
+  "id,full_name,email,phone,message,state_region,business_stage,budget,timeline,lifecycle_status,qualification_summary,latest_qualification_session_id,close_sync_status,close_sync_last_error,source_path,landing_path,source_page_slug,source_block_id,source_cta_tracking_name,utm_source,utm_medium,utm_campaign,metadata,created_at" as const;
 const SESSION_FIELDS =
   "id,lead_submission_id,status,answer_count,current_question_id,normalized_summary,experiment_key,variant_key,started_at,completed_at,stale_at,expires_at,created_at" as const;
 const ANSWER_FIELDS =
@@ -382,6 +399,8 @@ function mapLeadListItem(
   session: SessionRow | null,
   event: EventRow | null,
 ): AdminLeadListItem {
+  const attributionSession = objectAt(lead.metadata, "attribution_session");
+  const paidAttribution = objectAt(lead.metadata, "paid_attribution");
   return {
     id: lead.id,
     fullName: lead.full_name,
@@ -396,6 +415,19 @@ function mapLeadListItem(
     sourcePageSlug: lead.source_page_slug,
     sourceBlockId: lead.source_block_id,
     sourceCtaTrackingName: lead.source_cta_tracking_name,
+    vpSessionId: stringAt(attributionSession, "vp_session_id"),
+    firstLandingPath: stringAt(attributionSession, "first_landing_path"),
+    latestLandingPath: stringAt(attributionSession, "latest_landing_path"),
+    clickedHref: stringAt(attributionSession, "clicked_href"),
+    paidPlatform: stringAt(paidAttribution, "paid_platform"),
+    paidSourceKey: stringAt(paidAttribution, "paid_source_key"),
+    campaignId: stringAt(paidAttribution, "campaign_id"),
+    adsetId: stringAt(paidAttribution, "adset_id"),
+    adGroupId: stringAt(paidAttribution, "ad_group_id"),
+    groupId: stringAt(paidAttribution, "group_id"),
+    adId: stringAt(paidAttribution, "ad_id"),
+    gclid: stringAt(paidAttribution, "gclid"),
+    fbclid: stringAt(paidAttribution, "fbclid"),
     utmSource: lead.utm_source,
     utmMedium: lead.utm_medium,
     utmCampaign: lead.utm_campaign,

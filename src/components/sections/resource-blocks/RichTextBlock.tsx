@@ -1,5 +1,7 @@
 import type { PageBlock } from "@/lib/page-builder/blocks";
 import { isBlockFieldVisible } from "@/lib/page-builder/block-field-visibility";
+import type { LeadAttribution } from "@/lib/lead-attribution";
+import type { LeadAttributionLinkContext } from "@/lib/lead-attribution-links";
 import {
   RichTextParagraphContent,
   editorFallback,
@@ -10,12 +12,16 @@ import {
 
 type RichTextBlockProps = {
   block: Extract<PageBlock, { type: "rich_text" }>;
+  leadAttribution?: LeadAttribution | null;
+  linkContext?: LeadAttributionLinkContext;
   renderMode: ResourcePageRenderMode;
   linkMode: ResourcePageLinkMode;
 };
 
 export function RichTextBlock({
   block,
+  leadAttribution,
+  linkContext,
   renderMode,
   linkMode,
 }: RichTextBlockProps) {
@@ -99,6 +105,8 @@ export function RichTextBlock({
               <p key={richTextNodeKey(node, nodeIndex)}>
                 <RichTextParagraphContent
                   node={node}
+                  leadAttribution={leadAttribution}
+                  linkContext={linkContext}
                   linkMode={linkMode}
                   renderMode={renderMode}
                 />

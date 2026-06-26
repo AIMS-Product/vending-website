@@ -3,7 +3,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { PublicLeadForm, type PublicLeadFormAction } from "./PublicLeadForm";
 import { initialLeadActionState } from "@/app/lead-action-state";
-import type { LeadAttribution } from "@/lib/lead-attribution";
+import {
+  emptyLeadAttribution,
+  type LeadAttribution,
+} from "@/lib/lead-attribution";
 
 // PublicLeadForm calls useRouter() for the apply-success redirect; SSR has no
 // app-router context, so provide a minimal mock. The redirect/panel decision
@@ -14,6 +17,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const attribution: LeadAttribution = {
+  ...emptyLeadAttribution("/resources/start-vending"),
   source_path: "/resources/start-vending",
   landing_path: "/resources/start-vending",
   referrer: "",
@@ -27,6 +31,22 @@ const attribution: LeadAttribution = {
   utm_campaign: "",
   utm_term: "",
   utm_content: "",
+  gclid: "test-gclid",
+  fbclid: "",
+  gbraid: "",
+  wbraid: "",
+  paid_platform: "google_ads",
+  paid_source_key: "",
+  campaign_id: "camp-1",
+  campaign_name: "Campaign one",
+  adset_id: "",
+  adset_name: "",
+  ad_group_id: "group-1",
+  ad_group_name: "Ad group one",
+  group_id: "",
+  group_name: "",
+  ad_id: "ad-1",
+  ad_name: "Ad one",
 };
 
 const action: PublicLeadFormAction = async () => initialLeadActionState;
@@ -48,6 +68,10 @@ describe("PublicLeadForm", () => {
     expect(html).toContain("Available startup budget");
     expect(html).toContain("Launch timeline");
     expect(html).toContain('name="source_page_slug"');
+    expect(html).toContain('name="gclid"');
+    expect(html).toContain('value="test-gclid"');
+    expect(html).toContain('name="ad_group_id"');
+    expect(html).toContain('value="group-1"');
   });
 
   it("keeps compact contact forms lightweight", () => {

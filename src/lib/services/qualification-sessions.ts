@@ -246,11 +246,11 @@ export async function completeQualificationSession(
   };
 }
 
-export function hashQualificationSessionToken(token: string) {
+function hashQualificationSessionToken(token: string) {
   return `sha256:${createHash("sha256").update(token).digest("hex")}`;
 }
 
-export function safeCompletionRedirect(path: string | null | undefined) {
+function safeCompletionRedirect(path: string | null | undefined) {
   if (!path) return "/thank-you";
   if (!path.startsWith("/") || path.startsWith("//")) return "/thank-you";
   return path;
@@ -682,6 +682,7 @@ function answerValueForStorage(value: unknown): Json {
 
 function sourceAttributionFor(session: QualificationSessionRow): Json {
   return {
+    ...jsonObject(session.consent_source_attribution),
     source_path: session.source_path,
     landing_path: session.landing_path,
     referrer: session.referrer,
@@ -699,6 +700,11 @@ function sourceAttributionFor(session: QualificationSessionRow): Json {
     experiment_key: session.experiment_key,
     variant_key: session.variant_key,
   };
+}
+
+function jsonObject(value: Json): Record<string, Json> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, Json>;
 }
 
 function questionLabel(snapshot: Json) {

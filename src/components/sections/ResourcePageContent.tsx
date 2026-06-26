@@ -5,6 +5,8 @@ import {
   type PageBlock,
   type PageContent,
 } from "@/lib/page-builder/blocks";
+import type { LeadAttribution } from "@/lib/lead-attribution";
+import type { LeadAttributionLinkContext } from "@/lib/lead-attribution-links";
 import {
   getVideoEmbed,
   type VideoEmbed,
@@ -30,13 +32,24 @@ import {
 type ResourcePageContentViewProps = {
   content: PageContent;
   renderLeadForm?: (block: LeadFormBlock) => ReactNode;
+  leadAttribution?: LeadAttribution | null;
+  linkAttributionContext?: ResourcePageAttributionContext;
   renderMode?: ResourcePageRenderMode;
   linkMode?: ResourcePageLinkMode;
+};
+
+type ResourcePageAttributionContext = {
+  sourcePath: string;
+  sourcePageId: string;
+  sourcePageSlug: string;
+  targetKeyword: string | null;
 };
 
 type ResourcePageBlockViewProps = {
   block: PageBlock;
   renderLeadForm?: (block: LeadFormBlock) => ReactNode;
+  leadAttribution?: LeadAttribution | null;
+  linkAttributionContext?: ResourcePageAttributionContext;
   renderMode?: ResourcePageRenderMode;
   linkMode?: ResourcePageLinkMode;
   isPrimaryHero?: boolean;
@@ -58,6 +71,8 @@ export function ResourcePageBlockPreview({ block }: { block: PageBlock }) {
 export function ResourcePageContentView({
   content,
   renderLeadForm,
+  leadAttribution,
+  linkAttributionContext,
   renderMode = "public",
   linkMode = "live",
 }: ResourcePageContentViewProps) {
@@ -78,6 +93,8 @@ export function ResourcePageContentView({
                     key={block.id}
                     block={block}
                     renderLeadForm={renderLeadForm}
+                    leadAttribution={leadAttribution}
+                    linkAttributionContext={linkAttributionContext}
                     renderMode={renderMode}
                     linkMode={linkMode}
                     isPrimaryHero={block.id === primaryHeroId}
@@ -95,15 +112,21 @@ export function ResourcePageContentView({
 function ResourcePageBlockView({
   block,
   renderLeadForm,
+  leadAttribution,
+  linkAttributionContext,
   renderMode = "public",
   linkMode = "live",
   isPrimaryHero = false,
   previewLayout = false,
 }: ResourcePageBlockViewProps) {
+  const linkContext = blockLinkContext(block, linkAttributionContext);
+
   if (block.type === "hero") {
     return (
       <HeroBlock
         block={block}
+        leadAttribution={leadAttribution}
+        linkContext={linkContext}
         renderMode={renderMode}
         linkMode={linkMode}
         isPrimaryHero={isPrimaryHero}
@@ -116,6 +139,8 @@ function ResourcePageBlockView({
     return (
       <RichTextBlock
         block={block}
+        leadAttribution={leadAttribution}
+        linkContext={linkContext}
         renderMode={renderMode}
         linkMode={linkMode}
       />
@@ -259,6 +284,8 @@ function ResourcePageBlockView({
             {showFallbackLink && (
               <ResourceLink
                 href={block.props.url || "#"}
+                leadAttribution={leadAttribution}
+                linkContext={linkContext}
                 linkMode={linkMode}
                 className="mt-4 inline-flex text-sm font-black text-[#066a99] uppercase hover:text-[#111111]"
               >
@@ -286,6 +313,8 @@ function ResourcePageBlockView({
         {showFallbackLink && (
           <ResourceLink
             href={block.props.url || "#"}
+            leadAttribution={leadAttribution}
+            linkContext={linkContext}
             linkMode={linkMode}
             className="mt-3 inline-flex text-sm font-black text-[#066a99] uppercase hover:text-[#111111]"
           >
@@ -405,6 +434,8 @@ function ResourcePageBlockView({
                   renderMode === "editor") && (
                   <ResourceLink
                     href={card.href || "#"}
+                    leadAttribution={leadAttribution}
+                    linkContext={linkContext}
                     linkMode={linkMode}
                     className="mt-4 inline-flex text-sm font-black text-[#066a99] uppercase hover:text-[#111111]"
                   >
@@ -627,6 +658,8 @@ function ResourcePageBlockView({
       <ResourceLink
         href={block.props.href || "#"}
         trackingName={block.props.trackingName}
+        leadAttribution={leadAttribution}
+        linkContext={linkContext}
         linkMode={linkMode}
         className={resourceCtaClass(block.variant)}
       >
@@ -634,6 +667,20 @@ function ResourcePageBlockView({
       </ResourceLink>
     </div>
   );
+}
+
+function blockLinkContext(
+  block: PageBlock,
+  pageContext?: ResourcePageAttributionContext,
+): LeadAttributionLinkContext | undefined {
+  if (!pageContext) return undefined;
+  return {
+    sourcePath: pageContext.sourcePath,
+    sourcePageId: pageContext.sourcePageId,
+    sourcePageSlug: pageContext.sourcePageSlug,
+    targetKeyword: pageContext.targetKeyword,
+    sourceBlockId: block.id,
+  };
 }
 
 function ResourceLeadFormPreview({
