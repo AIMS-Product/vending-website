@@ -62,10 +62,12 @@ function buildLeadClient({
   existing = null,
   insertError = null,
   updateError = null,
+  closeSyncInsertError = null,
 }: {
   existing?: Record<string, unknown> | null;
   insertError?: Record<string, unknown> | null;
   updateError?: Record<string, unknown> | null;
+  closeSyncInsertError?: Record<string, unknown> | null;
 } = {}) {
   const maybeSingle = vi
     .fn()
@@ -79,6 +81,9 @@ function buildLeadClient({
       status: "received",
       notification_error: null,
       notification_sent_at: null,
+      close_contact_id: null,
+      close_lead_id: null,
+      close_sync_status: null,
     },
     error: insertError,
   });
@@ -88,7 +93,23 @@ function buildLeadClient({
   const eqAfterUpdate = vi.fn().mockResolvedValue({ error: updateError });
   const update = vi.fn().mockReturnValue({ eq: eqAfterUpdate });
 
-  const from = vi.fn().mockReturnValue({ select, insert, update });
+  const closeSyncSingle = vi.fn().mockResolvedValue({
+    data: { id: "close-sync-event-1" },
+    error: closeSyncInsertError,
+  });
+  const closeSyncSelectAfterInsert = vi
+    .fn()
+    .mockReturnValue({ single: closeSyncSingle });
+  const closeSyncInsert = vi
+    .fn()
+    .mockReturnValue({ select: closeSyncSelectAfterInsert });
+
+  const from = vi.fn((table: string) => {
+    if (table === "close_sync_events") {
+      return { insert: closeSyncInsert };
+    }
+    return { select, insert, update };
+  });
 
   return {
     client: { from } as unknown as Pick<SupabaseClient<Database>, "from">,
@@ -102,6 +123,9 @@ function buildLeadClient({
       single,
       update,
       eqAfterUpdate,
+      closeSyncInsert,
+      closeSyncSelectAfterInsert,
+      closeSyncSingle,
     },
   };
 }
@@ -131,6 +155,9 @@ describe("submitLead", () => {
     });
 
     expect(mocks.insert.mock.invocationCallOrder[0]).toBeLessThan(
+      fetchMock.mock.invocationCallOrder[0],
+    );
+    expect(mocks.closeSyncInsert.mock.invocationCallOrder[0]).toBeLessThan(
       fetchMock.mock.invocationCallOrder[0],
     );
     expect(mocks.insert).toHaveBeenCalledWith(
@@ -188,6 +215,45 @@ describe("submitLead", () => {
     expect(emailBody.text).toContain("Timeline: 30 days");
     expect(emailBody.text).toContain("Source CTA: resource_lead_form");
     expect(emailBody.text).toContain("Message:\nI am ready to start.");
+    expect(mocks.closeSyncInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lead_submission_id: "lead-1",
+        session_id: null,
+        event_type: "lead_create_or_update",
+        status: "pending",
+        dedupe_key: "lead_create_or_update:lead-1:vp-session-1",
+        next_retry_at: "2026-05-04T09:00:00.000Z",
+        payload: expect.objectContaining({
+          source: "public_lead_form",
+          contact: {
+            full_name: "Jane Applicant",
+            email: "jane@example.com",
+            phone: "555-0101",
+          },
+          attribution: expect.objectContaining({
+            vp_session_id: "vp-session-1",
+            source_path: "/book-a-call",
+            first_landing_path: "/book-a-call",
+            latest_landing_path: "/apply",
+            source_page_slug: "start-vending",
+            source_cta_tracking_name: "resource_lead_form",
+            clicked_href: "/apply",
+            gclid: "gclid-123",
+            paid_platform: "google_ads",
+            paid_source_key: "google_ads:camp-123:group-123:ad-123",
+            campaign_id: "camp-123",
+            ad_group_id: "group-123",
+            group_id: "group-123",
+            ad_id: "ad-123",
+          }),
+        }),
+      }),
+    );
+    expect(mocks.update).toHaveBeenCalledWith({
+      close_sync_status: "pending",
+      close_sync_next_retry_at: "2026-05-04T09:00:00.000Z",
+      close_sync_last_error: null,
+    });
     expect(mocks.update).toHaveBeenCalledWith({
       status: "notified",
       notification_attempted_at: "2026-05-04T09:00:00.000Z",
@@ -310,6 +376,9 @@ describe("submitLead", () => {
         status: "notified",
         notification_error: null,
         notification_sent_at: "2026-05-04T09:00:00.000Z",
+        close_contact_id: null,
+        close_lead_id: null,
+        close_sync_status: "pending",
       },
     });
     const fetchMock = vi.fn();

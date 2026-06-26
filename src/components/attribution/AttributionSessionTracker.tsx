@@ -19,6 +19,8 @@ type AttributionEventType = "landing_viewed" | "cta_clicked";
 
 export function AttributionSessionTracker() {
   useEffect(() => {
+    if (shouldSkipAttributionTracking(window.location.pathname)) return;
+
     const session = refreshStoredSession();
     if (session) {
       emitAttributionEvent("landing_viewed", session, {
@@ -36,6 +38,10 @@ export function AttributionSessionTracker() {
   }, []);
 
   return null;
+}
+
+export function shouldSkipAttributionTracking(pathname: string) {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
 }
 
 function handleAttributionClick(event: MouseEvent) {

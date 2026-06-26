@@ -21,7 +21,19 @@ import type { Database, Json, Tables } from "@/types/database";
 type LeadRow = Tables<"lead_submissions">;
 type LeadInsert = Database["public"]["Tables"]["lead_submissions"]["Insert"];
 type LeadUpdate = Database["public"]["Tables"]["lead_submissions"]["Update"];
+type CloseSyncEventInsert =
+  Database["public"]["Tables"]["close_sync_events"]["Insert"];
 type LeadClient = Pick<SupabaseClient<Database>, "from">;
+type StoredLead = Pick<
+  LeadRow,
+  | "id"
+  | "status"
+  | "notification_error"
+  | "notification_sent_at"
+  | "close_contact_id"
+  | "close_lead_id"
+  | "close_sync_status"
+>;
 
 export type LeadActionFormType = "apply" | "contact";
 
@@ -91,6 +103,8 @@ const applyQualificationFields = [
   { key: "budget", label: "Budget" },
   { key: "timeline", label: "Timeline" },
 ] as const;
+const STORED_LEAD_FIELDS =
+  "id,status,notification_error,notification_sent_at,close_contact_id,close_lead_id,close_sync_status" as const;
 
 export type SubmitLeadInput = LeadSourceInputFields & {
   formType: LeadActionFormType;
@@ -129,9 +143,11 @@ export async function submitLead(
   const now = deps.now ?? (() => new Date());
   const idFactory = deps.idFactory ?? (() => crypto.randomUUID());
   const idempotencyKey = lead.idempotencyKey ?? idFactory();
+  const closeSyncQueuedAt = now().toISOString();
 
   const existing = await findExistingLead(client, idempotencyKey);
   if (existing) {
+    await ensurePublicLeadCloseSync(client, lead, existing, closeSyncQueuedAt);
     return {
       status: "accepted",
       leadId: existing.id,
@@ -142,6 +158,7 @@ export async function submitLead(
   }
 
   const inserted = await insertLead(client, lead, idempotencyKey, env);
+  await ensurePublicLeadCloseSync(client, lead, inserted, closeSyncQueuedAt);
   const notification = await sendLeadNotifications(lead, {
     env,
     fetchImpl,
@@ -206,13 +223,10 @@ function notificationEnvFromConfig(): LeadNotificationEnv {
 async function findExistingLead(
   client: LeadClient,
   idempotencyKey: string,
-): Promise<Pick<
-  LeadRow,
-  "id" | "status" | "notification_error" | "notification_sent_at"
-> | null> {
+): Promise<StoredLead | null> {
   const { data, error } = await client
     .from("lead_submissions")
-    .select("id,status,notification_error,notification_sent_at")
+    .select(STORED_LEAD_FIELDS)
     .eq("idempotency_key", idempotencyKey)
     .maybeSingle();
 
@@ -269,11 +283,83 @@ async function insertLead(
   const { data, error } = await client
     .from("lead_submissions")
     .insert(row)
-    .select("id,status,notification_error,notification_sent_at")
+    .select(STORED_LEAD_FIELDS)
     .single();
 
   if (error) throw new Error("Could not store lead submission.");
   return data;
+}
+
+async function ensurePublicLeadCloseSync(
+  client: LeadClient,
+  lead: ValidLeadInput,
+  storedLead: StoredLead,
+  nowIso: string,
+) {
+  if (storedLead.close_sync_status) return;
+
+  const { error } = await client
+    .from("close_sync_events")
+    .insert(buildPublicLeadCloseSyncEvent(lead, storedLead, nowIso))
+    .select("id")
+    .single();
+
+  if (error) {
+    throw new Error("Lead was stored but Close sync was not queued.");
+  }
+
+  await updateCloseSyncStatus(client, storedLead.id, {
+    close_sync_status: "pending",
+    close_sync_next_retry_at: nowIso,
+    close_sync_last_error: null,
+  });
+}
+
+function buildPublicLeadCloseSyncEvent(
+  lead: ValidLeadInput,
+  storedLead: StoredLead,
+  nowIso: string,
+): CloseSyncEventInsert {
+  return {
+    lead_submission_id: storedLead.id,
+    session_id: null,
+    event_type: "lead_create_or_update",
+    status: "pending",
+    dedupe_key: `lead_create_or_update:${storedLead.id}:${lead.vpSessionId ?? lead.idempotencyKey ?? "public"}`,
+    next_retry_at: nowIso,
+    close_contact_id: storedLead.close_contact_id,
+    close_lead_id: storedLead.close_lead_id,
+    payload: {
+      source: "public_lead_form",
+      contact: {
+        full_name: lead.fullName,
+        email: lead.email,
+        phone: lead.phone,
+      },
+      attribution: buildSourceAttribution(lead),
+      lead: {
+        formType: lead.formType,
+        city: lead.city,
+        stateRegion: lead.stateRegion,
+        businessStage: lead.businessStage,
+        budget: lead.budget,
+        timeline: lead.timeline,
+      },
+    } satisfies Json,
+  };
+}
+
+function buildSourceAttribution(lead: ValidLeadInput): Json {
+  return {
+    ...sourceAttributionProperties(lead),
+    user_agent: lead.userAgent,
+    utm_source: lead.utmSource,
+    utm_medium: lead.utmMedium,
+    utm_campaign: lead.utmCampaign,
+    utm_term: lead.utmTerm,
+    utm_content: lead.utmContent,
+    ...buildPaidAttributionProperties(lead),
+  };
 }
 
 function attributionSessionMetadata(
@@ -308,6 +394,21 @@ async function updateNotificationStatus(
 
   if (error) {
     throw new Error("Lead was stored but notification status was not updated.");
+  }
+}
+
+async function updateCloseSyncStatus(
+  client: LeadClient,
+  leadId: string,
+  patch: LeadUpdate,
+) {
+  const { error } = await client
+    .from("lead_submissions")
+    .update(patch)
+    .eq("id", leadId);
+
+  if (error) {
+    throw new Error("Lead was stored but Close sync status was not updated.");
   }
 }
 
@@ -468,25 +569,8 @@ function buildMoneyPagePayload(lead: ValidLeadInput, leadId: string) {
     channel: channelFromAttributionSignals(lead),
     properties: compactObject({
       lead_id: leadId,
-      vp_session_id: lead.vpSessionId,
       form_type: lead.formType,
-      source_path: lead.sourcePath,
-      landing_path: lead.landingPath,
-      referrer: lead.referrer,
-      first_landing_url: lead.firstLandingUrl,
-      first_landing_path: lead.firstLandingPath,
-      first_referrer: lead.firstReferrer,
-      first_touch_at: lead.firstTouchAt,
-      latest_landing_url: lead.latestLandingUrl,
-      latest_landing_path: lead.latestLandingPath,
-      latest_referrer: lead.latestReferrer,
-      latest_touch_at: lead.latestTouchAt,
-      source_page_id: lead.sourcePageId,
-      source_page_slug: lead.sourcePageSlug,
-      target_keyword: lead.targetKeyword,
-      source_block_id: lead.sourceBlockId,
-      source_cta_tracking_name: lead.sourceCtaTrackingName,
-      clicked_href: lead.clickedHref,
+      ...sourceAttributionProperties(lead),
       utm_source: lead.utmSource,
       utm_medium: lead.utmMedium,
       utm_campaign: lead.utmCampaign,
@@ -500,6 +584,29 @@ function buildMoneyPagePayload(lead: ValidLeadInput, leadId: string) {
       timeline: lead.timeline,
       message_present: Boolean(lead.message),
     }),
+  };
+}
+
+function sourceAttributionProperties(lead: ValidLeadInput) {
+  return {
+    vp_session_id: lead.vpSessionId,
+    source_path: lead.sourcePath,
+    landing_path: lead.landingPath,
+    referrer: lead.referrer,
+    first_landing_url: lead.firstLandingUrl,
+    first_landing_path: lead.firstLandingPath,
+    first_referrer: lead.firstReferrer,
+    first_touch_at: lead.firstTouchAt,
+    latest_landing_url: lead.latestLandingUrl,
+    latest_landing_path: lead.latestLandingPath,
+    latest_referrer: lead.latestReferrer,
+    latest_touch_at: lead.latestTouchAt,
+    source_page_id: lead.sourcePageId,
+    source_page_slug: lead.sourcePageSlug,
+    target_keyword: lead.targetKeyword,
+    source_block_id: lead.sourceBlockId,
+    source_cta_tracking_name: lead.sourceCtaTrackingName,
+    clicked_href: lead.clickedHref,
   };
 }
 

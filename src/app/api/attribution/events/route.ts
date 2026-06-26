@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { VP_SESSION_COOKIE_NAME } from "@/lib/attribution-session";
 import { config } from "@/lib/config";
 import { channelFromAttributionSignals } from "@/lib/paid-attribution";
 
@@ -16,6 +17,9 @@ type AttributionEventPayload = z.output<typeof attributionEventSchema>;
 export async function POST(request: Request) {
   const payload = await parseAttributionEvent(request);
   if (!payload) return invalidEventResponse();
+  if (!isFirstPartyAttributionRequest(request, payload)) {
+    return unauthorizedEventResponse();
+  }
 
   const destination = moneyPageDestination();
   if (!destination) return attributionResponse(false);
@@ -38,6 +42,68 @@ function invalidEventResponse() {
     { ok: false, message: "Invalid event." },
     { status: 400 },
   );
+}
+
+function unauthorizedEventResponse() {
+  return Response.json(
+    { ok: false, message: "Unauthorized event." },
+    { status: 401 },
+  );
+}
+
+function isFirstPartyAttributionRequest(
+  request: Request,
+  payload: AttributionEventPayload,
+) {
+  return (
+    hasMatchingSessionCookie(request, payload.vp_session_id) &&
+    isSameSiteBrowserPost(request)
+  );
+}
+
+function hasMatchingSessionCookie(request: Request, sessionId: string) {
+  const cookie = cookieValue(
+    request.headers.get("cookie"),
+    VP_SESSION_COOKIE_NAME,
+  );
+  return cookie === sessionId;
+}
+
+function isSameSiteBrowserPost(request: Request) {
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite && !["same-origin", "same-site", "none"].includes(fetchSite)) {
+    return false;
+  }
+
+  const origin = request.headers.get("origin");
+  if (origin) return originMatchesRequest(origin, request);
+
+  const referer = request.headers.get("referer");
+  if (referer) return originMatchesRequest(referer, request);
+
+  return fetchSite === "same-origin" || fetchSite === "same-site";
+}
+
+function originMatchesRequest(value: string, request: Request) {
+  try {
+    return new URL(value).origin === new URL(request.url).origin;
+  } catch {
+    return false;
+  }
+}
+
+function cookieValue(header: string | null, name: string) {
+  if (!header) return null;
+  for (const cookie of header.split(";")) {
+    const [rawName, ...rawValue] = cookie.trim().split("=");
+    if (rawName !== name) continue;
+    try {
+      return decodeURIComponent(rawValue.join("="));
+    } catch {
+      return rawValue.join("=");
+    }
+  }
+  return null;
 }
 
 function moneyPageDestination() {
