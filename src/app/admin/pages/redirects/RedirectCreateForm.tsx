@@ -11,6 +11,7 @@ import {
 import { createBuilderRedirectAction, type RedirectFormState } from "./actions";
 import { FieldError } from "./FieldError";
 import { REDIRECT_STATUS_OPTIONS } from "./redirect-status-labels";
+import { RedirectTypeLegend } from "./RedirectTypeLegend";
 
 const initialState: RedirectFormState = { status: "idle" };
 
@@ -56,7 +57,7 @@ export function RedirectCreateForm() {
         className="grid gap-4 lg:grid-cols-4"
       >
         <label className={adminLabelClass}>
-          Old path
+          Old address (path)
           <input
             name="sourcePath"
             required
@@ -68,7 +69,7 @@ export function RedirectCreateForm() {
           <FieldError message={fieldErrors.sourcePath} />
         </label>
         <label className={adminLabelClass}>
-          Destination
+          New address (destination)
           <input
             name="destinationPath"
             required
@@ -80,7 +81,7 @@ export function RedirectCreateForm() {
           <FieldError message={fieldErrors.destinationPath} />
         </label>
         <label className={adminLabelClass}>
-          Status
+          Redirect type
           <select
             name="statusCode"
             defaultValue={values?.statusCode ?? "301"}
@@ -100,6 +101,9 @@ export function RedirectCreateForm() {
         </label>
         <div className="flex items-end">
           <CreateButton />
+        </div>
+        <div className="lg:col-span-4">
+          <RedirectTypeLegend />
         </div>
         <details className="rounded-lg border border-slate-200 bg-slate-50 p-4 lg:col-span-3">
           <summary className="cursor-pointer list-none text-sm font-semibold text-slate-700 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden">

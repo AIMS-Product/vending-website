@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   REDIRECT_STATUS_OPTIONS,
   redirectStatusLabel,
+  redirectStatusPlainExplanation,
 } from "./redirect-status-labels";
 
 // N18 / I11: redirect status codes must read words-first, never as a bare
@@ -24,5 +25,25 @@ describe("redirectStatusLabel (issue I11)", () => {
     expect(REDIRECT_STATUS_OPTIONS.map((o) => o.code)).toEqual([
       301, 302, 307, 308,
     ]);
+  });
+});
+
+// I9: plain-English explanation shown via AdminTermHint on the redirects page.
+describe("redirectStatusPlainExplanation (issue I9)", () => {
+  it("gives a distinct plain-English sentence for each supported code", () => {
+    const explanations = REDIRECT_STATUS_OPTIONS.map((option) =>
+      redirectStatusPlainExplanation(option.code),
+    );
+
+    expect(new Set(explanations).size).toBe(explanations.length);
+    for (const explanation of explanations) {
+      expect(explanation.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("falls back to a generic explanation for an unknown code", () => {
+    expect(redirectStatusPlainExplanation(399)).toBe(
+      "A redirect that sends visitors from the old address to the new one.",
+    );
   });
 });

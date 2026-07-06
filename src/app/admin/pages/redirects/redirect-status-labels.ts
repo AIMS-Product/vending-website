@@ -22,3 +22,21 @@ export function redirectStatusLabel(code: number): string {
   // Unknown/legacy code: still surface words-first, never a bare number.
   return match ? match.label : `Redirect (${code})`;
 }
+
+// I9: one plain-English sentence per status code, shown via AdminTermHint so
+// non-technical operators understand what each redirect type does without
+// having to know HTTP status semantics. Presentation only — the underlying
+// status codes and validation are unchanged.
+const REDIRECT_STATUS_PLAIN_EXPLANATIONS: Record<number, string> = {
+  301: "Moved permanently. Browsers and Google remember the new address.",
+  302: "Moved temporarily. Browsers and Google keep checking the old address.",
+  307: "Temporary redirect that keeps the original request method (rarely needed for pages).",
+  308: "Permanent redirect that keeps the original request method (rarely needed for pages).",
+};
+
+export function redirectStatusPlainExplanation(code: number): string {
+  return (
+    REDIRECT_STATUS_PLAIN_EXPLANATIONS[code] ??
+    "A redirect that sends visitors from the old address to the new one."
+  );
+}

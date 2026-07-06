@@ -20,6 +20,7 @@ import {
   REDIRECT_STATUS_OPTIONS,
   redirectStatusLabel,
 } from "./redirect-status-labels";
+import { RedirectTypeLegend } from "./RedirectTypeLegend";
 
 export type RedirectRowData = {
   id: string;
@@ -137,7 +138,7 @@ function RedirectEditForm({
         >
           <input type="hidden" name="id" value={redirect.id} />
           <label className="text-xs font-medium text-slate-600 lg:col-span-4">
-            Old path
+            Old address (path)
             <input
               name="sourcePath"
               defaultValue={values?.sourcePath ?? redirect.source_path}
@@ -147,7 +148,7 @@ function RedirectEditForm({
             <FieldError message={fieldErrors.sourcePath} />
           </label>
           <label className="text-xs font-medium text-slate-600 lg:col-span-4">
-            Destination
+            New address (destination)
             <input
               name="destinationPath"
               defaultValue={
@@ -159,7 +160,7 @@ function RedirectEditForm({
             <FieldError message={fieldErrors.destinationPath} />
           </label>
           <label className="text-xs font-medium text-slate-600 lg:col-span-2">
-            Status
+            Redirect type
             <select
               name="statusCode"
               defaultValue={values?.statusCode ?? String(redirect.status_code)}
@@ -183,6 +184,9 @@ function RedirectEditForm({
             >
               Cancel
             </button>
+          </div>
+          <div className="lg:col-span-12">
+            <RedirectTypeLegend heading={false} />
           </div>
           {state.status === "error" && !state.fieldErrors ? (
             <p

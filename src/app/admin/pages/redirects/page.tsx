@@ -42,7 +42,7 @@ export default async function RedirectManagerPage({
     <AdminShell
       activeSection="pages"
       title="Redirects"
-      description="Send old page addresses to their new destinations."
+      description="Redirects forward visitors from an old address to a new one so links keep working."
       userEmail={user.email}
       userRole={role}
       actions={
@@ -67,8 +67,8 @@ export default async function RedirectManagerPage({
           <table className="w-full min-w-[860px] text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
               <tr>
-                <th className="px-5 py-3">Old path</th>
-                <th className="px-5 py-3">Destination</th>
+                <th className="px-5 py-3">Old address (path)</th>
+                <th className="px-5 py-3">New address (destination)</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Source</th>
                 <th className="px-5 py-3">Created</th>
@@ -82,8 +82,8 @@ export default async function RedirectManagerPage({
                     colSpan={6}
                     className="px-5 py-6 text-center text-sm text-slate-500"
                   >
-                    No redirects yet. Create one above to send an old path to a
-                    new destination.
+                    No redirects yet. Create one above to send an old address to
+                    a new destination.
                   </td>
                 </tr>
               ) : (
