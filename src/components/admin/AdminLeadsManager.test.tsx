@@ -150,4 +150,99 @@ describe("AdminLeadDetailView", () => {
     expect(html).toContain("google_ads:camp-1:group-1:ad-1");
     expect(html).toContain("gclid-1");
   });
+
+  it("does not nest a second main or complementary landmark inside AdminShell (I2)", () => {
+    const html = renderToStaticMarkup(<AdminLeadDetailView lead={detail} />);
+
+    expect(html).not.toMatch(/<main[\s>]/);
+    expect(html).not.toMatch(/<aside[\s>]/);
+  });
+
+  it("groups ad-tech fields under a plain-language heading with technical terms secondary (I6b)", () => {
+    const html = renderToStaticMarkup(<AdminLeadDetailView lead={detail} />);
+
+    expect(html).toContain("Where this lead came from");
+    expect(html).toContain("Campaign source");
+    expect(html).toContain("(utm_source)");
+    expect(html).toContain("Google click ID");
+    expect(html).toContain("(GCLID)");
+    expect(html).toContain("Facebook click ID");
+    expect(html).toContain("(FBCLID)");
+  });
+
+  it("renders a plain-language permanently-failed label for dead_letter Close sync status (I6a)", () => {
+    const deadLetterDetail: AdminLeadDetail = {
+      ...detail,
+      closeSyncStatus: "dead_letter",
+      closeSyncEvents: [
+        {
+          id: "event_2",
+          status: "dead_letter",
+          eventType: "lead_create_or_update",
+          lastError: "Close API key is not configured.",
+          nextRetryAt: null,
+          syncedAt: null,
+        },
+      ],
+    };
+    const html = renderToStaticMarkup(
+      <AdminLeadDetailView lead={deadLetterDetail} />,
+    );
+
+    expect(html).toContain("Permanently failed");
+    expect(html).toContain(
+      "We stopped retrying after repeated failures — needs manual attention.",
+    );
+    expect(html).not.toContain("Dead letter");
+  });
+});
+
+describe("AdminLeadsManager sync issues banner (I7)", () => {
+  it("renders a prominent alert banner with a jump link when sync failures exist", () => {
+    const html = renderToStaticMarkup(
+      <AdminLeadsManager
+        leads={[lead]}
+        activeLifecycleStatus="all"
+        activeCloseSyncStatus="all"
+      />,
+    );
+
+    expect(html).toContain('role="alert"');
+    expect(html).toContain("stuck because Close");
+    expect(html).toContain('href="#sync-issues-table"');
+    expect(html).toContain("Fix now");
+    expect(html).toContain('id="sync-issues-table"');
+  });
+
+  it("renders no banner when there are zero sync failures", () => {
+    const healthyLead: AdminLeadListItem = {
+      ...lead,
+      closeSyncStatus: "synced",
+      closeSyncLastError: null,
+      latestCloseSyncEvent: null,
+    };
+    const html = renderToStaticMarkup(
+      <AdminLeadsManager
+        leads={[healthyLead]}
+        activeLifecycleStatus="all"
+        activeCloseSyncStatus="all"
+      />,
+    );
+
+    expect(html).not.toContain('role="alert"');
+    expect(html).not.toContain("Fix now");
+  });
+
+  it("uses the permanently-failed filter label instead of dead letter jargon", () => {
+    const html = renderToStaticMarkup(
+      <AdminLeadsManager
+        leads={[lead]}
+        activeLifecycleStatus="all"
+        activeCloseSyncStatus="all"
+      />,
+    );
+
+    expect(html).toContain("Permanently failed");
+    expect(html).not.toContain("Dead letter");
+  });
 });

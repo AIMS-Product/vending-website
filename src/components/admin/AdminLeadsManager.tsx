@@ -39,11 +39,53 @@ const syncFilters = [
   { value: "retrying", label: "Retrying" },
   { value: "failed", label: "Failed sync" },
   { value: "needs_review", label: "Needs review" },
-  { value: "dead_letter", label: "Dead letter" },
+  { value: "dead_letter", label: "Permanently failed" },
   { value: "synced", label: "Synced" },
 ] as const;
 
 const retryableStatuses = new Set(["failed", "needs_review", "dead_letter"]);
+
+// I6: internal Close sync enum/DB values stay unchanged — this only swaps the
+// admin-facing label and caption for "dead_letter" so admins see plain
+// language instead of queue jargon. AdminStatusBadge's generic formatter
+// would otherwise render this as "Dead letter".
+const DEAD_LETTER_CAPTION =
+  "We stopped retrying after repeated failures — needs manual attention.";
+
+function CloseSyncStatusBadge({ status }: { status: string }) {
+  if (status === "dead_letter") {
+    return (
+      <span className="grid gap-1">
+        <span className="inline-flex w-fit rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
+          Permanently failed
+        </span>
+        <span className="text-xs text-slate-500">{DEAD_LETTER_CAPTION}</span>
+      </span>
+    );
+  }
+  return <AdminStatusBadge status={status} />;
+}
+
+function SyncIssuesBanner({ count }: { count: number }) {
+  if (!count) return null;
+  return (
+    <div
+      role="alert"
+      className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex sm:items-center sm:justify-between sm:gap-4"
+    >
+      <p className="font-semibold">
+        {count} {count === 1 ? "lead is" : "leads are"} stuck because Close sync
+        keeps failing — these need manual attention.
+      </p>
+      <a
+        href="#sync-issues-table"
+        className="mt-2 inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-red-300 bg-white px-3 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:outline-none sm:mt-0"
+      >
+        Fix now
+      </a>
+    </div>
+  );
+}
 
 export function AdminLeadsManager({
   activeCloseSyncStatus,
@@ -68,6 +110,11 @@ export function AdminLeadsManager({
 
   return (
     <div className="grid gap-5">
+      {/* I7: the amber metric card alone buried the one actionable problem
+          below the fold on mobile. A prominent banner now surfaces sync
+          failures in plain English with a direct jump to the affected rows. */}
+      <SyncIssuesBanner count={failedSyncCount} />
+
       <AdminMetricStrip>
         <AdminMetricPanel
           icon="mail"
@@ -99,7 +146,7 @@ export function AdminLeadsManager({
         />
       </AdminMetricStrip>
 
-      <section className={adminPanelClass}>
+      <section id="sync-issues-table" className={adminPanelClass}>
         <div className="border-b border-slate-200 p-4">
           <div className="grid gap-4">
             <div>
@@ -182,7 +229,10 @@ export function AdminLeadsManager({
 export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <main className="grid gap-5">
+      {/* I2: the root layout already provides the main#main-content
+          landmark, so this is a plain container — nesting a second main
+          landmark here tripped axe's landmark-no-duplicate-main rule. */}
+      <div className="grid gap-5">
         <section className={adminCardClass}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -197,7 +247,7 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
             <div className="flex flex-wrap gap-2">
               <AdminStatusBadge status={lead.lifecycleStatus} />
               {lead.closeSyncStatus ? (
-                <AdminStatusBadge status={lead.closeSyncStatus} />
+                <CloseSyncStatusBadge status={lead.closeSyncStatus} />
               ) : null}
             </div>
           </div>
@@ -281,9 +331,14 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
             ))}
           </div>
         </section>
-      </main>
+      </div>
 
-      <aside className="grid content-start gap-5">
+      {/* I2: this rail is editor chrome inside AdminShell's section region,
+          not page-complementary content — a complementary landmark here
+          tripped axe's landmark-complementary-is-top-level rule. A plain div
+          keeps the visuals without the nested landmark role (see
+          NewsEditorForm.landmarks.test.ts precedent). */}
+      <div className="grid content-start gap-5">
         <section className={adminCardClass}>
           <h2 className="text-sm font-semibold text-slate-950">Close sync</h2>
           <p className="mt-2 text-sm text-slate-600">
@@ -322,21 +377,53 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
             <DetailMetric label="Block" value={lead.sourceBlockId} />
             <DetailMetric label="CTA" value={lead.sourceCtaTrackingName} />
             <DetailMetric label="Clicked href" value={lead.clickedHref} />
-            <DetailMetric label="UTM source" value={lead.utmSource} />
-            <DetailMetric label="UTM medium" value={lead.utmMedium} />
-            <DetailMetric label="UTM campaign" value={lead.utmCampaign} />
-            <DetailMetric label="Paid platform" value={lead.paidPlatform} />
-            <DetailMetric label="Paid key" value={lead.paidSourceKey} />
-            <DetailMetric label="Campaign ID" value={lead.campaignId} />
-            <DetailMetric label="Ad set ID" value={lead.adsetId} />
-            <DetailMetric label="Ad group ID" value={lead.adGroupId} />
-            <DetailMetric label="Group ID" value={lead.groupId} />
-            <DetailMetric label="Ad ID" value={lead.adId} />
-            <DetailMetric label="GCLID" value={lead.gclid} />
-            <DetailMetric label="FBCLID" value={lead.fbclid} />
+          </dl>
+
+          {/* I6(b): ad-tech acronyms grouped under a plain-language heading,
+              each with a marketer-facing label first and the raw technical
+              term shown secondary (e.g. "Campaign source (utm_source)"). */}
+          <h3 className="mt-6 border-t border-slate-200 pt-4 text-sm font-semibold text-slate-950">
+            Where this lead came from
+          </h3>
+          <dl className="mt-4 grid gap-3 text-sm">
+            <DetailMetric
+              label="Campaign source"
+              technicalTerm="utm_source"
+              value={lead.utmSource}
+            />
+            <DetailMetric
+              label="Campaign medium"
+              technicalTerm="utm_medium"
+              value={lead.utmMedium}
+            />
+            <DetailMetric
+              label="Campaign name"
+              technicalTerm="utm_campaign"
+              value={lead.utmCampaign}
+            />
+            <DetailMetric label="Ad platform" value={lead.paidPlatform} />
+            <DetailMetric
+              label="Paid tracking key"
+              value={lead.paidSourceKey}
+            />
+            <DetailMetric label="Campaign" value={lead.campaignId} />
+            <DetailMetric label="Ad set" value={lead.adsetId} />
+            <DetailMetric label="Ad group" value={lead.adGroupId} />
+            <DetailMetric label="Ad group (Meta)" value={lead.groupId} />
+            <DetailMetric label="Ad" value={lead.adId} />
+            <DetailMetric
+              label="Google click ID"
+              technicalTerm="GCLID"
+              value={lead.gclid}
+            />
+            <DetailMetric
+              label="Facebook click ID"
+              technicalTerm="FBCLID"
+              value={lead.fbclid}
+            />
           </dl>
         </section>
-      </aside>
+      </div>
     </div>
   );
 }
@@ -369,7 +456,7 @@ function LeadRow({ lead }: { lead: AdminLeadListItem }) {
       <td className="px-4 py-4">
         <div className="grid gap-1">
           {lead.closeSyncStatus ? (
-            <AdminStatusBadge status={lead.closeSyncStatus} />
+            <CloseSyncStatusBadge status={lead.closeSyncStatus} />
           ) : (
             <span className="text-xs font-semibold text-slate-500">None</span>
           )}
@@ -431,7 +518,7 @@ function CloseSyncEventCard({
             Next retry {formatDate(event.nextRetryAt) ?? "not scheduled"}
           </p>
         </div>
-        <AdminStatusBadge status={event.status} />
+        <CloseSyncStatusBadge status={event.status} />
       </div>
       {event.lastError ? (
         <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
@@ -551,15 +638,22 @@ function leadListHref(params: Record<string, string>) {
 
 function DetailMetric({
   label,
+  technicalTerm,
   value,
 }: {
   label: string;
+  technicalTerm?: string;
   value: string | null | undefined;
 }) {
   return (
     <div>
       <dt className="text-xs font-semibold text-slate-500 uppercase">
         {label}
+        {technicalTerm ? (
+          <span className="ml-1 font-normal text-slate-400 normal-case">
+            ({technicalTerm})
+          </span>
+        ) : null}
       </dt>
       <dd className="mt-1 text-sm font-medium break-words text-slate-800">
         {value || "None"}
