@@ -535,8 +535,8 @@ function AssetSummary({ asset }: { asset: MediaAssetListItem }) {
         <AssetSourceBadges asset={asset} />
         <UsageBadge count={asset.usageCount} />
         {!asset.alt_text?.trim() && asset.assetType === "image" ? (
-          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-            Missing alt
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900">
+            Needs metadata
           </span>
         ) : null}
       </div>
@@ -549,12 +549,12 @@ function AssetSourceBadges({ asset }: { asset: MediaAssetListItem }) {
   return (
     <>
       {asset.storage_path ? (
-        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
           Stored
         </span>
       ) : null}
       {asset.external_url ? (
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
           External
         </span>
       ) : null}
@@ -566,9 +566,7 @@ function UsageBadge({ count }: { count: number }) {
   return (
     <span
       className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-        count > 0
-          ? "bg-[#e9f1ff] text-[#0b63f6]"
-          : "bg-slate-100 text-slate-600"
+        count > 0 ? "bg-blue-100 text-blue-900" : "bg-slate-100 text-slate-700"
       }`}
     >
       {count > 0 ? `${count} in use` : "Unused"}
