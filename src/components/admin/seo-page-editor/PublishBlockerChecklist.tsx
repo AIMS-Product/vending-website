@@ -6,6 +6,20 @@ import type { PublishBlockerChecklistItem } from "@/components/admin/seo-page-ed
 // region the checklist announces through.
 export const PUBLISH_BLOCKER_LIST_ID = "publish-blocker-checklist";
 
+// I11: the ONE canonical readiness surface is this checklist. Other surfaces
+// (the verdict card, the disabled Publish button) may point at it but must not
+// re-render the full "N to fix" list. This helper is the single "jump to the
+// checklist" behavior they share, so scroll/focus never drifts between them.
+// Returns true when the checklist was found and focused.
+export function focusPublishBlockerChecklist(): boolean {
+  const list = document.getElementById(PUBLISH_BLOCKER_LIST_ID);
+  const firstItem = list?.querySelector<HTMLElement>("button");
+  if (!firstItem) return false;
+  list?.scrollIntoView({ behavior: "smooth", block: "center" });
+  firstItem.focus();
+  return true;
+}
+
 function actionVerbForTarget(item: PublishBlockerChecklistItem) {
   if (item.target.kind === "save-first") return "Save draft";
   if (item.target.kind === "block-modal") return "Open block settings";

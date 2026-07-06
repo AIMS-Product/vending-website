@@ -3,6 +3,11 @@
 import { useCallback, useLayoutEffect, useState } from "react";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 import { computeWalkthroughCardPlacement } from "@/components/admin/seo-page-editor/walkthrough-card-position";
+import {
+  nextWalkthroughStep,
+  panelToRevealForStep,
+  type WalkthroughStepId,
+} from "@/components/admin/seo-page-editor/walkthrough-steps";
 
 const walkthroughSteps = {
   1: {
@@ -25,7 +30,7 @@ const walkthroughSteps = {
   },
 } as const;
 
-type WalkthroughStep = keyof typeof walkthroughSteps;
+type WalkthroughStep = WalkthroughStepId;
 
 // N15 / issue I17: the Quick Tour is opt-in and fully self-driven. The
 // controller's legacy auto-start (builderWalkthroughStep) has been removed, so
@@ -45,14 +50,21 @@ export function BuilderEditorWalkthrough({
 }) {
   const [activeStep, setActiveStep] = useState<WalkthroughStep | null>(null);
 
-  // Ensure the panel a step points at is expanded so the highlight anchors to a
-  // real on-screen target (steps: 1 = blocks, 2 = SEO, 3 = AI assistant which is
-  // always mounted). Uses the controller's exposed toggles only.
+  // I1: revealing a panel toggles state OWNED BY the controller
+  // (SeoPageEditorForm). That must never run during THIS component's render.
+  // The old `advance` called this from inside a `setActiveStep` updater, which
+  // runs in the render phase — the resulting controller setState produced the
+  // "Cannot update a component (SeoPageEditorForm) while rendering a different
+  // component (BuilderEditorWalkthrough)" warning. `revealPanelForStep` is only
+  // ever invoked from click handlers (startTour / advance) below, where a
+  // controller state update is safe. Steps: 1 = blocks, 2 = SEO, 3 = AI
+  // assistant (always mounted).
   const revealPanelForStep = useCallback(
     (step: WalkthroughStep) => {
-      if (step === 1 && editor.isBlockSidebarCollapsed) {
+      const panel = panelToRevealForStep(step);
+      if (panel === "blocks" && editor.isBlockSidebarCollapsed) {
         editor.toggleBlockSidebar();
-      } else if (step === 2 && editor.isSeoSidebarCollapsed) {
+      } else if (panel === "seo" && editor.isSeoSidebarCollapsed) {
         editor.toggleSeoSidebar();
       }
     },
@@ -78,18 +90,12 @@ export function BuilderEditorWalkthrough({
   }, [persistSeen]);
 
   const advance = useCallback(() => {
-    setActiveStep((current) => {
-      if (current === 1) {
-        revealPanelForStep(2);
-        return 2;
-      }
-      if (current === 2) {
-        revealPanelForStep(3);
-        return 3;
-      }
-      return current;
-    });
-  }, [revealPanelForStep]);
+    if (activeStep === null) return;
+    const next = nextWalkthroughStep(activeStep);
+    if (next === null) return;
+    revealPanelForStep(next);
+    setActiveStep(next);
+  }, [activeStep, revealPanelForStep]);
 
   if (!activeStep) {
     return <QuickTourLauncher onStart={startTour} />;
@@ -113,11 +119,15 @@ export function BuilderEditorWalkthrough({
 
 function QuickTourLauncher({ onStart }: { onStart: () => void }) {
   return (
+    // I4: like the AI FAB, this bottom-left launcher would sit under the fixed
+    // MobileEditorActionBar (z-60, full-width) below xl. Raise it above the bar
+    // on narrow widths and restore the desktop placement at xl, where the bar
+    // is hidden. z-index is unchanged so the launcher stays usable.
     <button
       type="button"
       aria-label="Start the quick tour"
       title="Take a quick tour of the builder"
-      className="fixed bottom-4 left-4 z-[70] inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-lg transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+      className="fixed bottom-28 left-4 z-[70] inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-lg transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none xl:bottom-4"
       onClick={onStart}
     >
       <svg

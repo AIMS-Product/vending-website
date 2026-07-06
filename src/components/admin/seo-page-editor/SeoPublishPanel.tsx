@@ -8,6 +8,7 @@ import {
 import {
   PUBLISH_BLOCKER_LIST_ID,
   PublishBlockerChecklist,
+  focusPublishBlockerChecklist,
 } from "@/components/admin/seo-page-editor/PublishBlockerChecklist";
 import { ScheduleStatusCard } from "@/components/admin/seo-page-editor/ScheduleStatusCard";
 import { PublishSuccessCard } from "@/components/admin/seo-page-editor/PublishSuccessCard";
@@ -59,7 +60,6 @@ export function SeoPublishPanel({
         <PublishVerdictCard
           blockers={editor.publishBlockerChecklist}
           summary={editor.seoReadiness}
-          onFixNext={editor.focusPublishBlocker}
         />
         {/* Verdict leads; the readiness findings and the settings info-dump
             move behind tabs so the panel doesn't open as a wall of fields. */}
@@ -119,13 +119,7 @@ function PublishStatusSection({
     // Move attention to the canonical blocker checklist (the single source of
     // truth for what blocks publish), focusing its first actionable item.
     requestAnimationFrame(() => {
-      const list = document.getElementById(PUBLISH_BLOCKER_LIST_ID);
-      const firstItem = list?.querySelector<HTMLElement>("button");
-      if (firstItem) {
-        list?.scrollIntoView({ behavior: "smooth", block: "center" });
-        firstItem.focus();
-        return;
-      }
+      if (focusPublishBlockerChecklist()) return;
       onExpandedChange(true);
       const reason = document.getElementById("publish-next-step");
       reason?.scrollIntoView({ behavior: "smooth", block: "center" });

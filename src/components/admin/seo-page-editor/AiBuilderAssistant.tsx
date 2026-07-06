@@ -543,12 +543,18 @@ export function AiBuilderAssistant({
         </section>
       )}
 
+      {/* I4: below xl the fixed MobileEditorActionBar (z-60) sits at the bottom
+          edge, so a bottom-6 FAB overlaps its "SEO & publish" control — the
+          phone path to publish. Raise the FAB above the bar on narrow widths
+          (bottom-28 ≈ 7rem clears the bar height + its autosave status line +
+          the safe-area inset) and restore the desktop placement at xl, where
+          the bar is hidden. z-index is unchanged so the FAB stays usable. */}
       <button
         type="button"
         data-builder-walkthrough="ai"
         aria-label={isOpen ? "Close AI assistant" : "Open AI assistant"}
         aria-expanded={isOpen}
-        className="fixed right-4 bottom-6 z-[70] inline-flex items-center gap-2 rounded-full border border-violet-400 bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-xl transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none"
+        className="fixed right-4 bottom-28 z-[70] inline-flex items-center gap-2 rounded-full border border-violet-400 bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-xl transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none xl:bottom-6"
         onClick={() => setIsUserOpen((open) => !open)}
       >
         <SparkIcon />
