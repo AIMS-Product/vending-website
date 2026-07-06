@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   adminCreateQualificationForm,
@@ -100,6 +100,18 @@ function buildClient(initial: Partial<FakeState> = {}) {
       },
     } as unknown as QualificationFormClient,
   };
+}
+
+function failingInsertClient(error: { code: string; message: string }) {
+  return {
+    from: () => ({
+      insert: () => ({
+        select: () => ({
+          single: async () => ({ data: null, error }),
+        }),
+      }),
+    }),
+  } as unknown as QualificationFormClient;
 }
 
 class FakeQuery {
@@ -484,6 +496,69 @@ describe("qualification form services", () => {
       created_by: "admin_1",
       updated_by: "admin_1",
     });
+  });
+
+  it("explains an admin-account FK rejection when the create insert fails", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      await expect(
+        adminCreateQualificationForm(
+          { name: "Investor intake", createdBy: "ghost-admin" },
+          {
+            client: failingInsertClient({
+              code: "23503",
+              message:
+                'insert or update on table "qualification_forms" violates foreign key constraint "qualification_forms_created_by_fkey"',
+            }),
+          },
+        ),
+      ).rejects.toMatchObject({
+        name: "QualificationFormServiceError",
+        message:
+          "Could not create qualification form: your admin session is no longer linked to a valid user account. Sign out, sign back in, and try again.",
+      });
+
+      expect(consoleError).toHaveBeenCalledWith(
+        "qualification form create failed",
+        { code: "23503", message: expect.stringContaining("foreign key") },
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
+  it("logs unknown create failures and keeps the user-facing message generic", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      await expect(
+        adminCreateQualificationForm(
+          { name: "Investor intake", createdBy: "admin_1" },
+          {
+            client: failingInsertClient({
+              code: "57014",
+              message: "canceling statement due to statement timeout",
+            }),
+          },
+        ),
+      ).rejects.toMatchObject({
+        name: "QualificationFormServiceError",
+        message:
+          "Could not create qualification form. Please try again — the failure reason has been logged.",
+      });
+
+      expect(consoleError).toHaveBeenCalledWith(
+        "qualification form create failed",
+        { code: "57014", message: expect.stringContaining("timeout") },
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 
   it("loads one editable qualification form draft for the admin editor", async () => {

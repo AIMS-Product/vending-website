@@ -125,6 +125,7 @@ describe("qualification form admin actions", () => {
     expect(result).toEqual({
       status: "error",
       message: "Form name is required.",
+      values: { name: "   " },
     });
     expect(mocks.adminCreateQualificationForm).not.toHaveBeenCalled();
     expect(mocks.redirect).not.toHaveBeenCalled();
@@ -146,6 +147,7 @@ describe("qualification form admin actions", () => {
       expect(result).toEqual({
         status: "error",
         message: "Could not create qualification form.",
+        values: { name: "Investor qualification" },
       });
       expect(consoleError).toHaveBeenCalledWith(
         "qualification form admin action failed",
@@ -155,6 +157,97 @@ describe("qualification form admin actions", () => {
     } finally {
       consoleError.mockRestore();
     }
+  });
+
+  it("surfaces the service failure reason and preserves the typed name", async () => {
+    mocks.adminCreateQualificationForm.mockRejectedValue(
+      new mocks.QualificationFormServiceError(
+        "Could not create qualification form: your admin session is no longer linked to a valid user account. Sign out, sign back in, and try again.",
+      ),
+    );
+
+    const result = await createQualificationForm(
+      { status: "idle" },
+      formData({ name: "Investor qualification" }),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message:
+        "Could not create qualification form: your admin session is no longer linked to a valid user account. Sign out, sign back in, and try again.",
+      values: { name: "Investor qualification" },
+    });
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("stores null ownership for the dev-bypass admin so the FK insert succeeds", async () => {
+    mocks.requireAdmin.mockResolvedValue({
+      user: {
+        id: "00000000-0000-4000-8000-000000000001",
+        email: "dev-admin@dev.invalid",
+      },
+      role: "super_admin",
+    });
+
+    await expect(
+      createQualificationForm(
+        { status: "idle" },
+        formData({ name: "Investor qualification" }),
+      ),
+    ).rejects.toMatchObject({ location: `/admin/forms/${FORM_ID}` });
+
+    expect(mocks.adminCreateQualificationForm).toHaveBeenCalledWith({
+      name: "Investor qualification",
+      createdBy: null,
+    });
+  });
+
+  it("stores null attribution for the dev-bypass admin when saving and publishing", async () => {
+    mocks.requireAdmin.mockResolvedValue({
+      user: {
+        id: "00000000-0000-4000-8000-000000000001",
+        email: "dev-admin@dev.invalid",
+      },
+      role: "super_admin",
+    });
+
+    await saveQualificationForm(
+      { status: "idle" },
+      formData({
+        id: FORM_ID,
+        name: "Investor qualification",
+        schema: JSON.stringify(draftSchema),
+        intent: "publish",
+      }),
+    );
+
+    expect(mocks.adminUpdateQualificationFormDraft).toHaveBeenCalledWith(
+      expect.objectContaining({ updatedBy: null }),
+    );
+    expect(mocks.publishQualificationForm).toHaveBeenCalledWith({
+      formId: FORM_ID,
+      publishedBy: null,
+    });
+  });
+
+  it("stores null attribution for the dev-bypass admin when setting the default", async () => {
+    mocks.requireAdmin.mockResolvedValue({
+      user: {
+        id: "00000000-0000-4000-8000-000000000001",
+        email: "dev-admin@dev.invalid",
+      },
+      role: "super_admin",
+    });
+
+    await setDefaultQualificationForm(
+      { status: "idle" },
+      formData({ id: FORM_ID }),
+    );
+
+    expect(mocks.adminSetDefaultQualificationForm).toHaveBeenCalledWith({
+      formId: FORM_ID,
+      updatedBy: null,
+    });
   });
 
   it("saves reordered draft questions without publishing", async () => {

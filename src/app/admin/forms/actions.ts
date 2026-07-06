@@ -11,11 +11,19 @@ import {
   QualificationFormServiceError,
 } from "@/lib/services/qualification-forms";
 import { requireAdmin } from "@/lib/supabase/auth";
+import { attributableUserId } from "@/lib/supabase/dev-auth";
+
+type QualificationFormActionError = {
+  status: "error";
+  message: string;
+  /** Submitted values so a failed form can re-fill what the user typed. */
+  values?: { name: string };
+};
 
 export type QualificationFormActionState =
   | { status: "idle"; message?: string }
   | { status: "saved"; message: string }
-  | { status: "error"; message: string };
+  | QualificationFormActionError;
 
 const ADMIN_FORMS_PATH = "/admin/forms";
 
@@ -39,22 +47,26 @@ export async function createQualificationForm(
   formData: FormData,
 ): Promise<QualificationFormActionState> {
   const { user } = await requireAdmin();
-  const parsed = createFormSchema.safeParse({
-    name: formData.get("name"),
-  });
+  const typedName = String(formData.get("name") ?? "");
+  const parsed = createFormSchema.safeParse({ name: typedName });
 
-  if (!parsed.success) return validationError(parsed.error);
+  if (!parsed.success) {
+    return { ...validationError(parsed.error), values: { name: typedName } };
+  }
 
   let redirectTo: string;
   try {
     const created = await adminCreateQualificationForm({
       name: parsed.data.name,
-      createdBy: user.id,
+      createdBy: attributableUserId(user.id),
     });
     revalidatePath(ADMIN_FORMS_PATH);
     redirectTo = `${ADMIN_FORMS_PATH}/${created.id}`;
   } catch (error) {
-    return actionError(error, "Could not create qualification form.");
+    return {
+      ...actionError(error, "Could not create qualification form."),
+      values: { name: typedName },
+    };
   }
 
   redirect(redirectTo);
@@ -82,13 +94,13 @@ export async function saveQualificationForm(
       formId: parsed.data.id,
       name: parsed.data.name,
       schema: schema.value,
-      updatedBy: user.id,
+      updatedBy: attributableUserId(user.id),
     });
 
     if (parsed.data.intent === "publish") {
       const version = await publishQualificationForm({
         formId: parsed.data.id,
-        publishedBy: user.id,
+        publishedBy: attributableUserId(user.id),
       });
       revalidateFormPaths(parsed.data.id);
       return {
@@ -119,7 +131,7 @@ export async function setDefaultQualificationForm(
   try {
     await adminSetDefaultQualificationForm({
       formId: parsed.data.id,
-      updatedBy: user.id,
+      updatedBy: attributableUserId(user.id),
     });
     revalidateFormPaths(parsed.data.id);
     return {
@@ -154,7 +166,7 @@ function parseSchemaJson(
   }
 }
 
-function validationError(error: z.ZodError): QualificationFormActionState {
+function validationError(error: z.ZodError): QualificationFormActionError {
   return {
     status: "error",
     message: error.issues[0]!.message,
@@ -164,7 +176,7 @@ function validationError(error: z.ZodError): QualificationFormActionState {
 function actionError(
   error: unknown,
   fallback: string,
-): QualificationFormActionState {
+): QualificationFormActionError {
   if (error instanceof QualificationFormServiceError) {
     return { status: "error", message: error.message };
   }

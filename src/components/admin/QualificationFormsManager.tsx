@@ -129,6 +129,10 @@ function CreateForm() {
     createQualificationForm,
     initialActionState,
   );
+  // React resets the form after the action runs; defaultValue from the
+  // returned state restores the typed name when creation fails.
+  const submittedName =
+    state.status === "error" ? state.values?.name : undefined;
 
   return (
     <form action={formAction} className="w-full min-w-0 lg:max-w-2xl lg:flex-1">
@@ -140,6 +144,7 @@ function CreateForm() {
           id="qualification-form-name"
           name="name"
           required
+          defaultValue={submittedName}
           placeholder="Investor qualification"
           className="h-11 w-full min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15"
         />

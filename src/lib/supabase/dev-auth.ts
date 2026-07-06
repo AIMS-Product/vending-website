@@ -42,3 +42,13 @@ export function isDevAdminAuthBypassEnabled() {
 export function getDevAdminContext() {
   return isDevAdminAuthBypassEnabled() ? devAdminContext : null;
 }
+
+/**
+ * The dev-bypass admin is a sentinel with no `auth.users` row, so writing
+ * its id to a column with an FK to `auth.users(id)` (for example
+ * `qualification_forms.created_by`) fails the insert. Map it to null for
+ * persistence; real admin ids pass through unchanged.
+ */
+export function attributableUserId(userId: string): string | null {
+  return userId === devAdminContext.user.id ? null : userId;
+}

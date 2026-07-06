@@ -169,12 +169,22 @@ export async function adminCreateQualificationForm(
     .single();
 
   if (error || !data) {
-    throw new QualificationFormServiceError(
-      "Could not create qualification form.",
-    );
+    console.error("qualification form create failed", {
+      code: error?.code ?? null,
+      message: error?.message ?? "insert returned no row",
+    });
+    throw new QualificationFormServiceError(createFailureMessage(error));
   }
 
   return mapForm(data as QualificationFormRow);
+}
+
+function createFailureMessage(error: { code?: string } | null): string {
+  // 23503: created_by/updated_by FK to auth.users rejected the current admin.
+  if (error?.code === "23503") {
+    return "Could not create qualification form: your admin session is no longer linked to a valid user account. Sign out, sign back in, and try again.";
+  }
+  return "Could not create qualification form. Please try again — the failure reason has been logged.";
 }
 
 export async function adminUpdateQualificationFormDraft(

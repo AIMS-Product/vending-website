@@ -1,12 +1,32 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { QualificationFormsManager } from "./QualificationFormsManager";
+import type { QualificationFormActionState } from "@/app/admin/forms/actions";
 import type { AdminQualificationForm } from "@/lib/services/qualification-forms";
 
 vi.mock("@/app/admin/forms/actions", () => ({
   createQualificationForm: vi.fn(),
   setDefaultQualificationForm: vi.fn(),
 }));
+
+const actionStateOverride = vi.hoisted(() => ({
+  current: null as QualificationFormActionState | null,
+}));
+
+vi.mock("react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react")>();
+  return {
+    ...actual,
+    useActionState: (_action: unknown, initialState: unknown) => [
+      actionStateOverride.current ?? initialState,
+      vi.fn(),
+    ],
+  };
+});
+
+afterEach(() => {
+  actionStateOverride.current = null;
+});
 
 const forms: AdminQualificationForm[] = [
   {
@@ -84,5 +104,19 @@ describe("QualificationFormsManager", () => {
     expect(html).toContain("No qualification forms yet");
     expect(html).not.toContain("draft_schema");
     expect(html).not.toContain("current_published_version_id");
+  });
+
+  it("re-fills the typed name and shows the reason after a failed create", () => {
+    actionStateOverride.current = {
+      status: "error",
+      message: "Form name must be 120 characters or fewer.",
+      values: { name: "My typed form name" },
+    };
+
+    const html = renderToStaticMarkup(<QualificationFormsManager forms={[]} />);
+
+    expect(html).toContain('value="My typed form name"');
+    expect(html).toContain("Form name must be 120 characters or fewer.");
+    expect(html).toContain('role="alert"');
   });
 });
