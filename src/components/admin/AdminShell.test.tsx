@@ -21,6 +21,33 @@ function renderShell(
 }
 
 describe("AdminShell navigation", () => {
+  it("renders the Overview link first in both mobile and desktop Content navs", () => {
+    const html = renderShell("pages");
+
+    // The exact substring href="/admin" (with closing quote) only matches the
+    // Overview link — sibling hrefs like /admin/pages do not contain it. The
+    // mobile nav renders before the desktop sidebar and both consume the same
+    // contentSections array, so Overview appears exactly twice and precedes
+    // the first sibling (SEO pages) in each nav.
+    const overviewLinks = html.match(/href="\/admin"/g) ?? [];
+    expect(overviewLinks).toHaveLength(2);
+    expect(html).toContain("Overview");
+    expect(html.indexOf('href="/admin"')).toBeLessThan(
+      html.indexOf('href="/admin/pages"'),
+    );
+    expect(html.lastIndexOf('href="/admin"')).toBeLessThan(
+      html.lastIndexOf('href="/admin/pages"'),
+    );
+  });
+
+  it("marks Overview as the active page when on /admin", () => {
+    const html = renderShell("overview");
+
+    const overviewLink = html.match(/<a[^>]*href="\/admin"[^>]*>/);
+    expect(overviewLink).not.toBeNull();
+    expect(overviewLink?.[0]).toContain('aria-current="page"');
+  });
+
   it("renders the Blog and news link in the Content nav", () => {
     const html = renderShell("pages");
 

@@ -27,10 +27,7 @@ export default async function AdminOverviewPage() {
 
   return (
     <AdminShell
-      // N5 will add a dedicated "overview" AdminSection value to AdminShell;
-      // until then this reuses "pages" so the sidebar still highlights the
-      // closest active section without editing AdminShell in this change.
-      activeSection="pages"
+      activeSection="overview"
       eyebrow="Studio overview"
       title="Overview"
       description="A plain-English snapshot of what's live, what's in progress, and what needs your attention."

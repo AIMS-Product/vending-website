@@ -8,6 +8,7 @@ import { signOut } from "@/app/admin/actions";
 import { AdminIcon, type AdminIconName } from "@/components/admin/AdminUi";
 
 type AdminSection =
+  | "overview"
   | "pages"
   | "posts"
   | "forms"
@@ -24,6 +25,7 @@ type AdminShellIconName = Extract<
   | "help"
   | "image"
   | "layers"
+  | "list"
   | "mail"
   | "log-out"
   | "settings"
@@ -48,6 +50,13 @@ const blogSection: AdminNavSection = {
 };
 
 const contentSections: AdminNavSection[] = [
+  {
+    id: "overview",
+    label: "Overview",
+    href: "/admin",
+    description: "Studio overview",
+    icon: "list",
+  },
   {
     id: "pages",
     label: "SEO pages",
