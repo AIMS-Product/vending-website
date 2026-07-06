@@ -1027,6 +1027,14 @@ export function useSeoPageEditorController(
     }
   }
 
+  // Persona review P1-9 / I11: desktop shows one contextual panel at a time.
+  // Opening blocks must collapse SEO so the two panels are never both visible
+  // on desktop; closing blocks never touches the SEO panel. The transition is
+  // computed here in the event handler from the closure state (this function
+  // is recreated every render, so both reads are fresh) and issued as two
+  // plain setter calls, which React batches. It must NOT be a setState inside
+  // another setter's updater — updaters run during render and must stay pure
+  // (the I1 walkthrough fix removed exactly that bug class).
   function toggleBlockSidebar() {
     if (isNarrowEditor) {
       setMobileEditorPanel((currentPanel) =>
@@ -1035,9 +1043,18 @@ export function useSeoPageEditorController(
       return;
     }
 
-    setIsDesktopBlockSidebarCollapsed((isCollapsed) => !isCollapsed);
+    const next = nextDesktopPanelCollapseState({
+      thisCollapsed: isDesktopBlockSidebarCollapsed,
+      otherCollapsed: isDesktopSeoSidebarCollapsed,
+    });
+    setIsDesktopBlockSidebarCollapsed(next.thisCollapsed);
+    if (next.otherCollapsed !== isDesktopSeoSidebarCollapsed) {
+      setIsDesktopSeoSidebarCollapsed(next.otherCollapsed);
+    }
   }
 
+  // Mirror of toggleBlockSidebar above: opening SEO collapses blocks; closing
+  // SEO never reopens/touches blocks.
   function toggleSeoSidebar() {
     if (isNarrowEditor) {
       setMobileEditorPanel((currentPanel) =>
@@ -1046,7 +1063,14 @@ export function useSeoPageEditorController(
       return;
     }
 
-    setIsDesktopSeoSidebarCollapsed((isCollapsed) => !isCollapsed);
+    const next = nextDesktopPanelCollapseState({
+      thisCollapsed: isDesktopSeoSidebarCollapsed,
+      otherCollapsed: isDesktopBlockSidebarCollapsed,
+    });
+    setIsDesktopSeoSidebarCollapsed(next.thisCollapsed);
+    if (next.otherCollapsed !== isDesktopBlockSidebarCollapsed) {
+      setIsDesktopBlockSidebarCollapsed(next.otherCollapsed);
+    }
   }
 
   function selectBlockEntry(entry: BuilderBlockEntry) {
@@ -1507,6 +1531,31 @@ export function useSeoPageEditorController(
       setIsAiInserting(false);
     }
   }
+}
+
+// N4 / HC-editor-panel-exclusive-1: desktop (xl+) shows one contextual side
+// panel at a time — opening a panel collapses the other so the editor never
+// squeezes the canvas into a 3-column layout. Closing a panel is a pure local
+// toggle and must never reopen or otherwise touch the other panel. Extracted
+// as a pure function (rather than inlined in the two toggle callbacks) so the
+// exclusivity rule itself is directly unit-testable without needing a live
+// re-render, which this test file's SSR-probe technique cannot produce for
+// useState transitions.
+export function nextDesktopPanelCollapseState({
+  thisCollapsed,
+  otherCollapsed,
+}: {
+  thisCollapsed: boolean;
+  otherCollapsed: boolean;
+}): { thisCollapsed: boolean; otherCollapsed: boolean } {
+  const nextThisCollapsed = !thisCollapsed;
+  return {
+    thisCollapsed: nextThisCollapsed,
+    // Opening (nextThisCollapsed === false) forces the other panel collapsed.
+    // Closing (nextThisCollapsed === true) leaves the other panel exactly as
+    // it was.
+    otherCollapsed: nextThisCollapsed ? otherCollapsed : true,
+  };
 }
 
 // Reveal the SEO panel's Settings tab by clicking its rendered tab button —

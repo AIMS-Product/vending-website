@@ -275,7 +275,14 @@ function AdminDesktopSidebar({
   userEmail?: string | null;
 }) {
   return (
-    <aside className="relative hidden border-b border-slate-200 bg-white/95 backdrop-blur xl:sticky xl:top-0 xl:block xl:h-screen xl:border-r xl:border-b-0">
+    // N1: the root layout (src/app/layout.tsx) owns the main#main-content
+    // landmark that wraps every page, so rendering this sidebar as an aside
+    // element nested a complementary landmark inside main and tripped axe's
+    // landmark-complementary-is-top-level on every /admin route. A plain div
+    // keeps the visuals; the inner nav labelled "Admin sections" remains the
+    // discoverable landmark (same fix class as AdminLeadsManager I2 and
+    // NewsEditorForm S5 — see AdminShell.landmarks.test.ts).
+    <div className="relative hidden border-b border-slate-200 bg-white/95 backdrop-blur xl:sticky xl:top-0 xl:block xl:h-screen xl:border-r xl:border-b-0">
       <button
         type="button"
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -314,7 +321,7 @@ function AdminDesktopSidebar({
           userEmail={userEmail}
         />
       </div>
-    </aside>
+    </div>
   );
 }
 
