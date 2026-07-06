@@ -1,4 +1,10 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "main": false
+    }
+  },
+  "ignoreCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then echo \"Production deployments are disabled until custom-domain cutover is approved.\"; exit 0; fi; exit 1",
   "crons": [
     {
       "path": "/api/admin/scheduled-publishing/run",

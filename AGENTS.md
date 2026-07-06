@@ -21,6 +21,31 @@ instead of repeatedly raising legacy Webflow/Cloudflare responses.
 
 <!-- END:domain-cutover-rules -->
 
+<!-- BEGIN:temporary-production-freeze -->
+
+# Temporary Vercel production freeze
+
+Until the user explicitly approves the final custom-domain cutover, do not let
+pushes to `main` publish this app to production.
+
+The custom domains currently resolve through Vercel but are intentionally
+pointed at the Webflow rollback proxy. Keep the Vercel project-level Ignored
+Build Step and the repo-local `vercel.json` production freeze in place until
+cutover approval.
+
+Do not remove or bypass:
+
+- `vercel.json` `git.deploymentEnabled.main=false`
+- `vercel.json` production `ignoreCommand`
+- the Vercel project-level production Ignored Build Step
+- Vercel `autoAssignCustomDomains=false`
+
+Do not run `vercel --prod`, promote/rollback a `vending-website` deployment to
+the custom domains, or re-enable automatic custom-domain assignment unless the
+user explicitly asks for launch/cutover.
+
+<!-- END:temporary-production-freeze -->
+
 <!-- BEGIN:admin-studio-design-rules -->
 
 # Admin Studio and SEO Page Builder design contracts
