@@ -490,12 +490,12 @@ function RemoveAccessForm({ email }: { email: string }) {
         aria-label={`Remove access for ${email}`}
         title="Remove access"
         onClick={() => setConfirmOpen(true)}
-        className="inline-flex size-8 items-center justify-center rounded-md border border-red-200 bg-white text-red-700 shadow-sm transition hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:outline-none"
+        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-red-200 bg-white px-2.5 text-xs font-semibold whitespace-nowrap text-red-700 shadow-sm transition hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:outline-none"
       >
         <span aria-hidden="true">
           <AdminIcon icon="trash" />
         </span>
-        <span className="sr-only">Remove</span>
+        Remove access
       </button>
       {confirmOpen ? (
         <div
@@ -586,14 +586,15 @@ function IconSubmitButton({
   const { pending } = useFormStatus();
   const isPending = form ? false : pending;
   const buttonLabel = isPending ? "Working..." : label;
+  const visibleText = isPending ? "Working..." : title;
   return (
     <button
       type="submit"
       form={form}
       disabled={isPending}
       aria-label={buttonLabel}
-      title={isPending ? "Working..." : title}
-      className={`inline-flex size-8 items-center justify-center rounded-md shadow-sm transition focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+      title={visibleText}
+      className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-semibold whitespace-nowrap shadow-sm transition focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
         tone === "danger"
           ? "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-200"
           : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35"
@@ -602,7 +603,7 @@ function IconSubmitButton({
       <span aria-hidden="true">
         <AdminIcon icon={icon} />
       </span>
-      <span className="sr-only">{buttonLabel}</span>
+      {visibleText}
     </button>
   );
 }
