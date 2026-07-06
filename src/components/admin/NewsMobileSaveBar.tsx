@@ -4,6 +4,12 @@
 // editor form via the `form` attribute and the same `intent=save` button the
 // Publish aside uses, so the save path is reused, never forked. Hidden at `lg`
 // and up so the desktop two-column layout is untouched.
+//
+// I12: the mobile Publish button routes through NewsPublishButton so it shows
+// the same accessible "Publish this post?" confirm as the desktop aside — the
+// live action is never a single unguarded tap.
+
+import { NewsPublishButton } from "@/components/admin/NewsPublishButton";
 
 export function NewsMobileSaveBar({ formId }: { formId: string }) {
   return (
@@ -22,15 +28,10 @@ export function NewsMobileSaveBar({ formId }: { formId: string }) {
         >
           Save draft
         </button>
-        <button
-          type="submit"
-          form={formId}
-          name="intent"
-          value="publish"
+        <NewsPublishButton
+          formId={formId}
           className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-[#0b63f6]/20 bg-[#0b63f6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0756d6] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
-        >
-          Publish
-        </button>
+        />
       </div>
     </div>
   );

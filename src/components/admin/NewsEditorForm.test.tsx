@@ -34,4 +34,13 @@ describe("NewsEditorForm publish actions", () => {
     expect(saveClass).toContain(adminSecondaryButtonClass);
     expect(saveClass).not.toContain(adminPrimaryButtonClass);
   });
+
+  // I13: the slug field must carry an inline format hint, wired via
+  // aria-describedby so screen readers announce the rule.
+  it("renders an inline slug format hint associated with the slug field", () => {
+    const html = renderToStaticMarkup(<NewsEditorForm />);
+    expect(html).toContain('id="news-slug-hint"');
+    expect(html).toContain('aria-describedby="news-slug-hint"');
+    expect(html.toLowerCase()).toContain("lowercase letters, numbers");
+  });
 });

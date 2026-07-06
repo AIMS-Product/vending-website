@@ -1,14 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import type { FormEvent } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { renderMarkdown } from "@/lib/markdown";
-import { createClient } from "@/lib/supabase/client";
-import {
-  createSignedImageUpload,
-  savePost,
-  type EditorActionState,
-} from "@/app/admin/news/actions";
+import { savePost, type EditorActionState } from "@/app/admin/news/actions";
+import { normalizeNewsSlug } from "@/app/admin/news/news-slug";
 import {
   adminCardClass,
   adminInputClass,
@@ -16,12 +13,13 @@ import {
   adminSecondaryButtonClass,
   adminTextareaClass,
 } from "@/components/admin/AdminUi";
-import {
-  MediaLibrarySelectButton,
-  MediaPickerProvider,
-  useMediaPicker,
-} from "@/components/admin/MediaPickerProvider";
+import { MediaPickerProvider } from "@/components/admin/MediaPickerProvider";
+import { NewsCoverCard } from "@/components/admin/NewsCoverCard";
 import { NewsMobileSaveBar } from "@/components/admin/NewsMobileSaveBar";
+import { NewsPublishButton } from "@/components/admin/NewsPublishButton";
+import { formatDate, tabClass } from "@/components/admin/news-editor-helpers";
+import { useNewsAutosave } from "@/components/admin/useNewsAutosave";
+import { formatPacificDateTime } from "@/lib/page-builder/datetime-format";
 import type { EditorMediaAsset } from "@/lib/media/editor-asset";
 import type { NewsPost } from "@/lib/services/news";
 
@@ -53,18 +51,41 @@ export function NewsEditorForm({
   const [title, setTitle] = useState(post?.title ?? "");
   const [slug, setSlug] = useState(post?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(Boolean(post?.slug));
+  const [excerpt, setExcerpt] = useState(post?.excerpt ?? "");
   const [body, setBody] = useState(post?.body ?? "");
   const [previewHtml, setPreviewHtml] = useState("");
   const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
   const [coverUrl, setCoverUrl] = useState(post?.cover_url ?? "");
   const [coverAlt, setCoverAlt] = useState(post?.cover_alt ?? "");
-  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
-  const [isUploading, startUploadTransition] = useTransition();
 
   const status = post?.status ?? "draft";
   const canUnpublish = status === "published";
   const canArchive = Boolean(post?.id) && status !== "archived";
-  const visibleSlug = slugTouched ? slug : slugify(title);
+  const visibleSlug = slugTouched ? slug : normalizeNewsSlug(title);
+
+  // I5: background autosave for existing DRAFT rows only. Gated inside the hook
+  // on post.id (a brand-new post has no row yet and relies on manual "Save
+  // draft") and on draft status (news is single-source — a published post's
+  // body is the live content, so autosave must never write it).
+  const { autosave, clearAutosave } = useNewsAutosave({
+    postId: post?.id ?? null,
+    status,
+    title,
+    slug: visibleSlug,
+    excerpt,
+    body,
+    coverUrl,
+    coverAlt,
+  });
+
+  // A manual Save draft / Publish persists the whole row, so drop any pending
+  // autosave failure indicator when the user takes the manual fallback.
+  function handleManualSubmit(event: FormEvent<HTMLFormElement>) {
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    if (submitter instanceof HTMLButtonElement && submitter.name === "intent") {
+      clearAutosave();
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -84,36 +105,12 @@ export function NewsEditorForm({
       ? `Published ${formatDate(post.published_at)}`
       : status[0].toUpperCase() + status.slice(1);
 
-  function handleFileChange(file: File | null) {
-    if (!file) return;
-    setUploadMessage(null);
-    startUploadTransition(async () => {
-      try {
-        const request = new FormData();
-        request.set("filename", file.name);
-        const signed = await createSignedImageUpload(request);
-        const supabase = createClient();
-        const { error } = await supabase.storage
-          .from("news-images")
-          .uploadToSignedUrl(signed.path, signed.token, file, {
-            contentType: file.type || "image/jpeg",
-            upsert: false,
-          });
-        if (error) throw error;
-        setCoverUrl(signed.publicUrl);
-        setUploadMessage("Cover image uploaded.");
-      } catch (error) {
-        console.error("cover upload failed", error);
-        setUploadMessage("Could not upload the image.");
-      }
-    });
-  }
-
   return (
     <MediaPickerProvider initialAssets={mediaAssets}>
       <form
         id="news-editor-form"
         action={formAction}
+        onSubmit={handleManualSubmit}
         className="grid gap-8 pb-24 lg:grid-cols-[minmax(0,1fr)_320px] lg:pb-0"
       >
         {post?.id && <input type="hidden" name="id" value={post.id} />}
@@ -148,14 +145,24 @@ export function NewsEditorForm({
             <input
               name="slug"
               aria-label="Slug"
+              aria-describedby="news-slug-hint"
               value={visibleSlug}
               onChange={(event) => {
                 setSlugTouched(true);
-                setSlug(slugify(event.target.value));
+                setSlug(normalizeNewsSlug(event.target.value));
               }}
               required
               className={`${adminInputClass} font-mono`}
             />
+            {/* I13: tell the admin exactly what a valid slug looks like; the
+                server normalizes/validates with the same rule as a backstop. */}
+            <span
+              id="news-slug-hint"
+              className="mt-1.5 block text-xs text-slate-500"
+            >
+              Lowercase letters, numbers, and hyphens only — spaces and
+              punctuation are removed automatically.
+            </span>
           </label>
 
           <label className="block">
@@ -163,7 +170,8 @@ export function NewsEditorForm({
             <textarea
               name="excerpt"
               aria-label="Excerpt"
-              defaultValue={post?.excerpt ?? ""}
+              value={excerpt}
+              onChange={(event) => setExcerpt(event.target.value)}
               rows={3}
               maxLength={240}
               className={adminTextareaClass}
@@ -227,6 +235,19 @@ export function NewsEditorForm({
                 {state.message ?? "Post saved."}
               </p>
             )}
+            {/* I5: quiet autosave indicator, mirroring the SEO page editor. The
+                success state proves work is safe; the error state never claims
+                "saved" and points to the manual Save draft fallback. */}
+            {autosave?.status === "saved" && (
+              <p className="mt-3 text-xs font-medium text-slate-500">
+                Saved automatically · {formatPacificDateTime(autosave.savedAt)}
+              </p>
+            )}
+            {autosave?.status === "error" && (
+              <p className="mt-3 text-xs font-medium text-red-600">
+                {autosave.message}
+              </p>
+            )}
             <div className="mt-5 grid gap-2">
               <button
                 type="submit"
@@ -236,14 +257,7 @@ export function NewsEditorForm({
               >
                 Save draft
               </button>
-              <button
-                type="submit"
-                className={adminPrimaryButtonClass}
-                name="intent"
-                value="publish"
-              >
-                Publish
-              </button>
+              <NewsPublishButton className={adminPrimaryButtonClass} />
               {canUnpublish && (
                 <button
                   type="submit"
@@ -267,103 +281,15 @@ export function NewsEditorForm({
             </div>
           </div>
 
-          <div className={adminCardClass}>
-            <h2 className="text-sm font-semibold text-slate-950">Cover</h2>
-            <div className="mt-4">
-              <CoverLibraryButton
-                onSelect={(asset) => {
-                  setCoverUrl(asset.publicUrl);
-                  setCoverAlt(asset.altText);
-                }}
-              />
-            </div>
-            <label className="mt-4 block">
-              <span className="text-sm font-medium text-slate-700">
-                Image URL
-              </span>
-              <input
-                name="cover_url"
-                aria-label="Cover image URL"
-                value={coverUrl}
-                onChange={(event) => setCoverUrl(event.target.value)}
-                className={adminInputClass}
-              />
-            </label>
-            <label className="mt-4 block">
-              <span className="text-sm font-medium text-slate-700">Upload</span>
-              <input
-                type="file"
-                aria-label="Upload cover image"
-                accept="image/avif,image/webp,image/png,image/jpeg"
-                onChange={(event) =>
-                  handleFileChange(event.target.files?.[0] ?? null)
-                }
-                disabled={isUploading}
-                className="mt-2 block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#e9f1ff] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#0b63f6] hover:file:bg-[#dceaff]"
-              />
-            </label>
-            {uploadMessage && (
-              <p className="mt-2 text-xs text-slate-500">{uploadMessage}</p>
-            )}
-            <label className="mt-4 block">
-              <span className="text-sm font-medium text-slate-700">
-                Alt text
-              </span>
-              <input
-                name="cover_alt"
-                aria-label="Cover image alt text"
-                value={coverAlt}
-                onChange={(event) => setCoverAlt(event.target.value)}
-                className={adminInputClass}
-              />
-            </label>
-          </div>
+          <NewsCoverCard
+            coverUrl={coverUrl}
+            coverAlt={coverAlt}
+            onCoverUrlChange={setCoverUrl}
+            onCoverAltChange={setCoverAlt}
+          />
         </div>
       </form>
       <NewsMobileSaveBar formId="news-editor-form" />
     </MediaPickerProvider>
   );
-}
-
-function CoverLibraryButton({
-  onSelect,
-}: {
-  onSelect: (asset: EditorMediaAsset) => void;
-}) {
-  const { openMediaPicker } = useMediaPicker();
-  return (
-    <MediaLibrarySelectButton
-      label="Choose from media library"
-      onClick={() =>
-        openMediaPicker({
-          allowedTypes: ["image"],
-          onSelect,
-        })
-      }
-    />
-  );
-}
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/['"]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-function tabClass(active: boolean) {
-  return `px-4 py-3 text-sm font-medium transition ${
-    active
-      ? "bg-white text-[#0b63f6]"
-      : "text-slate-600 hover:bg-white/70 hover:text-slate-950"
-  }`;
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
