@@ -19,9 +19,15 @@ type LegacyLeadPageContentProps = {
   route: LegacyLeadRoute;
 };
 
+type LegacyContact = {
+  label: string;
+  tel: string;
+};
+
 type LegacySection = {
   title: string;
   body: string;
+  contacts?: LegacyContact[];
 };
 
 const variantSections: Record<LegacyLeadVariant, LegacySection[]> = {
@@ -147,6 +153,20 @@ const variantSections: Record<LegacyLeadVariant, LegacySection[]> = {
       body: "The blueprint breaks the journey into foundation, location, machine, product, and operating phases.",
     },
   ],
+  callBooking: [
+    {
+      title: "Don't See a Time That Works?",
+      body: "Need a different time? No problem. We have your availability and will reach out later today to find a slot that fits.",
+    },
+    {
+      title: "Ready to Talk Right Now?",
+      body: "Skip the scheduling and call the team directly. Available Monday–Friday, 8am–5pm PST.",
+      contacts: [
+        { label: "+1 (541) 214-2221", tel: "+15412142221" },
+        { label: "+1 (949) 676-1373", tel: "+19496761373" },
+      ],
+    },
+  ],
   join: [
     {
       title: "Hear From Our Community",
@@ -227,6 +247,19 @@ export function LegacyLeadPageContent({
               <p className="mt-4 text-base leading-7 font-semibold text-slate-700">
                 {section.body}
               </p>
+              {section.contacts ? (
+                <div className="mt-5 flex flex-wrap gap-3">
+                  {section.contacts.map((contact) => (
+                    <a
+                      className="inline-flex rounded-[8px] border-2 border-[#111111] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8] transition-transform hover:-translate-y-0.5"
+                      href={`tel:${contact.tel}`}
+                      key={contact.tel}
+                    >
+                      {contact.label}
+                    </a>
+                  ))}
+                </div>
+              ) : null}
             </article>
           ))}
         </div>

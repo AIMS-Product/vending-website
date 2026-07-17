@@ -10,7 +10,8 @@ export type LegacyLeadVariant =
   | "cashflow"
   | "quiz"
   | "journey"
-  | "join";
+  | "join"
+  | "callBooking";
 
 export type LegacyLeadRoute = {
   slug: string;
@@ -156,26 +157,56 @@ export const legacyLeadRoutes = [
   advisory("booking-partner", undefined, { embed: TYPEFORM_JPM }),
   advisory("booking-tiktok", undefined, { embed: TYPEFORM_JPM }),
   // --- Calendly advisory-call booking pages ---
-  advisory("book-my-advisory-call-setter", "Book Your Discovery Call", {
-    embed: calendly(
-      "https://calendly.com/d/cvsd-wxt-cvb/vendingpreneurs-quick-discovery",
-    ),
-  }),
-  advisory("book-my-advisory-call-accelerator", "Book Your Accelerator Call", {
-    embed: calendly(
-      "https://calendly.com/d/cxv9-jg6-m53/vending-accelerator-call",
-    ),
-  }),
-  advisory("book-my-advisory-call-l1-topcl", "Book Your Consultation Call", {
-    embed: calendly(
-      "https://calendly.com/d/cvr6-cfd-zgd/vendingpreneurs-consultation-call",
-    ),
-  }),
-  advisory("book-my-advisory-call-l1", "Book Your Consultation Call", {
-    embed: calendly(
-      "https://calendly.com/d/cxfn-hh2-h8g/vendingpreneurs-consultation",
-    ),
-  }),
+  // Copy mirrors the live Webflow pages: setter is a 15-minute discovery call;
+  // accelerator / l1 variants are the 45-minute advisory call.
+  route(
+    "book-my-advisory-call-setter",
+    "Book Your Discovery Call",
+    "Book Your Free Discovery Call",
+    "You've been dreaming about building something of your own. Let's get you an answer. In 15 minutes, we'll unpack your questions, your goals, and see if we're a good fit.",
+    "callBooking",
+    {
+      embed: calendly(
+        "https://calendly.com/d/cvsd-wxt-cvb/vendingpreneurs-quick-discovery",
+      ),
+    },
+  ),
+  route(
+    "book-my-advisory-call-accelerator",
+    "Book Your Accelerator Call",
+    "Book Your Free Advisory Call",
+    "You've been dreaming about building something of your own. Let's get you an answer. In 45 minutes, we'll walk through your numbers, your schedule, and your market, and decide whether vending is a smart second income for you.",
+    "callBooking",
+    {
+      embed: calendly(
+        "https://calendly.com/d/cxv9-jg6-m53/vending-accelerator-call",
+      ),
+    },
+  ),
+  route(
+    "book-my-advisory-call-l1-topcl",
+    "Book Your Consultation Call",
+    "Book Your Free Advisory Call",
+    "You've been dreaming about building something of your own. Let's get you an answer. In 45 minutes, we'll walk through your numbers, your schedule, and your market, and decide whether vending is a smart second income for you.",
+    "callBooking",
+    {
+      embed: calendly(
+        "https://calendly.com/d/cvr6-cfd-zgd/vendingpreneurs-consultation-call",
+      ),
+    },
+  ),
+  route(
+    "book-my-advisory-call-l1",
+    "Book Your Consultation Call",
+    "Book Your Free Advisory Call",
+    "You've been dreaming about building something of your own. Let's get you an answer. In 45 minutes, we'll walk through your numbers, your schedule, and your market, and decide whether vending is a smart second income for you.",
+    "callBooking",
+    {
+      embed: calendly(
+        "https://calendly.com/d/cxfn-hh2-h8g/vendingpreneurs-consultation",
+      ),
+    },
+  ),
   market("booking-vendingpreneurs-training"),
   route(
     "schedule-your-call-ig",
