@@ -1,5 +1,7 @@
 import "server-only";
 
+import { CalendlyEmbed } from "@/components/embeds/CalendlyEmbed";
+import { TypeformEmbed } from "@/components/embeds/TypeformEmbed";
 import {
   PublicLeadForm,
   type PublicLeadFormAction,
@@ -186,13 +188,29 @@ export function LegacyLeadPageContent({
             </p>
           </div>
 
-          <PublicLeadForm
-            action={action}
-            attribution={attribution}
-            idempotencyKey={idempotencyKey}
-            intent="apply"
-            submitLabel="Submit application"
-          />
+          {route.embed ? (
+            route.embed.kind === "typeform" ? (
+              <TypeformEmbed
+                attribution={attribution}
+                formId={route.embed.formId}
+                title={`${route.metadataTitle} — application form`}
+              />
+            ) : (
+              <CalendlyEmbed
+                attribution={attribution}
+                title={`${route.metadataTitle} — scheduler`}
+                url={route.embed.url}
+              />
+            )
+          ) : (
+            <PublicLeadForm
+              action={action}
+              attribution={attribution}
+              idempotencyKey={idempotencyKey}
+              intent="apply"
+              submitLabel="Submit application"
+            />
+          )}
         </div>
       </section>
 

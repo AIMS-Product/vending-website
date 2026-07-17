@@ -1,3 +1,5 @@
+import type { LeadEmbed } from "@/lib/content/lead-embed";
+
 export type LegacyLeadVariant =
   | "advisory"
   | "market"
@@ -18,6 +20,12 @@ export type LegacyLeadRoute = {
   description: string;
   variant: LegacyLeadVariant;
   indexable: boolean;
+  /**
+   * When set, the conversion CTA is a native in-page Typeform/Calendly embed
+   * instead of the built-in lead form. Driven by the Vendingpreneurs Migration
+   * Sheet — see docs/migration/conversion-pages.md.
+   */
+  embed?: LeadEmbed;
 };
 
 const advisoryHeadline =
@@ -40,13 +48,21 @@ const cashflowDescription =
 const journeyDescription =
   "Start with the 90-day blueprint and get the framework for locations, machines, products, and support.";
 
+type RouteOptions = { indexable?: boolean; embed?: LeadEmbed };
+
+/** Typeform embed shorthand. */
+const typeform = (formId: string): LeadEmbed => ({ kind: "typeform", formId });
+
+/** Calendly embed shorthand. */
+const calendly = (url: string): LeadEmbed => ({ kind: "calendly", url });
+
 function route(
   slug: string,
   metadataTitle: string,
   pageTitle: string,
   description: string,
   variant: LegacyLeadVariant,
-  options: { indexable?: boolean } = {},
+  options: RouteOptions = {},
 ): LegacyLeadRoute {
   return {
     slug,
@@ -56,12 +72,14 @@ function route(
     description,
     variant,
     indexable: options.indexable ?? false,
+    embed: options.embed,
   };
 }
 
 function advisory(
   slug: string,
   metadataTitle = "Book Your Vending Route Advisory Call",
+  options: RouteOptions = {},
 ) {
   return route(
     slug,
@@ -69,12 +87,14 @@ function advisory(
     advisoryHeadline,
     advisoryDescription,
     "advisory",
+    options,
   );
 }
 
 function market(
   slug: string,
   metadataTitle = "Book Your Vending Route Advisory Call",
+  options: RouteOptions = {},
 ) {
   return route(
     slug,
@@ -82,13 +102,14 @@ function market(
     marketHeadline,
     marketDescription,
     "market",
+    options,
   );
 }
 
 function cashflow(
   slug: string,
   metadataTitle: string,
-  options: { indexable?: boolean } = {},
+  options: RouteOptions = {},
 ) {
   return route(
     slug,
@@ -100,21 +121,61 @@ function cashflow(
   );
 }
 
+const TYPEFORM_JPM = typeform("JPM7QOcG");
+const TYPEFORM_NSA = typeform("NsaOR2VZ");
+
 export const legacyLeadRoutes = [
-  advisory("booking-meta"),
-  advisory("booking-youtube"),
-  advisory("booking-reactivation-email"),
-  advisory("booking-ig"),
-  advisory("booking-linkedin"),
+  // --- Typeform booking pages (embed JPM7QOcG unless noted) ---
+  advisory("booking-meta", undefined, { embed: TYPEFORM_JPM }),
+  advisory("booking-youtube", undefined, { embed: TYPEFORM_NSA }),
+  advisory("booking-reactivation-email", undefined, { embed: TYPEFORM_JPM }),
+  // booking-ig / booking-insta-b5: Action = "Redirects to Calendly only" —
+  // embed the Calendly scheduler as the primary CTA.
+  advisory("booking-ig", undefined, {
+    embed: calendly(
+      "https://calendly.com/d/dv5d-5zj-g8b/vendingpreneurs-consultation-session",
+    ),
+  }),
+  advisory("booking-insta-b5", undefined, {
+    embed: calendly(
+      "https://calendly.com/d/dz4t-wrw-3nk/vendingpreneurs-strategy-session",
+    ),
+  }),
+  advisory("booking-linkedin", undefined, { embed: TYPEFORM_JPM }),
+  // booking-x predates the sheet's booking-ak-x; kept on the native form
+  // pending confirmation (see docs/migration/conversion-pages.md).
   advisory("booking-x"),
-  advisory("booking-internal-ltf"),
-  advisory("booking-passivepreneurs"),
+  advisory("booking-ak-x", undefined, { embed: TYPEFORM_JPM }),
+  advisory("booking-ak-linkedin", undefined, { embed: TYPEFORM_JPM }),
+  advisory("booking-internal-ltf", undefined, { embed: TYPEFORM_JPM }),
+  advisory("booking-passivepreneurs", undefined, { embed: TYPEFORM_JPM }),
   advisory(
     "booking-modern-entrepreneur-newsletter",
     "Modern Entrepreneur Newsletter",
   ),
-  advisory("booking-partner"),
-  advisory("booking-tiktok"),
+  advisory("booking-partner", undefined, { embed: TYPEFORM_JPM }),
+  advisory("booking-tiktok", undefined, { embed: TYPEFORM_JPM }),
+  // --- Calendly advisory-call booking pages ---
+  advisory("book-my-advisory-call-setter", "Book Your Discovery Call", {
+    embed: calendly(
+      "https://calendly.com/d/cvsd-wxt-cvb/vendingpreneurs-quick-discovery",
+    ),
+  }),
+  advisory("book-my-advisory-call-accelerator", "Book Your Accelerator Call", {
+    embed: calendly(
+      "https://calendly.com/d/cxv9-jg6-m53/vending-accelerator-call",
+    ),
+  }),
+  advisory("book-my-advisory-call-l1-topcl", "Book Your Consultation Call", {
+    embed: calendly(
+      "https://calendly.com/d/cvr6-cfd-zgd/vendingpreneurs-consultation-call",
+    ),
+  }),
+  advisory("book-my-advisory-call-l1", "Book Your Consultation Call", {
+    embed: calendly(
+      "https://calendly.com/d/cxfn-hh2-h8g/vendingpreneurs-consultation",
+    ),
+  }),
   market("booking-vendingpreneurs-training"),
   route(
     "schedule-your-call-ig",
@@ -126,17 +187,27 @@ export const legacyLeadRoutes = [
   market("book-your-call"),
   route(
     "start",
-    "booking/vendingpreneurs-webinar",
+    "Book Your Vending Route Advisory Call",
     "You Saw How It Works. Now Let's Build Your Route.",
     "Turn the webinar into a concrete route plan with the next step, the right market, and the right support.",
     "webinar",
+    {
+      embed: calendly(
+        "https://calendly.com/d/cxwj-zxk-2z4/vending-route-advisory-call",
+      ),
+    },
   ),
   market(
     "start-your-route-ak-ig",
     "Start Your Vending Route | Vendingpreneurs",
+    {
+      embed: TYPEFORM_JPM,
+    },
   ),
   market("start-your-route-ak-tt", "Start Your Vending Route"),
-  market("start-my-vending-business", "Book Your Vending Route Advisory Call"),
+  market("start-my-vending-business", "Book Your Vending Route Advisory Call", {
+    embed: TYPEFORM_JPM,
+  }),
   cashflow("vending-route-blueprint", "Vending Route Blueprint | Watch Now", {
     indexable: true,
   }),
@@ -148,7 +219,9 @@ export const legacyLeadRoutes = [
     "journey",
     { indexable: true },
   ),
-  advisory("apply-vendingpreneurs", "Book Your Free Vending Advisory Call"),
+  advisory("apply-vendingpreneurs", "Book Your Free Vending Advisory Call", {
+    embed: TYPEFORM_NSA,
+  }),
 ] satisfies readonly LegacyLeadRoute[];
 
 const legacyLeadRouteBySlug: ReadonlyMap<string, LegacyLeadRoute> = new Map(
