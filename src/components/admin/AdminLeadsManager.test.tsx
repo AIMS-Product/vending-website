@@ -8,6 +8,7 @@ import type {
 
 vi.mock("@/app/admin/leads/actions", () => ({
   retryCloseSyncEvent: vi.fn(),
+  deleteLead: vi.fn(),
 }));
 
 const lead: AdminLeadListItem = {

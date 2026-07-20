@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import {
+  deleteLead,
   retryCloseSyncEvent,
   type LeadAdminActionState,
 } from "@/app/admin/leads/actions";
@@ -244,11 +245,14 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
                 <p className="mt-1 text-sm text-slate-600">{lead.phone}</p>
               ) : null}
             </div>
-            <div className="flex flex-wrap gap-2">
-              <AdminStatusBadge status={lead.lifecycleStatus} />
-              {lead.closeSyncStatus ? (
-                <CloseSyncStatusBadge status={lead.closeSyncStatus} />
-              ) : null}
+            <div className="flex flex-col items-start gap-3 sm:items-end">
+              <div className="flex flex-wrap gap-2">
+                <AdminStatusBadge status={lead.lifecycleStatus} />
+                {lead.closeSyncStatus ? (
+                  <CloseSyncStatusBadge status={lead.closeSyncStatus} />
+                ) : null}
+              </div>
+              <DeleteLeadForm leadId={lead.id} fullName={lead.fullName} />
             </div>
           </div>
           <dl className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -567,6 +571,51 @@ function RetrySubmitButton() {
         <AdminIcon icon="upload" />
       </span>
       {pending ? "Queueing..." : "Retry sync"}
+    </button>
+  );
+}
+
+function DeleteLeadForm({
+  leadId,
+  fullName,
+}: {
+  leadId: string;
+  fullName: string;
+}) {
+  const [state, formAction] = useActionState(deleteLead, initialActionState);
+  return (
+    <form
+      action={formAction}
+      className="grid justify-items-start gap-1 sm:justify-items-end"
+      onSubmit={(event) => {
+        if (
+          !window.confirm(
+            `Permanently delete the lead for ${fullName}? This removes their qualification answers and cannot be undone.`,
+          )
+        ) {
+          event.preventDefault();
+        }
+      }}
+    >
+      <input type="hidden" name="leadId" value={leadId} />
+      <DeleteSubmitButton />
+      <ActionMessage state={state} />
+    </form>
+  );
+}
+
+function DeleteSubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="inline-flex min-h-11 items-center gap-2 rounded-md border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:outline-none disabled:opacity-60"
+    >
+      <span aria-hidden="true">
+        <AdminIcon icon="trash" />
+      </span>
+      {pending ? "Deleting..." : "Delete lead"}
     </button>
   );
 }

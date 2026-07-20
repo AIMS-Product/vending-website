@@ -262,6 +262,35 @@ export async function adminRetryCloseSyncEvent(
   };
 }
 
+export type AdminDeleteLeadInput = {
+  leadId: string;
+};
+
+/**
+ * Permanently deletes a lead submission. Child rows in qualification_sessions,
+ * qualification_answers, and close_sync_events are removed by ON DELETE CASCADE;
+ * calendly_bookings rows are unlinked (ON DELETE SET NULL) rather than removed,
+ * so the booking record survives. Admin-only — callers must gate on requireAdmin.
+ */
+export async function adminDeleteLead(
+  input: AdminDeleteLeadInput,
+  deps: ServiceDeps = {},
+): Promise<{ status: "deleted"; leadId: string }> {
+  const client = serviceClient(deps);
+  const { data, error } = await client
+    .from("lead_submissions")
+    .delete()
+    .eq("id", input.leadId)
+    .select("id");
+
+  if (error) throw new LeadAdminServiceError("Could not delete lead.");
+  if (!data || data.length === 0) {
+    throw new LeadAdminServiceError("Lead not found.");
+  }
+
+  return { status: "deleted", leadId: input.leadId };
+}
+
 function serviceClient(deps: ServiceDeps): LeadAdminClient {
   return deps.client ?? createAdminClient();
 }

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { retryCloseSyncEvent } from "./actions";
+import { deleteLead, retryCloseSyncEvent } from "./actions";
 
 const mocks = vi.hoisted(() => {
   class LeadAdminServiceError extends Error {
@@ -13,7 +13,9 @@ const mocks = vi.hoisted(() => {
     LeadAdminServiceError,
     requireAdmin: vi.fn(),
     revalidatePath: vi.fn(),
+    redirect: vi.fn(),
     adminRetryCloseSyncEvent: vi.fn(),
+    adminDeleteLead: vi.fn(),
   };
 });
 
@@ -25,9 +27,14 @@ vi.mock("next/cache", () => ({
   revalidatePath: mocks.revalidatePath,
 }));
 
+vi.mock("next/navigation", () => ({
+  redirect: mocks.redirect,
+}));
+
 vi.mock("@/lib/services/lead-admin", () => ({
   LeadAdminServiceError: mocks.LeadAdminServiceError,
   adminRetryCloseSyncEvent: mocks.adminRetryCloseSyncEvent,
+  adminDeleteLead: mocks.adminDeleteLead,
 }));
 
 function formData(values: Record<string, string>) {
@@ -45,6 +52,10 @@ beforeEach(() => {
   mocks.adminRetryCloseSyncEvent.mockResolvedValue({
     status: "queued",
     eventId: "event_1",
+    leadId: "lead_1",
+  });
+  mocks.adminDeleteLead.mockResolvedValue({
+    status: "deleted",
     leadId: "lead_1",
   });
 });
@@ -83,5 +94,38 @@ describe("retryCloseSyncEvent", () => {
       status: "error",
       message: "Synced Close events cannot be retried.",
     });
+  });
+});
+
+describe("deleteLead", () => {
+  it("requires admin, deletes the lead, revalidates, and redirects to the list", async () => {
+    await deleteLead({ status: "idle" }, formData({ leadId: "lead_1" }));
+
+    expect(mocks.requireAdmin).toHaveBeenCalled();
+    expect(mocks.adminDeleteLead).toHaveBeenCalledWith({ leadId: "lead_1" });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/leads");
+    expect(mocks.redirect).toHaveBeenCalledWith("/admin/leads?deleted=1");
+  });
+
+  it("rejects a missing lead id without calling the service", async () => {
+    const result = await deleteLead({ status: "idle" }, formData({}));
+
+    expect(result.status).toBe("error");
+    expect(mocks.adminDeleteLead).not.toHaveBeenCalled();
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("returns the service error message and does not redirect", async () => {
+    mocks.adminDeleteLead.mockRejectedValue(
+      new mocks.LeadAdminServiceError("Lead not found."),
+    );
+
+    const result = await deleteLead(
+      { status: "idle" },
+      formData({ leadId: "missing" }),
+    );
+
+    expect(result).toEqual({ status: "error", message: "Lead not found." });
+    expect(mocks.redirect).not.toHaveBeenCalled();
   });
 });

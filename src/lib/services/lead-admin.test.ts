@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  adminDeleteLead,
   adminGetLeadDetail,
   adminListLeads,
   adminRetryCloseSyncEvent,
+  LeadAdminServiceError,
 } from "./lead-admin";
 import type { Database, Tables } from "@/types/database";
 
@@ -216,6 +218,7 @@ class FakeQuery {
   private orderKey: string | null = null;
   private orderAscending = true;
   private limitCount: number | null = null;
+  private deleteMode = false;
 
   constructor(
     private table: string,
@@ -223,6 +226,11 @@ class FakeQuery {
   ) {}
 
   select() {
+    return this;
+  }
+
+  delete() {
+    this.deleteMode = true;
     return this;
   }
 
@@ -287,6 +295,15 @@ class FakeQuery {
   }
 
   then(resolve: (value: { data: unknown[]; error: null }) => void) {
+    if (this.deleteMode) {
+      const matched = this.rows();
+      if (this.table === "lead_submissions") {
+        const ids = new Set(matched.map((row) => (row as LeadRow).id));
+        this.state.leads = this.state.leads.filter((row) => !ids.has(row.id));
+      }
+      resolve({ data: matched, error: null });
+      return;
+    }
     resolve({ data: this.rows(), error: null });
   }
 
@@ -458,5 +475,30 @@ describe("adminRetryCloseSyncEvent", () => {
     ).rejects.toThrow("Synced Close events cannot be retried.");
 
     expect(fake.state.updates).toEqual([]);
+  });
+});
+
+describe("adminDeleteLead", () => {
+  it("permanently removes the lead and reports the deleted id", async () => {
+    const fake = buildClient({
+      leads: [makeLead({ id: "lead_1" }), makeLead({ id: "lead_2" })],
+    });
+
+    const result = await adminDeleteLead(
+      { leadId: "lead_1" },
+      { client: fake.client },
+    );
+
+    expect(result).toEqual({ status: "deleted", leadId: "lead_1" });
+    expect(fake.state.leads.map((lead) => lead.id)).toEqual(["lead_2"]);
+  });
+
+  it("throws when the lead does not exist", async () => {
+    const fake = buildClient({ leads: [makeLead({ id: "lead_1" })] });
+
+    await expect(
+      adminDeleteLead({ leadId: "missing" }, { client: fake.client }),
+    ).rejects.toBeInstanceOf(LeadAdminServiceError);
+    expect(fake.state.leads).toHaveLength(1);
   });
 });
