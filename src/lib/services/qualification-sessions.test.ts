@@ -124,7 +124,10 @@ function makeSession(
     consent_user_agent: null,
     consent_source_attribution: {},
     stale_at: "2026-06-24T09:00:00.000Z",
-    expires_at: "2026-07-17T09:00:00.000Z",
+    // Far-future so happy-path tests that rely on the real clock (no injected
+    // `now`) never see the default session as expired. Expiry behaviour is
+    // covered by tests that override `expires_at` + pass a matching `now`.
+    expires_at: "2999-07-17T09:00:00.000Z",
     started_at: "2026-06-17T09:00:00.000Z",
     completed_at: null,
     created_at: "2026-06-17T09:00:00.000Z",

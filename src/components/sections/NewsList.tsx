@@ -113,5 +113,9 @@ function formatDate(iso: string): string {
     year: "numeric",
     month: "short",
     day: "numeric",
+    // Pin to UTC so a stored date renders the same calendar day regardless of
+    // the server's or viewer's timezone (otherwise a midnight-UTC date rolls
+    // back a day in US timezones).
+    timeZone: "UTC",
   });
 }
