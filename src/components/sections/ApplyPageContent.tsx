@@ -14,6 +14,9 @@ type ApplyPageContentProps = {
   title?: string;
   description?: string;
   submitLabel?: string;
+  // When set, a successful submit hands the lead off to this Calendly link to
+  // pick a time (name/email pre-filled) after the lead is captured.
+  bookingRedirectUrl?: string;
 };
 
 export function ApplyPageContent({
@@ -24,6 +27,7 @@ export function ApplyPageContent({
   title = "Apply to build your vending business with Mike.",
   description = "Share where you are now, where you want to launch, and what kind of support would move the business forward.",
   submitLabel = "Submit application",
+  bookingRedirectUrl,
 }: ApplyPageContentProps) {
   return (
     <section className="relative isolate overflow-hidden bg-[#f5fbff] px-5 pt-28 pb-20 lg:px-10 lg:pt-32 lg:pb-28">
@@ -46,6 +50,7 @@ export function ApplyPageContent({
           idempotencyKey={idempotencyKey}
           intent="apply"
           submitLabel={submitLabel}
+          bookingRedirectUrl={bookingRedirectUrl}
         />
       </div>
     </section>
