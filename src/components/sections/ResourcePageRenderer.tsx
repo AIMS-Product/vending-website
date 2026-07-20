@@ -62,6 +62,7 @@ export function ResourcePageRenderer({
                 block.variant === "compact" || block.variant === "sidebar"
                   ? "compact"
                   : "standard";
+              const bookingRedirectUrl = block.props.calendlyUrl || undefined;
 
               if (qualification.formId) {
                 return (
@@ -79,6 +80,7 @@ export function ResourcePageRenderer({
                     intent="qualification"
                     layout={layout}
                     submitLabel={block.props.submitLabel}
+                    bookingRedirectUrl={bookingRedirectUrl}
                   />
                 );
               }
@@ -91,6 +93,7 @@ export function ResourcePageRenderer({
                   intent="apply"
                   layout={layout}
                   submitLabel={block.props.submitLabel}
+                  bookingRedirectUrl={bookingRedirectUrl}
                 />
               );
             }}

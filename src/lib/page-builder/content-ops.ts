@@ -171,6 +171,7 @@ export function createPageBlock(
         body: "",
         submitLabel: "",
         trackingName: "",
+        calendlyUrl: "",
       },
     };
   }

@@ -72,3 +72,48 @@ export function buildCalendlySrc(
   }
   return target.toString();
 }
+
+/**
+ * Build a full-page Calendly scheduling link used as the post-submit handoff
+ * for a native lead form (form captures the lead → we send them to Calendly to
+ * pick a time). Name/email are pre-filled from what they just typed so they
+ * don't retype, and UTM attribution is carried through so the booking stays
+ * attributed to the originating campaign. Unlike buildCalendlySrc this is a
+ * top-level redirect target, not an inline iframe, so no embed params are set.
+ */
+export function buildCalendlyBookingUrl(
+  url: string,
+  prefill: {
+    name?: string | null;
+    email?: string | null;
+    attribution?: LeadAttribution | null;
+  } = {},
+): string {
+  const target = new URL(url);
+  const name = prefill.name?.trim();
+  const email = prefill.email?.trim();
+  if (name) target.searchParams.set("name", name);
+  if (email) target.searchParams.set("email", email);
+  if (prefill.attribution) {
+    for (const [key, value] of utmPairs(prefill.attribution)) {
+      target.searchParams.set(key, value);
+    }
+  }
+  return target.toString();
+}
+
+/**
+ * A calendly.com scheduling link. Used to validate the optional Calendly
+ * handoff configured on a lead form block before it reaches the public site.
+ */
+export function isCalendlyUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:") return false;
+    return (
+      url.hostname === "calendly.com" || url.hostname.endsWith(".calendly.com")
+    );
+  } catch {
+    return false;
+  }
+}

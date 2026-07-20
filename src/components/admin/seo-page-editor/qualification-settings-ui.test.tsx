@@ -56,6 +56,7 @@ describe("qualification attachment settings UI", () => {
         body: "Start with your contact details.",
         submitLabel: "Continue",
         trackingName: "resource_lead_form",
+        calendlyUrl: "",
         qualification: {
           formId: "22222222-2222-4222-8222-222222222222",
           completionRedirectPath: "/book-a-call",

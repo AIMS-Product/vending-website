@@ -998,6 +998,24 @@ export function BlockSidebarSettingsPanel({
               })
             }
           />
+          <div className="space-y-1.5">
+            <TextInput
+              label="Calendly link (optional)"
+              placeholder="https://calendly.com/your-team/intro-call"
+              value={block.props.calendlyUrl}
+              onChange={(value) =>
+                onChange({
+                  ...block,
+                  props: { ...block.props, calendlyUrl: value },
+                })
+              }
+            />
+            <p className="text-xs leading-5 text-slate-500">
+              After the form is submitted, the lead is captured, then sent to
+              this Calendly link to pick a time (name and email pre-filled).
+              Leave blank to just capture the lead.
+            </p>
+          </div>
           <LeadFormQualificationSettings block={block} onChange={onChange} />
         </>
       )}

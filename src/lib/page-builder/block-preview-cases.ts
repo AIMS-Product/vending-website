@@ -470,6 +470,7 @@ function createPreviewBlock(
       body: "Share your goals and we will point you toward the right next step.",
       submitLabel: "Request guidance",
       trackingName: `preview-${variant}-lead-form`,
+      calendlyUrl: "",
     },
   };
 }

@@ -799,6 +799,7 @@ describe("page builder block schemas", () => {
                     body: "Tell us about your goals.",
                     submitLabel: "Submit application",
                     trackingName: "resource_lead_form",
+                    calendlyUrl: "",
                   },
                 },
               ],

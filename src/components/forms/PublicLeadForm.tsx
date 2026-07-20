@@ -19,6 +19,7 @@ import {
   VP_ATTRIBUTION_STORAGE_KEY,
 } from "@/lib/attribution-session";
 import type { LeadAttribution } from "@/lib/lead-attribution";
+import { buildCalendlyBookingUrl } from "@/lib/content/lead-embed";
 import { US_STATES } from "@/lib/content/us-states";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,10 @@ type PublicLeadFormProps = {
   submitLabel: string;
   intent: LeadIntent;
   layout?: "standard" | "compact";
+  // Optional Calendly scheduling link. When set, a successful submission hands
+  // the lead off to Calendly (name/email pre-filled, UTM carried through) so
+  // they can pick a time — the lead is already captured in the CRM by then.
+  bookingRedirectUrl?: string;
   // Override the initial action state. Production always uses the idle default;
   // this exists so SSR-rendered tests can exercise the field-error layer.
   initialState?: PublicLeadActionState;
@@ -66,6 +71,7 @@ export function PublicLeadForm({
   submitLabel,
   intent,
   layout = "standard",
+  bookingRedirectUrl,
   initialState = initialLeadActionState,
 }: PublicLeadFormProps) {
   const router = useRouter();
@@ -94,11 +100,23 @@ export function PublicLeadForm({
     return dispatch(formData);
   };
 
-  const transition = resolveLeadSuccessTransition(
-    state,
-    intent,
-    submittedEmail,
-  );
+  // When a Calendly handoff is configured, a successful submit sends the lead
+  // straight to the scheduler (name/email pre-filled) instead of the internal
+  // thank-you page or success panel. Calendly is a different origin, so this is
+  // a full-page navigation, not a client-router push. This takes precedence
+  // over the internal transition below.
+  const bookingHref =
+    state.status === "success" && bookingRedirectUrl
+      ? buildCalendlyBookingUrl(bookingRedirectUrl, {
+          name: submittedValues.full_name,
+          email: submittedValues.email,
+          attribution,
+        })
+      : undefined;
+
+  const transition = bookingHref
+    ? null
+    : resolveLeadSuccessTransition(state, intent, submittedEmail);
   const redirectHref =
     transition?.kind === "redirect" ? transition.href : undefined;
 
@@ -109,6 +127,13 @@ export function PublicLeadForm({
       router.push(redirectHref);
     }
   }, [redirectHref, router]);
+
+  // Hand off to Calendly on a successful submit when configured.
+  useEffect(() => {
+    if (bookingHref) {
+      window.location.assign(bookingHref);
+    }
+  }, [bookingHref]);
 
   const errors = state.status === "error" ? state.fieldErrors : undefined;
   const summaryItems = deriveLeadErrorSummary(state);
@@ -128,6 +153,10 @@ export function PublicLeadForm({
   const isCompact = layout === "compact";
   const showQualificationFields = isApply || (!isCompact && !isQualification);
   const showPhoneField = isQualification || showQualificationFields;
+
+  if (bookingHref) {
+    return <BookingRedirectPanel />;
+  }
 
   if (transition?.kind === "panel") {
     return <ContactSuccessPanel email={transition.email} />;
@@ -381,6 +410,27 @@ function LeadErrorSummary({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function BookingRedirectPanel() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="grid gap-4 rounded-[12px] border-2 border-[#111111] bg-white p-7 shadow-[8px_8px_0_#55b8e8]"
+    >
+      <p className="inline-flex w-fit rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
+        Details received
+      </p>
+      <h3 className="text-2xl font-black text-[#111111] uppercase">
+        Taking you to book your call...
+      </h3>
+      <p className="text-base leading-7 font-semibold text-slate-700">
+        We&apos;ve got your details. You&apos;re being redirected to pick a time
+        that works for you. If nothing happens, refresh this page.
+      </p>
     </div>
   );
 }

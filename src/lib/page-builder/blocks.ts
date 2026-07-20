@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isBlockFieldVisible } from "@/lib/page-builder/block-field-visibility";
 import { collectInternalLinks } from "@/lib/page-builder/page-internal-links";
+import { isCalendlyUrl } from "@/lib/content/lead-embed";
 
 export type PageBuilderValidationIssue = {
   code: string;
@@ -370,6 +371,15 @@ const leadFormBlockSchema = z
         body: optionalTrimmedText(500),
         submitLabel: z.string().trim().max(80).default("Submit application"),
         trackingName: optionalTrimmedText(120),
+        calendlyUrl: z
+          .string()
+          .trim()
+          .max(500, "Calendly link is too long.")
+          .optional()
+          .transform((value) => value ?? "")
+          .refine((value) => value.length === 0 || isCalendlyUrl(value), {
+            message: "Use an https://calendly.com scheduling link.",
+          }),
         qualification: qualificationAttachmentSettingsSchema.optional(),
         fieldVisibility: blockFieldVisibilitySchema,
       })
@@ -571,6 +581,7 @@ export const blockRegistry = {
       body: "",
       submitLabel: "Submit application",
       trackingName: "",
+      calendlyUrl: "",
     },
   },
 } as const;
