@@ -13,6 +13,7 @@ type AdminSection =
   | "posts"
   | "forms"
   | "leads"
+  | "analytics"
   | "media"
   | "libraries"
   | "settings"
@@ -28,6 +29,7 @@ type AdminShellIconName = Extract<
   | "list"
   | "mail"
   | "log-out"
+  | "search"
   | "settings"
   | "shield"
   | "target"
@@ -78,6 +80,13 @@ const contentSections: AdminNavSection[] = [
     href: "/admin/leads",
     description: "Qualification ops",
     icon: "mail",
+  },
+  {
+    id: "analytics",
+    label: "Analytics",
+    href: "/admin/analytics",
+    description: "Reporting & conversion",
+    icon: "search",
   },
   {
     id: "media",
