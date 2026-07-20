@@ -30,14 +30,6 @@ function toRow(route: LegacyLeadRoute): LinkRow {
   return { path: route.path, slug: route.slug, reference: route.metadataTitle };
 }
 
-const typeformRows: LinkRow[] = legacyLeadRoutes
-  .filter((route) => route.embed?.kind === "typeform")
-  .map((route) => ({
-    ...toRow(route),
-    reference:
-      route.embed?.kind === "typeform" ? route.embed.formId : route.slug,
-  }));
-
 const calendlyRows: LinkRow[] = legacyLeadRoutes
   .filter((route) => route.embed?.kind === "calendly")
   .map((route) => ({
@@ -70,23 +62,19 @@ type Group = {
 
 const groups: Group[] = [
   {
-    title: "Typeform embeds",
-    blurb: "Native in-page Typeform with UTM + source passed as hidden fields.",
-    rows: typeformRows,
+    title: "Native lead form",
+    blurb:
+      "Built-in Vendingpreneurs form — captures the lead in our database with full UTM/source attribution. Former Typeform pages now live here.",
+    rows: nativeRows,
   },
   {
     title: "Calendly embeds",
     blurb: "Native in-page Calendly scheduler with UTM passed as utm_* params.",
     rows: calendlyRows,
   },
-  {
-    title: "Native lead form",
-    blurb: "Built-in Vendingpreneurs form (no external embed wired yet).",
-    rows: nativeRows,
-  },
 ];
 
-const total = typeformRows.length + calendlyRows.length + nativeRows.length;
+const total = calendlyRows.length + nativeRows.length;
 
 export default function QaLinksPage() {
   return (
@@ -99,9 +87,9 @@ export default function QaLinksPage() {
           Conversion Pages
         </h1>
         <p className="mt-6 max-w-2xl text-lg leading-8 font-semibold text-slate-700">
-          Every conversion page and its embed. Open a link to see the live
-          Typeform or Calendly in the branded page. {total} pages total. These
-          pages are noindex; do not share outside the team.
+          Every conversion page. Open a link to see the live native form or
+          Calendly in the branded page. {total} pages total. These pages are
+          noindex; do not share outside the team.
         </p>
 
         <div className="mt-12 flex flex-col gap-10">

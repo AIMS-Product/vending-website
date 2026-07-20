@@ -22,9 +22,10 @@ export type LegacyLeadRoute = {
   variant: LegacyLeadVariant;
   indexable: boolean;
   /**
-   * When set, the conversion CTA is a native in-page Typeform/Calendly embed
-   * instead of the built-in lead form. Driven by the Vendingpreneurs Migration
-   * Sheet — see docs/migration/conversion-pages.md.
+   * When set, the conversion CTA is a native in-page Calendly scheduler instead
+   * of the built-in lead form. Every other page uses the native form so the
+   * lead is captured in our database with UTM/source attribution. See
+   * docs/migration/conversion-pages.md.
    */
   embed?: LeadEmbed;
 };
@@ -50,9 +51,6 @@ const journeyDescription =
   "Start with the 90-day blueprint and get the framework for locations, machines, products, and support.";
 
 type RouteOptions = { indexable?: boolean; embed?: LeadEmbed };
-
-/** Typeform embed shorthand. */
-const typeform = (formId: string): LeadEmbed => ({ kind: "typeform", formId });
 
 /** Calendly embed shorthand. */
 const calendly = (url: string): LeadEmbed => ({ kind: "calendly", url });
@@ -122,14 +120,16 @@ function cashflow(
   );
 }
 
-const TYPEFORM_JPM = typeform("JPM7QOcG");
-const TYPEFORM_NSA = typeform("NsaOR2VZ");
-
 export const legacyLeadRoutes = [
-  // --- Typeform booking pages (embed JPM7QOcG unless noted) ---
-  advisory("booking-meta", undefined, { embed: TYPEFORM_JPM }),
-  advisory("booking-youtube", undefined, { embed: TYPEFORM_NSA }),
-  advisory("booking-reactivation-email", undefined, { embed: TYPEFORM_JPM }),
+  // --- Booking pages on the native lead form ---
+  // These were Typeform embeds; converted to the built-in form so every lead
+  // is captured in our database with full UTM/source attribution (Typeform kept
+  // the lead off-site). No `embed` => LegacyLeadPageContent renders the native
+  // PublicLeadForm, which preserves UTM via hidden fields + the stored
+  // first-touch attribution session.
+  advisory("booking-meta"),
+  advisory("booking-youtube"),
+  advisory("booking-reactivation-email"),
   // booking-ig / booking-insta-b5: Action = "Redirects to Calendly only" —
   // embed the Calendly scheduler as the primary CTA.
   advisory("booking-ig", undefined, {
@@ -142,20 +142,18 @@ export const legacyLeadRoutes = [
       "https://calendly.com/d/dz4t-wrw-3nk/vendingpreneurs-strategy-session",
     ),
   }),
-  advisory("booking-linkedin", undefined, { embed: TYPEFORM_JPM }),
-  // booking-x predates the sheet's booking-ak-x; kept on the native form
-  // pending confirmation (see docs/migration/conversion-pages.md).
+  advisory("booking-linkedin"),
   advisory("booking-x"),
-  advisory("booking-ak-x", undefined, { embed: TYPEFORM_JPM }),
-  advisory("booking-ak-linkedin", undefined, { embed: TYPEFORM_JPM }),
-  advisory("booking-internal-ltf", undefined, { embed: TYPEFORM_JPM }),
-  advisory("booking-passivepreneurs", undefined, { embed: TYPEFORM_JPM }),
+  advisory("booking-ak-x"),
+  advisory("booking-ak-linkedin"),
+  advisory("booking-internal-ltf"),
+  advisory("booking-passivepreneurs"),
   advisory(
     "booking-modern-entrepreneur-newsletter",
     "Modern Entrepreneur Newsletter",
   ),
-  advisory("booking-partner", undefined, { embed: TYPEFORM_JPM }),
-  advisory("booking-tiktok", undefined, { embed: TYPEFORM_JPM }),
+  advisory("booking-partner"),
+  advisory("booking-tiktok"),
   // --- Calendly advisory-call booking pages ---
   // Copy mirrors the live Webflow pages: setter is a 15-minute discovery call;
   // accelerator / l1 variants are the 45-minute advisory call.
@@ -231,14 +229,9 @@ export const legacyLeadRoutes = [
   market(
     "start-your-route-ak-ig",
     "Start Your Vending Route | Vendingpreneurs",
-    {
-      embed: TYPEFORM_JPM,
-    },
   ),
   market("start-your-route-ak-tt", "Start Your Vending Route"),
-  market("start-my-vending-business", "Book Your Vending Route Advisory Call", {
-    embed: TYPEFORM_JPM,
-  }),
+  market("start-my-vending-business", "Book Your Vending Route Advisory Call"),
   cashflow("vending-route-blueprint", "Vending Route Blueprint | Watch Now", {
     indexable: true,
   }),
@@ -250,9 +243,7 @@ export const legacyLeadRoutes = [
     "journey",
     { indexable: true },
   ),
-  advisory("apply-vendingpreneurs", "Book Your Free Vending Advisory Call", {
-    embed: TYPEFORM_NSA,
-  }),
+  advisory("apply-vendingpreneurs", "Book Your Free Vending Advisory Call"),
 ] satisfies readonly LegacyLeadRoute[];
 
 const legacyLeadRouteBySlug: ReadonlyMap<string, LegacyLeadRoute> = new Map(

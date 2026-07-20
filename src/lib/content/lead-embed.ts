@@ -1,18 +1,16 @@
 import type { LeadAttribution } from "@/lib/lead-attribution";
 
 /**
- * A conversion page either embeds a Typeform form or a Calendly scheduler
- * directly in-page (no off-site redirect). The mapping is driven by the
- * Vendingpreneurs Migration Sheet — see docs/migration/conversion-pages.md.
+ * A conversion page may embed a Calendly scheduler directly in-page. All other
+ * conversion pages use the native lead form (which captures the lead in our
+ * database with full UTM/source attribution). See docs/migration/conversion-pages.md.
  */
-export type LeadEmbed =
-  | { kind: "typeform"; formId: string }
-  | { kind: "calendly"; url: string };
+export type LeadEmbed = { kind: "calendly"; url: string };
 
 /**
- * The host Calendly/Typeform use for embed attribution + resize postMessage.
- * Rendering works regardless of the value; this only affects the third-party
- * analytics domain and iframe messaging.
+ * The host Calendly uses for embed attribution + resize postMessage. Rendering
+ * works regardless of the value; this only affects the third-party analytics
+ * domain and iframe messaging.
  */
 export const EMBED_DOMAIN =
   process.env.NEXT_PUBLIC_SITE_DOMAIN?.trim() || "www.vendingpreneurs.com";
@@ -32,27 +30,6 @@ function utmPairs(attribution: LeadAttribution): Array<[string, string]> {
     if (value) pairs.push([key, value]);
   }
   return pairs;
-}
-
-/**
- * Build the inline Typeform src with UTM + source attribution passed as
- * hidden-field query params. Typeform maps matching hidden fields
- * (utm_source, utm_medium, utm_campaign, utm_term, utm_content, source_path,
- * vp_session_id) so the lead stays attributed inside Typeform.
- */
-export function buildTypeformSrc(
-  formId: string,
-  attribution: LeadAttribution,
-): string {
-  const params = new URLSearchParams();
-  params.set("typeform-embed", "embed-widget");
-  for (const [key, value] of utmPairs(attribution)) params.set(key, value);
-  if (attribution.source_path)
-    params.set("source_path", attribution.source_path);
-  if (attribution.vp_session_id) {
-    params.set("vp_session_id", attribution.vp_session_id);
-  }
-  return `https://form.typeform.com/to/${formId}?${params.toString()}`;
 }
 
 /**
