@@ -6,7 +6,7 @@ import {
 } from "@/lib/content/legacy-routes";
 
 export const metadata: Metadata = {
-  title: "Conversion Pages — Staging Index",
+  title: "Staging Page Index — All Pages",
   robots: { index: false, follow: false },
 };
 
@@ -54,6 +54,36 @@ const nativeRows: LinkRow[] = [
     .map((route) => ({ ...toRow(route), reference: "native lead form" })),
 ];
 
+// Core marketing/content pages — replicated from Webflow, defined in code
+// (edited by a developer, not the CMS). All live and reachable.
+const marketingRows: LinkRow[] = [
+  { path: "/", slug: "home", reference: "Home" },
+  { path: "/about", slug: "about", reference: "About" },
+  { path: "/case-studies", slug: "case-studies", reference: "Case studies" },
+  { path: "/news", slug: "news", reference: "News / blog landing" },
+  {
+    path: "/pre-call-resources",
+    slug: "pre-call-resources",
+    reference: "Pre-call resources",
+  },
+  { path: "/terms", slug: "terms", reference: "Terms" },
+  { path: "/privacy", slug: "privacy", reference: "Privacy policy" },
+];
+
+// Pages that ARE editable in the admin backend (CMS), not code.
+const cmsRows: LinkRow[] = [
+  {
+    path: "/admin/pages",
+    slug: "admin-pages",
+    reference: "SEO pages — create & edit in the admin",
+  },
+  {
+    path: "/admin/news",
+    slug: "admin-news",
+    reference: "Blog & news articles — create & edit in the admin",
+  },
+];
+
 type Group = {
   title: string;
   blurb: string;
@@ -62,19 +92,32 @@ type Group = {
 
 const groups: Group[] = [
   {
+    title: "Marketing & content pages",
+    blurb:
+      "Core pages replicated from Webflow. Live and reachable, but defined in code — edited by a developer, not the CMS.",
+    rows: marketingRows,
+  },
+  {
     title: "Native lead form",
     blurb:
-      "Built-in Vendingpreneurs form — captures the lead in our database with full UTM/source attribution. Former Typeform pages now live here.",
+      "Built-in Vendingpreneurs form — captures the lead in our database with full UTM/source attribution. Former Typeform pages now live here. Code-managed.",
     rows: nativeRows,
   },
   {
     title: "Calendly embeds",
-    blurb: "Native in-page Calendly scheduler with UTM passed as utm_* params.",
+    blurb:
+      "Native in-page Calendly scheduler with UTM passed as utm_* params. Code-managed.",
     rows: calendlyRows,
+  },
+  {
+    title: "Editable in the admin (CMS)",
+    blurb:
+      "These are managed in the backend — an admin can create and edit them directly, no developer needed. Everything above is code-managed.",
+    rows: cmsRows,
   },
 ];
 
-const total = calendlyRows.length + nativeRows.length;
+const total = calendlyRows.length + nativeRows.length + marketingRows.length;
 
 export default function QaLinksPage() {
   return (
@@ -84,11 +127,12 @@ export default function QaLinksPage() {
           Staging Index · Internal
         </p>
         <h1 className="mt-8 text-[clamp(2rem,3.4vw,3.4rem)] leading-[1] font-black text-[#111111] uppercase">
-          Conversion Pages
+          All Pages
         </h1>
         <p className="mt-6 max-w-2xl text-lg leading-8 font-semibold text-slate-700">
-          Every conversion page. Open a link to see the live native form or
-          Calendly in the branded page. {total} pages total. These pages are
+          Every page on the site, grouped. {total} code-managed pages
+          (marketing, lead-form, and Calendly) — open any link to view it live.
+          The last group is editable in the admin backend (CMS). This index is
           noindex; do not share outside the team.
         </p>
 
