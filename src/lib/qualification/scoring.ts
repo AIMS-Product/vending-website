@@ -139,6 +139,43 @@ const BAND_THANK_YOU: Record<QualificationBand, ThankYouStateKey> = {
 };
 
 /**
+ * normalizedRole keys the scoring bridge reads out of a session's
+ * `normalized_summary`. The scoring form's timeline question must carry the
+ * `timeline` role and the invest question the `available_capital` role, and
+ * each option's stored value must equal the matching option `value` in the
+ * tables above (that's the data contract between the form definition and the
+ * engine).
+ */
+export const TIMELINE_ROLE = "timeline";
+export const INVEST_ROLE = "available_capital";
+
+/**
+ * Derives a score from a completed session's normalized answer summary plus its
+ * A/B variant key. Returns null (rather than throwing) when the session is not a
+ * scoring form — missing timeline/invest answers, no A/B variant, or option
+ * values the engine doesn't recognise — so non-scoring qualification forms pass
+ * through untouched.
+ */
+export function deriveQualificationScore(
+  normalizedSummary: Record<string, unknown> | null | undefined,
+  variantKey: string | null | undefined,
+): ScoreResult | null {
+  if (!normalizedSummary) return null;
+  const timeline = normalizedSummary[TIMELINE_ROLE];
+  const invest = normalizedSummary[INVEST_ROLE];
+  const variant = variantKey === "A" || variantKey === "B" ? variantKey : null;
+  if (typeof timeline !== "string" || typeof invest !== "string" || !variant) {
+    return null;
+  }
+  try {
+    return scoreQualification({ timeline, invest, variant });
+  } catch (error) {
+    if (error instanceof ScoringError) return null;
+    throw error;
+  }
+}
+
+/**
  * Deterministically assigns an invest A/B variant from a stable seed (e.g. the
  * qualification session id or vp_session_id), so a given visitor always sees the
  * same variant across renders — while the population splits ~50/50. Pure and

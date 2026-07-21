@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   assignInvestVariant,
+  deriveQualificationScore,
   INVEST_OPTIONS,
+  INVEST_ROLE,
   scoreQualification,
   ScoringError,
   THANK_YOU_STATES,
   TIMELINE_OPTIONS,
+  TIMELINE_ROLE,
 } from "./scoring";
 
 describe("scoreQualification", () => {
@@ -149,6 +152,52 @@ describe("scoring option tables", () => {
       expect(THANK_YOU_STATES[key].cta).toBeTruthy();
       expect(THANK_YOU_STATES[key].headline).toBeTruthy();
     }
+  });
+});
+
+describe("deriveQualificationScore", () => {
+  it("scores from a normalized summary + variant key", () => {
+    const result = deriveQualificationScore(
+      { [TIMELINE_ROLE]: "asap", [INVEST_ROLE]: "15k_plus" },
+      "A",
+    );
+
+    expect(result?.total).toBe(100);
+    expect(result?.band).toBe("top_closers");
+  });
+
+  it("returns null when the timeline or invest answer is missing", () => {
+    expect(
+      deriveQualificationScore({ [TIMELINE_ROLE]: "asap" }, "A"),
+    ).toBeNull();
+    expect(
+      deriveQualificationScore({ [INVEST_ROLE]: "15k_plus" }, "A"),
+    ).toBeNull();
+    expect(deriveQualificationScore(null, "A")).toBeNull();
+  });
+
+  it("returns null when there is no valid A/B variant", () => {
+    expect(
+      deriveQualificationScore(
+        { [TIMELINE_ROLE]: "asap", [INVEST_ROLE]: "15k_plus" },
+        null,
+      ),
+    ).toBeNull();
+    expect(
+      deriveQualificationScore(
+        { [TIMELINE_ROLE]: "asap", [INVEST_ROLE]: "15k_plus" },
+        "C",
+      ),
+    ).toBeNull();
+  });
+
+  it("returns null (does not throw) for option values the engine doesn't know", () => {
+    expect(
+      deriveQualificationScore(
+        { [TIMELINE_ROLE]: "asap", [INVEST_ROLE]: "made_up_value" },
+        "A",
+      ),
+    ).toBeNull();
   });
 });
 
