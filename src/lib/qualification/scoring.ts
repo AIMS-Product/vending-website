@@ -138,6 +138,20 @@ const BAND_THANK_YOU: Record<QualificationBand, ThankYouStateKey> = {
   top_closers: "perfect_fit",
 };
 
+/**
+ * Deterministically assigns an invest A/B variant from a stable seed (e.g. the
+ * qualification session id or vp_session_id), so a given visitor always sees the
+ * same variant across renders — while the population splits ~50/50. Pure and
+ * testable; no Math.random.
+ */
+export function assignInvestVariant(seed: string): InvestVariant {
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) | 0;
+  }
+  return Math.abs(hash) % 2 === 0 ? "A" : "B";
+}
+
 export type ScoreInput = {
   timeline: string;
   invest: string;

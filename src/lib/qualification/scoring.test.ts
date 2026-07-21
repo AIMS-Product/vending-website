@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  assignInvestVariant,
   INVEST_OPTIONS,
   scoreQualification,
   ScoringError,
@@ -148,5 +149,30 @@ describe("scoring option tables", () => {
       expect(THANK_YOU_STATES[key].cta).toBeTruthy();
       expect(THANK_YOU_STATES[key].headline).toBeTruthy();
     }
+  });
+});
+
+describe("assignInvestVariant", () => {
+  it("is deterministic for a given seed", () => {
+    expect(assignInvestVariant("session-abc")).toBe(
+      assignInvestVariant("session-abc"),
+    );
+  });
+
+  it("only ever returns A or B", () => {
+    for (const seed of ["a", "b", "c", "session-1", "vp-xyz", "", "12345"]) {
+      expect(["A", "B"]).toContain(assignInvestVariant(seed));
+    }
+  });
+
+  it("splits a population of seeds across both variants", () => {
+    const seeds = Array.from({ length: 200 }, (_, index) => `session-${index}`);
+    const variants = seeds.map(assignInvestVariant);
+    expect(variants).toContain("A");
+    expect(variants).toContain("B");
+    const aCount = variants.filter((variant) => variant === "A").length;
+    // Roughly balanced — guard against a degenerate all-A / all-B assignment.
+    expect(aCount).toBeGreaterThan(50);
+    expect(aCount).toBeLessThan(150);
   });
 });
