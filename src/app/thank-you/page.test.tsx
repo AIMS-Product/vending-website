@@ -36,25 +36,16 @@ describe("ThankYouPage", () => {
     expect(html).toContain(THANK_YOU_STATES.good_potential.headline);
   });
 
-  it("only renders a secondary CTA for the not_right_time state", async () => {
-    const notRightTimeHtml = await renderPage({ state: "not_right_time" });
-    expect(THANK_YOU_STATES.not_right_time.secondaryCta).toBeDefined();
-    expect(notRightTimeHtml).toContain(
-      THANK_YOU_STATES.not_right_time.secondaryCta as string,
-    );
-
+  it("renders no secondary CTA for any state", async () => {
+    // The 90-Day Guide asset doesn't exist yet, so not_right_time books the
+    // readiness call as its single CTA — no state defines secondary copy.
     for (const stateKey of [
+      "not_right_time",
       "good_potential",
       "strong_fit",
       "perfect_fit",
     ] as const) {
-      const html = await renderPage({ state: stateKey });
       expect(THANK_YOU_STATES[stateKey].secondaryCta).toBeUndefined();
-      // No other state defines secondary copy, so nothing extra to assert
-      // beyond the absence of the not_right_time secondary CTA string.
-      expect(html).not.toContain(
-        THANK_YOU_STATES.not_right_time.secondaryCta as string,
-      );
     }
   });
 

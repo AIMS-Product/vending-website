@@ -143,9 +143,8 @@ export const THANK_YOU_STATES: Record<ThankYouStateKey, ThankYouState> = {
   not_right_time: {
     label: "Not the right time yet",
     headline: "Now may not be the best time to launch a business.",
-    body: "And that's okay. Based on your answers, jumping in right now could set you up to struggle instead of succeed. We'd rather help you get ready the right way. Grab our free 90-Day Startup Guide, and when you're set, book a session to map your path to launch.",
-    cta: "Get the 90-Day Guide",
-    secondaryCta: "Book a readiness session",
+    body: "And that's okay. Based on your answers, jumping in right now could set you up to struggle instead of succeed. We'd rather help you get ready the right way. When you're set, book a readiness session and we'll map your path to launch.",
+    cta: "Book a readiness session",
   },
 };
 
