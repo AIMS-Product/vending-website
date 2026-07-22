@@ -16,11 +16,11 @@ export function ApplyHero() {
         }}
       />
       <div className="relative mx-auto max-w-[1180px] px-5 py-20 lg:px-10 lg:py-24">
-        <div className="max-w-3xl">
+        <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
             {applyHero.eyebrow}
           </p>
-          <h1 className="mt-5 max-w-[15ch] text-[clamp(2.6rem,4.6vw,4.1rem)] leading-[1.02] font-black tracking-tight text-[#111111] uppercase">
+          <h1 className="mx-auto mt-5 max-w-[15ch] text-[clamp(2.6rem,4.6vw,4.1rem)] leading-[1.02] font-black tracking-tight text-[#111111] uppercase">
             {applyHero.headline}
           </h1>
           <p className="mt-4 text-[clamp(1.7rem,2.8vw,2.5rem)] leading-[1.05] font-black tracking-tight text-[#111111] uppercase">
@@ -30,7 +30,7 @@ export function ApplyHero() {
             </span>
             {applyHero.subheadline.suffix}
           </p>
-          <p className="mt-6 max-w-[52ch] text-lg leading-relaxed font-semibold text-slate-700">
+          <p className="mx-auto mt-6 max-w-[52ch] text-lg leading-relaxed font-semibold text-slate-700">
             {applyHero.body}
           </p>
           <div className="mt-8">
