@@ -51,6 +51,14 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+/* Smooth in-page anchor scrolling (e.g. the /apply CTAs jumping to the quiz),
+   disabled for visitors who prefer reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 /* On-brand keyboard focus baseline. Brutalist site, so the ring is a solid
    high-contrast outline rather than a soft halo. Mouse users are unaffected
    because we only target :focus-visible. Components may layer their own

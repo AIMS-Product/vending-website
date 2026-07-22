@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
 import { randomUUID } from "node:crypto";
-import { ApplyPageContent } from "@/components/sections/ApplyPageContent";
+import { ApplyLandingPage } from "@/components/sections/ApplyLandingPage";
+import { applyMeta } from "@/lib/content/apply-page";
 import {
   buildLeadAttribution,
   type LeadSearchParams,
 } from "@/lib/lead-attribution";
-import { submitApplicationLead } from "./actions";
 
 export const metadata: Metadata = {
-  title: "Apply",
-  description:
-    "Apply to the Vending Accelerator Program — mentorship and tools to launch a profitable vending business.",
+  title: applyMeta.title,
+  description: applyMeta.description,
   alternates: {
     canonical: "/apply",
   },
@@ -24,10 +23,6 @@ export default async function ApplyPage({
   const attribution = buildLeadAttribution(await searchParams, "/apply");
 
   return (
-    <ApplyPageContent
-      action={submitApplicationLead}
-      attribution={attribution}
-      idempotencyKey={randomUUID()}
-    />
+    <ApplyLandingPage attribution={attribution} idempotencyKey={randomUUID()} />
   );
 }
