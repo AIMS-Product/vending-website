@@ -20,7 +20,7 @@ export const applyHero = {
   headline: "Launch your vending business in 90 days.",
   subheadline: {
     prefix: "Earn ",
-    highlight: "$1–$5,000/mo",
+    highlight: "$1–$5,000/mo*",
     suffix: " while you sleep.",
   },
   body: "You get Mike's playbook, systems, and scripts, plus exclusive product discounts, 1:1 support, and custom tools. Everything you need to launch quickly and build your route without costly mistakes.",
@@ -232,8 +232,6 @@ export const applyQuiz = {
   eyebrow: "Join the Vending Accelerator Program",
   title: "See if you're ready to launch",
   body: "Answer a few quick questions, then book a free call to build your plan.",
-  formNote:
-    "Answer a few quick questions, then book a free call to build your plan.",
   submitLabel: "See if I qualify",
   rail: {
     quote: "“With just 4 locations, I'm doing $25,000 a month in revenue.”",
@@ -293,7 +291,7 @@ export const applyYouTube = {
 
 export const applyFooter = {
   disclaimer:
-    "Member results aren't typical and aren't a guarantee. Outcomes depend on effort, market, and execution.",
+    "*Earnings may vary and are not guaranteed. The $1–$5,000 claim is based on the average profitability of our community members' machines. Outcomes depend on effort, market, and execution.",
   privacyNote:
     "By applying you agree to our Privacy Policy. We never sell your data.",
   // Light/transparent wordmark for the dark disclaimer band. Not delivered
@@ -303,7 +301,7 @@ export const applyFooter = {
 } as const;
 
 export const applySticky = {
-  text: "Ready to launch your route? Availability is capped by market.",
+  text: "Ready to launch your route?",
   ctaLabel: "I'm Ready to Build My Route",
 } as const;
 

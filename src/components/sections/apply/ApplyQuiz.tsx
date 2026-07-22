@@ -44,9 +44,6 @@ export function ApplyQuiz({ attribution, idempotencyKey }: ApplyQuizProps) {
 
         <div className="mx-auto mt-11 flex max-w-[1000px] flex-col items-start gap-7 lg:flex-row">
           <div className="w-full min-w-0 flex-1">
-            <p className="mb-4 text-sm font-semibold text-white/60">
-              {applyQuiz.formNote}
-            </p>
             <PublicLeadForm
               action={submitQualificationLead}
               attribution={attribution}
