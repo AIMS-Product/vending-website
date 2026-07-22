@@ -289,7 +289,8 @@ describe("ResourcePageRenderer", () => {
     );
 
     expect(html).toContain("Get the vending checklist");
-    expect(html).toContain("Name");
+    expect(html).toContain("First name");
+    expect(html).toContain("Last name");
     expect(html).toContain("Email");
     expect(html).toContain("Phone");
     expect(html).not.toContain("Business stage");

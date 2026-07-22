@@ -91,6 +91,14 @@ export function PublicLeadForm({
   // untouched.
   const formAction = (formData: FormData) => {
     mergeStoredAttributionIntoFormData(formData, attribution);
+    // Window 1 collects first + last name; combine them into the single
+    // full_name the intake service validates and stores.
+    if (intent === "qualification") {
+      const first = readTrimmed(formData, "first_name");
+      const last = readTrimmed(formData, "last_name");
+      const combined = [first, last].filter(Boolean).join(" ");
+      if (combined) formData.set("full_name", combined);
+    }
     const values: Record<string, string> = {};
     for (const [name, value] of formData.entries()) {
       if (typeof value === "string") values[name] = value;
@@ -187,15 +195,38 @@ export function PublicLeadForm({
       )}
 
       <div className={cn("grid gap-5", !isCompact && "sm:grid-cols-2")}>
-        <TextField
-          name="full_name"
-          errorKey="fullName"
-          label="Name"
-          autoComplete="name"
-          required
-          errors={errors}
-          values={submittedValues}
-        />
+        {isQualification ? (
+          <>
+            <TextField
+              name="first_name"
+              errorKey="firstName"
+              label="First name"
+              autoComplete="given-name"
+              required
+              errors={errors}
+              values={submittedValues}
+            />
+            <TextField
+              name="last_name"
+              errorKey="lastName"
+              label="Last name"
+              autoComplete="family-name"
+              required
+              errors={errors}
+              values={submittedValues}
+            />
+          </>
+        ) : (
+          <TextField
+            name="full_name"
+            errorKey="fullName"
+            label="Name"
+            autoComplete="name"
+            required
+            errors={errors}
+            values={submittedValues}
+          />
+        )}
         <TextField
           name="email"
           errorKey="email"
@@ -318,6 +349,11 @@ export function PublicLeadForm({
       <PrivacyAssurance intent={intent} />
     </form>
   );
+}
+
+function readTrimmed(formData: FormData, name: string): string {
+  const value = formData.get(name);
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function mergeStoredAttributionIntoFormData(

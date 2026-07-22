@@ -109,10 +109,14 @@ describe("PublicLeadForm", () => {
       }),
     );
 
-    expect(html).toContain("Name");
+    expect(html).toContain("First name");
+    expect(html).toContain("Last name");
     expect(html).toContain("Email");
     expect(html).toContain("Phone");
-    expect(html).toMatch(/Name[\s\S]*?\(required\)/);
+    expect(html).toContain('name="first_name"');
+    expect(html).toContain('name="last_name"');
+    expect(html).toMatch(/First name[\s\S]*?\(required\)/);
+    expect(html).toMatch(/Last name[\s\S]*?\(required\)/);
     expect(html).toMatch(/Email[\s\S]*?\(required\)/);
     expect(html).toMatch(/Phone[\s\S]*?\(required\)/);
     expect(html).toContain('name="qualification_form_id"');

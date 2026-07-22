@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { assignInvestVariant } from "@/lib/qualification/scoring";
 import {
   QualificationIntakeValidationError,
   createQualificationIntakeSession,
@@ -330,6 +331,27 @@ describe("createQualificationIntakeSession", () => {
     expect(fake.state.leads).toHaveLength(0);
     expect(fake.state.sessions).toHaveLength(0);
     expect(fake.state.events).toHaveLength(0);
+  });
+
+  it("assigns a deterministic A/B invest variant when the page does not set one", async () => {
+    const fake = buildClient();
+
+    const result = await createQualificationIntakeSession(
+      {
+        fullName: "Ada Buyer",
+        email: "ada@example.com",
+        phone: "555-0100",
+      },
+      {
+        client: fake.client,
+        now: () => new Date("2026-06-17T09:00:00.000Z"),
+        tokenFactory: () => "raw_test_token",
+      },
+    );
+
+    const assigned = fake.state.sessions[0]?.variant_key;
+    expect(assigned).toBe(assignInvestVariant(result.leadId));
+    expect(["A", "B"]).toContain(assigned);
   });
 
   it("stores a local lead, creates a tokenized qualification session, and queues Close sync", async () => {

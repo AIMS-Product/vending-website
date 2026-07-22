@@ -16,6 +16,7 @@ import {
 } from "@/lib/services/lead-source-fields";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
+import { assignInvestVariant } from "@/lib/qualification/scoring";
 import {
   getQualificationFormVersion,
   resolveDefaultQualificationFormVersion,
@@ -123,9 +124,15 @@ export async function createQualificationIntakeSession(
   const staleAt = addDays(now, 7).toISOString();
   const expiresAt = addDays(now, 30).toISOString();
 
+  // A/B: honour an explicit page-authored variant, otherwise assign a
+  // deterministic 50/50 invest variant seeded on the stable lead id so a
+  // visitor always sees the same variant across renders.
+  const variantKey = intake.variantKey || assignInvestVariant(lead.id);
+
   const session = await insertQualificationSession(client, {
     intake,
     leadId: lead.id,
+    variantKey,
     formVersion,
     tokenHash,
     nowIso,
@@ -321,6 +328,7 @@ async function insertQualificationSession(
   {
     intake,
     leadId,
+    variantKey,
     formVersion,
     tokenHash,
     nowIso,
@@ -329,6 +337,7 @@ async function insertQualificationSession(
   }: {
     intake: ValidIntakeInput;
     leadId: string;
+    variantKey: string;
     formVersion: QualificationPublishedVersion;
     tokenHash: string;
     nowIso: string;
@@ -358,7 +367,7 @@ async function insertQualificationSession(
     source_block_id: intake.sourceBlockId,
     source_cta_tracking_name: intake.sourceCtaTrackingName,
     experiment_key: intake.experimentKey,
-    variant_key: intake.variantKey,
+    variant_key: variantKey,
     current_question_id: formVersion.schema.questions[0]?.id ?? null,
     consent_source_attribution: buildSourceAttribution(intake),
     stale_at: staleAt,

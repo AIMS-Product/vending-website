@@ -8,6 +8,12 @@ import {
   type QualificationQuestion,
   type QualificationQuestionSnapshot,
 } from "@/lib/qualification/forms";
+import {
+  deriveQualificationScore,
+  INVEST_ROLE,
+  investFormOptions,
+  type ScoreResult,
+} from "@/lib/qualification/scoring";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
 import {
@@ -209,6 +215,21 @@ export async function completeQualificationSession(
   }
 
   const normalizedSummary = buildNormalizedSummary(context.answers);
+  // Score the two qualifying answers (timeline + invest) against the session's
+  // A/B variant. Returns null for non-scoring forms, which then flow through
+  // untouched with their author-configured redirect.
+  const score = deriveQualificationScore(
+    normalizedSummary as Record<string, unknown>,
+    session.variant_key,
+  );
+  const leadSummary = score
+    ? {
+        ...(normalizedSummary as Record<string, Json>),
+        qualification_score: score.total,
+        qualification_band: score.band,
+        qualification_thank_you_state: score.thankYouState,
+      }
+    : normalizedSummary;
   const consentAnswer = consentAnswerFor(context);
   await updateSession(client, session.id, {
     status: "completed",
@@ -224,7 +245,7 @@ export async function completeQualificationSession(
   await updateLead(client, session.lead_submission_id, {
     lifecycle_status: "qualified",
     latest_qualification_completed_at: nowIso,
-    qualification_summary: normalizedSummary,
+    qualification_summary: leadSummary,
     close_sync_status: "pending",
     close_sync_next_retry_at: nowIso,
   });
@@ -235,6 +256,7 @@ export async function completeQualificationSession(
     formVersion: context.formVersion,
     answers: context.answers,
     normalizedSummary,
+    score,
     lead,
     nowIso,
   });
@@ -242,8 +264,25 @@ export async function completeQualificationSession(
   return {
     status: "completed",
     sessionId: session.id,
-    redirectPath,
+    redirectPath: completionRedirectFor(score, redirectPath),
   };
+}
+
+/**
+ * Scored sessions land on the fit-based thank-you screen (which then routes to
+ * booking or the downsell asset); non-scoring forms keep their author-configured
+ * completion redirect.
+ */
+function completionRedirectFor(
+  score: ScoreResult | null,
+  fallback: string,
+): string {
+  if (!score) return fallback;
+  const params = new URLSearchParams({
+    state: score.thankYouState,
+    score: String(score.total),
+  });
+  return `/thank-you?${params.toString()}`;
 }
 
 function hashQualificationSessionToken(token: string) {
@@ -301,7 +340,7 @@ async function loadContext(
   client: QualificationSessionsClient,
   session: QualificationSessionRow,
 ) {
-  const [formVersion, answers] = await Promise.all([
+  const [rawFormVersion, answers] = await Promise.all([
     getQualificationFormVersion(
       { versionId: session.form_version_id },
       { client },
@@ -309,7 +348,38 @@ async function loadContext(
     listAnswers(client, session.id),
   ]);
 
+  const formVersion = applyInvestVariant(rawFormVersion, session.variant_key);
   return { session, formVersion, answers };
+}
+
+/**
+ * Swaps the invest question's options for the session's assigned A/B variant.
+ * The form is seeded with Variant A options; a B-variant session should see the
+ * Variant B "capital posture" options instead. Applied once at load so every
+ * downstream reader (view, answer save, validation, normalization) is
+ * variant-consistent. Non-invest forms are returned untouched.
+ */
+function applyInvestVariant(
+  formVersion: QualificationPublishedVersion,
+  variantKey: string | null,
+): QualificationPublishedVersion {
+  if (variantKey !== "A" && variantKey !== "B") return formVersion;
+  let swapped = false;
+  const questions = formVersion.schema.questions.map((question) => {
+    if (
+      question.normalizedRole !== INVEST_ROLE ||
+      question.type !== "single_choice"
+    ) {
+      return question;
+    }
+    swapped = true;
+    return { ...question, options: investFormOptions(variantKey) };
+  });
+  if (!swapped) return formVersion;
+  return {
+    ...formVersion,
+    schema: { ...formVersion.schema, questions },
+  };
 }
 
 async function listAnswers(
@@ -411,6 +481,7 @@ async function enqueueQualificationEnrichment(
     formVersion,
     answers,
     normalizedSummary,
+    score,
     lead,
     nowIso,
   }: {
@@ -418,6 +489,7 @@ async function enqueueQualificationEnrichment(
     formVersion: QualificationPublishedVersion;
     answers: QualificationAnswerRow[];
     normalizedSummary: Json;
+    score: ScoreResult | null;
     lead: LeadRow | null;
     nowIso: string;
   },
@@ -441,6 +513,10 @@ async function enqueueQualificationEnrichment(
         completedAt: nowIso,
         experimentKey: session.experiment_key,
         variantKey: session.variant_key,
+        score: score ? score.total : null,
+        band: score ? score.band : null,
+        thankYouState: score ? score.thankYouState : null,
+        disqualified: score ? score.disqualified : null,
       },
       attribution: sourceAttributionFor(session),
       normalized: normalizedSummary,

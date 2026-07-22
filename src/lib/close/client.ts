@@ -40,6 +40,8 @@ export type CloseCustomFieldConfig = {
   adNameFieldId?: string;
   experimentKeyFieldId?: string;
   variantKeyFieldId?: string;
+  scoreFieldId?: string;
+  bandFieldId?: string;
   stateMarketFieldId?: string;
   businessStageFieldId?: string;
   budgetRangeFieldId?: string;
@@ -173,6 +175,8 @@ export function closeConfigFromEnv(env: CloseEnv): CloseConfig {
       adNameFieldId: trimmed(env.CLOSE_AD_NAME_FIELD_ID),
       experimentKeyFieldId: trimmed(env.CLOSE_EXPERIMENT_KEY_FIELD_ID),
       variantKeyFieldId: trimmed(env.CLOSE_VARIANT_KEY_FIELD_ID),
+      scoreFieldId: trimmed(env.CLOSE_SCORE_FIELD_ID),
+      bandFieldId: trimmed(env.CLOSE_BAND_FIELD_ID),
       stateMarketFieldId: trimmed(env.CLOSE_STATE_MARKET_FIELD_ID),
       businessStageFieldId: trimmed(env.CLOSE_BUSINESS_STAGE_FIELD_ID),
       budgetRangeFieldId: trimmed(env.CLOSE_BUDGET_RANGE_FIELD_ID),
@@ -330,6 +334,8 @@ export function closeCustomFieldPayload(
   assignCustom(payload, fields.adNameFieldId, values.ad_name);
   assignCustom(payload, fields.experimentKeyFieldId, values.experiment_key);
   assignCustom(payload, fields.variantKeyFieldId, values.variant_key);
+  assignCustom(payload, fields.scoreFieldId, values.score);
+  assignCustom(payload, fields.bandFieldId, values.band);
   assignCustom(payload, fields.stateMarketFieldId, values.state_market);
   assignCustom(payload, fields.businessStageFieldId, values.business_stage);
   assignCustom(payload, fields.budgetRangeFieldId, values.budget_range);

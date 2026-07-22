@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { config } from "@/lib/config";
 import {
   jsonArrayAt as arrayAt,
+  jsonNumberAt as numberAt,
   jsonObjectAt as objectAt,
   jsonStringAt as stringAt,
 } from "@/lib/json-access";
@@ -638,6 +639,8 @@ function qualificationCustomFields(
       status: stringAt(qualification, "status"),
       experiment_key: stringAt(qualification, "experimentKey"),
       variant_key: stringAt(qualification, "variantKey"),
+      score: numberAt(qualification, "score"),
+      band: stringAt(qualification, "band"),
       state_market: stringAt(normalized, "state_market"),
       business_stage: stringAt(normalized, "business_stage"),
       budget_range: stringAt(normalized, "budget_range"),

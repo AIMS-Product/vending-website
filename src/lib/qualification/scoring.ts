@@ -95,6 +95,24 @@ export const INVEST_OPTIONS: Record<
   ],
 };
 
+/**
+ * Returns the invest question's options in qualification-form option shape
+ * (`{ id, label, value }`) for a given A/B variant, so the runtime can swap the
+ * seeded (Variant A) options for the variant the visitor was assigned. Values
+ * are the scoring engine's option values, keeping the form↔engine contract
+ * intact. Unknown/absent variants fall back to Variant A.
+ */
+export function investFormOptions(
+  variantKey: string | null | undefined,
+): Array<{ id: string; label: string; value: string }> {
+  const variant: InvestVariant = variantKey === "B" ? "B" : "A";
+  return INVEST_OPTIONS[variant].map((option) => ({
+    id: option.value,
+    label: option.label,
+    value: option.value,
+  }));
+}
+
 export type ThankYouState = {
   readonly label: string;
   readonly headline: string;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { INVEST_OPTIONS } from "@/lib/qualification/scoring";
 import {
   completeQualificationSession,
   loadQualificationSessionForToken,
@@ -709,6 +710,12 @@ describe("qualification sessions", () => {
       completedAt: "2026-06-17T11:00:00.000Z",
       experimentKey: "post_submit_qualification",
       variantKey: "v1",
+      // Non-A/B variant + no timeline answer → not a scoring form, so the
+      // score fields ride along as null.
+      score: null,
+      band: null,
+      thankYouState: null,
+      disqualified: null,
     });
     expect(payload.attribution).toEqual({
       source_path: "/start",
@@ -925,4 +932,153 @@ describe("qualification sessions", () => {
       },
     });
   });
+
+  it("scores a completed A/B session and routes it to the fit thank-you state", async () => {
+    const scoringSchema = {
+      version: 1,
+      questions: [
+        {
+          id: "timeline",
+          type: "single_choice",
+          label: "When do you want your first machine placed?",
+          required: true,
+          normalizedRole: "timeline",
+          options: [
+            { id: "asap", label: "As soon as possible", value: "asap" },
+            { id: "unsure", label: "Still figuring", value: "unsure" },
+          ],
+        },
+        {
+          id: "invest",
+          type: "single_choice",
+          label: "How much are you ready to invest?",
+          required: true,
+          normalizedRole: "available_capital",
+          options: [
+            { id: "15k_plus", label: "$15,000+", value: "15k_plus" },
+            { id: "lt_3k", label: "Less than $3,000", value: "lt_3k" },
+          ],
+        },
+        {
+          id: "consent",
+          type: "consent",
+          label: "I agree to be contacted.",
+          required: true,
+          normalizedRole: "consent",
+        },
+      ],
+    } as const;
+
+    const fake = buildClient({
+      versions: [makeVersion(scoringSchema)],
+      sessions: [makeSession({ variant_key: "A" })],
+      leads: [makeLead()],
+      answers: [
+        makeScoringAnswer("timeline", "timeline", "asap"),
+        makeScoringAnswer("invest", "available_capital", "15k_plus"),
+        {
+          ...makeScoringAnswer("consent", "consent", true),
+          answer_value: true as unknown as Json,
+        },
+      ],
+    });
+
+    const completed = await completeQualificationSession(
+      { sessionToken, userAgent: "vitest" },
+      { client: fake.client, now: () => new Date("2026-06-17T11:00:00.000Z") },
+    );
+
+    // asap (40) + $15k+ (60) = 100 → perfect fit / top closers.
+    expect(completed.redirectPath).toBe(
+      "/thank-you?state=perfect_fit&score=100",
+    );
+    expect(fake.state.leads[0]?.qualification_summary).toMatchObject({
+      qualification_score: 100,
+      qualification_band: "top_closers",
+      qualification_thank_you_state: "perfect_fit",
+    });
+    const payload = fake.state.events[0]?.payload as Record<string, unknown>;
+    expect(payload.qualification).toMatchObject({
+      score: 100,
+      band: "top_closers",
+      thankYouState: "perfect_fit",
+      disqualified: false,
+    });
+  });
 });
+
+describe("A/B invest variant rendering", () => {
+  const investSchema = {
+    version: 1,
+    questions: [
+      {
+        id: "invest",
+        type: "single_choice",
+        label: "How much are you ready to invest?",
+        required: true,
+        normalizedRole: "available_capital",
+        options: [
+          { id: "lt_3k", label: "Less than $3,000", value: "lt_3k" },
+          { id: "15k_plus", label: "$15,000+", value: "15k_plus" },
+        ],
+      },
+    ],
+  } as const;
+
+  it("swaps the seeded (Variant A) invest options for Variant B sessions", async () => {
+    const fake = buildClient({
+      versions: [makeVersion(investSchema)],
+      sessions: [makeSession({ variant_key: "B" })],
+    });
+
+    const view = await loadQualificationSessionForToken(
+      { sessionToken },
+      { client: fake.client },
+    );
+    if (view.status !== "active") throw new Error("expected active session");
+    const invest = view.questions.find((q) => q.id === "invest");
+    expect(invest?.options?.map((o) => o.value)).toEqual(
+      INVEST_OPTIONS.B.map((o) => o.value),
+    );
+  });
+
+  it("keeps the seeded (Variant A) invest options for Variant A sessions", async () => {
+    const fake = buildClient({
+      versions: [makeVersion(investSchema)],
+      sessions: [makeSession({ variant_key: "A" })],
+    });
+
+    const view = await loadQualificationSessionForToken(
+      { sessionToken },
+      { client: fake.client },
+    );
+    if (view.status !== "active") throw new Error("expected active session");
+    const invest = view.questions.find((q) => q.id === "invest");
+    expect(invest?.options?.map((o) => o.value)).toEqual(
+      INVEST_OPTIONS.A.map((o) => o.value),
+    );
+  });
+});
+
+function makeScoringAnswer(
+  questionId: string,
+  role: string,
+  value: Json,
+): QualificationAnswerRow {
+  return {
+    id: `answer_${questionId}`,
+    session_id: "session_1",
+    lead_submission_id: "lead_1",
+    form_version_id: "version_1",
+    question_id: questionId,
+    question_type: role === "consent" ? "consent" : "single_choice",
+    normalized_role: role,
+    question_snapshot: {},
+    option_snapshots: [],
+    answer_value: value,
+    normalized_value: role === "consent" ? {} : { [role]: value },
+    answered_at: "2026-06-17T10:00:00.000Z",
+    created_at: "2026-06-17T10:00:00.000Z",
+    updated_at: "2026-06-17T10:00:00.000Z",
+  } as unknown as QualificationAnswerRow;
+}

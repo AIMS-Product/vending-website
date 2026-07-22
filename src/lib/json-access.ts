@@ -21,3 +21,8 @@ export function jsonStringAt(value: Record<string, Json>, key: string) {
   }
   return null;
 }
+
+export function jsonNumberAt(value: Record<string, Json>, key: string) {
+  const result = value[key];
+  return typeof result === "number" && Number.isFinite(result) ? result : null;
+}

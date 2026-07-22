@@ -1,0 +1,124 @@
+-- Seed a published VP qualification form so the scored flow is testable.
+--
+-- Additive only: no existing tables/columns are altered. Inserts are
+-- idempotent via fixed ids + `on conflict (id) do nothing`, matching the
+-- immutable-once-published contract on qualification_form_versions (see
+-- 20260617090000_post_submit_qualification.sql).
+--
+-- Variant-A (dollar ladder) invest options are used here; Variant-B options
+-- are swapped in at render time for B-variant sessions and are intentionally
+-- not part of this seed.
+
+-- Ensure this is the sole default form (unique partial index on is_default).
+update public.qualification_forms
+set is_default = false
+where is_default = true;
+
+insert into public.qualification_forms (
+  id,
+  name,
+  slug,
+  status,
+  is_default,
+  draft_schema
+)
+values (
+  'a1b2c3d4-0000-4000-8000-000000000001',
+  'VP Lead Capture',
+  'vp-lead-capture',
+  'published',
+  true,
+  '{
+    "version": 1,
+    "questions": [
+      { "id": "consent_updates", "type": "consent", "label": "Email me the guide and vending resources.", "required": true, "normalizedRole": "consent" },
+      { "id": "consent_contact", "type": "consent", "label": "I agree to receive calls and texts about my request. Msg rates may apply.", "required": true, "normalizedRole": "contact_preference" },
+      { "id": "timeline", "type": "single_choice", "label": "When do you want your first machine placed and earning?", "required": true, "normalizedRole": "timeline", "options": [
+        { "id": "asap", "label": "As soon as possible", "value": "asap" },
+        { "id": "few_weeks", "label": "In the next few weeks", "value": "few_weeks" },
+        { "id": "1_3_months", "label": "1-3 months out", "value": "1_3_months" },
+        { "id": "unsure", "label": "Still figuring that out", "value": "unsure" }
+      ] },
+      { "id": "invest", "type": "single_choice", "label": "How much are you ready to invest?", "required": true, "normalizedRole": "available_capital", "options": [
+        { "id": "lt_3k", "label": "Less than $3,000", "value": "lt_3k" },
+        { "id": "3_5k", "label": "$3,000 - $5,000", "value": "3_5k" },
+        { "id": "5_10k", "label": "$5,000 - $10,000", "value": "5_10k" },
+        { "id": "10_15k", "label": "$10,000 - $15,000", "value": "10_15k" },
+        { "id": "15k_plus", "label": "$15,000+", "value": "15k_plus" }
+      ] },
+      { "id": "pull_to_launch", "type": "multiple_choice", "label": "What''s pulling you to launch your own business?", "required": false, "normalizedRole": "goal", "options": [
+        { "id": "replace_job", "label": "Replace my full-time job", "value": "replace_job" },
+        { "id": "generational_wealth", "label": "Build generational wealth for my family", "value": "generational_wealth" },
+        { "id": "diversify_income", "label": "Diversify my income streams", "value": "diversify_income" },
+        { "id": "life_event", "label": "A life event is making me reconsider", "value": "life_event" },
+        { "id": "other", "label": "Other", "value": "other" }
+      ] },
+      { "id": "learn_most", "type": "multiple_choice", "label": "What do you want to learn most?", "required": false, "options": [
+        { "id": "getting_started", "label": "Getting started the right way", "value": "getting_started" },
+        { "id": "machines_products", "label": "Machines & products (the vending basics)", "value": "machines_products" },
+        { "id": "locations", "label": "Finding & securing locations", "value": "locations" },
+        { "id": "financing", "label": "Financing & funding ($0-down, ROI)", "value": "financing" },
+        { "id": "legal", "label": "Permits, legal & state rules", "value": "legal" }
+      ] }
+    ]
+  }'::jsonb
+)
+on conflict (id) do nothing;
+
+insert into public.qualification_form_versions (
+  id,
+  form_id,
+  version_number,
+  question_count,
+  normalized_roles,
+  schema_snapshot
+)
+values (
+  'a1b2c3d4-0000-4000-8000-000000000002',
+  'a1b2c3d4-0000-4000-8000-000000000001',
+  1,
+  6,
+  array['consent', 'contact_preference', 'timeline', 'available_capital', 'goal'],
+  '{
+    "version": 1,
+    "questions": [
+      { "id": "consent_updates", "type": "consent", "label": "Email me the guide and vending resources.", "required": true, "normalizedRole": "consent" },
+      { "id": "consent_contact", "type": "consent", "label": "I agree to receive calls and texts about my request. Msg rates may apply.", "required": true, "normalizedRole": "contact_preference" },
+      { "id": "timeline", "type": "single_choice", "label": "When do you want your first machine placed and earning?", "required": true, "normalizedRole": "timeline", "options": [
+        { "id": "asap", "label": "As soon as possible", "value": "asap" },
+        { "id": "few_weeks", "label": "In the next few weeks", "value": "few_weeks" },
+        { "id": "1_3_months", "label": "1-3 months out", "value": "1_3_months" },
+        { "id": "unsure", "label": "Still figuring that out", "value": "unsure" }
+      ] },
+      { "id": "invest", "type": "single_choice", "label": "How much are you ready to invest?", "required": true, "normalizedRole": "available_capital", "options": [
+        { "id": "lt_3k", "label": "Less than $3,000", "value": "lt_3k" },
+        { "id": "3_5k", "label": "$3,000 - $5,000", "value": "3_5k" },
+        { "id": "5_10k", "label": "$5,000 - $10,000", "value": "5_10k" },
+        { "id": "10_15k", "label": "$10,000 - $15,000", "value": "10_15k" },
+        { "id": "15k_plus", "label": "$15,000+", "value": "15k_plus" }
+      ] },
+      { "id": "pull_to_launch", "type": "multiple_choice", "label": "What''s pulling you to launch your own business?", "required": false, "normalizedRole": "goal", "options": [
+        { "id": "replace_job", "label": "Replace my full-time job", "value": "replace_job" },
+        { "id": "generational_wealth", "label": "Build generational wealth for my family", "value": "generational_wealth" },
+        { "id": "diversify_income", "label": "Diversify my income streams", "value": "diversify_income" },
+        { "id": "life_event", "label": "A life event is making me reconsider", "value": "life_event" },
+        { "id": "other", "label": "Other", "value": "other" }
+      ] },
+      { "id": "learn_most", "type": "multiple_choice", "label": "What do you want to learn most?", "required": false, "options": [
+        { "id": "getting_started", "label": "Getting started the right way", "value": "getting_started" },
+        { "id": "machines_products", "label": "Machines & products (the vending basics)", "value": "machines_products" },
+        { "id": "locations", "label": "Finding & securing locations", "value": "locations" },
+        { "id": "financing", "label": "Financing & funding ($0-down, ROI)", "value": "financing" },
+        { "id": "legal", "label": "Permits, legal & state rules", "value": "legal" }
+      ] }
+    ]
+  }'::jsonb
+)
+on conflict (id) do nothing;
+
+update public.qualification_forms
+set current_published_version_id = 'a1b2c3d4-0000-4000-8000-000000000002',
+    status = 'published',
+    is_default = true,
+    updated_at = now()
+where id = 'a1b2c3d4-0000-4000-8000-000000000001';

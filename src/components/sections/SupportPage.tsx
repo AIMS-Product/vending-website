@@ -1,11 +1,30 @@
+import { Button } from "@/components/ui/Button";
+
+type SupportPageCta = {
+  label: string;
+  href: string;
+};
+
 type SupportPageProps = {
   eyebrow: string;
   title: string;
   body: string;
-  items: string[];
+  items?: string[];
+  cta?: SupportPageCta;
+  secondaryCta?: SupportPageCta;
+  /** Optional hidden debug value (e.g. a qualification score) surfaced only in markup for QA. */
+  debugValue?: string;
 };
 
-export function SupportPage({ eyebrow, title, body, items }: SupportPageProps) {
+export function SupportPage({
+  eyebrow,
+  title,
+  body,
+  items,
+  cta,
+  secondaryCta,
+  debugValue,
+}: SupportPageProps) {
   return (
     <section className="relative isolate overflow-hidden bg-[#f5fbff] px-5 pt-28 pb-20 lg:px-10 lg:pt-32 lg:pb-28">
       <div className="mx-auto max-w-3xl">
@@ -18,16 +37,37 @@ export function SupportPage({ eyebrow, title, body, items }: SupportPageProps) {
         <p className="mt-7 text-xl leading-8 font-semibold text-slate-700">
           {body}
         </p>
-        <ul className="mt-10 grid gap-4">
-          {items.map((item) => (
-            <li
-              key={item}
-              className="rounded-[8px] border-2 border-[#111111] bg-white px-5 py-4 font-semibold text-slate-700 shadow-[5px_5px_0_#55b8e8]"
-            >
-              {item}
-            </li>
-          ))}
-        </ul>
+        {items && items.length > 0 && (
+          <ul className="mt-10 grid gap-4">
+            {items.map((item) => (
+              <li
+                key={item}
+                className="rounded-[8px] border-2 border-[#111111] bg-white px-5 py-4 font-semibold text-slate-700 shadow-[5px_5px_0_#55b8e8]"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        )}
+        {(cta || secondaryCta) && (
+          <div className="mt-10 flex flex-wrap items-center gap-4">
+            {cta && (
+              <Button href={cta.href} variant="primary" showArrow>
+                {cta.label}
+              </Button>
+            )}
+            {secondaryCta && (
+              <Button href={secondaryCta.href} variant="ghost">
+                {secondaryCta.label}
+              </Button>
+            )}
+          </div>
+        )}
+        {debugValue !== undefined && (
+          <span className="sr-only" data-testid="support-page-debug-value">
+            {debugValue}
+          </span>
+        )}
       </div>
     </section>
   );

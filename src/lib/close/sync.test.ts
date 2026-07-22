@@ -628,6 +628,8 @@ describe("adminRunCloseSync", () => {
               status: "qualified",
               sessionId: "session_1",
               completedAt: "2026-06-17T09:30:00.000Z",
+              score: 82,
+              band: "top_closers",
             },
             normalized: {
               state_market: "SA",
@@ -653,6 +655,8 @@ describe("adminRunCloseSync", () => {
         CLOSE_QUALIFICATION_STATUS_FIELD_ID: "cf_status",
         CLOSE_STATE_MARKET_FIELD_ID: "cf_state",
         CLOSE_AVAILABLE_CAPITAL_FIELD_ID: "cf_capital",
+        CLOSE_SCORE_FIELD_ID: "cf_score",
+        CLOSE_BAND_FIELD_ID: "cf_band",
       }),
       fetchImpl: fetchMock as unknown as typeof fetch,
       now: () => new Date("2026-06-17T10:00:00.000Z"),
@@ -672,6 +676,50 @@ describe("adminRunCloseSync", () => {
       "custom.cf_status": "qualified",
       "custom.cf_state": "SA",
       "custom.cf_capital": "$25k-$50k",
+      "custom.cf_score": 82,
+      "custom.cf_band": "top_closers",
+    });
+  });
+
+  it("omits score and band custom fields when qualification payload leaves them null", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          event_type: "qualification_enrichment",
+          close_lead_id: "lead_close_1",
+          close_contact_id: "cont_close_1",
+          payload: {
+            qualification: {
+              status: "qualified",
+              score: null,
+              band: null,
+            },
+            normalized: {},
+            answers: [],
+          },
+        }),
+      ],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ id: "acti_note_2" }))
+      .mockResolvedValueOnce(jsonResponse({ id: "lead_close_1" }));
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({
+        CLOSE_API_KEY: "close_key_123",
+        CLOSE_QUALIFICATION_STATUS_FIELD_ID: "cf_status",
+        CLOSE_SCORE_FIELD_ID: "cf_score",
+        CLOSE_BAND_FIELD_ID: "cf_band",
+      }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T10:00:00.000Z"),
+    });
+
+    expect(result).toMatchObject({ synced: 1 });
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
+      "custom.cf_status": "qualified",
     });
   });
 
