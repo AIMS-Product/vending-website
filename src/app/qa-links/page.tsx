@@ -43,11 +43,15 @@ const calendlyRows: LinkRow[] = legacyLeadRoutes
 // No-embed legacy routes fall back to the built-in lead form, plus the two
 // top-level native-form pages that live outside the legacy registry.
 const nativeRows: LinkRow[] = [
-  { path: "/apply", slug: "apply", reference: "Apply — native lead form" },
+  {
+    path: "/apply",
+    slug: "apply",
+    reference: "Apply — 301 redirects to /contact",
+  },
   {
     path: "/contact",
     slug: "contact",
-    reference: "Contact — native lead form",
+    reference: "Contact — VP apply funnel (VSL + qualification quiz)",
   },
   ...legacyLeadRoutes
     .filter((route) => !route.embed)

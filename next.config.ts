@@ -4,31 +4,31 @@ import { withSentryConfig } from "@sentry/nextjs";
 const legacyLeadRedirects = [
   {
     source: "/booking-website",
-    destination: "/apply?source_path=/booking-website",
+    destination: "/contact?source_path=/booking-website",
   },
   {
     source: "/booking-organicmisc",
-    destination: "/apply?source_path=/booking-organicmisc",
+    destination: "/contact?source_path=/booking-organicmisc",
   },
   {
     source: "/booking-ltf",
-    destination: "/apply?source_path=/booking-ltf",
+    destination: "/contact?source_path=/booking-ltf",
   },
   {
     source: "/booking-reactivation-scraper",
-    destination: "/apply?source_path=/booking-reactivation-scraper",
+    destination: "/contact?source_path=/booking-reactivation-scraper",
   },
   {
     source: "/booking-podcast",
-    destination: "/apply?source_path=/booking-podcast",
+    destination: "/contact?source_path=/booking-podcast",
   },
   {
     source: "/location-eligibility",
-    destination: "/apply?source_path=/location-eligibility",
+    destination: "/contact?source_path=/location-eligibility",
   },
   {
     source: "/build-income-with-vending",
-    destination: "/apply?source_path=/build-income-with-vending",
+    destination: "/contact?source_path=/build-income-with-vending",
   },
   {
     source: "/vending-blueprint",
@@ -36,11 +36,11 @@ const legacyLeadRedirects = [
   },
   {
     source: "/join",
-    destination: "/apply?source_path=/join",
+    destination: "/contact?source_path=/join",
   },
   {
     source: "/vending-training",
-    destination: "/apply?source_path=/vending-training",
+    destination: "/contact?source_path=/vending-training",
   },
 ] as const;
 
@@ -61,6 +61,12 @@ const nextConfig: NextConfig = {
       {
         source: "/about-us",
         destination: "/about",
+        permanent: true,
+      },
+      // The apply funnel now lives at /contact — keep the old slug alive.
+      {
+        source: "/apply",
+        destination: "/contact",
         permanent: true,
       },
       {

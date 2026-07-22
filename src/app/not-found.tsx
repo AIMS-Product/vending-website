@@ -28,7 +28,7 @@ export default function NotFound() {
           about the program
         </Link>
         , or{" "}
-        <Link href="/apply" className="font-medium text-sky-700 underline">
+        <Link href="/contact" className="font-medium text-sky-700 underline">
           apply now
         </Link>
         .

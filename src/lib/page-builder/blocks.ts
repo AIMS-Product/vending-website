@@ -542,7 +542,7 @@ export const blockRegistry = {
     defaultProps: {
       presetId: undefined,
       label: "",
-      href: "/apply",
+      href: "/contact",
       trackingName: "",
     },
   },

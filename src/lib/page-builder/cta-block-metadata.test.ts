@@ -51,7 +51,7 @@ describe("CTA block metadata", () => {
     expect(blockRegistry.cta.defaultProps).toEqual({
       presetId: undefined,
       label: "",
-      href: "/apply",
+      href: "/contact",
       trackingName: "",
     });
     expect(blockCanvasPlaceholders.cta).toEqual({ label: "CTA label" });

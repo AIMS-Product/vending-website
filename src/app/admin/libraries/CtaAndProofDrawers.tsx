@@ -26,7 +26,7 @@ export function CtaPresetDrawerContent({ items }: { items: CtaPreset[] }) {
     <div className="grid gap-6">
       <form action={createCtaPreset} className="grid gap-4">
         <TextInput name="label" label="Label" />
-        <TextInput name="href" label="Href" placeholder="/apply" />
+        <TextInput name="href" label="Href" placeholder="/contact" />
         <SelectInput
           name="stylePreset"
           label="Style"

@@ -37,7 +37,7 @@ export async function generateMetadata({
       "Apply to the Vending Accelerator Program with source attribution preserved for this legacy Vendingpreneurs route.",
     robots: route.indexable ? undefined : { index: false, follow: false },
     alternates: {
-      canonical: route.indexable ? route.path : "/apply",
+      canonical: route.indexable ? route.path : "/contact",
     },
   };
 }

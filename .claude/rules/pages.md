@@ -13,7 +13,8 @@ paths:
   `<head>` tags, never skip metadata.
 - Marketing pages render under the root layout's Header/Footer (do not
   re-render layout chrome inside pages).
-- Apply Now / Contact CTAs link to `/apply` (Slice 1 placeholder, wired
-  in Slice 4). Do not inline form HTML in marketing pages.
+- Apply Now / Contact CTAs link to `/contact` (the VP apply funnel: VSL +
+  qualification quiz). The old `/apply` slug 301-redirects there. Do not
+  inline form HTML in marketing pages.
 - All visible copy on a marketing page must trace back to a typed entry
   in `src/lib/content/` — this keeps copy reviewable as data.

@@ -203,7 +203,7 @@ function ArticleSidebar({ headings }: { headings: string[] }) {
             Get the complete A-Z blueprint to passive income.
           </p>
           <Link
-            href="/apply"
+            href="/contact"
             className="mt-8 inline-flex min-h-14 w-full items-center justify-center rounded-[8px] bg-[#f47b3b] px-6 text-sm font-black text-[#111111] uppercase transition hover:-translate-y-0.5"
           >
             Step inside

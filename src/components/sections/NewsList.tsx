@@ -100,7 +100,7 @@ function EmptyState() {
           program and we&rsquo;ll get you on the path.
         </p>
         <div className="mt-8 flex justify-center">
-          <Button href="/apply">Apply Now</Button>
+          <Button href="/contact">Apply Now</Button>
         </div>
       </div>
     </section>

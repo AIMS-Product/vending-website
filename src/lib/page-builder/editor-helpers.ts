@@ -184,7 +184,7 @@ function withEditorDefaultsForNewBlock(block: PageBlock): PageBlock {
       ...block,
       props: {
         ...block.props,
-        href: block.props.href || "/apply",
+        href: block.props.href || "/contact",
         trackingName: block.props.trackingName || "cta",
       },
     };

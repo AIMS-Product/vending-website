@@ -232,7 +232,7 @@ export function EditorPublicHeader() {
           ))}
         </nav>
         <Link
-          href="/apply"
+          href="/contact"
           tabIndex={-1}
           onClick={(event) => event.preventDefault()}
           className="hidden min-h-12 items-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] lg:inline-flex"
