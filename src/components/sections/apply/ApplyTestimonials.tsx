@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { applyTestimonials } from "@/lib/content/apply-page";
 import { StarRow } from "./icons";
 
@@ -17,20 +18,37 @@ export function ApplyTestimonials() {
             key={quote.name}
             className="flex flex-col gap-4 rounded-[14px] border-2 border-[#111111] bg-white p-6 shadow-[6px_6px_0_#55b8e8]"
           >
-            <div className="flex items-center gap-3.5">
-              <span className="flex size-14 shrink-0 items-center justify-center rounded-[12px] border-2 border-[#111111] bg-[#eaf8ff] text-xl font-black text-[#066a99]">
-                {quote.initial}
-              </span>
+            {quote.image ? (
+              <div className="flex items-center gap-3.5">
+                <Image
+                  src={quote.image}
+                  alt={quote.name}
+                  width={56}
+                  height={56}
+                  className="size-14 shrink-0 rounded-[12px] border-2 border-[#111111] object-cover"
+                />
+                <div>
+                  <StarRow
+                    className="flex gap-0.5 text-[#f4c236]"
+                    starClassName="size-4"
+                  />
+                  <p className="mt-1 text-[15px] font-semibold text-[#111111]">
+                    {quote.name}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              // No headshot yet — name-forward layout, no avatar placeholder.
               <div>
                 <StarRow
                   className="flex gap-0.5 text-[#f4c236]"
                   starClassName="size-4"
                 />
-                <p className="mt-1 text-[15px] font-semibold text-[#111111]">
+                <p className="mt-1.5 text-[15px] font-black tracking-wide text-[#111111] uppercase">
                   {quote.name}
                 </p>
               </div>
-            </div>
+            )}
             <p className="text-[17px] leading-snug font-black text-[#111111]">
               {quote.quote}
             </p>

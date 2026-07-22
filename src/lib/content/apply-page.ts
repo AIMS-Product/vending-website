@@ -32,9 +32,10 @@ export const applyHero = {
 } as const;
 
 export const applyVsl = {
-  badge: "VSL · Video placeholder",
+  badge: "Free training",
   watchLabel: "Watch Mike's story",
-  videoHref: "https://youtu.be/P-Z1BZ9M",
+  youtubeId: "P-Z1BZ9M-Fg",
+  videoHref: "https://youtu.be/P-Z1BZ9M-Fg",
   caption: [
     { text: "That's " },
     { text: "Mike Hoffmann", strong: true },
@@ -82,20 +83,25 @@ export const applyTestimonials = {
   title: "What people are saying",
   shortQuotes: [
     {
-      initial: "A",
       name: "Anthony",
       quote: "“We have 45 locations, 77 machines, and did $98,000 last month…”",
+      // No headshot delivered yet — leave unset until Kody supplies
+      // public/apply/people/anthony.jpg (see asset manifest). Card renders a
+      // clean no-photo layout instead of a placeholder/initial avatar.
+      image: undefined as string | undefined,
     },
     {
-      initial: "S",
       name: "Shannon",
       quote: "“With just 4 locations, I’m doing $25,000 a month in revenue…”",
+      // public/apply/people/shannon.jpg once delivered.
+      image: undefined as string | undefined,
     },
     {
-      initial: "T",
       name: "Thomas",
       quote:
         "“In a few months, I went from zero experience to $5K profit a month!”",
+      // public/apply/people/thomas.jpg once delivered.
+      image: undefined as string | undefined,
     },
   ],
   featured: {
@@ -158,35 +164,39 @@ export const applyRoadmap = {
 export const applyMembers = {
   eyebrow: "Real members",
   title: "Regular people who ran the system",
+  // No headshots delivered yet — every `image` is unset, so cards render the
+  // clean no-photo layout instead of a placeholder/initial avatar. Once Kody
+  // supplies public/apply/people/<slug>.jpg, set the path and the card
+  // switches to the real photo automatically.
   members: [
     {
-      initial: "DF",
       name: "DJ Fuchs",
       result: "4 to 33 machines in 12 months.",
+      image: undefined as string | undefined, // people/dj-fuchs.jpg
     },
     {
-      initial: "GP",
       name: "Graham & Katie Parker",
       result:
         "Built to $36k/month and growing toward $60k, without quitting their first job.",
+      image: undefined as string | undefined, // people/graham-katie-parker.jpg
     },
     {
-      initial: "MG",
       name: "Madison Graves",
       result:
         "Stay-at-home mom, 6 locations in 10 months, 9 more under contract.",
+      image: undefined as string | undefined, // people/madison-graves.jpg
     },
     {
-      initial: "JN",
       name: "Joe Natoli",
       result:
         "Built a route around his own schedule, now $5k/month and closing on 20 locations.",
+      image: undefined as string | undefined, // people/joe-natoli.jpg
     },
     {
-      initial: "MM",
       name: "Matt Morrison",
       result:
         "Still at his 9-to-5, now runs 21+ locations doing over $40k/month.",
+      image: undefined as string | undefined, // people/matt-morrison.jpg
     },
   ],
 } as const;
@@ -286,6 +296,10 @@ export const applyFooter = {
     "Member results aren't typical and aren't a guarantee. Outcomes depend on effort, market, and execution.",
   privacyNote:
     "By applying you agree to our Privacy Policy. We never sell your data.",
+  // Light/transparent wordmark for the dark disclaimer band. Not delivered
+  // yet — until public/apply/vendingpreneurs-logo-light.svg exists, the band
+  // falls back to the text wordmark (clean, not a placeholder face).
+  lightLogo: "/apply/vendingpreneurs-logo-light.svg",
 } as const;
 
 export const applySticky = {

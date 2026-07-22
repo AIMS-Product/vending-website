@@ -89,6 +89,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cdn.prod.website-files.com",
       },
+      // YouTube thumbnail CDN — used by the /apply VSL click-to-play facade.
+      {
+        protocol: "https",
+        hostname: "i.ytimg.com",
+      },
     ],
   },
 };

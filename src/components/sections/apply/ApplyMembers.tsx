@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { applyMembers } from "@/lib/content/apply-page";
 
 export function ApplyMembers() {
@@ -11,24 +12,43 @@ export function ApplyMembers() {
       </h2>
 
       <ul className="mt-12 grid gap-4 sm:grid-cols-2">
-        {applyMembers.members.map((member) => (
-          <li
-            key={member.name}
-            className="flex items-center gap-4 rounded-[12px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8]"
-          >
-            <span className="flex size-13 shrink-0 items-center justify-center rounded-[10px] border-2 border-[#111111] bg-[#fdece0] text-base font-black text-[#e65f1f]">
-              {member.initial}
-            </span>
-            <div>
-              <h3 className="text-base font-black text-[#111111]">
+        {applyMembers.members.map((member) =>
+          member.image ? (
+            <li
+              key={member.name}
+              className="flex items-center gap-4 rounded-[12px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8]"
+            >
+              <Image
+                src={member.image}
+                alt={member.name}
+                width={52}
+                height={52}
+                className="size-13 shrink-0 rounded-[10px] border-2 border-[#111111] object-cover"
+              />
+              <div>
+                <h3 className="text-base font-black text-[#111111]">
+                  {member.name}
+                </h3>
+                <p className="mt-0.5 text-sm leading-snug font-semibold text-slate-700">
+                  {member.result}
+                </p>
+              </div>
+            </li>
+          ) : (
+            // No headshot yet — name-forward layout, no avatar placeholder.
+            <li
+              key={member.name}
+              className="flex flex-col justify-center gap-1 rounded-[12px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#55b8e8]"
+            >
+              <h3 className="text-base font-black tracking-wide text-[#111111] uppercase">
                 {member.name}
               </h3>
-              <p className="mt-0.5 text-sm leading-snug font-semibold text-slate-700">
+              <p className="text-sm leading-snug font-semibold text-slate-700">
                 {member.result}
               </p>
-            </div>
-          </li>
-        ))}
+            </li>
+          ),
+        )}
       </ul>
     </section>
   );
