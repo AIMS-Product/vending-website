@@ -158,44 +158,42 @@ export const applyRoadmap = {
   ],
 } as const;
 
+// Full success-story cards (finished graphics from Kody) that replace the old
+// "regular members" text list. Each card is clickable and links to that
+// member's story on YouTube (Kody: "eventually onsite case studies, for now the
+// YouTube vids"). Card art is portrait, ~880x1500. Each card's story + headline
+// stats are transcribed into `alt` for screen readers, since the copy lives
+// only inside the image.
+export type SuccessStoryCard = {
+  readonly name: string;
+  readonly image: string;
+  readonly youtubeUrl: string;
+  readonly alt: string;
+};
+
 export const applyMembers = {
   eyebrow: "Real members",
   title: "Regular people who ran the system",
-  // No headshots delivered yet — every `image` is unset, so cards render the
-  // clean no-photo layout instead of a placeholder/initial avatar. Once Kody
-  // supplies public/apply/people/<slug>.jpg, set the path and the card
-  // switches to the real photo automatically.
-  members: [
+  cards: [
     {
-      name: "DJ Fuchs",
-      result: "4 to 33 machines in 12 months.",
-      image: undefined as string | undefined, // people/dj-fuchs.jpg
+      name: "Anthony Kolodziej",
+      image: "/apply/stories/anthony.png",
+      youtubeUrl: "https://youtu.be/fsRX7K_Hg08",
+      alt: "Success story — Anthony Kolodziej: laid off from a 14-year real estate career with zero vending experience, he used personal 0% APR credit cards for his first machines and scaled to a sustainable multi-site operation — $102K/month across 45 locations in about a year, at roughly 10 hours a week. “I built something my kids can see me build — and get the time and freedom to actually be there for them while I do it.” Watch his story on YouTube.",
     },
     {
-      name: "Graham & Katie Parker",
-      result:
-        "Built to $36k/month and growing toward $60k, without quitting their first job.",
-      image: undefined as string | undefined, // people/graham-katie-parker.jpg
+      name: "Mallerie Rouch",
+      image: "/apply/stories/mallerie.png",
+      youtubeUrl: "https://youtu.be/io1Jkei-yFs",
+      alt: "Success story — Mallerie Rouch: working a full-time job and a mother of two, she and her husband bet on themselves and built a vending route to $4K/month across 6 locations in 8 months, at 5–6 hours a week part-time. “This is the right community to have access to people who've been insanely successful — to build this business right and avoid the mistakes people make without mentors.” Watch her story on YouTube.",
     },
     {
-      name: "Madison Graves",
-      result:
-        "Stay-at-home mom, 6 locations in 10 months, 9 more under contract.",
-      image: undefined as string | undefined, // people/madison-graves.jpg
+      name: "Moosa Sadi",
+      image: "/apply/stories/moosa.png",
+      youtubeUrl: "https://youtu.be/kb8ryBm6g9k",
+      alt: "Success story — Moosa Sadi: after losing his mother and younger brother and burning out of a hospitality career, he quit his job, found Mike Hoffman on YouTube, and rebuilt — 22 locations, 2 employees running his routes, a $41K single best month in about a year. “I genuinely feel freedom. At the end of the day, I do it for my mom and my brother.” Watch his story on YouTube.",
     },
-    {
-      name: "Joe Natoli",
-      result:
-        "Built a route around his own schedule, now $5k/month and closing on 20 locations.",
-      image: undefined as string | undefined, // people/joe-natoli.jpg
-    },
-    {
-      name: "Matt Morrison",
-      result:
-        "Still at his 9-to-5, now runs 21+ locations doing over $40k/month.",
-      image: undefined as string | undefined, // people/matt-morrison.jpg
-    },
-  ],
+  ] satisfies SuccessStoryCard[],
 } as const;
 
 export const applyFaq = {
