@@ -51,9 +51,10 @@ describe("ThankYouPage", () => {
 
   it("routes not_right_time to the roadmap download with a book-a-call subtext", async () => {
     const html = await renderPage({ state: "not_right_time" });
-    // Primary CTA downloads the roadmap (the blueprint lander).
+    // Primary CTA downloads the roadmap PDF (Kody's Drive file).
     expect(html).toContain("Download your free 90-Day Vending Roadmap");
-    expect(html).toContain('href="/vending-business-blueprint"');
+    expect(html).toContain("drive.google.com/uc?export=download");
+    expect(html).toContain("1iORHjmg_UzU3tr5EKcEBp8XIQ-8qoNSm");
     // Subtext note + a book-a-call link to the setter/quick-discovery calendar.
     expect(html).toContain("Think you're ready?");
     expect(html).toContain(

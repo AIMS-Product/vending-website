@@ -16,9 +16,12 @@
 
 import type { ThankYouStateKey } from "@/lib/qualification/scoring";
 
-// Free 90-Day Vending Roadmap opt-in lander (the "download the guide" surface).
+// Free 90-Day Vending Roadmap PDF (Kody's Google Drive file, direct-download
+// form so the CTA downloads on click rather than opening the Drive viewer).
+// Requires the Drive file be shared "Anyone with the link — Viewer".
 const ROADMAP_URL =
-  process.env.NEXT_PUBLIC_ROADMAP_URL ?? "/vending-business-blueprint";
+  process.env.NEXT_PUBLIC_ROADMAP_URL ??
+  "https://drive.google.com/uc?export=download&id=1iORHjmg_UzU3tr5EKcEBp8XIQ-8qoNSm";
 
 // Setter / quick-discovery call — lower-intent leads (not-right-time secondary
 // + good-potential primary).

@@ -78,60 +78,57 @@ export const applyTools = {
   ],
 } as const;
 
+// Pre-rendered member review cards (delivered by Kody as finished graphics in
+// the site's card style). Rendered as a 3-rows-of-2 image grid, capped with the
+// wide Madison "splitter" banner. Alt text transcribes each card's quote so the
+// testimonial is available to screen readers (the copy lives only in the image).
+// More cards get appended over time. Card art is 2019x838; the splitter 4330x620.
+export type ReviewCard = {
+  readonly name: string;
+  readonly image: string;
+  readonly alt: string;
+};
+
 export const applyTestimonials = {
   eyebrow: "Real results",
   title: "What people are saying",
-  shortQuotes: [
+  cards: [
     {
-      name: "Anthony",
-      quote: "“We have 45 locations, 77 machines, and did $98,000 last month…”",
-      // No headshot delivered yet — leave unset until Kody supplies
-      // public/apply/people/anthony.jpg (see asset manifest). Card renders a
-      // clean no-photo layout instead of a placeholder/initial avatar.
-      image: undefined as string | undefined,
+      name: "Brett Tracy",
+      image: "/apply/reviews/brett-tracy.png",
+      alt: "Five-star review from Brett Tracy: “Vendingpreneurs has been great! It helped speed up my knowledge by years in a short amount of time.”",
     },
     {
-      name: "Shannon",
-      quote: "“With just 4 locations, I’m doing $25,000 a month in revenue…”",
-      // public/apply/people/shannon.jpg once delivered.
-      image: undefined as string | undefined,
+      name: "DJ Fuchs",
+      image: "/apply/reviews/dj-fuchs.png",
+      alt: "Five-star review from DJ Fuchs: “You will exponentially increase your chances of succeeding and shorten the learning curve with Vendingpreneurs.”",
     },
     {
-      name: "Thomas",
-      quote:
-        "“In a few months, I went from zero experience to $5K profit a month!”",
-      // public/apply/people/thomas.jpg once delivered.
-      image: undefined as string | undefined,
+      name: "George Hoover",
+      image: "/apply/reviews/george-hoover.png",
+      alt: "Five-star review from George Hoover: “I have learned so much about this business since joining. Everyone in this community has been extremely helpful. I'm looking forward to contributing more to the group!”",
     },
-  ],
-  featured: {
-    quote:
-      "“You will exponentially increase your chances of succeeding and shorten the learning curve.”",
-    attribution: "DJ Fuchs · 4 → 33 machines in 12 months",
-  },
-  moreTitle: "More from the community",
-  reviews: [
     {
-      name: "Charles Wheeler",
-      org: "DenCo Vending LLC",
-      body: "High school football coach in Texas, no prior vending or business experience. Placed his first market 4 months after joining, now 7 months in with 5 markets live and 2 more on the way.",
+      name: "Joe Natoli",
+      image: "/apply/reviews/joe-natoli.png",
+      alt: "Five-star review from Joe Natoli: “The best thing about Vendingpreneurs is the community itself. Mike and the team have taken me from zero experience to landing 10 locations in less than a year. Would highly recommend!”",
+    },
+    {
+      name: "Kyle Sharp",
+      image: "/apply/reviews/kyle-sharp.png",
+      alt: "Five-star review from Kyle Sharp: “Mike's program helped us go from zero knowledge about the vending industry to having 10 locations in 6 months. It's proven and works!”",
     },
     {
       name: "Kelsey Corcoran",
-      org: "Super Foods Distribution",
-      body: "“Less than three months in and I've already gained more than I expected. I spent years wishing I knew how to do this — so glad I finally found Mike and this community to learn it.”",
+      image: "/apply/reviews/kelsey-corcoran.png",
+      alt: "Five-star review from Kelsey Corcoran: “I've only been a part of the community for less than 3 months and have gained much more than I expected! So glad to have found Mike & this community & would recommend this to everyone.”",
     },
-    {
-      name: "Abby C",
-      org: "Van Pelt Vending",
-      body: "“We joined with zero vending knowledge and got our four kids involved. We've gone from zero machines to 30+ in about a year. Best decision, highly recommend.”",
-    },
-    {
-      name: "Dennis & Michelle Dewitt",
-      org: "JC Vending",
-      body: "“No experience before joining. The community has been a wealth of knowledge — people willing to dive in, make mistakes, learn, and share so others don't repeat them.”",
-    },
-  ],
+  ] satisfies ReviewCard[],
+  splitter: {
+    name: "Madison Graves",
+    image: "/apply/reviews/madison-graves.png",
+    alt: "Member spotlight — Madison Graves, $28K/month across 16 machines: “The fastest way to learn is by learning from people who are in it, who are doing it, who have already been successful. The value of the community and the people you meet along the way is alone worth getting into the program.”",
+  } satisfies ReviewCard,
 } as const;
 
 export const applyRoadmap = {
@@ -231,7 +228,6 @@ export const applyFaq = {
 export const applyQuiz = {
   eyebrow: "Join the Vending Accelerator Program",
   title: "See if you're ready to launch",
-  body: "Answer a few quick questions, then book a free call to build your plan.",
   submitLabel: "See if I qualify",
   rail: {
     quote: "“With just 4 locations, I'm doing $25,000 a month in revenue.”",

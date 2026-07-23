@@ -390,9 +390,10 @@ describe("PublicLeadForm", () => {
     );
 
     expect(html).toContain('data-qualification-state="not_right_time"');
-    // Primary CTA downloads the roadmap (internal blueprint lander).
+    // Primary CTA downloads the roadmap PDF (Kody's Drive file).
     expect(html).toContain("Download your free 90-Day Vending Roadmap");
-    expect(html).toContain('href="/vending-business-blueprint"');
+    expect(html).toContain("drive.google.com/uc?export=download");
+    expect(html).toContain("1iORHjmg_UzU3tr5EKcEBp8XIQ-8qoNSm");
     // Subtext note + book-a-call fallback to the setter/quick-discovery call.
     expect(html).toContain("Think you&#x27;re ready?");
     expect(html).toContain("cvsd-wxt-cvb/vendingpreneurs-quick-discovery");

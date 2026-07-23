@@ -33,9 +33,6 @@ export function ApplyQuiz({ attribution, idempotencyKey }: ApplyQuizProps) {
         <h2 className="mt-4 text-center text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.05] font-black text-white uppercase">
           {applyQuiz.title}
         </h2>
-        <p className="mx-auto mt-4 max-w-[56ch] text-center text-lg font-semibold text-white/70">
-          {applyQuiz.body}
-        </p>
 
         <div className="mx-auto mt-11 flex max-w-[1000px] flex-col items-start gap-7 lg:flex-row">
           <div className="w-full min-w-0 flex-1">
