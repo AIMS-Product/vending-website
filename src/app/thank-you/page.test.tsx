@@ -36,17 +36,41 @@ describe("ThankYouPage", () => {
     expect(html).toContain(THANK_YOU_STATES.good_potential.headline);
   });
 
-  it("renders no secondary CTA for any state", async () => {
-    // The 90-Day Guide asset doesn't exist yet, so not_right_time books the
-    // readiness call as its single CTA — no state defines secondary copy.
+  it("defines a secondary CTA only for not_right_time", async () => {
+    // not_right_time leads download the 90-Day Roadmap first, then get a
+    // book-a-call subtext fallback. The three fit bands have a single CTA.
+    expect(THANK_YOU_STATES.not_right_time.secondaryCta).toBeTruthy();
     for (const stateKey of [
-      "not_right_time",
       "good_potential",
       "strong_fit",
       "perfect_fit",
     ] as const) {
       expect(THANK_YOU_STATES[stateKey].secondaryCta).toBeUndefined();
     }
+  });
+
+  it("routes not_right_time to the roadmap download with a book-a-call subtext", async () => {
+    const html = await renderPage({ state: "not_right_time" });
+    // Primary CTA downloads the roadmap (the blueprint lander).
+    expect(html).toContain("Download your free 90-Day Vending Roadmap");
+    expect(html).toContain('href="/vending-business-blueprint"');
+    // Subtext note + a book-a-call link to the setter/quick-discovery calendar.
+    expect(html).toContain("Think you're ready?");
+    expect(html).toContain(
+      "Book a call with our team to explore your options.",
+    );
+    expect(html).toContain("cvsd-wxt-cvb/vendingpreneurs-quick-discovery");
+  });
+
+  it("routes each fit band to its own Calendly destination", async () => {
+    const good = await renderPage({ state: "good_potential" });
+    expect(good).toContain("cvsd-wxt-cvb/vendingpreneurs-quick-discovery");
+
+    const strong = await renderPage({ state: "strong_fit" });
+    expect(strong).toContain("cxfn-hh2-h8g/vendingpreneurs-consultation");
+
+    const perfect = await renderPage({ state: "perfect_fit" });
+    expect(perfect).toContain("cvr6-cfd-zgd/vendingpreneurs-consultation-call");
   });
 
   it("carries an optional score through as a hidden debug value", async () => {

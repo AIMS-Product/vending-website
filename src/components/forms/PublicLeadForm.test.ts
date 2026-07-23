@@ -366,6 +366,52 @@ describe("PublicLeadForm", () => {
     expect(html).toContain('data-qualification-score="100"');
     expect(html).toContain("Book my call");
     expect(html).toMatch(/href="https:\/\/calendly\.com\/[^"]+"/);
+    // Perfect fit books the Lane 1 top-closer consultation.
+    expect(html).toContain("cvr6-cfd-zgd/vendingpreneurs-consultation-call");
+  });
+
+  it("routes a not_right_time result to the roadmap download with a book-a-call subtext", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        hiddenFields: { qualification_form_id: "form_1" },
+        idempotencyKey: "lead-inline-nrt",
+        intent: "qualification",
+        inlineQualification: true,
+        submitLabel: "See if I qualify",
+        initialState: {
+          status: "success",
+          message: "Thanks — here's your fit.",
+          leadId: "lead_2",
+          qualification: { thankYouState: "not_right_time", score: 20 },
+        },
+      }),
+    );
+
+    expect(html).toContain('data-qualification-state="not_right_time"');
+    // Primary CTA downloads the roadmap (internal blueprint lander).
+    expect(html).toContain("Download your free 90-Day Vending Roadmap");
+    expect(html).toContain('href="/vending-business-blueprint"');
+    // Subtext note + book-a-call fallback to the setter/quick-discovery call.
+    expect(html).toContain("Think you&#x27;re ready?");
+    expect(html).toContain("cvsd-wxt-cvb/vendingpreneurs-quick-discovery");
+  });
+
+  it("renders a divider between the consent checks and the qualifying questions", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        hiddenFields: { qualification_form_id: "form_1" },
+        idempotencyKey: "lead-inline-divider",
+        intent: "qualification",
+        inlineQualification: true,
+        submitLabel: "See if I qualify",
+      }),
+    );
+
+    expect(html).toContain('data-testid="qualification-divider"');
   });
 
   it("renders the live form (not a success panel) on first paint", () => {

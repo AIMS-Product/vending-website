@@ -33,7 +33,7 @@ export function ApplyStickyCta() {
           {applySticky.text}
         </span>
         <span className="text-[15px] font-black text-[#111111] sm:hidden">
-          Ready to launch your route?
+          Launch your route in 90 days.
         </span>
         <ApplyCtaButton size="md" className="shrink-0">
           {applySticky.ctaLabel}

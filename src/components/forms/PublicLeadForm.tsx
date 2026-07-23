@@ -34,7 +34,10 @@ import {
   THANK_YOU_STATES,
   type ThankYouStateKey,
 } from "@/lib/qualification/scoring";
-import { THANK_YOU_LINKS } from "@/lib/qualification/thank-you-links";
+import {
+  THANK_YOU_LINKS,
+  THANK_YOU_STATE_LINKS,
+} from "@/lib/qualification/thank-you-links";
 import { cn } from "@/lib/utils";
 
 type PublicLeadFormProps = {
@@ -294,24 +297,34 @@ export function PublicLeadForm({
               errors={errors}
               values={submittedValues}
             />
-            <SelectField
-              name={VP_QUESTION_IDS.timeline}
-              errorKey="timeline"
-              label={VP_TIMELINE_LABEL}
-              required
-              errors={errors}
-              values={submittedValues}
-              options={VP_TIMELINE_FIELD_OPTIONS}
+            {/* Light divider separating the opt-in checks from the two
+                qualifying questions below (per Kody), with generous spacing so
+                the sections read as distinct groups. */}
+            <div
+              data-testid="qualification-divider"
+              aria-hidden
+              className="mt-3 border-t border-slate-200 sm:col-span-2"
             />
-            <SelectField
-              name={VP_QUESTION_IDS.invest}
-              errorKey="invest"
-              label={VP_INVEST_LABEL}
-              required
-              errors={errors}
-              values={submittedValues}
-              options={VP_INVEST_FIELD_OPTIONS}
-            />
+            <div className="grid gap-7 sm:col-span-2">
+              <SelectField
+                name={VP_QUESTION_IDS.timeline}
+                errorKey="timeline"
+                label={VP_TIMELINE_LABEL}
+                required
+                errors={errors}
+                values={submittedValues}
+                options={VP_TIMELINE_FIELD_OPTIONS}
+              />
+              <SelectField
+                name={VP_QUESTION_IDS.invest}
+                errorKey="invest"
+                label={VP_INVEST_LABEL}
+                required
+                errors={errors}
+                values={submittedValues}
+                options={VP_INVEST_FIELD_OPTIONS}
+              />
+            </div>
           </>
         )}
         {showQualificationFields && (
@@ -560,9 +573,11 @@ function ContactSuccessPanel({ email }: { email: string }) {
 
 // Renders the scored fit result inline after a successful inline
 // qualification submit — no navigation to /qualify or /thank-you. Copy comes
-// from THANK_YOU_STATES (src/lib/qualification/scoring.ts, shared with the
-// /thank-you route) so the two surfaces never drift; the booking link is the
-// same accelerator-call Calendly URL /thank-you uses.
+// from THANK_YOU_STATES and links from THANK_YOU_STATE_LINKS
+// (src/lib/qualification/*, shared with the /thank-you route) so the two
+// surfaces never drift. Each band books its own Calendly (setter / Lane 1 /
+// Lane 1 top); not-right-time leads download the 90-Day Roadmap first, with a
+// book-a-call subtext fallback.
 function FitResultPanel({
   state,
   score,
@@ -571,6 +586,12 @@ function FitResultPanel({
   score: number;
 }) {
   const content = THANK_YOU_STATES[state];
+  const links = THANK_YOU_STATE_LINKS[state];
+  const primaryHref = THANK_YOU_LINKS[links.primary];
+  const secondaryHref =
+    content.secondaryCta && links.secondary
+      ? THANK_YOU_LINKS[links.secondary]
+      : undefined;
   return (
     <div
       role="status"
@@ -589,11 +610,22 @@ function FitResultPanel({
         {content.body}
       </p>
       <a
-        href={THANK_YOU_LINKS.calendlyUrl}
+        href={primaryHref}
         className="inline-flex min-h-12 w-fit items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         {content.cta}
       </a>
+      {secondaryHref && content.secondaryCta && (
+        <p className="text-sm font-semibold text-slate-600">
+          {content.secondaryNote ? `${content.secondaryNote} ` : null}
+          <a
+            href={secondaryHref}
+            className="font-black text-[#066a99] underline underline-offset-2 hover:text-[#111111]"
+          >
+            {content.secondaryCta}
+          </a>
+        </p>
+      )}
     </div>
   );
 }

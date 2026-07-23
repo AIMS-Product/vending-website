@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
 type SupportPageCta = {
@@ -11,6 +12,8 @@ type SupportPageProps = {
   body: string;
   items?: string[];
   cta?: SupportPageCta;
+  /** Lead-in text shown just before the secondary CTA link. */
+  secondaryNote?: string;
   secondaryCta?: SupportPageCta;
   /** Optional hidden debug value (e.g. a qualification score) surfaced only in markup for QA. */
   debugValue?: string;
@@ -22,6 +25,7 @@ export function SupportPage({
   body,
   items,
   cta,
+  secondaryNote,
   secondaryCta,
   debugValue,
 }: SupportPageProps) {
@@ -50,16 +54,22 @@ export function SupportPage({
           </ul>
         )}
         {(cta || secondaryCta) && (
-          <div className="mt-10 flex flex-wrap items-center gap-4">
+          <div className="mt-10 flex flex-col items-start gap-4">
             {cta && (
               <Button href={cta.href} variant="primary" showArrow>
                 {cta.label}
               </Button>
             )}
             {secondaryCta && (
-              <Button href={secondaryCta.href} variant="ghost">
-                {secondaryCta.label}
-              </Button>
+              <p className="text-base font-semibold text-slate-600">
+                {secondaryNote ? `${secondaryNote} ` : null}
+                <Link
+                  href={secondaryCta.href}
+                  className="font-black text-[#066a99] underline underline-offset-2 hover:text-[#111111]"
+                >
+                  {secondaryCta.label}
+                </Link>
+              </p>
             )}
           </div>
         )}

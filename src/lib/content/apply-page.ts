@@ -301,7 +301,7 @@ export const applyFooter = {
 } as const;
 
 export const applySticky = {
-  text: "Ready to launch your route?",
+  text: "Don't wait. Launch your vending route in 90 days.",
   ctaLabel: "I'm Ready to Build My Route",
 } as const;
 

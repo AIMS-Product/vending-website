@@ -118,6 +118,8 @@ export type ThankYouState = {
   readonly headline: string;
   readonly body: string;
   readonly cta: string;
+  /** Lead-in text shown just before the secondary CTA link (e.g. "Think you're ready?"). */
+  readonly secondaryNote?: string;
   readonly secondaryCta?: string;
 };
 
@@ -143,8 +145,10 @@ export const THANK_YOU_STATES: Record<ThankYouStateKey, ThankYouState> = {
   not_right_time: {
     label: "Not the right time yet",
     headline: "Now may not be the best time to launch a business.",
-    body: "And that's okay. Based on your answers, jumping in right now could set you up to struggle instead of succeed. We'd rather help you get ready the right way. When you're set, book a readiness session and we'll map your path to launch.",
-    cta: "Book a readiness session",
+    body: "And that's okay. Based on your answers, jumping in right now could set you up to struggle instead of succeed. Grab the free 90-Day Vending Roadmap so you're ready to move the moment the timing is right.",
+    cta: "Download your free 90-Day Vending Roadmap",
+    secondaryNote: "Think you're ready?",
+    secondaryCta: "Book a call with our team to explore your options.",
   },
 };
 

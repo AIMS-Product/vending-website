@@ -70,6 +70,7 @@ export default async function ThankYouPage({
         label: state.cta,
         href: THANK_YOU_LINKS[links.primary],
       }}
+      secondaryNote={state.secondaryNote}
       secondaryCta={
         state.secondaryCta && links.secondary
           ? {
