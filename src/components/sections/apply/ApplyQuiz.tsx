@@ -1,25 +1,20 @@
 import { PublicLeadForm } from "@/components/forms/PublicLeadForm";
-import { submitQualificationLead } from "@/app/qualification-intake/actions";
+import { submitInlineQualification } from "@/app/qualification-intake/actions";
 import { APPLY_QUIZ_ANCHOR, applyQuiz } from "@/lib/content/apply-page";
 import type { LeadAttribution } from "@/lib/lead-attribution";
+import { VP_QUALIFICATION_FORM_ID } from "@/lib/qualification/vp-fields";
 import { LockIcon, StarRow } from "./icons";
-
-// The seeded "VP Lead Capture" qualification form (see the seed migration).
-// Passing it explicitly keeps this independent of whichever form is the global
-// default — same id used by the /vp-quiz QA seam.
-const VP_QUALIFICATION_FORM_ID = "a1b2c3d4-0000-4000-8000-000000000001";
 
 type ApplyQuizProps = {
   attribution: LeadAttribution;
   idempotencyKey: string;
 };
 
-// The dark two-panel quiz band. For v1 the left card holds the qualification
-// CONTACT form; on submit, PublicLeadForm creates a session and hands off to
-// /qualify/[token] (the multi-step question runtime), which scores the answers
-// and routes to the matching /thank-you fit state. No calendlyUrl is passed —
-// that would skip the quiz. Fully embedding the multi-step questions inline
-// here is a deliberate fast-follow, not v1.
+// The dark two-panel quiz band. The left card holds the full inline
+// qualification form — contact + consent + timeline + invest. Submitting
+// scores the answers and renders the matching fit result in place (no
+// navigation to /qualify or /thank-you). Variant A (dollar ladder) is forced
+// server-side; the A/B invest-copy experiment is retired for this funnel.
 export function ApplyQuiz({ attribution, idempotencyKey }: ApplyQuizProps) {
   return (
     <section
@@ -45,13 +40,15 @@ export function ApplyQuiz({ attribution, idempotencyKey }: ApplyQuizProps) {
         <div className="mx-auto mt-11 flex max-w-[1000px] flex-col items-start gap-7 lg:flex-row">
           <div className="w-full min-w-0 flex-1">
             <PublicLeadForm
-              action={submitQualificationLead}
+              action={submitInlineQualification}
               attribution={attribution}
               hiddenFields={{
                 qualification_form_id: VP_QUALIFICATION_FORM_ID,
+                variant_key: "A",
               }}
               idempotencyKey={idempotencyKey}
               intent="qualification"
+              inlineQualification
               submitLabel={applyQuiz.submitLabel}
             />
           </div>

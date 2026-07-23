@@ -255,6 +255,119 @@ describe("PublicLeadForm", () => {
     );
   });
 
+  it("does not render inline qualification fields unless inlineQualification is set", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        hiddenFields: { qualification_form_id: "form_1" },
+        idempotencyKey: "lead-qualification-noinline",
+        intent: "qualification",
+        submitLabel: "See if I qualify",
+      }),
+    );
+
+    expect(html).not.toContain('name="consent_updates"');
+    expect(html).not.toContain('name="consent_contact"');
+    expect(html).not.toContain('name="timeline"');
+    expect(html).not.toContain('name="invest"');
+  });
+
+  it("renders the consent checkboxes and timeline/invest dropdowns inline", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        hiddenFields: { qualification_form_id: "form_1" },
+        idempotencyKey: "lead-inline-fields",
+        intent: "qualification",
+        inlineQualification: true,
+        submitLabel: "See if I qualify",
+      }),
+    );
+
+    expect(html).toContain('name="consent_updates"');
+    expect(html).toContain('type="checkbox"');
+    expect(html).toContain("Email me the guide and vending resources.");
+    expect(html).toContain('name="consent_contact"');
+    expect(html).toContain(
+      "I agree to receive calls and texts about my request. Msg rates may apply.",
+    );
+    expect(html).toContain('name="timeline"');
+    expect(html).toContain(
+      "When do you want your first machine placed and earning?",
+    );
+    expect(html).toContain(">As soon as possible<");
+    expect(html).toContain('name="invest"');
+    expect(html).toContain("How much are you ready to invest?");
+    expect(html).toContain(">$15,000+<");
+    // Not part of the inline qualification funnel.
+    expect(html).not.toContain("City");
+    expect(html).not.toContain("Business stage");
+  });
+
+  it("shows inline errors for the consent and timeline/invest fields from a pre-populated error state", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        hiddenFields: { qualification_form_id: "form_1" },
+        idempotencyKey: "lead-inline-errors",
+        intent: "qualification",
+        inlineQualification: true,
+        submitLabel: "See if I qualify",
+        initialState: {
+          status: "error",
+          message: "Check the highlighted fields and try again.",
+          fieldErrors: {
+            consent_updates: ["Consent is required."],
+            consent_contact: ["Consent is required."],
+            timeline: ["Timeline is required."],
+            invest: ["Investment amount is required."],
+          },
+        },
+      }),
+    );
+
+    // Every failed field is listed in the top summary with an anchor.
+    expect(html).toMatch(/4 problems with your qualification step/);
+    expect(html).toContain('href="#lead-consent_updates"');
+    expect(html).toContain('href="#lead-consent_contact"');
+    expect(html).toContain('href="#lead-timeline"');
+    expect(html).toContain('href="#lead-invest"');
+    // Inline per-field error text also renders.
+    const consentErrorCount = (html.match(/Consent is required\./g) ?? [])
+      .length;
+    expect(consentErrorCount).toBeGreaterThanOrEqual(2);
+  });
+
+  it("renders the fit result panel inline on a scored qualification success (no navigation)", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        hiddenFields: { qualification_form_id: "form_1" },
+        idempotencyKey: "lead-inline-success",
+        intent: "qualification",
+        inlineQualification: true,
+        submitLabel: "See if I qualify",
+        initialState: {
+          status: "success",
+          message: "Thanks — here's your fit.",
+          leadId: "lead_1",
+          qualification: { thankYouState: "perfect_fit", score: 100 },
+        },
+      }),
+    );
+
+    expect(html).not.toContain("<form");
+    expect(html).toContain("You&#x27;re a perfect fit for vending.");
+    expect(html).toContain('data-qualification-state="perfect_fit"');
+    expect(html).toContain('data-qualification-score="100"');
+    expect(html).toContain("Book my call");
+    expect(html).toMatch(/href="https:\/\/calendly\.com\/[^"]+"/);
+  });
+
   it("renders the live form (not a success panel) on first paint", () => {
     const html = renderToStaticMarkup(
       createElement(PublicLeadForm, {

@@ -13,6 +13,7 @@ import {
   INVEST_ROLE,
   investFormOptions,
   type ScoreResult,
+  type ThankYouStateKey,
 } from "@/lib/qualification/scoring";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
@@ -85,6 +86,12 @@ export type CompleteQualificationSessionResult = {
   status: "completed";
   sessionId: string;
   redirectPath: string;
+  // Additive: the scored fit state + total, so a caller that completes the
+  // session in the same request (e.g. an inline orchestrator) can render the
+  // result without parsing `redirectPath`. Null for non-scoring forms, same
+  // as the score fields already carried on the Close enrichment payload.
+  thankYouState: ThankYouStateKey | null;
+  score: number | null;
 };
 
 export class QualificationSessionValidationError extends Error {
@@ -206,7 +213,21 @@ export async function completeQualificationSession(
   const redirectPath = safeCompletionRedirect(session.completion_redirect_path);
 
   if (session.status === "completed") {
-    return { status: "completed", sessionId: session.id, redirectPath };
+    // Repeat completion (already-completed session): re-derive the score
+    // from the persisted normalized_summary so the additive fields stay
+    // consistent with the first call, without recomputing or re-persisting
+    // anything.
+    const existingScore = deriveQualificationScore(
+      session.normalized_summary as Record<string, unknown> | null,
+      session.variant_key,
+    );
+    return {
+      status: "completed",
+      sessionId: session.id,
+      redirectPath,
+      thankYouState: existingScore?.thankYouState ?? null,
+      score: existingScore?.total ?? null,
+    };
   }
 
   const fieldErrors = completionFieldErrors(context);
@@ -265,6 +286,8 @@ export async function completeQualificationSession(
     status: "completed",
     sessionId: session.id,
     redirectPath: completionRedirectFor(score, redirectPath),
+    thankYouState: score?.thankYouState ?? null,
+    score: score?.total ?? null,
   };
 }
 

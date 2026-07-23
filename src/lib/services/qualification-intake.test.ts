@@ -427,6 +427,7 @@ describe("createQualificationIntakeSession", () => {
       qualificationUrl: "/qualify/raw_test_token",
       expiresAt: "2026-07-17T09:00:00.000Z",
       staleAt: "2026-06-24T09:00:00.000Z",
+      sessionToken: "raw_test_token",
     });
 
     expect(fake.state.leads[1]).toMatchObject({

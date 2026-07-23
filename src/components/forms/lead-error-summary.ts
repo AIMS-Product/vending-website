@@ -20,6 +20,17 @@ const FIELD_DESCRIPTORS: ReadonlyArray<{
   { errorKey: "fullName", name: "full_name", label: "Name" },
   { errorKey: "email", name: "email", label: "Email" },
   { errorKey: "phone", name: "phone", label: "Phone" },
+  // Shared by the inline qualification funnel's two required consents.
+  {
+    errorKey: "consent_updates",
+    name: "consent_updates",
+    label: "Email updates consent",
+  },
+  {
+    errorKey: "consent_contact",
+    name: "consent_contact",
+    label: "Contact consent",
+  },
   { errorKey: "city", name: "city", label: "City" },
   { errorKey: "stateRegion", name: "state_region", label: "State" },
   {
@@ -28,7 +39,11 @@ const FIELD_DESCRIPTORS: ReadonlyArray<{
     label: "Business stage",
   },
   { errorKey: "budget", name: "budget", label: "Available startup budget" },
-  { errorKey: "timeline", name: "timeline", label: "Launch timeline" },
+  // Shared field name/id between /apply's "Launch timeline" select and the
+  // inline qualification funnel's timeline question — the two never render
+  // in the same form instance, so "Timeline" stays accurate for both.
+  { errorKey: "timeline", name: "timeline", label: "Timeline" },
+  { errorKey: "invest", name: "invest", label: "Investment amount" },
   { errorKey: "message", name: "message", label: "Message" },
 ];
 

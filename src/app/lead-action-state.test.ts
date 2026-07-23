@@ -28,6 +28,33 @@ describe("resolveLeadSuccessTransition", () => {
     ).toEqual({ kind: "redirect", href: "/qualify/raw_token" });
   });
 
+  it("returns a qualification-result transition when the inline funnel scores a fit", () => {
+    expect(
+      resolveLeadSuccessTransition(
+        {
+          ...success,
+          qualification: { thankYouState: "perfect_fit", score: 100 },
+        },
+        "qualification",
+        "person@example.com",
+      ),
+    ).toEqual({
+      kind: "qualification-result",
+      state: "perfect_fit",
+      score: 100,
+    });
+  });
+
+  it("returns null for qualification success without a redirect or a qualification result", () => {
+    expect(
+      resolveLeadSuccessTransition(
+        success,
+        "qualification",
+        "person@example.com",
+      ),
+    ).toBeNull();
+  });
+
   it("shows an in-place panel echoing the email for contact leads", () => {
     expect(
       resolveLeadSuccessTransition(success, "contact", " Person@Example.com "),

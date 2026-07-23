@@ -665,6 +665,10 @@ describe("qualification sessions", () => {
       status: "completed",
       redirectPath: "/thanks",
       sessionId: "session_1",
+      // Non-A/B variant + no timeline/invest answers → not a scoring form,
+      // so the additive fit fields ride along as null.
+      thankYouState: null,
+      score: null,
     });
     expect(fake.state.sessions[0]).toMatchObject({
       status: "completed",
@@ -783,6 +787,8 @@ describe("qualification sessions", () => {
       status: "completed",
       sessionId: "session_1",
       redirectPath: "/thanks",
+      thankYouState: null,
+      score: null,
     });
     expect(fake.state.events).toHaveLength(1);
 
@@ -989,6 +995,8 @@ describe("qualification sessions", () => {
     );
 
     // asap (40) + $15k+ (60) = 100 → perfect fit / top closers.
+    expect(completed.thankYouState).toBe("perfect_fit");
+    expect(completed.score).toBe(100);
     expect(completed.redirectPath).toBe(
       "/thank-you?state=perfect_fit&score=100",
     );

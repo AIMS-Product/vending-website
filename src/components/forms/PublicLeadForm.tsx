@@ -21,6 +21,20 @@ import {
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import { buildCalendlyBookingUrl } from "@/lib/content/lead-embed";
 import { US_STATES } from "@/lib/content/us-states";
+import {
+  VP_CONSENT_CONTACT_LABEL,
+  VP_CONSENT_UPDATES_LABEL,
+  VP_INVEST_FIELD_OPTIONS,
+  VP_INVEST_LABEL,
+  VP_QUESTION_IDS,
+  VP_TIMELINE_FIELD_OPTIONS,
+  VP_TIMELINE_LABEL,
+} from "@/lib/qualification/vp-fields";
+import {
+  THANK_YOU_STATES,
+  type ThankYouStateKey,
+} from "@/lib/qualification/scoring";
+import { THANK_YOU_LINKS } from "@/lib/qualification/thank-you-links";
 import { cn } from "@/lib/utils";
 
 type PublicLeadFormProps = {
@@ -35,6 +49,13 @@ type PublicLeadFormProps = {
   // the lead off to Calendly (name/email pre-filled, UTM carried through) so
   // they can pick a time — the lead is already captured in the CRM by then.
   bookingRedirectUrl?: string;
+  // Gates the inline /contact qualification funnel: renders the consent +
+  // timeline + invest questions inline (intent="qualification" only) and,
+  // on success, replaces the form with a FitResultPanel instead of
+  // navigating to /qualify or /thank-you. Other qualification embeds
+  // (/vp-quiz, resource page blocks) omit this and keep today's redirect
+  // handoff.
+  inlineQualification?: boolean;
   // Override the initial action state. Production always uses the idle default;
   // this exists so SSR-rendered tests can exercise the field-error layer.
   initialState?: PublicLeadActionState;
@@ -72,6 +93,7 @@ export function PublicLeadForm({
   intent,
   layout = "standard",
   bookingRedirectUrl,
+  inlineQualification = false,
   initialState = initialLeadActionState,
 }: PublicLeadFormProps) {
   const router = useRouter();
@@ -161,6 +183,7 @@ export function PublicLeadForm({
   const isCompact = layout === "compact";
   const showQualificationFields = isApply || (!isCompact && !isQualification);
   const showPhoneField = isQualification || showQualificationFields;
+  const showInlineQualificationFields = isQualification && inlineQualification;
 
   if (bookingHref) {
     return <BookingRedirectPanel />;
@@ -168,6 +191,10 @@ export function PublicLeadForm({
 
   if (transition?.kind === "panel") {
     return <ContactSuccessPanel email={transition.email} />;
+  }
+
+  if (transition?.kind === "qualification-result") {
+    return <FitResultPanel state={transition.state} score={transition.score} />;
   }
 
   return (
@@ -248,6 +275,44 @@ export function PublicLeadForm({
             errors={errors}
             values={submittedValues}
           />
+        )}
+        {showInlineQualificationFields && (
+          <>
+            <CheckboxField
+              name={VP_QUESTION_IDS.consentUpdates}
+              errorKey="consent_updates"
+              label={VP_CONSENT_UPDATES_LABEL}
+              required
+              errors={errors}
+              values={submittedValues}
+            />
+            <CheckboxField
+              name={VP_QUESTION_IDS.consentContact}
+              errorKey="consent_contact"
+              label={VP_CONSENT_CONTACT_LABEL}
+              required
+              errors={errors}
+              values={submittedValues}
+            />
+            <SelectField
+              name={VP_QUESTION_IDS.timeline}
+              errorKey="timeline"
+              label={VP_TIMELINE_LABEL}
+              required
+              errors={errors}
+              values={submittedValues}
+              options={VP_TIMELINE_FIELD_OPTIONS}
+            />
+            <SelectField
+              name={VP_QUESTION_IDS.invest}
+              errorKey="invest"
+              label={VP_INVEST_LABEL}
+              required
+              errors={errors}
+              values={submittedValues}
+              options={VP_INVEST_FIELD_OPTIONS}
+            />
+          </>
         )}
         {showQualificationFields && (
           <>
@@ -493,6 +558,46 @@ function ContactSuccessPanel({ email }: { email: string }) {
   );
 }
 
+// Renders the scored fit result inline after a successful inline
+// qualification submit — no navigation to /qualify or /thank-you. Copy comes
+// from THANK_YOU_STATES (src/lib/qualification/scoring.ts, shared with the
+// /thank-you route) so the two surfaces never drift; the booking link is the
+// same accelerator-call Calendly URL /thank-you uses.
+function FitResultPanel({
+  state,
+  score,
+}: {
+  state: ThankYouStateKey;
+  score: number;
+}) {
+  const content = THANK_YOU_STATES[state];
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      data-qualification-state={state}
+      data-qualification-score={score}
+      className="grid gap-4 rounded-[12px] border-2 border-[#111111] bg-white p-7 shadow-[8px_8px_0_#55b8e8]"
+    >
+      <p className="inline-flex w-fit rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
+        {content.label}
+      </p>
+      <h3 className="text-2xl font-black text-[#111111] uppercase">
+        {content.headline}
+      </h3>
+      <p className="text-base leading-7 font-semibold text-slate-700">
+        {content.body}
+      </p>
+      <a
+        href={THANK_YOU_LINKS.calendlyUrl}
+        className="inline-flex min-h-12 w-fit items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none"
+      >
+        {content.cta}
+      </a>
+    </div>
+  );
+}
+
 function HiddenAttribution({
   attribution,
   hiddenFields,
@@ -577,6 +682,10 @@ function TextField({
   );
 }
 
+type SelectFieldOption =
+  | string
+  | { readonly value: string; readonly label: string };
+
 function SelectField({
   name,
   errorKey,
@@ -585,7 +694,7 @@ function SelectField({
   options,
   errors,
   values,
-}: FieldProps & { options: readonly string[] }) {
+}: FieldProps & { options: readonly SelectFieldOption[] }) {
   const error = errors?.[errorKey]?.[0];
   const id = `lead-${name}`;
   return (
@@ -604,12 +713,62 @@ function SelectField({
         <option value="" disabled>
           Select
         </option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
+        {options.map((option) => {
+          const optionValue =
+            typeof option === "string" ? option : option.value;
+          const optionLabel =
+            typeof option === "string" ? option : option.label;
+          return (
+            <option key={optionValue} value={optionValue}>
+              {optionLabel}
+            </option>
+          );
+        })}
       </select>
+      <FieldError id={`${id}-error`} error={error} />
+    </div>
+  );
+}
+
+function CheckboxField({
+  name,
+  errorKey,
+  label,
+  required,
+  errors,
+  values,
+}: FieldProps) {
+  const error = errors?.[errorKey]?.[0];
+  const id = `lead-${name}`;
+  return (
+    <div className="space-y-2 sm:col-span-2">
+      <label htmlFor={id} className="flex items-start gap-3">
+        <input
+          id={id}
+          name={name}
+          type="checkbox"
+          value="true"
+          required={required}
+          defaultChecked={values?.[name] === "true"}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className={cn(
+            "mt-0.5 size-5 shrink-0 rounded-[4px] border-2 border-[#111111] text-[#0b63f6] focus:ring-2 focus:ring-[#55b8e8]",
+            error && "border-red-300",
+          )}
+        />
+        <span className="text-sm font-medium text-slate-700">
+          {label}
+          {required ? (
+            <>
+              <span className="ml-0.5 text-[#c2410c]" aria-hidden>
+                *
+              </span>
+              <span className="sr-only"> (required)</span>
+            </>
+          ) : null}
+        </span>
+      </label>
       <FieldError id={`${id}-error`} error={error} />
     </div>
   );

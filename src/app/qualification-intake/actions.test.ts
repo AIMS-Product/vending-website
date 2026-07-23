@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { initialLeadActionState } from "@/app/lead-action-state";
 import { QualificationIntakeValidationError } from "@/lib/services/qualification-intake";
-import { submitQualificationLead } from "./actions";
+import { QualificationSessionValidationError } from "@/lib/services/qualification-sessions";
+import { submitInlineQualification, submitQualificationLead } from "./actions";
 
 const mocks = vi.hoisted(() => ({
   headers: vi.fn(),
   createQualificationIntakeSession: vi.fn(),
+  submitInlineQualification: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
@@ -19,6 +21,16 @@ vi.mock("@/lib/services/qualification-intake", async () => {
   return {
     ...actual,
     createQualificationIntakeSession: mocks.createQualificationIntakeSession,
+  };
+});
+
+vi.mock("@/lib/services/qualification-inline", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/lib/services/qualification-inline")
+  >("@/lib/services/qualification-inline");
+  return {
+    ...actual,
+    submitInlineQualification: mocks.submitInlineQualification,
   };
 });
 
@@ -249,6 +261,164 @@ describe("submitQualificationLead", () => {
       );
       expect(JSON.stringify(consoleError.mock.calls)).not.toContain(
         "service role key leaked",
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+});
+
+function inlineQualificationFormData(overrides: Record<string, string> = {}) {
+  const formData = new FormData();
+  formData.set("idempotency_key", "inline-key");
+  formData.set("full_name", "Jane Buyer");
+  formData.set("email", "jane@example.com");
+  formData.set("phone", "555-0123");
+  formData.set("qualification_form_id", "a1b2c3d4-0000-4000-8000-000000000001");
+  formData.set("source_path", "/contact");
+  formData.set("landing_path", "/contact");
+  formData.set("consent_updates", "true");
+  formData.set("consent_contact", "true");
+  formData.set("timeline", "asap");
+  formData.set("invest", "15k_plus");
+
+  for (const [key, value] of Object.entries(overrides)) {
+    formData.set(key, value);
+  }
+
+  return formData;
+}
+
+describe("submitInlineQualification", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.headers.mockResolvedValue(
+      new Headers({
+        referer: "https://vendingpreneurs.com/contact",
+        "user-agent": "vitest",
+      }),
+    );
+    mocks.submitInlineQualification.mockResolvedValue({
+      status: "completed",
+      leadId: "lead_1",
+      thankYouState: "perfect_fit",
+      score: 100,
+    });
+  });
+
+  it("submits the four qualification answers as booleans/strings and returns the fit result", async () => {
+    const result = await submitInlineQualification(
+      initialLeadActionState,
+      inlineQualificationFormData(),
+    );
+
+    expect(result).toEqual({
+      status: "success",
+      message: "Thanks — here's your fit.",
+      leadId: "lead_1",
+      qualification: { thankYouState: "perfect_fit", score: 100 },
+    });
+    expect(mocks.submitInlineQualification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fullName: "Jane Buyer",
+        email: "jane@example.com",
+        phone: "555-0123",
+        qualificationFormId: "a1b2c3d4-0000-4000-8000-000000000001",
+        consentUpdates: true,
+        consentContact: true,
+        timeline: "asap",
+        invest: "15k_plus",
+      }),
+    );
+  });
+
+  it("does not leak a leadId, qualification result, or redirectHref field on the returned action state beyond the documented contract", async () => {
+    const result = await submitInlineQualification(
+      initialLeadActionState,
+      inlineQualificationFormData(),
+    );
+
+    expect(Object.keys(result).sort()).toEqual([
+      "leadId",
+      "message",
+      "qualification",
+      "status",
+    ]);
+  });
+
+  it("coerces an unchecked consent checkbox (absent from FormData) to false", async () => {
+    const formData = inlineQualificationFormData();
+    formData.delete("consent_contact");
+
+    await submitInlineQualification(initialLeadActionState, formData);
+
+    expect(mocks.submitInlineQualification).toHaveBeenCalledWith(
+      expect.objectContaining({ consentContact: false }),
+    );
+  });
+
+  it("returns field errors from intake validation without creating a fit result", async () => {
+    mocks.submitInlineQualification.mockRejectedValue(
+      new QualificationIntakeValidationError({
+        email: ["Enter a valid email."],
+      }),
+    );
+
+    const result = await submitInlineQualification(
+      initialLeadActionState,
+      inlineQualificationFormData({ email: "not-an-email" }),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Check the highlighted fields and try again.",
+      fieldErrors: { email: ["Enter a valid email."] },
+    });
+  });
+
+  it("returns field errors from session validation (missing consent) without creating a fit result", async () => {
+    mocks.submitInlineQualification.mockRejectedValue(
+      new QualificationSessionValidationError({
+        consent_contact: ["Consent is required."],
+      }),
+    );
+
+    const formData = inlineQualificationFormData();
+    formData.delete("consent_contact");
+
+    const result = await submitInlineQualification(
+      initialLeadActionState,
+      formData,
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Check the highlighted fields and try again.",
+      fieldErrors: { consent_contact: ["Consent is required."] },
+    });
+  });
+
+  it("returns a generic failure without leaking unexpected errors", async () => {
+    mocks.submitInlineQualification.mockRejectedValue(
+      new Error("service role key leaked"),
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      const result = await submitInlineQualification(
+        initialLeadActionState,
+        inlineQualificationFormData(),
+      );
+
+      expect(result).toEqual({
+        status: "error",
+        message: "We couldn't submit the form. Try again in a moment.",
+      });
+      expect(consoleError).toHaveBeenCalledWith(
+        "inline qualification action failed",
+        { error: "service role key leaked" },
       );
     } finally {
       consoleError.mockRestore();

@@ -1,3 +1,5 @@
+import type { ThankYouStateKey } from "@/lib/qualification/scoring";
+
 export type PublicLeadActionState =
   | { status: "idle"; message?: string; fieldErrors?: Record<string, string[]> }
   | {
@@ -5,6 +7,10 @@ export type PublicLeadActionState =
       message: string;
       leadId: string;
       redirectHref?: string;
+      // Additive: set by the inline qualification funnel so the form can
+      // render the fit result in place instead of navigating to
+      // /qualify or /thank-you. Other intents never set this.
+      qualification?: { thankYouState: ThankYouStateKey; score: number };
     }
   | {
       status: "error";
@@ -23,6 +29,7 @@ export const APPLY_THANK_YOU_PATH = "/thank-you-for-applying";
 export type LeadSuccessTransition =
   | { kind: "redirect"; href: string }
   | { kind: "panel"; email: string }
+  | { kind: "qualification-result"; state: ThankYouStateKey; score: number }
   | null;
 
 /**
@@ -43,6 +50,14 @@ export function resolveLeadSuccessTransition(
   if (intent === "apply") {
     return { kind: "redirect", href: APPLY_THANK_YOU_PATH };
   }
-  if (intent === "qualification") return null;
+  if (intent === "qualification") {
+    return state.qualification
+      ? {
+          kind: "qualification-result",
+          state: state.qualification.thankYouState,
+          score: state.qualification.score,
+        }
+      : null;
+  }
   return { kind: "panel", email: submittedEmail.trim() };
 }

@@ -61,6 +61,11 @@ export type CreateQualificationIntakeResult = {
   qualificationUrl: string;
   staleAt: string;
   expiresAt: string;
+  // The raw (unhashed) session token, for server-side callers that drive the
+  // session further in the same request (e.g. the inline qualification
+  // orchestrator). Only the hash is ever persisted; callers must not forward
+  // this value to the browser or include it in a returned action state.
+  sessionToken: string;
 };
 
 class QualificationIntakeServiceError extends Error {
@@ -167,6 +172,7 @@ export async function createQualificationIntakeSession(
     qualificationUrl: `/qualify/${encodeURIComponent(token)}`,
     staleAt,
     expiresAt,
+    sessionToken: token,
   };
 }
 
