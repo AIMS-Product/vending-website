@@ -9,7 +9,17 @@ import { PlayIcon } from "./icons";
 // (mirrors Kody's mockup framing) and only loads the iframe/player after the
 // visitor clicks, so the page never pays for an embedded player up front.
 // Client component because it holds "has the visitor pressed play" state.
-export function ApplyVsl() {
+export function ApplyVsl({
+  vsl = applyVsl,
+}: {
+  vsl?: {
+    badge: string;
+    watchLabel: string;
+    youtubeId: string;
+    videoHref: string;
+    caption: readonly { text: string; strong?: boolean }[];
+  };
+} = {}) {
   const [isPlaying, setIsPlaying] = useState(false);
 
   return (
@@ -18,8 +28,8 @@ export function ApplyVsl() {
         {isPlaying ? (
           <iframe
             className="absolute inset-0 size-full"
-            src={`https://www.youtube-nocookie.com/embed/${applyVsl.youtubeId}?autoplay=1&rel=0`}
-            title={`${applyVsl.watchLabel} — Vendingpreneurs`}
+            src={`https://www.youtube-nocookie.com/embed/${vsl.youtubeId}?autoplay=1&rel=0`}
+            title={`${vsl.watchLabel} — Vendingpreneurs`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
@@ -27,11 +37,11 @@ export function ApplyVsl() {
           <button
             type="button"
             onClick={() => setIsPlaying(true)}
-            aria-label={applyVsl.watchLabel}
+            aria-label={vsl.watchLabel}
             className="group absolute inset-0 block size-full focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             <Image
-              src={`https://i.ytimg.com/vi/${applyVsl.youtubeId}/maxresdefault.jpg`}
+              src={`https://i.ytimg.com/vi/${vsl.youtubeId}/maxresdefault.jpg`}
               alt=""
               fill
               sizes="(min-width: 940px) 940px, 100vw"
@@ -44,17 +54,17 @@ export function ApplyVsl() {
                 <PlayIcon className="size-7 translate-x-0.5 text-[#111111]" />
               </span>
               <span className="text-sm font-black tracking-[0.1em] text-white uppercase [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
-                {applyVsl.watchLabel}
+                {vsl.watchLabel}
               </span>
             </span>
             <span className="absolute top-4 left-4 rounded-full border border-white/40 bg-black/35 px-3 py-1.5 text-[11px] font-black tracking-[0.12em] text-white uppercase">
-              {applyVsl.badge}
+              {vsl.badge}
             </span>
           </button>
         )}
       </div>
       <p className="mx-auto mt-7 max-w-[64ch] text-center text-[17px] leading-relaxed font-semibold text-slate-700">
-        {applyVsl.caption.map((segment, index) =>
+        {vsl.caption.map((segment, index) =>
           segment.strong ? (
             <strong key={index} className="text-[#111111]">
               {segment.text}

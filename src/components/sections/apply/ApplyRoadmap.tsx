@@ -1,7 +1,11 @@
 import { applyRoadmap } from "@/lib/content/apply-page";
 import { ApplyCtaButton } from "./ApplyCtaButton";
 
-export function ApplyRoadmap() {
+export function ApplyRoadmap({
+  ctaLabel = applyRoadmap.ctaLabel,
+}: {
+  ctaLabel?: string;
+} = {}) {
   return (
     <section
       className="border-y-2 border-[#111111] bg-[#eaf6ff]"
@@ -51,7 +55,7 @@ export function ApplyRoadmap() {
         </ol>
 
         <div className="mt-12 flex justify-center">
-          <ApplyCtaButton>{applyRoadmap.ctaLabel}</ApplyCtaButton>
+          <ApplyCtaButton>{ctaLabel}</ApplyCtaButton>
         </div>
       </div>
     </section>

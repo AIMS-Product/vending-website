@@ -7,7 +7,11 @@ import { ApplyCtaButton } from "./ApplyCtaButton";
 // Sticky bottom CTA bar. Matches the mockup: hidden at the top of the page,
 // revealed once the visitor scrolls past the hero. Purely presentational —
 // the CTA is the same anchor-to-quiz link used everywhere else.
-export function ApplyStickyCta() {
+export function ApplyStickyCta({
+  ctaLabel = applySticky.ctaLabel,
+}: {
+  ctaLabel?: string;
+} = {}) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -36,7 +40,7 @@ export function ApplyStickyCta() {
           Launch your route in 90 days.
         </span>
         <ApplyCtaButton size="md" className="shrink-0">
-          {applySticky.ctaLabel}
+          {ctaLabel}
         </ApplyCtaButton>
       </div>
     </div>

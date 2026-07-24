@@ -2,7 +2,13 @@ import { applyHero } from "@/lib/content/apply-page";
 import { ApplyCtaButton } from "./ApplyCtaButton";
 import { LockIcon } from "./icons";
 
-export function ApplyHero() {
+export function ApplyHero({
+  body = applyHero.body,
+  ctaLabel = applyHero.ctaLabel,
+}: {
+  body?: string;
+  ctaLabel?: string;
+} = {}) {
   return (
     <section className="relative isolate overflow-hidden">
       {/* Dotted paper-blue wash, matching the mockup hero band. */}
@@ -31,10 +37,10 @@ export function ApplyHero() {
             {applyHero.subheadline.suffix}
           </p>
           <p className="mx-auto mt-6 max-w-[52ch] text-lg leading-relaxed font-semibold text-slate-700">
-            {applyHero.body}
+            {body}
           </p>
           <div className="mt-8">
-            <ApplyCtaButton>{applyHero.ctaLabel}</ApplyCtaButton>
+            <ApplyCtaButton>{ctaLabel}</ApplyCtaButton>
             <p className="mt-3.5 text-sm font-medium text-slate-500">
               {applyHero.ctaNote}
             </p>

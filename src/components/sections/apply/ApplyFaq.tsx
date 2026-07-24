@@ -5,7 +5,11 @@ import { applyFaq } from "@/lib/content/apply-page";
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon } from "./icons";
 
-export function ApplyFaq() {
+export function ApplyFaq({
+  items = applyFaq.items,
+}: {
+  items?: readonly { q: string; a: string }[];
+} = {}) {
   // First item open by default, matching the mockup. Single-open accordion.
   const [openIndex, setOpenIndex] = useState(0);
 
@@ -20,7 +24,7 @@ export function ApplyFaq() {
         </h2>
 
         <div className="flex flex-col gap-3.5">
-          {applyFaq.items.map((item, index) => {
+          {items.map((item, index) => {
             const open = openIndex === index;
             const panelId = `apply-faq-panel-${index}`;
             const buttonId = `apply-faq-button-${index}`;

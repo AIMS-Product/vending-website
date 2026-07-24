@@ -2,7 +2,11 @@ import { applyTools } from "@/lib/content/apply-page";
 import { ApplyCtaButton } from "./ApplyCtaButton";
 import { ToolIcon } from "./icons";
 
-export function ApplyTools() {
+export function ApplyTools({
+  ctaLabel = applyTools.ctaLabel,
+}: {
+  ctaLabel?: string;
+} = {}) {
   return (
     <section className="border-y-2 border-[#111111] bg-white">
       <div className="mx-auto max-w-[1180px] px-5 py-24 lg:px-10">
@@ -38,7 +42,7 @@ export function ApplyTools() {
         </ul>
 
         <div className="mt-12 flex justify-center">
-          <ApplyCtaButton>{applyTools.ctaLabel}</ApplyCtaButton>
+          <ApplyCtaButton>{ctaLabel}</ApplyCtaButton>
         </div>
       </div>
     </section>

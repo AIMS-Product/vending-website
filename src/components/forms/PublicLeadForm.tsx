@@ -59,6 +59,11 @@ type PublicLeadFormProps = {
   // (/vp-quiz, resource page blocks) omit this and keep today's redirect
   // handoff.
   inlineQualification?: boolean;
+  // Simplified "Book Your Call" form (social-ad booking pages): renders only
+  // name/email/phone — no qualifying dropdowns, no message, no scoring. Pair
+  // with intent="contact" (validates name+email only) and bookingRedirectUrl so
+  // the lead is captured with UTM attribution and then handed to Calendly.
+  simpleContact?: boolean;
   // Override the initial action state. Production always uses the idle default;
   // this exists so SSR-rendered tests can exercise the field-error layer.
   initialState?: PublicLeadActionState;
@@ -97,6 +102,7 @@ export function PublicLeadForm({
   layout = "standard",
   bookingRedirectUrl,
   inlineQualification = false,
+  simpleContact = false,
   initialState = initialLeadActionState,
 }: PublicLeadFormProps) {
   const router = useRouter();
@@ -184,8 +190,12 @@ export function PublicLeadForm({
   const isApply = intent === "apply";
   const isQualification = intent === "qualification";
   const isCompact = layout === "compact";
-  const showQualificationFields = isApply || (!isCompact && !isQualification);
-  const showPhoneField = isQualification || showQualificationFields;
+  // simpleContact forces the lean booking form (name/email/phone only), so it
+  // suppresses the city/state/message block and the qualification dropdowns.
+  const showQualificationFields =
+    isApply || (!isCompact && !isQualification && !simpleContact);
+  const showPhoneField =
+    isQualification || showQualificationFields || simpleContact;
   const showInlineQualificationFields = isQualification && inlineQualification;
 
   if (bookingHref) {
@@ -274,7 +284,7 @@ export function PublicLeadForm({
             label="Phone"
             type="tel"
             autoComplete="tel"
-            required={isQualification}
+            required={isQualification || simpleContact}
             errors={errors}
             values={submittedValues}
           />

@@ -2,7 +2,11 @@ import { applyYouTube } from "@/lib/content/apply-page";
 import { ApplyCtaButton } from "./ApplyCtaButton";
 import { PlayIcon } from "./icons";
 
-export function ApplyYouTube() {
+export function ApplyYouTube({
+  ctaLabel = applyYouTube.ctaLabel,
+}: {
+  ctaLabel?: string;
+} = {}) {
   return (
     <section className="mx-auto max-w-[1080px] px-5 py-24 lg:px-10">
       <p className="text-center text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
@@ -53,7 +57,7 @@ export function ApplyYouTube() {
       </div>
 
       <div className="mt-12 flex justify-center">
-        <ApplyCtaButton>{applyYouTube.ctaLabel}</ApplyCtaButton>
+        <ApplyCtaButton>{ctaLabel}</ApplyCtaButton>
       </div>
     </section>
   );
