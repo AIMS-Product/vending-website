@@ -615,8 +615,8 @@ function contactPayload(
   const phone = stringAt(contact, "phone") ?? lead?.phone;
   return {
     ...(fullName ? { name: fullName } : {}),
-    ...(email ? { emails: [{ email, type: "office" }] } : {}),
-    ...(phone ? { phones: [{ phone, type: "mobile" }] } : {}),
+    ...(email ? { emails: [{ email, type: "direct" }] } : {}),
+    ...(phone ? { phones: [{ phone, type: "direct" }] } : {}),
   };
 }
 
@@ -650,6 +650,7 @@ function qualificationCustomFields(
       machine_goal: stringAt(normalized, "machine_goal"),
       goal: stringAt(normalized, "goal"),
       consent: stringAt(normalized, "consent"),
+      contact_preference: stringAt(normalized, "contact_preference"),
       completed_at: stringAt(qualification, "completedAt"),
     },
     closeConfig.customFields,

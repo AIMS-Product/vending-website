@@ -603,8 +603,8 @@ describe("adminRunCloseSync", () => {
         contacts: [
           expect.objectContaining({
             name: "Jane Buyer",
-            emails: [{ email: "buyer@example.com", type: "office" }],
-            phones: [{ phone: "555-0101", type: "mobile" }],
+            emails: [{ email: "buyer@example.com", type: "direct" }],
+            phones: [{ phone: "555-0101", type: "direct" }],
           }),
         ],
       }),
@@ -634,6 +634,8 @@ describe("adminRunCloseSync", () => {
             normalized: {
               state_market: "SA",
               available_capital: "$25k-$50k",
+              consent: true,
+              contact_preference: true,
             },
             answers: [
               { label: "State", value: "SA" },
@@ -657,6 +659,8 @@ describe("adminRunCloseSync", () => {
         CLOSE_AVAILABLE_CAPITAL_FIELD_ID: "cf_capital",
         CLOSE_SCORE_FIELD_ID: "cf_score",
         CLOSE_BAND_FIELD_ID: "cf_band",
+        CLOSE_CONSENT_STATUS_FIELD_ID: "cf_consent",
+        CLOSE_CONTACT_PREFERENCE_FIELD_ID: "cf_sms",
       }),
       fetchImpl: fetchMock as unknown as typeof fetch,
       now: () => new Date("2026-06-17T10:00:00.000Z"),
@@ -678,6 +682,8 @@ describe("adminRunCloseSync", () => {
       "custom.cf_capital": "$25k-$50k",
       "custom.cf_score": 82,
       "custom.cf_band": "top_closers",
+      "custom.cf_consent": "true",
+      "custom.cf_sms": "true",
     });
   });
 

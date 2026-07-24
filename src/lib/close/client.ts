@@ -51,6 +51,7 @@ export type CloseCustomFieldConfig = {
   machineGoalFieldId?: string;
   primaryGoalFieldId?: string;
   consentStatusFieldId?: string;
+  contactPreferenceFieldId?: string;
   latestCompletedAtFieldId?: string;
 };
 
@@ -186,6 +187,7 @@ export function closeConfigFromEnv(env: CloseEnv): CloseConfig {
       machineGoalFieldId: trimmed(env.CLOSE_MACHINE_GOAL_FIELD_ID),
       primaryGoalFieldId: trimmed(env.CLOSE_PRIMARY_GOAL_FIELD_ID),
       consentStatusFieldId: trimmed(env.CLOSE_CONSENT_STATUS_FIELD_ID),
+      contactPreferenceFieldId: trimmed(env.CLOSE_CONTACT_PREFERENCE_FIELD_ID),
       latestCompletedAtFieldId: trimmed(env.CLOSE_LATEST_COMPLETED_AT_FIELD_ID),
     },
   };
@@ -349,6 +351,11 @@ export function closeCustomFieldPayload(
   assignCustom(payload, fields.machineGoalFieldId, values.machine_goal);
   assignCustom(payload, fields.primaryGoalFieldId, values.goal);
   assignCustom(payload, fields.consentStatusFieldId, values.consent);
+  assignCustom(
+    payload,
+    fields.contactPreferenceFieldId,
+    values.contact_preference,
+  );
   assignCustom(payload, fields.latestCompletedAtFieldId, values.completed_at);
   return payload;
 }
