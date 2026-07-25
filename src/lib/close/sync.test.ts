@@ -129,7 +129,7 @@ class FakeQuery {
   private filters: Array<{
     key: string;
     value: unknown;
-    op: "eq" | "lte";
+    op: "eq" | "lte" | "in";
   }> = [];
   private orderKey: string | null = null;
   private orderAscending = true;
@@ -151,6 +151,11 @@ class FakeQuery {
 
   lte(key: string, value: unknown) {
     this.filters.push({ key, value, op: "lte" });
+    return this;
+  }
+
+  in(key: string, values: readonly unknown[]) {
+    this.filters.push({ key, value: values, op: "in" });
     return this;
   }
 
@@ -233,6 +238,7 @@ class FakeQuery {
     return this.filters.every(({ key, value, op }) => {
       const actual = (row as Record<string, unknown>)[key];
       if (op === "lte") return String(actual ?? "") <= String(value ?? "");
+      if (op === "in") return (value as unknown[]).includes(actual);
       return actual === value;
     });
   }
@@ -614,6 +620,48 @@ describe("adminRunCloseSync", () => {
       close_lead_id: "lead_created",
       close_contact_id: "cont_created",
     });
+  });
+
+  it("skips parked events so they can't starve retryable ones behind the fetch limit", async () => {
+    const fake = buildClient({
+      events: [
+        // Parked (non-retryable) with the EARLIEST next_retry_at: before the
+        // fix this filled the limit-1 window and was filtered out in memory,
+        // leaving the pending lead permanently unprocessed.
+        makeEvent({
+          id: "event_parked",
+          status: "needs_review",
+          next_retry_at: "2026-06-17T08:00:00.000Z",
+        }),
+        makeEvent({
+          id: "event_pending",
+          status: "pending",
+          next_retry_at: "2026-06-17T09:00:00.000Z",
+        }),
+      ],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "lead_created",
+          contacts: [{ id: "cont_created" }],
+        }),
+      );
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T10:00:00.000Z"),
+      maxEvents: 1,
+    });
+
+    expect(result).toMatchObject({ scanned: 1, synced: 1 });
+    expect(
+      fake.state.events.find((e) => e.id === "event_pending")?.status,
+    ).toBe("synced");
   });
 
   it("writes qualification notes and configured custom fields on enrichment events", async () => {

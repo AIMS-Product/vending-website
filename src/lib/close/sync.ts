@@ -65,7 +65,8 @@ const EVENT_FIELDS =
 const LEAD_FIELDS =
   "id,full_name,email,phone,source_path,landing_path,referrer,source_page_id,source_page_slug,target_keyword,source_block_id,source_cta_tracking_name,utm_source,utm_medium,utm_campaign,utm_term,utm_content,close_lead_id,close_contact_id,close_sync_status,close_sync_attempt_count,close_sync_last_error" as const;
 
-const RETRYABLE_STATUSES = new Set(["pending", "failed", "retrying"]);
+const RETRYABLE_STATUS_LIST = ["pending", "failed", "retrying"] as const;
+const RETRYABLE_STATUSES = new Set<string>(RETRYABLE_STATUS_LIST);
 const LEAD_SOURCE_FIELDS = [
   ["source_path", "source_path"],
   ["landing_path", "landing_path"],
@@ -515,9 +516,13 @@ async function listDueCloseSyncEvents(
   nowIso: string,
   maxEvents = 20,
 ): Promise<CloseSyncEventRow[]> {
+  // Filter status in the query — NOT in memory after .limit() — so parked
+  // events (needs_review / synced / dead_letter) with an old next_retry_at
+  // can't fill the fetch window and starve retryable events behind them.
   const { data, error } = await client
     .from("close_sync_events")
     .select(EVENT_FIELDS)
+    .in("status", RETRYABLE_STATUS_LIST as unknown as string[])
     .lte("next_retry_at", nowIso)
     .order("next_retry_at", { ascending: true })
     .limit(maxEvents);
