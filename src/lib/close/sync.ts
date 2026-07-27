@@ -469,9 +469,25 @@ async function syncQualificationEnrichment(
     note_html: qualificationNoteHtml(event.payload),
   });
 
-  const customFields = qualificationCustomFields(event.payload, closeConfig);
-  if (Object.keys(customFields).length) {
-    await close.updateLead(leadId, customFields);
+  // Custom fields are scope-locked in Close: lead-scoped IDs must go on the lead,
+  // contact-scoped IDs on the contact. Sending a contact field to updateLead (or
+  // vice versa) makes Close reject the whole update with a 400, so we split by
+  // scope and write each group to its own object.
+  const leadFields = qualificationLeadCustomFields(event.payload, closeConfig);
+  if (Object.keys(leadFields).length) {
+    await close.updateLead(leadId, leadFields);
+  }
+  const contactFields = qualificationContactCustomFields(
+    event.payload,
+    closeConfig,
+  );
+  if (Object.keys(contactFields).length) {
+    if (!contactId) {
+      throw new CloseNeedsReviewError(
+        "Qualification enrichment has contact-scoped custom fields but no Close contact ID.",
+      );
+    }
+    await close.updateContact(contactId, contactFields);
   }
   return { leadId, contactId };
 }
@@ -631,12 +647,15 @@ function primaryEmail(event: CloseSyncEventRow, lead: LeadRow | null) {
   );
 }
 
-function qualificationCustomFields(
+// Lead-scoped qualification fields: attribution/source + the qualification
+// analytics that describe the opportunity (status, experiment, score, band,
+// completed_at). When their field IDs are created in Close they must be
+// LEAD-scoped to match this update path.
+function qualificationLeadCustomFields(
   payload: Json,
   closeConfig: CloseConfig,
 ): Record<`custom.${string}`, unknown> {
   const qualification = objectAt(payload, "qualification");
-  const normalized = objectAt(payload, "normalized");
   const attribution = objectAt(payload, "attribution");
   return closeCustomFieldPayload(
     {
@@ -646,6 +665,24 @@ function qualificationCustomFields(
       variant_key: stringAt(qualification, "variantKey"),
       score: numberAt(qualification, "score"),
       band: stringAt(qualification, "band"),
+      completed_at: stringAt(qualification, "completedAt"),
+    },
+    closeConfig.customFields,
+  );
+}
+
+// Contact-scoped qualification fields: the person's own answers + consent.
+// Stephen configured timeline / available_capital / consent (guide opt-in) /
+// contact_preference (SMS) as CONTACT custom fields in Close, so these are
+// written with updateContact — Close 400s if a contact-scoped field ID is sent
+// on a lead update.
+function qualificationContactCustomFields(
+  payload: Json,
+  closeConfig: CloseConfig,
+): Record<`custom.${string}`, unknown> {
+  const normalized = objectAt(payload, "normalized");
+  return closeCustomFieldPayload(
+    {
       state_market: stringAt(normalized, "state_market"),
       business_stage: stringAt(normalized, "business_stage"),
       budget_range: stringAt(normalized, "budget_range"),
@@ -656,7 +693,6 @@ function qualificationCustomFields(
       goal: stringAt(normalized, "goal"),
       consent: stringAt(normalized, "consent"),
       contact_preference: stringAt(normalized, "contact_preference"),
-      completed_at: stringAt(qualification, "completedAt"),
     },
     closeConfig.customFields,
   );

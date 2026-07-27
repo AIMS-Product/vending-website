@@ -696,7 +696,8 @@ describe("adminRunCloseSync", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse({ id: "acti_note_1" }))
-      .mockResolvedValueOnce(jsonResponse({ id: "lead_close_1" }));
+      .mockResolvedValueOnce(jsonResponse({ id: "lead_close_1" }))
+      .mockResolvedValueOnce(jsonResponse({ id: "cont_close_1" }));
 
     const result = await adminRunCloseSync({
       client: fake.client,
@@ -724,12 +725,23 @@ describe("adminRunCloseSync", () => {
         note_html: expect.stringContaining("Available capital"),
       }),
     );
+    // Lead-scoped analytics fields go on the lead.
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      "https://api.close.com/api/v1/lead/lead_close_1/",
+    );
     expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
       "custom.cf_status": "qualified",
-      "custom.cf_state": "SA",
-      "custom.cf_capital": "$25k-$50k",
       "custom.cf_score": 82,
       "custom.cf_band": "top_closers",
+    });
+    // Contact-scoped answer/consent fields go on the contact — sending these to
+    // the lead makes Close reject the whole update with a 400.
+    expect(fetchMock.mock.calls[2]?.[0]).toBe(
+      "https://api.close.com/api/v1/contact/cont_close_1/",
+    );
+    expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toEqual({
+      "custom.cf_state": "SA",
+      "custom.cf_capital": "$25k-$50k",
       "custom.cf_consent": "true",
       "custom.cf_sms": "true",
     });
@@ -775,6 +787,49 @@ describe("adminRunCloseSync", () => {
     expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
       "custom.cf_status": "qualified",
     });
+  });
+
+  it("needs-review when contact-scoped fields have no Close contact to land on", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          event_type: "qualification_enrichment",
+          lead_submission_id: null,
+          close_lead_id: "lead_close_1",
+          close_contact_id: null,
+          payload: {
+            qualification: { status: "qualified" },
+            normalized: { consent: true, contact_preference: true },
+            answers: [],
+          },
+        }),
+      ],
+      leads: [],
+    });
+    // Only the note POST should fire; the contact-scoped update must not be
+    // sent to the lead, and with no contact ID the event parks for retry.
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ id: "acti_note_guard" }));
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({
+        CLOSE_API_KEY: "close_key_123",
+        CLOSE_CONSENT_STATUS_FIELD_ID: "cf_consent",
+        CLOSE_CONTACT_PREFERENCE_FIELD_ID: "cf_sms",
+      }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T10:00:00.000Z"),
+    });
+
+    expect(result).toMatchObject({ synced: 0, needsReview: 1 });
+    // No PUT to /lead/ or /contact/ — the person fields were never written.
+    const urls = fetchMock.mock.calls.map((call) => call[0]);
+    expect(urls).not.toContain(
+      "https://api.close.com/api/v1/lead/lead_close_1/",
+    );
+    expect(urls.some((url) => String(url).includes("/contact/"))).toBe(false);
   });
 
   it("dead-letters exhausted events with bounded sanitized provider errors", async () => {
