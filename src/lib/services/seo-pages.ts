@@ -12,7 +12,6 @@ import {
   type PageContent,
 } from "@/lib/page-builder/blocks";
 import {
-  isAssignableBuilderRoutePath,
   normalizeRoutePrefix,
   pagePathForPage,
   pagePathForSlug,
@@ -1631,16 +1630,41 @@ function publishRevisionLabel(
   return `Publish ${publishedAt}`;
 }
 
+/**
+ * Redirect sources are ANY public path, not just builder pages: the whole point
+ * of the redirect table is retiring old URLs (a one-segment legacy Webflow path
+ * like `/old-offer` is the common case), and the proxy matcher admits every
+ * public path so it can serve them. Builder paths remain valid — they are just
+ * no longer the only thing accepted.
+ *
+ * Rejected because the proxy can never honour them, so a saved row would be a
+ * silent dead entry:
+ *   - `/` — redirecting the home page would take the whole site down.
+ *   - `/admin*`, `/auth*` — the proxy's redirect branch is explicitly skipped
+ *     for these so an editor can't lock everyone out of Studio.
+ *   - `/api*`, `/_next*` and anything with a file extension — excluded from the
+ *     proxy matcher itself (see `config.matcher` in src/proxy.ts).
+ */
+const NON_REDIRECTABLE_SOURCE_PREFIXES = ["/admin", "/auth", "/api", "/_next"];
+
 function normalizeSourcePath(path: string) {
   const normalized = normalizeInternalPath(path);
-  // Shape-based (not the static five): archived custom-prefix pages must be
-  // able to register redirects too. Reserved app segments stay rejected.
-  if (!isAssignableBuilderRoutePath(normalized)) {
+
+  const blocked =
+    normalized === "/" ||
+    NON_REDIRECTABLE_SOURCE_PREFIXES.some(
+      (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`),
+    ) ||
+    // A trailing file extension never reaches the proxy (asset request).
+    /\.[a-z0-9]+$/i.test(normalized);
+
+  if (blocked) {
     throw new SeoPageValidationError([
       {
         code: "invalid_redirect_source",
         path: "source_path",
-        message: "Builder redirect sources must be builder page paths.",
+        message:
+          "Redirect source must be a public page path (not the home page, /admin, /auth, /api, or a file).",
       },
     ]);
   }

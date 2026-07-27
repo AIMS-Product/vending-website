@@ -207,7 +207,18 @@ export async function proxy(request: NextRequest) {
   }
 
   // Individual article pages must resolve to a published slug, else 404.
+  // A Studio redirect wins first: this branch returns before the general
+  // public-path branch below, so without this lookup a retired article URL
+  // would 404 even with a redirect row saved for it.
   if (path.startsWith("/news/")) {
+    const redirect = await lookupRedirectForPath(path);
+    if (redirect) {
+      return NextResponse.redirect(
+        resolveRedirectDestination(request, redirect.destination_path),
+        redirect.status_code,
+      );
+    }
+
     let slug: string;
     try {
       slug = decodeURIComponent(path.replace(/^\/news\//, ""));

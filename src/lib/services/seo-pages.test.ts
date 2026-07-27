@@ -1664,12 +1664,61 @@ describe("seo page service", () => {
     }
   });
 
-  it("rejects manual redirect sources outside canonical builder route paths before touching Supabase", async () => {
+  it("creates manual redirects for retired non-builder URLs", async () => {
+    // The reason the redirect table exists: retiring a legacy one-segment
+    // Webflow URL, a nested path, or any other public page that was never a
+    // builder page.
+    for (const sourcePath of [
+      "/old-offer",
+      "/pre-call-resources",
+      "/blog/nested/path",
+      "/news/retired-article",
+    ]) {
+      const created = {
+        id: "redirect_legacy",
+        source_path: sourcePath,
+        destination_path: "/contact",
+        status_code: 301,
+      };
+      const insert = insertSingle(created);
+      const client = buildClient(insert.table);
+
+      const result = await adminCreateBuilderRedirect(
+        {
+          sourcePath: ` ${sourcePath}/ `,
+          destinationPath: "/contact",
+          statusCode: 301,
+          createdBy: "admin-1",
+        },
+        { client },
+      );
+
+      expect(result).toBe(created);
+      expect(insert.mocks.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          source_path: sourcePath,
+          destination_path: "/contact",
+          status_code: 301,
+        }),
+      );
+    }
+  });
+
+  it("rejects redirect sources the proxy can never serve before touching Supabase", async () => {
     const client = buildClient();
 
     for (const sourcePath of [
-      "/about",
-      "/blog/nested/path",
+      // Would take the whole site down.
+      "/",
+      // The proxy skips its redirect branch for these, so the row would be dead.
+      "/admin",
+      "/admin/leads",
+      "/auth/callback",
+      "/api/health",
+      "/_next/static",
+      // Assets never reach the proxy matcher.
+      "/logo.png",
+      // Not a root-relative internal path.
       "https://example.com/old",
       "//example.com/old",
     ]) {
@@ -1938,14 +1987,14 @@ describe("seo page service", () => {
     expect(client.from).not.toHaveBeenCalled();
   });
 
-  it("rejects an update whose source is not a canonical builder path", async () => {
+  it("rejects an update whose source the proxy can never serve", async () => {
     const client = buildClient();
 
     await expect(
       adminUpdateBuilderRedirect(
         {
           id: "redirect_1",
-          sourcePath: "/about",
+          sourcePath: "/admin/leads",
           destinationPath: "/blog/new",
           statusCode: 301,
         },

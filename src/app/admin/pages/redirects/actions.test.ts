@@ -90,7 +90,8 @@ describe("createBuilderRedirectAction", () => {
         {
           code: "invalid_redirect_source",
           path: "source_path",
-          message: "Builder redirect sources must be builder page paths.",
+          message:
+            "Redirect source must be a public page path (not the home page, /admin, /auth, /api, or a file).",
         },
       ]),
     );

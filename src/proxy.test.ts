@@ -131,6 +131,32 @@ describe("proxy legacy blog redirects", () => {
     expect(response.headers.get("location")).toBeNull();
   });
 
+  it("serves a Studio redirect for a retired /news/{slug} instead of 404ing", async () => {
+    const { hasPublishedPostSlug } = await import("@/lib/services/news");
+    vi.mocked(hasPublishedPostSlug).mockResolvedValue(false);
+    mocks.lookupRedirectForPath.mockResolvedValue({
+      source_path: "/news/retired-article",
+      destination_path: "/contact",
+      status_code: 301,
+    });
+
+    const response = await proxy(request("/news/retired-article"));
+
+    expect(response.status).toBe(301);
+    expect(response.headers.get("location")).toBe(
+      "https://vending-website.vercel.app/contact",
+    );
+  });
+
+  it("still 404s an unknown /news/{slug} with no redirect configured", async () => {
+    const { hasPublishedPostSlug } = await import("@/lib/services/news");
+    vi.mocked(hasPublishedPostSlug).mockResolvedValue(false);
+
+    const response = await proxy(request("/news/junk-slug"));
+
+    expect(response.status).toBe(404);
+  });
+
   it("lets a published builder page at /blog/{slug} win over the redirect", async () => {
     const { hasPublishedPostSlug } = await import("@/lib/services/news");
     vi.mocked(hasPublishedPostSlug).mockResolvedValue(true);

@@ -2,8 +2,8 @@ import Script from "next/script";
 
 /**
  * Third-party marketing / attribution tags ported from the legacy Webflow site
- * for the cutover: Meta Pixel, HubSpot, ClickMagick, Vidalytics, Wisepops,
- * ManyChat, RightMessage, and idpixel.
+ * for the cutover: Google Tag Manager + GA4, Meta Pixel, HubSpot, ClickMagick,
+ * Vidalytics, Wisepops, ManyChat, RightMessage, and idpixel.
  *
  * These are GATED behind `NEXT_PUBLIC_TRACKING_ENABLED` (off by default) so
  * preview/dev traffic never pollutes real pixel/CRM reporting. Set it to "1" in
@@ -20,11 +20,42 @@ const META_PIXEL_ID = "2008180456764704";
 const HUBSPOT_ID = "48512363";
 const VIDALYTICS_ID = "vid_glb_erwZUUrS";
 
+// Both IDs are the ones the legacy Webflow site configured. Webflow served the
+// Google loader through its own first-party-mode path (`/lsfr…`), which only
+// existed on Webflow's edge — so the loader here is the standard
+// googletagmanager.com one. The two `config` calls mirror the old page exactly:
+// the GA4 property AND the GTM container, which is what Tag Assistant looks for.
+const GTM_CONTAINER_ID = "GTM-57QRC275";
+const GA4_MEASUREMENT_ID = "G-2SX78VE7VF";
+
 export function TrackingScripts() {
   if (process.env.NEXT_PUBLIC_TRACKING_ENABLED !== "1") return null;
 
   return (
     <>
+      {/* Google Tag Manager + GA4 */}
+      <Script
+        id="google-tag-loader"
+        src={`https://www.googletagmanager.com/gtag/js?id=${GTM_CONTAINER_ID}`}
+        strategy="afterInteractive"
+      />
+      <Script id="google-tag-init" strategy="afterInteractive">
+        {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA4_MEASUREMENT_ID}');
+gtag('config', '${GTM_CONTAINER_ID}');`}
+      </Script>
+      <noscript>
+        <iframe
+          src={`https://www.googletagmanager.com/ns.html?id=${GTM_CONTAINER_ID}`}
+          height="0"
+          width="0"
+          style={{ display: "none", visibility: "hidden" }}
+          title="Google Tag Manager"
+        />
+      </noscript>
+
       {/* Meta Pixel */}
       <Script id="meta-pixel" strategy="afterInteractive">
         {`!function(f,b,e,v,n,t,s)
