@@ -13,6 +13,7 @@ import type { Database, Json, Tables } from "@/types/database";
 import {
   boundedError,
   closeConfigFromEnv,
+  closeContactAttributionPayload,
   closeCustomFieldPayload,
   CloseConfigError,
   createCloseClient,
@@ -286,6 +287,11 @@ async function dispatchCloseEvent(
   throw new Error(`Unsupported Close sync event type: ${event.event_type}`);
 }
 
+type SourceFields = {
+  lead: Record<`custom.${string}`, unknown>;
+  contact: Record<`custom.${string}`, unknown>;
+};
+
 async function syncLeadCreateOrUpdate(
   event: CloseSyncEventRow,
   {
@@ -339,7 +345,7 @@ async function syncUnknownCloseLead(
     contact: CloseContactPayload;
     event: CloseSyncEventRow;
     lead: LeadRow | null;
-    sourceFields: Record<`custom.${string}`, unknown>;
+    sourceFields: SourceFields;
   },
 ): Promise<CloseContactInfo> {
   const email = primaryEmail(event, lead);
@@ -350,10 +356,16 @@ async function syncUnknownCloseLead(
   const created = await close.createLead(
     createLeadPayload({ closeConfig, contact, email, lead, sourceFields }),
   );
-  return {
-    leadId: created.id,
-    contactId: created.contacts?.[0]?.id ?? created.contact_ids?.[0] ?? null,
-  };
+  const contactId =
+    created.contacts?.[0]?.id ?? created.contact_ids?.[0] ?? null;
+
+  // The contact only exists once the lead is created, so its UTM fields are
+  // written here rather than nested in the create payload.
+  if (contactId && Object.keys(sourceFields.contact).length) {
+    await close.updateContact(contactId, sourceFields.contact);
+  }
+
+  return { leadId: created.id, contactId };
 }
 
 async function matchedContactForEmail(
@@ -374,12 +386,12 @@ function createLeadPayload({
   contact: CloseContactPayload;
   email: string | null;
   lead: LeadRow | null;
-  sourceFields: Record<`custom.${string}`, unknown>;
+  sourceFields: SourceFields;
 }) {
   return {
     name: contact.name ?? lead?.full_name ?? email ?? "Website lead",
     ...leadStatusPayload(closeConfig),
-    ...sourceFields,
+    ...sourceFields.lead,
     contacts: [contact],
   };
 }
@@ -399,10 +411,15 @@ async function updateKnownCloseLead(
     contact: CloseContactPayload;
     contactId?: string | null;
     leadId: string;
-    sourceFields: Record<`custom.${string}`, unknown>;
+    sourceFields: SourceFields;
   },
 ): Promise<CloseContactInfo> {
-  if (contactId) await close.updateContact(contactId, contact);
+  if (contactId) {
+    await close.updateContact(contactId, {
+      ...contact,
+      ...sourceFields.contact,
+    });
+  }
   await updateCloseLeadSourceFields(close, leadId, sourceFields);
   return { leadId, contactId: contactId ?? null };
 }
@@ -423,14 +440,14 @@ async function updateMatchedCloseContact(
     ReturnType<CloseClient["searchContactsByEmail"]>
   >["data"][number],
   contact: CloseContactPayload,
-  sourceFields: Record<`custom.${string}`, unknown>,
+  sourceFields: SourceFields,
 ): Promise<CloseContactInfo> {
   if (!match.lead_id) {
     throw new CloseNeedsReviewError(
       `Close contact ${match.id} did not include a parent lead.`,
     );
   }
-  await close.updateContact(match.id, contact);
+  await close.updateContact(match.id, { ...contact, ...sourceFields.contact });
   await updateCloseLeadSourceFields(close, match.lead_id, sourceFields);
   return { leadId: match.lead_id, contactId: match.id };
 }
@@ -438,10 +455,10 @@ async function updateMatchedCloseContact(
 async function updateCloseLeadSourceFields(
   close: CloseClient,
   leadId: string,
-  sourceFields: Record<`custom.${string}`, unknown>,
+  sourceFields: SourceFields,
 ) {
-  if (Object.keys(sourceFields).length)
-    await close.updateLead(leadId, sourceFields);
+  if (Object.keys(sourceFields.lead).length)
+    await close.updateLead(leadId, sourceFields.lead);
 }
 
 async function syncQualificationEnrichment(
@@ -698,16 +715,22 @@ function qualificationContactCustomFields(
   );
 }
 
+/**
+ * Attribution split by Close's field scoping: UTMs are contact fields, the rest
+ * (source path, click IDs, campaign/ad IDs) are lead fields. Close 400s the whole
+ * update if either group is sent to the wrong object.
+ */
 function sourceCustomFields(
   event: CloseSyncEventRow,
   lead: LeadRow | null,
   closeConfig: CloseConfig,
-): Record<`custom.${string}`, unknown> {
+): SourceFields {
   const attribution = objectAt(event.payload, "attribution");
-  return closeCustomFieldPayload(
-    sourceAttributionValues(attribution, lead),
-    closeConfig.customFields,
-  );
+  const values = sourceAttributionValues(attribution, lead);
+  return {
+    lead: closeCustomFieldPayload(values, closeConfig.customFields),
+    contact: closeContactAttributionPayload(values, closeConfig.customFields),
+  };
 }
 
 function sourceAttributionValues(

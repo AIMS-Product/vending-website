@@ -322,6 +322,29 @@ export function createCloseClient({
 
 export type CloseClient = ReturnType<typeof createCloseClient>;
 
+/**
+ * The UTM half of attribution, which lives on the CONTACT in Close
+ * (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`).
+ *
+ * Custom fields in Close are scope-locked: sending a contact-scoped field ID on
+ * a lead update makes Close reject the entire update with a 400, so these are
+ * written with `updateContact` and never mixed into the lead payload. Everything
+ * else about the visit (source path, landing path, click IDs, campaign/ad IDs)
+ * stays lead-scoped in `closeCustomFieldPayload`.
+ */
+export function closeContactAttributionPayload(
+  values: Record<string, unknown>,
+  fields: CloseCustomFieldConfig,
+) {
+  const payload: Record<`custom.${string}`, unknown> = {};
+  assignCustom(payload, fields.utmSourceFieldId, values.utm_source);
+  assignCustom(payload, fields.utmMediumFieldId, values.utm_medium);
+  assignCustom(payload, fields.utmCampaignFieldId, values.utm_campaign);
+  assignCustom(payload, fields.utmTermFieldId, values.utm_term);
+  assignCustom(payload, fields.utmContentFieldId, values.utm_content);
+  return payload;
+}
+
 export function closeCustomFieldPayload(
   values: Record<string, unknown>,
   fields: CloseCustomFieldConfig,
@@ -363,11 +386,8 @@ export function closeCustomFieldPayload(
     values.source_cta_tracking_name,
   );
   assignCustom(payload, fields.clickedHrefFieldId, values.clicked_href);
-  assignCustom(payload, fields.utmSourceFieldId, values.utm_source);
-  assignCustom(payload, fields.utmMediumFieldId, values.utm_medium);
-  assignCustom(payload, fields.utmCampaignFieldId, values.utm_campaign);
-  assignCustom(payload, fields.utmTermFieldId, values.utm_term);
-  assignCustom(payload, fields.utmContentFieldId, values.utm_content);
+  // UTMs are deliberately absent here — they are contact-scoped in Close and are
+  // built by closeContactAttributionPayload instead. See that function.
   assignCustom(payload, fields.gclidFieldId, values.gclid);
   assignCustom(payload, fields.fbclidFieldId, values.fbclid);
   assignCustom(payload, fields.gbraidFieldId, values.gbraid);

@@ -443,12 +443,22 @@ describe("adminRunCloseSync", () => {
     });
 
     expect(result).toMatchObject({ scanned: 1, synced: 1, failed: 0 });
+
+    // UTMs are contact-scoped in Close, so they ride the contact update and must
+    // never appear on the lead — Close 400s a lead update carrying them.
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "https://api.close.com/api/v1/contact/cont_close_1/",
+    );
+    const contactBody = JSON.parse(
+      fetchMock.mock.calls[0]?.[1]?.body as string,
+    ) as Record<string, unknown>;
+    expect(contactBody["custom.cf_utm_source"]).toBe("google");
+    expect(contactBody["custom.cf_utm_medium"]).toBe("cpc");
+
     expect(fetchMock.mock.calls[1]?.[0]).toBe(
       "https://api.close.com/api/v1/lead/lead_close_1/",
     );
     expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
-      "custom.cf_utm_source": "google",
-      "custom.cf_utm_medium": "cpc",
       "custom.cf_gclid": "gclid-123",
       "custom.cf_campaign": "camp-123",
       "custom.cf_ad_group": "group-123",
@@ -573,7 +583,9 @@ describe("adminRunCloseSync", () => {
           contact_ids: ["cont_created"],
           contacts: [{ id: "cont_created" }],
         }),
-      );
+      )
+      // Follow-up write of the contact-scoped UTM fields.
+      .mockResolvedValueOnce(jsonResponse({ id: "cont_created" }));
 
     await adminRunCloseSync({
       client: fake.client,
@@ -614,7 +626,6 @@ describe("adminRunCloseSync", () => {
         "custom.cf_source_block": "block_cta",
         "custom.cf_source_cta": "hero_apply",
         "custom.cf_clicked_href": "/apply",
-        "custom.cf_utm_source": "facebook",
         "custom.cf_fbclid": "fbclid-123",
         "custom.cf_campaign": "camp-456",
         "custom.cf_adset": "set-456",
@@ -629,6 +640,15 @@ describe("adminRunCloseSync", () => {
         ],
       }),
     );
+    // The contact does not exist until the lead is created, so its contact-scoped
+    // UTMs are written in a follow-up call rather than nested in the create.
+    expect(fetchMock.mock.calls[2]?.[0]).toBe(
+      "https://api.close.com/api/v1/contact/cont_created/",
+    );
+    expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toEqual({
+      "custom.cf_utm_source": "facebook",
+    });
+
     expect(fake.state.events[0]).toMatchObject({
       status: "synced",
       close_lead_id: "lead_created",
