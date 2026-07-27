@@ -26,7 +26,7 @@ export type PublishedSeoPage = {
   updated_at: string;
 };
 
-type BuilderRedirect = {
+export type BuilderRedirect = {
   source_path: string;
   destination_path: string;
   status_code: number;
@@ -143,6 +143,25 @@ function throwPublicSeoPageQueryError(
       error.message ?? "Unknown Supabase query error"
     }`,
   );
+}
+
+/**
+ * Every redirect row. The table is admin-managed and small (tens of rows), so
+ * the proxy loads it whole and matches in memory rather than querying Supabase
+ * on every public request — see `@/lib/redirect-table`.
+ */
+export async function listBuilderRedirects(): Promise<BuilderRedirect[]> {
+  const supabase = getPublicClient();
+  const { data, error } = await supabase
+    .from("redirects")
+    .select("source_path, destination_path, status_code");
+
+  if (error) {
+    console.error("listBuilderRedirects failed", error);
+    throw new Error("Could not load redirects.");
+  }
+
+  return (data ?? []) satisfies BuilderRedirect[];
 }
 
 export async function getBuilderRedirectBySourcePath(sourcePath: string) {

@@ -8,7 +8,12 @@ const mocks = vi.hoisted(() => ({
   getBuilderRedirectBySourcePath: vi.fn(),
   hasPublishedSeoPagePath: vi.fn(),
   listRoutePrefixes: vi.fn(),
+  lookupRedirectForPath: vi.fn(),
   from: vi.fn(),
+}));
+
+vi.mock("@/lib/redirect-table", () => ({
+  lookupRedirectForPath: mocks.lookupRedirectForPath,
 }));
 
 vi.mock("@/lib/supabase/middleware", () => ({
@@ -45,6 +50,7 @@ describe("proxy admin auth gate", () => {
     vi.clearAllMocks();
     mocks.isDevAdminAuthBypassEnabled.mockReturnValue(false);
     mocks.getBuilderRedirectBySourcePath.mockResolvedValue(null);
+    mocks.lookupRedirectForPath.mockResolvedValue(null);
     mocks.hasPublishedSeoPagePath.mockResolvedValue(false);
     mocks.updateSession.mockResolvedValue({
       response: NextResponse.next(),
@@ -99,6 +105,7 @@ describe("proxy legacy blog redirects", () => {
     vi.clearAllMocks();
     mocks.isDevAdminAuthBypassEnabled.mockReturnValue(false);
     mocks.getBuilderRedirectBySourcePath.mockResolvedValue(null);
+    mocks.lookupRedirectForPath.mockResolvedValue(null);
     mocks.hasPublishedSeoPagePath.mockResolvedValue(false);
   });
 
@@ -150,6 +157,7 @@ describe("proxy custom-prefix redirects (S6b-2)", () => {
     vi.clearAllMocks();
     mocks.isDevAdminAuthBypassEnabled.mockReturnValue(false);
     mocks.getBuilderRedirectBySourcePath.mockResolvedValue(null);
+    mocks.lookupRedirectForPath.mockResolvedValue(null);
     mocks.hasPublishedSeoPagePath.mockResolvedValue(false);
     mocks.listRoutePrefixes.mockResolvedValue(configuredWithServices);
   });
@@ -220,5 +228,77 @@ describe("proxy custom-prefix redirects (S6b-2)", () => {
     );
     // Default prefixes never consult the configured-prefix list.
     expect(mocks.listRoutePrefixes).not.toHaveBeenCalled();
+  });
+});
+
+describe("proxy Studio redirects for any public path", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.isDevAdminAuthBypassEnabled.mockReturnValue(false);
+    mocks.getBuilderRedirectBySourcePath.mockResolvedValue(null);
+    mocks.lookupRedirectForPath.mockResolvedValue(null);
+    mocks.updateSession.mockResolvedValue({
+      response: NextResponse.next(),
+      user: null,
+      supabase: { from: mocks.from },
+    });
+  });
+
+  it("redirects a retired top-level URL with the configured status code", async () => {
+    mocks.lookupRedirectForPath.mockResolvedValue({
+      source_path: "/old-webflow-page",
+      destination_path: "/contact",
+      status_code: 301,
+    });
+
+    const response = await proxy(request("/old-webflow-page"));
+
+    expect(response.status).toBe(301);
+    expect(response.headers.get("location")).toBe(
+      "https://vending-website.vercel.app/contact",
+    );
+  });
+
+  it("redirects a deep path that no builder prefix covers", async () => {
+    mocks.lookupRedirectForPath.mockResolvedValue({
+      source_path: "/a/b/c",
+      destination_path: "https://example.com/somewhere",
+      status_code: 302,
+    });
+
+    const response = await proxy(request("/a/b/c"));
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("location")).toBe(
+      "https://example.com/somewhere",
+    );
+  });
+
+  it("serves the page normally when no redirect is configured", async () => {
+    const response = await proxy(request("/contact"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  // Regression guard: the catch-all matcher means public paths now reach the
+  // proxy. If this branch ever stopped terminating, every anonymous visitor
+  // would be bounced to /admin/login.
+  it("never sends an anonymous visitor on a public path to the admin gate", async () => {
+    for (const path of ["/contact", "/booking-meta", "/old-webflow-page"]) {
+      const response = await proxy(request(path));
+
+      expect(response.headers.get("location")).toBeNull();
+      expect(mocks.updateSession).not.toHaveBeenCalled();
+    }
+  });
+
+  it("still gates /admin for anonymous visitors", async () => {
+    const response = await proxy(request("/admin/leads"));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://vending-website.vercel.app/admin/login",
+    );
   });
 });

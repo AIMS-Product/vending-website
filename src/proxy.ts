@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { lookupRedirectForPath } from "@/lib/redirect-table";
 import { resolveRedirectDestination } from "@/lib/redirects";
 import { hasPublishedPostSlug } from "@/lib/services/news";
 import {
@@ -221,6 +222,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Every other public path. The matcher admits all of them so an editor can
+  // retire any URL from Studio without a deploy — not just builder pages — so
+  // this branch honours a configured redirect and otherwise hands off to the
+  // app route. TERMINAL: public paths must never fall through to the admin auth
+  // gate below, which would bounce anonymous visitors to /admin/login.
+  if (!path.startsWith("/admin") && !path.startsWith("/auth")) {
+    const redirect = await lookupRedirectForPath(path);
+    if (redirect) {
+      return NextResponse.redirect(
+        resolveRedirectDestination(request, redirect.destination_path),
+        redirect.status_code,
+      );
+    }
+
+    return NextResponse.next();
+  }
+
   if (
     path.startsWith("/admin") &&
     process.env.NODE_ENV === "development" &&
@@ -297,5 +315,9 @@ export const config = {
     // uppercase paths don't match the [a-z0-9-] shape; everything admitted
     // here is terminated by handleCustomBuilderPath or an earlier branch.
     "/:prefix([a-z0-9-]+)/:slug([^/]+)",
+    // Studio-managed redirects can retire ANY public URL, so every page request
+    // must reach the proxy. Excludes API routes, Next internals, and anything
+    // with a file extension (assets), which can never be a redirect source.
+    "/((?!api|_next|.*\\.).*)",
   ],
 };
