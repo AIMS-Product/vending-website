@@ -89,6 +89,7 @@ const envSchema = z.object({
   CLOSE_MACHINE_GOAL_FIELD_ID: optionalTrimmedOptionalEnv,
   CLOSE_PRIMARY_GOAL_FIELD_ID: optionalTrimmedOptionalEnv,
   CLOSE_CONSENT_STATUS_FIELD_ID: optionalTrimmedOptionalEnv,
+  CLOSE_CONTACT_PREFERENCE_FIELD_ID: optionalTrimmedOptionalEnv,
   CLOSE_LATEST_COMPLETED_AT_FIELD_ID: optionalTrimmedOptionalEnv,
   OPENAI_API_KEY: optionalEnv,
   OPENAI_SEO_MODEL: optionalTrimmedEnv("gpt-5.5"),
@@ -178,6 +179,8 @@ const parsed = envSchema.safeParse({
   CLOSE_MACHINE_GOAL_FIELD_ID: process.env.CLOSE_MACHINE_GOAL_FIELD_ID,
   CLOSE_PRIMARY_GOAL_FIELD_ID: process.env.CLOSE_PRIMARY_GOAL_FIELD_ID,
   CLOSE_CONSENT_STATUS_FIELD_ID: process.env.CLOSE_CONSENT_STATUS_FIELD_ID,
+  CLOSE_CONTACT_PREFERENCE_FIELD_ID:
+    process.env.CLOSE_CONTACT_PREFERENCE_FIELD_ID,
   CLOSE_LATEST_COMPLETED_AT_FIELD_ID:
     process.env.CLOSE_LATEST_COMPLETED_AT_FIELD_ID,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
