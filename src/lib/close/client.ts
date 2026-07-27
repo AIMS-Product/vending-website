@@ -93,10 +93,12 @@ type CloseNotePayload = {
   note_html: string;
 };
 
+type CloseContactEmail = { email?: string | null };
+
 type CloseContactResult = {
   id: string;
   lead_id?: string | null;
-  emails?: Array<{ email?: string | null }>;
+  emails?: CloseContactEmail[];
 };
 
 type CloseLeadResult = {
@@ -104,6 +106,47 @@ type CloseLeadResult = {
   contact_ids?: string[];
   contacts?: Array<{ id?: string | null }>;
 };
+
+type CloseLeadSearchResult = {
+  id: string;
+  contacts?: Array<{
+    id?: string | null;
+    emails?: Array<{ email?: string | null }>;
+  }>;
+};
+
+/** Close's search query language treats `"` as a delimiter, so neutralize it. */
+function escapeCloseQuery(value: string) {
+  return value.replace(/"/g, "");
+}
+
+/**
+ * Flatten a lead-search response down to the contacts that actually carry the
+ * searched address. Close's search is fuzzy across the lead, so a hit does not
+ * mean the contact's email matches — compare it explicitly.
+ */
+function contactsMatchingEmail(
+  leads: CloseLeadSearchResult[],
+  email: string,
+): CloseContactResult[] {
+  const target = email.trim().toLowerCase();
+
+  return leads.flatMap((lead) =>
+    (lead.contacts ?? [])
+      .filter(
+        (contact): contact is { id: string; emails?: CloseContactEmail[] } =>
+          Boolean(contact.id) &&
+          (contact.emails ?? []).some(
+            (entry) => entry.email?.trim().toLowerCase() === target,
+          ),
+      )
+      .map((contact) => ({
+        id: contact.id,
+        lead_id: lead.id,
+        emails: contact.emails,
+      })),
+  );
+}
 
 export class CloseApiError extends Error {
   status: number;
@@ -237,12 +280,19 @@ export function createCloseClient({
   }
 
   return {
-    searchContactsByEmail(email: string) {
-      const encoded = encodeURIComponent(email);
-      return request<{ data: CloseContactResult[] }>(
+    async searchContactsByEmail(email: string) {
+      // Close's /contact/ endpoint has no `email` filter — it silently ignores
+      // unknown query params and returns the org's first page of contacts. That
+      // made every lookup return 10 unrelated contacts, so the duplicate guard
+      // in sync.ts parked every single lead ("Multiple Close contacts matched").
+      // Lead search does support the query language, so search there and keep
+      // only the contacts whose email matches exactly.
+      const query = encodeURIComponent(`email:"${escapeCloseQuery(email)}"`);
+      const result = await request<{ data?: CloseLeadSearchResult[] }>(
         "GET",
-        `/contact/?email=${encoded}&_limit=10`,
+        `/lead/?query=${query}&_limit=10`,
       );
+      return { data: contactsMatchingEmail(result.data ?? [], email) };
     },
     createLead(payload: CloseLeadPayload) {
       return request<CloseLeadResult>("POST", "/lead/", payload);

@@ -465,9 +465,13 @@ describe("adminRunCloseSync", () => {
         jsonResponse({
           data: [
             {
-              id: "cont_close_2",
-              lead_id: "lead_close_2",
-              emails: [{ email: "buyer@example.com" }],
+              id: "lead_close_2",
+              contacts: [
+                {
+                  id: "cont_close_2",
+                  emails: [{ email: "buyer@example.com" }],
+                },
+              ],
             },
           ],
         }),
@@ -488,7 +492,7 @@ describe("adminRunCloseSync", () => {
       close_contact_id: "cont_close_2",
     });
     expect(singleFetch.mock.calls[0]?.[0]).toContain(
-      "/contact/?email=buyer%40example.com",
+      `/lead/?query=${encodeURIComponent('email:"buyer@example.com"')}`,
     );
 
     const ambiguous = buildClient({
@@ -497,8 +501,18 @@ describe("adminRunCloseSync", () => {
     const ambiguousFetch = vi.fn().mockResolvedValueOnce(
       jsonResponse({
         data: [
-          { id: "cont_a", lead_id: "lead_a" },
-          { id: "cont_b", lead_id: "lead_b" },
+          {
+            id: "lead_a",
+            contacts: [
+              { id: "cont_a", emails: [{ email: "buyer@example.com" }] },
+            ],
+          },
+          {
+            id: "lead_b",
+            contacts: [
+              { id: "cont_b", emails: [{ email: "buyer@example.com" }] },
+            ],
+          },
         ],
       }),
     );
