@@ -10,41 +10,34 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Custom domain cutover status
 
-The `vendingpreneurs.com` / `www.vendingpreneurs.com` custom domain is not
-available to this repo yet. Until the user explicitly says domain access has
-been granted or DNS has been cut over, do not treat current public-domain
-behavior as an app-side blocker.
+CUT OVER 2026-07-27. `vendingpreneurs.com` and `www.vendingpreneurs.com` resolve
+through Vercel (apex + www A records at `76.76.21.21`) and serve this app. The
+Webflow rollback proxy that previously answered on those hosts (identified by the
+`x-vp-rollback-origin: webflow` response header) has been replaced.
 
-For launch or route-alignment work, verify localhost and available Vercel
-deployment URLs. Record public custom-domain checks as post-cutover follow-up
-instead of repeatedly raising legacy Webflow/Cloudflare responses.
+Public-domain behavior is now app behavior: treat a wrong response on
+`www.vendingpreneurs.com` as a real bug, not as legacy Webflow noise.
+
+Rollback path if production must be reverted: re-promote the last rollback-proxy
+production deployment. DNS does not change in either direction.
 
 <!-- END:domain-cutover-rules -->
 
-<!-- BEGIN:temporary-production-freeze -->
+<!-- BEGIN:production-deploy-rules -->
 
-# Temporary Vercel production freeze
+# Production deploys
 
-Until the user explicitly approves the final custom-domain cutover, do not let
-pushes to `main` publish this app to production.
+Production is live. Pushes to `main` publish to the custom domains.
 
-The custom domains currently resolve through Vercel but are intentionally
-pointed at the Webflow rollback proxy. Keep the Vercel project-level Ignored
-Build Step and the repo-local `vercel.json` production freeze in place until
-cutover approval.
+- `main` is the release branch; deploy by merging into it, never by
+  `vercel --prod` from a working tree.
+- Verify a deployment on its own `*.vercel.app` URL before promoting anything to
+  the custom domains.
+- Leads flow to Close CRM from production on a 10-minute cron. Changes to
+  `src/lib/close/*` or the qualification intake path are customer-visible the
+  moment they deploy — verify on preview against the real Close org first.
 
-Do not remove or bypass:
-
-- `vercel.json` `git.deploymentEnabled.main=false`
-- `vercel.json` production `ignoreCommand`
-- the Vercel project-level production Ignored Build Step
-- Vercel `autoAssignCustomDomains=false`
-
-Do not run `vercel --prod`, promote/rollback a `vending-website` deployment to
-the custom domains, or re-enable automatic custom-domain assignment unless the
-user explicitly asks for launch/cutover.
-
-<!-- END:temporary-production-freeze -->
+<!-- END:production-deploy-rules -->
 
 <!-- BEGIN:admin-studio-design-rules -->
 
