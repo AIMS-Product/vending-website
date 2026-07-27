@@ -422,36 +422,44 @@ async function sendLeadNotifications(
     fetchImpl: typeof fetch;
   },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  // Each channel is independent. Send to whichever is configured (email, Slack,
+  // or both) and succeed as long as every configured channel succeeds. Slack
+  // works standalone — email is no longer required.
   const recipients = parseRecipients(env.LEAD_NOTIFICATION_TO);
-  if (
-    !env.RESEND_API_KEY ||
-    !env.LEAD_NOTIFICATION_FROM ||
-    !recipients.length
-  ) {
+  const resendApiKey = env.RESEND_API_KEY;
+  const from = env.LEAD_NOTIFICATION_FROM;
+  const slackWebhookUrl = env.SLACK_WEBHOOK_URL;
+  const emailConfigured = Boolean(resendApiKey && from && recipients.length);
+  const slackConfigured = Boolean(slackWebhookUrl);
+
+  if (!emailConfigured && !slackConfigured) {
     return {
       ok: false,
-      error: "Lead email notification is not configured.",
+      error: "Lead notifications are not configured.",
     };
   }
 
-  const email = await sendResendEmail(lead, {
-    apiKey: env.RESEND_API_KEY,
-    from: env.LEAD_NOTIFICATION_FROM,
-    to: recipients,
-    subjectPrefix: env.LEAD_NOTIFICATION_SUBJECT_PREFIX,
-    fetchImpl,
-  });
-  if (!email.ok) return email;
+  const errors: string[] = [];
 
-  if (env.SLACK_WEBHOOK_URL) {
-    const slack = await sendSlackWebhook(
-      lead,
-      env.SLACK_WEBHOOK_URL,
+  if (emailConfigured && resendApiKey && from) {
+    const email = await sendResendEmail(lead, {
+      apiKey: resendApiKey,
+      from,
+      to: recipients,
+      subjectPrefix: env.LEAD_NOTIFICATION_SUBJECT_PREFIX,
       fetchImpl,
-    );
-    if (!slack.ok) return slack;
+    });
+    if (!email.ok) errors.push(email.error);
   }
 
+  if (slackConfigured && slackWebhookUrl) {
+    const slack = await sendSlackWebhook(lead, slackWebhookUrl, fetchImpl);
+    if (!slack.ok) errors.push(slack.error);
+  }
+
+  if (errors.length) {
+    return { ok: false, error: errors.join("; ") };
+  }
   return { ok: true };
 }
 

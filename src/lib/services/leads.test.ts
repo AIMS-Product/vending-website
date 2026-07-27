@@ -369,6 +369,31 @@ describe("submitLead", () => {
     );
   });
 
+  it("notifies via Slack alone when no email channel is configured", async () => {
+    const { client, mocks } = buildLeadClient();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("ok", { status: 200 }));
+
+    const result = await submitLead(validLead, {
+      client,
+      env: { SLACK_WEBHOOK_URL: "https://hooks.slack.test/lead" },
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-05-04T09:31:00.000Z"),
+    });
+
+    expect(result.notificationStatus).toBe("notified");
+    // Only the Slack POST fires — no email attempt.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://hooks.slack.test/lead",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "notified" }),
+    );
+  });
+
   it("returns an existing lead for a duplicate idempotency key without notifying twice", async () => {
     const { client, mocks } = buildLeadClient({
       existing: {
@@ -440,13 +465,13 @@ describe("submitLead", () => {
 
     expect(result.notificationStatus).toBe("notification_failed");
     expect(result.notificationError).toBe(
-      "Lead email notification is not configured.",
+      "Lead notifications are not configured.",
     );
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mocks.update).toHaveBeenCalledWith(
       expect.objectContaining({
         status: "notification_failed",
-        notification_error: "Lead email notification is not configured.",
+        notification_error: "Lead notifications are not configured.",
       }),
     );
   });
@@ -539,7 +564,7 @@ describe("submitLead", () => {
     expect(mocks.update).toHaveBeenCalledWith(
       expect.objectContaining({
         status: "notification_failed",
-        notification_error: "Lead email notification is not configured.",
+        notification_error: "Lead notifications are not configured.",
       }),
     );
     expect(warn).toHaveBeenCalledWith(
