@@ -1,7 +1,10 @@
 "use server";
 
 import { headers } from "next/headers";
+import { after } from "next/server";
 import type { PublicLeadActionState } from "@/app/lead-action-state";
+import { adminRunCloseSync } from "@/lib/close/sync";
+import { notifyQualificationLead } from "@/lib/services/leads";
 import {
   createQualificationIntakeSession,
   QualificationIntakeValidationError,
@@ -10,6 +13,53 @@ import {
   submitInlineQualification as submitInlineQualificationOrchestrator,
   QualificationSessionValidationError,
 } from "@/lib/services/qualification-inline";
+
+type CapturedLead = Parameters<typeof notifyQualificationLead>[0];
+
+/**
+ * Alert the team and push the lead to Close without making the visitor wait.
+ * `after` runs once the response has been sent, so the inline fit result still
+ * renders immediately while Slack and Close land a second or two behind it.
+ *
+ * Both steps are best-effort by design: the lead is already committed, and the
+ * Close cron re-sweeps the queue, so a failure here costs speed, never data.
+ */
+function deliverCapturedLead(lead: CapturedLead) {
+  try {
+    scheduleDelivery(lead);
+  } catch (error) {
+    // `after` needs a request scope. If it is ever unavailable, the lead is
+    // still captured and the cron still syncs it — do not fail the submission.
+    console.warn("could not schedule lead delivery", {
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+  }
+}
+
+function scheduleDelivery(lead: CapturedLead) {
+  after(async () => {
+    try {
+      const notified = await notifyQualificationLead(lead);
+      if (!notified.ok) {
+        console.warn("qualification lead notification failed", {
+          error: notified.error,
+        });
+      }
+    } catch (error) {
+      console.error("qualification lead notification threw", {
+        name: error instanceof Error ? error.name : "UnknownError",
+      });
+    }
+
+    try {
+      await adminRunCloseSync();
+    } catch (error) {
+      console.error("close sync after lead capture failed", {
+        name: error instanceof Error ? error.name : "UnknownError",
+      });
+    }
+  });
+}
 
 // oxlint-disable-next-line react-doctor/server-auth-actions -- Public qualification intake must accept unauthenticated prospects.
 export async function submitQualificationLead(
@@ -71,6 +121,20 @@ export async function submitQualificationLead(
       adName: field(formData, "ad_name"),
       experimentKey: field(formData, "qualification_experiment_key"),
       variantKey: field(formData, "qualification_variant_key"),
+    });
+
+    deliverCapturedLead({
+      formType: "apply",
+      fullName: field(formData, "full_name") ?? "",
+      email: field(formData, "email") ?? "",
+      phone: field(formData, "phone"),
+      sourcePath: field(formData, "source_path"),
+      landingPath: field(formData, "landing_path"),
+      sourcePageSlug: field(formData, "source_page_slug"),
+      sourceCtaTrackingName: field(formData, "source_cta_tracking_name"),
+      utmSource: field(formData, "utm_source"),
+      utmMedium: field(formData, "utm_medium"),
+      utmCampaign: field(formData, "utm_campaign"),
     });
 
     return {
@@ -160,6 +224,22 @@ export async function submitInlineQualification(
       consentContact: field(formData, "consent_contact") === "true",
       timeline: field(formData, "timeline"),
       invest: field(formData, "invest"),
+    });
+
+    deliverCapturedLead({
+      formType: "apply",
+      fullName: field(formData, "full_name") ?? "",
+      email: field(formData, "email") ?? "",
+      phone: field(formData, "phone"),
+      timeline: field(formData, "timeline"),
+      budget: field(formData, "invest"),
+      sourcePath: field(formData, "source_path"),
+      landingPath: field(formData, "landing_path"),
+      sourcePageSlug: field(formData, "source_page_slug"),
+      sourceCtaTrackingName: field(formData, "source_cta_tracking_name"),
+      utmSource: field(formData, "utm_source"),
+      utmMedium: field(formData, "utm_medium"),
+      utmCampaign: field(formData, "utm_campaign"),
     });
 
     return {

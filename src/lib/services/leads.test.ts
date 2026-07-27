@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   LeadValidationError,
+  notifyQualificationLead,
   submitLead,
   type LeadNotificationEnv,
   type SubmitLeadInput,
@@ -575,5 +576,72 @@ describe("submitLead", () => {
       }),
     );
     warn.mockRestore();
+  });
+});
+
+describe("notifyQualificationLead", () => {
+  // The inline funnel (/contact, /booking-meta, /booking-youtube) submits
+  // through submitInlineQualification, not submitLead, so it never reached the
+  // notification channels before this entry point existed.
+  const funnelLead = {
+    formType: "apply" as const,
+    fullName: "IG Prospect",
+    email: "prospect@example.com",
+    phone: "5125550100",
+    timeline: "asap",
+    budget: "15k_plus",
+    sourcePath: "/booking-meta",
+    utmSource: "instagram",
+    utmMedium: "paid_social",
+    utmCampaign: "ig_launch",
+  };
+
+  it("posts an application alert to Slack with the funnel details", async () => {
+    const fetchImpl = vi.fn(async () => new Response("ok", { status: 200 }));
+
+    const result = await notifyQualificationLead(funnelLead, {
+      env: { SLACK_WEBHOOK_URL: "https://hooks.slack.test/lead" },
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    expect(result).toEqual({ ok: true });
+    const [url, init] = fetchImpl.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
+    expect(url).toBe("https://hooks.slack.test/lead");
+    const text = JSON.parse(init.body as string).text as string;
+    expect(text).toContain("New application lead");
+    expect(text).toContain("IG Prospect <prospect@example.com>");
+    expect(text).toContain("/booking-meta");
+  });
+
+  it("reports the failure instead of throwing when Slack rejects the post", async () => {
+    const fetchImpl = vi.fn(async () => new Response("nope", { status: 500 }));
+
+    const result = await notifyQualificationLead(funnelLead, {
+      env: { SLACK_WEBHOOK_URL: "https://hooks.slack.test/lead" },
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Slack webhook failed with 500",
+    });
+  });
+
+  it("reports when no channel is configured", async () => {
+    const fetchImpl = vi.fn();
+
+    const result = await notifyQualificationLead(funnelLead, {
+      env: {},
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Lead notifications are not configured.",
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });

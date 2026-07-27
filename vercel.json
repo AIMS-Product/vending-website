@@ -15,7 +15,7 @@
     },
     {
       "path": "/api/admin/close-sync/run",
-      "schedule": "*/10 * * * *"
+      "schedule": "*/2 * * * *"
     }
   ]
 }

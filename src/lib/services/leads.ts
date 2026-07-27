@@ -122,6 +122,16 @@ export type SubmitLeadInput = LeadSourceInputFields & {
 };
 type ValidLeadInput = z.output<typeof leadInputSchema>;
 
+/**
+ * What the notification channels actually read. A fully validated lead
+ * satisfies it, and so does the narrower shape the inline qualification funnel
+ * has on hand — that funnel never collects the apply-form fields, so it cannot
+ * produce a `ValidLeadInput`. Every optional field is rendered through
+ * `fieldLine`, which drops blanks.
+ */
+type NotifiableLead = Pick<ValidLeadInput, "formType" | "fullName" | "email"> &
+  Partial<ValidLeadInput>;
+
 export class LeadValidationError extends Error {
   fieldErrors: Record<string, string[]>;
 
@@ -412,8 +422,27 @@ async function updateCloseSyncStatus(
   }
 }
 
+/**
+ * Notify the team about a lead captured by the inline qualification funnel
+ * (`/contact`, `/booking-meta`, `/booking-youtube`). Those routes submit through
+ * `submitInlineQualification`, not `submitLead`, so without this they reach
+ * Close but never Slack or email.
+ */
+export async function notifyQualificationLead(
+  lead: NotifiableLead,
+  {
+    env = notificationEnvFromConfig(),
+    fetchImpl = fetch,
+  }: {
+    env?: LeadNotificationEnv;
+    fetchImpl?: typeof fetch;
+  } = {},
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  return sendLeadNotifications(lead, { env, fetchImpl });
+}
+
 async function sendLeadNotifications(
-  lead: ValidLeadInput,
+  lead: NotifiableLead,
   {
     env,
     fetchImpl,
@@ -464,7 +493,7 @@ async function sendLeadNotifications(
 }
 
 async function sendResendEmail(
-  lead: ValidLeadInput,
+  lead: NotifiableLead,
   {
     apiKey,
     from,
@@ -505,7 +534,7 @@ async function sendResendEmail(
 }
 
 async function sendSlackWebhook(
-  lead: ValidLeadInput,
+  lead: NotifiableLead,
   webhookUrl: string,
   fetchImpl: typeof fetch,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -525,6 +554,8 @@ async function sendSlackWebhook(
   return { ok: true };
 }
 
+// Money-page tracking needs the full validated lead, so it stays on the
+// submitLead path only — the inline funnel does not feed it.
 async function sendMoneyPageLeadEvent(
   lead: ValidLeadInput,
   leadId: string,
@@ -637,7 +668,7 @@ function parseRecipients(value?: string) {
   );
 }
 
-function formatLeadText(lead: ValidLeadInput) {
+function formatLeadText(lead: NotifiableLead) {
   return [
     `Form: ${lead.formType}`,
     `Name: ${lead.fullName}`,
@@ -665,7 +696,7 @@ function formatLeadText(lead: ValidLeadInput) {
     .join("\n");
 }
 
-function formatSlackText(lead: ValidLeadInput) {
+function formatSlackText(lead: NotifiableLead) {
   const label =
     lead.formType === "apply" ? "New application lead" : "New contact lead";
   return [
@@ -680,7 +711,7 @@ function formatSlackText(lead: ValidLeadInput) {
     .join("\n");
 }
 
-function fieldLine(label: string, value: string | null) {
+function fieldLine(label: string, value: string | null | undefined) {
   return value ? `${label}: ${value}` : null;
 }
 
