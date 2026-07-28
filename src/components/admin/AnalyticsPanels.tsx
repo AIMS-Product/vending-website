@@ -5,6 +5,10 @@ import type {
   AdminAnalyticsDailyTrendRow,
   AdminAnalyticsMetric,
 } from "@/lib/services/admin-analytics";
+import type {
+  AnalyticsCampaignRow,
+  AnalyticsFunnelStep,
+} from "@/lib/services/admin-analytics-detail";
 import {
   ADMIN_ANALYTICS_RANGES,
   ADMIN_ANALYTICS_RANGE_KEYS,
@@ -17,9 +21,11 @@ const ACCENT = "#0b63f6";
 export function AnalyticsRangeTabs({
   active,
   includeInternal,
+  tab,
 }: {
   active: AdminAnalyticsRangeKey;
   includeInternal: boolean;
+  tab: string;
 }) {
   return (
     <div
@@ -32,7 +38,7 @@ export function AnalyticsRangeTabs({
         return (
           <Link
             key={key}
-            href={analyticsHref(key, includeInternal)}
+            href={analyticsHref(key, includeInternal, tab)}
             aria-current={isActive ? "page" : undefined}
             className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${
               isActive
@@ -52,14 +58,16 @@ export function AnalyticsInternalToggle({
   range,
   includeInternal,
   excludedCount,
+  tab,
 }: {
   range: AdminAnalyticsRangeKey;
   includeInternal: boolean;
   excludedCount: number;
+  tab: string;
 }) {
   return (
     <Link
-      href={analyticsHref(range, !includeInternal)}
+      href={analyticsHref(range, !includeInternal, tab)}
       className="inline-flex items-center gap-2.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
     >
       <span
@@ -376,9 +384,11 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 function analyticsHref(
   range: AdminAnalyticsRangeKey,
   includeInternal: boolean,
+  tab?: string,
 ): string {
   const params = new URLSearchParams({ range });
   if (includeInternal) params.set("internal", "1");
+  if (tab && tab !== "overview") params.set("tab", tab);
   return `/admin/analytics?${params.toString()}`;
 }
 
@@ -389,4 +399,162 @@ function formatNumber(value: number): string {
 function formatShortDate(isoDate: string): string {
   const [, month, day] = isoDate.split("-");
   return `${month}/${day}`;
+}
+
+export const ANALYTICS_TABS = [
+  { key: "overview", label: "Overview" },
+  { key: "acquisition", label: "Acquisition" },
+  { key: "pages", label: "Pages & funnel" },
+  { key: "quality", label: "Lead quality" },
+] as const;
+
+export type AnalyticsTabKey = (typeof ANALYTICS_TABS)[number]["key"];
+
+export function parseAnalyticsTab(
+  value: string | null | undefined,
+): AnalyticsTabKey {
+  const trimmed = value?.trim();
+  const match = ANALYTICS_TABS.find((tab) => tab.key === trimmed);
+  return match ? match.key : "overview";
+}
+
+export function AnalyticsTabs({
+  active,
+  range,
+  includeInternal,
+}: {
+  active: AnalyticsTabKey;
+  range: AdminAnalyticsRangeKey;
+  includeInternal: boolean;
+}) {
+  return (
+    <nav
+      className="mb-5 flex flex-wrap gap-1 border-b border-slate-200"
+      aria-label="Analytics sections"
+    >
+      {ANALYTICS_TABS.map((tab) => {
+        const isActive = tab.key === active;
+        return (
+          <Link
+            key={tab.key}
+            href={analyticsHref(range, includeInternal, tab.key)}
+            aria-current={isActive ? "page" : undefined}
+            className={`-mb-px border-b-2 px-3.5 py-2.5 text-sm font-semibold transition ${
+              isActive
+                ? "border-slate-900 text-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            {tab.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+/** Funnel with drop-off between consecutive steps. */
+export function AnalyticsFunnel({ steps }: { steps: AnalyticsFunnelStep[] }) {
+  return (
+    <section className={adminCardClass} aria-label="Conversion funnel">
+      <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase">
+        From visitor to booked call
+      </h2>
+      <ol className="grid gap-3">
+        {steps.map((step, index) => (
+          <li key={step.label}>
+            <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
+              <span className="font-medium text-slate-700">{step.label}</span>
+              <span className="tabular-nums">
+                <span className="font-semibold text-slate-950">
+                  {step.count}
+                </span>
+                <span className="ml-2 text-xs text-slate-500">
+                  {step.ofTopPct}% of all
+                </span>
+              </span>
+            </div>
+            <div className="h-2.5 rounded-full bg-slate-100">
+              <div
+                className="h-2.5 rounded-full"
+                style={{
+                  width: `${Math.max(step.ofTopPct, step.count > 0 ? 2 : 0)}%`,
+                  backgroundColor: ACCENT,
+                }}
+              />
+            </div>
+            {index > 0 ? (
+              <p className="mt-1 text-xs text-slate-500">
+                {step.ofPreviousPct}% continued from the step above
+                {step.ofPreviousPct < 100 ? (
+                  <span className="text-rose-600">
+                    {" "}
+                    · {round1(100 - step.ofPreviousPct)}% dropped off
+                  </span>
+                ) : null}
+              </p>
+            ) : null}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+export function AnalyticsCampaignTable({
+  rows,
+}: {
+  rows: AnalyticsCampaignRow[];
+}) {
+  return (
+    <section className={adminCardClass} aria-label="Campaign performance">
+      <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase">
+        Campaign performance
+      </h2>
+      {rows.length === 0 ? (
+        <p className="text-sm text-slate-500">No campaigns in this range.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[36rem] text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 text-left text-xs font-semibold text-slate-500 uppercase">
+                <th className="py-2 pr-3">Campaign</th>
+                <th className="py-2 pr-3">Source</th>
+                <th className="py-2 pr-3 text-right">Leads</th>
+                <th className="py-2 pr-3 text-right">Qualified</th>
+                <th className="py-2 pr-3 text-right">Booked</th>
+                <th className="py-2 text-right">Rate</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {rows.map((row) => (
+                <tr key={`${row.campaign}-${row.source}`}>
+                  <td className="py-2 pr-3 font-medium text-slate-800">
+                    {row.campaign}
+                  </td>
+                  <td className="py-2 pr-3 text-slate-600">{row.source}</td>
+                  <td className="py-2 pr-3 text-right text-slate-900 tabular-nums">
+                    {row.leads}
+                  </td>
+                  <td className="py-2 pr-3 text-right text-slate-900 tabular-nums">
+                    {row.qualified}
+                  </td>
+                  <td className="py-2 pr-3 text-right text-slate-900 tabular-nums">
+                    {row.booked}
+                  </td>
+                  <td className="py-2 text-right font-semibold text-slate-950 tabular-nums">
+                    {row.bookingRatePct}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
 }

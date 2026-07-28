@@ -3,13 +3,21 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { adminCardClass } from "@/components/admin/AdminUi";
 import {
   AnalyticsBreakdown,
+  AnalyticsCampaignTable,
+  AnalyticsFunnel,
   AnalyticsInternalToggle,
   AnalyticsKpiCard,
   AnalyticsKpiGrid,
   AnalyticsRangeTabs,
+  AnalyticsTabs,
   AnalyticsTrend,
+  parseAnalyticsTab,
+  type AnalyticsTabKey,
 } from "@/components/admin/AnalyticsPanels";
-import { getAdminAnalytics } from "@/lib/services/admin-analytics";
+import {
+  getAdminAnalytics,
+  type AdminAnalytics,
+} from "@/lib/services/admin-analytics";
 import { parseAdminAnalyticsRange } from "@/lib/services/admin-analytics-range";
 import { requireAdmin } from "@/lib/supabase/auth";
 
@@ -33,13 +41,12 @@ export default async function AdminAnalyticsPage({
   const params = await searchParams;
   const range = parseAdminAnalyticsRange(singleParam(params.range));
   const includeInternal = singleParam(params.internal) === "1";
+  const tab = parseAnalyticsTab(singleParam(params.tab));
 
   const [{ user, role }, analytics] = await Promise.all([
     requireAdmin(),
     getAdminAnalytics({ range, includeInternal }),
   ]);
-
-  const { metrics } = analytics;
 
   return (
     <AdminShell
@@ -55,10 +62,43 @@ export default async function AdminAnalyticsPage({
           range={range}
           includeInternal={includeInternal}
           excludedCount={analytics.internalExcluded}
+          tab={tab}
         />
-        <AnalyticsRangeTabs active={range} includeInternal={includeInternal} />
+        <AnalyticsRangeTabs
+          active={range}
+          includeInternal={includeInternal}
+          tab={tab}
+        />
       </div>
 
+      <AnalyticsTabs
+        active={tab}
+        range={range}
+        includeInternal={includeInternal}
+      />
+
+      <TabContent tab={tab} analytics={analytics} />
+    </AdminShell>
+  );
+}
+
+function TabContent({
+  tab,
+  analytics,
+}: {
+  tab: AnalyticsTabKey;
+  analytics: AdminAnalytics;
+}) {
+  if (tab === "acquisition") return <AcquisitionTab analytics={analytics} />;
+  if (tab === "pages") return <PagesTab analytics={analytics} />;
+  if (tab === "quality") return <QualityTab analytics={analytics} />;
+  return <OverviewTab analytics={analytics} />;
+}
+
+function OverviewTab({ analytics }: { analytics: AdminAnalytics }) {
+  const { metrics } = analytics;
+  return (
+    <>
       <AnalyticsKpiGrid>
         <AnalyticsKpiCard
           label="Leads"
@@ -113,7 +153,96 @@ export default async function AdminAnalyticsPage({
       <div className="mt-5">
         <AnalyticsTrend rows={analytics.dailyTrend} />
       </div>
-    </AdminShell>
+    </>
+  );
+}
+
+function AcquisitionTab({ analytics }: { analytics: AdminAnalytics }) {
+  const { acquisition } = analytics;
+  return (
+    <>
+      <div className="grid gap-5 xl:grid-cols-3">
+        <AnalyticsBreakdown title="Channel" rows={acquisition.channelMix} />
+        <AnalyticsBreakdown
+          title="Source (utm_source)"
+          rows={acquisition.bySource}
+        />
+        <AnalyticsBreakdown
+          title="Medium (utm_medium)"
+          rows={acquisition.byMedium}
+        />
+      </div>
+      <div className="mt-5 grid gap-5 xl:grid-cols-3">
+        <AnalyticsBreakdown
+          title="Campaign (utm_campaign)"
+          rows={acquisition.byCampaign}
+        />
+        <AnalyticsBreakdown
+          title="Ad / creative (utm_content)"
+          rows={acquisition.byContent}
+        />
+        <AnalyticsBreakdown
+          title="Keyword (utm_term)"
+          rows={acquisition.byTerm}
+        />
+      </div>
+      <div className="mt-5">
+        <AnalyticsCampaignTable rows={acquisition.topCampaigns} />
+      </div>
+    </>
+  );
+}
+
+function PagesTab({ analytics }: { analytics: AdminAnalytics }) {
+  const { pages } = analytics;
+  return (
+    <>
+      <div className="grid gap-5 xl:grid-cols-2">
+        <AnalyticsFunnel steps={pages.funnel} />
+        <AnalyticsBreakdown
+          title="Landing page (first page seen)"
+          rows={pages.byLandingPage}
+        />
+      </div>
+      <div className="mt-5 grid gap-5 xl:grid-cols-2">
+        <AnalyticsBreakdown
+          title="Form page (where they submitted)"
+          rows={pages.bySubmitPage}
+        />
+        <AnalyticsBreakdown
+          title="Referring site"
+          rows={pages.byReferrer}
+          emptyLabel="No referrers recorded in this range."
+        />
+      </div>
+    </>
+  );
+}
+
+function QualityTab({ analytics }: { analytics: AdminAnalytics }) {
+  const { quality } = analytics;
+  return (
+    <>
+      <div className="grid gap-5 xl:grid-cols-3">
+        <AnalyticsBreakdown
+          title="Fit result shown"
+          rows={quality.byFitResult}
+        />
+        <AnalyticsBreakdown
+          title="Purchase timeline"
+          rows={quality.byTimeline}
+        />
+        <AnalyticsBreakdown title="Capital ready" rows={quality.byBudget} />
+      </div>
+      <div className="mt-5 grid gap-5 xl:grid-cols-3">
+        <AnalyticsBreakdown
+          title="Business stage"
+          rows={quality.byBusinessStage}
+        />
+        <AnalyticsBreakdown title="State / region" rows={quality.byState} />
+        <AnalyticsBreakdown title="Close CRM sync" rows={quality.syncHealth} />
+      </div>
+    </>
   );
 }
 

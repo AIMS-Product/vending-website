@@ -5,6 +5,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
 import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import {
+  buildAcquisitionRollup,
+  buildPagesRollup,
+  buildQualityRollup,
+  type AcquisitionRollup,
+  type AnalyticsLeadRow,
+  type PagesRollup,
+  type QualityRollup,
+} from "@/lib/services/admin-analytics-detail";
+import {
   ADMIN_ANALYTICS_RANGES,
   DEFAULT_ADMIN_ANALYTICS_RANGE,
   type AdminAnalyticsRangeKey,
@@ -20,8 +29,22 @@ type LeadAnalyticsRow = Pick<
   | "email"
   | "full_name"
   | "source_path"
+  | "landing_path"
+  | "referrer"
   | "utm_source"
+  | "utm_medium"
+  | "utm_campaign"
+  | "utm_term"
+  | "utm_content"
+  | "timeline"
+  | "budget"
+  | "business_stage"
+  | "state_region"
   | "lifecycle_status"
+  | "close_sync_status"
+  | "qualification_summary"
+  | "latest_qualification_started_at"
+  | "latest_qualification_completed_at"
 >;
 
 type BookingAnalyticsRow = Pick<
@@ -94,6 +117,9 @@ export type AdminAnalytics = {
   bookingsByCalendar: AdminAnalyticsBreakdownRow[];
   dailyTrend: AdminAnalyticsDailyTrendRow[];
   bookingsConnected: boolean;
+  acquisition: AcquisitionRollup;
+  pages: PagesRollup;
+  quality: QualityRollup;
 };
 
 export class AdminAnalyticsServiceError extends Error {
@@ -107,7 +133,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const TOP_N = 12;
 
 const LEAD_ANALYTICS_FIELDS =
-  "id,created_at,email,full_name,source_path,utm_source,lifecycle_status" as const;
+  "id,created_at,email,full_name,source_path,landing_path,referrer,utm_source,utm_medium,utm_campaign,utm_term,utm_content,timeline,budget,business_stage,state_region,lifecycle_status,close_sync_status,qualification_summary,latest_qualification_started_at,latest_qualification_completed_at" as const;
 const BOOKING_ANALYTICS_FIELDS =
   "id,created_at,status,scheduled_event_name,invitee_email,lead_submission_id" as const;
 
@@ -182,6 +208,27 @@ export async function getAdminAnalytics(
   const qualifiedCurrent = current.filter(isQualified);
   const qualifiedPrior = prior.filter(isQualified);
 
+  // Detail tabs describe the SELECTED window only — the prior window is fetched
+  // for comparison arithmetic, not for the breakdowns.
+  const detailRows = current as unknown as AnalyticsLeadRow[];
+
+  // A booking identifies its lead either by foreign key or by invitee email, so
+  // resolve both back to the lead's email — that is the key the pure rollups
+  // match on. Missing either way would silently under-report booked leads.
+  const emailByLeadId = new Map(
+    leads.map((lead) => [lead.id, lead.email?.trim().toLowerCase() ?? ""]),
+  );
+  const bookedEmails = new Set(
+    currentBooked
+      .map((row) => {
+        const viaFk = row.lead_submission_id
+          ? emailByLeadId.get(row.lead_submission_id)
+          : undefined;
+        return viaFk || (row.invitee_email?.trim().toLowerCase() ?? "");
+      })
+      .filter((email): email is string => Boolean(email)),
+  );
+
   return {
     range: {
       key: rangeKey,
@@ -235,6 +282,9 @@ export async function getAdminAnalytics(
     ),
     dailyTrend: buildDailyTrend(current, currentBooked, end, days),
     bookingsConnected: bookings.connected,
+    acquisition: buildAcquisitionRollup(detailRows, bookedEmails),
+    pages: buildPagesRollup(detailRows, bookedEmails),
+    quality: buildQualityRollup(detailRows),
   };
 }
 
