@@ -117,6 +117,24 @@ describe("buildAcquisitionRollup", () => {
       bookingRatePct: 50,
     });
   });
+  it("keeps campaign and source intact when the campaign name contains spaces", () => {
+    const rollup = buildAcquisitionRollup(
+      [
+        makeLead({
+          email: "a@x.com",
+          utm_campaign: "july launch 2026",
+          utm_source: "meta ads",
+        }),
+      ],
+      new Set(),
+    );
+
+    expect(rollup.topCampaigns[0]).toMatchObject({
+      campaign: "july launch 2026",
+      source: "meta ads",
+      leads: 1,
+    });
+  });
 });
 
 describe("buildPagesRollup", () => {
