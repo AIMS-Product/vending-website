@@ -31,12 +31,12 @@ describe("scoreQualification", () => {
 
   it("scores a strong Lane 1 lead", () => {
     const result = scoreQualification({
-      timeline: "asap",
+      timeline: "few_weeks",
       invest: "5_10k",
       variant: "A",
     });
 
-    expect(result.total).toBe(80);
+    expect(result.total).toBe(70);
     expect(result.band).toBe("lane_1");
     expect(result.thankYouState).toBe("strong_fit");
   });
@@ -48,7 +48,7 @@ describe("scoreQualification", () => {
       variant: "A",
     });
 
-    expect(result.total).toBe(45);
+    expect(result.total).toBe(35);
     expect(result.band).toBe("setting");
     expect(result.thankYouState).toBe("good_potential");
   });
@@ -60,18 +60,18 @@ describe("scoreQualification", () => {
       variant: "A",
     });
 
-    expect(result.total).toBe(30);
+    expect(result.total).toBe(25);
     expect(result.disqualified).toBe(false);
     expect(result.band).toBe("disqualify");
     expect(result.thankYouState).toBe("not_right_time");
   });
 
   it("auto-disqualifies a disqualifying invest answer even when the total clears the setting threshold", () => {
-    // asap(40) + <$3k(0, disqualifies) = 40, which would be "setting" by score,
-    // but the invest answer forces a disqualify.
+    // asap(40) + no cash(0, disqualifies) = 40, which would be "setting" by
+    // score, but the invest answer forces a disqualify.
     const result = scoreQualification({
       timeline: "asap",
-      invest: "lt_3k",
+      invest: "no_cash",
       variant: "A",
     });
 
@@ -81,16 +81,54 @@ describe("scoreQualification", () => {
     expect(result.thankYouState).toBe("not_right_time");
   });
 
-  it("treats a score of exactly 40 (non-disqualifying) as the setting band, not disqualify", () => {
+  it("qualifies a $1,000–$3,000 lead instead of disqualifying it", () => {
+    // The rung that replaced "Less than $3,000" (Kody, 2026-07-28). That option
+    // used to auto-disqualify and was knocking out ~44% of real leads on its
+    // own; only "no available cash" disqualifies now.
     const result = scoreQualification({
-      timeline: "unsure",
-      invest: "1_2k_finance",
-      variant: "B",
+      timeline: "asap",
+      invest: "1_3k",
+      variant: "A",
     });
 
-    expect(result.total).toBe(40);
+    expect(result.total).toBe(55);
     expect(result.disqualified).toBe(false);
-    expect(result.band).toBe("setting");
+    expect(result.band).toBe("lane_1");
+  });
+
+  it("places each band boundary on the correct side", () => {
+    // 30 is the top of disqualify, 45 the top of setting, 75 the top of Lane 1.
+    const at30 = scoreQualification({
+      timeline: "1_3_months",
+      invest: "1_3k",
+      variant: "A",
+    });
+    expect(at30.total).toBe(30);
+    expect(at30.band).toBe("disqualify");
+
+    const at45 = scoreQualification({
+      timeline: "next_30_days",
+      invest: "3_5k",
+      variant: "A",
+    });
+    expect(at45.total).toBe(45);
+    expect(at45.band).toBe("setting");
+
+    const at75 = scoreQualification({
+      timeline: "next_30_days",
+      invest: "10_15k",
+      variant: "A",
+    });
+    expect(at75.total).toBe(75);
+    expect(at75.band).toBe("lane_1");
+
+    const at80 = scoreQualification({
+      timeline: "few_weeks",
+      invest: "10_15k",
+      variant: "A",
+    });
+    expect(at80.total).toBe(80);
+    expect(at80.band).toBe("top_closers");
   });
 
   it("scores variant B capital-posture answers", () => {
@@ -107,6 +145,7 @@ describe("scoreQualification", () => {
       invest: "not_able",
       variant: "B",
     });
+    expect(disq.total).toBe(30);
     expect(disq.disqualified).toBe(true);
     expect(disq.band).toBe("disqualify");
   });
@@ -126,10 +165,10 @@ describe("scoreQualification", () => {
 });
 
 describe("scoring option tables", () => {
-  it("keeps timeline points within the documented 10–40 range", () => {
+  it("keeps timeline points within the documented 5–40 range", () => {
     const points = TIMELINE_OPTIONS.map((option) => option.points);
     expect(Math.max(...points)).toBe(40);
-    expect(Math.min(...points)).toBe(10);
+    expect(Math.min(...points)).toBe(5);
   });
 
   it("marks exactly one disqualifying invest option per variant", () => {

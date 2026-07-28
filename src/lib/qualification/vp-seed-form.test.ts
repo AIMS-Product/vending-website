@@ -31,6 +31,11 @@ const VP_SEED_FORM_SCHEMA = {
       options: [
         { id: "asap", label: "As soon as possible", value: "asap" },
         { id: "few_weeks", label: "In the next few weeks", value: "few_weeks" },
+        {
+          id: "next_30_days",
+          label: "Next 30 days",
+          value: "next_30_days",
+        },
         { id: "1_3_months", label: "1-3 months out", value: "1_3_months" },
         { id: "unsure", label: "Still figuring that out", value: "unsure" },
       ],
@@ -42,11 +47,16 @@ const VP_SEED_FORM_SCHEMA = {
       required: true,
       normalizedRole: "available_capital",
       options: [
-        { id: "lt_3k", label: "Less than $3,000", value: "lt_3k" },
-        { id: "3_5k", label: "$3,000 - $5,000", value: "3_5k" },
-        { id: "5_10k", label: "$5,000 - $10,000", value: "5_10k" },
-        { id: "10_15k", label: "$10,000 - $15,000", value: "10_15k" },
         { id: "15k_plus", label: "$15,000+", value: "15k_plus" },
+        { id: "10_15k", label: "$10,000 - $15,000", value: "10_15k" },
+        { id: "5_10k", label: "$5,000 - $10,000", value: "5_10k" },
+        { id: "3_5k", label: "$3,000 - $5,000", value: "3_5k" },
+        { id: "1_3k", label: "$1,000 - $3,000", value: "1_3k" },
+        {
+          id: "no_cash",
+          label: "No available cash to invest",
+          value: "no_cash",
+        },
       ],
     },
     {
@@ -123,6 +133,7 @@ describe("VP seed qualification form schema", () => {
     expect(timeline?.options?.map((o) => o.value)).toEqual([
       "asap",
       "few_weeks",
+      "next_30_days",
       "1_3_months",
       "unsure",
     ]);
@@ -132,11 +143,12 @@ describe("VP seed qualification form schema", () => {
     const parsed = parseQualificationFormSchema(VP_SEED_FORM_SCHEMA);
     const invest = parsed.questions.find((q) => q.id === "invest");
     expect(invest?.options?.map((o) => o.value)).toEqual([
-      "lt_3k",
-      "3_5k",
-      "5_10k",
-      "10_15k",
       "15k_plus",
+      "10_15k",
+      "5_10k",
+      "3_5k",
+      "1_3k",
+      "no_cash",
     ]);
   });
 });

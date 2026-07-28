@@ -40,29 +40,37 @@ export class ScoringError extends Error {
   }
 }
 
+// Points and rungs per Kody, 2026-07-28.
 export const TIMELINE_OPTIONS: readonly QualificationOption[] = [
   { value: "asap", label: "As soon as possible", points: 40 },
   { value: "few_weeks", label: "In the next few weeks", points: 30 },
-  { value: "1_3_months", label: "1–3 months out", points: 25 },
-  { value: "unsure", label: "Still figuring that out", points: 10 },
+  { value: "next_30_days", label: "Next 30 days", points: 25 },
+  { value: "1_3_months", label: "1–3 months out", points: 15 },
+  { value: "unsure", label: "Still figuring that out", points: 5 },
 ];
 
 export const INVEST_OPTIONS: Record<
   InvestVariant,
   readonly QualificationOption[]
 > = {
-  // Variant A — dollar ladder.
+  // Variant A — dollar ladder. Ordered high-to-low, as Kody specified it.
+  //
+  // "$1,000 – $3,000" replaced "Less than $3,000" on 2026-07-28. The old rung
+  // auto-disqualified, and it alone was disqualifying ~44% of real leads —
+  // people with some capital were routed to a PDF instead of a call. Only
+  // "no available cash" disqualifies now.
   A: [
+    { value: "15k_plus", label: "$15,000+", points: 60 },
+    { value: "10_15k", label: "$10,000 – $15,000", points: 50 },
+    { value: "5_10k", label: "$5,000 – $10,000", points: 40 },
+    { value: "3_5k", label: "$3,000 – $5,000", points: 20 },
+    { value: "1_3k", label: "$1,000 – $3,000", points: 15 },
     {
-      value: "lt_3k",
-      label: "Less than $3,000",
+      value: "no_cash",
+      label: "No available cash to invest",
       points: 0,
       disqualifies: true,
     },
-    { value: "3_5k", label: "$3,000 – $5,000", points: 20 },
-    { value: "5_10k", label: "$5,000 – $10,000", points: 40 },
-    { value: "10_15k", label: "$10,000 – $15,000", points: 50 },
-    { value: "15k_plus", label: "$15,000+", points: 60 },
   ],
   // Variant B — capital posture.
   B: [
@@ -238,10 +246,13 @@ function findOption(
   return option;
 }
 
+// Band thresholds per Kody, 2026-07-28: 0–30 disqualify (soft-redirect +
+// downsell), 31–45 setting team, 46–75 Lane 1, 76–100 top closers. Every
+// boundary moved down, which widens who gets offered a call.
 function bandFromScore(total: number): QualificationBand {
-  if (total <= 39) return "disqualify";
-  if (total <= 64) return "setting";
-  if (total <= 84) return "lane_1";
+  if (total <= 30) return "disqualify";
+  if (total <= 45) return "setting";
+  if (total <= 75) return "lane_1";
   return "top_closers";
 }
 

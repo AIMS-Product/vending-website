@@ -57,6 +57,11 @@ const vpSchema = {
         { id: "asap", label: "As soon as possible", value: "asap" },
         { id: "few_weeks", label: "In the next few weeks", value: "few_weeks" },
         { id: "1_3_months", label: "1-3 months out", value: "1_3_months" },
+        {
+          id: "next_30_days",
+          label: "Next 30 days",
+          value: "next_30_days",
+        },
         { id: "unsure", label: "Still figuring that out", value: "unsure" },
       ],
     },
@@ -67,11 +72,16 @@ const vpSchema = {
       required: true,
       normalizedRole: "available_capital",
       options: [
-        { id: "lt_3k", label: "Less than $3,000", value: "lt_3k" },
-        { id: "3_5k", label: "$3,000 - $5,000", value: "3_5k" },
-        { id: "5_10k", label: "$5,000 - $10,000", value: "5_10k" },
-        { id: "10_15k", label: "$10,000 - $15,000", value: "10_15k" },
         { id: "15k_plus", label: "$15,000+", value: "15k_plus" },
+        { id: "10_15k", label: "$10,000 - $15,000", value: "10_15k" },
+        { id: "5_10k", label: "$5,000 - $10,000", value: "5_10k" },
+        { id: "3_5k", label: "$3,000 - $5,000", value: "3_5k" },
+        { id: "1_3k", label: "$1,000 - $3,000", value: "1_3k" },
+        {
+          id: "no_cash",
+          label: "No available cash to invest",
+          value: "no_cash",
+        },
       ],
     },
   ],
@@ -431,13 +441,13 @@ describe("submitInlineQualification", () => {
     ).toBe(true);
   });
 
-  it("scores a strong-fit submission (asap + $5k-$10k)", async () => {
+  it("scores a strong-fit submission (few weeks + $5k-$10k)", async () => {
     const fake = buildClient();
 
     const result = await submitInlineQualification(
       baseInput({
         idempotencyKey: "inline-2",
-        timeline: "asap",
+        timeline: "few_weeks",
         invest: "5_10k",
       }),
       { client: fake.client, tokenFactory: () => "raw_inline_token_2" },
@@ -447,17 +457,17 @@ describe("submitInlineQualification", () => {
       status: "completed",
       leadId: fake.state.leads[0]?.id,
       thankYouState: "strong_fit",
-      score: 80,
+      score: 70,
     });
   });
 
-  it("scores a good-potential submission (few weeks + $3k-$5k)", async () => {
+  it("scores a good-potential submission (1-3 months + $3k-$5k)", async () => {
     const fake = buildClient();
 
     const result = await submitInlineQualification(
       baseInput({
         idempotencyKey: "inline-3",
-        timeline: "few_weeks",
+        timeline: "1_3_months",
         invest: "3_5k",
       }),
       { client: fake.client, tokenFactory: () => "raw_inline_token_3" },
@@ -467,7 +477,7 @@ describe("submitInlineQualification", () => {
       status: "completed",
       leadId: fake.state.leads[0]?.id,
       thankYouState: "good_potential",
-      score: 50,
+      score: 35,
     });
   });
 
@@ -487,18 +497,18 @@ describe("submitInlineQualification", () => {
       status: "completed",
       leadId: fake.state.leads[0]?.id,
       thankYouState: "not_right_time",
-      score: 30,
+      score: 25,
     });
   });
 
-  it("disqualifies (invest < $3k) regardless of timeline", async () => {
+  it("disqualifies (no available cash) regardless of timeline", async () => {
     const fake = buildClient();
 
     const result = await submitInlineQualification(
       baseInput({
         idempotencyKey: "inline-5",
         timeline: "asap",
-        invest: "lt_3k",
+        invest: "no_cash",
       }),
       { client: fake.client, tokenFactory: () => "raw_inline_token_5" },
     );

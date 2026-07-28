@@ -41,15 +41,18 @@ export type VpFieldOption = {
 export const VP_TIMELINE_FIELD_OPTIONS: readonly VpFieldOption[] = [
   { value: "asap", label: "As soon as possible" },
   { value: "few_weeks", label: "In the next few weeks" },
+  { value: "next_30_days", label: "Next 30 days" },
   { value: "1_3_months", label: "1-3 months out" },
   { value: "unsure", label: "Still figuring that out" },
 ];
 
 // Variant A only — the dollar ladder. A/B is retired for the inline funnel.
+// Highest rung first, as Kody specified it.
 export const VP_INVEST_FIELD_OPTIONS: readonly VpFieldOption[] = [
-  { value: "lt_3k", label: "Less than $3,000" },
-  { value: "3_5k", label: "$3,000 - $5,000" },
-  { value: "5_10k", label: "$5,000 - $10,000" },
-  { value: "10_15k", label: "$10,000 - $15,000" },
   { value: "15k_plus", label: "$15,000+" },
+  { value: "10_15k", label: "$10,000 - $15,000" },
+  { value: "5_10k", label: "$5,000 - $10,000" },
+  { value: "3_5k", label: "$3,000 - $5,000" },
+  { value: "1_3k", label: "$1,000 - $3,000" },
+  { value: "no_cash", label: "No available cash to invest" },
 ];
