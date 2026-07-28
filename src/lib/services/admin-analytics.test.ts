@@ -21,10 +21,8 @@ type FakeState = Record<string, FakeTableState>;
 /**
  * Minimal fake mirroring the two query shapes admin-analytics.ts issues:
  *  - a row-select query: `.select(fields).gte(...).order(...)` resolving
- *    `{ data, error }` (used for leads and bookings, see lead-admin.test.ts)
- *  - a `count(head:true)` query: `.select(fields, { count, head })`
- *    resolving `{ count, error }` (used for leadsAllTime, see
- *    admin-overview.test.ts)
+ *    `{ data, error }`
+ *  - a `count(head:true)` query resolving `{ count, error }`
  */
 function buildClient(state: FakeState) {
   return {
@@ -90,8 +88,11 @@ function makeLead(overrides: Partial<FakeRow> = {}): FakeRow {
   return {
     id: "lead_1",
     created_at: "2026-07-15T12:00:00.000Z",
+    email: "prospect@gmail.com",
+    full_name: "Real Prospect",
     source_path: "/resources/vending-machine-cost",
     utm_source: "google",
+    lifecycle_status: "contact_captured",
     ...overrides,
   };
 }
@@ -102,57 +103,216 @@ function makeBooking(overrides: Partial<FakeRow> = {}): FakeRow {
     created_at: "2026-07-15T12:00:00.000Z",
     status: "booked",
     scheduled_event_name: "Discovery call",
+    invitee_email: null,
+    lead_submission_id: null,
     ...overrides,
   };
 }
 
+const NOW = new Date("2026-07-20T12:00:00.000Z");
+
 describe("getAdminAnalytics", () => {
-  it("computes totals, booking rate, and top-N breakdowns with null labels", async () => {
-    const now = new Date("2026-07-20T12:00:00.000Z");
+  it("counts leads in the selected window and compares to the prior window", async () => {
     const client = buildClient({
       lead_submissions: {
         rows: [
-          makeLead({ id: "l1", source_path: "/apply", utm_source: "google" }),
-          makeLead({ id: "l2", source_path: "/apply", utm_source: "google" }),
-          makeLead({ id: "l3", source_path: null, utm_source: null }),
-          makeLead({ id: "l4", source_path: "", utm_source: "  " }),
+          // Current 7d window (Jul 13 -> Jul 20).
+          makeLead({ id: "c1", created_at: "2026-07-19T12:00:00.000Z" }),
+          makeLead({ id: "c2", created_at: "2026-07-15T12:00:00.000Z" }),
+          makeLead({ id: "c3", created_at: "2026-07-14T12:00:00.000Z" }),
+          // Prior 7d window (Jul 6 -> Jul 13).
+          makeLead({ id: "p1", created_at: "2026-07-10T12:00:00.000Z" }),
+          makeLead({ id: "p2", created_at: "2026-07-08T12:00:00.000Z" }),
+        ],
+      },
+      calendly_bookings: { rows: [] },
+    });
+
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "7d",
+    });
+
+    expect(analytics.metrics.leads.value).toBe(3);
+    expect(analytics.metrics.leads.prior).toBe(2);
+    expect(analytics.metrics.leads.deltaPct).toBe(50);
+    expect(analytics.range.days).toBe(7);
+  });
+
+  it("reports an absolute change instead of a percentage when the prior window was empty", async () => {
+    const client = buildClient({
+      lead_submissions: {
+        rows: [makeLead({ id: "c1", created_at: "2026-07-19T12:00:00.000Z" })],
+      },
+      calendly_bookings: { rows: [] },
+    });
+
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "7d",
+    });
+
+    // A percentage against zero is undefined — the UI shows "new · N vs 0".
+    expect(analytics.metrics.leads.deltaPct).toBeNull();
+    expect(analytics.metrics.leads.value).toBe(1);
+    expect(analytics.metrics.leads.prior).toBe(0);
+  });
+
+  it("excludes internal and test leads by default and reports how many were hidden", async () => {
+    const client = buildClient({
+      lead_submissions: {
+        rows: [
+          makeLead({
+            id: "real",
+            email: "buyer@yahoo.com",
+            full_name: "Real Buyer",
+          }),
+          makeLead({ id: "t1", email: "vp-e2e@vendingpreneurs-test.com" }),
+          makeLead({ id: "t2", email: "kody@modern-amenities.com" }),
+          makeLead({
+            id: "t3",
+            email: "adam+vpstaging1@aimanagingservices.com",
+          }),
+          makeLead({
+            id: "t4",
+            email: "someone@gmail.com",
+            full_name: "Stephen Testing 01",
+          }),
+        ],
+      },
+      calendly_bookings: { rows: [] },
+    });
+
+    const excluded = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "90d",
+    });
+    expect(excluded.metrics.leads.value).toBe(1);
+    expect(excluded.internalExcluded).toBe(4);
+
+    const included = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "90d",
+      includeInternal: true,
+    });
+    expect(included.metrics.leads.value).toBe(5);
+  });
+
+  it("counts only bookings traceable to a lead toward the booking rate", async () => {
+    const client = buildClient({
+      lead_submissions: {
+        rows: [
+          makeLead({ id: "l1", email: "one@gmail.com" }),
+          makeLead({ id: "l2", email: "two@gmail.com" }),
+          makeLead({ id: "l3", email: "three@gmail.com" }),
+          makeLead({ id: "l4", email: "four@gmail.com" }),
         ],
       },
       calendly_bookings: {
         rows: [
-          makeBooking({ id: "b1", status: "booked" }),
-          makeBooking({ id: "b2", status: "canceled" }),
+          // Matched by foreign key.
+          makeBooking({ id: "b1", lead_submission_id: "l1" }),
+          // Matched by invitee email, case-insensitively.
+          makeBooking({ id: "b2", invitee_email: "TWO@gmail.com" }),
+          // Booked through Saleskick or by phone — real, but not from the site.
+          makeBooking({ id: "b3", invitee_email: "walkin@aol.com" }),
+          // Cancellations never count.
+          makeBooking({
+            id: "b4",
+            status: "canceled",
+            lead_submission_id: "l3",
+          }),
         ],
       },
     });
 
-    const analytics = await getAdminAnalytics({ client, now });
-
-    expect(analytics.totals).toEqual({
-      leads90d: 4,
-      leadsAllTime: 4,
-      bookings90d: 1,
-      bookingRatePct: 25,
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "90d",
     });
-    expect(analytics.bookingsConnected).toBe(true);
-    expect(analytics.leadsBySourcePath).toEqual([
-      { label: "/apply", count: 2 },
-      { label: "(direct / unknown)", count: 2 },
-    ]);
-    expect(analytics.leadsByUtmSource).toEqual([
-      { label: "google", count: 2 },
-      { label: "(none)", count: 2 },
-    ]);
+
+    expect(analytics.metrics.bookedFromLeads.value).toBe(2);
+    // 2 of 4 leads booked — never the 3/4 that counting the walk-in would give.
+    expect(analytics.metrics.bookingRatePct.value).toBe(50);
+    expect(analytics.bookingsTotal).toBe(3);
+    expect(analytics.bookingsUnattributed).toBe(1);
+  });
+
+  it("never reports a booking rate above 100% when outside bookings outnumber leads", async () => {
+    // The exact shape of the bug this replaced: 309 bookings / 23 leads = 1343%.
+    const client = buildClient({
+      lead_submissions: {
+        rows: [makeLead({ id: "l1", email: "one@gmail.com" })],
+      },
+      calendly_bookings: {
+        rows: Array.from({ length: 40 }, (_, index) =>
+          makeBooking({
+            id: `b${index}`,
+            invitee_email: `outside${index}@aol.com`,
+          }),
+        ),
+      },
+    });
+
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "90d",
+    });
+
+    expect(analytics.metrics.bookingRatePct.value).toBe(0);
+    expect(analytics.metrics.bookingRatePct.value).toBeLessThanOrEqual(100);
+    expect(analytics.bookingsUnattributed).toBe(40);
+  });
+
+  it("counts qualified leads from lifecycle status", async () => {
+    const client = buildClient({
+      lead_submissions: {
+        rows: [
+          makeLead({
+            id: "q1",
+            email: "a@gmail.com",
+            lifecycle_status: "qualified",
+          }),
+          makeLead({
+            id: "q2",
+            email: "b@gmail.com",
+            lifecycle_status: "qualified",
+          }),
+          makeLead({
+            id: "n1",
+            email: "c@gmail.com",
+            lifecycle_status: "contact_captured",
+          }),
+        ],
+      },
+      calendly_bookings: { rows: [] },
+    });
+
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "90d",
+    });
+
+    expect(analytics.metrics.qualified.value).toBe(2);
+    expect(analytics.metrics.leads.value).toBe(3);
   });
 
   it("limits breakdowns to the top 12 by count", async () => {
-    const now = new Date("2026-07-20T12:00:00.000Z");
     const leads = Array.from({ length: 15 }, (_, index) => {
-      const path = `/page-${index}`;
-      // Give page-0 the most hits so we can assert it stays #1 after sorting.
       const count = index === 0 ? 5 : 1;
       return Array.from({ length: count }, (_, copy) =>
-        makeLead({ id: `l${index}-${copy}`, source_path: path }),
+        makeLead({
+          id: `l${index}-${copy}`,
+          email: `p${index}-${copy}@gmail.com`,
+          source_path: `/page-${index}`,
+        }),
       );
     }).flat();
 
@@ -161,7 +321,11 @@ describe("getAdminAnalytics", () => {
       calendly_bookings: { rows: [] },
     });
 
-    const analytics = await getAdminAnalytics({ client, now });
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "90d",
+    });
 
     expect(analytics.leadsBySourcePath).toHaveLength(12);
     expect(analytics.leadsBySourcePath[0]).toEqual({
@@ -170,14 +334,63 @@ describe("getAdminAnalytics", () => {
     });
   });
 
-  it("builds a 14-day daily trend including zero-days, bucketed by day", async () => {
-    const now = new Date("2026-07-20T15:30:00.000Z");
+  it("labels blank source and utm values rather than dropping them", async () => {
     const client = buildClient({
       lead_submissions: {
         rows: [
-          makeLead({ id: "l1", created_at: "2026-07-20T01:00:00.000Z" }),
-          makeLead({ id: "l2", created_at: "2026-07-20T23:00:00.000Z" }),
-          makeLead({ id: "l3", created_at: "2026-07-13T00:00:00.000Z" }),
+          makeLead({
+            id: "l1",
+            email: "a@gmail.com",
+            source_path: "/apply",
+            utm_source: "google",
+          }),
+          makeLead({
+            id: "l2",
+            email: "b@gmail.com",
+            source_path: null,
+            utm_source: null,
+          }),
+          makeLead({
+            id: "l3",
+            email: "c@gmail.com",
+            source_path: "",
+            utm_source: "  ",
+          }),
+        ],
+      },
+      calendly_bookings: { rows: [] },
+    });
+
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "90d",
+    });
+
+    expect(analytics.leadsBySourcePath).toEqual([
+      { label: "(direct / unknown)", count: 2 },
+      { label: "/apply", count: 1 },
+    ]);
+    expect(analytics.leadsByUtmSource).toEqual([
+      { label: "(none)", count: 2 },
+      { label: "google", count: 1 },
+    ]);
+  });
+
+  it("builds a daily trend covering the range including zero days", async () => {
+    const client = buildClient({
+      lead_submissions: {
+        rows: [
+          makeLead({
+            id: "l1",
+            email: "a@gmail.com",
+            created_at: "2026-07-20T01:00:00.000Z",
+          }),
+          makeLead({
+            id: "l2",
+            email: "b@gmail.com",
+            created_at: "2026-07-19T23:00:00.000Z",
+          }),
         ],
       },
       calendly_bookings: {
@@ -185,41 +398,40 @@ describe("getAdminAnalytics", () => {
           makeBooking({
             id: "b1",
             created_at: "2026-07-20T09:00:00.000Z",
-            status: "booked",
+            invitee_email: "a@gmail.com",
           }),
-          // Canceled booking must not appear in the trend.
           makeBooking({
             id: "b2",
             created_at: "2026-07-20T10:00:00.000Z",
             status: "canceled",
+            invitee_email: "b@gmail.com",
           }),
         ],
       },
     });
 
-    const analytics = await getAdminAnalytics({ client, now });
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "7d",
+    });
 
-    expect(analytics.dailyTrend).toHaveLength(14);
-    expect(analytics.dailyTrend[0].date).toBe("2026-07-07");
-    expect(analytics.dailyTrend[0]).toEqual({
-      date: "2026-07-07",
-      leads: 0,
-      bookings: 0,
-    });
-    expect(analytics.dailyTrend.at(-1)).toEqual({
-      date: "2026-07-20",
-      leads: 2,
-      bookings: 1,
-    });
-    const day13 = analytics.dailyTrend.find((day) => day.date === "2026-07-13");
-    expect(day13).toEqual({ date: "2026-07-13", leads: 1, bookings: 0 });
+    expect(analytics.dailyTrend).toHaveLength(7);
+    const lastDay = analytics.dailyTrend.at(-1);
+    expect(lastDay?.date).toBe("2026-07-20");
+    expect(lastDay?.leads).toBe(1);
+    // The canceled booking must not appear.
+    expect(lastDay?.bookings).toBe(1);
+    expect(analytics.dailyTrend[0].leads).toBe(0);
   });
 
   it("degrades gracefully when calendly_bookings errors (e.g. 42P01, not yet migrated)", async () => {
-    const now = new Date("2026-07-20T12:00:00.000Z");
     const client = buildClient({
       lead_submissions: {
-        rows: [makeLead({ id: "l1" }), makeLead({ id: "l2" })],
+        rows: [
+          makeLead({ id: "l1", email: "a@gmail.com" }),
+          makeLead({ id: "l2", email: "b@gmail.com" }),
+        ],
       },
       calendly_bookings: {
         rows: [],
@@ -227,32 +439,27 @@ describe("getAdminAnalytics", () => {
       },
     });
 
-    const analytics = await getAdminAnalytics({ client, now });
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "90d",
+    });
 
     expect(analytics.bookingsConnected).toBe(false);
     expect(analytics.bookingsByCalendar).toEqual([]);
-    expect(analytics.totals.bookings90d).toBe(0);
-    expect(analytics.totals.bookingRatePct).toBe(0);
-    // Leads must still be returned even though bookings failed.
-    expect(analytics.totals.leads90d).toBe(2);
-    expect(analytics.totals.leadsAllTime).toBe(2);
+    expect(analytics.metrics.bookedFromLeads.value).toBe(0);
+    expect(analytics.metrics.bookingRatePct.value).toBe(0);
+    expect(analytics.metrics.leads.value).toBe(2);
   });
 
   it("throws AdminAnalyticsServiceError when the leads query itself errors", async () => {
-    const now = new Date("2026-07-20T12:00:00.000Z");
     const client = buildClient({
-      lead_submissions: {
-        rows: [],
-        error: { message: "connection reset" },
-      },
+      lead_submissions: { rows: [], error: { message: "connection reset" } },
       calendly_bookings: { rows: [] },
     });
 
-    // Both the row-select and the all-time count query hit the same errored
-    // table, so either message can win the race inside Promise.all — assert
-    // on the dedicated error class instead of a specific message.
-    await expect(getAdminAnalytics({ client, now })).rejects.toThrow(
-      AdminAnalyticsServiceError,
-    );
+    await expect(
+      getAdminAnalytics({ client, now: NOW, range: "90d" }),
+    ).rejects.toThrow(AdminAnalyticsServiceError);
   });
 });

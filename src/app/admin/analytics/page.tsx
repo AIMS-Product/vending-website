@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { adminCardClass } from "@/components/admin/AdminUi";
 import {
-  AdminMetricPanel,
-  AdminMetricStrip,
-  adminCardClass,
-} from "@/components/admin/AdminUi";
-import {
-  getAdminAnalytics,
-  type AdminAnalyticsBreakdownRow,
-  type AdminAnalyticsDailyTrendRow,
-} from "@/lib/services/admin-analytics";
+  AnalyticsBreakdown,
+  AnalyticsInternalToggle,
+  AnalyticsKpiCard,
+  AnalyticsKpiGrid,
+  AnalyticsRangeTabs,
+  AnalyticsTrend,
+} from "@/components/admin/AnalyticsPanels";
+import { getAdminAnalytics } from "@/lib/services/admin-analytics";
+import { parseAdminAnalyticsRange } from "@/lib/services/admin-analytics-range";
 import { requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
@@ -17,193 +18,155 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AdminAnalyticsPage() {
+// Reporting must reflect the database on every load. Without this the page
+// served counts that disagreed with /admin/leads and did not move after rows
+// were deleted — a dashboard nobody can trust is worse than no dashboard.
+export const dynamic = "force-dynamic";
+
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export default async function AdminAnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const range = parseAdminAnalyticsRange(singleParam(params.range));
+  const includeInternal = singleParam(params.internal) === "1";
+
   const [{ user, role }, analytics] = await Promise.all([
     requireAdmin(),
-    getAdminAnalytics(),
+    getAdminAnalytics({ range, includeInternal }),
   ]);
+
+  const { metrics } = analytics;
 
   return (
     <AdminShell
       activeSection="analytics"
       eyebrow="Reporting"
       title="Analytics"
-      description="Leads, bookings, and conversion by source, funnel, and calendar."
+      description="Leads, qualification, and bookings by source, page, and campaign."
       userEmail={user.email}
       userRole={role}
     >
-      <AdminMetricStrip>
-        <AdminMetricPanel
-          icon="mail"
-          tone="blue"
-          label="Leads (90d)"
-          value={analytics.totals.leads90d}
-          caption="last 90 days"
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <AnalyticsInternalToggle
+          range={range}
+          includeInternal={includeInternal}
+          excludedCount={analytics.internalExcluded}
         />
-        <AdminMetricPanel
-          icon="target"
-          tone="green"
-          label="Bookings (90d)"
-          value={analytics.totals.bookings90d}
-          caption="last 90 days"
-        />
-        <AdminMetricPanel
-          icon="check"
-          tone="purple"
-          label="Booking rate"
-          value={`${formatPercent(analytics.totals.bookingRatePct)}%`}
-          caption="bookings / leads"
-        />
-        <AdminMetricPanel
-          icon="list"
-          tone="slate"
-          label="Leads (all-time)"
-          value={analytics.totals.leadsAllTime}
-          caption="since launch"
-        />
-      </AdminMetricStrip>
+        <AnalyticsRangeTabs active={range} includeInternal={includeInternal} />
+      </div>
 
-      {!analytics.bookingsConnected ? (
-        <div className={`${adminCardClass} mb-5`}>
-          <p className="text-sm text-slate-600">
-            Booking tracking isn&apos;t connected yet — bookings will appear
-            here once the Calendly webhook is live.
-          </p>
-        </div>
-      ) : null}
+      <AnalyticsKpiGrid>
+        <AnalyticsKpiCard
+          label="Leads"
+          metric={metrics.leads}
+          caption={`vs prior ${analytics.range.days} days`}
+        />
+        <AnalyticsKpiCard
+          label="Qualified"
+          metric={metrics.qualified}
+          caption="completed the questions"
+        />
+        <AnalyticsKpiCard
+          label="Booked a call"
+          metric={metrics.bookedFromLeads}
+          caption="bookings traced to a lead"
+        />
+        <AnalyticsKpiCard
+          label="Booking rate"
+          metric={metrics.bookingRatePct}
+          caption="of leads who booked"
+          format="percent"
+        />
+      </AnalyticsKpiGrid>
+
+      <BookingContext
+        connected={analytics.bookingsConnected}
+        total={analytics.bookingsTotal}
+        unattributed={analytics.bookingsUnattributed}
+        leadsAllTime={analytics.leadsAllTime}
+      />
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <BreakdownBars
-          title="Leads by source page"
+        <AnalyticsBreakdown
+          title="Leads by page"
           rows={analytics.leadsBySourcePath}
         />
-        <BreakdownBars
+        <AnalyticsBreakdown
           title="Leads by traffic source"
           rows={analytics.leadsByUtmSource}
         />
-        <BreakdownBars
+        <AnalyticsBreakdown
           title="Bookings by calendar"
           rows={analytics.bookingsByCalendar}
           emptyLabel={
             analytics.bookingsConnected
-              ? "No bookings in the last 90 days."
+              ? "No bookings in this range."
               : "Bookings not connected yet."
           }
         />
       </div>
 
       <div className="mt-5">
-        <DailyTrend rows={analytics.dailyTrend} />
+        <AnalyticsTrend rows={analytics.dailyTrend} />
       </div>
     </AdminShell>
   );
 }
 
-function formatPercent(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
-
-function BreakdownBars({
-  title,
-  rows,
-  emptyLabel = "No data in the last 90 days.",
+/**
+ * Bookings that never came through this site (Saleskick, phone, direct Calendly
+ * links) are real but are not website conversions. They are reported here, next
+ * to the rate, so the number is visible without silently inflating it.
+ */
+function BookingContext({
+  connected,
+  total,
+  unattributed,
+  leadsAllTime,
 }: {
-  title: string;
-  rows: AdminAnalyticsBreakdownRow[];
-  emptyLabel?: string;
+  connected: boolean;
+  total: number;
+  unattributed: number;
+  leadsAllTime: number;
 }) {
-  const maxCount = Math.max(1, ...rows.map((row) => row.count));
+  if (!connected) {
+    return (
+      <div className={`${adminCardClass} mb-5`}>
+        <p className="text-sm text-slate-600">
+          Booking tracking isn&apos;t connected yet — bookings will appear here
+          once the Calendly webhook is live.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <section className={adminCardClass} aria-label={title}>
-      <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase">
-        {title}
-      </h2>
-      {rows.length === 0 ? (
-        <p className="text-sm text-slate-500">{emptyLabel}</p>
-      ) : (
-        <ul className="grid gap-2.5">
-          {rows.map((row) => (
-            <li key={row.label}>
-              <div className="mb-1 flex items-center justify-between gap-3 text-sm">
-                <span className="min-w-0 truncate font-medium text-slate-700">
-                  {row.label}
-                </span>
-                <span className="shrink-0 font-semibold text-slate-950">
-                  {row.count}
-                </span>
-              </div>
-              <div className="h-2 rounded-full bg-slate-100">
-                <div
-                  className="h-2 rounded-full bg-[#0b63f6]"
-                  style={{ width: `${(row.count / maxCount) * 100}%` }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+    <div className={`${adminCardClass} mb-5`}>
+      <p className="text-sm text-slate-600">
+        <span className="font-semibold text-slate-900">{total}</span> calls were
+        booked in this range.{" "}
+        {unattributed > 0 ? (
+          <>
+            <span className="font-semibold text-slate-900">{unattributed}</span>{" "}
+            of those came from outside this website (phone, Saleskick, or a
+            direct Calendly link), so they are excluded from the booking rate
+            above.
+          </>
+        ) : (
+          <>Every one of them traces back to a lead this site captured.</>
+        )}{" "}
+        <span className="text-slate-500">
+          {leadsAllTime.toLocaleString()} leads captured all time.
+        </span>
+      </p>
+    </div>
   );
 }
 
-function DailyTrend({ rows }: { rows: AdminAnalyticsDailyTrendRow[] }) {
-  const maxValue = Math.max(1, ...rows.map((row) => row.leads + row.bookings));
-
-  return (
-    <section className={adminCardClass} aria-label="14-day trend">
-      <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase">
-        14-day trend
-      </h2>
-      <div className="flex items-end gap-2 overflow-x-auto pb-1">
-        {rows.map((row) => (
-          <div
-            key={row.date}
-            className="flex min-w-[2.25rem] flex-1 flex-col items-center gap-1.5"
-          >
-            <div className="flex h-24 w-full items-end justify-center gap-0.5">
-              <div
-                className="w-2.5 rounded-t bg-[#0b63f6]"
-                style={{
-                  height: `${Math.max(2, (row.leads / maxValue) * 100)}%`,
-                }}
-                title={`${row.leads} leads on ${row.date}`}
-              />
-              <div
-                className="w-2.5 rounded-t bg-emerald-400"
-                style={{
-                  height: `${Math.max(2, (row.bookings / maxValue) * 100)}%`,
-                }}
-                title={`${row.bookings} bookings on ${row.date}`}
-              />
-            </div>
-            <span className="text-[10px] font-medium text-slate-500">
-              {formatShortDate(row.date)}
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
-        <span className="flex items-center gap-1.5">
-          <span
-            className="size-2.5 rounded-full bg-[#0b63f6]"
-            aria-hidden="true"
-          />
-          Leads
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span
-            className="size-2.5 rounded-full bg-emerald-400"
-            aria-hidden="true"
-          />
-          Bookings
-        </span>
-      </div>
-    </section>
-  );
-}
-
-function formatShortDate(isoDate: string): string {
-  const [, month, day] = isoDate.split("-");
-  return `${month}/${day}`;
+function singleParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
 }
