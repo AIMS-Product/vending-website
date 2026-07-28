@@ -11,6 +11,11 @@ export type PublicLeadActionState =
       // render the fit result in place instead of navigating to
       // /qualify or /thank-you. Other intents never set this.
       qualification?: { thankYouState: ThankYouStateKey; score: number };
+      // Additive: set only by the two-stage inline funnel's stage-1 action.
+      // Its presence is what advances the form to stage 2, which posts the
+      // token back to identify the session. Never a lead id — that would let
+      // anyone post answers against someone else's lead.
+      sessionToken?: string;
     }
   | {
       status: "error";

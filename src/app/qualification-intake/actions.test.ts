@@ -2,12 +2,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { initialLeadActionState } from "@/app/lead-action-state";
 import { QualificationIntakeValidationError } from "@/lib/services/qualification-intake";
 import { QualificationSessionValidationError } from "@/lib/services/qualification-sessions";
-import { submitInlineQualification, submitQualificationLead } from "./actions";
+import {
+  finishInlineQualification,
+  startInlineQualification,
+  submitInlineQualification,
+  submitQualificationLead,
+} from "./actions";
 
 const mocks = vi.hoisted(() => ({
   headers: vi.fn(),
   createQualificationIntakeSession: vi.fn(),
   submitInlineQualification: vi.fn(),
+  startInlineQualification: vi.fn(),
+  finishInlineQualification: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
@@ -31,6 +38,8 @@ vi.mock("@/lib/services/qualification-inline", async () => {
   return {
     ...actual,
     submitInlineQualification: mocks.submitInlineQualification,
+    startInlineQualification: mocks.startInlineQualification,
+    finishInlineQualification: mocks.finishInlineQualification,
   };
 });
 
@@ -418,6 +427,202 @@ describe("submitInlineQualification", () => {
       });
       expect(consoleError).toHaveBeenCalledWith(
         "inline qualification action failed",
+        { error: "service role key leaked" },
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+});
+
+// The two-stage /contact form. Stage 1 captures the contact + consents and
+// hands the session token back to the browser; stage 2 posts that token with
+// the answers. See .claude/specs/2026-07-28-two-stage-inline-contact-form.md.
+describe("startInlineQualification", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.headers.mockResolvedValue(
+      new Headers({
+        referer: "https://vendingpreneurs.com/contact",
+        "user-agent": "vitest",
+      }),
+    );
+    mocks.startInlineQualification.mockResolvedValue({
+      status: "started",
+      leadId: "lead_1",
+      sessionToken: "raw_stage_token",
+    });
+  });
+
+  it("captures the contact and both consents, and hands back the session token", async () => {
+    const formData = inlineQualificationFormData();
+    // Stage 1 never renders the questions, so they are not on the post.
+    formData.delete("timeline");
+    formData.delete("invest");
+
+    const result = await startInlineQualification(
+      initialLeadActionState,
+      formData,
+    );
+
+    expect(result).toEqual({
+      status: "success",
+      message: "Got your details. Two quick questions.",
+      leadId: "lead_1",
+      sessionToken: "raw_stage_token",
+    });
+    expect(mocks.startInlineQualification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fullName: "Jane Buyer",
+        email: "jane@example.com",
+        phone: "555-0123",
+        consentUpdates: true,
+        consentContact: true,
+        qualificationFormId: "a1b2c3d4-0000-4000-8000-000000000001",
+      }),
+    );
+  });
+
+  it("never returns a redirectHref, so stage 1 cannot navigate away", async () => {
+    const result = await startInlineQualification(
+      initialLeadActionState,
+      inlineQualificationFormData(),
+    );
+
+    expect(Object.keys(result).sort()).toEqual([
+      "leadId",
+      "message",
+      "sessionToken",
+      "status",
+    ]);
+  });
+
+  it("returns consent field errors instead of capturing the lead", async () => {
+    mocks.startInlineQualification.mockRejectedValue(
+      new QualificationSessionValidationError({
+        consent_contact: ["Consent is required."],
+      }),
+    );
+
+    const formData = inlineQualificationFormData();
+    formData.delete("consent_contact");
+
+    const result = await startInlineQualification(
+      initialLeadActionState,
+      formData,
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Check the highlighted fields and try again.",
+      fieldErrors: { consent_contact: ["Consent is required."] },
+    });
+  });
+});
+
+describe("finishInlineQualification", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.headers.mockResolvedValue(new Headers({ "user-agent": "vitest" }));
+    mocks.finishInlineQualification.mockResolvedValue({
+      status: "completed",
+      leadId: "lead_1",
+      thankYouState: "perfect_fit",
+      score: 100,
+    });
+  });
+
+  function stageTwoFormData(overrides: Record<string, string> = {}) {
+    const formData = new FormData();
+    formData.set("session_token", "raw_stage_token");
+    formData.set("timeline", "asap");
+    formData.set("invest", "15k_plus");
+    for (const [key, value] of Object.entries(overrides)) {
+      formData.set(key, value);
+    }
+    return formData;
+  }
+
+  it("scores the answers against the posted session token", async () => {
+    const result = await finishInlineQualification(
+      initialLeadActionState,
+      stageTwoFormData(),
+    );
+
+    expect(result).toEqual({
+      status: "success",
+      message: "Thanks — here's your fit.",
+      leadId: "lead_1",
+      qualification: { thankYouState: "perfect_fit", score: 100 },
+    });
+    expect(mocks.finishInlineQualification).toHaveBeenCalledWith({
+      sessionToken: "raw_stage_token",
+      timeline: "asap",
+      invest: "15k_plus",
+      userAgent: "vitest",
+    });
+  });
+
+  it("surfaces a session failure as its own message, since no field can be highlighted", async () => {
+    mocks.finishInlineQualification.mockRejectedValue(
+      new QualificationSessionValidationError({
+        session: ["This form has already been submitted."],
+      }),
+    );
+
+    const result = await finishInlineQualification(
+      initialLeadActionState,
+      stageTwoFormData(),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message:
+        "This form has already been submitted. Refresh the page to start again.",
+    });
+  });
+
+  it("returns answer field errors for the stage-2 selects", async () => {
+    mocks.finishInlineQualification.mockRejectedValue(
+      new QualificationSessionValidationError({
+        invest: ["How much are you ready to invest? is required."],
+      }),
+    );
+
+    const result = await finishInlineQualification(
+      initialLeadActionState,
+      stageTwoFormData({ invest: "" }),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Check the highlighted fields and try again.",
+      fieldErrors: {
+        invest: ["How much are you ready to invest? is required."],
+      },
+    });
+  });
+
+  it("returns a generic failure without leaking unexpected errors", async () => {
+    mocks.finishInlineQualification.mockRejectedValue(
+      new Error("service role key leaked"),
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      const result = await finishInlineQualification(
+        initialLeadActionState,
+        stageTwoFormData(),
+      );
+
+      expect(result).toEqual({
+        status: "error",
+        message: "We couldn't submit the form. Try again in a moment.",
+      });
+      expect(consoleError).toHaveBeenCalledWith(
+        "inline qualification finish action failed",
         { error: "service role key leaked" },
       );
     } finally {

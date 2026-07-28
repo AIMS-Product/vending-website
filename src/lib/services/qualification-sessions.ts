@@ -85,6 +85,10 @@ export type SaveQualificationAnswerResult = {
 export type CompleteQualificationSessionResult = {
   status: "completed";
   sessionId: string;
+  // The lead this session belongs to. Server-side only: it lets a caller that
+  // identifies the session by token alone (the two-stage inline form) report
+  // the lead without ever putting a lead id in the browser.
+  leadSubmissionId: string;
   redirectPath: string;
   // Additive: the scored fit state + total, so a caller that completes the
   // session in the same request (e.g. an inline orchestrator) can render the
@@ -224,6 +228,7 @@ export async function completeQualificationSession(
     return {
       status: "completed",
       sessionId: session.id,
+      leadSubmissionId: session.lead_submission_id,
       redirectPath,
       thankYouState: existingScore?.thankYouState ?? null,
       score: existingScore?.total ?? null,
@@ -285,6 +290,7 @@ export async function completeQualificationSession(
   return {
     status: "completed",
     sessionId: session.id,
+    leadSubmissionId: session.lead_submission_id,
     redirectPath: completionRedirectFor(score, redirectPath),
     thankYouState: score?.thankYouState ?? null,
     score: score?.total ?? null,

@@ -1,5 +1,8 @@
 import { PublicLeadForm } from "@/components/forms/PublicLeadForm";
-import { submitInlineQualification } from "@/app/qualification-intake/actions";
+import {
+  finishInlineQualification,
+  startInlineQualification,
+} from "@/app/qualification-intake/actions";
 import { APPLY_QUIZ_ANCHOR, applyQuiz } from "@/lib/content/apply-page";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import { VP_QUALIFICATION_FORM_ID } from "@/lib/qualification/vp-fields";
@@ -10,11 +13,13 @@ type ApplyQuizProps = {
   idempotencyKey: string;
 };
 
-// The dark two-panel quiz band. The left card holds the full inline
-// qualification form — contact + consent + timeline + invest. Submitting
-// scores the answers and renders the matching fit result in place (no
-// navigation to /qualify or /thank-you). Variant A (dollar ladder) is forced
-// server-side; the A/B invest-copy experiment is retired for this funnel.
+// The dark two-panel quiz band. The left card holds the inline qualification
+// form, split in two: stage 1 is contact details + both consents (the lead is
+// captured and contactable from there), stage 2 replaces those fields in the
+// same card with the timeline/invest questions. Answering scores them and
+// renders the matching fit result in place — no navigation to /qualify or
+// /thank-you at any point. Variant A (dollar ladder) is forced server-side;
+// the A/B invest-copy experiment is retired for this funnel.
 export function ApplyQuiz({ attribution, idempotencyKey }: ApplyQuizProps) {
   return (
     <section
@@ -37,7 +42,8 @@ export function ApplyQuiz({ attribution, idempotencyKey }: ApplyQuizProps) {
         <div className="mx-auto mt-11 flex max-w-[1000px] flex-col items-start gap-7 lg:flex-row">
           <div className="w-full min-w-0 flex-1">
             <PublicLeadForm
-              action={submitInlineQualification}
+              action={startInlineQualification}
+              finishAction={finishInlineQualification}
               attribution={attribution}
               hiddenFields={{
                 qualification_form_id: VP_QUALIFICATION_FORM_ID,
