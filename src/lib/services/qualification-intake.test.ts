@@ -244,6 +244,25 @@ class FakeQuery {
         updated_at: "2026-06-17T00:00:00.000Z",
       };
       const row = { ...defaults, ...inserted } as CloseSyncEventRow;
+      // Mirrors close_sync_events_dedupe_key_idx — the real table rejects a
+      // second row with the same dedupe_key, and callers must cope with that.
+      const duplicate =
+        row.dedupe_key !== null &&
+        this.state.events.some((e) => e.dedupe_key === row.dedupe_key);
+      if (duplicate) {
+        return {
+          select: () => ({
+            single: async () => ({
+              data: null,
+              error: {
+                code: "23505",
+                message:
+                  'duplicate key value violates unique constraint "close_sync_events_dedupe_key_idx"',
+              },
+            }),
+          }),
+        };
+      }
       this.state.events.push(row);
       return {
         select: () => ({
@@ -513,7 +532,7 @@ describe("createQualificationIntakeSession", () => {
       status: "pending",
       close_contact_id: "close_contact_existing",
       close_lead_id: "close_lead_existing",
-      dedupe_key: "lead_create_or_update:lead_2:session_1",
+      dedupe_key: "lead_create_or_update:lead_2",
       next_retry_at: "2026-06-17T09:00:00.000Z",
       payload: expect.objectContaining({
         attribution: expect.objectContaining({
@@ -536,6 +555,37 @@ describe("createQualificationIntakeSession", () => {
         }),
       }),
     });
+  });
+
+  it("queues one Close sync per lead even when the visitor submits the same form twice", async () => {
+    // Real failure this guards: the dedupe key used to include the session id.
+    // A second submit reuses the lead (same idempotency key) but opens a new
+    // session, so the key differed, a second lead_create_or_update was queued,
+    // and Close ended up with two contacts for one person.
+    const fake = buildClient({});
+    const input = {
+      idempotencyKey: "double-submit-1",
+      fullName: "Double Submitter",
+      email: "double@example.com",
+      phone: "555-0100",
+      sourcePath: "/contact",
+      userAgent: "vitest",
+    };
+    const deps = {
+      client: fake.client,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+      tokenFactory: () => "raw_test_token",
+    };
+
+    const first = await createQualificationIntakeSession(input, deps);
+    const second = await createQualificationIntakeSession(input, deps);
+
+    // Same person, same lead — a second submit must not become a second push.
+    expect(second.leadId).toBe(first.leadId);
+    expect(fake.state.events).toHaveLength(1);
+    expect(fake.state.events[0]?.dedupe_key).toBe(
+      `lead_create_or_update:${first.leadId}`,
+    );
   });
 
   it("uses an explicitly resolved page or block qualification form instead of the global default", async () => {

@@ -16,6 +16,10 @@ import {
   type LeadSourceInputFields,
 } from "@/lib/services/lead-source-fields";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  isDuplicateDedupeError,
+  leadCreateOrUpdateDedupeKey,
+} from "@/lib/close/dedupe";
 import type { Database, Json, Tables } from "@/types/database";
 
 type LeadRow = Tables<"lead_submissions">;
@@ -314,7 +318,9 @@ async function ensurePublicLeadCloseSync(
     .select("id")
     .single();
 
-  if (error) {
+  // A duplicate means this lead's push is already queued — a re-submit, not a
+  // failure. Throwing here would fail a submit whose work is already done.
+  if (error && !isDuplicateDedupeError(error)) {
     throw new Error("Lead was stored but Close sync was not queued.");
   }
 
@@ -335,7 +341,7 @@ function buildPublicLeadCloseSyncEvent(
     session_id: null,
     event_type: "lead_create_or_update",
     status: "pending",
-    dedupe_key: `lead_create_or_update:${storedLead.id}:${lead.vpSessionId ?? lead.idempotencyKey ?? "public"}`,
+    dedupe_key: leadCreateOrUpdateDedupeKey(storedLead.id),
     next_retry_at: nowIso,
     close_contact_id: storedLead.close_contact_id,
     close_lead_id: storedLead.close_lead_id,

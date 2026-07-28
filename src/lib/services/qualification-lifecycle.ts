@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isDuplicateDedupeError } from "@/lib/close/dedupe";
 import type { Database, Json, Tables } from "@/types/database";
 
 type QualificationSessionRow = Tables<"qualification_sessions">;
@@ -355,17 +356,6 @@ function staleTaskPayload(
 function jsonObject(value: Json): Record<string, Json> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   return value as Record<string, Json>;
-}
-
-function isDuplicateDedupeError(error: unknown) {
-  if (!error || typeof error !== "object") return false;
-  const record = error as Record<string, unknown>;
-  return (
-    record.code === "23505" ||
-    String(record.message ?? "")
-      .toLowerCase()
-      .includes("duplicate")
-  );
 }
 
 function lifecycleErrorMessage(error: unknown) {

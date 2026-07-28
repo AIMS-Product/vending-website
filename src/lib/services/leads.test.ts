@@ -222,7 +222,7 @@ describe("submitLead", () => {
         session_id: null,
         event_type: "lead_create_or_update",
         status: "pending",
-        dedupe_key: "lead_create_or_update:lead-1:vp-session-1",
+        dedupe_key: "lead_create_or_update:lead-1",
         next_retry_at: "2026-05-04T09:00:00.000Z",
         payload: expect.objectContaining({
           source: "public_lead_form",

@@ -18,6 +18,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
 import { assignInvestVariant } from "@/lib/qualification/scoring";
 import {
+  isDuplicateDedupeError,
+  leadCreateOrUpdateDedupeKey,
+} from "@/lib/close/dedupe";
+import {
   getQualificationFormVersion,
   resolveDefaultQualificationFormVersion,
   resolvePublishedQualificationFormVersion,
@@ -433,7 +437,7 @@ async function enqueueLeadCloseSync(
     session_id: sessionId,
     event_type: "lead_create_or_update",
     status: "pending",
-    dedupe_key: `lead_create_or_update:${lead.id}:${sessionId}`,
+    dedupe_key: leadCreateOrUpdateDedupeKey(lead.id),
     next_retry_at: nowIso,
     close_contact_id: lead.close_contact_id,
     close_lead_id: lead.close_lead_id,
@@ -463,7 +467,9 @@ async function enqueueLeadCloseSync(
     .select("id")
     .single();
 
-  if (error) {
+  // A duplicate means this lead's push is already queued — a re-submit, not a
+  // failure. Throwing here would fail a submit whose work is already done.
+  if (error && !isDuplicateDedupeError(error)) {
     throw new QualificationIntakeServiceError(
       "Qualification session was created but Close sync was not queued.",
     );
