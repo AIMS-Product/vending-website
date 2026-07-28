@@ -57,6 +57,8 @@ export const testimonialsV2 = {
 
 export const finalCtaV2 = {
   marqueeWord: "Apply now",
-  titleLines: ["Take action", "today"],
+  // Two lines because the band renders them as stacked display type; the second
+  // line carries the highlight.
+  titleLines: ["Join the Vending", "Accelerator Program"],
   ghostWord: "Freedom",
 } as const;
