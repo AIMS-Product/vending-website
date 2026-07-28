@@ -28,9 +28,11 @@ export function ApplyVsl({
 
   return (
     <section className="mx-auto max-w-[940px] px-5 py-20 lg:px-10">
+      {/* The heading runs to the video's width on desktop so it breaks to two
+          lines instead of three (Kody, 2026-07-28). */}
       {vsl.title ? (
-        <div className="mx-auto mb-9 max-w-[52ch] text-center">
-          <h2 className="text-[clamp(1.75rem,3vw,2.5rem)] leading-[1.08] font-black tracking-tight text-[#111111] uppercase">
+        <div className="mx-auto mb-9 max-w-[36ch] text-center lg:max-w-none">
+          <h2 className="text-[clamp(1.75rem,3.4vw,2.9rem)] leading-[1.08] font-black tracking-tight text-[#111111] uppercase">
             {vsl.title}
           </h2>
           {vsl.subtitle ? (

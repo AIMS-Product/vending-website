@@ -38,7 +38,7 @@ export const applyHero = {
 
 export const applyVsl = {
   title: "Mike Hoffmann built his vending business from scratch",
-  subtitle: "Vendingpreneurs is what he wished he had when he started",
+  subtitle: "Vendingpreneurs is what Mike wished he had when starting",
   badge: "Free training",
   watchLabel: "Watch Mike's story",
   youtubeId: "P-Z1BZ9M-Fg",
