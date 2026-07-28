@@ -198,7 +198,7 @@ function PagesTab({ analytics }: { analytics: AdminAnalytics }) {
   return (
     <>
       <div className="grid gap-5 xl:grid-cols-2">
-        <AnalyticsFunnel steps={pages.funnel} />
+        <AnalyticsFunnel steps={pages.funnel} context={pages.funnelContext} />
         <AnalyticsBreakdown
           title="Landing page (first page seen)"
           rows={pages.byLandingPage}

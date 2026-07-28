@@ -43,6 +43,7 @@ type LeadAnalyticsRow = Pick<
   | "lifecycle_status"
   | "close_sync_status"
   | "qualification_summary"
+  | "latest_qualification_form_id"
   | "latest_qualification_started_at"
   | "latest_qualification_completed_at"
 >;
@@ -133,7 +134,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const TOP_N = 12;
 
 const LEAD_ANALYTICS_FIELDS =
-  "id,created_at,email,full_name,source_path,landing_path,referrer,utm_source,utm_medium,utm_campaign,utm_term,utm_content,timeline,budget,business_stage,state_region,lifecycle_status,close_sync_status,qualification_summary,latest_qualification_started_at,latest_qualification_completed_at" as const;
+  "id,created_at,email,full_name,source_path,landing_path,referrer,utm_source,utm_medium,utm_campaign,utm_term,utm_content,timeline,budget,business_stage,state_region,lifecycle_status,close_sync_status,qualification_summary,latest_qualification_form_id,latest_qualification_started_at,latest_qualification_completed_at" as const;
 const BOOKING_ANALYTICS_FIELDS =
   "id,created_at,status,scheduled_event_name,invitee_email,lead_submission_id" as const;
 

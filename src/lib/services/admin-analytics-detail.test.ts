@@ -26,10 +26,26 @@ function makeLead(overrides: Partial<AnalyticsLeadRow> = {}): AnalyticsLeadRow {
     lifecycle_status: "contact_captured",
     close_sync_status: null,
     qualification_summary: {},
+    latest_qualification_form_id: null,
     latest_qualification_started_at: null,
     latest_qualification_completed_at: null,
     ...overrides,
   };
+}
+
+/**
+ * A lead the qualification intake created — it carries the form id from the
+ * moment the row is inserted, which is what marks it as "was actually offered
+ * the questions".
+ */
+function makeQualificationLead(
+  overrides: Partial<AnalyticsLeadRow> = {},
+): AnalyticsLeadRow {
+  return makeLead({
+    latest_qualification_form_id: "a1b2c3d4-0000-4000-8000-000000000001",
+    latest_qualification_started_at: "2026-07-15T12:00:00.000Z",
+    ...overrides,
+  });
 }
 
 describe("buildAcquisitionRollup", () => {
@@ -141,29 +157,28 @@ describe("buildPagesRollup", () => {
   it("builds a funnel where each step reports drop-off from the one above", () => {
     const rollup = buildPagesRollup(
       [
-        makeLead({
+        makeQualificationLead({
           email: "a@x.com",
-          latest_qualification_started_at: "2026-07-15T12:00:00.000Z",
           latest_qualification_completed_at: "2026-07-15T12:05:00.000Z",
           lifecycle_status: "qualified",
         }),
-        makeLead({
+        makeQualificationLead({
           email: "b@x.com",
-          latest_qualification_started_at: "2026-07-15T12:00:00.000Z",
           latest_qualification_completed_at: "2026-07-15T12:05:00.000Z",
           lifecycle_status: "qualified",
         }),
-        makeLead({
-          email: "c@x.com",
-          latest_qualification_started_at: "2026-07-15T12:00:00.000Z",
+        makeQualificationLead({ email: "c@x.com" }),
+        // Offered the questions but never opened the first one.
+        makeQualificationLead({
+          email: "d@x.com",
+          latest_qualification_started_at: null,
         }),
-        makeLead({ email: "d@x.com" }),
       ],
       new Set(["a@x.com"]),
     );
 
-    const [captured, started, finished, qualified, booked] = rollup.funnel;
-    expect(captured).toMatchObject({ count: 4, ofTopPct: 100 });
+    const [offered, started, finished, qualified, booked] = rollup.funnel;
+    expect(offered).toMatchObject({ count: 4, ofTopPct: 100 });
     expect(started).toMatchObject({
       count: 3,
       ofTopPct: 75,
@@ -174,6 +189,64 @@ describe("buildPagesRollup", () => {
     expect(finished?.ofPreviousPct).toBe(66.7);
     expect(qualified?.count).toBe(2);
     expect(booked).toMatchObject({ count: 1, ofTopPct: 25 });
+  });
+
+  it("keeps leads that were never offered the questions out of the funnel denominator", () => {
+    const rollup = buildPagesRollup(
+      [
+        // Two leads that saw the questions; one finished.
+        makeQualificationLead({
+          email: "a@x.com",
+          source_path: "/contact",
+          latest_qualification_completed_at: "2026-07-15T12:05:00.000Z",
+          lifecycle_status: "qualified",
+        }),
+        makeQualificationLead({ email: "b@x.com", source_path: "/contact" }),
+        // Six leads from booking pages, which only ever collect name/email/phone
+        // and hand off to Calendly. They cannot reach a question, so counting
+        // them as abandonment invents a drop-off that never happened.
+        ...["c", "d", "e", "f", "g", "h"].map((name) =>
+          makeLead({
+            email: `${name}@x.com`,
+            source_path: "/booking-t5-socials",
+          }),
+        ),
+      ],
+      new Set(),
+    );
+
+    expect(rollup.funnelContext).toEqual({
+      contactsCaptured: 8,
+      offeredQuestions: 2,
+      neverOfferedQuestions: 6,
+    });
+
+    const [offered, started, finished] = rollup.funnel;
+    // Top of the funnel is the 2 who were offered, not all 8 captured.
+    expect(offered).toMatchObject({ count: 2, ofTopPct: 100 });
+    // Both started: 0% drop-off, not the 75% the old denominator implied.
+    expect(started).toMatchObject({
+      count: 2,
+      ofTopPct: 100,
+      ofPreviousPct: 100,
+    });
+    expect(finished).toMatchObject({ count: 1, ofPreviousPct: 50 });
+  });
+
+  it("reports an empty funnel rather than dividing by zero when no lead was offered questions", () => {
+    const rollup = buildPagesRollup(
+      [makeLead({ email: "a@x.com", source_path: "/booking-meta" })],
+      new Set(),
+    );
+
+    expect(rollup.funnelContext).toEqual({
+      contactsCaptured: 1,
+      offeredQuestions: 0,
+      neverOfferedQuestions: 1,
+    });
+    expect(rollup.funnel.every((step) => step.count === 0)).toBe(true);
+    expect(rollup.funnel.every((step) => step.ofTopPct === 0)).toBe(true);
+    expect(rollup.funnel.every((step) => step.ofPreviousPct === 0)).toBe(true);
   });
 
   it("groups referrers by host so one site is one row", () => {

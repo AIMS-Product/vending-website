@@ -107,8 +107,10 @@ window, `utm_source` only.
   email); outside bookings are reported separately, never folded in.
 - **Acquisition** — channel mix, all five UTM params, campaign table scoring
   each campaign on leads → qualified → booked → rate.
-- **Pages & funnel** — captured → started → finished → qualified → booked with
+- **Pages & funnel** — offered → started → finished → qualified → booked with
   per-step drop-off; landing page vs submit page; referrers grouped by host.
+  The funnel counts only leads that were actually offered the questions; see the
+  correction below.
 - **Lead quality** — fit result shown to the visitor, timeline, capital,
   business stage, region, Close sync health.
 
@@ -117,11 +119,39 @@ window, `utm_source` only.
 Filtering was chosen over deleting because one QA round produced 45 fake rows
 against 11 real ones and deleting does not survive the next test session.
 
+### CORRECTION 2026-07-28 — the "43.5% never start the questions" figure was wrong
+
+**Retracted.** The real first-question drop-off is **0%**. There is no leak at
+step one, and the "highest-leverage fix on the site" claim built on it does not
+stand.
+
+The old number divided by every captured lead. Booking pages
+(`/booking-t5-socials`, `/booking-b5-socials`, `/booking-ig`,
+`/booking-ak-linkedin`) collect name/email/phone and hand off straight to
+Calendly — they never render a question, so those leads could not possibly reach
+"Started questions". They were counted as abandonment.
+
+Production, last 30 days, internal leads excluded:
+
+|                         | old (all leads) | corrected (offered only) |
+| ----------------------- | --------------- | ------------------------ |
+| denominator             | 32 captured     | 18 offered the questions |
+| started                 | 18              | 18                       |
+| first-question drop-off | 43.8%           | **0%**                   |
+
+All 18 who were offered the questions started, finished, and came out
+`qualified`. The questions path loses nobody. The only conversion step with real
+movement left is booked-a-call, and `calendly_bookings` is live and populating.
+
+**Fix:** `buildFunnel` in `admin-analytics-detail.ts` now takes only leads that
+were offered qualification, detected by `latest_qualification_form_id` (stamped
+at row insert by `qualification-intake.ts`, so it is present even for a lead
+offered the questions who never began one). The 14 never-offered leads stay
+visible as their own number above the funnel rather than being dropped or folded
+into the denominator. Regression tests in `admin-analytics-detail.test.ts`.
+
 ### What the data already says
 
-- **43.5% of leads never start the questions** (23 captured → 13 started).
-  Everyone who starts, finishes. The whole loss is at step one — highest-leverage
-  fix on the site.
 - **`book-call` / `mike-ig` books at 75%** (4 leads → 3 booked), while
   `start-vending-business` and `ltf_buyers` produced 2 qualified each and 0 booked.
 - **10 of 23 saw "Not right time"**, only 3 got a positive fit. Scoring may be

@@ -7,6 +7,7 @@ import type {
 } from "@/lib/services/admin-analytics";
 import type {
   AnalyticsCampaignRow,
+  AnalyticsFunnelContext,
   AnalyticsFunnelStep,
 } from "@/lib/services/admin-analytics-detail";
 import {
@@ -454,12 +455,26 @@ export function AnalyticsTabs({
 }
 
 /** Funnel with drop-off between consecutive steps. */
-export function AnalyticsFunnel({ steps }: { steps: AnalyticsFunnelStep[] }) {
+export function AnalyticsFunnel({
+  steps,
+  context,
+}: {
+  steps: AnalyticsFunnelStep[];
+  context: AnalyticsFunnelContext;
+}) {
   return (
     <section className={adminCardClass} aria-label="Conversion funnel">
-      <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase">
-        From visitor to booked call
+      <h2 className="mb-1 text-sm font-semibold text-slate-500 uppercase">
+        From question to booked call
       </h2>
+      <p className="mb-4 text-xs text-slate-500">
+        {context.contactsCaptured} contacts captured ·{" "}
+        <span className="font-medium text-slate-700">
+          {context.offeredQuestions} were offered the questions
+        </span>{" "}
+        · {context.neverOfferedQuestions} came from booking or contact pages
+        that never show them. Only the offered group is measured below.
+      </p>
       <ol className="grid gap-3">
         {steps.map((step, index) => (
           <li key={step.label}>
