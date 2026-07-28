@@ -3,7 +3,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { VP_QUESTION_IDS } from "@/lib/qualification/vp-fields";
 import { QualificationIntakeValidationError } from "./qualification-intake";
 import { QualificationSessionValidationError } from "./qualification-sessions";
-import { submitInlineQualification } from "./qualification-inline";
+import {
+  finishInlineQualification,
+  startInlineQualification,
+  submitInlineQualification,
+} from "./qualification-inline";
 import type { Database, Json, Tables } from "@/types/database";
 
 type LeadRow = Tables<"lead_submissions">;
@@ -399,7 +403,9 @@ class FakeQuery {
   }
 }
 
-function baseInput(overrides: Record<string, unknown> = {}) {
+// Stage 1 collects the contact details and both consents; the one-shot path
+// posts the same fields plus the two answers.
+function startInput(overrides: Record<string, unknown> = {}) {
   return {
     idempotencyKey: undefined,
     fullName: "Jane Buyer",
@@ -410,6 +416,13 @@ function baseInput(overrides: Record<string, unknown> = {}) {
     landingPath: "/contact",
     consentUpdates: true,
     consentContact: true,
+    ...overrides,
+  };
+}
+
+function baseInput(overrides: Record<string, unknown> = {}) {
+  return {
+    ...startInput(),
     timeline: "asap",
     invest: "15k_plus",
     ...overrides,
@@ -644,5 +657,226 @@ describe("submitInlineQualification", () => {
       "thankYouState",
     ]);
     expect(JSON.stringify(result)).not.toContain(rawToken);
+  });
+});
+
+// The two-stage /contact form: stage 1 captures the contact + both consents
+// (the lead is persisted and contactable from here on), stage 2 posts the
+// session token back with the timeline/invest answers and scores.
+// See .claude/specs/2026-07-28-two-stage-inline-contact-form.md.
+describe("startInlineQualification", () => {
+  it("persists the lead, saves both consents, and returns the session token", async () => {
+    const fake = buildClient();
+
+    const result = await startInlineQualification(
+      startInput({ idempotencyKey: "stage-one-1" }),
+      { client: fake.client, tokenFactory: () => "raw_stage_token_1" },
+    );
+
+    expect(result).toEqual({
+      status: "started",
+      leadId: fake.state.leads[0]?.id,
+      sessionToken: "raw_stage_token_1",
+    });
+    expect(fake.state.leads).toHaveLength(1);
+    expect(fake.state.leads[0]?.email).toBe("buyer@example.com");
+
+    const consents = fake.state.answers.filter(
+      (answer) =>
+        answer.question_id === VP_QUESTION_IDS.consentUpdates ||
+        answer.question_id === VP_QUESTION_IDS.consentContact,
+    );
+    expect(consents).toHaveLength(2);
+    expect(consents.every((answer) => answer.answer_value === true)).toBe(true);
+
+    // Stage 1 does not answer, score, or complete anything.
+    expect(fake.state.answers).toHaveLength(2);
+    expect(fake.state.sessions[0]?.status).not.toBe("completed");
+    expect(
+      fake.state.events.some(
+        (e) => e.event_type === "qualification_enrichment",
+      ),
+    ).toBe(false);
+  });
+
+  it("queues the Close lead push so a stage-1 lead is contactable before stage 2", async () => {
+    const fake = buildClient();
+
+    await startInlineQualification(
+      startInput({ idempotencyKey: "stage-one-2" }),
+      {
+        client: fake.client,
+        tokenFactory: () => "raw_stage_token_2",
+      },
+    );
+
+    expect(
+      fake.state.events.some((e) => e.event_type === "lead_create_or_update"),
+    ).toBe(true);
+  });
+
+  it("rejects a missing consent before any lead is captured", async () => {
+    const fake = buildClient();
+
+    await expect(
+      startInlineQualification(
+        startInput({
+          idempotencyKey: "stage-one-no-consent",
+          consentUpdates: false,
+        }),
+        { client: fake.client, tokenFactory: () => "raw_stage_token_3" },
+      ),
+    ).rejects.toMatchObject({
+      fieldErrors: { consent_updates: ["Consent is required."] },
+    });
+
+    // Consent is what makes the person contactable — no consent, no record.
+    expect(fake.state.leads).toHaveLength(0);
+    expect(fake.state.sessions).toHaveLength(0);
+    expect(fake.state.events).toHaveLength(0);
+  });
+
+  it("rejects invalid contact fields via the intake validation", async () => {
+    const fake = buildClient();
+
+    await expect(
+      startInlineQualification(
+        startInput({ idempotencyKey: "stage-one-bad-email", email: "nope" }),
+        { client: fake.client, tokenFactory: () => "raw_stage_token_4" },
+      ),
+    ).rejects.toBeInstanceOf(QualificationIntakeValidationError);
+  });
+});
+
+describe("finishInlineQualification", () => {
+  async function startedSession(token: string, idempotencyKey: string) {
+    const fake = buildClient();
+    const started = await startInlineQualification(
+      startInput({ idempotencyKey }),
+      { client: fake.client, tokenFactory: () => token },
+    );
+    return { fake, started };
+  }
+
+  it("scores and completes the session the token points at", async () => {
+    const { fake, started } = await startedSession(
+      "raw_finish_token_1",
+      "stage-two-1",
+    );
+
+    const result = await finishInlineQualification(
+      {
+        sessionToken: started.sessionToken,
+        timeline: "asap",
+        invest: "15k_plus",
+      },
+      { client: fake.client },
+    );
+
+    expect(result).toEqual({
+      status: "completed",
+      leadId: started.leadId,
+      thankYouState: "perfect_fit",
+      score: 100,
+    });
+    expect(fake.state.sessions[0]?.status).toBe("completed");
+    expect(fake.state.leads[0]?.lifecycle_status).toBe("qualified");
+    expect(
+      fake.state.events.some(
+        (e) => e.event_type === "qualification_enrichment",
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects a second finish on an already-completed session without re-scoring", async () => {
+    const { fake, started } = await startedSession(
+      "raw_finish_token_2",
+      "stage-two-2",
+    );
+
+    await finishInlineQualification(
+      {
+        sessionToken: started.sessionToken,
+        timeline: "asap",
+        invest: "15k_plus",
+      },
+      { client: fake.client },
+    );
+
+    await expect(
+      finishInlineQualification(
+        {
+          sessionToken: started.sessionToken,
+          timeline: "unsure",
+          invest: "no_cash",
+        },
+        { client: fake.client },
+      ),
+    ).rejects.toBeInstanceOf(QualificationSessionValidationError);
+
+    // The first result stands: no re-scoring, no second enrichment event.
+    expect(fake.state.leads[0]?.qualification_summary).toMatchObject({
+      qualification_score: 100,
+    });
+    expect(
+      fake.state.events.filter(
+        (e) => e.event_type === "qualification_enrichment",
+      ),
+    ).toHaveLength(1);
+  });
+
+  it("rejects an unknown session token", async () => {
+    const fake = buildClient();
+
+    await expect(
+      finishInlineQualification(
+        { sessionToken: "not_a_real_token", timeline: "asap", invest: "1_3k" },
+        { client: fake.client },
+      ),
+    ).rejects.toBeInstanceOf(QualificationSessionValidationError);
+  });
+
+  it("rejects a blank session token without touching the database", async () => {
+    const fake = buildClient();
+
+    await expect(
+      finishInlineQualification(
+        { sessionToken: "", timeline: "asap", invest: "1_3k" },
+        { client: fake.client },
+      ),
+    ).rejects.toBeInstanceOf(QualificationSessionValidationError);
+  });
+
+  it("rejects a missing timeline without completing the session", async () => {
+    const { fake, started } = await startedSession(
+      "raw_finish_token_3",
+      "stage-two-3",
+    );
+
+    await expect(
+      finishInlineQualification(
+        {
+          sessionToken: started.sessionToken,
+          timeline: "",
+          invest: "15k_plus",
+        },
+        { client: fake.client },
+      ),
+    ).rejects.toMatchObject({
+      fieldErrors: expect.objectContaining({ timeline: expect.any(Array) }),
+    });
+    expect(fake.state.sessions[0]?.status).not.toBe("completed");
+  });
+
+  it("leaves an abandoned stage 2 as a started-but-unfinished lead", async () => {
+    const { fake } = await startedSession("raw_abandon_token", "stage-two-4");
+
+    // The visitor never posts stage 2. This is the case /admin/analytics
+    // measures as "offered the questions but never finished".
+    const lead = fake.state.leads[0];
+    expect(lead?.latest_qualification_started_at).toBeTruthy();
+    expect(lead?.latest_qualification_completed_at).toBeNull();
+    expect(lead?.lifecycle_status).toBe("qualification_pending");
+    expect(lead?.email).toBe("buyer@example.com");
   });
 });

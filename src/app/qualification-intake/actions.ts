@@ -10,6 +10,8 @@ import {
   QualificationIntakeValidationError,
 } from "@/lib/services/qualification-intake";
 import {
+  finishInlineQualification as finishInlineQualificationOrchestrator,
+  startInlineQualification as startInlineQualificationOrchestrator,
   submitInlineQualification as submitInlineQualificationOrchestrator,
   QualificationSessionValidationError,
 } from "@/lib/services/qualification-inline";
@@ -51,14 +53,35 @@ function scheduleDelivery(lead: CapturedLead) {
       });
     }
 
-    try {
-      await adminRunCloseSync();
-    } catch (error) {
-      console.error("close sync after lead capture failed", {
-        name: error instanceof Error ? error.name : "UnknownError",
-      });
-    }
+    await drainCloseSync();
   });
+}
+
+/**
+ * Push the queued Close events without re-alerting the team. Stage 2 of the
+ * two-stage form enriches a lead the team was already told about at stage 1,
+ * so it drains the queue only.
+ */
+function deliverQualificationAnswers() {
+  try {
+    after(drainCloseSync);
+  } catch (error) {
+    // `after` needs a request scope. The enrichment event is already queued
+    // and the cron re-sweeps it, so a failure here costs speed, never data.
+    console.warn("could not schedule close sync", {
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+  }
+}
+
+async function drainCloseSync() {
+  try {
+    await adminRunCloseSync();
+  } catch (error) {
+    console.error("close sync after lead capture failed", {
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+  }
 }
 
 // oxlint-disable-next-line react-doctor/server-auth-actions -- Public qualification intake must accept unauthenticated prospects.
@@ -70,72 +93,12 @@ export async function submitQualificationLead(
 
   try {
     const result = await createQualificationIntakeSession({
-      idempotencyKey: field(formData, "idempotency_key"),
-      fullName: field(formData, "full_name"),
-      email: field(formData, "email"),
-      phone: field(formData, "phone"),
-      qualificationFormId: field(formData, "qualification_form_id"),
-      completionRedirectPath: field(
-        formData,
-        "qualification_completion_redirect_path",
-      ),
-      vpSessionId: field(formData, "vp_session_id"),
-      sourcePath: field(formData, "source_path"),
-      landingPath: field(formData, "landing_path"),
-      referrer: field(formData, "referrer") || h.get("referer"),
-      firstLandingUrl: field(formData, "first_landing_url"),
-      firstLandingPath: field(formData, "first_landing_path"),
-      firstReferrer: field(formData, "first_referrer"),
-      firstTouchAt: field(formData, "first_touch_at"),
-      latestLandingUrl: field(formData, "latest_landing_url"),
-      latestLandingPath: field(formData, "latest_landing_path"),
-      latestReferrer: field(formData, "latest_referrer"),
-      latestTouchAt: field(formData, "latest_touch_at"),
-      userAgent: h.get("user-agent"),
-      sourcePageId: field(formData, "source_page_id"),
-      sourcePageSlug: field(formData, "source_page_slug"),
-      targetKeyword: field(formData, "target_keyword"),
-      sourceBlockId: field(formData, "source_block_id"),
-      sourceCtaTrackingName: field(formData, "source_cta_tracking_name"),
-      clickedHref: field(formData, "clicked_href"),
-      utmSource: field(formData, "utm_source"),
-      utmMedium: field(formData, "utm_medium"),
-      utmCampaign: field(formData, "utm_campaign"),
-      utmTerm: field(formData, "utm_term"),
-      utmContent: field(formData, "utm_content"),
-      gclid: field(formData, "gclid"),
-      fbclid: field(formData, "fbclid"),
-      gbraid: field(formData, "gbraid"),
-      wbraid: field(formData, "wbraid"),
-      paidPlatform: field(formData, "paid_platform"),
-      paidSourceKey: field(formData, "paid_source_key"),
-      campaignId: field(formData, "campaign_id"),
-      campaignName: field(formData, "campaign_name"),
-      adsetId: field(formData, "adset_id"),
-      adsetName: field(formData, "adset_name"),
-      adGroupId: field(formData, "ad_group_id"),
-      adGroupName: field(formData, "ad_group_name"),
-      groupId: field(formData, "group_id"),
-      groupName: field(formData, "group_name"),
-      adId: field(formData, "ad_id"),
-      adName: field(formData, "ad_name"),
+      ...intakeFieldsFromFormData(formData, h),
       experimentKey: field(formData, "qualification_experiment_key"),
       variantKey: field(formData, "qualification_variant_key"),
     });
 
-    deliverCapturedLead({
-      formType: "apply",
-      fullName: field(formData, "full_name") ?? "",
-      email: field(formData, "email") ?? "",
-      phone: field(formData, "phone"),
-      sourcePath: field(formData, "source_path"),
-      landingPath: field(formData, "landing_path"),
-      sourcePageSlug: field(formData, "source_page_slug"),
-      sourceCtaTrackingName: field(formData, "source_cta_tracking_name"),
-      utmSource: field(formData, "utm_source"),
-      utmMedium: field(formData, "utm_medium"),
-      utmCampaign: field(formData, "utm_campaign"),
-    });
+    deliverCapturedLead(capturedLeadFromFormData(formData));
 
     return {
       status: "success",
@@ -171,76 +134,19 @@ export async function submitInlineQualification(
 
   try {
     const result = await submitInlineQualificationOrchestrator({
-      idempotencyKey: field(formData, "idempotency_key"),
-      fullName: field(formData, "full_name"),
-      email: field(formData, "email"),
-      phone: field(formData, "phone"),
-      qualificationFormId: field(formData, "qualification_form_id"),
-      completionRedirectPath: field(
-        formData,
-        "qualification_completion_redirect_path",
-      ),
-      vpSessionId: field(formData, "vp_session_id"),
-      sourcePath: field(formData, "source_path"),
-      landingPath: field(formData, "landing_path"),
-      referrer: field(formData, "referrer") || h.get("referer"),
-      firstLandingUrl: field(formData, "first_landing_url"),
-      firstLandingPath: field(formData, "first_landing_path"),
-      firstReferrer: field(formData, "first_referrer"),
-      firstTouchAt: field(formData, "first_touch_at"),
-      latestLandingUrl: field(formData, "latest_landing_url"),
-      latestLandingPath: field(formData, "latest_landing_path"),
-      latestReferrer: field(formData, "latest_referrer"),
-      latestTouchAt: field(formData, "latest_touch_at"),
-      userAgent: h.get("user-agent"),
-      sourcePageId: field(formData, "source_page_id"),
-      sourcePageSlug: field(formData, "source_page_slug"),
-      targetKeyword: field(formData, "target_keyword"),
-      sourceBlockId: field(formData, "source_block_id"),
-      sourceCtaTrackingName: field(formData, "source_cta_tracking_name"),
-      clickedHref: field(formData, "clicked_href"),
-      utmSource: field(formData, "utm_source"),
-      utmMedium: field(formData, "utm_medium"),
-      utmCampaign: field(formData, "utm_campaign"),
-      utmTerm: field(formData, "utm_term"),
-      utmContent: field(formData, "utm_content"),
-      gclid: field(formData, "gclid"),
-      fbclid: field(formData, "fbclid"),
-      gbraid: field(formData, "gbraid"),
-      wbraid: field(formData, "wbraid"),
-      paidPlatform: field(formData, "paid_platform"),
-      paidSourceKey: field(formData, "paid_source_key"),
-      campaignId: field(formData, "campaign_id"),
-      campaignName: field(formData, "campaign_name"),
-      adsetId: field(formData, "adset_id"),
-      adsetName: field(formData, "adset_name"),
-      adGroupId: field(formData, "ad_group_id"),
-      adGroupName: field(formData, "ad_group_name"),
-      groupId: field(formData, "group_id"),
-      groupName: field(formData, "group_name"),
-      adId: field(formData, "ad_id"),
-      adName: field(formData, "ad_name"),
+      ...intakeFieldsFromFormData(formData, h),
       consentUpdates: field(formData, "consent_updates") === "true",
       consentContact: field(formData, "consent_contact") === "true",
       timeline: field(formData, "timeline"),
       invest: field(formData, "invest"),
     });
 
-    deliverCapturedLead({
-      formType: "apply",
-      fullName: field(formData, "full_name") ?? "",
-      email: field(formData, "email") ?? "",
-      phone: field(formData, "phone"),
-      timeline: field(formData, "timeline"),
-      budget: field(formData, "invest"),
-      sourcePath: field(formData, "source_path"),
-      landingPath: field(formData, "landing_path"),
-      sourcePageSlug: field(formData, "source_page_slug"),
-      sourceCtaTrackingName: field(formData, "source_cta_tracking_name"),
-      utmSource: field(formData, "utm_source"),
-      utmMedium: field(formData, "utm_medium"),
-      utmCampaign: field(formData, "utm_campaign"),
-    });
+    deliverCapturedLead(
+      capturedLeadFromFormData(formData, {
+        timeline: field(formData, "timeline"),
+        budget: field(formData, "invest"),
+      }),
+    );
 
     return {
       status: "success",
@@ -271,6 +177,179 @@ export async function submitInlineQualification(
       message: "We couldn't submit the form. Try again in a moment.",
     };
   }
+}
+
+// oxlint-disable-next-line react-doctor/server-auth-actions -- Public qualification intake must accept unauthenticated prospects.
+export async function startInlineQualification(
+  _prev: PublicLeadActionState,
+  formData: FormData,
+): Promise<PublicLeadActionState> {
+  const h = await headers();
+
+  try {
+    const result = await startInlineQualificationOrchestrator({
+      ...intakeFieldsFromFormData(formData, h),
+      consentUpdates: field(formData, "consent_updates") === "true",
+      consentContact: field(formData, "consent_contact") === "true",
+    });
+
+    // The lead exists and has consented as of here, so the team hears about it
+    // now — even if the visitor never answers the questions in stage 2.
+    deliverCapturedLead(capturedLeadFromFormData(formData));
+
+    return {
+      status: "success",
+      message: "Got your details. Two quick questions.",
+      leadId: result.leadId,
+      sessionToken: result.sessionToken,
+    };
+  } catch (error) {
+    return inlineQualificationErrorState(error, "inline qualification start");
+  }
+}
+
+// oxlint-disable-next-line react-doctor/server-auth-actions -- Public qualification intake must accept unauthenticated prospects.
+export async function finishInlineQualification(
+  _prev: PublicLeadActionState,
+  formData: FormData,
+): Promise<PublicLeadActionState> {
+  const h = await headers();
+
+  try {
+    const result = await finishInlineQualificationOrchestrator({
+      sessionToken: field(formData, "session_token"),
+      timeline: field(formData, "timeline"),
+      invest: field(formData, "invest"),
+      userAgent: h.get("user-agent"),
+    });
+
+    deliverQualificationAnswers();
+
+    return {
+      status: "success",
+      message: "Thanks — here's your fit.",
+      leadId: result.leadId,
+      qualification: {
+        thankYouState: result.thankYouState,
+        score: result.score,
+      },
+    };
+  } catch (error) {
+    return inlineQualificationErrorState(error, "inline qualification finish");
+  }
+}
+
+function inlineQualificationErrorState(
+  error: unknown,
+  context: string,
+): PublicLeadActionState {
+  if (
+    error instanceof QualificationIntakeValidationError ||
+    error instanceof QualificationSessionValidationError
+  ) {
+    // A session-level failure (expired, unknown, already submitted) has no
+    // field to highlight, so it needs to speak for itself.
+    if (error.fieldErrors.session) {
+      return {
+        status: "error",
+        message: `${error.fieldErrors.session[0]} Refresh the page to start again.`,
+      };
+    }
+    return {
+      status: "error",
+      message: "Check the highlighted fields and try again.",
+      fieldErrors: error.fieldErrors,
+    };
+  }
+
+  console.error(`${context} action failed`, {
+    error: error instanceof Error ? error.message : "unknown error",
+  });
+  return {
+    status: "error",
+    message: "We couldn't submit the form. Try again in a moment.",
+  };
+}
+
+/**
+ * The lead/attribution fields every qualification action forwards to the
+ * intake service, read straight off the posted form. Shared so the one-shot
+ * and two-stage paths cannot drift on which attribution reaches Close.
+ */
+function intakeFieldsFromFormData(formData: FormData, h: Headers) {
+  return {
+    idempotencyKey: field(formData, "idempotency_key"),
+    fullName: field(formData, "full_name"),
+    email: field(formData, "email"),
+    phone: field(formData, "phone"),
+    qualificationFormId: field(formData, "qualification_form_id"),
+    completionRedirectPath: field(
+      formData,
+      "qualification_completion_redirect_path",
+    ),
+    vpSessionId: field(formData, "vp_session_id"),
+    sourcePath: field(formData, "source_path"),
+    landingPath: field(formData, "landing_path"),
+    referrer: field(formData, "referrer") || h.get("referer"),
+    firstLandingUrl: field(formData, "first_landing_url"),
+    firstLandingPath: field(formData, "first_landing_path"),
+    firstReferrer: field(formData, "first_referrer"),
+    firstTouchAt: field(formData, "first_touch_at"),
+    latestLandingUrl: field(formData, "latest_landing_url"),
+    latestLandingPath: field(formData, "latest_landing_path"),
+    latestReferrer: field(formData, "latest_referrer"),
+    latestTouchAt: field(formData, "latest_touch_at"),
+    userAgent: h.get("user-agent"),
+    sourcePageId: field(formData, "source_page_id"),
+    sourcePageSlug: field(formData, "source_page_slug"),
+    targetKeyword: field(formData, "target_keyword"),
+    sourceBlockId: field(formData, "source_block_id"),
+    sourceCtaTrackingName: field(formData, "source_cta_tracking_name"),
+    clickedHref: field(formData, "clicked_href"),
+    utmSource: field(formData, "utm_source"),
+    utmMedium: field(formData, "utm_medium"),
+    utmCampaign: field(formData, "utm_campaign"),
+    utmTerm: field(formData, "utm_term"),
+    utmContent: field(formData, "utm_content"),
+    gclid: field(formData, "gclid"),
+    fbclid: field(formData, "fbclid"),
+    gbraid: field(formData, "gbraid"),
+    wbraid: field(formData, "wbraid"),
+    paidPlatform: field(formData, "paid_platform"),
+    paidSourceKey: field(formData, "paid_source_key"),
+    campaignId: field(formData, "campaign_id"),
+    campaignName: field(formData, "campaign_name"),
+    adsetId: field(formData, "adset_id"),
+    adsetName: field(formData, "adset_name"),
+    adGroupId: field(formData, "ad_group_id"),
+    adGroupName: field(formData, "ad_group_name"),
+    groupId: field(formData, "group_id"),
+    groupName: field(formData, "group_name"),
+    adId: field(formData, "ad_id"),
+    adName: field(formData, "ad_name"),
+  };
+}
+
+function capturedLeadFromFormData(
+  formData: FormData,
+  answers:
+    | Pick<CapturedLead, "timeline" | "budget">
+    | Record<never, never> = {},
+): CapturedLead {
+  return {
+    formType: "apply",
+    fullName: field(formData, "full_name"),
+    email: field(formData, "email"),
+    phone: field(formData, "phone"),
+    sourcePath: field(formData, "source_path"),
+    landingPath: field(formData, "landing_path"),
+    sourcePageSlug: field(formData, "source_page_slug"),
+    sourceCtaTrackingName: field(formData, "source_cta_tracking_name"),
+    utmSource: field(formData, "utm_source"),
+    utmMedium: field(formData, "utm_medium"),
+    utmCampaign: field(formData, "utm_campaign"),
+    ...answers,
+  };
 }
 
 function field(formData: FormData, name: string) {

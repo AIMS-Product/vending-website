@@ -59,6 +59,13 @@ type PublicLeadFormProps = {
   // (/vp-quiz, resource page blocks) omit this and keep today's redirect
   // handoff.
   inlineQualification?: boolean;
+  // Splits the inline qualification form in two. Stage 1 collects the contact
+  // details and both consents (the lead is captured there, so someone who
+  // leaves is still contactable); stage 2 replaces those fields in the same
+  // card with the timeline/invest questions and posts them to this action,
+  // identified by the session token stage 1 returned. Without it the form
+  // keeps the one-shot behaviour — there is nowhere for a stage 2 to submit.
+  finishAction?: PublicLeadFormAction;
   // Simplified "Book Your Call" form (social-ad booking pages): renders only
   // name/email/phone — no qualifying dropdowns, no message, no scoring. Pair
   // with intent="contact" (validates name+email only) and bookingRedirectUrl so
@@ -67,6 +74,10 @@ type PublicLeadFormProps = {
   // Override the initial action state. Production always uses the idle default;
   // this exists so SSR-rendered tests can exercise the field-error layer.
   initialState?: PublicLeadActionState;
+  // Same escape hatch for the stage-2 action state and for the re-seeded
+  // values. Production always starts idle and empty.
+  initialFinishState?: PublicLeadActionState;
+  initialSubmittedValues?: Record<string, string>;
 };
 
 export type PublicLeadFormAction = (
@@ -103,15 +114,21 @@ export function PublicLeadForm({
   bookingRedirectUrl,
   inlineQualification = false,
   simpleContact = false,
+  finishAction,
   initialState = initialLeadActionState,
+  initialFinishState = initialLeadActionState,
+  initialSubmittedValues = {},
 }: PublicLeadFormProps) {
   const router = useRouter();
-  const [submittedEmail, setSubmittedEmail] = useState("");
   const [submittedValues, setSubmittedValues] = useState<
     Record<string, string>
-  >({});
+  >(initialSubmittedValues);
 
   const [state, dispatch, pending] = useActionState(action, initialState);
+  const [finishState, finishDispatch, finishPending] = useActionState(
+    finishAction ?? noopLeadAction,
+    initialFinishState,
+  );
 
   // Capture the submitted values before delegating to the server action. React
   // resets uncontrolled inputs once a form action resolves, so on a validation
@@ -130,14 +147,35 @@ export function PublicLeadForm({
       const combined = [first, last].filter(Boolean).join(" ");
       if (combined) formData.set("full_name", combined);
     }
-    const values: Record<string, string> = {};
-    for (const [name, value] of formData.entries()) {
-      if (typeof value === "string") values[name] = value;
-    }
-    setSubmittedValues(values);
-    setSubmittedEmail(values.email ?? "");
+    setSubmittedValues((previous) => mergeSubmitted(previous, formData));
     return dispatch(formData);
   };
+
+  // Stage 2 of the two-stage funnel. Merging rather than replacing keeps the
+  // stage-1 email (used to say who the card is continuing for) alongside the
+  // stage-2 answers, so a validation failure re-seeds both.
+  const finishFormAction = (formData: FormData) => {
+    setSubmittedValues((previous) => mergeSubmitted(previous, formData));
+    return finishDispatch(formData);
+  };
+
+  const isQualification = intent === "qualification";
+  const showInlineQualificationFields = isQualification && inlineQualification;
+  // Two stages need somewhere for stage 2 to submit, so the split is on
+  // exactly when a finishAction is supplied. Every other caller of this
+  // component — including inline qualification without one — is untouched.
+  const isTwoStage = showInlineQualificationFields && Boolean(finishAction);
+  const startedSessionToken =
+    state.status === "success" ? state.sessionToken : undefined;
+  // Derived, not stored: stage 2 is simply "the start action came back with a
+  // token". There is no second piece of state to fall out of sync.
+  const atStageTwo = isTwoStage && Boolean(startedSessionToken);
+  // Whichever stage is on screen owns the errors, the pending flag and the
+  // success transition. In one-stage mode this is the only action state there
+  // has ever been.
+  const activeState = atStageTwo ? finishState : state;
+  const activePending = atStageTwo ? finishPending : pending;
+  const submittedEmail = submittedValues.email ?? "";
 
   // When a Calendly handoff is configured, a successful submit sends the lead
   // straight to the scheduler (name/email pre-filled) instead of the internal
@@ -145,7 +183,7 @@ export function PublicLeadForm({
   // a full-page navigation, not a client-router push. This takes precedence
   // over the internal transition below.
   const bookingHref =
-    state.status === "success" && bookingRedirectUrl
+    activeState.status === "success" && bookingRedirectUrl
       ? buildCalendlyBookingUrl(bookingRedirectUrl, {
           name: submittedValues.full_name,
           email: submittedValues.email,
@@ -155,7 +193,7 @@ export function PublicLeadForm({
 
   const transition = bookingHref
     ? null
-    : resolveLeadSuccessTransition(state, intent, submittedEmail);
+    : resolveLeadSuccessTransition(activeState, intent, submittedEmail);
   const redirectHref =
     transition?.kind === "redirect" ? transition.href : undefined;
 
@@ -174,8 +212,9 @@ export function PublicLeadForm({
     }
   }, [bookingHref]);
 
-  const errors = state.status === "error" ? state.fieldErrors : undefined;
-  const summaryItems = deriveLeadErrorSummary(state);
+  const errors =
+    activeState.status === "error" ? activeState.fieldErrors : undefined;
+  const summaryItems = deriveLeadErrorSummary(activeState);
   const hasSummary = summaryItems.length > 0;
   const summaryRef = useRef<HTMLDivElement>(null);
 
@@ -188,7 +227,6 @@ export function PublicLeadForm({
   }, [hasSummary, summarySignature]);
 
   const isApply = intent === "apply";
-  const isQualification = intent === "qualification";
   const isCompact = layout === "compact";
   // simpleContact forces the lean booking form (name/email/phone only), so it
   // suppresses the city/state/message block and the qualification dropdowns.
@@ -196,7 +234,9 @@ export function PublicLeadForm({
     isApply || (!isCompact && !isQualification && !simpleContact);
   const showPhoneField =
     isQualification || showQualificationFields || simpleContact;
-  const showInlineQualificationFields = isQualification && inlineQualification;
+  // The timeline/invest questions sit alongside the consents only on the
+  // one-shot form; the two-stage form holds them back for stage 2.
+  const showInlineQuestions = showInlineQualificationFields && !isTwoStage;
 
   if (bookingHref) {
     return <BookingRedirectPanel />;
@@ -208,6 +248,24 @@ export function PublicLeadForm({
 
   if (transition?.kind === "qualification-result") {
     return <FitResultPanel state={transition.state} score={transition.score} />;
+  }
+
+  if (atStageTwo && startedSessionToken) {
+    return (
+      <QualificationQuestionsStage
+        action={finishFormAction}
+        sessionToken={startedSessionToken}
+        email={submittedEmail}
+        errors={errors}
+        summaryItems={summaryItems}
+        summaryRef={summaryRef}
+        state={activeState}
+        pending={activePending}
+        submitLabel={submitLabel}
+        values={submittedValues}
+        compact={isCompact}
+      />
+    );
   }
 
   return (
@@ -307,34 +365,22 @@ export function PublicLeadForm({
               errors={errors}
               values={submittedValues}
             />
-            {/* Light divider separating the opt-in checks from the two
-                qualifying questions below (per Kody), with generous spacing so
-                the sections read as distinct groups. */}
-            <div
-              data-testid="qualification-divider"
-              aria-hidden
-              className="mt-3 border-t border-slate-200 sm:col-span-2"
-            />
-            <div className="grid gap-7 sm:col-span-2">
-              <SelectField
-                name={VP_QUESTION_IDS.timeline}
-                errorKey="timeline"
-                label={VP_TIMELINE_LABEL}
-                required
-                errors={errors}
-                values={submittedValues}
-                options={VP_TIMELINE_FIELD_OPTIONS}
-              />
-              <SelectField
-                name={VP_QUESTION_IDS.invest}
-                errorKey="invest"
-                label={VP_INVEST_LABEL}
-                required
-                errors={errors}
-                values={submittedValues}
-                options={VP_INVEST_FIELD_OPTIONS}
-              />
-            </div>
+            {showInlineQuestions && (
+              <>
+                {/* Light divider separating the opt-in checks from the two
+                    qualifying questions below (per Kody), with generous
+                    spacing so the sections read as distinct groups. */}
+                <div
+                  data-testid="qualification-divider"
+                  aria-hidden
+                  className="mt-3 border-t border-slate-200 sm:col-span-2"
+                />
+                <QualificationQuestions
+                  errors={errors}
+                  values={submittedValues}
+                />
+              </>
+            )}
           </>
         )}
         {showQualificationFields && (
@@ -422,22 +468,176 @@ export function PublicLeadForm({
         />
       )}
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {pending ? "Submitting..." : submitLabel}
-        </button>
-
-        <ActionMessage state={state} muted={hasSummary} />
-      </div>
+      <SubmitRow
+        pending={activePending}
+        submitLabel={submitLabel}
+        state={activeState}
+        muted={hasSummary}
+      />
 
       <PrivacyAssurance intent={intent} />
     </form>
   );
 }
+
+/**
+ * Stage 2 of the two-stage inline funnel: the same card, with the contact
+ * fields swapped for the qualifying questions. No navigation, no page load —
+ * the lead was already captured by stage 1. The session is identified by the
+ * token stage 1 returned and nothing else; a lead id in the DOM would let
+ * anyone post answers against someone else's lead.
+ */
+function QualificationQuestionsStage({
+  action,
+  sessionToken,
+  email,
+  errors,
+  summaryItems,
+  summaryRef,
+  state,
+  pending,
+  submitLabel,
+  values,
+  compact,
+}: {
+  action: (formData: FormData) => void;
+  sessionToken: string;
+  email: string;
+  errors?: Record<string, string[]>;
+  summaryItems: LeadErrorSummaryItem[];
+  summaryRef: React.Ref<HTMLDivElement>;
+  state: PublicLeadActionState;
+  pending: boolean;
+  submitLabel: string;
+  values: Record<string, string>;
+  compact: boolean;
+}) {
+  const hasSummary = summaryItems.length > 0;
+  return (
+    <form
+      action={action}
+      noValidate
+      className={cn(
+        "grid gap-5 rounded-[12px] border-2 border-[#111111] bg-white p-5 shadow-[8px_8px_0_#55b8e8]",
+        !compact && "sm:p-7",
+      )}
+    >
+      <input type="hidden" name="session_token" value={sessionToken} />
+
+      <div className="grid gap-1">
+        <p className="inline-flex w-fit rounded-[8px] border-2 border-[#111111] bg-[#111111] px-3 py-1 text-xs font-black tracking-[0.08em] text-white uppercase">
+          Step 2 of 2
+        </p>
+        {email ? (
+          <p className="text-sm font-semibold text-slate-600">
+            Continuing for {email}
+          </p>
+        ) : null}
+      </div>
+
+      {hasSummary && (
+        <LeadErrorSummary
+          ref={summaryRef}
+          items={summaryItems}
+          fieldErrors={errors}
+          intent="qualification"
+        />
+      )}
+
+      <QualificationQuestions errors={errors} values={values} />
+
+      <SubmitRow
+        pending={pending}
+        submitLabel={submitLabel}
+        state={state}
+        muted={hasSummary}
+      />
+
+      <PrivacyAssurance intent="qualification" />
+    </form>
+  );
+}
+
+// The two scored questions. Shared verbatim by the one-shot form and stage 2
+// so the two paths cannot drift on labels, options, or error keys.
+function QualificationQuestions({
+  errors,
+  values,
+}: {
+  errors?: Record<string, string[]>;
+  values: Record<string, string>;
+}) {
+  return (
+    <div className="grid gap-7 sm:col-span-2">
+      <SelectField
+        name={VP_QUESTION_IDS.timeline}
+        errorKey="timeline"
+        label={VP_TIMELINE_LABEL}
+        required
+        errors={errors}
+        values={values}
+        options={VP_TIMELINE_FIELD_OPTIONS}
+      />
+      <SelectField
+        name={VP_QUESTION_IDS.invest}
+        errorKey="invest"
+        label={VP_INVEST_LABEL}
+        required
+        errors={errors}
+        values={values}
+        options={VP_INVEST_FIELD_OPTIONS}
+      />
+    </div>
+  );
+}
+
+function SubmitRow({
+  pending,
+  submitLabel,
+  state,
+  muted,
+}: {
+  pending: boolean;
+  submitLabel: string;
+  state: PublicLeadActionState;
+  muted: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <button
+        type="submit"
+        disabled={pending}
+        className="inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {pending ? "Submitting..." : submitLabel}
+      </button>
+
+      <ActionMessage state={state} muted={muted} />
+    </div>
+  );
+}
+
+/**
+ * Snapshot of what was just submitted, merged over what came before. React
+ * resets uncontrolled inputs once a form action resolves, so each field's
+ * defaultValue is re-seeded from this on a validation failure. Merging (rather
+ * than replacing) is what lets stage 2 keep the stage-1 email while still
+ * preserving its own selects.
+ */
+function mergeSubmitted(
+  previous: Record<string, string>,
+  formData: FormData,
+): Record<string, string> {
+  const values: Record<string, string> = { ...previous };
+  for (const [name, value] of formData.entries()) {
+    if (typeof value === "string") values[name] = value;
+  }
+  return values;
+}
+
+// Keeps the stage-2 useActionState hook unconditional when no finishAction is
+// supplied. It is never dispatched: without a finishAction there is no stage 2.
+const noopLeadAction: PublicLeadFormAction = async (prev) => prev;
 
 function readTrimmed(formData: FormData, name: string): string {
   const value = formData.get(name);

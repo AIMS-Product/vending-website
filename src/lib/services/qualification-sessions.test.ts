@@ -665,6 +665,7 @@ describe("qualification sessions", () => {
       status: "completed",
       redirectPath: "/thanks",
       sessionId: "session_1",
+      leadSubmissionId: "lead_1",
       // Non-A/B variant + no timeline/invest answers → not a scoring form,
       // so the additive fit fields ride along as null.
       thankYouState: null,
@@ -786,6 +787,7 @@ describe("qualification sessions", () => {
     expect(completedAgain).toEqual({
       status: "completed",
       sessionId: "session_1",
+      leadSubmissionId: "lead_1",
       redirectPath: "/thanks",
       thankYouState: null,
       score: null,
