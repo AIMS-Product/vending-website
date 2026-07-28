@@ -81,15 +81,22 @@ function isCustomBuilderPathCandidate(path: string) {
  */
 async function handleCustomBuilderPath(request: NextRequest, path: string) {
   // Shape + reservation gate: reserved segments (e.g. /authors, /images) and
-  // non-kebab paths are not builder candidates — no DB lookups for them.
+  // non-kebab paths are not builder candidates.
+  //
+  // This branch is TERMINAL for every two-segment path, so each exit has to
+  // consider a Studio redirect itself — falling through to the general
+  // public-path branch is not an option. A path here that is not a builder page
+  // (unconfigured prefix, or not builder-shaped at all) is precisely a retired
+  // URL an editor wants to redirect, so it gets the same cached-table lookup the
+  // general branch uses.
   const split = splitAssignableBuilderRoutePath(path);
-  if (!split) return NextResponse.next();
+  if (!split) return redirectOrNext(request, path);
 
   const configured = await listRoutePrefixes();
   const isConfigured = configured.some(
     (entry) => entry.prefix === split.routePrefix,
   );
-  if (!isConfigured) return NextResponse.next();
+  if (!isConfigured) return redirectOrNext(request, path);
 
   const redirect = await getBuilderRedirectBySourcePath(path);
   if (redirect) {
@@ -101,6 +108,18 @@ async function handleCustomBuilderPath(request: NextRequest, path: string) {
 
   // Existence/404 handling stays with the route (same streamed-shell
   // behavior as the rest of the app); only redirects need real 3xx here.
+  return NextResponse.next();
+}
+
+/** Serve a Studio redirect for `path` if one is configured, else continue. */
+async function redirectOrNext(request: NextRequest, path: string) {
+  const redirect = await lookupRedirectForPath(path);
+  if (redirect) {
+    return NextResponse.redirect(
+      resolveRedirectDestination(request, redirect.destination_path),
+      redirect.status_code,
+    );
+  }
   return NextResponse.next();
 }
 

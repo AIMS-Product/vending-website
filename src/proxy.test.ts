@@ -210,6 +210,49 @@ describe("proxy custom-prefix redirects (S6b-2)", () => {
     expect(mocks.updateSession).not.toHaveBeenCalled();
   });
 
+  it("serves a Studio redirect for a two-segment path under an UNconfigured prefix", async () => {
+    // Regression: this branch is terminal for every two-segment path, so an
+    // unconfigured prefix used to return next() without ever consulting the
+    // redirect table — a retired URL like /vp-check/old-page kept serving 200.
+    mocks.lookupRedirectForPath.mockResolvedValue({
+      source_path: "/vp-check/old-page",
+      destination_path: "/contact",
+      status_code: 301,
+    });
+
+    const response = await proxy(request("/vp-check/old-page"));
+
+    expect(response.status).toBe(301);
+    expect(response.headers.get("location")).toBe(
+      "https://vending-website.vercel.app/contact",
+    );
+    expect(mocks.updateSession).not.toHaveBeenCalled();
+  });
+
+  it("serves a Studio redirect for a two-segment path that is not builder-shaped", async () => {
+    // A reserved prefix (/about/...) fails the shape gate and used to exit
+    // early the same way.
+    mocks.lookupRedirectForPath.mockResolvedValue({
+      source_path: "/about/retired-bio",
+      destination_path: "/about",
+      status_code: 308,
+    });
+
+    const response = await proxy(request("/about/retired-bio"));
+
+    expect(response.status).toBe(308);
+    expect(response.headers.get("location")).toBe(
+      "https://vending-website.vercel.app/about",
+    );
+  });
+
+  it("still renders normally when an unconfigured-prefix path has no redirect", async () => {
+    const response = await proxy(request("/vp-check/live-page"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
   it("lets configured custom-prefix pages without a redirect row render normally", async () => {
     const response = await proxy(
       request("/services/r3-services-proof-renamed"),
