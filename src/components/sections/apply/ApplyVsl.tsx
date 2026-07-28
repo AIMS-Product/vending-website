@@ -13,6 +13,10 @@ export function ApplyVsl({
   vsl = applyVsl,
 }: {
   vsl?: {
+    // Optional so a persona variant (e.g. Anthony's pages) can omit the heading
+    // rather than inherit copy written about someone else.
+    title?: string;
+    subtitle?: string;
     badge: string;
     watchLabel: string;
     youtubeId: string;
@@ -24,6 +28,18 @@ export function ApplyVsl({
 
   return (
     <section className="mx-auto max-w-[940px] px-5 py-20 lg:px-10">
+      {vsl.title ? (
+        <div className="mx-auto mb-9 max-w-[52ch] text-center">
+          <h2 className="text-[clamp(1.75rem,3vw,2.5rem)] leading-[1.08] font-black tracking-tight text-[#111111] uppercase">
+            {vsl.title}
+          </h2>
+          {vsl.subtitle ? (
+            <p className="mt-3.5 text-lg leading-relaxed font-semibold text-slate-700">
+              {vsl.subtitle}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <div className="relative aspect-video overflow-hidden rounded-[12px] border-2 border-[#111111] shadow-[8px_8px_0_#111111]">
         {isPlaying ? (
           <iframe

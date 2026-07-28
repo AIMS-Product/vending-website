@@ -27,12 +27,15 @@ export function ApplyLandingPage({
     <>
       <ApplyHero />
       <ApplyVsl />
+      {/* The form sits directly under the video (Kody, 2026-07-28): at the
+          bottom of the page it was losing visitors who never scrolled that far.
+          Every CTA still anchors here, so the deep-scroll path is unchanged. */}
+      <ApplyQuiz attribution={attribution} idempotencyKey={idempotencyKey} />
       <ApplyTools />
       <ApplyTestimonials />
       <ApplyRoadmap />
       <ApplyMembers />
       <ApplyFaq />
-      <ApplyQuiz attribution={attribution} idempotencyKey={idempotencyKey} />
       <ApplyYouTube />
       <ApplyDisclaimer />
       <ApplyStickyCta />

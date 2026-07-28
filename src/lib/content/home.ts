@@ -142,8 +142,8 @@ export const accelerator = {
 } as const;
 
 export const finalCta = {
-  title: "Take Action Today",
-  body: "The vending industry is one of the most accessible ways to build passive income, but success doesn't happen by chance—it happens by taking the right steps with the right guidance.",
+  title: "Join the Vending Accelerator Program",
+  body: "Get the process, tools, and expert guidance to build your vending route in 90 days.",
   image: {
     src: "/images/sections/cta.avif",
     alt: "A customer tapping a phone to pay at a smart vending machine",

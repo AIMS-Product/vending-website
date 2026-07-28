@@ -1,6 +1,5 @@
 import { applyHero } from "@/lib/content/apply-page";
 import { ApplyCtaButton } from "./ApplyCtaButton";
-import { LockIcon } from "./icons";
 
 export function ApplyHero({
   body = applyHero.body,
@@ -44,11 +43,20 @@ export function ApplyHero({
             <p className="mt-3.5 text-sm font-medium text-slate-500">
               {applyHero.ctaNote}
             </p>
-            <p className="mt-2.5 inline-flex items-center gap-2 text-[13px] font-semibold text-[#111111]">
-              <LockIcon className="size-3.5" />
-              {applyHero.availabilityNote}
-            </p>
           </div>
+
+          <ul className="mx-auto mt-9 flex max-w-[46ch] flex-wrap items-baseline justify-center gap-x-8 gap-y-3">
+            {applyHero.trustStats.map((stat) => (
+              <li key={stat.label} className="flex items-baseline gap-2">
+                <span className="text-2xl leading-none font-black text-[#066a99]">
+                  {stat.value}
+                </span>
+                <span className="text-[13px] font-semibold text-slate-600">
+                  {stat.label}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

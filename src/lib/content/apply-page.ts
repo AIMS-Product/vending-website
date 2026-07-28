@@ -16,22 +16,29 @@ export const applyMeta = {
 } as const;
 
 export const applyHero = {
-  eyebrow: "For anyone done trading time for one paycheck",
+  eyebrow: "Stop trading your time for a single paycheck",
   headline: "Launch your vending business in 90 days.",
   subheadline: {
     prefix: "Earn ",
-    highlight: "$1–$5,000/mo*",
+    highlight: "$1–$5,000/mo",
     suffix: " while you sleep.",
   },
-  body: "You get Mike's playbook, systems, and scripts, plus exclusive product discounts, 1:1 support, and custom tools. Everything you need to launch quickly and build your route without costly mistakes.",
-  ctaLabel: "I'm Ready to Build My Route",
+  body: "Join Vendingpreneurs and get access to Mike's playbook, systems, and scripts, plus exclusive product discounts, 1:1 support, and custom tools. Everything you need to launch quickly and build your route without costly mistakes.",
+  ctaLabel: "Book Your Call",
   ctaNote:
     "Answer a few quick questions, then book a free call to see if you're a fit.",
-  availabilityNote:
-    "Availability is capped by market. Yours may still be open.",
+  // Basic proof under the hero CTA (Kody, 2026-07-28). Same figures as the
+  // quiz rail so the two never disagree.
+  trustStats: [
+    { value: "850+", label: "entrepreneurs launched" },
+    { value: "3,000+", label: "locations placed" },
+    { value: "$3 million+", label: "in vending sales" },
+  ],
 } as const;
 
 export const applyVsl = {
+  title: "Mike Hoffmann built his vending business from scratch",
+  subtitle: "Vendingpreneurs is what he wished he had when he started",
   badge: "Free training",
   watchLabel: "Watch Mike's story",
   youtubeId: "P-Z1BZ9M-Fg",
@@ -53,7 +60,7 @@ export const applyTools = {
   eyebrow: "What you get",
   title: "Exclusive access to proven tools & systems",
   body: "Building a vending business without guidance means wasted time and costly mistakes. We remove the guesswork with a structured roadmap, proprietary resources, and custom tools.",
-  ctaLabel: "I'm Ready to Build My Route",
+  ctaLabel: "Book Your Call",
   items: [
     {
       icon: "course" as ToolIconKey,
@@ -135,7 +142,7 @@ export const applyRoadmap = {
   eyebrow: "The roadmap",
   title: "What you'll build in 90 days",
   body: "Doing this alone usually means 18–24 months of expensive mistakes. Here's the path members follow instead.",
-  ctaLabel: "I'm Ready to Build My Route",
+  ctaLabel: "Book Your Call",
   phases: [
     {
       num: "01",
@@ -225,8 +232,8 @@ export const applyFaq = {
 
 export const applyQuiz = {
   eyebrow: "Join the Vending Accelerator Program",
-  title: "See if you're ready to launch",
-  submitLabel: "See if I qualify",
+  title: "Book Your Call and see if vending is right for you",
+  submitLabel: "Submit",
   rail: {
     quote: "“With just 4 locations, I'm doing $25,000 a month in revenue.”",
     attribution: "Shannon · Member",
@@ -243,7 +250,7 @@ export const applyYouTube = {
   title: "Prefer to learn before you talk to anyone?",
   channelLabel: "youtube.com/@Vendingpreneurs",
   channelHref: "https://youtube.com/@Vendingpreneurs",
-  ctaLabel: "I'm Ready to Build My Route",
+  ctaLabel: "Book Your Call",
   groups: [
     {
       title: "Getting Started",
@@ -285,7 +292,7 @@ export const applyYouTube = {
 
 export const applyFooter = {
   disclaimer:
-    "*Earnings may vary and are not guaranteed. The $1–$5,000 claim is based on the average profitability of our community members' machines. Outcomes depend on effort, market, and execution.",
+    "Earnings may vary and are not guaranteed. The $1–$5,000 claim is based on the average profitability of our community members' machines. Outcomes depend on effort, market, and execution.",
   privacyNote:
     "By applying you agree to our Privacy Policy. We never sell your data.",
   // Light/transparent wordmark for the dark disclaimer band. Not delivered
@@ -296,7 +303,7 @@ export const applyFooter = {
 
 export const applySticky = {
   text: "Don't wait. Launch your vending route in 90 days.",
-  ctaLabel: "I'm Ready to Build My Route",
+  ctaLabel: "Book Your Call",
 } as const;
 
 /** The in-page anchor every CTA scrolls to (the quiz section). */
