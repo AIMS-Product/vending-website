@@ -31,7 +31,7 @@ export function FaqItemEditorList({
       {block.props.items.map((item, itemIndex) => (
         <div
           key={itemKeys[itemIndex] ?? `${block.id}-${itemIndex}`}
-          className="border-ui-line bg-ui-canvas rounded-lg border p-3"
+          className="border-ui-line bg-ui-canvas rounded-ui-lg border p-3"
         >
           <div className="mb-3 flex items-center justify-between gap-2">
             <p className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">

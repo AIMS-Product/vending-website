@@ -36,7 +36,7 @@ export function BuilderBlocksPanel({
     <section
       aria-labelledby="builder-blocks-panel-title"
       data-builder-walkthrough="blocks"
-      className="border-ui-line fixed top-32 bottom-4 left-4 z-[60] order-2 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border bg-white shadow-xl xl:sticky xl:top-4 xl:bottom-auto xl:left-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none"
+      className="border-ui-line rounded-ui-lg bg-ui-surface shadow-ui-raised fixed top-32 bottom-4 left-4 z-[60] order-2 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden border xl:sticky xl:top-4 xl:bottom-auto xl:left-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none"
     >
       <div className="border-ui-line flex shrink-0 items-start border-b px-5 py-4">
         <div>
@@ -92,7 +92,7 @@ export function BuilderBlocksPanel({
       <div className="border-ui-line shrink-0 border-t p-4">
         <Link
           href="/admin/pages"
-          className="border-ui-line text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 inline-flex w-full items-center justify-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-semibold shadow-sm transition focus-visible:ring-4 focus-visible:outline-none"
+          className="border-ui-line text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 rounded-ui-lg bg-ui-surface shadow-ui inline-flex w-full items-center justify-center gap-2 border px-4 py-3 text-sm font-semibold transition focus-visible:ring-4 focus-visible:outline-none"
         >
           <ChevronIcon direction="left" />
           Go back to dashboard

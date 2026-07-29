@@ -18,23 +18,25 @@ export function ScheduleStatusCard({
 
   if (status.kind === "failed") {
     return (
-      <section className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+      <section className="rounded-ui-lg border-ui-bad/25 bg-ui-bad-fill border p-4">
         <div className="flex items-center gap-2">
           <span
-            className="size-2 shrink-0 rounded-full bg-rose-500"
+            className="bg-ui-bad size-2 shrink-0 rounded-full"
             aria-hidden="true"
           />
-          <h3 className="text-sm font-semibold text-rose-900">
+          <h3 className="text-ui-bad-ink text-sm font-semibold">
             Scheduled publish failed
           </h3>
         </div>
         {status.display ? (
-          <p className="mt-1.5 text-xs font-medium text-rose-800">
+          <p className="text-ui-bad-ink mt-1.5 text-xs font-medium">
             Was scheduled for {status.display}.
           </p>
         ) : null}
-        <p className="mt-1.5 text-sm leading-5 text-rose-800">{status.error}</p>
-        <p className="mt-2 text-xs leading-5 text-rose-700">
+        <p className="text-ui-bad-ink mt-1.5 text-sm leading-5">
+          {status.error}
+        </p>
+        <p className="text-ui-bad-ink mt-2 text-xs leading-5">
           Save a new scheduled time below to retry, or cancel the schedule.
         </p>
         <div className="mt-3">
@@ -49,20 +51,20 @@ export function ScheduleStatusCard({
   }
 
   return (
-    <section className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+    <section className="rounded-ui-lg border-ui-accent/25 bg-ui-accent-soft border p-4">
       <div className="flex items-center gap-2">
         <span
-          className="size-2 shrink-0 rounded-full bg-sky-500"
+          className="bg-ui-accent size-2 shrink-0 rounded-full"
           aria-hidden="true"
         />
-        <h3 className="text-sm font-semibold text-sky-900">
+        <h3 className="text-ui-accent text-sm font-semibold">
           Scheduled to publish
         </h3>
       </div>
-      <p className="mt-1.5 text-sm leading-5 font-semibold text-sky-900">
+      <p className="text-ui-accent mt-1.5 text-sm leading-5 font-semibold">
         {status.display}
       </p>
-      <p className="mt-1.5 text-xs leading-5 text-sky-700">
+      <p className="text-ui-accent mt-1.5 text-xs leading-5">
         This draft publishes automatically at that time. The live page is not
         updated until then.
       </p>
@@ -88,14 +90,14 @@ function CancelScheduleButton({
 }) {
   const toneClass =
     tone === "rose"
-      ? "border-rose-300 text-rose-800 hover:bg-rose-100 focus-visible:ring-rose-200"
-      : "border-sky-300 text-sky-800 hover:bg-sky-100 focus-visible:ring-sky-200";
+      ? "border-ui-bad/25 text-ui-bad-ink hover:bg-ui-bad-fill focus-visible:ring-ui-bad/25"
+      : "border-ui-accent/25 text-ui-accent hover:bg-ui-accent-soft focus-visible:ring-ui-accent/25";
   return (
     <button
       type="button"
       onClick={onCancelSchedule}
       disabled={isCancelling}
-      className={`inline-flex min-h-9 items-center justify-center rounded-lg border bg-white px-3 text-xs font-semibold shadow-sm transition focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${toneClass}`}
+      className={`rounded-ui-lg bg-ui-surface shadow-ui inline-flex min-h-9 items-center justify-center border px-3 text-xs font-semibold transition focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${toneClass}`}
     >
       {isCancelling ? "Cancelling…" : "Cancel scheduled publish"}
     </button>

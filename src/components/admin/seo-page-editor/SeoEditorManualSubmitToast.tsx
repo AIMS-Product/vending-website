@@ -23,21 +23,21 @@ export function SeoEditorManualSubmitToast({
         key={`${toast.tone}:${toast.message}`}
         role={toast.tone === "error" ? "alert" : "status"}
         aria-live={toast.tone === "error" ? "assertive" : "polite"}
-        className={`pointer-events-auto flex max-w-sm items-start gap-3 rounded-xl border px-4 py-3 text-sm font-semibold shadow-2xl backdrop-blur ${
+        className={`rounded-ui-lg shadow-ui-raised pointer-events-auto flex max-w-sm items-start gap-3 border px-4 py-3 text-sm font-semibold backdrop-blur ${
           toast.tone === "error"
-            ? "border-red-200 bg-red-50/95 text-red-800"
+            ? "border-ui-bad/25 bg-ui-bad-fill/95 text-ui-bad-ink"
             : toast.tone === "pending"
-              ? "text-ui-text border-sky-200 bg-white/95"
-              : "border-emerald-200 bg-emerald-50/95 text-emerald-800"
+              ? "text-ui-text border-ui-accent/25 bg-ui-surface/95"
+              : "border-ui-ok/25 bg-ui-ok-fill/95 text-ui-ok-ink"
         }`}
       >
         <span
           className={`mt-1 size-2.5 shrink-0 rounded-full ${
             toast.tone === "error"
-              ? "bg-red-500"
+              ? "bg-ui-bad"
               : toast.tone === "pending"
-                ? "bg-sky-500"
-                : "bg-emerald-500"
+                ? "bg-ui-accent"
+                : "bg-ui-ok"
           }`}
           aria-hidden="true"
         />

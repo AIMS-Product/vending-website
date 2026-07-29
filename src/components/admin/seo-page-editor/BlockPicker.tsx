@@ -60,8 +60,8 @@ export function BlockPicker({
 
   const defaultTriggerButtonClass =
     triggerVariant === "compact"
-      ? "inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-slate-200 transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none"
-      : "flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ui-line bg-white p-4 text-sm font-medium text-ui-text-subtle transition-all hover:border-ui-accent/50 hover:bg-ui-canvas hover:text-ui-accent focus-visible:ring-2 focus-visible:ring-ui-accent/35 focus-visible:outline-none";
+      ? "inline-flex size-9 shrink-0 items-center justify-center rounded-ui-lg bg-white/10 text-ui-text-subtle transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-ui-accent/25 focus-visible:outline-none"
+      : "flex w-full items-center justify-center gap-2 rounded-ui-lg border-2 border-dashed border-ui-line bg-ui-surface p-4 text-sm font-medium text-ui-text-subtle transition-all hover:border-ui-accent/50 hover:bg-ui-canvas hover:text-ui-accent focus-visible:ring-2 focus-visible:ring-ui-accent/35 focus-visible:outline-none";
   const triggerButtonClass =
     triggerButtonClassName ?? defaultTriggerButtonClass;
 
@@ -70,7 +70,7 @@ export function BlockPicker({
       ? createPortal(
           <div
             role="presentation"
-            className="fixed inset-0 z-[90] overflow-y-auto bg-slate-950/20 px-4 py-4 sm:px-6 lg:py-8"
+            className="bg-ui-text/20 fixed inset-0 z-[90] overflow-y-auto px-4 py-4 sm:px-6 lg:py-8"
             onMouseDown={(event) => {
               if (event.target === event.currentTarget) {
                 setIsOpen(false);
@@ -79,7 +79,7 @@ export function BlockPicker({
           >
             <dialog
               open
-              className="animate-in fade-in slide-in-from-top-2 border-ui-line mx-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-xl border bg-white p-4 shadow-2xl ring-1 ring-slate-900/5 sm:p-5"
+              className="animate-in fade-in slide-in-from-top-2 border-ui-line rounded-ui-lg bg-ui-surface shadow-ui-raised ring-ui-text/5 mx-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-6xl flex-col overflow-hidden border p-4 ring-1 sm:p-5"
               aria-modal="true"
               aria-labelledby="block-picker-title"
               aria-describedby="block-picker-description"
@@ -103,7 +103,7 @@ export function BlockPicker({
                   type="button"
                   onClick={() => setIsOpen(false)}
                   aria-label="Close page content picker"
-                  className="text-ui-text-subtle hover:bg-ui-line hover:text-ui-text-muted focus-visible:ring-ui-accent/35 inline-flex size-8 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  className="text-ui-text-subtle hover:bg-ui-line hover:text-ui-text-muted focus-visible:ring-ui-accent/35 rounded-ui inline-flex size-8 shrink-0 items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -131,18 +131,18 @@ export function BlockPicker({
                         type="button"
                         data-testid="block-picker-type"
                         data-block-picker-type={option.type}
-                        className={`focus-visible:ring-ui-accent/35 flex min-h-16 min-w-56 items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-all focus-visible:ring-2 focus-visible:outline-none lg:min-w-0 ${
+                        className={`focus-visible:ring-ui-accent/35 rounded-ui-lg flex min-h-16 min-w-56 items-start gap-2.5 border px-3 py-2.5 text-left transition-all focus-visible:ring-2 focus-visible:outline-none lg:min-w-0 ${
                           isSelected
-                            ? "border-ui-accent/65 ring-ui-accent/20 bg-[#f7faff] shadow-sm ring-1"
-                            : "border-ui-line hover:border-ui-line-strong hover:bg-ui-canvas bg-white shadow-sm"
+                            ? "border-ui-accent/65 ring-ui-accent/20 bg-ui-accent-soft shadow-ui ring-1"
+                            : "border-ui-line hover:border-ui-line-strong hover:bg-ui-canvas bg-ui-surface shadow-ui"
                         }`}
                         onClick={() => selectBlockType(option.type)}
                       >
                         <span
-                          className={`flex size-8 shrink-0 items-center justify-center rounded-md shadow-sm ring-1 ring-inset ${
+                          className={`rounded-ui shadow-ui flex size-8 shrink-0 items-center justify-center ring-1 ring-inset ${
                             isSelected
-                              ? "text-ui-accent ring-ui-accent/20 bg-white"
-                              : "bg-ui-canvas text-ui-text-subtle ring-slate-200"
+                              ? "text-ui-accent ring-ui-accent/20 bg-ui-surface"
+                              : "bg-ui-canvas text-ui-text-subtle ring-ui-line"
                           }`}
                           aria-hidden="true"
                         >
@@ -164,7 +164,7 @@ export function BlockPicker({
                 {selectedOption && (
                   <div
                     ref={variantPanelRef}
-                    className="border-ui-line min-h-0 rounded-xl border bg-white p-4 sm:p-6 lg:overflow-y-auto"
+                    className="border-ui-line rounded-ui-lg bg-ui-surface min-h-0 border p-4 sm:p-6 lg:overflow-y-auto"
                   >
                     <div className="mb-4">
                       <h5 className="text-ui-text text-sm font-semibold sm:text-base">
@@ -180,7 +180,7 @@ export function BlockPicker({
                           data-testid="block-picker-variant"
                           data-block-picker-type={selectedOption.type}
                           data-block-picker-variant={variant.id}
-                          className="border-ui-line hover:border-ui-accent/50 focus-visible:ring-ui-accent/35 overflow-hidden rounded-lg border bg-white text-left shadow-sm transition-all hover:shadow-md focus-visible:ring-2 focus-visible:outline-none"
+                          className="border-ui-line hover:border-ui-accent/50 focus-visible:ring-ui-accent/35 rounded-ui-lg bg-ui-surface shadow-ui hover:shadow-ui-raised overflow-hidden border text-left transition-all focus-visible:ring-2 focus-visible:outline-none"
                           onClick={() => {
                             onAddBlock(selectedOption.type, variant.id);
                             setIsOpen(false);

@@ -127,7 +127,7 @@ function QuickTourLauncher({ onStart }: { onStart: () => void }) {
       type="button"
       aria-label="Start the quick tour"
       title="Take a quick tour of the builder"
-      className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 fixed bottom-28 left-4 z-[70] inline-flex min-h-10 items-center gap-2 rounded-full border bg-white px-4 text-sm font-semibold shadow-lg transition focus-visible:ring-4 focus-visible:outline-none xl:bottom-4"
+      className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 rounded-ui bg-ui-surface shadow-ui-raised fixed bottom-28 left-4 z-[70] inline-flex min-h-10 items-center gap-2 border px-4 text-sm font-semibold transition focus-visible:ring-4 focus-visible:outline-none xl:bottom-4"
       onClick={onStart}
     >
       <svg
@@ -175,7 +175,7 @@ function WalkthroughOverlay({
       <button
         type="button"
         aria-label="Skip walkthrough"
-        className="absolute inset-0 bg-slate-950/55"
+        className="bg-ui-text/55 absolute inset-0"
         onClick={onSkip}
       />
 
@@ -183,7 +183,7 @@ function WalkthroughOverlay({
         <>
           <div
             aria-hidden="true"
-            className="ring-ui-accent pointer-events-none fixed z-[81] rounded-2xl ring-4 ring-offset-2 ring-offset-transparent"
+            className="ring-ui-accent rounded-ui-lg pointer-events-none fixed z-[81] ring-4 ring-offset-2 ring-offset-transparent"
             style={{
               top: targetRect.top - 6,
               left: targetRect.left - 6,
@@ -203,7 +203,7 @@ function WalkthroughOverlay({
         </>
       ) : (
         <div className="pointer-events-none fixed inset-0 z-[82] grid place-items-center px-4">
-          <div className="border-ui-line pointer-events-auto w-full max-w-sm rounded-2xl border bg-white p-5 shadow-2xl">
+          <div className="border-ui-line rounded-ui-lg bg-ui-surface shadow-ui-raised pointer-events-auto w-full max-w-sm border p-5">
             <p className="text-ui-accent text-xs font-semibold tracking-wider uppercase">
               Quick tour · Step {step} of 3
             </p>
@@ -219,7 +219,7 @@ function WalkthroughOverlay({
               </button>
               <button
                 type="button"
-                className="border-ui-accent bg-ui-accent focus-visible:ring-ui-accent/20 min-h-10 rounded-lg border px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:outline-none"
+                className="border-ui-accent bg-ui-accent focus-visible:ring-ui-accent/20 rounded-ui-lg shadow-ui hover:bg-ui-accent-hover min-h-10 border px-4 text-sm font-semibold text-white transition focus-visible:ring-4 focus-visible:outline-none"
                 onClick={onContinue}
               >
                 {cta}
@@ -259,7 +259,7 @@ function WalkthroughCard({
       className="pointer-events-none fixed z-[82] w-[min(20rem,calc(100vw-2rem))]"
       style={{ top, left }}
     >
-      <div className="border-ui-line pointer-events-auto rounded-2xl border bg-white p-5 shadow-2xl">
+      <div className="border-ui-line rounded-ui-lg bg-ui-surface shadow-ui-raised pointer-events-auto border p-5">
         <p className="text-ui-accent text-xs font-semibold tracking-wider uppercase">
           Quick tour · Step {step} of 3
         </p>
@@ -275,7 +275,7 @@ function WalkthroughCard({
           </button>
           <button
             type="button"
-            className="border-ui-accent bg-ui-accent focus-visible:ring-ui-accent/20 min-h-10 rounded-lg border px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:outline-none"
+            className="border-ui-accent bg-ui-accent focus-visible:ring-ui-accent/20 rounded-ui-lg shadow-ui hover:bg-ui-accent-hover min-h-10 border px-4 text-sm font-semibold text-white transition focus-visible:ring-4 focus-visible:outline-none"
             onClick={onContinue}
           >
             {cta}

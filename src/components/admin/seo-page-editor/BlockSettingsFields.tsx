@@ -202,7 +202,7 @@ export function BlockSidebarSettingsPanel({
             </div>
           </OptionalBlockField>
           {block.variant === "split" && (
-            <div className="border-ui-line bg-ui-canvas grid gap-4 rounded-lg border p-3 sm:grid-cols-2">
+            <div className="border-ui-line bg-ui-canvas rounded-ui-lg grid gap-4 border p-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <p className="text-ui-text-muted text-sm font-medium">
                   Media library asset
@@ -649,7 +649,7 @@ export function BlockSidebarSettingsPanel({
             {block.props.cards.map((card, cardIndex) => (
               <div
                 key={cardItemKey(block.id, cardIndex)}
-                className="border-ui-line bg-ui-canvas rounded-lg border p-3"
+                className="border-ui-line bg-ui-canvas rounded-ui-lg border p-3"
               >
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <p className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
@@ -1047,7 +1047,7 @@ function LeadFormQualificationSettings({
   });
 
   return (
-    <details className="border-ui-line bg-ui-canvas rounded-lg border px-3 py-2">
+    <details className="border-ui-line bg-ui-canvas rounded-ui-lg border px-3 py-2">
       <summary className="text-ui-text-muted cursor-pointer text-sm font-semibold">
         Qualification follow-up
       </summary>

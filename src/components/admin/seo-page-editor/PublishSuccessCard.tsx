@@ -32,7 +32,7 @@ export function PublishSuccessCard({ livePageUrl }: { livePageUrl: string }) {
   return (
     <section
       aria-live="polite"
-      className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+      className="rounded-ui-lg border-ui-ok/25 bg-ui-ok-fill border p-4"
     >
       <div className="flex items-center gap-2">
         <svg
@@ -45,15 +45,15 @@ export function PublishSuccessCard({ livePageUrl }: { livePageUrl: string }) {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-emerald-600"
+          className="text-ui-ok"
           aria-hidden="true"
         >
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
           <path d="m9 11 3 3L22 4" />
         </svg>
-        <h3 className="text-sm font-semibold text-emerald-900">Published</h3>
+        <h3 className="text-ui-ok-ink text-sm font-semibold">Published</h3>
       </div>
-      <p className="mt-1.5 text-sm leading-5 text-emerald-800">
+      <p className="text-ui-ok-ink mt-1.5 text-sm leading-5">
         This page is now the live public version.
       </p>
       <div className="mt-3">
@@ -62,14 +62,14 @@ export function PublishSuccessCard({ livePageUrl }: { livePageUrl: string }) {
             href={livePageUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex min-h-9 items-center justify-center rounded-lg border border-emerald-300 bg-white px-3 text-xs font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-100 focus-visible:ring-4 focus-visible:ring-emerald-200 focus-visible:outline-none"
+            className="rounded-ui-lg border-ui-ok/25 bg-ui-surface text-ui-ok-ink shadow-ui hover:bg-ui-ok-fill focus-visible:ring-ui-ok/25 inline-flex min-h-9 items-center justify-center border px-3 text-xs font-semibold transition focus-visible:ring-4 focus-visible:outline-none"
           >
             Open live page
           </a>
         ) : (
-          <p className="inline-flex items-center gap-2 text-xs font-medium text-emerald-700">
+          <p className="text-ui-ok-ink inline-flex items-center gap-2 text-xs font-medium">
             <span
-              className="size-3 animate-spin rounded-full border-2 border-emerald-300 border-t-emerald-600"
+              className="border-ui-ok/25 border-t-ui-ok size-3 animate-spin rounded-full border-2"
               aria-hidden="true"
             />
             {phase === "slow"

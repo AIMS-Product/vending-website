@@ -33,7 +33,7 @@ export function MobileEditorActionBar({
 
   return (
     <div
-      className="border-ui-line fixed inset-x-0 bottom-0 z-[60] border-t bg-white/95 px-4 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-16px_rgba(15,23,42,0.45)] backdrop-blur xl:hidden"
+      className="border-ui-line bg-ui-surface/95 fixed inset-x-0 bottom-0 z-[60] border-t px-4 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-16px_rgba(15,23,42,0.45)] backdrop-blur xl:hidden"
       role="region"
       aria-label="Editor actions"
     >
@@ -43,7 +43,7 @@ export function MobileEditorActionBar({
         </p>
       )}
       {autosave?.status === "error" && (
-        <p className="mb-1.5 text-center text-xs font-medium text-red-600">
+        <p className="text-ui-bad mb-1.5 text-center text-xs font-medium">
           {autosave.message}
         </p>
       )}
@@ -52,13 +52,13 @@ export function MobileEditorActionBar({
           type="submit"
           name="intent"
           value="save"
-          className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 inline-flex min-h-11 flex-1 items-center justify-center rounded-full border bg-white px-5 text-sm font-semibold shadow-sm transition focus-visible:ring-4 focus-visible:outline-none"
+          className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 rounded-ui bg-ui-surface shadow-ui inline-flex min-h-11 flex-1 items-center justify-center border px-5 text-sm font-semibold transition focus-visible:ring-4 focus-visible:outline-none"
         >
           {saveDraftLabel}
         </button>
         <button
           type="button"
-          className="border-ui-accent/20 bg-ui-accent hover:bg-ui-accent-hover focus-visible:ring-ui-accent/20 inline-flex min-h-11 flex-1 items-center justify-center rounded-full border px-5 text-sm font-semibold text-white shadow-sm transition focus-visible:ring-4 focus-visible:outline-none"
+          className="border-ui-accent/20 bg-ui-accent hover:bg-ui-accent-hover focus-visible:ring-ui-accent/20 rounded-ui shadow-ui inline-flex min-h-11 flex-1 items-center justify-center border px-5 text-sm font-semibold text-white transition focus-visible:ring-4 focus-visible:outline-none"
           aria-expanded={bar.seoPanelOpen}
           onClick={toggleSeoSidebar}
         >
