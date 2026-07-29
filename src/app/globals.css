@@ -51,12 +51,26 @@
   --ui-accent-hover: #0a56d6;
   --ui-accent-soft: #eef4ff;
 
-  /* Status. Used as a dot plus plain text, never as a filled pill — a
-     table of filled pills becomes a quilt at fourteen rows. */
+  /* Status. A soft tinted chip: the whole cell carries the colour so it can
+     be read at a glance down a long column. Fills stay pale and the ink is
+     the deep end of the same hue, so every pair clears WCAG AA and no row
+     shouts louder than the data.
+     The bare dot colours are still used for inline captions. */
   --ui-ok: #17803d;
+  --ui-ok-fill: #dcfce7;
+  --ui-ok-ink: #14532d;
+
   --ui-warn: #b45309;
+  --ui-warn-fill: #fef3c7;
+  --ui-warn-ink: #78350f;
+
   --ui-bad: #c81e1e;
+  --ui-bad-fill: #fee2e2;
+  --ui-bad-ink: #7f1d1d;
+
   --ui-idle: #8a92a1;
+  --ui-idle-fill: #f1f5f9;
+  --ui-idle-ink: #334155;
 }
 
 @theme inline {
@@ -85,9 +99,17 @@
   --color-ui-accent-hover: var(--ui-accent-hover);
   --color-ui-accent-soft: var(--ui-accent-soft);
   --color-ui-ok: var(--ui-ok);
+  --color-ui-ok-fill: var(--ui-ok-fill);
+  --color-ui-ok-ink: var(--ui-ok-ink);
   --color-ui-warn: var(--ui-warn);
+  --color-ui-warn-fill: var(--ui-warn-fill);
+  --color-ui-warn-ink: var(--ui-warn-ink);
   --color-ui-bad: var(--ui-bad);
+  --color-ui-bad-fill: var(--ui-bad-fill);
+  --color-ui-bad-ink: var(--ui-bad-ink);
   --color-ui-idle: var(--ui-idle);
+  --color-ui-idle-fill: var(--ui-idle-fill);
+  --color-ui-idle-ink: var(--ui-idle-ink);
 
   /* Two radii, two shadows. More than that and nothing looks deliberate. */
   --radius-ui: 6px;

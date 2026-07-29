@@ -132,10 +132,17 @@ function AdminStatusDot({ tone }: { tone: "ok" | "warn" | "bad" | "idle" }) {
   );
 }
 
-/* Status reads as a coloured dot plus plain text. It survives a fourteen-row
-   table without turning into a quilt, it stays legible for colour-blind
-   users because the word is always there, and it matches the legend pattern
-   the SEO pages list already uses. */
+/* Status is a soft tinted chip. A bare dot is too small to pick out when you
+   are scanning a long column, so the whole chip carries the colour. The fill
+   stays pale and the word is always present, so it reads at a glance without
+   relying on colour alone. */
+const STATUS_CHIP_CLASS: Record<"ok" | "warn" | "bad" | "idle", string> = {
+  ok: "bg-ui-ok-fill text-ui-ok-ink",
+  warn: "bg-ui-warn-fill text-ui-warn-ink",
+  bad: "bg-ui-bad-fill text-ui-bad-ink",
+  idle: "bg-ui-idle-fill text-ui-idle-ink",
+};
+
 export function AdminStatusBadge({
   status,
   label,
@@ -144,10 +151,12 @@ export function AdminStatusBadge({
   /** Override the visible text without changing the stored status value. */
   label?: string;
 }) {
-  const tone = adminStatusTone(status);
   return (
-    <span className="text-ui-text inline-flex items-center gap-1.5 text-[0.8125rem] whitespace-nowrap">
-      <AdminStatusDot tone={tone} />
+    <span
+      className={`rounded-ui inline-flex w-fit items-center px-2 py-0.5 text-[0.8125rem] font-medium whitespace-nowrap ${
+        STATUS_CHIP_CLASS[adminStatusTone(status)]
+      }`}
+    >
       {label ?? formatAdminStatus(status)}
     </span>
   );

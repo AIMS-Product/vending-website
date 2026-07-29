@@ -18,9 +18,11 @@ on a landing page. In a dense data tool it reads as noise, and it contradicts
 the Product Standard below. Do not import it into `/admin`, and do not add a
 second set of tokens to sit beside `--ui-*`.
 
-Status is rendered as a coloured dot plus a word, never as a filled pill. One
-component owns it, `AdminStatusBadge`, so a legend and a table cell can never
-drift apart.
+Status is rendered as a soft tinted chip: a pale fill with deep ink of the
+same hue, and the word always present so meaning never rests on colour alone.
+One component owns it, `AdminStatusBadge`, so a legend and a table cell can
+never drift apart. Fills stay pale; a status column must be scannable without
+becoming the loudest thing on the page.
 
 ## Product Standard
 

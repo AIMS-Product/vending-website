@@ -40,9 +40,12 @@ Shadows: `--shadow-ui` (everything), `--shadow-ui-raised` (dialogs). Two only.
 
 ## Rules
 
-- **Status is a dot plus a word.** Never a filled pill. The word carries the
-  meaning for colour-blind users; the dot carries it for everyone scanning.
-  One component: `AdminStatusBadge`.
+- **Status is a soft tinted chip.** Pale fill, deep ink of the same hue, the
+  word always present. The whole chip carries the colour because a bare dot
+  is too small to pick out when scanning a long column. Keep the fills pale:
+  the chips should be readable at a glance without out-shouting the data.
+  One component owns it, `AdminStatusBadge`, so a legend and a table cell can
+  never drift apart.
 - **One filled control per screen.** The primary button. Everything else is a
   bordered surface or plain text.
 - **Selection is a soft fill,** never a coloured edge bar.
