@@ -9,15 +9,22 @@ import {
 } from "@/app/admin/settings/routes/actions";
 import {
   AdminIcon,
+  adminDangerButtonClass,
+  adminInputClass,
   adminPanelClass,
   adminPrimaryButtonClass,
 } from "@/components/admin/AdminUi";
+import { cn } from "@/lib/utils";
 import type { RoutePrefix } from "@/lib/services/route-prefixes";
 
 const initialState: RouteSettingsActionState = { status: "idle" };
 
-const controlClass =
-  "box-border h-11 w-full min-w-0 rounded-md border border-ui-line bg-white px-3 text-sm leading-none text-ui-text shadow-sm transition outline-none placeholder:text-ui-text-subtle focus:border-ui-accent focus:ring-2 focus:ring-ui-accent/15 disabled:cursor-not-allowed disabled:opacity-50";
+// The shared input already is the admin's input. This only strips the label
+// gap it assumes and adds the disabled state, rather than restating a shape.
+const controlClass = cn(
+  adminInputClass,
+  "mt-0 min-w-0 disabled:cursor-not-allowed disabled:opacity-50",
+);
 
 export function AdminRoutePrefixesManager({
   prefixes,
@@ -31,7 +38,7 @@ export function AdminRoutePrefixesManager({
   return (
     <div className="grid gap-5">
       {!canManage ? (
-        <section className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <section className="rounded-ui-lg border-ui-warn/25 bg-ui-warn-fill text-ui-warn-ink border px-4 py-3 text-sm">
           Route prefix management is read-only for your account. Super admins
           can add custom prefixes and delete unused ones.
         </section>
@@ -71,7 +78,7 @@ export function AdminRoutePrefixesManager({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-ui-line divide-y bg-white">
+            <tbody className="divide-ui-line bg-ui-surface divide-y">
               {prefixes.length ? (
                 prefixes.map((entry) => (
                   <PrefixRow
@@ -113,11 +120,11 @@ function PrefixRow({
       <td className="text-ui-text-muted px-4 py-2.5">{entry.label || "—"}</td>
       <td className="px-4 py-2.5">
         {entry.isDefault ? (
-          <span className="bg-ui-line text-ui-text-muted inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold">
+          <span className="bg-ui-idle-fill text-ui-idle-ink rounded-ui inline-flex items-center px-2 py-0.5 text-xs font-semibold">
             Default
           </span>
         ) : (
-          <span className="text-ui-accent inline-flex items-center rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-xs font-semibold">
+          <span className="text-ui-accent bg-ui-accent-soft rounded-ui inline-flex items-center px-2 py-0.5 text-xs font-semibold">
             Custom
           </span>
         )}
@@ -178,7 +185,7 @@ function AddSubmitButton({ disabled }: { disabled: boolean }) {
     <button
       type="submit"
       disabled={disabled || pending}
-      className={`${adminPrimaryButtonClass} h-11 w-full whitespace-nowrap sm:w-auto`}
+      className={`${adminPrimaryButtonClass} w-full whitespace-nowrap sm:w-auto`}
     >
       <span aria-hidden="true">
         <AdminIcon icon="plus" />
@@ -207,7 +214,7 @@ function DeleteSubmitButton({ prefix }: { prefix: string }) {
       disabled={pending}
       aria-label={`Delete route prefix ${prefix}`}
       title="Delete prefix"
-      className="inline-flex size-8 items-center justify-center rounded-md border border-red-200 bg-white text-red-700 shadow-sm transition hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+      className={cn(adminDangerButtonClass, "size-8 px-0")}
     >
       <span aria-hidden="true">
         <AdminIcon icon="trash" />
@@ -228,7 +235,7 @@ function ActionMessage({
   return (
     <p
       className={`${className} text-xs font-medium ${
-        state.status === "error" ? "text-red-600" : "text-emerald-700"
+        state.status === "error" ? "text-ui-bad" : "text-ui-ok"
       }`}
       role={state.status === "error" ? "alert" : "status"}
       aria-live="polite"

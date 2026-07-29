@@ -141,7 +141,7 @@ export function SeoPageRevisionPanel({
             restores.
           </p>
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-ui-line divide-y">
             {revisions.map((revision, index) => {
               const versionNumber = versionNumberById.get(revision.id);
               return (
@@ -210,10 +210,10 @@ export function SeoPageRevisionPanel({
         </form>
         {previewState.status !== "idle" && (
           <p
-            className={`mt-3 rounded-lg px-3 py-2 text-sm ${
+            className={`rounded-ui mt-3 px-3 py-2 text-sm ${
               previewState.status === "error"
-                ? "bg-red-50 text-red-700"
-                : "bg-emerald-50 text-emerald-700"
+                ? "bg-ui-bad-fill text-ui-bad-ink"
+                : "bg-ui-ok-fill text-ui-ok-ink"
             }`}
           >
             {previewState.message}
@@ -235,7 +235,7 @@ export function SeoPageRevisionPanel({
             return (
               <div
                 key={token.id}
-                className="border-ui-line bg-ui-canvas rounded-lg border p-3"
+                className="border-ui-line bg-ui-canvas rounded-ui-lg border p-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -268,9 +268,9 @@ export function SeoPageRevisionPanel({
           role="dialog"
           aria-modal="true"
           aria-labelledby={restoreDialogTitleId}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4 py-6"
+          className="bg-ui-text/35 fixed inset-0 z-[100] flex items-center justify-center px-4 py-6"
         >
-          <div className="border-ui-line w-full max-w-md rounded-lg border bg-white p-5 shadow-xl">
+          <div className="border-ui-line bg-ui-surface rounded-ui-lg shadow-ui-raised w-full max-w-md border p-5">
             <h2
               id={restoreDialogTitleId}
               className="text-ui-text text-base font-semibold"
@@ -326,10 +326,10 @@ function RevisionChip({
 }) {
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+      className={`rounded-ui px-2 py-0.5 text-[11px] font-semibold ${
         tone === "live"
-          ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 ring-inset"
-          : "bg-ui-line text-ui-text-muted"
+          ? "bg-ui-ok-fill text-ui-ok-ink"
+          : "bg-ui-idle-fill text-ui-idle-ink"
       }`}
     >
       {children}

@@ -74,8 +74,9 @@ for (const option of questionTypeOptions) {
   }
 }
 
-const addAnotherQuestionButtonClass =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+// One filled control per screen, and on this screen that is Publish. Adding a
+// question is a bordered surface like every other secondary action.
+const addAnotherQuestionButtonClass = adminSecondaryButtonClass;
 
 export function QualificationFormEditor({
   form,
@@ -233,7 +234,7 @@ export function QualificationFormEditor({
                 />
               ))}
             </div>
-            <div className="mt-4 flex justify-center border-t border-slate-100 pt-4">
+            <div className="border-ui-line mt-4 flex justify-center border-t pt-4">
               <button
                 type="button"
                 className={addAnotherQuestionButtonClass}
@@ -257,7 +258,7 @@ export function QualificationFormEditor({
             </p>
             <ActionMessage
               state={state}
-              className="mt-3 rounded-md px-3 py-2"
+              className="rounded-ui mt-3 px-3 py-2"
             />
             <div className="mt-5 grid gap-2">
               <button
@@ -312,7 +313,7 @@ export function QualificationFormEditor({
                 <ActionMessage state={defaultState} />
               </form>
             ) : (
-              <span className="mt-4 inline-flex rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700">
+              <span className="bg-ui-accent-soft text-ui-accent rounded-ui mt-4 inline-flex px-2 py-0.5 text-xs font-semibold">
                 Default
               </span>
             )}
@@ -361,7 +362,7 @@ function QualificationEditorOverview({
 
 function SummaryBadge({ label, value }: { label: string; value: number }) {
   return (
-    <span className="bg-ui-line text-ui-text-muted inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold">
+    <span className="bg-ui-idle-fill text-ui-idle-ink rounded-ui inline-flex items-center gap-2 px-2 py-0.5 text-xs font-semibold">
       <span className="text-ui-text-subtle">{label}</span>
       <span className="text-ui-text">{value}</span>
     </span>
@@ -388,7 +389,7 @@ function QuestionEditor({
   const showOptions = optionQuestionTypes.has(question.type);
 
   return (
-    <article className="border-ui-line rounded-lg border bg-white p-4">
+    <article className="border-ui-line bg-ui-surface rounded-ui-lg border p-4">
       <div className="border-ui-line flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-ui-text-subtle text-xs font-semibold uppercase">
@@ -398,15 +399,15 @@ function QuestionEditor({
             {question.label || "Untitled question"}
           </h3>
           <div className="mt-2 flex flex-wrap gap-2">
-            <span className="bg-ui-line text-ui-text-muted rounded-full px-2.5 py-1 text-xs font-semibold">
+            <span className="bg-ui-idle-fill text-ui-idle-ink rounded-ui px-2 py-0.5 text-xs font-semibold">
               {labelForQuestionType(question.type)}
             </span>
             {question.required ? (
-              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+              <span className="bg-ui-accent-soft text-ui-accent rounded-ui px-2 py-0.5 text-xs font-semibold">
                 Required
               </span>
             ) : (
-              <span className="bg-ui-line text-ui-text-muted rounded-full px-2.5 py-1 text-xs font-semibold">
+              <span className="bg-ui-idle-fill text-ui-idle-ink rounded-ui px-2 py-0.5 text-xs font-semibold">
                 Optional
               </span>
             )}
@@ -494,7 +495,7 @@ function QuestionEditor({
             className={adminInputClass}
           />
         </label>
-        <label className="border-ui-line bg-ui-canvas text-ui-text-muted flex items-center gap-2 self-end rounded-md border px-3 py-2.5 text-sm font-semibold">
+        <label className="border-ui-line bg-ui-canvas text-ui-text-muted rounded-ui flex items-center gap-2 self-end border px-3 py-2.5 text-sm font-semibold">
           <input
             key={`${question.id}-required-${question.required}-${actionRevision}`}
             type="checkbox"
@@ -509,7 +510,7 @@ function QuestionEditor({
         </label>
       </div>
 
-      <details className="border-ui-line bg-ui-canvas mt-4 rounded-lg border p-3">
+      <details className="border-ui-line bg-ui-canvas rounded-ui-lg mt-4 border p-3">
         <summary className="text-ui-text cursor-pointer text-sm font-semibold">
           Lead routing
         </summary>
@@ -560,7 +561,7 @@ function QuestionOptions({
 }) {
   const options = question.options ?? [];
   return (
-    <div className="border-ui-line bg-ui-canvas mt-4 rounded-lg border p-3">
+    <div className="border-ui-line bg-ui-canvas rounded-ui-lg mt-4 border p-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h4 className="text-ui-text text-sm font-semibold">Answer choices</h4>
@@ -588,7 +589,7 @@ function QuestionOptions({
         {options.map((option, index) => (
           <div
             key={option.id}
-            className="border-ui-line grid gap-3 rounded-md border bg-white p-3 md:grid-cols-[minmax(0,1fr)_auto]"
+            className="border-ui-line rounded-ui bg-ui-surface grid gap-3 border p-3 md:grid-cols-[minmax(0,1fr)_auto]"
           >
             <label className="block">
               <span className={adminLabelClass}>Option label</span>
@@ -674,7 +675,7 @@ function QualificationPreview({
             {questions.length} questions, {requiredCount} required.
           </p>
         </div>
-        <span className="bg-ui-line text-ui-text-muted rounded-full px-2.5 py-1 text-xs font-semibold">
+        <span className="bg-ui-idle-fill text-ui-idle-ink rounded-ui px-2 py-0.5 text-xs font-semibold">
           Prospect view
         </span>
       </div>
@@ -682,12 +683,12 @@ function QualificationPreview({
         {questions.map((question) => (
           <div
             key={question.id}
-            className="border-ui-line rounded-lg border p-3"
+            className="border-ui-line rounded-ui-lg border p-3"
           >
             <p className="text-ui-text text-sm font-semibold">
               {question.label || "Untitled question"}
               {question.required ? (
-                <span className="text-red-600"> *</span>
+                <span className="text-ui-bad"> *</span>
               ) : null}
             </p>
             {question.helpText ? (
@@ -731,7 +732,7 @@ function PreviewControl({ question }: { question: QualificationQuestion }) {
         {options.map((option) => (
           <label
             key={option.id}
-            className="border-ui-line text-ui-text-muted flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+            className="border-ui-line text-ui-text-muted rounded-ui flex items-center gap-2 border px-3 py-2 text-sm"
           >
             <input type="checkbox" disabled />
             {option.label}
@@ -743,7 +744,7 @@ function PreviewControl({ question }: { question: QualificationQuestion }) {
 
   if (question.type === "yes_no" || question.type === "consent") {
     return (
-      <label className="border-ui-line text-ui-text-muted mt-3 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+      <label className="border-ui-line text-ui-text-muted rounded-ui mt-3 flex items-center gap-2 border px-3 py-2 text-sm">
         <input type="checkbox" disabled />
         {question.type === "consent" ? "I agree" : "Yes"}
       </label>
@@ -903,8 +904,8 @@ function ActionMessage({
     <p
       className={`${className} text-sm font-medium ${
         state.status === "error"
-          ? "bg-red-50 text-red-700"
-          : "bg-emerald-50 text-emerald-700"
+          ? "bg-ui-bad-fill text-ui-bad-ink"
+          : "bg-ui-ok-fill text-ui-ok-ink"
       }`}
       role={state.status === "error" ? "alert" : "status"}
       aria-live="polite"

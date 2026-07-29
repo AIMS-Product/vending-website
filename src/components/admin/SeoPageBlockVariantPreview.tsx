@@ -20,7 +20,10 @@ export function BlockVariantPreviewSkeleton({
   }
 
   return (
-    <span className="block h-full w-full overflow-hidden rounded-md bg-[#f5fbff] text-left ring-1 ring-[#d8effb]">
+    // The frame is admin chrome, so it uses the --ui-* tokens. What sits inside
+    // it is a miniature of the published page, so that keeps the public site's
+    // own canvas colour: recolouring it would make the preview a lie.
+    <span className="rounded-ui ring-ui-line bg-ui-canvas block h-full w-full overflow-hidden text-left ring-1">
       <span
         className="block origin-top-left"
         style={{
