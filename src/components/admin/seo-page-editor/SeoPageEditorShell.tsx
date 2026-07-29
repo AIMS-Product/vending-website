@@ -21,6 +21,7 @@ import {
   completionMessagesForBlock,
   type BuilderBlockEntry,
 } from "@/lib/page-builder/editor-helpers";
+import { adminEyebrowClass, adminPanelClass } from "@/components/admin/AdminUi";
 import {
   BuilderGlyph,
   SettingsGlyph,
@@ -78,12 +79,12 @@ export function NewPageChoiceGate({
   }
 
   return (
-    <div className="border-ui-line bg-ui-line grid min-h-[calc(100dvh-4rem)] place-items-center border px-4 py-8">
+    <div className="border-ui-line bg-ui-canvas grid min-h-[calc(100dvh-4rem)] place-items-center border px-4 py-8">
       {/* C132: a plain <div>, not a named <section>. AdminShell already wraps
           this route in a `region` landmark (<section aria-labelledby="admin-shell-title">),
           so adding a second named region here nested inside it tripped axe's
           landmark-unique rule. The heading below keeps the panel's structure. */}
-      <div className="border-ui-line w-full max-w-3xl rounded-2xl border bg-white p-5 shadow-xl ring-1 ring-black/5 sm:p-8">
+      <div className="border-ui-line rounded-ui-lg bg-ui-surface shadow-ui-raised w-full max-w-3xl border p-5 sm:p-8">
         <div className="mb-6">
           <p className="text-ui-accent text-xs font-semibold tracking-wider uppercase">
             SEO Page Builder
@@ -111,10 +112,10 @@ export function NewPageChoiceGate({
                 <button
                   key={option.id}
                   type="button"
-                  className={`focus-visible:ring-ui-accent/20 rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:outline-none ${
+                  className={`focus-visible:ring-ui-accent/20 rounded-ui-lg border p-4 text-left transition focus-visible:ring-4 focus-visible:outline-none ${
                     isSelected
-                      ? "border-ui-accent bg-ui-accent-soft shadow-sm"
-                      : "border-ui-line hover:border-ui-line-strong bg-white"
+                      ? "border-ui-accent bg-ui-accent-soft shadow-ui"
+                      : "border-ui-line hover:border-ui-line-strong bg-ui-surface"
                   }`}
                   aria-pressed={isSelected}
                   onClick={() => selectPageType(option.id)}
@@ -159,7 +160,7 @@ export function NewPageChoiceGate({
         <div className="border-ui-line mt-8 flex justify-end border-t pt-6">
           <button
             type="button"
-            className="border-ui-accent bg-ui-accent focus-visible:ring-ui-accent/20 min-h-11 rounded-lg border px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:outline-none"
+            className="border-ui-accent bg-ui-accent focus-visible:ring-ui-accent/20 hover:bg-ui-accent-hover rounded-ui shadow-ui min-h-11 border px-5 text-sm font-semibold text-white transition focus-visible:ring-4 focus-visible:outline-none"
             onClick={handleStartBuilding}
           >
             Start building page
@@ -187,12 +188,12 @@ function ChoiceCard({
     <button
       type="button"
       disabled={disabled}
-      className={`focus-visible:ring-ui-accent/20 rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:outline-none ${
+      className={`focus-visible:ring-ui-accent/20 rounded-ui-lg border p-4 text-left transition focus-visible:ring-4 focus-visible:outline-none ${
         disabled
           ? "border-ui-line bg-ui-canvas cursor-not-allowed opacity-70"
           : selected
-            ? "border-ui-accent bg-ui-accent-soft shadow-sm"
-            : "border-ui-line hover:border-ui-line-strong bg-white"
+            ? "border-ui-accent bg-ui-accent-soft shadow-ui"
+            : "border-ui-line hover:border-ui-line-strong bg-ui-surface"
       }`}
       aria-pressed={selected}
       onClick={onClick}
@@ -349,16 +350,14 @@ export function BuilderBlockSidebar({
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-900 bg-slate-950 text-white shadow-xl">
-      <div className="border-b border-white/10 p-4">
+    <section className={adminPanelClass}>
+      <div className="border-ui-line border-b p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold tracking-wider text-sky-300 uppercase">
-              Page blocks
-            </p>
+            <p className={adminEyebrowClass}>Page blocks</p>
             <h3 className="mt-1 text-base font-semibold">Builder outline</h3>
           </div>
-          <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-semibold text-white/80 ring-1 ring-white/10 ring-inset">
+          <span className="bg-ui-idle-fill text-ui-idle-ink rounded-ui px-2 py-0.5 text-xs font-semibold tabular-nums">
             {entries.length}
           </span>
         </div>
@@ -376,31 +375,31 @@ export function BuilderBlockSidebar({
                 1;
               const isFirstInColumn = entry.blockIndex === 0;
               const isLastInColumn = entry.blockIndex === columnBlockCount - 1;
-              const moveButtonClass = `flex size-9 shrink-0 items-center justify-center rounded-lg transition focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-35 ${
+              const moveButtonClass = `rounded-ui focus-visible:ring-ui-accent/30 text-ui-text-muted flex size-9 shrink-0 items-center justify-center transition focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-35 ${
                 isSelected
-                  ? "bg-ui-line text-ui-text-muted enabled:hover:bg-slate-200"
-                  : "bg-white/10 text-slate-200 enabled:hover:bg-white/20"
+                  ? "bg-ui-surface enabled:hover:bg-ui-canvas"
+                  : "bg-ui-canvas enabled:hover:bg-ui-line"
               }`;
 
               return (
                 <div
                   key={entry.block.id}
-                  className={`flex items-stretch gap-2 rounded-xl border p-1.5 transition ${
+                  className={`rounded-ui-lg text-ui-text flex items-stretch gap-2 border p-1.5 transition ${
                     isSelected
-                      ? "text-ui-text border-sky-300 bg-white shadow-sm"
-                      : "border-white/10 bg-white/5 text-white hover:bg-white/10"
+                      ? "border-ui-accent/30 bg-ui-accent-soft"
+                      : "border-ui-line bg-ui-surface hover:bg-ui-canvas"
                   }`}
                 >
                   <button
                     type="button"
-                    className="flex min-w-0 flex-1 items-start gap-3 rounded-lg px-2.5 py-2 text-left focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none"
+                    className="rounded-ui focus-visible:ring-ui-accent/30 flex min-w-0 flex-1 items-start gap-3 px-2.5 py-2 text-left focus-visible:ring-2 focus-visible:outline-none"
                     onClick={() => onSelectBlock(entry)}
                   >
                     <span
-                      className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg ${
+                      className={`rounded-ui mt-0.5 flex size-9 shrink-0 items-center justify-center ring-1 ${
                         isSelected
-                          ? "text-ui-accent bg-sky-50 ring-1 ring-sky-100"
-                          : "bg-white/10 text-slate-200 ring-1 ring-white/10"
+                          ? "text-ui-accent bg-ui-surface ring-ui-accent/20"
+                          : "bg-ui-canvas text-ui-text-muted ring-ui-line"
                       }`}
                       aria-hidden="true"
                     >
@@ -412,23 +411,13 @@ export function BuilderBlockSidebar({
                           {blockLabel(entry.block.type)}
                         </span>
                         {hasWarnings && (
-                          <span className="size-2 rounded-full bg-amber-400" />
+                          <span className="bg-ui-warn size-2 rounded-full" />
                         )}
                       </span>
-                      <span
-                        className={`mt-1 line-clamp-2 block text-xs leading-5 ${
-                          isSelected ? "text-ui-text-subtle" : "text-slate-300"
-                        }`}
-                      >
+                      <span className="text-ui-text-subtle mt-1 line-clamp-2 block text-xs leading-5">
                         {entry.blockNumber}. {blockSummary(entry.block)}
                       </span>
-                      <span
-                        className={`mt-1 block text-[11px] font-medium ${
-                          isSelected
-                            ? "text-ui-text-subtle"
-                            : "text-ui-text-subtle"
-                        }`}
-                      >
+                      <span className="text-ui-text-subtle mt-1 block text-[11px] font-medium">
                         Section {entry.sectionNumber}, column{" "}
                         {entry.columnNumber}
                       </span>
@@ -461,10 +450,10 @@ export function BuilderBlockSidebar({
                     aria-label={`Edit ${blockLabel(entry.block.type)} settings`}
                     title={`Edit ${blockLabel(entry.block.type)} settings`}
                     aria-pressed={isSelected}
-                    className={`my-2 flex size-9 shrink-0 items-center justify-center rounded-lg transition focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none ${
+                    className={`rounded-ui focus-visible:ring-ui-accent/30 my-2 flex size-9 shrink-0 items-center justify-center transition focus-visible:ring-2 focus-visible:outline-none ${
                       isSelected
                         ? "bg-ui-accent text-white"
-                        : "bg-white/10 text-slate-200 hover:bg-white/20"
+                        : "bg-ui-canvas text-ui-text-muted hover:bg-ui-line"
                     }`}
                     onClick={() => onEditBlock(entry)}
                   >
@@ -477,10 +466,10 @@ export function BuilderBlockSidebar({
                         entry.block.type,
                       )}`}
                       triggerAriaLabel={`Add block below block ${entry.blockNumber}`}
-                      triggerButtonClassName={`inline-flex size-9 shrink-0 items-center justify-center rounded-lg transition focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none ${
+                      triggerButtonClassName={`rounded-ui focus-visible:ring-ui-accent/30 text-ui-text-muted inline-flex size-9 shrink-0 items-center justify-center transition focus-visible:ring-2 focus-visible:outline-none ${
                         isSelected
-                          ? "bg-ui-line text-ui-text-muted hover:bg-slate-200"
-                          : "bg-white/10 text-slate-200 hover:bg-white/20"
+                          ? "bg-ui-surface hover:bg-ui-canvas"
+                          : "bg-ui-canvas hover:bg-ui-line"
                       }`}
                       onAddBlock={(type, variant) =>
                         onCreateBlockAfter(entry, type, variant)
@@ -495,10 +484,10 @@ export function BuilderBlockSidebar({
           <button
             type="button"
             onClick={onCreateBlock}
-            className="flex w-full flex-col items-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/5 px-4 py-6 text-center transition hover:border-sky-300/60 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none"
+            className="rounded-ui-lg border-ui-line-strong bg-ui-canvas hover:border-ui-accent/50 hover:bg-ui-accent-soft focus-visible:ring-ui-accent/30 flex w-full flex-col items-center gap-2 border border-dashed px-4 py-6 text-center transition focus-visible:ring-2 focus-visible:outline-none"
           >
             <span
-              className="flex size-9 items-center justify-center rounded-full bg-sky-400/20 text-sky-200 ring-1 ring-white/10"
+              className="bg-ui-accent-soft text-ui-accent ring-ui-line flex size-9 items-center justify-center rounded-full ring-1"
               aria-hidden="true"
             >
               <svg
@@ -514,10 +503,10 @@ export function BuilderBlockSidebar({
                 <path d="M5 12h14" />
               </svg>
             </span>
-            <span className="text-sm font-semibold text-white">
+            <span className="text-ui-text text-sm font-semibold">
               Add your first block
             </span>
-            <span className="text-xs leading-5 text-slate-300">
+            <span className="text-ui-text-subtle text-xs leading-5">
               Choose a content block to get started.
             </span>
           </button>
@@ -554,7 +543,7 @@ export function PageChromeControls({
           onChange={(checked) => onChange({ showFooter: checked })}
         />
       </div>
-      <details className="border-ui-line bg-ui-canvas rounded-lg border px-3 py-2">
+      <details className="border-ui-line bg-ui-canvas rounded-ui-lg border px-3 py-2">
         <summary className="text-ui-text-muted cursor-pointer text-sm font-semibold">
           Qualification follow-up
         </summary>
@@ -605,7 +594,7 @@ function ChromeToggle({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="text-ui-text-muted hover:text-ui-text flex cursor-pointer items-center gap-2.5 rounded-lg py-1 text-sm font-semibold transition">
+    <label className="text-ui-text-muted hover:text-ui-text rounded-ui flex cursor-pointer items-center gap-2.5 py-1 text-sm font-semibold transition">
       <span>{label}</span>
       <input
         aria-label={label}
@@ -618,12 +607,12 @@ function ChromeToggle({
         className={`peer-focus-visible:ring-ui-accent/40 flex h-5 w-9 items-center rounded-full p-0.5 ring-1 transition peer-focus-visible:ring-2 ${
           checked
             ? "bg-ui-accent ring-ui-accent"
-            : "bg-slate-200 ring-slate-300"
+            : "bg-ui-line ring-ui-line-strong"
         }`}
         aria-hidden="true"
       >
         <span
-          className={`size-4 rounded-full bg-white shadow-sm transition ${
+          className={`shadow-ui bg-ui-surface size-4 rounded-full transition ${
             checked ? "translate-x-4" : ""
           }`}
         />

@@ -507,7 +507,7 @@ function CardGridCanvasEditor({
             >
               {cardGridLinkLabel(card)}
               {!hasEditorText(card.href) && (
-                <span className="bg-ui-line text-ui-text-subtle rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ring-1 ring-slate-200">
+                <span className="bg-ui-line text-ui-text-subtle rounded-ui ring-ui-line px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ring-1">
                   Optional
                 </span>
               )}

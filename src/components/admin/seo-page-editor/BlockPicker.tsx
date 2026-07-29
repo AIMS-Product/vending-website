@@ -60,7 +60,7 @@ export function BlockPicker({
 
   const defaultTriggerButtonClass =
     triggerVariant === "compact"
-      ? "inline-flex size-9 shrink-0 items-center justify-center rounded-ui-lg bg-white/10 text-ui-text-subtle transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-ui-accent/25 focus-visible:outline-none"
+      ? "rounded-ui bg-ui-canvas text-ui-text-muted hover:bg-ui-line inline-flex size-9 shrink-0 items-center justify-center transition focus-visible:ring-2 focus-visible:ring-ui-accent/25 focus-visible:outline-none"
       : "flex w-full items-center justify-center gap-2 rounded-ui-lg border-2 border-dashed border-ui-line bg-ui-surface p-4 text-sm font-medium text-ui-text-subtle transition-all hover:border-ui-accent/50 hover:bg-ui-canvas hover:text-ui-accent focus-visible:ring-2 focus-visible:ring-ui-accent/35 focus-visible:outline-none";
   const triggerButtonClass =
     triggerButtonClassName ?? defaultTriggerButtonClass;
