@@ -83,15 +83,18 @@ export type AdminAnalyticsDailyTrendRow = {
 
 /**
  * A headline number with the context needed to read it: the same measure over
- * the immediately preceding window of equal length, and a per-day series for a
- * sparkline. `deltaPct` is null when the prior window is zero — a percentage
- * against zero is not meaningful, so the UI shows the absolute change instead.
+ * the immediately preceding window of equal length. `deltaPct` is null when the
+ * prior window is zero — a percentage against zero is not meaningful, so the UI
+ * names the state instead.
+ *
+ * There is no per-metric series here. The KPI cards used to carry a 72px
+ * sparkline of one, but `dailyTrend` already plots the same data full width on
+ * the same page, and a rate metric has no series to plot at all.
  */
 export type AdminAnalyticsMetric = {
   value: number;
   prior: number;
   deltaPct: number | null;
-  spark: number[];
 };
 
 export type AdminAnalytics = {
@@ -241,21 +244,9 @@ export async function getAdminAnalytics(
     includeInternal,
     internalExcluded,
     metrics: {
-      leads: buildMetric(current, prior, start, end, days),
-      qualified: buildMetric(
-        qualifiedCurrent,
-        qualifiedPrior,
-        start,
-        end,
-        days,
-      ),
-      bookedFromLeads: buildMetric(
-        currentBooked,
-        priorBooked,
-        start,
-        end,
-        days,
-      ),
+      leads: buildMetric(current, prior),
+      qualified: buildMetric(qualifiedCurrent, qualifiedPrior),
+      bookedFromLeads: buildMetric(currentBooked, priorBooked),
       bookingRatePct: buildRateMetric(
         currentBooked.length,
         current.length,
@@ -313,15 +304,11 @@ type DatedRow = { created_at: string };
 function buildMetric(
   current: DatedRow[],
   prior: DatedRow[],
-  start: Date,
-  end: Date,
-  days: number,
 ): AdminAnalyticsMetric {
   return {
     value: current.length,
     prior: prior.length,
     deltaPct: percentChange(current.length, prior.length),
-    spark: buildSpark(current, start, end, days),
   };
 }
 
@@ -337,7 +324,6 @@ function buildRateMetric(
     value,
     prior,
     deltaPct: percentChange(value, prior),
-    spark: [],
   };
 }
 
@@ -349,31 +335,6 @@ function ratePct(numerator: number, denominator: number): number {
 function percentChange(value: number, prior: number): number | null {
   if (prior <= 0) return null;
   return Math.round(((value - prior) / prior) * 1000) / 10;
-}
-
-/**
- * Per-bucket counts across the range. Long ranges are compressed into wider
- * buckets so a year does not render 365 one-pixel bars.
- */
-function buildSpark(
-  rows: DatedRow[],
-  start: Date,
-  end: Date,
-  days: number,
-): number[] {
-  const buckets = Math.min(days, 30);
-  const span = Math.max(1, end.getTime() - start.getTime());
-  const counts = new Array<number>(buckets).fill(0);
-
-  for (const row of rows) {
-    const offset = new Date(row.created_at).getTime() - start.getTime();
-    const index = Math.min(
-      buckets - 1,
-      Math.max(0, Math.floor((offset / span) * buckets)),
-    );
-    counts[index] += 1;
-  }
-  return counts;
 }
 
 function buildDailyTrend(

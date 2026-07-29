@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { adminCardClass } from "@/components/admin/AdminUi";
+import { AdminMetricStrip, adminCardClass } from "@/components/admin/AdminUi";
 import {
   AnalyticsBreakdown,
   AnalyticsCampaignTable,
   AnalyticsFunnel,
   AnalyticsInternalToggle,
   AnalyticsKpiCard,
-  AnalyticsKpiGrid,
   AnalyticsRangeTabs,
   AnalyticsTabs,
   AnalyticsTrend,
@@ -99,7 +98,7 @@ function OverviewTab({ analytics }: { analytics: AdminAnalytics }) {
   const { metrics } = analytics;
   return (
     <>
-      <AnalyticsKpiGrid>
+      <AdminMetricStrip>
         <AnalyticsKpiCard
           label="Leads"
           metric={metrics.leads}
@@ -121,7 +120,7 @@ function OverviewTab({ analytics }: { analytics: AdminAnalytics }) {
           caption="of leads who booked"
           format="percent"
         />
-      </AnalyticsKpiGrid>
+      </AdminMetricStrip>
 
       <BookingContext
         connected={analytics.bookingsConnected}

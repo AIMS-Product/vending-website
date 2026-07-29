@@ -52,6 +52,17 @@ Shadows: `--shadow-ui` (everything), `--shadow-ui-raised` (dialogs). Two only.
 - **Type scale is fixed rem, ratio ~1.2.** Page title 22px semibold. Body 14px.
   Dense rows and labels 13px. Eyebrows 11px uppercase, `0.08em` tracking.
 - **Numbers are `tabular-nums`.** Counts, phone numbers, dates, percentages.
+- **A magnitude bar is one hue, and length is its only encoding.** `AdminBar`
+  owns it. Don't tint a bar darker because it is longer: that spends the colour
+  channel restating what the length already says. Don't put a track behind it
+  either. A full-width grey rail under every row is identical on every row, so
+  the eye anchors on the rail instead of the fill and a 25% row stops looking
+  different from a 2% row. Without a track the panel's silhouette is the
+  ranking. Bars are square where they start and rounded only at the data end,
+  so a short bar reads as short instead of as a pill.
+- **Two series get a legend; one series doesn't.** With a single colour the
+  panel title already says what is plotted, and a one-swatch key is ink that
+  explains nothing.
 - **Density over decoration.** Table rows at `py-2.5`. Fourteen-plus rows on a
   1440px screen.
 - **No dark mode. No emojis.** Icons come from `AdminIcon`.

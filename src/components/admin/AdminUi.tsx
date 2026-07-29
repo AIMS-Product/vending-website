@@ -90,6 +90,7 @@ export function AdminMetricPanel({
   label,
   value,
   caption,
+  delta,
 }: {
   /** Kept for call-site compatibility. The number carries the meaning; a
    *  pastel icon chip behind it never did. */
@@ -98,6 +99,8 @@ export function AdminMetricPanel({
   label: string;
   value: number | string;
   caption: string;
+  /** Optional movement chip, rendered ahead of the caption. */
+  delta?: ReactNode;
 }) {
   return (
     <div className="px-4 py-3.5">
@@ -105,13 +108,70 @@ export function AdminMetricPanel({
       <p className="text-ui-text mt-2 text-2xl leading-none font-semibold tracking-[-0.02em] tabular-nums">
         {value}
       </p>
-      <p className="text-ui-text-muted mt-1.5 flex items-center gap-1.5 text-xs">
+      <p className="text-ui-text-muted mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+        {delta}
         {tone && tone !== "blue" && tone !== "slate" ? (
           <AdminStatusDot tone={tone === "green" ? "ok" : "warn"} />
         ) : null}
         {caption}
       </p>
     </div>
+  );
+}
+
+/**
+ * Horizontal magnitude bar for a ranked list. `share` is this row's value over
+ * the largest value in the same panel.
+ *
+ * One hue, and length is the only encoding. Tinting a bar darker because it is
+ * longer spends the colour channel restating what the length already says.
+ *
+ * There is deliberately no track behind the fill: a full-width grey rail under
+ * every row is what made a 25% row and a 2% row read as the same object, since
+ * the eye anchors on the rail, which is identical on every row. Without it the
+ * panel's silhouette is the ranking. The fill is square where it starts and
+ * rounded only at the data end, so a short bar still reads as a short bar
+ * rather than as a pill.
+ */
+export function AdminBar({ share }: { share: number }) {
+  const pct = Math.min(1, Math.max(0, share)) * 100;
+  return (
+    // The value is printed as text beside every bar, so the bar is decoration
+    // for a screen reader.
+    <div className="h-1.5 w-full" aria-hidden="true">
+      <div
+        className="bg-ui-accent h-1.5 rounded-r-[3px]"
+        // A row with one lead out of four hundred is still a row that happened;
+        // the floor keeps it visible instead of rounding it out of existence.
+        style={{ width: pct > 0 ? `max(2px, ${pct}%)` : undefined }}
+      />
+    </div>
+  );
+}
+
+/**
+ * Movement against the prior window. Direction is carried by the sign as well
+ * as the colour, so it survives being read in greyscale.
+ */
+export function AdminDeltaChip({
+  tone,
+  children,
+}: {
+  tone: "up" | "down" | "neutral";
+  children: ReactNode;
+}) {
+  const toneClass =
+    tone === "up"
+      ? "bg-ui-ok-fill text-ui-ok-ink"
+      : tone === "down"
+        ? "bg-ui-bad-fill text-ui-bad-ink"
+        : "bg-ui-idle-fill text-ui-idle-ink";
+  return (
+    <span
+      className={`rounded-ui inline-flex w-fit items-center px-1.5 py-0.5 text-[0.6875rem] font-medium whitespace-nowrap tabular-nums ${toneClass}`}
+    >
+      {children}
+    </span>
   );
 }
 

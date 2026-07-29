@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { adminCardClass } from "@/components/admin/AdminUi";
+import {
+  AdminBar,
+  AdminDeltaChip,
+  AdminMetricPanel,
+  adminCardClass,
+  adminEyebrowClass,
+} from "@/components/admin/AdminUi";
 import type {
   AdminAnalyticsBreakdownRow,
   AdminAnalyticsDailyTrendRow,
@@ -16,8 +22,6 @@ import {
   type AdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
 
-const ACCENT = "#0b63f6";
-
 /** Segmented range switcher. Plain links so the page stays a Server Component. */
 export function AnalyticsRangeTabs({
   active,
@@ -30,7 +34,7 @@ export function AnalyticsRangeTabs({
 }) {
   return (
     <div
-      className="border-ui-line inline-flex rounded-lg border bg-white p-1"
+      className="border-ui-line rounded-ui bg-ui-surface shadow-ui inline-flex border p-0.5"
       role="group"
       aria-label="Date range"
     >
@@ -41,10 +45,12 @@ export function AnalyticsRangeTabs({
             key={key}
             href={analyticsHref(key, includeInternal, tab)}
             aria-current={isActive ? "page" : undefined}
-            className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${
+            // Selection is a soft fill. A filled dark segment would be a second
+            // filled control competing with the page's primary button.
+            className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] font-medium transition ${
               isActive
-                ? "bg-slate-900 text-white"
-                : "text-ui-text-muted hover:bg-ui-canvas"
+                ? "bg-ui-accent-soft text-ui-accent"
+                : "text-ui-text-muted hover:text-ui-text"
             }`}
           >
             {ADMIN_ANALYTICS_RANGES[key].label}
@@ -69,14 +75,14 @@ export function AnalyticsInternalToggle({
   return (
     <Link
       href={analyticsHref(range, !includeInternal, tab)}
-      className="border-ui-line text-ui-text-muted hover:bg-ui-canvas inline-flex items-center gap-2.5 rounded-lg border bg-white px-3 py-2 text-sm font-medium transition"
+      className="border-ui-line text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text rounded-ui bg-ui-surface shadow-ui inline-flex items-center gap-2 border px-2.5 py-1.5 text-[0.8125rem] font-medium transition"
     >
       <span
         aria-hidden="true"
-        className={`flex h-4 w-4 items-center justify-center rounded border ${
+        className={`flex h-4 w-4 items-center justify-center rounded-[3px] border ${
           includeInternal
-            ? "border-slate-900 bg-slate-900 text-white"
-            : "border-ui-line-strong bg-white"
+            ? "border-ui-accent bg-ui-accent text-white"
+            : "border-ui-line-strong bg-ui-surface"
         }`}
       >
         {includeInternal ? (
@@ -100,17 +106,16 @@ export function AnalyticsInternalToggle({
   );
 }
 
-export function AnalyticsKpiGrid({ children }: { children: React.ReactNode }) {
-  return (
-    <section
-      className="border-ui-line mb-5 grid gap-px overflow-hidden rounded-xl border bg-slate-200 sm:grid-cols-2 xl:grid-cols-4"
-      aria-label="Headline metrics"
-    >
-      {children}
-    </section>
-  );
-}
-
+/**
+ * A headline number, rendered through the shared metric strip so the analytics
+ * row is the same object as the one on Leads, News and Libraries.
+ *
+ * There is no sparkline. The series behind these numbers is plotted full width
+ * by `AnalyticsTrend` further down the same page; a 72px copy of it beside the
+ * value was a near-flat line that could not carry the shape, and the booking
+ * rate is a ratio of two windows with no per-day series to plot at all, so one
+ * of the four was always blank.
+ */
 export function AnalyticsKpiCard({
   label,
   metric,
@@ -122,34 +127,25 @@ export function AnalyticsKpiCard({
   caption: string;
   format?: "number" | "percent";
 }) {
-  const display =
-    format === "percent"
-      ? `${formatNumber(metric.value)}%`
-      : formatNumber(metric.value);
-
+  const suffix = format === "percent" ? "%" : "";
   return (
-    <div className="bg-white px-5 py-4">
-      <p className="text-ui-text-subtle text-xs font-semibold tracking-wide uppercase">
-        {label}
-      </p>
-      <div className="mt-2 flex items-end justify-between gap-3">
-        <p className="text-ui-text text-3xl font-semibold tracking-tight">
-          {display}
-        </p>
-        {metric.spark.length > 0 ? <Sparkline values={metric.spark} /> : null}
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <DeltaChip metric={metric} format={format} />
-        <span className="text-ui-text-subtle text-xs">{caption}</span>
-      </div>
-    </div>
+    <AdminMetricPanel
+      label={label}
+      value={`${formatNumber(metric.value)}${suffix}`}
+      caption={caption}
+      delta={<DeltaChip metric={metric} format={format} />}
+    />
   );
 }
 
 /**
  * Percentage change against the prior window. When the prior window was zero a
- * percentage is undefined, so the absolute change is shown instead — this is
- * the difference between an honest "+3 vs 0" and a fake "+300%".
+ * percentage is undefined, so the state is named instead — this is the
+ * difference between an honest "new" and a fake "+300%".
+ *
+ * The sign carries the direction as well as the colour, so the chip still reads
+ * in greyscale. The prior value moves to the tooltip: it is context for a
+ * number you are already looking at, not something to scan a row of cards for.
  */
 function DeltaChip({
   metric,
@@ -159,89 +155,42 @@ function DeltaChip({
   format: "number" | "percent";
 }) {
   const suffix = format === "percent" ? "%" : "";
+  const priorLabel = `Prior window: ${formatNumber(metric.prior)}${suffix}`;
 
   if (metric.value === 0 && metric.prior === 0) {
-    return <Chip tone="neutral">no activity</Chip>;
+    return <AdminDeltaChip tone="neutral">no activity</AdminDeltaChip>;
   }
   if (metric.deltaPct === null) {
     return (
-      <Chip tone="up">
-        new · {formatNumber(metric.value)}
-        {suffix} vs 0
-      </Chip>
+      <span title={priorLabel}>
+        <AdminDeltaChip tone="up">new</AdminDeltaChip>
+      </span>
     );
   }
   if (metric.deltaPct === 0) {
-    return <Chip tone="neutral">flat vs prior</Chip>;
+    return (
+      <span title={priorLabel}>
+        <AdminDeltaChip tone="neutral">flat</AdminDeltaChip>
+      </span>
+    );
   }
 
   const rising = metric.deltaPct > 0;
   return (
-    <Chip tone={rising ? "up" : "down"}>
-      {rising ? "▲" : "▼"} {Math.abs(metric.deltaPct)}% vs{" "}
-      {formatNumber(metric.prior)}
-      {suffix}
-    </Chip>
-  );
-}
-
-function Chip({
-  tone,
-  children,
-}: {
-  tone: "up" | "down" | "neutral";
-  children: React.ReactNode;
-}) {
-  const toneClass =
-    tone === "up"
-      ? "bg-emerald-50 text-emerald-700"
-      : tone === "down"
-        ? "bg-rose-50 text-rose-700"
-        : "bg-ui-line text-ui-text-muted";
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${toneClass}`}
-    >
-      {children}
+    <span title={priorLabel}>
+      <AdminDeltaChip tone={rising ? "up" : "down"}>
+        {rising ? "+" : "−"}
+        {Math.abs(metric.deltaPct)}%
+      </AdminDeltaChip>
     </span>
   );
 }
 
-function Sparkline({ values }: { values: number[] }) {
-  const width = 72;
-  const height = 26;
-  const max = Math.max(1, ...values);
-  const step = values.length > 1 ? width / (values.length - 1) : width;
-
-  const points = values
-    .map((value, index) => {
-      const x = index * step;
-      const y = height - (value / max) * (height - 2) - 1;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-
-  return (
-    <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      className="shrink-0 overflow-visible"
-      role="img"
-      aria-label={`Trend: ${values.join(", ")}`}
-    >
-      <polyline
-        points={points}
-        fill="none"
-        stroke={ACCENT}
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
+/**
+ * A ranked list. Rows are already sorted by count, so the job here is to make
+ * the decline from first to last legible: an explicit rank, one line of text
+ * per row, and a bar with nothing behind it.
+ */
 export function AnalyticsBreakdown({
   title,
   rows,
@@ -256,45 +205,48 @@ export function AnalyticsBreakdown({
 
   return (
     <section className={adminCardClass} aria-label={title}>
-      <h2 className="text-ui-text-subtle mb-4 text-sm font-semibold uppercase">
-        {title}
-      </h2>
+      <h2 className={adminEyebrowClass}>{title}</h2>
       {rows.length === 0 ? (
-        <p className="text-ui-text-subtle text-sm">{emptyLabel}</p>
+        <p className="text-ui-text-subtle mt-3 text-sm">{emptyLabel}</p>
       ) : (
-        <ul className="grid gap-2.5">
-          {rows.map((row) => (
-            <li key={row.label}>
-              <div className="mb-1 flex items-center justify-between gap-3 text-sm">
-                <span className="text-ui-text-muted min-w-0 truncate font-medium">
+        <ol className="mt-3 grid gap-1.5">
+          {rows.map((row, index) => (
+            <li key={row.label} className="grid gap-1">
+              <div className="flex items-baseline gap-2 text-[0.8125rem]">
+                <span className="text-ui-text-subtle w-5 shrink-0 tabular-nums">
+                  {index + 1}
+                </span>
+                <span
+                  className="text-ui-text min-w-0 flex-1 truncate"
+                  title={row.label}
+                >
                   {row.label}
                 </span>
-                <span className="shrink-0 tabular-nums">
-                  <span className="text-ui-text font-semibold">
-                    {row.count}
-                  </span>
-                  {total > 0 ? (
-                    <span className="text-ui-text-subtle ml-1.5 text-xs">
-                      {Math.round((row.count / total) * 100)}%
-                    </span>
-                  ) : null}
+                <span className="text-ui-text shrink-0 font-semibold tabular-nums">
+                  {row.count}
+                </span>
+                <span className="text-ui-text-subtle w-9 shrink-0 text-right text-xs tabular-nums">
+                  {sharePct(row.count, total)}
                 </span>
               </div>
-              <div className="bg-ui-line h-2 rounded-full">
-                <div
-                  className="h-2 rounded-full"
-                  style={{
-                    width: `${(row.count / maxCount) * 100}%`,
-                    backgroundColor: ACCENT,
-                  }}
-                />
-              </div>
+              <AdminBar share={row.count / maxCount} />
             </li>
           ))}
-        </ul>
+        </ol>
       )}
     </section>
   );
+}
+
+/**
+ * Rounding a real row down to "0%" reads as "nothing happened here", which is
+ * not what the row says. Anything that happened at least once floors at "<1%".
+ */
+function sharePct(count: number, total: number): string {
+  if (total <= 0) return "";
+  const pct = (count / total) * 100;
+  if (pct > 0 && pct < 1) return "<1%";
+  return `${Math.round(pct)}%`;
 }
 
 export function AnalyticsTrend({
@@ -309,38 +261,38 @@ export function AnalyticsTrend({
 
   return (
     <section className={adminCardClass} aria-label="Daily trend">
-      <h2 className="text-ui-text-subtle mb-4 text-sm font-semibold uppercase">
-        Leads and bookings per day
-      </h2>
-      <div className="flex items-end gap-1.5 overflow-x-auto pb-1">
+      <h2 className={adminEyebrowClass}>Leads and bookings per day</h2>
+      <div className="mt-3 flex items-end gap-1.5 overflow-x-auto pb-1">
         {rows.map((row) => (
           <div
             key={row.date}
             className="flex min-w-[1.75rem] flex-1 flex-col items-center gap-1.5"
           >
-            <div className="flex h-28 w-full items-end justify-center gap-0.5">
+            <div className="flex h-24 w-full items-end justify-center gap-0.5">
               <Bar
                 value={row.leads}
                 max={maxValue}
-                color={ACCENT}
+                fill="bg-ui-accent"
                 title={`${row.leads} leads on ${row.date}`}
               />
               <Bar
                 value={row.bookings}
                 max={maxValue}
-                color="#34d399"
+                fill="bg-ui-ok"
                 title={`${row.bookings} bookings on ${row.date}`}
               />
             </div>
-            <span className="text-ui-text-subtle text-[10px] font-medium">
+            <span className="text-ui-text-subtle text-[10px] tabular-nums">
               {formatShortDate(row.date)}
             </span>
           </div>
         ))}
       </div>
-      <div className="text-ui-text-subtle mt-3 flex items-center gap-4 text-xs">
-        <LegendDot color={ACCENT} label="Leads" />
-        <LegendDot color="#34d399" label="Bookings from leads" />
+      {/* Two series, so a key is doing real work here: it is the only thing
+          naming which column is which. */}
+      <div className="text-ui-text-muted mt-3 flex items-center gap-4 text-xs">
+        <LegendDot fill="bg-ui-accent" label="Leads" />
+        <LegendDot fill="bg-ui-ok" label="Bookings from leads" />
       </div>
     </section>
   );
@@ -349,32 +301,28 @@ export function AnalyticsTrend({
 function Bar({
   value,
   max,
-  color,
+  fill,
   title,
 }: {
   value: number;
   max: number;
-  color: string;
+  fill: string;
   title: string;
 }) {
   return (
     <div
-      className="w-2.5 rounded-t"
-      style={{
-        height: `${Math.max(2, (value / max) * 100)}%`,
-        backgroundColor: value > 0 ? color : "#e2e8f0",
-      }}
+      className={`w-2.5 rounded-t-[2px] ${value > 0 ? fill : "bg-ui-line"}`}
+      style={{ height: `${Math.max(2, (value / max) * 100)}%` }}
       title={title}
     />
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+function LegendDot({ fill, label }: { fill: string; label: string }) {
   return (
     <span className="flex items-center gap-1.5">
       <span
-        className="size-2.5 rounded-full"
-        style={{ backgroundColor: color }}
+        className={`size-2 shrink-0 rounded-full ${fill}`}
         aria-hidden="true"
       />
       {label}
@@ -440,9 +388,9 @@ export function AnalyticsTabs({
             key={tab.key}
             href={analyticsHref(range, includeInternal, tab.key)}
             aria-current={isActive ? "page" : undefined}
-            className={`-mb-px border-b-2 px-3.5 py-2.5 text-sm font-semibold transition ${
+            className={`-mb-px border-b-2 px-3 py-2 text-[0.8125rem] font-medium transition ${
               isActive
-                ? "text-ui-text border-slate-900"
+                ? "text-ui-text border-ui-accent"
                 : "text-ui-text-subtle hover:text-ui-text border-transparent"
             }`}
           >
@@ -464,10 +412,8 @@ export function AnalyticsFunnel({
 }) {
   return (
     <section className={adminCardClass} aria-label="Conversion funnel">
-      <h2 className="text-ui-text-subtle mb-1 text-sm font-semibold uppercase">
-        From question to booked call
-      </h2>
-      <p className="text-ui-text-subtle mb-4 text-xs">
+      <h2 className={adminEyebrowClass}>From question to booked call</h2>
+      <p className="text-ui-text-subtle mt-2 text-xs">
         {context.contactsCaptured} contacts captured ·{" "}
         <span className="text-ui-text-muted font-medium">
           {context.offeredQuestions} were offered the questions
@@ -475,34 +421,26 @@ export function AnalyticsFunnel({
         · {context.neverOfferedQuestions} came from booking or contact pages
         that never show them. Only the offered group is measured below.
       </p>
-      <ol className="grid gap-3">
+      <ol className="mt-3 grid gap-2.5">
         {steps.map((step, index) => (
-          <li key={step.label}>
-            <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
-              <span className="text-ui-text-muted font-medium">
+          <li key={step.label} className="grid gap-1">
+            <div className="flex items-baseline gap-2 text-[0.8125rem]">
+              <span className="text-ui-text min-w-0 flex-1 truncate">
                 {step.label}
               </span>
-              <span className="tabular-nums">
-                <span className="text-ui-text font-semibold">{step.count}</span>
-                <span className="text-ui-text-subtle ml-2 text-xs">
-                  {step.ofTopPct}% of all
-                </span>
+              <span className="text-ui-text shrink-0 font-semibold tabular-nums">
+                {step.count}
+              </span>
+              <span className="text-ui-text-subtle w-9 shrink-0 text-right text-xs tabular-nums">
+                {step.ofTopPct}%
               </span>
             </div>
-            <div className="bg-ui-line h-2.5 rounded-full">
-              <div
-                className="h-2.5 rounded-full"
-                style={{
-                  width: `${Math.max(step.ofTopPct, step.count > 0 ? 2 : 0)}%`,
-                  backgroundColor: ACCENT,
-                }}
-              />
-            </div>
+            <AdminBar share={step.ofTopPct / 100} />
             {index > 0 ? (
-              <p className="text-ui-text-subtle mt-1 text-xs">
+              <p className="text-ui-text-subtle text-xs">
                 {step.ofPreviousPct}% continued from the step above
                 {step.ofPreviousPct < 100 ? (
-                  <span className="text-rose-600">
+                  <span className="text-ui-bad">
                     {" "}
                     · {round1(100 - step.ofPreviousPct)}% dropped off
                   </span>
@@ -523,43 +461,47 @@ export function AnalyticsCampaignTable({
 }) {
   return (
     <section className={adminCardClass} aria-label="Campaign performance">
-      <h2 className="text-ui-text-subtle mb-4 text-sm font-semibold uppercase">
-        Campaign performance
-      </h2>
+      <h2 className={adminEyebrowClass}>Campaign performance</h2>
       {rows.length === 0 ? (
-        <p className="text-ui-text-subtle text-sm">
+        <p className="text-ui-text-subtle mt-3 text-sm">
           No campaigns in this range.
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[36rem] text-sm">
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[36rem] text-[0.8125rem]">
             <thead>
-              <tr className="border-ui-line text-ui-text-subtle border-b text-left text-xs font-semibold uppercase">
-                <th className="py-2 pr-3">Campaign</th>
-                <th className="py-2 pr-3">Source</th>
-                <th className="py-2 pr-3 text-right">Leads</th>
-                <th className="py-2 pr-3 text-right">Qualified</th>
-                <th className="py-2 pr-3 text-right">Booked</th>
-                <th className="py-2 text-right">Rate</th>
+              <tr
+                className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
+              >
+                <th className="py-2 pr-3 font-semibold">Campaign</th>
+                <th className="py-2 pr-3 font-semibold">Source</th>
+                <th className="py-2 pr-3 text-right font-semibold">Leads</th>
+                <th className="py-2 pr-3 text-right font-semibold">
+                  Qualified
+                </th>
+                <th className="py-2 pr-3 text-right font-semibold">Booked</th>
+                <th className="py-2 text-right font-semibold">Rate</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-ui-line divide-y">
               {rows.map((row) => (
                 <tr key={`${row.campaign}-${row.source}`}>
-                  <td className="text-ui-text py-2 pr-3 font-medium">
+                  <td className="text-ui-text py-2.5 pr-3 font-medium">
                     {row.campaign}
                   </td>
-                  <td className="text-ui-text-muted py-2 pr-3">{row.source}</td>
-                  <td className="text-ui-text py-2 pr-3 text-right tabular-nums">
+                  <td className="text-ui-text-muted py-2.5 pr-3">
+                    {row.source}
+                  </td>
+                  <td className="text-ui-text py-2.5 pr-3 text-right tabular-nums">
                     {row.leads}
                   </td>
-                  <td className="text-ui-text py-2 pr-3 text-right tabular-nums">
+                  <td className="text-ui-text py-2.5 pr-3 text-right tabular-nums">
                     {row.qualified}
                   </td>
-                  <td className="text-ui-text py-2 pr-3 text-right tabular-nums">
+                  <td className="text-ui-text py-2.5 pr-3 text-right tabular-nums">
                     {row.booked}
                   </td>
-                  <td className="text-ui-text py-2 text-right font-semibold tabular-nums">
+                  <td className="text-ui-text py-2.5 text-right font-semibold tabular-nums">
                     {row.bookingRatePct}%
                   </td>
                 </tr>
