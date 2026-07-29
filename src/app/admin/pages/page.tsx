@@ -272,10 +272,10 @@ function SeoPagesAdminSurface({
 }) {
   return (
     <>
-      <SeoPagesSummary
-        state={state}
-        scheduleFailedCount={scheduleFailedCount}
-      />
+      {/* The four count tiles used to live here. They were a second copy of
+          the status filter that already exists in the toolbar, so the counts
+          moved onto those tabs and the tiles are gone. */}
+      <ScheduleFailedKpi count={scheduleFailedCount} />
       <section className="border-ui-line rounded-lg border bg-white shadow-sm">
         <SeoPagesToolbar state={state} />
         <SeoPagesResults state={state} createdId={createdId} />
@@ -459,33 +459,51 @@ function SeoPagesSearchForm({ state }: { state: SeoPagesListState }) {
 }
 
 function SeoPagesStatusFilters({ state }: { state: SeoPagesListState }) {
-  const { perPage, q: searchQuery, sort, status, view } = state;
+  const { pageCounts, perPage, q: searchQuery, sort, status, view } = state;
+
+  // The counts that used to sit in four large tiles above the table. Beside
+  // their own tab they say the same thing in one line.
+  const countFor: Record<string, number | undefined> = {
+    active: pageCounts.active,
+    draft: pageCounts.draft,
+    published: pageCounts.published,
+    archived: pageCounts.archived,
+  };
 
   return (
     <nav
-      className="border-ui-line inline-flex min-h-12 max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-md border bg-white p-1 shadow-sm"
+      className="border-ui-line bg-ui-canvas rounded-ui inline-flex max-w-full flex-nowrap items-center gap-0.5 overflow-x-auto border p-0.5"
       aria-label="Page status filters"
     >
-      {seoPageFilters.map((filter) => (
-        <Link
-          key={filter.value}
-          href={adminPagesHref({
-            status: filter.value,
-            view,
-            q: searchQuery,
-            sort,
-            perPage,
-          })}
-          aria-current={status === filter.value ? "page" : undefined}
-          className={`focus-visible:ring-ui-accent/35 shrink-0 rounded-md px-4 py-2 text-sm font-semibold whitespace-nowrap transition focus-visible:ring-2 focus-visible:outline-none ${
-            status === filter.value
-              ? "bg-ui-accent-soft text-ui-accent shadow-sm"
-              : "text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text"
-          }`}
-        >
-          {filter.label}
-        </Link>
-      ))}
+      {seoPageFilters.map((filter) => {
+        const isActive = status === filter.value;
+        const count = countFor[filter.value];
+        return (
+          <Link
+            key={filter.value}
+            href={adminPagesHref({
+              status: filter.value,
+              view,
+              q: searchQuery,
+              sort,
+              perPage,
+            })}
+            aria-current={isActive ? "page" : undefined}
+            className={`shrink-0 rounded-[4px] px-2.5 py-1 text-[0.8125rem] whitespace-nowrap transition ${
+              isActive
+                ? "bg-ui-surface text-ui-text shadow-ui font-medium"
+                : "text-ui-text-muted hover:text-ui-text"
+            }`}
+          >
+            {filter.label}
+            {typeof count === "number" ? (
+              <span className="text-ui-text-subtle ml-1.5 tabular-nums">
+                {count}
+              </span>
+            ) : null}
+          </Link>
+        );
+      })}
     </nav>
   );
 }
@@ -594,7 +612,8 @@ function SeoPagesResults({
 
   return (
     <>
-      <StatusLegend />
+      {/* The legend is gone: every status chip carries its own word now, so
+          a key that decodes the colours has nothing left to explain. */}
       <div className="hidden md:block">
         <BulkArchiveControls returnTo={state.returnTo} />
       </div>
@@ -894,11 +913,7 @@ function PageRow({
         justCreated ? "bg-emerald-50/70" : ""
       }`}
     >
-      <td
-        className={`border-l-4 px-7 py-4 ${
-          justCreated ? "border-emerald-400" : "border-transparent"
-        }`}
-      >
+      <td className="px-4 py-2.5">
         <div className="flex items-start gap-3">
           {page.status !== "archived" ? (
             // S3 / WCAG 2.5.8: the checkbox stays a 16px visual box, but a
@@ -1213,18 +1228,24 @@ function StatusBadge({
   tone: StatusDotTone;
   align?: "start" | "center";
 }) {
+  // Same tinted-chip treatment as AdminStatusBadge, so status reads the same
+  // way here as it does on Leads.
+  const chip: Record<StatusDotTone, string> = {
+    green: "bg-ui-ok-fill text-ui-ok-ink",
+    amber: "bg-ui-warn-fill text-ui-warn-ink",
+    red: "bg-ui-bad-fill text-ui-bad-ink",
+    blue: "bg-ui-accent-soft text-ui-accent",
+    slate: "bg-ui-idle-fill text-ui-idle-ink",
+  };
+
   return (
     <span
-      className={`text-ui-text-muted inline-flex items-center gap-2 text-xs font-semibold ${
-        align === "center" ? "justify-center" : ""
-      }`}
+      className={`rounded-ui inline-flex w-fit items-center px-2 py-0.5 text-[0.8125rem] font-medium whitespace-nowrap ${
+        chip[tone] ?? chip.slate
+      } ${align === "center" ? "justify-center" : ""}`}
       aria-label={accessibleLabel}
     >
-      <span
-        className={`size-2.5 shrink-0 rounded-full ${dotToneClass(tone)}`}
-        aria-hidden="true"
-      />
-      <span>{label}</span>
+      {label}
     </span>
   );
 }

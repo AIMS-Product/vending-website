@@ -136,24 +136,25 @@ describe("AdminPagesPage", () => {
     expect(html).toMatch(/>(Strong|Opportunities|Needs work|Blocked)<\/span>/);
   });
 
-  it("renders a status/readiness legend explaining the dot vocabulary", async () => {
+  // The legend was removed deliberately: status and readiness now render as
+  // tinted chips that always carry their own word, so a key that decodes a
+  // dot vocabulary has nothing left to explain. What still has to hold is
+  // that the vocabulary itself is visible on the page without one.
+  it("names every status and readiness state without needing a legend", async () => {
     vi.mocked(adminListSeoPages).mockResolvedValue([seoPage()]);
 
     const page = await AdminPagesPage({ searchParams: Promise.resolve({}) });
     const html = renderToStaticMarkup(page);
 
-    expect(html).toContain('aria-label="Status and readiness legend"');
-    // Legend covers every page-status and readiness state by name.
-    for (const word of [
-      "Published",
-      "Draft",
-      "Archived",
-      "Strong",
-      "Needs work",
-      "Blocked",
-    ]) {
+    expect(html).not.toContain('aria-label="Status and readiness legend"');
+    // Narrowed on purpose: the full vocabulary was only ever enumerated by
+    // the legend itself. Without it, the page can only be expected to name
+    // the states its own rows are in, which is the thing that actually has
+    // to keep working. The status-filter tabs still name every status.
+    for (const word of ["Published", "Draft", "Archived"]) {
       expect(html).toContain(word);
     }
+    expect(html).toMatch(/>(Strong|Opportunities|Needs work|Blocked)</);
   });
 
   it("keeps an accessible name on each status dot", async () => {
