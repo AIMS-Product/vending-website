@@ -16,7 +16,6 @@ import {
   adminCardClass,
   adminPanelClass,
   adminSecondaryButtonClass,
-  adminSmallButtonClass,
 } from "@/components/admin/AdminUi";
 import type {
   AdminCloseSyncEventSummary,
@@ -56,10 +55,8 @@ const DEAD_LETTER_CAPTION =
 function CloseSyncStatusBadge({ status }: { status: string }) {
   if (status === "dead_letter") {
     return (
-      <span className="grid gap-1">
-        <span className="inline-flex w-fit rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
-          Permanently failed
-        </span>
+      <span className="grid justify-items-start gap-1">
+        <AdminStatusBadge status={status} label="Permanently failed" />
         <span className="text-xs text-slate-500">{DEAD_LETTER_CAPTION}</span>
       </span>
     );
@@ -72,15 +69,15 @@ function SyncIssuesBanner({ count }: { count: number }) {
   return (
     <div
       role="alert"
-      className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex sm:items-center sm:justify-between sm:gap-4"
+      className="rounded-admin-card border-admin-ink bg-admin-bad-fill text-admin-bad shadow-admin-card border-2 px-4 py-3 text-sm sm:flex sm:items-center sm:justify-between sm:gap-4"
     >
-      <p className="font-semibold">
+      <p className="font-bold">
         {count} {count === 1 ? "lead is" : "leads are"} stuck because Close sync
         keeps failing — these need manual attention.
       </p>
       <a
         href="#sync-issues-table"
-        className="mt-2 inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-red-300 bg-white px-3 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:outline-none sm:mt-0"
+        className="rounded-admin border-admin-ink text-admin-bad focus-visible:ring-admin-pop mt-2 inline-flex h-9 shrink-0 items-center justify-center border-2 bg-white px-3 text-sm font-bold transition hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:outline-none sm:mt-0"
       >
         Fix now
       </a>
@@ -123,6 +120,7 @@ export function AdminLeadsManager({
           label="Visible"
           value={leads.length}
           caption="leads"
+          primary
         />
         <AdminMetricPanel
           icon="filter"
@@ -148,17 +146,13 @@ export function AdminLeadsManager({
       </AdminMetricStrip>
 
       <section id="sync-issues-table" className={adminPanelClass}>
-        <div className="border-b border-slate-200 p-4">
+        {/* The page header already carries this description — repeating it
+            here was the same sentence twice on one screen. */}
+        <div className="border-admin-ink border-b-2 p-4">
           <div className="grid gap-4">
-            <div>
-              <h2 className="text-base font-semibold text-slate-950">
-                Lead backstop
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Review captured leads, qualification progress, source
-                attribution, and Close sync recovery state.
-              </p>
-            </div>
+            <h2 className="text-admin-ink text-base font-bold">
+              Lead backstop
+            </h2>
             <div className="grid gap-2 xl:grid-cols-2">
               <FilterNav
                 activeValue={activeLifecycleStatus}
@@ -183,24 +177,24 @@ export function AdminLeadsManager({
         {leads.length ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1040px] divide-y divide-slate-200 text-left text-sm">
-              <thead className="bg-slate-50 text-xs font-semibold tracking-normal text-slate-500 uppercase">
+              <thead className="border-admin-ink text-admin-ink border-b-2 bg-slate-100 text-xs font-bold tracking-wider uppercase">
                 <tr>
-                  <th scope="col" className="px-5 py-3">
+                  <th scope="col" className="px-5 py-2.5">
                     Lead
                   </th>
-                  <th scope="col" className="px-4 py-3">
+                  <th scope="col" className="px-4 py-2.5">
                     Lifecycle
                   </th>
-                  <th scope="col" className="px-4 py-3">
+                  <th scope="col" className="px-4 py-2.5">
                     Qualification
                   </th>
-                  <th scope="col" className="px-4 py-3">
+                  <th scope="col" className="px-4 py-2.5">
                     Close sync
                   </th>
-                  <th scope="col" className="px-4 py-3">
+                  <th scope="col" className="px-4 py-2.5">
                     Source
                   </th>
-                  <th scope="col" className="px-5 py-3 text-right">
+                  <th scope="col" className="px-5 py-2.5 text-right">
                     Actions
                   </th>
                 </tr>
@@ -434,64 +428,63 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
 
 function LeadRow({ lead }: { lead: AdminLeadListItem }) {
   return (
-    <tr>
-      <td className="px-5 py-4">
+    <tr className="align-top transition hover:bg-slate-50">
+      <td className="px-5 py-2.5">
         <Link
           href={`/admin/leads/${lead.id}`}
-          className="font-semibold text-slate-950 hover:text-[#0b63f6]"
+          className="text-admin-ink hover:text-admin-link font-bold"
         >
           {lead.fullName}
         </Link>
-        <p className="mt-1 text-xs text-slate-500">{lead.email}</p>
-        {lead.phone ? (
-          <p className="mt-1 text-xs text-slate-500">{lead.phone}</p>
-        ) : null}
+        <p className="text-xs text-slate-500 tabular-nums">
+          {lead.email}
+          {lead.phone ? ` · ${lead.phone}` : ""}
+        </p>
       </td>
-      <td className="px-4 py-4">
+      <td className="px-4 py-2.5">
         <AdminStatusBadge status={lead.lifecycleStatus} />
       </td>
-      <td className="px-4 py-4">
+      <td className="px-4 py-2.5">
         {lead.qualificationStatus ? (
           <AdminStatusBadge status={lead.qualificationStatus} />
         ) : (
-          <span className="text-xs font-semibold text-slate-500">None</span>
+          <AdminStatusBadge status="none" />
         )}
       </td>
-      <td className="px-4 py-4">
-        <div className="grid gap-1">
+      <td className="px-4 py-2.5">
+        <div className="grid justify-items-start gap-1">
           {lead.closeSyncStatus ? (
             <CloseSyncStatusBadge status={lead.closeSyncStatus} />
           ) : (
-            <span className="text-xs font-semibold text-slate-500">None</span>
+            <AdminStatusBadge status="none" />
           )}
           {lead.closeSyncLastError ? (
-            <p className="max-w-48 truncate text-xs text-red-700">
+            <p className="text-admin-bad max-w-48 truncate text-xs">
               {lead.closeSyncLastError}
             </p>
           ) : null}
         </div>
       </td>
-      <td className="px-4 py-4">
-        <div className="grid gap-1 text-xs text-slate-600">
-          <span className="font-medium text-slate-800">
-            {lead.sourcePath ?? lead.landingPath ?? "Unknown source"}
+      <td className="px-4 py-2.5">
+        <div className="grid gap-0.5 text-xs text-slate-600">
+          <span className="text-admin-ink font-semibold">
+            {formatSourcePath(lead.sourcePath ?? lead.landingPath)}
           </span>
           {lead.sourcePageSlug ? <span>{lead.sourcePageSlug}</span> : null}
-          {lead.experimentKey || lead.variantKey ? (
-            <span>
-              {[lead.experimentKey, lead.variantKey]
-                .filter(Boolean)
-                .join(" / ")}
-            </span>
+          {formatExperiment(lead.experimentKey, lead.variantKey) ? (
+            <span>{formatExperiment(lead.experimentKey, lead.variantKey)}</span>
           ) : null}
         </div>
       </td>
-      <td className="px-5 py-4">
+      <td className="px-5 py-2.5">
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Link
             href={`/admin/leads/${lead.id}`}
-            className={adminSmallButtonClass}
+            className="text-admin-link focus-visible:ring-admin-pop inline-flex items-center gap-1 font-bold underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:outline-none"
           >
+            <span aria-hidden="true">
+              <AdminIcon icon="search" />
+            </span>
             Inspect
           </Link>
           {lead.latestCloseSyncEvent &&
@@ -502,6 +495,23 @@ function LeadRow({ lead }: { lead: AdminLeadListItem }) {
       </td>
     </tr>
   );
+}
+
+// "/" alone in a table cell reads as a rendering glitch, and a bare variant
+// key ("A") reads as one too. Both get a word in front of them.
+function formatSourcePath(path: string | null | undefined) {
+  if (!path) return "Unknown source";
+  return path === "/" ? "Homepage (/)" : path;
+}
+
+function formatExperiment(
+  experimentKey: string | null | undefined,
+  variantKey: string | null | undefined,
+) {
+  const parts: string[] = [];
+  if (experimentKey) parts.push(`Test ${experimentKey}`);
+  if (variantKey) parts.push(`Variant ${variantKey}`);
+  return parts.join(" · ");
 }
 
 function CloseSyncEventCard({
@@ -663,10 +673,10 @@ function FilterNav({
             [otherParam]: otherValue,
           })}
           aria-current={activeValue === option.value ? "page" : undefined}
-          className={`rounded-md px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+          className={`rounded-admin focus-visible:ring-admin-pop px-3 py-2 text-xs font-bold transition focus-visible:ring-2 focus-visible:outline-none ${
             activeValue === option.value
-              ? "bg-[#f4f8ff] text-[#0b63f6] shadow-sm"
-              : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+              ? "border-admin-ink bg-admin-accent text-admin-ink border-2"
+              : "hover:text-admin-ink border-2 border-transparent text-slate-600 hover:bg-slate-50"
           }`}
         >
           {option.label}

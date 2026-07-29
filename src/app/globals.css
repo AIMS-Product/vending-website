@@ -28,6 +28,59 @@
     #eaf6ff 50%,
     #b6e1ff 100%
   );
+
+  /* Admin Studio tokens.
+     Values are lifted from the live public lead form (PublicLeadForm.tsx) so
+     the admin reads as the same product, not an approximation of it. Public
+     components can migrate onto these same variables — do not fork a second
+     copy of the palette. */
+  --admin-ink: #111111;
+  --admin-accent: #f47b3b;
+  /* #f47b3b fails WCAG AA on white for small text. Orange is for fills, bars
+     and large numerals; small text uses this darker orange or ink. */
+  --admin-accent-ink: #c2410c;
+  --admin-pop: #55b8e8;
+  --admin-focus: #2d9fd6;
+  --admin-link: #066a99;
+
+  /* Semantic status. Fill is the pill background, ink is its text. */
+  --admin-ok: #14532d;
+  --admin-ok-fill: #dcfce7;
+  --admin-warn: #78350f;
+  --admin-warn-fill: #fef3c7;
+  --admin-bad: #7f1d1d;
+  --admin-bad-fill: #fee2e2;
+  --admin-idle: #334155;
+  --admin-idle-fill: #f1f5f9;
+}
+
+@theme inline {
+  --color-admin-ink: var(--admin-ink);
+  --color-admin-accent: var(--admin-accent);
+  --color-admin-accent-ink: var(--admin-accent-ink);
+  --color-admin-pop: var(--admin-pop);
+  --color-admin-focus: var(--admin-focus);
+  --color-admin-link: var(--admin-link);
+
+  --color-admin-ok: var(--admin-ok);
+  --color-admin-ok-fill: var(--admin-ok-fill);
+  --color-admin-warn: var(--admin-warn);
+  --color-admin-warn-fill: var(--admin-warn-fill);
+  --color-admin-bad: var(--admin-bad);
+  --color-admin-bad-fill: var(--admin-bad-fill);
+  --color-admin-idle: var(--admin-idle);
+  --color-admin-idle-fill: var(--admin-idle-fill);
+
+  /* The hard offset shadow is the brand tell. Card = pale blue, button =
+     ink, badge = a 2px hint so dense tables don't turn into noise.
+     Never put these on table rows or inputs. */
+  --shadow-admin-card: 8px 8px 0 var(--admin-pop);
+  --shadow-admin-button: 5px 5px 0 var(--admin-ink);
+  --shadow-admin-button-hover: 7px 7px 0 var(--admin-ink);
+  --shadow-admin-badge: 2px 2px 0 var(--admin-ink);
+
+  --radius-admin: 8px;
+  --radius-admin-card: 12px;
 }
 
 @theme inline {
