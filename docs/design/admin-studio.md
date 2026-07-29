@@ -6,6 +6,22 @@ The Admin Studio is an operational CMS surface for creating, governing, and publ
 
 This contract applies to `/admin/*` routes, including resource pages, blog/news, media, content libraries, future landing pages, and future campaign pages.
 
+## Visual System
+
+The admin has one visual language, defined by the `--ui-*` tokens in
+`src/app/globals.css` and implemented in `src/components/admin/AdminUi.tsx`.
+See `DESIGN.md` for the full token table and rules.
+
+The public site's offset-brutalist language (ink borders, hard offset shadows,
+orange fills) is **not** part of it. That language exists to convert visitors
+on a landing page. In a dense data tool it reads as noise, and it contradicts
+the Product Standard below. Do not import it into `/admin`, and do not add a
+second set of tokens to sit beside `--ui-*`.
+
+Status is rendered as a coloured dot plus a word, never as a filled pill. One
+component owns it, `AdminStatusBadge`, so a legend and a table cell can never
+drift apart.
+
 ## Product Standard
 
 - The UI should feel quiet, structured, and work-focused.

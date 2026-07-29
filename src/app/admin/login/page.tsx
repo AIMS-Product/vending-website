@@ -30,28 +30,27 @@ export default async function AdminLoginPage({
   const defaultEmail = normalizeAdminEmailParam(params.email);
 
   return (
-    <section className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-6 px-6 py-16">
-      <header className="space-y-2">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-md bg-[#0b63f6] text-lg font-semibold text-white shadow-sm">
-            S
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold text-slate-950">Studio</h1>
-            <p className="text-sm text-slate-500">Admin CMS</p>
-          </div>
-        </div>
-        <p className="pt-2 text-sm leading-6 text-slate-600">
-          Sign in with the email and password set up for your Studio account.
-        </p>
-      </header>
+    <section
+      data-admin-ui
+      className="bg-ui-canvas flex min-h-screen w-full flex-col items-center justify-center px-6 py-16"
+    >
+      <div className="w-full max-w-sm">
+        <header className="mb-5">
+          <p className="text-ui-text-subtle text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
+            Vendingpreneurs Studio
+          </p>
+          <h1 className="text-ui-text mt-1.5 text-[1.375rem] leading-7 font-semibold tracking-[-0.01em]">
+            Sign in
+          </h1>
+        </header>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <LoginForm
-          defaultEmail={defaultEmail}
-          initialError={authErrorMessage(params.error)}
-          nextPath={nextPath}
-        />
+        <div className="rounded-ui-lg border-ui-line bg-ui-surface shadow-ui border p-5">
+          <LoginForm
+            defaultEmail={defaultEmail}
+            initialError={authErrorMessage(params.error)}
+            nextPath={nextPath}
+          />
+        </div>
       </div>
     </section>
   );

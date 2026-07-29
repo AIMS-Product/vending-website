@@ -5,7 +5,12 @@ import { createPortal, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { signOut } from "@/app/admin/actions";
-import { AdminIcon, type AdminIconName } from "@/components/admin/AdminUi";
+import {
+  AdminIcon,
+  adminEyebrowClass,
+  adminPageTitleClass,
+  type AdminIconName,
+} from "@/components/admin/AdminUi";
 
 type AdminSection =
   | "overview"
@@ -151,7 +156,10 @@ export function AdminShell({
   const roleLabel = userRole ? formatAdminRole(userRole) : null;
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f7f8fb] text-[#0f172a]">
+    <div
+      data-admin-ui
+      className="bg-ui-canvas text-ui-text min-h-screen overflow-x-hidden"
+    >
       {!immersive && (
         <AdminMobileNav
           activeLabel={activeLabel}
@@ -208,25 +216,20 @@ function AdminMobileNav({
   activeSection: AdminSection;
 }) {
   return (
-    <div className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur xl:hidden">
+    <div className="border-ui-line bg-ui-surface sticky top-0 z-50 border-b px-4 py-2.5 xl:hidden">
       <details>
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-950 [&::-webkit-details-marker]:hidden">
-          <span className="flex min-w-0 items-center gap-3">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#0b63f6] text-sm font-semibold text-white">
-              S
+        <summary className="text-ui-text flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
+          <span className="min-w-0">
+            <span className="text-ui-text-subtle block text-xs">
+              Vendingpreneurs Studio
             </span>
-            <span className="min-w-0">
-              <span className="block">Studio</span>
-              <span className="block truncate text-xs font-medium text-slate-500">
-                {activeLabel}
-              </span>
-            </span>
+            <span className="block truncate font-semibold">{activeLabel}</span>
           </span>
-          <span className="text-slate-500" aria-hidden="true">
+          <span className="text-ui-text-subtle" aria-hidden="true">
             <AdminChevron />
           </span>
         </summary>
-        <div className="mt-4 grid gap-4 border-t border-slate-200 pt-4">
+        <div className="border-ui-line mt-4 grid gap-4 border-t pt-4">
           <AdminMobileNavList
             activeSection={activeSection}
             ariaLabel="Admin sections"
@@ -241,9 +244,9 @@ function AdminMobileNav({
           <form action={signOut}>
             <button
               type="submit"
-              className="flex w-full items-center gap-2.5 rounded-md border border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-semibold text-slate-950 shadow-sm"
+              className="rounded-ui border-ui-line-strong bg-ui-surface text-ui-text shadow-ui flex w-full items-center gap-2.5 border px-3 py-2 text-left text-sm font-medium"
             >
-              <span className="text-slate-700" aria-hidden="true">
+              <span className="text-ui-text-subtle" aria-hidden="true">
                 <AdminIcon icon="log-out" />
               </span>
               Sign out
@@ -300,13 +303,13 @@ function AdminDesktopSidebar({
     // keeps the visuals; the inner nav labelled "Admin sections" remains the
     // discoverable landmark (same fix class as AdminLeadsManager I2 and
     // NewsEditorForm S5 — see AdminShell.landmarks.test.ts).
-    <div className="relative hidden border-b border-slate-200 bg-white/95 backdrop-blur xl:sticky xl:top-0 xl:block xl:h-screen xl:border-r xl:border-b-0">
+    <div className="border-ui-line bg-ui-sidebar relative hidden border-b xl:sticky xl:top-0 xl:block xl:h-screen xl:border-r xl:border-b-0">
       <button
         type="button"
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         onClick={onToggleCollapsed}
-        className="absolute top-5 right-0 z-10 inline-flex size-8 translate-x-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+        className="border-ui-line bg-ui-surface text-ui-text-subtle shadow-ui hover:text-ui-text absolute top-4 right-0 z-10 inline-flex size-6 translate-x-1/2 items-center justify-center rounded-full border transition"
       >
         <span
           className={clsx(
@@ -320,8 +323,8 @@ function AdminDesktopSidebar({
       </button>
       <div
         className={clsx(
-          "flex h-full flex-col overflow-y-auto pt-5 pb-4 transition-[padding] duration-200",
-          collapsed ? "px-3" : "px-4",
+          "flex h-full flex-col overflow-y-auto pt-4 pb-3 transition-[padding] duration-200",
+          collapsed ? "px-2" : "px-3",
         )}
       >
         <AdminDesktopBrand collapsed={collapsed} />
@@ -343,23 +346,31 @@ function AdminDesktopSidebar({
   );
 }
 
+/* Type only. A blue tile with a letter in it is placeholder chrome, and
+   "Studio / Admin CMS" named the same tool twice in eleven characters. */
 function AdminDesktopBrand({ collapsed }: { collapsed: boolean }) {
   return (
-    <div className="flex items-start justify-between gap-3 px-2">
-      <div
-        className={clsx(
-          "flex min-w-0 items-start gap-3",
-          collapsed && "justify-center",
-        )}
-      >
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#0b63f6] text-base font-semibold text-white shadow-sm">
-          S
+    <div
+      className={clsx(
+        "flex min-w-0 items-center px-2",
+        collapsed && "justify-center",
+      )}
+    >
+      {collapsed ? (
+        <span
+          className="text-ui-text text-sm font-semibold"
+          title="Vendingpreneurs Studio"
+        >
+          VP
+        </span>
+      ) : (
+        <div className="min-w-0">
+          <h2 className="text-ui-text truncate text-sm font-semibold">
+            Vendingpreneurs
+          </h2>
+          <p className="text-ui-text-subtle text-xs">Studio</p>
         </div>
-        <div className={clsx("min-w-0", collapsed && "hidden")}>
-          <h2 className="text-sm font-semibold text-slate-950">Studio</h2>
-          <p className="text-xs text-slate-500">Admin CMS</p>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -380,19 +391,19 @@ function AdminDesktopNavGroup({
   return (
     <div
       className={clsx(
-        "border-t border-slate-200 pt-4",
-        collapsed ? "mt-4" : "mt-5",
+        "border-ui-line border-t pt-3",
+        collapsed ? "mt-3" : "mt-4",
       )}
     >
       <p
         className={clsx(
-          "mb-2 px-2 text-xs font-semibold text-slate-500 uppercase",
+          "text-ui-text-subtle mb-1.5 px-2 text-[0.6875rem] font-semibold tracking-[0.08em] uppercase",
           collapsed && "sr-only",
         )}
       >
         {label}
       </p>
-      <nav aria-label={ariaLabel} className="grid gap-1">
+      <nav aria-label={ariaLabel} className="grid gap-0.5">
         {navSections.map((section) => (
           <AdminDesktopNavItem
             key={section.id}
@@ -416,45 +427,38 @@ function AdminDesktopNavItem({
   section: AdminNavSection;
 }) {
   return (
-    <div
+    // Selection is carried by a soft accent fill, not a coloured edge bar.
+    <Link
+      href={section.href}
+      title={
+        collapsed ? section.label : `${section.label}: ${section.description}`
+      }
+      aria-current={isActive ? "page" : undefined}
       className={clsx(
-        "group flex items-center gap-2 rounded-md border text-sm transition",
+        "rounded-ui flex min-w-0 items-center py-1.5 text-[0.8125rem] transition",
+        collapsed ? "justify-center px-2" : "gap-2.5 px-2",
         isActive
-          ? "border-[#cfe0ff] bg-[#f4f8ff] shadow-[inset_3px_0_0_#0b63f6]"
-          : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950",
+          ? "bg-ui-accent-soft text-ui-accent font-medium"
+          : "text-ui-text-muted hover:bg-ui-line/50 hover:text-ui-text font-normal",
       )}
     >
-      <Link
-        href={section.href}
-        title={
-          collapsed ? section.label : `${section.label}: ${section.description}`
-        }
+      <span
         className={clsx(
-          "flex min-w-0 flex-1 items-center rounded-md py-2 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
-          collapsed ? "justify-center px-2" : "gap-2 px-3",
+          "flex size-4 shrink-0 items-center justify-center [&_svg]:size-4",
+          isActive ? "text-ui-accent" : "text-ui-text-subtle",
         )}
-        aria-current={isActive ? "page" : undefined}
+        aria-hidden="true"
       >
-        <span
-          className={clsx(
-            "flex size-6 shrink-0 items-center justify-center rounded-md",
-            isActive ? "text-[#0b63f6]" : "text-slate-500",
-          )}
-          aria-hidden="true"
-        >
-          <AdminIcon icon={section.icon} />
+        <AdminIcon icon={section.icon} />
+      </span>
+      <span className={clsx("min-w-0 truncate", collapsed && "hidden")}>
+        {section.label}
+        <span className="sr-only">
+          {": "}
+          {section.description}
         </span>
-        <span className={clsx("min-w-0", collapsed && "hidden")}>
-          <span className="block font-semibold text-slate-950">
-            {section.label}
-          </span>
-          <span className="sr-only">
-            {": "}
-            {section.description}
-          </span>
-        </span>
-      </Link>
-    </div>
+      </span>
+    </Link>
   );
 }
 
@@ -470,10 +474,10 @@ function AdminAccountBlock({
   userEmail?: string | null;
 }) {
   return (
-    <div className="mt-auto border-t border-slate-200 pt-4">
+    <div className="border-ui-line mt-auto border-t pt-3">
       <nav
         aria-label="Account settings"
-        className={clsx("mb-3 grid gap-1", collapsed && "mb-4")}
+        className={clsx("mb-3 grid gap-0.5", collapsed && "mb-4")}
       >
         {accountSections.map((section) => (
           <AdminDesktopNavItem
@@ -491,21 +495,19 @@ function AdminAccountBlock({
             collapsed && "justify-center",
           )}
         >
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-800">
+          <div className="bg-ui-line text-ui-text-muted flex size-6 shrink-0 items-center justify-center rounded-full text-[0.625rem] font-semibold">
             {adminInitials(userEmail)}
           </div>
           <p
-            className={clsx(
-              "min-w-0 text-xs leading-4 text-slate-500",
-              collapsed && "hidden",
-            )}
+            className={clsx("min-w-0 text-xs leading-4", collapsed && "hidden")}
           >
-            Signed in as
-            <span className="block truncate text-sm font-medium text-slate-950">
+            <span className="text-ui-text block truncate font-medium">
               {userEmail}
             </span>
             {roleLabel ? (
-              <span className="block truncate">{roleLabel}</span>
+              <span className="text-ui-text-subtle block truncate">
+                {roleLabel}
+              </span>
             ) : null}
           </p>
         </div>
@@ -517,11 +519,14 @@ function AdminAccountBlock({
         href="mailto:support@vendingpreneurs.com?subject=SEO%20Page%20Builder%20help"
         title="Help & support"
         className={clsx(
-          "mb-2 flex w-full items-center rounded-md py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
-          collapsed ? "justify-center px-2" : "gap-2 px-3",
+          "rounded-ui text-ui-text-muted hover:bg-ui-line/50 hover:text-ui-text mb-0.5 flex w-full items-center py-1.5 text-left text-[0.8125rem] transition",
+          collapsed ? "justify-center px-2" : "gap-2.5 px-2",
         )}
       >
-        <span className="text-slate-500" aria-hidden="true">
+        <span
+          className="text-ui-text-subtle flex size-4 items-center justify-center [&_svg]:size-4"
+          aria-hidden="true"
+        >
           <AdminIcon icon="help" />
         </span>
         <span className={clsx(collapsed && "hidden")}>Help &amp; support</span>
@@ -531,11 +536,14 @@ function AdminAccountBlock({
           type="submit"
           title={collapsed ? "Sign out" : undefined}
           className={clsx(
-            "flex w-full items-center rounded-md border border-slate-200 bg-white py-2.5 text-left text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none",
-            collapsed ? "justify-center px-2" : "gap-2 px-3",
+            "rounded-ui text-ui-text-muted hover:bg-ui-line/50 hover:text-ui-text flex w-full items-center py-1.5 text-left text-[0.8125rem] transition",
+            collapsed ? "justify-center px-2" : "gap-2.5 px-2",
           )}
         >
-          <span className="text-slate-700" aria-hidden="true">
+          <span
+            className="text-ui-text-subtle flex size-4 items-center justify-center [&_svg]:size-4"
+            aria-hidden="true"
+          >
             <AdminIcon icon="log-out" />
           </span>
           <span className={clsx(collapsed && "hidden")}>Sign out</span>
@@ -565,7 +573,7 @@ function AdminShellContent({
       aria-labelledby="admin-shell-title"
       className={clsx(
         "min-w-0",
-        immersive ? "p-0" : "px-5 py-5 sm:px-8 xl:px-10",
+        immersive ? "p-0" : "px-5 py-5 sm:px-6 xl:px-8",
       )}
     >
       {immersive ? (
@@ -574,31 +582,23 @@ function AdminShellContent({
         </h1>
       ) : null}
       {!immersive && (
-        <header className="mb-5">
+        <header className="mb-4">
           {eyebrow ? (
-            <div className="mb-4 flex items-center gap-3 text-sm font-semibold text-[#0b63f6]">
-              <span>{eyebrow}</span>
-              <span className="text-slate-400" aria-hidden="true">
-                <AdminChevron />
-              </span>
-            </div>
+            <p className={`${adminEyebrowClass} mb-1.5`}>{eyebrow}</p>
           ) : null}
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-            <div className="max-w-3xl">
-              <h1
-                id="admin-shell-title"
-                className="text-3xl font-semibold tracking-normal text-slate-950"
-              >
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-2xl">
+              <h1 id="admin-shell-title" className={adminPageTitleClass}>
                 {title}
               </h1>
               {description ? (
-                <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
+                <p className="text-ui-text-muted mt-1 text-sm leading-6">
                   {description}
                 </p>
               ) : null}
             </div>
             {actions ? (
-              <div className="flex flex-wrap items-center gap-3">{actions}</div>
+              <div className="flex flex-wrap items-center gap-2">{actions}</div>
             ) : null}
           </div>
         </header>
@@ -682,10 +682,10 @@ export function AdminPageActionButton({
           }
         }}
         className={clsx(
-          "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+          "rounded-ui flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[0.8125rem] transition disabled:cursor-not-allowed disabled:opacity-60",
           tone === "danger"
-            ? "text-red-700 hover:bg-red-50"
-            : "text-slate-700 hover:bg-slate-50 hover:text-slate-950",
+            ? "text-ui-bad hover:bg-ui-bad/5"
+            : "text-ui-text-muted hover:bg-ui-line/50 hover:text-ui-text",
         )}
       >
         {/* N17 / I12: a non-colour cue for destructive actions so the danger
@@ -708,14 +708,17 @@ export function AdminPageActionButton({
             }}
           >
             <div className="flex min-h-full items-center justify-center px-4 py-6">
-              <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
+              <div
+                data-admin-ui
+                className="rounded-ui-lg border-ui-line bg-ui-surface shadow-ui-raised w-full max-w-sm border p-5"
+              >
                 <h2
                   id={confirmTitleId}
-                  className="text-base font-semibold text-slate-950"
+                  className="text-ui-text text-base font-semibold"
                 >
                   {confirmTitle}
                 </h2>
-                <p className="mt-3 text-sm leading-6 whitespace-pre-line text-slate-600">
+                <p className="text-ui-text-muted mt-2 text-sm leading-6 whitespace-pre-line">
                   {confirmMessage}
                 </p>
                 <div className="mt-5 flex justify-end gap-2">
@@ -723,7 +726,7 @@ export function AdminPageActionButton({
                     ref={cancelButtonRef}
                     type="button"
                     disabled={pending}
-                    className="inline-flex min-h-10 items-center rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+                    className="rounded-ui border-ui-line-strong bg-ui-surface text-ui-text shadow-ui hover:bg-ui-canvas inline-flex h-9 items-center border px-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-70"
                     onClick={closeConfirmDialog}
                   >
                     Cancel
@@ -733,10 +736,10 @@ export function AdminPageActionButton({
                     disabled={pending}
                     aria-busy={pending ? "true" : undefined}
                     className={clsx(
-                      "inline-flex min-h-10 items-center rounded-md px-4 text-sm font-semibold text-white shadow-sm transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70",
+                      "rounded-ui shadow-ui inline-flex h-9 items-center px-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-70",
                       tone === "danger"
-                        ? "bg-red-600 hover:bg-red-700"
-                        : "bg-[#0b63f6] hover:bg-[#0756d6]",
+                        ? "bg-ui-bad hover:brightness-110"
+                        : "bg-ui-accent hover:bg-ui-accent-hover",
                     )}
                     onClick={submitConfirmedAction}
                   >
@@ -796,35 +799,34 @@ function MobileNavLink({
   isActive: boolean;
 }) {
   return (
-    <div
+    <Link
+      href={section.href}
+      title={`${section.label}: ${section.description}`}
+      aria-current={isActive ? "page" : undefined}
       className={clsx(
-        "flex items-center gap-2 rounded-md border text-sm transition",
+        "rounded-ui flex min-w-0 items-center gap-2.5 px-2.5 py-2 text-sm transition",
         isActive
-          ? "border-[#cfe0ff] bg-[#f4f8ff] text-slate-950"
-          : "border-slate-200 bg-white text-slate-600",
+          ? "bg-ui-accent-soft text-ui-accent font-medium"
+          : "text-ui-text-muted",
       )}
     >
-      <Link
-        href={section.href}
-        title={`${section.label}: ${section.description}`}
-        className="flex min-w-0 flex-1 items-center gap-2.5 p-2.5"
-        aria-current={isActive ? "page" : undefined}
+      <span
+        className={clsx(
+          "flex size-4 shrink-0 items-center justify-center [&_svg]:size-4",
+          isActive ? "text-ui-accent" : "text-ui-text-subtle",
+        )}
+        aria-hidden="true"
       >
-        <span
-          className="flex size-6 shrink-0 items-center justify-center rounded-md text-[#0b63f6]"
-          aria-hidden="true"
-        >
-          <AdminIcon icon={section.icon} />
+        <AdminIcon icon={section.icon} />
+      </span>
+      <span className="min-w-0 flex-1 truncate">
+        {section.label}
+        <span className="sr-only">
+          {": "}
+          {section.description}
         </span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold">{section.label}</span>
-          <span className="sr-only">
-            {": "}
-            {section.description}
-          </span>
-        </span>
-      </Link>
-    </div>
+      </span>
+    </Link>
   );
 }
 

@@ -25,36 +25,60 @@ export type AdminIconName =
   | "trash"
   | "upload";
 
+/* Shared admin design layer. ~40 files import from here, so this file is
+   what makes every /admin screen look like one product. Colours, radii and
+   shadows come from the --ui-* tokens in globals.css. Don't add raw hex
+   here, and don't invent a second button or card shape in a page. */
+
+// One button height, one radius, one shadow. Primary is the only filled
+// control on a screen; everything else is a bordered surface.
+const BUTTON_BASE =
+  "inline-flex h-9 items-center justify-center gap-2 rounded-ui px-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50";
+
 export const adminPanelClass =
-  "overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm";
+  "overflow-hidden rounded-ui-lg border border-ui-line bg-ui-surface shadow-ui";
 
 export const adminCardClass =
-  "rounded-lg border border-slate-200 bg-white p-5 shadow-sm";
+  "rounded-ui-lg border border-ui-line bg-ui-surface p-4 shadow-ui";
 
 export const adminInputClass =
-  "mt-2 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15";
+  "mt-1.5 w-full rounded-ui border border-ui-line-strong bg-ui-surface px-2.5 py-1.5 text-sm text-ui-text transition outline-none placeholder:text-ui-text-subtle focus:border-ui-accent focus:ring-2 focus:ring-ui-accent/15";
 
 export const adminTextareaClass =
-  "mt-2 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-950 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15";
+  "mt-1.5 w-full rounded-ui border border-ui-line-strong bg-ui-surface px-2.5 py-1.5 text-sm leading-6 text-ui-text transition outline-none placeholder:text-ui-text-subtle focus:border-ui-accent focus:ring-2 focus:ring-ui-accent/15";
 
-export const adminLabelClass = "text-sm font-medium text-slate-700";
+export const adminLabelClass = "text-sm font-medium text-ui-text";
 
-export const adminPrimaryButtonClass =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#0b63f6] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0756d6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+export const adminPrimaryButtonClass = `${BUTTON_BASE} bg-ui-accent text-white shadow-ui hover:bg-ui-accent-hover`;
 
-export const adminSecondaryButtonClass =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+export const adminSecondaryButtonClass = `${BUTTON_BASE} border border-ui-line-strong bg-ui-surface text-ui-text shadow-ui hover:bg-ui-canvas`;
 
-export const adminSmallButtonClass =
-  "inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+export const adminSmallButtonClass = `${BUTTON_BASE} h-8 border border-ui-line-strong bg-ui-surface px-2.5 text-[0.8125rem] text-ui-text-muted shadow-ui hover:bg-ui-canvas hover:text-ui-text`;
 
-export const adminDangerButtonClass =
-  "inline-flex items-center justify-center rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:outline-none";
+// Destructive actions read as text, not as a red button. The red button is
+// reserved for the confirmation step, where it is the actual commitment.
+export const adminDangerButtonClass = `${BUTTON_BASE} h-8 border border-ui-line-strong bg-ui-surface px-2.5 text-[0.8125rem] text-ui-bad hover:border-ui-bad/40 hover:bg-ui-bad/5`;
 
+export const adminLinkClass =
+  "font-medium text-ui-accent underline-offset-2 transition hover:underline";
+
+// Page-level type scale. Fixed rem, ~1.2 ratio. An admin title does not
+// need to be 30px; the content below it is the point.
+export const adminPageTitleClass =
+  "text-[1.375rem] leading-7 font-semibold tracking-[-0.01em] text-ui-text";
+
+export const adminSectionTitleClass = "text-sm font-semibold text-ui-text";
+
+export const adminEyebrowClass =
+  "text-[0.6875rem] font-semibold tracking-[0.08em] text-ui-text-subtle uppercase";
+
+// One bordered strip, divided into columns. Four separate cards each with
+// their own border and shadow is four times the visual weight for the same
+// four numbers.
 export function AdminMetricStrip({ children }: { children: ReactNode }) {
   return (
-    <section className={`${adminPanelClass} mb-5`} aria-label="Admin summary">
-      <div className="grid divide-y divide-slate-200 md:grid-cols-4 md:divide-x md:divide-y-0">
+    <section className={`${adminPanelClass} mb-4`} aria-label="Admin summary">
+      <div className="divide-ui-line grid divide-y sm:grid-cols-2 sm:divide-x xl:grid-cols-4 xl:divide-y-0">
         {children}
       </div>
     </section>
@@ -62,47 +86,69 @@ export function AdminMetricStrip({ children }: { children: ReactNode }) {
 }
 
 export function AdminMetricPanel({
-  icon,
   tone,
   label,
   value,
   caption,
 }: {
-  icon: AdminIconName;
-  tone: "amber" | "blue" | "green" | "purple" | "slate";
+  /** Kept for call-site compatibility. The number carries the meaning; a
+   *  pastel icon chip behind it never did. */
+  icon?: AdminIconName;
+  tone?: "amber" | "blue" | "green" | "purple" | "slate";
   label: string;
   value: number | string;
   caption: string;
 }) {
   return (
-    <div className="flex items-center gap-4 px-5 py-4">
-      <span
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${adminMetricToneClass(
-          tone,
-        )}`}
-        aria-hidden="true"
-      >
-        <AdminIcon icon={icon} />
-      </span>
-      <div>
-        <p className="text-sm font-medium text-slate-500">{label}</p>
-        <p className="mt-0.5 text-2xl font-semibold tracking-normal text-slate-950">
-          {value}
-        </p>
-        <p className="text-sm text-slate-500">{caption}</p>
-      </div>
+    <div className="px-4 py-3.5">
+      <p className={adminEyebrowClass}>{label}</p>
+      <p className="text-ui-text mt-2 text-2xl leading-none font-semibold tracking-[-0.02em] tabular-nums">
+        {value}
+      </p>
+      <p className="text-ui-text-muted mt-1.5 flex items-center gap-1.5 text-xs">
+        {tone && tone !== "blue" && tone !== "slate" ? (
+          <AdminStatusDot tone={tone === "green" ? "ok" : "warn"} />
+        ) : null}
+        {caption}
+      </p>
     </div>
   );
 }
 
-export function AdminStatusBadge({ status }: { status: string }) {
+function AdminStatusDot({ tone }: { tone: "ok" | "warn" | "bad" | "idle" }) {
+  const fill =
+    tone === "ok"
+      ? "bg-ui-ok"
+      : tone === "warn"
+        ? "bg-ui-warn"
+        : tone === "bad"
+          ? "bg-ui-bad"
+          : "bg-ui-idle";
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${adminStatusClass(
-        status,
-      )}`}
-    >
-      {formatAdminStatus(status)}
+      aria-hidden="true"
+      className={`inline-block size-1.5 shrink-0 rounded-full ${fill}`}
+    />
+  );
+}
+
+/* Status reads as a coloured dot plus plain text. It survives a fourteen-row
+   table without turning into a quilt, it stays legible for colour-blind
+   users because the word is always there, and it matches the legend pattern
+   the SEO pages list already uses. */
+export function AdminStatusBadge({
+  status,
+  label,
+}: {
+  status: string;
+  /** Override the visible text without changing the stored status value. */
+  label?: string;
+}) {
+  const tone = adminStatusTone(status);
+  return (
+    <span className="text-ui-text inline-flex items-center gap-1.5 text-[0.8125rem] whitespace-nowrap">
+      <AdminStatusDot tone={tone} />
+      {label ?? formatAdminStatus(status)}
     </span>
   );
 }
@@ -312,33 +358,72 @@ export function AdminIcon({ icon }: { icon: AdminIconName }) {
   }
 }
 
-function adminMetricToneClass(
-  tone: "amber" | "blue" | "green" | "purple" | "slate",
-) {
-  if (tone === "amber") return "bg-amber-100 text-amber-600";
-  if (tone === "green") return "bg-emerald-100 text-emerald-600";
-  if (tone === "purple") return "bg-violet-100 text-violet-600";
-  if (tone === "slate") return "bg-slate-100 text-slate-600";
-  return "bg-[#e9f1ff] text-[#0b63f6]";
-}
+/* Every status used to fall through to the same pale amber, so a synced
+   lead and a permanently failed one looked identical. Explicit sets first,
+   then a keyword fallback so an unlisted status still lands somewhere sane
+   instead of silently reading as "in progress".
+   Order matters: "needs_review" must be caught as bad before the "review"
+   keyword pushes it into warn. */
+const OK_STATUSES = new Set([
+  "active",
+  "approved",
+  "complete",
+  "completed",
+  "delivered",
+  "published",
+  "qualified",
+  "sent",
+  "stored",
+  "synced",
+]);
 
-function adminStatusClass(status: string) {
-  if (
-    status === "published" ||
-    status === "approved" ||
-    status === "stored" ||
-    status === "active"
-  ) {
-    return "bg-emerald-100 text-emerald-700";
+const BAD_STATUSES = new Set([
+  "dead_letter",
+  "error",
+  "failed",
+  "high",
+  "needs_review",
+  "qualification_expired",
+]);
+
+const WARN_STATUSES = new Set([
+  "in_progress",
+  "medium",
+  "pending",
+  "pending_setup",
+  "processing",
+  "qualification_pending",
+  "qualification_stale",
+  "queued",
+  "retrying",
+  "stale",
+]);
+
+const IDLE_STATUSES = new Set([
+  "archived",
+  "draft",
+  "external",
+  "low",
+  "none",
+  "unknown",
+]);
+
+export function adminStatusTone(
+  status: string,
+): "ok" | "warn" | "bad" | "idle" {
+  if (BAD_STATUSES.has(status)) return "bad";
+  if (OK_STATUSES.has(status)) return "ok";
+  if (WARN_STATUSES.has(status)) return "warn";
+  if (IDLE_STATUSES.has(status)) return "idle";
+
+  if (/fail|expired|dead|error|reject|block/.test(status)) return "bad";
+  if (/pending|retry|progress|stale|review|queue|wait/.test(status)) {
+    return "warn";
   }
-  if (status === "archived" || status === "external") {
-    return "bg-slate-100 text-slate-600";
+  if (/synced|complete|qualified|publish|approve|active|success/.test(status)) {
+    return "ok";
   }
-  if (status === "high") return "bg-red-100 text-red-700";
-  if (status === "medium" || status === "pending_setup") {
-    return "bg-amber-100 text-amber-700";
-  }
-  return "bg-amber-100 text-amber-700";
+  return "idle";
 }
 
 function formatAdminStatus(status: string) {

@@ -28,6 +28,35 @@
     #eaf6ff 50%,
     #b6e1ff 100%
   );
+
+  /* ── Admin Studio UI ──────────────────────────────────────────────────
+     The public site is loud on purpose. The admin is not: it is a tool
+     people are inside of all day, so it stays quiet and lets the data be
+     the only thing with colour. These are the single source of truth for
+     every /admin surface. See DESIGN.md and docs/design/admin-studio.md.
+
+     Neutrals are tinted a few points toward the accent hue rather than
+     being pure grey, so white surfaces don't read as cold next to blue. */
+  --ui-canvas: #f6f7f9;
+  --ui-surface: #fdfdfe;
+  --ui-sidebar: #fafbfc;
+  --ui-line: #e5e8ed;
+  --ui-line-strong: #d3d8e0;
+
+  --ui-text: #12161f;
+  --ui-text-muted: #5b6472;
+  --ui-text-subtle: #8a92a1;
+
+  --ui-accent: #0b63f6;
+  --ui-accent-hover: #0a56d6;
+  --ui-accent-soft: #eef4ff;
+
+  /* Status. Used as a dot plus plain text, never as a filled pill — a
+     table of filled pills becomes a quilt at fourteen rows. */
+  --ui-ok: #17803d;
+  --ui-warn: #b45309;
+  --ui-bad: #c81e1e;
+  --ui-idle: #8a92a1;
 }
 
 @theme inline {
@@ -43,6 +72,46 @@
   --color-brand-500: var(--brand-500);
   --color-brand-600: var(--brand-600);
   --color-brand-700: var(--brand-700);
+
+  --color-ui-canvas: var(--ui-canvas);
+  --color-ui-surface: var(--ui-surface);
+  --color-ui-sidebar: var(--ui-sidebar);
+  --color-ui-line: var(--ui-line);
+  --color-ui-line-strong: var(--ui-line-strong);
+  --color-ui-text: var(--ui-text);
+  --color-ui-text-muted: var(--ui-text-muted);
+  --color-ui-text-subtle: var(--ui-text-subtle);
+  --color-ui-accent: var(--ui-accent);
+  --color-ui-accent-hover: var(--ui-accent-hover);
+  --color-ui-accent-soft: var(--ui-accent-soft);
+  --color-ui-ok: var(--ui-ok);
+  --color-ui-warn: var(--ui-warn);
+  --color-ui-bad: var(--ui-bad);
+  --color-ui-idle: var(--ui-idle);
+
+  /* Two radii, two shadows. More than that and nothing looks deliberate. */
+  --radius-ui: 6px;
+  --radius-ui-lg: 8px;
+  --shadow-ui: 0 1px 2px rgba(18, 22, 31, 0.05);
+  --shadow-ui-raised: 0 4px 12px rgba(18, 22, 31, 0.08);
+}
+
+/* The site-wide focus outline is a heavy brutalist ring that belongs on the
+   marketing pages. Inside the admin it keeps the same job with the admin's
+   own accent, so keyboard nav stops looking like a different product. */
+[data-admin-ui]
+  :where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [tabindex]
+  ):focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-ui);
 }
 
 body {

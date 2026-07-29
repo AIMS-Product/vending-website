@@ -56,11 +56,11 @@ const DEAD_LETTER_CAPTION =
 function CloseSyncStatusBadge({ status }: { status: string }) {
   if (status === "dead_letter") {
     return (
-      <span className="grid gap-1">
-        <span className="inline-flex w-fit rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
-          Permanently failed
+      <span className="grid justify-items-start gap-0.5">
+        <AdminStatusBadge status={status} label="Permanently failed" />
+        <span className="text-ui-text-subtle text-xs">
+          {DEAD_LETTER_CAPTION}
         </span>
-        <span className="text-xs text-slate-500">{DEAD_LETTER_CAPTION}</span>
       </span>
     );
   }
@@ -72,15 +72,21 @@ function SyncIssuesBanner({ count }: { count: number }) {
   return (
     <div
       role="alert"
-      className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex sm:items-center sm:justify-between sm:gap-4"
+      className="rounded-ui-lg border-ui-line bg-ui-surface shadow-ui flex flex-col gap-2 border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
     >
-      <p className="font-semibold">
-        {count} {count === 1 ? "lead is" : "leads are"} stuck because Close sync
-        keeps failing — these need manual attention.
+      <p className="text-ui-text flex items-start gap-2 text-sm">
+        <span
+          aria-hidden="true"
+          className="bg-ui-bad mt-1.5 inline-block size-1.5 shrink-0 rounded-full"
+        />
+        <span>
+          {count} {count === 1 ? "lead is" : "leads are"} stuck because Close
+          sync keeps failing. These need manual attention.
+        </span>
       </p>
       <a
         href="#sync-issues-table"
-        className="mt-2 inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-red-300 bg-white px-3 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:outline-none sm:mt-0"
+        className={`${adminSmallButtonClass} shrink-0`}
       >
         Fix now
       </a>
@@ -148,17 +154,11 @@ export function AdminLeadsManager({
       </AdminMetricStrip>
 
       <section id="sync-issues-table" className={adminPanelClass}>
-        <div className="border-b border-slate-200 p-4">
-          <div className="grid gap-4">
-            <div>
-              <h2 className="text-base font-semibold text-slate-950">
-                Lead backstop
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Review captured leads, qualification progress, source
-                attribution, and Close sync recovery state.
-              </p>
-            </div>
+        {/* The page header already carries this description. Printing the
+            same sentence twice on one screen was one of the things that made
+            this page feel unfinished. */}
+        <div className="border-ui-line border-b p-3">
+          <div className="grid gap-2">
             <div className="grid gap-2 xl:grid-cols-2">
               <FilterNav
                 activeValue={activeLifecycleStatus}
@@ -182,30 +182,30 @@ export function AdminLeadsManager({
 
         {leads.length ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1040px] divide-y divide-slate-200 text-left text-sm">
-              <thead className="bg-slate-50 text-xs font-semibold tracking-normal text-slate-500 uppercase">
+            <table className="w-full min-w-[1040px] text-left text-sm">
+              <thead className="border-ui-line bg-ui-canvas text-ui-text-subtle border-b text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
                 <tr>
-                  <th scope="col" className="px-5 py-3">
+                  <th scope="col" className="px-4 py-2">
                     Lead
                   </th>
-                  <th scope="col" className="px-4 py-3">
+                  <th scope="col" className="px-3 py-2">
                     Lifecycle
                   </th>
-                  <th scope="col" className="px-4 py-3">
+                  <th scope="col" className="px-3 py-2">
                     Qualification
                   </th>
-                  <th scope="col" className="px-4 py-3">
+                  <th scope="col" className="px-3 py-2">
                     Close sync
                   </th>
-                  <th scope="col" className="px-4 py-3">
+                  <th scope="col" className="px-3 py-2">
                     Source
                   </th>
-                  <th scope="col" className="px-5 py-3 text-right">
+                  <th scope="col" className="px-4 py-2 text-right">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 bg-white">
+              <tbody className="divide-ui-line divide-y">
                 {leads.map((lead) => (
                   <LeadRow key={lead.id} lead={lead} />
                 ))}
@@ -434,63 +434,51 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
 
 function LeadRow({ lead }: { lead: AdminLeadListItem }) {
   return (
-    <tr>
-      <td className="px-5 py-4">
+    <tr className="hover:bg-ui-canvas align-top transition">
+      <td className="px-4 py-2.5">
         <Link
           href={`/admin/leads/${lead.id}`}
-          className="font-semibold text-slate-950 hover:text-[#0b63f6]"
+          className="text-ui-text font-medium underline-offset-2 hover:underline"
         >
           {lead.fullName}
         </Link>
-        <p className="mt-1 text-xs text-slate-500">{lead.email}</p>
-        {lead.phone ? (
-          <p className="mt-1 text-xs text-slate-500">{lead.phone}</p>
-        ) : null}
+        <p className="text-ui-text-subtle text-xs tabular-nums">
+          {lead.email}
+          {lead.phone ? ` · ${lead.phone}` : ""}
+        </p>
       </td>
-      <td className="px-4 py-4">
+      <td className="px-3 py-2.5">
         <AdminStatusBadge status={lead.lifecycleStatus} />
       </td>
-      <td className="px-4 py-4">
-        {lead.qualificationStatus ? (
-          <AdminStatusBadge status={lead.qualificationStatus} />
-        ) : (
-          <span className="text-xs font-semibold text-slate-500">None</span>
-        )}
+      <td className="px-3 py-2.5">
+        <AdminStatusBadge status={lead.qualificationStatus ?? "none"} />
       </td>
-      <td className="px-4 py-4">
-        <div className="grid gap-1">
-          {lead.closeSyncStatus ? (
-            <CloseSyncStatusBadge status={lead.closeSyncStatus} />
-          ) : (
-            <span className="text-xs font-semibold text-slate-500">None</span>
-          )}
+      <td className="px-3 py-2.5">
+        <div className="grid justify-items-start gap-0.5">
+          <AdminStatusBadge status={lead.closeSyncStatus ?? "none"} />
           {lead.closeSyncLastError ? (
-            <p className="max-w-48 truncate text-xs text-red-700">
+            <p className="text-ui-text-subtle max-w-48 truncate text-xs">
               {lead.closeSyncLastError}
             </p>
           ) : null}
         </div>
       </td>
-      <td className="px-4 py-4">
-        <div className="grid gap-1 text-xs text-slate-600">
-          <span className="font-medium text-slate-800">
-            {lead.sourcePath ?? lead.landingPath ?? "Unknown source"}
+      <td className="px-3 py-2.5">
+        <div className="text-ui-text-subtle grid gap-0.5 text-xs">
+          <span className="text-ui-text text-[0.8125rem]">
+            {formatSourcePath(lead.sourcePath ?? lead.landingPath)}
           </span>
           {lead.sourcePageSlug ? <span>{lead.sourcePageSlug}</span> : null}
-          {lead.experimentKey || lead.variantKey ? (
-            <span>
-              {[lead.experimentKey, lead.variantKey]
-                .filter(Boolean)
-                .join(" / ")}
-            </span>
+          {formatExperiment(lead.experimentKey, lead.variantKey) ? (
+            <span>{formatExperiment(lead.experimentKey, lead.variantKey)}</span>
           ) : null}
         </div>
       </td>
-      <td className="px-5 py-4">
+      <td className="px-4 py-2.5">
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Link
             href={`/admin/leads/${lead.id}`}
-            className={adminSmallButtonClass}
+            className="text-ui-accent text-[0.8125rem] underline-offset-2 hover:underline"
           >
             Inspect
           </Link>
@@ -502,6 +490,23 @@ function LeadRow({ lead }: { lead: AdminLeadListItem }) {
       </td>
     </tr>
   );
+}
+
+// "/" alone in a table cell reads as a rendering glitch, and a bare variant
+// key ("A") reads as one too. Both get a word in front of them.
+function formatSourcePath(path: string | null | undefined) {
+  if (!path) return "Unknown source";
+  return path === "/" ? "Homepage (/)" : path;
+}
+
+function formatExperiment(
+  experimentKey: string | null | undefined,
+  variantKey: string | null | undefined,
+) {
+  const parts: string[] = [];
+  if (experimentKey) parts.push(`Test ${experimentKey}`);
+  if (variantKey) parts.push(`Variant ${variantKey}`);
+  return parts.join(" · ");
 }
 
 function CloseSyncEventCard({
@@ -652,7 +657,7 @@ function FilterNav({
 }) {
   return (
     <nav
-      className="inline-flex min-h-11 flex-wrap items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm"
+      className="rounded-ui border-ui-line bg-ui-canvas inline-flex flex-wrap items-center gap-0.5 border p-0.5"
       aria-label={ariaLabel}
     >
       {options.map((option) => (
@@ -663,10 +668,10 @@ function FilterNav({
             [otherParam]: otherValue,
           })}
           aria-current={activeValue === option.value ? "page" : undefined}
-          className={`rounded-md px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+          className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] transition ${
             activeValue === option.value
-              ? "bg-[#f4f8ff] text-[#0b63f6] shadow-sm"
-              : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+              ? "bg-ui-surface text-ui-text shadow-ui font-medium"
+              : "text-ui-text-muted hover:text-ui-text"
           }`}
         >
           {option.label}

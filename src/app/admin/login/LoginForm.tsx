@@ -31,10 +31,7 @@ export function LoginForm({
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="next" value={nextPath} />
-      <label
-        htmlFor="email"
-        className="block text-sm font-medium text-slate-700"
-      >
+      <label htmlFor="email" className="text-ui-text block text-sm font-medium">
         Email
         <input
           id="email"
@@ -53,7 +50,7 @@ export function LoginForm({
 
       <label
         htmlFor="password"
-        className="block text-sm font-medium text-slate-700"
+        className="text-ui-text block text-sm font-medium"
       >
         Password
         <input
@@ -73,20 +70,20 @@ export function LoginForm({
       <div className="flex justify-end">
         <Link
           href={forgotPasswordHref}
-          className="text-sm font-semibold text-[#0b63f6] transition hover:text-[#0756d6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+          className="text-ui-text-muted hover:text-ui-text text-[0.8125rem] underline-offset-2 transition hover:underline"
         >
           Forgot password?
         </Link>
       </div>
 
       {state.status === "error" && (
-        <p className="text-sm text-red-600" role="alert" aria-live="polite">
+        <p className="text-ui-bad text-sm" role="alert" aria-live="polite">
           {state.message}
         </p>
       )}
 
       {initialError && (
-        <p className="text-sm text-red-600" role="alert" aria-live="polite">
+        <p className="text-ui-bad text-sm" role="alert" aria-live="polite">
           {initialError}
         </p>
       )}
@@ -100,7 +97,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className={`${adminPrimaryButtonClass} w-full`}
+      className={`${adminPrimaryButtonClass} mt-1 h-10 w-full`}
     >
       {pending ? "Signing in..." : "Sign in"}
     </button>
