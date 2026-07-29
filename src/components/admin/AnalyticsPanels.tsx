@@ -30,7 +30,7 @@ export function AnalyticsRangeTabs({
 }) {
   return (
     <div
-      className="inline-flex rounded-lg border border-slate-200 bg-white p-1"
+      className="border-ui-line inline-flex rounded-lg border bg-white p-1"
       role="group"
       aria-label="Date range"
     >
@@ -44,7 +44,7 @@ export function AnalyticsRangeTabs({
             className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${
               isActive
                 ? "bg-slate-900 text-white"
-                : "text-slate-600 hover:bg-slate-50"
+                : "text-ui-text-muted hover:bg-ui-canvas"
             }`}
           >
             {ADMIN_ANALYTICS_RANGES[key].label}
@@ -69,14 +69,14 @@ export function AnalyticsInternalToggle({
   return (
     <Link
       href={analyticsHref(range, !includeInternal, tab)}
-      className="inline-flex items-center gap-2.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+      className="border-ui-line text-ui-text-muted hover:bg-ui-canvas inline-flex items-center gap-2.5 rounded-lg border bg-white px-3 py-2 text-sm font-medium transition"
     >
       <span
         aria-hidden="true"
         className={`flex h-4 w-4 items-center justify-center rounded border ${
           includeInternal
             ? "border-slate-900 bg-slate-900 text-white"
-            : "border-slate-300 bg-white"
+            : "border-ui-line-strong bg-white"
         }`}
       >
         {includeInternal ? (
@@ -94,7 +94,7 @@ export function AnalyticsInternalToggle({
       </span>
       Include test &amp; internal leads
       {!includeInternal && excludedCount > 0 ? (
-        <span className="text-slate-500">({excludedCount} hidden)</span>
+        <span className="text-ui-text-subtle">({excludedCount} hidden)</span>
       ) : null}
     </Link>
   );
@@ -103,7 +103,7 @@ export function AnalyticsInternalToggle({
 export function AnalyticsKpiGrid({ children }: { children: React.ReactNode }) {
   return (
     <section
-      className="mb-5 grid gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 sm:grid-cols-2 xl:grid-cols-4"
+      className="border-ui-line mb-5 grid gap-px overflow-hidden rounded-xl border bg-slate-200 sm:grid-cols-2 xl:grid-cols-4"
       aria-label="Headline metrics"
     >
       {children}
@@ -129,18 +129,18 @@ export function AnalyticsKpiCard({
 
   return (
     <div className="bg-white px-5 py-4">
-      <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+      <p className="text-ui-text-subtle text-xs font-semibold tracking-wide uppercase">
         {label}
       </p>
       <div className="mt-2 flex items-end justify-between gap-3">
-        <p className="text-3xl font-semibold tracking-tight text-slate-950">
+        <p className="text-ui-text text-3xl font-semibold tracking-tight">
           {display}
         </p>
         {metric.spark.length > 0 ? <Sparkline values={metric.spark} /> : null}
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <DeltaChip metric={metric} format={format} />
-        <span className="text-xs text-slate-500">{caption}</span>
+        <span className="text-ui-text-subtle text-xs">{caption}</span>
       </div>
     </div>
   );
@@ -197,7 +197,7 @@ function Chip({
       ? "bg-emerald-50 text-emerald-700"
       : tone === "down"
         ? "bg-rose-50 text-rose-700"
-        : "bg-slate-100 text-slate-600";
+        : "bg-ui-line text-ui-text-muted";
   return (
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${toneClass}`}
@@ -256,31 +256,31 @@ export function AnalyticsBreakdown({
 
   return (
     <section className={adminCardClass} aria-label={title}>
-      <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase">
+      <h2 className="text-ui-text-subtle mb-4 text-sm font-semibold uppercase">
         {title}
       </h2>
       {rows.length === 0 ? (
-        <p className="text-sm text-slate-500">{emptyLabel}</p>
+        <p className="text-ui-text-subtle text-sm">{emptyLabel}</p>
       ) : (
         <ul className="grid gap-2.5">
           {rows.map((row) => (
             <li key={row.label}>
               <div className="mb-1 flex items-center justify-between gap-3 text-sm">
-                <span className="min-w-0 truncate font-medium text-slate-700">
+                <span className="text-ui-text-muted min-w-0 truncate font-medium">
                   {row.label}
                 </span>
                 <span className="shrink-0 tabular-nums">
-                  <span className="font-semibold text-slate-950">
+                  <span className="text-ui-text font-semibold">
                     {row.count}
                   </span>
                   {total > 0 ? (
-                    <span className="ml-1.5 text-xs text-slate-500">
+                    <span className="text-ui-text-subtle ml-1.5 text-xs">
                       {Math.round((row.count / total) * 100)}%
                     </span>
                   ) : null}
                 </span>
               </div>
-              <div className="h-2 rounded-full bg-slate-100">
+              <div className="bg-ui-line h-2 rounded-full">
                 <div
                   className="h-2 rounded-full"
                   style={{
@@ -309,7 +309,7 @@ export function AnalyticsTrend({
 
   return (
     <section className={adminCardClass} aria-label="Daily trend">
-      <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase">
+      <h2 className="text-ui-text-subtle mb-4 text-sm font-semibold uppercase">
         Leads and bookings per day
       </h2>
       <div className="flex items-end gap-1.5 overflow-x-auto pb-1">
@@ -332,13 +332,13 @@ export function AnalyticsTrend({
                 title={`${row.bookings} bookings on ${row.date}`}
               />
             </div>
-            <span className="text-[10px] font-medium text-slate-500">
+            <span className="text-ui-text-subtle text-[10px] font-medium">
               {formatShortDate(row.date)}
             </span>
           </div>
         ))}
       </div>
-      <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
+      <div className="text-ui-text-subtle mt-3 flex items-center gap-4 text-xs">
         <LegendDot color={ACCENT} label="Leads" />
         <LegendDot color="#34d399" label="Bookings from leads" />
       </div>
@@ -430,7 +430,7 @@ export function AnalyticsTabs({
 }) {
   return (
     <nav
-      className="mb-5 flex flex-wrap gap-1 border-b border-slate-200"
+      className="border-ui-line mb-5 flex flex-wrap gap-1 border-b"
       aria-label="Analytics sections"
     >
       {ANALYTICS_TABS.map((tab) => {
@@ -442,8 +442,8 @@ export function AnalyticsTabs({
             aria-current={isActive ? "page" : undefined}
             className={`-mb-px border-b-2 px-3.5 py-2.5 text-sm font-semibold transition ${
               isActive
-                ? "border-slate-900 text-slate-900"
-                : "border-transparent text-slate-500 hover:text-slate-800"
+                ? "text-ui-text border-slate-900"
+                : "text-ui-text-subtle hover:text-ui-text border-transparent"
             }`}
           >
             {tab.label}
@@ -464,12 +464,12 @@ export function AnalyticsFunnel({
 }) {
   return (
     <section className={adminCardClass} aria-label="Conversion funnel">
-      <h2 className="mb-1 text-sm font-semibold text-slate-500 uppercase">
+      <h2 className="text-ui-text-subtle mb-1 text-sm font-semibold uppercase">
         From question to booked call
       </h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <p className="text-ui-text-subtle mb-4 text-xs">
         {context.contactsCaptured} contacts captured ·{" "}
-        <span className="font-medium text-slate-700">
+        <span className="text-ui-text-muted font-medium">
           {context.offeredQuestions} were offered the questions
         </span>{" "}
         · {context.neverOfferedQuestions} came from booking or contact pages
@@ -479,17 +479,17 @@ export function AnalyticsFunnel({
         {steps.map((step, index) => (
           <li key={step.label}>
             <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
-              <span className="font-medium text-slate-700">{step.label}</span>
+              <span className="text-ui-text-muted font-medium">
+                {step.label}
+              </span>
               <span className="tabular-nums">
-                <span className="font-semibold text-slate-950">
-                  {step.count}
-                </span>
-                <span className="ml-2 text-xs text-slate-500">
+                <span className="text-ui-text font-semibold">{step.count}</span>
+                <span className="text-ui-text-subtle ml-2 text-xs">
                   {step.ofTopPct}% of all
                 </span>
               </span>
             </div>
-            <div className="h-2.5 rounded-full bg-slate-100">
+            <div className="bg-ui-line h-2.5 rounded-full">
               <div
                 className="h-2.5 rounded-full"
                 style={{
@@ -499,7 +499,7 @@ export function AnalyticsFunnel({
               />
             </div>
             {index > 0 ? (
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="text-ui-text-subtle mt-1 text-xs">
                 {step.ofPreviousPct}% continued from the step above
                 {step.ofPreviousPct < 100 ? (
                   <span className="text-rose-600">
@@ -523,16 +523,18 @@ export function AnalyticsCampaignTable({
 }) {
   return (
     <section className={adminCardClass} aria-label="Campaign performance">
-      <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase">
+      <h2 className="text-ui-text-subtle mb-4 text-sm font-semibold uppercase">
         Campaign performance
       </h2>
       {rows.length === 0 ? (
-        <p className="text-sm text-slate-500">No campaigns in this range.</p>
+        <p className="text-ui-text-subtle text-sm">
+          No campaigns in this range.
+        </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[36rem] text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-xs font-semibold text-slate-500 uppercase">
+              <tr className="border-ui-line text-ui-text-subtle border-b text-left text-xs font-semibold uppercase">
                 <th className="py-2 pr-3">Campaign</th>
                 <th className="py-2 pr-3">Source</th>
                 <th className="py-2 pr-3 text-right">Leads</th>
@@ -544,20 +546,20 @@ export function AnalyticsCampaignTable({
             <tbody className="divide-y divide-slate-100">
               {rows.map((row) => (
                 <tr key={`${row.campaign}-${row.source}`}>
-                  <td className="py-2 pr-3 font-medium text-slate-800">
+                  <td className="text-ui-text py-2 pr-3 font-medium">
                     {row.campaign}
                   </td>
-                  <td className="py-2 pr-3 text-slate-600">{row.source}</td>
-                  <td className="py-2 pr-3 text-right text-slate-900 tabular-nums">
+                  <td className="text-ui-text-muted py-2 pr-3">{row.source}</td>
+                  <td className="text-ui-text py-2 pr-3 text-right tabular-nums">
                     {row.leads}
                   </td>
-                  <td className="py-2 pr-3 text-right text-slate-900 tabular-nums">
+                  <td className="text-ui-text py-2 pr-3 text-right tabular-nums">
                     {row.qualified}
                   </td>
-                  <td className="py-2 pr-3 text-right text-slate-900 tabular-nums">
+                  <td className="text-ui-text py-2 pr-3 text-right tabular-nums">
                     {row.booked}
                   </td>
-                  <td className="py-2 text-right font-semibold text-slate-950 tabular-nums">
+                  <td className="text-ui-text py-2 text-right font-semibold tabular-nums">
                     {row.bookingRatePct}%
                   </td>
                 </tr>

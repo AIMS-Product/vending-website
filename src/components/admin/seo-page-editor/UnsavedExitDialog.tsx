@@ -95,20 +95,20 @@ export function UnsavedExitDialog({
         aria-labelledby="unsaved-exit-title"
         aria-describedby="unsaved-exit-body"
         tabIndex={-1}
-        className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl focus:outline-none"
+        className="border-ui-line w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl focus:outline-none"
       >
-        <p className="text-xs font-semibold tracking-wider text-[#0b63f6] uppercase">
+        <p className="text-ui-accent text-xs font-semibold tracking-wider uppercase">
           Unsaved page
         </p>
         <h2
           id="unsaved-exit-title"
-          className="mt-2 text-xl font-semibold text-slate-950"
+          className="text-ui-text mt-2 text-xl font-semibold"
         >
           Keep this draft before you leave?
         </h2>
         <p
           id="unsaved-exit-body"
-          className="mt-2 text-sm leading-6 text-slate-600"
+          className="text-ui-text-muted mt-2 text-sm leading-6"
         >
           This page was started automatically but has not been saved yet. Save
           it to keep working on it later, or discard it to remove the unsaved
@@ -127,7 +127,7 @@ export function UnsavedExitDialog({
         <div className="mt-6 grid gap-2">
           <button
             type="button"
-            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#0b63f6] bg-[#0b63f6] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+            className="border-ui-accent bg-ui-accent focus-visible:ring-ui-accent/20 inline-flex min-h-11 items-center justify-center rounded-lg border px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isDiscarding}
             onClick={() => onChoose("save")}
           >
@@ -143,7 +143,7 @@ export function UnsavedExitDialog({
           </button>
           <button
             type="button"
-            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+            className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas focus-visible:ring-ui-accent/20 inline-flex min-h-11 items-center justify-center rounded-lg border bg-white px-4 text-sm font-semibold shadow-sm transition focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isDiscarding}
             onClick={() => onChoose("stay")}
           >

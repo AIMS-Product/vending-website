@@ -119,29 +119,31 @@ export function NewsEditorForm({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
               href="/admin/news"
-              className="text-sm font-semibold text-[#0b63f6] hover:text-[#0756d6]"
+              className="text-ui-accent hover:text-ui-accent-hover text-sm font-semibold"
             >
               Back to posts
             </Link>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+            <span className="bg-ui-line text-ui-text-muted rounded-full px-3 py-1 text-xs font-semibold">
               {statusLabel}
             </span>
           </div>
 
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Title</span>
+            <span className="text-ui-text-muted text-sm font-medium">
+              Title
+            </span>
             <input
               name="title"
               aria-label="Title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               required
-              className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-2xl font-semibold text-slate-950 shadow-sm transition outline-none focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15"
+              className="border-ui-line text-ui-text focus:border-ui-accent focus:ring-ui-accent/15 mt-2 w-full rounded-lg border bg-white px-4 py-3 text-2xl font-semibold shadow-sm transition outline-none focus:ring-2"
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Slug</span>
+            <span className="text-ui-text-muted text-sm font-medium">Slug</span>
             <input
               name="slug"
               aria-label="Slug"
@@ -158,7 +160,7 @@ export function NewsEditorForm({
                 server normalizes/validates with the same rule as a backstop. */}
             <span
               id="news-slug-hint"
-              className="mt-1.5 block text-xs text-slate-500"
+              className="text-ui-text-subtle mt-1.5 block text-xs"
             >
               Lowercase letters, numbers, and hyphens only — spaces and
               punctuation are removed automatically.
@@ -166,7 +168,9 @@ export function NewsEditorForm({
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Excerpt</span>
+            <span className="text-ui-text-muted text-sm font-medium">
+              Excerpt
+            </span>
             <textarea
               name="excerpt"
               aria-label="Excerpt"
@@ -178,8 +182,8 @@ export function NewsEditorForm({
             />
           </label>
 
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-            <div className="flex border-b border-slate-200 bg-slate-50">
+          <div className="border-ui-line overflow-hidden rounded-lg border bg-white shadow-sm">
+            <div className="border-ui-line bg-ui-canvas flex border-b">
               <button
                 type="button"
                 onClick={() => setActiveTab("write")}
@@ -203,7 +207,7 @@ export function NewsEditorForm({
                 onChange={(event) => setBody(event.target.value)}
                 required
                 rows={24}
-                className="min-h-[520px] w-full resize-y border-0 p-4 font-mono text-sm leading-6 text-slate-800 outline-none"
+                className="text-ui-text min-h-[520px] w-full resize-y border-0 p-4 font-mono text-sm leading-6 outline-none"
               />
             ) : (
               <>
@@ -223,7 +227,7 @@ export function NewsEditorForm({
 
         <div className="space-y-5">
           <div className={adminCardClass}>
-            <h2 className="text-sm font-semibold text-slate-950">Publish</h2>
+            <h2 className="text-ui-text text-sm font-semibold">Publish</h2>
             {(state.status !== "idle" || savedFromRedirect) && (
               <p
                 className={`mt-3 rounded-lg px-3 py-2 text-sm ${
@@ -239,7 +243,7 @@ export function NewsEditorForm({
                 success state proves work is safe; the error state never claims
                 "saved" and points to the manual Save draft fallback. */}
             {autosave?.status === "saved" && (
-              <p className="mt-3 text-xs font-medium text-slate-500">
+              <p className="text-ui-text-subtle mt-3 text-xs font-medium">
                 Saved automatically · {formatPacificDateTime(autosave.savedAt)}
               </p>
             )}

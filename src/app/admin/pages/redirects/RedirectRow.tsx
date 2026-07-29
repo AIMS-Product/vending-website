@@ -68,10 +68,10 @@ export function RedirectRow({ redirect }: { redirect: RedirectRowData }) {
 
   return (
     <tr>
-      <td className="px-5 py-3 font-mono text-xs text-slate-700">
+      <td className="text-ui-text-muted px-5 py-3 font-mono text-xs">
         {redirect.source_path}
       </td>
-      <td className="px-5 py-3 font-mono text-xs text-slate-700">
+      <td className="text-ui-text-muted px-5 py-3 font-mono text-xs">
         {redirect.destination_path}
       </td>
       <td className="px-5 py-3">{redirectStatusLabel(redirect.status_code)}</td>
@@ -137,7 +137,7 @@ function RedirectEditForm({
           className="grid gap-3 lg:grid-cols-12"
         >
           <input type="hidden" name="id" value={redirect.id} />
-          <label className="text-xs font-medium text-slate-600 lg:col-span-4">
+          <label className="text-ui-text-muted text-xs font-medium lg:col-span-4">
             Old address (path)
             <input
               name="sourcePath"
@@ -147,7 +147,7 @@ function RedirectEditForm({
             />
             <FieldError message={fieldErrors.sourcePath} />
           </label>
-          <label className="text-xs font-medium text-slate-600 lg:col-span-4">
+          <label className="text-ui-text-muted text-xs font-medium lg:col-span-4">
             New address (destination)
             <input
               name="destinationPath"
@@ -159,7 +159,7 @@ function RedirectEditForm({
             />
             <FieldError message={fieldErrors.destinationPath} />
           </label>
-          <label className="text-xs font-medium text-slate-600 lg:col-span-2">
+          <label className="text-ui-text-muted text-xs font-medium lg:col-span-2">
             Redirect type
             <select
               name="statusCode"
@@ -223,11 +223,11 @@ function RedirectDeleteDialog({
       aria-labelledby={titleId}
       className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4 py-6"
     >
-      <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 text-left shadow-xl">
-        <h2 id={titleId} className="text-base font-semibold text-slate-950">
+      <div className="border-ui-line w-full max-w-sm rounded-lg border bg-white p-5 text-left shadow-xl">
+        <h2 id={titleId} className="text-ui-text text-base font-semibold">
           Delete this redirect?
         </h2>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
+        <p className="text-ui-text-muted mt-3 text-sm leading-6">
           <span className="font-mono text-xs">{redirect.source_path}</span> will
           stop sending people to{" "}
           <span className="font-mono text-xs">{redirect.destination_path}</span>

@@ -57,7 +57,7 @@ export function NewsCoverCard({
 
   return (
     <div className={adminCardClass}>
-      <h2 className="text-sm font-semibold text-slate-950">Cover</h2>
+      <h2 className="text-ui-text text-sm font-semibold">Cover</h2>
       <div className="mt-4">
         <CoverLibraryButton
           onSelect={(asset) => {
@@ -67,7 +67,9 @@ export function NewsCoverCard({
         />
       </div>
       <label className="mt-4 block">
-        <span className="text-sm font-medium text-slate-700">Image URL</span>
+        <span className="text-ui-text-muted text-sm font-medium">
+          Image URL
+        </span>
         <input
           name="cover_url"
           aria-label="Cover image URL"
@@ -77,7 +79,7 @@ export function NewsCoverCard({
         />
       </label>
       <label className="mt-4 block">
-        <span className="text-sm font-medium text-slate-700">Upload</span>
+        <span className="text-ui-text-muted text-sm font-medium">Upload</span>
         <input
           type="file"
           aria-label="Upload cover image"
@@ -86,14 +88,14 @@ export function NewsCoverCard({
             handleFileChange(event.target.files?.[0] ?? null)
           }
           disabled={isUploading}
-          className="mt-2 block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#e9f1ff] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#0b63f6] hover:file:bg-[#dceaff]"
+          className="text-ui-text-muted file:text-ui-accent mt-2 block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-[#e9f1ff] file:px-4 file:py-2 file:text-sm file:font-semibold hover:file:bg-[#dceaff]"
         />
       </label>
       {uploadMessage && (
-        <p className="mt-2 text-xs text-slate-500">{uploadMessage}</p>
+        <p className="text-ui-text-subtle mt-2 text-xs">{uploadMessage}</p>
       )}
       <label className="mt-4 block">
-        <span className="text-sm font-medium text-slate-700">Alt text</span>
+        <span className="text-ui-text-muted text-sm font-medium">Alt text</span>
         <input
           name="cover_alt"
           aria-label="Cover image alt text"

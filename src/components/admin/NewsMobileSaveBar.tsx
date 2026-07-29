@@ -14,7 +14,7 @@ import { NewsPublishButton } from "@/components/admin/NewsPublishButton";
 export function NewsMobileSaveBar({ formId }: { formId: string }) {
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-[60] border-t border-slate-200 bg-white/95 px-4 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-16px_rgba(15,23,42,0.45)] backdrop-blur lg:hidden"
+      className="border-ui-line fixed inset-x-0 bottom-0 z-[60] border-t bg-white/95 px-4 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-16px_rgba(15,23,42,0.45)] backdrop-blur lg:hidden"
       role="region"
       aria-label="Editor actions"
     >
@@ -24,13 +24,13 @@ export function NewsMobileSaveBar({ formId }: { formId: string }) {
           form={formId}
           name="intent"
           value="save"
-          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+          className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 inline-flex min-h-11 flex-1 items-center justify-center rounded-full border bg-white px-5 text-sm font-semibold shadow-sm transition focus-visible:ring-4 focus-visible:outline-none"
         >
           Save draft
         </button>
         <NewsPublishButton
           formId={formId}
-          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-[#0b63f6]/20 bg-[#0b63f6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0756d6] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+          className="border-ui-accent/20 bg-ui-accent hover:bg-ui-accent-hover focus-visible:ring-ui-accent/20 inline-flex min-h-11 flex-1 items-center justify-center rounded-full border px-5 text-sm font-semibold text-white shadow-sm transition focus-visible:ring-4 focus-visible:outline-none"
         />
       </div>
     </div>

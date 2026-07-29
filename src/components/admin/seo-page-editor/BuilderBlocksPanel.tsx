@@ -36,20 +36,20 @@ export function BuilderBlocksPanel({
     <section
       aria-labelledby="builder-blocks-panel-title"
       data-builder-walkthrough="blocks"
-      className="fixed top-32 bottom-4 left-4 z-[60] order-2 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:bottom-auto xl:left-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none"
+      className="border-ui-line fixed top-32 bottom-4 left-4 z-[60] order-2 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border bg-white shadow-xl xl:sticky xl:top-4 xl:bottom-auto xl:left-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none"
     >
-      <div className="flex shrink-0 items-start border-b border-slate-200 px-5 py-4">
+      <div className="border-ui-line flex shrink-0 items-start border-b px-5 py-4">
         <div>
-          <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+          <p className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
             Blocks
           </p>
           <h2
             id="builder-blocks-panel-title"
-            className="mt-1 text-base font-semibold text-slate-950"
+            className="text-ui-text mt-1 text-base font-semibold"
           >
             Page structure
           </h2>
-          <p className="mt-1 text-xs font-medium text-slate-500">
+          <p className="text-ui-text-subtle mt-1 text-xs font-medium">
             {builderBlockEntries.length}{" "}
             {builderBlockEntries.length === 1 ? "block" : "blocks"}
           </p>
@@ -81,7 +81,7 @@ export function BuilderBlocksPanel({
           }
         />
       </div>
-      <div className="shrink-0 border-t border-slate-200 px-4 py-3">
+      <div className="border-ui-line shrink-0 border-t px-4 py-3">
         <PageChromeControls
           settings={chromeSettings}
           onChange={updateChromeSettings}
@@ -89,10 +89,10 @@ export function BuilderBlocksPanel({
           onQualificationChange={updateQualificationSettings}
         />
       </div>
-      <div className="shrink-0 border-t border-slate-200 p-4">
+      <div className="border-ui-line shrink-0 border-t p-4">
         <Link
           href="/admin/pages"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+          className="border-ui-line text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 inline-flex w-full items-center justify-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-semibold shadow-sm transition focus-visible:ring-4 focus-visible:outline-none"
         >
           <ChevronIcon direction="left" />
           Go back to dashboard

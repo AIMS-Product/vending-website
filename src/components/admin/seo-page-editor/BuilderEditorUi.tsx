@@ -115,7 +115,7 @@ export function MovePositionMenu({
       </BuilderTooltip>
       {isOpen && (
         <div
-          className={`animate-in fade-in slide-in-from-top-2 absolute z-40 mt-2 min-w-[188px] rounded-xl border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5 ${menuAlignClass}`}
+          className={`animate-in fade-in slide-in-from-top-2 border-ui-line absolute z-40 mt-2 min-w-[188px] rounded-xl border bg-white p-2 shadow-lg ring-1 ring-black/5 ${menuAlignClass}`}
         >
           <button
             type="button"
@@ -142,7 +142,7 @@ export function MovePositionMenu({
           {itemCount > 1 ? (
             <>
               <div className="my-1 border-t border-slate-100" />
-              <p className="px-2 py-1 text-[10px] font-semibold tracking-wide text-slate-400 uppercase">
+              <p className="text-ui-text-subtle px-2 py-1 text-[10px] font-semibold tracking-wide uppercase">
                 {positionHeading}
               </p>
               {Array.from({ length: itemCount }, (_, index) => (
@@ -270,12 +270,12 @@ export function BlockToolbar({
         : null;
 
   return (
-    <header className="pointer-events-auto flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white/95 px-2.5 py-1.5 text-xs opacity-100 shadow-[0_10px_24px_-16px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur transition-all md:opacity-0 md:group-focus-within/editor:opacity-100 md:group-hover/editor:opacity-100">
+    <header className="border-ui-line pointer-events-auto flex items-center justify-between gap-2 rounded-lg border bg-white/95 px-2.5 py-1.5 text-xs opacity-100 shadow-[0_10px_24px_-16px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur transition-all md:opacity-0 md:group-focus-within/editor:opacity-100 md:group-hover/editor:opacity-100">
       <div className="flex min-w-0 items-center gap-2">
         <BuilderTooltip label={`${typeLabel} block`} detail={readyDetail}>
           <span
             role="img"
-            className="flex size-7 shrink-0 items-center justify-center rounded-md bg-slate-50 text-slate-500 ring-1 ring-slate-200/50 ring-inset"
+            className="bg-ui-canvas text-ui-text-subtle flex size-7 shrink-0 items-center justify-center rounded-md ring-1 ring-slate-200/50 ring-inset"
             aria-label={`${typeLabel} block`}
           >
             <BuilderGlyph name={icon} />
@@ -283,14 +283,14 @@ export function BlockToolbar({
         </BuilderTooltip>
         {structure ? (
           <BuilderTooltip label={structure.label} detail={structure.detail}>
-            <span className="shrink-0 rounded-md bg-slate-50 px-2 py-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase ring-1 ring-slate-200/70 ring-inset">
+            <span className="bg-ui-canvas text-ui-text-subtle shrink-0 rounded-md px-2 py-1 text-[10px] font-bold tracking-wider uppercase ring-1 ring-slate-200/70 ring-inset">
               {structure.label}
             </span>
           </BuilderTooltip>
         ) : null}
         <span className="flex min-w-0 items-center gap-2">
           <BuilderTooltip label={variantLabel} detail={variantDetail}>
-            <span className="truncate text-[11px] font-medium text-slate-600">
+            <span className="text-ui-text-muted truncate text-[11px] font-medium">
               {variantLabel}
             </span>
           </BuilderTooltip>
@@ -307,7 +307,7 @@ export function BlockToolbar({
       </div>
       <div className="flex shrink-0 items-center gap-1">
         {moveControl ? (
-          <div className="rounded-md border border-slate-200 bg-white p-0.5 shadow-sm">
+          <div className="border-ui-line rounded-md border bg-white p-0.5 shadow-sm">
             <MovePositionMenu
               label={moveControl.label}
               currentIndex={moveControl.currentIndex}
@@ -320,7 +320,7 @@ export function BlockToolbar({
             />
           </div>
         ) : null}
-        <div className="rounded-md border border-slate-200 bg-white p-0.5 shadow-sm">
+        <div className="border-ui-line rounded-md border bg-white p-0.5 shadow-sm">
           <MoreActions
             label={structure ? "Section and block actions" : "Block actions"}
             detail={
@@ -429,7 +429,7 @@ export function MoreActions({
         </button>
       </BuilderTooltip>
       {isOpen && (
-        <div className="animate-in fade-in slide-in-from-top-2 absolute right-0 z-20 mt-2 min-w-[160px] rounded-xl border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5">
+        <div className="animate-in fade-in slide-in-from-top-2 border-ui-line absolute right-0 z-20 mt-2 min-w-[160px] rounded-xl border bg-white p-2 shadow-lg ring-1 ring-black/5">
           {children}
         </div>
       )}

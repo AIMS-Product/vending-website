@@ -86,28 +86,28 @@ export function NewsPublishButton({
             onCancel={() => setIsConfirmOpen(false)}
           >
             <div className="flex min-h-full items-center justify-center px-4 py-6">
-              <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
+              <div className="border-ui-line w-full max-w-sm rounded-lg border bg-white p-5 shadow-xl">
                 <h2
                   id={confirmTitleId}
-                  className="text-base font-semibold text-slate-950"
+                  className="text-ui-text text-base font-semibold"
                 >
                   Publish this post?
                 </h2>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
+                <p className="text-ui-text-muted mt-3 text-sm leading-6">
                   This makes the post publicly visible at your blog right away.
                 </p>
                 <div className="mt-5 flex justify-end gap-2">
                   <button
                     ref={cancelButtonRef}
                     type="button"
-                    className="inline-flex min-h-10 items-center rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                    className="border-ui-line text-ui-text-muted hover:bg-ui-canvas focus-visible:ring-ui-accent/35 inline-flex min-h-10 items-center rounded-md border bg-white px-4 text-sm font-semibold shadow-sm transition focus-visible:ring-2 focus-visible:outline-none"
                     onClick={() => setIsConfirmOpen(false)}
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
-                    className="inline-flex min-h-10 items-center rounded-md bg-[#0b63f6] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0756d6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                    className="bg-ui-accent hover:bg-ui-accent-hover focus-visible:ring-ui-accent/35 inline-flex min-h-10 items-center rounded-md px-4 text-sm font-semibold text-white shadow-sm transition focus-visible:ring-2 focus-visible:outline-none"
                     onClick={submitConfirmedAction}
                   >
                     Publish

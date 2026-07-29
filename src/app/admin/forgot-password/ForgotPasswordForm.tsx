@@ -31,13 +31,11 @@ export function ForgotPasswordForm({
     const sentLoginHref = adminPathWithEmail("/admin/login", state.email);
 
     return (
-      <div className="space-y-4 text-sm text-slate-700">
-        <p className="text-base font-semibold text-slate-950">
-          Check your email
-        </p>
+      <div className="text-ui-text-muted space-y-4 text-sm">
+        <p className="text-ui-text text-base font-semibold">Check your email</p>
         <p>
-          If <span className="font-medium text-slate-950">{state.email}</span>{" "}
-          has Studio access, a password reset email is on its way.
+          If <span className="text-ui-text font-medium">{state.email}</span> has
+          Studio access, a password reset email is on its way.
         </p>
         <Link
           href={sentLoginHref}
@@ -53,7 +51,7 @@ export function ForgotPasswordForm({
     <form action={formAction} className="space-y-4">
       <label
         htmlFor="email"
-        className="block text-sm font-medium text-slate-700"
+        className="text-ui-text-muted block text-sm font-medium"
       >
         Email
         <input

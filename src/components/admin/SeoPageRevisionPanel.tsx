@@ -130,13 +130,13 @@ export function SeoPageRevisionPanel({
   return (
     <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       <section className={adminPanelClass}>
-        <header className="border-b border-slate-200 px-5 py-4">
-          <h2 className="text-base font-semibold text-slate-950">
+        <header className="border-ui-line border-b px-5 py-4">
+          <h2 className="text-ui-text text-base font-semibold">
             Revision history
           </h2>
         </header>
         {revisions.length === 0 ? (
-          <p className="p-5 text-sm text-slate-500">
+          <p className="text-ui-text-subtle p-5 text-sm">
             Revisions appear after publishing, library refreshes, or draft
             restores.
           </p>
@@ -151,7 +151,7 @@ export function SeoPageRevisionPanel({
                 >
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-slate-950">
+                      <p className="text-ui-text text-sm font-semibold">
                         {revisionTitle(revision, versionNumber)}
                       </p>
                       {versionNumber && (
@@ -162,7 +162,7 @@ export function SeoPageRevisionPanel({
                       )}
                       {index === 0 && <RevisionChip>Latest</RevisionChip>}
                     </div>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="text-ui-text-subtle mt-1 text-xs">
                       {revisionTypeLabel(revision.revision_type)} ·{" "}
                       {formatRevisionDateTime(revision.created_at)}
                     </p>
@@ -195,7 +195,7 @@ export function SeoPageRevisionPanel({
           landmark-complementary-is-top-level; a div keeps the layout and the
           heading provides the structure. */}
       <div className={adminCardClass}>
-        <h2 className="text-sm font-semibold text-slate-950">Draft preview</h2>
+        <h2 className="text-ui-text text-sm font-semibold">Draft preview</h2>
         <form action={refreshSeoPageLibraryReferences} className="mt-4">
           <input type="hidden" name="pageId" value={pageId} />
           <button type="submit" className={adminSmallButtonClass}>
@@ -223,7 +223,7 @@ export function SeoPageRevisionPanel({
           <Link
             href={previewState.previewPath}
             target="_blank"
-            className="mt-3 block text-sm font-semibold break-all text-[#0b63f6] hover:text-[#0756d6]"
+            className="text-ui-accent hover:text-ui-accent-hover mt-3 block text-sm font-semibold break-all"
           >
             {previewState.previewPath}
           </Link>
@@ -235,14 +235,14 @@ export function SeoPageRevisionPanel({
             return (
               <div
                 key={token.id}
-                className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+                className="border-ui-line bg-ui-canvas rounded-lg border p-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-mono text-xs text-slate-700">
+                    <p className="text-ui-text-muted font-mono text-xs">
                       {token.token_prefix}...
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="text-ui-text-subtle mt-1 text-xs">
                       {status} - expires{" "}
                       {formatRevisionDateTime(token.expires_at)}
                     </p>
@@ -270,14 +270,14 @@ export function SeoPageRevisionPanel({
           aria-labelledby={restoreDialogTitleId}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4 py-6"
         >
-          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
+          <div className="border-ui-line w-full max-w-md rounded-lg border bg-white p-5 shadow-xl">
             <h2
               id={restoreDialogTitleId}
-              className="text-base font-semibold text-slate-950"
+              className="text-ui-text text-base font-semibold"
             >
               Restore this revision as draft?
             </h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
+            <p className="text-ui-text-muted mt-3 text-sm leading-6">
               This copies {revisionTitle(restoreRevision)} into the editor
               draft. The live page stays unchanged until you publish again.
             </p>
@@ -329,7 +329,7 @@ function RevisionChip({
       className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
         tone === "live"
           ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 ring-inset"
-          : "bg-slate-100 text-slate-600"
+          : "bg-ui-line text-ui-text-muted"
       }`}
     >
       {children}
@@ -342,7 +342,7 @@ function RevisionContext({ snapshot }: { snapshot?: Json }) {
   const { blockCount, wordCount } = revisionBlockStats(snapshot ?? null);
   if (blockCount === 0 && wordCount === 0) return null;
   return (
-    <p className="mt-0.5 text-xs text-slate-500">
+    <p className="text-ui-text-subtle mt-0.5 text-xs">
       {blockCount} {blockCount === 1 ? "block" : "blocks"} · {wordCount}{" "}
       {wordCount === 1 ? "word" : "words"}
     </p>

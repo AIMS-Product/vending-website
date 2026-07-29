@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const baseClass =
-  "flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none";
+  "flex size-9 items-center justify-center rounded-md border border-ui-line bg-white focus-visible:ring-2 focus-visible:ring-ui-accent/35 focus-visible:outline-none";
 
 function PaginationChevron({ next }: { next: boolean }) {
   return (
@@ -50,7 +50,7 @@ export function AdminPaginationLink({
     <Link
       href={href}
       aria-label={label}
-      className={`${baseClass} text-slate-700 transition hover:bg-slate-50 hover:text-slate-950`}
+      className={`${baseClass} text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text transition`}
     >
       <PaginationChevron next={next} />
     </Link>

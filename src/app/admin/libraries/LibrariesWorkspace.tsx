@@ -159,7 +159,7 @@ export function LibrariesWorkspace({
 function DependencyCue() {
   return (
     <section
-      className={`${adminCardClass} bg-[#f5f8ff] text-sm leading-6 text-slate-700`}
+      className={`${adminCardClass} text-ui-text-muted bg-[#f5f8ff] text-sm leading-6`}
       aria-label="Library order guidance"
     >
       <p>
@@ -167,7 +167,7 @@ function DependencyCue() {
         approved claims are backed by excerpts. Source documents, source
         excerpts, and approved claims build on each other in that order.
       </p>
-      <p className="mt-2 text-slate-500">
+      <p className="text-ui-text-subtle mt-2">
         CTA presets and proof items are independent — add them anytime.
       </p>
     </section>

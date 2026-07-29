@@ -38,7 +38,7 @@ export function SeoPageEditorWorkspace({
         </>
       )}
 
-      <div className="relative min-h-[calc(100dvh-4rem)] overflow-x-hidden border border-slate-200 bg-slate-100 lg:min-h-screen">
+      <div className="border-ui-line bg-ui-line relative min-h-[calc(100dvh-4rem)] overflow-x-hidden border lg:min-h-screen">
         <SeoPageEditorTopRail editor={editor} />
         {editor.isNarrowEditor &&
           (!editor.isBlockSidebarCollapsed ||

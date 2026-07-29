@@ -156,10 +156,10 @@ export function QualificationFormEditor({
           <section className={adminCardClass}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-base font-semibold text-slate-950">
+                <h2 className="text-ui-text text-base font-semibold">
                   Form details
                 </h2>
-                <p className="mt-1 text-sm text-slate-600">
+                <p className="text-ui-text-muted mt-1 text-sm">
                   Name this follow-up flow so it is easy to pick from pages and
                   lead blocks.
                 </p>
@@ -181,10 +181,10 @@ export function QualificationFormEditor({
           <section className={adminCardClass}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-base font-semibold text-slate-950">
+                <h2 className="text-ui-text text-base font-semibold">
                   Questions
                 </h2>
-                <p className="mt-1 text-sm text-slate-600">
+                <p className="text-ui-text-muted mt-1 text-sm">
                   Write the prospect-facing questions first. Routing fields stay
                   available in advanced settings when you need them.
                 </p>
@@ -250,8 +250,8 @@ export function QualificationFormEditor({
 
         <aside className="grid content-start gap-5">
           <section className={adminCardClass}>
-            <h2 className="text-sm font-semibold text-slate-950">Publish</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <h2 className="text-ui-text text-sm font-semibold">Publish</h2>
+            <p className="text-ui-text-muted mt-2 text-sm">
               Save keeps editing open. Publish creates a locked version for new
               qualification sessions.
             </p>
@@ -288,10 +288,8 @@ export function QualificationFormEditor({
           </section>
 
           <section className={adminCardClass}>
-            <h2 className="text-sm font-semibold text-slate-950">
-              Default form
-            </h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <h2 className="text-ui-text text-sm font-semibold">Default form</h2>
+            <p className="text-ui-text-muted mt-2 text-sm">
               {form.isDefault
                 ? "This form is the fallback when a page or lead block does not choose another form."
                 : "Publish first, then make this the fallback for pages and lead blocks without their own form."}
@@ -342,10 +340,10 @@ function QualificationEditorOverview({
     <section className={adminCardClass} aria-label="Builder overview">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div>
-          <h2 className="text-base font-semibold text-slate-950">
+          <h2 className="text-ui-text text-base font-semibold">
             Build the follow-up prospects see after the short lead form
           </h2>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="text-ui-text-muted mt-1 text-sm">
             Edit the questions, check the prospect preview, then save or publish
             a version for new sessions.
           </p>
@@ -363,9 +361,9 @@ function QualificationEditorOverview({
 
 function SummaryBadge({ label, value }: { label: string; value: number }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-      <span className="text-slate-500">{label}</span>
-      <span className="text-slate-950">{value}</span>
+    <span className="bg-ui-line text-ui-text-muted inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold">
+      <span className="text-ui-text-subtle">{label}</span>
+      <span className="text-ui-text">{value}</span>
     </span>
   );
 }
@@ -390,17 +388,17 @@ function QuestionEditor({
   const showOptions = optionQuestionTypes.has(question.type);
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4">
-      <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+    <article className="border-ui-line rounded-lg border bg-white p-4">
+      <div className="border-ui-line flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold text-slate-500 uppercase">
+          <p className="text-ui-text-subtle text-xs font-semibold uppercase">
             Question {index + 1}
           </p>
-          <h3 className="mt-1 text-sm font-semibold text-slate-950">
+          <h3 className="text-ui-text mt-1 text-sm font-semibold">
             {question.label || "Untitled question"}
           </h3>
           <div className="mt-2 flex flex-wrap gap-2">
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+            <span className="bg-ui-line text-ui-text-muted rounded-full px-2.5 py-1 text-xs font-semibold">
               {labelForQuestionType(question.type)}
             </span>
             {question.required ? (
@@ -408,7 +406,7 @@ function QuestionEditor({
                 Required
               </span>
             ) : (
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+              <span className="bg-ui-line text-ui-text-muted rounded-full px-2.5 py-1 text-xs font-semibold">
                 Optional
               </span>
             )}
@@ -496,7 +494,7 @@ function QuestionEditor({
             className={adminInputClass}
           />
         </label>
-        <label className="flex items-center gap-2 self-end rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700">
+        <label className="border-ui-line bg-ui-canvas text-ui-text-muted flex items-center gap-2 self-end rounded-md border px-3 py-2.5 text-sm font-semibold">
           <input
             key={`${question.id}-required-${question.required}-${actionRevision}`}
             type="checkbox"
@@ -505,17 +503,17 @@ function QuestionEditor({
             onChange={(event) =>
               onChange({ ...question, required: event.target.checked })
             }
-            className="size-4 rounded border-slate-300 text-[#0b63f6]"
+            className="border-ui-line-strong text-ui-accent size-4 rounded"
           />
           Required
         </label>
       </div>
 
-      <details className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-        <summary className="cursor-pointer text-sm font-semibold text-slate-800">
+      <details className="border-ui-line bg-ui-canvas mt-4 rounded-lg border p-3">
+        <summary className="text-ui-text cursor-pointer text-sm font-semibold">
           Lead routing
         </summary>
-        <p className="mt-2 text-xs leading-5 text-slate-600">
+        <p className="text-ui-text-muted mt-2 text-xs leading-5">
           Optional mapping used for lead summaries, filters, and CRM sync. Most
           copy edits do not need this.
         </p>
@@ -562,13 +560,11 @@ function QuestionOptions({
 }) {
   const options = question.options ?? [];
   return (
-    <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+    <div className="border-ui-line bg-ui-canvas mt-4 rounded-lg border p-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h4 className="text-sm font-semibold text-slate-950">
-            Answer choices
-          </h4>
-          <p className="mt-1 text-xs leading-5 text-slate-600">
+          <h4 className="text-ui-text text-sm font-semibold">Answer choices</h4>
+          <p className="text-ui-text-muted mt-1 text-xs leading-5">
             Labels are shown to prospects. Internal values are optional.
           </p>
         </div>
@@ -592,7 +588,7 @@ function QuestionOptions({
         {options.map((option, index) => (
           <div
             key={option.id}
-            className="grid gap-3 rounded-md border border-slate-200 bg-white p-3 md:grid-cols-[minmax(0,1fr)_auto]"
+            className="border-ui-line grid gap-3 rounded-md border bg-white p-3 md:grid-cols-[minmax(0,1fr)_auto]"
           >
             <label className="block">
               <span className={adminLabelClass}>Option label</span>
@@ -630,7 +626,7 @@ function QuestionOptions({
               Remove
             </button>
             <details className="md:col-span-2">
-              <summary className="cursor-pointer text-xs font-semibold text-slate-600">
+              <summary className="text-ui-text-muted cursor-pointer text-xs font-semibold">
                 Internal value
               </summary>
               <label className="mt-2 block">
@@ -671,14 +667,14 @@ function QualificationPreview({
     <section className={adminCardClass} aria-label="Prospect preview">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-slate-950">
+          <h2 className="text-ui-text text-sm font-semibold">
             Prospect preview
           </h2>
-          <p className="mt-1 text-xs leading-5 text-slate-600">
+          <p className="text-ui-text-muted mt-1 text-xs leading-5">
             {questions.length} questions, {requiredCount} required.
           </p>
         </div>
-        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+        <span className="bg-ui-line text-ui-text-muted rounded-full px-2.5 py-1 text-xs font-semibold">
           Prospect view
         </span>
       </div>
@@ -686,16 +682,16 @@ function QualificationPreview({
         {questions.map((question) => (
           <div
             key={question.id}
-            className="rounded-lg border border-slate-200 p-3"
+            className="border-ui-line rounded-lg border p-3"
           >
-            <p className="text-sm font-semibold text-slate-950">
+            <p className="text-ui-text text-sm font-semibold">
               {question.label || "Untitled question"}
               {question.required ? (
                 <span className="text-red-600"> *</span>
               ) : null}
             </p>
             {question.helpText ? (
-              <p className="mt-1 text-xs leading-5 text-slate-500">
+              <p className="text-ui-text-subtle mt-1 text-xs leading-5">
                 {question.helpText}
               </p>
             ) : null}
@@ -735,7 +731,7 @@ function PreviewControl({ question }: { question: QualificationQuestion }) {
         {options.map((option) => (
           <label
             key={option.id}
-            className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700"
+            className="border-ui-line text-ui-text-muted flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
           >
             <input type="checkbox" disabled />
             {option.label}
@@ -747,7 +743,7 @@ function PreviewControl({ question }: { question: QualificationQuestion }) {
 
   if (question.type === "yes_no" || question.type === "consent") {
     return (
-      <label className="mt-3 flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700">
+      <label className="border-ui-line text-ui-text-muted mt-3 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
         <input type="checkbox" disabled />
         {question.type === "consent" ? "I agree" : "Yes"}
       </label>

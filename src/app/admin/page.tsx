@@ -35,7 +35,7 @@ export default async function AdminOverviewPage() {
       userRole={role}
     >
       <section aria-label="Content live" className="mb-7">
-        <h2 className="mb-3 text-sm font-semibold text-slate-500 uppercase">
+        <h2 className="text-ui-text-subtle mb-3 text-sm font-semibold uppercase">
           Content live
         </h2>
         <AdminMetricStrip>
@@ -64,13 +64,13 @@ export default async function AdminOverviewPage() {
         <div className="mt-3 flex flex-wrap gap-3 text-sm">
           <Link
             href="/admin/pages"
-            className="font-semibold text-[#0b63f6] hover:underline"
+            className="text-ui-accent font-semibold hover:underline"
           >
             View pages
           </Link>
           <Link
             href="/admin/news"
-            className="font-semibold text-[#0b63f6] hover:underline"
+            className="text-ui-accent font-semibold hover:underline"
           >
             View posts
           </Link>
@@ -78,16 +78,16 @@ export default async function AdminOverviewPage() {
       </section>
 
       <section aria-label="Leads this week" className="mb-7">
-        <h2 className="mb-3 text-sm font-semibold text-slate-500 uppercase">
+        <h2 className="text-ui-text-subtle mb-3 text-sm font-semibold uppercase">
           Leads this week
         </h2>
         <div className={adminCardClass}>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-3xl font-semibold tracking-normal text-slate-950">
+              <p className="text-ui-text text-3xl font-semibold tracking-normal">
                 {overview.leadsThisWeek}
               </p>
-              <p className="text-sm text-slate-600">
+              <p className="text-ui-text-muted text-sm">
                 new leads in the last 7 days ({overview.leadsTotal} total)
               </p>
             </div>
@@ -102,7 +102,7 @@ export default async function AdminOverviewPage() {
       </section>
 
       <section aria-label="Needs attention" className="mb-7">
-        <h2 className="mb-3 text-sm font-semibold text-slate-500 uppercase">
+        <h2 className="text-ui-text-subtle mb-3 text-sm font-semibold uppercase">
           Needs attention
         </h2>
         {needsAttentionItems.length === 0 ? (
@@ -118,7 +118,7 @@ export default async function AdminOverviewPage() {
                   className={`flex items-center justify-between gap-4 rounded-lg border px-4 py-3 text-sm shadow-sm transition hover:bg-white/60 ${
                     item.tone === "red"
                       ? "border-red-200 bg-red-50 text-red-800"
-                      : "border-slate-200 bg-white text-slate-700"
+                      : "border-ui-line text-ui-text-muted bg-white"
                   }`}
                 >
                   <span className="font-semibold">{item.label}</span>
@@ -131,7 +131,7 @@ export default async function AdminOverviewPage() {
       </section>
 
       <section aria-label="Quick actions">
-        <h2 className="mb-3 text-sm font-semibold text-slate-500 uppercase">
+        <h2 className="text-ui-text-subtle mb-3 text-sm font-semibold uppercase">
           Quick actions
         </h2>
         <div className="flex flex-wrap gap-3">

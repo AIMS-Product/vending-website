@@ -78,30 +78,30 @@ export function NewPageChoiceGate({
   }
 
   return (
-    <div className="grid min-h-[calc(100dvh-4rem)] place-items-center border border-slate-200 bg-slate-100 px-4 py-8">
+    <div className="border-ui-line bg-ui-line grid min-h-[calc(100dvh-4rem)] place-items-center border px-4 py-8">
       {/* C132: a plain <div>, not a named <section>. AdminShell already wraps
           this route in a `region` landmark (<section aria-labelledby="admin-shell-title">),
           so adding a second named region here nested inside it tripped axe's
           landmark-unique rule. The heading below keeps the panel's structure. */}
-      <div className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl ring-1 ring-black/5 sm:p-8">
+      <div className="border-ui-line w-full max-w-3xl rounded-2xl border bg-white p-5 shadow-xl ring-1 ring-black/5 sm:p-8">
         <div className="mb-6">
-          <p className="text-xs font-semibold tracking-wider text-[#0b63f6] uppercase">
+          <p className="text-ui-accent text-xs font-semibold tracking-wider uppercase">
             SEO Page Builder
           </p>
           <h2
             id="new-page-choice-title"
-            className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl"
+            className="text-ui-text mt-2 text-2xl font-semibold tracking-tight sm:text-3xl"
           >
             Create page
           </h2>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
+          <p className="text-ui-text-muted mt-2 max-w-xl text-sm leading-6">
             Choose the page type that best matches your goal, then start
             building. You can adjust every detail in the editor.
           </p>
         </div>
 
         <fieldset className="space-y-3">
-          <legend className="text-sm font-semibold text-slate-950">
+          <legend className="text-ui-text text-sm font-semibold">
             What kind of page are you creating?
           </legend>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -111,18 +111,18 @@ export function NewPageChoiceGate({
                 <button
                   key={option.id}
                   type="button"
-                  className={`rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none ${
+                  className={`focus-visible:ring-ui-accent/20 rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:outline-none ${
                     isSelected
-                      ? "border-[#0b63f6] bg-[#f4f8ff] shadow-sm"
-                      : "border-slate-200 bg-white hover:border-slate-300"
+                      ? "border-ui-accent bg-ui-accent-soft shadow-sm"
+                      : "border-ui-line hover:border-ui-line-strong bg-white"
                   }`}
                   aria-pressed={isSelected}
                   onClick={() => selectPageType(option.id)}
                 >
-                  <span className="block text-sm font-semibold text-slate-950">
+                  <span className="text-ui-text block text-sm font-semibold">
                     {option.label}
                   </span>
-                  <span className="mt-1 block text-sm leading-5 text-slate-600">
+                  <span className="text-ui-text-muted mt-1 block text-sm leading-5">
                     {option.description}
                   </span>
                 </button>
@@ -133,7 +133,7 @@ export function NewPageChoiceGate({
 
         {hasSavedTemplates ? (
           <fieldset className="mt-6 space-y-3">
-            <legend className="text-sm font-semibold text-slate-950">
+            <legend className="text-ui-text text-sm font-semibold">
               Start from a template (optional)
             </legend>
             <div className="grid gap-2 sm:grid-cols-2">
@@ -156,10 +156,10 @@ export function NewPageChoiceGate({
           </fieldset>
         ) : null}
 
-        <div className="mt-8 flex justify-end border-t border-slate-200 pt-6">
+        <div className="border-ui-line mt-8 flex justify-end border-t pt-6">
           <button
             type="button"
-            className="min-h-11 rounded-lg border border-[#0b63f6] bg-[#0b63f6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+            className="border-ui-accent bg-ui-accent focus-visible:ring-ui-accent/20 min-h-11 rounded-lg border px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:outline-none"
             onClick={handleStartBuilding}
           >
             Start building page
@@ -187,20 +187,18 @@ function ChoiceCard({
     <button
       type="button"
       disabled={disabled}
-      className={`rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none ${
+      className={`focus-visible:ring-ui-accent/20 rounded-xl border p-4 text-left transition focus-visible:ring-4 focus-visible:outline-none ${
         disabled
-          ? "cursor-not-allowed border-slate-200 bg-slate-50 opacity-70"
+          ? "border-ui-line bg-ui-canvas cursor-not-allowed opacity-70"
           : selected
-            ? "border-[#0b63f6] bg-[#f4f8ff] shadow-sm"
-            : "border-slate-200 bg-white hover:border-slate-300"
+            ? "border-ui-accent bg-ui-accent-soft shadow-sm"
+            : "border-ui-line hover:border-ui-line-strong bg-white"
       }`}
       aria-pressed={selected}
       onClick={onClick}
     >
-      <span className="block text-sm font-semibold text-slate-950">
-        {label}
-      </span>
-      <span className="mt-1 block text-sm leading-5 text-slate-600">
+      <span className="text-ui-text block text-sm font-semibold">{label}</span>
+      <span className="text-ui-text-muted mt-1 block text-sm leading-5">
         {description}
       </span>
     </button>
@@ -380,7 +378,7 @@ export function BuilderBlockSidebar({
               const isLastInColumn = entry.blockIndex === columnBlockCount - 1;
               const moveButtonClass = `flex size-9 shrink-0 items-center justify-center rounded-lg transition focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-35 ${
                 isSelected
-                  ? "bg-slate-100 text-slate-600 enabled:hover:bg-slate-200"
+                  ? "bg-ui-line text-ui-text-muted enabled:hover:bg-slate-200"
                   : "bg-white/10 text-slate-200 enabled:hover:bg-white/20"
               }`;
 
@@ -389,7 +387,7 @@ export function BuilderBlockSidebar({
                   key={entry.block.id}
                   className={`flex items-stretch gap-2 rounded-xl border p-1.5 transition ${
                     isSelected
-                      ? "border-sky-300 bg-white text-slate-950 shadow-sm"
+                      ? "text-ui-text border-sky-300 bg-white shadow-sm"
                       : "border-white/10 bg-white/5 text-white hover:bg-white/10"
                   }`}
                 >
@@ -401,7 +399,7 @@ export function BuilderBlockSidebar({
                     <span
                       className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg ${
                         isSelected
-                          ? "bg-sky-50 text-[#0b63f6] ring-1 ring-sky-100"
+                          ? "text-ui-accent bg-sky-50 ring-1 ring-sky-100"
                           : "bg-white/10 text-slate-200 ring-1 ring-white/10"
                       }`}
                       aria-hidden="true"
@@ -419,14 +417,16 @@ export function BuilderBlockSidebar({
                       </span>
                       <span
                         className={`mt-1 line-clamp-2 block text-xs leading-5 ${
-                          isSelected ? "text-slate-500" : "text-slate-300"
+                          isSelected ? "text-ui-text-subtle" : "text-slate-300"
                         }`}
                       >
                         {entry.blockNumber}. {blockSummary(entry.block)}
                       </span>
                       <span
                         className={`mt-1 block text-[11px] font-medium ${
-                          isSelected ? "text-slate-400" : "text-slate-400"
+                          isSelected
+                            ? "text-ui-text-subtle"
+                            : "text-ui-text-subtle"
                         }`}
                       >
                         Section {entry.sectionNumber}, column{" "}
@@ -463,7 +463,7 @@ export function BuilderBlockSidebar({
                     aria-pressed={isSelected}
                     className={`my-2 flex size-9 shrink-0 items-center justify-center rounded-lg transition focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none ${
                       isSelected
-                        ? "bg-[#0b63f6] text-white"
+                        ? "bg-ui-accent text-white"
                         : "bg-white/10 text-slate-200 hover:bg-white/20"
                     }`}
                     onClick={() => onEditBlock(entry)}
@@ -479,7 +479,7 @@ export function BuilderBlockSidebar({
                       triggerAriaLabel={`Add block below block ${entry.blockNumber}`}
                       triggerButtonClassName={`inline-flex size-9 shrink-0 items-center justify-center rounded-lg transition focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none ${
                         isSelected
-                          ? "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          ? "bg-ui-line text-ui-text-muted hover:bg-slate-200"
                           : "bg-white/10 text-slate-200 hover:bg-white/20"
                       }`}
                       onAddBlock={(type, variant) =>
@@ -554,8 +554,8 @@ export function PageChromeControls({
           onChange={(checked) => onChange({ showFooter: checked })}
         />
       </div>
-      <details className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-        <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+      <details className="border-ui-line bg-ui-canvas rounded-lg border px-3 py-2">
+        <summary className="text-ui-text-muted cursor-pointer text-sm font-semibold">
           Qualification follow-up
         </summary>
         <div className="mt-3 space-y-3">
@@ -605,7 +605,7 @@ function ChromeToggle({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 rounded-lg py-1 text-sm font-semibold text-slate-700 transition hover:text-slate-950">
+    <label className="text-ui-text-muted hover:text-ui-text flex cursor-pointer items-center gap-2.5 rounded-lg py-1 text-sm font-semibold transition">
       <span>{label}</span>
       <input
         aria-label={label}
@@ -615,9 +615,9 @@ function ChromeToggle({
         className="peer sr-only"
       />
       <span
-        className={`flex h-5 w-9 items-center rounded-full p-0.5 ring-1 transition peer-focus-visible:ring-2 peer-focus-visible:ring-[#0b63f6]/40 ${
+        className={`peer-focus-visible:ring-ui-accent/40 flex h-5 w-9 items-center rounded-full p-0.5 ring-1 transition peer-focus-visible:ring-2 ${
           checked
-            ? "bg-[#0b63f6] ring-[#0b63f6]"
+            ? "bg-ui-accent ring-ui-accent"
             : "bg-slate-200 ring-slate-300"
         }`}
         aria-hidden="true"

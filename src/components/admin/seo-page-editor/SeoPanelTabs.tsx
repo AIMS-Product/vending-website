@@ -45,7 +45,7 @@ export function SeoPanelTabs({ tabs }: { tabs: SeoPanelTab[] }) {
       <div
         role="tablist"
         aria-label="SEO panel sections"
-        className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1"
+        className="border-ui-line bg-ui-canvas flex gap-1 rounded-xl border p-1"
       >
         {tabs.map((tab, index) => {
           const selected = tab.id === activeTab.id;
@@ -67,10 +67,10 @@ export function SeoPanelTabs({ tabs }: { tabs: SeoPanelTab[] }) {
               tabIndex={selected ? 0 : -1}
               onClick={() => setActiveId(tab.id)}
               onKeyDown={(event) => onKeyDown(event, index)}
-              className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold transition focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none ${
+              className={`focus-visible:ring-ui-accent/20 flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold transition focus-visible:ring-4 focus-visible:outline-none ${
                 selected
-                  ? "bg-white text-slate-950 shadow-sm"
-                  : "text-slate-500 hover:text-slate-800"
+                  ? "text-ui-text bg-white shadow-sm"
+                  : "text-ui-text-subtle hover:text-ui-text"
               }`}
             >
               {tab.label}

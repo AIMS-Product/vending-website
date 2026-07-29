@@ -63,13 +63,13 @@ export default async function SeoPageSourcePage({
         <section className={`${adminPanelClass} p-5`}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-slate-500">
+              <p className="text-ui-text-subtle text-sm font-semibold">
                 {page.title}
               </p>
-              <h2 className="mt-1 text-xl font-semibold text-slate-950">
+              <h2 className="text-ui-text mt-1 text-xl font-semibold">
                 {publicPath}
               </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              <p className="text-ui-text-muted mt-2 max-w-2xl text-sm leading-6">
                 This view is for admin review only. It keeps the live public
                 page unchanged while exposing the source in readable blocks.
               </p>
@@ -231,9 +231,11 @@ function ReadableSourceBlock({
         tone === "warning" ? "border-amber-200 bg-amber-50/40" : "bg-white"
       }`}
     >
-      <header className="border-b border-slate-200 px-5 py-4">
-        <h2 className="text-base font-semibold text-slate-950">{title}</h2>
-        <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
+      <header className="border-ui-line border-b px-5 py-4">
+        <h2 className="text-ui-text text-base font-semibold">{title}</h2>
+        <p className="text-ui-text-muted mt-1 text-sm leading-6">
+          {description}
+        </p>
       </header>
       <pre className="max-h-[34rem] overflow-auto bg-slate-950 p-5 font-mono text-xs leading-6 break-words whitespace-pre-wrap text-slate-100">
         {code}

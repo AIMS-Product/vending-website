@@ -71,7 +71,7 @@ function FaqCanvasItemEditorList({
       {items.map((item, itemIndex) => (
         <div key={`${block.id}-faq-canvas-${itemIndex}`} className="p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+            <p className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
               FAQ {itemIndex + 1}
             </p>
             {items.length > 1 && (
@@ -410,7 +410,7 @@ function CardGridCanvasEditor({
             className={cardGridCanvasCardClass(block, cardIndex)}
           >
             <div className="mb-4 flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              <p className="text-ui-text-subtle text-xs font-semibold tracking-wide uppercase">
                 Card {cardIndex + 1}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -499,15 +499,15 @@ function CardGridCanvasEditor({
               type="button"
               onClick={onEditSettings}
               aria-label={`Edit optional link for card ${cardIndex + 1}`}
-              className={`mt-4 inline-flex items-center gap-2 text-sm font-black uppercase focus-visible:ring-2 focus-visible:ring-[#0b63f6]/30 focus-visible:outline-none ${
+              className={`focus-visible:ring-ui-accent/30 mt-4 inline-flex items-center gap-2 text-sm font-black uppercase focus-visible:ring-2 focus-visible:outline-none ${
                 hasEditorText(card.href)
                   ? "text-[#066a99] hover:text-[#111111]"
-                  : "text-slate-400 hover:text-[#066a99]"
+                  : "text-ui-text-subtle hover:text-[#066a99]"
               }`}
             >
               {cardGridLinkLabel(card)}
               {!hasEditorText(card.href) && (
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-slate-500 uppercase ring-1 ring-slate-200">
+                <span className="bg-ui-line text-ui-text-subtle rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ring-1 ring-slate-200">
                   Optional
                 </span>
               )}
@@ -516,7 +516,7 @@ function CardGridCanvasEditor({
         ))}
         <button
           type="button"
-          className="group flex h-full min-h-[22rem] flex-col items-center justify-center gap-3 rounded-[10px] border-2 border-dashed border-[#55b8e8]/70 bg-white p-5 text-center text-sm font-black text-[#0b63f6] uppercase shadow-[5px_5px_0_rgba(85,184,232,0.25)] transition hover:-translate-y-0.5 hover:border-[#0b63f6] hover:bg-[#f7fbff] hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-[#0b63f6] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400 disabled:shadow-none disabled:hover:translate-y-0"
+          className="group text-ui-accent hover:border-ui-accent focus-visible:ring-ui-accent disabled:border-ui-line disabled:bg-ui-canvas disabled:text-ui-text-subtle flex h-full min-h-[22rem] flex-col items-center justify-center gap-3 rounded-[10px] border-2 border-dashed border-[#55b8e8]/70 bg-white p-5 text-center text-sm font-black uppercase shadow-[5px_5px_0_rgba(85,184,232,0.25)] transition hover:-translate-y-0.5 hover:bg-[#f7fbff] hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:shadow-none disabled:hover:translate-y-0"
           disabled={block.props.cards.length >= CARD_GRID_MAX_CARDS}
           onClick={(event) => {
             event.currentTarget.blur();
@@ -589,7 +589,7 @@ export function BlockEditor({
       data-builder-block-id={block.id}
       className="group/editor scroll-mt-28 transition-all"
     >
-      <div className="relative isolate min-w-0 rounded-[12px] border border-transparent bg-transparent transition-all focus-within:border-[#0b63f6]/50 focus-within:bg-white/80 focus-within:ring-4 focus-within:ring-[#0b63f6]/5 hover:border-slate-300 hover:bg-white/70">
+      <div className="focus-within:border-ui-accent/50 focus-within:ring-ui-accent/5 hover:border-ui-line-strong relative isolate min-w-0 rounded-[12px] border border-transparent bg-transparent transition-all focus-within:bg-white/80 focus-within:ring-4 hover:bg-white/70">
         <BlockEditorToolbar
           block={block}
           blockIndex={blockIndex}
@@ -605,7 +605,7 @@ export function BlockEditor({
 
         {renderInlineContentEditor && (
           <details open className="contents">
-            <summary className="hidden text-sm font-semibold text-slate-800">
+            <summary className="text-ui-text hidden text-sm font-semibold">
               Block settings
             </summary>
             <div className="px-3 pt-14 pb-6 sm:px-4">
@@ -692,7 +692,7 @@ export function BlockEditor({
                         })
                       }
                       rows={3}
-                      className="focus:ring-brand-100 w-full bg-transparent text-xl leading-8 font-semibold text-slate-950 outline-none focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:ring-2"
+                      className="focus:ring-brand-100 text-ui-text w-full bg-transparent text-xl leading-8 font-semibold outline-none focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:ring-2"
                     />
                   </label>
                   <div

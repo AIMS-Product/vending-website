@@ -483,7 +483,7 @@ export function AiBuilderAssistant({
               id="page-ai-chat-input"
               value={chatState.input}
               rows={2}
-              className="min-h-11 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none"
+              className="border-ui-line text-ui-text min-h-11 w-full resize-none rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none"
               placeholder="Describe what to build or change — e.g. draft a hero, FAQ, and CTA for this page"
               disabled={chatState.isLoading}
               onChange={(event) =>
@@ -802,11 +802,11 @@ function AiBlockChecklist({
               }
             >
               <span className="min-w-0">
-                <span className="block truncate font-semibold text-slate-800">
+                <span className="text-ui-text block truncate font-semibold">
                   {entry.blockNumber}. {blockLabel(entry.block.type)}
                 </span>
                 {issues[0] && (
-                  <span className="block truncate text-slate-500">
+                  <span className="text-ui-text-subtle block truncate">
                     {issues[0]}
                   </span>
                 )}
@@ -859,7 +859,7 @@ function ChatMessageList({
         />
       ))}
       {isLoading && (
-        <p className="w-fit rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-500">
+        <p className="bg-ui-line text-ui-text-subtle w-fit rounded-lg px-3 py-2 text-sm font-medium">
           Thinking&hellip;
         </p>
       )}
@@ -885,9 +885,7 @@ function ChatMessage({
       <div
         className={`min-w-0 rounded-lg px-3 py-2 text-sm leading-5 break-words ${
           isUser ? "max-w-[85%]" : "max-w-[92%]"
-        } ${
-          isUser ? "bg-violet-600 text-white" : "bg-slate-100 text-slate-800"
-        }`}
+        } ${isUser ? "bg-violet-600 text-white" : "bg-ui-line text-ui-text"}`}
       >
         <FormattedChatContent content={message.content} isUser={isUser} />
 
@@ -907,12 +905,12 @@ function ChatMessage({
         )}
 
         {message.pendingDelete && (
-          <div className="mt-3 rounded-md bg-white p-2 text-xs text-slate-700 ring-1 ring-red-100">
+          <div className="text-ui-text-muted mt-3 rounded-md bg-white p-2 text-xs ring-1 ring-red-100">
             <p className="font-semibold text-red-700">
               Delete {message.pendingDelete.blockLabel}?
             </p>
             {message.pendingDelete.reason && (
-              <p className="mt-1 text-slate-500">
+              <p className="text-ui-text-subtle mt-1">
                 {message.pendingDelete.reason}
               </p>
             )}
@@ -928,7 +926,7 @@ function ChatMessage({
               </button>
               <button
                 type="button"
-                className="rounded-md bg-slate-100 px-2.5 py-1 font-semibold text-slate-700 transition hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:outline-none"
+                className="bg-ui-line text-ui-text-muted rounded-md px-2.5 py-1 font-semibold transition hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:outline-none"
                 onClick={() => onCancelDelete(message.id)}
               >
                 Cancel
@@ -976,7 +974,7 @@ function FormattedChatContent({
           return (
             <p
               key={block.key}
-              className={`font-semibold ${isUser ? "text-white" : "text-slate-900"}`}
+              className={`font-semibold ${isUser ? "text-white" : "text-ui-text"}`}
             >
               <InlineFormattedText
                 text={block.lines.map((line) => line.text).join(" ")}
@@ -1015,7 +1013,7 @@ function FormattedChatContent({
                   <p
                     key={line.key}
                     className={`mt-1 ${
-                      isUser ? "text-violet-50" : "text-slate-600"
+                      isUser ? "text-violet-50" : "text-ui-text-muted"
                     }`}
                   >
                     <InlineFormattedText text={line.text} isUser={isUser} />
@@ -1061,7 +1059,7 @@ function InlineFormattedText({
           className={`rounded px-1 py-0.5 text-[0.92em] break-words ${
             isUser
               ? "bg-white/15 text-white"
-              : "bg-white text-slate-800 ring-1 ring-slate-200"
+              : "text-ui-text bg-white ring-1 ring-slate-200"
           }`}
         >
           {token.slice(1, -1)}
@@ -1504,7 +1502,7 @@ export function DocumentImportPanel({
               data-testid="document-import-text"
               value={text}
               rows={5}
-              className="mt-2 min-h-28 w-full resize-y rounded-lg border border-violet-100 bg-white px-3 py-2 text-sm leading-6 text-slate-900 shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none"
+              className="text-ui-text mt-2 min-h-28 w-full resize-y rounded-lg border border-violet-100 bg-white px-3 py-2 text-sm leading-6 shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none"
               placeholder="Paste a brief, outline, or document excerpt"
               onChange={(event) => {
                 setUploadFileName(null);
@@ -1612,10 +1610,10 @@ function SeoAssistantReviewPanel({
           <p className="text-[11px] font-semibold tracking-wider text-violet-500 uppercase">
             Next required step
           </p>
-          <p className="mt-1 text-sm font-semibold text-slate-950">
+          <p className="text-ui-text mt-1 text-sm font-semibold">
             {editor.nextPublishStep.title}
           </p>
-          <p className="mt-1 text-xs leading-5 text-slate-600">
+          <p className="text-ui-text-muted mt-1 text-xs leading-5">
             {editor.nextPublishStep.detail}
           </p>
         </div>
@@ -1626,10 +1624,10 @@ function SeoAssistantReviewPanel({
               key={metric.label}
               className="rounded-lg bg-white p-2 text-center shadow-sm ring-1 ring-violet-100"
             >
-              <dt className="text-[10px] font-semibold text-slate-500">
+              <dt className="text-ui-text-subtle text-[10px] font-semibold">
                 {metric.label}
               </dt>
-              <dd className="mt-1 text-sm font-semibold text-slate-950">
+              <dd className="text-ui-text mt-1 text-sm font-semibold">
                 {metric.value}
               </dd>
             </div>
@@ -1674,18 +1672,18 @@ function SeoReviewFindingCard({
           className={`size-2 rounded-full ${findingDotClass(finding.severity)}`}
           aria-hidden="true"
         />
-        <span className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+        <span className="text-ui-text-subtle text-[11px] font-semibold tracking-wider uppercase">
           {findingSeverityLabel(finding.severity)}
         </span>
-        <span className="rounded-md bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
+        <span className="bg-ui-canvas text-ui-text-muted rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1 ring-slate-200">
           {friendlyFindingLocation(finding)}
         </span>
       </div>
-      <p className="mt-2 text-sm leading-5 font-semibold text-slate-900">
+      <p className="text-ui-text mt-2 text-sm leading-5 font-semibold">
         {finding.message}
       </p>
       {friendlyEvidenceText(finding) ? (
-        <p className="mt-1 text-xs leading-5 text-slate-500">
+        <p className="text-ui-text-subtle mt-1 text-xs leading-5">
           {friendlyEvidenceText(finding)}
         </p>
       ) : null}
@@ -1752,10 +1750,10 @@ function DocumentImportReview({
     <section className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-violet-100">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h4 className="text-sm font-semibold text-slate-950">
+          <h4 className="text-ui-text text-sm font-semibold">
             {proposal.sourceTitle}
           </h4>
-          <p className="mt-1 text-xs leading-5 text-slate-500">
+          <p className="text-ui-text-subtle mt-1 text-xs leading-5">
             Pasted text · {proposal.lineCount} source lines
           </p>
         </div>
@@ -1787,7 +1785,7 @@ function DocumentImportReview({
           return (
             <label
               key={entry.block.id}
-              className="flex gap-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-left"
+              className="border-ui-line bg-ui-canvas flex gap-3 rounded-md border p-3 text-left"
             >
               <input
                 aria-label={`Insert imported ${blockLabel(entry.block.type)}`}
@@ -1805,18 +1803,18 @@ function DocumentImportReview({
               />
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold text-slate-900">
+                  <span className="text-ui-text text-sm font-semibold">
                     {blockLabel(entry.block.type)}
                   </span>
-                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200">
+                  <span className="text-ui-text-subtle rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold ring-1 ring-slate-200">
                     Lines {entry.sourceLines[0]}-{entry.sourceLines[1]}
                   </span>
                 </span>
-                <span className="mt-1 block text-sm font-medium text-slate-800">
+                <span className="text-ui-text mt-1 block text-sm font-medium">
                   {aiBlockReviewTitle(entry.block)}
                 </span>
                 {aiBlockReviewBody(entry.block) && (
-                  <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">
+                  <span className="text-ui-text-subtle mt-1 line-clamp-2 block text-xs leading-5">
                     {aiBlockReviewBody(entry.block)}
                   </span>
                 )}

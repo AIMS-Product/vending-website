@@ -32,7 +32,7 @@ function ProofItemMediaFieldInner() {
     <div>
       <span className={adminLabelClass}>Proof image (optional)</span>
       <input type="hidden" name="assetId" value={asset?.id ?? ""} />
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="text-ui-text-subtle mt-1 text-xs">
         {asset ? asset.title : "No asset selected"}
       </p>
       <div className="mt-2 flex flex-wrap gap-2">

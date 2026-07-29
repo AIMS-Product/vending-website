@@ -19,10 +19,10 @@ export function SeoPageCommentsPanel({
   return (
     <section className={`${adminPanelClass} mt-5 p-5`} aria-label="Comments">
       <div className="mb-4">
-        <h2 className="text-base font-semibold text-slate-950">
+        <h2 className="text-ui-text text-base font-semibold">
           Governance comments
         </h2>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="text-ui-text-muted mt-1 text-sm">
           Internal page and block notes stay out of previews and public pages.
         </p>
       </div>
@@ -39,7 +39,7 @@ export function SeoPageCommentsPanel({
         <div>
           <label
             htmlFor="seo-comment-block-id"
-            className="text-xs font-semibold text-slate-600 uppercase"
+            className="text-ui-text-muted text-xs font-semibold uppercase"
           >
             Block ID
           </label>
@@ -53,7 +53,7 @@ export function SeoPageCommentsPanel({
         <div>
           <label
             htmlFor="seo-comment-body"
-            className="text-xs font-semibold text-slate-600 uppercase"
+            className="text-ui-text-muted text-xs font-semibold uppercase"
           >
             Comment
           </label>
@@ -72,11 +72,11 @@ export function SeoPageCommentsPanel({
           </button>
         </div>
       </form>
-      <div className="mt-5 divide-y divide-slate-200">
+      <div className="divide-ui-line mt-5 divide-y">
         {comments.map((comment) => (
           <article key={comment.id} className="py-3">
-            <p className="text-sm leading-6 text-slate-800">{comment.body}</p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="text-ui-text text-sm leading-6">{comment.body}</p>
+            <p className="text-ui-text-subtle mt-1 text-xs">
               {comment.block_id ? `Block ${comment.block_id} · ` : ""}
               {new Date(comment.created_at).toLocaleString("en-US", {
                 month: "short",

@@ -106,20 +106,20 @@ export function BlockSettingsModal({
         aria-modal="true"
         aria-labelledby="block-settings-modal-title"
         tabIndex={-1}
-        className="flex max-h-[min(760px,calc(100dvh-2rem))] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl focus:outline-none"
+        className="border-ui-line flex max-h-[min(760px,calc(100dvh-2rem))] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border bg-white shadow-2xl focus:outline-none"
       >
-        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <div className="border-ui-line flex shrink-0 items-start justify-between gap-4 border-b px-5 py-4">
           <div>
-            <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+            <p className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
               Block settings
             </p>
             <h3
               id="block-settings-modal-title"
-              className="mt-1 text-lg font-semibold text-slate-950"
+              className="text-ui-text mt-1 text-lg font-semibold"
             >
               {blockLabel(entry.block.type)} {entry.blockNumber}
             </h3>
-            <p className="mt-1 text-xs font-medium text-slate-500">
+            <p className="text-ui-text-subtle mt-1 text-xs font-medium">
               Section {entry.sectionNumber}, column {entry.columnNumber}
             </p>
           </div>
@@ -135,7 +135,7 @@ export function BlockSettingsModal({
             </span>
             <button
               type="button"
-              className="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+              className="border-ui-line text-ui-text-subtle hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 inline-flex size-9 items-center justify-center rounded-full border bg-white shadow-sm transition focus-visible:ring-4 focus-visible:outline-none"
               aria-label="Close block settings"
               title="Close block settings"
               onClick={onClose}
@@ -170,10 +170,10 @@ export function BlockSettingsModal({
           )}
         </div>
 
-        <div className="flex shrink-0 justify-end border-t border-slate-200 bg-slate-50 px-5 py-4">
+        <div className="border-ui-line bg-ui-canvas flex shrink-0 justify-end border-t px-5 py-4">
           <button
             type="button"
-            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+            className="focus-visible:ring-ui-accent/20 inline-flex min-h-10 items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus-visible:ring-4 focus-visible:outline-none"
             onClick={onClose}
           >
             Apply settings

@@ -160,8 +160,8 @@ export function MediaLibraryManager({
   return (
     <>
       {selectedIds.length > 0 ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dceaff] bg-[#f4f8ff] px-5 py-3">
-          <p className="text-sm font-semibold text-slate-900">
+        <div className="bg-ui-accent-soft flex flex-wrap items-center justify-between gap-3 border-b border-[#dceaff] px-5 py-3">
+          <p className="text-ui-text text-sm font-semibold">
             {selectedIds.length} selected
           </p>
           <div className="flex flex-wrap gap-2">
@@ -193,7 +193,7 @@ export function MediaLibraryManager({
       ) : null}
 
       {bulkMessage ? (
-        <p className="border-b border-slate-200 px-5 py-3 text-sm text-slate-600">
+        <p className="border-ui-line text-ui-text-muted border-b px-5 py-3 text-sm">
           {bulkMessage}
         </p>
       ) : null}
@@ -242,7 +242,7 @@ export function MediaLibraryManager({
       ) : null}
 
       {usageMessage && assets.length > 0 ? (
-        <p className="border-t border-slate-200 px-5 py-3 text-sm text-slate-600">
+        <p className="border-ui-line text-ui-text-muted border-t px-5 py-3 text-sm">
           {usageMessage}
         </p>
       ) : null}
@@ -299,8 +299,8 @@ function MediaAssetCard({
     <article
       className={`overflow-hidden rounded-md border bg-white transition hover:shadow-sm ${
         selected
-          ? "border-[#0b63f6] ring-2 ring-[#0b63f6]/15"
-          : "border-slate-200 hover:border-[#bdd3ff]"
+          ? "border-ui-accent ring-ui-accent/15 ring-2"
+          : "border-ui-line hover:border-[#bdd3ff]"
       }`}
     >
       <div className="relative">
@@ -314,7 +314,7 @@ function MediaAssetCard({
             className="aspect-[16/9] w-full object-cover"
           />
         ) : (
-          <div className="grid aspect-[16/9] place-items-center bg-slate-50 px-4 text-center text-xs font-semibold text-slate-600 uppercase">
+          <div className="bg-ui-canvas text-ui-text-muted grid aspect-[16/9] place-items-center px-4 text-center text-xs font-semibold uppercase">
             {asset.assetType} asset
           </div>
         )}
@@ -324,7 +324,7 @@ function MediaAssetCard({
             checked={selected}
             aria-label={`Select ${asset.title}`}
             onChange={onToggleSelected}
-            className="size-4 rounded border-slate-300"
+            className="border-ui-line-strong size-4 rounded"
           />
         </label>
       </div>
@@ -376,8 +376,8 @@ function MediaAssetTable({
             key={asset.id}
             className={`rounded-md border bg-white p-4 ${
               selectedIds.includes(asset.id)
-                ? "border-[#0b63f6] ring-2 ring-[#0b63f6]/15"
-                : "border-slate-200"
+                ? "border-ui-accent ring-ui-accent/15 ring-2"
+                : "border-ui-line"
             }`}
           >
             <div className="flex items-start gap-3">
@@ -386,7 +386,7 @@ function MediaAssetTable({
                 checked={selectedIds.includes(asset.id)}
                 aria-label={`Select ${asset.title}`}
                 onChange={() => onToggleSelected(asset.id)}
-                className="mt-1 size-4 rounded border-slate-300"
+                className="border-ui-line-strong mt-1 size-4 rounded"
               />
               <div className="min-w-0 flex-1">
                 <AssetSummary asset={asset} />
@@ -414,7 +414,7 @@ function MediaAssetTable({
 
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[980px] table-fixed border-collapse text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+          <thead className="border-ui-line bg-ui-canvas text-ui-text-subtle border-b text-xs font-semibold tracking-wide uppercase">
             <tr>
               <th className="w-12 px-4 py-3">
                 <input
@@ -422,7 +422,7 @@ function MediaAssetTable({
                   checked={allVisibleSelected}
                   aria-label="Select all visible assets"
                   onChange={onToggleSelectAll}
-                  className="size-4 rounded border-slate-300"
+                  className="border-ui-line-strong size-4 rounded"
                 />
               </th>
               <th className="w-20 px-4 py-3">Preview</th>
@@ -435,7 +435,7 @@ function MediaAssetTable({
               <th className="w-40 px-4 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
+          <tbody className="divide-ui-line divide-y">
             {assets.map((asset) => (
               <tr
                 key={asset.id}
@@ -449,7 +449,7 @@ function MediaAssetTable({
                     checked={selectedIds.includes(asset.id)}
                     aria-label={`Select ${asset.title}`}
                     onChange={() => onToggleSelected(asset.id)}
-                    className="size-4 rounded border-slate-300"
+                    className="border-ui-line-strong size-4 rounded"
                   />
                 </td>
                 <td className="px-4 py-3 align-top">
@@ -462,18 +462,18 @@ function MediaAssetTable({
                       className="size-12 rounded-md object-cover"
                     />
                   ) : (
-                    <div className="grid size-12 place-items-center rounded-md bg-slate-100 text-[10px] font-semibold text-slate-600 uppercase">
+                    <div className="bg-ui-line text-ui-text-muted grid size-12 place-items-center rounded-md text-[10px] font-semibold uppercase">
                       {asset.assetType}
                     </div>
                   )}
                 </td>
                 <td className="px-4 py-3 align-top">
-                  <p className="font-semibold text-slate-950">{asset.title}</p>
-                  <p className="mt-1 truncate text-xs text-slate-500">
+                  <p className="text-ui-text font-semibold">{asset.title}</p>
+                  <p className="text-ui-text-subtle mt-1 truncate text-xs">
                     {asset.alt_text || "No alt text"}
                   </p>
                 </td>
-                <td className="px-4 py-3 align-top text-slate-700 capitalize">
+                <td className="text-ui-text-muted px-4 py-3 align-top capitalize">
                   {asset.assetType}
                 </td>
                 <td className="px-4 py-3 align-top">
@@ -485,7 +485,7 @@ function MediaAssetTable({
                 <td className="px-4 py-3 align-top">
                   <AssetTagList tags={asset.tags} />
                 </td>
-                <td className="px-4 py-3 align-top text-slate-600">
+                <td className="text-ui-text-muted px-4 py-3 align-top">
                   {formatAssetDate(asset.created_at)}
                 </td>
                 <td className="px-4 py-3 align-top">
@@ -520,14 +520,14 @@ function AssetSummary({ asset }: { asset: MediaAssetListItem }) {
     <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold text-slate-950">
+          <h3 className="text-ui-text truncate text-sm font-semibold">
             {asset.title}
           </h3>
-          <p className="truncate text-xs text-slate-500">
+          <p className="text-ui-text-subtle truncate text-xs">
             {asset.alt_text || "No alt text"}
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 uppercase">
+        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700 uppercase">
           {asset.assetType}
         </span>
       </div>
@@ -576,14 +576,14 @@ function UsageBadge({ count }: { count: number }) {
 
 function AssetTagList({ tags }: { tags: string[] }) {
   if (tags.length === 0) {
-    return <p className="text-xs text-slate-500">No tags</p>;
+    return <p className="text-ui-text-subtle text-xs">No tags</p>;
   }
   return (
     <div className="flex flex-wrap gap-1">
       {tags.map((tag, index) => (
         <span
           key={`${tag}-${index}`}
-          className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+          className="bg-ui-line text-ui-text-muted rounded-full px-2 py-0.5 text-xs font-medium"
         >
           {tag}
         </span>
@@ -627,7 +627,7 @@ function BulkTagModal({
         }}
       >
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Tag</span>
+          <span className="text-ui-text-muted text-sm font-medium">Tag</span>
           <input
             value={tag}
             onChange={(event) => setTag(event.target.value)}
@@ -782,8 +782,8 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
       <div
         className={`rounded-lg border border-dashed p-4 text-center transition ${
           isDropActive
-            ? "border-[#0b63f6] bg-[#f5fbff]"
-            : "border-slate-200 bg-slate-50"
+            ? "border-ui-accent bg-[#f5fbff]"
+            : "border-ui-line bg-ui-canvas"
         }`}
         onDragEnter={(event) => handleDragState(event, true)}
         onDragOver={(event) => handleDragState(event, true)}
@@ -793,7 +793,9 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
           queueFiles(event.dataTransfer.files);
         }}
       >
-        <p className="text-sm font-semibold text-slate-700">Drop images here</p>
+        <p className="text-ui-text-muted text-sm font-semibold">
+          Drop images here
+        </p>
         <label className="mt-3 inline-flex cursor-pointer">
           <span className={adminSecondaryButtonClass}>Choose files</span>
           <input
@@ -810,7 +812,7 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
       </div>
 
       <label className="mt-4 block">
-        <span className="text-sm font-medium text-slate-700">
+        <span className="text-ui-text-muted text-sm font-medium">
           Default tags for all uploads
         </span>
         <input
@@ -827,11 +829,11 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
           {items.map((item, index) => (
             <li
               key={`${item.file.name}-${index}`}
-              className="rounded-lg border border-slate-200 p-3"
+              className="border-ui-line rounded-lg border p-3"
             >
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block">
-                  <span className="text-xs font-medium text-slate-500">
+                  <span className="text-ui-text-subtle text-xs font-medium">
                     Title
                   </span>
                   <input
@@ -845,7 +847,7 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-medium text-slate-500">
+                  <span className="text-ui-text-subtle text-xs font-medium">
                     Alt text
                   </span>
                   <input
@@ -859,7 +861,7 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
                   />
                 </label>
               </div>
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="text-ui-text-subtle mt-2 text-xs">
                 {item.file.name}
                 {item.status === "uploading" ? " · Uploading..." : ""}
                 {item.status === "ready" ? " · Ready" : ""}
@@ -871,7 +873,7 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
       ) : null}
 
       {message ? (
-        <p className="mt-4 text-sm text-slate-600">{message}</p>
+        <p className="text-ui-text-muted mt-4 text-sm">{message}</p>
       ) : null}
 
       <div className="mt-5 flex gap-3">
@@ -955,7 +957,7 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
           </p>
         )}
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Type</span>
+          <span className="text-ui-text-muted text-sm font-medium">Type</span>
           <select
             name="assetType"
             aria-label="Asset type"
@@ -980,8 +982,8 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
           <div
             className={`rounded-lg border border-dashed p-4 text-center transition ${
               isDropActive
-                ? "border-[#0b63f6] bg-[#f5fbff]"
-                : "border-slate-200 bg-slate-50"
+                ? "border-ui-accent bg-[#f5fbff]"
+                : "border-ui-line bg-ui-canvas"
             }`}
             onDragEnter={(event) => handleDragState(event, true)}
             onDragOver={(event) => handleDragState(event, true)}
@@ -991,7 +993,7 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
               handleFileChange(event.dataTransfer.files?.[0] ?? null);
             }}
           >
-            <p className="text-sm font-semibold text-slate-700">
+            <p className="text-ui-text-muted text-sm font-semibold">
               {isUploading ? "Uploading..." : "Drop an image here"}
             </p>
             <label className="mt-3 inline-flex cursor-pointer">
@@ -1008,12 +1010,14 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
               />
             </label>
             {uploadMessage ? (
-              <p className="mt-2 text-xs text-slate-500">{uploadMessage}</p>
+              <p className="text-ui-text-subtle mt-2 text-xs">
+                {uploadMessage}
+              </p>
             ) : null}
           </div>
         ) : null}
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Title</span>
+          <span className="text-ui-text-muted text-sm font-medium">Title</span>
           <input
             id="add-media-title"
             name="title"
@@ -1025,7 +1029,9 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Alt text</span>
+          <span className="text-ui-text-muted text-sm font-medium">
+            Alt text
+          </span>
           <input
             id="add-media-alt"
             name="altText"
@@ -1037,7 +1043,7 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">
+          <span className="text-ui-text-muted text-sm font-medium">
             Rights notes
           </span>
           <textarea
@@ -1049,7 +1055,9 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Caption</span>
+          <span className="text-ui-text-muted text-sm font-medium">
+            Caption
+          </span>
           <input
             name="caption"
             aria-label="Caption"
@@ -1057,7 +1065,7 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Tags</span>
+          <span className="text-ui-text-muted text-sm font-medium">Tags</span>
           <input
             name="tags"
             aria-label="Tags"
@@ -1067,7 +1075,7 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
         </label>
         {assetType !== "image" ? (
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">
+            <span className="text-ui-text-muted text-sm font-medium">
               Duration (seconds)
             </span>
             <input
@@ -1078,7 +1086,7 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
           </label>
         ) : null}
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">
+          <span className="text-ui-text-muted text-sm font-medium">
             External URL
           </span>
           <input
@@ -1141,7 +1149,7 @@ function AssetEditorModal({
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="assetId" value={asset.id} />
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Title</span>
+          <span className="text-ui-text-muted text-sm font-medium">Title</span>
           <input
             name="title"
             defaultValue={asset.title}
@@ -1150,7 +1158,9 @@ function AssetEditorModal({
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Alt text</span>
+          <span className="text-ui-text-muted text-sm font-medium">
+            Alt text
+          </span>
           <input
             name="altText"
             defaultValue={asset.alt_text ?? ""}
@@ -1158,7 +1168,7 @@ function AssetEditorModal({
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">
+          <span className="text-ui-text-muted text-sm font-medium">
             Rights notes
           </span>
           <textarea
@@ -1170,7 +1180,9 @@ function AssetEditorModal({
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Caption</span>
+          <span className="text-ui-text-muted text-sm font-medium">
+            Caption
+          </span>
           <input
             name="caption"
             defaultValue={asset.caption ?? ""}
@@ -1178,7 +1190,7 @@ function AssetEditorModal({
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">
+          <span className="text-ui-text-muted text-sm font-medium">
             External URL
           </span>
           <input
@@ -1188,7 +1200,7 @@ function AssetEditorModal({
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Tags</span>
+          <span className="text-ui-text-muted text-sm font-medium">Tags</span>
           <input
             name="tags"
             defaultValue={asset.tags.join(", ")}
@@ -1197,7 +1209,7 @@ function AssetEditorModal({
         </label>
         {asset.assetType !== "image" ? (
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">
+            <span className="text-ui-text-muted text-sm font-medium">
               Duration (seconds)
             </span>
             <input
@@ -1242,13 +1254,13 @@ function AssetUsageModal({
   return (
     <ModalShell title={asset.title} description="Asset usage" onClose={onClose}>
       {usageMessage ? (
-        <p className="mb-4 text-sm text-slate-600">{usageMessage}</p>
+        <p className="text-ui-text-muted mb-4 text-sm">{usageMessage}</p>
       ) : null}
       {!usage ? (
-        <p className="text-sm text-slate-500">Loading usage...</p>
+        <p className="text-ui-text-subtle text-sm">Loading usage...</p>
       ) : (
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <p className="text-sm text-slate-700">
+        <div className="border-ui-line bg-ui-canvas rounded-lg border p-4">
+          <p className="text-ui-text-muted text-sm">
             {usage.totalCount === 0
               ? "This asset is not referenced anywhere."
               : `${usage.totalCount} reference${usage.totalCount === 1 ? "" : "s"} found.`}
@@ -1259,7 +1271,7 @@ function AssetUsageModal({
           <UsageList title="Source documents" items={usage.sourceDocuments} />
         </div>
       )}
-      <div className="mt-6 border-t border-slate-200 pt-4">
+      <div className="border-ui-line mt-6 border-t pt-4">
         <button
           type="button"
           className={`${adminSecondaryButtonClass} text-red-700`}
@@ -1288,8 +1300,8 @@ function UsageList({
   if (items.length === 0) return null;
   return (
     <div className="mt-3">
-      <p className="text-xs font-semibold text-slate-700">{title}</p>
-      <ul className="mt-1 space-y-1 text-xs text-slate-600">
+      <p className="text-ui-text-muted text-xs font-semibold">{title}</p>
+      <ul className="text-ui-text-muted mt-1 space-y-1 text-xs">
         {items.map((item) => (
           <li key={item.id}>
             {item.slug ? (
@@ -1301,7 +1313,7 @@ function UsageList({
                       ? `/admin/news/${item.id}`
                       : "#"
                 }
-                className="font-medium text-[#0b63f6] hover:text-slate-950"
+                className="text-ui-accent hover:text-ui-text font-medium"
               >
                 {item.title ?? item.body ?? item.id}
               </Link>
@@ -1349,20 +1361,20 @@ function ModalShell({
         role="dialog"
         aria-modal="true"
         aria-labelledby="media-modal-title"
-        className={`flex max-h-[min(760px,calc(100dvh-2rem))] w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ${
+        className={`border-ui-line flex max-h-[min(760px,calc(100dvh-2rem))] w-full flex-col overflow-hidden rounded-2xl border bg-white shadow-2xl ${
           wide ? "max-w-2xl" : "max-w-lg"
         }`}
       >
-        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <header className="border-ui-line flex items-start justify-between gap-4 border-b px-5 py-4">
           <div>
             {description ? (
-              <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+              <p className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
                 {description}
               </p>
             ) : null}
             <h3
               id="media-modal-title"
-              className="mt-1 text-lg font-semibold text-slate-950"
+              className="text-ui-text mt-1 text-lg font-semibold"
             >
               {title}
             </h3>
@@ -1371,7 +1383,7 @@ function ModalShell({
             type="button"
             aria-label="Close dialog"
             onClick={onClose}
-            className="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500"
+            className="border-ui-line text-ui-text-subtle inline-flex size-9 items-center justify-center rounded-full border bg-white"
           >
             ×
           </button>

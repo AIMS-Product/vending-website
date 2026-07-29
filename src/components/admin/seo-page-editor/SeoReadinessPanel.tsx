@@ -98,16 +98,16 @@ export function SeoReadinessPanel({
           <span>{thinWarning}</span>
         </div>
       ) : null}
-      <div className="grid gap-px overflow-hidden rounded-xl border border-slate-100 bg-slate-100 shadow-sm sm:grid-cols-2">
+      <div className="bg-ui-line grid gap-px overflow-hidden rounded-xl border border-slate-100 shadow-sm sm:grid-cols-2">
         {summary.categories.map((category) => (
           <div
             key={category.category}
-            className={`bg-white p-5 transition-colors hover:bg-slate-50 ${readinessCategoryClass(
+            className={`hover:bg-ui-canvas bg-white p-5 transition-colors ${readinessCategoryClass(
               category.status,
             )}`}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-semibold text-slate-900">
+              <span className="text-ui-text text-sm font-semibold">
                 {friendlyReadinessCategoryLabel(category.category)}
               </span>
               <span
@@ -119,11 +119,11 @@ export function SeoReadinessPanel({
               </span>
             </div>
             {category.findings[0] ? (
-              <p className="mt-3 line-clamp-2 text-sm text-slate-500">
+              <p className="text-ui-text-subtle mt-3 line-clamp-2 text-sm">
                 {category.findings[0].message}
               </p>
             ) : (
-              <p className="mt-3 flex items-center gap-1.5 text-sm text-slate-500">
+              <p className="text-ui-text-subtle mt-3 flex items-center gap-1.5 text-sm">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="14"
@@ -147,10 +147,8 @@ export function SeoReadinessPanel({
 
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <h3 className="text-base font-semibold text-slate-900">
-            Action Items
-          </h3>
-          <span className="text-sm font-medium text-slate-500">
+          <h3 className="text-ui-text text-base font-semibold">Action Items</h3>
+          <span className="text-ui-text-subtle text-sm font-medium">
             Highest impact first
           </span>
         </div>
@@ -160,7 +158,7 @@ export function SeoReadinessPanel({
             {topFindings.map((finding, index) => (
               <article
                 key={`${finding.code}-${finding.path}-${index}`}
-                className="group relative flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md"
+                className="group border-ui-line hover:border-ui-line-strong relative flex flex-col rounded-xl border bg-white p-5 shadow-sm transition-all hover:shadow-md"
               >
                 <div className="flex flex-wrap items-center gap-2.5">
                   <span
@@ -168,18 +166,18 @@ export function SeoReadinessPanel({
                       finding.severity,
                     )}`}
                   />
-                  <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+                  <span className="text-ui-text-subtle text-xs font-bold tracking-wider uppercase">
                     {findingSeverityLabel(finding.severity)}
                   </span>
-                  <span className="rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200 ring-inset">
+                  <span className="bg-ui-canvas text-ui-text-muted rounded-md px-2 py-1 text-xs font-medium ring-1 ring-slate-200 ring-inset">
                     {friendlyFindingLocation(finding)}
                   </span>
                 </div>
-                <p className="mt-3 text-sm leading-6 font-semibold text-slate-900">
+                <p className="text-ui-text mt-3 text-sm leading-6 font-semibold">
                   {finding.message}
                 </p>
                 {friendlyEvidenceText(finding) && (
-                  <p className="mt-1.5 text-sm text-slate-500">
+                  <p className="text-ui-text-subtle mt-1.5 text-sm">
                     {friendlyEvidenceText(finding)}
                   </p>
                 )}
@@ -224,39 +222,39 @@ export function SeoReadinessPanel({
       </div>
 
       <div className="space-y-6">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
-          <h3 className="text-sm font-semibold text-slate-900">
+        <div className="border-ui-line rounded-xl border bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+          <h3 className="text-ui-text text-sm font-semibold">
             Builder support
           </h3>
           <div className="mt-4 grid gap-3">
-            <details className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800">
+            <details className="border-ui-line bg-ui-canvas text-ui-text rounded-lg border px-4 py-3 text-sm">
               <summary className="cursor-pointer font-semibold">
                 Media assets
               </summary>
-              <p className="mt-2 text-xs leading-5 text-slate-500">
+              <p className="text-ui-text-subtle mt-2 text-xs leading-5">
                 {mediaAssetCount > 0
                   ? `${mediaAssetCount} approved assets are available from image blocks.`
                   : "No assets yet. Add images, alt text, and rights notes before relying on image blocks."}
               </p>
               <Link
                 href="/admin/media"
-                className="mt-3 inline-flex text-xs font-semibold text-[#0b63f6] hover:text-slate-950"
+                className="text-ui-accent hover:text-ui-text mt-3 inline-flex text-xs font-semibold"
               >
                 Open full media library
               </Link>
             </details>
-            <details className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800">
+            <details className="border-ui-line bg-ui-canvas text-ui-text rounded-lg border px-4 py-3 text-sm">
               <summary className="cursor-pointer font-semibold">
                 Approved claims and CTAs
               </summary>
-              <p className="mt-2 text-xs leading-5 text-slate-500">
+              <p className="text-ui-text-subtle mt-2 text-xs leading-5">
                 Use content libraries for approved source excerpts, proof
                 points, claims, and reusable CTA presets. Keep claims
                 source-backed before adding them to this draft.
               </p>
               <Link
                 href="/admin/libraries"
-                className="mt-3 inline-flex text-xs font-semibold text-[#0b63f6] hover:text-slate-950"
+                className="text-ui-accent hover:text-ui-text mt-3 inline-flex text-xs font-semibold"
               >
                 Open content libraries
               </Link>
@@ -297,7 +295,7 @@ export function SeoReadinessPanel({
           </div>
 
           {linkSuggestionMessage && (
-            <p className="mt-4 rounded-lg bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm ring-1 ring-sky-200 ring-inset">
+            <p className="text-ui-text-muted mt-4 rounded-lg bg-white px-4 py-3 text-sm font-medium shadow-sm ring-1 ring-sky-200 ring-inset">
               {linkSuggestionMessage}
             </p>
           )}
@@ -309,10 +307,10 @@ export function SeoReadinessPanel({
                   key={suggestion.id}
                   className="group flex flex-col rounded-xl bg-white p-4 shadow-sm ring-1 ring-sky-200 transition-all ring-inset hover:shadow-md hover:ring-sky-300"
                 >
-                  <p className="text-sm font-semibold text-slate-900">
+                  <p className="text-ui-text text-sm font-semibold">
                     Link &quot;{suggestion.anchorText}&quot;
                   </p>
-                  <p className="mt-1.5 line-clamp-2 text-xs text-slate-500">
+                  <p className="text-ui-text-subtle mt-1.5 line-clamp-2 text-xs">
                     {suggestion.reason}
                   </p>
                   <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
@@ -433,7 +431,7 @@ function ReadinessFindingAction({
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-200 ring-inset">
+    <span className="bg-ui-canvas text-ui-text-subtle inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-slate-200 ring-inset">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="12"

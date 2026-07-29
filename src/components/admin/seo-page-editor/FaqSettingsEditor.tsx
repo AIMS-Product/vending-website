@@ -31,10 +31,10 @@ export function FaqItemEditorList({
       {block.props.items.map((item, itemIndex) => (
         <div
           key={itemKeys[itemIndex] ?? `${block.id}-${itemIndex}`}
-          className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+          className="border-ui-line bg-ui-canvas rounded-lg border p-3"
         >
           <div className="mb-3 flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+            <p className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
               FAQ {itemIndex + 1}
             </p>
             <button

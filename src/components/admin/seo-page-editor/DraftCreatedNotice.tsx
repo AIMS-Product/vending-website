@@ -17,7 +17,7 @@ export function DraftCreatedNotice() {
     >
       <span
         aria-hidden="true"
-        className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-sky-50 text-[#0b63f6] ring-1 ring-sky-100"
+        className="text-ui-accent mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-sky-50 ring-1 ring-sky-100"
       >
         <svg
           viewBox="0 0 24 24"
@@ -32,15 +32,15 @@ export function DraftCreatedNotice() {
         </svg>
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-slate-950">Draft created</p>
-        <p className="mt-0.5 text-xs leading-5 text-slate-600">
+        <p className="text-ui-text text-sm font-semibold">Draft created</p>
+        <p className="text-ui-text-muted mt-0.5 text-xs leading-5">
           This page is being saved automatically as a draft. If you leave before
           saving, you can choose to keep or discard it.
         </p>
       </div>
       <button
         type="button"
-        className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/25 focus-visible:outline-none"
+        className="text-ui-text-subtle hover:bg-ui-line hover:text-ui-text-muted focus-visible:ring-ui-accent/25 inline-flex size-7 shrink-0 items-center justify-center rounded-full transition focus-visible:ring-2 focus-visible:outline-none"
         aria-label="Dismiss draft created notice"
         onClick={() => setDismissed(true)}
       >

@@ -127,7 +127,7 @@ function QuickTourLauncher({ onStart }: { onStart: () => void }) {
       type="button"
       aria-label="Start the quick tour"
       title="Take a quick tour of the builder"
-      className="fixed bottom-28 left-4 z-[70] inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-lg transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none xl:bottom-4"
+      className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 fixed bottom-28 left-4 z-[70] inline-flex min-h-10 items-center gap-2 rounded-full border bg-white px-4 text-sm font-semibold shadow-lg transition focus-visible:ring-4 focus-visible:outline-none xl:bottom-4"
       onClick={onStart}
     >
       <svg
@@ -137,7 +137,7 @@ function QuickTourLauncher({ onStart }: { onStart: () => void }) {
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="size-4 text-[#0b63f6]"
+        className="text-ui-accent size-4"
         aria-hidden="true"
       >
         <circle cx="12" cy="12" r="9" />
@@ -183,7 +183,7 @@ function WalkthroughOverlay({
         <>
           <div
             aria-hidden="true"
-            className="pointer-events-none fixed z-[81] rounded-2xl ring-4 ring-[#0b63f6] ring-offset-2 ring-offset-transparent"
+            className="ring-ui-accent pointer-events-none fixed z-[81] rounded-2xl ring-4 ring-offset-2 ring-offset-transparent"
             style={{
               top: targetRect.top - 6,
               left: targetRect.left - 6,
@@ -203,25 +203,23 @@ function WalkthroughOverlay({
         </>
       ) : (
         <div className="pointer-events-none fixed inset-0 z-[82] grid place-items-center px-4">
-          <div className="pointer-events-auto w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
-            <p className="text-xs font-semibold tracking-wider text-[#0b63f6] uppercase">
+          <div className="border-ui-line pointer-events-auto w-full max-w-sm rounded-2xl border bg-white p-5 shadow-2xl">
+            <p className="text-ui-accent text-xs font-semibold tracking-wider uppercase">
               Quick tour · Step {step} of 3
             </p>
-            <h3 className="mt-2 text-lg font-semibold text-slate-950">
-              {title}
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
+            <h3 className="text-ui-text mt-2 text-lg font-semibold">{title}</h3>
+            <p className="text-ui-text-muted mt-2 text-sm leading-6">{body}</p>
             <div className="mt-5 flex items-center justify-between gap-3">
               <button
                 type="button"
-                className="text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+                className="text-ui-text-subtle hover:text-ui-text-muted text-sm font-semibold transition"
                 onClick={onSkip}
               >
                 Skip tour
               </button>
               <button
                 type="button"
-                className="min-h-10 rounded-lg border border-[#0b63f6] bg-[#0b63f6] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+                className="border-ui-accent bg-ui-accent focus-visible:ring-ui-accent/20 min-h-10 rounded-lg border px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:outline-none"
                 onClick={onContinue}
               >
                 {cta}
@@ -261,23 +259,23 @@ function WalkthroughCard({
       className="pointer-events-none fixed z-[82] w-[min(20rem,calc(100vw-2rem))]"
       style={{ top, left }}
     >
-      <div className="pointer-events-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
-        <p className="text-xs font-semibold tracking-wider text-[#0b63f6] uppercase">
+      <div className="border-ui-line pointer-events-auto rounded-2xl border bg-white p-5 shadow-2xl">
+        <p className="text-ui-accent text-xs font-semibold tracking-wider uppercase">
           Quick tour · Step {step} of 3
         </p>
-        <h3 className="mt-2 text-lg font-semibold text-slate-950">{title}</h3>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
+        <h3 className="text-ui-text mt-2 text-lg font-semibold">{title}</h3>
+        <p className="text-ui-text-muted mt-2 text-sm leading-6">{body}</p>
         <div className="mt-5 flex items-center justify-between gap-3">
           <button
             type="button"
-            className="text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+            className="text-ui-text-subtle hover:text-ui-text-muted text-sm font-semibold transition"
             onClick={onSkip}
           >
             Skip tour
           </button>
           <button
             type="button"
-            className="min-h-10 rounded-lg border border-[#0b63f6] bg-[#0b63f6] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+            className="border-ui-accent bg-ui-accent focus-visible:ring-ui-accent/20 min-h-10 rounded-lg border px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:outline-none"
             onClick={onContinue}
           >
             {cta}

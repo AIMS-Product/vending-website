@@ -65,7 +65,7 @@ export default async function RedirectManagerPage({
       <section className={adminPanelClass}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
+            <thead className="border-ui-line bg-ui-canvas text-ui-text-subtle border-b text-xs font-semibold uppercase">
               <tr>
                 <th className="px-5 py-3">Old address (path)</th>
                 <th className="px-5 py-3">New address (destination)</th>
@@ -75,12 +75,12 @@ export default async function RedirectManagerPage({
                 <th className="px-5 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-ui-line divide-y">
               {redirects.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-5 py-6 text-center text-sm text-slate-500"
+                    className="text-ui-text-subtle px-5 py-6 text-center text-sm"
                   >
                     No redirects yet. Create one above to send an old address to
                     a new destination.

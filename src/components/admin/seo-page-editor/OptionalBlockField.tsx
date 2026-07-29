@@ -70,8 +70,8 @@ function FieldVisibilityEyeToggle({
       onClick={() => onChange(!visible)}
       className={`inline-flex size-7 shrink-0 items-center justify-center rounded-md transition ${
         visible
-          ? "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-          : "text-slate-300 hover:bg-slate-100 hover:text-slate-500"
+          ? "text-ui-text-subtle hover:bg-ui-line hover:text-ui-text-muted"
+          : "hover:bg-ui-line hover:text-ui-text-subtle text-slate-300"
       }`}
     >
       <FieldVisibilityEyeIcon visible={visible} />
@@ -122,7 +122,9 @@ export function OptionalBlockField({
       className={`${optionalFieldEyeTrackClass} ${visible ? "" : "opacity-70"}`}
     >
       <div className="min-w-0 space-y-1.5">
-        <span className="text-sm font-medium text-slate-700">{fieldLabel}</span>
+        <span className="text-ui-text-muted text-sm font-medium">
+          {fieldLabel}
+        </span>
         {children}
       </div>
       <div className={optionalFieldEyeCellClass}>{eyeToggle}</div>

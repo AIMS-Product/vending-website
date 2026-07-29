@@ -202,12 +202,12 @@ export function BlockSidebarSettingsPanel({
             </div>
           </OptionalBlockField>
           {block.variant === "split" && (
-            <div className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
+            <div className="border-ui-line bg-ui-canvas grid gap-4 rounded-lg border p-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <p className="text-sm font-medium text-slate-700">
+                <p className="text-ui-text-muted text-sm font-medium">
                   Media library asset
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="text-ui-text-subtle mt-1 text-xs">
                   {selectedMediaAssetLabel(
                     assets,
                     block.props.mediaAssetId,
@@ -309,10 +309,10 @@ export function BlockSidebarSettingsPanel({
       {block.type === "image" && (
         <>
           <div>
-            <p className="text-sm font-medium text-slate-700">
+            <p className="text-ui-text-muted text-sm font-medium">
               Media library asset
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="text-ui-text-subtle mt-1 text-xs">
               {selectedMediaAssetLabel(
                 assets,
                 block.props.assetId,
@@ -481,8 +481,10 @@ export function BlockSidebarSettingsPanel({
             />
           </OptionalBlockField>
           <div>
-            <p className="text-sm font-medium text-slate-700">Library video</p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="text-ui-text-muted text-sm font-medium">
+              Library video
+            </p>
+            <p className="text-ui-text-subtle mt-1 text-xs">
               {selectedMediaAssetLabel(
                 assets,
                 block.props.assetId,
@@ -517,10 +519,10 @@ export function BlockSidebarSettingsPanel({
             }
           />
           <div>
-            <p className="text-sm font-medium text-slate-700">
+            <p className="text-ui-text-muted text-sm font-medium">
               Thumbnail override
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="text-ui-text-subtle mt-1 text-xs">
               {selectedMediaAssetLabel(
                 assets,
                 block.props.thumbnailAssetId,
@@ -647,10 +649,10 @@ export function BlockSidebarSettingsPanel({
             {block.props.cards.map((card, cardIndex) => (
               <div
                 key={cardItemKey(block.id, cardIndex)}
-                className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+                className="border-ui-line bg-ui-canvas rounded-lg border p-3"
               >
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                  <p className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
                     Card {cardIndex + 1}
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -864,10 +866,10 @@ export function BlockSidebarSettingsPanel({
             />
           </OptionalBlockField>
           <div>
-            <p className="text-sm font-medium text-slate-700">
+            <p className="text-ui-text-muted text-sm font-medium">
               Media library asset
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="text-ui-text-subtle mt-1 text-xs">
               {selectedMediaAssetLabel(
                 assets,
                 block.props.assetId,
@@ -1010,7 +1012,7 @@ export function BlockSidebarSettingsPanel({
                 })
               }
             />
-            <p className="text-xs leading-5 text-slate-500">
+            <p className="text-ui-text-subtle text-xs leading-5">
               After the form is submitted, the lead is captured, then sent to
               this Calendly link to pick a time (name and email pre-filled).
               Leave blank to just capture the lead.
@@ -1045,8 +1047,8 @@ function LeadFormQualificationSettings({
   });
 
   return (
-    <details className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-      <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+    <details className="border-ui-line bg-ui-canvas rounded-lg border px-3 py-2">
+      <summary className="text-ui-text-muted cursor-pointer text-sm font-semibold">
         Qualification follow-up
       </summary>
       <div className="mt-3 space-y-3">

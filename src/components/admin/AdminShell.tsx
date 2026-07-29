@@ -238,7 +238,7 @@ function AdminMobileNav({
           <AdminMobileNavList
             activeSection={activeSection}
             ariaLabel="Account sections"
-            className="border-t border-slate-200 pt-4"
+            className="border-ui-line border-t pt-4"
             sections={accountSections}
           />
           <form action={signOut}>

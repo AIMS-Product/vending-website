@@ -139,9 +139,9 @@ export default async function AdminNewsPage({
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <form
             action="/admin/news"
-            className="flex h-12 w-full items-center gap-3 rounded-md border border-slate-200 bg-white px-4 shadow-sm lg:w-80"
+            className="border-ui-line flex h-12 w-full items-center gap-3 rounded-md border bg-white px-4 shadow-sm lg:w-80"
           >
-            <span className="text-slate-500" aria-hidden="true">
+            <span className="text-ui-text-subtle" aria-hidden="true">
               <AdminIcon icon="search" />
             </span>
             <label className="sr-only" htmlFor="admin-news-search">
@@ -153,7 +153,7 @@ export default async function AdminNewsPage({
               aria-label="Search blog posts"
               defaultValue={searchQuery}
               placeholder="Search title or slug"
-              className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-500"
+              className="text-ui-text placeholder:text-ui-text-subtle min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
             {active !== "all" ? (
               <input type="hidden" name="status" value={active} />
@@ -170,7 +170,7 @@ export default async function AdminNewsPage({
           </form>
 
           <nav
-            className="inline-flex min-h-12 flex-wrap items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm"
+            className="border-ui-line inline-flex min-h-12 flex-wrap items-center gap-1 rounded-md border bg-white p-1 shadow-sm"
             aria-label="Post status filters"
           >
             {newsFilters.map((filter) => (
@@ -183,10 +183,10 @@ export default async function AdminNewsPage({
                   sort,
                 })}
                 aria-current={active === filter.value ? "page" : undefined}
-                className={`rounded-md px-4 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+                className={`focus-visible:ring-ui-accent/35 rounded-md px-4 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:outline-none ${
                   active === filter.value
-                    ? "bg-[#f4f8ff] text-[#0b63f6] shadow-sm"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+                    ? "bg-ui-accent-soft text-ui-accent shadow-sm"
+                    : "text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text"
                 }`}
               >
                 {filter.label}
@@ -198,10 +198,10 @@ export default async function AdminNewsPage({
         <div className="flex flex-wrap items-center gap-3">
           <form
             action="/admin/news"
-            className="flex h-12 w-full items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm shadow-sm sm:w-auto"
+            className="border-ui-line flex h-12 w-full items-center gap-2 rounded-md border bg-white px-3 text-sm shadow-sm sm:w-auto"
           >
             <label
-              className="shrink-0 text-xs font-semibold text-slate-500"
+              className="text-ui-text-subtle shrink-0 text-xs font-semibold"
               htmlFor="admin-news-updated-from"
             >
               Updated since
@@ -211,7 +211,7 @@ export default async function AdminNewsPage({
               name="updatedFrom"
               type="date"
               defaultValue={updatedFrom}
-              className="h-8 min-w-36 rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-950 outline-none focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15"
+              className="border-ui-line text-ui-text focus:border-ui-accent focus:ring-ui-accent/15 h-8 min-w-36 rounded-md border bg-white px-2 text-sm outline-none focus:ring-2"
             />
             {active !== "all" ? (
               <input type="hidden" name="status" value={active} />
@@ -224,7 +224,7 @@ export default async function AdminNewsPage({
             ) : null}
             <button
               type="submit"
-              className="rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+              className="focus-visible:ring-ui-accent/35 rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 focus-visible:ring-2 focus-visible:outline-none"
             >
               Apply
             </button>
@@ -235,7 +235,7 @@ export default async function AdminNewsPage({
                   q: searchQuery,
                   sort,
                 })}
-                className="rounded px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                className="text-ui-text-subtle hover:bg-ui-line hover:text-ui-text focus-visible:ring-ui-accent/35 rounded px-2 py-1 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
               >
                 Clear
               </Link>
@@ -243,16 +243,16 @@ export default async function AdminNewsPage({
           </form>
 
           <details className="group relative">
-            <summary className="flex h-12 cursor-pointer list-none items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none">
+            <summary className="border-ui-line text-ui-text hover:bg-ui-canvas focus-visible:ring-ui-accent/35 flex h-12 cursor-pointer list-none items-center gap-2 rounded-md border bg-white px-4 text-sm font-semibold shadow-sm transition focus-visible:ring-2 focus-visible:outline-none">
               {newsSortLabels[sort]}
               <span
-                className="text-slate-500 transition group-open:rotate-180"
+                className="text-ui-text-subtle transition group-open:rotate-180"
                 aria-hidden="true"
               >
                 <NewsChevron />
               </span>
             </summary>
-            <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+            <div className="border-ui-line absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-md border bg-white p-1 shadow-lg">
               {Object.entries(newsSortLabels).map(([value, label]) => (
                 <Link
                   key={value}
@@ -262,7 +262,7 @@ export default async function AdminNewsPage({
                     updatedFrom,
                     sort: value as NewsSortKey,
                   })}
-                  className="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                  className="text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/35 block rounded-md px-3 py-2 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
                   aria-current={sort === value ? "page" : undefined}
                 >
                   {label}
@@ -272,14 +272,14 @@ export default async function AdminNewsPage({
           </details>
 
           <details className="group relative">
-            <summary className="flex h-12 cursor-pointer list-none items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none">
+            <summary className="border-ui-line text-ui-text hover:bg-ui-canvas focus-visible:ring-ui-accent/35 flex h-12 cursor-pointer list-none items-center gap-2 rounded-md border bg-white px-4 text-sm font-semibold shadow-sm transition focus-visible:ring-2 focus-visible:outline-none">
               <span aria-hidden="true">
                 <AdminIcon icon="filter" />
               </span>
               Filters
             </summary>
-            <div className="absolute right-0 z-20 mt-2 w-52 rounded-md border border-slate-200 bg-white p-3 text-sm shadow-lg">
-              <p className="font-semibold text-slate-950">Status</p>
+            <div className="border-ui-line absolute right-0 z-20 mt-2 w-52 rounded-md border bg-white p-3 text-sm shadow-lg">
+              <p className="text-ui-text font-semibold">Status</p>
               <div className="mt-2 grid gap-1">
                 {newsFilters.map((filter) => (
                   <Link
@@ -290,7 +290,7 @@ export default async function AdminNewsPage({
                       updatedFrom,
                       sort,
                     })}
-                    className="rounded-md px-2 py-1.5 font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                    className="text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/35 rounded-md px-2 py-1.5 font-medium focus-visible:ring-2 focus-visible:outline-none"
                     aria-current={active === filter.value ? "page" : undefined}
                   >
                     {filter.label}
@@ -302,27 +302,27 @@ export default async function AdminNewsPage({
 
           <details className="group relative">
             <summary
-              className="flex h-12 cursor-pointer list-none items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+              className="border-ui-line text-ui-text hover:bg-ui-canvas focus-visible:ring-ui-accent/35 flex h-12 cursor-pointer list-none items-center gap-2 rounded-md border bg-white px-3 text-sm font-semibold shadow-sm transition focus-visible:ring-2 focus-visible:outline-none"
               aria-label="Table view options"
             >
               <span aria-hidden="true">
                 <AdminIcon icon="list" />
               </span>
               <span
-                className="text-slate-500 transition group-open:rotate-180"
+                className="text-ui-text-subtle transition group-open:rotate-180"
                 aria-hidden="true"
               >
                 <NewsChevron />
               </span>
             </summary>
-            <div className="absolute right-0 z-20 mt-2 w-40 rounded-md border border-slate-200 bg-white p-1 shadow-lg">
-              <span className="block rounded-md bg-slate-50 px-3 py-2 text-sm font-medium text-slate-950">
+            <div className="border-ui-line absolute right-0 z-20 mt-2 w-40 rounded-md border bg-white p-1 shadow-lg">
+              <span className="bg-ui-canvas text-ui-text block rounded-md px-3 py-2 text-sm font-medium">
                 Table view
               </span>
             </div>
           </details>
 
-          <p className="text-sm text-slate-600">
+          <p className="text-ui-text-muted text-sm">
             Showing {filteredPosts.length} blog{" "}
             {filteredPosts.length === 1 ? "post" : "posts"}
           </p>
@@ -332,10 +332,10 @@ export default async function AdminNewsPage({
       <div className={adminPanelClass}>
         {visiblePosts.length === 0 ? (
           <div className="p-10 text-center">
-            <h2 className="text-lg font-semibold text-slate-950">
+            <h2 className="text-ui-text text-lg font-semibold">
               No blog posts found
             </h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="text-ui-text-muted mt-2 text-sm">
               Adjust the search, status, or date filters, or create a new draft.
             </p>
             <Link
@@ -353,7 +353,7 @@ export default async function AdminNewsPage({
             <NewsBulkArchiveControls returnTo={returnTo} />
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] border-collapse text-left text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
+                <thead className="border-ui-line bg-ui-canvas text-ui-text-subtle border-b text-xs font-semibold uppercase">
                   <tr>
                     <th className="px-7 py-4">Title</th>
                     <th className="px-5 py-4">Status</th>
@@ -362,7 +362,7 @@ export default async function AdminNewsPage({
                     <th className="px-5 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-ui-line divide-y">
                   {visiblePosts.map((post, index) => (
                     <PostRow
                       key={post.id}
@@ -378,7 +378,7 @@ export default async function AdminNewsPage({
         )}
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 text-sm text-slate-600 md:flex-row md:items-center md:justify-between">
+      <div className="text-ui-text-muted mt-6 flex flex-col gap-3 text-sm md:flex-row md:items-center md:justify-between">
         <p>
           {displayStart}-{displayEnd} of {filteredPosts.length}
         </p>
@@ -405,7 +405,7 @@ export default async function AdminNewsPage({
                 page: currentPage - 1,
               })}
             />
-            <span className="flex h-9 min-w-9 items-center justify-center rounded-md border border-[#0b63f6] bg-white px-3 font-semibold text-[#0b63f6]">
+            <span className="border-ui-accent text-ui-accent flex h-9 min-w-9 items-center justify-center rounded-md border bg-white px-3 font-semibold">
               {currentPage}
             </span>
             <AdminPaginationLink
@@ -437,10 +437,10 @@ function PostRow({
   returnTo: string;
 }) {
   return (
-    <tr className="align-middle transition hover:bg-slate-50 [&:has(details[open])]:relative [&:has(details[open])]:z-20 [&:has(details[open])]:bg-[#f8fbff]">
+    <tr className="hover:bg-ui-canvas align-middle transition [&:has(details[open])]:relative [&:has(details[open])]:z-20 [&:has(details[open])]:bg-[#f8fbff]">
       <td
         className={`px-7 py-4 ${
-          isFirst ? "border-l-4 border-[#0b63f6]" : "border-l-4 border-white"
+          isFirst ? "border-ui-accent border-l-4" : "border-l-4 border-white"
         }`}
       >
         <div className="flex items-start gap-3">
@@ -451,17 +451,17 @@ function PostRow({
               value={post.id}
               form="news-bulk-archive-form"
               aria-label={`Select ${post.title} for bulk actions`}
-              className="mt-1 size-4 shrink-0 rounded border-slate-300 text-[#0b63f6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+              className="border-ui-line-strong text-ui-accent focus-visible:ring-ui-accent/35 mt-1 size-4 shrink-0 rounded focus-visible:ring-2 focus-visible:outline-none"
             />
           ) : null}
           <div className="min-w-0">
             <Link
               href={`/admin/news/${post.id}`}
-              className="font-semibold text-slate-950 hover:text-[#0b63f6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+              className="text-ui-text hover:text-ui-accent focus-visible:ring-ui-accent/35 font-semibold focus-visible:ring-2 focus-visible:outline-none"
             >
               {post.title}
             </Link>
-            <p className="mt-1 font-mono text-xs text-slate-500">
+            <p className="text-ui-text-subtle mt-1 font-mono text-xs">
               /{post.slug}
             </p>
           </div>
@@ -470,10 +470,10 @@ function PostRow({
       <td className="px-5 py-4">
         <AdminStatusBadge status={post.status} />
       </td>
-      <td className="px-5 py-4 text-slate-700">
+      <td className="text-ui-text-muted px-5 py-4">
         {formatDate(post.updated_at)}
       </td>
-      <td className="px-5 py-4 text-slate-700">
+      <td className="text-ui-text-muted px-5 py-4">
         {post.published_at ? formatDate(post.published_at) : "-"}
       </td>
       <td className="px-5 py-4 text-right">
@@ -495,15 +495,15 @@ function PostActionsMenu({
   return (
     <details className="group relative inline-block shrink-0 text-left">
       <summary
-        className="inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-md text-slate-700 transition group-open:bg-[#eef5ff] group-open:text-[#0b63f6] hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+        className="text-ui-text-muted group-open:text-ui-accent hover:bg-ui-line hover:text-ui-text focus-visible:ring-ui-accent/35 inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-md transition group-open:bg-[#eef5ff] focus-visible:ring-2 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
         aria-label={`Open actions for ${post.title}`}
       >
         <AdminIcon icon="more" />
       </summary>
-      <div className="absolute top-full right-0 z-30 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white p-1 text-left shadow-lg">
+      <div className="border-ui-line absolute top-full right-0 z-30 mt-2 w-52 overflow-hidden rounded-md border bg-white p-1 text-left shadow-lg">
         <Link
           href={`/admin/news/${post.id}`}
-          className="block rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+          className="text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/35 block rounded-md px-3 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
         >
           Edit post
         </Link>

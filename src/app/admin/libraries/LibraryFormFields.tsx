@@ -86,7 +86,7 @@ export function ItemList<T extends { id: string | number }>({
   render: (item: T) => ReactNode;
 }) {
   if (items.length === 0) {
-    return <p className="text-sm text-slate-500">{empty}</p>;
+    return <p className="text-ui-text-subtle text-sm">{empty}</p>;
   }
 
   return (
@@ -94,7 +94,7 @@ export function ItemList<T extends { id: string | number }>({
       {items.slice(0, 8).map((item) => (
         <article
           key={item.id}
-          className="grid gap-2 rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-600"
+          className="border-ui-line text-ui-text-muted grid gap-2 rounded-md border bg-white p-3 text-sm"
         >
           {render(item)}
         </article>

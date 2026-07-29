@@ -50,12 +50,12 @@ export function AdminTermHint({ term, explanation }: AdminTermHintProps) {
         aria-expanded={open}
         aria-controls={panelId}
         aria-describedby={open ? panelId : undefined}
-        className="inline-flex items-center gap-1 rounded-sm border-b border-dotted border-slate-400 pb-px text-inherit decoration-0 underline-offset-2 outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35"
+        className="focus-visible:ring-ui-accent/35 inline-flex items-center gap-1 rounded-sm border-b border-dotted border-slate-400 pb-px text-inherit decoration-0 underline-offset-2 outline-none focus-visible:rounded focus-visible:ring-2"
       >
         {term}
         <span
           aria-hidden="true"
-          className="flex size-4 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-semibold text-slate-500"
+          className="bg-ui-line text-ui-text-subtle flex size-4 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold"
         >
           ?
         </span>
@@ -64,7 +64,7 @@ export function AdminTermHint({ term, explanation }: AdminTermHintProps) {
         <span
           id={panelId}
           role="note"
-          className="absolute top-[calc(100%+0.4rem)] left-0 z-20 w-[min(16rem,calc(100vw-2rem))] rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs leading-5 font-normal text-slate-700 normal-case shadow-lg"
+          className="border-ui-line text-ui-text-muted absolute top-[calc(100%+0.4rem)] left-0 z-20 w-[min(16rem,calc(100vw-2rem))] rounded-lg border bg-white px-3 py-2 text-xs leading-5 font-normal normal-case shadow-lg"
         >
           {explanation}
         </span>

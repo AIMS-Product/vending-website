@@ -31,18 +31,18 @@ export function LibraryCard({
     <section className={`${adminCardClass} flex flex-col gap-4`}>
       <div className="flex items-start gap-3">
         <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#e9f1ff] text-[#0b63f6]"
+          className="text-ui-accent flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#e9f1ff]"
           aria-hidden="true"
         >
           <AdminIcon icon={icon} />
         </span>
         <div>
-          <h2 className="text-base font-semibold text-slate-950">{name}</h2>
-          <p className="mt-1 text-sm text-slate-500">{purpose}</p>
+          <h2 className="text-ui-text text-base font-semibold">{name}</h2>
+          <p className="text-ui-text-subtle mt-1 text-sm">{purpose}</p>
         </div>
       </div>
-      <p className="text-sm text-slate-600">
-        <span className="text-2xl font-semibold tracking-normal text-slate-950">
+      <p className="text-ui-text-muted text-sm">
+        <span className="text-ui-text text-2xl font-semibold tracking-normal">
           {itemCount}
         </span>{" "}
         {itemNoun}

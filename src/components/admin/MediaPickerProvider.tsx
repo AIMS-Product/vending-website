@@ -173,7 +173,7 @@ export function MediaDropTarget({
     <div
       className={`relative grid place-items-center text-center ${className ?? ""} ${
         isDragging
-          ? "border-[#0b63f6] bg-[#f5fbff] ring-4 ring-[#0b63f6]/15"
+          ? "border-ui-accent ring-ui-accent/15 bg-[#f5fbff] ring-4"
           : ""
       }`}
       onDragEnter={(event) => handleDragState(event, true)}
@@ -199,24 +199,24 @@ export function MediaDropTarget({
           type="button"
           disabled={isUploading}
           onClick={() => inputRef.current?.click()}
-          className="text-sm text-slate-500 transition hover:text-slate-700 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+          className="text-ui-text-subtle hover:text-ui-text-muted focus-visible:ring-ui-accent/20 text-sm transition focus-visible:ring-4 focus-visible:outline-none"
         >
-          <span className="block font-semibold text-slate-600">
+          <span className="text-ui-text-muted block font-semibold">
             {isUploading ? "Uploading image..." : label}
           </span>
-          <span className="mt-1 block text-xs text-slate-500">{hint}</span>
+          <span className="text-ui-text-subtle mt-1 block text-xs">{hint}</span>
         </button>
         {onOpenLibrary ? (
           <button
             type="button"
-            className="mt-3 text-xs font-semibold text-[#0b63f6] hover:text-slate-950"
+            className="text-ui-accent hover:text-ui-text mt-3 text-xs font-semibold"
             onClick={onOpenLibrary}
           >
             {libraryLabel}
           </button>
         ) : null}
         {message ? (
-          <p className="mt-2 text-xs text-slate-500" role="status">
+          <p className="text-ui-text-subtle mt-2 text-xs" role="status">
             {message}
           </p>
         ) : null}
@@ -363,16 +363,16 @@ function MediaPickerModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="media-picker-title"
-        className="flex max-h-[min(820px,calc(100dvh-2rem))] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        className="border-ui-line flex max-h-[min(820px,calc(100dvh-2rem))] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border bg-white shadow-2xl"
       >
-        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <header className="border-ui-line flex items-start justify-between gap-4 border-b px-5 py-4">
           <div>
-            <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+            <p className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
               Media library
             </p>
             <h2
               id="media-picker-title"
-              className="mt-1 text-lg font-semibold text-slate-950"
+              className="text-ui-text mt-1 text-lg font-semibold"
             >
               Choose media
             </h2>
@@ -381,13 +381,13 @@ function MediaPickerModal({
             type="button"
             aria-label="Close media picker"
             onClick={onClose}
-            className="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+            className="border-ui-line text-ui-text-subtle hover:bg-ui-canvas inline-flex size-9 items-center justify-center rounded-full border bg-white"
           >
             ×
           </button>
         </header>
 
-        <div className="flex shrink-0 gap-2 border-b border-slate-200 px-5 py-3">
+        <div className="border-ui-line flex shrink-0 gap-2 border-b px-5 py-3">
           <button
             type="button"
             className={
@@ -414,9 +414,9 @@ function MediaPickerModal({
 
         {mode === "library" ? (
           <div className="flex min-h-0 flex-1 flex-col">
-            <div className="border-b border-slate-200 px-5 py-3">
-              <label className="flex h-11 items-center gap-3 rounded-md border border-slate-200 bg-white px-3">
-                <span className="text-slate-500" aria-hidden="true">
+            <div className="border-ui-line border-b px-5 py-3">
+              <label className="border-ui-line flex h-11 items-center gap-3 rounded-md border bg-white px-3">
+                <span className="text-ui-text-subtle" aria-hidden="true">
                   <AdminIcon icon="search" />
                 </span>
                 <input
@@ -430,7 +430,7 @@ function MediaPickerModal({
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-5">
               {filteredAssets.length === 0 ? (
-                <p className="text-sm text-slate-500">
+                <p className="text-ui-text-subtle text-sm">
                   No matching assets. Upload a new asset or open the full media
                   library.
                 </p>
@@ -441,7 +441,7 @@ function MediaPickerModal({
                       key={asset.id}
                       type="button"
                       onClick={() => onSelect(asset)}
-                      className="overflow-hidden rounded-md border border-slate-200 bg-white text-left transition hover:border-[#0b63f6]/40 hover:shadow-sm"
+                      className="border-ui-line hover:border-ui-accent/40 overflow-hidden rounded-md border bg-white text-left transition hover:shadow-sm"
                     >
                       {asset.publicUrl && asset.assetType === "image" ? (
                         <Image
@@ -453,15 +453,15 @@ function MediaPickerModal({
                           className="aspect-[16/9] w-full object-cover"
                         />
                       ) : (
-                        <div className="grid aspect-[16/9] place-items-center bg-slate-50 px-4 text-center text-xs font-semibold text-slate-600 uppercase">
+                        <div className="bg-ui-canvas text-ui-text-muted grid aspect-[16/9] place-items-center px-4 text-center text-xs font-semibold uppercase">
                           {asset.assetType} asset
                         </div>
                       )}
                       <div className="space-y-1 p-3">
-                        <p className="text-sm font-semibold text-slate-950">
+                        <p className="text-ui-text text-sm font-semibold">
                           {asset.title}
                         </p>
-                        <p className="line-clamp-2 text-xs text-slate-500">
+                        <p className="text-ui-text-subtle line-clamp-2 text-xs">
                           {asset.altText || asset.publicUrl}
                         </p>
                       </div>
@@ -477,8 +477,8 @@ function MediaPickerModal({
               <div
                 className={`mb-5 rounded-xl border-2 border-dashed px-4 py-8 text-center transition ${
                   isDropActive
-                    ? "border-[#0b63f6] bg-[#f5fbff]"
-                    : "border-slate-200 bg-slate-50"
+                    ? "border-ui-accent bg-[#f5fbff]"
+                    : "border-ui-line bg-ui-canvas"
                 }`}
                 onDragEnter={(event) => {
                   event.preventDefault();
@@ -499,10 +499,10 @@ function MediaPickerModal({
                   if (file) void handleQuickImageUpload(file);
                 }}
               >
-                <p className="text-sm font-semibold text-slate-700">
+                <p className="text-ui-text-muted text-sm font-semibold">
                   Drop an image here
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="text-ui-text-subtle mt-1 text-xs">
                   Images dropped here are saved to the media library
                   automatically.
                 </p>
@@ -510,7 +510,9 @@ function MediaPickerModal({
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block sm:col-span-2">
-                <span className="text-sm font-medium text-slate-700">Type</span>
+                <span className="text-ui-text-muted text-sm font-medium">
+                  Type
+                </span>
                 <select
                   value={uploadAssetType}
                   onChange={(event) => {
@@ -531,7 +533,7 @@ function MediaPickerModal({
                 </select>
               </label>
               <label className="block">
-                <span className="text-sm font-medium text-slate-700">
+                <span className="text-ui-text-muted text-sm font-medium">
                   Title
                 </span>
                 <input
@@ -541,7 +543,7 @@ function MediaPickerModal({
                 />
               </label>
               <label className="block">
-                <span className="text-sm font-medium text-slate-700">
+                <span className="text-ui-text-muted text-sm font-medium">
                   Alt text
                 </span>
                 <input
@@ -551,7 +553,7 @@ function MediaPickerModal({
                 />
               </label>
               <label className="block sm:col-span-2">
-                <span className="text-sm font-medium text-slate-700">
+                <span className="text-ui-text-muted text-sm font-medium">
                   Rights notes
                 </span>
                 <textarea
@@ -562,7 +564,7 @@ function MediaPickerModal({
                 />
               </label>
               <label className="block sm:col-span-2">
-                <span className="text-sm font-medium text-slate-700">
+                <span className="text-ui-text-muted text-sm font-medium">
                   Caption
                 </span>
                 <input
@@ -573,7 +575,7 @@ function MediaPickerModal({
               </label>
               {uploadAssetType === "image" ? (
                 <label className="block sm:col-span-2">
-                  <span className="text-sm font-medium text-slate-700">
+                  <span className="text-ui-text-muted text-sm font-medium">
                     Upload image
                   </span>
                   <input
@@ -583,17 +585,17 @@ function MediaPickerModal({
                     onChange={(event) =>
                       handleFileChange(event.target.files?.[0] ?? null)
                     }
-                    className="mt-2 block w-full text-sm text-slate-700"
+                    className="text-ui-text-muted mt-2 block w-full text-sm"
                   />
                   {uploadMessage && (
-                    <p className="mt-2 text-xs text-slate-500">
+                    <p className="text-ui-text-subtle mt-2 text-xs">
                       {uploadMessage}
                     </p>
                   )}
                 </label>
               ) : null}
               <label className="block sm:col-span-2">
-                <span className="text-sm font-medium text-slate-700">
+                <span className="text-ui-text-muted text-sm font-medium">
                   External URL
                 </span>
                 <input

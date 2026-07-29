@@ -60,17 +60,17 @@ export default async function AdminRevisionPreviewPage({
     // preview is a plain container — a nested <main> created a duplicate-main
     // landmark violation.
     <div>
-      <div className="border-b border-slate-200 bg-white px-6 py-4 text-slate-950 shadow-sm lg:px-10">
+      <div className="border-ui-line text-ui-text border-b bg-white px-6 py-4 shadow-sm lg:px-10">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold text-[#0b63f6]">
+            <p className="text-ui-accent text-sm font-semibold">
               Revision preview
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="text-ui-text-subtle mt-1 text-xs">
               {revisionTypeLabel(revision.revision_type)} ·{" "}
               {formatRevisionDateTime(revision.created_at)}
             </p>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="text-ui-text-subtle mt-0.5 text-xs">
               {stats.blockCount} {stats.blockCount === 1 ? "block" : "blocks"} ·{" "}
               {stats.wordCount} {stats.wordCount === 1 ? "word" : "words"}
             </p>

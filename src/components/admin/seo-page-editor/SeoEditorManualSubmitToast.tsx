@@ -27,7 +27,7 @@ export function SeoEditorManualSubmitToast({
           toast.tone === "error"
             ? "border-red-200 bg-red-50/95 text-red-800"
             : toast.tone === "pending"
-              ? "border-sky-200 bg-white/95 text-slate-800"
+              ? "text-ui-text border-sky-200 bg-white/95"
               : "border-emerald-200 bg-emerald-50/95 text-emerald-800"
         }`}
       >

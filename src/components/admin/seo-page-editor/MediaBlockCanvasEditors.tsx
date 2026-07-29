@@ -219,7 +219,7 @@ export function SplitHeroBlockCanvas({
                 props: { ...block.props, mediaCaption: event.target.value },
               })
             }
-            className="focus:ring-brand-100 w-full bg-transparent text-sm font-semibold text-slate-600 outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
+            className="focus:ring-brand-100 text-ui-text-muted w-full bg-transparent text-sm font-semibold outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
           />
         </label>
       </OptionalBlockField>
@@ -240,7 +240,7 @@ export function SplitHeroBlockCanvas({
     <MediaDropTarget
       label={blockCanvasPlaceholders.image.dropLabel}
       hint={blockCanvasPlaceholders.image.dropHint}
-      className={`${imageClass} border-dashed bg-slate-50 px-4 transition focus-within:ring-4 focus-within:ring-[#0b63f6]/20 hover:border-[#0b63f6]/40 hover:bg-white`}
+      className={`${imageClass} bg-ui-canvas focus-within:ring-ui-accent/20 hover:border-ui-accent/40 border-dashed px-4 transition focus-within:ring-4 hover:bg-white`}
       onAsset={(asset) =>
         onChange(applyMediaAssetToSplitHeroBlock(block, asset))
       }
@@ -302,7 +302,7 @@ export function ImageBlockCanvas({
     <MediaDropTarget
       label={blockCanvasPlaceholders.image.dropLabel}
       hint={blockCanvasPlaceholders.image.dropHint}
-      className={`${imageClass} border-dashed bg-slate-50 px-4 transition focus-within:ring-4 focus-within:ring-[#0b63f6]/20 hover:border-[#0b63f6]/40 hover:bg-white`}
+      className={`${imageClass} bg-ui-canvas focus-within:ring-ui-accent/20 hover:border-ui-accent/40 border-dashed px-4 transition focus-within:ring-4 hover:bg-white`}
       onAsset={(asset) => onChange(applyMediaAssetToImageBlock(block, asset))}
       onOpenLibrary={() =>
         openMediaPicker({
@@ -324,7 +324,7 @@ export function ImageBlockCanvas({
           props: { ...block.props, caption: event.target.value },
         })
       }
-      className="focus:ring-brand-100 w-full bg-transparent text-sm text-slate-500 outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
+      className="focus:ring-brand-100 text-ui-text-subtle w-full bg-transparent text-sm outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
     />
   );
 
@@ -338,7 +338,7 @@ export function ImageBlockCanvas({
           compact
         >
           <figure className={imageFrameClass}>
-            <figcaption className="text-base leading-7 font-semibold text-slate-600">
+            <figcaption className="text-ui-text-muted text-base leading-7 font-semibold">
               <p className="text-sm font-black text-[#066a99] uppercase">
                 Featured media
               </p>
@@ -408,7 +408,7 @@ export function VideoBlockCanvas({
       style={thumbnailStyle}
       className={`${videoFrameClass} grid place-items-center ${
         thumbnailSrc ? "bg-black bg-cover bg-center" : "bg-[#f5fbff]"
-      } transition hover:bg-white focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none`}
+      } focus-visible:ring-ui-accent/20 transition hover:bg-white focus-visible:ring-4 focus-visible:outline-none`}
     >
       <span className="grid size-14 place-items-center rounded-full border-2 border-[#111111] bg-white shadow-[4px_4px_0_#55b8e8]">
         <span className="sr-only">Edit video settings</span>
@@ -427,7 +427,7 @@ export function VideoBlockCanvas({
           props: { ...block.props, title: event.target.value },
         })
       }
-      className="w-full bg-transparent text-xl font-black text-[#111111] uppercase outline-none placeholder:text-slate-400 focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2 focus:ring-[#0b63f6]/20"
+      className="placeholder:text-ui-text-subtle focus:ring-ui-accent/20 w-full bg-transparent text-xl font-black text-[#111111] uppercase outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
     />
   );
   const captionInput = (
@@ -442,14 +442,14 @@ export function VideoBlockCanvas({
           props: { ...block.props, caption: event.target.value },
         })
       }
-      className="mt-3 w-full resize-y bg-transparent text-sm leading-7 font-semibold text-slate-600 outline-none placeholder:text-slate-400 focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2 focus:ring-[#0b63f6]/20"
+      className="text-ui-text-muted placeholder:text-ui-text-subtle focus:ring-ui-accent/20 mt-3 w-full resize-y bg-transparent text-sm leading-7 font-semibold outline-none focus:rounded-md focus:bg-white focus:px-2 focus:py-1 focus:ring-2"
     />
   );
   const watchButton = (
     <button
       type="button"
       onClick={onEditSettings}
-      className="mt-3 inline-flex text-sm font-black text-[#066a99] uppercase hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/30 focus-visible:outline-none"
+      className="focus-visible:ring-ui-accent/30 mt-3 inline-flex text-sm font-black text-[#066a99] uppercase hover:text-[#111111] focus-visible:ring-2 focus-visible:outline-none"
     >
       Edit video
     </button>

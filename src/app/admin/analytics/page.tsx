@@ -265,7 +265,7 @@ function BookingContext({
   if (!connected) {
     return (
       <div className={`${adminCardClass} mb-5`}>
-        <p className="text-sm text-slate-600">
+        <p className="text-ui-text-muted text-sm">
           Booking tracking isn&apos;t connected yet — bookings will appear here
           once the Calendly webhook is live.
         </p>
@@ -275,12 +275,12 @@ function BookingContext({
 
   return (
     <div className={`${adminCardClass} mb-5`}>
-      <p className="text-sm text-slate-600">
-        <span className="font-semibold text-slate-900">{total}</span> calls were
+      <p className="text-ui-text-muted text-sm">
+        <span className="text-ui-text font-semibold">{total}</span> calls were
         booked in this range.{" "}
         {unattributed > 0 ? (
           <>
-            <span className="font-semibold text-slate-900">{unattributed}</span>{" "}
+            <span className="text-ui-text font-semibold">{unattributed}</span>{" "}
             of those came from outside this website (phone, Saleskick, or a
             direct Calendly link), so they are excluded from the booking rate
             above.
@@ -288,7 +288,7 @@ function BookingContext({
         ) : (
           <>Every one of them traces back to a lead this site captured.</>
         )}{" "}
-        <span className="text-slate-500">
+        <span className="text-ui-text-subtle">
           {leadsAllTime.toLocaleString()} leads captured all time.
         </span>
       </p>

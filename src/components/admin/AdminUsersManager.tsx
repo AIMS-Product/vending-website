@@ -98,13 +98,11 @@ export function AdminUsersManager({
       ) : null}
 
       <section className={adminPanelClass}>
-        <div className="border-b border-slate-200 p-4">
+        <div className="border-ui-line border-b p-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
             <div className="shrink-0 lg:max-w-sm">
-              <h2 className="text-base font-semibold text-slate-950">
-                Add user
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
+              <h2 className="text-ui-text text-base font-semibold">Add user</h2>
+              <p className="text-ui-text-muted mt-1 text-sm">
                 New users receive a password setup email after access is added.
               </p>
             </div>
@@ -119,8 +117,8 @@ export function AdminUsersManager({
         />
 
         <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[760px] divide-y divide-slate-200 text-left text-sm">
-            <thead className="bg-slate-50 text-xs font-semibold tracking-normal text-slate-500 uppercase">
+          <table className="divide-ui-line w-full min-w-[760px] divide-y text-left text-sm">
+            <thead className="bg-ui-canvas text-ui-text-subtle text-xs font-semibold tracking-normal uppercase">
               <tr>
                 <th scope="col" className="px-4 py-2.5">
                   Email
@@ -136,16 +134,16 @@ export function AdminUsersManager({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-ui-line divide-y bg-white">
               {users.length ? (
                 users.map((user) => (
                   <tr key={user.email}>
-                    <td className="px-4 py-2.5 font-medium text-slate-950">
+                    <td className="text-ui-text px-4 py-2.5 font-medium">
                       <span className="block max-w-[18rem] truncate">
                         {user.email}
                       </span>
                       {user.email === currentUserEmail ? (
-                        <span className="mt-1 block text-xs font-semibold text-[#0b63f6]">
+                        <span className="text-ui-accent mt-1 block text-xs font-semibold">
                           You
                         </span>
                       ) : null}
@@ -158,7 +156,7 @@ export function AdminUsersManager({
                           saveInActions
                         />
                       ) : (
-                        <span className="font-medium text-slate-700">
+                        <span className="text-ui-text-muted font-medium">
                           {roleLabel(user.role)}
                         </span>
                       )}
@@ -177,7 +175,7 @@ export function AdminUsersManager({
                           <RemoveAccessForm email={user.email} />
                         </div>
                       ) : (
-                        <span className="text-xs font-semibold text-slate-500">
+                        <span className="text-ui-text-subtle text-xs font-semibold">
                           Super-admin only
                         </span>
                       )}
@@ -188,7 +186,7 @@ export function AdminUsersManager({
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-8 text-center text-sm text-slate-500"
+                    className="text-ui-text-subtle px-4 py-8 text-center text-sm"
                   >
                     No admin users yet.
                   </td>
@@ -200,23 +198,23 @@ export function AdminUsersManager({
       </section>
 
       <section className={adminPanelClass}>
-        <div className="border-b border-slate-200 p-4">
-          <h2 className="text-base font-semibold text-slate-950">
+        <div className="border-ui-line border-b p-4">
+          <h2 className="text-ui-text text-base font-semibold">
             Recent account events
           </h2>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="text-ui-text-muted mt-1 text-sm">
             Account access changes and setup emails.
           </p>
         </div>
-        <div className="divide-y divide-slate-200">
+        <div className="divide-ui-line divide-y">
           {events.length ? (
             events.map((event) => (
               <div
                 key={event.id}
-                className="grid gap-2 px-4 py-3 text-sm text-slate-600 lg:grid-cols-[1fr_auto]"
+                className="text-ui-text-muted grid gap-2 px-4 py-3 text-sm lg:grid-cols-[1fr_auto]"
               >
                 <div className="min-w-0">
-                  <p className="font-semibold text-slate-950">
+                  <p className="text-ui-text font-semibold">
                     {eventLabel(event.eventType)}
                   </p>
                   <p className="mt-1">
@@ -234,13 +232,13 @@ export function AdminUsersManager({
                     ) : null}
                   </p>
                 </div>
-                <time className="text-xs font-medium text-slate-500">
+                <time className="text-ui-text-subtle text-xs font-medium">
                   {formatDate(event.createdAt)}
                 </time>
               </div>
             ))
           ) : (
-            <p className="px-4 py-7 text-sm text-slate-500">
+            <p className="text-ui-text-subtle px-4 py-7 text-sm">
               No account events recorded yet.
             </p>
           )}
@@ -261,24 +259,24 @@ function UsersMobileList({
 }) {
   if (!users.length) {
     return (
-      <p className="px-5 py-10 text-center text-sm text-slate-500 md:hidden">
+      <p className="text-ui-text-subtle px-5 py-10 text-center text-sm md:hidden">
         No admin users yet.
       </p>
     );
   }
 
   return (
-    <div className="divide-y divide-slate-200 md:hidden">
+    <div className="divide-ui-line divide-y md:hidden">
       {users.map((user) => (
         <article key={user.email} className="grid gap-3 p-4">
           <div className="grid gap-2">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="text-sm font-semibold break-words text-slate-950">
+                <h3 className="text-ui-text text-sm font-semibold break-words">
                   {user.email}
                 </h3>
                 {user.email === currentUserEmail ? (
-                  <p className="mt-1 text-xs font-semibold text-[#0b63f6]">
+                  <p className="text-ui-accent mt-1 text-xs font-semibold">
                     You
                   </p>
                 ) : null}
@@ -287,10 +285,10 @@ function UsersMobileList({
             </div>
             <dl className="text-sm">
               <div>
-                <dt className="text-xs font-semibold tracking-normal text-slate-500 uppercase">
+                <dt className="text-ui-text-subtle text-xs font-semibold tracking-normal uppercase">
                   Role
                 </dt>
-                <dd className="mt-1 font-medium text-slate-700">
+                <dd className="text-ui-text-muted mt-1 font-medium">
                   {roleLabel(user.role)}
                 </dd>
               </div>
@@ -309,7 +307,7 @@ function UsersMobileList({
               </div>
             </div>
           ) : (
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-ui-text-subtle text-xs font-semibold">
               Super-admin only
             </span>
           )}
@@ -320,7 +318,7 @@ function UsersMobileList({
 }
 
 const inviteControlClass =
-  "box-border h-11 w-full min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm leading-none text-slate-950 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15 disabled:cursor-not-allowed disabled:opacity-50";
+  "box-border h-11 w-full min-w-0 rounded-md border border-ui-line bg-white px-3 text-sm leading-none text-ui-text shadow-sm transition outline-none placeholder:text-ui-text-subtle focus:border-ui-accent focus:ring-2 focus:ring-ui-accent/15 disabled:cursor-not-allowed disabled:opacity-50";
 
 function InviteUserForm({ disabled }: { disabled: boolean }) {
   const [state, formAction] = useActionState(inviteUser, initialState);
@@ -379,7 +377,7 @@ function RoleForm({
       name="role"
       defaultValue={role}
       aria-label={`Role for ${email}`}
-      className="h-8 rounded-md border border-slate-200 bg-white px-2 text-sm font-medium text-slate-700 shadow-sm focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15 focus:outline-none"
+      className="border-ui-line text-ui-text-muted focus:border-ui-accent focus:ring-ui-accent/15 h-8 rounded-md border bg-white px-2 text-sm font-medium shadow-sm focus:ring-2 focus:outline-none"
     >
       <option value="admin">Admin</option>
       <option value="super_admin">Super admin</option>
@@ -506,14 +504,14 @@ function RemoveAccessForm({ email }: { email: string }) {
           onKeyDown={handleDialogKeyDown}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4 py-6"
         >
-          <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
+          <div className="border-ui-line w-full max-w-sm rounded-lg border bg-white p-5 shadow-xl">
             <h2
               id={`remove-${email}`}
-              className="text-base font-semibold text-slate-950"
+              className="text-ui-text text-base font-semibold"
             >
               Remove user access
             </h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
+            <p className="text-ui-text-muted mt-3 text-sm leading-6">
               This removes {email} from Studio access and disables future
               sign-in until they are invited again.
             </p>
@@ -597,7 +595,7 @@ function IconSubmitButton({
       className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-semibold whitespace-nowrap shadow-sm transition focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
         tone === "danger"
           ? "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-200"
-          : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35"
+          : "border-ui-line text-ui-text-muted hover:bg-ui-canvas focus-visible:ring-ui-accent/35 border bg-white focus-visible:ring-2"
       }`}
     >
       <span aria-hidden="true">

@@ -61,7 +61,7 @@ export function BlockPicker({
   const defaultTriggerButtonClass =
     triggerVariant === "compact"
       ? "inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-slate-200 transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:outline-none"
-      : "flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 bg-white p-4 text-sm font-medium text-slate-500 transition-all hover:border-[#0b63f6]/50 hover:bg-slate-50 hover:text-[#0b63f6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none";
+      : "flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ui-line bg-white p-4 text-sm font-medium text-ui-text-subtle transition-all hover:border-ui-accent/50 hover:bg-ui-canvas hover:text-ui-accent focus-visible:ring-2 focus-visible:ring-ui-accent/35 focus-visible:outline-none";
   const triggerButtonClass =
     triggerButtonClassName ?? defaultTriggerButtonClass;
 
@@ -79,7 +79,7 @@ export function BlockPicker({
           >
             <dialog
               open
-              className="animate-in fade-in slide-in-from-top-2 mx-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-2xl ring-1 ring-slate-900/5 sm:p-5"
+              className="animate-in fade-in slide-in-from-top-2 border-ui-line mx-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-xl border bg-white p-4 shadow-2xl ring-1 ring-slate-900/5 sm:p-5"
               aria-modal="true"
               aria-labelledby="block-picker-title"
               aria-describedby="block-picker-description"
@@ -88,13 +88,13 @@ export function BlockPicker({
                 <div>
                   <h4
                     id="block-picker-title"
-                    className="text-base font-semibold text-slate-950"
+                    className="text-ui-text text-base font-semibold"
                   >
                     Add page content
                   </h4>
                   <p
                     id="block-picker-description"
-                    className="mt-1 text-sm text-slate-500"
+                    className="text-ui-text-subtle mt-1 text-sm"
                   >
                     Choose what appears next on the page.
                   </p>
@@ -103,7 +103,7 @@ export function BlockPicker({
                   type="button"
                   onClick={() => setIsOpen(false)}
                   aria-label="Close page content picker"
-                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                  className="text-ui-text-subtle hover:bg-ui-line hover:text-ui-text-muted focus-visible:ring-ui-accent/35 inline-flex size-8 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -131,28 +131,28 @@ export function BlockPicker({
                         type="button"
                         data-testid="block-picker-type"
                         data-block-picker-type={option.type}
-                        className={`flex min-h-16 min-w-56 items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none lg:min-w-0 ${
+                        className={`focus-visible:ring-ui-accent/35 flex min-h-16 min-w-56 items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-all focus-visible:ring-2 focus-visible:outline-none lg:min-w-0 ${
                           isSelected
-                            ? "border-[#0b63f6]/65 bg-[#f7faff] shadow-sm ring-1 ring-[#0b63f6]/20"
-                            : "border-slate-200 bg-white shadow-sm hover:border-slate-300 hover:bg-slate-50"
+                            ? "border-ui-accent/65 ring-ui-accent/20 bg-[#f7faff] shadow-sm ring-1"
+                            : "border-ui-line hover:border-ui-line-strong hover:bg-ui-canvas bg-white shadow-sm"
                         }`}
                         onClick={() => selectBlockType(option.type)}
                       >
                         <span
                           className={`flex size-8 shrink-0 items-center justify-center rounded-md shadow-sm ring-1 ring-inset ${
                             isSelected
-                              ? "bg-white text-[#0b63f6] ring-[#0b63f6]/20"
-                              : "bg-slate-50 text-slate-500 ring-slate-200"
+                              ? "text-ui-accent ring-ui-accent/20 bg-white"
+                              : "bg-ui-canvas text-ui-text-subtle ring-slate-200"
                           }`}
                           aria-hidden="true"
                         >
                           <BuilderGlyph name={option.type} />
                         </span>
                         <span className="min-w-0">
-                          <span className="block text-sm font-semibold text-slate-900">
+                          <span className="text-ui-text block text-sm font-semibold">
                             {option.label}
                           </span>
-                          <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-slate-500 sm:text-sm sm:leading-5">
+                          <span className="text-ui-text-subtle mt-0.5 line-clamp-2 block text-xs leading-5 sm:text-sm sm:leading-5">
                             {option.description}
                           </span>
                         </span>
@@ -164,10 +164,10 @@ export function BlockPicker({
                 {selectedOption && (
                   <div
                     ref={variantPanelRef}
-                    className="min-h-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-6 lg:overflow-y-auto"
+                    className="border-ui-line min-h-0 rounded-xl border bg-white p-4 sm:p-6 lg:overflow-y-auto"
                   >
                     <div className="mb-4">
-                      <h5 className="text-sm font-semibold text-slate-950 sm:text-base">
+                      <h5 className="text-ui-text text-sm font-semibold sm:text-base">
                         Choose {articleFor(selectedOption.label)}{" "}
                         {selectedOption.label.toLowerCase()} layout
                       </h5>
@@ -180,14 +180,14 @@ export function BlockPicker({
                           data-testid="block-picker-variant"
                           data-block-picker-type={selectedOption.type}
                           data-block-picker-variant={variant.id}
-                          className="overflow-hidden rounded-lg border border-slate-200 bg-white text-left shadow-sm transition-all hover:border-[#0b63f6]/50 hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                          className="border-ui-line hover:border-ui-accent/50 focus-visible:ring-ui-accent/35 overflow-hidden rounded-lg border bg-white text-left shadow-sm transition-all hover:shadow-md focus-visible:ring-2 focus-visible:outline-none"
                           onClick={() => {
                             onAddBlock(selectedOption.type, variant.id);
                             setIsOpen(false);
                           }}
                         >
                           <span
-                            className="block h-44 overflow-hidden border-b border-slate-200 bg-[#f5fbff] p-2 sm:h-52 sm:p-3"
+                            className="border-ui-line block h-44 overflow-hidden border-b bg-[#f5fbff] p-2 sm:h-52 sm:p-3"
                             aria-hidden="true"
                           >
                             <BlockVariantPreviewSkeleton
@@ -196,10 +196,10 @@ export function BlockPicker({
                             />
                           </span>
                           <span className="block px-4 py-3">
-                            <span className="block text-sm font-semibold text-slate-900">
+                            <span className="text-ui-text block text-sm font-semibold">
                               {variant.label}
                             </span>
-                            <span className="mt-1 block text-sm leading-5 text-slate-500">
+                            <span className="text-ui-text-subtle mt-1 block text-sm leading-5">
                               {variant.description}
                             </span>
                           </span>

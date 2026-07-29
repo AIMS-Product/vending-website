@@ -276,7 +276,7 @@ function SeoPagesAdminSurface({
         state={state}
         scheduleFailedCount={scheduleFailedCount}
       />
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+      <section className="border-ui-line rounded-lg border bg-white shadow-sm">
         <SeoPagesToolbar state={state} />
         <SeoPagesResults state={state} createdId={createdId} />
         <SeoPagesFooter state={state} />
@@ -296,7 +296,7 @@ function SeoPagesSummary({
 
   return (
     <section className="mb-5 space-y-3" aria-label="SEO page summary">
-      <div className="grid divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:grid-cols-4 md:divide-x md:divide-y-0">
+      <div className="divide-ui-line border-ui-line grid divide-y overflow-hidden rounded-lg border bg-white shadow-sm md:grid-cols-4 md:divide-x md:divide-y-0">
         <MetricPanel
           icon="file"
           tone="blue"
@@ -388,7 +388,7 @@ function ScheduleFailedKpi({ count }: { count: number }) {
 
 function SeoPagesToolbar({ state }: { state: SeoPagesListState }) {
   return (
-    <div className="border-b border-slate-200 bg-white p-4 sm:p-5">
+    <div className="border-ui-line border-b bg-white p-4 sm:p-5">
       <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center">
           <SeoPagesSearchForm state={state} />
@@ -409,9 +409,9 @@ function SeoPagesSearchForm({ state }: { state: SeoPagesListState }) {
     <form
       action="/admin/pages"
       method="get"
-      className="flex h-12 w-full items-center gap-3 rounded-md border border-slate-200 bg-white px-4 shadow-sm lg:w-[26rem] lg:shrink-0"
+      className="border-ui-line flex h-12 w-full items-center gap-3 rounded-md border bg-white px-4 shadow-sm lg:w-[26rem] lg:shrink-0"
     >
-      <span className="text-slate-500" aria-hidden="true">
+      <span className="text-ui-text-subtle" aria-hidden="true">
         <AdminIcon icon="search" />
       </span>
       <label className="sr-only" htmlFor="admin-pages-search">
@@ -423,7 +423,7 @@ function SeoPagesSearchForm({ state }: { state: SeoPagesListState }) {
         aria-label="Search SEO pages"
         defaultValue={searchQuery}
         placeholder="Search title, keyword, or URL"
-        className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-500"
+        className="text-ui-text placeholder:text-ui-text-subtle min-w-0 flex-1 bg-transparent text-sm outline-none"
       />
       {status !== "active" ? (
         <input type="hidden" name="status" value={status} />
@@ -443,14 +443,14 @@ function SeoPagesSearchForm({ state }: { state: SeoPagesListState }) {
             sort,
             perPage,
           })}
-          className="rounded px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+          className="text-ui-text-subtle hover:bg-ui-line hover:text-ui-text focus-visible:ring-ui-accent/35 rounded px-2 py-1 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
         >
           Clear
         </Link>
       ) : null}
       <button
         type="submit"
-        className="rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+        className="focus-visible:ring-ui-accent/35 rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 focus-visible:ring-2 focus-visible:outline-none"
       >
         Search
       </button>
@@ -463,7 +463,7 @@ function SeoPagesStatusFilters({ state }: { state: SeoPagesListState }) {
 
   return (
     <nav
-      className="inline-flex min-h-12 max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-md border border-slate-200 bg-white p-1 shadow-sm"
+      className="border-ui-line inline-flex min-h-12 max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-md border bg-white p-1 shadow-sm"
       aria-label="Page status filters"
     >
       {seoPageFilters.map((filter) => (
@@ -477,10 +477,10 @@ function SeoPagesStatusFilters({ state }: { state: SeoPagesListState }) {
             perPage,
           })}
           aria-current={status === filter.value ? "page" : undefined}
-          className={`shrink-0 rounded-md px-4 py-2 text-sm font-semibold whitespace-nowrap transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+          className={`focus-visible:ring-ui-accent/35 shrink-0 rounded-md px-4 py-2 text-sm font-semibold whitespace-nowrap transition focus-visible:ring-2 focus-visible:outline-none ${
             status === filter.value
-              ? "bg-[#f4f8ff] text-[#0b63f6] shadow-sm"
-              : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+              ? "bg-ui-accent-soft text-ui-accent shadow-sm"
+              : "text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text"
           }`}
         >
           {filter.label}
@@ -495,16 +495,16 @@ function SeoPagesSortMenu({ state }: { state: SeoPagesListState }) {
 
   return (
     <details className="group relative w-full sm:w-auto">
-      <summary className="flex h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none sm:justify-start">
+      <summary className="border-ui-line text-ui-text hover:bg-ui-canvas focus-visible:ring-ui-accent/35 flex h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-md border bg-white px-4 text-sm font-semibold shadow-sm transition focus-visible:ring-2 focus-visible:outline-none sm:justify-start">
         {seoPageSortLabels[sort]}
         <span
-          className="text-slate-500 transition group-open:rotate-180"
+          className="text-ui-text-subtle transition group-open:rotate-180"
           aria-hidden="true"
         >
           <PageChevron />
         </span>
       </summary>
-      <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+      <div className="border-ui-line absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-md border bg-white p-1 shadow-lg">
         {Object.entries(seoPageSortLabels).map(([value, label]) => (
           <Link
             key={value}
@@ -515,7 +515,7 @@ function SeoPagesSortMenu({ state }: { state: SeoPagesListState }) {
               sort: value as keyof typeof seoPageSortLabels,
               perPage,
             })}
-            className="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+            className="text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/35 block rounded-md px-3 py-2 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
             aria-current={sort === value ? "page" : undefined}
           >
             {label}
@@ -550,10 +550,10 @@ function SeoPagesWorkflowFilters({ state }: { state: SeoPagesListState }) {
             })}
             aria-current={activeView === filter.value ? "page" : undefined}
             title={filter.description}
-            className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+            className={`focus-visible:ring-ui-accent/35 shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none ${
               activeView === filter.value
-                ? "border-[#0b63f6] bg-[#f4f8ff] text-[#0b63f6]"
-                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+                ? "border-ui-accent bg-ui-accent-soft text-ui-accent"
+                : "border-ui-line text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text bg-white"
             }`}
           >
             {filter.label}
@@ -561,7 +561,7 @@ function SeoPagesWorkflowFilters({ state }: { state: SeoPagesListState }) {
         ))}
       </nav>
       {activeFilter && activeFilter.value !== "all" ? (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="text-ui-text-subtle mt-2 text-xs">
           {activeFilter.description}
         </p>
       ) : null}
@@ -573,7 +573,7 @@ function SeoPagesResultCount({ state }: { state: SeoPagesListState }) {
   const { filteredPages, status } = state;
 
   return (
-    <p className="mt-3 text-sm text-slate-600">
+    <p className="text-ui-text-muted mt-3 text-sm">
       Showing {filteredPages.length} SEO{" "}
       {filteredPages.length === 1 ? "page" : "pages"}
       {status === "active" ? " in active pages" : ""}
@@ -622,10 +622,10 @@ function SeoPagesEmptyState({ state }: { state: SeoPagesListState }) {
 
   return (
     <div className="p-10 text-center">
-      <h2 className="text-lg font-semibold text-slate-950">
+      <h2 className="text-ui-text text-lg font-semibold">
         {searchQuery ? "No matching SEO pages" : "No SEO pages found"}
       </h2>
-      <p className="mt-2 text-sm text-slate-600">
+      <p className="text-ui-text-muted mt-2 text-sm">
         {searchQuery
           ? "Clear the search or change the status tab to broaden the list."
           : "Create a new SEO page draft to start building content."}
@@ -670,7 +670,7 @@ function SeoPagesDesktopTable({
   return (
     <div className="hidden min-h-[28rem] overflow-x-auto md:block">
       <table className="w-full min-w-[880px] table-fixed border-collapse text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
+        <thead className="border-ui-line bg-ui-canvas text-ui-text-subtle border-b text-xs font-semibold uppercase">
           <tr>
             <th className="w-[44%] px-7 py-4">Title</th>
             <th className="w-[22%] px-5 py-4">Keyword</th>
@@ -679,7 +679,7 @@ function SeoPagesDesktopTable({
             <th className="w-[12%] px-5 py-4 text-right">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-200">
+        <tbody className="divide-ui-line divide-y">
           {pages.map((page) => (
             <PageRow
               key={page.id}
@@ -696,7 +696,7 @@ function SeoPagesDesktopTable({
 
 function SeoPagesFooter({ state }: { state: SeoPagesListState }) {
   return (
-    <div className="flex flex-col gap-4 border-t border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-600 lg:flex-row lg:items-center lg:justify-between">
+    <div className="border-ui-line bg-ui-canvas/60 text-ui-text-muted flex flex-col gap-4 border-t p-4 text-sm lg:flex-row lg:items-center lg:justify-between">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
         {state.totalPages > 1 ? <p>{state.resultRangeLabel}</p> : null}
         {state.showRowsPerPage ? <RowsPerPageControl state={state} /> : null}
@@ -714,9 +714,9 @@ function RowsPerPageControl({ state }: { state: SeoPagesListState }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="font-medium text-slate-500">Rows per page</span>
+      <span className="text-ui-text-subtle font-medium">Rows per page</span>
       <nav
-        className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm"
+        className="border-ui-line inline-flex items-center gap-1 rounded-md border bg-white p-1 shadow-sm"
         aria-label="Rows per page"
       >
         {seoPageSizeOptions.map((option) => (
@@ -730,10 +730,10 @@ function RowsPerPageControl({ state }: { state: SeoPagesListState }) {
               perPage: option,
             })}
             aria-current={perPage === option ? "page" : undefined}
-            className={`flex h-8 min-w-9 items-center justify-center rounded-md px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+            className={`focus-visible:ring-ui-accent/35 flex h-8 min-w-9 items-center justify-center rounded-md px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none ${
               perPage === option
-                ? "bg-[#f4f8ff] text-[#0b63f6] shadow-sm"
-                : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+                ? "bg-ui-accent-soft text-ui-accent shadow-sm"
+                : "text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text"
             }`}
           >
             {option}
@@ -773,7 +773,7 @@ function SeoPagesPagination({ state }: { state: SeoPagesListState }) {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm font-medium text-slate-500">
+      <span className="text-ui-text-subtle text-sm font-medium">
         Page {currentPage} of {totalPages}
       </span>
       <nav className="flex items-center gap-2" aria-label="Pagination">
@@ -843,7 +843,7 @@ function MetricPanel({
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-5 px-6 py-4 transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+      className={`hover:bg-ui-canvas focus-visible:ring-ui-accent/35 flex items-center gap-5 px-6 py-4 transition focus-visible:ring-2 focus-visible:outline-none ${
         active ? "bg-[#fbfdff] shadow-[inset_0_-3px_0_#0b63f6]" : ""
       }`}
     >
@@ -856,11 +856,11 @@ function MetricPanel({
         <AdminIcon icon={icon} />
       </span>
       <div>
-        <p className="text-sm font-medium text-slate-500">{label}</p>
-        <p className="mt-1 text-3xl font-semibold tracking-normal text-slate-950">
+        <p className="text-ui-text-subtle text-sm font-medium">{label}</p>
+        <p className="text-ui-text mt-1 text-3xl font-semibold tracking-normal">
           {value}
         </p>
-        <p className="text-sm text-slate-500">{caption}</p>
+        <p className="text-ui-text-subtle text-sm">{caption}</p>
       </div>
     </Link>
   );
@@ -890,7 +890,7 @@ function PageRow({
   return (
     <tr
       data-created-row={justCreated ? "true" : undefined}
-      className={`align-middle transition focus-within:bg-slate-50 hover:bg-slate-50 [&:has(details[open])]:relative [&:has(details[open])]:z-20 [&:has(details[open])]:bg-[#f8fbff] ${
+      className={`focus-within:bg-ui-canvas hover:bg-ui-canvas align-middle transition [&:has(details[open])]:relative [&:has(details[open])]:z-20 [&:has(details[open])]:bg-[#f8fbff] ${
         justCreated ? "bg-emerald-50/70" : ""
       }`}
     >
@@ -914,20 +914,20 @@ function PageRow({
                 name="ids"
                 value={page.id}
                 form="bulk-archive-form"
-                className="size-4 rounded border-slate-300 text-[#0b63f6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                className="border-ui-line-strong text-ui-accent focus-visible:ring-ui-accent/35 size-4 rounded focus-visible:ring-2 focus-visible:outline-none"
               />
             </label>
           ) : null}
           <div className="min-w-0">
             <Link
               href={`/admin/pages/${page.id}`}
-              className="block truncate font-semibold text-[#0b63f6] underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+              className="text-ui-accent focus-visible:ring-ui-accent/35 block truncate font-semibold underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:outline-none"
               title={page.title}
             >
               {page.title}
             </Link>
             <p
-              className="mt-1 max-w-[36rem] truncate font-mono text-xs text-slate-500"
+              className="text-ui-text-subtle mt-1 max-w-[36rem] truncate font-mono text-xs"
               title={page.route_path}
             >
               {page.route_path}
@@ -935,7 +935,7 @@ function PageRow({
           </div>
         </div>
       </td>
-      <td className="px-5 py-4 break-words text-slate-700">
+      <td className="text-ui-text-muted px-5 py-4 break-words">
         {page.target_keyword || "-"}
       </td>
       <td className="px-5 py-4 text-center">
@@ -988,19 +988,19 @@ function PageMobileCard({
       className={`rounded-lg border bg-white p-4 shadow-sm ${
         justCreated
           ? "border-emerald-300 ring-1 ring-emerald-200"
-          : "border-slate-200"
+          : "border-ui-line"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Link
             href={`/admin/pages/${page.id}`}
-            className="text-base font-semibold text-[#0b63f6] underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+            className="text-ui-accent focus-visible:ring-ui-accent/35 text-base font-semibold underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:outline-none"
           >
             {page.title}
           </Link>
           <p
-            className="mt-1 truncate font-mono text-xs text-slate-500"
+            className="text-ui-text-subtle mt-1 truncate font-mono text-xs"
             title={page.route_path}
           >
             {page.route_path}
@@ -1022,18 +1022,18 @@ function PageMobileCard({
         />
       </div>
 
-      <dl className="mt-4 grid gap-3 text-sm text-slate-600">
+      <dl className="text-ui-text-muted mt-4 grid gap-3 text-sm">
         <div>
-          <dt className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+          <dt className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
             Keyword
           </dt>
-          <dd className="mt-1 text-slate-800">{page.target_keyword || "-"}</dd>
+          <dd className="text-ui-text mt-1">{page.target_keyword || "-"}</dd>
         </div>
       </dl>
 
       <Link
         href={`/admin/pages/${page.id}`}
-        className="mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-md bg-[#0b63f6] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0756d6] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+        className="bg-ui-accent hover:bg-ui-accent-hover focus-visible:ring-ui-accent/35 mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-md px-4 text-sm font-semibold text-white shadow-sm transition focus-visible:ring-2 focus-visible:outline-none"
       >
         Edit page
       </Link>
@@ -1055,10 +1055,10 @@ function PageActionsMenu({
   const isArchived = page.status === "archived";
   const summaryClass =
     variant === "card"
-      ? "inline-flex size-10 cursor-pointer list-none items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition group-open:bg-[#eef5ff] group-open:text-[#0b63f6] hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
-      : "inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-md text-slate-700 transition group-open:bg-[#eef5ff] group-open:text-[#0b63f6] hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden";
+      ? "inline-flex size-10 cursor-pointer list-none items-center justify-center rounded-md border border-ui-line bg-white text-ui-text-muted shadow-sm transition group-open:bg-[#eef5ff] group-open:text-ui-accent hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-2 focus-visible:ring-ui-accent/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+      : "inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-md text-ui-text-muted transition group-open:bg-[#eef5ff] group-open:text-ui-accent hover:bg-ui-line hover:text-ui-text focus-visible:ring-2 focus-visible:ring-ui-accent/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden";
   const menuClass =
-    "absolute top-full right-0 z-30 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white p-1 text-left shadow-lg";
+    "absolute top-full right-0 z-30 mt-2 w-52 overflow-hidden rounded-md border border-ui-line bg-white p-1 text-left shadow-lg";
 
   return (
     <details className="group relative inline-block shrink-0 text-left">
@@ -1071,7 +1071,7 @@ function PageActionsMenu({
       <div className={menuClass}>
         <Link
           href={`/admin/pages/${page.id}`}
-          className="block rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+          className="text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/35 block rounded-md px-3 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
         >
           Edit page
         </Link>
@@ -1080,7 +1080,7 @@ function PageActionsMenu({
             href={page.route_path}
             target="_blank"
             rel="noreferrer"
-            className="block rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+            className="text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/35 block rounded-md px-3 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
           >
             View live page
           </Link>
@@ -1174,7 +1174,7 @@ function PaginationNumber({
     return (
       <span
         aria-current="page"
-        className="flex h-9 min-w-9 items-center justify-center rounded-md border border-[#0b63f6] bg-white px-3 font-semibold text-[#0b63f6]"
+        className="border-ui-accent text-ui-accent flex h-9 min-w-9 items-center justify-center rounded-md border bg-white px-3 font-semibold"
       >
         {pageNumber}
       </span>
@@ -1184,7 +1184,7 @@ function PaginationNumber({
   return (
     <Link
       href={href}
-      className="flex h-9 min-w-9 items-center justify-center rounded-md border border-slate-200 bg-white px-3 font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+      className="border-ui-line text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/35 flex h-9 min-w-9 items-center justify-center rounded-md border bg-white px-3 font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
     >
       {pageNumber}
     </Link>
@@ -1194,8 +1194,8 @@ function PaginationNumber({
 function metricToneClass(tone: "amber" | "blue" | "green" | "slate") {
   if (tone === "amber") return "bg-amber-100 text-amber-600";
   if (tone === "green") return "bg-emerald-100 text-emerald-600";
-  if (tone === "slate") return "bg-slate-100 text-slate-600";
-  return "bg-[#e9f1ff] text-[#0b63f6]";
+  if (tone === "slate") return "bg-ui-line text-ui-text-muted";
+  return "bg-[#e9f1ff] text-ui-accent";
 }
 
 // N7 / issue I7: a status dot paired with a visible text label so the state is
@@ -1215,7 +1215,7 @@ function StatusBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-2 text-xs font-semibold text-slate-700 ${
+      className={`text-ui-text-muted inline-flex items-center gap-2 text-xs font-semibold ${
         align === "center" ? "justify-center" : ""
       }`}
       aria-label={accessibleLabel}
@@ -1232,7 +1232,7 @@ function StatusBadge({
 function StatusLegend() {
   return (
     <div
-      className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-slate-200 bg-slate-50/60 px-4 py-3 text-xs text-slate-600 sm:px-5"
+      className="border-ui-line bg-ui-canvas/60 text-ui-text-muted flex flex-wrap items-center gap-x-5 gap-y-2 border-b px-4 py-3 text-xs sm:px-5"
       aria-label="Status and readiness legend"
     >
       <LegendGroup title="Status" entries={pageStatusLegend} />
@@ -1254,7 +1254,7 @@ function LegendGroup({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-      <span className="font-semibold tracking-wider text-slate-500 uppercase">
+      <span className="text-ui-text-subtle font-semibold tracking-wider uppercase">
         {title}
       </span>
       {entries.map((entry) => (
@@ -1265,7 +1265,7 @@ function LegendGroup({
             )}`}
             aria-hidden="true"
           />
-          <span className="font-medium text-slate-700">{entry.label}</span>
+          <span className="text-ui-text-muted font-medium">{entry.label}</span>
         </span>
       ))}
     </div>

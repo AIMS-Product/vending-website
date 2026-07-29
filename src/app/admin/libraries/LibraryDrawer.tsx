@@ -58,23 +58,22 @@ export function LibraryDrawer({
       }}
     >
       <div className="flex min-h-full items-start justify-end sm:items-stretch">
-        <div className="flex h-full w-full max-w-lg flex-col overflow-hidden border-l border-slate-200 bg-white shadow-2xl">
-          <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <div className="border-ui-line flex h-full w-full max-w-lg flex-col overflow-hidden border-l bg-white shadow-2xl">
+          <div className="border-ui-line flex shrink-0 items-start justify-between gap-4 border-b px-5 py-4">
             <div>
-              <h2
-                id={titleId}
-                className="text-base font-semibold text-slate-950"
-              >
+              <h2 id={titleId} className="text-ui-text text-base font-semibold">
                 {title}
               </h2>
               {description && (
-                <p className="mt-1 text-sm text-slate-500">{description}</p>
+                <p className="text-ui-text-subtle mt-1 text-sm">
+                  {description}
+                </p>
               )}
             </div>
             <button
               ref={closeButtonRef}
               type="button"
-              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+              className="border-ui-line text-ui-text-subtle hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/35 inline-flex size-9 shrink-0 items-center justify-center rounded-full border bg-white shadow-sm transition focus-visible:ring-2 focus-visible:outline-none"
               aria-label={`Close ${title} drawer`}
               onClick={onClose}
             >

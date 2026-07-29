@@ -18,12 +18,12 @@ export function RedirectTypeLegend({
   return (
     <div>
       {heading ? (
-        <span className="block text-xs font-medium text-slate-500">
+        <span className="text-ui-text-subtle block text-xs font-medium">
           What does each redirect type mean?
         </span>
       ) : null}
       <ul
-        className={`flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 ${
+        className={`text-ui-text-subtle flex flex-wrap gap-x-4 gap-y-1 text-xs ${
           heading ? "mt-1" : ""
         }`}
       >

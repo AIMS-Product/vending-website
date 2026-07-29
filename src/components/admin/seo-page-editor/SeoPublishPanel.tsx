@@ -35,7 +35,7 @@ import {
 // page doesn't render an active-looking blue primary button. Clicking it still
 // works — it reveals the "next required step" reason rather than submitting.
 const disabledPublishButtonClass =
-  "rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-400 shadow-none transition cursor-help";
+  "rounded-lg border border-ui-line bg-ui-line px-4 py-2 text-sm font-semibold text-ui-text-subtle shadow-none transition cursor-help";
 
 export function SeoPublishPanel({
   editor,
@@ -48,7 +48,7 @@ export function SeoPublishPanel({
     <section
       aria-labelledby="seo-panel-title"
       data-builder-walkthrough="seo"
-      className="fixed top-32 right-4 bottom-4 z-[60] order-3 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl xl:sticky xl:top-4 xl:right-auto xl:bottom-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none"
+      className="border-ui-line fixed top-32 right-4 bottom-4 z-[60] order-3 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border bg-white shadow-xl xl:sticky xl:top-4 xl:right-auto xl:bottom-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none"
     >
       <SeoPanelHeader editor={editor} />
       <PublishStatusSection
@@ -128,21 +128,21 @@ function PublishStatusSection({
   }
 
   return (
-    <div className="shrink-0 border-b border-slate-200 px-4 py-3 sm:px-5">
+    <div className="border-ui-line shrink-0 border-b px-4 py-3 sm:px-5">
       <div className="flex items-start gap-2">
         <button
           type="button"
           aria-expanded={isExpanded}
           aria-controls="publish-status-content"
-          className="flex min-w-0 flex-1 items-start justify-between gap-3 rounded-lg px-1 py-1 text-left transition hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+          className="hover:bg-ui-canvas focus-visible:ring-ui-accent/20 flex min-w-0 flex-1 items-start justify-between gap-3 rounded-lg px-1 py-1 text-left transition focus-visible:ring-4 focus-visible:outline-none"
           onClick={() => onExpandedChange(!isExpanded)}
         >
           <div className="min-w-0">
-            <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+            <span className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
               Publish status
             </span>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
+              <span className="border-ui-line text-ui-text-muted inline-flex items-center gap-1.5 rounded-full border bg-white px-2.5 py-0.5 text-xs font-semibold shadow-sm">
                 <span
                   className={`size-1.5 rounded-full ${statusDotClass}`}
                   aria-hidden="true"
@@ -229,7 +229,7 @@ function CollapseChevronIcon({ expanded }: { expanded: boolean }) {
   return (
     <svg
       aria-hidden="true"
-      className={`mt-0.5 size-4 shrink-0 text-slate-400 transition-transform ${
+      className={`text-ui-text-subtle mt-0.5 size-4 shrink-0 transition-transform ${
         expanded ? "rotate-180" : ""
       }`}
       fill="none"
@@ -246,22 +246,22 @@ function SeoPanelHeader({ editor }: { editor: SeoPageEditorController }) {
   const { publishStateLabel, seoReadiness } = editor;
 
   return (
-    <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
+    <div className="border-ui-line flex shrink-0 items-start justify-between gap-3 border-b px-5 py-4">
       <div>
-        <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+        <p className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
           SEO
         </p>
         <h2
           id="seo-panel-title"
-          className="mt-1 text-base font-semibold text-slate-950"
+          className="text-ui-text mt-1 text-base font-semibold"
         >
           Readiness and publish
         </h2>
-        <p className="mt-1 text-xs font-medium text-slate-500">
+        <p className="text-ui-text-subtle mt-1 text-xs font-medium">
           {publishStateLabel} · SEO {seoReadiness.label}
         </p>
       </div>
-      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 shadow-sm">
+      <span className="border-ui-line text-ui-text-muted rounded-full border bg-white px-2.5 py-1 text-xs font-semibold shadow-sm">
         {seoReadiness.label}
       </span>
     </div>
@@ -272,12 +272,12 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
   const { page, publishStateHelp, publishStateLabel } = editor;
 
   return (
-    <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+    <div className="border-ui-line bg-ui-canvas grid gap-3 rounded-xl border p-4">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+        <span className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
           Status
         </span>
-        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
+        <span className="border-ui-line text-ui-text-muted rounded-full border bg-white px-2.5 py-0.5 text-xs font-semibold shadow-sm">
           <span className="flex items-center gap-1.5">
             <span
               className={`size-1.5 rounded-full ${
@@ -288,7 +288,7 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
           </span>
         </span>
       </div>
-      <p className="text-xs leading-5 font-medium text-slate-500">
+      <p className="text-ui-text-subtle text-xs leading-5 font-medium">
         {publishStateHelp}
       </p>
       {/* Scheduled / failed schedule state is rendered once, in the always-
@@ -298,21 +298,21 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
           href={page.route_path}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none"
+          className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 inline-flex min-h-9 items-center justify-center rounded-lg border bg-white px-3 text-xs font-semibold shadow-sm transition focus-visible:ring-4 focus-visible:outline-none"
         >
           Open live page
         </a>
       )}
-      <dl className="grid gap-1.5 text-xs text-slate-500">
+      <dl className="text-ui-text-subtle grid gap-1.5 text-xs">
         <div className="flex items-center justify-between gap-3">
           <dt className="font-medium">Last updated</dt>
-          <dd className="font-semibold text-slate-700">
+          <dd className="text-ui-text-muted font-semibold">
             {page?.updated_at ? formatPacificDate(page.updated_at) : "—"}
           </dd>
         </div>
         <div className="flex items-center justify-between gap-3">
           <dt className="font-medium">Published</dt>
-          <dd className="font-semibold text-slate-700">
+          <dd className="text-ui-text-muted font-semibold">
             {page?.published_at
               ? formatPacificDate(page.published_at)
               : "Not yet"}
@@ -332,7 +332,7 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
   return (
     <div className="space-y-5">
       <label className="block">
-        <span className="text-sm font-semibold text-slate-900">Page title</span>
+        <span className="text-ui-text text-sm font-semibold">Page title</span>
         <input
           name="title"
           aria-label="Page title"
@@ -342,23 +342,23 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
           className={compactInputClass}
           placeholder="Internal page title and SEO fallback"
         />
-        <span className="mt-1.5 block text-xs leading-5 text-slate-500">
+        <span className="text-ui-text-subtle mt-1.5 block text-xs leading-5">
           Used for admin lists, slug generation, and as the SEO title fallback.
           The visible page headline is edited in the hero block.
         </span>
       </label>
 
       <label className="block">
-        <span className="text-sm font-semibold text-slate-900">
+        <span className="text-ui-text text-sm font-semibold">
           URL ending (slug)
         </span>
-        <div className="mt-1.5 flex items-center rounded-lg border border-slate-200 bg-white shadow-sm transition focus-within:border-[#0b63f6] focus-within:ring-4 focus-within:ring-[#0b63f6]/10">
+        <div className="border-ui-line focus-within:border-ui-accent focus-within:ring-ui-accent/10 mt-1.5 flex items-center rounded-lg border bg-white shadow-sm transition focus-within:ring-4">
           <select
             name="routePrefix"
             aria-label="Route prefix"
             value={editor.routePrefix}
             onChange={(event) => editor.setRoutePrefix(event.target.value)}
-            className="max-w-32 rounded-l-lg border-r border-slate-200 bg-slate-50 px-2 py-2.5 text-sm font-semibold text-slate-700 outline-none"
+            className="border-ui-line bg-ui-canvas text-ui-text-muted max-w-32 rounded-l-lg border-r px-2 py-2.5 text-sm font-semibold outline-none"
           >
             {editor.routePrefixOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -372,11 +372,11 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
             value={editor.visibleSlug}
             onChange={(event) => editor.updateSlugFromInput(event.target.value)}
             aria-label="URL ending (slug)"
-            className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-300"
+            className="text-ui-text min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm font-semibold outline-none placeholder:text-slate-300"
             placeholder="page-slug"
           />
         </div>
-        <span className="mt-1.5 block text-xs leading-5 text-slate-500">
+        <span className="text-ui-text-subtle mt-1.5 block text-xs leading-5">
           Lowercase letters, numbers and hyphens only. Auto-generated from the
           title until you edit it, and the full path must be unique across
           active pages.
@@ -401,7 +401,7 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
       />
 
       <label className="block">
-        <span className="text-sm font-semibold text-slate-900">
+        <span className="text-ui-text text-sm font-semibold">
           Meta description
         </span>
         <textarea
@@ -441,8 +441,8 @@ function ScheduleField({ editor }: { editor: SeoPageEditorController }) {
   );
 
   return (
-    <label className="block rounded-xl border border-slate-200 bg-slate-50 p-4">
-      <span className="text-sm font-semibold text-slate-900">
+    <label className="border-ui-line bg-ui-canvas block rounded-xl border p-4">
+      <span className="text-ui-text text-sm font-semibold">
         Schedule publish
       </span>
       <input
@@ -457,7 +457,7 @@ function ScheduleField({ editor }: { editor: SeoPageEditorController }) {
         name="scheduledPublishAtBaseline"
         value={scheduledPublishBaseline}
       />
-      <span className="mt-1.5 block text-xs leading-5 text-slate-500">
+      <span className="text-ui-text-subtle mt-1.5 block text-xs leading-5">
         Uses {SCHEDULED_PUBLISH_TIME_ZONE_LABEL} ({SCHEDULED_PUBLISH_TIME_ZONE}
         ). Leave blank unless this page should publish later. Save the draft to
         arm the schedule.
@@ -483,7 +483,7 @@ function TextInput({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-semibold text-slate-900">{label}</span>
+      <span className="text-ui-text text-sm font-semibold">{label}</span>
       <input
         name={name}
         aria-label={label}
@@ -501,14 +501,14 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
   return (
     <details
       id="advanced-seo-fields"
-      className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+      className="border-ui-line bg-ui-canvas rounded-xl border p-4"
     >
-      <summary className="cursor-pointer text-sm font-semibold text-slate-900">
+      <summary className="text-ui-text cursor-pointer text-sm font-semibold">
         Advanced SEO
       </summary>
       <div className="mt-4 space-y-4">
         <label className="block">
-          <span className="text-sm font-semibold text-slate-900">
+          <span className="text-ui-text text-sm font-semibold">
             Preferred URL
           </span>
           <input
@@ -520,13 +520,13 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
             className={compactInputClass}
             placeholder="https://..."
           />
-          <span className="mt-1.5 block text-xs leading-5 text-slate-500">
+          <span className="text-ui-text-subtle mt-1.5 block text-xs leading-5">
             Optional. Use only when this page should point search engines to a
             different preferred URL.
           </span>
         </label>
 
-        <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="border-ui-line space-y-3 rounded-lg border bg-white p-4">
           <CheckboxSetting
             checked={editor.noindex}
             id="seo-noindex-field"
@@ -549,12 +549,12 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
           />
         </div>
 
-        <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="border-ui-line space-y-3 rounded-lg border bg-white p-4">
           <div>
-            <p className="text-sm font-semibold text-slate-900">
+            <p className="text-ui-text text-sm font-semibold">
               Structured data
             </p>
-            <p className="mt-0.5 text-xs leading-5 font-normal text-slate-500">
+            <p className="text-ui-text-subtle mt-0.5 text-xs leading-5 font-normal">
               Control the search metadata generated from this published page.
             </p>
           </div>
@@ -585,17 +585,17 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
 function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
   const page = editor.page;
   return (
-    <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+    <div className="border-ui-line space-y-4 rounded-lg border bg-white p-4">
       <div>
-        <p className="text-sm font-semibold text-slate-900">
+        <p className="text-ui-text text-sm font-semibold">
           Internal &amp; social
         </p>
-        <p className="mt-0.5 text-xs leading-5 text-slate-500">
+        <p className="text-ui-text-subtle mt-0.5 text-xs leading-5">
           Internal tags, review timing, and how this page looks when shared.
         </p>
       </div>
       <label className="block">
-        <span className="text-sm font-semibold text-slate-900">
+        <span className="text-ui-text text-sm font-semibold">
           Internal tags
         </span>
         <input
@@ -608,7 +608,7 @@ function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
       </label>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
-          <span className="text-sm font-semibold text-slate-900">
+          <span className="text-ui-text text-sm font-semibold">
             Topic cluster
           </span>
           <input
@@ -619,7 +619,7 @@ function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
           />
         </label>
         <label className="block">
-          <span className="text-sm font-semibold text-slate-900">Campaign</span>
+          <span className="text-ui-text text-sm font-semibold">Campaign</span>
           <input
             name="campaignLabel"
             aria-label="Campaign"
@@ -630,7 +630,7 @@ function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
-          <span className="text-sm font-semibold text-slate-900">
+          <span className="text-ui-text text-sm font-semibold">
             Funnel stage
           </span>
           <input
@@ -641,9 +641,7 @@ function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
           />
         </label>
         <label className="block">
-          <span className="text-sm font-semibold text-slate-900">
-            Lifecycle
-          </span>
+          <span className="text-ui-text text-sm font-semibold">Lifecycle</span>
           <select
             name="lifecycleStatus"
             aria-label="Lifecycle"
@@ -659,7 +657,7 @@ function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
-          <span className="text-sm font-semibold text-slate-900">
+          <span className="text-ui-text text-sm font-semibold">
             Review period
           </span>
           <select
@@ -676,7 +674,7 @@ function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
           </select>
         </label>
         <label className="block">
-          <span className="text-sm font-semibold text-slate-900">
+          <span className="text-ui-text text-sm font-semibold">
             Next review
           </span>
           <input
@@ -689,9 +687,7 @@ function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
         </label>
       </div>
       <label className="block">
-        <span className="text-sm font-semibold text-slate-900">
-          Social title
-        </span>
+        <span className="text-ui-text text-sm font-semibold">Social title</span>
         <input
           name="ogTitle"
           aria-label="Social title"
@@ -701,7 +697,7 @@ function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
         />
       </label>
       <label className="block">
-        <span className="text-sm font-semibold text-slate-900">
+        <span className="text-ui-text text-sm font-semibold">
           Social description
         </span>
         <textarea
@@ -735,7 +731,7 @@ function CheckboxSetting({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-slate-700">
+    <label className="text-ui-text-muted flex cursor-pointer items-start gap-3 text-sm font-medium">
       <input
         name={name}
         aria-label={label}
@@ -744,11 +740,11 @@ function CheckboxSetting({
         checked={checked}
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 size-4 rounded border-slate-300 text-[#0b63f6] focus:ring-[#0b63f6] disabled:opacity-50"
+        className="border-ui-line-strong text-ui-accent focus:ring-ui-accent mt-1 size-4 rounded disabled:opacity-50"
       />
       <div className={disabled ? "opacity-50" : ""}>
-        <span className="block text-slate-900">{label}</span>
-        <span className="mt-0.5 block text-xs font-normal text-slate-500">
+        <span className="text-ui-text block">{label}</span>
+        <span className="text-ui-text-subtle mt-0.5 block text-xs font-normal">
           {help}
         </span>
       </div>
@@ -758,7 +754,7 @@ function CheckboxSetting({
 
 function SearchPreviewCard({ editor }: { editor: SeoPageEditorController }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
+    <div className="border-ui-line rounded-xl border bg-white p-5 shadow-sm ring-1 ring-black/5">
       <div className="mb-4 flex items-center gap-2">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -770,12 +766,12 @@ function SearchPreviewCard({ editor }: { editor: SeoPageEditorController }) {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-[#0b63f6]"
+          className="text-ui-accent"
         >
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.3-4.3" />
         </svg>
-        <h3 className="text-sm font-semibold text-slate-900">Search Preview</h3>
+        <h3 className="text-ui-text text-sm font-semibold">Search Preview</h3>
       </div>
       <div className="space-y-1">
         <p className="cursor-pointer truncate text-lg font-medium text-[#1a0dab] hover:underline">

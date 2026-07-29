@@ -74,7 +74,7 @@ export function ProofItemDrawerContent({
         </div>
         <TextInput name="sourceRightsNotes" label="Source and rights notes" />
         <ProofItemMediaField assets={editorMediaAssets} />
-        <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+        <label className="text-ui-text-muted inline-flex items-center gap-2 text-sm font-medium">
           <input
             name="approved"
             type="checkbox"

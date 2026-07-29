@@ -92,11 +92,11 @@ export function RichTextBodyEditor({
         return (
           <div
             key={`${index}-${kind}`}
-            className="rounded-lg border border-slate-200 bg-white/80 p-3 shadow-sm"
+            className="border-ui-line rounded-lg border bg-white/80 p-3 shadow-sm"
           >
             {node.type === "list" ? (
               <label className="block">
-                <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                <span className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
                   List items
                 </span>
                 <AutoResizeTextarea
@@ -116,7 +116,7 @@ export function RichTextBodyEditor({
             ) : (
               <>
                 <label className="block">
-                  <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                  <span className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
                     {node.type === "heading" ? "Heading" : "Paragraph"}
                   </span>
                   <AutoResizeTextarea
@@ -141,11 +141,11 @@ export function RichTextBodyEditor({
               </>
             )}
 
-            <details className="mt-3 rounded-lg border border-slate-200 bg-slate-50/70">
-              <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold tracking-wider text-slate-500 uppercase transition hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/25 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
+            <details className="border-ui-line bg-ui-canvas/70 mt-3 rounded-lg border">
+              <summary className="text-ui-text-subtle hover:text-ui-text focus-visible:ring-ui-accent/25 cursor-pointer list-none px-3 py-2 text-xs font-semibold tracking-wider uppercase transition focus-visible:ring-2 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
                 Text options
               </summary>
-              <div className="space-y-3 border-t border-slate-200 p-3">
+              <div className="border-ui-line space-y-3 border-t p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <label className="min-w-44 flex-1">
                     <span className="sr-only">Text block {index + 1} type</span>
@@ -261,7 +261,7 @@ function ParagraphLinkControls({
   return (
     <div className="space-y-2">
       <label className="block">
-        <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+        <span className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
           Manual link
         </span>
         <input
@@ -276,12 +276,12 @@ function ParagraphLinkControls({
           }}
           className={compactInputClass}
         />
-        <span className="mt-1 block text-xs text-slate-500">
+        <span className="text-ui-text-subtle mt-1 block text-xs">
           Use a root-relative path or an http(s) URL.
         </span>
       </label>
       <label className="block">
-        <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+        <span className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
           Link text
         </span>
         <input
@@ -312,7 +312,7 @@ function ParagraphLinkControls({
             {linkTextError}
           </span>
         ) : (
-          <span className="mt-1 block text-xs text-slate-500">
+          <span className="text-ui-text-subtle mt-1 block text-xs">
             Leave blank to link the whole paragraph.
           </span>
         )}

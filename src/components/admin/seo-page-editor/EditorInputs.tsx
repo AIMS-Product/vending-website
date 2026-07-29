@@ -49,7 +49,7 @@ export function TextInput({
   return (
     <label className="block">
       {hideLabel ? null : (
-        <span className="text-sm font-medium text-slate-700">{label}</span>
+        <span className="text-ui-text-muted text-sm font-medium">{label}</span>
       )}
       <input
         aria-label={label}
@@ -89,7 +89,7 @@ export function TextAreaInput({
   return (
     <label className="block">
       {hideLabel ? null : (
-        <span className="text-sm font-medium text-slate-700">{label}</span>
+        <span className="text-ui-text-muted text-sm font-medium">{label}</span>
       )}
       <textarea
         ref={textareaRef}

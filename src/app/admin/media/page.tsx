@@ -109,15 +109,15 @@ export default async function AdminMediaPage({
         </Link>
       }
     >
-      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-4 py-4 sm:px-5">
+      <section className="border-ui-line overflow-hidden rounded-lg border bg-white shadow-sm">
+        <div className="border-ui-line border-b px-4 py-4 sm:px-5">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <form
               action="/admin/media"
               method="get"
-              className="flex h-10 min-w-0 flex-1 items-center gap-2 border-b border-slate-200 pb-3 lg:border-r lg:border-b-0 lg:pr-4 lg:pb-0"
+              className="border-ui-line flex h-10 min-w-0 flex-1 items-center gap-2 border-b pb-3 lg:border-r lg:border-b-0 lg:pr-4 lg:pb-0"
             >
-              <span className="text-slate-400" aria-hidden="true">
+              <span className="text-ui-text-subtle" aria-hidden="true">
                 <AdminIcon icon="search" />
               </span>
               <label className="sr-only" htmlFor="admin-media-search">
@@ -129,7 +129,7 @@ export default async function AdminMediaPage({
                 aria-label="Search media assets"
                 defaultValue={searchQuery}
                 placeholder="Search title or tag"
-                className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400"
+                className="text-ui-text placeholder:text-ui-text-subtle min-w-0 flex-1 bg-transparent text-sm outline-none"
               />
               <MediaSearchHiddenFields
                 typeFilter={typeFilter}
@@ -148,17 +148,17 @@ export default async function AdminMediaPage({
             <div className="flex shrink-0 flex-wrap items-center gap-2 lg:pl-1">
               <MediaUploadActions />
               <nav
-                className="inline-flex h-10 items-center rounded-md bg-slate-100 p-0.5"
+                className="bg-ui-line inline-flex h-10 items-center rounded-md p-0.5"
                 aria-label="View mode"
               >
                 <Link
                   href={adminMediaHref({ ...filterContext, view: "grid" })}
                   aria-current={view === "grid" ? "page" : undefined}
                   aria-label="Grid view"
-                  className={`inline-flex size-9 items-center justify-center rounded-md transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+                  className={`focus-visible:ring-ui-accent/35 inline-flex size-9 items-center justify-center rounded-md transition focus-visible:ring-2 focus-visible:outline-none ${
                     view === "grid"
-                      ? "bg-white text-[#0b63f6] shadow-sm"
-                      : "text-slate-500 hover:text-slate-950"
+                      ? "text-ui-accent bg-white shadow-sm"
+                      : "text-ui-text-subtle hover:text-ui-text"
                   }`}
                 >
                   <AdminIcon icon="image" />
@@ -167,21 +167,21 @@ export default async function AdminMediaPage({
                   href={adminMediaHref({ ...filterContext, view: "list" })}
                   aria-current={view === "list" ? "page" : undefined}
                   aria-label="List view"
-                  className={`inline-flex size-9 items-center justify-center rounded-md transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+                  className={`focus-visible:ring-ui-accent/35 inline-flex size-9 items-center justify-center rounded-md transition focus-visible:ring-2 focus-visible:outline-none ${
                     view === "list"
-                      ? "bg-white text-[#0b63f6] shadow-sm"
-                      : "text-slate-500 hover:text-slate-950"
+                      ? "text-ui-accent bg-white shadow-sm"
+                      : "text-ui-text-subtle hover:text-ui-text"
                   }`}
                 >
                   <AdminIcon icon="list" />
                 </Link>
               </nav>
               <details className="group relative">
-                <summary className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-md px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none">
+                <summary className="text-ui-text-muted hover:bg-ui-canvas focus-visible:ring-ui-accent/35 flex h-10 cursor-pointer list-none items-center gap-2 rounded-md px-3 text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none">
                   {mediaSortLabels[sort]}
                   <SortChevron />
                 </summary>
-                <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+                <div className="border-ui-line absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-md border bg-white p-1 shadow-lg">
                   {Object.entries(mediaSortLabels).map(([value, label]) => (
                     <Link
                       key={value}
@@ -189,7 +189,7 @@ export default async function AdminMediaPage({
                         ...filterContext,
                         sort: value as SortKey,
                       })}
-                      className="block rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-950"
+                      className="text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text block rounded-md px-3 py-2 text-sm"
                       aria-current={sort === value ? "page" : undefined}
                     >
                       {label}
@@ -223,14 +223,14 @@ export default async function AdminMediaPage({
                       ? "page"
                       : undefined
                   }
-                  className={`inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+                  className={`focus-visible:ring-ui-accent/35 inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 transition focus-visible:ring-2 focus-visible:outline-none ${
                     collection === item.value && sourceFilter === "all"
-                      ? "font-semibold text-[#0b63f6]"
-                      : "text-slate-600 hover:text-slate-950"
+                      ? "text-ui-accent font-semibold"
+                      : "text-ui-text-muted hover:text-ui-text"
                   }`}
                 >
                   {item.label}
-                  <span className="text-xs font-medium text-slate-400">
+                  <span className="text-ui-text-subtle text-xs font-medium">
                     {collectionCounts[item.value]}
                   </span>
                 </Link>
@@ -251,14 +251,14 @@ export default async function AdminMediaPage({
                   ? "page"
                   : undefined
               }
-              className={`inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+              className={`focus-visible:ring-ui-accent/35 inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 transition focus-visible:ring-2 focus-visible:outline-none ${
                 sourceFilter === "stored" && collection === "all"
-                  ? "font-semibold text-[#0b63f6]"
-                  : "text-slate-600 hover:text-slate-950"
+                  ? "text-ui-accent font-semibold"
+                  : "text-ui-text-muted hover:text-ui-text"
               }`}
             >
               Stored
-              <span className="text-xs font-medium text-slate-400">
+              <span className="text-ui-text-subtle text-xs font-medium">
                 {assetCounts.stored}
               </span>
             </Link>
@@ -266,7 +266,7 @@ export default async function AdminMediaPage({
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="mr-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              <span className="text-ui-text-subtle mr-1 text-xs font-semibold tracking-wide uppercase">
                 Type
               </span>
               {mediaTypeFilters.map((filter) => (
@@ -279,10 +279,10 @@ export default async function AdminMediaPage({
                   aria-current={
                     typeFilter === filter.value ? "page" : undefined
                   }
-                  className={`rounded-full px-2.5 py-1 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+                  className={`focus-visible:ring-ui-accent/35 rounded-full px-2.5 py-1 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none ${
                     typeFilter === filter.value
                       ? "bg-slate-900 text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-950"
+                      : "bg-ui-line text-ui-text-muted hover:text-ui-text hover:bg-slate-200"
                   }`}
                 >
                   {filter.label}
@@ -291,11 +291,11 @@ export default async function AdminMediaPage({
             </div>
 
             <details className="group relative">
-              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none">
+              <summary className="bg-ui-line text-ui-text-muted hover:text-ui-text focus-visible:ring-ui-accent/35 flex cursor-pointer list-none items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold transition hover:bg-slate-200 focus-visible:ring-2 focus-visible:outline-none">
                 Purpose: {activePurpose?.label ?? "All"}
                 <SortChevron />
               </summary>
-              <div className="absolute left-0 z-20 mt-2 w-48 overflow-hidden rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+              <div className="border-ui-line absolute left-0 z-20 mt-2 w-48 overflow-hidden rounded-md border bg-white p-1 shadow-lg">
                 <Link
                   href={adminMediaHref({
                     ...filterContext,
@@ -303,7 +303,7 @@ export default async function AdminMediaPage({
                       ? "all"
                       : collection,
                   })}
-                  className="block rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                  className="text-ui-text-muted hover:bg-ui-canvas block rounded-md px-3 py-2 text-sm"
                   aria-current={!activePurpose ? "page" : undefined}
                 >
                   All purposes
@@ -317,13 +317,13 @@ export default async function AdminMediaPage({
                       source: "all",
                       tag: "",
                     })}
-                    className="flex items-center justify-between rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    className="text-ui-text-muted hover:bg-ui-canvas flex items-center justify-between rounded-md px-3 py-2 text-sm"
                     aria-current={
                       collection === item.value ? "page" : undefined
                     }
                   >
                     {item.label}
-                    <span className="text-xs text-slate-400">
+                    <span className="text-ui-text-subtle text-xs">
                       {collectionCounts[item.value]}
                     </span>
                   </Link>
@@ -332,11 +332,11 @@ export default async function AdminMediaPage({
             </details>
 
             <details className="group relative">
-              <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-semibold text-slate-500 transition hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none">
+              <summary className="text-ui-text-subtle hover:text-ui-text focus-visible:ring-ui-accent/35 flex cursor-pointer list-none items-center gap-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none">
                 More filters
                 <SortChevron />
               </summary>
-              <div className="absolute left-0 z-20 mt-2 w-44 overflow-hidden rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+              <div className="border-ui-line absolute left-0 z-20 mt-2 w-44 overflow-hidden rounded-md border bg-white p-1 shadow-lg">
                 {mediaSourceFilters.map((filter) => (
                   <Link
                     key={filter.value}
@@ -346,7 +346,7 @@ export default async function AdminMediaPage({
                       collection: "all",
                       tag: "",
                     })}
-                    className="block rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    className="text-ui-text-muted hover:bg-ui-canvas block rounded-md px-3 py-2 text-sm"
                     aria-current={
                       sourceFilter === filter.value ? "page" : undefined
                     }
@@ -366,7 +366,7 @@ export default async function AdminMediaPage({
                     <Link
                       key={chip.key}
                       href={chip.href}
-                      className="inline-flex items-center gap-1 rounded-full bg-[#eef4ff] px-2.5 py-1 text-xs font-semibold text-[#0b63f6] transition hover:bg-[#dceaff] focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+                      className="text-ui-accent focus-visible:ring-ui-accent/35 inline-flex items-center gap-1 rounded-full bg-[#eef4ff] px-2.5 py-1 text-xs font-semibold transition hover:bg-[#dceaff] focus-visible:ring-2 focus-visible:outline-none"
                     >
                       {chip.label}
                       <span aria-hidden="true">×</span>
@@ -374,17 +374,17 @@ export default async function AdminMediaPage({
                   ))}
                   <Link
                     href="/admin/media"
-                    className="text-xs font-semibold text-slate-500 transition hover:text-slate-950"
+                    className="text-ui-text-subtle hover:text-ui-text text-xs font-semibold transition"
                   >
                     Clear all
                   </Link>
                 </>
               ) : (
-                <p className="text-sm text-slate-500">{resultLabel}</p>
+                <p className="text-ui-text-subtle text-sm">{resultLabel}</p>
               )}
             </div>
             {activeFilterChips.length > 0 ? (
-              <p className="text-sm text-slate-500">{resultLabel}</p>
+              <p className="text-ui-text-subtle text-sm">{resultLabel}</p>
             ) : null}
           </div>
 
@@ -393,7 +393,7 @@ export default async function AdminMediaPage({
               className="mt-3 flex flex-wrap gap-1.5 border-t border-slate-100 pt-3"
               aria-label="Filter by tag"
             >
-              <span className="mr-1 self-center text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              <span className="text-ui-text-subtle mr-1 self-center text-xs font-semibold tracking-wide uppercase">
                 Tags
               </span>
               {allTags.map((tag) => (
@@ -404,10 +404,10 @@ export default async function AdminMediaPage({
                     tag: tagFilter === tag ? "" : tag,
                   })}
                   aria-current={tagFilter === tag ? "page" : undefined}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+                  className={`focus-visible:ring-ui-accent/35 rounded-full px-2.5 py-1 text-xs font-medium transition focus-visible:ring-2 focus-visible:outline-none ${
                     tagFilter === tag
                       ? "bg-slate-900 text-white"
-                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-950"
+                      : "text-ui-text-subtle hover:bg-ui-line hover:text-ui-text"
                   }`}
                 >
                   {tag}
@@ -419,12 +419,12 @@ export default async function AdminMediaPage({
 
         {visibleAssets.length === 0 ? (
           <div className="p-10 text-center">
-            <h2 className="text-lg font-semibold text-slate-950">
+            <h2 className="text-ui-text text-lg font-semibold">
               {hasActiveFilters
                 ? "No matching media assets"
                 : "No media assets yet"}
             </h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="text-ui-text-muted mt-2 text-sm">
               {hasActiveFilters
                 ? "Clear filters or upload a new asset to broaden the list."
                 : "Upload your first image or link an external video to start building the library."}
@@ -448,15 +448,15 @@ export default async function AdminMediaPage({
               usageCounts={usageIndex}
               view={view}
             />
-            <div className="border-t border-slate-200 px-5 py-4 sm:flex sm:items-center sm:justify-between">
+            <div className="border-ui-line border-t px-5 py-4 sm:flex sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-4">
                 {showRowsPerPage ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-slate-500">
+                    <span className="text-ui-text-subtle text-sm font-medium">
                       Rows
                     </span>
                     <nav
-                      className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1"
+                      className="border-ui-line inline-flex items-center gap-1 rounded-md border bg-white p-1"
                       aria-label="Rows per page"
                     >
                       {mediaPageSizeOptions.map((option) => (
@@ -469,10 +469,10 @@ export default async function AdminMediaPage({
                           aria-current={
                             pageSize === option ? "page" : undefined
                           }
-                          className={`flex h-8 min-w-9 items-center justify-center rounded-md px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none ${
+                          className={`focus-visible:ring-ui-accent/35 flex h-8 min-w-9 items-center justify-center rounded-md px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none ${
                             pageSize === option
-                              ? "bg-[#f4f8ff] text-[#0b63f6] shadow-sm"
-                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+                              ? "bg-ui-accent-soft text-ui-accent shadow-sm"
+                              : "text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text"
                           }`}
                         >
                           {option}
@@ -484,7 +484,7 @@ export default async function AdminMediaPage({
               </div>
               {totalPages > 1 ? (
                 <div className="mt-4 flex items-center gap-3 sm:mt-0">
-                  <span className="text-sm font-medium text-slate-500">
+                  <span className="text-ui-text-subtle text-sm font-medium">
                     Page {currentPage} of {totalPages}
                   </span>
                   <nav
@@ -600,7 +600,7 @@ function PaginationNumber({
     return (
       <span
         aria-current="page"
-        className="flex h-9 min-w-9 items-center justify-center rounded-md border border-[#0b63f6] bg-white px-3 font-semibold text-[#0b63f6]"
+        className="border-ui-accent text-ui-accent flex h-9 min-w-9 items-center justify-center rounded-md border bg-white px-3 font-semibold"
       >
         {pageNumber}
       </span>
@@ -610,7 +610,7 @@ function PaginationNumber({
   return (
     <Link
       href={href}
-      className="flex h-9 min-w-9 items-center justify-center rounded-md border border-slate-200 bg-white px-3 font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-[#0b63f6]/35 focus-visible:outline-none"
+      className="border-ui-line text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/35 flex h-9 min-w-9 items-center justify-center rounded-md border bg-white px-3 font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
     >
       {pageNumber}
     </Link>

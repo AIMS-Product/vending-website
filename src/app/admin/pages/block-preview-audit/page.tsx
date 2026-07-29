@@ -51,32 +51,32 @@ export default async function BlockPreviewAuditPage() {
                 data-parity-markers={JSON.stringify(
                   getBlockPreviewParityMarkers(previewCase.block),
                 )}
-                className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+                className="border-ui-line min-w-0 overflow-hidden rounded-lg border bg-white shadow-sm"
               >
-                <header className="flex min-w-0 flex-col gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <header className="border-ui-line bg-ui-canvas flex min-w-0 flex-col gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                    <p className="text-ui-text-subtle text-xs font-semibold tracking-wide uppercase">
                       {previewCase.blockLabel}
                     </p>
-                    <h2 className="text-base font-semibold text-slate-950">
+                    <h2 className="text-ui-text text-base font-semibold">
                       {previewCase.variantLabel}
                     </h2>
                   </div>
-                  <p className="max-w-xl min-w-0 text-sm text-slate-500">
+                  <p className="text-ui-text-subtle max-w-xl min-w-0 text-sm">
                     {previewCase.description}
                   </p>
                 </header>
 
                 <div className="grid max-w-full min-w-0 gap-0 overflow-hidden xl:grid-cols-[360px_minmax(0,1fr)]">
                   <div
-                    className="min-w-0 border-b border-slate-200 p-4 xl:border-r xl:border-b-0"
+                    className="border-ui-line min-w-0 border-b p-4 xl:border-r xl:border-b-0"
                     data-testid="picker-preview"
                   >
-                    <p className="mb-3 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                    <p className="text-ui-text-subtle mb-3 text-xs font-semibold tracking-wide uppercase">
                       Picker preview
                     </p>
                     <div
-                      className="h-48 max-w-full overflow-hidden rounded-lg border border-slate-200 bg-white p-4"
+                      className="border-ui-line h-48 max-w-full overflow-hidden rounded-lg border bg-white p-4"
                       aria-hidden="true"
                       inert
                     >
@@ -88,7 +88,7 @@ export default async function BlockPreviewAuditPage() {
                   </div>
 
                   <div className="min-w-0 p-4" data-testid="actual-render">
-                    <p className="mb-3 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                    <p className="text-ui-text-subtle mb-3 text-xs font-semibold tracking-wide uppercase">
                       Actual resource render
                     </p>
                     <div

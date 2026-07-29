@@ -66,12 +66,12 @@ export function MediaUploadActions() {
         {menuOpen ? (
           <div
             role="menu"
-            className="absolute top-full right-0 z-30 mt-2 w-44 overflow-hidden rounded-md border border-slate-200 bg-white p-1 shadow-lg"
+            className="border-ui-line absolute top-full right-0 z-30 mt-2 w-44 overflow-hidden rounded-md border bg-white p-1 shadow-lg"
           >
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950"
+              className="text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium"
               onClick={() => {
                 setMenuOpen(false);
                 setUploadOpen(true);
@@ -83,7 +83,7 @@ export function MediaUploadActions() {
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950"
+              className="text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium"
               onClick={() => {
                 setMenuOpen(false);
                 setBulkUploadOpen(true);

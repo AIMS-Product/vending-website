@@ -214,10 +214,10 @@ export function AdminLeadsManager({
           </div>
         ) : (
           <div className="px-5 py-10 text-center">
-            <h2 className="text-lg font-semibold text-slate-950">
+            <h2 className="text-ui-text text-lg font-semibold">
               No leads match these filters
             </h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="text-ui-text-muted mt-2 text-sm">
               Change lifecycle or Close sync filters to review captured leads.
             </p>
           </div>
@@ -237,12 +237,12 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
         <section className={adminCardClass}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-950">
+              <h2 className="text-ui-text text-lg font-semibold">
                 {lead.fullName}
               </h2>
-              <p className="mt-1 text-sm text-slate-600">{lead.email}</p>
+              <p className="text-ui-text-muted mt-1 text-sm">{lead.email}</p>
               {lead.phone ? (
-                <p className="mt-1 text-sm text-slate-600">{lead.phone}</p>
+                <p className="text-ui-text-muted mt-1 text-sm">{lead.phone}</p>
               ) : null}
             </div>
             <div className="flex flex-col items-start gap-3 sm:items-end">
@@ -264,7 +264,7 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
         </section>
 
         <section className={adminCardClass}>
-          <h2 className="text-base font-semibold text-slate-950">
+          <h2 className="text-ui-text text-base font-semibold">
             Qualification answers
           </h2>
           <div className="mt-4 grid gap-3">
@@ -272,19 +272,19 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
               lead.answers.map((answer) => (
                 <div
                   key={answer.id}
-                  className="rounded-lg border border-slate-200 p-3"
+                  className="border-ui-line rounded-lg border p-3"
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h3 className="text-sm font-semibold text-slate-950">
+                      <h3 className="text-ui-text text-sm font-semibold">
                         {answer.questionLabel}
                       </h3>
-                      <p className="mt-1 text-sm text-slate-700">
+                      <p className="text-ui-text-muted mt-1 text-sm">
                         {answer.displayValue}
                       </p>
                     </div>
                     {answer.normalizedRole ? (
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                      <span className="bg-ui-line text-ui-text-muted rounded-full px-2.5 py-1 text-xs font-semibold">
                         {formatStatus(answer.normalizedRole)}
                       </span>
                     ) : null}
@@ -292,7 +292,7 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-600">
+              <p className="text-ui-text-muted text-sm">
                 No qualification answers have been saved yet.
               </p>
             )}
@@ -300,18 +300,18 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
         </section>
 
         <section className={adminCardClass}>
-          <h2 className="text-base font-semibold text-slate-950">
+          <h2 className="text-ui-text text-base font-semibold">
             Qualification sessions
           </h2>
           <div className="mt-4 grid gap-3">
             {lead.sessions.map((session) => (
               <div
                 key={session.id}
-                className="rounded-lg border border-slate-200 p-3"
+                className="border-ui-line rounded-lg border p-3"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <AdminStatusBadge status={session.status} />
-                  <span className="text-xs font-semibold text-slate-500">
+                  <span className="text-ui-text-subtle text-xs font-semibold">
                     {session.answerCount} answers
                   </span>
                 </div>
@@ -344,8 +344,8 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
           NewsEditorForm.landmarks.test.ts precedent). */}
       <div className="grid content-start gap-5">
         <section className={adminCardClass}>
-          <h2 className="text-sm font-semibold text-slate-950">Close sync</h2>
-          <p className="mt-2 text-sm text-slate-600">
+          <h2 className="text-ui-text text-sm font-semibold">Close sync</h2>
+          <p className="text-ui-text-muted mt-2 text-sm">
             Failed and review-needed events can be queued for the retry runner.
           </p>
           <div className="mt-4 grid gap-3">
@@ -358,7 +358,7 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
                 />
               ))
             ) : (
-              <p className="text-sm text-slate-600">
+              <p className="text-ui-text-muted text-sm">
                 No Close sync events are attached to this lead.
               </p>
             )}
@@ -366,9 +366,7 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
         </section>
 
         <section className={adminCardClass}>
-          <h2 className="text-sm font-semibold text-slate-950">
-            Source details
-          </h2>
+          <h2 className="text-ui-text text-sm font-semibold">Source details</h2>
           <dl className="mt-4 grid gap-3 text-sm">
             <DetailMetric label="VP session" value={lead.vpSessionId} />
             <DetailMetric label="First landing" value={lead.firstLandingPath} />
@@ -386,7 +384,7 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
           {/* I6(b): ad-tech acronyms grouped under a plain-language heading,
               each with a marketer-facing label first and the raw technical
               term shown secondary (e.g. "Campaign source (utm_source)"). */}
-          <h3 className="mt-6 border-t border-slate-200 pt-4 text-sm font-semibold text-slate-950">
+          <h3 className="border-ui-line text-ui-text mt-6 border-t pt-4 text-sm font-semibold">
             Where this lead came from
           </h3>
           <dl className="mt-4 grid gap-3 text-sm">
@@ -517,13 +515,13 @@ function CloseSyncEventCard({
   leadId: string;
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 p-3">
+    <div className="border-ui-line rounded-lg border p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold text-slate-950">
+          <p className="text-ui-text text-sm font-semibold">
             {formatStatus(event.eventType)}
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="text-ui-text-subtle mt-1 text-xs">
             Next retry {formatDate(event.nextRetryAt) ?? "not scheduled"}
           </p>
         </div>
@@ -701,15 +699,15 @@ function DetailMetric({
 }) {
   return (
     <div>
-      <dt className="text-xs font-semibold text-slate-500 uppercase">
+      <dt className="text-ui-text-subtle text-xs font-semibold uppercase">
         {label}
         {technicalTerm ? (
-          <span className="ml-1 font-normal text-slate-400 normal-case">
+          <span className="text-ui-text-subtle ml-1 font-normal normal-case">
             ({technicalTerm})
           </span>
         ) : null}
       </dt>
-      <dd className="mt-1 text-sm font-medium break-words text-slate-800">
+      <dd className="text-ui-text mt-1 text-sm font-medium break-words">
         {value || "None"}
       </dd>
     </div>
@@ -723,7 +721,7 @@ function SummaryList({ summary }: { summary: unknown }) {
   const entries = Object.entries(summary).filter(([, value]) => value != null);
   if (!entries.length) return null;
   return (
-    <dl className="mt-3 grid gap-2 border-t border-slate-200 pt-3 text-sm sm:grid-cols-2">
+    <dl className="border-ui-line mt-3 grid gap-2 border-t pt-3 text-sm sm:grid-cols-2">
       {entries.map(([key, value]) => (
         <DetailMetric
           key={key}

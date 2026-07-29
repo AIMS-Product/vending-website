@@ -66,13 +66,13 @@ export function QualificationFormsManager({
       </AdminMetricStrip>
 
       <section className={adminPanelClass}>
-        <div className="border-b border-slate-200 p-4">
+        <div className="border-ui-line border-b p-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
             <div className="shrink-0 lg:max-w-sm">
-              <h2 className="text-base font-semibold text-slate-950">
+              <h2 className="text-ui-text text-base font-semibold">
                 Create form
               </h2>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="text-ui-text-muted mt-1 text-sm">
                 Start a draft for the post-submit qualification flow.
               </p>
             </div>
@@ -82,17 +82,17 @@ export function QualificationFormsManager({
 
         {forms.length === 0 ? (
           <div className="px-5 py-10 text-center">
-            <h2 className="text-lg font-semibold text-slate-950">
+            <h2 className="text-ui-text text-lg font-semibold">
               No qualification forms yet
             </h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="text-ui-text-muted mt-2 text-sm">
               Create the first draft before attaching a form to a lead block.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] divide-y divide-slate-200 text-left text-sm">
-              <thead className="bg-slate-50 text-xs font-semibold tracking-normal text-slate-500 uppercase">
+            <table className="divide-ui-line w-full min-w-[760px] divide-y text-left text-sm">
+              <thead className="bg-ui-canvas text-ui-text-subtle text-xs font-semibold tracking-normal uppercase">
                 <tr>
                   <th scope="col" className="px-5 py-3">
                     Form
@@ -111,7 +111,7 @@ export function QualificationFormsManager({
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 bg-white">
+              <tbody className="divide-ui-line divide-y bg-white">
                 {forms.map((form) => (
                   <QualificationFormRow key={form.id} form={form} />
                 ))}
@@ -146,7 +146,7 @@ function CreateForm() {
           required
           defaultValue={submittedName}
           placeholder="Investor qualification"
-          className="h-11 w-full min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15"
+          className="border-ui-line text-ui-text placeholder:text-ui-text-subtle focus:border-ui-accent focus:ring-ui-accent/15 h-11 w-full min-w-0 rounded-md border bg-white px-3 text-sm shadow-sm transition outline-none focus:ring-2"
         />
         <CreateSubmitButton />
       </div>
@@ -180,25 +180,29 @@ function QualificationFormRow({ form }: { form: AdminQualificationForm }) {
       <td className="px-5 py-4">
         <Link
           href={`/admin/forms/${form.id}`}
-          className="font-semibold text-slate-950 hover:text-[#0b63f6]"
+          className="text-ui-text hover:text-ui-accent font-semibold"
         >
           {form.name}
         </Link>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="text-ui-text-subtle mt-1 text-xs">
           Updated {formatDate(form.updatedAt)}
         </p>
       </td>
       <td className="px-4 py-4">
         <AdminStatusBadge status={form.status} />
       </td>
-      <td className="px-4 py-4 text-slate-700">{form.draftQuestionCount}</td>
+      <td className="text-ui-text-muted px-4 py-4">
+        {form.draftQuestionCount}
+      </td>
       <td className="px-4 py-4">
         {form.isDefault ? (
           <span className="inline-flex rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700">
             Default
           </span>
         ) : (
-          <span className="text-xs font-semibold text-slate-500">Not set</span>
+          <span className="text-ui-text-subtle text-xs font-semibold">
+            Not set
+          </span>
         )}
       </td>
       <td className="px-5 py-4">

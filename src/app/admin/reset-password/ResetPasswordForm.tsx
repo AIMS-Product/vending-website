@@ -45,7 +45,7 @@ export function ResetPasswordForm({ email }: { email: string }) {
     <form action={formAction} className="space-y-4">
       <label
         htmlFor="password"
-        className="block text-sm font-medium text-slate-700"
+        className="text-ui-text-muted block text-sm font-medium"
       >
         New password
         <input
@@ -62,7 +62,7 @@ export function ResetPasswordForm({ email }: { email: string }) {
 
       <label
         htmlFor="confirmPassword"
-        className="block text-sm font-medium text-slate-700"
+        className="text-ui-text-muted block text-sm font-medium"
       >
         Confirm password
         <input

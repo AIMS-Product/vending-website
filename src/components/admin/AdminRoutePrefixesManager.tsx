@@ -17,7 +17,7 @@ import type { RoutePrefix } from "@/lib/services/route-prefixes";
 const initialState: RouteSettingsActionState = { status: "idle" };
 
 const controlClass =
-  "box-border h-11 w-full min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm leading-none text-slate-950 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-[#0b63f6] focus:ring-2 focus:ring-[#0b63f6]/15 disabled:cursor-not-allowed disabled:opacity-50";
+  "box-border h-11 w-full min-w-0 rounded-md border border-ui-line bg-white px-3 text-sm leading-none text-ui-text shadow-sm transition outline-none placeholder:text-ui-text-subtle focus:border-ui-accent focus:ring-2 focus:ring-ui-accent/15 disabled:cursor-not-allowed disabled:opacity-50";
 
 export function AdminRoutePrefixesManager({
   prefixes,
@@ -38,13 +38,13 @@ export function AdminRoutePrefixesManager({
       ) : null}
 
       <section className={adminPanelClass}>
-        <div className="border-b border-slate-200 p-4">
+        <div className="border-ui-line border-b p-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
             <div className="shrink-0 lg:max-w-sm">
-              <h2 className="text-base font-semibold text-slate-950">
+              <h2 className="text-ui-text text-base font-semibold">
                 Add route prefix
               </h2>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="text-ui-text-muted mt-1 text-sm">
                 A single lowercase segment like <code>/guides</code>. Builder
                 pages can publish under any prefix in this list.
               </p>
@@ -54,8 +54,8 @@ export function AdminRoutePrefixesManager({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px] divide-y divide-slate-200 text-left text-sm">
-            <thead className="bg-slate-50 text-xs font-semibold tracking-normal text-slate-500 uppercase">
+          <table className="divide-ui-line w-full min-w-[560px] divide-y text-left text-sm">
+            <thead className="bg-ui-canvas text-ui-text-subtle text-xs font-semibold tracking-normal uppercase">
               <tr>
                 <th scope="col" className="px-4 py-2.5">
                   Prefix
@@ -71,7 +71,7 @@ export function AdminRoutePrefixesManager({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-ui-line divide-y bg-white">
               {prefixes.length ? (
                 prefixes.map((entry) => (
                   <PrefixRow
@@ -84,7 +84,7 @@ export function AdminRoutePrefixesManager({
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-8 text-center text-sm text-slate-500"
+                    className="text-ui-text-subtle px-4 py-8 text-center text-sm"
                   >
                     No route prefixes configured.
                   </td>
@@ -107,17 +107,17 @@ function PrefixRow({
 }) {
   return (
     <tr>
-      <td className="px-4 py-2.5 font-medium text-slate-950">
+      <td className="text-ui-text px-4 py-2.5 font-medium">
         <code>{entry.prefix}</code>
       </td>
-      <td className="px-4 py-2.5 text-slate-700">{entry.label || "—"}</td>
+      <td className="text-ui-text-muted px-4 py-2.5">{entry.label || "—"}</td>
       <td className="px-4 py-2.5">
         {entry.isDefault ? (
-          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+          <span className="bg-ui-line text-ui-text-muted inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold">
             Default
           </span>
         ) : (
-          <span className="inline-flex items-center rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-xs font-semibold text-[#0b63f6]">
+          <span className="text-ui-accent inline-flex items-center rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-xs font-semibold">
             Custom
           </span>
         )}
@@ -125,13 +125,13 @@ function PrefixRow({
       <td className="px-4 py-2.5">
         <div className="flex items-center justify-end">
           {entry.isDefault ? (
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-ui-text-subtle text-xs font-semibold">
               Built-in
             </span>
           ) : canManage ? (
             <DeletePrefixForm prefix={entry.prefix} />
           ) : (
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-ui-text-subtle text-xs font-semibold">
               Super-admin only
             </span>
           )}

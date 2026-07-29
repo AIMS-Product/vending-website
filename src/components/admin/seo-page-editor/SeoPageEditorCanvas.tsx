@@ -97,11 +97,11 @@ export function SortableSectionEditor({
       className={`group/section relative rounded-[12px] border border-transparent transition-all ${editorSectionClass(
         section.background,
         section.spacing,
-      )} hover:border-slate-300`}
+      )} hover:border-ui-line-strong`}
     >
       <div className={columnGridClass(section.columns.length)}>
         {section.columns.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-6 py-12 text-center transition-colors hover:border-slate-400 hover:bg-slate-50">
+          <div className="border-ui-line-strong bg-ui-canvas/50 hover:bg-ui-canvas flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors hover:border-slate-400">
             <div className="mb-3 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -113,21 +113,21 @@ export function SortableSectionEditor({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-slate-400"
+                className="text-ui-text-subtle"
               >
                 <rect width="18" height="18" x="3" y="3" rx="2" />
                 <path d="M12 8v8" />
                 <path d="M8 12h8" />
               </svg>
             </div>
-            <h4 className="text-sm font-semibold text-slate-900">No columns</h4>
-            <p className="mt-1 max-w-sm text-sm text-slate-500">
+            <h4 className="text-ui-text text-sm font-semibold">No columns</h4>
+            <p className="text-ui-text-subtle mt-1 max-w-sm text-sm">
               Add a column before adding page content.
             </p>
             <button
               type="button"
               onClick={onAddColumn}
-              className="mt-4 inline-flex items-center gap-2 rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-300 ring-inset hover:bg-slate-50"
+              className="text-ui-text-muted hover:bg-ui-canvas mt-4 inline-flex items-center gap-2 rounded-md bg-white px-3 py-1.5 text-sm font-semibold shadow-sm ring-1 ring-slate-300 ring-inset"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -216,7 +216,7 @@ export function SimpleBlockStackEditor({
       {column.blocks.length === 0 ? (
         <div
           id="builder-canvas-add-block"
-          className="flex scroll-mt-24 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center transition-colors hover:border-slate-300 hover:bg-slate-50"
+          className="border-ui-line bg-ui-canvas/50 hover:border-ui-line-strong hover:bg-ui-canvas flex scroll-mt-24 flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-16 text-center transition-colors"
         >
           <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
             <svg
@@ -229,17 +229,17 @@ export function SimpleBlockStackEditor({
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-slate-400"
+              className="text-ui-text-subtle"
             >
               <rect width="18" height="18" x="3" y="3" rx="2" />
               <path d="M3 9h18" />
               <path d="M9 21V9" />
             </svg>
           </div>
-          <h3 className="text-sm font-semibold text-slate-900">
+          <h3 className="text-ui-text text-sm font-semibold">
             Start building this page
           </h3>
-          <p className="mt-1 max-w-sm text-sm text-slate-500">
+          <p className="text-ui-text-subtle mt-1 max-w-sm text-sm">
             Add your first block below: a hero or text section to introduce the
             page. A CTA or lead-form block is required before you can publish.
           </p>
@@ -324,17 +324,17 @@ function SortableColumnEditor({
   return (
     <div
       className={`group/column relative flex flex-col rounded-[12px] border border-dashed border-transparent bg-transparent transition-all ${
-        showColumnChrome ? "hover:border-slate-300 hover:bg-white/50" : ""
+        showColumnChrome ? "hover:border-ui-line-strong hover:bg-white/50" : ""
       } [&:has(.builder-block-editor:focus-within)>header]:opacity-0`}
     >
       {showColumnChrome ? (
         <header className="pointer-events-none absolute top-2 right-2 z-20 flex items-center gap-1 opacity-0 transition-opacity group-hover/column:opacity-100">
-          <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-slate-200 bg-white/90 p-0.5 shadow-sm ring-1 ring-black/5 backdrop-blur">
+          <div className="border-ui-line pointer-events-auto flex items-center gap-1 rounded-lg border bg-white/90 p-0.5 shadow-sm ring-1 ring-black/5 backdrop-blur">
             <BuilderTooltip
               label={`Column ${columnIndex + 1}`}
               detail={`Content column ${columnIndex + 1} in this page section`}
             >
-              <span className="px-2 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+              <span className="text-ui-text-subtle px-2 text-[10px] font-bold tracking-wider uppercase">
                 Column {columnIndex + 1}
               </span>
             </BuilderTooltip>
@@ -368,7 +368,7 @@ function SortableColumnEditor({
       <div className="flex-1">
         <div>
           {column.blocks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-4 py-10 text-center">
+            <div className="border-ui-line bg-ui-canvas/50 flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-10 text-center">
               <div className="mb-3 rounded-full bg-white p-2 shadow-sm ring-1 ring-slate-200">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -380,17 +380,15 @@ function SortableColumnEditor({
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-slate-400"
+                  className="text-ui-text-subtle"
                 >
                   <rect width="18" height="18" x="3" y="3" rx="2" />
                   <path d="M3 9h18" />
                   <path d="M9 21V9" />
                 </svg>
               </div>
-              <p className="text-sm font-semibold text-slate-900">
-                Empty column
-              </p>
-              <p className="mt-1 mb-4 text-xs text-slate-500">
+              <p className="text-ui-text text-sm font-semibold">Empty column</p>
+              <p className="text-ui-text-subtle mt-1 mb-4 text-xs">
                 Add page content below
               </p>
               <div className="w-full text-left">
