@@ -209,9 +209,13 @@ export function AnalyticsBreakdown({
       {rows.length === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">{emptyLabel}</p>
       ) : (
-        <ol className="mt-3 grid gap-1.5">
+        // Block flow, not grid. A grid item defaults to `min-width: auto`, so
+        // it refuses to shrink below its own min-content — one long unbroken
+        // label like a 52-character URL path then pins the whole card to that
+        // width and overflows the column instead of truncating.
+        <ol className="mt-3 space-y-1.5">
           {rows.map((row, index) => (
-            <li key={row.label} className="grid gap-1">
+            <li key={row.label} className="flex flex-col gap-1">
               <div className="flex items-baseline gap-2 text-[0.8125rem]">
                 <span className="text-ui-text-subtle w-5 shrink-0 tabular-nums">
                   {index + 1}
@@ -421,9 +425,9 @@ export function AnalyticsFunnel({
         · {context.neverOfferedQuestions} came from booking or contact pages
         that never show them. Only the offered group is measured below.
       </p>
-      <ol className="mt-3 grid gap-2.5">
+      <ol className="mt-3 space-y-2.5">
         {steps.map((step, index) => (
-          <li key={step.label} className="grid gap-1">
+          <li key={step.label} className="flex flex-col gap-1">
             <div className="flex items-baseline gap-2 text-[0.8125rem]">
               <span className="text-ui-text min-w-0 flex-1 truncate">
                 {step.label}
