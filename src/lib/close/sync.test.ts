@@ -618,7 +618,6 @@ describe("adminRunCloseSync", () => {
       expect.objectContaining({
         name: "Jane Buyer",
         "custom.cf_vp_session": "vp-session-1",
-        "custom.cf_source_path": "/resources/start-vending",
         "custom.cf_landing_path": "/apply",
         "custom.cf_first_landing": "/resources/start-vending",
         "custom.cf_latest_landing": "/apply",
@@ -641,11 +640,14 @@ describe("adminRunCloseSync", () => {
       }),
     );
     // The contact does not exist until the lead is created, so its contact-scoped
-    // UTMs are written in a follow-up call rather than nested in the create.
+    // fields (UTMs + the submitting page) are written in a follow-up call rather
+    // than nested in the create. source_path must NOT ride the lead payload:
+    // Close 400s the whole lead update when a contact-scoped ID appears on it.
     expect(fetchMock.mock.calls[2]?.[0]).toBe(
       "https://api.close.com/api/v1/contact/cont_created/",
     );
     expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toEqual({
+      "custom.cf_source_path": "/resources/start-vending",
       "custom.cf_utm_source": "facebook",
     });
 

@@ -323,20 +323,22 @@ export function createCloseClient({
 export type CloseClient = ReturnType<typeof createCloseClient>;
 
 /**
- * The UTM half of attribution, which lives on the CONTACT in Close
- * (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`).
+ * The half of attribution that lives on the CONTACT in Close: the UTMs
+ * (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`) and the
+ * submitting page (`source_path`, Close field "Application Source").
  *
  * Custom fields in Close are scope-locked: sending a contact-scoped field ID on
  * a lead update makes Close reject the entire update with a 400, so these are
  * written with `updateContact` and never mixed into the lead payload. Everything
- * else about the visit (source path, landing path, click IDs, campaign/ad IDs)
- * stays lead-scoped in `closeCustomFieldPayload`.
+ * else about the visit (landing path, click IDs, campaign/ad IDs) stays
+ * lead-scoped in `closeCustomFieldPayload`.
  */
 export function closeContactAttributionPayload(
   values: Record<string, unknown>,
   fields: CloseCustomFieldConfig,
 ) {
   const payload: Record<`custom.${string}`, unknown> = {};
+  assignCustom(payload, fields.sourcePathFieldId, values.source_path);
   assignCustom(payload, fields.utmSourceFieldId, values.utm_source);
   assignCustom(payload, fields.utmMediumFieldId, values.utm_medium);
   assignCustom(payload, fields.utmCampaignFieldId, values.utm_campaign);
@@ -352,7 +354,6 @@ export function closeCustomFieldPayload(
   const payload: Record<`custom.${string}`, unknown> = {};
   assignCustom(payload, fields.qualificationStatusFieldId, values.status);
   assignCustom(payload, fields.vpSessionIdFieldId, values.vp_session_id);
-  assignCustom(payload, fields.sourcePathFieldId, values.source_path);
   assignCustom(payload, fields.landingPathFieldId, values.landing_path);
   assignCustom(
     payload,
@@ -386,8 +387,8 @@ export function closeCustomFieldPayload(
     values.source_cta_tracking_name,
   );
   assignCustom(payload, fields.clickedHrefFieldId, values.clicked_href);
-  // UTMs are deliberately absent here — they are contact-scoped in Close and are
-  // built by closeContactAttributionPayload instead. See that function.
+  // UTMs and source_path are deliberately absent here — they are contact-scoped in
+  // Close and are built by closeContactAttributionPayload instead. See that function.
   assignCustom(payload, fields.gclidFieldId, values.gclid);
   assignCustom(payload, fields.fbclidFieldId, values.fbclid);
   assignCustom(payload, fields.gbraidFieldId, values.gbraid);
