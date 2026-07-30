@@ -36,7 +36,7 @@ export function SeoPageEditorCanvasPanel({
   } = editor;
 
   return (
-    <div className="border-ui-line bg-ui-line order-1 min-w-0 overflow-y-auto rounded-2xl border shadow-sm xl:order-none xl:h-[calc(100dvh-7rem)]">
+    <div className="border-ui-line bg-ui-line rounded-ui-lg shadow-ui order-1 min-w-0 overflow-y-auto border xl:order-none xl:h-[calc(100dvh-7rem)]">
       <EditorStatusBar editor={editor} />
 
       {/* N19 / I20 item 9: orient the user that the canvas mirrors the public
@@ -46,7 +46,7 @@ export function SeoPageEditorCanvasPanel({
         Preview of the public page — edit the content blocks below
       </p>
 
-      <div className="mx-auto max-w-[1500px] bg-[#f5fbff] shadow-sm">
+      <div className="shadow-ui mx-auto max-w-[1500px] bg-[#f5fbff]">
         {chromeSettings.showHeader ? <EditorPublicHeader /> : null}
         <article className="bg-[#f5fbff]">
           <div className="group/page-body relative mx-auto max-w-5xl px-5 py-14 lg:px-10">
@@ -113,14 +113,14 @@ function EditorStatusBar({ editor }: { editor: SeoPageEditorController }) {
   if (!hasStatus) return null;
 
   return (
-    <div className="border-ui-line sticky top-0 z-30 border-b bg-white/90 px-5 py-3 text-sm shadow-sm backdrop-blur">
+    <div className="border-ui-line bg-ui-surface/90 shadow-ui sticky top-0 z-30 border-b px-5 py-3 text-sm backdrop-blur">
       <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-3">
         {(state.status !== "idle" || savedFromRedirect || redirectError) && (
           <p
             className={
               state.status === "error" || redirectError
-                ? "text-red-700"
-                : "text-emerald-700"
+                ? "text-ui-bad-ink"
+                : "text-ui-ok-ink"
             }
           >
             {saveMessage}
@@ -130,7 +130,7 @@ function EditorStatusBar({ editor }: { editor: SeoPageEditorController }) {
           <p
             className={
               autosave.status === "error"
-                ? "text-red-700"
+                ? "text-ui-bad-ink"
                 : "text-ui-text-subtle"
             }
           >
@@ -233,8 +233,8 @@ function StructuredSectionEditor({
 
 function BlankCanvasState({ onAddContent }: { onAddContent: () => void }) {
   return (
-    <div className="border-ui-line bg-ui-canvas/50 hover:border-ui-line-strong hover:bg-ui-canvas flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-16 text-center transition-colors">
-      <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
+    <div className="border-ui-line bg-ui-canvas/50 hover:border-ui-line-strong hover:bg-ui-canvas rounded-ui-lg flex flex-col items-center justify-center border-2 border-dashed px-6 py-16 text-center transition-colors">
+      <div className="bg-ui-surface shadow-ui ring-ui-line mb-4 rounded-full p-3 ring-1">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -259,7 +259,7 @@ function BlankCanvasState({ onAddContent }: { onAddContent: () => void }) {
       <button
         type="button"
         onClick={onAddContent}
-        className="text-ui-text-muted hover:bg-ui-canvas mt-6 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold shadow-sm ring-1 ring-slate-300 ring-inset"
+        className="text-ui-text-muted hover:bg-ui-canvas rounded-ui bg-ui-surface shadow-ui ring-ui-line-strong mt-6 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold ring-1 ring-inset"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

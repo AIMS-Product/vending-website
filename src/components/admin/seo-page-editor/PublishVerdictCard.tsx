@@ -34,18 +34,18 @@ export function PublishVerdictCard({
 
   const toneClass =
     verdict.tone === "improve"
-      ? "border-sky-200 bg-sky-50 text-sky-950"
-      : "border-emerald-200 bg-emerald-50 text-emerald-900";
+      ? "border-ui-accent/25 bg-ui-accent-soft text-ui-accent"
+      : "border-ui-ok/25 bg-ui-ok-fill text-ui-ok-ink";
 
   return (
     <section
       aria-live="polite"
-      className={`rounded-xl border p-4 ${toneClass}`}
+      className={`rounded-ui-lg border p-4 ${toneClass}`}
     >
       <div className="flex items-center gap-2">
         <span
           className={`size-2 shrink-0 rounded-full ${
-            verdict.tone === "improve" ? "bg-sky-500" : "bg-emerald-500"
+            verdict.tone === "improve" ? "bg-ui-accent" : "bg-ui-ok"
           }`}
           aria-hidden="true"
         />
@@ -72,11 +72,11 @@ function BlockedVerdictChip({ blockerCount }: { blockerCount: number }) {
   return (
     <section
       aria-live="polite"
-      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950"
+      className="rounded-ui-lg border-ui-warn/25 bg-ui-warn-fill text-ui-warn-ink flex flex-wrap items-center justify-between gap-2 border p-4"
     >
       <div className="flex items-center gap-2">
         <span
-          className="size-2 shrink-0 rounded-full bg-amber-500"
+          className="bg-ui-warn size-2 shrink-0 rounded-full"
           aria-hidden="true"
         />
         <h3 className="text-sm font-semibold">Not ready to publish</h3>
@@ -85,9 +85,9 @@ function BlockedVerdictChip({ blockerCount }: { blockerCount: number }) {
         type="button"
         aria-controls={PUBLISH_BLOCKER_LIST_ID}
         onClick={() => focusPublishBlockerChecklist()}
-        className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-amber-300 bg-white px-3 text-xs font-semibold text-amber-800 shadow-sm transition hover:bg-amber-100 focus-visible:ring-4 focus-visible:ring-amber-200 focus-visible:outline-none"
+        className="rounded-ui border-ui-warn/25 bg-ui-surface text-ui-warn-ink shadow-ui hover:bg-ui-warn-fill focus-visible:ring-ui-warn/25 inline-flex min-h-8 items-center gap-1.5 border px-3 text-xs font-semibold transition focus-visible:ring-4 focus-visible:outline-none"
       >
-        <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-900 ring-1 ring-amber-200 ring-inset">
+        <span className="rounded-ui bg-ui-warn-fill text-ui-warn-ink ring-ui-warn/25 px-1.5 py-0.5 text-[11px] ring-1 ring-inset">
           {blockerCount}
         </span>
         View checklist

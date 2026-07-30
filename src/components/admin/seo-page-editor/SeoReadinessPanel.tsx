@@ -29,13 +29,13 @@ import {
 export function NextPublishStepCard({ step }: { step: NextPublishStep }) {
   const toneClass =
     step.tone === "ready"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+      ? "border-ui-ok/25 bg-ui-ok-fill text-ui-ok-ink"
       : step.tone === "blocked"
-        ? "border-amber-200 bg-amber-50 text-amber-950"
-        : "border-sky-200 bg-sky-50 text-sky-950";
+        ? "border-ui-warn/25 bg-ui-warn-fill text-ui-warn-ink"
+        : "border-ui-accent/25 bg-ui-accent-soft text-ui-accent";
 
   return (
-    <section className={`rounded-xl border p-4 ${toneClass}`}>
+    <section className={`rounded-ui-lg border p-4 ${toneClass}`}>
       <p className="text-xs font-semibold tracking-wider uppercase">
         Next required step
       </p>
@@ -79,7 +79,7 @@ export function SeoReadinessPanel({
       {thinWarning ? (
         <div
           role="status"
-          className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          className="rounded-ui-lg border-ui-warn/25 bg-ui-warn-fill text-ui-warn-ink flex items-start gap-2.5 border px-4 py-3 text-sm"
         >
           <svg
             aria-hidden="true"
@@ -98,11 +98,11 @@ export function SeoReadinessPanel({
           <span>{thinWarning}</span>
         </div>
       ) : null}
-      <div className="bg-ui-line grid gap-px overflow-hidden rounded-xl border border-slate-100 shadow-sm sm:grid-cols-2">
+      <div className="bg-ui-line rounded-ui-lg border-ui-line shadow-ui grid gap-px overflow-hidden border sm:grid-cols-2">
         {summary.categories.map((category) => (
           <div
             key={category.category}
-            className={`hover:bg-ui-canvas bg-white p-5 transition-colors ${readinessCategoryClass(
+            className={`hover:bg-ui-canvas bg-ui-surface p-5 transition-colors ${readinessCategoryClass(
               category.status,
             )}`}
           >
@@ -111,7 +111,7 @@ export function SeoReadinessPanel({
                 {friendlyReadinessCategoryLabel(category.category)}
               </span>
               <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${readinessPillClass(
+                className={`rounded-ui px-2.5 py-0.5 text-xs font-semibold ${readinessPillClass(
                   category.status,
                 )} ring-1 ring-black/5 ring-inset`}
               >
@@ -134,7 +134,7 @@ export function SeoReadinessPanel({
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-emerald-500"
+                  className="text-ui-ok"
                 >
                   <path d="M20 6 9 17l-5-5" />
                 </svg>
@@ -146,7 +146,7 @@ export function SeoReadinessPanel({
       </div>
 
       <div className="flex flex-col gap-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+        <div className="border-ui-line flex flex-wrap items-center justify-between gap-3 border-b pb-3">
           <h3 className="text-ui-text text-base font-semibold">Action Items</h3>
           <span className="text-ui-text-subtle text-sm font-medium">
             Highest impact first
@@ -158,7 +158,7 @@ export function SeoReadinessPanel({
             {topFindings.map((finding, index) => (
               <article
                 key={`${finding.code}-${finding.path}-${index}`}
-                className="group border-ui-line hover:border-ui-line-strong relative flex flex-col rounded-xl border bg-white p-5 shadow-sm transition-all hover:shadow-md"
+                className="group border-ui-line hover:border-ui-line-strong rounded-ui-lg bg-ui-surface shadow-ui hover:shadow-ui-raised relative flex flex-col border p-5 transition-all"
               >
                 <div className="flex flex-wrap items-center gap-2.5">
                   <span
@@ -169,7 +169,7 @@ export function SeoReadinessPanel({
                   <span className="text-ui-text-subtle text-xs font-bold tracking-wider uppercase">
                     {findingSeverityLabel(finding.severity)}
                   </span>
-                  <span className="bg-ui-canvas text-ui-text-muted rounded-md px-2 py-1 text-xs font-medium ring-1 ring-slate-200 ring-inset">
+                  <span className="bg-ui-canvas text-ui-text-muted rounded-ui ring-ui-line px-2 py-1 text-xs font-medium ring-1 ring-inset">
                     {friendlyFindingLocation(finding)}
                   </span>
                 </div>
@@ -193,8 +193,8 @@ export function SeoReadinessPanel({
             ))}
           </div>
         ) : (
-          <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-8 text-center text-sm leading-6 text-emerald-800 shadow-sm">
-            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+          <div className="rounded-ui-lg border-ui-ok/25 bg-ui-ok-fill text-ui-ok-ink shadow-ui mt-3 border px-6 py-8 text-center text-sm leading-6">
+            <div className="bg-ui-ok-fill text-ui-ok mx-auto mb-3 flex size-12 items-center justify-center rounded-full">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -210,10 +210,8 @@ export function SeoReadinessPanel({
                 <path d="m9 11 3 3L22 4" />
               </svg>
             </div>
-            <h4 className="text-sm font-semibold text-emerald-900">
-              All clear!
-            </h4>
-            <p className="mt-1 text-sm text-emerald-700">
+            <h4 className="text-ui-ok-ink text-sm font-semibold">All clear!</h4>
+            <p className="text-ui-ok-ink mt-1 text-sm">
               No readiness findings on this draft. Review the public preview
               before publishing.
             </p>
@@ -222,12 +220,12 @@ export function SeoReadinessPanel({
       </div>
 
       <div className="space-y-6">
-        <div className="border-ui-line rounded-xl border bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+        <div className="border-ui-line rounded-ui-lg bg-ui-surface shadow-ui hover:shadow-ui-raised border p-5 transition-shadow">
           <h3 className="text-ui-text text-sm font-semibold">
             Builder support
           </h3>
           <div className="mt-4 grid gap-3">
-            <details className="border-ui-line bg-ui-canvas text-ui-text rounded-lg border px-4 py-3 text-sm">
+            <details className="border-ui-line bg-ui-canvas text-ui-text rounded-ui-lg border px-4 py-3 text-sm">
               <summary className="cursor-pointer font-semibold">
                 Media assets
               </summary>
@@ -243,7 +241,7 @@ export function SeoReadinessPanel({
                 Open full media library
               </Link>
             </details>
-            <details className="border-ui-line bg-ui-canvas text-ui-text rounded-lg border px-4 py-3 text-sm">
+            <details className="border-ui-line bg-ui-canvas text-ui-text rounded-ui-lg border px-4 py-3 text-sm">
               <summary className="cursor-pointer font-semibold">
                 Approved claims and CTAs
               </summary>
@@ -264,10 +262,10 @@ export function SeoReadinessPanel({
       </div>
 
       {(internalLinkSuggestions.length > 0 || linkSuggestionMessage) && (
-        <div className="mb-6 rounded-xl border border-sky-200 bg-sky-50 p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-200/60 pb-4">
+        <div className="rounded-ui-lg border-ui-accent/25 bg-ui-accent-soft shadow-ui mb-6 border p-5">
+          <div className="border-ui-accent/60 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
             <div>
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-sky-900">
+              <h3 className="text-ui-accent flex items-center gap-2 text-sm font-semibold">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
@@ -284,18 +282,18 @@ export function SeoReadinessPanel({
                 </svg>
                 Internal link suggestions
               </h3>
-              <p className="mt-1 text-xs text-sky-700">
+              <p className="text-ui-accent mt-1 text-xs">
                 Add relevant links from the copy that already exists on this
                 page.
               </p>
             </div>
-            <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-700 shadow-sm ring-1 ring-sky-200 ring-inset">
+            <span className="rounded-ui bg-ui-surface text-ui-accent shadow-ui ring-ui-accent/25 px-3 py-1 text-xs font-semibold ring-1 ring-inset">
               {internalLinkSuggestions.length} available
             </span>
           </div>
 
           {linkSuggestionMessage && (
-            <p className="text-ui-text-muted mt-4 rounded-lg bg-white px-4 py-3 text-sm font-medium shadow-sm ring-1 ring-sky-200 ring-inset">
+            <p className="text-ui-text-muted rounded-ui-lg bg-ui-surface shadow-ui ring-ui-accent/25 mt-4 px-4 py-3 text-sm font-medium ring-1 ring-inset">
               {linkSuggestionMessage}
             </p>
           )}
@@ -305,7 +303,7 @@ export function SeoReadinessPanel({
               {internalLinkSuggestions.slice(0, 4).map((suggestion) => (
                 <div
                   key={suggestion.id}
-                  className="group flex flex-col rounded-xl bg-white p-4 shadow-sm ring-1 ring-sky-200 transition-all ring-inset hover:shadow-md hover:ring-sky-300"
+                  className="group rounded-ui-lg bg-ui-surface shadow-ui ring-ui-accent/25 hover:shadow-ui-raised hover:ring-ui-accent/25 flex flex-col p-4 ring-1 transition-all ring-inset"
                 >
                   <p className="text-ui-text text-sm font-semibold">
                     Link &quot;{suggestion.anchorText}&quot;
@@ -314,12 +312,12 @@ export function SeoReadinessPanel({
                     {suggestion.reason}
                   </p>
                   <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
-                    <span className="truncate text-xs font-medium text-sky-700">
+                    <span className="text-ui-accent truncate text-xs font-medium">
                       {suggestion.targetPath}
                     </span>
                     <button
                       type="button"
-                      className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 shadow-sm ring-1 ring-sky-300 transition-all ring-inset hover:bg-sky-50 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none"
+                      className="rounded-ui-lg bg-ui-surface text-ui-accent shadow-ui ring-ui-accent/25 hover:bg-ui-accent-soft focus-visible:ring-ui-accent px-3 py-1.5 text-xs font-semibold ring-1 transition-all ring-inset focus-visible:ring-2 focus-visible:outline-none"
                       onClick={() => onApplyInternalLinkSuggestion(suggestion)}
                     >
                       Apply link
@@ -431,7 +429,7 @@ function ReadinessFindingAction({
   }
 
   return (
-    <span className="bg-ui-canvas text-ui-text-subtle inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-slate-200 ring-inset">
+    <span className="bg-ui-canvas text-ui-text-subtle rounded-ui ring-ui-line inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium ring-1 ring-inset">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="12"

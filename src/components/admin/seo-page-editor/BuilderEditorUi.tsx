@@ -115,7 +115,7 @@ export function MovePositionMenu({
       </BuilderTooltip>
       {isOpen && (
         <div
-          className={`animate-in fade-in slide-in-from-top-2 border-ui-line absolute z-40 mt-2 min-w-[188px] rounded-xl border bg-white p-2 shadow-lg ring-1 ring-black/5 ${menuAlignClass}`}
+          className={`animate-in fade-in slide-in-from-top-2 border-ui-line rounded-ui-lg bg-ui-surface shadow-ui-raised absolute z-40 mt-2 min-w-[188px] border p-2 ring-1 ring-black/5 ${menuAlignClass}`}
         >
           <button
             type="button"
@@ -141,7 +141,7 @@ export function MovePositionMenu({
           </button>
           {itemCount > 1 ? (
             <>
-              <div className="my-1 border-t border-slate-100" />
+              <div className="border-ui-line my-1 border-t" />
               <p className="text-ui-text-subtle px-2 py-1 text-[10px] font-semibold tracking-wide uppercase">
                 {positionHeading}
               </p>
@@ -196,11 +196,11 @@ export function BuilderTooltip({
       {children}
       <span
         role="tooltip"
-        className={`pointer-events-none absolute bottom-[calc(100%+0.45rem)] z-30 hidden w-max max-w-64 rounded-lg border border-white/10 bg-slate-950 px-2.5 py-2 text-left text-[11px] leading-4 text-white shadow-lg group-focus-within/builder-tooltip:block group-hover/builder-tooltip:block ${alignClass}`}
+        className={`rounded-ui-lg bg-ui-text shadow-ui-raised pointer-events-none absolute bottom-[calc(100%+0.45rem)] z-30 hidden w-max max-w-64 border border-white/10 px-2.5 py-2 text-left text-[11px] leading-4 text-white group-focus-within/builder-tooltip:block group-hover/builder-tooltip:block ${alignClass}`}
       >
         <span className="block font-semibold">{label}</span>
         {detail ? (
-          <span className="mt-1 block font-normal text-slate-300">
+          <span className="text-ui-text-subtle mt-1 block font-normal">
             {detail}
           </span>
         ) : null}
@@ -270,12 +270,12 @@ export function BlockToolbar({
         : null;
 
   return (
-    <header className="border-ui-line pointer-events-auto flex items-center justify-between gap-2 rounded-lg border bg-white/95 px-2.5 py-1.5 text-xs opacity-100 shadow-[0_10px_24px_-16px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur transition-all md:opacity-0 md:group-focus-within/editor:opacity-100 md:group-hover/editor:opacity-100">
+    <header className="border-ui-line rounded-ui-lg bg-ui-surface/95 pointer-events-auto flex items-center justify-between gap-2 border px-2.5 py-1.5 text-xs opacity-100 shadow-[0_10px_24px_-16px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur transition-all md:opacity-0 md:group-focus-within/editor:opacity-100 md:group-hover/editor:opacity-100">
       <div className="flex min-w-0 items-center gap-2">
         <BuilderTooltip label={`${typeLabel} block`} detail={readyDetail}>
           <span
             role="img"
-            className="bg-ui-canvas text-ui-text-subtle flex size-7 shrink-0 items-center justify-center rounded-md ring-1 ring-slate-200/50 ring-inset"
+            className="bg-ui-canvas text-ui-text-subtle rounded-ui ring-ui-line/50 flex size-7 shrink-0 items-center justify-center ring-1 ring-inset"
             aria-label={`${typeLabel} block`}
           >
             <BuilderGlyph name={icon} />
@@ -283,7 +283,7 @@ export function BlockToolbar({
         </BuilderTooltip>
         {structure ? (
           <BuilderTooltip label={structure.label} detail={structure.detail}>
-            <span className="bg-ui-canvas text-ui-text-subtle shrink-0 rounded-md px-2 py-1 text-[10px] font-bold tracking-wider uppercase ring-1 ring-slate-200/70 ring-inset">
+            <span className="bg-ui-canvas text-ui-text-subtle rounded-ui ring-ui-line/70 shrink-0 px-2 py-1 text-[10px] font-bold tracking-wider uppercase ring-1 ring-inset">
               {structure.label}
             </span>
           </BuilderTooltip>
@@ -298,7 +298,7 @@ export function BlockToolbar({
             <BuilderTooltip label={status} detail={statusDetail ?? description}>
               <span
                 role="img"
-                className="size-2 shrink-0 rounded-full bg-amber-400"
+                className="bg-ui-warn size-2 shrink-0 rounded-full"
                 aria-label={status}
               />
             </BuilderTooltip>
@@ -307,7 +307,7 @@ export function BlockToolbar({
       </div>
       <div className="flex shrink-0 items-center gap-1">
         {moveControl ? (
-          <div className="border-ui-line rounded-md border bg-white p-0.5 shadow-sm">
+          <div className="border-ui-line rounded-ui bg-ui-surface shadow-ui border p-0.5">
             <MovePositionMenu
               label={moveControl.label}
               currentIndex={moveControl.currentIndex}
@@ -320,7 +320,7 @@ export function BlockToolbar({
             />
           </div>
         ) : null}
-        <div className="border-ui-line rounded-md border bg-white p-0.5 shadow-sm">
+        <div className="border-ui-line rounded-ui bg-ui-surface shadow-ui border p-0.5">
           <MoreActions
             label={structure ? "Section and block actions" : "Block actions"}
             detail={
@@ -346,7 +346,7 @@ export function BlockToolbar({
             </button>
             {structure ? (
               <>
-                <div className="my-1 border-t border-slate-100" />
+                <div className="border-ui-line my-1 border-t" />
                 <button
                   type="button"
                   className={`${menuButtonClass} disabled:cursor-not-allowed disabled:opacity-50`}
@@ -429,7 +429,7 @@ export function MoreActions({
         </button>
       </BuilderTooltip>
       {isOpen && (
-        <div className="animate-in fade-in slide-in-from-top-2 border-ui-line absolute right-0 z-20 mt-2 min-w-[160px] rounded-xl border bg-white p-2 shadow-lg ring-1 ring-black/5">
+        <div className="animate-in fade-in slide-in-from-top-2 border-ui-line rounded-ui-lg bg-ui-surface shadow-ui-raised absolute right-0 z-20 mt-2 min-w-[160px] border p-2 ring-1 ring-black/5">
           {children}
         </div>
       )}

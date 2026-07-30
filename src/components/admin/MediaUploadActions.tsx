@@ -29,7 +29,7 @@ export function MediaUploadActions() {
       <div ref={menuRef} className="relative inline-flex shrink-0">
         <button
           type="button"
-          className={`${adminPrimaryButtonClass} rounded-r-none border-r border-[#0952c9] pr-3`}
+          className={`${adminPrimaryButtonClass} border-ui-accent-hover rounded-r-none border-r pr-3`}
           onClick={() => {
             setMenuOpen(false);
             setUploadOpen(true);
@@ -66,12 +66,12 @@ export function MediaUploadActions() {
         {menuOpen ? (
           <div
             role="menu"
-            className="border-ui-line absolute top-full right-0 z-30 mt-2 w-44 overflow-hidden rounded-md border bg-white p-1 shadow-lg"
+            className="border-ui-line bg-ui-surface rounded-ui-lg shadow-ui-raised absolute top-full right-0 z-30 mt-2 w-44 overflow-hidden border p-1"
           >
             <button
               type="button"
               role="menuitem"
-              className="text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium"
+              className="text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text rounded-ui flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium"
               onClick={() => {
                 setMenuOpen(false);
                 setUploadOpen(true);
@@ -83,7 +83,7 @@ export function MediaUploadActions() {
             <button
               type="button"
               role="menuitem"
-              className="text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium"
+              className="text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text rounded-ui flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium"
               onClick={() => {
                 setMenuOpen(false);
                 setBulkUploadOpen(true);

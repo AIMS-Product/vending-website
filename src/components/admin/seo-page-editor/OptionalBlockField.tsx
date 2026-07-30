@@ -68,10 +68,10 @@ function FieldVisibilityEyeToggle({
       aria-pressed={visible}
       title={actionLabel}
       onClick={() => onChange(!visible)}
-      className={`inline-flex size-7 shrink-0 items-center justify-center rounded-md transition ${
+      className={`rounded-ui inline-flex size-7 shrink-0 items-center justify-center transition ${
         visible
           ? "text-ui-text-subtle hover:bg-ui-line hover:text-ui-text-muted"
-          : "hover:bg-ui-line hover:text-ui-text-subtle text-slate-300"
+          : "hover:bg-ui-line hover:text-ui-text-subtle text-ui-text-subtle"
       }`}
     >
       <FieldVisibilityEyeIcon visible={visible} />

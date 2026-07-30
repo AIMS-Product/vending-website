@@ -46,7 +46,7 @@ export function SeoPageEditorWorkspace({
             <button
               type="button"
               aria-label="Close editor side panel"
-              className="fixed inset-x-0 top-28 bottom-0 z-[55] bg-slate-950/20 xl:hidden"
+              className="bg-ui-text/20 fixed inset-x-0 top-28 bottom-0 z-[55] xl:hidden"
               onClick={() => editor.setMobileEditorPanel(null)}
             />
           )}

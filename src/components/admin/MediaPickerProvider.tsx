@@ -173,7 +173,7 @@ export function MediaDropTarget({
     <div
       className={`relative grid place-items-center text-center ${className ?? ""} ${
         isDragging
-          ? "border-ui-accent ring-ui-accent/15 bg-[#f5fbff] ring-4"
+          ? "border-ui-accent ring-ui-accent/15 bg-ui-accent-soft ring-4"
           : ""
       }`}
       onDragEnter={(event) => handleDragState(event, true)}
@@ -354,7 +354,7 @@ function MediaPickerModal({
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm"
+      className="bg-ui-text/35 fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -363,7 +363,7 @@ function MediaPickerModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="media-picker-title"
-        className="border-ui-line flex max-h-[min(820px,calc(100dvh-2rem))] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border bg-white shadow-2xl"
+        className="border-ui-line rounded-ui-lg bg-ui-surface shadow-ui-raised flex max-h-[min(820px,calc(100dvh-2rem))] w-full max-w-4xl flex-col overflow-hidden border"
       >
         <header className="border-ui-line flex items-start justify-between gap-4 border-b px-5 py-4">
           <div>
@@ -381,7 +381,7 @@ function MediaPickerModal({
             type="button"
             aria-label="Close media picker"
             onClick={onClose}
-            className="border-ui-line text-ui-text-subtle hover:bg-ui-canvas inline-flex size-9 items-center justify-center rounded-full border bg-white"
+            className="border-ui-line text-ui-text-subtle hover:bg-ui-canvas rounded-ui bg-ui-surface inline-flex size-9 items-center justify-center border"
           >
             ×
           </button>
@@ -415,7 +415,7 @@ function MediaPickerModal({
         {mode === "library" ? (
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="border-ui-line border-b px-5 py-3">
-              <label className="border-ui-line flex h-11 items-center gap-3 rounded-md border bg-white px-3">
+              <label className="border-ui-line rounded-ui bg-ui-surface flex h-11 items-center gap-3 border px-3">
                 <span className="text-ui-text-subtle" aria-hidden="true">
                   <AdminIcon icon="search" />
                 </span>
@@ -441,7 +441,7 @@ function MediaPickerModal({
                       key={asset.id}
                       type="button"
                       onClick={() => onSelect(asset)}
-                      className="border-ui-line hover:border-ui-accent/40 overflow-hidden rounded-md border bg-white text-left transition hover:shadow-sm"
+                      className="border-ui-line hover:border-ui-accent/40 rounded-ui bg-ui-surface hover:shadow-ui overflow-hidden border text-left transition"
                     >
                       {asset.publicUrl && asset.assetType === "image" ? (
                         <Image
@@ -475,9 +475,9 @@ function MediaPickerModal({
           <div className="min-h-0 flex-1 overflow-y-auto p-5">
             {uploadAssetType === "image" ? (
               <div
-                className={`mb-5 rounded-xl border-2 border-dashed px-4 py-8 text-center transition ${
+                className={`rounded-ui-lg mb-5 border-2 border-dashed px-4 py-8 text-center transition ${
                   isDropActive
-                    ? "border-ui-accent bg-[#f5fbff]"
+                    ? "border-ui-accent bg-ui-accent-soft"
                     : "border-ui-line bg-ui-canvas"
                 }`}
                 onDragEnter={(event) => {
@@ -612,7 +612,7 @@ function MediaPickerModal({
               </label>
             </div>
             {saveMessage && (
-              <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p className="rounded-ui bg-ui-bad-fill text-ui-bad-ink mt-4 px-3 py-2 text-sm">
                 {saveMessage}
               </p>
             )}

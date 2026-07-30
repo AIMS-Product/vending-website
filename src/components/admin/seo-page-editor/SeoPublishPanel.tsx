@@ -35,7 +35,7 @@ import {
 // page doesn't render an active-looking blue primary button. Clicking it still
 // works — it reveals the "next required step" reason rather than submitting.
 const disabledPublishButtonClass =
-  "rounded-lg border border-ui-line bg-ui-line px-4 py-2 text-sm font-semibold text-ui-text-subtle shadow-none transition cursor-help";
+  "rounded-ui-lg border border-ui-line bg-ui-line px-4 py-2 text-sm font-semibold text-ui-text-subtle shadow-none transition cursor-help";
 
 export function SeoPublishPanel({
   editor,
@@ -48,7 +48,7 @@ export function SeoPublishPanel({
     <section
       aria-labelledby="seo-panel-title"
       data-builder-walkthrough="seo"
-      className="border-ui-line fixed top-32 right-4 bottom-4 z-[60] order-3 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border bg-white shadow-xl xl:sticky xl:top-4 xl:right-auto xl:bottom-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none"
+      className="border-ui-line rounded-ui-lg bg-ui-surface shadow-ui-raised fixed top-32 right-4 bottom-4 z-[60] order-3 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden border xl:sticky xl:top-4 xl:right-auto xl:bottom-auto xl:z-auto xl:order-none xl:h-[calc(100dvh-7rem)] xl:min-h-0 xl:w-auto xl:max-w-none"
     >
       <SeoPanelHeader editor={editor} />
       <PublishStatusSection
@@ -107,13 +107,13 @@ function PublishStatusSection({
   const { isConfirmingPublish, setIsConfirmingPublish } = editor;
   const { nextPublishStep, page, publishStateLabel } = editor;
   const statusDotClass =
-    page?.status === "published" ? "bg-emerald-500" : "bg-amber-500";
+    page?.status === "published" ? "bg-ui-ok" : "bg-ui-warn";
   const nextStepToneClass =
     nextPublishStep.tone === "ready"
-      ? "text-emerald-700"
+      ? "text-ui-ok-ink"
       : nextPublishStep.tone === "blocked"
-        ? "text-amber-700"
-        : "text-sky-700";
+        ? "text-ui-warn-ink"
+        : "text-ui-accent";
 
   function revealPublishBlocker() {
     // Move attention to the canonical blocker checklist (the single source of
@@ -134,7 +134,7 @@ function PublishStatusSection({
           type="button"
           aria-expanded={isExpanded}
           aria-controls="publish-status-content"
-          className="hover:bg-ui-canvas focus-visible:ring-ui-accent/20 flex min-w-0 flex-1 items-start justify-between gap-3 rounded-lg px-1 py-1 text-left transition focus-visible:ring-4 focus-visible:outline-none"
+          className="hover:bg-ui-canvas focus-visible:ring-ui-accent/20 rounded-ui-lg flex min-w-0 flex-1 items-start justify-between gap-3 px-1 py-1 text-left transition focus-visible:ring-4 focus-visible:outline-none"
           onClick={() => onExpandedChange(!isExpanded)}
         >
           <div className="min-w-0">
@@ -142,7 +142,7 @@ function PublishStatusSection({
               Publish status
             </span>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <span className="border-ui-line text-ui-text-muted inline-flex items-center gap-1.5 rounded-full border bg-white px-2.5 py-0.5 text-xs font-semibold shadow-sm">
+              <span className="border-ui-line text-ui-text-muted rounded-ui bg-ui-surface shadow-ui inline-flex items-center gap-1.5 border px-2.5 py-0.5 text-xs font-semibold">
                 <span
                   className={`size-1.5 rounded-full ${statusDotClass}`}
                   aria-hidden="true"
@@ -261,7 +261,7 @@ function SeoPanelHeader({ editor }: { editor: SeoPageEditorController }) {
           {publishStateLabel} · SEO {seoReadiness.label}
         </p>
       </div>
-      <span className="border-ui-line text-ui-text-muted rounded-full border bg-white px-2.5 py-1 text-xs font-semibold shadow-sm">
+      <span className="border-ui-line text-ui-text-muted rounded-ui bg-ui-surface shadow-ui border px-2.5 py-1 text-xs font-semibold">
         {seoReadiness.label}
       </span>
     </div>
@@ -272,16 +272,16 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
   const { page, publishStateHelp, publishStateLabel } = editor;
 
   return (
-    <div className="border-ui-line bg-ui-canvas grid gap-3 rounded-xl border p-4">
+    <div className="border-ui-line bg-ui-canvas rounded-ui-lg grid gap-3 border p-4">
       <div className="flex items-center justify-between gap-3">
         <span className="text-ui-text-subtle text-xs font-semibold tracking-wider uppercase">
           Status
         </span>
-        <span className="border-ui-line text-ui-text-muted rounded-full border bg-white px-2.5 py-0.5 text-xs font-semibold shadow-sm">
+        <span className="border-ui-line text-ui-text-muted rounded-ui bg-ui-surface shadow-ui border px-2.5 py-0.5 text-xs font-semibold">
           <span className="flex items-center gap-1.5">
             <span
               className={`size-1.5 rounded-full ${
-                page?.status === "published" ? "bg-emerald-500" : "bg-amber-500"
+                page?.status === "published" ? "bg-ui-ok" : "bg-ui-warn"
               }`}
             />
             {publishStateLabel}
@@ -298,7 +298,7 @@ function PublishStatusCard({ editor }: { editor: SeoPageEditorController }) {
           href={page.route_path}
           target="_blank"
           rel="noreferrer"
-          className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 inline-flex min-h-9 items-center justify-center rounded-lg border bg-white px-3 text-xs font-semibold shadow-sm transition focus-visible:ring-4 focus-visible:outline-none"
+          className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 rounded-ui-lg bg-ui-surface shadow-ui inline-flex min-h-9 items-center justify-center border px-3 text-xs font-semibold transition focus-visible:ring-4 focus-visible:outline-none"
         >
           Open live page
         </a>
@@ -352,13 +352,13 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
         <span className="text-ui-text text-sm font-semibold">
           URL ending (slug)
         </span>
-        <div className="border-ui-line focus-within:border-ui-accent focus-within:ring-ui-accent/10 mt-1.5 flex items-center rounded-lg border bg-white shadow-sm transition focus-within:ring-4">
+        <div className="border-ui-line focus-within:border-ui-accent focus-within:ring-ui-accent/10 rounded-ui-lg bg-ui-surface shadow-ui mt-1.5 flex items-center border transition focus-within:ring-4">
           <select
             name="routePrefix"
             aria-label="Route prefix"
             value={editor.routePrefix}
             onChange={(event) => editor.setRoutePrefix(event.target.value)}
-            className="border-ui-line bg-ui-canvas text-ui-text-muted max-w-32 rounded-l-lg border-r px-2 py-2.5 text-sm font-semibold outline-none"
+            className="border-ui-line bg-ui-canvas text-ui-text-muted rounded-l-ui-lg max-w-32 border-r px-2 py-2.5 text-sm font-semibold outline-none"
           >
             {editor.routePrefixOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -372,7 +372,7 @@ function SeoMetadataFields({ editor }: { editor: SeoPageEditorController }) {
             value={editor.visibleSlug}
             onChange={(event) => editor.updateSlugFromInput(event.target.value)}
             aria-label="URL ending (slug)"
-            className="text-ui-text min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm font-semibold outline-none placeholder:text-slate-300"
+            className="text-ui-text placeholder:text-ui-text-subtle min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm font-semibold outline-none"
             placeholder="page-slug"
           />
         </div>
@@ -441,7 +441,7 @@ function ScheduleField({ editor }: { editor: SeoPageEditorController }) {
   );
 
   return (
-    <label className="border-ui-line bg-ui-canvas block rounded-xl border p-4">
+    <label className="border-ui-line bg-ui-canvas rounded-ui-lg block border p-4">
       <span className="text-ui-text text-sm font-semibold">
         Schedule publish
       </span>
@@ -501,7 +501,7 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
   return (
     <details
       id="advanced-seo-fields"
-      className="border-ui-line bg-ui-canvas rounded-xl border p-4"
+      className="border-ui-line bg-ui-canvas rounded-ui-lg border p-4"
     >
       <summary className="text-ui-text cursor-pointer text-sm font-semibold">
         Advanced SEO
@@ -526,7 +526,7 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
           </span>
         </label>
 
-        <div className="border-ui-line space-y-3 rounded-lg border bg-white p-4">
+        <div className="border-ui-line rounded-ui-lg bg-ui-surface space-y-3 border p-4">
           <CheckboxSetting
             checked={editor.noindex}
             id="seo-noindex-field"
@@ -549,7 +549,7 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
           />
         </div>
 
-        <div className="border-ui-line space-y-3 rounded-lg border bg-white p-4">
+        <div className="border-ui-line rounded-ui-lg bg-ui-surface space-y-3 border p-4">
           <div>
             <p className="text-ui-text text-sm font-semibold">
               Structured data
@@ -585,7 +585,7 @@ function AdvancedSeoFields({ editor }: { editor: SeoPageEditorController }) {
 function GovernanceFields({ editor }: { editor: SeoPageEditorController }) {
   const page = editor.page;
   return (
-    <div className="border-ui-line space-y-4 rounded-lg border bg-white p-4">
+    <div className="border-ui-line rounded-ui-lg bg-ui-surface space-y-4 border p-4">
       <div>
         <p className="text-ui-text text-sm font-semibold">
           Internal &amp; social
@@ -740,7 +740,7 @@ function CheckboxSetting({
         checked={checked}
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
-        className="border-ui-line-strong text-ui-accent focus:ring-ui-accent mt-1 size-4 rounded disabled:opacity-50"
+        className="border-ui-line-strong text-ui-accent focus:ring-ui-accent rounded-ui mt-1 size-4 disabled:opacity-50"
       />
       <div className={disabled ? "opacity-50" : ""}>
         <span className="text-ui-text block">{label}</span>
@@ -754,7 +754,7 @@ function CheckboxSetting({
 
 function SearchPreviewCard({ editor }: { editor: SeoPageEditorController }) {
   return (
-    <div className="border-ui-line rounded-xl border bg-white p-5 shadow-sm ring-1 ring-black/5">
+    <div className="border-ui-line rounded-ui-lg bg-ui-surface shadow-ui border p-5 ring-1 ring-black/5">
       <div className="mb-4 flex items-center gap-2">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -852,18 +852,18 @@ function PublishConfirmDialog({
       role="alertdialog"
       aria-labelledby="editor-publish-confirm-title"
       aria-describedby="editor-publish-confirm-body"
-      className="mt-3 grid gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"
+      className="rounded-ui-lg border-ui-warn/25 bg-ui-warn-fill text-ui-warn-ink mt-3 grid gap-3 border p-3 text-sm"
     >
       <div>
         <p
           id="editor-publish-confirm-title"
-          className="font-semibold text-amber-950"
+          className="text-ui-warn-ink font-semibold"
         >
           Confirm publish
         </p>
         <p
           id="editor-publish-confirm-body"
-          className="mt-1 text-xs leading-5 whitespace-pre-line text-amber-900"
+          className="text-ui-warn-ink mt-1 text-xs leading-5 whitespace-pre-line"
         >
           {publishConfirmMessage}
         </p>
@@ -871,7 +871,7 @@ function PublishConfirmDialog({
       {thinWarning ? (
         <p
           role="note"
-          className="flex items-start gap-2 rounded-lg border border-amber-300 bg-white/70 px-3 py-2 text-xs leading-5 text-amber-900"
+          className="rounded-ui-lg border-ui-warn/25 bg-ui-surface/70 text-ui-warn-ink flex items-start gap-2 border px-3 py-2 text-xs leading-5"
         >
           <svg
             aria-hidden="true"
@@ -893,7 +893,7 @@ function PublishConfirmDialog({
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <button
           type="button"
-          className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm font-semibold text-amber-900 shadow-sm transition hover:bg-amber-100 focus-visible:ring-4 focus-visible:ring-amber-200/70 focus-visible:outline-none"
+          className="rounded-ui-lg border-ui-warn/25 bg-ui-surface text-ui-warn-ink shadow-ui hover:bg-ui-warn-fill focus-visible:ring-ui-warn/70 border px-3 py-2 text-sm font-semibold transition focus-visible:ring-4 focus-visible:outline-none"
           onClick={onCancel}
         >
           Cancel

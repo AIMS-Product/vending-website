@@ -39,17 +39,17 @@ export function PublishBlockerChecklist({
   return (
     <section
       aria-labelledby="publish-blocker-checklist-title"
-      className="rounded-xl border border-amber-200 bg-amber-50 p-4"
+      className="rounded-ui-lg border-ui-warn/25 bg-ui-warn-fill border p-4"
     >
       <div className="flex items-center justify-between gap-2">
         <h3
           id="publish-blocker-checklist-title"
-          className="text-sm font-semibold text-amber-950"
+          className="text-ui-warn-ink text-sm font-semibold"
         >
           Before you can publish
         </h3>
         {hasBlockers ? (
-          <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-200 ring-inset">
+          <span className="rounded-ui bg-ui-surface text-ui-warn-ink ring-ui-warn/25 px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset">
             {items.length} to fix
           </span>
         ) : null}
@@ -70,23 +70,23 @@ export function PublishBlockerChecklist({
               <button
                 type="button"
                 onClick={() => onFocusBlocker(item)}
-                className="flex w-full items-center justify-between gap-3 rounded-lg border border-amber-200 bg-white px-3 py-2.5 text-left text-sm font-medium text-amber-950 shadow-sm transition hover:border-amber-300 hover:bg-amber-50 focus-visible:ring-4 focus-visible:ring-amber-200/70 focus-visible:outline-none"
+                className="rounded-ui-lg border-ui-warn/25 bg-ui-surface text-ui-warn-ink shadow-ui hover:border-ui-warn/25 hover:bg-ui-warn-fill focus-visible:ring-ui-warn/70 flex w-full items-center justify-between gap-3 border px-3 py-2.5 text-left text-sm font-medium transition focus-visible:ring-4 focus-visible:outline-none"
               >
                 <span className="flex min-w-0 items-start gap-2">
                   <span
-                    className="mt-1.5 size-1.5 shrink-0 rounded-full bg-amber-500"
+                    className="bg-ui-warn mt-1.5 size-1.5 shrink-0 rounded-full"
                     aria-hidden="true"
                   />
                   <span className="min-w-0">{item.label}</span>
                 </span>
-                <span className="shrink-0 text-xs font-semibold text-amber-700">
+                <span className="text-ui-warn-ink shrink-0 text-xs font-semibold">
                   {actionVerbForTarget(item)}
                 </span>
               </button>
             </li>
           ))
         ) : (
-          <li className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-900">
+          <li className="rounded-ui-lg border-ui-ok/25 bg-ui-ok-fill text-ui-ok-ink border px-3 py-2.5 text-sm font-medium">
             No publish blockers — this page can be published.
           </li>
         )}

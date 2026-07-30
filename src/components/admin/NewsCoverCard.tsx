@@ -88,7 +88,7 @@ export function NewsCoverCard({
             handleFileChange(event.target.files?.[0] ?? null)
           }
           disabled={isUploading}
-          className="text-ui-text-muted file:text-ui-accent mt-2 block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-[#e9f1ff] file:px-4 file:py-2 file:text-sm file:font-semibold hover:file:bg-[#dceaff]"
+          className="text-ui-text-muted file:text-ui-accent file:rounded-ui file:bg-ui-accent-soft hover:file:bg-ui-accent/15 mt-2 block w-full text-sm file:mr-3 file:border-0 file:px-4 file:py-2 file:text-sm file:font-semibold"
         />
       </label>
       {uploadMessage && (

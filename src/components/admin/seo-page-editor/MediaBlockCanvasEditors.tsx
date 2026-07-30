@@ -224,7 +224,7 @@ export function SplitHeroBlockCanvas({
         </label>
       </OptionalBlockField>
       {!block.props.mediaAltText?.trim() && (
-        <p className="mt-2 text-xs text-amber-700">
+        <p className="text-ui-warn-ink mt-2 text-xs">
           Add alt text in block settings before publishing.
         </p>
       )}

@@ -15,11 +15,11 @@ import { pagePathForSlug } from "@/lib/page-builder/page-paths";
 // These are the only way to open the Blocks / SEO panels on mobile + tablet,
 // so they must read as "open this panel", not as ambiguous corner chevrons.
 const railPanelToggleClass =
-  "inline-flex min-h-10 items-center gap-1.5 rounded-full border border-ui-line bg-white px-3.5 text-sm font-semibold text-ui-text-muted shadow-sm transition hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-4 focus-visible:ring-ui-accent/20 focus-visible:outline-none";
+  "inline-flex min-h-10 items-center gap-1.5 rounded-ui border border-ui-line bg-ui-surface px-3.5 text-sm font-semibold text-ui-text-muted shadow-ui transition hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-4 focus-visible:ring-ui-accent/20 focus-visible:outline-none";
 const railCommandClass =
-  "inline-flex min-h-10 items-center justify-center rounded-full border border-ui-line bg-white px-4 text-sm font-semibold text-ui-text-muted shadow-sm transition hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-4 focus-visible:ring-ui-accent/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55";
+  "inline-flex min-h-10 items-center justify-center rounded-ui border border-ui-line bg-ui-surface px-4 text-sm font-semibold text-ui-text-muted shadow-ui transition hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-4 focus-visible:ring-ui-accent/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55";
 const railMenuItemClass =
-  "rounded-lg px-3 py-2 text-left text-sm font-semibold text-ui-text-muted transition hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-2 focus-visible:ring-ui-accent/25 focus-visible:outline-none";
+  "rounded-ui-lg px-3 py-2 text-left text-sm font-semibold text-ui-text-muted transition hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-2 focus-visible:ring-ui-accent/25 focus-visible:outline-none";
 
 // S20 / C140 e2e: a page is "just created in-session" when there is no loaded
 // page (the editor opened on /admin/pages/new) but a draft row now exists
@@ -140,7 +140,7 @@ export function SeoPageEditorTopRail({
               type="submit"
               name="intent"
               value="save"
-              className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 inline-flex min-h-10 items-center justify-center rounded-full border bg-white px-5 text-sm font-semibold shadow-lg transition focus-visible:ring-4 focus-visible:outline-none"
+              className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 rounded-ui bg-ui-surface shadow-ui-raised inline-flex min-h-10 items-center justify-center border px-5 text-sm font-semibold transition focus-visible:ring-4 focus-visible:outline-none"
               title={
                 isPublishedPage
                   ? "Save unpublished edits while keeping the current live page published."
@@ -151,7 +151,7 @@ export function SeoPageEditorTopRail({
             </button>
             <button
               type="button"
-              className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 inline-flex min-h-10 items-center justify-center rounded-full border bg-white px-5 text-sm font-semibold shadow-lg transition focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55"
+              className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-accent/20 rounded-ui bg-ui-surface shadow-ui-raised inline-flex min-h-10 items-center justify-center border px-5 text-sm font-semibold transition focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55"
               disabled={isPreviewOpening}
               title={
                 page?.id
@@ -173,7 +173,7 @@ export function SeoPageEditorTopRail({
                 href={previewLinkPath}
                 target="_blank"
                 rel="noreferrer"
-                className="border-ui-accent/20 bg-ui-accent hover:bg-ui-accent-hover focus-visible:ring-ui-accent/20 inline-flex min-h-10 items-center justify-center rounded-full border px-5 text-sm font-semibold text-white shadow-lg transition focus-visible:ring-4 focus-visible:outline-none"
+                className="border-ui-accent/20 bg-ui-accent hover:bg-ui-accent-hover focus-visible:ring-ui-accent/20 rounded-ui shadow-ui-raised inline-flex min-h-10 items-center justify-center border px-5 text-sm font-semibold text-white transition focus-visible:ring-4 focus-visible:outline-none"
               >
                 Open preview
               </a>
@@ -186,7 +186,7 @@ export function SeoPageEditorTopRail({
                 >
                   Share
                 </summary>
-                <div className="border-ui-line absolute top-full left-1/2 z-[70] mt-2 grid w-64 -translate-x-1/2 gap-1 rounded-xl border bg-white p-2 text-left shadow-xl">
+                <div className="border-ui-line rounded-ui-lg bg-ui-surface shadow-ui-raised absolute top-full left-1/2 z-[70] mt-2 grid w-64 -translate-x-1/2 gap-1 border p-2 text-left">
                   {canCopyEditorUrl && (
                     <button
                       type="button"
@@ -248,7 +248,7 @@ export function SeoPageEditorTopRail({
             </p>
           )}
           {autosave?.status === "error" && (
-            <p className="text-xs font-medium text-red-600">
+            <p className="text-ui-bad text-xs font-medium">
               {autosave.message}
             </p>
           )}
@@ -256,7 +256,7 @@ export function SeoPageEditorTopRail({
             <p
               className={`text-xs font-medium ${
                 previewLinkTone === "error"
-                  ? "text-red-600"
+                  ? "text-ui-bad"
                   : "text-ui-text-subtle"
               }`}
             >
@@ -275,7 +275,7 @@ export function SeoPageEditorTopRail({
             <div
               className={`text-center text-xs font-medium ${
                 copyMessage.tone === "error"
-                  ? "text-red-600"
+                  ? "text-ui-bad"
                   : "text-ui-text-subtle"
               }`}
               role={copyMessage.tone === "error" ? "alert" : "status"}
@@ -289,7 +289,7 @@ export function SeoPageEditorTopRail({
                     value={copyMessage.manualUrl}
                     aria-label="Copy this URL manually"
                     onFocus={(event) => event.currentTarget.select()}
-                    className="w-full max-w-[min(80vw,32rem)] rounded-md border border-red-200 bg-white px-2 py-1 font-mono text-[11px] text-red-700 shadow-sm outline-none focus:border-red-300 focus:ring-2 focus:ring-red-100"
+                    className="rounded-ui border-ui-bad/25 bg-ui-surface text-ui-bad-ink shadow-ui focus:border-ui-bad/25 focus:ring-ui-bad-fill w-full max-w-[min(80vw,32rem)] border px-2 py-1 font-mono text-[11px] outline-none focus:ring-2"
                   />
                 </label>
               ) : null}

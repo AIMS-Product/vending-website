@@ -8,7 +8,7 @@ export function editorCanvasDividerClass(
 ) {
   if (!showDivider) return "";
   const spacingClass = spacing === 10 ? "mt-10 pt-10" : "mt-14 pt-14";
-  return `border-t border-dashed border-slate-300 ${spacingClass}`;
+  return `border-t border-dashed border-ui-line-strong ${spacingClass}`;
 }
 
 export function formatTime(iso: string) {

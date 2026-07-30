@@ -92,7 +92,7 @@ export function RichTextBodyEditor({
         return (
           <div
             key={`${index}-${kind}`}
-            className="border-ui-line rounded-lg border bg-white/80 p-3 shadow-sm"
+            className="border-ui-line rounded-ui-lg bg-ui-surface/80 shadow-ui border p-3"
           >
             {node.type === "list" ? (
               <label className="block">
@@ -141,7 +141,7 @@ export function RichTextBodyEditor({
               </>
             )}
 
-            <details className="border-ui-line bg-ui-canvas/70 mt-3 rounded-lg border">
+            <details className="border-ui-line bg-ui-canvas/70 rounded-ui-lg mt-3 border">
               <summary className="text-ui-text-subtle hover:text-ui-text focus-visible:ring-ui-accent/25 cursor-pointer list-none px-3 py-2 text-xs font-semibold tracking-wider uppercase transition focus-visible:ring-2 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
                 Text options
               </summary>
@@ -307,7 +307,7 @@ function ParagraphLinkControls({
           <span
             id={errorId}
             role="alert"
-            className="mt-1 block text-xs font-medium text-red-600"
+            className="text-ui-bad mt-1 block text-xs font-medium"
           >
             {linkTextError}
           </span>

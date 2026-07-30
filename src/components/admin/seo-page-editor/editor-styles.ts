@@ -1,4 +1,19 @@
+import {
+  adminInputClass,
+  adminPrimaryButtonClass,
+  adminSecondaryButtonClass,
+  adminSmallButtonClass,
+  adminTextareaClass,
+} from "@/components/admin/AdminUi";
 import type { SeoReadinessStatus } from "@/lib/page-builder/seo-readiness";
+
+/* Two kinds of style live in this file and they are not interchangeable.
+   Editor chrome — buttons, inputs, pills, menus — is admin UI and uses the
+   --ui-* tokens. The canvas inline inputs at the bottom sit inside a preview
+   of the published page, so their type colours are the public site's own and
+   deliberately stay raw: only the editing affordances (hover surface, focus
+   ring, placeholder) are admin, because only those are invisible once the
+   page publishes. */
 
 export function labelForReadinessStatus(status: SeoReadinessStatus) {
   if (status === "blocked") return "Blocked";
@@ -8,72 +23,70 @@ export function labelForReadinessStatus(status: SeoReadinessStatus) {
 }
 
 export function readinessPillClass(status: SeoReadinessStatus) {
-  if (status === "blocked") return "bg-red-50 text-red-700 ring-1 ring-red-200";
-  if (status === "needs_work") {
-    return "bg-amber-50 text-amber-800 ring-1 ring-amber-200";
-  }
-  if (status === "opportunities") {
-    return "bg-sky-50 text-sky-700 ring-1 ring-sky-200";
-  }
-  return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
+  if (status === "blocked") return "bg-ui-bad-fill text-ui-bad-ink";
+  if (status === "needs_work") return "bg-ui-warn-fill text-ui-warn-ink";
+  if (status === "opportunities") return "bg-ui-accent-soft text-ui-accent";
+  return "bg-ui-ok-fill text-ui-ok-ink";
 }
 
 export function readinessCategoryClass(status: SeoReadinessStatus) {
-  if (status === "blocked") return "border-l-4 border-l-red-500";
-  if (status === "needs_work") return "border-l-4 border-l-amber-500";
-  if (status === "opportunities") return "border-l-4 border-l-sky-500";
-  return "border-l-4 border-l-emerald-500";
+  if (status === "blocked") return "border-l-4 border-l-ui-bad";
+  if (status === "needs_work") return "border-l-4 border-l-ui-warn";
+  if (status === "opportunities") return "border-l-4 border-l-ui-accent";
+  return "border-l-4 border-l-ui-ok";
 }
 
 export function findingDotClass(
   severity: "blocker" | "warning" | "opportunity",
 ) {
-  if (severity === "blocker") return "bg-red-500";
-  if (severity === "warning") return "bg-amber-500";
-  return "bg-sky-500";
+  if (severity === "blocker") return "bg-ui-bad";
+  if (severity === "warning") return "bg-ui-warn";
+  return "bg-ui-accent";
 }
 
-export const leadInputClass =
-  "w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-1 text-base leading-7 text-slate-600 outline-none transition placeholder:text-slate-300 hover:bg-slate-50 focus:bg-white focus:border-[#0b63f6]/30 focus:ring-4 focus:ring-[#0b63f6]/10";
+/* The editor used to keep its own button and input shapes, which is how the
+   builder drifted a shade off every other admin screen. They are now the
+   shared ones. */
+export const primaryButtonClass = adminPrimaryButtonClass;
 
-export const eyebrowInputClass =
-  "w-full rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-sm font-bold tracking-wider text-indigo-600 uppercase outline-none transition-all placeholder:text-indigo-300 hover:bg-indigo-50/50 focus:bg-white focus:border-indigo-200 focus:ring-4 focus:ring-indigo-100";
+export const secondaryButtonClass = adminSecondaryButtonClass;
 
-export const heroHeadingInputClass =
-  "w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-3xl font-bold tracking-tight text-slate-900 outline-none transition-all placeholder:text-slate-300 hover:bg-slate-50 focus:bg-white focus:border-[#0b63f6]/30 focus:ring-4 focus:ring-[#0b63f6]/10 md:text-4xl";
+export const smallButtonClass = `${adminSmallButtonClass} max-w-full whitespace-nowrap`;
 
-export const sectionHeadingInputClass =
-  "w-full rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-2xl font-bold tracking-tight text-slate-900 outline-none transition-all placeholder:text-slate-300 hover:bg-slate-50 focus:bg-white focus:border-[#0b63f6]/30 focus:ring-4 focus:ring-[#0b63f6]/10 md:text-3xl";
+export const compactInputClass = adminInputClass;
 
-export const bodyTextareaClass =
-  "w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-base leading-8 text-slate-600 outline-none transition-all placeholder:text-slate-300 hover:bg-slate-50 focus:bg-white focus:border-[#0b63f6]/30 focus:ring-4 focus:ring-[#0b63f6]/10";
+export const textareaClass = adminTextareaClass;
 
 export const disabledLeadFieldClass =
-  "rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-400 shadow-sm";
+  "rounded-ui border-ui-line bg-ui-surface text-ui-text-subtle shadow-ui border p-3 text-sm";
 
-export const compactInputClass =
-  "mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-all outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-[#0b63f6] focus:ring-4 focus:ring-[#0b63f6]/10";
-
-export const textareaClass =
-  "mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm leading-6 text-slate-900 shadow-sm transition-all outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-[#0b63f6] focus:ring-4 focus:ring-[#0b63f6]/10";
-
-export const primaryButtonClass =
-  "rounded-lg bg-[#0b63f6] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#0756d6] hover:shadow focus-visible:ring-4 focus-visible:ring-[#0b63f6]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
-
-export const secondaryButtonClass =
-  "rounded-lg bg-white border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-300 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
-
-export const smallButtonClass =
-  "inline-flex max-w-full items-center justify-center rounded-lg bg-white px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 transition-all hover:bg-slate-50 hover:ring-slate-400 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
-
+/* No AdminUi equivalent: these are the builder's dense toolbar and overflow
+   menu, which have no counterpart on a list screen. Tokens, not new colours. */
 export const miniButtonClass =
-  "rounded-lg bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 transition-all hover:bg-slate-50 hover:ring-slate-400 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded-ui bg-ui-surface text-ui-text-muted shadow-ui ring-ui-line-strong hover:bg-ui-canvas hover:ring-ui-text-subtle focus-visible:ring-ui-line px-3 py-1 text-xs font-semibold ring-1 transition ring-inset focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
 export const menuButtonClass =
-  "w-full rounded-lg bg-white px-3 py-2 text-left text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none";
+  "rounded-ui bg-ui-surface text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-line w-full px-3 py-2 text-left text-sm font-semibold transition focus-visible:ring-4 focus-visible:outline-none";
 
 export const dangerButtonClass =
-  "w-full rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-600 transition-all hover:bg-red-50 hover:text-red-700 focus-visible:ring-4 focus-visible:ring-red-100 focus-visible:outline-none text-left";
+  "rounded-ui bg-ui-surface text-ui-bad hover:bg-ui-bad/5 focus-visible:ring-ui-bad/20 w-full px-3 py-2 text-left text-sm font-semibold transition focus-visible:ring-4 focus-visible:outline-none";
 
 export const iconButtonClass =
-  "inline-flex size-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded-ui text-ui-text-subtle hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-ui-line inline-flex size-8 items-center justify-center transition-colors focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+
+/* Canvas inline inputs. The text colours below are the public page's, not the
+   admin's — this markup is a preview of what publishes. */
+export const leadInputClass =
+  "rounded-ui hover:bg-ui-canvas focus:bg-ui-surface focus:border-ui-accent/30 focus:ring-ui-accent/10 placeholder:text-ui-text-subtle w-full resize-none border border-transparent bg-transparent px-2 py-1 text-base leading-7 text-slate-600 outline-none transition focus:ring-4";
+
+export const eyebrowInputClass =
+  "rounded-ui hover:bg-ui-canvas focus:bg-ui-surface focus:border-ui-accent/30 focus:ring-ui-accent/10 placeholder:text-ui-text-subtle w-full border border-transparent bg-transparent px-2 py-1.5 text-sm font-bold tracking-wider text-indigo-600 uppercase outline-none transition-all focus:ring-4";
+
+export const heroHeadingInputClass =
+  "rounded-ui hover:bg-ui-canvas focus:bg-ui-surface focus:border-ui-accent/30 focus:ring-ui-accent/10 placeholder:text-ui-text-subtle w-full resize-none border border-transparent bg-transparent px-2 py-1.5 text-3xl font-bold tracking-tight text-slate-900 outline-none transition-all focus:ring-4 md:text-4xl";
+
+export const sectionHeadingInputClass =
+  "rounded-ui hover:bg-ui-canvas focus:bg-ui-surface focus:border-ui-accent/30 focus:ring-ui-accent/10 placeholder:text-ui-text-subtle w-full border border-transparent bg-transparent px-2 py-1.5 text-2xl font-bold tracking-tight text-slate-900 outline-none transition-all focus:ring-4 md:text-3xl";
+
+export const bodyTextareaClass =
+  "rounded-ui hover:bg-ui-canvas focus:bg-ui-surface focus:border-ui-accent/30 focus:ring-ui-accent/10 placeholder:text-ui-text-subtle w-full resize-none border border-transparent bg-transparent px-2 py-1.5 text-base leading-8 text-slate-600 outline-none transition-all focus:ring-4";

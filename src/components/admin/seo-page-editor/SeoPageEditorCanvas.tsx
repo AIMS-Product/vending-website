@@ -101,8 +101,8 @@ export function SortableSectionEditor({
     >
       <div className={columnGridClass(section.columns.length)}>
         {section.columns.length === 0 ? (
-          <div className="border-ui-line-strong bg-ui-canvas/50 hover:bg-ui-canvas flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors hover:border-slate-400">
-            <div className="mb-3 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
+          <div className="border-ui-line-strong bg-ui-canvas/50 hover:bg-ui-canvas rounded-ui-lg hover:border-ui-line-strong flex flex-col items-center justify-center border-2 border-dashed px-6 py-12 text-center transition-colors">
+            <div className="bg-ui-surface shadow-ui ring-ui-line mb-3 rounded-full p-3 ring-1">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="20"
@@ -127,7 +127,7 @@ export function SortableSectionEditor({
             <button
               type="button"
               onClick={onAddColumn}
-              className="text-ui-text-muted hover:bg-ui-canvas mt-4 inline-flex items-center gap-2 rounded-md bg-white px-3 py-1.5 text-sm font-semibold shadow-sm ring-1 ring-slate-300 ring-inset"
+              className="text-ui-text-muted hover:bg-ui-canvas rounded-ui bg-ui-surface shadow-ui ring-ui-line-strong mt-4 inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold ring-1 ring-inset"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -216,9 +216,9 @@ export function SimpleBlockStackEditor({
       {column.blocks.length === 0 ? (
         <div
           id="builder-canvas-add-block"
-          className="border-ui-line bg-ui-canvas/50 hover:border-ui-line-strong hover:bg-ui-canvas flex scroll-mt-24 flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-16 text-center transition-colors"
+          className="border-ui-line bg-ui-canvas/50 hover:border-ui-line-strong hover:bg-ui-canvas rounded-ui-lg flex scroll-mt-24 flex-col items-center justify-center border-2 border-dashed px-6 py-16 text-center transition-colors"
         >
-          <div className="mb-4 rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
+          <div className="bg-ui-surface shadow-ui ring-ui-line mb-4 rounded-full p-3 ring-1">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -324,12 +324,14 @@ function SortableColumnEditor({
   return (
     <div
       className={`group/column relative flex flex-col rounded-[12px] border border-dashed border-transparent bg-transparent transition-all ${
-        showColumnChrome ? "hover:border-ui-line-strong hover:bg-white/50" : ""
+        showColumnChrome
+          ? "hover:border-ui-line-strong hover:bg-ui-surface/50"
+          : ""
       } [&:has(.builder-block-editor:focus-within)>header]:opacity-0`}
     >
       {showColumnChrome ? (
         <header className="pointer-events-none absolute top-2 right-2 z-20 flex items-center gap-1 opacity-0 transition-opacity group-hover/column:opacity-100">
-          <div className="border-ui-line pointer-events-auto flex items-center gap-1 rounded-lg border bg-white/90 p-0.5 shadow-sm ring-1 ring-black/5 backdrop-blur">
+          <div className="border-ui-line rounded-ui-lg bg-ui-surface/90 shadow-ui pointer-events-auto flex items-center gap-1 border p-0.5 ring-1 ring-black/5 backdrop-blur">
             <BuilderTooltip
               label={`Column ${columnIndex + 1}`}
               detail={`Content column ${columnIndex + 1} in this page section`}
@@ -368,8 +370,8 @@ function SortableColumnEditor({
       <div className="flex-1">
         <div>
           {column.blocks.length === 0 ? (
-            <div className="border-ui-line bg-ui-canvas/50 flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-10 text-center">
-              <div className="mb-3 rounded-full bg-white p-2 shadow-sm ring-1 ring-slate-200">
+            <div className="border-ui-line bg-ui-canvas/50 rounded-ui-lg flex flex-col items-center justify-center border-2 border-dashed px-4 py-10 text-center">
+              <div className="bg-ui-surface shadow-ui ring-ui-line mb-3 rounded-full p-2 ring-1">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"

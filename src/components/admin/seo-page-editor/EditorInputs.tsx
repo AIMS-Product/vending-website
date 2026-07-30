@@ -18,10 +18,10 @@ export function EditorCharLimit({
 
   const toneClass =
     count >= max
-      ? "font-semibold text-red-600"
+      ? "font-semibold text-ui-bad"
       : count >= warnAt
-        ? "font-medium text-amber-600"
-        : "font-medium text-emerald-600";
+        ? "font-medium text-ui-warn"
+        : "font-medium text-ui-ok";
 
   return (
     <p

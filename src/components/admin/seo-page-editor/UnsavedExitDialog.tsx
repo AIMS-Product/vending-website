@@ -83,7 +83,7 @@ export function UnsavedExitDialog({
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
+      className="bg-ui-text/40 fixed inset-0 z-[90] flex items-center justify-center p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onChoose("stay");
       }}
@@ -95,7 +95,7 @@ export function UnsavedExitDialog({
         aria-labelledby="unsaved-exit-title"
         aria-describedby="unsaved-exit-body"
         tabIndex={-1}
-        className="border-ui-line w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl focus:outline-none"
+        className="border-ui-line rounded-ui-lg bg-ui-surface shadow-ui-raised w-full max-w-md border p-6 focus:outline-none"
       >
         <p className="text-ui-accent text-xs font-semibold tracking-wider uppercase">
           Unsaved page
@@ -118,7 +118,7 @@ export function UnsavedExitDialog({
         {errorMessage ? (
           <p
             role="alert"
-            className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 ring-1 ring-red-100"
+            className="rounded-ui-lg bg-ui-bad-fill text-ui-bad-ink ring-ui-bad-fill mt-4 px-3 py-2 text-sm font-medium ring-1"
           >
             {errorMessage}
           </p>
@@ -127,7 +127,7 @@ export function UnsavedExitDialog({
         <div className="mt-6 grid gap-2">
           <button
             type="button"
-            className="border-ui-accent bg-ui-accent focus-visible:ring-ui-accent/20 inline-flex min-h-11 items-center justify-center rounded-lg border px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#074fca] focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+            className="border-ui-accent bg-ui-accent focus-visible:ring-ui-accent/20 rounded-ui-lg shadow-ui hover:bg-ui-accent-hover inline-flex min-h-11 items-center justify-center border px-4 text-sm font-semibold text-white transition focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isDiscarding}
             onClick={() => onChoose("save")}
           >
@@ -135,7 +135,7 @@ export function UnsavedExitDialog({
           </button>
           <button
             type="button"
-            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 shadow-sm transition hover:border-red-300 hover:bg-red-50 focus-visible:ring-4 focus-visible:ring-red-500/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-ui-lg border-ui-bad/25 bg-ui-surface text-ui-bad-ink shadow-ui hover:border-ui-bad/25 hover:bg-ui-bad-fill focus-visible:ring-ui-bad/20 inline-flex min-h-11 items-center justify-center border px-4 text-sm font-semibold transition focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isDiscarding}
             onClick={() => onChoose("discard")}
           >
@@ -143,7 +143,7 @@ export function UnsavedExitDialog({
           </button>
           <button
             type="button"
-            className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas focus-visible:ring-ui-accent/20 inline-flex min-h-11 items-center justify-center rounded-lg border bg-white px-4 text-sm font-semibold shadow-sm transition focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+            className="border-ui-line text-ui-text-muted hover:border-ui-line-strong hover:bg-ui-canvas focus-visible:ring-ui-accent/20 rounded-ui-lg bg-ui-surface shadow-ui inline-flex min-h-11 items-center justify-center border px-4 text-sm font-semibold transition focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isDiscarding}
             onClick={() => onChoose("stay")}
           >

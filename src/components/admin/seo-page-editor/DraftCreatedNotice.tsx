@@ -13,11 +13,11 @@ export function DraftCreatedNotice() {
   return (
     <div
       role="status"
-      className="fixed inset-x-0 bottom-4 z-[75] mx-auto flex w-[min(92vw,30rem)] items-start gap-3 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-xl ring-1 ring-black/5"
+      className="rounded-ui-lg border-ui-accent/25 bg-ui-surface shadow-ui-raised fixed inset-x-0 bottom-4 z-[75] mx-auto flex w-[min(92vw,30rem)] items-start gap-3 border px-4 py-3 ring-1 ring-black/5"
     >
       <span
         aria-hidden="true"
-        className="text-ui-accent mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-sky-50 ring-1 ring-sky-100"
+        className="text-ui-accent bg-ui-accent-soft ring-ui-accent-soft mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full ring-1"
       >
         <svg
           viewBox="0 0 24 24"

@@ -327,13 +327,13 @@ export function AiBuilderAssistant({
             minWidth: AI_CHAT_PANEL_MIN_WIDTH,
             maxWidth: `calc(100vw - ${AI_CHAT_PANEL_VIEWPORT_MARGIN}px)`,
           }}
-          className="z-[70] flex flex-col overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-2xl"
+          className="rounded-ui-lg border-ui-accent/25 bg-ui-surface shadow-ui-raised z-[70] flex flex-col overflow-hidden border"
         >
           <AiAssistantPanelEdgeResize
             axis="vertical"
             ariaLabel="Resize assistant panel height"
-            className="relative flex h-3 shrink-0 cursor-ns-resize touch-none items-center justify-center border-b border-violet-100 bg-violet-50/80 transition hover:bg-violet-100 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none focus-visible:ring-inset"
-            indicatorClassName="h-1 w-10 rounded-full bg-violet-300"
+            className="border-ui-accent-soft bg-ui-accent-soft/80 hover:bg-ui-accent-soft focus-visible:ring-ui-accent relative flex h-3 shrink-0 cursor-ns-resize touch-none items-center justify-center border-b transition focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset"
+            indicatorClassName="h-1 w-10 rounded-full bg-ui-accent"
             onResizeStart={(_, clientY) => {
               panelHeightResizeSessionRef.current = {
                 startY: clientY,
@@ -355,8 +355,8 @@ export function AiBuilderAssistant({
           <AiAssistantPanelEdgeResize
             axis="horizontal"
             ariaLabel="Resize assistant panel width"
-            className="absolute top-0 bottom-0 left-0 z-10 flex w-3 cursor-ew-resize touch-none items-center justify-center border-r border-violet-100 bg-violet-50/80 transition hover:bg-violet-100 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none focus-visible:ring-inset"
-            indicatorClassName="h-10 w-1 rounded-full bg-violet-300"
+            className="border-ui-accent-soft bg-ui-accent-soft/80 hover:bg-ui-accent-soft focus-visible:ring-ui-accent absolute top-0 bottom-0 left-0 z-10 flex w-3 cursor-ew-resize touch-none items-center justify-center border-r transition focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset"
+            indicatorClassName="h-10 w-1 rounded-full bg-ui-accent"
             onResizeStart={(clientX) => {
               panelWidthResizeSessionRef.current = {
                 startX: clientX,
@@ -373,13 +373,13 @@ export function AiBuilderAssistant({
               panelWidthResizeSessionRef.current = null;
             }}
           />
-          <div className="flex shrink-0 items-start justify-between gap-3 border-b border-violet-100 bg-violet-50 px-5 py-4">
+          <div className="border-ui-accent-soft bg-ui-accent-soft flex shrink-0 items-start justify-between gap-3 border-b px-5 py-4">
             <div>
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-violet-900">
+              <h2 className="text-ui-accent flex items-center gap-2 text-sm font-semibold">
                 <SparkIcon />
                 AI Page Assistant
               </h2>
-              <p className="mt-1 text-xs text-violet-700">
+              <p className="text-ui-accent mt-1 text-xs">
                 Draft edits land in this page only after the editor validates
                 them.
               </p>
@@ -387,7 +387,7 @@ export function AiBuilderAssistant({
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                className="rounded-md px-2 py-1 text-xs font-semibold text-violet-600 transition hover:bg-violet-100 hover:text-violet-900 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
+                className="rounded-ui text-ui-accent hover:bg-ui-accent-soft hover:text-ui-accent focus-visible:ring-ui-accent px-2 py-1 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
                 onClick={() => setIsUserOpen(false)}
               >
                 Hide
@@ -438,7 +438,7 @@ export function AiBuilderAssistant({
             />
 
             {chatState.error && (
-              <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700 ring-1 ring-red-100">
+              <p className="rounded-ui-lg bg-ui-bad-fill text-ui-bad-ink ring-ui-bad-fill mt-3 px-3 py-2 text-xs font-medium ring-1">
                 {chatState.error}
               </p>
             )}
@@ -449,7 +449,7 @@ export function AiBuilderAssistant({
             />
           </div>
 
-          <div className="shrink-0 border-t border-violet-100 bg-white p-3">
+          <div className="border-ui-accent-soft bg-ui-surface shrink-0 border-t p-3">
             {activeAssistantTool === "import" ? (
               <DocumentImportPanel
                 embedded
@@ -483,7 +483,7 @@ export function AiBuilderAssistant({
               id="page-ai-chat-input"
               value={chatState.input}
               rows={2}
-              className="border-ui-line text-ui-text min-h-11 w-full resize-none rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none"
+              className="border-ui-line text-ui-text rounded-ui-lg shadow-ui focus:border-ui-accent focus:ring-ui-accent/25 min-h-11 w-full resize-none border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
               placeholder="Describe what to build or change — e.g. draft a hero, FAQ, and CTA for this page"
               disabled={chatState.isLoading}
               onChange={(event) =>
@@ -554,7 +554,7 @@ export function AiBuilderAssistant({
         data-builder-walkthrough="ai"
         aria-label={isOpen ? "Close AI assistant" : "Open AI assistant"}
         aria-expanded={isOpen}
-        className="fixed right-4 bottom-28 z-[70] inline-flex items-center gap-2 rounded-full border border-violet-400 bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-xl transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none xl:bottom-6"
+        className="rounded-ui border-ui-accent/25 bg-ui-accent shadow-ui-raised hover:bg-ui-accent-hover focus-visible:ring-ui-accent/25 fixed right-4 bottom-28 z-[70] inline-flex items-center gap-2 border px-4 py-3 text-sm font-semibold text-white transition focus-visible:ring-4 focus-visible:outline-none xl:bottom-6"
         onClick={() => setIsUserOpen((open) => !open)}
       >
         <SparkIcon />
@@ -781,20 +781,20 @@ function AiBlockChecklist({
 
   return (
     <details
-      className="rounded-lg border border-violet-100 bg-violet-50/50"
+      className="rounded-ui-lg border-ui-accent-soft bg-ui-accent-soft/50 border"
       open
     >
-      <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-violet-800">
+      <summary className="text-ui-accent cursor-pointer px-3 py-2 text-xs font-semibold">
         Blocks · {readyCount} of {entries.length} ready
       </summary>
-      <div className="grid gap-1 border-t border-violet-100 p-2">
+      <div className="border-ui-accent-soft grid gap-1 border-t p-2">
         {entries.slice(0, 8).map((entry) => {
           const issues = completionMessagesForBlock(entry.block);
           return (
             <button
               key={entry.block.id}
               type="button"
-              className="flex items-center justify-between gap-3 rounded-md p-2 text-left text-xs transition hover:bg-white focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
+              className="rounded-ui hover:bg-ui-surface focus-visible:ring-ui-accent flex items-center justify-between gap-3 p-2 text-left text-xs transition focus-visible:ring-2 focus-visible:outline-none"
               onClick={() =>
                 onPrompt(
                   `Please draft or improve the "${blockLabel(entry.block.type)}" block with ID ${entry.block.id}.`,
@@ -813,7 +813,7 @@ function AiBlockChecklist({
               </span>
               <span
                 className={`size-2.5 shrink-0 rounded-full ${
-                  issues.length === 0 ? "bg-emerald-500" : "bg-amber-400"
+                  issues.length === 0 ? "bg-ui-ok" : "bg-ui-warn"
                 }`}
                 aria-hidden="true"
               />
@@ -859,7 +859,7 @@ function ChatMessageList({
         />
       ))}
       {isLoading && (
-        <p className="bg-ui-line text-ui-text-subtle w-fit rounded-lg px-3 py-2 text-sm font-medium">
+        <p className="bg-ui-line text-ui-text-subtle rounded-ui-lg w-fit px-3 py-2 text-sm font-medium">
           Thinking&hellip;
         </p>
       )}
@@ -883,9 +883,9 @@ function ChatMessage({
   return (
     <article className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`min-w-0 rounded-lg px-3 py-2 text-sm leading-5 break-words ${
+        className={`rounded-ui-lg min-w-0 px-3 py-2 text-sm leading-5 break-words ${
           isUser ? "max-w-[85%]" : "max-w-[92%]"
-        } ${isUser ? "bg-violet-600 text-white" : "bg-ui-line text-ui-text"}`}
+        } ${isUser ? "bg-ui-accent text-white" : "bg-ui-line text-ui-text"}`}
       >
         <FormattedChatContent content={message.content} isUser={isUser} />
 
@@ -895,7 +895,7 @@ function ChatMessage({
               <button
                 key={option}
                 type="button"
-                className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-violet-700 ring-1 ring-violet-200 transition hover:bg-violet-50 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
+                className="rounded-ui bg-ui-surface text-ui-accent ring-ui-accent/25 hover:bg-ui-accent-soft focus-visible:ring-ui-accent px-3 py-1 text-xs font-semibold ring-1 transition focus-visible:ring-2 focus-visible:outline-none"
                 onClick={() => onClarification(option)}
               >
                 {option}
@@ -905,8 +905,8 @@ function ChatMessage({
         )}
 
         {message.pendingDelete && (
-          <div className="text-ui-text-muted mt-3 rounded-md bg-white p-2 text-xs ring-1 ring-red-100">
-            <p className="font-semibold text-red-700">
+          <div className="text-ui-text-muted rounded-ui bg-ui-surface ring-ui-bad-fill mt-3 p-2 text-xs ring-1">
+            <p className="text-ui-bad-ink font-semibold">
               Delete {message.pendingDelete.blockLabel}?
             </p>
             {message.pendingDelete.reason && (
@@ -917,7 +917,7 @@ function ChatMessage({
             <div className="mt-2 flex gap-2">
               <button
                 type="button"
-                className="rounded-md bg-red-600 px-2.5 py-1 font-semibold text-white transition hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:outline-none"
+                className="rounded-ui bg-ui-bad hover:bg-ui-bad focus-visible:ring-ui-bad/25 px-2.5 py-1 font-semibold text-white transition focus-visible:ring-2 focus-visible:outline-none"
                 onClick={() =>
                   onConfirmDelete(message.id, message.pendingDelete!.blockId)
                 }
@@ -926,7 +926,7 @@ function ChatMessage({
               </button>
               <button
                 type="button"
-                className="bg-ui-line text-ui-text-muted rounded-md px-2.5 py-1 font-semibold transition hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:outline-none"
+                className="bg-ui-line text-ui-text-muted rounded-ui hover:bg-ui-line focus-visible:ring-ui-line-strong px-2.5 py-1 font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
                 onClick={() => onCancelDelete(message.id)}
               >
                 Cancel
@@ -1013,7 +1013,7 @@ function FormattedChatContent({
                   <p
                     key={line.key}
                     className={`mt-1 ${
-                      isUser ? "text-violet-50" : "text-ui-text-muted"
+                      isUser ? "text-white/80" : "text-ui-text-muted"
                     }`}
                   >
                     <InlineFormattedText text={line.text} isUser={isUser} />
@@ -1056,10 +1056,10 @@ function InlineFormattedText({
       nodes.push(
         <code
           key={`code-${match.index}`}
-          className={`rounded px-1 py-0.5 text-[0.92em] break-words ${
+          className={`rounded-ui px-1 py-0.5 text-[0.92em] break-words ${
             isUser
               ? "bg-white/15 text-white"
-              : "text-ui-text bg-white ring-1 ring-slate-200"
+              : "text-ui-text bg-ui-surface ring-ui-line ring-1"
           }`}
         >
           {token.slice(1, -1)}
@@ -1326,18 +1326,18 @@ function AssistantIconButton({
       aria-pressed={pressed}
       disabled={disabled}
       title={label}
-      className={`relative inline-flex size-10 items-center justify-center rounded-lg transition focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`rounded-ui-lg focus-visible:ring-ui-accent/25 relative inline-flex size-10 items-center justify-center transition focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
         primary
-          ? "bg-violet-600 text-white shadow-sm hover:bg-violet-700"
+          ? "bg-ui-accent shadow-ui hover:bg-ui-accent-hover text-white"
           : pressed
-            ? "bg-violet-100 text-violet-900 ring-1 ring-violet-200"
-            : "text-violet-700 hover:bg-violet-50 hover:text-violet-900"
+            ? "bg-ui-accent-soft text-ui-accent ring-ui-accent/25 ring-1"
+            : "text-ui-accent hover:bg-ui-accent-soft hover:text-ui-accent"
       }`}
       onClick={onClick}
     >
       {children}
       {badge ? (
-        <span className="absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full bg-violet-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+        <span className="bg-ui-accent ring-ui-surface absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white ring-2">
           {badge}
         </span>
       ) : null}
@@ -1395,7 +1395,7 @@ export function DocumentImportPanel({
   return (
     <section
       aria-labelledby="document-import-title"
-      className={`rounded-lg border border-violet-100 bg-violet-50/50 ${
+      className={`rounded-ui-lg border-ui-accent-soft bg-ui-accent-soft/50 border ${
         embedded ? "mb-3 max-h-[min(40vh,20rem)] overflow-y-auto" : "mt-4"
       }`}
     >
@@ -1404,7 +1404,7 @@ export function DocumentImportPanel({
       >
         {!embedded ? (
           <span
-            className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-700 ring-1 ring-violet-200"
+            className="rounded-ui-lg bg-ui-accent-soft text-ui-accent ring-ui-accent/25 mt-0.5 flex size-8 shrink-0 items-center justify-center ring-1"
             aria-hidden="true"
           >
             <DocumentImportIcon />
@@ -1413,12 +1413,12 @@ export function DocumentImportPanel({
         <div className="min-w-0">
           <h3
             id="document-import-title"
-            className="text-xs font-semibold text-violet-900"
+            className="text-ui-accent text-xs font-semibold"
           >
             Import document
           </h3>
           {!embedded ? (
-            <p className="mt-1 text-xs leading-5 text-violet-700">
+            <p className="text-ui-accent mt-1 text-xs leading-5">
               Turn an outline or brief into draft blocks you can review before
               inserting.
             </p>
@@ -1426,9 +1426,9 @@ export function DocumentImportPanel({
         </div>
       </div>
 
-      <div className="space-y-3 border-t border-violet-100 p-3">
+      <div className="border-ui-accent-soft space-y-3 border-t p-3">
         <div
-          className="grid grid-cols-2 gap-1 rounded-lg bg-white p-1 ring-1 ring-violet-100"
+          className="rounded-ui-lg bg-ui-surface ring-ui-accent-soft grid grid-cols-2 gap-1 p-1 ring-1"
           role="tablist"
           aria-label="Import method"
         >
@@ -1436,10 +1436,10 @@ export function DocumentImportPanel({
             type="button"
             role="tab"
             aria-selected={importMode === "upload"}
-            className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none ${
+            className={`rounded-ui focus-visible:ring-ui-accent inline-flex min-h-9 items-center justify-center gap-1.5 px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none ${
               importMode === "upload"
-                ? "bg-violet-600 text-white shadow-sm"
-                : "text-violet-700 hover:bg-violet-50"
+                ? "bg-ui-accent shadow-ui text-white"
+                : "text-ui-accent hover:bg-ui-accent-soft"
             }`}
             onClick={() => setImportMode("upload")}
           >
@@ -1450,10 +1450,10 @@ export function DocumentImportPanel({
             type="button"
             role="tab"
             aria-selected={importMode === "paste"}
-            className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none ${
+            className={`rounded-ui focus-visible:ring-ui-accent inline-flex min-h-9 items-center justify-center gap-1.5 px-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none ${
               importMode === "paste"
-                ? "bg-violet-600 text-white shadow-sm"
-                : "text-violet-700 hover:bg-violet-50"
+                ? "bg-ui-accent shadow-ui text-white"
+                : "text-ui-accent hover:bg-ui-accent-soft"
             }`}
             onClick={() => setImportMode("paste")}
           >
@@ -1462,8 +1462,8 @@ export function DocumentImportPanel({
           </button>
         </div>
 
-        <p className="rounded-lg bg-white px-3 py-2 text-xs leading-5 text-violet-700 ring-1 ring-violet-100">
-          <span className="font-semibold text-violet-900">
+        <p className="rounded-ui-lg bg-ui-surface text-ui-accent ring-ui-accent-soft px-3 py-2 text-xs leading-5 ring-1">
+          <span className="text-ui-accent font-semibold">
             Formatting guidelines:
           </span>{" "}
           one <code># Title</code>, <code>## Section</code> per block (max 8),{" "}
@@ -1473,14 +1473,14 @@ export function DocumentImportPanel({
         </p>
 
         {importMode === "upload" ? (
-          <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-violet-200 bg-white px-4 py-6 text-center transition focus-within:ring-2 focus-within:ring-violet-200 hover:border-violet-300 hover:bg-violet-50/40">
-            <span className="flex size-10 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+          <label className="rounded-ui-lg border-ui-accent/25 bg-ui-surface focus-within:ring-ui-accent/25 hover:border-ui-accent/25 hover:bg-ui-accent-soft/40 flex cursor-pointer flex-col items-center gap-2 border border-dashed px-4 py-6 text-center transition focus-within:ring-2">
+            <span className="bg-ui-accent-soft text-ui-accent flex size-10 items-center justify-center rounded-full">
               <UploadIcon />
             </span>
-            <span className="text-sm font-semibold text-violet-900">
+            <span className="text-ui-accent text-sm font-semibold">
               Upload a document
             </span>
-            <span className="text-xs leading-5 text-violet-700">
+            <span className="text-ui-accent text-xs leading-5">
               .txt or .md files
             </span>
             <input
@@ -1495,14 +1495,14 @@ export function DocumentImportPanel({
           </label>
         ) : (
           <label className="block">
-            <span className="text-xs font-semibold text-violet-900">
+            <span className="text-ui-accent text-xs font-semibold">
               Paste document text
             </span>
             <textarea
               data-testid="document-import-text"
               value={text}
               rows={5}
-              className="text-ui-text mt-2 min-h-28 w-full resize-y rounded-lg border border-violet-100 bg-white px-3 py-2 text-sm leading-6 shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none"
+              className="text-ui-text rounded-ui-lg border-ui-accent-soft bg-ui-surface shadow-ui focus:border-ui-accent focus:ring-ui-accent/25 mt-2 min-h-28 w-full resize-y border px-3 py-2 text-sm leading-6 focus:ring-2 focus:outline-none"
               placeholder="Paste a brief, outline, or document excerpt"
               onChange={(event) => {
                 setUploadFileName(null);
@@ -1514,26 +1514,26 @@ export function DocumentImportPanel({
         )}
 
         {uploadFileName ? (
-          <p className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-violet-800 ring-1 ring-violet-100">
+          <p className="rounded-ui-lg bg-ui-surface text-ui-accent ring-ui-accent-soft px-3 py-2 text-xs font-medium ring-1">
             Loaded {uploadFileName}
           </p>
         ) : null}
         {uploadError ? (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700 ring-1 ring-red-100">
+          <p className="rounded-ui-lg bg-ui-bad-fill text-ui-bad-ink ring-ui-bad-fill px-3 py-2 text-xs font-medium ring-1">
             {uploadError}
           </p>
         ) : null}
 
         <button
           type="button"
-          className="w-full rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-ui-lg bg-ui-accent shadow-ui hover:bg-ui-accent-hover focus-visible:ring-ui-accent/25 w-full px-3 py-2 text-sm font-semibold text-white transition focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           disabled={text.trim().length === 0}
           onClick={onCreateProposal}
         >
           Create block plan
         </button>
         {message && (
-          <p className="rounded-lg bg-white px-3 py-2 text-xs leading-5 text-violet-800 ring-1 ring-violet-100">
+          <p className="rounded-ui-lg bg-ui-surface text-ui-accent ring-ui-accent-soft px-3 py-2 text-xs leading-5 ring-1">
             {message}
           </p>
         )}
@@ -1579,7 +1579,7 @@ function SeoAssistantReviewPanel({
   return (
     <section
       aria-labelledby="ai-seo-review-title"
-      className={`rounded-lg border border-violet-100 bg-violet-50/50 ${
+      className={`rounded-ui-lg border-ui-accent-soft bg-ui-accent-soft/50 border ${
         embedded ? "mb-3 max-h-[min(40vh,20rem)] overflow-y-auto" : "mt-4"
       }`}
     >
@@ -1588,26 +1588,26 @@ function SeoAssistantReviewPanel({
           <div className="flex flex-wrap items-center gap-2">
             <h3
               id="ai-seo-review-title"
-              className="text-xs font-semibold text-violet-900"
+              className="text-ui-accent text-xs font-semibold"
             >
               Review SEO
             </h3>
             <span
-              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${readinessPillClass(
+              className={`rounded-ui px-2 py-0.5 text-[11px] font-semibold ${readinessPillClass(
                 summary.status,
               )}`}
             >
               {labelForReadinessStatus(summary.status)}
             </span>
           </div>
-          <p className="mt-1 text-xs leading-5 text-violet-700">
+          <p className="text-ui-accent mt-1 text-xs leading-5">
             Checks the current draft against the same readiness rules used
             before publishing.
           </p>
         </div>
 
-        <div className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-violet-100">
-          <p className="text-[11px] font-semibold tracking-wider text-violet-500 uppercase">
+        <div className="rounded-ui-lg bg-ui-surface shadow-ui ring-ui-accent-soft p-3 ring-1">
+          <p className="text-ui-accent text-[11px] font-semibold tracking-wider uppercase">
             Next required step
           </p>
           <p className="text-ui-text mt-1 text-sm font-semibold">
@@ -1622,7 +1622,7 @@ function SeoAssistantReviewPanel({
           {metrics.map((metric) => (
             <div
               key={metric.label}
-              className="rounded-lg bg-white p-2 text-center shadow-sm ring-1 ring-violet-100"
+              className="rounded-ui-lg bg-ui-surface shadow-ui ring-ui-accent-soft p-2 text-center ring-1"
             >
               <dt className="text-ui-text-subtle text-[10px] font-semibold">
                 {metric.label}
@@ -1635,9 +1635,7 @@ function SeoAssistantReviewPanel({
         </dl>
 
         <div className="space-y-2">
-          <h4 className="text-xs font-semibold text-violet-900">
-            Top findings
-          </h4>
+          <h4 className="text-ui-accent text-xs font-semibold">Top findings</h4>
           {topFindings.length > 0 ? (
             topFindings.map((finding, index) => (
               <SeoReviewFindingCard
@@ -1647,7 +1645,7 @@ function SeoAssistantReviewPanel({
               />
             ))
           ) : (
-            <p className="rounded-lg bg-emerald-50 px-3 py-3 text-xs leading-5 text-emerald-800 ring-1 ring-emerald-100">
+            <p className="rounded-ui-lg bg-ui-ok-fill text-ui-ok-ink ring-ui-ok-fill px-3 py-3 text-xs leading-5 ring-1">
               No readiness findings on this draft. Open the public preview
               before publishing.
             </p>
@@ -1666,7 +1664,7 @@ function SeoReviewFindingCard({
   editor: SeoPageEditorController;
 }) {
   return (
-    <article className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-violet-100">
+    <article className="rounded-ui-lg bg-ui-surface shadow-ui ring-ui-accent-soft p-3 ring-1">
       <div className="flex flex-wrap items-center gap-2">
         <span
           className={`size-2 rounded-full ${findingDotClass(finding.severity)}`}
@@ -1675,7 +1673,7 @@ function SeoReviewFindingCard({
         <span className="text-ui-text-subtle text-[11px] font-semibold tracking-wider uppercase">
           {findingSeverityLabel(finding.severity)}
         </span>
-        <span className="bg-ui-canvas text-ui-text-muted rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1 ring-slate-200">
+        <span className="bg-ui-canvas text-ui-text-muted rounded-ui ring-ui-line px-2 py-0.5 text-[11px] font-semibold ring-1">
           {friendlyFindingLocation(finding)}
         </span>
       </div>
@@ -1747,7 +1745,7 @@ function DocumentImportReview({
   );
 
   return (
-    <section className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-violet-100">
+    <section className="rounded-ui-lg bg-ui-surface shadow-ui ring-ui-accent-soft p-3 ring-1">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h4 className="text-ui-text text-sm font-semibold">
@@ -1768,13 +1766,13 @@ function DocumentImportReview({
           Insert selected
         </button>
       </div>
-      <p className="mt-3 line-clamp-3 rounded-md bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-900">
+      <p className="rounded-ui bg-ui-accent-soft text-ui-accent mt-3 line-clamp-3 px-3 py-2 text-xs leading-5">
         {proposal.sourceExcerpt}
       </p>
       {proposal.warnings.length > 0 && (
         <p
           role="status"
-          className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 ring-1 ring-amber-100"
+          className="rounded-ui bg-ui-warn-fill text-ui-warn-ink ring-ui-warn-fill mt-3 px-3 py-2 text-xs leading-5 ring-1"
         >
           {proposal.warnings.join(" ")}
         </p>
@@ -1785,7 +1783,7 @@ function DocumentImportReview({
           return (
             <label
               key={entry.block.id}
-              className="border-ui-line bg-ui-canvas flex gap-3 rounded-md border p-3 text-left"
+              className="border-ui-line bg-ui-canvas rounded-ui flex gap-3 border p-3 text-left"
             >
               <input
                 aria-label={`Insert imported ${blockLabel(entry.block.type)}`}
@@ -1806,7 +1804,7 @@ function DocumentImportReview({
                   <span className="text-ui-text text-sm font-semibold">
                     {blockLabel(entry.block.type)}
                   </span>
-                  <span className="text-ui-text-subtle rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold ring-1 ring-slate-200">
+                  <span className="text-ui-text-subtle rounded-ui bg-ui-surface ring-ui-line px-2 py-0.5 text-[11px] font-semibold ring-1">
                     Lines {entry.sourceLines[0]}-{entry.sourceLines[1]}
                   </span>
                 </span>
@@ -1818,7 +1816,7 @@ function DocumentImportReview({
                     {aiBlockReviewBody(entry.block)}
                   </span>
                 )}
-                <span className="mt-2 line-clamp-2 block text-[11px] leading-5 text-violet-700">
+                <span className="text-ui-accent mt-2 line-clamp-2 block text-[11px] leading-5">
                   Source: {entry.sourceExcerpt}
                 </span>
               </span>
