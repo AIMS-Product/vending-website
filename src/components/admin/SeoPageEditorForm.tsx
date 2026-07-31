@@ -2,6 +2,10 @@
 
 import { useCallback, useRef } from "react";
 import { MediaPickerProvider } from "@/components/admin/MediaPickerProvider";
+import {
+  QualificationFormOptionsProvider,
+  type QualificationFormOption,
+} from "@/components/admin/seo-page-editor/QualificationFormOptions";
 import { NewPageChoiceGate } from "@/components/admin/seo-page-editor/SeoPageEditorShell";
 import { SeoPageEditorWorkspace } from "@/components/admin/seo-page-editor/SeoPageEditorWorkspace";
 import { DraftCreatedNotice } from "@/components/admin/seo-page-editor/DraftCreatedNotice";
@@ -13,9 +17,14 @@ import {
   type SeoPageEditorControllerProps,
 } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 
-type SeoPageEditorFormProps = SeoPageEditorControllerProps;
+type SeoPageEditorFormProps = SeoPageEditorControllerProps & {
+  qualificationFormOptions?: QualificationFormOption[];
+};
 
-export function SeoPageEditorForm(props: SeoPageEditorFormProps) {
+export function SeoPageEditorForm({
+  qualificationFormOptions = [],
+  ...props
+}: SeoPageEditorFormProps) {
   const formRef = useRef<HTMLFormElement | null>(null);
   const editor = useSeoPageEditorController(props, formRef);
 
@@ -63,22 +72,24 @@ export function SeoPageEditorForm(props: SeoPageEditorFormProps) {
 
   return (
     <MediaPickerProvider initialAssets={editor.mediaAssets}>
-      <form
-        action={editor.formAction}
-        className="relative"
-        onSubmit={editor.handleEditorFormSubmit}
-        ref={formRef}
-      >
-        <SeoPageEditorWorkspace editor={editor} />
-      </form>
-      {showDraftCreatedNotice ? <DraftCreatedNotice /> : null}
-      {exitGuard.isOpen ? (
-        <UnsavedExitDialog
-          isDiscarding={exitGuard.isDiscarding}
-          errorMessage={exitGuard.errorMessage}
-          onChoose={exitGuard.resolve}
-        />
-      ) : null}
+      <QualificationFormOptionsProvider options={qualificationFormOptions}>
+        <form
+          action={editor.formAction}
+          className="relative"
+          onSubmit={editor.handleEditorFormSubmit}
+          ref={formRef}
+        >
+          <SeoPageEditorWorkspace editor={editor} />
+        </form>
+        {showDraftCreatedNotice ? <DraftCreatedNotice /> : null}
+        {exitGuard.isOpen ? (
+          <UnsavedExitDialog
+            isDiscarding={exitGuard.isDiscarding}
+            errorMessage={exitGuard.errorMessage}
+            onChoose={exitGuard.resolve}
+          />
+        ) : null}
+      </QualificationFormOptionsProvider>
     </MediaPickerProvider>
   );
 }

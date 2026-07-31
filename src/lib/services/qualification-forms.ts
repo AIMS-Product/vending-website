@@ -125,6 +125,20 @@ export async function adminListQualificationForms(
   return ((data ?? []) as QualificationFormRow[]).map(mapForm);
 }
 
+/**
+ * Published forms only, as {id, name} — what the page builder's qualification
+ * pickers offer. A draft form has no published version to serve, so attaching
+ * one would render nothing on the live page.
+ */
+export async function adminListPublishedQualificationFormOptions(
+  deps: ServiceDeps = {},
+): Promise<{ id: string; name: string }[]> {
+  const forms = await adminListQualificationForms(deps);
+  return forms
+    .filter((form) => form.status === "published")
+    .map((form) => ({ id: form.id, name: form.name }));
+}
+
 export async function adminGetQualificationForm(
   input: GetQualificationFormInput,
   deps: ServiceDeps = {},

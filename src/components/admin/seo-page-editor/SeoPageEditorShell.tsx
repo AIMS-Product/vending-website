@@ -28,6 +28,7 @@ import {
 } from "@/components/admin/seo-page-editor/BuilderEditorUi";
 import { BlockPicker } from "@/components/admin/seo-page-editor/BlockPicker";
 import { TextInput } from "@/components/admin/seo-page-editor/EditorInputs";
+import { QualificationFormPicker } from "@/components/admin/seo-page-editor/QualificationFormOptions";
 import { footerColumns, primaryNav } from "@/lib/content/nav";
 
 // N13 / issue I15: a single-step create panel. The old 3-step wizard forced
@@ -548,9 +549,9 @@ export function PageChromeControls({
           Qualification follow-up
         </summary>
         <div className="mt-3 space-y-3">
-          <TextInput
+          <QualificationFormPicker
             label="Default form"
-            placeholder="Published form ID"
+            emptyLabel="No qualification follow-up"
             value={qualificationSettings.formId}
             onChange={(formId) => onQualificationChange({ formId })}
           />

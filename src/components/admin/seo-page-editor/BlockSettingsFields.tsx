@@ -22,6 +22,7 @@ import {
   TextAreaInput,
   TextInput,
 } from "@/components/admin/seo-page-editor/EditorInputs";
+import { QualificationFormPicker } from "@/components/admin/seo-page-editor/QualificationFormOptions";
 import { FaqItemEditorList } from "@/components/admin/seo-page-editor/FaqSettingsEditor";
 import { OptionalBlockField } from "@/components/admin/seo-page-editor/OptionalBlockField";
 import { HERO_BODY_MAX_LENGTH } from "@/components/admin/seo-page-editor/editor-limits";
@@ -1052,9 +1053,9 @@ function LeadFormQualificationSettings({
         Qualification follow-up
       </summary>
       <div className="mt-3 space-y-3">
-        <TextInput
+        <QualificationFormPicker
           label="Form override"
-          placeholder="Published form ID"
+          emptyLabel="Use the page default"
           value={settings.formId}
           onChange={(formId) => onChange(updateQualification({ formId }))}
         />

@@ -14,6 +14,7 @@ import {
   adminListSeoPageRevisions,
 } from "@/lib/services/seo-pages";
 import { adminListInternalLinkTargets } from "@/lib/services/seo-internal-link-index";
+import { adminListPublishedQualificationFormOptions } from "@/lib/services/qualification-forms";
 import { listRoutePrefixes } from "@/lib/services/route-prefixes";
 import { routePrefixOptionsFrom } from "@/lib/page-builder/page-paths";
 import { requireAdmin } from "@/lib/supabase/auth";
@@ -47,6 +48,7 @@ export default async function EditSeoPagePage({
     mediaAssets,
     comments,
     routePrefixes,
+    qualificationFormOptions,
   ] = await Promise.all([
     adminGetSeoPageById(id),
     adminListSeoPageRevisions(id),
@@ -56,6 +58,7 @@ export default async function EditSeoPagePage({
     adminListMediaAssets(),
     adminListPageComments(id),
     listRoutePrefixes(),
+    adminListPublishedQualificationFormOptions(),
   ]);
   if (!page) notFound();
 
@@ -77,6 +80,7 @@ export default async function EditSeoPagePage({
         savedFromRedirect={query.saved === "1"}
         redirectError={pageActionErrorMessage(query.error)}
         routePrefixOptions={routePrefixOptionsFrom(routePrefixes)}
+        qualificationFormOptions={qualificationFormOptions}
       />
       <SeoPageRevisionPanel
         pageId={page.id}

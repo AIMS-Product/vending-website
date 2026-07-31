@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import type { PageBlock } from "@/lib/page-builder/blocks";
 import { BlockSidebarSettingsPanel } from "./BlockSettingsFields";
+import { QualificationFormOptionsProvider } from "./QualificationFormOptions";
 import { PageChromeControls } from "./SeoPageEditorShell";
 
 vi.mock("@/components/admin/MediaPickerProvider", () => ({
@@ -76,5 +77,72 @@ describe("qualification attachment settings UI", () => {
     expect(html).toContain("Experiment key");
     expect(html).toContain("Variant key");
     expect(html).not.toContain("Layout");
+  });
+
+  it("offers published forms by name when options are provided", () => {
+    const block: Extract<PageBlock, { type: "lead_form" }> = {
+      id: "block_form",
+      type: "lead_form",
+      variant: "standard",
+      props: {
+        heading: "Apply",
+        body: "",
+        submitLabel: "Continue",
+        trackingName: "",
+        calendlyUrl: "",
+        qualification: {
+          formId: "form-b",
+          completionRedirectPath: "",
+          experimentKey: "",
+          variantKey: "",
+        },
+      },
+    };
+
+    const html = renderToStaticMarkup(
+      <QualificationFormOptionsProvider
+        options={[
+          { id: "form-a", name: "Vending Lead Magnet" },
+          { id: "form-b", name: "Entrepreneur Lead Magnet" },
+        ]}
+      >
+        <BlockSidebarSettingsPanel block={block} onChange={() => undefined} />
+      </QualificationFormOptionsProvider>,
+    );
+
+    expect(html).toContain("<select");
+    expect(html).toContain("Vending Lead Magnet");
+    expect(html).toContain("Use the page default");
+  });
+
+  it("keeps an unpublished form id selectable instead of silently clearing it", () => {
+    const block: Extract<PageBlock, { type: "lead_form" }> = {
+      id: "block_form",
+      type: "lead_form",
+      variant: "standard",
+      props: {
+        heading: "Apply",
+        body: "",
+        submitLabel: "Continue",
+        trackingName: "",
+        calendlyUrl: "",
+        qualification: {
+          formId: "archived-form",
+          completionRedirectPath: "",
+          experimentKey: "",
+          variantKey: "",
+        },
+      },
+    };
+
+    const html = renderToStaticMarkup(
+      <QualificationFormOptionsProvider
+        options={[{ id: "form-a", name: "Vending Lead Magnet" }]}
+      >
+        <BlockSidebarSettingsPanel block={block} onChange={() => undefined} />
+      </QualificationFormOptionsProvider>,
+    );
+
+    expect(html).toContain("Unpublished form (archived-form)");
   });
 });
