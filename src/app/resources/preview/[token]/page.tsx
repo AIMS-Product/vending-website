@@ -3,6 +3,7 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ResourcePageRenderer } from "@/components/sections/ResourcePageRenderer";
+import { resolvePhoneRequiredByFormId } from "@/lib/page-builder/resource-qualification-policy";
 import { getSeoPagePreviewByToken } from "@/lib/services/seo-pages";
 
 type Params = { token: string };
@@ -36,10 +37,16 @@ export default async function ResourcePreviewPage({
   const { token } = await params;
   const page = await getPreviewPage(token);
   if (!page) notFound();
+  // Preview deliberately ignores the global default form (an unattached block
+  // shows the plain apply form here), so only block/page overrides resolve.
+  const phoneRequiredByFormId = await resolvePhoneRequiredByFormId(
+    page.published_content,
+  );
 
   return (
     <ResourcePageRenderer
       page={page}
+      phoneRequiredByFormId={phoneRequiredByFormId}
       idempotencyKeyPrefix={randomUUID()}
       showPreviewEmptyState
     />

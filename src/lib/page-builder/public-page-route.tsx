@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ResourcePageRenderer } from "@/components/sections/ResourcePageRenderer";
+import { resolvePhoneRequiredByFormId } from "@/lib/page-builder/resource-qualification-policy";
 import {
   buildLeadAttribution,
   type LeadSearchParams,
@@ -49,12 +50,17 @@ export async function renderBuilderPage({
   if (!page) notFound();
   const defaultQualificationFormVersion =
     await resolveDefaultQualificationFormVersion();
+  const phoneRequiredByFormId = await resolvePhoneRequiredByFormId(
+    page.published_content,
+    defaultQualificationFormVersion?.formId,
+  );
   const attribution = buildLeadAttribution(query, page.route_path);
 
   return (
     <ResourcePageRenderer
       page={page}
       defaultQualificationFormId={defaultQualificationFormVersion?.formId}
+      phoneRequiredByFormId={phoneRequiredByFormId}
       leadAttribution={attribution}
       idempotencyKeyPrefix={randomUUID()}
     />

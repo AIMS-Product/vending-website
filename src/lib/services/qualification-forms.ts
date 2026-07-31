@@ -95,6 +95,7 @@ const VERSION_FIELDS =
 
 const DEFAULT_DRAFT_SCHEMA: QualificationFormDefinition = {
   version: 1,
+  contactPhoneRequired: true,
   questions: [
     {
       id: "first_question",

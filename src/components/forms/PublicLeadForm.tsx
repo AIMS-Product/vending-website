@@ -71,6 +71,11 @@ type PublicLeadFormProps = {
   // with intent="contact" (validates name+email only) and bookingRedirectUrl so
   // the lead is captured with UTM attribution and then handed to Calendly.
   simpleContact?: boolean;
+  // Mirrors the resolved qualification form's `contactPhoneRequired` so the
+  // input renders as optional when the form says so. Presentation only — the
+  // intake service re-checks the policy against the form it actually resolves.
+  // Defaults to true: an embed that does not resolve a form keeps asking.
+  phoneRequired?: boolean;
   // Override the initial action state. Production always uses the idle default;
   // this exists so SSR-rendered tests can exercise the field-error layer.
   initialState?: PublicLeadActionState;
@@ -114,6 +119,7 @@ export function PublicLeadForm({
   bookingRedirectUrl,
   inlineQualification = false,
   simpleContact = false,
+  phoneRequired = true,
   finishAction,
   initialState = initialLeadActionState,
   initialFinishState = initialLeadActionState,
@@ -339,10 +345,12 @@ export function PublicLeadForm({
           <TextField
             name="phone"
             errorKey="phone"
-            label="Phone"
+            label={
+              isQualification && !phoneRequired ? "Phone (optional)" : "Phone"
+            }
             type="tel"
             autoComplete="tel"
-            required={isQualification || simpleContact}
+            required={(isQualification && phoneRequired) || simpleContact}
             errors={errors}
             values={submittedValues}
           />

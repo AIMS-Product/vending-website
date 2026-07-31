@@ -605,10 +605,7 @@ function serializeAnswer(
   value: unknown,
   answeredAt: string,
 ) {
-  const snapshot = buildQuestionSnapshots({
-    version: 1,
-    questions: [question],
-  })[0];
+  const snapshot = buildQuestionSnapshots({ questions: [question] })[0];
   const normalizedValue = normalizedValueForQuestion(question, value);
   return {
     questionType: question.type,

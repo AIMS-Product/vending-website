@@ -117,6 +117,12 @@ const optionQuestionTypes = new Set<QualificationQuestionType>([
 export const qualificationFormSchema = z
   .object({
     version: z.literal(1),
+    // Window 1 (name/email/phone) is not built from `questions` — it is the
+    // fixed contact step. Phone is the only part of it a form gets to relax:
+    // an application form wants a callable number, a lead magnet trading a PDF
+    // for an email should not lose the lead over it. Defaults to true so every
+    // schema stored before this field existed keeps requiring phone.
+    contactPhoneRequired: z.boolean().default(true),
     questions: z.array(questionSchema).min(1).max(30),
   })
   .strict()
@@ -161,7 +167,7 @@ export function parseQualificationFormSchema(
 }
 
 export function buildQuestionSnapshots(
-  form: QualificationFormDefinition,
+  form: Pick<QualificationFormDefinition, "questions">,
 ): QualificationQuestionSnapshot[] {
   return form.questions.map((question) => {
     const snapshot: QualificationQuestionSnapshot = {

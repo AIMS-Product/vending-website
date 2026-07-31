@@ -16,6 +16,7 @@ const form: AdminQualificationForm = {
   isDefault: false,
   draftSchema: {
     version: 1,
+    contactPhoneRequired: true,
     questions: [
       {
         id: "state",

@@ -93,7 +93,10 @@ const intakeInputSchema = z.object({
   idempotencyKey: optionalText("Submission key", 160),
   fullName: requiredText("Name", 140),
   email: emailText(),
-  phone: requiredText("Phone", 60),
+  // Whether phone is mandatory is a per-form policy, and the form is only
+  // known after this schema has parsed the raw input. Parse it as optional
+  // here, then enforce the resolved form's policy in `assertPhonePolicy`.
+  phone: optionalText("Phone", 60),
   qualificationFormId: optionalText("Qualification form", 80),
   qualificationFormVersionId: optionalText("Qualification form version", 80),
   completionRedirectPath: optionalText("Completion redirect", 500),
@@ -120,6 +123,7 @@ export async function createQualificationIntakeSession(
   const token = deps.tokenFactory?.() ?? randomSessionToken();
   const tokenHash = hashSessionToken(token);
   const formVersion = await resolveFormVersion(intake, client);
+  assertPhonePolicy(intake, formVersion);
   const matchingLead = await findLatestLeadByEmail(client, intake.email);
   const lead =
     (await findLeadByIdempotency(client, idempotencyKey)) ??
@@ -188,6 +192,23 @@ function parseIntakeInput(input: CreateQualificationIntakeInput) {
     );
   }
   return parsed.data;
+}
+
+/**
+ * Server-side half of the per-form phone policy. The client renders the phone
+ * input as required or not, but that is a hint — this is the check that holds,
+ * and it runs against the form actually resolved for the submission rather
+ * than whatever form id the browser claimed to be filling in.
+ */
+function assertPhonePolicy(
+  intake: ValidIntakeInput,
+  formVersion: QualificationPublishedVersion,
+) {
+  if (!formVersion.schema.contactPhoneRequired) return;
+  if (intake.phone) return;
+  throw new QualificationIntakeValidationError({
+    phone: ["Phone is required."],
+  });
 }
 
 async function resolveFormVersion(

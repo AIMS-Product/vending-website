@@ -37,6 +37,7 @@ const forms: AdminQualificationForm[] = [
     isDefault: true,
     draftSchema: {
       version: 1,
+      contactPhoneRequired: true,
       questions: [
         {
           id: "state",
@@ -62,6 +63,7 @@ const forms: AdminQualificationForm[] = [
     isDefault: false,
     draftSchema: {
       version: 1,
+      contactPhoneRequired: true,
       questions: [
         {
           id: "goal",

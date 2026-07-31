@@ -352,6 +352,47 @@ describe("createQualificationIntakeSession", () => {
     expect(fake.state.events).toHaveLength(0);
   });
 
+  it("rejects a blank phone when the resolved form requires one, before writing anything", async () => {
+    const fake = buildClient();
+
+    await expect(
+      createQualificationIntakeSession(
+        { fullName: "Ada Buyer", email: "ada@example.com", phone: "" },
+        { client: fake.client },
+      ),
+    ).rejects.toBeInstanceOf(QualificationIntakeValidationError);
+
+    expect(fake.state.leads).toHaveLength(0);
+    expect(fake.state.sessions).toHaveLength(0);
+  });
+
+  it("accepts a blank phone when the resolved form does not require one", async () => {
+    const phoneOptionalSchema = {
+      ...baseFormSchema,
+      contactPhoneRequired: false,
+    };
+    const fake = buildClient({
+      forms: [
+        { ...makeForm(), draft_schema: phoneOptionalSchema as unknown as Json },
+      ],
+      versions: [
+        {
+          ...makeVersion(),
+          schema_snapshot: phoneOptionalSchema as unknown as Json,
+        },
+      ],
+    });
+
+    const result = await createQualificationIntakeSession(
+      { fullName: "Ada Buyer", email: "ada@example.com", phone: "" },
+      { client: fake.client, tokenFactory: () => "raw_test_token" },
+    );
+
+    expect(result.leadId).toBeTruthy();
+    expect(fake.state.leads).toHaveLength(1);
+    expect(fake.state.leads[0]?.phone ?? "").toBe("");
+  });
+
   it("assigns a deterministic A/B invest variant when the page does not set one", async () => {
     const fake = buildClient();
 

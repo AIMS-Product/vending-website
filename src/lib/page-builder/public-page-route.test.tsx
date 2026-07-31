@@ -69,7 +69,7 @@ describe("renderBuilderPage", () => {
       formId: "form_default",
       versionId: "version_default",
       versionNumber: 1,
-      schema: { version: 1, questions: [] },
+      schema: { version: 1, contactPhoneRequired: true, questions: [] },
       questionCount: 0,
       normalizedRoles: [],
       publishedAt: "2026-06-17T00:00:00.000Z",

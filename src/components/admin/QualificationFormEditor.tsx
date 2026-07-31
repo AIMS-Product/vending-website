@@ -95,14 +95,18 @@ export function QualificationFormEditor({
   const [questions, setQuestions] = useState<QualificationQuestion[]>(() =>
     form.draftSchema.questions.map(normalizeQuestion),
   );
+  const [contactPhoneRequired, setContactPhoneRequired] = useState(
+    form.draftSchema.contactPhoneRequired,
+  );
 
   const schemaValue = useMemo(
     () =>
       JSON.stringify({
         version: 1,
+        contactPhoneRequired,
         questions: questions.map(cleanQuestion),
       }),
-    [questions],
+    [contactPhoneRequired, questions],
   );
 
   const canSetDefault =
@@ -176,6 +180,25 @@ export function QualificationFormEditor({
                 required
                 className={adminInputClass}
               />
+            </label>
+            <label className="mt-4 flex items-start gap-2">
+              <input
+                type="checkbox"
+                checked={contactPhoneRequired}
+                data-controlled-checkbox-checked={String(contactPhoneRequired)}
+                onChange={(event) =>
+                  setContactPhoneRequired(event.target.checked)
+                }
+                className="mt-1"
+              />
+              <span className="text-ui-text-muted text-sm">
+                Require a phone number on the contact step.
+                <span className="block text-xs">
+                  First name, last name and email are always required. Turn this
+                  off for lead magnets where a phone number would cost you the
+                  signup.
+                </span>
+              </span>
             </label>
           </section>
 

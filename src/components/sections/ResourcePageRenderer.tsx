@@ -14,6 +14,10 @@ import { buildResourcePageStructuredDataGraphs } from "./resource-page-structure
 type ResourcePageRendererProps = {
   page: PublishedSeoPage;
   defaultQualificationFormId?: string | null;
+  // Per-form phone policy, pre-resolved by resolvePhoneRequiredByFormId because
+  // renderLeadForm below is synchronous. A form missing from the map keeps the
+  // safe default of requiring phone.
+  phoneRequiredByFormId?: Record<string, boolean>;
   leadAttribution?: LeadAttribution;
   idempotencyKeyPrefix: string;
   showPreviewEmptyState?: boolean;
@@ -22,6 +26,7 @@ type ResourcePageRendererProps = {
 export function ResourcePageRenderer({
   page,
   defaultQualificationFormId,
+  phoneRequiredByFormId,
   leadAttribution,
   idempotencyKeyPrefix,
   showPreviewEmptyState = false,
@@ -78,6 +83,9 @@ export function ResourcePageRenderer({
                     }}
                     idempotencyKey={`${idempotencyKeyPrefix}:${block.id}`}
                     intent="qualification"
+                    phoneRequired={
+                      phoneRequiredByFormId?.[qualification.formId] ?? true
+                    }
                     layout={layout}
                     submitLabel={block.props.submitLabel}
                     bookingRedirectUrl={bookingRedirectUrl}
