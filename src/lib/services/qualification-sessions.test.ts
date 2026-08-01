@@ -287,6 +287,26 @@ class FakeQuery {
         ...defaults,
         ...(value as Partial<CloseSyncEventRow>),
       } as CloseSyncEventRow;
+      // Mirror close_sync_events_dedupe_key_idx. Without this the fake accepts
+      // duplicate enqueues that the real database rejects, so a caller missing
+      // its duplicate guard passes tests and fails in production.
+      const duplicate =
+        row.dedupe_key !== null &&
+        this.state.events.some((event) => event.dedupe_key === row.dedupe_key);
+      if (duplicate) {
+        return {
+          select: () => ({
+            single: async () => ({
+              data: null,
+              error: {
+                code: "23505",
+                message:
+                  'duplicate key value violates unique constraint "close_sync_events_dedupe_key_idx"',
+              },
+            }),
+          }),
+        };
+      }
       this.state.events.push(row);
       return {
         select: () => ({
@@ -631,6 +651,55 @@ describe("qualification sessions", () => {
         budget: ["How much capital can you access? is required."],
       },
     });
+  });
+
+  it("succeeds when the Close enrichment for this session is already queued", async () => {
+    // requireUncompletedSession is a read-then-act check with no lock, so a
+    // double-click gets two requests past it. Both score the session correctly
+    // and only the loser's enqueue collides on the dedupe key. Treating that
+    // collision as a failure showed the visitor "we couldn't submit the form"
+    // on a submission that had in fact succeeded and was already bound for
+    // Close -- and every other enqueue site in the codebase already tolerates
+    // a duplicate.
+    const fake = buildClient();
+
+    for (const [questionId, answerValue] of [
+      ["state", "SA"],
+      ["budget", "25-50"],
+      ["notes", 42],
+      ["consent", true],
+    ] as const) {
+      await saveQualificationAnswer(
+        { sessionToken, questionId, answerValue },
+        { client: fake.client },
+      );
+    }
+
+    // The winning request's event is already in the table.
+    fake.state.events.push({
+      ...(fake.state.events[0] ?? {}),
+      id: "event_from_winner",
+      dedupe_key: "qualification_enrichment:session_1",
+      event_type: "qualification_enrichment",
+      status: "pending",
+    } as (typeof fake.state.events)[number]);
+
+    const completed = await completeQualificationSession(
+      { sessionToken, userAgent: "vitest" },
+      {
+        client: fake.client,
+        now: () => new Date("2026-06-17T11:00:00.000Z"),
+      },
+    );
+
+    expect(completed.status).toBe("completed");
+    // Still exactly one enrichment event — the duplicate was refused by the
+    // index, not silently doubled.
+    expect(
+      fake.state.events.filter(
+        (event) => event.dedupe_key === "qualification_enrichment:session_1",
+      ),
+    ).toHaveLength(1);
   });
 
   it("completes once, enqueues Close enrichment, and rejects unsafe redirects", async () => {

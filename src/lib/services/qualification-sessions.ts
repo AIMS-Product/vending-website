@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isDuplicateDedupeError } from "@/lib/close/dedupe";
 import {
   buildQuestionSnapshots,
   type QualificationFormDefinition,
@@ -565,7 +566,15 @@ async function enqueueQualificationEnrichment(
     .insert(event)
     .select("id")
     .single();
-  if (error) {
+
+  // A duplicate means this session's enrichment is already queued — the same
+  // guard leads.ts and qualification-intake.ts already apply at their enqueue
+  // sites. requireUncompletedSession is a read-then-act check with no lock, so
+  // a double-click gets two requests past it; both complete and score the
+  // session fine, and only the loser's insert collides. Throwing here showed
+  // the visitor "we couldn't submit the form" on a submission that had in fact
+  // succeeded and was already on its way to Close.
+  if (error && !isDuplicateDedupeError(error)) {
     throw new QualificationSessionServiceError(
       "Qualification completed but Close enrichment was not queued.",
     );

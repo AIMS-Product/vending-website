@@ -629,6 +629,34 @@ describe("createQualificationIntakeSession", () => {
     );
   });
 
+  it("does not reset an already-synced lead back to pending on a re-submit", async () => {
+    // The enqueue below is deduped away on a re-submit, so nothing will ever
+    // move this lead off "pending" again. Forcing it here made /admin report
+    // permanently-pending leads that were in fact fully synced, and skewed the
+    // sync health counts on the overview.
+    const fake = buildClient({
+      leads: [makeLead({ close_sync_status: "synced" })],
+    });
+
+    await createQualificationIntakeSession(
+      {
+        idempotencyKey: "existing-key",
+        fullName: "Existing Lead",
+        email: "buyer@example.com",
+        phone: "555-0000",
+        sourcePath: "/contact",
+        userAgent: "vitest",
+      },
+      {
+        client: fake.client,
+        now: () => new Date("2026-06-17T09:00:00.000Z"),
+        tokenFactory: () => "raw_test_token",
+      },
+    );
+
+    expect(fake.state.leads[0]?.close_sync_status).toBe("synced");
+  });
+
   it("uses an explicitly resolved page or block qualification form instead of the global default", async () => {
     const fake = buildClient({
       forms: [

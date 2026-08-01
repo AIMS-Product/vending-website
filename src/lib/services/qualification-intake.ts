@@ -108,7 +108,7 @@ const intakeInputSchema = z.object({
 type ValidIntakeInput = z.output<typeof intakeInputSchema>;
 
 const LEAD_FIELDS =
-  "id,idempotency_key,status,notification_error,close_contact_id,close_lead_id,created_at" as const;
+  "id,idempotency_key,status,notification_error,close_contact_id,close_lead_id,close_sync_status,created_at" as const;
 
 export async function createQualificationIntakeSession(
   input: CreateQualificationIntakeInput,
@@ -159,8 +159,18 @@ export async function createQualificationIntakeSession(
     latest_qualification_session_id: session.id,
     latest_qualification_started_at: nowIso,
     lifecycle_status: "qualification_pending",
-    close_sync_status: "pending",
-    close_sync_next_retry_at: nowIso,
+    // Only reset the sync state for a lead that has none. On a re-submit the
+    // lead is reused and its create event already exists, so the enqueue below
+    // hits the dedupe key and inserts nothing — forcing "pending" here would
+    // leave the lead claiming it is waiting on a push that will never be made
+    // again, including leads already fully synced. leads.ts guards its own
+    // enqueue the same way.
+    ...(lead.close_sync_status
+      ? {}
+      : {
+          close_sync_status: "pending" as const,
+          close_sync_next_retry_at: nowIso,
+        }),
   });
 
   await enqueueLeadCloseSync(client, {
