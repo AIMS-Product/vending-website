@@ -4,6 +4,7 @@ import {
   ADMIN_LOGIN_PATH,
   ADMIN_RESET_PASSWORD_PATH,
   AUTH_CALLBACK_PATH,
+  resolveAuthEmailOrigin,
   adminPathWithEmail,
   authErrorMessage,
   buildPasswordResetRedirectUrl,
@@ -128,5 +129,95 @@ describe("admin auth redirects", () => {
     expect(ADMIN_LOGIN_PATH).toBe("/admin/login");
     expect(AUTH_CALLBACK_PATH).toBe("/auth/callback");
     expect(ADMIN_RESET_PASSWORD_PATH).toBe("/admin/reset-password");
+  });
+});
+
+describe("resolveAuthEmailOrigin", () => {
+  const siteUrl = "https://www.vendingpreneurs.com";
+
+  it("ignores a forged x-forwarded-host and falls back to the site URL", () => {
+    // The whole point: a recovery email must never be addressed to a host the
+    // caller picked, or clicking it hands the one-time code to an attacker.
+    expect(
+      resolveAuthEmailOrigin({
+        host: "evil.tld",
+        proto: "https",
+        siteUrl,
+        isProduction: true,
+      }),
+    ).toBe(siteUrl);
+  });
+
+  it("ignores a lookalike host and a foreign vercel.app deployment", () => {
+    for (const host of [
+      "www.vendingpreneurs.com.evil.tld",
+      "attacker-project.vercel.app",
+      "wwwXvendingpreneurs.com",
+    ]) {
+      expect(
+        resolveAuthEmailOrigin({
+          host,
+          proto: "https",
+          siteUrl,
+          isProduction: true,
+        }),
+      ).toBe(siteUrl);
+    }
+  });
+
+  it("honors the configured site host", () => {
+    expect(
+      resolveAuthEmailOrigin({
+        host: "www.vendingpreneurs.com",
+        proto: "https",
+        siteUrl,
+        isProduction: true,
+      }),
+    ).toBe(siteUrl);
+  });
+
+  it("honors the platform-injected deployment host so previews still work", () => {
+    // VERCEL_URL is set by the platform, not by the request, so it is trusted.
+    expect(
+      resolveAuthEmailOrigin({
+        host: "vending-website-abc123.vercel.app",
+        proto: "https",
+        siteUrl,
+        deploymentHost: "vending-website-abc123.vercel.app",
+        isProduction: true,
+      }),
+    ).toBe("https://vending-website-abc123.vercel.app");
+  });
+
+  it("allows localhost only outside production", () => {
+    expect(
+      resolveAuthEmailOrigin({
+        host: "localhost:3000",
+        proto: "http",
+        siteUrl,
+        isProduction: false,
+      }),
+    ).toBe("http://localhost:3000");
+    expect(
+      resolveAuthEmailOrigin({
+        host: "localhost:3000",
+        proto: "http",
+        siteUrl,
+        isProduction: true,
+      }),
+    ).toBe(siteUrl);
+  });
+
+  it("falls back when the host is missing or unparseable", () => {
+    expect(
+      resolveAuthEmailOrigin({ host: null, siteUrl, isProduction: true }),
+    ).toBe(siteUrl);
+    expect(
+      resolveAuthEmailOrigin({
+        host: "not a host::::",
+        siteUrl,
+        isProduction: true,
+      }),
+    ).toBe(siteUrl);
   });
 });

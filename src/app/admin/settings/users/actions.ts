@@ -15,6 +15,8 @@ import {
   AdminAuthorizationError,
   requireSuperAdmin,
 } from "@/lib/supabase/auth";
+import { resolveAuthEmailOrigin } from "@/lib/supabase/auth-redirects";
+import { publicConfig } from "@/lib/config";
 
 export type UserSettingsActionState =
   | { status: "idle" }
@@ -162,8 +164,11 @@ function actionError(
 
 async function originFromHeaders(): Promise<string> {
   const h = await headers();
-  const proto = h.get("x-forwarded-proto") ?? "https";
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  if (!host) throw new Error("No host header on incoming request");
-  return `${proto}://${host}`;
+  return resolveAuthEmailOrigin({
+    host: h.get("x-forwarded-host") ?? h.get("host"),
+    proto: h.get("x-forwarded-proto"),
+    siteUrl: publicConfig.siteUrl,
+    deploymentHost: process.env.VERCEL_URL,
+    isProduction: process.env.NODE_ENV === "production",
+  });
 }

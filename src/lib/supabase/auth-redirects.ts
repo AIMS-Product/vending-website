@@ -29,6 +29,70 @@ export function adminPathWithEmail(
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
+/**
+ * Resolve the origin that goes into a Supabase auth email (password reset,
+ * user invite, resend setup).
+ *
+ * The request `Host` / `X-Forwarded-Host` headers are attacker-controlled: a
+ * POST to the forgot-password action carrying `X-Forwarded-Host: evil.tld`
+ * would otherwise generate a recovery email pointing at the attacker, and an
+ * admin clicking it hands over a one-time code that exchanges for a session.
+ *
+ * So the header is treated as a *claim* to be checked, never as the answer.
+ * Only the configured site host, the platform-injected deployment host, and
+ * localhost outside production are honored; anything else falls back to the
+ * configured site URL, which is always safe if less convenient.
+ */
+export function resolveAuthEmailOrigin({
+  host,
+  proto,
+  siteUrl,
+  deploymentHost,
+  isProduction,
+}: {
+  host?: string | null;
+  proto?: string | null;
+  siteUrl: string;
+  deploymentHost?: string | null;
+  isProduction: boolean;
+}): string {
+  const configured = parseOrigin(siteUrl);
+  if (!configured) {
+    throw new Error("Site URL is not a valid origin");
+  }
+  if (!host) return configured.origin;
+
+  const candidate = parseOrigin(`${proto ?? "https"}://${host}`);
+  if (!candidate) return configured.origin;
+
+  const allowed = new Set<string>([configured.host]);
+  // Set by the platform, not by the caller, so it is safe to trust.
+  if (deploymentHost) {
+    const deployment = parseOrigin(`https://${deploymentHost}`);
+    if (deployment) allowed.add(deployment.host);
+  }
+  if (!isProduction) {
+    allowed.add("localhost");
+  }
+
+  const hostname = candidate.hostname;
+  const matches =
+    allowed.has(candidate.host) ||
+    (!isProduction && (hostname === "localhost" || hostname === "127.0.0.1"));
+
+  return matches ? candidate.origin : configured.origin;
+}
+
+function parseOrigin(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    return url;
+  } catch {
+    return null;
+  }
+}
+
 export function buildPasswordResetRedirectUrl(
   origin: string,
   email?: string | null,
