@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import { securityHeaders } from "./src/lib/security-headers";
 
 const legacyLeadRedirects = [
   {
@@ -45,6 +46,14 @@ const legacyLeadRedirects = [
 ] as const;
 
 const nextConfig: NextConfig = {
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [...securityHeaders],
+      },
+    ];
+  },
   async redirects() {
     return [
       {
