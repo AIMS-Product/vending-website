@@ -6,11 +6,15 @@ import {
 } from "./calendly-webhook";
 
 const SIGNING_KEY = "whsec_test_key";
+// Signatures are only valid inside a freshness window now, so the existing
+// cases anchor "now" to the timestamp they sign with.
+const SIGNED_AT_SECONDS = 1700000000;
+const NOW = new Date(SIGNED_AT_SECONDS * 1000);
 
 function signatureHeader(
   body: string,
   {
-    timestamp = "1700000000",
+    timestamp = String(SIGNED_AT_SECONDS),
     key = SIGNING_KEY,
   }: { timestamp?: string; key?: string } = {},
 ) {
@@ -25,7 +29,7 @@ describe("verifyCalendlySignature", () => {
     const body = JSON.stringify({ event: "invitee.created" });
     const header = signatureHeader(body);
 
-    expect(verifyCalendlySignature(body, header, SIGNING_KEY)).toBe(true);
+    expect(verifyCalendlySignature(body, header, SIGNING_KEY, NOW)).toBe(true);
   });
 
   it("rejects a tampered body", () => {
@@ -33,29 +37,29 @@ describe("verifyCalendlySignature", () => {
     const header = signatureHeader(body);
     const tamperedBody = JSON.stringify({ event: "invitee.canceled" });
 
-    expect(verifyCalendlySignature(tamperedBody, header, SIGNING_KEY)).toBe(
-      false,
-    );
+    expect(
+      verifyCalendlySignature(tamperedBody, header, SIGNING_KEY, NOW),
+    ).toBe(false);
   });
 
   it("rejects a signature generated with the wrong key", () => {
     const body = JSON.stringify({ event: "invitee.created" });
     const header = signatureHeader(body, { key: "whsec_wrong_key" });
 
-    expect(verifyCalendlySignature(body, header, SIGNING_KEY)).toBe(false);
+    expect(verifyCalendlySignature(body, header, SIGNING_KEY, NOW)).toBe(false);
   });
 
   it("rejects a missing signature header", () => {
     const body = JSON.stringify({ event: "invitee.created" });
 
-    expect(verifyCalendlySignature(body, null, SIGNING_KEY)).toBe(false);
+    expect(verifyCalendlySignature(body, null, SIGNING_KEY, NOW)).toBe(false);
   });
 
   it("rejects a malformed signature header", () => {
     const body = JSON.stringify({ event: "invitee.created" });
 
     expect(
-      verifyCalendlySignature(body, "not-a-valid-header", SIGNING_KEY),
+      verifyCalendlySignature(body, "not-a-valid-header", SIGNING_KEY, NOW),
     ).toBe(false);
   });
 
@@ -63,7 +67,53 @@ describe("verifyCalendlySignature", () => {
     const body = JSON.stringify({ event: "invitee.created" });
     const header = signatureHeader(body);
 
-    expect(verifyCalendlySignature(body, header, "")).toBe(false);
+    expect(verifyCalendlySignature(body, header, "", NOW)).toBe(false);
+  });
+
+  it("rejects a replay of a still-perfectly-signed old request", () => {
+    // The signature stays valid forever on its own. Anyone who captures one
+    // request -- proxy log, Vercel log export, Calendly's delivery log -- could
+    // otherwise replay it to rewrite booking state indefinitely.
+    const body = JSON.stringify({ event: "invitee.canceled" });
+    const header = signatureHeader(body);
+    const anHourLater = new Date(NOW.getTime() + 60 * 60 * 1000);
+
+    expect(
+      verifyCalendlySignature(body, header, SIGNING_KEY, anHourLater),
+    ).toBe(false);
+  });
+
+  it("rejects a timestamp from the future", () => {
+    const body = JSON.stringify({ event: "invitee.created" });
+    const header = signatureHeader(body);
+    const anHourEarlier = new Date(NOW.getTime() - 60 * 60 * 1000);
+
+    expect(
+      verifyCalendlySignature(body, header, SIGNING_KEY, anHourEarlier),
+    ).toBe(false);
+  });
+
+  it("tolerates ordinary clock skew and delivery latency", () => {
+    const body = JSON.stringify({ event: "invitee.created" });
+    const header = signatureHeader(body);
+
+    for (const offsetMs of [-60_000, 0, 60_000, 4 * 60_000]) {
+      expect(
+        verifyCalendlySignature(
+          body,
+          header,
+          SIGNING_KEY,
+          new Date(NOW.getTime() + offsetMs),
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("rejects a non-numeric timestamp", () => {
+    const body = JSON.stringify({ event: "invitee.created" });
+    const header = signatureHeader(body, { timestamp: "not-a-number" });
+
+    expect(verifyCalendlySignature(body, header, SIGNING_KEY, NOW)).toBe(false);
   });
 });
 

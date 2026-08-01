@@ -77,11 +77,19 @@ export function verifyCalendlySignature(
   rawBody: string,
   signatureHeader: string | null,
   signingKey: string,
+  now: Date = new Date(),
 ): boolean {
   if (!signatureHeader || !signingKey) return false;
 
   const parsed = parseSignatureHeader(signatureHeader);
   if (!parsed) return false;
+
+  // The timestamp is signed but was never checked, so a single observed
+  // request stayed valid forever. Anyone who saw one -- a proxy log, a Vercel
+  // log export, a screenshot of Calendly's delivery log -- could replay it to
+  // rewrite booking state, e.g. replaying an old invitee.canceled to mark a
+  // live booking cancelled.
+  if (!isFreshTimestamp(parsed.timestamp, now)) return false;
 
   const expectedHex = createHmac("sha256", signingKey)
     .update(`${parsed.timestamp}.${rawBody}`)
@@ -98,6 +106,17 @@ export function verifyCalendlySignature(
   }
 
   return timingSafeEqual(expectedBuffer, actualBuffer);
+}
+
+/** How far a signed timestamp may sit from now, in either direction. */
+const SIGNATURE_TOLERANCE_MS = 5 * 60 * 1000;
+
+function isFreshTimestamp(timestamp: string, now: Date): boolean {
+  if (!/^\d+$/.test(timestamp)) return false;
+  const signedAtMs = Number(timestamp) * 1000;
+  if (!Number.isFinite(signedAtMs)) return false;
+  // Symmetric: a far-future timestamp is as suspect as a stale one.
+  return Math.abs(now.getTime() - signedAtMs) <= SIGNATURE_TOLERANCE_MS;
 }
 
 function parseSignatureHeader(
