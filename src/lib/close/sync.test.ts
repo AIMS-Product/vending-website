@@ -393,9 +393,15 @@ describe("adminRunCloseSync", () => {
         }),
       ],
     });
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(jsonResponse({ id: "cont_close_1" }));
+    // Close already holds exactly what this submit carries, so the read is the
+    // only call: there is nothing to add and nothing may be rewritten.
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      jsonResponse({
+        id: "cont_close_1",
+        emails: [{ email: "buyer@example.com" }],
+        phones: [{ phone: "555-0101" }],
+      }),
+    );
 
     const result = await adminRunCloseSync({
       client: fake.client,
@@ -409,6 +415,7 @@ describe("adminRunCloseSync", () => {
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
       "https://api.close.com/api/v1/contact/cont_close_1/",
     );
+    expect(fetchMock.mock.calls[0]?.[1]?.method).toBe("GET");
     expect(fake.state.events[0]).toMatchObject({
       status: "synced",
       close_lead_id: "lead_close_1",
@@ -456,6 +463,13 @@ describe("adminRunCloseSync", () => {
     });
     const fetchMock = vi
       .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "cont_close_1",
+          emails: [{ email: "buyer@example.com" }],
+          phones: [{ phone: "555-0101" }],
+        }),
+      )
       .mockResolvedValueOnce(jsonResponse({ id: "cont_close_1" }))
       .mockResolvedValueOnce(jsonResponse({ id: "lead_close_1" }));
 
@@ -479,19 +493,20 @@ describe("adminRunCloseSync", () => {
 
     // UTMs are contact-scoped in Close, so they ride the contact update and must
     // never appear on the lead — Close 400s a lead update carrying them.
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+    // calls[0] is the read of the existing contact that keeps the update additive.
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
       "https://api.close.com/api/v1/contact/cont_close_1/",
     );
     const contactBody = JSON.parse(
-      fetchMock.mock.calls[0]?.[1]?.body as string,
+      fetchMock.mock.calls[1]?.[1]?.body as string,
     ) as Record<string, unknown>;
     expect(contactBody["custom.cf_utm_source"]).toBe("google");
     expect(contactBody["custom.cf_utm_medium"]).toBe("cpc");
 
-    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+    expect(fetchMock.mock.calls[2]?.[0]).toBe(
       "https://api.close.com/api/v1/lead/lead_close_1/",
     );
-    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
+    expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toEqual({
       "custom.cf_gclid": "gclid-123",
       "custom.cf_campaign": "camp-123",
       "custom.cf_ad_group": "group-123",
@@ -517,6 +532,13 @@ describe("adminRunCloseSync", () => {
               ],
             },
           ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "cont_close_2",
+          emails: [{ email: "buyer@example.com" }],
+          phones: [{ phone: "555-0999" }],
         }),
       )
       .mockResolvedValueOnce(jsonResponse({ id: "cont_close_2" }));
@@ -573,6 +595,117 @@ describe("adminRunCloseSync", () => {
       last_error: "Multiple Close contacts matched buyer@example.com.",
     });
     expect(ambiguousFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("never rewrites a matched contact's identity from a public submit", async () => {
+    // The public form is unauthenticated, so anyone can submit a known
+    // customer's email with their own name and phone number. Close's
+    // PUT /contact/ replaces arrays wholesale, so the update must add and
+    // never substitute, and must not carry `name` at all.
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          payload: {
+            contact: {
+              full_name: "Attacker Name",
+              email: "victim@example.com",
+              phone: "555-9999",
+            },
+          },
+        }),
+      ],
+      leads: [makeLead({ email: "victim@example.com", phone: "555-9999" })],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              id: "lead_victim",
+              contacts: [
+                {
+                  id: "cont_victim",
+                  emails: [{ email: "victim@example.com" }],
+                },
+              ],
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "cont_victim",
+          name: "Real Customer",
+          emails: [{ email: "victim@example.com", type: "office" }],
+          phones: [{ phone: "555-0100", type: "office" }],
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ id: "cont_victim" }));
+
+    await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    const update = JSON.parse(
+      fetchMock.mock.calls[2]?.[1]?.body as string,
+    ) as Record<string, unknown>;
+
+    expect(fetchMock.mock.calls[2]?.[0]).toBe(
+      "https://api.close.com/api/v1/contact/cont_victim/",
+    );
+    expect(update).not.toHaveProperty("name");
+    // The real number survives and the submitted one is appended after it.
+    expect(update.phones).toEqual([
+      { phone: "555-0100", type: "office" },
+      { phone: "555-9999", type: "direct" },
+    ]);
+    // Nothing new to add, so the key is omitted and Close keeps its array.
+    expect(update).not.toHaveProperty("emails");
+  });
+
+  it("adds nothing when a matched contact already holds the submitted details", async () => {
+    const fake = buildClient({
+      events: [makeEvent()],
+      leads: [makeLead()],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              id: "lead_close_2",
+              contacts: [
+                { id: "cont_close_2", emails: [{ email: "buyer@example.com" }] },
+              ],
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "cont_close_2",
+          // Same address in a different case — matching must be normalized, or
+          // the address gets appended a second time.
+          emails: [{ email: "Buyer@Example.com" }],
+          phones: [{ phone: "555-0101" }],
+        }),
+      );
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    expect(result).toMatchObject({ synced: 1 });
+    // Search + read only: an empty update is not worth a write.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("creates a Close lead/contact when no existing match is found", async () => {

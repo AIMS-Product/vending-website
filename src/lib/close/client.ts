@@ -66,8 +66,8 @@ export type CloseConfig = {
 
 export type CloseContactPayload = {
   name?: string;
-  emails?: Array<{ email: string; type?: string }>;
-  phones?: Array<{ phone: string; type?: string }>;
+  emails?: CloseContactEmail[];
+  phones?: CloseContactPhone[];
 };
 
 type CloseLeadPayload = {
@@ -93,12 +93,14 @@ type CloseNotePayload = {
   note_html: string;
 };
 
-type CloseContactEmail = { email?: string | null };
+type CloseContactEmail = { email?: string | null; type?: string };
+type CloseContactPhone = { phone?: string | null; type?: string };
 
 type CloseContactResult = {
   id: string;
   lead_id?: string | null;
   emails?: CloseContactEmail[];
+  phones?: CloseContactPhone[];
 };
 
 type CloseLeadResult = {
@@ -302,6 +304,12 @@ export function createCloseClient({
         "PUT",
         `/lead/${encodeURIComponent(leadId)}/`,
         payload,
+      );
+    },
+    getContact(contactId: string) {
+      return request<CloseContactResult>(
+        "GET",
+        `/contact/${encodeURIComponent(contactId)}/`,
       );
     },
     updateContact(contactId: string, payload: CloseContactPayload) {

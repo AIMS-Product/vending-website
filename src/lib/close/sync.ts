@@ -437,8 +437,7 @@ async function updateKnownCloseLead(
   },
 ): Promise<CloseContactInfo> {
   if (contactId) {
-    await close.updateContact(contactId, {
-      ...contact,
+    await updateContactAdditively(close, contactId, contact, {
       ...sourceFields.contact,
     });
   }
@@ -469,9 +468,75 @@ async function updateMatchedCloseContact(
       `Close contact ${match.id} did not include a parent lead.`,
     );
   }
-  await close.updateContact(match.id, { ...contact, ...sourceFields.contact });
+  await updateContactAdditively(close, match.id, contact, {
+    ...sourceFields.contact,
+  });
   await updateCloseLeadSourceFields(close, match.lead_id, sourceFields);
   return { leadId: match.lead_id, contactId: match.id };
+}
+
+/**
+ * Update a Close contact that already exists without rewriting who it is.
+ *
+ * Both callers reach a contact that this submit did not necessarily own: the
+ * email-match path resolves a stranger's contact from an unauthenticated public
+ * form, and the known-lead path can be pointed at that same contact once the
+ * match has been recorded on our lead row. Close's `PUT /contact/` replaces
+ * every array it receives wholesale, so passing the submitted `name`/`phones`
+ * through let anyone who knows a customer's email address replace that
+ * customer's name and phone number in the CRM, and sales would then dial the
+ * attacker.
+ *
+ * Product decision (2026-07-31): never touch `name`, and only ever ADD an email
+ * or phone to what Close already holds. Full contact details are still written
+ * at creation time, where the contact is genuinely ours.
+ */
+async function updateContactAdditively(
+  close: CloseClient,
+  contactId: string,
+  contact: CloseContactPayload,
+  contactFields: Record<string, unknown>,
+) {
+  const existing = await close.getContact(contactId);
+  const emails = appendedContactEntries(
+    "email",
+    existing.emails,
+    contact.emails,
+  );
+  const phones = appendedContactEntries(
+    "phone",
+    existing.phones,
+    contact.phones,
+  );
+  const payload = {
+    ...(emails ? { emails } : {}),
+    ...(phones ? { phones } : {}),
+    ...contactFields,
+  };
+  if (Object.keys(payload).length) {
+    await close.updateContact(contactId, payload);
+  }
+}
+
+/**
+ * The existing entries plus any submitted entry Close does not already hold, or
+ * null when there is nothing new — omitting the key is what preserves the array.
+ *
+ * ponytail: exact string comparison, so the same number in two formats
+ * ("555-0100" vs "5550100") appends twice. Normalize to digits if that shows up.
+ */
+function appendedContactEntries<K extends "email" | "phone">(
+  key: K,
+  existing: Array<Partial<Record<K, string | null>>> = [],
+  incoming: Array<Partial<Record<K, string | null>>> = [],
+) {
+  const known = new Set(
+    existing.map((entry) => entry[key]?.trim().toLowerCase()),
+  );
+  const added = incoming.filter(
+    (entry) => entry[key] && !known.has(entry[key]?.trim().toLowerCase()),
+  );
+  return added.length ? [...existing, ...added] : null;
 }
 
 async function updateCloseLeadSourceFields(
