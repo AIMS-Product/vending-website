@@ -18,6 +18,7 @@ import {
   normalizeAdminNextPath,
   supabaseAuthErrorRedirectPath,
 } from "@/lib/supabase/auth-redirects";
+import { isCodedRoutePath } from "@/lib/page-builder/coded-route-paths";
 import { isDevAdminAuthBypassEnabled } from "@/lib/supabase/dev-auth";
 import { updateSession } from "@/lib/supabase/middleware";
 
@@ -177,6 +178,9 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isBuilderRoutePath(path)) {
+    // A coded page under a builder prefix has no `seo_pages` row, so the
+    // existence check below would 404 it before its route ever runs. A Studio
+    // redirect still wins, so this sits after the redirect lookup.
     const redirect = await getBuilderRedirectBySourcePath(path);
     if (redirect) {
       return NextResponse.redirect(
@@ -191,6 +195,10 @@ export async function proxy(request: NextRequest) {
     } catch {
       return notFoundResponse();
     }
+    if (isCodedRoutePath(routePath)) {
+      return NextResponse.next();
+    }
+
     const exists = await hasPublishedSeoPagePath(routePath);
     if (!exists) {
       // Legacy /blog/{slug} links permanently redirect to the matching

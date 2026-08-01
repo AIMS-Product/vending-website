@@ -7,6 +7,7 @@ import {
   financeTemplatesThankYouPage,
 } from "@/lib/content/lead-magnets";
 import { flattenBlocks, pageContentSchema } from "@/lib/page-builder/blocks";
+import { CODED_ROUTE_PATHS } from "@/lib/page-builder/coded-route-paths";
 import { resolveResourceQualificationAttachment } from "@/lib/page-builder/resource-lead-attribution";
 
 describe("lead magnet pages", () => {
@@ -46,6 +47,15 @@ describe("lead magnet pages", () => {
     expect(page.noindex).toBe(true);
     expect(page.sitemap_enabled).toBe(false);
   });
+
+  // Without this registration the proxy 404s the path before the route runs,
+  // because there is no published seo_pages row behind it.
+  it.each(leadMagnetPages.map((page) => [page.route_path] as const))(
+    "%s is registered as a coded route with the proxy",
+    (routePath) => {
+      expect(CODED_ROUTE_PATHS.has(routePath)).toBe(true);
+    },
+  );
 
   it("puts a reachable asset link on every thank-you page", () => {
     for (const page of [roadmapThankYouPage, financeTemplatesThankYouPage]) {
