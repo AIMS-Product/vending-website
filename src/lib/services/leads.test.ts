@@ -453,6 +453,50 @@ describe("submitLead", () => {
     );
   });
 
+  it("keeps the lead row when the Resend request rejects outright", async () => {
+    const { client, mocks } = buildLeadClient();
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValue(new Error("getaddrinfo ENOTFOUND api.resend.com"));
+
+    const result = await submitLead(validLead, {
+      client,
+      env: notificationEnv,
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-05-04T09:10:00.000Z"),
+    });
+
+    // A rejecting fetch must not escape submitLead: the lead is already stored
+    // and queued to Close, so the visitor must still see a successful submit.
+    expect(result.status).toBe("accepted");
+    expect(mocks.insert).toHaveBeenCalled();
+    expect(result.notificationStatus).toBe("notification_failed");
+    expect(result.notificationError).toContain("ENOTFOUND");
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "notification_failed",
+        notification_sent_at: null,
+      }),
+    );
+  });
+
+  it("keeps the lead row when the Slack webhook request rejects outright", async () => {
+    const { client, mocks } = buildLeadClient();
+    const fetchMock = vi.fn().mockRejectedValue(new Error("socket hang up"));
+
+    const result = await submitLead(validLead, {
+      client,
+      env: { SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/x" },
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-05-04T09:10:00.000Z"),
+    });
+
+    expect(result.status).toBe("accepted");
+    expect(mocks.insert).toHaveBeenCalled();
+    expect(result.notificationStatus).toBe("notification_failed");
+    expect(result.notificationError).toContain("socket hang up");
+  });
+
   it("stores the lead and records a notification failure when env is missing", async () => {
     const { client, mocks } = buildLeadClient();
     const fetchMock = vi.fn();

@@ -514,29 +514,41 @@ async function sendResendEmail(
     fetchImpl: typeof fetch;
   },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const response = await fetchImpl("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to,
-      subject: `${subjectPrefix ?? "Vendingpreneurs"} ${lead.formType === "apply" ? "application" : "contact"} lead`,
-      text: formatLeadText(lead),
-    }),
-  });
+  // A rejecting fetch (DNS failure, socket hang-up, timeout) must degrade to
+  // `notification_failed` like a 5xx does. Letting it throw would escape
+  // submitLead before the status patch runs, so the lead row would sit at
+  // "received" while the visitor is told their submission failed — even though
+  // it was already stored and queued to Close.
+  try {
+    const response = await fetchImpl("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to,
+        subject: `${subjectPrefix ?? "Vendingpreneurs"} ${lead.formType === "apply" ? "application" : "contact"} lead`,
+        text: formatLeadText(lead),
+      }),
+    });
 
-  if (!response.ok) {
-    const body = await safeResponseText(response);
+    if (!response.ok) {
+      const body = await safeResponseText(response);
+      return {
+        ok: false,
+        error: `Resend email failed with ${response.status}${body ? `: ${body}` : ""}`,
+      };
+    }
+
+    return { ok: true };
+  } catch (error) {
     return {
       ok: false,
-      error: `Resend email failed with ${response.status}${body ? `: ${body}` : ""}`,
+      error: `Resend email request failed: ${error instanceof Error ? error.message : "unknown error"}`,
     };
   }
-
-  return { ok: true };
 }
 
 async function sendSlackWebhook(
@@ -544,20 +556,29 @@ async function sendSlackWebhook(
   webhookUrl: string,
   fetchImpl: typeof fetch,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const response = await fetchImpl(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: formatSlackText(lead) }),
-  });
+  // See sendResendEmail: a rejecting fetch has to become a failed notification,
+  // not a failed lead submit.
+  try {
+    const response = await fetchImpl(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: formatSlackText(lead) }),
+    });
 
-  if (!response.ok) {
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: `Slack webhook failed with ${response.status}`,
+      };
+    }
+
+    return { ok: true };
+  } catch (error) {
     return {
       ok: false,
-      error: `Slack webhook failed with ${response.status}`,
+      error: `Slack webhook request failed: ${error instanceof Error ? error.message : "unknown error"}`,
     };
   }
-
-  return { ok: true };
 }
 
 // Money-page tracking needs the full validated lead, so it stays on the
