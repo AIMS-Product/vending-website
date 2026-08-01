@@ -75,11 +75,35 @@ describe("settings user actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.requireSuperAdmin.mockResolvedValue(actor);
+    // Matches VERCEL_URL, which the platform injects, so the invite link stays
+    // on the deployment the admin is actually using. An unrecognized host
+    // falls back to the configured site URL — see the forged-host case below.
+    vi.stubEnv("VERCEL_URL", "vending-website.vercel.app");
     mocks.headers.mockResolvedValue(
       new Headers({
         "x-forwarded-host": "vending-website.vercel.app",
         "x-forwarded-proto": "https",
       }),
+    );
+  });
+
+  it("ignores a forged x-forwarded-host when building an invite link", async () => {
+    mocks.headers.mockResolvedValue(
+      new Headers({
+        "x-forwarded-host": "evil.tld",
+        "x-forwarded-proto": "https",
+      }),
+    );
+
+    await inviteUser(
+      { status: "idle" },
+      formData({ email: "New@Example.com", role: "admin" }),
+    );
+
+    expect(mocks.inviteAppUser).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ origin: "https://www.vendingpreneurs.com" }),
     );
   });
 

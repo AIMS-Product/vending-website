@@ -43,6 +43,10 @@ function formData(email: string) {
 describe("requestPasswordReset", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // A preview deployment: the request host matches VERCEL_URL, which the
+    // platform injects, so it is trusted and the reset link stays on the
+    // deployment the admin is actually using.
+    vi.stubEnv("VERCEL_URL", "vending-website.vercel.app");
     mocks.headers.mockResolvedValue(
       new Headers({
         "x-forwarded-host": "vending-website.vercel.app",
@@ -74,6 +78,34 @@ describe("requestPasswordReset", () => {
       },
     );
     expect(mocks.createServerClient).toHaveBeenCalledOnce();
+  });
+
+  it("ignores a forged x-forwarded-host when building the reset link", async () => {
+    // Otherwise a POST carrying this header produces a real recovery email
+    // pointing at the attacker, and the one-time code in it exchanges for an
+    // admin session.
+    mocks.headers.mockResolvedValue(
+      new Headers({
+        "x-forwarded-host": "evil.tld",
+        "x-forwarded-proto": "https",
+      }),
+    );
+
+    await requestPasswordReset(
+      { status: "idle" },
+      formData("admin@example.com"),
+    );
+
+    expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith(
+      "admin@example.com",
+      {
+        redirectTo: expect.stringContaining(
+          "https://www.vendingpreneurs.com/auth/callback",
+        ),
+      },
+    );
+    const [, options] = mocks.resetPasswordForEmail.mock.calls[0] ?? [];
+    expect(options?.redirectTo).not.toContain("evil.tld");
   });
 
   it("does not send reset emails to non-admin addresses but returns generic sent state", async () => {
