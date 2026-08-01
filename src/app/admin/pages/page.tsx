@@ -16,7 +16,6 @@ import {
   AdminIcon,
   adminPrimaryButtonClass,
   adminSecondaryButtonClass,
-  type AdminIconName,
 } from "@/components/admin/AdminUi";
 import { firstParam, type SearchParamValue } from "@/lib/admin/list-state";
 import {
@@ -33,14 +32,10 @@ import { assessSeoReadiness } from "@/lib/page-builder/seo-readiness";
 import { adminListSeoPages } from "@/lib/services/seo-pages";
 import { requireAdmin } from "@/lib/supabase/auth";
 import {
-  dotToneClass,
   pageStatusDotTone,
   pageStatusLabel,
-  pageStatusLegend,
   readinessDotTone,
-  readinessLegend,
   type StatusDotTone,
-  type StatusLegendEntry,
 } from "@/app/admin/pages/seo-pages-status-labels";
 import type { Tables } from "@/types/database";
 
@@ -285,87 +280,6 @@ function SeoPagesAdminSurface({
   );
 }
 
-function SeoPagesSummary({
-  state,
-  scheduleFailedCount,
-}: {
-  state: SeoPagesListState;
-  scheduleFailedCount: number;
-}) {
-  const { pageCounts, perPage, q: searchQuery, sort, status, view } = state;
-
-  return (
-    <section className="mb-5 space-y-3" aria-label="SEO page summary">
-      <div className="divide-ui-line border-ui-line grid divide-y overflow-hidden rounded-lg border bg-white shadow-sm md:grid-cols-4 md:divide-x md:divide-y-0">
-        <MetricPanel
-          icon="file"
-          tone="blue"
-          label="All"
-          value={pageCounts.active}
-          caption="drafts + published"
-          href={adminPagesHref({
-            status: "active",
-            view,
-            q: searchQuery,
-            sort,
-            perPage,
-          })}
-          active={status === "active"}
-        />
-        <MetricPanel
-          icon="pencil"
-          tone="amber"
-          label="Drafts"
-          value={pageCounts.draft}
-          caption="needs work"
-          href={adminPagesHref({
-            status: "draft",
-            view,
-            q: searchQuery,
-            sort,
-            perPage,
-          })}
-          active={status === "draft"}
-        />
-        <MetricPanel
-          icon="check"
-          tone="green"
-          label="Published"
-          value={pageCounts.published}
-          caption="publicly visible"
-          href={adminPagesHref({
-            status: "published",
-            view,
-            q: searchQuery,
-            sort,
-            perPage,
-          })}
-          active={status === "published"}
-        />
-        <MetricPanel
-          icon="archive"
-          tone="slate"
-          label="Archived"
-          value={pageCounts.archived}
-          caption="retired"
-          href={adminPagesHref({
-            status: "archived",
-            view,
-            q: searchQuery,
-            sort,
-            perPage,
-          })}
-          active={status === "archived"}
-        />
-      </div>
-      <ScheduleFailedKpi count={scheduleFailedCount} />
-    </section>
-  );
-}
-
-// S15 / C137: surface the schedule-failed count alongside the status metrics so
-// a failed scheduled publish is visible without opening the workflow filter.
-// Reuses the same `?view=schedule-failed` filter and renders nothing at zero.
 function ScheduleFailedKpi({ count }: { count: number }) {
   if (count <= 0) return null;
 
@@ -841,50 +755,6 @@ function SeoPagesPagination({ state }: { state: SeoPagesListState }) {
   );
 }
 
-function MetricPanel({
-  icon,
-  tone,
-  label,
-  value,
-  caption,
-  href,
-  active,
-}: {
-  icon: AdminIconName;
-  tone: "amber" | "blue" | "green" | "slate";
-  label: string;
-  value: number;
-  caption: string;
-  href: string;
-  active: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={active ? "page" : undefined}
-      className={`hover:bg-ui-canvas focus-visible:ring-ui-accent/35 flex items-center gap-5 px-6 py-4 transition focus-visible:ring-2 focus-visible:outline-none ${
-        active ? "bg-[#fbfdff] shadow-[inset_0_-3px_0_#0b63f6]" : ""
-      }`}
-    >
-      <span
-        className={`flex size-12 shrink-0 items-center justify-center rounded-md ${metricToneClass(
-          tone,
-        )}`}
-        aria-hidden="true"
-      >
-        <AdminIcon icon={icon} />
-      </span>
-      <div>
-        <p className="text-ui-text-subtle text-sm font-medium">{label}</p>
-        <p className="text-ui-text mt-1 text-3xl font-semibold tracking-normal">
-          {value}
-        </p>
-        <p className="text-ui-text-subtle text-sm">{caption}</p>
-      </div>
-    </Link>
-  );
-}
-
 function PageRow({
   page,
   returnTo,
@@ -1206,17 +1076,6 @@ function PaginationNumber({
   );
 }
 
-function metricToneClass(tone: "amber" | "blue" | "green" | "slate") {
-  if (tone === "amber") return "bg-amber-100 text-amber-600";
-  if (tone === "green") return "bg-emerald-100 text-emerald-600";
-  if (tone === "slate") return "bg-ui-line text-ui-text-muted";
-  return "bg-[#e9f1ff] text-ui-accent";
-}
-
-// N7 / issue I7: a status dot paired with a visible text label so the state is
-// readable at a glance without decoding colour. `accessibleLabel` keeps the
-// fuller "Page status: Published" name for assistive tech; `label` is the
-// short word shown next to the dot.
 function StatusBadge({
   accessibleLabel,
   label,
@@ -1247,49 +1106,6 @@ function StatusBadge({
     >
       {label}
     </span>
-  );
-}
-
-function StatusLegend() {
-  return (
-    <div
-      className="border-ui-line bg-ui-canvas/60 text-ui-text-muted flex flex-wrap items-center gap-x-5 gap-y-2 border-b px-4 py-3 text-xs sm:px-5"
-      aria-label="Status and readiness legend"
-    >
-      <LegendGroup title="Status" entries={pageStatusLegend} />
-      <span
-        aria-hidden="true"
-        className="hidden h-4 w-px bg-slate-200 sm:block"
-      />
-      <LegendGroup title="Readiness" entries={readinessLegend} />
-    </div>
-  );
-}
-
-function LegendGroup({
-  title,
-  entries,
-}: {
-  title: string;
-  entries: readonly StatusLegendEntry[];
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-      <span className="text-ui-text-subtle font-semibold tracking-wider uppercase">
-        {title}
-      </span>
-      {entries.map((entry) => (
-        <span key={entry.label} className="inline-flex items-center gap-1.5">
-          <span
-            className={`size-2.5 shrink-0 rounded-full ${dotToneClass(
-              entry.tone,
-            )}`}
-            aria-hidden="true"
-          />
-          <span className="text-ui-text-muted font-medium">{entry.label}</span>
-        </span>
-      ))}
-    </div>
   );
 }
 
