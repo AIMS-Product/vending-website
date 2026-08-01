@@ -16,6 +16,9 @@ type FakeState = {
     id: string;
     patch: Record<string, unknown>;
   }>;
+  // When set, any close_sync_events update touching this id resolves with a
+  // PostgREST error instead of applying — the way a dropped connection does.
+  failEventUpdatesFor?: string;
 };
 
 function makeLead(overrides: Partial<LeadRow> = {}): LeadRow {
@@ -219,10 +222,26 @@ class FakeQuery {
     return affected;
   }
 
-  then(resolve: (value: { data: unknown[]; error: null }) => void) {
+  then(
+    resolve: (value: {
+      data: unknown[] | null;
+      error: { message: string } | null;
+    }) => void,
+  ) {
     if (this.pendingUpdate) {
       const patch = this.pendingUpdate;
       this.pendingUpdate = null;
+      const failFor = this.state.failEventUpdatesFor;
+      if (
+        this.table === "close_sync_events" &&
+        failFor &&
+        this.state.events.some(
+          (row) => row.id === failFor && this.matches(row),
+        )
+      ) {
+        resolve({ data: null, error: { message: "connection reset" } });
+        return;
+      }
       resolve({ data: this.applyUpdate(patch), error: null });
       return;
     }
@@ -955,6 +974,71 @@ describe("adminRunCloseSync", () => {
       }),
     );
     expect(fake.state.events[0].status).toBe("synced");
+  });
+
+  it("keeps draining the batch when one event's bookkeeping write fails", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({ id: "event_bad", dedupe_key: "bad" }),
+        makeEvent({ id: "event_good", dedupe_key: "good" }),
+      ],
+      failEventUpdatesFor: "event_bad",
+    });
+
+    const fetchMock = vi.fn(async (url: unknown, init?: RequestInit) => {
+      if ((init?.method ?? "GET") === "GET") return jsonResponse({ data: [] });
+      if (String(url).endsWith("/lead/")) {
+        return jsonResponse({
+          id: "lead_created",
+          contact_ids: ["cont_created"],
+          contacts: [{ id: "cont_created" }],
+        });
+      }
+      return jsonResponse({ id: "cont_created" });
+    });
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    // The healthy event behind the broken one still gets processed.
+    expect(result.scanned).toBe(2);
+    expect(result.synced).toBe(1);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ eventId: "event_bad" }),
+    );
+  });
+
+  it("retries qualification enrichment that arrives before its Close lead exists", async () => {
+    // The lead_create_or_update event normally drains first and populates
+    // close_lead_id. A transient Close 5xx on that event pushes its
+    // next_retry_at forward and inverts the order. Parking the enrichment as
+    // needs_review here is terminal, so the score, band, and answers would
+    // never reach Close and nothing would alert.
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          event_type: "qualification_enrichment",
+          close_lead_id: null,
+          payload: { qualification: { status: "qualified" } },
+        }),
+      ],
+      leads: [makeLead({ close_lead_id: null })],
+    });
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: vi.fn() as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    expect(result.needsReview).toBe(0);
+    expect(result.failed).toBe(1);
+    expect(fake.state.events[0].status).toBe("failed");
   });
 
   it("lets only one of two concurrent drains process an event", async () => {

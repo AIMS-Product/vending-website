@@ -133,12 +133,25 @@ export async function adminRunCloseSync(
   };
 
   for (const event of events) {
-    const processed = await processCloseSyncEvent(event, {
-      client,
-      closeConfig,
-      fetchImpl: deps.fetchImpl,
-      now,
-    });
+    // The bookkeeping writes inside processCloseSyncEvent sit outside its own
+    // try block and throw on any PostgREST error. Without this guard one bad
+    // write 500s the cron route and abandons every remaining event in the
+    // batch with nothing recorded against them.
+    let processed: Awaited<ReturnType<typeof processCloseSyncEvent>>;
+    try {
+      processed = await processCloseSyncEvent(event, {
+        client,
+        closeConfig,
+        fetchImpl: deps.fetchImpl,
+        now,
+      });
+    } catch (error) {
+      result.errors.push({
+        eventId: event.id,
+        message: sanitizeSyncError(error, closeConfig.apiKey),
+      });
+      continue;
+    }
     result.synced += processed === "synced" ? 1 : 0;
     result.failed += processed === "failed" ? 1 : 0;
     result.deadLettered += processed === "dead_letter" ? 1 : 0;
@@ -484,9 +497,15 @@ async function syncQualificationEnrichment(
 ): Promise<CloseContactInfo> {
   const leadId = event.close_lead_id ?? lead?.close_lead_id;
   if (!leadId) {
-    throw new CloseNeedsReviewError(
-      "Qualification enrichment is missing a Close lead ID.",
-    );
+    // Retryable, NOT needs_review. The Close record is created by this lead's
+    // lead_create_or_update event, which normally drains first because it was
+    // queued earlier. One transient Close 5xx on that event pushes its
+    // next_retry_at forward and inverts the order — and needs_review is
+    // terminal, so parking here would strand the score, band, and answers
+    // outside Close forever with nothing to alert on. Retrying lets the
+    // ordering resolve itself; a genuinely unresolvable event still
+    // dead-letters after max_attempts.
+    throw new Error("Qualification enrichment is missing a Close lead ID.");
   }
   const contactId = event.close_contact_id ?? lead?.close_contact_id ?? null;
   await close.createNote({
