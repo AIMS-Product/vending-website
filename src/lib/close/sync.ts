@@ -174,12 +174,21 @@ async function processCloseSyncEvent(
 
   const nowIso = now.toISOString();
   const attemptCount = event.attempt_count + 1;
-  await updateEvent(client, event.id, {
+  const claimed = await claimEvent(client, event, {
     status: "retrying",
     attempt_count: attemptCount,
     last_attempted_at: nowIso,
     last_error: null,
+    // Lease the event so a drain that starts while this one is mid-flight
+    // doesn't see it as due. Both the success and failure paths below set
+    // next_retry_at again, so the lease never outlives the attempt.
+    next_retry_at: claimLeaseUntil(now).toISOString(),
   });
+  // Another drain got here first. Bail out before touching Close: the status
+  // check above only sees this run's snapshot, and "retrying" is itself
+  // retryable, so without the claim two concurrent drains would both call
+  // createLead and produce duplicate Close records for one person.
+  if (!claimed) return "skipped";
   if (event.lead_submission_id) {
     await updateLead(client, event.lead_submission_id, {
       close_sync_status: "retrying",
@@ -593,6 +602,36 @@ async function getLead(
   return data as LeadRow;
 }
 
+/**
+ * Take exclusive ownership of a due event before doing any external work.
+ *
+ * The queue is drained from three places at once — the every-2-minute Vercel
+ * cron plus an `after()` hook on both the stage-1 and stage-2 form submits —
+ * so two runs routinely list the same due rows. This is a compare-and-swap on
+ * `attempt_count`: the claim increments it, so a second drain holding the same
+ * snapshot matches zero rows and skips the event instead of double-processing
+ * it. Guarding on status alone would not be enough, because the claim sets
+ * "retrying", which is itself a retryable status.
+ *
+ * Returns true when this run owns the event.
+ */
+async function claimEvent(
+  client: CloseSyncClient,
+  event: CloseSyncEventRow,
+  patch: CloseSyncEventUpdate,
+): Promise<boolean> {
+  const { data, error } = await client
+    .from("close_sync_events")
+    .update(patch)
+    .eq("id", event.id)
+    .eq("attempt_count", event.attempt_count)
+    .in("status", RETRYABLE_STATUS_LIST as unknown as string[])
+    .select("id");
+
+  if (error) throw new Error("Could not claim Close sync event.");
+  return (data ?? []).length > 0;
+}
+
 async function updateEvent(
   client: CloseSyncClient,
   eventId: string,
@@ -779,6 +818,18 @@ function sanitizeSyncError(error: unknown, apiKey?: string) {
   if (error instanceof CloseConfigError) return error.message;
   const message = error instanceof Error ? error.message : String(error);
   return boundedError(sanitizeCloseErrorText(message, apiKey));
+}
+
+/**
+ * How long a claimed event stays invisible to other drains.
+ *
+ * Long enough to cover the slowest Close round trip, short enough that an
+ * event orphaned by a crashed or timed-out run is retried promptly.
+ */
+const CLAIM_LEASE_MINUTES = 5;
+
+function claimLeaseUntil(now: Date) {
+  return new Date(now.getTime() + CLAIM_LEASE_MINUTES * 60 * 1000);
 }
 
 function nextRetryAt(now: Date, attemptCount: number) {

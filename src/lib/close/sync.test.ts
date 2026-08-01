@@ -134,6 +134,7 @@ class FakeQuery {
   private orderKey: string | null = null;
   private orderAscending = true;
   private limitCount: number | null = null;
+  private pendingUpdate: Record<string, unknown> | null = null;
 
   constructor(
     private table: string,
@@ -175,43 +176,56 @@ class FakeQuery {
     return { data: row, error: row ? null : { message: "Not found" } };
   }
 
+  // The update stays pending until the query is awaited, so filters added
+  // after it (`.eq(...).in(...).select()`) still apply. That mirrors
+  // PostgREST, where a conditional update matches zero rows when its filters
+  // miss — which is what the sync claim relies on.
   update(patch: Record<string, unknown>) {
-    const apply = async () => {
-      if (this.table === "close_sync_events") {
-        this.state.events = this.state.events.map((row) => {
-          if (!this.matches(row)) return row;
-          this.state.updates.push({
-            table: "close_sync_events",
-            id: row.id,
-            patch,
-          });
-          return { ...row, ...patch } as CloseSyncEventRow;
-        });
-      } else if (this.table === "lead_submissions") {
-        this.state.leads = this.state.leads.map((row) => {
-          if (!this.matches(row)) return row;
-          this.state.updates.push({
-            table: "lead_submissions",
-            id: row.id,
-            patch,
-          });
-          return { ...row, ...patch } as LeadRow;
-        });
-      } else {
-        throw new Error(`Unexpected update to ${this.table}`);
-      }
-      return { data: null, error: null };
-    };
+    this.pendingUpdate = patch;
+    return this;
+  }
 
-    return {
-      eq: (key: string, value: unknown) => {
-        this.eq(key, value);
-        return apply();
-      },
-    };
+  private applyUpdate(patch: Record<string, unknown>) {
+    const affected: Array<CloseSyncEventRow | LeadRow> = [];
+
+    if (this.table === "close_sync_events") {
+      this.state.events = this.state.events.map((row) => {
+        if (!this.matches(row)) return row;
+        this.state.updates.push({
+          table: "close_sync_events",
+          id: row.id,
+          patch,
+        });
+        const next = { ...row, ...patch } as CloseSyncEventRow;
+        affected.push(next);
+        return next;
+      });
+    } else if (this.table === "lead_submissions") {
+      this.state.leads = this.state.leads.map((row) => {
+        if (!this.matches(row)) return row;
+        this.state.updates.push({
+          table: "lead_submissions",
+          id: row.id,
+          patch,
+        });
+        const next = { ...row, ...patch } as LeadRow;
+        affected.push(next);
+        return next;
+      });
+    } else {
+      throw new Error(`Unexpected update to ${this.table}`);
+    }
+
+    return affected;
   }
 
   then(resolve: (value: { data: unknown[]; error: null }) => void) {
+    if (this.pendingUpdate) {
+      const patch = this.pendingUpdate;
+      this.pendingUpdate = null;
+      resolve({ data: this.applyUpdate(patch), error: null });
+      return;
+    }
     resolve({ data: this.rows(), error: null });
   }
 
@@ -941,5 +955,74 @@ describe("adminRunCloseSync", () => {
       }),
     );
     expect(fake.state.events[0].status).toBe("synced");
+  });
+
+  it("lets only one of two concurrent drains process an event", async () => {
+    // The queue is drained by the cron and by an after() hook on both form
+    // submit stages, so overlapping runs are routine. Without an exclusive
+    // claim both runs call createLead and one person gets two Close records.
+    const fake = buildClient();
+    const closeCalls: Array<{ method: string; url: string }> = [];
+    const fetchMock = vi.fn(async (url: unknown, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      closeCalls.push({ method, url: String(url) });
+      if (method === "GET") return jsonResponse({ data: [] });
+      if (String(url).endsWith("/lead/")) {
+        return jsonResponse({
+          id: "lead_created",
+          contact_ids: ["cont_created"],
+          contacts: [{ id: "cont_created" }],
+        });
+      }
+      return jsonResponse({ id: "cont_created" });
+    });
+
+    const run = () =>
+      adminRunCloseSync({
+        client: fake.client,
+        closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+        fetchImpl: fetchMock as unknown as typeof fetch,
+        now: () => new Date("2026-06-17T09:00:00.000Z"),
+      });
+
+    const [first, second] = await Promise.all([run(), run()]);
+
+    const leadCreates = closeCalls.filter(
+      (call) => call.method === "POST" && call.url.endsWith("/lead/"),
+    );
+    expect(leadCreates).toHaveLength(1);
+    expect(first.synced + second.synced).toBe(1);
+    expect(fake.state.events[0].status).toBe("synced");
+    // The loser must not report a failure — nothing went wrong for it.
+    expect(first.failed + second.failed).toBe(0);
+  });
+
+  it("leases a claimed event so a later drain does not re-list it", async () => {
+    const fake = buildClient();
+    const fetchMock = vi.fn(async (url: unknown, init?: RequestInit) => {
+      if ((init?.method ?? "GET") === "GET") return jsonResponse({ data: [] });
+      if (String(url).endsWith("/lead/")) {
+        return jsonResponse({
+          id: "lead_created",
+          contact_ids: ["cont_created"],
+          contacts: [{ id: "cont_created" }],
+        });
+      }
+      return jsonResponse({ id: "cont_created" });
+    });
+
+    await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    // The claim pushed next_retry_at past the drain that would run a minute
+    // later, so a crashed attempt is retried on lease expiry rather than
+    // being picked up while the first attempt is still in flight.
+    expect(
+      new Date(fake.state.events[0].next_retry_at ?? 0).getTime(),
+    ).toBeGreaterThan(new Date("2026-06-17T09:01:00.000Z").getTime());
   });
 });
