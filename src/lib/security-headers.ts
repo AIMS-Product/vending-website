@@ -1,17 +1,23 @@
+import { contentSecurityPolicyReportOnly } from "./content-security-policy";
+
 /**
  * Response security headers applied to every route.
  *
- * Deliberately excludes `Content-Security-Policy`. The public site loads a long
- * tail of third-party tags (Meta Pixel, HubSpot, ClickMagick, Vidalytics,
- * Wisepops, ManyChat, RightMessage, GA4) plus YouTube and Calendly frames, so an
- * enforcing CSP written blind would break production. Adding one needs a
- * `Content-Security-Policy-Report-Only` rollout measured against real traffic
- * first — tracked as a follow-up, not something to guess at.
+ * The CSP here is REPORT-ONLY and blocks nothing — see
+ * `content-security-policy.ts` for why an enforcing policy cannot be written
+ * from source alone, and for what has to happen before it is promoted.
  *
- * `preload` is also left off HSTS on purpose: submitting to the preload list is
+ * `preload` is left off HSTS on purpose: submitting to the preload list is
  * effectively irreversible and is a domain-owner decision, not a code one.
  */
 export const securityHeaders = [
+  {
+    // Report-only: browsers evaluate it, report to /api/csp-report, and allow
+    // the request regardless. Promoting this to Content-Security-Policy is a
+    // separate, deliberate change.
+    key: "Content-Security-Policy-Report-Only",
+    value: contentSecurityPolicyReportOnly,
+  },
   {
     // The qualification session token travels in the URL path
     // (`/qualify/<token>`) and is the only credential for reading a lead's
