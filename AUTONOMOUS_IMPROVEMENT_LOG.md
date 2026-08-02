@@ -349,3 +349,242 @@ Recorded so they are not re-investigated:
 - The same report listed several `src/lib/close/*` functions as untested; `sync.test.ts` and
   `client.test.ts` already cover the main paths. Only the genuinely uncovered concurrency and
   failure paths got new tests.
+
+---
+
+# Round 2 — 2026-08-01
+
+Continued on `autonomous-hardening-20260731` in the same worktree
+(`/Users/adamwolfe/vending-website-hardening`), plus one separate branch and worktree for the
+framework bump. Nothing pushed, nothing deployed, nothing written to the remote database.
+
+Adam's three decisions from the handoff were taken as given and not re-asked.
+
+## Before / after
+
+| Metric                       | Round 1 end | Round 2 end    |
+| ---------------------------- | ----------- | -------------- |
+| Tests                        | 1245        | **1305** (+60) |
+| Test files                   | 186         | **191** (+5)   |
+| Type errors (`tsc --noEmit`) | 0           | **0**          |
+| Lint errors                  | 0           | **0**          |
+| Lint warnings                | 4           | **4**          |
+| Statement coverage           | 67.1%       | **68.4%**      |
+| Production build             | passing     | **passing**    |
+
+Coverage moved 1.3 points on the whole repo, but the two files it targeted moved much further:
+`admin/media/actions.ts` 6.5% → 73.2%, `admin/libraries/actions.ts` 9.1% → 100%.
+
+## Completed — 6 commits
+
+| Commit    | Change                                                            |
+| --------- | ----------------------------------------------------------------- |
+| `2bccb46` | security: public submits can no longer rewrite a Close contact    |
+| `a3dff83` | security: rate limiting on every unauthenticated lead entry point |
+| `9b357ce` | security: report-only CSP + a report collector                    |
+| `3f8b83f` | perf: batched media bulk operations, capped the unbounded reads   |
+| `1e4cbb3` | test: media + library server actions                              |
+| `ed17808` | refactor: split the AI chat schemas out of `ai-chat.ts`           |
+
+Plus, on its own branch `next-16-2-11` (worktree `/Users/adamwolfe/vending-website-next-bump`):
+
+| Commit    | Change                  |
+| --------- | ----------------------- |
+| `14b34d1` | `next` 16.2.6 → 16.2.11 |
+
+### 1. Close contact hijack (queue item 1) — fixed
+
+Per Adam's decision, `name` is never sent on an update and `emails`/`phones` only ever grow.
+
+Fixing only the email-match path named in the handoff would have left the hole open one step
+later: once a match is recorded on our lead row, the _known-lead_ path (`updateKnownCloseLead`)
+reaches the same stranger's contact with the same full payload. Both paths now route through one
+helper that reads the contact first and sends an additive payload. Contact creation is untouched —
+that contact is genuinely ours.
+
+Cost: one `GET /contact/{id}/` before each contact update. Close's search projection does not
+return phones, so the read was needed regardless; making both paths use it keeps one rule instead
+of two.
+
+Three tests, each verified to fail without the guard: an email match does not change an existing
+name and appends the submitted phone after the real one rather than replacing it; a matched
+contact that already holds the submitted details produces no write at all; and the pre-existing
+"uses existing Close IDs" test now also asserts no rewrite. Creation with full details was already
+pinned by an existing test.
+
+### 2. Rate limiting (queue item 2) — fixed, migration NOT applied
+
+Postgres sliding window, no new dependency, per Adam's decision. One row per accepted attempt,
+counted over an IP **or** an email hash so rotating either one does not buy a fresh budget.
+
+Covered: the two public lead forms (apply and booking both route through `submitPublicLeadAction`,
+so that is one gate, not two), all four qualification actions sharing one window, and
+`/api/attribution/events`.
+
+Three things worth knowing:
+
+- **It fails open.** The migration is not applied, so the table does not exist yet. Every database
+  error — including "table missing" — allows the request and logs a warning. Until the migration
+  is run by hand, behaviour is exactly what it is today. Losing lead capture to a limiter outage
+  would cost far more than the flood it prevents.
+- **The table stores no readable contact details.** The email is SHA-256'd; only the request IP is
+  stored in the clear, which is what Adam approved.
+- **Retention is 24 hours**, stated in the migration comment. Nothing older than the longest
+  window (10 minutes) can affect a decision; the rest of the day is so an abuse report can be
+  investigated the next morning. The prune runs on the Close sync cron rather than adding a second
+  schedule for one `DELETE`.
+
+Six wiring tests (one per entry point) were verified to fail without their guards, plus nine unit
+tests against a fake that actually evaluates the window bound and the IP-or-email filter — a fake
+answering a fixed count would have passed with either missing. That fake caught one real bug in
+itself (splitting an IPv4 on every dot).
+
+One genuine bug was found while writing this: `createAdminClient()` throws when Supabase config is
+absent, and it was outside the try block — so a misconfigured environment would have 500'd every
+submit the limiter was meant to protect. Moved inside.
+
+**The inline `drainCloseSync()` on every submit was left in place.** The handoff called it the
+amplification factor and framed it as a cost decision. With the limiter in front of it the
+amplification is now bounded, and removing it delays every lead reaching Close by up to two
+minutes, which is a sales-responsiveness call rather than a technical one. Flagged below.
+
+### 3. `next` 16.2.6 → 16.2.11 (queue item 3) — done, own branch
+
+Verified in a **separate worktree with its own `node_modules`** — this worktree's `node_modules` is
+a symlink into the main checkout, and installing there would have silently changed the Next version
+under the concurrent session. 1305 tests pass, tsc clean, eslint 0 errors, production build
+succeeds. The lockfile moves `next` and its nine platform binaries and nothing else.
+
+Remaining `npm audit` findings that name `next` are transitive (`postcss`, `sharp`), not the direct
+advisories this closes.
+
+### 4. CSP (queue item 4) — report-only rollout shipped
+
+`Content-Security-Policy-Report-Only`, which blocks nothing, built from the actual tag inventory
+in `TrackingScripts.tsx` and the embed components. Plus `/api/csp-report` to measure it.
+
+The collector logs only the **first** report of each distinct directive-and-host pair per instance,
+stores nothing in the database, and reduces every URL to its origin — a `/qualify/<token>` page URL
+must never reach the logs. What is needed to write the enforcing policy is the set of distinct
+hosts, not the traffic volume behind them.
+
+Verified against a real production build: the report-only header is present on `/` and `/contact`,
+the enforcing header is absent, the collector answers 204 and logs. A test asserts the enforcing
+header is not set, so promoting it can only ever be deliberate.
+
+`script-src` still carries `'unsafe-inline'`, so this cannot catch injected inline script. What it
+does catch is any host the page contacts that nobody wrote down, which is the unknown. Removing
+`'unsafe-inline'` needs nonces on the tag bootstraps and is called out in the policy file.
+
+### 5. Performance (queue item 5) — four of five fixed
+
+- **Bulk delete**, the flagship: it already computed the usage index for the whole selection, then
+  re-asked the same question per asset (five reads each, reparsing every SEO page's content JSON
+  every time). ~125 queries for 20 assets → the index plus one `DELETE`. The batch is now
+  all-or-nothing where the loop was per-asset; for a delete keyed on ids just proved unreferenced,
+  an error means something systemic and stopping is right.
+- **Bulk tagging**: three round trips per asset (load, reload inside `adminUpdateMediaAsset`,
+  write) → one read plus one write each. Still one write per asset because each row's next tag
+  array depends on its own current one.
+- **Unbounded selects**: media library grid capped at 500, page revision history at 200
+  (append-only, only `manual_save` rows are ever pruned), analytics lead read at 50,000 **with a
+  warning** — that one is a ceiling against the function dying, not a display cap. The real fix
+  there is grouping in Postgres, which needs an RPC and therefore a migration.
+- **`adminBuildMediaUsageIndex` was deliberately left uncapped.** It decides which assets are safe
+  to delete; a truncated answer would report a still-referenced asset as unused and delete it.
+- **`MediaLibraryManager`**: the selection maths ran array scans in the render body on every
+  keystroke. Sets behind `useMemo` now.
+
+Three of the new service tests were verified to fail against the old implementations.
+
+**Not done: batching `getLead` in the Close drain loop.** Reading the code closely, this is not
+safe as a plain prefetch. When two events for the same lead are in one batch — a create followed by
+its qualification enrichment — the first writes `close_lead_id` back to the lead row and the second
+depends on re-reading it. A prefetched snapshot would make the enrichment fail and retry. It can be
+done with a write-through cache, but that widens the window in which a concurrent drain's write is
+missed, on the live CRM path, to save 20 primary-key lookups per two-minute cron. Round 1 spent its
+effort closing exactly that class of race; this did not seem worth reopening it. Left as-is
+deliberately, not overlooked.
+
+### 6. Test coverage (queue item 6) — both server-action files done
+
+`admin/media/actions.ts` 6.5% → **73.2%**, `admin/libraries/actions.ts` 9.1% → **100%**.
+
+Covers everything the handoff named — an image with neither an external URL nor a storage path,
+bulk create refusing more than twenty without creating any, bulk create saving the good items and
+counting the failures rather than discarding files already in storage, and the dangerous bulk
+delete shape where everything was skipped as in-use and nothing was deleted (an error, not a false
+success) — plus the surrounding branches, and a test in each file that every mutation refuses an
+unauthenticated caller before reaching the service layer.
+
+The remaining uncovered part of the media file is `createSignedMediaUpload`, which is a thin
+wrapper over a Supabase storage call.
+
+**Not attempted:** the admin editor client components (`AiBuilderAssistant` 7.3%,
+`useSeoPageEditorController` 31.3%, `MediaLibraryManager` 13.3%).
+
+### 7. Giant-file refactor (queue item 7) — one of four
+
+`ai-chat.ts` 1833 → 1435 lines, with the schema half moved to `ai-chat-schemas.ts` (481). No
+behaviour change and no caller changed: `ai-chat.ts` re-exports exactly the public names it did
+before, so the ten importing files are untouched. Suite green, tsc clean, production build passes.
+
+**Not attempted:** `seo-pages.test.ts` (2266), `AiBuilderAssistant.tsx` (1829), `seo-pages.ts`
+(1744). The seams the handoff mapped still look right; there was no time left to do them with the
+care a no-behaviour-change split needs, and a careless one is worse than the long file.
+
+### 8. Small open decisions (queue item 8) — still open, deliberately
+
+`adminResolvePageComment` (zero callers) and the three `seo-pages-status-labels.ts` exports
+referenced only by their own test were both left alone. Both are "wire it up or delete it"
+questions about half-shipped features, which is a product call. `insertQualificationSession`'s
+missing uniqueness guard (F5) was likewise left: reusing a lead's open session changes resume
+semantics for in-flight visitors and wants its own slice.
+
+## BLOCKED
+
+- [~] **`supabase/migrations/20260801090000_public_request_hits.sql` is written but not applied.**
+  The rate limiter does nothing until it is. Same blocker as round 1's index: this is DDL, which
+  this project cannot apply through PostgREST with the service-role key. Needs the Supabase SQL
+  editor, a Management API PAT, or the database password.
+- [~] **Round 1's `20260731120000_lead_submissions_email_index.sql` is still not applied.** Carried
+  over unchanged.
+
+## Needs your review
+
+1. **Apply the two migrations.** Neither does anything until then. The rate limiter is written to
+   fail open, so the site behaves exactly as it does today in the meantime — which also means the
+   protection is not real yet.
+2. **The `next` bump is on its own branch** (`next-16-2-11`) and wants its own deploy verification
+   rather than being merged with the rest.
+3. **The CSP is report-only.** It needs real traffic before anyone considers enforcing it. Read the
+   `csp report-only violation` lines in the Vercel logs; any legitimate host that appears belongs in
+   `content-security-policy.ts` before the switch.
+4. **The inline Close drain on every submit** is still there. Removing it makes a flood cheaper;
+   keeping it means leads reach Close in seconds instead of up to two minutes. Your call.
+5. **Rate limits are guesses**: 8 lead submits and 12 qualification actions per 10 minutes per
+   IP-or-email, 60 attribution events per minute. Set well above what a real visitor produces, but
+   nobody has measured the actual distribution.
+6. **Carried over from round 1, still open**: `adminResolvePageComment`,
+   `seo-pages-status-labels.ts`, and F5 (`insertQualificationSession`).
+
+## Honest gaps
+
+Three of the four file splits and all three admin editor client components were not attempted.
+`getLead` batching was analysed and deliberately declined, with the reason recorded above rather
+than being quietly dropped.
+
+## Reviewing this round
+
+```bash
+git -C /Users/adamwolfe/vending-website log --oneline e284b43..autonomous-hardening-20260731
+git -C /Users/adamwolfe/vending-website diff e284b43..autonomous-hardening-20260731
+git -C /Users/adamwolfe/vending-website diff autonomous-hardening-20260731..next-16-2-11
+```
+
+When finished, remove both worktrees:
+
+```bash
+git -C /Users/adamwolfe/vending-website worktree remove /Users/adamwolfe/vending-website-next-bump
+git -C /Users/adamwolfe/vending-website worktree remove /Users/adamwolfe/vending-website-hardening
+```
