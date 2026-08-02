@@ -20,8 +20,8 @@ type FakeState = Record<string, FakeTableState>;
 
 /**
  * Minimal fake mirroring the two query shapes admin-analytics.ts issues:
- *  - a row-select query: `.select(fields).gte(...).order(...)` resolving
- *    `{ data, error }`
+ *  - a row-select query: `.select(fields).gte(...).order(...).limit(...)`
+ *    resolving `{ data, error }`
  *  - a `count(head:true)` query resolving `{ count, error }`
  */
 function buildClient(state: FakeState) {
@@ -36,6 +36,7 @@ function buildClient(state: FakeState) {
 class FakeAnalyticsQuery {
   private filters: Array<(row: FakeRow) => boolean> = [];
   private isCountQuery = false;
+  private rowLimit: number | null = null;
 
   constructor(private tableState: FakeTableState) {}
 
@@ -56,6 +57,11 @@ class FakeAnalyticsQuery {
     return this;
   }
 
+  limit(count: number) {
+    this.rowLimit = count;
+    return this;
+  }
+
   then(
     resolve: (value: {
       data?: FakeRow[] | null;
@@ -72,9 +78,12 @@ class FakeAnalyticsQuery {
       return;
     }
 
-    const matched = this.tableState.rows.filter((row) =>
+    const all = this.tableState.rows.filter((row) =>
       this.filters.every((predicate) => predicate(row)),
     );
+    // Honour the limit the way PostgREST does, so a capped read is visible
+    // here rather than being silently ignored by the fake.
+    const matched = this.rowLimit === null ? all : all.slice(0, this.rowLimit);
 
     resolve(
       this.isCountQuery

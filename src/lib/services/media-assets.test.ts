@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   adminBuildMediaUsageIndex,
   adminBulkAddTagsToAssets,
+  adminBulkDeleteMediaAssets,
   adminCreateMediaAsset,
   adminDeleteMediaAsset,
   adminGetMediaAssetUsage,
@@ -31,12 +32,13 @@ function listSelect(data: unknown, error: unknown = null) {
       return Promise.resolve(resolveWith).then(onFulfilled, onRejected);
     },
   };
-  const order = vi.fn().mockReturnValue(builder);
+  const limit = vi.fn().mockReturnValue(builder);
+  const order = vi.fn().mockReturnValue({ limit });
   const inFn = vi.fn().mockReturnValue({ order });
   const select = vi.fn().mockReturnValue({ in: inFn });
   return {
     table: { select },
-    mocks: { select, in: inFn, order, or: builder.or },
+    mocks: { select, in: inFn, order, limit, or: builder.or },
   };
 }
 
@@ -59,6 +61,24 @@ function updateSingle(data: unknown, error: unknown = null) {
   const eq = vi.fn().mockReturnValue({ select });
   const update = vi.fn().mockReturnValue({ eq });
   return { table: { update }, mocks: { update, eq, select, single } };
+}
+
+function inSelect(data: unknown, error: unknown = null) {
+  const inFn = vi.fn().mockResolvedValue({ data, error });
+  const select = vi.fn().mockReturnValue({ in: inFn });
+  return { table: { select }, mocks: { select, in: inFn } };
+}
+
+function updateEq(error: unknown = null) {
+  const eq = vi.fn().mockResolvedValue({ error });
+  const update = vi.fn().mockReturnValue({ eq });
+  return { table: { update }, mocks: { update, eq } };
+}
+
+function deleteIn(error: unknown = null) {
+  const inFn = vi.fn().mockResolvedValue({ error });
+  const del = vi.fn().mockReturnValue({ in: inFn });
+  return { table: { delete: del }, mocks: { delete: del, in: inFn } };
 }
 
 function maybeSingleSelect(data: unknown, error: unknown = null) {
@@ -98,6 +118,9 @@ describe("media asset service", () => {
     expect(list.mocks.or).toHaveBeenCalledWith(
       "title.ilike.%Hero%,tags.cs.{Hero}",
     );
+    // The library only grows; an uncapped select is a page that eventually
+    // fails to render.
+    expect(list.mocks.limit).toHaveBeenCalledWith(500);
   });
 
   it("creates image media assets only with source, alt, and rights metadata", async () => {
@@ -354,33 +377,114 @@ describe("media asset service", () => {
     });
   });
 
-  it("adds tags in bulk without duplicating existing tags", async () => {
-    const existing = {
-      id: "asset_1",
-      asset_type: "image",
-      title: "Hero",
-      alt_text: "Hero",
-      caption: null,
-      source_rights_notes: "Owned.",
-      storage_bucket: "page-builder-media",
-      storage_path: "images/hero.webp",
-      external_url: null,
-      thumbnail_asset_id: null,
-      width: null,
-      height: null,
-      duration_seconds: null,
-      tags: ["hero"],
-      uploaded_by: null,
-      created_at: "2026-05-06T00:00:00Z",
-      updated_at: "2026-05-06T00:00:00Z",
-    };
-    const load = maybeSingleSelect(existing);
-    const update = updateSingle({ ...existing, tags: ["hero", "proof"] });
-    const client = buildClient(load.table, load.table, update.table);
+  it("adds tags in bulk in one read plus one write per asset", async () => {
+    // This used to load each asset by id and then call adminUpdateMediaAsset,
+    // which re-read the same row before writing — three round trips per asset.
+    const load = inSelect([
+      { id: "asset_1", tags: ["hero"] },
+      { id: "asset_2", tags: [] },
+    ]);
+    const first = updateEq();
+    const second = updateEq();
+    const client = buildClient(load.table, first.table, second.table);
 
     await expect(
-      adminBulkAddTagsToAssets(["asset_1"], "proof", { client }),
-    ).resolves.toEqual({ updated: 1, tag: "proof" });
+      adminBulkAddTagsToAssets(["asset_1", "asset_2", "asset_1"], "Proof", {
+        client,
+      }),
+    ).resolves.toEqual({ updated: 2, tag: "proof" });
+
+    // One read for the whole selection, deduplicated.
+    expect(load.mocks.in).toHaveBeenCalledWith("id", ["asset_1", "asset_2"]);
+    expect(client.from).toHaveBeenCalledTimes(3);
+    // Existing tags are kept and the new one is not duplicated.
+    expect(first.mocks.update).toHaveBeenCalledWith({
+      tags: ["hero", "proof"],
+    });
+    expect(second.mocks.update).toHaveBeenCalledWith({ tags: ["proof"] });
+  });
+
+  it("deletes a bulk selection in one statement and skips the assets still in use", async () => {
+    const usageRows = {
+      media_assets: [
+        {
+          id: "asset_1",
+          storage_bucket: null,
+          storage_path: null,
+          external_url: null,
+        },
+        {
+          id: "asset_2",
+          storage_bucket: null,
+          storage_path: null,
+          external_url: null,
+        },
+      ],
+      seo_pages: [
+        {
+          id: "page_1",
+          og_asset_id: "asset_2",
+          draft_content: null,
+          published_content: null,
+        },
+      ],
+      news_posts: [],
+      proof_items: [],
+      source_documents: [],
+    } as Record<string, unknown[]>;
+    const removal = deleteIn();
+    let mediaCalls = 0;
+    const client = {
+      from: vi.fn((table: string) => {
+        if (table === "media_assets") {
+          mediaCalls += 1;
+          // First touch builds the usage index; the second is the delete.
+          return mediaCalls === 1
+            ? plainSelect(usageRows.media_assets).table
+            : removal.table;
+        }
+        const rows = usageRows[table];
+        if (!rows) throw new Error(`Unexpected table ${table}`);
+        return plainSelect(rows).table;
+      }),
+    } as unknown as MediaClient & { from: ReturnType<typeof vi.fn> };
+
+    await expect(
+      adminBulkDeleteMediaAssets(["asset_1", "asset_2"], { client }),
+    ).resolves.toEqual({ deleted: 1, skipped: 1, errors: [] });
+
+    // asset_2 is the page's og image, so only asset_1 goes — in one statement,
+    // not one usage recheck plus one delete per asset.
+    expect(removal.mocks.in).toHaveBeenCalledWith("id", ["asset_1"]);
+    expect(client.from).toHaveBeenCalledTimes(6);
+  });
+
+  it("reports nothing deleted when the batch delete fails", async () => {
+    const usageRows: Record<string, unknown[]> = {
+      seo_pages: [],
+      news_posts: [],
+      proof_items: [],
+      source_documents: [],
+    };
+    const removal = deleteIn({ message: "permission denied" });
+    let mediaCalls = 0;
+    const client = {
+      from: vi.fn((table: string) => {
+        if (table === "media_assets") {
+          mediaCalls += 1;
+          return mediaCalls === 1 ? plainSelect([]).table : removal.table;
+        }
+        return plainSelect(usageRows[table] ?? []).table;
+      }),
+    } as unknown as MediaClient;
+
+    await expect(
+      adminBulkDeleteMediaAssets(["asset_1"], { client }),
+    ).resolves.toEqual({
+      deleted: 0,
+      skipped: 0,
+      errors: ["Could not delete media asset."],
+    });
   });
 
   it("builds public URLs for stored media assets", () => {

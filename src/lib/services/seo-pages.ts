@@ -703,6 +703,14 @@ export async function adminRefreshSeoPageLibraryReferences(
   );
 }
 
+/**
+ * page_revisions is append-only and only `manual_save` rows are ever pruned, so
+ * a long-lived page accumulates autosave and publish revisions without bound.
+ * The history panel cannot usefully show more than this many, and newest-first
+ * ordering means the cap drops the oldest.
+ */
+const PAGE_REVISION_LIST_LIMIT = 200;
+
 export async function adminListSeoPageRevisions(
   pageId: string,
   deps: ServiceDeps = {},
@@ -712,7 +720,8 @@ export async function adminListSeoPageRevisions(
     .from("page_revisions")
     .select(PAGE_REVISION_FIELDS)
     .eq("page_id", pageId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(PAGE_REVISION_LIST_LIMIT);
 
   if (error) throw new Error("Could not list SEO page revisions.");
   return data ?? [];

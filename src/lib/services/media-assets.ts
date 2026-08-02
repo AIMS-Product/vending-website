@@ -67,6 +67,17 @@ const MEDIA_ASSET_FIELDS =
 
 const DEFAULT_LIST_TYPES: MediaAssetType[] = ["image", "video", "embed"];
 
+/**
+ * Ceiling on the library grid. The table only grows, and every row carries its
+ * metadata into the page, so an uncapped select is a slow page today and a
+ * failed one later. Newest first, so what falls off the end is the oldest.
+ *
+ * Deliberately NOT applied to adminBuildMediaUsageIndex: that query decides
+ * which assets are safe to delete, and a truncated answer there would report a
+ * still-referenced asset as unused.
+ */
+const MEDIA_ASSET_LIST_LIMIT = 500;
+
 export async function adminListMediaAssets(
   { search, assetTypes = DEFAULT_LIST_TYPES }: MediaAssetListOptions = {},
   deps: ServiceDeps = {},
@@ -76,7 +87,8 @@ export async function adminListMediaAssets(
     .from("media_assets")
     .select(MEDIA_ASSET_FIELDS)
     .in("asset_type", assetTypes)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(MEDIA_ASSET_LIST_LIMIT);
 
   const term = normalizeSearch(search);
   if (term) {
@@ -248,23 +260,32 @@ export async function adminBulkAddTagsToAssets(
   if (!normalizedTag) throw new Error("Tag is required.");
   if (assetIds.length === 0) throw new Error("Choose at least one asset.");
 
+  const client = deps.client ?? createAdminClient();
   const uniqueIds = [...new Set(assetIds)];
+
+  // One read for the whole selection. This used to load each asset by id and
+  // then call adminUpdateMediaAsset, which re-read the same row before writing
+  // it — three round trips per asset for a change to one array column.
+  const { data: existing, error } = await client
+    .from("media_assets")
+    .select("id, tags")
+    .in("id", uniqueIds);
+  if (error) throw new Error("Could not load media asset.");
+
   let updated = 0;
-
-  for (const assetId of uniqueIds) {
-    const client = deps.client ?? createAdminClient();
-    const { data: existing, error } = await client
+  // ponytail: still one write per asset, because each row's next tag array
+  // depends on its own current one. A batched upsert would need to resend
+  // every column and would clobber a concurrent edit to any of them.
+  for (const asset of existing ?? []) {
+    const nextTags = [...new Set([...(asset.tags ?? []), normalizedTag])].slice(
+      0,
+      20,
+    );
+    const { error: updateError } = await client
       .from("media_assets")
-      .select(MEDIA_ASSET_FIELDS)
-      .eq("id", assetId)
-      .maybeSingle();
-    if (error) throw new Error("Could not load media asset.");
-    if (!existing) continue;
-
-    const nextTags = [
-      ...new Set([...(existing.tags ?? []), normalizedTag]),
-    ].slice(0, 20);
-    await adminUpdateMediaAsset(assetId, { tags: nextTags }, deps);
+      .update({ tags: nextTags })
+      .eq("id", asset.id);
+    if (updateError) throw new Error("Could not update media asset.");
     updated += 1;
   }
 
@@ -277,30 +298,32 @@ export async function adminBulkDeleteMediaAssets(
 ) {
   if (assetIds.length === 0) throw new Error("Choose at least one asset.");
 
-  const usageIndex = await adminBuildMediaUsageIndex(deps);
+  const client = deps.client ?? createAdminClient();
+  const usageIndex = await adminBuildMediaUsageIndex({ client });
   const uniqueIds = [...new Set(assetIds)];
-  let deleted = 0;
-  let skipped = 0;
-  const errors: string[] = [];
+  const deletable = uniqueIds.filter((id) => (usageIndex[id] ?? 0) === 0);
+  const skipped = uniqueIds.length - deletable.length;
 
-  for (const assetId of uniqueIds) {
-    if ((usageIndex[assetId] ?? 0) > 0) {
-      skipped += 1;
-      continue;
-    }
-    try {
-      await adminDeleteMediaAsset(assetId, deps);
-      deleted += 1;
-    } catch (error) {
-      errors.push(
-        error instanceof Error
-          ? error.message
-          : "Could not delete media asset.",
-      );
-    }
+  if (deletable.length === 0) return { deleted: 0, skipped, errors: [] };
+
+  // The index above already answered, for every asset at once, the question
+  // adminDeleteMediaAsset re-asks per asset — five table reads each, reparsing
+  // every SEO page's content JSON every time. Twenty assets cost ~125 queries;
+  // now it is the index plus one statement.
+  //
+  // The batch is all-or-nothing where the loop was per-asset, so a failure now
+  // reports zero deleted rather than a partial result. For a delete keyed on
+  // ids we just proved unreferenced, an error means something systemic
+  // (permissions, a new foreign key) and stopping is the right answer.
+  const { error } = await client
+    .from("media_assets")
+    .delete()
+    .in("id", deletable);
+  if (error) {
+    return { deleted: 0, skipped, errors: ["Could not delete media asset."] };
   }
 
-  return { deleted, skipped, errors };
+  return { deleted: deletable.length, skipped, errors: [] };
 }
 
 export async function adminGetMediaAssetUsage(

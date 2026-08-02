@@ -382,6 +382,19 @@ function buildDailyTrend(
   });
 }
 
+/**
+ * Safety valve, not a display cap. Every rollup on this page groups rows in
+ * Node, so the `1y` range pulls two years of leads — 23 columns each, including
+ * a JSON summary — into the function's memory. That is survivable at today's
+ * volume and is not survivable forever, and the failure mode without a ceiling
+ * is the function dying rather than the page being wrong.
+ *
+ * Set far above real volume: hitting it means the numbers below it are
+ * understated, which is why it logs. The real fix is grouping in Postgres,
+ * which needs an RPC and therefore a migration.
+ */
+const MAX_ANALYTICS_LEAD_ROWS = 50_000;
+
 async function fetchLeads(
   client: AdminAnalyticsClient,
   sinceIso: string,
@@ -390,12 +403,20 @@ async function fetchLeads(
     .from("lead_submissions")
     .select(LEAD_ANALYTICS_FIELDS)
     .gte("created_at", sinceIso)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(MAX_ANALYTICS_LEAD_ROWS);
 
   if (error) {
     throw new AdminAnalyticsServiceError("Could not load leads for analytics.");
   }
-  return (data ?? []) as LeadAnalyticsRow[];
+  const rows = (data ?? []) as LeadAnalyticsRow[];
+  if (rows.length >= MAX_ANALYTICS_LEAD_ROWS) {
+    console.warn("admin analytics lead read hit its row ceiling", {
+      limit: MAX_ANALYTICS_LEAD_ROWS,
+      since: sinceIso,
+    });
+  }
+  return rows;
 }
 
 async function countLeadsAllTime(

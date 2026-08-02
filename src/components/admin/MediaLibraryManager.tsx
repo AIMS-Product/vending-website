@@ -79,19 +79,29 @@ export function MediaLibraryManager({
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isBulkWorking, startBulkTransition] = useTransition();
 
+  // Sets, not array scans: these run on every render, including every keystroke
+  // in the search box, and the library is unbounded. Membership tests over two
+  // arrays made that O(assets x selection).
   const visibleIds = useMemo(() => assets.map((asset) => asset.id), [assets]);
+  const visibleIdSet = useMemo(() => new Set(visibleIds), [visibleIds]);
   const selectedIds = useMemo(
-    () => rawSelectedIds.filter((id) => visibleIds.includes(id)),
-    [rawSelectedIds, visibleIds],
+    () => rawSelectedIds.filter((id) => visibleIdSet.has(id)),
+    [rawSelectedIds, visibleIdSet],
   );
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const allVisibleSelected =
-    visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
-  const selectedAssets = assets.filter((asset) =>
-    selectedIds.includes(asset.id),
+    visibleIds.length > 0 && visibleIds.every((id) => selectedIdSet.has(id));
+  const selectedAssets = useMemo(
+    () => assets.filter((asset) => selectedIdSet.has(asset.id)),
+    [assets, selectedIdSet],
   );
-  const selectedDeletableCount = selectedAssets.filter(
-    (asset) => (usageCounts[asset.id] ?? asset.usageCount) === 0,
-  ).length;
+  const selectedDeletableCount = useMemo(
+    () =>
+      selectedAssets.filter(
+        (asset) => (usageCounts[asset.id] ?? asset.usageCount) === 0,
+      ).length,
+    [selectedAssets, usageCounts],
+  );
 
   async function loadUsage(assetId: string) {
     setUsageMessage(null);
