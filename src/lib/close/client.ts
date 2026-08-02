@@ -93,7 +93,14 @@ type CloseNotePayload = {
   note_html: string;
 };
 
-type CloseContactEmail = { email?: string | null; type?: string };
+// Shapes confirmed against a real GET /contact/{id}/ on the production org.
+// Phones also carry derived `country` and `phone_formatted`, which are read-only
+// and deliberately not modelled — sync.ts strips them before any write.
+type CloseContactEmail = {
+  email?: string | null;
+  type?: string;
+  is_unsubscribed?: boolean;
+};
 type CloseContactPhone = { phone?: string | null; type?: string };
 
 type CloseContactResult = {

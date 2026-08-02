@@ -519,6 +519,21 @@ async function updateContactAdditively(
 }
 
 /**
+ * What Close accepts back on a write, per entry type. Verified against a real
+ * `GET /contact/{id}/` on the production org: entries come back carrying more
+ * than this — `country` and `phone_formatted` on phones — and those are derived,
+ * so echoing them into a PUT sends Close its own computed values.
+ *
+ * `is_unsubscribed` is in the list on purpose. It is writable, and rebuilding an
+ * email entry without it would resubscribe someone who had opted out, silently,
+ * as a side effect of a stranger filling in a form.
+ */
+const WRITABLE_ENTRY_FIELDS = {
+  email: ["email", "type", "is_unsubscribed"],
+  phone: ["phone", "type"],
+} as const;
+
+/**
  * The existing entries plus any submitted entry Close does not already hold, or
  * null when there is nothing new — omitting the key is what preserves the array.
  *
@@ -527,16 +542,30 @@ async function updateContactAdditively(
  */
 function appendedContactEntries<K extends "email" | "phone">(
   key: K,
-  existing: Array<Partial<Record<K, string | null>>> = [],
-  incoming: Array<Partial<Record<K, string | null>>> = [],
+  existing: Array<Record<string, unknown>> = [],
+  incoming: Array<Record<string, unknown>> = [],
 ) {
-  const known = new Set(
-    existing.map((entry) => entry[key]?.trim().toLowerCase()),
-  );
+  const value = (entry: Record<string, unknown>) => {
+    const raw = entry[key];
+    return typeof raw === "string" ? raw.trim().toLowerCase() : null;
+  };
+  const known = new Set(existing.map(value));
   const added = incoming.filter(
-    (entry) => entry[key] && !known.has(entry[key]?.trim().toLowerCase()),
+    (entry) => value(entry) && !known.has(value(entry)),
   );
-  return added.length ? [...existing, ...added] : null;
+  if (!added.length) return null;
+  return [...existing.map((entry) => writableEntry(key, entry)), ...added];
+}
+
+function writableEntry<K extends "email" | "phone">(
+  key: K,
+  entry: Record<string, unknown>,
+) {
+  return Object.fromEntries(
+    WRITABLE_ENTRY_FIELDS[key]
+      .filter((field) => entry[field] !== undefined)
+      .map((field) => [field, entry[field]]),
+  );
 }
 
 async function updateCloseLeadSourceFields(

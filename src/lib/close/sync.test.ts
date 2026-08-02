@@ -235,9 +235,7 @@ class FakeQuery {
       if (
         this.table === "close_sync_events" &&
         failFor &&
-        this.state.events.some(
-          (row) => row.id === failFor && this.matches(row),
-        )
+        this.state.events.some((row) => row.id === failFor && this.matches(row))
       ) {
         resolve({ data: null, error: { message: "connection reset" } });
         return;
@@ -667,6 +665,132 @@ describe("adminRunCloseSync", () => {
     expect(update).not.toHaveProperty("emails");
   });
 
+  it("preserves an unsubscribe flag and never echoes Close's derived fields back", async () => {
+    // Shapes taken from a real GET /contact/{id}/ on the production org: Close
+    // returns is_unsubscribed on emails and country/phone_formatted on phones.
+    // Rebuilding an email entry without is_unsubscribed would resubscribe
+    // someone who opted out, as a side effect of a stranger filling in a form.
+    const fake = buildClient({
+      events: [makeEvent()],
+      leads: [makeLead()],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              id: "lead_close_3",
+              contacts: [
+                {
+                  id: "cont_close_3",
+                  emails: [{ email: "buyer@example.com" }],
+                },
+              ],
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "cont_close_3",
+          emails: [
+            {
+              email: "buyer@example.com",
+              type: "office",
+              is_unsubscribed: true,
+            },
+          ],
+          phones: [
+            {
+              phone: "555-0100",
+              type: "office",
+              country: "US",
+              phone_formatted: "+1 555-0100",
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ id: "cont_close_3" }));
+
+    await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    const update = JSON.parse(
+      fetchMock.mock.calls[2]?.[1]?.body as string,
+    ) as Record<string, unknown>;
+
+    // The submitted phone differs, so phones are rewritten — and the kept entry
+    // must carry only what Close accepts on a write.
+    expect(update.phones).toEqual([
+      { phone: "555-0100", type: "office" },
+      { phone: "555-0101", type: "direct" },
+    ]);
+    // Emails are untouched here, but the same rule applies when they are not.
+    expect(update).not.toHaveProperty("emails");
+  });
+
+  it("carries is_unsubscribed through when the email array is rewritten", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          payload: {
+            contact: {
+              full_name: "Jane Buyer",
+              email: "new@example.com",
+              phone: "555-0101",
+            },
+          },
+        }),
+      ],
+      leads: [makeLead({ email: "new@example.com" })],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              id: "lead_close_4",
+              contacts: [
+                { id: "cont_close_4", emails: [{ email: "new@example.com" }] },
+              ],
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "cont_close_4",
+          emails: [
+            { email: "old@example.com", type: "office", is_unsubscribed: true },
+          ],
+          phones: [{ phone: "555-0101", type: "direct" }],
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ id: "cont_close_4" }));
+
+    await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    const update = JSON.parse(
+      fetchMock.mock.calls[2]?.[1]?.body as string,
+    ) as Record<string, unknown>;
+
+    expect(update.emails).toEqual([
+      { email: "old@example.com", type: "office", is_unsubscribed: true },
+      { email: "new@example.com", type: "direct" },
+    ]);
+  });
+
   it("adds nothing when a matched contact already holds the submitted details", async () => {
     const fake = buildClient({
       events: [makeEvent()],
@@ -680,7 +804,10 @@ describe("adminRunCloseSync", () => {
             {
               id: "lead_close_2",
               contacts: [
-                { id: "cont_close_2", emails: [{ email: "buyer@example.com" }] },
+                {
+                  id: "cont_close_2",
+                  emails: [{ email: "buyer@example.com" }],
+                },
               ],
             },
           ],
