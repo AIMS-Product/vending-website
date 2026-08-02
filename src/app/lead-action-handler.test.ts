@@ -1,5 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { submitPublicLeadAction } from "@/app/lead-action-handler";
+
+const mocks = vi.hoisted(() => ({ checkPublicRateLimit: vi.fn() }));
+
+vi.mock("@/lib/public-rate-limit", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/lib/public-rate-limit")
+  >("@/lib/public-rate-limit");
+  return { ...actual, checkPublicRateLimit: mocks.checkPublicRateLimit };
+});
 
 // The handler reads request headers for referrer/user-agent.
 vi.mock("next/headers", () => ({
@@ -35,6 +44,10 @@ function applyFormData(overrides: Record<string, string> = {}): FormData {
 }
 
 describe("submitPublicLeadAction", () => {
+  beforeEach(() => {
+    mocks.checkPublicRateLimit.mockResolvedValue(true);
+  });
+
   it("returns per-field errors for every required apply field on an empty payload", async () => {
     const state = await submitPublicLeadAction("apply", applyFormData());
 
@@ -72,5 +85,26 @@ describe("submitPublicLeadAction", () => {
     if (state.status !== "error") throw new Error("expected error state");
     expect(state.message).toMatch(/couldn't submit/i);
     expect(state.fieldErrors).toBeUndefined();
+  });
+
+  it("refuses a throttled submit before validating or storing anything", async () => {
+    // Both public forms (apply and booking) route through here, so this is the
+    // one gate in front of the row write, the Slack alert, the Resend email,
+    // and the Close enqueue.
+    mocks.checkPublicRateLimit.mockResolvedValue(false);
+
+    const state = await submitPublicLeadAction(
+      "apply",
+      applyFormData({ email: "jane@example.com" }),
+    );
+
+    expect(state).toEqual({
+      status: "error",
+      message: expect.stringMatching(/too many/i),
+    });
+    expect(mocks.checkPublicRateLimit).toHaveBeenCalledWith("lead_submit", {
+      ip: null,
+      email: "jane@example.com",
+    });
   });
 });

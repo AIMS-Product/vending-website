@@ -11,6 +11,7 @@ import {
 
 const mocks = vi.hoisted(() => ({
   headers: vi.fn(),
+  checkPublicRateLimit: vi.fn(),
   createQualificationIntakeSession: vi.fn(),
   submitInlineQualification: vi.fn(),
   startInlineQualification: vi.fn(),
@@ -20,6 +21,13 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/headers", () => ({
   headers: mocks.headers,
 }));
+
+vi.mock("@/lib/public-rate-limit", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/lib/public-rate-limit")
+  >("@/lib/public-rate-limit");
+  return { ...actual, checkPublicRateLimit: mocks.checkPublicRateLimit };
+});
 
 vi.mock("@/lib/services/qualification-intake", async () => {
   const actual = await vi.importActual<
@@ -94,6 +102,7 @@ function qualificationFormData(overrides: Record<string, string> = {}) {
 describe("submitQualificationLead", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.checkPublicRateLimit.mockResolvedValue(true);
     mocks.headers.mockResolvedValue(
       new Headers({
         referer: "https://vendingpreneurs.com/resources/start-vending",
@@ -301,6 +310,7 @@ function inlineQualificationFormData(overrides: Record<string, string> = {}) {
 describe("submitInlineQualification", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.checkPublicRateLimit.mockResolvedValue(true);
     mocks.headers.mockResolvedValue(
       new Headers({
         referer: "https://vendingpreneurs.com/contact",
@@ -441,6 +451,7 @@ describe("submitInlineQualification", () => {
 describe("startInlineQualification", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.checkPublicRateLimit.mockResolvedValue(true);
     mocks.headers.mockResolvedValue(
       new Headers({
         referer: "https://vendingpreneurs.com/contact",
@@ -523,6 +534,7 @@ describe("startInlineQualification", () => {
 describe("finishInlineQualification", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.checkPublicRateLimit.mockResolvedValue(true);
     mocks.headers.mockResolvedValue(new Headers({ "user-agent": "vitest" }));
     mocks.finishInlineQualification.mockResolvedValue({
       status: "completed",
@@ -629,4 +641,59 @@ describe("finishInlineQualification", () => {
       consoleError.mockRestore();
     }
   });
+});
+
+describe("public rate limiting", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.headers.mockResolvedValue(new Headers({ "user-agent": "vitest" }));
+    mocks.checkPublicRateLimit.mockResolvedValue(false);
+  });
+
+  // Every action here is an unauthenticated write that fans out to Slack,
+  // Resend, and Close. A throttled call must stop before any of that, and all
+  // four must share one window — otherwise a flood just rotates between them.
+  const throttledCases = [
+    [
+      "submitQualificationLead",
+      submitQualificationLead,
+      () => qualificationFormData(),
+      mocks.createQualificationIntakeSession,
+    ],
+    [
+      "submitInlineQualification",
+      submitInlineQualification,
+      () => inlineQualificationFormData(),
+      mocks.submitInlineQualification,
+    ],
+    [
+      "startInlineQualification",
+      startInlineQualification,
+      () => inlineQualificationFormData(),
+      mocks.startInlineQualification,
+    ],
+    [
+      "finishInlineQualification",
+      finishInlineQualification,
+      () => new FormData(),
+      mocks.finishInlineQualification,
+    ],
+  ] as const;
+
+  it.each(throttledCases)(
+    "%s refuses the submit without reaching the service",
+    async (_name, action, formData, service) => {
+      const result = await action(initialLeadActionState, formData());
+
+      expect(result).toEqual({
+        status: "error",
+        message: expect.stringMatching(/too many/i),
+      });
+      expect(service).not.toHaveBeenCalled();
+      expect(mocks.checkPublicRateLimit).toHaveBeenCalledWith(
+        "qualification_intake",
+        expect.anything(),
+      );
+    },
+  );
 });

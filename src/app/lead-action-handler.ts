@@ -7,6 +7,11 @@ import {
   type SubmitLeadInput,
 } from "@/lib/services/leads";
 import type { PublicLeadActionState } from "@/app/lead-action-state";
+import {
+  checkPublicRateLimit,
+  requestIp,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from "@/lib/public-rate-limit";
 
 const successMessages: Record<SubmitLeadInput["formType"], string> = {
   apply: "Thanks. We received your details and will follow up shortly.",
@@ -18,6 +23,17 @@ export async function submitPublicLeadAction(
   formData: FormData,
 ): Promise<PublicLeadActionState> {
   const h = await headers();
+
+  // Both public forms (apply and booking) land here, so this is the single
+  // gate in front of a submit that writes a row, alerts Slack, sends an
+  // email, and queues a Close sync.
+  const allowed = await checkPublicRateLimit("lead_submit", {
+    ip: requestIp(h),
+    email: field(formData, "email"),
+  });
+  if (!allowed) {
+    return { status: "error", message: TOO_MANY_REQUESTS_MESSAGE };
+  }
 
   try {
     const result = await submitLead({

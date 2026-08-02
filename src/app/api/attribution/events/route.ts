@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { VP_SESSION_COOKIE_NAME } from "@/lib/attribution-session";
 import { config } from "@/lib/config";
+import { checkPublicRateLimit, requestIp } from "@/lib/public-rate-limit";
 import { channelFromAttributionSignals } from "@/lib/paid-attribution";
 
 const attributionEventSchema = z.object({
@@ -20,6 +21,16 @@ export async function POST(request: Request) {
   if (!isFirstPartyAttributionRequest(request, payload)) {
     return unauthorizedEventResponse();
   }
+
+  // The first-party check above is CSRF-grade, not auth-grade: `vp_sid` is set
+  // client-side, so a non-browser caller supplies both the cookie and the
+  // matching body and gets a write proxy into the downstream ingest that
+  // spends our secret. Until that endpoint authenticates callers itself, the
+  // rate limit is what bounds the damage.
+  const allowed = await checkPublicRateLimit("attribution_event", {
+    ip: requestIp(request.headers),
+  });
+  if (!allowed) return tooManyEventsResponse();
 
   const destination = moneyPageDestination();
   if (!destination) return attributionResponse(false);
@@ -41,6 +52,13 @@ function invalidEventResponse() {
   return Response.json(
     { ok: false, message: "Invalid event." },
     { status: 400 },
+  );
+}
+
+function tooManyEventsResponse() {
+  return Response.json(
+    { ok: false, message: "Too many events." },
+    { status: 429 },
   );
 }
 

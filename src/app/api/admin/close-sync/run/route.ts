@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { adminRunCloseSync } from "@/lib/close/sync";
 import { config } from "@/lib/config";
+import { prunePublicRequestHits } from "@/lib/public-rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -33,6 +34,10 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Piggybacked on the only cron this app already runs, rather than adding a
+    // second schedule for one DELETE. Best-effort and never throws, so a prune
+    // failure cannot fail the sync it rides along with.
+    await prunePublicRequestHits();
     const result = await adminRunCloseSync();
     return NextResponse.json({
       ok: true,

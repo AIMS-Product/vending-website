@@ -4,6 +4,11 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import type { PublicLeadActionState } from "@/app/lead-action-state";
 import { adminRunCloseSync } from "@/lib/close/sync";
+import {
+  checkPublicRateLimit,
+  requestIp,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from "@/lib/public-rate-limit";
 import { notifyQualificationLead } from "@/lib/services/leads";
 import {
   createQualificationIntakeSession,
@@ -74,6 +79,24 @@ function deliverQualificationAnswers() {
   }
 }
 
+/**
+ * Every action in this file is a public, unauthenticated write. They share one
+ * window so a flood cannot simply rotate between the one-shot and two-stage
+ * entry points to get four budgets instead of one.
+ */
+async function throttled(h: Headers, email?: string) {
+  const allowed = await checkPublicRateLimit("qualification_intake", {
+    ip: requestIp(h),
+    email,
+  });
+  return allowed
+    ? null
+    : ({
+        status: "error",
+        message: TOO_MANY_REQUESTS_MESSAGE,
+      } satisfies PublicLeadActionState);
+}
+
 async function drainCloseSync() {
   try {
     await adminRunCloseSync();
@@ -90,6 +113,8 @@ export async function submitQualificationLead(
   formData: FormData,
 ): Promise<PublicLeadActionState> {
   const h = await headers();
+  const limited = await throttled(h, field(formData, "email"));
+  if (limited) return limited;
 
   try {
     const result = await createQualificationIntakeSession({
@@ -131,6 +156,8 @@ export async function submitInlineQualification(
   formData: FormData,
 ): Promise<PublicLeadActionState> {
   const h = await headers();
+  const limited = await throttled(h, field(formData, "email"));
+  if (limited) return limited;
 
   try {
     const result = await submitInlineQualificationOrchestrator({
@@ -185,6 +212,8 @@ export async function startInlineQualification(
   formData: FormData,
 ): Promise<PublicLeadActionState> {
   const h = await headers();
+  const limited = await throttled(h, field(formData, "email"));
+  if (limited) return limited;
 
   try {
     const result = await startInlineQualificationOrchestrator({
@@ -214,6 +243,9 @@ export async function finishInlineQualification(
   formData: FormData,
 ): Promise<PublicLeadActionState> {
   const h = await headers();
+  // Stage 2 carries a session token, not an address, so this one keys on IP.
+  const limited = await throttled(h);
+  if (limited) return limited;
 
   try {
     const result = await finishInlineQualificationOrchestrator({

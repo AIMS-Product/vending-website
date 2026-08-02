@@ -1341,6 +1341,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      public_request_hits: {
+        Row: {
+          action: string;
+          email_hash: string | null;
+          id: number;
+          ip: string | null;
+          occurred_at: string;
+        };
+        Insert: {
+          action: string;
+          email_hash?: string | null;
+          id?: number;
+          ip?: string | null;
+          occurred_at?: string;
+        };
+        Update: {
+          action?: string;
+          email_hash?: string | null;
+          id?: number;
+          ip?: string | null;
+          occurred_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       published_seo_pages: {

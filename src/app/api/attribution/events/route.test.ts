@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 
 const mocks = vi.hoisted(() => ({
+  checkPublicRateLimit: vi.fn(),
   config: {
     MONEY_PAGE_INGEST_URL: "https://money-page.test/api/ingest/vendingpreneurs",
     MONEY_PAGE_SECRET: "shared-secret",
@@ -14,6 +15,13 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/config", () => ({
   config: mocks.config,
 }));
+
+vi.mock("@/lib/public-rate-limit", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/lib/public-rate-limit")
+  >("@/lib/public-rate-limit");
+  return { ...actual, checkPublicRateLimit: mocks.checkPublicRateLimit };
+});
 
 const payload = {
   event_type: "landing_viewed",
@@ -34,6 +42,7 @@ const payload = {
 describe("attribution event route", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    mocks.checkPublicRateLimit.mockResolvedValue(true);
     mocks.config.MONEY_PAGE_INGEST_URL =
       "https://money-page.test/api/ingest/vendingpreneurs";
     mocks.config.MONEY_PAGE_SECRET = "shared-secret";
@@ -83,6 +92,18 @@ describe("attribution event route", () => {
         fetchSite: "cross-site",
       }),
     );
+  });
+
+  it("stops relaying to the downstream ingest once the caller is rate limited", async () => {
+    // The cookie check is CSRF-grade, so a scripted caller can pass it. The
+    // limit is what stops it spending our ingest secret in a loop.
+    mocks.checkPublicRateLimit.mockResolvedValue(false);
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+
+    const response = await POST(eventRequest());
+
+    expect(response.status).toBe(429);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 
