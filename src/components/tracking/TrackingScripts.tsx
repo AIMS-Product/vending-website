@@ -20,31 +20,33 @@ const META_PIXEL_ID = "2008180456764704";
 const HUBSPOT_ID = "48512363";
 const VIDALYTICS_ID = "vid_glb_erwZUUrS";
 
-// Both IDs are the ones the legacy Webflow site configured. Webflow served the
-// Google loader through its own first-party-mode path (`/lsfr…`), which only
-// existed on Webflow's edge — so the loader here is the standard
-// googletagmanager.com one. The two `config` calls mirror the old page exactly:
-// the GA4 property AND the GTM container, which is what Tag Assistant looks for.
+// Webflow served the Google loader through its own first-party-mode path
+// (`/lsfr…`), which only existed on Webflow's edge — so the loader here is the
+// standard googletagmanager.com one.
+//
+// This MUST be the real GTM container loader (`gtm.js?id=…`), not gtag.js.
+// An earlier version of this file loaded `gtag/js?id=GTM-…` and then called
+// `gtag('config', GTM_CONTAINER_ID)` — passing a GTM container ID to a gtag.js
+// command that expects a GA4/Ads ID. gtag.js silently no-ops on an
+// unrecognized config target, which is why Tag Assistant reported
+// `isNonDebuggable: true` and zero tagged pages: the container was never
+// actually installed, just referenced. The container pulls in its own GA4 tag
+// once installed this way, so there is no separate `gtag('config', GA4_ID)`
+// call here — that line used to double-count every pageview.
 const GTM_CONTAINER_ID = "GTM-57QRC275";
-const GA4_MEASUREMENT_ID = "G-2SX78VE7VF";
 
 export function TrackingScripts() {
   if (process.env.NEXT_PUBLIC_TRACKING_ENABLED !== "1") return null;
 
   return (
     <>
-      {/* Google Tag Manager + GA4 */}
-      <Script
-        id="google-tag-loader"
-        src={`https://www.googletagmanager.com/gtag/js?id=${GTM_CONTAINER_ID}`}
-        strategy="afterInteractive"
-      />
-      <Script id="google-tag-init" strategy="afterInteractive">
-        {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${GA4_MEASUREMENT_ID}');
-gtag('config', '${GTM_CONTAINER_ID}');`}
+      {/* Google Tag Manager — official install snippet */}
+      <Script id="google-tag-manager" strategy="afterInteractive">
+        {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${GTM_CONTAINER_ID}');`}
       </Script>
       <noscript>
         <iframe

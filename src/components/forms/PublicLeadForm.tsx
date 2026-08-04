@@ -19,7 +19,18 @@ import {
   VP_ATTRIBUTION_STORAGE_KEY,
 } from "@/lib/attribution-session";
 import type { LeadAttribution } from "@/lib/lead-attribution";
-import { buildCalendlyBookingUrl } from "@/lib/content/lead-embed";
+import {
+  buildCalendlyBookingUrl,
+  isCalendlyUrl,
+} from "@/lib/content/lead-embed";
+import {
+  bookingClickEvent,
+  formStartEvent,
+  leadQualifiedEvent,
+  leadSubmitErrorEvent,
+  leadSubmitEvent,
+  pushDataLayerEvent,
+} from "@/lib/tracking/lead-events";
 import { US_STATES } from "@/lib/content/us-states";
 import {
   VP_CONSENT_CONTACT_LABEL,
@@ -218,6 +229,90 @@ export function PublicLeadForm({
     }
   }, [bookingHref]);
 
+  // GTM dataLayer events. Guarded by a ref holding the last state object we
+  // already pushed for, so a re-render that does not carry a new action
+  // result (e.g. typing after a failed submit) never double-fires — and
+  // React 19 strict-mode's double-invoked effects in dev never double-fire
+  // either, since both invocations see the same `state` reference.
+  const stage1TrackedRef = useRef<PublicLeadActionState | null>(null);
+  useEffect(() => {
+    if (stage1TrackedRef.current === state) return;
+    stage1TrackedRef.current = state;
+    if (state.status === "success") {
+      pushDataLayerEvent(
+        leadSubmitEvent(attribution, intent, 1, {
+          leadEmail: submittedValues.email ?? "",
+          leadPhone: submittedValues.phone ?? "",
+          idempotencyKey,
+        }),
+      );
+      if (state.qualification) {
+        pushDataLayerEvent(
+          leadQualifiedEvent(attribution, intent, 1, {
+            leadEmail: submittedValues.email ?? "",
+            leadPhone: submittedValues.phone ?? "",
+            idempotencyKey,
+            qualificationState: state.qualification.thankYouState,
+            qualificationScore: state.qualification.score,
+          }),
+        );
+      }
+    } else if (state.status === "error") {
+      pushDataLayerEvent(
+        leadSubmitErrorEvent(
+          attribution,
+          intent,
+          1,
+          deriveLeadErrorSummary(state).map((item) => item.errorKey),
+        ),
+      );
+    }
+  }, [state, attribution, intent, idempotencyKey, submittedValues]);
+
+  // Same guard for stage 2. When there is no finishAction, finishState never
+  // leaves "idle" so this never fires.
+  const stage2TrackedRef = useRef<PublicLeadActionState | null>(null);
+  useEffect(() => {
+    if (stage2TrackedRef.current === finishState) return;
+    stage2TrackedRef.current = finishState;
+    if (finishState.status === "success" && finishState.qualification) {
+      pushDataLayerEvent(
+        leadQualifiedEvent(attribution, intent, 2, {
+          leadEmail: submittedValues.email ?? "",
+          leadPhone: submittedValues.phone ?? "",
+          idempotencyKey,
+          qualificationState: finishState.qualification.thankYouState,
+          qualificationScore: finishState.qualification.score,
+        }),
+      );
+    } else if (finishState.status === "error") {
+      pushDataLayerEvent(
+        leadSubmitErrorEvent(
+          attribution,
+          intent,
+          2,
+          deriveLeadErrorSummary(finishState).map((item) => item.errorKey),
+        ),
+      );
+    }
+  }, [finishState, attribution, intent, idempotencyKey, submittedValues]);
+
+  // Fires once per step on first field interaction, so GTM can tell "started
+  // typing" apart from "submitted". onFocusCapture (not onFocus) sees every
+  // descendant's focus event, including inputs that never bubble focus.
+  const stage1StartedRef = useRef(false);
+  const handleStage1FocusCapture = () => {
+    if (stage1StartedRef.current) return;
+    stage1StartedRef.current = true;
+    pushDataLayerEvent(formStartEvent(attribution, intent, 1));
+  };
+  const stage2StartedRef = useRef(false);
+  const handleStage2FocusCapture = () => {
+    if (stage2StartedRef.current) return;
+    stage2StartedRef.current = true;
+    pushDataLayerEvent(formStartEvent(attribution, intent, 2));
+  };
+
   const errors =
     activeState.status === "error" ? activeState.fieldErrors : undefined;
   const summaryItems = deriveLeadErrorSummary(activeState);
@@ -253,7 +348,16 @@ export function PublicLeadForm({
   }
 
   if (transition?.kind === "qualification-result") {
-    return <FitResultPanel state={transition.state} score={transition.score} />;
+    return (
+      <FitResultPanel
+        state={transition.state}
+        score={transition.score}
+        attribution={attribution}
+        intent={intent}
+        name={submittedValues.full_name}
+        email={submittedValues.email}
+      />
+    );
   }
 
   if (atStageTwo && startedSessionToken) {
@@ -270,13 +374,17 @@ export function PublicLeadForm({
         submitLabel={submitLabel}
         values={submittedValues}
         compact={isCompact}
+        onFieldFocus={handleStage2FocusCapture}
       />
     );
   }
 
   return (
     <form
+      id={`lead-form-${intent}-step-1`}
+      data-form-step="1"
       action={formAction}
+      onFocusCapture={handleStage1FocusCapture}
       noValidate
       className={cn(
         "grid gap-5 rounded-[12px] border-2 border-[#111111] bg-white p-5 shadow-[8px_8px_0_#55b8e8]",
@@ -481,6 +589,7 @@ export function PublicLeadForm({
         submitLabel={submitLabel}
         state={activeState}
         muted={hasSummary}
+        dataGtm={`lead-form-submit-${intent}-step-1`}
       />
 
       <PrivacyAssurance intent={intent} />
@@ -507,6 +616,7 @@ function QualificationQuestionsStage({
   submitLabel,
   values,
   compact,
+  onFieldFocus,
 }: {
   action: (formData: FormData) => void;
   sessionToken: string;
@@ -519,11 +629,15 @@ function QualificationQuestionsStage({
   submitLabel: string;
   values: Record<string, string>;
   compact: boolean;
+  onFieldFocus: () => void;
 }) {
   const hasSummary = summaryItems.length > 0;
   return (
     <form
+      id="lead-form-qualification-step-2"
+      data-form-step="2"
       action={action}
+      onFocusCapture={onFieldFocus}
       noValidate
       className={cn(
         "grid gap-5 rounded-[12px] border-2 border-[#111111] bg-white p-5 shadow-[8px_8px_0_#55b8e8]",
@@ -559,6 +673,7 @@ function QualificationQuestionsStage({
         submitLabel={submitLabel}
         state={state}
         muted={hasSummary}
+        dataGtm="lead-form-submit-qualification-step-2"
       />
 
       <PrivacyAssurance intent="qualification" />
@@ -604,17 +719,20 @@ function SubmitRow({
   submitLabel,
   state,
   muted,
+  dataGtm,
 }: {
   pending: boolean;
   submitLabel: string;
   state: PublicLeadActionState;
   muted: boolean;
+  dataGtm: string;
 }) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <button
         type="submit"
         disabled={pending}
+        data-gtm={dataGtm}
         className="inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
       >
         {pending ? "Submitting..." : submitLabel}
@@ -799,17 +917,40 @@ function ContactSuccessPanel({ email }: { email: string }) {
 function FitResultPanel({
   state,
   score,
+  attribution,
+  intent,
+  name,
+  email,
 }: {
   state: ThankYouStateKey;
   score: number;
+  attribution: LeadAttribution;
+  intent: LeadIntent;
+  name?: string;
+  email?: string;
 }) {
   const content = THANK_YOU_STATES[state];
   const links = THANK_YOU_STATE_LINKS[state];
-  const primaryHref = THANK_YOU_LINKS[links.primary];
+  // Calendly links get name/email/UTM prefilled so the booking stays
+  // attributed to the same lead and campaign; the roadmap PDF link (the
+  // not-right-time primary CTA) is not a Calendly URL and passes through
+  // unchanged.
+  const resolveHref = (href: string) =>
+    isCalendlyUrl(href)
+      ? buildCalendlyBookingUrl(href, { name, email, attribution })
+      : href;
+  const primaryHref = resolveHref(THANK_YOU_LINKS[links.primary]);
   const secondaryHref =
     content.secondaryCta && links.secondary
-      ? THANK_YOU_LINKS[links.secondary]
+      ? resolveHref(THANK_YOU_LINKS[links.secondary])
       : undefined;
+  const trackBookingClick = (href: string) => () =>
+    pushDataLayerEvent(
+      bookingClickEvent(attribution, intent, {
+        bookingHref: href,
+        qualificationState: state,
+      }),
+    );
   return (
     <div
       role="status"
@@ -829,6 +970,8 @@ function FitResultPanel({
       </p>
       <a
         href={primaryHref}
+        data-gtm="lead-form-booking-primary"
+        onClick={trackBookingClick(primaryHref)}
         className="inline-flex min-h-12 w-fit items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         {content.cta}
@@ -838,6 +981,8 @@ function FitResultPanel({
           {content.secondaryNote ? `${content.secondaryNote} ` : null}
           <a
             href={secondaryHref}
+            data-gtm="lead-form-booking-secondary"
+            onClick={trackBookingClick(secondaryHref)}
             className="font-black text-[#066a99] underline underline-offset-2 hover:text-[#111111]"
           >
             {content.secondaryCta}
