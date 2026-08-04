@@ -12,6 +12,7 @@
 export const CODED_ROUTE_PATHS: ReadonlySet<string> = new Set([
   "/resources/roadmap",
   "/resources/roadmap-thank-you",
+  "/resources/finance-templates",
   "/resources/finance-templates-thank-you",
 ]);
 
