@@ -357,6 +357,11 @@ async function insertQualificationLead(
     .single();
 
   if (error || !data) {
+    console.error("qualification intake lead insert failed", {
+      code: error?.code ?? null,
+      message: error?.message ?? "insert returned no row",
+      hint: error?.hint ?? null,
+    });
     throw new QualificationIntakeServiceError(
       "Could not store qualification intake lead.",
     );
