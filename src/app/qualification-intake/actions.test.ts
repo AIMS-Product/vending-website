@@ -4,7 +4,9 @@ import { QualificationIntakeValidationError } from "@/lib/services/qualification
 import { QualificationSessionValidationError } from "@/lib/services/qualification-sessions";
 import {
   finishInlineQualification,
+  finishNewsletterSignup,
   startInlineQualification,
+  startNewsletterSignup,
   submitInlineQualification,
   submitQualificationLead,
 } from "./actions";
@@ -16,6 +18,8 @@ const mocks = vi.hoisted(() => ({
   submitInlineQualification: vi.fn(),
   startInlineQualification: vi.fn(),
   finishInlineQualification: vi.fn(),
+  startNewsletterSignup: vi.fn(),
+  finishNewsletterSignup: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
@@ -50,6 +54,11 @@ vi.mock("@/lib/services/qualification-inline", async () => {
     finishInlineQualification: mocks.finishInlineQualification,
   };
 });
+
+vi.mock("@/lib/services/newsletter-signup", () => ({
+  startNewsletterSubscription: mocks.startNewsletterSignup,
+  finishNewsletterSubscription: mocks.finishNewsletterSignup,
+}));
 
 function qualificationFormData(overrides: Record<string, string> = {}) {
   const formData = new FormData();
@@ -643,6 +652,82 @@ describe("finishInlineQualification", () => {
   });
 });
 
+describe("newsletter signup actions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.checkPublicRateLimit.mockResolvedValue(true);
+    mocks.headers.mockResolvedValue(
+      new Headers({
+        referer: "https://vendingpreneurs.com/newsletter",
+        "user-agent": "vitest",
+      }),
+    );
+    mocks.startNewsletterSignup.mockResolvedValue({
+      status: "started",
+      leadId: "lead_1",
+      sessionToken: "newsletter-token",
+    });
+    mocks.finishNewsletterSignup.mockResolvedValue({
+      status: "completed",
+      leadId: "lead_1",
+    });
+  });
+
+  it("forwards truthful stage-one consent values", async () => {
+    const formData = qualificationFormData({
+      source_path: "/newsletter",
+      landing_path: "/newsletter",
+      newsletter_email_consent: "true",
+    });
+    formData.delete("program_updates_consent");
+
+    const result = await startNewsletterSignup(
+      initialLeadActionState,
+      formData,
+    );
+
+    expect(result).toMatchObject({
+      status: "success",
+      sessionToken: "newsletter-token",
+    });
+    expect(mocks.startNewsletterSignup).toHaveBeenCalledWith(
+      expect.objectContaining({
+        newsletterEmailConsent: true,
+        programUpdatesConsent: false,
+      }),
+    );
+  });
+
+  it("preserves repeated stage-two choices and identifies the lead by token", async () => {
+    const formData = new FormData();
+    formData.set("session_token", "newsletter-token");
+    formData.set("phone", "555-0199");
+    formData.set("sms_updates_consent", "true");
+    formData.append("pull_to_launch", "replace_job");
+    formData.append("pull_to_launch", "diversify_income");
+    formData.append("learn_most", "locations");
+
+    const result = await finishNewsletterSignup(
+      initialLeadActionState,
+      formData,
+    );
+
+    expect(result).toEqual({
+      status: "success",
+      message: "Welcome to The Route.",
+      leadId: "lead_1",
+    });
+    expect(mocks.finishNewsletterSignup).toHaveBeenCalledWith({
+      sessionToken: "newsletter-token",
+      phone: "555-0199",
+      smsUpdatesConsent: true,
+      pullToLaunch: ["replace_job", "diversify_income"],
+      learnMost: ["locations"],
+      userAgent: "vitest",
+    });
+  });
+});
+
 describe("public rate limiting", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -677,6 +762,18 @@ describe("public rate limiting", () => {
       finishInlineQualification,
       () => new FormData(),
       mocks.finishInlineQualification,
+    ],
+    [
+      "startNewsletterSignup",
+      startNewsletterSignup,
+      () => qualificationFormData(),
+      mocks.startNewsletterSignup,
+    ],
+    [
+      "finishNewsletterSignup",
+      finishNewsletterSignup,
+      () => new FormData(),
+      mocks.finishNewsletterSignup,
     ],
   ] as const;
 

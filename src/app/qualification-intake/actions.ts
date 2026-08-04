@@ -20,6 +20,10 @@ import {
   submitInlineQualification as submitInlineQualificationOrchestrator,
   QualificationSessionValidationError,
 } from "@/lib/services/qualification-inline";
+import {
+  finishNewsletterSubscription,
+  startNewsletterSubscription,
+} from "@/lib/services/newsletter-signup";
 
 type CapturedLead = Parameters<typeof notifyQualificationLead>[0];
 
@@ -271,6 +275,68 @@ export async function finishInlineQualification(
   }
 }
 
+// oxlint-disable-next-line react-doctor/server-auth-actions -- Public newsletter signup must accept unauthenticated prospects.
+export async function startNewsletterSignup(
+  _prev: PublicLeadActionState,
+  formData: FormData,
+): Promise<PublicLeadActionState> {
+  const h = await headers();
+  const limited = await throttled(h, field(formData, "email"));
+  if (limited) return limited;
+
+  try {
+    const result = await startNewsletterSubscription({
+      ...intakeFieldsFromFormData(formData, h),
+      newsletterEmailConsent:
+        field(formData, "newsletter_email_consent") === "true",
+      programUpdatesConsent:
+        field(formData, "program_updates_consent") === "true",
+    });
+
+    deliverCapturedLead(
+      capturedLeadFromFormData(formData, { formType: "newsletter" }),
+    );
+    return {
+      status: "success",
+      message: "You're in. Two quick questions.",
+      leadId: result.leadId,
+      sessionToken: result.sessionToken,
+    };
+  } catch (error) {
+    return inlineQualificationErrorState(error, "newsletter signup start");
+  }
+}
+
+// oxlint-disable-next-line react-doctor/server-auth-actions -- Public newsletter signup must accept unauthenticated prospects.
+export async function finishNewsletterSignup(
+  _prev: PublicLeadActionState,
+  formData: FormData,
+): Promise<PublicLeadActionState> {
+  const h = await headers();
+  const limited = await throttled(h);
+  if (limited) return limited;
+
+  try {
+    const result = await finishNewsletterSubscription({
+      sessionToken: field(formData, "session_token"),
+      phone: field(formData, "phone"),
+      smsUpdatesConsent: field(formData, "sms_updates_consent") === "true",
+      pullToLaunch: fields(formData, "pull_to_launch"),
+      learnMost: fields(formData, "learn_most"),
+      userAgent: h.get("user-agent"),
+    });
+
+    deliverQualificationAnswers();
+    return {
+      status: "success",
+      message: "Welcome to The Route.",
+      leadId: result.leadId,
+    };
+  } catch (error) {
+    return inlineQualificationErrorState(error, "newsletter signup finish");
+  }
+}
+
 function inlineQualificationErrorState(
   error: unknown,
   context: string,
@@ -364,12 +430,13 @@ function intakeFieldsFromFormData(formData: FormData, h: Headers) {
 
 function capturedLeadFromFormData(
   formData: FormData,
-  answers:
-    | Pick<CapturedLead, "timeline" | "budget">
-    | Record<never, never> = {},
+  options: Partial<Pick<CapturedLead, "timeline" | "budget">> & {
+    formType?: CapturedLead["formType"];
+  } = {},
 ): CapturedLead {
+  const { formType = "apply", ...answers } = options;
   return {
-    formType: "apply",
+    formType,
     fullName: field(formData, "full_name"),
     email: field(formData, "email"),
     phone: field(formData, "phone"),
@@ -387,4 +454,10 @@ function capturedLeadFromFormData(
 function field(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
+}
+
+function fields(formData: FormData, name: string) {
+  return formData
+    .getAll(name)
+    .filter((value): value is string => typeof value === "string");
 }

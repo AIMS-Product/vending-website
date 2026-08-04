@@ -459,6 +459,22 @@ describe("qualification lifecycle runner", () => {
     ]);
   });
 
+  it("does not turn a newsletter subscriber into a stale sales lead", async () => {
+    const fake = buildClient({
+      sessions: [makeSession({ status: "in_progress" })],
+      leads: [makeLead({ lifecycle_status: "newsletter_subscribed" })],
+    });
+
+    const result = await adminRunQualificationLifecycle({
+      client: fake.client,
+      now: () => new Date(nowIso),
+    });
+
+    expect(result.markedStale).toBe(1);
+    expect(result.taskEventsCreated).toBe(0);
+    expect(fake.state.leads[0]?.lifecycle_status).toBe("newsletter_subscribed");
+  });
+
   it("does not create duplicate stale task events when re-run", async () => {
     const fake = buildClient({
       events: [makeEvent()],

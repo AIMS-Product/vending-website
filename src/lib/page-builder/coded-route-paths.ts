@@ -10,6 +10,7 @@
  * `lead-magnets.test.ts` fails if a lead-magnet page is missing from it.
  */
 export const CODED_ROUTE_PATHS: ReadonlySet<string> = new Set([
+  "/newsletter",
   "/resources/roadmap",
   "/resources/roadmap-thank-you",
   "/resources/finance-templates",

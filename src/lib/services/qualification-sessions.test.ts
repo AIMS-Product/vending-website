@@ -5,7 +5,12 @@ import {
   completeQualificationSession,
   loadQualificationSessionForToken,
   saveQualificationAnswer,
+  updateQualificationLeadPhone,
 } from "./qualification-sessions";
+import {
+  completeNewsletterSignupSession,
+  markNewsletterSubscription,
+} from "./newsletter-session-lifecycle";
 import type { Database, Json, Tables } from "@/types/database";
 
 type QualificationSessionRow = Tables<"qualification_sessions">;
@@ -1083,6 +1088,166 @@ describe("qualification sessions", () => {
       thankYouState: "perfect_fit",
       disqualified: false,
     });
+  });
+});
+
+describe("token-scoped lead phone updates", () => {
+  it("updates only the lead owned by the active session token", async () => {
+    const fake = buildClient({
+      leads: [makeLead(), makeLead({ id: "lead_2", phone: "555-0202" })],
+    });
+
+    const result = await updateQualificationLeadPhone(
+      { sessionToken, phone: " 555-0199 " },
+      { client: fake.client },
+    );
+
+    expect(result).toEqual({ status: "updated", leadId: "lead_1" });
+    expect(fake.state.leads.find((lead) => lead.id === "lead_1")?.phone).toBe(
+      "555-0199",
+    );
+    expect(fake.state.leads.find((lead) => lead.id === "lead_2")?.phone).toBe(
+      "555-0202",
+    );
+  });
+
+  it("refuses unknown and completed tokens without changing a lead", async () => {
+    const fake = buildClient({
+      sessions: [makeSession({ status: "completed" })],
+    });
+
+    await expect(
+      updateQualificationLeadPhone(
+        { sessionToken: "wrong-token", phone: "555-0199" },
+        { client: fake.client },
+      ),
+    ).rejects.toMatchObject({ fieldErrors: { session: [expect.any(String)] } });
+    await expect(
+      updateQualificationLeadPhone(
+        { sessionToken, phone: "555-0199" },
+        { client: fake.client },
+      ),
+    ).rejects.toMatchObject({ fieldErrors: { session: [expect.any(String)] } });
+    expect(fake.state.leads[0]?.phone).toBe("555-0101");
+  });
+});
+
+describe("completed-session write guard", () => {
+  it("refuses to overwrite answers after completion", async () => {
+    const existing = makeScoringAnswer("state", "state_market", "SA");
+    const fake = buildClient({
+      sessions: [makeSession({ status: "completed" })],
+      answers: [existing],
+    });
+
+    await expect(
+      saveQualificationAnswer(
+        { sessionToken, questionId: "state", answerValue: "VIC" },
+        { client: fake.client },
+      ),
+    ).rejects.toMatchObject({ fieldErrors: { session: [expect.any(String)] } });
+    expect(fake.state.answers[0]?.answer_value).toBe("SA");
+  });
+});
+
+describe("newsletter session lifecycle", () => {
+  const newsletterSchema = {
+    version: 1,
+    contactPhoneRequired: false,
+    questions: [
+      {
+        id: "newsletter_email_consent",
+        type: "consent",
+        label: "Send me The Route.",
+        required: true,
+        normalizedRole: "consent",
+      },
+      {
+        id: "learn_most",
+        type: "multiple_choice",
+        label: "What do you want to learn?",
+        required: false,
+        options: [{ id: "locations", label: "Locations", value: "locations" }],
+      },
+    ],
+  } as const;
+
+  function newsletterFake() {
+    return buildClient({
+      versions: [makeVersion(newsletterSchema)],
+      answers: [
+        {
+          ...makeScoringAnswer("newsletter_email_consent", "consent", true),
+          answer_value: true as unknown as Json,
+        },
+      ],
+    });
+  }
+
+  it("marks stage one as subscribed and queues consent without qualifying", async () => {
+    const fake = newsletterFake();
+
+    await markNewsletterSubscription(
+      {
+        sessionToken,
+        newsletterFormId: "form_1",
+        requiredConsentQuestionId: "newsletter_email_consent",
+      },
+      { client: fake.client, now: () => new Date("2026-06-17T10:00:00.000Z") },
+    );
+
+    expect(fake.state.sessions[0]?.status).toBe("in_progress");
+    expect(fake.state.leads[0]?.lifecycle_status).toBe("newsletter_subscribed");
+    expect(fake.state.events[0]).toMatchObject({
+      event_type: "newsletter_enrichment",
+      dedupe_key: "newsletter_enrichment:session_1:subscribed",
+    });
+    expect(fake.state.events[0]?.payload).toMatchObject({
+      source: "newsletter_signup",
+      qualification: { status: "newsletter_subscribed", phase: "subscribed" },
+    });
+  });
+
+  it("completes optional follow-up without using the qualified lifecycle", async () => {
+    const fake = newsletterFake();
+
+    const result = await completeNewsletterSignupSession(
+      {
+        sessionToken,
+        newsletterFormId: "form_1",
+        requiredConsentQuestionId: "newsletter_email_consent",
+        userAgent: "vitest",
+      },
+      { client: fake.client, now: () => new Date("2026-06-17T11:00:00.000Z") },
+    );
+
+    expect(result).toMatchObject({
+      status: "completed",
+      leadSubmissionId: "lead_1",
+      score: null,
+    });
+    expect(fake.state.sessions[0]?.status).toBe("completed");
+    expect(fake.state.leads[0]?.lifecycle_status).toBe("newsletter_subscribed");
+    expect(fake.state.events[0]).toMatchObject({
+      event_type: "newsletter_enrichment",
+      dedupe_key: "newsletter_enrichment:session_1:completed",
+    });
+  });
+
+  it("refuses a token belonging to a different form", async () => {
+    const fake = newsletterFake();
+
+    await expect(
+      markNewsletterSubscription(
+        {
+          sessionToken,
+          newsletterFormId: "another_form",
+          requiredConsentQuestionId: "newsletter_email_consent",
+        },
+        { client: fake.client },
+      ),
+    ).rejects.toMatchObject({ fieldErrors: { session: [expect.any(String)] } });
+    expect(fake.state.events).toHaveLength(0);
   });
 });
 

@@ -1076,6 +1076,51 @@ describe("adminRunCloseSync", () => {
     });
   });
 
+  it("syncs newsletter consent without presenting it as qualification", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          event_type: "newsletter_enrichment",
+          close_lead_id: "lead_close_1",
+          close_contact_id: "cont_close_1",
+          payload: {
+            qualification: {
+              status: "newsletter_subscribed",
+              phase: "subscribed",
+            },
+            normalized: { consent: true },
+            answers: [{ label: "Send me The Route", value: "true" }],
+          },
+        }),
+      ],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ id: "acti_note_newsletter" }))
+      .mockResolvedValueOnce(jsonResponse({ id: "cont_close_1" }));
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({
+        CLOSE_API_KEY: "close_key_123",
+        CLOSE_CONSENT_STATUS_FIELD_ID: "cf_consent",
+      }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T10:00:00.000Z"),
+    });
+
+    expect(result).toMatchObject({ synced: 1 });
+    const note = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string) as {
+      note_html: string;
+    };
+    expect(note.note_html).toContain("The Route newsletter signup");
+    expect(note.note_html).not.toContain("Qualification completed");
+    expect(note.note_html).not.toContain("qualified");
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
+      "custom.cf_consent": "true",
+    });
+  });
+
   it("omits score and band custom fields when qualification payload leaves them null", async () => {
     const fake = buildClient({
       events: [

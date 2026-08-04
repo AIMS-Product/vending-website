@@ -157,7 +157,7 @@ async function expireSession(
   }
 
   const lead = await getLead(client, session.lead_submission_id);
-  if (lead && lead.lifecycle_status !== "qualified") {
+  if (lead && !isCompletedLeadLifecycle(lead.lifecycle_status)) {
     await updateLead(client, lead.id, {
       lifecycle_status: "qualification_expired",
     });
@@ -181,7 +181,7 @@ async function markSessionStale(
   const lead = await getLead(client, session.lead_submission_id);
   if (!lead) return { marked: !wasAlreadyStale, taskEvent: "skipped" };
 
-  if (lead.lifecycle_status === "qualified") {
+  if (isCompletedLeadLifecycle(lead.lifecycle_status)) {
     return { marked: !wasAlreadyStale, taskEvent: "skipped" };
   }
 
@@ -198,6 +198,10 @@ async function markSessionStale(
     nowIso,
   });
   return { marked: !wasAlreadyStale, taskEvent };
+}
+
+function isCompletedLeadLifecycle(status: string) {
+  return status === "qualified" || status === "newsletter_subscribed";
 }
 
 async function ensureStaleFollowUpTaskEvent(

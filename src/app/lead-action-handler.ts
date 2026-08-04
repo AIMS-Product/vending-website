@@ -16,6 +16,7 @@ import {
 const successMessages: Record<SubmitLeadInput["formType"], string> = {
   apply: "Thanks. We received your details and will follow up shortly.",
   contact: "Thanks. We received your note and will follow up shortly.",
+  newsletter: "Thanks. You're subscribed to The Route.",
 };
 
 export async function submitPublicLeadAction(

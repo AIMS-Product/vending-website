@@ -57,6 +57,11 @@ export type CompleteQualificationSessionInput = {
   userAgent?: string | null;
 };
 
+export type UpdateQualificationLeadPhoneInput = {
+  sessionToken: string;
+  phone: string;
+};
+
 export type QualificationSessionUnavailable = {
   status: "unavailable";
   reason: "not_found" | "expired";
@@ -146,7 +151,7 @@ export async function saveQualificationAnswer(
   const client = serviceClient(deps);
   const now = deps.now?.() ?? new Date();
   const nowIso = now.toISOString();
-  const session = await requireActiveSession(client, input.sessionToken, now);
+  const session = await requireWritableSession(client, input.sessionToken, now);
   const context = await loadContext(client, session);
   const question = findQuestion(context.formVersion.schema, input.questionId);
   if (!question) {
@@ -204,6 +209,24 @@ export async function saveQualificationAnswer(
     currentQuestionId: nextQuestionId,
     answerCount: answers.length,
   };
+}
+
+/** Updates only the lead owned by a valid session token. */
+export async function updateQualificationLeadPhone(
+  input: UpdateQualificationLeadPhoneInput,
+  deps: ServiceDeps = {},
+) {
+  const client = serviceClient(deps);
+  const now = deps.now?.() ?? new Date();
+  const session = await requireWritableSession(client, input.sessionToken, now);
+  const phone = input.phone.trim();
+  if (!phone || phone.length > 60) {
+    throw new QualificationSessionValidationError({
+      phone: ["Enter a valid phone number."],
+    });
+  }
+  await updateLead(client, session.lead_submission_id, { phone });
+  return { status: "updated" as const, leadId: session.lead_submission_id };
 }
 
 export async function completeQualificationSession(
@@ -315,7 +338,7 @@ function completionRedirectFor(
   return `/thank-you?${params.toString()}`;
 }
 
-function hashQualificationSessionToken(token: string) {
+export function hashQualificationSessionToken(token: string) {
   return `sha256:${createHash("sha256").update(token).digest("hex")}`;
 }
 
@@ -343,6 +366,20 @@ async function requireActiveSession(
   if (isExpired(session, now)) {
     throw new QualificationSessionValidationError({
       session: ["Qualification session has expired."],
+    });
+  }
+  return session;
+}
+
+async function requireWritableSession(
+  client: QualificationSessionsClient,
+  sessionToken: string,
+  now: Date,
+) {
+  const session = await requireActiveSession(client, sessionToken, now);
+  if (session.status === "completed") {
+    throw new QualificationSessionValidationError({
+      session: ["This qualification session has already been completed."],
     });
   }
   return session;
@@ -711,7 +748,12 @@ function consentAnswerFor({
   );
 }
 
-function buildNormalizedSummary(answers: QualificationAnswerRow[]): Json {
+export function buildNormalizedSummary(
+  answers: Pick<
+    QualificationAnswerRow,
+    "normalized_role" | "normalized_value" | "answer_value"
+  >[],
+): Json {
   return answers.reduce<Record<string, Json>>((summary, answer) => {
     if (!answer.normalized_role) return summary;
     if (

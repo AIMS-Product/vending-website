@@ -39,7 +39,7 @@ type StoredLead = Pick<
   | "close_sync_status"
 >;
 
-export type LeadActionFormType = "apply" | "contact";
+export type LeadActionFormType = "apply" | "contact" | "newsletter";
 
 export type LeadNotificationEnv = {
   RESEND_API_KEY?: string;
@@ -74,7 +74,7 @@ const metadataSchema = z
 
 const leadInputSchema = z
   .object({
-    formType: z.enum(["apply", "contact"]),
+    formType: z.enum(["apply", "contact", "newsletter"]),
     idempotencyKey: optionalText("Submission key", 160),
     fullName: requiredText("Name", 140),
     email: emailText(),
@@ -529,7 +529,7 @@ async function sendResendEmail(
       body: JSON.stringify({
         from,
         to,
-        subject: `${subjectPrefix ?? "Vendingpreneurs"} ${lead.formType === "apply" ? "application" : "contact"} lead`,
+        subject: `${subjectPrefix ?? "Vendingpreneurs"} ${emailSubjectLabel(lead.formType)}`,
         text: formatLeadText(lead),
       }),
     });
@@ -724,8 +724,7 @@ function formatLeadText(lead: NotifiableLead) {
 }
 
 function formatSlackText(lead: NotifiableLead) {
-  const label =
-    lead.formType === "apply" ? "New application lead" : "New contact lead";
+  const label = slackHeading(lead.formType);
   return [
     `*${label}*`,
     `${lead.fullName} <${lead.email}>`,
@@ -736,6 +735,18 @@ function formatSlackText(lead: NotifiableLead) {
   ]
     .filter((line) => line !== null)
     .join("\n");
+}
+
+function emailSubjectLabel(formType: LeadActionFormType) {
+  if (formType === "apply") return "application lead";
+  if (formType === "newsletter") return "newsletter subscriber";
+  return "contact lead";
+}
+
+function slackHeading(formType: LeadActionFormType) {
+  if (formType === "apply") return "New application lead";
+  if (formType === "newsletter") return "New newsletter subscriber";
+  return "New contact lead";
 }
 
 function fieldLine(label: string, value: string | null | undefined) {

@@ -660,6 +660,32 @@ describe("notifyQualificationLead", () => {
     expect(text).toContain("/booking-meta");
   });
 
+  it("labels newsletter subscribers without paging them as applicants", async () => {
+    const fetchImpl = vi.fn(async () => new Response("ok", { status: 200 }));
+
+    await notifyQualificationLead(
+      {
+        ...funnelLead,
+        formType: "newsletter",
+        fullName: "Route Reader",
+        email: "reader@example.com",
+        sourcePath: "/newsletter",
+      },
+      {
+        env: { SLACK_WEBHOOK_URL: "https://hooks.slack.test/lead" },
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      },
+    );
+
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
+    const text = JSON.parse(init.body as string).text as string;
+    expect(text).toContain("New newsletter subscriber");
+    expect(text).not.toContain("application lead");
+  });
+
   it("reports the failure instead of throwing when Slack rejects the post", async () => {
     const fetchImpl = vi.fn(async () => new Response("nope", { status: 500 }));
 

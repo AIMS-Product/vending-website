@@ -298,7 +298,20 @@ async function dispatchCloseEvent(
     return syncLeadCreateOrUpdate(event, { close, closeConfig, lead });
   }
   if (event.event_type === "qualification_enrichment") {
-    return syncQualificationEnrichment(event, { close, closeConfig, lead });
+    return syncQualificationEnrichment(event, {
+      close,
+      closeConfig,
+      lead,
+      isNewsletter: false,
+    });
+  }
+  if (event.event_type === "newsletter_enrichment") {
+    return syncQualificationEnrichment(event, {
+      close,
+      closeConfig,
+      lead,
+      isNewsletter: true,
+    });
   }
   if (event.event_type === "stale_follow_up_task") {
     return syncStaleFollowUpTask(event, { close, closeConfig, lead });
@@ -583,10 +596,12 @@ async function syncQualificationEnrichment(
     close,
     closeConfig,
     lead,
+    isNewsletter,
   }: {
     close: CloseClient;
     closeConfig: CloseConfig;
     lead: LeadRow | null;
+    isNewsletter: boolean;
   },
 ): Promise<CloseContactInfo> {
   const leadId = event.close_lead_id ?? lead?.close_lead_id;
@@ -605,14 +620,18 @@ async function syncQualificationEnrichment(
   await close.createNote({
     lead_id: leadId,
     contact_id: contactId,
-    note_html: qualificationNoteHtml(event.payload),
+    note_html: qualificationNoteHtml(event.payload, isNewsletter),
   });
 
   // Custom fields are scope-locked in Close: lead-scoped IDs must go on the lead,
   // contact-scoped IDs on the contact. Sending a contact field to updateLead (or
   // vice versa) makes Close reject the whole update with a 400, so we split by
   // scope and write each group to its own object.
-  const leadFields = qualificationLeadCustomFields(event.payload, closeConfig);
+  const leadFields = qualificationLeadCustomFields(
+    event.payload,
+    closeConfig,
+    isNewsletter,
+  );
   if (Object.keys(leadFields).length) {
     await close.updateLead(leadId, leadFields);
   }
@@ -823,13 +842,14 @@ function primaryEmail(event: CloseSyncEventRow, lead: LeadRow | null) {
 function qualificationLeadCustomFields(
   payload: Json,
   closeConfig: CloseConfig,
+  isNewsletter: boolean,
 ): Record<`custom.${string}`, unknown> {
   const qualification = objectAt(payload, "qualification");
   const attribution = objectAt(payload, "attribution");
   return closeCustomFieldPayload(
     {
       ...sourceAttributionValues(attribution, null),
-      status: stringAt(qualification, "status"),
+      status: isNewsletter ? undefined : stringAt(qualification, "status"),
       experiment_key: stringAt(qualification, "experimentKey"),
       variant_key: stringAt(qualification, "variantKey"),
       score: numberAt(qualification, "score"),
@@ -903,7 +923,7 @@ function sourceAttributionValues(
   return values;
 }
 
-function qualificationNoteHtml(payload: Json) {
+function qualificationNoteHtml(payload: Json, isNewsletter: boolean) {
   const qualification = objectAt(payload, "qualification");
   const answers = arrayAt(payload, "answers");
   const rows = answers
@@ -920,8 +940,12 @@ function qualificationNoteHtml(payload: Json) {
 
   return [
     "<body>",
-    "<h2>Qualification completed</h2>",
-    `<p>Status: ${escapeHtml(stringAt(qualification, "status") ?? "qualified")}</p>`,
+    isNewsletter
+      ? "<h2>The Route newsletter signup</h2>"
+      : "<h2>Qualification completed</h2>",
+    isNewsletter
+      ? ""
+      : `<p>Status: ${escapeHtml(stringAt(qualification, "status") ?? "qualified")}</p>`,
     rows ? `<ul>${rows}</ul>` : "",
     "</body>",
   ].join("");
