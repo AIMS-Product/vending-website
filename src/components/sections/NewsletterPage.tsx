@@ -18,7 +18,7 @@ export async function NewsletterPage({
 }) {
   const attribution = {
     ...buildLeadAttribution(await searchParams, "/newsletter"),
-    source_page_id: "coded:newsletter",
+    source_page_id: "",
     source_page_slug: "newsletter",
     source_block_id: "newsletter_signup",
     source_cta_tracking_name: "newsletter-signup-form",

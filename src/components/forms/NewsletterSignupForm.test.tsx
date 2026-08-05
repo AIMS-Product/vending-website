@@ -25,7 +25,7 @@ const attribution: LeadAttribution = {
   latest_referrer: "",
   latest_touch_at: "2026-08-04T22:00:00.000Z",
   vp_session_id: "vp-newsletter-session",
-  source_page_id: "coded:newsletter",
+  source_page_id: "",
   source_page_slug: "newsletter",
   target_keyword: "",
   source_block_id: "newsletter_signup",
