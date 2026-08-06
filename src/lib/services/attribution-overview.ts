@@ -62,8 +62,6 @@ const WRITTEN_CHOICE_VALUES: Partial<
     CLOSE_TAGGING_VALUES.entrySourceLeadMagnet,
     CLOSE_TAGGING_VALUES.entrySourceWebsiteApply,
   ],
-  recaptureStateFieldId: [CLOSE_TAGGING_VALUES.recaptureStateHotInbound],
-  everHadCallFieldId: [CLOSE_TAGGING_VALUES.everHadCallNo],
 };
 
 export type AttributionFieldStatus =
@@ -156,7 +154,7 @@ const ENTRY_POINTS: Array<
     routes: ["/contact", "/vp-quiz", "Builder pages using the default form"],
     entrySource: CLOSE_TAGGING_VALUES.entrySourceWebsiteApply,
     entrySourceValue: CLOSE_TAGGING_VALUES.entrySourceWebsiteApply,
-    resourceTag: "None",
+    resourceTag: CLOSE_RESOURCE_TAGS.websiteApplication,
   },
 ];
 

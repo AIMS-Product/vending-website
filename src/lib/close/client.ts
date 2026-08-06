@@ -55,8 +55,6 @@ export type CloseCustomFieldConfig = {
   latestCompletedAtFieldId?: string;
   entrySourceFieldId?: string;
   resourceTagFieldId?: string;
-  recaptureStateFieldId?: string;
-  everHadCallFieldId?: string;
 };
 
 export type CloseConfig = {
@@ -255,8 +253,6 @@ export function closeConfigFromEnv(env: CloseEnv): CloseConfig {
       latestCompletedAtFieldId: trimmed(env.CLOSE_LATEST_COMPLETED_AT_FIELD_ID),
       entrySourceFieldId: trimmed(env.CLOSE_ENTRY_SOURCE_FIELD_ID),
       resourceTagFieldId: trimmed(env.CLOSE_RESOURCE_TAG_FIELD_ID),
-      recaptureStateFieldId: trimmed(env.CLOSE_RECAPTURE_STATE_FIELD_ID),
-      everHadCallFieldId: trimmed(env.CLOSE_EVER_HAD_CALL_FIELD_ID),
     },
   };
 }
@@ -415,8 +411,6 @@ export function closeContactAttributionPayload(
 export const CLOSE_TAGGING_VALUES = {
   entrySourceLeadMagnet: "Lead-Magnet",
   entrySourceWebsiteApply: "Website-Apply",
-  recaptureStateHotInbound: "Hot-Inbound",
-  everHadCallNo: "No",
 } as const;
 
 /**
@@ -432,8 +426,20 @@ export const CLOSE_RESOURCE_TAGS = {
   roadmap: "lead-magnet-90-days",
   financeTemplates: "lead-magnet-finance-templates",
   newsletter: "newsletter",
+  websiteApplication: "website-application",
 } as const;
 
+/**
+ * The two lead-scoped tagging fields this site owns, written on CREATE only.
+ *
+ * Deliberately only two. Recapture State and Ever Had Call are set by the
+ * reconciler in Close's Lane 2 automation (Stephen, 2026-08-06). Writing them
+ * from here is at best redundant, and at worst changes which leads that
+ * automation picks up — so we stay out of them entirely.
+ *
+ * Never sent on update either: both are first-touch attribution, and
+ * re-sending them would stomp rep and automation edits.
+ */
 export function closeTaggingPayload(
   values: Record<string, unknown>,
   fields: CloseCustomFieldConfig,
@@ -441,8 +447,6 @@ export function closeTaggingPayload(
   const payload: Record<`custom.${string}`, unknown> = {};
   assignCustom(payload, fields.entrySourceFieldId, values.entry_source);
   assignCustom(payload, fields.resourceTagFieldId, values.resource_tag);
-  assignCustom(payload, fields.recaptureStateFieldId, values.recapture_state);
-  assignCustom(payload, fields.everHadCallFieldId, values.ever_had_call);
   return payload;
 }
 

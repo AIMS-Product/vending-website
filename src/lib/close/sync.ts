@@ -449,8 +449,6 @@ function createLeadPayload({
 const {
   entrySourceLeadMagnet: ENTRY_SOURCE_LEAD_MAGNET,
   entrySourceWebsiteApply: ENTRY_SOURCE_WEBSITE_APPLY,
-  recaptureStateHotInbound: RECAPTURE_STATE_HOT_INBOUND,
-  everHadCallNo: EVER_HAD_CALL_NO,
 } = CLOSE_TAGGING_VALUES;
 
 function taggingValues(lead: LeadRow | null) {
@@ -461,9 +459,9 @@ function taggingValues(lead: LeadRow | null) {
     entry_source: isLeadMagnet
       ? ENTRY_SOURCE_LEAD_MAGNET
       : ENTRY_SOURCE_WEBSITE_APPLY,
-    resource_tag: isLeadMagnet ? resourceTag(lead, formId) : undefined,
-    recapture_state: RECAPTURE_STATE_HOT_INBOUND,
-    ever_had_call: EVER_HAD_CALL_NO,
+    resource_tag: isLeadMagnet
+      ? resourceTag(lead, formId)
+      : CLOSE_RESOURCE_TAGS.websiteApplication,
   };
 }
 

@@ -1468,9 +1468,28 @@ describe("Close tagging fields", () => {
     expect(body).toMatchObject({
       "custom.cf_entry_source": "Lead-Magnet",
       "custom.cf_resource_tag": CLOSE_RESOURCE_TAGS.financeTemplates,
-      "custom.cf_recapture_state": "Hot-Inbound",
-      "custom.cf_ever_had_call": "No",
     });
+  });
+
+  // Close's Lane 2 reconciler owns Recapture State and Ever Had Call. Writing
+  // them from here could change which leads that automation picks up.
+  //
+  // Asserted at the config layer, not just the payload: a payload-only check
+  // passes for the wrong reason once the config key is gone, so it would not
+  // notice someone re-adding the whole plumbing. This fails the moment the
+  // fields become reachable again, which is the thing we actually care about.
+  it("never writes the fields Close's Lane 2 automation owns", async () => {
+    const config = closeConfigFromEnv(TAGGING_ENV);
+    expect(config.customFields).not.toHaveProperty("recaptureStateFieldId");
+    expect(config.customFields).not.toHaveProperty("everHadCallFieldId");
+
+    const body = await createdLeadBody({
+      latest_qualification_form_id: LEAD_MAGNET_FORM_ID,
+      source_path: "/resources/roadmap",
+    });
+
+    expect(body).not.toHaveProperty("custom.cf_recapture_state");
+    expect(body).not.toHaveProperty("custom.cf_ever_had_call");
   });
 
   // The roadmap must land in the tag Close already reports on, not a new name.
@@ -1508,18 +1527,16 @@ describe("Close tagging fields", () => {
     });
   });
 
-  it("tags the call-booking form as Website-Apply with no resource tag", async () => {
+  it("tags the call-booking form as Website-Apply / website-application", async () => {
     const body = await createdLeadBody({
       latest_qualification_form_id: "a1b2c3d4-0000-4000-8000-000000000001",
-      source_path: "/apply",
+      source_path: "/contact",
     });
 
     expect(body).toMatchObject({
       "custom.cf_entry_source": "Website-Apply",
-      "custom.cf_recapture_state": "Hot-Inbound",
-      "custom.cf_ever_had_call": "No",
+      "custom.cf_resource_tag": "website-application",
     });
-    expect(body).not.toHaveProperty("custom.cf_resource_tag");
   });
 
   // A magnet whose landing path is missing must not carry another magnet's tag.
