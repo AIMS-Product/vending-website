@@ -151,7 +151,8 @@ const ENTRY_POINTS: Array<
   {
     name: "Apply / qualification (books a call)",
     formId: "a1b2c3d4-0000-4000-8000-000000000001",
-    routes: ["/apply", "/vp-quiz", "Builder pages with the default form"],
+    // The apply funnel lives at /contact; /apply is only a 301 into it.
+    routes: ["/contact", "/vp-quiz", "Builder pages using the default form"],
     entrySource: CLOSE_TAGGING_VALUES.entrySourceWebsiteApply,
     entrySourceValue: CLOSE_TAGGING_VALUES.entrySourceWebsiteApply,
     resourceTag: "None",

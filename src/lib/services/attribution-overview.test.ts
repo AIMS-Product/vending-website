@@ -8,6 +8,7 @@ import {
   type CloseClient,
   type CloseCustomFieldDefinition,
 } from "@/lib/close/client";
+import { isCodedRoutePath } from "@/lib/page-builder/coded-route-paths";
 
 const ENTRY_SOURCE_ID = "cf_entry_source";
 
@@ -178,6 +179,21 @@ describe("buildAttributionOverview", () => {
 
     expect(overview.leadStatus.configured).toBe(false);
     expect(overview.leadStatus.issue).toContain("default status");
+  });
+
+  // Drift guard: the routes shown for the coded entry points must be real
+  // registered routes. A page that lists a route which 301s elsewhere (as
+  // /apply does) sends someone hunting attribution on a page with no form.
+  it("lists only registered coded routes for the magnet and newsletter", async () => {
+    const overview = await overviewWith(BASE_ENV, fakeClose({}));
+    const coded = overview.entryPoints
+      .filter((entry) => !entry.name.includes("Apply"))
+      .flatMap((entry) => entry.routes);
+
+    expect(coded.length).toBeGreaterThan(0);
+    for (const route of coded) {
+      expect(isCodedRoutePath(route)).toBe(true);
+    }
   });
 
   // Drift guard: a new field added to the Close config must appear on this page
