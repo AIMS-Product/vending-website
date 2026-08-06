@@ -53,6 +53,10 @@ export type CloseCustomFieldConfig = {
   consentStatusFieldId?: string;
   contactPreferenceFieldId?: string;
   latestCompletedAtFieldId?: string;
+  entrySourceFieldId?: string;
+  resourceTagFieldId?: string;
+  recaptureStateFieldId?: string;
+  everHadCallFieldId?: string;
 };
 
 export type CloseConfig = {
@@ -122,6 +126,14 @@ type CloseLeadSearchResult = {
     id?: string | null;
     emails?: Array<{ email?: string | null }>;
   }>;
+};
+
+export type CloseCustomFieldDefinition = {
+  id: string;
+  name: string;
+  /** "text", "choices", "date", … — only "choices" carries a `choices` list. */
+  type: string;
+  choices?: string[] | null;
 };
 
 /** Close's search query language treats `"` as a delimiter, so neutralize it. */
@@ -241,6 +253,10 @@ export function closeConfigFromEnv(env: CloseEnv): CloseConfig {
       consentStatusFieldId: trimmed(env.CLOSE_CONSENT_STATUS_FIELD_ID),
       contactPreferenceFieldId: trimmed(env.CLOSE_CONTACT_PREFERENCE_FIELD_ID),
       latestCompletedAtFieldId: trimmed(env.CLOSE_LATEST_COMPLETED_AT_FIELD_ID),
+      entrySourceFieldId: trimmed(env.CLOSE_ENTRY_SOURCE_FIELD_ID),
+      resourceTagFieldId: trimmed(env.CLOSE_RESOURCE_TAG_FIELD_ID),
+      recaptureStateFieldId: trimmed(env.CLOSE_RECAPTURE_STATE_FIELD_ID),
+      everHadCallFieldId: trimmed(env.CLOSE_EVER_HAD_CALL_FIELD_ID),
     },
   };
 }
@@ -326,6 +342,21 @@ export function createCloseClient({
         payload,
       );
     },
+    /**
+     * The org's custom field definitions for one object type.
+     *
+     * Read-only, and used by the attribution overview to answer "does this
+     * field ID still exist, is it scoped to the object we write it to, and is
+     * the literal we send a valid choice on it". Close silently accepts a
+     * write to a stale field ID on the wrong object with a 400 rather than a
+     * useful message, so the check has to compare against the real schema.
+     */
+    listCustomFields(scope: "lead" | "contact") {
+      return request<{ data?: CloseCustomFieldDefinition[] }>(
+        "GET",
+        `/custom_field/${scope}/?_limit=200`,
+      );
+    },
     createNote(payload: CloseNotePayload) {
       return request<{ id: string }>("POST", "/activity/note/", payload);
     },
@@ -359,6 +390,44 @@ export function closeContactAttributionPayload(
   assignCustom(payload, fields.utmCampaignFieldId, values.utm_campaign);
   assignCustom(payload, fields.utmTermFieldId, values.utm_term);
   assignCustom(payload, fields.utmContentFieldId, values.utm_content);
+  return payload;
+}
+
+/**
+ * Stephen's lead-scoped tagging fields, written on lead CREATE only.
+ *
+ * Entry Source / Recapture State / Ever Had Call are `choices` fields in Close —
+ * Close 400s a value that is not an exact choice label, so the callers must only
+ * ever pass values from CLOSE_ENTRY_SOURCE_CHOICES et al. Resource Tag is free
+ * text.
+ *
+ * These are never sent on update: Entry Source and Resource Tag are first-touch
+ * attribution, and Close's own workflows own Recapture State and Ever Had Call
+ * after creation. Re-sending them would stomp rep and automation edits.
+ */
+/**
+ * The exact choice labels configured on Stephen's Close fields.
+ *
+ * Close validates `choices` fields against its own list and rejects anything
+ * else, so these are literals rather than anything derived — and the
+ * attribution overview checks each one still exists on the live field.
+ */
+export const CLOSE_TAGGING_VALUES = {
+  entrySourceLeadMagnet: "Lead-Magnet",
+  entrySourceWebsiteApply: "Website-Apply",
+  recaptureStateHotInbound: "Hot-Inbound",
+  everHadCallNo: "No",
+} as const;
+
+export function closeTaggingPayload(
+  values: Record<string, unknown>,
+  fields: CloseCustomFieldConfig,
+) {
+  const payload: Record<`custom.${string}`, unknown> = {};
+  assignCustom(payload, fields.entrySourceFieldId, values.entry_source);
+  assignCustom(payload, fields.resourceTagFieldId, values.resource_tag);
+  assignCustom(payload, fields.recaptureStateFieldId, values.recapture_state);
+  assignCustom(payload, fields.everHadCallFieldId, values.ever_had_call);
   return payload;
 }
 

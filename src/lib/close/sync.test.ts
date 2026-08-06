@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { CloseApiError, closeConfigFromEnv, createCloseClient } from "./client";
 import { adminRunCloseSync } from "./sync";
+import { LEAD_MAGNET_FORM_ID } from "@/lib/content/lead-magnets";
+import { NEWSLETTER_FORM_ID } from "@/lib/content/newsletter";
 import type { Database, Json, Tables } from "@/types/database";
 
 type CloseSyncEventRow = Tables<"close_sync_events">;
@@ -1413,5 +1415,126 @@ describe("adminRunCloseSync", () => {
     expect(
       new Date(fake.state.events[0].next_retry_at ?? 0).getTime(),
     ).toBeGreaterThan(new Date("2026-06-17T09:01:00.000Z").getTime());
+  });
+});
+
+describe("Close tagging fields", () => {
+  const TAGGING_ENV = {
+    CLOSE_API_KEY: "close_key_123",
+    CLOSE_ENTRY_SOURCE_FIELD_ID: "cf_entry_source",
+    CLOSE_RESOURCE_TAG_FIELD_ID: "cf_resource_tag",
+    CLOSE_RECAPTURE_STATE_FIELD_ID: "cf_recapture_state",
+    CLOSE_EVER_HAD_CALL_FIELD_ID: "cf_ever_had_call",
+  };
+
+  async function createdLeadBody(lead: Partial<LeadRow>) {
+    const fake = buildClient({ leads: [makeLead(lead)] });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "lead_created",
+          contact_ids: ["cont_created"],
+          contacts: [{ id: "cont_created" }],
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ id: "cont_created" }));
+
+    await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv(TAGGING_ENV),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    const create = fetchMock.mock.calls.find(
+      (call) => call[0] === "https://api.close.com/api/v1/lead/",
+    );
+    return JSON.parse(create?.[1]?.body as string) as Record<string, unknown>;
+  }
+
+  it("tags a lead-magnet submission with its magnet slug", async () => {
+    const body = await createdLeadBody({
+      latest_qualification_form_id: LEAD_MAGNET_FORM_ID,
+      source_path: "/resources/finance-templates",
+    });
+
+    expect(body).toMatchObject({
+      "custom.cf_entry_source": "Lead-Magnet",
+      "custom.cf_resource_tag": "finance-templates",
+      "custom.cf_recapture_state": "Hot-Inbound",
+      "custom.cf_ever_had_call": "No",
+    });
+  });
+
+  it("tags a newsletter signup as a lead magnet", async () => {
+    const body = await createdLeadBody({
+      latest_qualification_form_id: NEWSLETTER_FORM_ID,
+      source_path: "/newsletter",
+    });
+
+    expect(body).toMatchObject({
+      "custom.cf_entry_source": "Lead-Magnet",
+      "custom.cf_resource_tag": "newsletter",
+    });
+  });
+
+  it("tags the call-booking form as Website-Apply with no resource tag", async () => {
+    const body = await createdLeadBody({
+      latest_qualification_form_id: "a1b2c3d4-0000-4000-8000-000000000001",
+      source_path: "/apply",
+    });
+
+    expect(body).toMatchObject({
+      "custom.cf_entry_source": "Website-Apply",
+      "custom.cf_recapture_state": "Hot-Inbound",
+      "custom.cf_ever_had_call": "No",
+    });
+    expect(body).not.toHaveProperty("custom.cf_resource_tag");
+  });
+
+  // A magnet whose landing path is missing must not carry another magnet's tag.
+  it("omits the resource tag when the magnet cannot be identified", async () => {
+    const body = await createdLeadBody({
+      latest_qualification_form_id: LEAD_MAGNET_FORM_ID,
+      source_path: null,
+      landing_path: null,
+    });
+
+    expect(body).toMatchObject({ "custom.cf_entry_source": "Lead-Magnet" });
+    expect(body).not.toHaveProperty("custom.cf_resource_tag");
+  });
+
+  // Close's workflows own Recapture State / Ever Had Call once the lead exists,
+  // and Entry Source is first-touch — an update must never re-send them.
+  it("never re-sends tagging fields on an update to a known Close lead", async () => {
+    const fake = buildClient({
+      leads: [
+        makeLead({
+          close_lead_id: "lead_existing",
+          close_contact_id: "cont_existing",
+          latest_qualification_form_id: LEAD_MAGNET_FORM_ID,
+          source_path: "/resources/roadmap",
+        }),
+      ],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ id: "cont_existing" }));
+
+    await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv(TAGGING_ENV),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    const bodies = fetchMock.mock.calls.map((call) =>
+      String(call[1]?.body ?? ""),
+    );
+    expect(bodies.join(" ")).not.toContain("cf_entry_source");
+    expect(bodies.join(" ")).not.toContain("cf_recapture_state");
+    expect(bodies.join(" ")).not.toContain("cf_ever_had_call");
   });
 });

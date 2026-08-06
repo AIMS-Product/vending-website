@@ -2,6 +2,8 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { config } from "@/lib/config";
+import { LEAD_MAGNET_FORM_ID } from "@/lib/content/lead-magnets";
+import { NEWSLETTER_FORM_ID } from "@/lib/content/newsletter";
 import {
   jsonArrayAt as arrayAt,
   jsonNumberAt as numberAt,
@@ -15,6 +17,8 @@ import {
   closeConfigFromEnv,
   closeContactAttributionPayload,
   closeCustomFieldPayload,
+  closeTaggingPayload,
+  CLOSE_TAGGING_VALUES,
   CloseConfigError,
   createCloseClient,
   sanitizeCloseErrorText,
@@ -64,7 +68,7 @@ const EVENT_FIELDS =
   "id,lead_submission_id,session_id,event_type,status,dedupe_key,payload,close_lead_id,close_contact_id,attempt_count,max_attempts,next_retry_at,last_attempted_at,synced_at,last_error,created_at,updated_at" as const;
 
 const LEAD_FIELDS =
-  "id,full_name,email,phone,source_path,landing_path,referrer,source_page_id,source_page_slug,target_keyword,source_block_id,source_cta_tracking_name,utm_source,utm_medium,utm_campaign,utm_term,utm_content,close_lead_id,close_contact_id,close_sync_status,close_sync_attempt_count,close_sync_last_error" as const;
+  "id,full_name,email,phone,source_path,landing_path,referrer,source_page_id,source_page_slug,target_keyword,source_block_id,source_cta_tracking_name,latest_qualification_form_id,utm_source,utm_medium,utm_campaign,utm_term,utm_content,close_lead_id,close_contact_id,close_sync_status,close_sync_attempt_count,close_sync_last_error" as const;
 
 const RETRYABLE_STATUS_LIST = ["pending", "failed", "retrying"] as const;
 const RETRYABLE_STATUSES = new Set<string>(RETRYABLE_STATUS_LIST);
@@ -427,8 +431,51 @@ function createLeadPayload({
     name: contact.name ?? lead?.full_name ?? email ?? "Website lead",
     ...leadStatusPayload(closeConfig),
     ...sourceFields.lead,
+    ...closeTaggingPayload(taggingValues(lead), closeConfig.customFields),
     contacts: [contact],
   };
+}
+
+/**
+ * Stephen's Close tagging, keyed off which form the lead came through.
+ *
+ * These are the exact choice labels configured on the Close fields — Close 400s
+ * anything else, so they are literals here rather than anything derived. Adding
+ * a magnet needs no change: any `/resources/<slug>` path tags itself.
+ *
+ * Written on lead create only. See `closeTaggingPayload`.
+ */
+const {
+  entrySourceLeadMagnet: ENTRY_SOURCE_LEAD_MAGNET,
+  entrySourceWebsiteApply: ENTRY_SOURCE_WEBSITE_APPLY,
+  recaptureStateHotInbound: RECAPTURE_STATE_HOT_INBOUND,
+  everHadCallNo: EVER_HAD_CALL_NO,
+} = CLOSE_TAGGING_VALUES;
+
+function taggingValues(lead: LeadRow | null) {
+  const formId = lead?.latest_qualification_form_id;
+  const isLeadMagnet =
+    formId === LEAD_MAGNET_FORM_ID || formId === NEWSLETTER_FORM_ID;
+  return {
+    entry_source: isLeadMagnet
+      ? ENTRY_SOURCE_LEAD_MAGNET
+      : ENTRY_SOURCE_WEBSITE_APPLY,
+    resource_tag: isLeadMagnet ? resourceTag(lead, formId) : undefined,
+    recapture_state: RECAPTURE_STATE_HOT_INBOUND,
+    ever_had_call: EVER_HAD_CALL_NO,
+  };
+}
+
+/**
+ * Which magnet, for the two magnets that share one form. The landing path is
+ * the only thing that distinguishes them, so a magnet with no usable path
+ * carries no tag rather than a wrong one.
+ */
+function resourceTag(lead: LeadRow | null, formId: string | null | undefined) {
+  if (formId === NEWSLETTER_FORM_ID) return "newsletter";
+  const path = lead?.source_path ?? lead?.landing_path;
+  const slug = path?.match(/^\/resources\/([a-z0-9-]+)\/?$/i)?.[1];
+  return slug?.toLowerCase();
 }
 
 function leadStatusPayload({ leadStatusId }: CloseConfig) {

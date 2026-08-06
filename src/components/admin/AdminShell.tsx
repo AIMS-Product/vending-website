@@ -22,7 +22,8 @@ type AdminSection =
   | "media"
   | "libraries"
   | "settings"
-  | "routes";
+  | "routes"
+  | "attribution";
 type AdminShellIconName = Extract<
   AdminIconName,
   | "archive"
@@ -123,6 +124,13 @@ const accountSections: AdminNavSection[] = [
     href: "/admin/settings/routes",
     description: "Builder URL prefixes",
     icon: "layers",
+  },
+  {
+    id: "attribution",
+    label: "Attribution health",
+    href: "/admin/attribution",
+    description: "Where leads come from",
+    icon: "shield",
   },
 ];
 
