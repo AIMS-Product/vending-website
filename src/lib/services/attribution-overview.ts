@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  CLOSE_RESOURCE_TAGS,
   CLOSE_TAGGING_VALUES,
   closeConfigFromEnv,
   createCloseClient,
@@ -138,7 +139,7 @@ const ENTRY_POINTS: Array<
     routes: ["/resources/roadmap", "/resources/finance-templates"],
     entrySource: CLOSE_TAGGING_VALUES.entrySourceLeadMagnet,
     entrySourceValue: CLOSE_TAGGING_VALUES.entrySourceLeadMagnet,
-    resourceTag: "Magnet slug from the /resources/… path",
+    resourceTag: `${CLOSE_RESOURCE_TAGS.roadmap} · ${CLOSE_RESOURCE_TAGS.financeTemplates}`,
   },
   {
     name: "Newsletter signup",

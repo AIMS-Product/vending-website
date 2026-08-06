@@ -419,6 +419,21 @@ export const CLOSE_TAGGING_VALUES = {
   everHadCallNo: "No",
 } as const;
 
+/**
+ * Resource Tag values, one per magnet.
+ *
+ * `roadmap` deliberately reuses the sales team's existing `lead-magnet-90-days`
+ * rather than a name of our own: that tag is already in use in Close for the
+ * 90-day roadmap, and a second name for the same magnet would split it across
+ * two buckets in their reporting. The other two have no existing equivalent, so
+ * they are new names — Kody may rename them, which is a one-line change here.
+ */
+export const CLOSE_RESOURCE_TAGS = {
+  roadmap: "lead-magnet-90-days",
+  financeTemplates: "lead-magnet-finance-templates",
+  newsletter: "newsletter",
+} as const;
+
 export function closeTaggingPayload(
   values: Record<string, unknown>,
   fields: CloseCustomFieldConfig,

@@ -18,6 +18,7 @@ import {
   closeContactAttributionPayload,
   closeCustomFieldPayload,
   closeTaggingPayload,
+  CLOSE_RESOURCE_TAGS,
   CLOSE_TAGGING_VALUES,
   CloseConfigError,
   createCloseClient,
@@ -467,15 +468,28 @@ function taggingValues(lead: LeadRow | null) {
 }
 
 /**
- * Which magnet, for the two magnets that share one form. The landing path is
- * the only thing that distinguishes them, so a magnet with no usable path
- * carries no tag rather than a wrong one.
+ * Which magnet, for the magnets that share one form.
+ *
+ * Resource Tag is free text, but it is NOT ours to invent: the sales team
+ * already reports on values like `lead-magnet-90-days`, `internal-webinar` and
+ * `ltf-course`. Deriving a tag from the URL slug looked convenient and would
+ * have filed the 90-day roadmap under `roadmap`, splitting one magnet across
+ * two names in their reports.
+ *
+ * So the mapping is explicit, and a magnet that is not in it sends no tag at
+ * all. An untagged lead is a gap someone can see on the attribution page; an
+ * invented tag is silent corruption of their taxonomy.
  */
+const RESOURCE_TAGS_BY_PATH: Record<string, string> = {
+  "/newsletter": CLOSE_RESOURCE_TAGS.newsletter,
+  "/resources/roadmap": CLOSE_RESOURCE_TAGS.roadmap,
+  "/resources/finance-templates": CLOSE_RESOURCE_TAGS.financeTemplates,
+};
+
 function resourceTag(lead: LeadRow | null, formId: string | null | undefined) {
-  if (formId === NEWSLETTER_FORM_ID) return "newsletter";
-  const path = lead?.source_path ?? lead?.landing_path;
-  const slug = path?.match(/^\/resources\/([a-z0-9-]+)\/?$/i)?.[1];
-  return slug?.toLowerCase();
+  if (formId === NEWSLETTER_FORM_ID) return CLOSE_RESOURCE_TAGS.newsletter;
+  const path = (lead?.source_path ?? lead?.landing_path)?.replace(/\/$/, "");
+  return path ? RESOURCE_TAGS_BY_PATH[path.toLowerCase()] : undefined;
 }
 
 function leadStatusPayload({ leadStatusId }: CloseConfig) {

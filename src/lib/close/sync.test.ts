@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { CloseApiError, closeConfigFromEnv, createCloseClient } from "./client";
+import {
+  CloseApiError,
+  CLOSE_RESOURCE_TAGS,
+  closeConfigFromEnv,
+  createCloseClient,
+} from "./client";
 import { adminRunCloseSync } from "./sync";
 import { LEAD_MAGNET_FORM_ID } from "@/lib/content/lead-magnets";
 import { NEWSLETTER_FORM_ID } from "@/lib/content/newsletter";
@@ -1454,7 +1459,7 @@ describe("Close tagging fields", () => {
     return JSON.parse(create?.[1]?.body as string) as Record<string, unknown>;
   }
 
-  it("tags a lead-magnet submission with its magnet slug", async () => {
+  it("tags a lead-magnet submission with the sales team's tag for that magnet", async () => {
     const body = await createdLeadBody({
       latest_qualification_form_id: LEAD_MAGNET_FORM_ID,
       source_path: "/resources/finance-templates",
@@ -1462,10 +1467,33 @@ describe("Close tagging fields", () => {
 
     expect(body).toMatchObject({
       "custom.cf_entry_source": "Lead-Magnet",
-      "custom.cf_resource_tag": "finance-templates",
+      "custom.cf_resource_tag": CLOSE_RESOURCE_TAGS.financeTemplates,
       "custom.cf_recapture_state": "Hot-Inbound",
       "custom.cf_ever_had_call": "No",
     });
+  });
+
+  // The roadmap must land in the tag Close already reports on, not a new name.
+  // Two names for one magnet splits it across two buckets in their reporting.
+  it("files the roadmap under the existing lead-magnet-90-days tag", async () => {
+    const body = await createdLeadBody({
+      latest_qualification_form_id: LEAD_MAGNET_FORM_ID,
+      source_path: "/resources/roadmap",
+    });
+
+    expect(body["custom.cf_resource_tag"]).toBe("lead-magnet-90-days");
+  });
+
+  // An unrecognised magnet must send nothing rather than invent a tag inside
+  // the sales team's taxonomy.
+  it("sends no resource tag for a magnet path it does not know", async () => {
+    const body = await createdLeadBody({
+      latest_qualification_form_id: LEAD_MAGNET_FORM_ID,
+      source_path: "/resources/some-new-magnet",
+    });
+
+    expect(body).toMatchObject({ "custom.cf_entry_source": "Lead-Magnet" });
+    expect(body).not.toHaveProperty("custom.cf_resource_tag");
   });
 
   it("tags a newsletter signup as a lead magnet", async () => {
