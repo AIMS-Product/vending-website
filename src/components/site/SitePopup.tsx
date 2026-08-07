@@ -18,6 +18,10 @@ import {
   type Popup,
   type PopupCta,
 } from "@/lib/content/popups";
+import {
+  emitAttributionEvent,
+  readStoredAttributionSession,
+} from "@/lib/attribution-client";
 
 /**
  * Structural subset of `window` used by trigger wiring, so triggers are
@@ -107,6 +111,8 @@ export function SitePopup() {
   const [visible, setVisible] = useState<Popup | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
+  // Preview mode (?vppopup=preview) must not pollute the stats.
+  const previewRef = useRef(false);
 
   useEffect(() => {
     const mode = new URLSearchParams(window.location.search).get("vppopup");
@@ -122,12 +128,16 @@ export function SitePopup() {
     )
       return;
 
+    previewRef.current = preview;
     let fired = false;
     const show = () => {
       if (fired) return;
       fired = true;
       setVisible(popup);
-      if (!preview) markShown(popup);
+      if (!preview) {
+        markShown(popup);
+        emitPopupEvent("popup_shown", popup);
+      }
     };
     if (preview) {
       show();
@@ -144,8 +154,10 @@ export function SitePopup() {
         : null;
     dialogRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setVisible(null);
-      else if (event.key === "Tab") trapFocus(event, dialogRef.current);
+      if (event.key === "Escape") {
+        if (!previewRef.current) emitPopupEvent("popup_dismissed", visible);
+        setVisible(null);
+      } else if (event.key === "Tab") trapFocus(event, dialogRef.current);
     };
     document.addEventListener("keydown", onKeyDown);
     return () => {
@@ -155,17 +167,49 @@ export function SitePopup() {
   }, [visible]);
 
   if (!visible) return null;
-  const close = () => setVisible(null);
+  const dismiss = () => {
+    if (!previewRef.current) emitPopupEvent("popup_dismissed", visible);
+    setVisible(null);
+  };
+  const ctaClicked = (role: "primary" | "secondary", href: string) => {
+    if (!previewRef.current)
+      emitPopupEvent("popup_cta_clicked", visible, {
+        cta_role: role,
+        cta_href: href,
+      });
+    setVisible(null);
+  };
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-[#111111]/50 p-4"
       onClick={(event) => {
-        if (event.target === event.currentTarget) close();
+        if (event.target === event.currentTarget) dismiss();
       }}
     >
-      <PopupCard popup={visible} onClose={close} dialogRef={dialogRef} />
+      <PopupCard
+        popup={visible}
+        onClose={dismiss}
+        onCtaClick={ctaClicked}
+        dialogRef={dialogRef}
+      />
     </div>
   );
+}
+
+/** Sends a popup analytics event through the first-party attribution pipeline. */
+function emitPopupEvent(
+  eventType: "popup_shown" | "popup_cta_clicked" | "popup_dismissed",
+  popup: Popup,
+  extra: Record<string, string> = {},
+) {
+  const session = readStoredAttributionSession();
+  if (!session) return;
+  emitAttributionEvent(eventType, session, {
+    popup_id: popup.id,
+    popup_trigger: popup.trigger,
+    page_path: window.location.pathname,
+    ...extra,
+  });
 }
 
 /**
@@ -176,12 +220,17 @@ export function SitePopup() {
 export function PopupCard({
   popup,
   onClose,
+  onCtaClick,
   dialogRef,
 }: {
   popup: Popup;
   onClose: () => void;
+  /** CTA navigations close the popup here instead of counting as a dismissal. */
+  onCtaClick?: (role: "primary" | "secondary", href: string) => void;
   dialogRef?: Ref<HTMLDivElement>;
 }) {
+  const ctaClicked: (role: "primary" | "secondary", href: string) => void =
+    onCtaClick ?? (() => onClose());
   return (
     <div
       ref={dialogRef}
@@ -245,10 +294,13 @@ export function PopupCard({
             cta={popup.primaryCta}
             primary
             accentColor={popup.accentColor}
-            onNavigate={onClose}
+            onNavigate={(href) => ctaClicked("primary", href)}
           />
           {popup.secondaryCta ? (
-            <CtaLink cta={popup.secondaryCta} onNavigate={onClose} />
+            <CtaLink
+              cta={popup.secondaryCta}
+              onNavigate={(href) => ctaClicked("secondary", href)}
+            />
           ) : null}
         </div>
         {popup.dismissText ? (
@@ -279,7 +331,7 @@ function CtaLink({
   cta: PopupCta;
   primary?: boolean;
   accentColor?: string | null;
-  onNavigate: () => void;
+  onNavigate: (href: string) => void;
 }) {
   const href = safePopupHref(cta.href);
   if (!href) return null;
@@ -292,12 +344,13 @@ function CtaLink({
       {primary ? <ArrowIcon /> : null}
     </>
   );
+  const onClick = () => onNavigate(href);
   return href.startsWith("/") ? (
-    <Link href={href} className={className} style={style} onClick={onNavigate}>
+    <Link href={href} className={className} style={style} onClick={onClick}>
       {children}
     </Link>
   ) : (
-    <a href={href} className={className} style={style} onClick={onNavigate}>
+    <a href={href} className={className} style={style} onClick={onClick}>
       {children}
     </a>
   );

@@ -1,11 +1,12 @@
 import { z } from "zod";
+import { ATTRIBUTION_EVENT_TYPES } from "@/lib/attribution-client";
 import { VP_SESSION_COOKIE_NAME } from "@/lib/attribution-session";
 import { config } from "@/lib/config";
 import { checkPublicRateLimit, requestIp } from "@/lib/public-rate-limit";
 import { channelFromAttributionSignals } from "@/lib/paid-attribution";
 
 const attributionEventSchema = z.object({
-  event_type: z.enum(["landing_viewed", "cta_clicked", "form_started"]),
+  event_type: z.enum(ATTRIBUTION_EVENT_TYPES),
   external_id: z.string().trim().min(1).max(300),
   occurred_at: z.string().trim().min(1).max(80),
   vp_session_id: z.string().trim().min(1).max(160),

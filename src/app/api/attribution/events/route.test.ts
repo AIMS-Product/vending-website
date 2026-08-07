@@ -81,6 +81,40 @@ describe("attribution event route", () => {
     );
   });
 
+  it("accepts popup event types and forwards the popup id", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response("{}", { status: 200 }));
+
+    const response = await POST(
+      eventRequest({
+        body: {
+          ...payload,
+          event_type: "popup_shown",
+          external_id: "vending-website:popup_shown:vp-session-1:123",
+          properties: { popup_id: "exit-apply", popup_trigger: "EXIT_INTENT" },
+        },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual(
+      expect.objectContaining({
+        event_type: "popup_shown",
+        properties: expect.objectContaining({ popup_id: "exit-apply" }),
+      }),
+    );
+  });
+
+  it("rejects unknown event types", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const response = await POST(
+      eventRequest({ body: { ...payload, event_type: "made_up_event" } }),
+    );
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("rejects events without the matching first-party session cookie", async () => {
     await expectUnauthorizedEvent(eventRequest({ cookie: "vp_sid=other" }));
   });
@@ -121,10 +155,12 @@ function eventRequest({
   cookie = "vp_sid=vp-session-1",
   origin = "https://vending-website.vercel.app",
   fetchSite = "same-origin",
+  body = payload,
 }: {
   cookie?: string;
   origin?: string;
   fetchSite?: string;
+  body?: Record<string, unknown>;
 } = {}) {
   return new Request(
     "https://vending-website.vercel.app/api/attribution/events",
@@ -136,7 +172,7 @@ function eventRequest({
         origin,
         "sec-fetch-site": fetchSite,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     },
   );
 }
