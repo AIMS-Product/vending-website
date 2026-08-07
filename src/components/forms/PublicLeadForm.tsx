@@ -966,6 +966,7 @@ function FitResultPanel({
         <CalendlyEmbed
           url={primaryHref}
           attribution={attribution}
+          hideDetails
           title={content.cta}
         />
       </div>

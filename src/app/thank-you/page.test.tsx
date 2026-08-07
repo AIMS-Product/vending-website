@@ -36,6 +36,10 @@ describe("ThankYouPage", () => {
       expect(html).toContain(state.headline);
       expect(html).toContain(`calendly.com/d/${calendlyId}`);
       expect(html).toContain("embed_type=Inline");
+      // Opens straight on the date picker — the page's own headline frames
+      // the call, so Calendly's event-details block would just push the
+      // calendar below the fold.
+      expect(html).toContain("hide_event_type_details=1");
       // The old CTA button is gone — the calendar is the action.
       expect(html).not.toContain(state.cta);
       expect(html).not.toContain(state.body);

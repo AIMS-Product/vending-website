@@ -5,6 +5,8 @@ type CalendlyEmbedProps = {
   url: string;
   /** Omit on surfaces with no lead/session context (e.g. /thank-you). */
   attribution?: LeadAttribution;
+  /** Open straight on the date picker (hides Calendly's event-details block). */
+  hideDetails?: boolean;
   title?: string;
 };
 
@@ -16,9 +18,10 @@ type CalendlyEmbedProps = {
 export function CalendlyEmbed({
   url,
   attribution,
+  hideDetails = false,
   title = "Book your Vendingpreneurs call",
 }: CalendlyEmbedProps) {
-  const src = buildCalendlySrc(url, attribution);
+  const src = buildCalendlySrc(url, attribution, { hideDetails });
 
   return (
     <div className="w-full rounded-[10px] border-2 border-[#111111] bg-white shadow-[6px_6px_0_#55b8e8]">

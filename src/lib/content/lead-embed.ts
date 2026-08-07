@@ -39,11 +39,20 @@ function utmPairs(attribution: LeadAttribution): Array<[string, string]> {
 export function buildCalendlySrc(
   url: string,
   attribution?: LeadAttribution,
+  options?: {
+    /** Hide the event name/duration/description block so the embed opens
+     *  straight on the date picker — for surfaces whose own copy already
+     *  frames the call. */
+    hideDetails?: boolean;
+  },
 ): string {
   const target = new URL(url);
   target.searchParams.set("embed_domain", EMBED_DOMAIN);
   target.searchParams.set("embed_type", "Inline");
   target.searchParams.set("hide_gdpr_banner", "1");
+  if (options?.hideDetails) {
+    target.searchParams.set("hide_event_type_details", "1");
+  }
   if (attribution) {
     for (const [key, value] of utmPairs(attribution)) {
       target.searchParams.set(key, value);

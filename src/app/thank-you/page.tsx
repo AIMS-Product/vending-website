@@ -73,7 +73,7 @@ export default async function ThankYouPage({
       body={bookInline ? undefined : state.body}
       embed={
         bookInline ? (
-          <CalendlyEmbed url={THANK_YOU_LINKS[links.primary]} />
+          <CalendlyEmbed url={THANK_YOU_LINKS[links.primary]} hideDetails />
         ) : undefined
       }
       cta={
