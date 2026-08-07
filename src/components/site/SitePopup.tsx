@@ -106,7 +106,7 @@ export function wireTrigger(
   }
 }
 
-export function SitePopup() {
+export function SitePopup({ popups = POPUPS }: { popups?: Popup[] }) {
   const pathname = usePathname() ?? "/";
   const [visible, setVisible] = useState<Popup | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -117,10 +117,10 @@ export function SitePopup() {
   useEffect(() => {
     const mode = new URLSearchParams(window.location.search).get("vppopup");
     if (mode === "off") return;
-    if (mode === "clear") clearShownKeys();
+    if (mode === "clear") clearShownKeys(popups);
     const preview = mode === "preview";
 
-    const popup = pickPopup(pathname, POPUPS, { preview });
+    const popup = pickPopup(pathname, popups, { preview });
     if (!popup) return;
     if (
       !preview &&
@@ -144,7 +144,7 @@ export function SitePopup() {
       return;
     }
     return wireTrigger(popup, show, window);
-  }, [pathname]);
+  }, [pathname, popups]);
 
   useEffect(() => {
     if (!visible) return;
@@ -403,8 +403,10 @@ function markShown(popup: Popup) {
   }
 }
 
-function clearShownKeys() {
-  for (const popup of POPUPS) {
+function clearShownKeys(popups: Popup[]) {
+  // Static entries are cleared too: a DB campaign may share a frequency key
+  // with the fallback popup it replaced.
+  for (const popup of [...popups, ...POPUPS]) {
     try {
       const key = popupFrequencyKey(popup.id);
       window.sessionStorage.removeItem(key);

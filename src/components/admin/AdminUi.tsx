@@ -13,6 +13,7 @@ export type AdminIconName =
   | "list"
   | "log-out"
   | "mail"
+  | "megaphone"
   | "more"
   | "newspaper"
   | "pencil"
@@ -330,6 +331,14 @@ export function AdminIcon({ icon }: { icon: AdminIconName }) {
           <path d="m4 7 8 6 8-6" />
         </svg>
       );
+    case "megaphone":
+      return (
+        <svg {...common}>
+          <path d="M3 11v3l14 5V6L3 11Z" />
+          <path d="M17 8a4 4 0 0 1 0 9" />
+          <path d="M7 14.5V19l3 1v-4.4" />
+        </svg>
+      );
     case "more":
       return (
         <svg {...common}>
@@ -458,6 +467,7 @@ const BAD_STATUSES = new Set([
 const WARN_STATUSES = new Set([
   "in_progress",
   "medium",
+  "paused",
   "pending",
   "pending_setup",
   "processing",

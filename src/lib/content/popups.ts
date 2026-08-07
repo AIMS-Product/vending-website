@@ -83,6 +83,71 @@ export const POPUPS: Popup[] = [
   },
 ];
 
+/** Field defaults that seed a new campaign — everything but id/active. */
+export type PopupTemplateFields = Omit<Popup, "id" | "active">;
+
+export interface PopupTemplate {
+  key: string;
+  name: string;
+  description: string;
+  fields: PopupTemplateFields;
+}
+
+function templateFields(popup: Popup): PopupTemplateFields {
+  return {
+    trigger: popup.trigger,
+    triggerThreshold: popup.triggerThreshold,
+    targetUrlPatterns: popup.targetUrlPatterns,
+    frequency: popup.frequency,
+    eyebrow: popup.eyebrow,
+    headline: popup.headline,
+    body: popup.body,
+    primaryCta: popup.primaryCta,
+    secondaryCta: popup.secondaryCta,
+    featuredValue: popup.featuredValue,
+    offerCode: popup.offerCode,
+    dismissText: popup.dismissText,
+    accentColor: popup.accentColor,
+  };
+}
+
+// Templates are data, not code: adding one = adding an entry here. The first
+// two reuse the original code-array campaigns.
+export const POPUP_TEMPLATES: PopupTemplate[] = [
+  {
+    key: "exit-intent",
+    name: "Exit intent",
+    description: "Catches visitors leaving the page with a training offer.",
+    fields: templateFields(POPUPS[0]),
+  },
+  {
+    key: "scroll-offer",
+    name: "Scroll offer",
+    description: "Offers a resource once the visitor scrolls half the page.",
+    fields: templateFields(POPUPS[1]),
+  },
+  {
+    key: "blank",
+    name: "Blank",
+    description: "Start from an empty card.",
+    fields: {
+      trigger: "TIME_ON_PAGE",
+      triggerThreshold: 10,
+      targetUrlPatterns: [],
+      frequency: "session",
+      eyebrow: null,
+      headline: "Headline",
+      body: "Write the supporting copy for this offer.",
+      primaryCta: { label: "Call to action", href: "/contact" },
+      secondaryCta: null,
+      featuredValue: null,
+      offerCode: null,
+      dismissText: null,
+      accentColor: null,
+    },
+  },
+];
+
 export function popupMatchesPath(popup: Popup, pathname: string): boolean {
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return false;
   if (popup.targetUrlPatterns.length === 0) return true;

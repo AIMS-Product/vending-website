@@ -18,6 +18,7 @@ type AdminSection =
   | "posts"
   | "forms"
   | "leads"
+  | "popups"
   | "analytics"
   | "media"
   | "libraries"
@@ -34,6 +35,7 @@ type AdminShellIconName = Extract<
   | "layers"
   | "list"
   | "mail"
+  | "megaphone"
   | "log-out"
   | "search"
   | "settings"
@@ -86,6 +88,13 @@ const contentSections: AdminNavSection[] = [
     href: "/admin/leads",
     description: "Qualification ops",
     icon: "mail",
+  },
+  {
+    id: "popups",
+    label: "Popups",
+    href: "/admin/popups",
+    description: "Site popup campaigns",
+    icon: "megaphone",
   },
   {
     id: "analytics",

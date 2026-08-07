@@ -3,6 +3,7 @@ import { POST } from "./route";
 
 const mocks = vi.hoisted(() => ({
   checkPublicRateLimit: vi.fn(),
+  recordPopupEvent: vi.fn(),
   config: {
     MONEY_PAGE_INGEST_URL: "https://money-page.test/api/ingest/vendingpreneurs",
     MONEY_PAGE_SECRET: "shared-secret",
@@ -14,6 +15,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/config", () => ({
   config: mocks.config,
+}));
+
+vi.mock("@/lib/services/popups", () => ({
+  recordPopupEvent: mocks.recordPopupEvent,
 }));
 
 vi.mock("@/lib/public-rate-limit", async () => {
@@ -43,6 +48,8 @@ describe("attribution event route", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     mocks.checkPublicRateLimit.mockResolvedValue(true);
+    mocks.recordPopupEvent.mockReset();
+    mocks.recordPopupEvent.mockResolvedValue(true);
     mocks.config.MONEY_PAGE_INGEST_URL =
       "https://money-page.test/api/ingest/vendingpreneurs";
     mocks.config.MONEY_PAGE_SECRET = "shared-secret";
@@ -104,6 +111,23 @@ describe("attribution event route", () => {
         properties: expect.objectContaining({ popup_id: "exit-apply" }),
       }),
     );
+    // Popup events are also counted locally for the admin stat tiles.
+    expect(mocks.recordPopupEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: "popup_shown",
+        popupId: "exit-apply",
+      }),
+    );
+  });
+
+  it("does not write popup counters for non-popup events", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("{}", { status: 200 }),
+    );
+
+    await POST(eventRequest());
+
+    expect(mocks.recordPopupEvent).not.toHaveBeenCalled();
   });
 
   it("rejects unknown event types", async () => {

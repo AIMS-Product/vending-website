@@ -4,6 +4,7 @@ import { VP_SESSION_COOKIE_NAME } from "@/lib/attribution-session";
 import { config } from "@/lib/config";
 import { checkPublicRateLimit, requestIp } from "@/lib/public-rate-limit";
 import { channelFromAttributionSignals } from "@/lib/paid-attribution";
+import { recordPopupEvent } from "@/lib/services/popups";
 
 const attributionEventSchema = z.object({
   event_type: z.enum(ATTRIBUTION_EVENT_TYPES),
@@ -32,6 +33,18 @@ export async function POST(request: Request) {
     ip: requestIp(request.headers),
   });
   if (!allowed) return tooManyEventsResponse();
+
+  // The money-page forward has no queryable readback, so popup events are
+  // also counted locally for the /admin/popups stat tiles. Best-effort:
+  // recordPopupEvent never throws and never blocks the forward.
+  const popupId = stringProperty(payload.properties, "popup_id");
+  if (payload.event_type.startsWith("popup_") && popupId) {
+    await recordPopupEvent({
+      eventType: payload.event_type,
+      popupId,
+      pagePath: stringProperty(payload.properties, "page_path") || null,
+    });
+  }
 
   const destination = moneyPageDestination();
   if (!destination) return attributionResponse(false);

@@ -7,6 +7,7 @@ import { TrackingScripts } from "@/components/tracking/TrackingScripts";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { SitePopup } from "@/components/site/SitePopup";
+import { loadSitePopups } from "@/lib/services/popups";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -39,11 +40,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Cached (5 min, tag "site-popups") and falls back to the static array on
+  // any DB failure, so this fetch cannot slow or break public pages.
+  const popups = await loadSitePopups();
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
@@ -56,7 +60,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <AttributionSessionTracker />
-        <SitePopup />
+        <SitePopup popups={popups} />
         <TrackingScripts />
         <Analytics />
         <SpeedInsights />

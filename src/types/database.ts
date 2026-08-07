@@ -1365,6 +1365,108 @@ export type Database = {
         };
         Relationships: [];
       };
+      popups: {
+        Row: {
+          accent_color: string | null;
+          body: string;
+          created_at: string;
+          created_by: string | null;
+          dismiss_text: string | null;
+          eyebrow: string | null;
+          featured_value_label: string | null;
+          featured_value_note: string | null;
+          featured_value_value: string | null;
+          frequency: string;
+          headline: string;
+          id: string;
+          offer_code: string | null;
+          primary_cta_href: string;
+          primary_cta_label: string;
+          secondary_cta_href: string | null;
+          secondary_cta_label: string | null;
+          status: string;
+          target_url_patterns: string[];
+          trigger: string;
+          trigger_threshold: number | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          accent_color?: string | null;
+          body: string;
+          created_at?: string;
+          created_by?: string | null;
+          dismiss_text?: string | null;
+          eyebrow?: string | null;
+          featured_value_label?: string | null;
+          featured_value_note?: string | null;
+          featured_value_value?: string | null;
+          frequency?: string;
+          headline: string;
+          id?: string;
+          offer_code?: string | null;
+          primary_cta_href: string;
+          primary_cta_label: string;
+          secondary_cta_href?: string | null;
+          secondary_cta_label?: string | null;
+          status?: string;
+          target_url_patterns?: string[];
+          trigger: string;
+          trigger_threshold?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          accent_color?: string | null;
+          body?: string;
+          created_at?: string;
+          created_by?: string | null;
+          dismiss_text?: string | null;
+          eyebrow?: string | null;
+          featured_value_label?: string | null;
+          featured_value_note?: string | null;
+          featured_value_value?: string | null;
+          frequency?: string;
+          headline?: string;
+          id?: string;
+          offer_code?: string | null;
+          primary_cta_href?: string;
+          primary_cta_label?: string;
+          secondary_cta_href?: string | null;
+          secondary_cta_label?: string | null;
+          status?: string;
+          target_url_patterns?: string[];
+          trigger?: string;
+          trigger_threshold?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      popup_events: {
+        Row: {
+          event_type: string;
+          id: number;
+          occurred_at: string;
+          page_path: string | null;
+          popup_id: string;
+        };
+        Insert: {
+          event_type: string;
+          id?: number;
+          occurred_at?: string;
+          page_path?: string | null;
+          popup_id: string;
+        };
+        Update: {
+          event_type?: string;
+          id?: number;
+          occurred_at?: string;
+          page_path?: string | null;
+          popup_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       published_seo_pages: {
