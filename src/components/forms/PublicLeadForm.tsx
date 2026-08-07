@@ -18,6 +18,7 @@ import {
   parseAttributionSession,
   VP_ATTRIBUTION_STORAGE_KEY,
 } from "@/lib/attribution-session";
+import { emitPopupConversionIfAttributed } from "@/lib/attribution-client";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import {
   buildCalendlyBookingUrl,
@@ -239,6 +240,9 @@ export function PublicLeadForm({
     if (stage1TrackedRef.current === state) return;
     stage1TrackedRef.current = state;
     if (state.status === "success") {
+      // Credits the popup whose CTA drove this visit (no-op otherwise);
+      // feeds the Converted tile in /admin/popups.
+      emitPopupConversionIfAttributed({ lead_intent: intent });
       pushDataLayerEvent(
         leadSubmitEvent(attribution, intent, 1, {
           leadEmail: submittedValues.email ?? "",

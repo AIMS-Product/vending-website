@@ -9,9 +9,9 @@ import {
  * browser emitters (tracker, popups) and the route's zod schema, so a new
  * event type cannot be emitted without the route accepting it.
  *
- * `popup_converted` is accepted but not yet emitted anywhere: popup CTAs land
- * on funnel pages whose own events (form_started, lead capture) mark the
- * conversion, joined downstream by vp_session_id.
+ * `popup_converted` fires when a lead form succeeds in a tab whose visit was
+ * driven by a popup CTA click (marker below) — that is what feeds the
+ * "Converted" stat tile in /admin/popups.
  */
 export const ATTRIBUTION_EVENT_TYPES = [
   "landing_viewed",
@@ -72,6 +72,48 @@ export function emitAttributionEvent(
     body,
     keepalive: true,
   }).catch(() => undefined);
+}
+
+const VP_POPUP_ATTRIBUTION_KEY = "vp_popup_cta";
+
+/** Called by SitePopup when a visitor clicks a popup CTA (never in preview). */
+export function markPopupCtaClicked(popupId: string) {
+  try {
+    window.sessionStorage.setItem(
+      VP_POPUP_ATTRIBUTION_KEY,
+      JSON.stringify({ popup_id: popupId }),
+    );
+  } catch {
+    // Storage unavailable — the conversion just won't attribute.
+  }
+}
+
+/**
+ * Emits `popup_converted` once if this tab's lead submission was driven by a
+ * popup CTA, then clears the marker so one click never counts twice.
+ * ponytail: sessionStorage = same-tab attribution window; a visitor who
+ * returns in a new tab converts unattributed. Move to localStorage + TTL if
+ * that gap matters.
+ */
+export function emitPopupConversionIfAttributed(
+  properties: Record<string, string | undefined> = {},
+) {
+  try {
+    const raw = window.sessionStorage.getItem(VP_POPUP_ATTRIBUTION_KEY);
+    if (!raw) return;
+    window.sessionStorage.removeItem(VP_POPUP_ATTRIBUTION_KEY);
+    const popupId: unknown = JSON.parse(raw)?.popup_id;
+    if (typeof popupId !== "string" || !popupId) return;
+    const session = readStoredAttributionSession();
+    if (!session) return;
+    emitAttributionEvent("popup_converted", session, {
+      popup_id: popupId,
+      page_path: window.location.pathname,
+      ...properties,
+    });
+  } catch {
+    // Attribution is best-effort; never break the form's success path.
+  }
 }
 
 function sessionProperties(session: AttributionSession) {

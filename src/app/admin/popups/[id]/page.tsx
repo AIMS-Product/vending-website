@@ -26,7 +26,9 @@ export default async function EditPopupPage({
 }) {
   const [{ user, role }, { id }] = await Promise.all([requireAdmin(), params]);
   const [entry, totalsMap] = await Promise.all([
-    adminGetPopup(id),
+    // A load failure (e.g. table not provisioned yet) reads as "no such
+    // popup" rather than a hard error page.
+    adminGetPopup(id).catch(() => null),
     adminPopupEventTotals().catch(() => null),
   ]);
   if (!entry) notFound();

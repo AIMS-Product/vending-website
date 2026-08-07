@@ -20,6 +20,7 @@ import {
 } from "@/lib/content/popups";
 import {
   emitAttributionEvent,
+  markPopupCtaClicked,
   readStoredAttributionSession,
 } from "@/lib/attribution-client";
 
@@ -172,11 +173,14 @@ export function SitePopup({ popups = POPUPS }: { popups?: Popup[] }) {
     setVisible(null);
   };
   const ctaClicked = (role: "primary" | "secondary", href: string) => {
-    if (!previewRef.current)
+    if (!previewRef.current) {
       emitPopupEvent("popup_cta_clicked", visible, {
         cta_role: role,
         cta_href: href,
       });
+      // If this visit ends in a lead submit, the form emits popup_converted.
+      markPopupCtaClicked(visible.id);
+    }
     setVisible(null);
   };
   return (

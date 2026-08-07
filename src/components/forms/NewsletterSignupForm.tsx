@@ -14,6 +14,7 @@ import {
   NEWSLETTER_QUESTION_IDS,
   NEWSLETTER_SMS_CONSENT_LABEL,
 } from "@/lib/content/newsletter";
+import { emitPopupConversionIfAttributed } from "@/lib/attribution-client";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import {
   formStartEvent,
@@ -72,6 +73,8 @@ export function NewsletterSignupForm({
 
   useEffect(() => {
     if (state.status === "success") {
+      // Stage 1 writes the lead row, so a popup-driven signup converts here.
+      emitPopupConversionIfAttributed({ lead_intent: "newsletter" });
       pushDataLayerEvent(
         leadSubmitEvent(attribution, "qualification", 1, {
           leadEmail: stringValue(submitted.email),
