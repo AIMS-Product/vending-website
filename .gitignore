@@ -45,3 +45,6 @@ next-env.d.ts
 reports/ux-persona-review*/screenshots/
 reports/ux-persona-review*/text/
 reports/ux-persona-review/ux-review.html
+
+# Playwright MCP tool output — console logs and page dumps, always local
+.playwright-mcp/
