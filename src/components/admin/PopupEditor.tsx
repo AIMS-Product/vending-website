@@ -141,262 +141,266 @@ export function PopupEditor({ entry }: { entry: AdminPopup }) {
 
   return (
     <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,26rem)]">
-      <form action={saveAction} className={`${adminPanelClass} min-w-0`}>
-        <input type="hidden" name="id" value={entry.id} />
-        <input type="hidden" name="status" value={values.status} />
+      {/* Delete is a separate sibling form below — a form nested inside the
+          editor form is invalid HTML and breaks hydration + submission. */}
+      <div className={`${adminPanelClass} min-w-0`}>
+        <form action={saveAction}>
+          <input type="hidden" name="id" value={entry.id} />
+          <input type="hidden" name="status" value={values.status} />
 
-        <div className="border-ui-line border-b p-4">
-          <h2 className={adminSectionTitleClass}>Status</h2>
-          <div
-            className="border-ui-line-strong mt-2 inline-flex overflow-hidden rounded-md border"
-            role="group"
-            aria-label="Popup status"
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() =>
-                  setValues((prev) => ({ ...prev, status: option.value }))
-                }
-                aria-pressed={values.status === option.value}
-                title={option.hint}
-                className={`px-3 py-1.5 text-sm font-medium transition ${
-                  values.status === option.value
-                    ? "bg-ui-accent text-white"
-                    : "text-ui-text-muted hover:bg-ui-canvas bg-white"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-          <p className="text-ui-text-subtle mt-1.5 text-xs">
-            {STATUS_OPTIONS.find((option) => option.value === values.status)
-              ?.hint ?? ""}
-            {values.status === "active"
-              ? " Saving makes this popup visible to visitors within ~5 minutes."
-              : ""}
-          </p>
-        </div>
-
-        <div className="grid gap-4 p-4">
-          <h2 className={adminSectionTitleClass}>Content</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className={adminLabelClass}>
-              Eyebrow <span className="text-ui-text-subtle">(optional)</span>
-              <input
-                name="eyebrow"
-                value={values.eyebrow}
-                onChange={set("eyebrow")}
-                placeholder="Before you go"
-                className={adminInputClass}
-              />
-            </label>
-            <label className={adminLabelClass}>
-              Accent colour{" "}
-              <span className="text-ui-text-subtle">(optional hex)</span>
-              <input
-                name="accentColor"
-                value={values.accentColor}
-                onChange={set("accentColor")}
-                placeholder="#f47b3b"
-                className={adminInputClass}
-              />
-            </label>
-          </div>
-          <label className={adminLabelClass}>
-            Headline
-            <input
-              name="headline"
-              required
-              value={values.headline}
-              onChange={set("headline")}
-              className={adminInputClass}
-            />
-          </label>
-          <label className={adminLabelClass}>
-            Body copy
-            <textarea
-              name="body"
-              required
-              rows={3}
-              value={values.body}
-              onChange={set("body")}
-              className={adminTextareaClass}
-            />
-          </label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className={adminLabelClass}>
-              Offer code <span className="text-ui-text-subtle">(optional)</span>
-              <input
-                name="offerCode"
-                value={values.offerCode}
-                onChange={set("offerCode")}
-                placeholder="VENDING50"
-                className={adminInputClass}
-              />
-            </label>
-            <label className={adminLabelClass}>
-              Dismiss link text{" "}
-              <span className="text-ui-text-subtle">(optional)</span>
-              <input
-                name="dismissText"
-                value={values.dismissText}
-                onChange={set("dismissText")}
-                placeholder="No thanks, I'm just browsing"
-                className={adminInputClass}
-              />
-            </label>
+          <div className="border-ui-line border-b p-4">
+            <h2 className={adminSectionTitleClass}>Status</h2>
+            <div
+              className="border-ui-line-strong mt-2 inline-flex overflow-hidden rounded-md border"
+              role="group"
+              aria-label="Popup status"
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() =>
+                    setValues((prev) => ({ ...prev, status: option.value }))
+                  }
+                  aria-pressed={values.status === option.value}
+                  title={option.hint}
+                  className={`px-3 py-1.5 text-sm font-medium transition ${
+                    values.status === option.value
+                      ? "bg-ui-accent text-white"
+                      : "text-ui-text-muted hover:bg-ui-canvas bg-white"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-ui-text-subtle mt-1.5 text-xs">
+              {STATUS_OPTIONS.find((option) => option.value === values.status)
+                ?.hint ?? ""}
+              {values.status === "active"
+                ? " Saving makes this popup visible to visitors within ~5 minutes."
+                : ""}
+            </p>
           </div>
 
-          <h2 className={`${adminSectionTitleClass} mt-2`}>Buttons</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-4 p-4">
+            <h2 className={adminSectionTitleClass}>Content</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className={adminLabelClass}>
+                Eyebrow <span className="text-ui-text-subtle">(optional)</span>
+                <input
+                  name="eyebrow"
+                  value={values.eyebrow}
+                  onChange={set("eyebrow")}
+                  placeholder="Before you go"
+                  className={adminInputClass}
+                />
+              </label>
+              <label className={adminLabelClass}>
+                Accent colour{" "}
+                <span className="text-ui-text-subtle">(optional hex)</span>
+                <input
+                  name="accentColor"
+                  value={values.accentColor}
+                  onChange={set("accentColor")}
+                  placeholder="#f47b3b"
+                  className={adminInputClass}
+                />
+              </label>
+            </div>
             <label className={adminLabelClass}>
-              Primary button label
+              Headline
               <input
-                name="primaryCtaLabel"
+                name="headline"
                 required
-                value={values.primaryCtaLabel}
-                onChange={set("primaryCtaLabel")}
+                value={values.headline}
+                onChange={set("headline")}
                 className={adminInputClass}
               />
             </label>
             <label className={adminLabelClass}>
-              Primary button link
-              <input
-                name="primaryCtaHref"
+              Body copy
+              <textarea
+                name="body"
                 required
-                value={values.primaryCtaHref}
-                onChange={set("primaryCtaHref")}
-                placeholder="/contact"
-                className={adminInputClass}
+                rows={3}
+                value={values.body}
+                onChange={set("body")}
+                className={adminTextareaClass}
               />
             </label>
-            <label className={adminLabelClass}>
-              Secondary label{" "}
-              <span className="text-ui-text-subtle">(optional)</span>
-              <input
-                name="secondaryCtaLabel"
-                value={values.secondaryCtaLabel}
-                onChange={set("secondaryCtaLabel")}
-                className={adminInputClass}
-              />
-            </label>
-            <label className={adminLabelClass}>
-              Secondary link{" "}
-              <span className="text-ui-text-subtle">(optional)</span>
-              <input
-                name="secondaryCtaHref"
-                value={values.secondaryCtaHref}
-                onChange={set("secondaryCtaHref")}
-                placeholder="/case-studies"
-                className={adminInputClass}
-              />
-            </label>
-          </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className={adminLabelClass}>
+                Offer code{" "}
+                <span className="text-ui-text-subtle">(optional)</span>
+                <input
+                  name="offerCode"
+                  value={values.offerCode}
+                  onChange={set("offerCode")}
+                  placeholder="VENDING50"
+                  className={adminInputClass}
+                />
+              </label>
+              <label className={adminLabelClass}>
+                Dismiss link text{" "}
+                <span className="text-ui-text-subtle">(optional)</span>
+                <input
+                  name="dismissText"
+                  value={values.dismissText}
+                  onChange={set("dismissText")}
+                  placeholder="No thanks, I'm just browsing"
+                  className={adminInputClass}
+                />
+              </label>
+            </div>
 
-          <h2 className={`${adminSectionTitleClass} mt-2`}>
-            Featured value card{" "}
-            <span className="text-ui-text-subtle font-normal">(optional)</span>
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <label className={adminLabelClass}>
-              Label
-              <input
-                name="featuredValueLabel"
-                value={values.featuredValueLabel}
-                onChange={set("featuredValueLabel")}
-                placeholder="Member average"
-                className={adminInputClass}
-              />
-            </label>
-            <label className={adminLabelClass}>
-              Value
-              <input
-                name="featuredValueValue"
-                value={values.featuredValueValue}
-                onChange={set("featuredValueValue")}
-                placeholder="$1,200/mo"
-                className={adminInputClass}
-              />
-            </label>
-            <label className={adminLabelClass}>
-              Note
-              <input
-                name="featuredValueNote"
-                value={values.featuredValueNote}
-                onChange={set("featuredValueNote")}
-                placeholder="per machine"
-                className={adminInputClass}
-              />
-            </label>
-          </div>
+            <h2 className={`${adminSectionTitleClass} mt-2`}>Buttons</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className={adminLabelClass}>
+                Primary button label
+                <input
+                  name="primaryCtaLabel"
+                  required
+                  value={values.primaryCtaLabel}
+                  onChange={set("primaryCtaLabel")}
+                  className={adminInputClass}
+                />
+              </label>
+              <label className={adminLabelClass}>
+                Primary button link
+                <input
+                  name="primaryCtaHref"
+                  required
+                  value={values.primaryCtaHref}
+                  onChange={set("primaryCtaHref")}
+                  placeholder="/contact"
+                  className={adminInputClass}
+                />
+              </label>
+              <label className={adminLabelClass}>
+                Secondary label{" "}
+                <span className="text-ui-text-subtle">(optional)</span>
+                <input
+                  name="secondaryCtaLabel"
+                  value={values.secondaryCtaLabel}
+                  onChange={set("secondaryCtaLabel")}
+                  className={adminInputClass}
+                />
+              </label>
+              <label className={adminLabelClass}>
+                Secondary link{" "}
+                <span className="text-ui-text-subtle">(optional)</span>
+                <input
+                  name="secondaryCtaHref"
+                  value={values.secondaryCtaHref}
+                  onChange={set("secondaryCtaHref")}
+                  placeholder="/case-studies"
+                  className={adminInputClass}
+                />
+              </label>
+            </div>
 
-          <h2 className={`${adminSectionTitleClass} mt-2`}>Delivery</h2>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <label className={adminLabelClass}>
-              Shows when
-              <select
-                name="trigger"
-                value={values.trigger}
-                onChange={set("trigger")}
-                className={adminInputClass}
-              >
-                <option value="IMMEDIATE">Immediately</option>
-                <option value="TIME_ON_PAGE">After time on page</option>
-                <option value="SCROLL_DEPTH">At scroll depth</option>
-                <option value="IDLE_TIME">After idle time</option>
-                <option value="EXIT_INTENT">On exit intent</option>
-              </select>
-            </label>
-            <label className={adminLabelClass}>
-              Threshold
-              <input
-                name="triggerThreshold"
-                inputMode="numeric"
-                value={values.triggerThreshold}
-                onChange={set("triggerThreshold")}
-                placeholder={values.trigger === "SCROLL_DEPTH" ? "50" : "10"}
-                className={adminInputClass}
-              />
-              <span className="text-ui-text-subtle mt-1 block text-xs font-normal">
-                {thresholdHint}
+            <h2 className={`${adminSectionTitleClass} mt-2`}>
+              Featured value card{" "}
+              <span className="text-ui-text-subtle font-normal">
+                (optional)
               </span>
-            </label>
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className={adminLabelClass}>
+                Label
+                <input
+                  name="featuredValueLabel"
+                  value={values.featuredValueLabel}
+                  onChange={set("featuredValueLabel")}
+                  placeholder="Member average"
+                  className={adminInputClass}
+                />
+              </label>
+              <label className={adminLabelClass}>
+                Value
+                <input
+                  name="featuredValueValue"
+                  value={values.featuredValueValue}
+                  onChange={set("featuredValueValue")}
+                  placeholder="$1,200/mo"
+                  className={adminInputClass}
+                />
+              </label>
+              <label className={adminLabelClass}>
+                Note
+                <input
+                  name="featuredValueNote"
+                  value={values.featuredValueNote}
+                  onChange={set("featuredValueNote")}
+                  placeholder="per machine"
+                  className={adminInputClass}
+                />
+              </label>
+            </div>
+
+            <h2 className={`${adminSectionTitleClass} mt-2`}>Delivery</h2>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className={adminLabelClass}>
+                Shows when
+                <select
+                  name="trigger"
+                  value={values.trigger}
+                  onChange={set("trigger")}
+                  className={adminInputClass}
+                >
+                  <option value="IMMEDIATE">Immediately</option>
+                  <option value="TIME_ON_PAGE">After time on page</option>
+                  <option value="SCROLL_DEPTH">At scroll depth</option>
+                  <option value="IDLE_TIME">After idle time</option>
+                  <option value="EXIT_INTENT">On exit intent</option>
+                </select>
+              </label>
+              <label className={adminLabelClass}>
+                Threshold
+                <input
+                  name="triggerThreshold"
+                  inputMode="numeric"
+                  value={values.triggerThreshold}
+                  onChange={set("triggerThreshold")}
+                  placeholder={values.trigger === "SCROLL_DEPTH" ? "50" : "10"}
+                  className={adminInputClass}
+                />
+                <span className="text-ui-text-subtle mt-1 block text-xs font-normal">
+                  {thresholdHint}
+                </span>
+              </label>
+              <label className={adminLabelClass}>
+                Frequency
+                <select
+                  name="frequency"
+                  value={values.frequency}
+                  onChange={set("frequency")}
+                  className={adminInputClass}
+                >
+                  <option value="session">Once per session</option>
+                  <option value="once_per_day">Once per day</option>
+                  <option value="always">Every visit</option>
+                </select>
+              </label>
+            </div>
             <label className={adminLabelClass}>
-              Frequency
-              <select
-                name="frequency"
-                value={values.frequency}
-                onChange={set("frequency")}
-                className={adminInputClass}
-              >
-                <option value="session">Once per session</option>
-                <option value="once_per_day">Once per day</option>
-                <option value="always">Every visit</option>
-              </select>
+              Show on pages containing{" "}
+              <span className="text-ui-text-subtle">
+                (one per line, empty = every page)
+              </span>
+              <textarea
+                name="targetUrlPatterns"
+                rows={2}
+                value={values.targetUrlPatterns}
+                onChange={set("targetUrlPatterns")}
+                placeholder="/case-studies"
+                className={adminTextareaClass}
+              />
             </label>
           </div>
-          <label className={adminLabelClass}>
-            Show on pages containing{" "}
-            <span className="text-ui-text-subtle">
-              (one per line, empty = every page)
-            </span>
-            <textarea
-              name="targetUrlPatterns"
-              rows={2}
-              value={values.targetUrlPatterns}
-              onChange={set("targetUrlPatterns")}
-              placeholder="/case-studies"
-              className={adminTextareaClass}
-            />
-          </label>
-        </div>
 
-        <div className="border-ui-line flex flex-wrap items-center justify-between gap-3 border-t p-4">
-          <DeletePopupControl popupId={entry.id} />
-          <div className="flex items-center gap-3">
+          <div className="border-ui-line flex flex-wrap items-center justify-end gap-3 border-t p-4">
             {saveState.status !== "idle" ? (
               <p
                 className={`text-xs font-medium ${
@@ -412,8 +416,11 @@ export function PopupEditor({ entry }: { entry: AdminPopup }) {
             ) : null}
             <SaveButton />
           </div>
+        </form>
+        <div className="border-ui-line flex items-center justify-between gap-3 border-t p-4">
+          <DeletePopupControl popupId={entry.id} />
         </div>
-      </form>
+      </div>
 
       <aside
         className={`${adminPanelClass} lg:sticky lg:top-4`}
