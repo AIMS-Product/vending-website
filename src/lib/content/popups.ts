@@ -29,7 +29,8 @@ export interface Popup {
   trigger: PopupTrigger;
   /** Seconds for TIME_ON_PAGE/IDLE_TIME, percent for SCROLL_DEPTH, unused otherwise. */
   triggerThreshold: number | null;
-  /** Path substrings; empty = every page. `/admin` is always excluded. */
+  /** Path substrings; empty = every page. Admin and conversion surfaces
+   *  (contact, booking, qualify, newsletter, thank-you) are always excluded. */
   targetUrlPatterns: string[];
   frequency: PopupFrequency;
   eyebrow: string | null;
@@ -212,8 +213,30 @@ export const POPUP_TEMPLATES: PopupTemplate[] = [
   },
 ];
 
+/**
+ * Conversion surfaces where a popup can never show, regardless of targeting
+ * (Adam, 2026-08-07): a visitor mid-form or mid-booking must not be
+ * interrupted by another CTA. Plain prefix match — "/book" covers
+ * /booking-* and /book-my-advisory-call-*, "/schedule" the
+ * schedule-your-call-* pages, "/thank-you" both thank-you routes.
+ */
+const POPUP_EXCLUDED_PATH_PREFIXES = [
+  "/admin",
+  "/apply",
+  "/book",
+  "/contact",
+  "/newsletter",
+  "/qualify",
+  "/schedule",
+  "/thank-you",
+];
+
 export function popupMatchesPath(popup: Popup, pathname: string): boolean {
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) return false;
+  if (
+    POPUP_EXCLUDED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  ) {
+    return false;
+  }
   if (popup.targetUrlPatterns.length === 0) return true;
   return popup.targetUrlPatterns.some((pattern) => pathname.includes(pattern));
 }

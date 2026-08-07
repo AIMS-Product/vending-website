@@ -170,6 +170,29 @@ describe("pickPopup URL targeting", () => {
     expect(pickPopup("/admin/popups", [everywhere])).toBeNull();
   });
 
+  it("never shows on conversion surfaces, even when explicitly targeted", () => {
+    const everywhere = popup({ id: "everywhere" });
+    for (const path of [
+      "/contact",
+      "/thank-you",
+      "/thank-you-for-applying",
+      "/qualify/session-token",
+      "/newsletter",
+      "/booking-meta",
+      "/book-my-advisory-call-l1-topcl",
+      "/schedule-your-call-ig",
+      "/apply",
+    ]) {
+      expect(pickPopup(path, [everywhere])).toBeNull();
+      // Explicit targeting cannot override the exclusion.
+      const targetedAtFunnel = popup({
+        id: "targeted-funnel",
+        targetUrlPatterns: [path],
+      });
+      expect(pickPopup(path, [targetedAtFunnel])).toBeNull();
+    }
+  });
+
   it("skips inactive popups unless previewing", () => {
     const inactive = popup({ id: "inactive", active: false });
     expect(pickPopup("/", [inactive])).toBeNull();
