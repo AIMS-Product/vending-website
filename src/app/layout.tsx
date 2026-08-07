@@ -6,6 +6,7 @@ import { AttributionSessionTracker } from "@/components/attribution/AttributionS
 import { TrackingScripts } from "@/components/tracking/TrackingScripts";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { SitePopup } from "@/components/site/SitePopup";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -55,6 +56,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <AttributionSessionTracker />
+        <SitePopup />
         <TrackingScripts />
         <Analytics />
         <SpeedInsights />

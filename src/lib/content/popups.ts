@@ -1,0 +1,138 @@
+/**
+ * Per-page popup campaigns, held as typed data (repo rule: all visible copy
+ * lives in `src/lib/content/`). One `Popup` shape is consumed by the live
+ * renderer (`SitePopup`), and later by the admin preview and template seeds —
+ * never a second rendering codepath.
+ *
+ * Every optional field is nullable and presence-gated in the renderer, which
+ * is what lets one card component cover every page's popup without variants.
+ */
+
+export type PopupTrigger =
+  | "IMMEDIATE"
+  | "TIME_ON_PAGE"
+  | "SCROLL_DEPTH"
+  | "IDLE_TIME"
+  | "EXIT_INTENT";
+
+export type PopupFrequency = "session" | "once_per_day" | "always";
+
+export interface PopupCta {
+  label: string;
+  href: string;
+}
+
+export interface Popup {
+  id: string;
+  /** Inactive popups never render for visitors; `?vppopup=preview` still shows them. */
+  active: boolean;
+  trigger: PopupTrigger;
+  /** Seconds for TIME_ON_PAGE/IDLE_TIME, percent for SCROLL_DEPTH, unused otherwise. */
+  triggerThreshold: number | null;
+  /** Path substrings; empty = every page. `/admin` is always excluded. */
+  targetUrlPatterns: string[];
+  frequency: PopupFrequency;
+  eyebrow: string | null;
+  headline: string;
+  body: string;
+  primaryCta: PopupCta;
+  secondaryCta: PopupCta | null;
+  featuredValue: { label: string; value: string; note: string | null } | null;
+  offerCode: string | null;
+  dismissText: string | null;
+  /** Hex accent for the top gradient bar + primary CTA. null = brand orange, no bar. */
+  accentColor: string | null;
+}
+
+// Both entries ship inactive: flip `active` after copy review. Verify with
+// `?vppopup=preview` (shows inactive popups, ignores frequency + targeting).
+export const POPUPS: Popup[] = [
+  {
+    id: "exit-apply",
+    active: false,
+    trigger: "EXIT_INTENT",
+    triggerThreshold: null,
+    targetUrlPatterns: [],
+    frequency: "once_per_day",
+    eyebrow: "Before you go",
+    headline: "Not sure where to start with vending?",
+    body: "See how Vendingpreneurs members find locations, place machines, and build monthly income — no experience required.",
+    primaryCta: { label: "Watch the free training", href: "/contact" },
+    secondaryCta: { label: "See member case studies", href: "/case-studies" },
+    featuredValue: null,
+    offerCode: null,
+    dismissText: "No thanks, I'm just browsing",
+    accentColor: null,
+  },
+  {
+    id: "case-studies-resources",
+    active: false,
+    trigger: "SCROLL_DEPTH",
+    triggerThreshold: 50,
+    targetUrlPatterns: ["/case-studies"],
+    frequency: "session",
+    eyebrow: null,
+    headline: "Get the free vending business roadmap",
+    body: "A step-by-step launch checklist covering machines, locations, and your first 90 days.",
+    primaryCta: { label: "Grab the roadmap", href: "/resources" },
+    secondaryCta: null,
+    featuredValue: null,
+    offerCode: null,
+    dismissText: "Maybe later",
+    accentColor: null,
+  },
+];
+
+export function popupMatchesPath(popup: Popup, pathname: string): boolean {
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return false;
+  if (popup.targetUrlPatterns.length === 0) return true;
+  return popup.targetUrlPatterns.some((pattern) => pathname.includes(pattern));
+}
+
+export function pickPopup(
+  pathname: string,
+  popups: Popup[] = POPUPS,
+  { preview = false }: { preview?: boolean } = {},
+): Popup | null {
+  return (
+    popups.find(
+      (popup) => (popup.active || preview) && popupMatchesPath(popup, pathname),
+    ) ?? null
+  );
+}
+
+export function popupFrequencyKey(id: string): string {
+  return `vp_popup_shown:${id}`;
+}
+
+const ONE_DAY_MS = 86_400_000;
+
+/**
+ * Storage-agnostic dedup check. `read` is backed by sessionStorage for
+ * `session` popups and localStorage (storing a ms timestamp) for
+ * `once_per_day`; passing a reader keeps this testable without a DOM.
+ */
+export function isFrequencyCapped(
+  popup: Popup,
+  read: (key: string) => string | null,
+  now: number,
+): boolean {
+  if (popup.frequency === "always") return false;
+  const raw = read(popupFrequencyKey(popup.id));
+  if (!raw) return false;
+  if (popup.frequency === "session") return true;
+  const shownAt = Number(raw);
+  return Number.isFinite(shownAt) && now - shownAt < ONE_DAY_MS;
+}
+
+const SAFE_PROTOCOLS = new Set(["http:", "https:", "mailto:", "tel:"]);
+
+/** Allowlist CTA targets — never hand raw config to navigation. */
+export function safePopupHref(href: string): string | null {
+  if (href.startsWith("/") && !href.startsWith("//")) return href;
+  try {
+    return SAFE_PROTOCOLS.has(new URL(href).protocol) ? href : null;
+  } catch {
+    return null;
+  }
+}
