@@ -38,14 +38,16 @@ function utmPairs(attribution: LeadAttribution): Array<[string, string]> {
  */
 export function buildCalendlySrc(
   url: string,
-  attribution: LeadAttribution,
+  attribution?: LeadAttribution,
 ): string {
   const target = new URL(url);
   target.searchParams.set("embed_domain", EMBED_DOMAIN);
   target.searchParams.set("embed_type", "Inline");
   target.searchParams.set("hide_gdpr_banner", "1");
-  for (const [key, value] of utmPairs(attribution)) {
-    target.searchParams.set(key, value);
+  if (attribution) {
+    for (const [key, value] of utmPairs(attribution)) {
+      target.searchParams.set(key, value);
+    }
   }
   return target.toString();
 }

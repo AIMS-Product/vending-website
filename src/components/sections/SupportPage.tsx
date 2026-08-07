@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
@@ -9,8 +10,10 @@ type SupportPageCta = {
 type SupportPageProps = {
   eyebrow: string;
   title: string;
-  body: string;
+  body?: string;
   items?: string[];
+  /** Inline widget (e.g. a Calendly scheduler) rendered in place of body copy + CTA. */
+  embed?: ReactNode;
   cta?: SupportPageCta;
   /** Lead-in text shown just before the secondary CTA link. */
   secondaryNote?: string;
@@ -24,6 +27,7 @@ export function SupportPage({
   title,
   body,
   items,
+  embed,
   cta,
   secondaryNote,
   secondaryCta,
@@ -38,9 +42,12 @@ export function SupportPage({
         <h1 className="mt-8 text-[clamp(3rem,6vw,5.5rem)] leading-[0.95] font-black text-[#111111] uppercase">
           {title}
         </h1>
-        <p className="mt-7 text-xl leading-8 font-semibold text-slate-700">
-          {body}
-        </p>
+        {body && (
+          <p className="mt-7 text-xl leading-8 font-semibold text-slate-700">
+            {body}
+          </p>
+        )}
+        {embed && <div className="mt-10">{embed}</div>}
         {items && items.length > 0 && (
           <ul className="mt-10 grid gap-4">
             {items.map((item) => (

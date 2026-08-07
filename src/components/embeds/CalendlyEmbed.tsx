@@ -3,7 +3,8 @@ import type { LeadAttribution } from "@/lib/lead-attribution";
 
 type CalendlyEmbedProps = {
   url: string;
-  attribution: LeadAttribution;
+  /** Omit on surfaces with no lead/session context (e.g. /thank-you). */
+  attribution?: LeadAttribution;
   title?: string;
 };
 

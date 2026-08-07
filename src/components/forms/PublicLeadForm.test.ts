@@ -361,11 +361,13 @@ describe("PublicLeadForm", () => {
     );
 
     expect(html).not.toContain("<form");
-    expect(html).toContain("You&#x27;re a perfect fit for vending.");
     expect(html).toContain('data-qualification-state="perfect_fit"');
     expect(html).toContain('data-qualification-score="100"');
-    expect(html).toContain("Book my call");
-    expect(html).toMatch(/href="https:\/\/calendly\.com\/[^"]+"/);
+    // Call-worthy bands book inline (per Kody, 2026-08-07): the band's
+    // calendar replaces the fit message, so the visitor books in place.
+    expect(html).not.toContain("You&#x27;re a perfect fit for vending.");
+    expect(html).toMatch(/<iframe[^>]+src="https:\/\/calendly\.com\/[^"]+"/);
+    expect(html).toContain("embed_type=Inline");
     // Perfect fit books the Lane 1 top-closer consultation.
     expect(html).toContain("cvr6-cfd-zgd/vendingpreneurs-consultation-call");
   });

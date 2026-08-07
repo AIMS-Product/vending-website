@@ -18,6 +18,7 @@ import {
   parseAttributionSession,
   VP_ATTRIBUTION_STORAGE_KEY,
 } from "@/lib/attribution-session";
+import { CalendlyEmbed } from "@/components/embeds/CalendlyEmbed";
 import { emitPopupConversionIfAttributed } from "@/lib/attribution-client";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import {
@@ -944,6 +945,32 @@ function FitResultPanel({
       ? buildCalendlyBookingUrl(href, { name, email, attribution })
       : href;
   const primaryHref = resolveHref(THANK_YOU_LINKS[links.primary]);
+
+  // The three call-worthy bands skip the fit message and put the band's
+  // calendar straight in view (per Kody, 2026-08-07): the visitor books
+  // without leaving the page. name/email are prefilled via primaryHref and
+  // CalendlyEmbed appends UTM attribution, so the booking webhook still joins
+  // back to the lead. Disqualified leads keep the roadmap downsell below.
+  if (state !== "not_right_time" && isCalendlyUrl(primaryHref)) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        data-qualification-state={state}
+        data-qualification-score={score}
+        className="grid gap-4"
+      >
+        <p className="inline-flex w-fit rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
+          {content.label} — pick a time below
+        </p>
+        <CalendlyEmbed
+          url={primaryHref}
+          attribution={attribution}
+          title={content.cta}
+        />
+      </div>
+    );
+  }
   const secondaryHref =
     content.secondaryCta && links.secondary
       ? resolveHref(THANK_YOU_LINKS[links.secondary])

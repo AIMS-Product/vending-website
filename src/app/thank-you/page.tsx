@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CalendlyEmbed } from "@/components/embeds/CalendlyEmbed";
 import { SupportPage } from "@/components/sections/SupportPage";
 import {
   THANK_YOU_STATES,
@@ -60,16 +61,29 @@ export default async function ThankYouPage({
 
   const state = THANK_YOU_STATES[stateKey];
   const links = THANK_YOU_STATE_LINKS[stateKey];
+  // The three call-worthy bands put their band's calendar straight in view in
+  // place of the fit message + CTA button (per Kody, 2026-08-07). No lead
+  // context exists on this redirect surface, so the embed carries no prefill.
+  const bookInline = stateKey !== "not_right_time";
 
   return (
     <SupportPage
       eyebrow={state.label}
       title={state.headline}
-      body={state.body}
-      cta={{
-        label: state.cta,
-        href: THANK_YOU_LINKS[links.primary],
-      }}
+      body={bookInline ? undefined : state.body}
+      embed={
+        bookInline ? (
+          <CalendlyEmbed url={THANK_YOU_LINKS[links.primary]} />
+        ) : undefined
+      }
+      cta={
+        bookInline
+          ? undefined
+          : {
+              label: state.cta,
+              href: THANK_YOU_LINKS[links.primary],
+            }
+      }
       secondaryNote={state.secondaryNote}
       secondaryCta={
         state.secondaryCta && links.secondary

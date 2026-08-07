@@ -13,18 +13,34 @@ async function renderPage(searchParams: Record<string, string>) {
 }
 
 describe("ThankYouPage", () => {
-  it.each([
-    ["not_right_time"] as const,
-    ["good_potential"] as const,
-    ["strong_fit"] as const,
-    ["perfect_fit"] as const,
-  ])("renders the %s state's headline and CTA", async (stateKey) => {
-    const html = await renderPage({ state: stateKey });
-    const state = THANK_YOU_STATES[stateKey];
+  it("renders not_right_time's headline and CTA button", async () => {
+    const html = await renderPage({ state: "not_right_time" });
+    const state = THANK_YOU_STATES.not_right_time;
 
     expect(html).toContain(state.headline);
     expect(html).toContain(state.cta);
   });
+
+  // The three call-worthy bands book inline: the band's Calendly calendar
+  // replaces the fit message and CTA button (per Kody, 2026-08-07).
+  it.each([
+    ["good_potential", "cvsd-wxt-cvb"] as const,
+    ["strong_fit", "cxfn-hh2-h8g"] as const,
+    ["perfect_fit", "cvr6-cfd-zgd"] as const,
+  ])(
+    "renders the %s state's headline with its inline calendar",
+    async (stateKey, calendlyId) => {
+      const html = await renderPage({ state: stateKey });
+      const state = THANK_YOU_STATES[stateKey];
+
+      expect(html).toContain(state.headline);
+      expect(html).toContain(`calendly.com/d/${calendlyId}`);
+      expect(html).toContain("embed_type=Inline");
+      // The old CTA button is gone — the calendar is the action.
+      expect(html).not.toContain(state.cta);
+      expect(html).not.toContain(state.body);
+    },
+  );
 
   it("falls back to good_potential when state is missing", async () => {
     const html = await renderPage({});
