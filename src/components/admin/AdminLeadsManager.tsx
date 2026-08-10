@@ -453,7 +453,17 @@ function LeadRow({ lead }: { lead: AdminLeadListItem }) {
       </td>
       <td className="px-3 py-2.5">
         <div className="grid justify-items-start gap-0.5">
-          <AdminStatusBadge status={lead.closeSyncStatus ?? "none"} />
+          <AdminStatusBadge
+            status={lead.closeSyncStatus ?? "none"}
+            // The row already carries the real error underneath, so this needs
+            // the plain-language label only — not CloseSyncStatusBadge's
+            // caption, which would say the same thing twice.
+            label={
+              lead.closeSyncStatus === "dead_letter"
+                ? "Permanently failed"
+                : undefined
+            }
+          />
           {lead.closeSyncLastError ? (
             <p className="text-ui-text-subtle max-w-48 truncate text-xs">
               {lead.closeSyncLastError}
