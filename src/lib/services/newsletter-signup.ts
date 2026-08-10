@@ -7,6 +7,7 @@ import {
   NEWSLETTER_PULL_OPTIONS,
   NEWSLETTER_QUESTION_IDS,
 } from "@/lib/content/newsletter";
+import { normalizePhone } from "@/lib/phone";
 import {
   createQualificationIntakeSession,
   QualificationIntakeValidationError,
@@ -224,11 +225,4 @@ function addUnknownOptions(
   if (values.some((value) => !allowed.has(value))) {
     errors[field] = ["Choose one of the available options."];
   }
-}
-
-function normalizePhone(value: string) {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length >= 11 && digits.length <= 15) return `+${digits}`;
-  return "";
 }

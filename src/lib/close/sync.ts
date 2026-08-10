@@ -10,6 +10,7 @@ import {
   jsonObjectAt as objectAt,
   jsonStringAt as stringAt,
 } from "@/lib/json-access";
+import { normalizePhone } from "@/lib/phone";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
 import {
@@ -880,7 +881,11 @@ function contactPayload(
   const contact = objectAt(event.payload, "contact");
   const fullName = stringAt(contact, "full_name") ?? lead?.full_name;
   const email = stringAt(contact, "email") ?? lead?.email;
-  const phone = stringAt(contact, "phone") ?? lead?.phone;
+  // Normalized here, at the one point both Close write paths pass through: the
+  // create payload below and the additive contact update in
+  // updateContactAdditively. An unparseable phone 400s the whole request, so it
+  // is dropped rather than forwarded.
+  const phone = normalizePhone(stringAt(contact, "phone") ?? lead?.phone ?? "");
   return {
     ...(fullName ? { name: fullName } : {}),
     ...(email ? { emails: [{ email, type: "direct" }] } : {}),

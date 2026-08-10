@@ -36,7 +36,7 @@ function makeLead(overrides: Partial<LeadRow> = {}): LeadRow {
     status: "received",
     full_name: "Jane Buyer",
     email: "buyer@example.com",
-    phone: "555-0101",
+    phone: "415-555-0101",
     city: null,
     state_region: null,
     business_stage: null,
@@ -96,7 +96,7 @@ function makeEvent(
       contact: {
         full_name: "Jane Buyer",
         email: "buyer@example.com",
-        phone: "555-0101",
+        phone: "415-555-0101",
       },
       qualification: {
         status: "qualification_pending",
@@ -404,7 +404,7 @@ describe("adminRunCloseSync", () => {
       jsonResponse({
         id: "cont_close_1",
         emails: [{ email: "buyer@example.com" }],
-        phones: [{ phone: "555-0101" }],
+        phones: [{ phone: "+14155550101" }],
       }),
     );
 
@@ -444,7 +444,7 @@ describe("adminRunCloseSync", () => {
             contact: {
               full_name: "Jane Buyer",
               email: "buyer@example.com",
-              phone: "555-0101",
+              phone: "415-555-0101",
             },
             attribution: {
               source_path: "/resources/start-vending",
@@ -472,7 +472,7 @@ describe("adminRunCloseSync", () => {
         jsonResponse({
           id: "cont_close_1",
           emails: [{ email: "buyer@example.com" }],
-          phones: [{ phone: "555-0101" }],
+          phones: [{ phone: "+14155550101" }],
         }),
       )
       .mockResolvedValueOnce(jsonResponse({ id: "cont_close_1" }))
@@ -543,7 +543,7 @@ describe("adminRunCloseSync", () => {
         jsonResponse({
           id: "cont_close_2",
           emails: [{ email: "buyer@example.com" }],
-          phones: [{ phone: "555-0999" }],
+          phones: [{ phone: "+14155550999" }],
         }),
       )
       .mockResolvedValueOnce(jsonResponse({ id: "cont_close_2" }));
@@ -614,12 +614,12 @@ describe("adminRunCloseSync", () => {
             contact: {
               full_name: "Attacker Name",
               email: "victim@example.com",
-              phone: "555-9999",
+              phone: "415-555-9999",
             },
           },
         }),
       ],
-      leads: [makeLead({ email: "victim@example.com", phone: "555-9999" })],
+      leads: [makeLead({ email: "victim@example.com", phone: "415-555-9999" })],
     });
     const fetchMock = vi
       .fn()
@@ -643,7 +643,7 @@ describe("adminRunCloseSync", () => {
           id: "cont_victim",
           name: "Real Customer",
           emails: [{ email: "victim@example.com", type: "office" }],
-          phones: [{ phone: "555-0100", type: "office" }],
+          phones: [{ phone: "+14155550100", type: "office" }],
         }),
       )
       .mockResolvedValueOnce(jsonResponse({ id: "cont_victim" }));
@@ -665,8 +665,8 @@ describe("adminRunCloseSync", () => {
     expect(update).not.toHaveProperty("name");
     // The real number survives and the submitted one is appended after it.
     expect(update.phones).toEqual([
-      { phone: "555-0100", type: "office" },
-      { phone: "555-9999", type: "direct" },
+      { phone: "+14155550100", type: "office" },
+      { phone: "+14155559999", type: "direct" },
     ]);
     // Nothing new to add, so the key is omitted and Close keeps its array.
     expect(update).not.toHaveProperty("emails");
@@ -710,10 +710,10 @@ describe("adminRunCloseSync", () => {
           ],
           phones: [
             {
-              phone: "555-0100",
+              phone: "+14155550100",
               type: "office",
               country: "US",
-              phone_formatted: "+1 555-0100",
+              phone_formatted: "+1 415-555-0100",
             },
           ],
         }),
@@ -734,8 +734,8 @@ describe("adminRunCloseSync", () => {
     // The submitted phone differs, so phones are rewritten — and the kept entry
     // must carry only what Close accepts on a write.
     expect(update.phones).toEqual([
-      { phone: "555-0100", type: "office" },
-      { phone: "555-0101", type: "direct" },
+      { phone: "+14155550100", type: "office" },
+      { phone: "+14155550101", type: "direct" },
     ]);
     // Emails are untouched here, but the same rule applies when they are not.
     expect(update).not.toHaveProperty("emails");
@@ -749,7 +749,7 @@ describe("adminRunCloseSync", () => {
             contact: {
               full_name: "Jane Buyer",
               email: "new@example.com",
-              phone: "555-0101",
+              phone: "415-555-0101",
             },
           },
         }),
@@ -776,7 +776,7 @@ describe("adminRunCloseSync", () => {
           emails: [
             { email: "old@example.com", type: "office", is_unsubscribed: true },
           ],
-          phones: [{ phone: "555-0101", type: "direct" }],
+          phones: [{ phone: "+14155550101", type: "direct" }],
         }),
       )
       .mockResolvedValueOnce(jsonResponse({ id: "cont_close_4" }));
@@ -826,7 +826,7 @@ describe("adminRunCloseSync", () => {
           // Same address in a different case — matching must be normalized, or
           // the address gets appended a second time.
           emails: [{ email: "Buyer@Example.com" }],
-          phones: [{ phone: "555-0101" }],
+          phones: [{ phone: "+14155550101" }],
         }),
       );
 
@@ -842,6 +842,55 @@ describe("adminRunCloseSync", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  // Production, 2026-08-06: two leads dead-lettered on
+  // `{"phones": {"1": {"phone": "Invalid phone number."}}}` and never reached
+  // Close at all. The form takes any text up to 60 characters as a phone, and
+  // these two people typed an email address and `1` into it. Close rejects what
+  // it cannot parse by failing the WHOLE write, so an unusable phone must be
+  // dropped before it is sent — the lead matters, the junk phone does not.
+  it.each(["tpeek@ryatech.us", "1", "  ", "abcdefghij"])(
+    "drops an unusable phone (%s) instead of losing the whole lead",
+    async (phone) => {
+      const fake = buildClient({
+        events: [
+          makeEvent({
+            payload: {
+              contact: {
+                full_name: "Jane Buyer",
+                email: "buyer@example.com",
+                phone,
+              },
+            },
+          }),
+        ],
+        leads: [makeLead({ phone })],
+      });
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse({ data: [] }))
+        .mockResolvedValueOnce(
+          jsonResponse({
+            id: "lead_created",
+            contacts: [{ id: "cont_created" }],
+          }),
+        );
+
+      const result = await adminRunCloseSync({
+        client: fake.client,
+        closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+        fetchImpl: fetchMock as unknown as typeof fetch,
+        now: () => new Date("2026-06-17T09:00:00.000Z"),
+      });
+
+      const created = JSON.parse(
+        fetchMock.mock.calls[1]?.[1]?.body as string,
+      ) as { contacts: Array<Record<string, unknown>> };
+      expect(created.contacts[0]).not.toHaveProperty("phones");
+      expect(created.contacts[0]).toHaveProperty("emails");
+      expect(result).toMatchObject({ synced: 1, deadLettered: 0, failed: 0 });
+    },
+  );
+
   it("creates a Close lead/contact when no existing match is found", async () => {
     const fake = buildClient({
       events: [
@@ -850,7 +899,7 @@ describe("adminRunCloseSync", () => {
             contact: {
               full_name: "Jane Buyer",
               email: "buyer@example.com",
-              phone: "555-0101",
+              phone: "415-555-0101",
             },
             attribution: {
               vp_session_id: "vp-session-1",
@@ -934,7 +983,7 @@ describe("adminRunCloseSync", () => {
           expect.objectContaining({
             name: "Jane Buyer",
             emails: [{ email: "buyer@example.com", type: "direct" }],
-            phones: [{ phone: "555-0101", type: "direct" }],
+            phones: [{ phone: "+14155550101", type: "direct" }],
           }),
         ],
       }),
