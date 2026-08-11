@@ -15,8 +15,9 @@ export const headerCta = { label: "Get Started", href: "/contact" } as const;
 //
 // "Resources" points at /news on Kody's 2026-08-10 instruction (he gave the
 // absolute https://www.vendingpreneurs.com/news; the internal path is the same
-// page and keeps client-side navigation). This leaves two nav entries aimed at
-// /news and orphans /pre-call-resources — raised with him, awaiting an answer.
+// page and keeps client-side navigation). He confirmed on 2026-08-11 that the
+// header keeping both Resources and News on /news is intended; /pre-call-
+// resources is re-linked from the footer as "Prepare for Your Call".
 export const primaryNav: ReadonlyArray<NavItem> = [
   { label: "About", href: "/about" },
   { label: "Resources", href: "/news" },
@@ -37,7 +38,9 @@ export const footerColumns: ReadonlyArray<{
   {
     items: [
       { label: "Case Studies", href: "/case-studies" },
-      { label: "News", href: "/news" },
+      // Kody, 2026-08-11: this footer slot becomes the way back to the
+      // pre-call resources page. He plans to build that page out further.
+      { label: "Prepare for Your Call", href: "/pre-call-resources" },
     ],
   },
   {

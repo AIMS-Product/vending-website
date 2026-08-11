@@ -7,7 +7,12 @@
 // Every visible string traces back to this module (page/component conventions).
 // Anthony copy is reproduced verbatim from Kody — do NOT reword.
 
-import { applyFaq, type RichSegment } from "@/lib/content/apply-page";
+import {
+  applyFaq,
+  applyHero,
+  applyVsl,
+  type RichSegment,
+} from "@/lib/content/apply-page";
 
 export type BookingPersona = "mike" | "anthony";
 
@@ -31,45 +36,6 @@ const LANE_1_GENERAL_CALENDLY =
 
 const bookingMetaDescription =
   "Book your free vending route call. Get a clear read on your market, your startup position, and the next step to launch your route in 90 days.";
-
-// These pages used to read their hero and (for Mike) their VSL straight off
-// apply-page.ts. Kody's 2026-08-10 rewrite is scoped to the contact funnel —
-// his doc lists a separate "Universal" section for the changes he wanted
-// everywhere, and the hero/video rewrite is not in it — so the copy below is
-// the pre-rewrite text, frozen here rather than inherited. These four carry
-// paid traffic; unpin them only when Kody says the new hero should reach it.
-const FROZEN_BOOKING_HERO = {
-  eyebrow: "Stop trading your time for a single paycheck",
-  headline: "Launch your vending business in 90 days.",
-  subheadline: {
-    prefix: "Earn ",
-    highlight: "$1–$5,000/mo",
-    suffix: " while you sleep.",
-  },
-} as const;
-
-// Mike-persona copy, frozen at its pre-2026-08-10 wording (see above).
-export const mikeBookingCopy = {
-  heroBody:
-    "Join Vendingpreneurs and get access to Mike's playbook, systems, and scripts, plus exclusive product discounts, 1:1 support, and custom tools. Everything you need to launch quickly and build your route without costly mistakes.",
-  vsl: {
-    badge: "Free training",
-    watchLabel: "Watch Mike's story",
-    youtubeId: "P-Z1BZ9M-Fg",
-    videoHref: "https://youtu.be/P-Z1BZ9M-Fg",
-    caption: [
-      { text: "That's " },
-      { text: "Mike Hoffmann", strong: true },
-      {
-        text: ". He built an AI-powered smart vending portfolio across multiple states — today his own route does over ",
-      },
-      { text: "$50,000/month", strong: true },
-      {
-        text: " — then turned the exact system into the playbook and tools Vendingpreneurs members run now.",
-      },
-    ] satisfies RichSegment[],
-  },
-} as const;
 
 // Anthony-persona copy overrides (Kody-approved, verbatim).
 export const anthonyBookingCopy = {
@@ -102,40 +68,29 @@ export type BookingVsl = {
 };
 
 export type BookingCopy = {
-  readonly heroEyebrow: string;
-  readonly heroHeadline: string;
-  readonly heroSubheadline: {
-    readonly prefix: string;
-    readonly highlight: string;
-    readonly suffix: string;
-  };
   readonly heroBody: string;
   readonly vsl: BookingVsl;
   readonly faqItems: readonly { readonly q: string; readonly a: string }[];
 };
 
 /**
- * Resolve the persona-specific copy for a booking page. Both personas share the
- * frozen hero eyebrow/headline/subheadline; the Anthony persona additionally
- * swaps the hero subcopy, the VSL video + caption, and the single "Do I need
- * experience?" FAQ answer. Every other section stays persona-neutral.
+ * Resolve the persona-specific copy for a booking page. The Mike persona reuses
+ * the live /contact apply copy unchanged — Kody confirmed on 2026-08-11 that his
+ * copy rewrite should reach these pages too, so they track the contact funnel
+ * again rather than pinning their own text. The Anthony persona swaps the hero
+ * subcopy, the VSL video + caption, and the single "Do I need experience?" FAQ
+ * answer. Every other section stays persona-neutral.
  */
 export function resolveBookingCopy(config: BookingPageConfig): BookingCopy {
   if (config.persona !== "anthony") {
     return {
-      heroEyebrow: FROZEN_BOOKING_HERO.eyebrow,
-      heroHeadline: FROZEN_BOOKING_HERO.headline,
-      heroSubheadline: FROZEN_BOOKING_HERO.subheadline,
-      heroBody: mikeBookingCopy.heroBody,
-      vsl: mikeBookingCopy.vsl,
+      heroBody: applyHero.body,
+      vsl: applyVsl,
       faqItems: applyFaq.items,
     };
   }
 
   return {
-    heroEyebrow: FROZEN_BOOKING_HERO.eyebrow,
-    heroHeadline: FROZEN_BOOKING_HERO.headline,
-    heroSubheadline: FROZEN_BOOKING_HERO.subheadline,
     heroBody: anthonyBookingCopy.heroBody,
     vsl: anthonyBookingCopy.vsl,
     faqItems: applyFaq.items.map((item) =>

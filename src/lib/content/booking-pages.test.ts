@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   anthonyBookingCopy,
   bookingPages,
-  mikeBookingCopy,
   resolveBookingCopy,
 } from "./booking-pages";
 import { applyFaq, applyHero, applyVsl } from "./apply-page";
@@ -54,31 +53,16 @@ describe("bookingPages config", () => {
 });
 
 describe("resolveBookingCopy", () => {
-  it("keeps the frozen Mike copy for the default persona", () => {
+  // Kody, 2026-08-11: these pages track the contact funnel's copy again. The
+  // assertion is the inheritance itself, not the strings — that is what keeps
+  // a future contact rewrite from silently skipping the ad pages.
+  it("tracks the live contact copy for the default persona", () => {
     const copy = resolveBookingCopy(bookingPages["booking-t5-socials"]);
-    expect(copy.heroBody).toBe(mikeBookingCopy.heroBody);
-    expect(copy.vsl).toEqual(mikeBookingCopy.vsl);
+    expect(copy.heroBody).toBe(applyHero.body);
+    expect(copy.vsl).toEqual(applyVsl);
     expect(copy.faqItems).toEqual(applyFaq.items);
-    expect(copy.vsl.caption.map((s) => s.text).join("")).toContain(
-      "Mike Hoffmann",
-    );
+    expect(copy.vsl.caption.map((s) => s.text).join("")).toContain("Mike");
   });
-
-  // These four pages carry paid traffic and were deliberately cut loose from
-  // apply-page.ts when Kody rewrote the contact funnel on 2026-08-10. If someone
-  // re-points them at the shared copy, ad spend starts landing on a hero nobody
-  // approved for it — so assert the divergence, not just the strings.
-  it.each(["booking-t5-socials", "booking-ak-t5"] as const)(
-    "does not inherit the contact funnel rewrite (%s)",
-    (slug) => {
-      const copy = resolveBookingCopy(bookingPages[slug]);
-      expect(copy.heroHeadline).not.toBe(applyHero.headline);
-      expect(copy.heroHeadline).not.toContain("$5-$60k");
-      expect(copy.heroEyebrow).not.toBe(applyHero.eyebrow);
-      expect(copy.heroSubheadline.highlight).toBe("$1–$5,000/mo");
-      expect(copy.vsl.caption).not.toEqual(applyVsl.caption);
-    },
-  );
 
   it("swaps in Anthony's hero, VSL, and experience answer", () => {
     const copy = resolveBookingCopy(bookingPages["booking-ak-t5"]);

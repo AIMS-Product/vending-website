@@ -292,7 +292,10 @@ export const applyYouTube = {
 
 export const applyFooter = {
   disclaimer:
-    "Earnings may vary and are not guaranteed. The $1–$5,000 claim is based on the average profitability of our community members' machines. Outcomes depend on effort, market, and execution.",
+    // Number tracks the hero headline — Kody, 2026-08-11. If the headline claim
+    // ever changes again, this string changes with it or the page is making a
+    // claim its own disclaimer does not cover.
+    "Earnings may vary and are not guaranteed. The $5,000–$60,000 claim is based on the average profitability of our community members' machines. Outcomes depend on effort, market, and execution.",
   privacyNote:
     "By applying you agree to our Privacy Policy. We never sell your data.",
   // Light/transparent wordmark for the dark disclaimer band. Not delivered

@@ -33,7 +33,9 @@ describe("BookingLandingPage", () => {
   it("renders Mike's copy + VSL for the default persona", () => {
     const html = renderPage("booking-t5-socials");
     expect(html).toContain("P-Z1BZ9M-Fg"); // Mike VSL thumbnail
-    expect(html).toContain("Mike Hoffmann");
+    // Kody's 2026-08-11 caption, inherited from the contact funnel.
+    expect(html).toContain("Mike breaks down");
+    expect(html).toContain("Meet the Founder");
     expect(html).not.toContain("ksvldfarH-U");
   });
 

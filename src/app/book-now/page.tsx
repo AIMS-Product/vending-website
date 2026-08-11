@@ -36,9 +36,9 @@ export default async function BookNowPage({
       // Single source for the setter link — same constant the scored funnel and
       // /thank-you read, so an env override moves all three at once.
       bookingEmbedUrl={THANK_YOU_LINKS.setterCalendlyUrl}
-      // Placeholder until Kody supplies a heading: the default asks visitors to
-      // "see if vending is right for you", which this funnel no longer does.
-      quizTitle="Book Your Call"
+      // Kody, 2026-08-11. The shared heading asks visitors to "see if vending is
+      // right for you", which this funnel no longer does.
+      quizTitle="Schedule Your Free Vending Consultation"
     />
   );
 }

@@ -22,13 +22,13 @@ describe("site navigation", () => {
     expect(footerResources?.href).toBe("/news");
   });
 
-  it("no longer links /pre-call-resources from anywhere in the nav", () => {
-    // Not a bug — a consequence of the change above, and the reason it was
-    // flagged back to Kody. The page is still live and reachable by URL.
-    const everyHref = [
-      ...primaryNav,
-      ...footerColumns.flatMap((column) => column.items),
-    ].map((item) => item.href);
-    expect(everyHref).not.toContain("/pre-call-resources");
+  it("keeps a way back to the pre-call resources page from the footer", () => {
+    // Kody, 2026-08-11. Pointing header Resources at /news orphaned this page;
+    // the footer slot is how it stays reachable until he builds it out.
+    const footerItems = footerColumns.flatMap((column) => column.items);
+    const prepare = footerItems.find(
+      (item) => item.href === "/pre-call-resources",
+    );
+    expect(prepare?.label).toBe("Prepare for Your Call");
   });
 });
