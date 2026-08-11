@@ -24,11 +24,11 @@ export const CTA_TRUST_LINE = "Free 45-minute call. No purchase necessary.";
 
 export const applyHero = {
   eyebrow: "Start Your Vending Business Today",
-  // Kody, 2026-08-10. The headline now carries the income figure itself, so the
-  // old orange "Earn $1–$5,000/mo" sub-headline was dropped rather than left to
-  // contradict it on the same screen.
-  headline:
-    "Everyday People Are Building $5-$60k/Month Vending Routes Without Quitting Their Job or Risking Savings",
+  // Kody's 2026-08-10 headline, split across two sizes on 2026-08-11: set as one
+  // 20-word block it swallowed the whole first screen on mobile. The claim stays
+  // in the h1; the qualifier drops to the old sub-headline size to break it up.
+  headline: "Everyday People Are Building $5-$60k/Month Vending Routes",
+  subheadline: "Without Quitting Their Job or Risking Savings",
   body: "You can spend months figuring out vending, make costly mistakes, and wonder if you're on the right path. Or you can join people who've already proven the system works and reach profitability faster.",
   ctaLabel: "Book Your Free Strategy Call",
   // Basic proof under the hero CTA (Kody, 2026-07-28). Same figures as the

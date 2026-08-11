@@ -25,12 +25,12 @@ export function ApplyHero({
           <p className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
             {applyHero.eyebrow}
           </p>
-          {/* Sized for Kody's 2026-08-10 headline, which is ~20 words rather
-              than the 5 it replaced: a wider measure and a smaller ceiling keep
-              it to three lines on desktop and off the fold on mobile. */}
-          <h1 className="mx-auto mt-5 max-w-[26ch] text-[clamp(1.9rem,3.4vw,3.1rem)] leading-[1.06] font-black tracking-tight text-balance text-[#111111] uppercase">
+          <h1 className="mx-auto mt-5 max-w-[21ch] text-[clamp(2.2rem,4vw,3.6rem)] leading-[1.04] font-black tracking-tight text-balance text-[#111111] uppercase">
             {applyHero.headline}
           </h1>
+          <p className="mx-auto mt-4 max-w-[24ch] text-[clamp(1.5rem,2.6vw,2.3rem)] leading-[1.08] font-black tracking-tight text-balance text-[#111111] uppercase">
+            {applyHero.subheadline}
+          </p>
           <p className="mx-auto mt-6 max-w-[52ch] text-lg leading-relaxed font-semibold text-slate-700">
             {body}
           </p>
