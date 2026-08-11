@@ -1386,6 +1386,9 @@ export type Database = {
           secondary_cta_label: string | null;
           status: string;
           target_url_patterns: string[];
+          exclude_url_patterns: string[] | null;
+          include_homepage: boolean | null;
+          exclude_homepage: boolean | null;
           trigger: string;
           trigger_threshold: number | null;
           updated_at: string;
@@ -1411,6 +1414,9 @@ export type Database = {
           secondary_cta_label?: string | null;
           status?: string;
           target_url_patterns?: string[];
+          exclude_url_patterns?: string[] | null;
+          include_homepage?: boolean | null;
+          exclude_homepage?: boolean | null;
           trigger: string;
           trigger_threshold?: number | null;
           updated_at?: string;
@@ -1436,6 +1442,9 @@ export type Database = {
           secondary_cta_label?: string | null;
           status?: string;
           target_url_patterns?: string[];
+          exclude_url_patterns?: string[] | null;
+          include_homepage?: boolean | null;
+          exclude_homepage?: boolean | null;
           trigger?: string;
           trigger_threshold?: number | null;
           updated_at?: string;

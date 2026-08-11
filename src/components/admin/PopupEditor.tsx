@@ -17,7 +17,7 @@ import {
   adminTextareaClass,
 } from "@/components/admin/AdminUi";
 import { PopupCard } from "@/components/site/SitePopup";
-import type { Popup } from "@/lib/content/popups";
+import { POPUP_EXCLUDED_PATH_PREFIXES, type Popup } from "@/lib/content/popups";
 import type { AdminPopup, PopupStatus } from "@/lib/services/popups";
 
 const initialActionState: PopupActionState = { status: "idle" };
@@ -27,6 +27,9 @@ type EditorValues = {
   trigger: Popup["trigger"];
   triggerThreshold: string;
   targetUrlPatterns: string;
+  excludeUrlPatterns: string;
+  includeHomepage: boolean;
+  excludeHomepage: boolean;
   frequency: Popup["frequency"];
   eyebrow: string;
   headline: string;
@@ -51,6 +54,9 @@ function initialValues(entry: AdminPopup): EditorValues {
     triggerThreshold:
       popup.triggerThreshold == null ? "" : String(popup.triggerThreshold),
     targetUrlPatterns: popup.targetUrlPatterns.join("\n"),
+    excludeUrlPatterns: popup.excludeUrlPatterns.join("\n"),
+    includeHomepage: popup.includeHomepage,
+    excludeHomepage: popup.excludeHomepage,
     frequency: popup.frequency,
     eyebrow: popup.eyebrow ?? "",
     headline: popup.headline,
@@ -80,6 +86,9 @@ function previewPopup(id: string, values: EditorValues): Popup {
         ? null
         : Number(values.triggerThreshold),
     targetUrlPatterns: [],
+    excludeUrlPatterns: [],
+    includeHomepage: false,
+    excludeHomepage: false,
     frequency: values.frequency,
     eyebrow: values.eyebrow.trim() || null,
     headline: values.headline.trim() || "Headline",
@@ -131,6 +140,11 @@ export function PopupEditor({ entry }: { entry: AdminPopup }) {
       >,
     ) =>
       setValues((prev) => ({ ...prev, [key]: event.target.value }));
+
+  const setChecked =
+    <Key extends keyof EditorValues>(key: Key) =>
+    (event: React.ChangeEvent<HTMLInputElement>) =>
+      setValues((prev) => ({ ...prev, [key]: event.target.checked }));
 
   const thresholdHint =
     values.trigger === "SCROLL_DEPTH"
@@ -398,6 +412,52 @@ export function PopupEditor({ entry }: { entry: AdminPopup }) {
                 className={adminTextareaClass}
               />
             </label>
+            <label className="text-ui-text flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                name="includeHomepage"
+                checked={values.includeHomepage}
+                onChange={setChecked("includeHomepage")}
+                className="size-4"
+              />
+              Also show on the homepage
+              <span className="text-ui-text-subtle font-normal">
+                (the homepage has no path to match, so it needs its own tick)
+              </span>
+            </label>
+
+            <label className={adminLabelClass}>
+              Never show on pages containing{" "}
+              <span className="text-ui-text-subtle">
+                (one per line, wins over the list above)
+              </span>
+              <textarea
+                name="excludeUrlPatterns"
+                rows={2}
+                value={values.excludeUrlPatterns}
+                onChange={set("excludeUrlPatterns")}
+                placeholder="/news"
+                className={adminTextareaClass}
+              />
+            </label>
+            <label className="text-ui-text flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                name="excludeHomepage"
+                checked={values.excludeHomepage}
+                onChange={setChecked("excludeHomepage")}
+                className="size-4"
+              />
+              Never show on the homepage
+            </label>
+
+            {/* These are enforced in code, not configuration. Without this note
+                an admin can target /contact, save successfully, and never
+                understand why the popup does not appear. */}
+            <p className="text-ui-text-subtle text-xs">
+              Popups never show on the booking and form pages, whatever is set
+              above: {POPUP_EXCLUDED_PATH_PREFIXES.join(", ")}.
+            </p>
           </div>
 
           <div className="border-ui-line flex flex-wrap items-center justify-end gap-3 border-t p-4">

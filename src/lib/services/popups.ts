@@ -47,8 +47,12 @@ export class PopupServiceError extends Error {
 /** Tag revalidated by admin actions so visitor pages pick up edits. */
 export const SITE_POPUPS_CACHE_TAG = "site-popups";
 
+// Explicit, not "*": naming the columns means this query fails loudly against
+// a database that predates a column rather than silently serving undefined.
+// The cost is ordering — 20260811100000_popup_page_exclusions.sql must be
+// applied before the deploy that ships this list, or every popup read 400s.
 const POPUP_FIELDS =
-  "id, status, trigger, trigger_threshold, target_url_patterns, frequency, eyebrow, headline, body, primary_cta_label, primary_cta_href, secondary_cta_label, secondary_cta_href, featured_value_label, featured_value_value, featured_value_note, offer_code, dismiss_text, accent_color, created_at, updated_at" as const;
+  "id, status, trigger, trigger_threshold, target_url_patterns, exclude_url_patterns, include_homepage, exclude_homepage, frequency, eyebrow, headline, body, primary_cta_label, primary_cta_href, secondary_cta_label, secondary_cta_href, featured_value_label, featured_value_value, featured_value_note, offer_code, dismiss_text, accent_color, created_at, updated_at" as const;
 
 const popupCtaSchema = z.object({
   label: z.string().trim().min(1, "CTA label is required.").max(80),
@@ -73,6 +77,9 @@ const popupFieldsSchema: z.ZodType<PopupTemplateFields> = z.object({
   ]),
   triggerThreshold: z.number().finite().min(0).max(10_000).nullable(),
   targetUrlPatterns: z.array(z.string().trim().min(1).max(200)).max(20),
+  excludeUrlPatterns: z.array(z.string().trim().min(1).max(200)).max(20),
+  includeHomepage: z.boolean(),
+  excludeHomepage: z.boolean(),
   frequency: z.enum(["session", "once_per_day", "always"]),
   eyebrow: z.string().trim().min(1).max(80).nullable(),
   headline: z.string().trim().min(1, "Headline is required.").max(120),
@@ -338,6 +345,9 @@ function fieldsToRow(
     trigger: fields.trigger,
     trigger_threshold: fields.triggerThreshold,
     target_url_patterns: fields.targetUrlPatterns,
+    exclude_url_patterns: fields.excludeUrlPatterns,
+    include_homepage: fields.includeHomepage,
+    exclude_homepage: fields.excludeHomepage,
     frequency: fields.frequency,
     eyebrow: fields.eyebrow,
     headline: fields.headline,
@@ -362,6 +372,12 @@ function rowToPopup(row: PopupRow): Popup {
     trigger: row.trigger as Popup["trigger"],
     triggerThreshold: row.trigger_threshold,
     targetUrlPatterns: row.target_url_patterns,
+    // Coalesced rather than trusted: rows written before the exclusion columns
+    // existed come back null, and a null here would crash the matcher on every
+    // page it runs on.
+    excludeUrlPatterns: row.exclude_url_patterns ?? [],
+    includeHomepage: row.include_homepage ?? false,
+    excludeHomepage: row.exclude_homepage ?? false,
     frequency: row.frequency as Popup["frequency"],
     eyebrow: row.eyebrow,
     headline: row.headline,

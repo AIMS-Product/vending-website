@@ -23,6 +23,9 @@ function popup(overrides: Partial<Popup> = {}): Popup {
     trigger: "IMMEDIATE",
     triggerThreshold: null,
     targetUrlPatterns: [],
+    excludeUrlPatterns: [],
+    includeHomepage: false,
+    excludeHomepage: false,
     frequency: "always",
     eyebrow: null,
     headline: "Headline",
@@ -197,6 +200,88 @@ describe("pickPopup URL targeting", () => {
     const inactive = popup({ id: "inactive", active: false });
     expect(pickPopup("/", [inactive])).toBeNull();
     expect(pickPopup("/", [inactive], { preview: true })?.id).toBe("inactive");
+  });
+});
+
+// Kody, 2026-08-11: carve pages out of a broad rule, and decide the homepage
+// separately because no substring can single it out.
+describe("pickPopup exclusions", () => {
+  it("keeps a broad popup off an excluded page", () => {
+    const everywhere = popup({
+      id: "everywhere",
+      excludeUrlPatterns: ["/news"],
+    });
+    expect(pickPopup("/about", [everywhere])?.id).toBe("everywhere");
+    expect(pickPopup("/news", [everywhere])).toBeNull();
+    expect(pickPopup("/news/some-article", [everywhere])).toBeNull();
+  });
+
+  it("lets an exclusion beat an explicit target", () => {
+    const conflicted = popup({
+      id: "conflicted",
+      targetUrlPatterns: ["/case-studies"],
+      excludeUrlPatterns: ["/case-studies/route-one"],
+    });
+    expect(pickPopup("/case-studies", [conflicted])?.id).toBe("conflicted");
+    expect(pickPopup("/case-studies/route-one", [conflicted])).toBeNull();
+  });
+
+  it("does not let an exclusion pattern leak into other pages", () => {
+    const excluded = popup({ id: "excluded", excludeUrlPatterns: ["/news"] });
+    expect(pickPopup("/newsletter-archive", [excluded])).toBeNull();
+    expect(pickPopup("/case-studies", [excluded])?.id).toBe("excluded");
+  });
+});
+
+describe("pickPopup homepage targeting", () => {
+  it("reaches the homepage when the popup targets every page", () => {
+    expect(pickPopup("/", [popup({ id: "everywhere" })])?.id).toBe(
+      "everywhere",
+    );
+  });
+
+  it("leaves the homepage alone when specific pages are listed", () => {
+    const targeted = popup({
+      id: "targeted",
+      targetUrlPatterns: ["/case-studies"],
+    });
+    expect(pickPopup("/", [targeted])).toBeNull();
+  });
+
+  it("adds the homepage back when it is ticked alongside a page list", () => {
+    const both = popup({
+      id: "both",
+      targetUrlPatterns: ["/case-studies"],
+      includeHomepage: true,
+    });
+    expect(pickPopup("/", [both])?.id).toBe("both");
+    expect(pickPopup("/case-studies", [both])?.id).toBe("both");
+    expect(pickPopup("/about", [both])).toBeNull();
+  });
+
+  it("keeps a show-everywhere popup off the homepage when excluded", () => {
+    const notHome = popup({ id: "not-home", excludeHomepage: true });
+    expect(pickPopup("/", [notHome])).toBeNull();
+    expect(pickPopup("/about", [notHome])?.id).toBe("not-home");
+  });
+
+  it("resolves a contradictory pair by excluding, like every other rule", () => {
+    const contradictory = popup({
+      id: "contradictory",
+      targetUrlPatterns: ["/case-studies"],
+      includeHomepage: true,
+      excludeHomepage: true,
+    });
+    expect(pickPopup("/", [contradictory])).toBeNull();
+  });
+
+  it("still cannot be targeted by typing a slash, which matches nothing extra", () => {
+    // Every path contains "/", so this used to mean "every page" while reading
+    // like "the homepage". It now selects the homepage only because of the
+    // checkbox, and a bare "/" pattern behaves like the every-page default.
+    const slash = popup({ id: "slash", targetUrlPatterns: ["/"] });
+    expect(pickPopup("/", [slash])).toBeNull();
+    expect(pickPopup("/about", [slash])?.id).toBe("slash");
   });
 });
 

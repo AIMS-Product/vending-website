@@ -32,6 +32,13 @@ export interface Popup {
   /** Path substrings; empty = every page. Admin and conversion surfaces
    *  (contact, booking, qualify, newsletter, thank-you) are always excluded. */
   targetUrlPatterns: string[];
+  /** Path substrings this popup must never show on. Beats targetUrlPatterns. */
+  excludeUrlPatterns: string[];
+  /** The homepage is "/", which no substring can single out — every path
+   *  contains it. These two carry the homepage decision instead, and only the
+   *  homepage is affected by them. */
+  includeHomepage: boolean;
+  excludeHomepage: boolean;
   frequency: PopupFrequency;
   eyebrow: string | null;
   headline: string;
@@ -54,6 +61,9 @@ export const POPUPS: Popup[] = [
     trigger: "EXIT_INTENT",
     triggerThreshold: null,
     targetUrlPatterns: [],
+    excludeUrlPatterns: [],
+    includeHomepage: false,
+    excludeHomepage: false,
     frequency: "once_per_day",
     eyebrow: "Before you go",
     headline: "Not sure where to start with vending?",
@@ -71,6 +81,9 @@ export const POPUPS: Popup[] = [
     trigger: "SCROLL_DEPTH",
     triggerThreshold: 50,
     targetUrlPatterns: ["/case-studies"],
+    excludeUrlPatterns: [],
+    includeHomepage: false,
+    excludeHomepage: false,
     frequency: "session",
     eyebrow: null,
     headline: "Get the free vending business roadmap",
@@ -99,6 +112,9 @@ function templateFields(popup: Popup): PopupTemplateFields {
     trigger: popup.trigger,
     triggerThreshold: popup.triggerThreshold,
     targetUrlPatterns: popup.targetUrlPatterns,
+    excludeUrlPatterns: popup.excludeUrlPatterns,
+    includeHomepage: popup.includeHomepage,
+    excludeHomepage: popup.excludeHomepage,
     frequency: popup.frequency,
     eyebrow: popup.eyebrow,
     headline: popup.headline,
@@ -135,6 +151,9 @@ export const POPUP_TEMPLATES: PopupTemplate[] = [
       trigger: "TIME_ON_PAGE",
       triggerThreshold: 20,
       targetUrlPatterns: [],
+      excludeUrlPatterns: [],
+      includeHomepage: false,
+      excludeHomepage: false,
       frequency: "once_per_day",
       eyebrow: "The Route",
       headline: "Vending income tips, straight to your inbox",
@@ -155,6 +174,9 @@ export const POPUP_TEMPLATES: PopupTemplate[] = [
       trigger: "SCROLL_DEPTH",
       triggerThreshold: 40,
       targetUrlPatterns: [],
+      excludeUrlPatterns: [],
+      includeHomepage: false,
+      excludeHomepage: false,
       frequency: "session",
       eyebrow: "Member results",
       headline: "Real people. Real vending income.",
@@ -179,6 +201,9 @@ export const POPUP_TEMPLATES: PopupTemplate[] = [
       trigger: "EXIT_INTENT",
       triggerThreshold: null,
       targetUrlPatterns: [],
+      excludeUrlPatterns: [],
+      includeHomepage: false,
+      excludeHomepage: false,
       frequency: "once_per_day",
       eyebrow: "Limited offer",
       headline: "Save on your vending launch",
@@ -199,6 +224,9 @@ export const POPUP_TEMPLATES: PopupTemplate[] = [
       trigger: "TIME_ON_PAGE",
       triggerThreshold: 10,
       targetUrlPatterns: [],
+      excludeUrlPatterns: [],
+      includeHomepage: false,
+      excludeHomepage: false,
       frequency: "session",
       eyebrow: null,
       headline: "Headline",
@@ -220,7 +248,7 @@ export const POPUP_TEMPLATES: PopupTemplate[] = [
  * /booking-* and /book-my-advisory-call-*, "/schedule" the
  * schedule-your-call-* pages, "/thank-you" both thank-you routes.
  */
-const POPUP_EXCLUDED_PATH_PREFIXES = [
+export const POPUP_EXCLUDED_PATH_PREFIXES = [
   "/admin",
   "/apply",
   "/book",
@@ -231,11 +259,40 @@ const POPUP_EXCLUDED_PATH_PREFIXES = [
   "/thank-you",
 ];
 
+/**
+ * Order matters, and every "no" wins over every "yes":
+ *
+ * 1. Conversion surfaces above are off, always, whatever the popup says.
+ * 2. The popup's own exclusions come next, so an admin can carve pages out of
+ *    a broad rule without having to enumerate the pages they do want.
+ * 3. Only then do the inclusions decide.
+ *
+ * The homepage is handled by its own two flags rather than by the pattern
+ * lists. Every path contains "/", so a substring rule can neither select the
+ * homepage nor avoid it — matching it here by path equality is the only way to
+ * give an admin a control that does what its label says.
+ */
 export function popupMatchesPath(popup: Popup, pathname: string): boolean {
   if (
     POPUP_EXCLUDED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
   ) {
     return false;
+  }
+
+  const isHomepage = pathname === "/";
+  if (isHomepage && popup.excludeHomepage) return false;
+  if (
+    popup.excludeUrlPatterns.some(
+      (pattern) => pattern.length > 0 && pathname.includes(pattern),
+    )
+  ) {
+    return false;
+  }
+
+  // "Show everywhere" still reaches the homepage; an explicit list of pages
+  // does not, unless the homepage was ticked alongside it.
+  if (isHomepage) {
+    return popup.targetUrlPatterns.length === 0 || popup.includeHomepage;
   }
   if (popup.targetUrlPatterns.length === 0) return true;
   return popup.targetUrlPatterns.some((pattern) => pathname.includes(pattern));

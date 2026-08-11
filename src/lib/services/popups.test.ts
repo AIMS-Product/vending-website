@@ -22,6 +22,9 @@ function makeRow(overrides: Partial<PopupRow> = {}): PopupRow {
     trigger: "EXIT_INTENT",
     trigger_threshold: null,
     target_url_patterns: [],
+    exclude_url_patterns: [],
+    include_homepage: false,
+    exclude_homepage: false,
     frequency: "once_per_day",
     eyebrow: "Before you go",
     headline: "Not sure where to start?",
@@ -64,6 +67,49 @@ function stubClient(result: { data: unknown; error: unknown }): PopupsClient {
 }
 
 describe("popups service", () => {
+  it("carries the targeting columns through to the renderer shape", async () => {
+    const client = stubClient({
+      data: [
+        makeRow({
+          target_url_patterns: ["/case-studies"],
+          exclude_url_patterns: ["/case-studies/route-one"],
+          include_homepage: true,
+          exclude_homepage: false,
+        }),
+      ],
+      error: null,
+    });
+
+    expect((await fetchActiveSitePopups({ client }))[0]).toMatchObject({
+      targetUrlPatterns: ["/case-studies"],
+      excludeUrlPatterns: ["/case-studies/route-one"],
+      includeHomepage: true,
+      excludeHomepage: false,
+    });
+  });
+
+  // Rows written before the exclusion columns existed read back null. The
+  // matcher calls .some() on these on every page load, so a null would take
+  // the public site down rather than just mis-target a popup.
+  it("defaults the targeting columns when an older row has them null", async () => {
+    const client = stubClient({
+      data: [
+        makeRow({
+          exclude_url_patterns: null,
+          include_homepage: null,
+          exclude_homepage: null,
+        }),
+      ],
+      error: null,
+    });
+
+    expect((await fetchActiveSitePopups({ client }))[0]).toMatchObject({
+      excludeUrlPatterns: [],
+      includeHomepage: false,
+      excludeHomepage: false,
+    });
+  });
+
   it("maps rows to the renderer Popup shape with active derived from status", async () => {
     const client = stubClient({
       data: [

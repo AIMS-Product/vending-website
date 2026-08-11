@@ -135,6 +135,13 @@ function fieldsFromForm(
 ): { value: PopupTemplateFields } | { error: PopupActionState } {
   const text = (name: string) => String(formData.get(name) ?? "").trim();
   const optional = (name: string) => text(name) || null;
+  // An unchecked box sends nothing at all, so absence is false.
+  const checked = (name: string) => formData.get(name) !== null;
+  const lines = (name: string) =>
+    text(name)
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
 
   const secondaryLabel = optional("secondaryCtaLabel");
   const secondaryHref = optional("secondaryCtaHref");
@@ -173,10 +180,10 @@ function fieldsFromForm(
     value: {
       trigger: text("trigger") as PopupTemplateFields["trigger"],
       triggerThreshold: threshold,
-      targetUrlPatterns: text("targetUrlPatterns")
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean),
+      targetUrlPatterns: lines("targetUrlPatterns"),
+      excludeUrlPatterns: lines("excludeUrlPatterns"),
+      includeHomepage: checked("includeHomepage"),
+      excludeHomepage: checked("excludeHomepage"),
       frequency: text("frequency") as PopupTemplateFields["frequency"],
       eyebrow: optional("eyebrow"),
       headline: text("headline"),

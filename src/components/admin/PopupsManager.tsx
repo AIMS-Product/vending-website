@@ -246,10 +246,23 @@ export function describeTrigger(popup: Popup): string {
 }
 
 function describeDelivery(popup: Popup): string {
-  const where =
+  const targets =
     popup.targetUrlPatterns.length === 0
-      ? "every page"
-      : popup.targetUrlPatterns.join(", ");
+      ? ["every page"]
+      : [...popup.targetUrlPatterns];
+  if (popup.includeHomepage && popup.targetUrlPatterns.length > 0) {
+    targets.push("homepage");
+  }
+  // Exclusions belong in the summary: a popup listed as "every page" that is
+  // in fact off on half the site would be a lie at a glance.
+  const excluded = [
+    ...popup.excludeUrlPatterns,
+    ...(popup.excludeHomepage ? ["homepage"] : []),
+  ];
+  const where =
+    excluded.length > 0
+      ? `${targets.join(", ")} except ${excluded.join(", ")}`
+      : targets.join(", ");
   return `${describeTrigger(popup)} · ${where}`;
 }
 
