@@ -15,18 +15,22 @@ export const applyMeta = {
     "Launch your vending business in 90 days with Mike's playbook, systems, coaching, and exclusive discounts. Answer a few quick questions to see if you're a fit.",
 } as const;
 
+/**
+ * Reassurance line that sits under every in-page CTA button (Kody, 2026-08-10).
+ * Deliberately not rendered in the header nav or the sticky bottom bar — both
+ * are chrome with no room for a second line (Adam, same day).
+ */
+export const CTA_TRUST_LINE = "Free 45-minute call. No purchase necessary.";
+
 export const applyHero = {
-  eyebrow: "Stop trading your time for a single paycheck",
-  headline: "Launch your vending business in 90 days.",
-  subheadline: {
-    prefix: "Earn ",
-    highlight: "$1–$5,000/mo",
-    suffix: " while you sleep.",
-  },
-  body: "Join Vendingpreneurs and get access to Mike's playbook, systems, and scripts, plus exclusive product discounts, 1:1 support, and custom tools. Everything you need to launch quickly and build your route without costly mistakes.",
-  ctaLabel: "Book Your Call",
-  ctaNote:
-    "Answer a few quick questions, then book a free call to see if you're a fit.",
+  eyebrow: "Start Your Vending Business Today",
+  // Kody, 2026-08-10. The headline now carries the income figure itself, so the
+  // old orange "Earn $1–$5,000/mo" sub-headline was dropped rather than left to
+  // contradict it on the same screen.
+  headline:
+    "Everyday People Are Building $5-$60k/Month Vending Routes Without Quitting Their Job or Risking Savings",
+  body: "You can spend months figuring out vending, make costly mistakes, and wonder if you're on the right path. Or you can join people who've already proven the system works and reach profitability faster.",
+  ctaLabel: "Book Your Free Strategy Call",
   // Basic proof under the hero CTA (Kody, 2026-07-28). Same figures as the
   // quiz rail so the two never disagree.
   trustStats: [
@@ -37,21 +41,17 @@ export const applyHero = {
 } as const;
 
 export const applyVsl = {
-  title: "Mike Hoffmann built his vending business from scratch",
-  subtitle: "Vendingpreneurs is what Mike wished he had when starting",
+  // Kody, 2026-08-10. Caption is one plain segment because he supplied it with
+  // no emphasis — reproduced verbatim rather than re-bolded.
+  title: "Meet the Founder",
+  subtitle: "Before you schedule your free consultation, watch this.",
   badge: "Free training",
   watchLabel: "Watch Mike's story",
   youtubeId: "P-Z1BZ9M-Fg",
   videoHref: "https://youtu.be/P-Z1BZ9M-Fg",
   caption: [
-    { text: "That's " },
-    { text: "Mike Hoffmann", strong: true },
     {
-      text: ". He built an AI-powered smart vending portfolio across multiple states — today his own route does over ",
-    },
-    { text: "$50,000/month", strong: true },
-    {
-      text: " — then turned the exact system into the playbook and tools Vendingpreneurs members run now.",
+      text: "Mike breaks down how the business model works, what makes a location worth pursuing, and how he and others have built a vending route with no experience while working a 9-to-5 to create the freedom to spend more time with their families.",
     },
   ] satisfies RichSegment[],
 } as const;

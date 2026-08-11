@@ -1,4 +1,4 @@
-import { applyRoadmap } from "@/lib/content/apply-page";
+import { applyRoadmap, CTA_TRUST_LINE } from "@/lib/content/apply-page";
 import { ApplyCtaButton } from "./ApplyCtaButton";
 
 export function ApplyRoadmap({
@@ -54,8 +54,9 @@ export function ApplyRoadmap({
           ))}
         </ol>
 
-        <div className="mt-12 flex justify-center">
+        <div className="mt-12 flex flex-col items-center gap-3.5">
           <ApplyCtaButton>{ctaLabel}</ApplyCtaButton>
+          <p className="text-sm font-medium text-slate-500">{CTA_TRUST_LINE}</p>
         </div>
       </div>
     </section>

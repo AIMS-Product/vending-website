@@ -164,7 +164,7 @@ export const POPUP_TEMPLATES: PopupTemplate[] = [
       featuredValue: {
         label: "The community so far",
         value: "$3M+ in machine sales",
-        note: "500+ entrepreneurs launched",
+        note: "850+ entrepreneurs launched",
       },
       offerCode: null,
       dismissText: "Maybe later",

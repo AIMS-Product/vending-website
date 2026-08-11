@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/Button";
+import { CTA_TRUST_LINE } from "@/lib/content/apply-page";
 import { finalCta } from "@/lib/content/home";
 import { finalCtaV2 } from "@/lib/content/home-v2";
 
@@ -55,7 +56,7 @@ export function FinalCtaV2() {
 
         <div
           data-reveal
-          className="mt-10 flex justify-center"
+          className="mt-10 flex flex-col items-center gap-3.5"
           style={{ "--v2-delay": "0.18s" } as CSSProperties}
         >
           <Button
@@ -65,6 +66,8 @@ export function FinalCtaV2() {
           >
             {finalCta.cta.label}
           </Button>
+          {/* Slate-500 would fail contrast on this near-black band. */}
+          <p className="text-sm font-medium text-slate-400">{CTA_TRUST_LINE}</p>
         </div>
       </div>
     </section>

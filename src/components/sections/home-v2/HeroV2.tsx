@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
+import { CTA_TRUST_LINE } from "@/lib/content/apply-page";
 import { hero } from "@/lib/content/home";
 import { heroV2 } from "@/lib/content/home-v2";
 
@@ -58,15 +59,20 @@ export function HeroV2() {
           </div>
 
           <div
-            className="v2-rise mt-9 flex flex-wrap items-center gap-4"
+            className="v2-rise mt-9"
             style={{ "--v2-delay": "0.42s" } as CSSProperties}
           >
-            <Button href={hero.cta.href} showArrow>
-              {hero.cta.label}
-            </Button>
-            <Button href={heroV2.secondaryCta.href} variant="ghost">
-              {heroV2.secondaryCta.label}
-            </Button>
+            <div className="flex flex-wrap items-center gap-4">
+              <Button href={hero.cta.href} showArrow>
+                {hero.cta.label}
+              </Button>
+              <Button href={heroV2.secondaryCta.href} variant="ghost">
+                {heroV2.secondaryCta.label}
+              </Button>
+            </div>
+            <p className="mt-3.5 text-sm font-medium text-slate-500">
+              {CTA_TRUST_LINE}
+            </p>
           </div>
         </div>
 

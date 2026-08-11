@@ -1,4 +1,4 @@
-import { applyYouTube } from "@/lib/content/apply-page";
+import { applyYouTube, CTA_TRUST_LINE } from "@/lib/content/apply-page";
 import { ApplyCtaButton } from "./ApplyCtaButton";
 import { PlayIcon } from "./icons";
 
@@ -56,8 +56,9 @@ export function ApplyYouTube({
         ))}
       </div>
 
-      <div className="mt-12 flex justify-center">
+      <div className="mt-12 flex flex-col items-center gap-3.5">
         <ApplyCtaButton>{ctaLabel}</ApplyCtaButton>
+        <p className="text-sm font-medium text-slate-500">{CTA_TRUST_LINE}</p>
       </div>
     </section>
   );

@@ -1,10 +1,21 @@
-import { applyHero } from "@/lib/content/apply-page";
+import { applyHero, CTA_TRUST_LINE } from "@/lib/content/apply-page";
 import { ApplyCtaButton } from "./ApplyCtaButton";
 
+// eyebrow/headline/subheadline are overridable so the social-ad booking pages
+// can stay frozen on the copy their paid traffic already sees (Kody's
+// 2026-08-10 rewrite is scoped to the contact funnel). subheadline is optional
+// because the contact funnel no longer has one — its headline carries the
+// income figure itself.
 export function ApplyHero({
+  eyebrow = applyHero.eyebrow,
+  headline = applyHero.headline,
+  subheadline,
   body = applyHero.body,
   ctaLabel = applyHero.ctaLabel,
 }: {
+  eyebrow?: string;
+  headline?: string;
+  subheadline?: { prefix: string; highlight: string; suffix: string };
   body?: string;
   ctaLabel?: string;
 } = {}) {
@@ -23,25 +34,28 @@ export function ApplyHero({
       <div className="relative mx-auto max-w-[1180px] px-5 py-20 lg:px-10 lg:py-24">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
-            {applyHero.eyebrow}
+            {eyebrow}
           </p>
-          <h1 className="mx-auto mt-5 max-w-[15ch] text-[clamp(2.6rem,4.6vw,4.1rem)] leading-[1.02] font-black tracking-tight text-[#111111] uppercase">
-            {applyHero.headline}
+          {/* Sized for Kody's 2026-08-10 headline, which is ~20 words rather
+              than the 5 it replaced: a wider measure and a smaller ceiling keep
+              it to three lines on desktop and off the fold on mobile. */}
+          <h1 className="mx-auto mt-5 max-w-[26ch] text-[clamp(1.9rem,3.4vw,3.1rem)] leading-[1.06] font-black tracking-tight text-balance text-[#111111] uppercase">
+            {headline}
           </h1>
-          <p className="mt-4 text-[clamp(1.7rem,2.8vw,2.5rem)] leading-[1.05] font-black tracking-tight text-[#111111] uppercase">
-            {applyHero.subheadline.prefix}
-            <span className="text-[#f47b3b]">
-              {applyHero.subheadline.highlight}
-            </span>
-            {applyHero.subheadline.suffix}
-          </p>
+          {subheadline ? (
+            <p className="mt-4 text-[clamp(1.7rem,2.8vw,2.5rem)] leading-[1.05] font-black tracking-tight text-[#111111] uppercase">
+              {subheadline.prefix}
+              <span className="text-[#f47b3b]">{subheadline.highlight}</span>
+              {subheadline.suffix}
+            </p>
+          ) : null}
           <p className="mx-auto mt-6 max-w-[52ch] text-lg leading-relaxed font-semibold text-slate-700">
             {body}
           </p>
           <div className="mt-8">
             <ApplyCtaButton>{ctaLabel}</ApplyCtaButton>
             <p className="mt-3.5 text-sm font-medium text-slate-500">
-              {applyHero.ctaNote}
+              {CTA_TRUST_LINE}
             </p>
           </div>
 

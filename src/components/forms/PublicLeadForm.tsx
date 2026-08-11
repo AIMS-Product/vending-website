@@ -79,6 +79,14 @@ type PublicLeadFormProps = {
   // identified by the session token stage 1 returned. Without it the form
   // keeps the one-shot behaviour — there is nowhere for a stage 2 to submit.
   finishAction?: PublicLeadFormAction;
+  // Skips stage 2 entirely (the /book-now funnel, Kody 2026-08-10): once stage 1
+  // has captured the contact details and both consents, this calendar replaces
+  // the card instead of the timeline/invest questions. Nothing is scored and no
+  // fit result is shown — every lead lands on the same calendar. Requires the
+  // same inlineQualification + finishAction pairing as the scored funnel so
+  // stage 1 behaves identically (lead persisted, Close synced, Slack alerted);
+  // the finishAction simply never gets dispatched.
+  bookingEmbedUrl?: string;
   // Simplified "Book Your Call" form (social-ad booking pages): renders only
   // name/email/phone — no qualifying dropdowns, no message, no scoring. Pair
   // with intent="contact" (validates name+email only) and bookingRedirectUrl so
@@ -130,6 +138,7 @@ export function PublicLeadForm({
   intent,
   layout = "standard",
   bookingRedirectUrl,
+  bookingEmbedUrl,
   inlineQualification = false,
   simpleContact = false,
   phoneRequired = true,
@@ -362,6 +371,30 @@ export function PublicLeadForm({
         name={submittedValues.full_name}
         email={submittedValues.email}
       />
+    );
+  }
+
+  // /book-now: stage 1 succeeded, so the lead is captured and opted in. Show
+  // the calendar in place of the questions. Prefilled and UTM-tagged the same
+  // way FitResultPanel does it, so the Calendly booking webhook still joins
+  // back to this lead.
+  if (atStageTwo && bookingEmbedUrl) {
+    return (
+      <div role="status" aria-live="polite" className="grid gap-4">
+        <p className="inline-flex w-fit rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
+          Details received — pick a time below
+        </p>
+        <CalendlyEmbed
+          url={buildCalendlyBookingUrl(bookingEmbedUrl, {
+            name: submittedValues.full_name,
+            email: submittedValues.email,
+            attribution,
+          })}
+          attribution={attribution}
+          hideDetails
+          title="Book your call"
+        />
+      </div>
     );
   }
 

@@ -17,7 +17,7 @@ export const heroV2 = {
     [{ text: "freedom", highlight: true }],
   ] satisfies ReadonlyArray<ReadonlyArray<HeroTitleSegment>>,
   badges: [
-    { value: "500+", label: "Entrepreneurs launched", tilt: "-5deg" },
+    { value: "850+", label: "Entrepreneurs launched", tilt: "-5deg" },
     { value: "$3M+", label: "In machine sales", tilt: "4deg" },
   ],
   secondaryCta: { label: "See real results", href: "#success-stories" },
@@ -25,10 +25,10 @@ export const heroV2 = {
 
 export const tickerV2 = {
   srSummary:
-    "Vendingpreneurs: 500+ entrepreneurs launched. $3M+ in machine sales. 3,000+ vending locations secured. Beginner friendly.",
+    "Vendingpreneurs: 850+ entrepreneurs launched. $3M+ in machine sales. 3,000+ vending locations secured. Beginner friendly.",
   items: [
     "Passive income, done right",
-    "500+ entrepreneurs launched",
+    "850+ entrepreneurs launched",
     "$3M+ in machine sales",
     "3,000+ locations secured",
     "Beginner friendly",

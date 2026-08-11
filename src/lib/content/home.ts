@@ -29,7 +29,7 @@ export const hero = {
     src: "/images/sections/hero.avif",
     alt: "An entrepreneur stocking a smart vending machine",
   },
-  cta: { label: "Apply Now", href: "/apply" },
+  cta: { label: "Book Your Call", href: "/apply" },
 } as const;
 
 /** Order matches the live Webflow strip: 365, Alani, Cantaloupe, Micromart, PepsiCo, Prime, Poppi, Doritos. */
@@ -123,7 +123,7 @@ export const accelerator = {
     alt: "An entrepreneur using a Cantaloupe-branded vending kiosk",
   },
   stats: [
-    { value: "500+", label: "Entrepreneurs launched" },
+    { value: "850+", label: "Entrepreneurs launched" },
     { value: "$3M+", label: "Snack/Drink sales in Vendingpreneur machines" },
     { value: "3,000+", label: "Vending locations w/our guidance" },
   ] satisfies ReadonlyArray<Stat>,
@@ -138,7 +138,7 @@ export const accelerator = {
     label: "Bonus:",
     body: "Get access to discounted vending machines and bulk product deals to increase your bottom line.",
   },
-  cta: { label: "Apply Now", href: "/apply" },
+  cta: { label: "Book Your Call", href: "/apply" },
 } as const;
 
 export const finalCta = {
@@ -148,5 +148,5 @@ export const finalCta = {
     src: "/images/sections/cta.avif",
     alt: "A customer tapping a phone to pay at a smart vending machine",
   },
-  cta: { label: "Apply Now", href: "/apply" },
+  cta: { label: "Book Your Call", href: "/apply" },
 } as const;

@@ -37,7 +37,13 @@ export function BookingLandingPage({
 
   return (
     <>
-      <ApplyHero body={copy.heroBody} ctaLabel={BOOK_CTA} />
+      <ApplyHero
+        eyebrow={copy.heroEyebrow}
+        headline={copy.heroHeadline}
+        subheadline={copy.heroSubheadline}
+        body={copy.heroBody}
+        ctaLabel={BOOK_CTA}
+      />
       <ApplyVsl vsl={copy.vsl} />
       <ApplyTools ctaLabel={BOOK_CTA} />
       <ApplyTestimonials />

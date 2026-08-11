@@ -11,6 +11,11 @@ import { LockIcon, StarRow } from "./icons";
 type ApplyQuizProps = {
   attribution: LeadAttribution;
   idempotencyKey: string;
+  // /book-now drops the scoring stage: stage 1 submits and this calendar takes
+  // the card. The band heading changes with it, because "see if vending is
+  // right for you" describes questions that funnel no longer asks.
+  bookingEmbedUrl?: string;
+  title?: string;
 };
 
 // The dark two-panel quiz band. The left card holds the inline qualification
@@ -20,7 +25,12 @@ type ApplyQuizProps = {
 // renders the matching fit result in place — no navigation to /qualify or
 // /thank-you at any point. Variant A (dollar ladder) is forced server-side;
 // the A/B invest-copy experiment is retired for this funnel.
-export function ApplyQuiz({ attribution, idempotencyKey }: ApplyQuizProps) {
+export function ApplyQuiz({
+  attribution,
+  idempotencyKey,
+  bookingEmbedUrl,
+  title = applyQuiz.title,
+}: ApplyQuizProps) {
   return (
     <section
       id={APPLY_QUIZ_ANCHOR}
@@ -36,7 +46,7 @@ export function ApplyQuiz({ attribution, idempotencyKey }: ApplyQuizProps) {
           {applyQuiz.eyebrow}
         </p>
         <h2 className="mt-4 text-center text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.05] font-black text-white uppercase">
-          {applyQuiz.title}
+          {title}
         </h2>
 
         <div className="mx-auto mt-11 flex max-w-[1000px] flex-col items-start gap-7 lg:flex-row">
@@ -52,6 +62,7 @@ export function ApplyQuiz({ attribution, idempotencyKey }: ApplyQuizProps) {
               idempotencyKey={idempotencyKey}
               intent="qualification"
               inlineQualification
+              bookingEmbedUrl={bookingEmbedUrl}
               submitLabel={applyQuiz.submitLabel}
             />
           </div>

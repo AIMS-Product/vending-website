@@ -498,6 +498,66 @@ describe("PublicLeadForm", () => {
     expect(html).not.toContain("lead_stage_one");
   });
 
+  // --- /book-now: stage 1, then straight to the setter calendar -----------
+  // Kody, 2026-08-10. Same stage 1 as the scored funnel (so the lead is still
+  // persisted, consented and synced), but no questions and no scoring — the
+  // calendar takes the card as soon as stage 1 succeeds.
+  it("replaces stage 2 with the booking calendar when bookingEmbedUrl is set", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        finishAction,
+        attribution,
+        hiddenFields: { qualification_form_id: "form_1" },
+        idempotencyKey: "lead-book-now",
+        intent: "qualification",
+        inlineQualification: true,
+        bookingEmbedUrl:
+          "https://calendly.com/d/cvsd-wxt-cvb/vendingpreneurs-quick-discovery",
+        submitLabel: "Submit",
+        initialState: stageOneStarted,
+        initialSubmittedValues: {
+          email: "buyer@example.com",
+          full_name: "Casey Buyer",
+        },
+      }),
+    );
+
+    // The setter calendar, opened on the date picker and prefilled so the
+    // Calendly booking webhook still joins back to this lead.
+    expect(html).toMatch(/<iframe[^>]+src="https:\/\/calendly\.com\/[^"]+"/);
+    expect(html).toContain("cvsd-wxt-cvb/vendingpreneurs-quick-discovery");
+    expect(html).toContain("embed_type=Inline");
+    expect(html).toContain("Casey+Buyer");
+    expect(html).toContain("buyer%40example.com");
+    // No scoring questions, and no second form to submit.
+    expect(html).not.toContain('name="timeline"');
+    expect(html).not.toContain('name="invest"');
+    expect(html).not.toContain("<form");
+  });
+
+  it("still collects both consents before showing the booking calendar", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        finishAction,
+        attribution,
+        hiddenFields: { qualification_form_id: "form_1" },
+        idempotencyKey: "lead-book-now-stage-1",
+        intent: "qualification",
+        inlineQualification: true,
+        bookingEmbedUrl:
+          "https://calendly.com/d/cvsd-wxt-cvb/vendingpreneurs-quick-discovery",
+        submitLabel: "Submit",
+      }),
+    );
+
+    expect(html).toContain('name="consent_updates"');
+    expect(html).toContain('name="consent_contact"');
+    // The calendar only appears after stage 1 succeeds.
+    expect(html).not.toContain("<iframe");
+  });
+
   it("shows who stage 2 is continuing for", () => {
     const html = renderToStaticMarkup(
       createElement(PublicLeadForm, {
