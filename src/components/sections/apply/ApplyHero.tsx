@@ -28,7 +28,10 @@ export function ApplyHero({
           <h1 className="mx-auto mt-5 max-w-[21ch] text-[clamp(2.2rem,4vw,3.6rem)] leading-[1.04] font-black tracking-tight text-balance text-[#111111] uppercase">
             {applyHero.headline}
           </h1>
-          <p className="mx-auto mt-4 max-w-[24ch] text-[clamp(1.5rem,2.6vw,2.3rem)] leading-[1.08] font-black tracking-tight text-balance text-[#111111] uppercase">
+          {/* Kody, 2026-08-11: the deep blue rather than ink, so the eye can
+              tell the qualifier from the claim above it at a glance. Same
+              #066a99 as the eyebrow and every other section eyebrow. */}
+          <p className="mx-auto mt-4 max-w-[24ch] text-[clamp(1.5rem,2.6vw,2.3rem)] leading-[1.08] font-black tracking-tight text-balance text-[#066a99] uppercase">
             {applyHero.subheadline}
           </p>
           <p className="mx-auto mt-6 max-w-[52ch] text-lg leading-relaxed font-semibold text-slate-700">
