@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { QualificationAnswerActionState } from "@/app/qualify/[sessionToken]/actions";
 import type { QualificationQuestionSnapshot } from "@/lib/qualification/forms";
+import { filterVpOperatorPathQuestions } from "@/lib/qualification/vp-fields";
 import type { Json } from "@/types/database";
 import { cn } from "@/lib/utils";
 
@@ -38,8 +39,14 @@ export function QualificationRuntime({
 }: QualificationRuntimeProps) {
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, Json>>(session.answers);
+  // Form V2 branching: answering the operator gate reveals only that path's
+  // questions. Forms without the gate pass through unchanged.
+  const questions = filterVpOperatorPathQuestions(session.questions, answers);
   const [currentIndex, setCurrentIndex] = useState(() =>
-    initialQuestionIndex(session),
+    initialQuestionIndex(
+      session,
+      filterVpOperatorPathQuestions(session.questions, session.answers),
+    ),
   );
   const [completionState, setCompletionState] =
     useState<QualificationAnswerActionState | null>(
@@ -57,7 +64,7 @@ export function QualificationRuntime({
     index: number;
   } | null>(null);
 
-  const currentQuestion = session.questions[currentIndex] ?? null;
+  const currentQuestion = questions[currentIndex] ?? null;
   const activeState = completionState ?? state;
   const fieldErrors =
     activeState.status === "error" ? activeState.fieldErrors : undefined;
@@ -66,19 +73,31 @@ export function QualificationRuntime({
       ? fieldErrors[currentQuestion.id]
       : undefined;
   const progressValue =
-    session.questions.length > 0
-      ? Math.round(((currentIndex + 1) / session.questions.length) * 100)
+    questions.length > 0
+      ? Math.round(((currentIndex + 1) / questions.length) * 100)
       : 0;
 
   useEffect(() => {
     if (state.status !== "saved") return;
     const submitted = lastSubmitted.current;
     if (!submitted) return;
+    // Consume the submission: `questions` can change identity when the gate
+    // answer lands (the branch reveals), re-running this effect while the
+    // action state is still "saved" — without this the completion call could
+    // double-fire.
+    lastSubmitted.current = null;
     setAnswers((current) => ({
       ...current,
       [submitted.questionId]: submitted.answerValue,
     }));
-    if (submitted.index < session.questions.length - 1) {
+    // Answering the gate reveals that path's questions, so "was this the last
+    // question?" must be judged against the list as it will exist after this
+    // answer is applied — not the pre-answer list this closure rendered with.
+    const nextQuestions = filterVpOperatorPathQuestions(session.questions, {
+      ...answers,
+      [submitted.questionId]: submitted.answerValue,
+    });
+    if (submitted.index < nextQuestions.length - 1) {
       setCurrentIndex(submitted.index + 1);
       setCompletionState(null);
       return;
@@ -87,13 +106,13 @@ export function QualificationRuntime({
       setCompletionState(result);
       if (result.status === "error") {
         const firstErrorId = Object.keys(result.fieldErrors ?? {})[0];
-        const errorIndex = session.questions.findIndex(
+        const errorIndex = nextQuestions.findIndex(
           (question) => question.id === firstErrorId,
         );
         if (errorIndex >= 0) setCurrentIndex(errorIndex);
       }
     });
-  }, [completeAction, session.questions, state]);
+  }, [completeAction, session.questions, answers, state]);
 
   useEffect(() => {
     if (completionState?.status === "completed") {
@@ -142,8 +161,8 @@ export function QualificationRuntime({
       <div className="relative mx-auto grid min-h-screen w-full max-w-7xl gap-8 px-5 py-6 md:grid-cols-[minmax(0,1fr)_380px] md:px-10 lg:px-12">
         <div className="flex min-h-[calc(100vh-3rem)] flex-col">
           <RuntimeHeader
-            current={Math.min(currentIndex + 1, session.questions.length)}
-            total={session.questions.length}
+            current={Math.min(currentIndex + 1, questions.length)}
+            total={questions.length}
             progressValue={progressValue}
           />
 
@@ -161,7 +180,7 @@ export function QualificationRuntime({
               />
               <div className="max-w-3xl">
                 <p className="text-sm font-semibold text-[#0b63f6]">
-                  Question {currentIndex + 1} of {session.questions.length}
+                  Question {currentIndex + 1} of {questions.length}
                 </p>
                 <h1 className="mt-4 text-[clamp(2rem,5vw,4.75rem)] leading-[1.02] font-black text-slate-950">
                   {currentQuestion.label}
@@ -186,7 +205,7 @@ export function QualificationRuntime({
 
               <RuntimeControls
                 canGoBack={currentIndex > 0}
-                isLast={currentIndex === session.questions.length - 1}
+                isLast={currentIndex === questions.length - 1}
                 pending={pending}
                 onBack={() => {
                   setCompletionState(null);
@@ -545,12 +564,25 @@ function answerHasValue(value: Json): boolean {
   return Object.keys(value).length > 0;
 }
 
-function initialQuestionIndex(session: QualificationRuntimeSession) {
+function initialQuestionIndex(
+  session: QualificationRuntimeSession,
+  questions: readonly QualificationQuestionSnapshot[],
+) {
   if (session.status === "completed") return 0;
-  const index = session.questions.findIndex(
+  // currentQuestionId tracks the first unanswered *required* question, but
+  // the Form V2 branch questions are schema-optional by design — resuming
+  // must not jump past an optional question the visitor has not seen yet, so
+  // the earlier of the two wins.
+  const current = questions.findIndex(
     (question) => question.id === session.currentQuestionId,
   );
-  return index >= 0 ? index : 0;
+  const unanswered = questions.findIndex(
+    (question) => !answerHasValue(session.answers[question.id] ?? null),
+  );
+  if (current >= 0 && unanswered >= 0) return Math.min(current, unanswered);
+  if (current >= 0) return current;
+  if (unanswered >= 0) return unanswered;
+  return 0;
 }
 
 function inputTypeFor(type: QualificationQuestionSnapshot["type"]) {

@@ -487,7 +487,7 @@ describe("startInlineQualification", () => {
 
     expect(result).toEqual({
       status: "success",
-      message: "Got your details. Two quick questions.",
+      message: "Got your details. A few quick questions.",
       leadId: "lead_1",
       sessionToken: "raw_stage_token",
     });
@@ -578,6 +578,12 @@ describe("finishInlineQualification", () => {
     });
     expect(mocks.finishInlineQualification).toHaveBeenCalledWith({
       sessionToken: "raw_stage_token",
+      // Form V2 fields pass through even when the posted form omits them —
+      // blank means "not on this path" to the orchestrator.
+      operator: "",
+      persona: "",
+      confidence: "",
+      bottleneck: "",
       timeline: "asap",
       invest: "15k_plus",
       userAgent: "vitest",

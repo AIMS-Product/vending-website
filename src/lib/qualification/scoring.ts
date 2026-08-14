@@ -1,10 +1,15 @@
 /**
  * VP lead qualification scoring engine.
  *
- * Pure, data-driven scoring for the two qualifying questions (timeline +
- * investment). Points, options, and thank-you copy live in the tables below so
- * they can be tuned without touching the logic. See
- * .claude/specs/2026-07-20-vp-qualification-scoring.md.
+ * Pure, data-driven scoring for the qualifying questions. Points, options, and
+ * thank-you copy live in the tables below so they can be tuned without
+ * touching the logic. See .claude/specs/2026-07-20-vp-qualification-scoring.md.
+ *
+ * Form V2 (Kody, 2026-08-14): score = urgency (0–40) + investment (0–60).
+ * Existing vending operators (the gate question) get the full 40 urgency
+ * points and skip the timeline question; everyone else earns urgency from
+ * timeline exactly as before. Investment points, the no-cash auto-disqualify,
+ * and every band threshold are unchanged.
  *
  * NOTE: Variant B rungs and copy still need reconciliation with Kody (the form
  * list and scoring table disagree on the top rung). The scoring table is
@@ -67,7 +72,7 @@ export const INVEST_OPTIONS: Record<
     { value: "1_3k", label: "$1,000 – $3,000", points: 15 },
     {
       value: "no_cash",
-      label: "No available cash to invest",
+      label: "None/Not ready to deploy capital yet",
       points: 0,
       disqualifies: true,
     },
@@ -173,31 +178,79 @@ const BAND_THANK_YOU: Record<QualificationBand, ThankYouStateKey> = {
  * `timeline` role and the invest question the `available_capital` role, and
  * each option's stored value must equal the matching option `value` in the
  * tables above (that's the data contract between the form definition and the
- * engine).
+ * engine). The operator gate carries `operator_status` ("yes"/"no") and the
+ * persona question `persona` — both Form V2 additions.
  */
 export const TIMELINE_ROLE = "timeline";
 export const INVEST_ROLE = "available_capital";
+export const OPERATOR_ROLE = "operator_status";
+export const PERSONA_ROLE = "persona";
+
+/** Urgency points an existing operator earns in place of the timeline answer. */
+export const OPERATOR_URGENCY_POINTS = 40;
+
+/** "Yes" on the gate question, as stored in the normalized summary. */
+export const OPERATOR_YES_VALUE = "yes";
+
+/**
+ * Kody's PERSONA key mapping (Form V2 doc): the gate answer wins — any "yes"
+ * is OPERATOR regardless of other answers — otherwise the persona question's
+ * stored value maps to its uppercase key. Null when neither is present (e.g.
+ * legacy sessions and non-VP forms), so callers can skip the field entirely.
+ */
+export type PersonaKey =
+  | "OPERATOR"
+  | "DIVERSIFIER"
+  | "ESCAPE"
+  | "TRIGGERED"
+  | "FAMILY"
+  | "UNSURE";
+
+const PERSONA_KEY_BY_VALUE: Record<string, PersonaKey> = {
+  diversifier: "DIVERSIFIER",
+  escape: "ESCAPE",
+  triggered: "TRIGGERED",
+  family: "FAMILY",
+  unsure: "UNSURE",
+};
+
+export function derivePersonaKey(
+  normalizedSummary: Record<string, unknown> | null | undefined,
+): PersonaKey | null {
+  if (!normalizedSummary) return null;
+  if (normalizedSummary[OPERATOR_ROLE] === OPERATOR_YES_VALUE) {
+    return "OPERATOR";
+  }
+  const persona = normalizedSummary[PERSONA_ROLE];
+  if (typeof persona !== "string") return null;
+  return PERSONA_KEY_BY_VALUE[persona] ?? null;
+}
 
 /**
  * Derives a score from a completed session's normalized answer summary plus its
  * A/B variant key. Returns null (rather than throwing) when the session is not a
- * scoring form — missing timeline/invest answers, no A/B variant, or option
- * values the engine doesn't recognise — so non-scoring qualification forms pass
- * through untouched.
+ * scoring form — missing invest answer, missing timeline for a non-operator,
+ * no A/B variant, or option values the engine doesn't recognise — so
+ * non-scoring qualification forms pass through untouched.
  */
 export function deriveQualificationScore(
   normalizedSummary: Record<string, unknown> | null | undefined,
   variantKey: string | null | undefined,
 ): ScoreResult | null {
   if (!normalizedSummary) return null;
+  const operator = normalizedSummary[OPERATOR_ROLE] === OPERATOR_YES_VALUE;
   const timeline = normalizedSummary[TIMELINE_ROLE];
   const invest = normalizedSummary[INVEST_ROLE];
   const variant = variantKey === "A" || variantKey === "B" ? variantKey : null;
-  if (typeof timeline !== "string" || typeof invest !== "string" || !variant) {
-    return null;
-  }
+  if (typeof invest !== "string" || !variant) return null;
+  if (!operator && typeof timeline !== "string") return null;
   try {
-    return scoreQualification({ timeline, invest, variant });
+    return scoreQualification({
+      timeline: typeof timeline === "string" ? timeline : null,
+      invest,
+      variant,
+      operator,
+    });
   } catch (error) {
     if (error instanceof ScoringError) return null;
     throw error;
@@ -219,9 +272,12 @@ export function assignInvestVariant(seed: string): InvestVariant {
 }
 
 export type ScoreInput = {
-  timeline: string;
+  /** Null/absent is valid only for operators, who skip the timeline question. */
+  timeline?: string | null;
   invest: string;
   variant: InvestVariant;
+  /** True when the gate question was answered "yes" — flat 40 urgency. */
+  operator?: boolean;
 };
 
 export type ScoreResult = {
@@ -257,9 +313,10 @@ function bandFromScore(total: number): QualificationBand {
 }
 
 /**
- * Scores a qualification response. `total` is the sum of the two questions
- * (max 100). A disqualifying invest answer forces the `disqualify` band even
- * when the raw total would otherwise clear a higher threshold.
+ * Scores a qualification response. `total` is urgency + investment (max 100).
+ * Operators take the full urgency points in place of a timeline answer; a
+ * disqualifying invest answer forces the `disqualify` band even when the raw
+ * total would otherwise clear a higher threshold.
  */
 export function scoreQualification(input: ScoreInput): ScoreResult {
   const investOptions = INVEST_OPTIONS[input.variant];
@@ -267,14 +324,22 @@ export function scoreQualification(input: ScoreInput): ScoreResult {
     throw new ScoringError(`Unknown invest variant: ${input.variant}`);
   }
 
-  const timelineOption = findOption(
-    TIMELINE_OPTIONS,
-    input.timeline,
-    "timeline",
-  );
   const investOption = findOption(investOptions, input.invest, "invest");
 
-  const timelinePoints = timelineOption.points;
+  let timelinePoints: number;
+  if (input.operator) {
+    timelinePoints = OPERATOR_URGENCY_POINTS;
+  } else {
+    if (typeof input.timeline !== "string") {
+      throw new ScoringError("Timeline answer is required for non-operators.");
+    }
+    timelinePoints = findOption(
+      TIMELINE_OPTIONS,
+      input.timeline,
+      "timeline",
+    ).points;
+  }
+
   const investPoints = investOption.points;
   const total = timelinePoints + investPoints;
   const disqualified = Boolean(investOption.disqualifies);

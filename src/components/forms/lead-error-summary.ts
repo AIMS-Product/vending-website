@@ -39,6 +39,13 @@ const FIELD_DESCRIPTORS: ReadonlyArray<{
     label: "Business stage",
   },
   { errorKey: "budget", name: "budget", label: "Available startup budget" },
+  // Form V2 stage-2 questions, in presentation order: the operator gate, then
+  // the Standard path (persona/confidence/timeline/invest) with the Operator
+  // path's bottleneck between the branches.
+  { errorKey: "operator", name: "operator", label: "Operator question" },
+  { errorKey: "persona", name: "persona", label: "About you" },
+  { errorKey: "confidence", name: "confidence", label: "Confidence" },
+  { errorKey: "bottleneck", name: "bottleneck", label: "Bottleneck" },
   // Shared field name/id between /apply's "Launch timeline" select and the
   // inline qualification funnel's timeline question — the two never render
   // in the same form instance, so "Timeline" stays accurate for both.

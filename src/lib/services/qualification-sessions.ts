@@ -10,6 +10,7 @@ import {
   type QualificationQuestionSnapshot,
 } from "@/lib/qualification/forms";
 import {
+  derivePersonaKey,
   deriveQualificationScore,
   INVEST_ROLE,
   investFormOptions,
@@ -272,13 +273,24 @@ export async function completeQualificationSession(
     normalizedSummary as Record<string, unknown>,
     session.variant_key,
   );
-  const leadSummary = score
-    ? {
-        ...(normalizedSummary as Record<string, Json>),
-        qualification_score: score.total,
-        qualification_band: score.band,
-        qualification_thank_you_state: score.thankYouState,
-      }
+  // Kody's PERSONA key (Form V2): OPERATOR when the gate was "yes", else the
+  // persona answer's uppercase key. Null for forms without those roles, in
+  // which case the summary stays untouched.
+  const personaKey = derivePersonaKey(
+    normalizedSummary as Record<string, unknown>,
+  );
+  const summaryExtras: Record<string, Json> = {
+    ...(score
+      ? {
+          qualification_score: score.total,
+          qualification_band: score.band,
+          qualification_thank_you_state: score.thankYouState,
+        }
+      : {}),
+    ...(personaKey ? { persona_key: personaKey } : {}),
+  };
+  const leadSummary = Object.keys(summaryExtras).length
+    ? { ...(normalizedSummary as Record<string, Json>), ...summaryExtras }
     : normalizedSummary;
   const consentAnswer = consentAnswerFor(context);
   await updateSession(client, session.id, {
@@ -584,6 +596,12 @@ async function enqueueQualificationEnrichment(
         band: score ? score.band : null,
         thankYouState: score ? score.thankYouState : null,
         disqualified: score ? score.disqualified : null,
+        // Kody's PERSONA key for email/comms sorting (Form V2). Also derivable
+        // from `normalized` (operator_status + persona), carried here so
+        // downstream consumers don't each re-implement the mapping.
+        personaKey: derivePersonaKey(
+          normalizedSummary as Record<string, unknown>,
+        ),
       },
       attribution: sourceAttributionFor(session),
       normalized: normalizedSummary,

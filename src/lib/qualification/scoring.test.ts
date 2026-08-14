@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   assignInvestVariant,
+  derivePersonaKey,
   deriveQualificationScore,
   INVEST_OPTIONS,
   INVEST_ROLE,
+  OPERATOR_ROLE,
+  OPERATOR_URGENCY_POINTS,
+  PERSONA_ROLE,
   scoreQualification,
   ScoringError,
   THANK_YOU_STATES,
@@ -150,6 +154,46 @@ describe("scoreQualification", () => {
     expect(disq.band).toBe("disqualify");
   });
 
+  // Form V2 (Kody, 2026-08-14): existing operators earn the full urgency
+  // points from the gate answer and never see the timeline question.
+  it("scores an operator at flat 40 urgency without a timeline answer", () => {
+    const result = scoreQualification({
+      operator: true,
+      invest: "15k_plus",
+      variant: "A",
+    });
+    expect(result.timelinePoints).toBe(OPERATOR_URGENCY_POINTS);
+    expect(result.total).toBe(100);
+    expect(result.band).toBe("top_closers");
+  });
+
+  it("still auto-disqualifies an operator with no capital", () => {
+    const result = scoreQualification({
+      operator: true,
+      invest: "no_cash",
+      variant: "A",
+    });
+    expect(result.disqualified).toBe(true);
+    expect(result.band).toBe("disqualify");
+  });
+
+  it("ignores a supplied timeline for operators — the gate answer wins", () => {
+    const result = scoreQualification({
+      operator: true,
+      timeline: "unsure",
+      invest: "5_10k",
+      variant: "A",
+    });
+    expect(result.timelinePoints).toBe(OPERATOR_URGENCY_POINTS);
+    expect(result.total).toBe(80);
+  });
+
+  it("throws when a non-operator has no timeline answer", () => {
+    expect(() =>
+      scoreQualification({ invest: "15k_plus", variant: "A" }),
+    ).toThrow(ScoringError);
+  });
+
   it("throws for an unknown timeline or invest option", () => {
     expect(() =>
       scoreQualification({
@@ -236,6 +280,64 @@ describe("deriveQualificationScore", () => {
         { [TIMELINE_ROLE]: "asap", [INVEST_ROLE]: "made_up_value" },
         "A",
       ),
+    ).toBeNull();
+  });
+});
+
+describe("deriveQualificationScore (Form V2 operator gate)", () => {
+  it("scores an operator summary without a timeline role", () => {
+    const result = deriveQualificationScore(
+      { [OPERATOR_ROLE]: "yes", [INVEST_ROLE]: "10_15k" },
+      "A",
+    );
+    expect(result?.total).toBe(90);
+    expect(result?.band).toBe("top_closers");
+  });
+
+  it("still requires a timeline for a non-operator summary", () => {
+    expect(
+      deriveQualificationScore(
+        { [OPERATOR_ROLE]: "no", [INVEST_ROLE]: "10_15k" },
+        "A",
+      ),
+    ).toBeNull();
+  });
+
+  it("keeps pre-gate summaries scoring exactly as before", () => {
+    const result = deriveQualificationScore(
+      { [TIMELINE_ROLE]: "asap", [INVEST_ROLE]: "15k_plus" },
+      "A",
+    );
+    expect(result?.total).toBe(100);
+  });
+});
+
+describe("derivePersonaKey", () => {
+  it("maps the gate answer to OPERATOR regardless of persona", () => {
+    expect(
+      derivePersonaKey({ [OPERATOR_ROLE]: "yes", [PERSONA_ROLE]: "escape" }),
+    ).toBe("OPERATOR");
+  });
+
+  it("maps each standard persona value to its uppercase key", () => {
+    for (const [value, key] of [
+      ["diversifier", "DIVERSIFIER"],
+      ["escape", "ESCAPE"],
+      ["triggered", "TRIGGERED"],
+      ["family", "FAMILY"],
+      ["unsure", "UNSURE"],
+    ] as const) {
+      expect(
+        derivePersonaKey({ [OPERATOR_ROLE]: "no", [PERSONA_ROLE]: value }),
+      ).toBe(key);
+    }
+  });
+
+  it("returns null for summaries without persona roles (legacy + non-VP forms)", () => {
+    expect(derivePersonaKey({ [TIMELINE_ROLE]: "asap" })).toBeNull();
+    expect(derivePersonaKey(null)).toBeNull();
+    expect(
+      derivePersonaKey({ [OPERATOR_ROLE]: "no", [PERSONA_ROLE]: "unknown" }),
     ).toBeNull();
   });
 });

@@ -795,6 +795,8 @@ describe("qualification sessions", () => {
       band: null,
       thankYouState: null,
       disqualified: null,
+      // No operator/persona roles on this form either → no persona key.
+      personaKey: null,
     });
     expect(payload.attribution).toEqual({
       source_path: "/start",

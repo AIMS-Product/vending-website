@@ -168,6 +168,10 @@ export async function submitInlineQualification(
       ...intakeFieldsFromFormData(formData, h),
       consentUpdates: field(formData, "consent_updates") === "true",
       consentContact: field(formData, "consent_contact") === "true",
+      operator: field(formData, "operator"),
+      persona: field(formData, "persona"),
+      confidence: field(formData, "confidence"),
+      bottleneck: field(formData, "bottleneck"),
       timeline: field(formData, "timeline"),
       invest: field(formData, "invest"),
     });
@@ -232,7 +236,7 @@ export async function startInlineQualification(
 
     return {
       status: "success",
-      message: "Got your details. Two quick questions.",
+      message: "Got your details. A few quick questions.",
       leadId: result.leadId,
       sessionToken: result.sessionToken,
     };
@@ -254,6 +258,10 @@ export async function finishInlineQualification(
   try {
     const result = await finishInlineQualificationOrchestrator({
       sessionToken: field(formData, "session_token"),
+      operator: field(formData, "operator"),
+      persona: field(formData, "persona"),
+      confidence: field(formData, "confidence"),
+      bottleneck: field(formData, "bottleneck"),
       timeline: field(formData, "timeline"),
       invest: field(formData, "invest"),
       userAgent: h.get("user-agent"),

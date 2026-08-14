@@ -195,4 +195,99 @@ describe("QualificationRuntime", () => {
     expect(html).toContain('href="/thanks"');
     expect(html).not.toContain("<form");
   });
+
+  // Form V2 (Kody, 2026-08-14): forms carrying the operator gate reveal only
+  // the visitor's path. Forms without the gate (everything above) are
+  // untouched by the filter.
+  describe("operator-gate branching", () => {
+    const gateQuestions: QualificationRuntimeSession["questions"] = [
+      {
+        id: "operator",
+        type: "single_choice",
+        label: "Do you already operate vending machines?",
+        required: false,
+        options: [
+          { id: "yes", label: "Yes", value: "yes" },
+          { id: "no", label: "No", value: "no" },
+        ],
+      },
+      {
+        id: "persona",
+        type: "single_choice",
+        label: "Which of these sounds most like you right now?",
+        required: false,
+        options: [{ id: "escape", label: "Escape", value: "escape" }],
+      },
+      {
+        id: "bottleneck",
+        type: "single_choice",
+        label: "What's holding your business back right now?",
+        required: false,
+        options: [{ id: "locations", label: "Locations", value: "locations" }],
+      },
+      {
+        id: "timeline",
+        type: "single_choice",
+        label: "When do you want your first machine earning income?",
+        required: false,
+        options: [{ id: "asap", label: "ASAP", value: "asap" }],
+      },
+      {
+        id: "invest",
+        type: "single_choice",
+        label: "How much capital are you ready to invest?",
+        required: true,
+        options: [{ id: "15k_plus", label: "$15,000+", value: "15k_plus" }],
+      },
+    ];
+
+    it("hides both branches until the gate is answered", () => {
+      const html = renderRuntime(
+        makeSession({
+          questions: gateQuestions,
+          currentQuestionId: "operator",
+          answers: {},
+        }),
+      );
+
+      // Visible: gate + invest only.
+      expect(html).toContain("Question 1 of 2");
+      expect(html).toContain("Do you already operate vending machines?");
+      expect(html).not.toContain("Which of these sounds most like you");
+      expect(html).not.toContain("What&#x27;s holding your business back");
+    });
+
+    it("walks the standard path (no bottleneck) after a No", () => {
+      const html = renderRuntime(
+        makeSession({
+          questions: gateQuestions,
+          currentQuestionId: "invest",
+          answers: { operator: "no" },
+        }),
+      );
+
+      // Gate answered "no" → gate, persona, timeline, invest (4 questions),
+      // resuming on the first unanswered (persona).
+      expect(html).toContain("Question 2 of 4");
+      expect(html).toContain("Which of these sounds most like you right now?");
+    });
+
+    it("walks the leaner operator path after a Yes", () => {
+      const html = renderRuntime(
+        makeSession({
+          questions: gateQuestions,
+          currentQuestionId: "invest",
+          answers: { operator: "yes" },
+        }),
+      );
+
+      // Gate answered "yes" → gate, bottleneck, invest (3 questions),
+      // resuming on the first unanswered (bottleneck).
+      expect(html).toContain("Question 2 of 3");
+      expect(html).toContain(
+        "What&#x27;s holding your business back right now?",
+      );
+      expect(html).not.toContain("Which of these sounds most like you");
+    });
+  });
 });

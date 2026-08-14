@@ -28,6 +28,11 @@ export const qualificationNormalizedRoles = [
   "machine_goal",
   "consent",
   "contact_preference",
+  // Form V2 (Kody, 2026-08-14): the operator gate + its branch questions.
+  "operator_status",
+  "persona",
+  "confidence",
+  "bottleneck",
 ] as const;
 
 export type QualificationQuestionType =

@@ -145,14 +145,104 @@ function makeLead(overrides: Partial<LeadRow> = {}): LeadRow {
   };
 }
 
-function makeForm(): QualificationFormRow {
+// Mirrors the Form V2 published schema (version 3, see the
+// 20260814210000_vp_form_v3_operator_paths.sql migration): the operator gate
+// plus its branch questions, all schema-optional except invest — path
+// requiredness lives in the inline service under test here.
+const vpSchemaV3 = {
+  version: 1,
+  questions: [
+    ...vpSchema.questions.filter(
+      (question) =>
+        question.id !== VP_QUESTION_IDS.timeline &&
+        question.id !== VP_QUESTION_IDS.invest,
+    ),
+    {
+      id: VP_QUESTION_IDS.operator,
+      type: "single_choice",
+      label: "Do you already operate vending machines?",
+      required: false,
+      normalizedRole: "operator_status",
+      options: [
+        { id: "yes", label: "Yes", value: "yes" },
+        { id: "no", label: "No", value: "no" },
+      ],
+    },
+    {
+      id: VP_QUESTION_IDS.persona,
+      type: "single_choice",
+      label: "Which of these sounds most like you right now?",
+      required: false,
+      normalizedRole: "persona",
+      options: [
+        { id: "diversifier", label: "Diversifier", value: "diversifier" },
+        { id: "escape", label: "Escape", value: "escape" },
+        { id: "triggered", label: "Triggered", value: "triggered" },
+        { id: "family", label: "Family", value: "family" },
+        { id: "unsure", label: "None of the above", value: "unsure" },
+      ],
+    },
+    {
+      id: VP_QUESTION_IDS.confidence,
+      type: "single_choice",
+      label:
+        "How confident are you in finding a location and picking a machine?",
+      required: false,
+      normalizedRole: "confidence",
+      options: [
+        {
+          id: "very_confident",
+          label: "Very confident",
+          value: "very_confident",
+        },
+        {
+          id: "one_not_other",
+          label: "One, not the other",
+          value: "one_not_other",
+        },
+        { id: "need_roadmap", label: "Need a roadmap", value: "need_roadmap" },
+        { id: "almost_bought", label: "Almost bought", value: "almost_bought" },
+      ],
+    },
+    {
+      id: VP_QUESTION_IDS.bottleneck,
+      type: "single_choice",
+      label: "What's holding your business back right now?",
+      required: false,
+      normalizedRole: "bottleneck",
+      options: [
+        { id: "locations", label: "Locations", value: "locations" },
+        {
+          id: "underperforming",
+          label: "Underperforming",
+          value: "underperforming",
+        },
+        { id: "financing", label: "Financing", value: "financing" },
+        { id: "other", label: "Something else", value: "other" },
+      ],
+    },
+    {
+      ...vpSchema.questions.find(
+        (question) => question.id === VP_QUESTION_IDS.timeline,
+      )!,
+      required: false,
+    },
+    vpSchema.questions.find(
+      (question) => question.id === VP_QUESTION_IDS.invest,
+    )!,
+  ],
+};
+
+type VpSchema = typeof vpSchema | typeof vpSchemaV3;
+
+function makeForm(schema: VpSchema = vpSchema): QualificationFormRow {
   return {
     id: VP_FORM_ID,
     name: "VP Lead Capture",
     slug: "vp-lead-capture",
     status: "published",
     is_default: false,
-    draft_schema: vpSchema as unknown as Json,
+    draft_schema: schema as unknown as Json,
     current_published_version_id: VP_VERSION_ID,
     created_by: null,
     updated_by: null,
@@ -161,14 +251,14 @@ function makeForm(): QualificationFormRow {
   };
 }
 
-function makeVersion(): QualificationFormVersionRow {
+function makeVersion(schema: VpSchema = vpSchema): QualificationFormVersionRow {
   return {
     id: VP_VERSION_ID,
     form_id: VP_FORM_ID,
-    version_number: 2,
-    schema_snapshot: vpSchema as unknown as Json,
-    question_count: vpSchema.questions.length,
-    normalized_roles: vpSchema.questions
+    version_number: schema === vpSchema ? 2 : 3,
+    schema_snapshot: schema as unknown as Json,
+    question_count: schema.questions.length,
+    normalized_roles: schema.questions
       .map((question) => question.normalizedRole)
       .filter((role): role is string => Boolean(role)),
     published_by: null,
@@ -177,11 +267,11 @@ function makeVersion(): QualificationFormVersionRow {
   };
 }
 
-function buildClient(initial: Partial<FakeState> = {}) {
+function buildClient(initial: Partial<FakeState> = {}, schema?: VpSchema) {
   const state: FakeState = {
     leads: [],
-    forms: [makeForm()],
-    versions: [makeVersion()],
+    forms: [makeForm(schema)],
+    versions: [makeVersion(schema)],
     sessions: [],
     answers: [],
     events: [],
@@ -878,5 +968,202 @@ describe("finishInlineQualification", () => {
     expect(lead?.latest_qualification_completed_at).toBeNull();
     expect(lead?.lifecycle_status).toBe("qualification_pending");
     expect(lead?.email).toBe("buyer@example.com");
+  });
+});
+
+// Form V2 (Kody, 2026-08-14): the operator gate routes "yes" to the leaner
+// Operator path and "no" to the Standard path. Sessions here run against the
+// version-3 schema the migration publishes.
+describe("finishInlineQualification (Form V2 paths)", () => {
+  async function startedV3Session(token: string, idempotencyKey: string) {
+    const fake = buildClient({}, vpSchemaV3);
+    const started = await startInlineQualification(
+      startInput({ idempotencyKey }),
+      { client: fake.client, tokenFactory: () => token },
+    );
+    return { fake, started };
+  }
+
+  it("scores an operator at full urgency without a timeline answer", async () => {
+    const { fake, started } = await startedV3Session(
+      "raw_v2_operator_token",
+      "v2-operator-1",
+    );
+
+    const result = await finishInlineQualification(
+      {
+        sessionToken: started.sessionToken,
+        operator: "yes",
+        bottleneck: "locations",
+        timeline: "",
+        invest: "15k_plus",
+      },
+      { client: fake.client },
+    );
+
+    // Gate "yes" = 40 urgency + $15k+ = 60 → 100, same bands as before.
+    expect(result).toEqual({
+      status: "completed",
+      leadId: started.leadId,
+      thankYouState: "perfect_fit",
+      score: 100,
+    });
+    expect(fake.state.leads[0]?.qualification_summary).toMatchObject({
+      operator_status: "yes",
+      bottleneck: "locations",
+      persona_key: "OPERATOR",
+      qualification_band: "top_closers",
+    });
+  });
+
+  it("still disqualifies an operator with no capital to deploy", async () => {
+    const { fake, started } = await startedV3Session(
+      "raw_v2_operator_dq_token",
+      "v2-operator-2",
+    );
+
+    const result = await finishInlineQualification(
+      {
+        sessionToken: started.sessionToken,
+        operator: "yes",
+        bottleneck: "financing",
+        timeline: "",
+        invest: "no_cash",
+      },
+      { client: fake.client },
+    );
+
+    expect(result.thankYouState).toBe("not_right_time");
+    expect(fake.state.leads[0]?.qualification_summary).toMatchObject({
+      qualification_band: "disqualify",
+    });
+  });
+
+  it("requires the bottleneck answer on the operator path", async () => {
+    const { fake, started } = await startedV3Session(
+      "raw_v2_operator_missing_token",
+      "v2-operator-3",
+    );
+
+    await expect(
+      finishInlineQualification(
+        {
+          sessionToken: started.sessionToken,
+          operator: "yes",
+          timeline: "",
+          invest: "15k_plus",
+        },
+        { client: fake.client },
+      ),
+    ).rejects.toMatchObject({
+      fieldErrors: expect.objectContaining({ bottleneck: expect.any(Array) }),
+    });
+    expect(fake.state.sessions[0]?.status).not.toBe("completed");
+  });
+
+  it("walks the standard path and keeps scoring identical to the old funnel", async () => {
+    const { fake, started } = await startedV3Session(
+      "raw_v2_standard_token",
+      "v2-standard-1",
+    );
+
+    const result = await finishInlineQualification(
+      {
+        sessionToken: started.sessionToken,
+        operator: "no",
+        persona: "escape",
+        confidence: "need_roadmap",
+        timeline: "few_weeks",
+        invest: "5_10k",
+      },
+      { client: fake.client },
+    );
+
+    // few_weeks (30) + $5k-$10k (40) → 70, exactly as before the gate.
+    expect(result).toEqual({
+      status: "completed",
+      leadId: started.leadId,
+      thankYouState: "strong_fit",
+      score: 70,
+    });
+    expect(fake.state.leads[0]?.qualification_summary).toMatchObject({
+      operator_status: "no",
+      persona: "escape",
+      confidence: "need_roadmap",
+      persona_key: "ESCAPE",
+    });
+  });
+
+  it("requires persona, confidence, and timeline on the standard path", async () => {
+    const { fake, started } = await startedV3Session(
+      "raw_v2_standard_missing_token",
+      "v2-standard-2",
+    );
+
+    await expect(
+      finishInlineQualification(
+        {
+          sessionToken: started.sessionToken,
+          operator: "no",
+          timeline: "",
+          invest: "15k_plus",
+        },
+        { client: fake.client },
+      ),
+    ).rejects.toMatchObject({
+      fieldErrors: expect.objectContaining({
+        persona: expect.any(Array),
+        confidence: expect.any(Array),
+        timeline: expect.any(Array),
+      }),
+    });
+    expect(fake.state.sessions[0]?.status).not.toBe("completed");
+  });
+
+  it("keeps the legacy timeline+invest contract working against the V3 form", async () => {
+    // One-shot callers (page-builder embeds, /vp-quiz) still post only the
+    // two scored answers with no gate — they must keep completing.
+    const { fake, started } = await startedV3Session(
+      "raw_v2_legacy_token",
+      "v2-legacy-1",
+    );
+
+    const result = await finishInlineQualification(
+      {
+        sessionToken: started.sessionToken,
+        timeline: "asap",
+        invest: "15k_plus",
+      },
+      { client: fake.client },
+    );
+
+    expect(result.thankYouState).toBe("perfect_fit");
+    expect(result.score).toBe(100);
+  });
+
+  it("tells a gate submission against a pre-V2 session to refresh", async () => {
+    // Deploy race: the session was started against the old published schema,
+    // then the new stepper posts a gate answer the old form cannot store.
+    const fake = buildClient();
+    const started = await startInlineQualification(
+      startInput({ idempotencyKey: "v2-race-1" }),
+      { client: fake.client, tokenFactory: () => "raw_v2_race_token" },
+    );
+
+    await expect(
+      finishInlineQualification(
+        {
+          sessionToken: started.sessionToken,
+          operator: "yes",
+          bottleneck: "locations",
+          timeline: "",
+          invest: "15k_plus",
+        },
+        { client: fake.client },
+      ),
+    ).rejects.toMatchObject({
+      fieldErrors: expect.objectContaining({ session: expect.any(Array) }),
+    });
+    expect(fake.state.sessions[0]?.status).not.toBe("completed");
   });
 });

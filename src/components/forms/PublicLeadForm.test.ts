@@ -295,11 +295,11 @@ describe("PublicLeadForm", () => {
     );
     expect(html).toContain('name="timeline"');
     expect(html).toContain(
-      "When do you want your first machine placed and earning?",
+      "When do you want your first machine earning income?",
     );
-    expect(html).toContain(">As soon as possible<");
+    expect(html).toContain(">ASAP<");
     expect(html).toContain('name="invest"');
-    expect(html).toContain("How much are you ready to invest?");
+    expect(html).toContain("How much capital are you ready to invest?");
     expect(html).toContain(">$15,000+<");
     // Not part of the inline qualification funnel.
     expect(html).not.toContain("City");
@@ -462,7 +462,7 @@ describe("PublicLeadForm", () => {
     expect(html).not.toContain('data-testid="qualification-divider"');
   });
 
-  it("swaps the contact fields for the questions once stage 1 has started", () => {
+  it("swaps the contact fields for the operator gate once stage 1 has started", () => {
     const html = renderToStaticMarkup(
       createElement(PublicLeadForm, {
         action,
@@ -478,14 +478,19 @@ describe("PublicLeadForm", () => {
       }),
     );
 
-    // Same card, new fields — no navigation, no page load.
+    // Same card, new fields — no navigation, no page load. Stage 2 opens on
+    // the Form V2 gate question, one question at a time with every answer
+    // visible (Kody, 2026-08-14).
     expect(html).toContain("<form");
-    expect(html).toContain('name="timeline"');
-    expect(html).toContain(
-      "When do you want your first machine placed and earning?",
+    expect(html).toContain('data-question="operator"');
+    expect(html).toContain("Do you already operate vending machines?");
+    expect(html).toContain(">Yes<");
+    expect(html).toContain(">No<");
+    // Later questions wait their turn — nothing else renders yet.
+    expect(html).not.toContain(
+      "When do you want your first machine earning income?",
     );
-    expect(html).toContain('name="invest"');
-    expect(html).toContain("How much are you ready to invest?");
+    expect(html).not.toContain("How much capital are you ready to invest?");
     // The stage-1 fields are gone.
     expect(html).not.toContain('name="first_name"');
     expect(html).not.toContain('name="last_name"');
@@ -496,6 +501,48 @@ describe("PublicLeadForm", () => {
     expect(html).toContain('name="session_token"');
     expect(html).toContain('value="raw_stage_token"');
     expect(html).not.toContain("lead_stage_one");
+  });
+
+  it("walks the Standard path after a seeded No on the gate", () => {
+    // Seeding the gate answer (the SSR escape hatch) reveals the Standard
+    // path: 5 questions total, currently on the gate screen with its answer
+    // carried as a hidden input for the eventual submit.
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        finishAction,
+        attribution,
+        idempotencyKey: "lead-two-stage-standard",
+        intent: "qualification",
+        inlineQualification: true,
+        submitLabel: "Submit",
+        initialState: stageOneStarted,
+        initialSubmittedValues: { email: "buyer@example.com", operator: "no" },
+      }),
+    );
+
+    expect(html).toContain("Question 1 of 5");
+    expect(html).toMatch(/name="operator"[^>]*value="no"/);
+  });
+
+  it("walks the leaner Operator path after a seeded Yes on the gate", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        finishAction,
+        attribution,
+        idempotencyKey: "lead-two-stage-operator",
+        intent: "qualification",
+        inlineQualification: true,
+        submitLabel: "Submit",
+        initialState: stageOneStarted,
+        initialSubmittedValues: { email: "buyer@example.com", operator: "yes" },
+      }),
+    );
+
+    // Operators get the leaner set: gate + bottleneck + invest.
+    expect(html).toContain("Question 1 of 3");
+    expect(html).toMatch(/name="operator"[^>]*value="yes"/);
   });
 
   // --- /book-now: stage 1, then straight to the setter calendar -----------
@@ -594,6 +641,9 @@ describe("PublicLeadForm", () => {
         },
         initialSubmittedValues: {
           email: "buyer@example.com",
+          operator: "no",
+          persona: "escape",
+          confidence: "need_roadmap",
           timeline: "few_weeks",
         },
       }),
@@ -602,8 +652,11 @@ describe("PublicLeadForm", () => {
     // Still on stage 2, with the error surfaced...
     expect(html).toContain("Investment amount is required.");
     expect(html).toContain('href="#lead-invest"');
-    // ...and the answer the visitor already picked still selected.
-    expect(html).toContain('<option value="few_weeks" selected="">');
+    // ...and every answer the visitor already picked still carried as hidden
+    // inputs, ready for the corrected re-submit.
+    expect(html).toMatch(/name="timeline"[^>]*value="few_weeks"/);
+    expect(html).toMatch(/name="persona"[^>]*value="escape"/);
+    expect(html).toMatch(/name="confidence"[^>]*value="need_roadmap"/);
   });
 
   it("renders the fit result from the stage-2 action state", () => {

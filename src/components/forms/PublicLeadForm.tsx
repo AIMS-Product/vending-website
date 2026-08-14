@@ -35,13 +35,24 @@ import {
 } from "@/lib/tracking/lead-events";
 import { US_STATES } from "@/lib/content/us-states";
 import {
+  VP_BOTTLENECK_FIELD_OPTIONS,
+  VP_BOTTLENECK_LABEL,
+  VP_CONFIDENCE_FIELD_OPTIONS,
+  VP_CONFIDENCE_LABEL,
   VP_CONSENT_CONTACT_LABEL,
   VP_CONSENT_UPDATES_LABEL,
   VP_INVEST_FIELD_OPTIONS,
   VP_INVEST_LABEL,
+  VP_INVEST_OPERATOR_FIELD_OPTIONS,
+  VP_INVEST_OPERATOR_LABEL,
+  VP_OPERATOR_FIELD_OPTIONS,
+  VP_OPERATOR_LABEL,
+  VP_PERSONA_FIELD_OPTIONS,
+  VP_PERSONA_LABEL,
   VP_QUESTION_IDS,
   VP_TIMELINE_FIELD_OPTIONS,
   VP_TIMELINE_LABEL,
+  type VpFieldOption,
 } from "@/lib/qualification/vp-fields";
 import {
   THANK_YOU_STATES,
@@ -75,9 +86,11 @@ type PublicLeadFormProps = {
   // Splits the inline qualification form in two. Stage 1 collects the contact
   // details and both consents (the lead is captured there, so someone who
   // leaves is still contactable); stage 2 replaces those fields in the same
-  // card with the timeline/invest questions and posts them to this action,
-  // identified by the session token stage 1 returned. Without it the form
-  // keeps the one-shot behaviour — there is nowhere for a stage 2 to submit.
+  // card with the Form V2 question stepper (operator gate, then the Operator
+  // or Standard path one question at a time) and posts the answers to this
+  // action, identified by the session token stage 1 returned. Without it the
+  // form keeps the one-shot behaviour — there is nowhere for a stage 2 to
+  // submit.
   finishAction?: PublicLeadFormAction;
   // Skips stage 2 entirely (the /book-now funnel, Kody 2026-08-10): once stage 1
   // has captured the contact details and both consents, this calendar replaces
@@ -635,12 +648,76 @@ export function PublicLeadForm({
   );
 }
 
+// The Form V2 stage-2 question catalog (Kody, 2026-08-14). The gate question
+// picks the path: "yes" → the leaner Operator set, "no" → the Standard set.
+// Copy and option values live in vp-fields.ts; the invest question is the
+// same stored question on both paths, worded around deploying capital for
+// operators.
+type VpStage2Question = {
+  id: string;
+  label: string;
+  options: readonly VpFieldOption[];
+};
+
+const VP_GATE_QUESTION: VpStage2Question = {
+  id: VP_QUESTION_IDS.operator,
+  label: VP_OPERATOR_LABEL,
+  options: VP_OPERATOR_FIELD_OPTIONS,
+};
+
+const VP_OPERATOR_PATH: readonly VpStage2Question[] = [
+  {
+    id: VP_QUESTION_IDS.bottleneck,
+    label: VP_BOTTLENECK_LABEL,
+    options: VP_BOTTLENECK_FIELD_OPTIONS,
+  },
+  {
+    id: VP_QUESTION_IDS.invest,
+    label: VP_INVEST_OPERATOR_LABEL,
+    options: VP_INVEST_OPERATOR_FIELD_OPTIONS,
+  },
+];
+
+const VP_STANDARD_PATH: readonly VpStage2Question[] = [
+  {
+    id: VP_QUESTION_IDS.persona,
+    label: VP_PERSONA_LABEL,
+    options: VP_PERSONA_FIELD_OPTIONS,
+  },
+  {
+    id: VP_QUESTION_IDS.confidence,
+    label: VP_CONFIDENCE_LABEL,
+    options: VP_CONFIDENCE_FIELD_OPTIONS,
+  },
+  {
+    id: VP_QUESTION_IDS.timeline,
+    label: VP_TIMELINE_LABEL,
+    options: VP_TIMELINE_FIELD_OPTIONS,
+  },
+  {
+    id: VP_QUESTION_IDS.invest,
+    label: VP_INVEST_LABEL,
+    options: VP_INVEST_FIELD_OPTIONS,
+  },
+];
+
+function vpStage2Questions(
+  gateAnswer: string | undefined,
+): readonly VpStage2Question[] {
+  if (gateAnswer === "yes") return [VP_GATE_QUESTION, ...VP_OPERATOR_PATH];
+  if (gateAnswer === "no") return [VP_GATE_QUESTION, ...VP_STANDARD_PATH];
+  return [VP_GATE_QUESTION];
+}
+
 /**
  * Stage 2 of the two-stage inline funnel: the same card, with the contact
- * fields swapped for the qualifying questions. No navigation, no page load —
- * the lead was already captured by stage 1. The session is identified by the
- * token stage 1 returned and nothing else; a lead id in the DOM would let
- * anyone post answers against someone else's lead.
+ * fields swapped for the Form V2 stepper — one question at a time with every
+ * answer visible (per Kody, 2026-08-14). Picking an answer advances to the
+ * next question in the path; the final answer arms the submit button, which
+ * posts every recorded answer. No navigation, no page load — the lead was
+ * already captured by stage 1. The session is identified by the token stage 1
+ * returned and nothing else; a lead id in the DOM would let anyone post
+ * answers against someone else's lead.
  */
 function QualificationQuestionsStage({
   action,
@@ -670,10 +747,62 @@ function QualificationQuestionsStage({
   onFieldFocus: () => void;
 }) {
   const hasSummary = summaryItems.length > 0;
+  // Answers live in state (not uncontrolled inputs), so they survive the
+  // action-resolve reset and re-render as hidden inputs on every step. The
+  // SSR-test escape hatch (initialSubmittedValues) seeds them.
+  const [answers, setAnswers] = useState<Record<string, string>>(() =>
+    seedStage2Answers(values),
+  );
+  const [stepIndex, setStepIndex] = useState(0);
+
+  const questions = vpStage2Questions(answers[VP_QUESTION_IDS.operator]);
+  const question = questions[Math.min(stepIndex, questions.length - 1)];
+  // The gate is never last: until it is answered the path is unknown, and
+  // answering it always reveals the path's questions.
+  const isLast = questions.length > 1 && stepIndex >= questions.length - 1;
+  const answered = answers[question.id];
+  const questionError = errors?.[question.id]?.[0];
+
+  // After a failed submit, jump back to the first question the server
+  // flagged so the visitor can fix it. Render-phase state adjustment (the
+  // React-documented alternative to setState-in-effect), guarded on the
+  // action-state identity so only a new result triggers one jump.
+  const [jumpedForState, setJumpedForState] =
+    useState<PublicLeadActionState | null>(null);
+  if (jumpedForState !== state) {
+    setJumpedForState(state);
+    if (state.status === "error" && state.fieldErrors) {
+      const fieldErrors = state.fieldErrors;
+      const errorIndex = questions.findIndex(
+        (candidate) => (fieldErrors[candidate.id]?.length ?? 0) > 0,
+      );
+      if (errorIndex >= 0 && errorIndex !== stepIndex) {
+        setStepIndex(errorIndex);
+      }
+    }
+  }
+
+  const selectOption = (value: string) => {
+    setAnswers((previous) => {
+      // Changing the gate answer switches paths, so the other path's answers
+      // no longer apply — drop everything but the new gate answer.
+      if (
+        question.id === VP_QUESTION_IDS.operator &&
+        previous[VP_QUESTION_IDS.operator] !== undefined &&
+        previous[VP_QUESTION_IDS.operator] !== value
+      ) {
+        return { [VP_QUESTION_IDS.operator]: value };
+      }
+      return { ...previous, [question.id]: value };
+    });
+    if (!isLast) setStepIndex((index) => index + 1);
+  };
+
   return (
     <form
       id="lead-form-qualification-step-2"
       data-form-step="2"
+      data-question={question.id}
       action={action}
       onFocusCapture={onFieldFocus}
       noValidate
@@ -683,10 +812,15 @@ function QualificationQuestionsStage({
       )}
     >
       <input type="hidden" name="session_token" value={sessionToken} />
+      {Object.entries(answers).map(([name, value]) => (
+        <input key={name} type="hidden" name={name} value={value} />
+      ))}
 
       <div className="grid gap-1">
         <p className="inline-flex w-fit rounded-[8px] border-2 border-[#111111] bg-[#111111] px-3 py-1 text-xs font-black tracking-[0.08em] text-white uppercase">
-          Step 2 of 2
+          {questions.length > 1
+            ? `Question ${Math.min(stepIndex, questions.length - 1) + 1} of ${questions.length}`
+            : "Question 1"}
         </p>
         {email ? (
           <p className="text-sm font-semibold text-slate-600">
@@ -704,18 +838,89 @@ function QualificationQuestionsStage({
         />
       )}
 
-      <QualificationQuestions errors={errors} values={values} />
+      <div className="grid gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <p
+            id={`lead-${question.id}-label`}
+            className="text-lg leading-snug font-black text-[#111111]"
+          >
+            {question.label}
+          </p>
+          {stepIndex > 0 && (
+            <button
+              type="button"
+              onClick={() => setStepIndex((index) => Math.max(0, index - 1))}
+              className="shrink-0 text-sm font-bold text-slate-500 underline underline-offset-2 transition hover:text-slate-800"
+            >
+              Back
+            </button>
+          )}
+        </div>
 
-      <SubmitRow
-        pending={pending}
-        submitLabel={submitLabel}
-        state={state}
-        muted={hasSummary}
-        dataGtm="lead-form-submit-qualification-step-2"
-      />
+        <div
+          id={`lead-${question.id}`}
+          aria-labelledby={`lead-${question.id}-label`}
+          className="grid gap-2.5"
+        >
+          {question.options.map((option) => {
+            const selected = answered === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={selected}
+                data-gtm={`lead-form-qualification-${question.id}-${option.value}`}
+                onClick={() => selectOption(option.value)}
+                className={cn(
+                  "min-h-12 rounded-[8px] border-2 border-[#111111] px-4 py-3 text-left text-base leading-snug font-bold transition focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none",
+                  selected
+                    ? "bg-[#111111] text-white shadow-[4px_4px_0_#55b8e8]"
+                    : "bg-white text-slate-900 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#111111]",
+                )}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {questionError && (
+          <p className="text-sm font-bold text-red-600">{questionError}</p>
+        )}
+      </div>
+
+      {isLast && (
+        <SubmitRow
+          pending={pending}
+          submitLabel={submitLabel}
+          state={state}
+          muted={hasSummary}
+          dataGtm="lead-form-submit-qualification-step-2"
+        />
+      )}
 
       <PrivacyAssurance intent="qualification" />
     </form>
+  );
+}
+
+// Seeds the stepper's answers from the SSR-test escape hatch / re-seeded
+// submitted values, keeping only recognised stage-2 question ids.
+function seedStage2Answers(
+  values: Record<string, string>,
+): Record<string, string> {
+  const questionIds = new Set<string>([
+    VP_QUESTION_IDS.operator,
+    VP_QUESTION_IDS.persona,
+    VP_QUESTION_IDS.confidence,
+    VP_QUESTION_IDS.bottleneck,
+    VP_QUESTION_IDS.timeline,
+    VP_QUESTION_IDS.invest,
+  ]);
+  return Object.fromEntries(
+    Object.entries(values).filter(
+      ([name, value]) => questionIds.has(name) && value.length > 0,
+    ),
   );
 }
 
