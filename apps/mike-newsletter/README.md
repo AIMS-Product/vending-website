@@ -27,18 +27,35 @@ Domains once a deployment looks right.
 
 ## Connecting signups
 
-`src/lib/subscribe.ts` is an adapter over three backends. The first one that is
-fully configured wins:
+The newsletter platform is **ActiveCampaign**. `src/lib/subscribe.ts` talks to
+its v3 API and needs three variables:
 
-1. **beehiiv** — `BEEHIIV_API_KEY` + `BEEHIIV_PUBLICATION_ID`
-2. **Kit / ConvertKit** — `KIT_API_KEY` + `KIT_FORM_ID`
-3. **Webhook** — `SUBSCRIBE_WEBHOOK_URL`, posts
-   `{ email, source, publication, submitted_at }`
+| Variable                  | Where it comes from                                   |
+| ------------------------- | ----------------------------------------------------- |
+| `ACTIVECAMPAIGN_API_URL`  | Settings → Developer (the account host, no trailing `/`) |
+| `ACTIVECAMPAIGN_API_KEY`  | Settings → Developer                                  |
+| `ACTIVECAMPAIGN_LIST_ID`  | the `listid` in the URL when you open the list        |
 
-With none of them set the form shows an explicit "signups aren't connected
+Two optional ones: `ACTIVECAMPAIGN_SOURCE_FIELD_ID` stamps which block on the
+page sent the signup onto a custom field, and `ACTIVECAMPAIGN_TAG_ID` tags
+every signup from this site.
+
+A signup is two calls — `contact/sync` to create or update the contact, then
+`contactLists` to subscribe it. The second is the one that matters: a contact
+on no list receives nothing, so a failure there is reported as a failure even
+though the contact was created. `contact/sync` is idempotent, so someone
+signing up twice is not an error. If the list uses double opt-in,
+ActiveCampaign sends the confirmation itself and nothing here changes.
+
+`SUBSCRIBE_WEBHOOK_URL` is an escape hatch, used only when the ActiveCampaign
+variables are absent — handy for pointing signups at Zapier or a staging sink
+while the AC account is being set up. It posts
+`{ email, source, publication, submitted_at }`.
+
+With nothing configured the form shows an explicit "signups aren't connected
 yet" message. That is deliberate: a subscriber told they're on the list who
 then never hears from us is worse than a visible error on a site nobody has
-pointed a domain at yet. **Set one before the domain goes live.**
+pointed a domain at yet. **Set ActiveCampaign before the domain goes live.**
 
 Each submission carries a `source` (`hero` or `closing`) so you can see which
 block on the page converts.

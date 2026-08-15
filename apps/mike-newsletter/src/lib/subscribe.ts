@@ -3,17 +3,19 @@ import "server-only";
 /**
  * Where a signup actually goes.
  *
- * The page ships before the email platform is picked, so this is an adapter
- * with three supported backends. The first one that is fully configured wins:
+ * ActiveCampaign is the newsletter platform. The generic webhook below it is
+ * an escape hatch — useful for pointing signups at Zapier/Make or a staging
+ * sink while the AC account is being set up — and is only used when the
+ * ActiveCampaign variables are absent.
  *
- *   1. beehiiv        BEEHIIV_API_KEY + BEEHIIV_PUBLICATION_ID
- *   2. Kit/ConvertKit KIT_API_KEY + KIT_FORM_ID
- *   3. Webhook        SUBSCRIBE_WEBHOOK_URL  (Zapier, Make, n8n, a CRM…)
+ *   1. ActiveCampaign  ACTIVECAMPAIGN_API_URL + ACTIVECAMPAIGN_API_KEY
+ *                      + ACTIVECAMPAIGN_LIST_ID
+ *   2. Webhook         SUBSCRIBE_WEBHOOK_URL
  *
- * With none of them set the form reports an explicit "not connected yet"
+ * With neither configured the form reports an explicit "not connected yet"
  * error rather than showing a success screen it can't honour. A subscriber
- * who is told they're in and then never hears from us is worse than a
- * visible error on a page nobody has pointed a domain at yet.
+ * who is told they're in and then never hears from us is worse than a visible
+ * error on a page nobody has pointed a domain at yet.
  */
 
 export type SubscribeOutcome =
@@ -37,57 +39,131 @@ type Provider = {
   send: (email: string, source: string) => Promise<boolean>;
 };
 
-function resolveProvider(): Provider | null {
-  const beehiivKey = process.env.BEEHIIV_API_KEY;
-  const beehiivPublication = process.env.BEEHIIV_PUBLICATION_ID;
-  if (beehiivKey && beehiivPublication) {
-    return {
-      name: "beehiiv",
-      send: async (email, source) => {
-        const response = await fetch(
-          `https://api.beehiiv.com/v2/publications/${beehiivPublication}/subscriptions`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${beehiivKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email,
-              reactivate_existing: true,
-              send_welcome_email: true,
-              utm_source: source,
-            }),
-          },
-        );
-        return response.ok;
-      },
-    };
-  }
+/**
+ * ActiveCampaign, API v3.
+ *
+ * Two calls, in order:
+ *
+ *   POST /api/3/contact/sync   create or update the contact (idempotent, so a
+ *                              repeat signup is not an error)
+ *   POST /api/3/contactLists   subscribe that contact to the list
+ *
+ * The second call is the one that matters. A contact that exists but is on no
+ * list receives nothing, so a failure there is reported as a failure even
+ * though the first call succeeded — better a visible retry than a silent
+ * orphan in the contact table.
+ *
+ * If the list is set to double opt-in in ActiveCampaign, AC sends the
+ * confirmation email itself; nothing here needs to change.
+ */
+function activeCampaign(
+  baseUrl: string,
+  apiKey: string,
+  listId: string,
+): Provider {
+  const root = baseUrl.replace(/\/+$/, "");
+  const headers = {
+    "Api-Token": apiKey,
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
 
-  const kitKey = process.env.KIT_API_KEY;
-  const kitForm = process.env.KIT_FORM_ID;
-  if (kitKey && kitForm) {
-    return {
-      name: "kit",
-      send: async (email, source) => {
-        const response = await fetch(
-          `https://api.kit.com/v4/forms/${kitForm}/subscribers`,
-          {
-            method: "POST",
-            headers: {
-              "X-Kit-Api-Key": kitKey,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email_address: email,
-              fields: { source },
-            }),
+  // Optional: an ActiveCampaign custom field to stamp with which block on the
+  // page sent the signup, and a tag to apply. Both are skipped when unset.
+  const sourceFieldId = process.env.ACTIVECAMPAIGN_SOURCE_FIELD_ID;
+  const tagId = process.env.ACTIVECAMPAIGN_TAG_ID;
+
+  return {
+    name: "activecampaign",
+    send: async (email, source) => {
+      const syncResponse = await fetch(`${root}/api/3/contact/sync`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          contact: {
+            email,
+            ...(sourceFieldId
+              ? { fieldValues: [{ field: sourceFieldId, value: source }] }
+              : {}),
           },
+        }),
+      });
+
+      if (!syncResponse.ok) {
+        console.error(
+          `[subscribe] ActiveCampaign contact/sync failed (${syncResponse.status}).`,
         );
-        return response.ok;
-      },
-    };
+        return false;
+      }
+
+      const synced: unknown = await syncResponse.json();
+      const contactId = readContactId(synced);
+      if (!contactId) {
+        console.error(
+          "[subscribe] ActiveCampaign contact/sync returned no contact id.",
+        );
+        return false;
+      }
+
+      const listResponse = await fetch(`${root}/api/3/contactLists`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          contactList: {
+            list: listId,
+            contact: contactId,
+            // 1 = subscribed. AC treats any other value as not-on-the-list.
+            status: 1,
+          },
+        }),
+      });
+
+      if (!listResponse.ok) {
+        console.error(
+          `[subscribe] ActiveCampaign list subscribe failed (${listResponse.status}).`,
+        );
+        return false;
+      }
+
+      if (tagId) {
+        // Best effort. The subscription already succeeded, so a failed tag is
+        // logged and swallowed rather than shown to the reader as an error.
+        const tagResponse = await fetch(`${root}/api/3/contactTags`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            contactTag: { contact: contactId, tag: tagId },
+          }),
+        });
+        if (!tagResponse.ok) {
+          console.error(
+            `[subscribe] ActiveCampaign tag failed (${tagResponse.status}). Subscription itself succeeded.`,
+          );
+        }
+      }
+
+      return true;
+    },
+  };
+}
+
+/** Pulls `contact.id` out of an ActiveCampaign response without trusting it. */
+function readContactId(payload: unknown): string | null {
+  if (typeof payload !== "object" || payload === null) return null;
+  const contact = (payload as { contact?: unknown }).contact;
+  if (typeof contact !== "object" || contact === null) return null;
+  const id = (contact as { id?: unknown }).id;
+  if (typeof id === "string" && id.length > 0) return id;
+  if (typeof id === "number") return String(id);
+  return null;
+}
+
+function resolveProvider(): Provider | null {
+  const acUrl = process.env.ACTIVECAMPAIGN_API_URL;
+  const acKey = process.env.ACTIVECAMPAIGN_API_KEY;
+  const acList = process.env.ACTIVECAMPAIGN_LIST_ID;
+  if (acUrl && acKey && acList) {
+    return activeCampaign(acUrl, acKey, acList);
   }
 
   const webhook = process.env.SUBSCRIBE_WEBHOOK_URL;
@@ -120,8 +196,8 @@ export async function subscribe(
   const provider = resolveProvider();
   if (!provider) {
     console.error(
-      "[subscribe] No newsletter provider configured. Set BEEHIIV_API_KEY + " +
-        "BEEHIIV_PUBLICATION_ID, KIT_API_KEY + KIT_FORM_ID, or SUBSCRIBE_WEBHOOK_URL.",
+      "[subscribe] No newsletter provider configured. Set ACTIVECAMPAIGN_API_URL " +
+        "+ ACTIVECAMPAIGN_API_KEY + ACTIVECAMPAIGN_LIST_ID, or SUBSCRIBE_WEBHOOK_URL.",
     );
     return { ok: false, reason: "unconfigured" };
   }
@@ -129,7 +205,6 @@ export async function subscribe(
   try {
     const delivered = await provider.send(email, source);
     if (!delivered) {
-      console.error(`[subscribe] ${provider.name} rejected the signup.`);
       return { ok: false, reason: "provider" };
     }
     return { ok: true };
