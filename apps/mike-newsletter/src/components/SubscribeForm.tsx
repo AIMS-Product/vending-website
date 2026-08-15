@@ -13,11 +13,19 @@ type Props = {
   source: string;
   /** "light" sits on cream, "dark" sits on the deep blue closing band. */
   tone?: "light" | "dark";
+  /** The ask, sitting directly above the field. */
+  label?: string;
   note?: string;
   id?: string;
 };
 
-export function SubscribeForm({ source, tone = "light", note, id }: Props) {
+export function SubscribeForm({
+  source,
+  tone = "light",
+  label,
+  note,
+  id,
+}: Props) {
   const [state, formAction, pending] = useActionState<SubscribeState, FormData>(
     subscribeAction,
     initialSubscribeState,
@@ -71,6 +79,16 @@ export function SubscribeForm({ source, tone = "light", note, id }: Props) {
       aria-describedby={note ? `${source}-note` : undefined}
     >
       <input type="hidden" name="source" value={source} />
+
+      {label && (
+        <p
+          className={`mb-3 text-[0.9375rem] font-semibold ${
+            dark ? "text-ink-inverse" : "text-ink"
+          }`}
+        >
+          {label}
+        </p>
+      )}
 
       {/* Honeypot. Clipped rather than `display: none` so form-filling bots
           still see a real field, and clipped rather than parked at -9999px so

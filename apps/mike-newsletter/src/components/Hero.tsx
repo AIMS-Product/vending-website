@@ -5,34 +5,45 @@ import { hero, stats } from "@/lib/content";
 export function Hero() {
   return (
     <section className="border-b border-rule">
-      <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-6 pt-9 pb-12 sm:px-8 lg:grid-cols-[1.08fr_0.92fr] lg:gap-14 lg:pt-16 lg:pb-20">
+      {/* Everything above the field is on a budget below 400px: the brief's
+          subhead plus the "Join Entrepreneurship Collective." label is a lot
+          of type to clear before the fold on a 568px-tall phone. */}
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-6 pt-6 pb-12 sm:px-8 sm:pt-9 lg:grid-cols-[1.08fr_0.92fr] lg:gap-14 lg:pt-16 lg:pb-20">
         <div>
           <p className="eyebrow flex items-center gap-3 text-accent">
             <span aria-hidden className="h-px w-8 bg-accent" />
             {hero.eyebrow}
           </p>
 
-          <h1 className="font-display mt-5 max-w-2xl text-[2.6rem] leading-[1.02] text-balance sm:text-6xl lg:text-[4rem]">
+          <h1 className="font-display mt-4 max-w-2xl text-[2.6rem] leading-[1.02] text-balance max-[400px]:text-[2.35rem] sm:mt-5 sm:text-6xl lg:text-[4rem]">
             {hero.heading}
           </h1>
 
-          {/* A deck, not a pitch. The full positioning paragraph lives further
-              down the page; up here every line costs fold space. */}
-          <p className="mt-5 max-w-lg text-lg leading-7 text-ink-muted sm:text-xl sm:leading-8">
+          {/* The front half of the brief's subhead. The whole sentence is
+              intact further down, in "What you get". */}
+          <p className="mt-4 max-w-lg text-lg leading-7 text-ink-muted max-[400px]:text-base max-[400px]:leading-6 sm:mt-5 sm:text-xl sm:leading-8">
             {hero.subhead}
           </p>
 
-          <div className="mt-7 max-w-lg">
-            <SubscribeForm id="subscribe" source="hero" note={hero.formNote} />
-          </div>
-
-          <p className="mt-3 flex items-baseline gap-2.5 text-sm text-ink-muted">
-            <span
-              aria-hidden
-              className="inline-block size-1.5 shrink-0 translate-y-[-0.15em] rounded-full bg-accent"
+          {/* The signup is a defined module, not loose controls on the page.
+              A hairline card is enough to make it the thing the eye lands on
+              after the headline — anything heavier and it stops looking like
+              a publication. */}
+          <div className="mt-6 max-w-lg rounded-lg border border-rule-strong bg-paper-raised p-4 sm:mt-7 sm:p-6">
+            <SubscribeForm
+              id="subscribe"
+              source="hero"
+              label={hero.formLabel}
+              note={hero.formNote}
             />
-            {hero.proofLine}
-          </p>
+            <p className="mt-3 flex items-baseline gap-2.5 border-t border-rule pt-3 text-sm text-ink-muted">
+              <span
+                aria-hidden
+                className="inline-block size-1.5 shrink-0 translate-y-[-0.15em] rounded-full bg-accent"
+              />
+              {hero.proofLine}
+            </p>
+          </div>
         </div>
 
         {/* Capped between phone and desktop: left uncapped, the square portrait

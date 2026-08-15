@@ -20,20 +20,23 @@ export function MeetMike() {
         </div>
 
         {/* The companies are the proof, so they get the list treatment rather
-            than a second photo of the same person. */}
+            than a second photo of the same person. Names only — see the note
+            in content.ts. */}
         <div className="lg:pt-2">
-          <p className="eyebrow text-ink-subtle">He runs</p>
-          <ul className="mt-4 border-t border-rule">
-            {meetMike.companies.map((company) => (
+          <p className="eyebrow text-ink-subtle">{meetMike.companiesLabel}</p>
+          <ol className="mt-4 border-t border-rule">
+            {meetMike.companies.map((company, index) => (
               <li
-                key={company.name}
-                className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-rule py-4"
+                key={company}
+                className="flex items-baseline gap-4 border-b border-rule py-4"
               >
-                <span className="font-display text-xl">{company.name}</span>
-                <span className="text-sm text-ink-subtle">{company.note}</span>
+                <span className="eyebrow tabular-nums text-accent">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="font-display text-xl">{company}</span>
               </li>
             ))}
-          </ul>
+          </ol>
 
           <dl className="mt-8 grid grid-cols-2 gap-6">
             <div>

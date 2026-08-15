@@ -29,6 +29,7 @@ export function ClosingCta() {
             id="closing"
             source="closing"
             tone="dark"
+            label={closing.formLabel}
             note={hero.formNote}
           />
         </div>
