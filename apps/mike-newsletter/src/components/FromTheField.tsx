@@ -4,14 +4,16 @@ import { field } from "@/lib/content";
 export function FromTheField() {
   return (
     <section className="border-b border-rule bg-paper-deep">
-      <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-20 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:py-28">
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-6 py-16 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:py-24">
+        {/* Wide on a phone, tall on a desktop: a 4:5 crop costs ~490px of
+            scroll at 390px wide and buys nothing there. */}
         <Image
           src={field.image}
           alt={field.alt}
           width={1000}
           height={1150}
           sizes="(min-width: 1024px) 50vw, 100vw"
-          className="aspect-[4/5] w-full rounded-lg border border-rule-strong object-cover lg:order-last"
+          className="aspect-[3/2] w-full rounded-lg border border-rule-strong object-cover lg:order-last lg:aspect-[4/5]"
         />
 
         <div>

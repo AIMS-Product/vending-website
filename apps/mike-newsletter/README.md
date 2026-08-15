@@ -43,6 +43,27 @@ pointed a domain at yet. **Set one before the domain goes live.**
 Each submission carries a `source` (`hero` or `closing`) so you can see which
 block on the page converts.
 
+## Conversion layout
+
+The decisions worth not undoing:
+
+- **The signup field clears the fold at every width down to 320px.** The
+  headline is followed by a one-line deck, not the full positioning paragraph
+  — that paragraph lives in "What you get", where it has room. Lengthening the
+  deck pushes the field under the fold on a small phone.
+- **A sticky bar carries the ask on phones.** It appears once the hero form
+  scrolls away, hides whenever either real form is on screen, and disappears
+  for good once someone subscribes (`SUBSCRIBED_EVENT`). The header's
+  Subscribe button is hidden below `sm` because that bar already covers it.
+- **Two forms, not three.** Hero and closing. Every other CTA is an anchor to
+  one of them, so there is only one piece of form state per submission.
+- **The issue cards are bullets, not prose.** That block is where a skimmer
+  stops, and three short lines answer "what's actually in it" faster than a
+  paragraph they won't finish.
+
+`npm run build` plus a pass over 320/360/390/768/1280/1440 is the check: no
+horizontal scroll at any width, and the subscribe button above the fold.
+
 ## Design
 
 Cream, near-black, and one blue — `--accent: #1f72a5`, carried over from the

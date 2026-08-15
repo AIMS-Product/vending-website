@@ -15,9 +15,13 @@ export const site = {
 export const hero = {
   eyebrow: "A free newsletter by Mike Hoffmann",
   heading: "Build Real Wealth the Boring Way",
+  // Two lines on a phone. The full positioning paragraph ran five lines here
+  // and pushed the signup field under the fold on a 360px screen, so it moved
+  // down to `whatYouGet.lede` where it has room and the deck stays a promise.
   subhead:
-    "Weekly insights, stories, and resources from a founder who turned one overlooked, unglamorous business into a real portfolio — guiding you from zero businesses to owning the ones that actually pay.",
+    "Two emails a week on vending and the other unglamorous businesses that actually pay.",
   formNote: "Free. Two emails a week. Unsubscribe anytime.",
+  proofLine: "Join 1,200+ operators and owners.",
   portraitCaption: "Mike Hoffmann — founder, Vendingpreneurs and VendHub",
 } as const;
 
@@ -27,6 +31,12 @@ export const stats = [
   { value: "150+", label: "Machines run" },
   { value: "$0", label: "To subscribe" },
 ] as const;
+
+/** Copy for the bar that follows the reader up the page on small screens. */
+export const stickyCta = {
+  label: "Free · Two emails a week",
+  button: "Subscribe",
+} as const;
 
 export const proof = {
   heading: "Ideas featured across",
@@ -48,18 +58,29 @@ export const proof = {
 export const whatYouGet = {
   eyebrow: "What you get",
   heading: "Two emails a week, straight to your inbox.",
+  lede: "Insights, stories, and resources from a founder who turned one overlooked, unglamorous business into a real portfolio — guiding you from zero businesses to owning the ones that actually pay.",
   issues: [
     {
       number: "01",
       title: "The vending issue",
-      body: "Walks you through vending — the exact business Mike broke into first, from picking your first location to running your first real route.",
+      body: "Vending — the exact business Mike broke into first.",
+      points: [
+        "Picking your first location",
+        "Machines, products and margins",
+        "Running your first real route",
+      ],
       image: "/images/hero.avif",
       alt: "An operator restocking a smart cooler on a vending route.",
     },
     {
       number: "02",
       title: "The portfolio issue",
-      body: "Pulls back further: what it actually takes to build income through cash-flowing, unglamorous businesses beyond vending — the ones that build real income, not the ones that just look good online.",
+      body: "What it takes to build income beyond vending.",
+      points: [
+        "Cash-flowing, unglamorous businesses",
+        "Buying versus building from zero",
+        "The ones that pay, not the ones that post",
+      ],
       image: "/images/accelerator.avif",
       alt: "A self-checkout kiosk in an office micro market.",
     },

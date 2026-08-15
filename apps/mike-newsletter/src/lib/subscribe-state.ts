@@ -10,3 +10,9 @@ export type SubscribeState =
   | { status: "error"; message: string };
 
 export const initialSubscribeState: SubscribeState = { status: "idle" };
+
+/**
+ * Fired on `window` the moment a signup succeeds. The sticky mobile bar
+ * listens for it so it stops asking someone who has already said yes.
+ */
+export const SUBSCRIBED_EVENT = "ec:subscribed";

@@ -5,6 +5,7 @@ import { MeetMike } from "@/components/MeetMike";
 import { ProofBar } from "@/components/ProofBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { StickyCta } from "@/components/StickyCta";
 import { WhatYouGet } from "@/components/WhatYouGet";
 
 export default function HomePage() {
@@ -20,6 +21,7 @@ export default function HomePage() {
         <ClosingCta />
       </main>
       <SiteFooter />
+      <StickyCta />
     </>
   );
 }

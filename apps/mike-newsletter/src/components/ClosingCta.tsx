@@ -17,7 +17,7 @@ export function ClosingCta() {
           wash so the type keeps its contrast on every screen. */}
       <div aria-hidden className="absolute inset-0 -z-10 bg-accent-deep/95" />
 
-      <div className="mx-auto w-full max-w-3xl px-6 py-20 text-center sm:px-8 lg:py-28">
+      <div className="mx-auto w-full max-w-3xl px-6 py-16 text-center sm:px-8 lg:py-24">
         <h2 className="font-display text-3xl leading-tight text-balance text-ink-inverse sm:text-4xl lg:text-[2.75rem]">
           {closing.heading}
         </h2>
@@ -25,7 +25,12 @@ export function ClosingCta() {
           {closing.body}
         </p>
         <div className="mx-auto mt-9 max-w-lg text-left">
-          <SubscribeForm source="closing" tone="dark" note={hero.formNote} />
+          <SubscribeForm
+            id="closing"
+            source="closing"
+            tone="dark"
+            note={hero.formNote}
+          />
         </div>
       </div>
     </section>

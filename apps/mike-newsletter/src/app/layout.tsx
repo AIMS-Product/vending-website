@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Source_Serif_4 } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { site } from "@/lib/content";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
@@ -52,6 +54,10 @@ export default function RootLayout({
           Skip to content
         </a>
         {children}
+        {/* A funnel that isn't measured can't be improved. Both are no-ops
+            off Vercel, so local runs stay quiet. */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

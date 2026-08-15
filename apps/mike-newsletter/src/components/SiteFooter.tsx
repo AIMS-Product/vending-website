@@ -4,7 +4,10 @@ import { footer, site } from "@/lib/content";
 export function SiteFooter() {
   return (
     <footer className="border-t border-rule bg-paper-deep">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-12 sm:px-8 md:flex-row md:items-end md:justify-between">
+      {/* Extra bottom padding on small screens so the sticky subscribe bar,
+          which reappears once the closing form scrolls past, never sits on
+          top of the footer links. */}
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 pt-10 pb-28 sm:px-8 md:flex-row md:items-end md:justify-between lg:pb-10">
         <div>
           <Wordmark />
           <p className="mt-4 max-w-sm text-sm leading-6 text-ink-muted">

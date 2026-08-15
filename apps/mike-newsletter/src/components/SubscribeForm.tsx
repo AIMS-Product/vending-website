@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { subscribeAction } from "@/app/actions";
 import {
   initialSubscribeState,
+  SUBSCRIBED_EVENT,
   type SubscribeState,
 } from "@/lib/subscribe-state";
 
@@ -23,6 +24,11 @@ export function SubscribeForm({ source, tone = "light", note, id }: Props) {
   );
 
   const dark = tone === "dark";
+  const succeeded = state.status === "success";
+
+  useEffect(() => {
+    if (succeeded) window.dispatchEvent(new Event(SUBSCRIBED_EVENT));
+  }, [succeeded]);
 
   if (state.status === "success") {
     return (
@@ -66,9 +72,12 @@ export function SubscribeForm({ source, tone = "light", note, id }: Props) {
     >
       <input type="hidden" name="source" value={source} />
 
-      {/* Honeypot — off-screen rather than display:none so bots that skip
-          hidden inputs still fill it in. */}
-      <div aria-hidden className="absolute left-[-9999px] h-0 w-0 overflow-hidden">
+      {/* Honeypot. Clipped rather than `display: none` so form-filling bots
+          still see a real field, and clipped rather than parked at -9999px so
+          it can never contribute to the page's scroll width. `aria-hidden`
+          plus `tabIndex={-1}` keep it away from anyone using a screen reader
+          or the keyboard. */}
+      <div aria-hidden className="sr-only">
         <label htmlFor={`${source}-company`}>Company</label>
         <input
           id={`${source}-company`}
