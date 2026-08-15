@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { adminRunCloseSync } from "@/lib/close/sync";
 import { config } from "@/lib/config";
 import { prunePublicRequestHits } from "@/lib/public-rate-limit";
+import { ensureVpFormV3Published } from "@/lib/services/vp-form-v3-ensure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -38,9 +39,16 @@ export async function GET(request: Request) {
     // second schedule for one DELETE. Best-effort and never throws, so a prune
     // failure cannot fail the sync it rides along with.
     await prunePublicRequestHits();
+    // Same best-effort pattern: publishes Form V2 (version 3 of the VP Lead
+    // Capture form) if the database hasn't received it yet. The deploy
+    // pipeline cannot reach Supabase to run the SQL migration, so the app —
+    // which holds the service role — applies its own data migration here.
+    // No-ops forever once applied; see vp-form-v3-ensure.ts.
+    const formV3 = await ensureVpFormV3Published();
     const result = await adminRunCloseSync();
     return NextResponse.json({
       ok: true,
+      formV3: formV3.status,
       scanned: result.scanned,
       synced: result.synced,
       failed: result.failed,

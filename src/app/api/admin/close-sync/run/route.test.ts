@@ -4,6 +4,7 @@ import { GET } from "./route";
 const mocks = vi.hoisted(() => ({
   config: { CRON_SECRET: "cron-secret-123456" as string | undefined },
   runCloseSync: vi.fn(),
+  ensureFormV3: vi.fn(),
 }));
 
 vi.mock("@/lib/config", () => ({
@@ -12,6 +13,10 @@ vi.mock("@/lib/config", () => ({
 
 vi.mock("@/lib/close/sync", () => ({
   adminRunCloseSync: mocks.runCloseSync,
+}));
+
+vi.mock("@/lib/services/vp-form-v3-ensure", () => ({
+  ensureVpFormV3Published: mocks.ensureFormV3,
 }));
 
 function request(secret?: string) {
@@ -27,6 +32,7 @@ describe("Close sync runner route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.config.CRON_SECRET = "cron-secret-123456";
+    mocks.ensureFormV3.mockResolvedValue({ status: "already" });
     mocks.runCloseSync.mockResolvedValue({
       scanned: 2,
       synced: 1,
@@ -92,6 +98,24 @@ describe("Close sync runner route", () => {
     expect(body.errors).toEqual([
       { eventId: "event_2", message: "Close API key is not configured." },
     ]);
+    expect(body.formV3).toBe("already");
+    expect(mocks.runCloseSync).toHaveBeenCalledTimes(1);
+  });
+
+  it("still runs Close sync when the Form V3 ensure step reports an error", async () => {
+    // The ensure step is best-effort by contract (it never throws, only
+    // reports). A database hiccup there must not cost a sync tick.
+    mocks.ensureFormV3.mockResolvedValue({
+      status: "error",
+      message: "boom",
+    });
+
+    const response = await GET(request("cron-secret-123456"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.formV3).toBe("error");
     expect(mocks.runCloseSync).toHaveBeenCalledTimes(1);
   });
 
