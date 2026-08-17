@@ -1,6 +1,8 @@
 .env*
 .next/
-apps/
+apps/*
+!apps/mike-newsletter/
+!apps/mike-newsletter/**
 coverage/
 node_modules/
 reports/
