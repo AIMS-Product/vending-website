@@ -7,6 +7,11 @@ const eslintConfig = defineConfig([
   ...nextTs,
   // Override default ignores of eslint-config-next.
   globalIgnores([
+    // Standalone apps with their own toolchain, deployed as their own Vercel
+    // projects. They are not part of this app's program: their `@/*` resolves
+    // to their own src/, so linting or typechecking them from here reports
+    // errors that do not exist.
+    "apps/**",
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",

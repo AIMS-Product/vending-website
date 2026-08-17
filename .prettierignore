@@ -1,6 +1,8 @@
 .next
 node_modules
 .agents
+# Standalone apps format themselves with their own config.
+apps
 out
 build
 coverage

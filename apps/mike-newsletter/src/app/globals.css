@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────────────────
+   mikehoffmann.co — Entrepreneurship Collective
+
+   The Vendingpreneurs public site is loud on purpose: orange fills, ink
+   borders, hard offset shadows. This surface is the opposite job. It is a
+   newsletter funnel that has to read as a publication, so the palette keeps
+   the Vendingpreneurs blue as the single accent and swaps the orange for
+   cream paper and near-black ink. Everything else is a hairline.
+
+   One filled control per screen: the subscribe button. If a second thing
+   wants a fill, it becomes a bordered surface instead.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Paper. Two creams so a card can sit on the page without a border doing
+     all the work. Nothing is pure #fff — it reads cold next to the blue. */
+  --paper: #f8f5ef;
+  --paper-raised: #fdfbf7;
+  --paper-deep: #efeade;
+
+  /* Ink. Near-black, warmed a couple of points so it sits on cream. */
+  --ink: #16181c;
+  --ink-muted: #5c6068;
+  /* Eyebrows and captions are small, so `subtle` is only a step lighter than
+     `muted` — the two roles are separated by size and tracking, not by a pale
+     grey that would drop the 11px caps under 4.5:1 on cream. */
+  --ink-subtle: #656a72;
+  --ink-inverse: #f8f5ef;
+
+  /* Hairlines. Warm, not grey — a cool rule on cream looks like a mistake.
+     `rule` and `rule-strong` are decoration: dividers and image frames.
+     `rule-control` is the edge of something you can type in or click, and it
+     is darker on purpose so it clears 3:1 against the page (WCAG 1.4.11). */
+  --rule: #e3ddd0;
+  --rule-strong: #cec7b6;
+  --rule-control: #8f8a7d;
+
+  /* The one colour. Carried over from the Vendingpreneurs brand scale so the
+     two properties read as the same family without sharing a layout. */
+  --accent: #1f72a5;
+  --accent-hover: #175b85;
+  /* The bright end only ever appears on the deep blue band, so it is pitched
+     to clear 4.5:1 there rather than matching brand-500 exactly. */
+  --accent-bright: #6ec1ee;
+  --accent-wash: #eaf4fb;
+  --accent-deep: #10394f;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-deep: var(--paper-deep);
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-ink-inverse: var(--ink-inverse);
+
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-rule-control: var(--rule-control);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-bright: var(--accent-bright);
+  --color-accent-wash: var(--accent-wash);
+  --color-accent-deep: var(--accent-deep);
+
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-source-serif);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Editorial display face. Used for headings only — body copy stays in the
+   sans so long paragraphs keep the newsletter's plain-spoken tone. */
+.font-display {
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+/* Eyebrow: 11px caps with wide tracking. The only place caps are allowed. */
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Anchor jumps land under the sticky masthead otherwise. */
+:target {
+  scroll-margin-top: 6rem;
+}
+
+::selection {
+  background: var(--accent-wash);
+  color: var(--ink);
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Skip link: hidden until focused, then the first actionable control. */
+.skip-to-content {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  transform: translateY(-150%);
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+  background: var(--paper-raised);
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: transform 0.15s ease;
+}
+.skip-to-content:focus {
+  transform: translateY(0);
+}
