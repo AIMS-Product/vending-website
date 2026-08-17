@@ -27,14 +27,13 @@ export const hero = {
     "Weekly insights, stories, and resources from a founder who turned one unglamorous business into a real portfolio.",
   formLabel: "Join Entrepreneurship Collective.",
   formNote: "Free. Two emails a week. Unsubscribe anytime.",
-  proofLine: "1,200+ people already read it.",
+  proofLine: "28,000+ people already read it.",
   portraitCaption: "Mike Hoffmann — founder, Vendingpreneurs and VendHub",
 } as const;
 
 export const stats = [
-  { value: "1,200+", label: "Readers" },
+  { value: "28,000+", label: "Readers" },
   { value: "2×", label: "Emails a week" },
-  { value: "150+", label: "Machines run" },
   { value: "$0", label: "To subscribe" },
 ] as const;
 
@@ -98,7 +97,7 @@ export const field = {
   heading: "No recycled fluff.",
   body: "Every issue comes from real conversations, real member wins, and what's actually happening in the field right now — vending routes, cash-flowing assets, and the unsexy operations most people scroll right past.",
   pullQuote:
-    "Built from real calls with active operators, not theory or secondhand advice.",
+    "Build from Mike's real experiences building his boring business portfolio.",
   image: "/images/why.avif",
   alt: "A customer paying at a smart cooler with a contactless watch tap.",
 } as const;
@@ -111,17 +110,18 @@ export const meetMike = {
     "That was just the start. Mike used that first business to build three more. Entrepreneurship Collective is his playbook for going from zero businesses to boring business master.",
   ],
   companiesLabel: "The three that followed",
-  // Names only, in the brief's order. A one-line descriptor under each would
-  // have to be invented, and an invented descriptor on a real company is the
-  // kind of thing that ends up quoted back at you.
-  companies: ["Modern Amenities", "Vendingpreneurs", "VendHub"],
+  companies: [
+    { name: "Modern Amenities", href: "https://www.modern-amenities.com" },
+    { name: "Vendingpreneurs", href: "https://www.vendingpreneurs.com" },
+    { name: "VendHub", href: "https://www.vendhubhq.com" },
+  ],
   portrait: "/images/mike-hoffmann.webp",
 } as const;
 
 export const closing = {
   heading:
     "Ready for a newsletter that actually helps you build something real — even if you're starting from zero?",
-  body: "Join 1,200+ people getting Entrepreneurship Collective twice a week. It's free, straight to your inbox.",
+  body: "Join 28,000+ people getting Entrepreneurship Collective twice a week. It's free, straight to your inbox.",
   formLabel: "Subscribe to stay in the loop.",
 } as const;
 

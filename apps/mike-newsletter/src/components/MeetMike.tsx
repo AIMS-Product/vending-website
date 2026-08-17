@@ -27,27 +27,24 @@ export function MeetMike() {
           <ol className="mt-4 border-t border-rule">
             {meetMike.companies.map((company, index) => (
               <li
-                key={company}
+                key={company.name}
                 className="flex items-baseline gap-4 border-b border-rule py-4"
               >
                 <span className="eyebrow tabular-nums text-accent">
                   {String(index + 1).padStart(2, "0")}
                 </span>
-                <span className="font-display text-xl">{company}</span>
+                <a
+                  href={company.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-display text-xl underline-offset-4 transition hover:text-accent hover:underline"
+                >
+                  {company.name}
+                </a>
               </li>
             ))}
           </ol>
 
-          <dl className="mt-8 grid grid-cols-2 gap-6">
-            <div>
-              <dd className="font-display text-3xl tabular-nums">150+</dd>
-              <dt className="eyebrow mt-1 text-ink-subtle">Machines</dt>
-            </div>
-            <div>
-              <dd className="font-display text-3xl tabular-nums">$200k+</dd>
-              <dt className="eyebrow mt-1 text-ink-subtle">Monthly revenue</dt>
-            </div>
-          </dl>
         </div>
       </div>
     </section>

@@ -75,18 +75,14 @@ export function Hero() {
       </div>
 
       <div className="border-t border-rule">
-        <dl className="mx-auto grid w-full max-w-6xl grid-cols-2 px-6 sm:px-8 md:grid-cols-4">
+        <dl className="mx-auto grid w-full max-w-6xl px-6 sm:grid-cols-3 sm:px-8">
           {stats.map((stat, index) => (
             <div
               key={stat.label}
               className={[
-                "py-5 md:py-6",
-                // 2×2 on mobile, one row on desktop. The rules are drawn per
-                // cell rather than with divide-* so the mobile row break and
-                // the desktop columns can disagree about where lines go.
-                index % 2 === 1 ? "border-l border-rule pl-5" : "",
-                index >= 2 ? "border-t border-rule" : "",
-                "md:border-t-0 md:border-l md:pl-6 md:first:border-l-0 md:first:pl-0",
+                "py-5 sm:py-6",
+                index > 0 ? "border-t border-rule sm:border-t-0" : "",
+                "sm:border-l sm:pl-6 sm:first:border-l-0 sm:first:pl-0",
               ].join(" ")}
             >
               <dd className="font-display text-2xl tabular-nums sm:text-3xl">
