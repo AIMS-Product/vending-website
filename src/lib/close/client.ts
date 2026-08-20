@@ -125,6 +125,17 @@ type CloseLeadSearchResult = {
     emails?: Array<{ email?: string | null }>;
   }>;
 };
+/**
+ * A lead read back from Close. `custom` is keyed by field NAME (not field ID)
+ * when the request asks for the `custom` field group, which is what the booking
+ * reconciler reads — it wants "First Call Booked Date" and does not hold that
+ * field's ID in config.
+ */
+export type CloseLeadReadResult = {
+  id: string;
+  status_label?: string | null;
+  custom?: Record<string, unknown> | null;
+};
 
 export type CloseCustomFieldDefinition = {
   id: string;
@@ -324,6 +335,23 @@ export function createCloseClient({
         `/lead/${encodeURIComponent(leadId)}/`,
         payload,
       );
+    },
+    /**
+     * Read one lead's status and custom fields. Returns `null` on 404 rather
+     * than throwing: leads get merged and deleted in Close all the time, and a
+     * lead we synced months ago going missing is normal bookkeeping, not an
+     * error the reconciler should retry forever.
+     */
+    async getLead(leadId: string): Promise<CloseLeadReadResult | null> {
+      try {
+        return await request<CloseLeadReadResult>(
+          "GET",
+          `/lead/${encodeURIComponent(leadId)}/?_fields=id,status_label,custom`,
+        );
+      } catch (error) {
+        if (error instanceof CloseApiError && error.status === 404) return null;
+        throw error;
+      }
     },
     getContact(contactId: string) {
       return request<CloseContactResult>(
