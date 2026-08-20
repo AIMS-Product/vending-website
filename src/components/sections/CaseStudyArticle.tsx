@@ -67,7 +67,7 @@ export function CaseStudyArticle({
   return (
     <>
       <div className="bg-[#f5fbff] px-5 pt-28 pb-20 lg:px-10 lg:pt-32">
-        <div className="mx-auto grid max-w-[1500px] gap-12 xl:grid-cols-[64px_minmax(0,920px)_360px] xl:gap-14">
+        <div className="mx-auto grid max-w-[1500px] gap-12 min-[1832px]:max-w-[1760px] min-[1832px]:grid-cols-[360px_minmax(0,920px)_360px]! xl:grid-cols-[64px_minmax(0,920px)_360px] xl:gap-14">
           <ShareRail title={caseStudy.title} url={articleUrl} />
 
           <article className="min-w-0">
@@ -302,7 +302,10 @@ function ShareRail({ title, url }: { title: string; url: string }) {
   ];
 
   return (
-    <aside className="hidden xl:block" aria-label="Share this case study">
+    <aside
+      className="hidden xl:block xl:justify-self-end"
+      aria-label="Share this case study"
+    >
       <div className="sticky top-32 flex flex-col items-center gap-5">
         {links.slice(0, 3).map((link) => (
           <a
