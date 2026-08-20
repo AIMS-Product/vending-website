@@ -8,6 +8,25 @@ put together.
 - Public page: `/case-studies/<slug>`
 - Admin: `/admin/case-studies`
 
+## Status: migration not yet applied
+
+The `case_studies` table does not exist in Supabase yet, so `/case-studies`
+renders an empty grid and `/case-studies/<slug>` 404s. Applying it needs a
+database credential that is not in the repo or in Vercel — only the Supabase
+REST keys are, and those cannot run DDL.
+
+**To finish the setup:**
+
+1. Paste `supabase/migrations/20260819120000_case_studies_cms.sql` into the
+   Supabase SQL editor for project `aacisvhkmsaabqdvdmmf` and run it.
+2. `node scripts/import-case-studies.mjs --write` — loads the 25 stories as
+   drafts.
+3. Review against `import-report.md`, then publish from `/admin/case-studies`.
+
+Until step 1 happens, the design can be reviewed at `/case-study-preview`
+(add `?slug=<slug>`), which reads the stories straight off disk. **Delete that
+route once the migration is applied.**
+
 ## Everything imported as a draft, on purpose
 
 The revenue figures in these stories are what members said out loud in an
