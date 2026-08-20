@@ -12,6 +12,7 @@ import { requireAdmin } from "@/lib/supabase/auth";
 type SearchParams = {
   lifecycle?: string | string[];
   sync?: string | string[];
+  call?: string | string[];
 };
 
 export const metadata: Metadata = {
@@ -30,9 +31,11 @@ export default async function AdminLeadsPage({
   ]);
   const lifecycleStatus = singleParam(params.lifecycle) ?? "all";
   const closeSyncStatus = singleParam(params.sync) ?? "all";
+  const callStatus = singleParam(params.call) ?? "all";
   const leads = await adminListLeads({
     lifecycleStatus,
     closeSyncStatus,
+    callStatus,
   });
 
   return (
@@ -56,6 +59,7 @@ export default async function AdminLeadsPage({
         leads={leads}
         activeLifecycleStatus={lifecycleStatus}
         activeCloseSyncStatus={closeSyncStatus}
+        activeCallStatus={callStatus}
       />
     </AdminShell>
   );

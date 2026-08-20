@@ -44,6 +44,12 @@ const syncFilters = [
   { value: "synced", label: "Synced" },
 ] as const;
 
+const callFilters = [
+  { value: "all", label: "All calls" },
+  { value: "booked", label: "Booked a call" },
+  { value: "not_booked", label: "No call booked" },
+] as const;
+
 const retryableStatuses = new Set(["failed", "needs_review", "dead_letter"]);
 
 // I6: internal Close sync enum/DB values stay unchanged — this only swaps the
@@ -95,10 +101,12 @@ function SyncIssuesBanner({ count }: { count: number }) {
 }
 
 export function AdminLeadsManager({
+  activeCallStatus,
   activeCloseSyncStatus,
   activeLifecycleStatus,
   leads,
 }: {
+  activeCallStatus: string;
   activeCloseSyncStatus: string;
   activeLifecycleStatus: string;
   leads: AdminLeadListItem[];
@@ -109,6 +117,7 @@ export function AdminLeadsManager({
   const qualifiedCount = leads.filter(
     (lead) => lead.lifecycleStatus === "qualified",
   ).length;
+  const bookedCount = leads.filter((lead) => lead.callBookedAt).length;
   const failedSyncCount = leads.filter((lead) =>
     ["failed", "needs_review", "dead_letter"].includes(
       lead.closeSyncStatus ?? "",
@@ -145,6 +154,13 @@ export function AdminLeadsManager({
           caption="completed"
         />
         <AdminMetricPanel
+          icon="target"
+          tone="green"
+          label="Booked a call"
+          value={bookedCount}
+          caption="of the leads shown"
+        />
+        <AdminMetricPanel
           icon="shield"
           tone={failedSyncCount ? "amber" : "slate"}
           label="Sync issues"
@@ -165,18 +181,29 @@ export function AdminLeadsManager({
                 ariaLabel="Lifecycle filters"
                 param="lifecycle"
                 options={lifecycleFilters}
-                otherParam="sync"
-                otherValue={activeCloseSyncStatus}
+                others={{ sync: activeCloseSyncStatus, call: activeCallStatus }}
               />
               <FilterNav
                 activeValue={activeCloseSyncStatus}
                 ariaLabel="Close sync filters"
                 param="sync"
                 options={syncFilters}
-                otherParam="lifecycle"
-                otherValue={activeLifecycleStatus}
+                others={{
+                  lifecycle: activeLifecycleStatus,
+                  call: activeCallStatus,
+                }}
               />
             </div>
+            <FilterNav
+              activeValue={activeCallStatus}
+              ariaLabel="Call booked filters"
+              param="call"
+              options={callFilters}
+              others={{
+                lifecycle: activeLifecycleStatus,
+                sync: activeCloseSyncStatus,
+              }}
+            />
           </div>
         </div>
 
@@ -221,7 +248,8 @@ export function AdminLeadsManager({
               No leads match these filters
             </h2>
             <p className="text-ui-text-muted mt-2 text-sm">
-              Change lifecycle or Close sync filters to review captured leads.
+              Change the lifecycle, Close sync, or call filters to review
+              captured leads.
             </p>
           </div>
         )}
@@ -712,15 +740,18 @@ function FilterNav({
   activeValue,
   ariaLabel,
   options,
-  otherParam,
-  otherValue,
+  others,
   param,
 }: {
   activeValue: string;
   ariaLabel: string;
   options: readonly { value: string; label: string }[];
-  otherParam: string;
-  otherValue: string;
+  /**
+   * The other filters' current values, carried onto every link so switching one
+   * filter never silently clears the others. A single otherParam/otherValue
+   * pair could only preserve one of them.
+   */
+  others: Record<string, string>;
   param: string;
 }) {
   return (
@@ -731,10 +762,7 @@ function FilterNav({
       {options.map((option) => (
         <Link
           key={option.value}
-          href={leadListHref({
-            [param]: option.value,
-            [otherParam]: otherValue,
-          })}
+          href={leadListHref({ ...others, [param]: option.value })}
           aria-current={activeValue === option.value ? "page" : undefined}
           className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] transition ${
             activeValue === option.value

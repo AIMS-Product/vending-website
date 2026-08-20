@@ -26,6 +26,8 @@ type ServiceDeps = {
 export type AdminListLeadsInput = {
   lifecycleStatus?: string | null;
   closeSyncStatus?: string | null;
+  /** "booked" | "not_booked" | "all". See the call filter in adminListLeads. */
+  callStatus?: string | null;
 };
 
 export type AdminGetLeadDetailInput = {
@@ -137,7 +139,7 @@ export class LeadAdminServiceError extends Error {
 }
 
 const LEAD_FIELDS =
-  "id,full_name,email,phone,message,state_region,business_stage,budget,timeline,lifecycle_status,qualification_summary,latest_qualification_session_id,close_sync_status,close_sync_last_error,source_path,landing_path,source_page_slug,source_block_id,source_cta_tracking_name,utm_source,utm_medium,utm_campaign,metadata,created_at" as const;
+  "id,full_name,email,phone,message,state_region,business_stage,budget,timeline,lifecycle_status,qualification_summary,latest_qualification_session_id,close_sync_status,close_sync_last_error,call_booked_at,call_status,source_path,landing_path,source_page_slug,source_block_id,source_cta_tracking_name,utm_source,utm_medium,utm_campaign,metadata,created_at" as const;
 const SESSION_FIELDS =
   "id,lead_submission_id,status,answer_count,current_question_id,normalized_summary,experiment_key,variant_key,started_at,completed_at,stale_at,expires_at,created_at" as const;
 const ANSWER_FIELDS =
@@ -165,6 +167,15 @@ export async function adminListLeads(
   }
   if (input.closeSyncStatus && input.closeSyncStatus !== "all") {
     query = query.eq("close_sync_status", input.closeSyncStatus);
+  }
+  // "Not booked" means Close was asked and said no — a lead the reconciler has
+  // not reached yet is genuinely unknown, so it belongs in neither bucket.
+  if (input.callStatus === "booked") {
+    query = query.not("call_booked_at", "is", null);
+  } else if (input.callStatus === "not_booked") {
+    query = query
+      .is("call_booked_at", null)
+      .not("call_reconciled_at", "is", null);
   }
 
   const { data, error } = await query;

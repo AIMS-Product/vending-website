@@ -110,6 +110,7 @@ describe("AdminLeadsManager", () => {
         leads={[lead]}
         activeLifecycleStatus="all"
         activeCloseSyncStatus="all"
+        activeCallStatus="all"
       />,
     );
 
@@ -130,6 +131,7 @@ describe("AdminLeadsManager", () => {
         leads={[lead]}
         activeLifecycleStatus="all"
         activeCloseSyncStatus="all"
+        activeCallStatus="all"
       />,
     );
 
@@ -208,6 +210,7 @@ describe("AdminLeadsManager sync issues banner (I7)", () => {
         leads={[lead]}
         activeLifecycleStatus="all"
         activeCloseSyncStatus="all"
+        activeCallStatus="all"
       />,
     );
 
@@ -230,6 +233,7 @@ describe("AdminLeadsManager sync issues banner (I7)", () => {
         leads={[healthyLead]}
         activeLifecycleStatus="all"
         activeCloseSyncStatus="all"
+        activeCallStatus="all"
       />,
     );
 
@@ -243,6 +247,7 @@ describe("AdminLeadsManager sync issues banner (I7)", () => {
         leads={[lead]}
         activeLifecycleStatus="all"
         activeCloseSyncStatus="all"
+        activeCallStatus="all"
       />,
     );
 

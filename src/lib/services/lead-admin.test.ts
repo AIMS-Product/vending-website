@@ -216,7 +216,7 @@ class FakeQuery {
   private filters: Array<{
     key: string;
     value: unknown;
-    op: "eq" | "in";
+    op: "eq" | "in" | "is_null" | "not_null";
   }> = [];
   private orderKey: string | null = null;
   private orderAscending = true;
@@ -244,6 +244,22 @@ class FakeQuery {
 
   in(key: string, value: unknown[]) {
     this.filters.push({ key, value, op: "in" });
+    return this;
+  }
+
+  // PostgREST spells null checks `.is(col, null)` and `.not(col, "is", null)`.
+  is(key: string, value: unknown) {
+    this.filters.push({ key, value, op: "is_null" });
+    return this;
+  }
+
+  not(key: string, op: string, value: unknown) {
+    if (op !== "is" || value !== null) {
+      throw new Error(
+        `FakeQuery only supports .not(col, "is", null), got ${op}`,
+      );
+    }
+    this.filters.push({ key, value, op: "not_null" });
     return this;
   }
 
@@ -339,6 +355,8 @@ class FakeQuery {
   private matches(row: object) {
     return this.filters.every(({ key, op, value }) => {
       const actual = (row as Record<string, unknown>)[key];
+      if (op === "is_null") return actual === null || actual === undefined;
+      if (op === "not_null") return actual !== null && actual !== undefined;
       return op === "eq"
         ? actual === value
         : Array.isArray(value) && value.includes(actual);
@@ -356,6 +374,42 @@ class FakeQuery {
 }
 
 describe("adminListLeads", () => {
+  it('filters to leads that booked a call, and excludes unchecked ones from "not booked"', async () => {
+    const fake = buildClient({
+      leads: [
+        makeLead({ id: "booked", call_booked_at: "2026-08-21" }),
+        // Reconciled against Close and confirmed to have no call.
+        makeLead({
+          id: "no-call",
+          call_booked_at: null,
+          call_reconciled_at: "2026-08-20T12:00:00.000Z",
+        }),
+        // Never reconciled — genuinely unknown, so it belongs in neither
+        // bucket. Counting it as "no call booked" would report a brand-new
+        // lead as a failure to convert.
+        makeLead({ id: "unchecked", call_booked_at: null }),
+      ],
+    });
+
+    const booked = await adminListLeads({
+      client: fake.client,
+      callStatus: "booked",
+    });
+    expect(booked.map((lead) => lead.id)).toEqual(["booked"]);
+
+    const notBooked = await adminListLeads({
+      client: fake.client,
+      callStatus: "not_booked",
+    });
+    expect(notBooked.map((lead) => lead.id)).toEqual(["no-call"]);
+
+    const all = await adminListLeads({
+      client: fake.client,
+      callStatus: "all",
+    });
+    expect(all).toHaveLength(3);
+  });
+
   it("lists lead identity, lifecycle, sync, source, UTM, variant, and qualification state", async () => {
     const fake = buildClient();
 
