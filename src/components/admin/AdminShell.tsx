@@ -16,6 +16,7 @@ type AdminSection =
   | "overview"
   | "pages"
   | "posts"
+  | "caseStudies"
   | "forms"
   | "leads"
   | "popups"
@@ -29,6 +30,7 @@ type AdminShellIconName = Extract<
   AdminIconName,
   | "archive"
   | "book"
+  | "crown"
   | "file"
   | "help"
   | "image"
@@ -59,6 +61,14 @@ const blogSection: AdminNavSection = {
   icon: "book",
 };
 
+const caseStudiesSection: AdminNavSection = {
+  id: "caseStudies",
+  label: "Case studies",
+  href: "/admin/case-studies",
+  description: "Member video stories",
+  icon: "crown",
+};
+
 const contentSections: AdminNavSection[] = [
   {
     id: "overview",
@@ -75,6 +85,7 @@ const contentSections: AdminNavSection[] = [
     icon: "file",
   },
   blogSection,
+  caseStudiesSection,
   {
     id: "forms",
     label: "Qualification forms",

@@ -1,0 +1,42 @@
+{
+  "slug": "madison-6-locations",
+  "video_id": "5y5geBPe3mM",
+  "title": "She's Doing $10-12K a Month With Just 6 Vending Locations",
+  "member_name": "Madison",
+  "member_role": "Stay-at-home mom turned vending operator",
+  "excerpt": "A stay-at-home mom of five years pushed her husband for three months to back a vending business, and ten months later runs six locations doing $10-12K a month.",
+  "quote": "I need you to invest in me so I can invest in this program, because this is what I want.",
+  "quote_attribution": "Madison",
+  "body": "## Background\nMadison had worked in sales before spending the last five years as a stay-at-home mom. She wanted something that stretched her mind and let her contribute financially again without giving up time with her kids. Her longer-term goal is owning parking lots; she sees vending as a stepping stone toward that. She runs the business out of her garage, which her husband jokingly calls \"a 7-Eleven.\"\n\n> \"I wanted to flex my brain muscle a little bit and do more than just Coco Melon and baby talk.\"\n\n## The Challenge\nAs a stay-at-home mom, Madison worried about sinking time into something away from her kids and getting it wrong. She also had to win her husband over, pushing him for three months before he agreed to back the program.\n\n> \"I'll be damned if I'm going to do something that takes up a ton of my time away from my kids and then the whole time I'm doing it wrong. I'm going to do it and I'm going to do it right.\"\n\n## The Turning Point\nOn their wedding anniversary, Madison finally got her husband to shake on it, and January 1st became her first day. She had looked at generic Facebook groups first but found nothing with the structure, strategy, and education Vendingpreneurs offered.\n\n> \"I joined some Facebook groups. There's a lot of generic info online, but Mike was clearly running operations with people in VP at a large scale. The program had structure, it had strategy, it had education.\"\n\n## Where They Are Now\nTen months in, Madison has six locations live and nine contracts signed, doing $10,000 to $12,000 a month. Her best location, a manufacturing plant, brings in about $4,300 a month across three machines, alongside a condo high-rise, a luxury mid-rise, and the teachers' lounge at her kids' private school. She spends roughly 10 to 12 hours a week on the business, often with her kids in tow, and signs early lease-up contracts on properties before competitors notice them, locking in territory ahead of time. She's aiming for 10 locations by year-end and eventually 100 machines.\n\n> \"It got me back a little bit of my personal spark... It feels really, really good to be able to contribute to my family financially again.\"",
+  "stats": [
+    {
+      "label": "Monthly Revenue",
+      "value": "$10-12K"
+    },
+    {
+      "label": "Locations",
+      "value": "6"
+    },
+    {
+      "label": "Contracts Signed",
+      "value": "9"
+    },
+    {
+      "label": "Best Location",
+      "value": "$4,300/mo"
+    }
+  ],
+  "monthly_revenue_usd": 10000,
+  "machine_count": null,
+  "location_count": 6,
+  "months_to_result": 10,
+  "prior_occupation": "Sales professional, then stay-at-home mom for 5 years",
+  "location_types": ["manufacturing", "condo", "school"],
+  "tags": ["part-time", "scaling"],
+  "review_notes": [
+    "Revenue is a stated range ($10-12K/month); per spec, monthly_revenue_usd uses the low end (10000) and the full range is shown in stats.",
+    "Transcript is auto-generated; verify all dollar figures against the video before publishing.",
+    "Her market is described only as hot-climate ('it's still hot here'), likely AZ or a similar region — not confirmed, so no location/market claim was added to the body.",
+    "months_to_result (10) is calculated from her own stated start date (January 1) and interview date (November 1st), not a number she stated directly."
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "slug": "kyle-40k-per-month",
+  "video_id": "HHMaPdTKECs",
+  "title": "How He Scaled to 30 Vending Machines Generating $40K a Month in Revenue",
+  "member_name": "Kyle",
+  "member_role": "Vending operator, central California",
+  "excerpt": "Kyle sold door-to-door as a kid, was later laid off from a corporate job, and built a 25-30 machine vending route generating $35-40K a month.",
+  "quote": "If you're not out there hustling to get it, somebody else is going to. Go and seize that opportunity while you have it.",
+  "quote_attribution": "Kyle",
+  "body": "## Background\n\nKyle grew up selling door to door in central California, starting with newspaper subscriptions at 12 and Dish Network at 14. He carried that sales instinct through a stint as a personal trainer and gym manager, then was laid off after the locally owned company he worked for was bought out by a corporation. He and his wife also run a carpet-cleaning franchise. He found Mike after Codie Sanchez mentioned him in an email.\n\n> Every time I tell people we're into vending machines, like nine out of ten people say, \"You know, I've always thought about doing that.\"\n\n## The Challenge\n\nDespite a lifetime in sales, Kyle had never actually looked into how vending worked, and dropping a couple thousand dollars on a machine felt riskier without any know-how. Convincing his wife, who grew up in poverty and was cautious with money, was its own hurdle — he sold it small at first.\n\n> It's not a crazy investment, but it's much more comforting if you feel like you have some level of know-how. And I'd never invested the time to figure out how to do it.\n\n## The Turning Point\n\nMike's program gave Kyle both a lead-generation platform and education on which machines to buy, how to evaluate locations, and what product moves. After getting his wife's support, he committed and kept adding machines, including a stretch where he installed almost one a week.\n\n> When I saw your program and understood there would be the lead-generation platform as well as the educational platform to guide me, your platform provides nearly everything somebody needs to be successful.\n\n## Where They Are Now\n\nTwenty-one months in, Kyle is approaching his 30th machine, running between 25 and 30 machines generating $35,000 to $40,000 a month — not far from half a million dollars a year. He built a warehouse an hour from home, hired two part-time employees (soon three), and promoted a driver to warehouse manager. He now works 15 to 20 hours a week by choice.\n\n> I'm really thankful that I'm afforded the opportunity to work 15 to 20 hours a week, sometimes less, and revenue is still coming in.",
+  "stats": [
+    {
+      "label": "Monthly Revenue",
+      "value": "$35-40K"
+    },
+    {
+      "label": "Machines",
+      "value": "25-30"
+    },
+    {
+      "label": "Annual Revenue",
+      "value": "~$500K"
+    }
+  ],
+  "monthly_revenue_usd": 35000,
+  "machine_count": 25,
+  "location_count": null,
+  "months_to_result": 21,
+  "prior_occupation": "Personal trainer and fitness gym manager",
+  "location_types": [],
+  "tags": ["laid-off", "scaling", "part-time"],
+  "review_notes": [
+    "Monthly revenue stated as a range ($35-40K); low end used for monthly_revenue_usd per spec.",
+    "Machine count stated as a range (25-30); low end used for machine_count.",
+    "Transcript does not separately state a location count distinct from machine count; left null.",
+    "No specific location types (e.g. office, apartment) were named in the transcript; left empty.",
+    "Annual revenue figure ('not terribly far from half a million') is Kyle's own mental-math estimate, not a firm reported number."
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "slug": "javier-zeder",
+  "video_id": "GO6C25-1mf8",
+  "title": "$8,500 First Month... His First Location",
+  "member_name": "Javier Zeder",
+  "member_role": "Recent college graduate, Texas",
+  "excerpt": "Javier Zeder was a recent college graduate in Texas who joined Vendingpreneurs and closed $8,500 in revenue during his very first month in vending.",
+  "quote": "It tells me that I set my own limits, you know -- myself, no one else. No one can tell me what I can and can't do. It's myself.",
+  "quote_attribution": "Javier Zeder",
+  "body": "## Background\nJavier Zeder was a recent college graduate in Texas who wasn't drawn to the corporate ladder. He helped with his family's businesses but wanted something that was his own, and joined Vendingpreneurs in late February 2026 as a single guy still working his day job.\n\n> \"With just hours and hours of thinking, you know, and you're getting hit with all the things that people are trying to sell you online, I stumbled upon this and did my own due diligence.\"\n\n## The Challenge\nHe'd been pitched drop shipping, websites, and even life insurance by friends, and his first question was always how much capital vending would take. Later on, once he was running a machine, a different fear showed up: the learning curve of the inventory and planogram software itself.\n\n> \"My first question was always, you know, how much money I needed and how can I leverage my network that I have... vending needs a little bit of a lower entry of capital.\"\n\n## The Turning Point\nHe watched every video on Mike Hoffman's YouTube channel, then joined the community to get answers he couldn't find alone. He used the ambassador calls to weigh an open-market setup against the AI smart machines, and leveraged his own network to land his first location.\n\n> \"So I find Mike on YouTube, watch every single video, do my due diligence, join the community, you know, for that extra step of getting some feedback on everything that I don't have an answer on -- and immediately got that feedback and placed the machine.\"\n\n## Where They Are Now\nHis first location, an open-market unit inside a hotel installed March 4, 2026, closed just under $8,500 in revenue in its first month, with a best single day of $700. Restocking about three times a week across roughly 100 to 150 SKUs, his top sellers were one-liter Ozarka water, Pepsi products, and convenience items like Advil and Gatorade. Landing a Pepsi-only property also let him point to the bottler relationships the community had already built. Property management is now feeding him leads into other properties just as busy, and he plans to give notice at his job, bring his 13-year-old brother into the business, and buy his parents something nice.\n",
+  "stats": [
+    {
+      "label": "Monthly Revenue",
+      "value": "$8,500"
+    },
+    {
+      "label": "Best Day",
+      "value": "$700"
+    },
+    {
+      "label": "Locations",
+      "value": "1"
+    }
+  ],
+  "monthly_revenue_usd": 8500,
+  "machine_count": null,
+  "location_count": 1,
+  "months_to_result": 1,
+  "prior_occupation": "Recent college graduate; helped with family businesses",
+  "location_types": ["hotel"],
+  "tags": ["first-location", "part-time", "scaling"],
+  "review_notes": [
+    "machine_count left null: the location is described as one open-market unit, but the transcript never states a distinct machine count.",
+    "The closing quote was also the pull quote, so the duplicate blockquote was removed from the story body. Consider adding a different verbatim quote to that section."
+  ]
+}

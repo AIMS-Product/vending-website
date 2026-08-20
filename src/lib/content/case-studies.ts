@@ -28,7 +28,7 @@ export const caseStudiesHero = {
  * document a sequential h1 → h2 → h3 outline without altering the visual design.
  */
 export const caseStudySectionHeadings = {
-  videos: "Video case studies",
+  stories: "Member success stories",
   quotes: "Written testimonials",
 } as const;
 

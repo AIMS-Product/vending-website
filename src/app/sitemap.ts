@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/site";
 import { listPublishedSlugs } from "@/lib/services/news";
+import { listPublishedCaseStudySlugs } from "@/lib/services/case-studies";
 import { listSitemapSeoPages } from "@/lib/services/seo-page-public";
 
 const staticRoutes = [
@@ -17,8 +18,9 @@ export const revalidate = 0;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
-  const [slugs, resourcePages] = await Promise.all([
+  const [slugs, caseStudySlugs, resourcePages] = await Promise.all([
     listPublishedSlugs(),
+    listPublishedCaseStudySlugs(),
     listSitemapSeoPages(),
   ]);
 
@@ -34,6 +36,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.6,
+    })),
+    ...caseStudySlugs.map((slug) => ({
+      url: absoluteUrl(`/case-studies/${slug}`),
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
     })),
     ...resourcePages.map((page) => ({
       url: absoluteUrl(page.route_path),

@@ -1,0 +1,27 @@
+{
+  "slug": "tim-barnes",
+  "video_id": "sGgnnwa2ySs",
+  "title": "From Out of Work to $90K/Month",
+  "member_name": "Tim Barnes",
+  "member_role": "Vending operator, Austin TX",
+  "excerpt": "Tim Barnes and his partner Ben were both between jobs when they joined Vendingpreneurs. A year and a half later they run 41 machines toward $90K a month.",
+  "quote": "We're at 41 machines, 34 locations, and we're on track this month to hit $90,000 a month... and definitely this will be our first month where we're passing over that million-dollar-a-year run rate.",
+  "quote_attribution": "Tim Barnes",
+  "body": "## Background\nTim Barnes and his business partner Ben had worked together for 28 years, based in Austin, Texas. For the first time, both were between jobs at once -- Ben had left an operations role at a startup that was getting too corporate, and Tim had exited an Airbnb business after the Austin market correction. They joined Vendingpreneurs at the end of August 2024 after meeting Mike Hoffman in person at a Wealth Without Wall Street conference in Nashville.\n\n> \"For the first time in 28 years together, Ben and I both were at a pause... in between employment, so we were a little bit stressed.\"\n\n## The Challenge\nBefore vending, they'd looked at laundromats, car washes, and franchises. The franchises carried entry fees running into six figures without much support behind them, and the other options carried a much higher barrier to entry in capital than vending did.\n\n> \"In a franchise you pay 25, 50, 100,000 or more in kind of an entry fee, and you don't really -- especially in some of them -- you're not getting a ton of support.\"\n\n## The Turning Point\nMeeting Mike in person was the difference-maker: Vendingpreneurs offered franchise-level support and a community, without the franchise fee, plus the excitement of an industry moving fast on new technology.\n\n> \"Vendingpreneurs... there's so much support in it that it's not a franchise but it has a lot of those advantages, and on top of that you get the community.\"\n\n## Where They Are Now\nA year and a half in, they run 41 machines across 34 locations and are on track to hit $90,000 a month, up from $64,000 the month before -- their first month over a million-dollar annual run rate. Their best-performing sites are self-checkout micro markets, with several now running around $14,000 a month apiece. A camera-system partnership through the community also solved their theft problem: after installing it at one micro market, they identified an employee of the location as the source, shared the footage, and the person was fired on the spot. They've hired two full-time and three part-time staff to keep up with the growth.\n\n> \"We're able to work together, which is awesome... we have that freedom -- running our own business and seeing those wins, celebrating them together is a whole different feeling than before, where you've always got different responsibilities, different people to answer to.\"\n",
+  "stats": [
+    { "label": "Monthly Revenue", "value": "$90K" },
+    { "label": "Machines", "value": "41" },
+    { "label": "Locations", "value": "34" },
+    { "label": "Best Location", "value": "$14K/mo" }
+  ],
+  "monthly_revenue_usd": 90000,
+  "machine_count": 41,
+  "location_count": 34,
+  "months_to_result": 18,
+  "prior_occupation": "Airbnb business owner, Austin TX",
+  "location_types": ["micro-market"],
+  "tags": ["scaling", "full-time", "career-change"],
+  "review_notes": [
+    "The $90K figure is an in-month, on-track projection stated during filming ('we're on track this month to hit 90,000'), not a closed/final month total -- verify before publish."
+  ]
+}
