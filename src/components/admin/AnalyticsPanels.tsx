@@ -226,6 +226,14 @@ export function AnalyticsBreakdown({
                 >
                   {row.label}
                 </span>
+                {typeof row.booked === "number" ? (
+                  <span
+                    className="shrink-0 text-xs font-semibold text-emerald-700 tabular-nums"
+                    title={`${row.booked} of ${row.count} booked a call`}
+                  >
+                    {row.booked} booked
+                  </span>
+                ) : null}
                 <span className="text-ui-text shrink-0 font-semibold tabular-nums">
                   {row.count}
                 </span>
@@ -234,6 +242,30 @@ export function AnalyticsBreakdown({
                 </span>
               </div>
               <AdminBar share={row.count / maxCount} />
+              {row.children?.length ? (
+                // Per-person tagged links, kept visible under the platform they
+                // roll into so combining them never costs anyone their credit.
+                <ul className="mt-1 ml-7 space-y-0.5">
+                  {row.children.map((child) => (
+                    <li
+                      key={child.label}
+                      className="text-ui-text-subtle flex items-baseline gap-2 text-xs"
+                    >
+                      <span className="min-w-0 flex-1 truncate">
+                        via {child.label}
+                      </span>
+                      {typeof child.booked === "number" ? (
+                        <span className="shrink-0 tabular-nums">
+                          {child.booked} booked
+                        </span>
+                      ) : null}
+                      <span className="shrink-0 tabular-nums">
+                        {child.count}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </li>
           ))}
         </ol>

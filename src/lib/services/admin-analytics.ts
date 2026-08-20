@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { resolveChannel } from "@/lib/analytics/channel";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
 import { isInternalLead } from "@/lib/services/admin-analytics-internal";
@@ -74,6 +75,13 @@ export type GetAdminAnalyticsInput = {
 export type AdminAnalyticsBreakdownRow = {
   label: string;
   count: number;
+  /** Leads in this row that went on to book a call, when known. */
+  booked?: number;
+  /**
+   * Sub-rows that roll up into this one — used to keep per-person credit for
+   * tagged links (mike-ig) visible under their platform total (Instagram).
+   */
+  children?: AdminAnalyticsBreakdownRow[];
 };
 
 export type AdminAnalyticsDailyTrendRow = {
@@ -118,7 +126,7 @@ export type AdminAnalytics = {
   bookingsUnattributed: number;
   leadsAllTime: number;
   leadsBySourcePath: AdminAnalyticsBreakdownRow[];
-  leadsByUtmSource: AdminAnalyticsBreakdownRow[];
+  leadsByChannel: AdminAnalyticsBreakdownRow[];
   bookingsByCalendar: AdminAnalyticsBreakdownRow[];
   dailyTrend: AdminAnalyticsDailyTrendRow[];
   bookingsConnected: boolean;
@@ -254,16 +262,13 @@ export async function getAdminAnalytics(
     bookingsTotal: bookedInRange.length,
     bookingsUnattributed: bookedInRange.length - attributedInRange.length,
     leadsAllTime,
-    leadsBySourcePath: topN(
-      current.map((lead) => lead.source_path),
+    leadsBySourcePath: topNWithBookings(
+      current,
+      (lead) => lead.source_path,
       TOP_N,
       "(direct / unknown)",
     ),
-    leadsByUtmSource: topN(
-      current.map((lead) => lead.utm_source),
-      TOP_N,
-      "(none)",
-    ),
+    leadsByChannel: buildChannelRollup(current, TOP_N),
     bookingsByCalendar: topN(
       bookedInRange.map((row) => row.scheduled_event_name),
       TOP_N,
@@ -481,6 +486,85 @@ function topN(
 
   return [...counts.entries()]
     .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+/**
+ * Same shape as topN, but each row also carries how many of its leads booked a
+ * call — the number the team actually manages to, rather than raw volume.
+ */
+function topNWithBookings(
+  leads: LeadAnalyticsRow[],
+  keyOf: (lead: LeadAnalyticsRow) => string | null,
+  limit: number,
+  fallbackLabel: string,
+): AdminAnalyticsBreakdownRow[] {
+  const groups = new Map<string, { count: number; booked: number }>();
+
+  for (const lead of leads) {
+    const label = normalizeLabel(keyOf(lead), fallbackLabel);
+    const group = groups.get(label) ?? { count: 0, booked: 0 };
+    group.count += 1;
+    if (hasBookedCall(lead)) group.booked += 1;
+    groups.set(label, group);
+  }
+
+  return [...groups.entries()]
+    .map(([label, group]) => ({ label, ...group }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+/**
+ * Leads grouped by canonical channel, with per-person tagged links kept as
+ * sub-rows of the platform they belong to.
+ *
+ * Raw utm_source values fragment badly — "Instagram" and "instagram" were two
+ * rows, and "mike-ig" hid another third of Instagram's volume — so grouping on
+ * the raw value understated every channel that more than one person tags links
+ * for. Untagged leads resolve to Website; see resolveChannel.
+ */
+function buildChannelRollup(
+  leads: LeadAnalyticsRow[],
+  limit: number,
+): AdminAnalyticsBreakdownRow[] {
+  type Group = {
+    count: number;
+    booked: number;
+    people: Map<string, { count: number; booked: number }>;
+  };
+  const groups = new Map<string, Group>();
+
+  for (const lead of leads) {
+    const { channel, person } = resolveChannel(lead.utm_source);
+    const group = groups.get(channel) ?? {
+      count: 0,
+      booked: 0,
+      people: new Map(),
+    };
+    const booked = hasBookedCall(lead);
+    group.count += 1;
+    if (booked) group.booked += 1;
+
+    if (person) {
+      const owned = group.people.get(person) ?? { count: 0, booked: 0 };
+      owned.count += 1;
+      if (booked) owned.booked += 1;
+      group.people.set(person, owned);
+    }
+    groups.set(channel, group);
+  }
+
+  return [...groups.entries()]
+    .map(([label, group]) => ({
+      label,
+      count: group.count,
+      booked: group.booked,
+      children: [...group.people.entries()]
+        .map(([person, owned]) => ({ label: person, ...owned }))
+        .sort((a, b) => b.count - a.count),
+    }))
     .sort((a, b) => b.count - a.count)
     .slice(0, limit);
 }

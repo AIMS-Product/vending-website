@@ -354,6 +354,7 @@ describe("getAdminAnalytics", () => {
     expect(analytics.leadsBySourcePath[0]).toEqual({
       label: "/page-0",
       count: 5,
+      booked: 0,
     });
   });
 
@@ -391,12 +392,14 @@ describe("getAdminAnalytics", () => {
     });
 
     expect(analytics.leadsBySourcePath).toEqual([
-      { label: "(direct / unknown)", count: 2 },
-      { label: "/apply", count: 1 },
+      { label: "(direct / unknown)", count: 2, booked: 0 },
+      { label: "/apply", count: 1, booked: 0 },
     ]);
-    expect(analytics.leadsByUtmSource).toEqual([
-      { label: "(none)", count: 2 },
-      { label: "google", count: 1 },
+    // Raw utm_source values are canonicalised: an untagged lead is Website,
+    // not a "(none)" row that hides what the site produced.
+    expect(analytics.leadsByChannel).toEqual([
+      { label: "Website", count: 2, booked: 0, children: [] },
+      { label: "Google", count: 1, booked: 0, children: [] },
     ]);
   });
 

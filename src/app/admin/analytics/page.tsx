@@ -135,8 +135,8 @@ function OverviewTab({ analytics }: { analytics: AdminAnalytics }) {
           rows={analytics.leadsBySourcePath}
         />
         <AnalyticsBreakdown
-          title="Leads by traffic source"
-          rows={analytics.leadsByUtmSource}
+          title="Leads by channel"
+          rows={analytics.leadsByChannel}
         />
         <AnalyticsBreakdown
           title="Bookings by calendar"
