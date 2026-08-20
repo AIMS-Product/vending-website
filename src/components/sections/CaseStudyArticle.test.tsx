@@ -20,6 +20,9 @@ const caseStudy = {
   published_at: "2026-08-19T00:00:00.000Z",
   prior_occupation: "High school teacher",
   location_types: ["office", "retirement-community"],
+  machine_count: 26,
+  location_count: 22,
+  months_to_result: 11,
 };
 
 const html =

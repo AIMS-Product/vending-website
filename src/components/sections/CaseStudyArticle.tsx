@@ -33,6 +33,9 @@ type CaseStudyArticleProps = {
     // stories, so the sidebar renders only what a given story actually has.
     | "prior_occupation"
     | "location_types"
+    | "machine_count"
+    | "location_count"
+    | "months_to_result"
   >;
   /** Sanitised HTML rendered from the markdown body. */
   html: string;

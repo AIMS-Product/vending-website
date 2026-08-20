@@ -1,22 +1,25 @@
 /**
  * Highlights for the article sidebar.
  *
- * Deliberately carries NO numbers. `StatsStrip` sits directly under the video
- * and owns revenue, machines, locations and time-to-result; a sidebar that
- * repeated any of them would just be the strip again in a narrower box.
- * This card answers the other question — who the member was before vending
- * and what kind of places their route runs through.
+ * Kody's ask, verbatim: "highlights about them and their route - # of
+ * machines, months in the program, etc." So the numbers are the point here.
+ * They also appear in `StatsStrip` under the video; that repetition is
+ * intentional and his call. The sidebar is sticky, so these stay on screen
+ * while the reader scrolls past the strip.
  *
  * Coverage across the 25 published stories is uneven (prior occupation 24/25,
- * location types 22/25), so only present fields are returned and the card
- * shrinks to fit. Every published story has at least one of the two. Nothing
- * is zero-filled: a story padded with a blank slot is worse than a short card.
+ * location types 22/25, locations 18/25, machines 15/25, months 12/25), so
+ * only present fields are returned and the card shrinks to fit. Nothing is
+ * zero-filled: "0 machines" reads as a claim, and it is not one.
  */
 export type RouteHighlight = { label: string; value: string };
 
 export type RouteHighlightSource = {
   prior_occupation: string | null;
   location_types: readonly string[] | null;
+  machine_count: number | null;
+  location_count: number | null;
+  months_to_result: number | null;
 };
 
 export function buildRouteHighlights(
@@ -27,6 +30,30 @@ export function buildRouteHighlights(
   const priorOccupation = caseStudy.prior_occupation?.trim();
   if (priorOccupation) {
     highlights.push({ label: "Before vending", value: priorOccupation });
+  }
+
+  // `> 0` rather than `!= null` throughout: a zero here is a data gap, not a
+  // result worth printing next to a member's name.
+  if (caseStudy.machine_count !== null && caseStudy.machine_count > 0) {
+    highlights.push({
+      label: "Machines",
+      value: String(caseStudy.machine_count),
+    });
+  }
+
+  if (caseStudy.location_count !== null && caseStudy.location_count > 0) {
+    highlights.push({
+      label: "Locations",
+      value: String(caseStudy.location_count),
+    });
+  }
+
+  const months = caseStudy.months_to_result;
+  if (months !== null && months > 0) {
+    highlights.push({
+      label: "Months in the program",
+      value: `${months} ${months === 1 ? "month" : "months"}`,
+    });
   }
 
   const locationTypes = (caseStudy.location_types ?? [])
