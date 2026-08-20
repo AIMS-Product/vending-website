@@ -3,10 +3,22 @@ import { NextResponse } from "next/server";
 import { adminRunCloseSync } from "@/lib/close/sync";
 import { config } from "@/lib/config";
 import { prunePublicRequestHits } from "@/lib/public-rate-limit";
+import { reconcileCloseBookings } from "@/lib/services/close-booking-reconcile";
 import { ensureVpFormV3Published } from "@/lib/services/vp-form-v3-ensure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+async function reconcileCloseBookingsSafely() {
+  try {
+    return await reconcileCloseBookings();
+  } catch (error) {
+    console.error("close booking reconcile failed", {
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+    return null;
+  }
+}
 
 function hasValidCronSecret(authorization: string | null, secret: string) {
   if (!authorization) return false;
@@ -46,9 +58,16 @@ export async function GET(request: Request) {
     // No-ops forever once applied; see vp-form-v3-ensure.ts.
     const formV3 = await ensureVpFormV3Published();
     const result = await adminRunCloseSync();
+    // Mirrors "did this lead book a call" back from Close onto our lead rows.
+    // Runs after the sync so leads created in this same pass already have a
+    // close_lead_id to join on. Best-effort like the two calls above: the
+    // funnel report going stale for two minutes must never fail the sync that
+    // feeds the CRM.
+    const bookings = await reconcileCloseBookingsSafely();
     return NextResponse.json({
       ok: true,
       formV3: formV3.status,
+      bookings,
       scanned: result.scanned,
       synced: result.synced,
       failed: result.failed,

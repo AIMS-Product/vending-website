@@ -241,6 +241,9 @@ export type Database = {
           close_sync_next_retry_at: string | null;
           close_sync_status: string | null;
           close_sync_synced_at: string | null;
+          call_booked_at: string | null;
+          call_status: string | null;
+          call_reconciled_at: string | null;
           created_at: string;
           email: string;
           form_type: string;
@@ -291,6 +294,9 @@ export type Database = {
           close_sync_next_retry_at?: string | null;
           close_sync_status?: string | null;
           close_sync_synced_at?: string | null;
+          call_booked_at?: string | null;
+          call_status?: string | null;
+          call_reconciled_at?: string | null;
           created_at?: string;
           email: string;
           form_type: string;
@@ -341,6 +347,9 @@ export type Database = {
           close_sync_next_retry_at?: string | null;
           close_sync_status?: string | null;
           close_sync_synced_at?: string | null;
+          call_booked_at?: string | null;
+          call_status?: string | null;
+          call_reconciled_at?: string | null;
           created_at?: string;
           email?: string;
           form_type?: string;

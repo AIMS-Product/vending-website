@@ -46,6 +46,7 @@ type LeadAnalyticsRow = Pick<
   | "latest_qualification_form_id"
   | "latest_qualification_started_at"
   | "latest_qualification_completed_at"
+  | "call_booked_at"
 >;
 
 type BookingAnalyticsRow = Pick<
@@ -137,7 +138,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const TOP_N = 12;
 
 const LEAD_ANALYTICS_FIELDS =
-  "id,created_at,email,full_name,source_path,landing_path,referrer,utm_source,utm_medium,utm_campaign,utm_term,utm_content,timeline,budget,business_stage,state_region,lifecycle_status,close_sync_status,qualification_summary,latest_qualification_form_id,latest_qualification_started_at,latest_qualification_completed_at" as const;
+  "id,created_at,email,full_name,source_path,landing_path,referrer,utm_source,utm_medium,utm_campaign,utm_term,utm_content,timeline,budget,business_stage,state_region,lifecycle_status,close_sync_status,qualification_summary,latest_qualification_form_id,latest_qualification_started_at,latest_qualification_completed_at,call_booked_at" as const;
 const BOOKING_ANALYTICS_FIELDS =
   "id,created_at,status,scheduled_event_name,invitee_email,lead_submission_id" as const;
 
@@ -199,13 +200,18 @@ export async function getAdminAnalytics(
     isAttributedBooking(row, leadEmails),
   );
 
-  const currentBooked = attributed.filter((row) =>
+  // Whether a lead booked a call is read from Close (mirrored onto
+  // call_booked_at by the booking reconciler), NOT from the Calendly table.
+  // Close covers every calendar -- including phone, Saleskick and direct links
+  // this site never renders -- and joins on close_lead_id rather than guessing
+  // by invitee email, so it is both complete and exact. The Calendly rows below
+  // survive only to describe WHICH calendar a booking landed on.
+  const currentBooked = current.filter(hasBookedCall);
+  const priorBooked = prior.filter(hasBookedCall);
+  const bookedInRange = booked.filter((row) =>
     inWindow(row.created_at, start, end),
   );
-  const priorBooked = attributed.filter((row) =>
-    inWindow(row.created_at, priorStart, start),
-  );
-  const bookedInRange = booked.filter((row) =>
+  const attributedInRange = attributed.filter((row) =>
     inWindow(row.created_at, start, end),
   );
 
@@ -216,20 +222,11 @@ export async function getAdminAnalytics(
   // for comparison arithmetic, not for the breakdowns.
   const detailRows = current as unknown as AnalyticsLeadRow[];
 
-  // A booking identifies its lead either by foreign key or by invitee email, so
-  // resolve both back to the lead's email — that is the key the pure rollups
-  // match on. Missing either way would silently under-report booked leads.
-  const emailByLeadId = new Map(
-    leads.map((lead) => [lead.id, lead.email?.trim().toLowerCase() ?? ""]),
-  );
+  // The pure rollups (acquisition, pages) match on lead email, so reduce the
+  // booked leads to that key.
   const bookedEmails = new Set(
     currentBooked
-      .map((row) => {
-        const viaFk = row.lead_submission_id
-          ? emailByLeadId.get(row.lead_submission_id)
-          : undefined;
-        return viaFk || (row.invitee_email?.trim().toLowerCase() ?? "");
-      })
+      .map((lead) => lead.email?.trim().toLowerCase() ?? "")
       .filter((email): email is string => Boolean(email)),
   );
 
@@ -255,7 +252,7 @@ export async function getAdminAnalytics(
       ),
     },
     bookingsTotal: bookedInRange.length,
-    bookingsUnattributed: bookedInRange.length - currentBooked.length,
+    bookingsUnattributed: bookedInRange.length - attributedInRange.length,
     leadsAllTime,
     leadsBySourcePath: topN(
       current.map((lead) => lead.source_path),
@@ -278,6 +275,15 @@ export async function getAdminAnalytics(
     pages: buildPagesRollup(detailRows, bookedEmails),
     quality: buildQualityRollup(detailRows),
   };
+}
+
+/**
+ * A lead booked a sales call at some point. Mirrored from Close's "First Call
+ * Booked Date", so it stays true for a lead that later no-showed or cancelled —
+ * the booking still happened, and that is what a funnel measures.
+ */
+function hasBookedCall(lead: LeadAnalyticsRow): boolean {
+  return Boolean(lead.call_booked_at);
 }
 
 /** Half-open [start, end) so a row is never counted in two adjacent windows. */

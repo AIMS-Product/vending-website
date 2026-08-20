@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { CLOSE_LEAD_MISSING } from "@/lib/services/close-booking-reconcile";
 import {
   jsonObjectAt as objectAt,
   jsonStringAt as stringAt,
@@ -54,6 +55,11 @@ export type AdminLeadListItem = {
   qualificationStatus: string | null;
   closeSyncStatus: string | null;
   closeSyncLastError: string | null;
+  callBookedAt: string | null;
+  /** Close lead status label, or null when Close has no answer for this lead. */
+  callStatus: string | null;
+  /** The Close lead we synced no longer exists (merged or deleted). */
+  callLeadMissing: boolean;
   sourcePath: string | null;
   landingPath: string | null;
   sourcePageSlug: string | null;
@@ -439,6 +445,12 @@ function mapLeadListItem(
     qualificationStatus: session?.status ?? null,
     closeSyncStatus: lead.close_sync_status,
     closeSyncLastError: lead.close_sync_last_error,
+    callBookedAt: lead.call_booked_at,
+    // The reconciler's internal marker never reaches the client: the UI gets a
+    // flag, not a sentinel string it would have to know how to spell.
+    callStatus:
+      lead.call_status === CLOSE_LEAD_MISSING ? null : lead.call_status,
+    callLeadMissing: lead.call_status === CLOSE_LEAD_MISSING,
     sourcePath: lead.source_path,
     landingPath: lead.landing_path,
     sourcePageSlug: lead.source_page_slug,

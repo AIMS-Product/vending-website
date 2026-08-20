@@ -198,6 +198,9 @@ export function AdminLeadsManager({
                     Close sync
                   </th>
                   <th scope="col" className="px-3 py-2">
+                    Call booked
+                  </th>
+                  <th scope="col" className="px-3 py-2">
                     Source
                   </th>
                   <th scope="col" className="px-4 py-2 text-right">
@@ -430,6 +433,55 @@ export function AdminLeadDetailView({ lead }: { lead: AdminLeadDetail }) {
   );
 }
 
+/**
+ * Whether this lead went on to book a sales call, mirrored from Close.
+ *
+ * Three states are deliberately distinct: booked (date + where it stands now),
+ * a confirmed "no" for a lead Close has checked, and "not checked yet" for a
+ * lead the reconciler has not reached. Collapsing the last two into "No" would
+ * report a brand-new lead as a failure to convert.
+ */
+function LeadCallCell({
+  bookedAt,
+  status,
+  leadMissing,
+  syncStatus,
+}: {
+  bookedAt: string | null;
+  status: string | null;
+  leadMissing: boolean;
+  syncStatus: string | null;
+}) {
+  if (bookedAt) {
+    return (
+      <div className="grid justify-items-start gap-0.5">
+        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+          Booked
+        </span>
+        <span className="text-ui-text-subtle text-xs tabular-nums">
+          {bookedAt}
+          {status ? ` · ${status}` : ""}
+        </span>
+      </div>
+    );
+  }
+
+  if (leadMissing) {
+    return <span className="text-ui-text-muted text-xs">Removed in Close</span>;
+  }
+
+  // Never reached Close, so there is nothing to reconcile against.
+  if (!syncStatus || syncStatus === "pending") {
+    return <span className="text-ui-text-subtle text-xs">Not synced</span>;
+  }
+
+  if (!status) {
+    return <span className="text-ui-text-subtle text-xs">Not checked yet</span>;
+  }
+
+  return <span className="text-ui-text-muted text-xs">No call booked</span>;
+}
+
 function LeadRow({ lead }: { lead: AdminLeadListItem }) {
   return (
     <tr className="hover:bg-ui-canvas align-top transition">
@@ -470,6 +522,14 @@ function LeadRow({ lead }: { lead: AdminLeadListItem }) {
             </p>
           ) : null}
         </div>
+      </td>
+      <td className="px-3 py-2.5">
+        <LeadCallCell
+          bookedAt={lead.callBookedAt}
+          status={lead.callStatus}
+          leadMissing={lead.callLeadMissing}
+          syncStatus={lead.closeSyncStatus}
+        />
       </td>
       <td className="px-3 py-2.5">
         <div className="text-ui-text-subtle grid gap-0.5 text-xs">

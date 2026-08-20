@@ -215,8 +215,18 @@ describe("getAdminAnalytics", () => {
     const client = buildClient({
       lead_submissions: {
         rows: [
-          makeLead({ id: "l1", email: "one@gmail.com" }),
-          makeLead({ id: "l2", email: "two@gmail.com" }),
+          // Booked, per Close's "First Call Booked Date".
+          makeLead({
+            id: "l1",
+            email: "one@gmail.com",
+            call_booked_at: "2026-07-16",
+          }),
+          makeLead({
+            id: "l2",
+            email: "two@gmail.com",
+            call_booked_at: "2026-07-17",
+          }),
+          // Reconciled against Close and confirmed to have never booked.
           makeLead({ id: "l3", email: "three@gmail.com" }),
           makeLead({ id: "l4", email: "four@gmail.com" }),
         ],
@@ -245,9 +255,13 @@ describe("getAdminAnalytics", () => {
       range: "90d",
     });
 
+    // Booked leads are read from Close, so the walk-in booking (b3) cannot
+    // reach this number no matter how the Calendly table looks.
     expect(analytics.metrics.bookedFromLeads.value).toBe(2);
     // 2 of 4 leads booked — never the 3/4 that counting the walk-in would give.
     expect(analytics.metrics.bookingRatePct.value).toBe(50);
+    // The Calendly rows still describe raw calendar volume, including the
+    // walk-in that belongs to no website lead.
     expect(analytics.bookingsTotal).toBe(3);
     expect(analytics.bookingsUnattributed).toBe(1);
   });
@@ -394,6 +408,7 @@ describe("getAdminAnalytics", () => {
             id: "l1",
             email: "a@gmail.com",
             created_at: "2026-07-20T01:00:00.000Z",
+            call_booked_at: "2026-07-21",
           }),
           makeLead({
             id: "l2",
@@ -429,8 +444,16 @@ describe("getAdminAnalytics", () => {
     const lastDay = analytics.dailyTrend.at(-1);
     expect(lastDay?.date).toBe("2026-07-20");
     expect(lastDay?.leads).toBe(1);
-    // The canceled booking must not appear.
+    // The series buckets a booking on the day its LEAD arrived, not the day the
+    // calendar row was written, so a day's two numbers describe one cohort:
+    // "of the leads captured that day, this many went on to book".
     expect(lastDay?.bookings).toBe(1);
+    // l2 arrived on the 19th and never booked, so its day contributes a lead
+    // and no booking — the Calendly rows cannot add one back.
+    const priorDay = analytics.dailyTrend.at(-2);
+    expect(priorDay?.date).toBe("2026-07-19");
+    expect(priorDay?.leads).toBe(1);
+    expect(priorDay?.bookings).toBe(0);
     expect(analytics.dailyTrend[0].leads).toBe(0);
   });
 
