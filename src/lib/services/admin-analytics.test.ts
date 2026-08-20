@@ -125,13 +125,21 @@ describe("getAdminAnalytics", () => {
     const client = buildClient({
       lead_submissions: {
         rows: [
-          // Current 7d window (Jul 13 -> Jul 20).
-          makeLead({ id: "c1", created_at: "2026-07-19T12:00:00.000Z" }),
-          makeLead({ id: "c2", created_at: "2026-07-15T12:00:00.000Z" }),
-          makeLead({ id: "c3", created_at: "2026-07-14T12:00:00.000Z" }),
-          // Prior 7d window (Jul 6 -> Jul 13).
-          makeLead({ id: "p1", created_at: "2026-07-10T12:00:00.000Z" }),
-          makeLead({ id: "p2", created_at: "2026-07-08T12:00:00.000Z" }),
+          // Current 7d window (Jul 13 -> Jul 20): 15 leads.
+          ...Array.from({ length: 15 }, (_, index) =>
+            makeLead({
+              id: `c${index}`,
+              created_at: "2026-07-15T12:00:00.000Z",
+            }),
+          ),
+          // Prior 7d window (Jul 6 -> Jul 13): 10 leads. Deliberately at the
+          // comparability floor — below it no percentage is reported at all.
+          ...Array.from({ length: 10 }, (_, index) =>
+            makeLead({
+              id: `p${index}`,
+              created_at: "2026-07-10T12:00:00.000Z",
+            }),
+          ),
         ],
       },
       calendly_bookings: { rows: [] },
@@ -143,10 +151,47 @@ describe("getAdminAnalytics", () => {
       range: "7d",
     });
 
-    expect(analytics.metrics.leads.value).toBe(3);
-    expect(analytics.metrics.leads.prior).toBe(2);
+    expect(analytics.metrics.leads.value).toBe(15);
+    expect(analytics.metrics.leads.prior).toBe(10);
     expect(analytics.metrics.leads.deltaPct).toBe(50);
     expect(analytics.range.days).toBe(7);
+  });
+
+  it("reports no percentage when the prior window is too small to divide by", async () => {
+    // The real shape of the bug this guards: the site cut over on 2026-07-27
+    // and lead capture starts 2026-07-06, so a 30-day comparison reached into
+    // a near-empty window and rendered "+17,533%" off a base of three.
+    const client = buildClient({
+      lead_submissions: {
+        rows: [
+          ...Array.from({ length: 40 }, (_, index) =>
+            makeLead({
+              id: `c${index}`,
+              created_at: "2026-07-15T12:00:00.000Z",
+            }),
+          ),
+          ...Array.from({ length: 3 }, (_, index) =>
+            makeLead({
+              id: `p${index}`,
+              created_at: "2026-07-10T12:00:00.000Z",
+            }),
+          ),
+        ],
+      },
+      calendly_bookings: { rows: [] },
+    });
+
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "7d",
+    });
+
+    expect(analytics.metrics.leads.value).toBe(40);
+    expect(analytics.metrics.leads.prior).toBe(3);
+    // The prior count is still reported — the UI shows "no baseline" and can
+    // surface the 3 on hover. Only the meaningless ratio is withheld.
+    expect(analytics.metrics.leads.deltaPct).toBeNull();
   });
 
   it("reports an absolute change instead of a percentage when the prior window was empty", async () => {

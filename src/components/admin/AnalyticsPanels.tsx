@@ -161,9 +161,14 @@ function DeltaChip({
     return <AdminDeltaChip tone="neutral">no activity</AdminDeltaChip>;
   }
   if (metric.deltaPct === null) {
+    // No comparison is offered when the prior window is empty (genuinely new)
+    // or too small to divide by. Saying "new" for a base of three would be a
+    // different lie than "+17,533%", not an improvement.
     return (
       <span title={priorLabel}>
-        <AdminDeltaChip tone="up">new</AdminDeltaChip>
+        <AdminDeltaChip tone={metric.prior === 0 ? "up" : "neutral"}>
+          {metric.prior === 0 ? "new" : "no baseline"}
+        </AdminDeltaChip>
       </span>
     );
   }
@@ -245,13 +250,17 @@ export function AnalyticsBreakdown({
               {row.children?.length ? (
                 // Per-person tagged links, kept visible under the platform they
                 // roll into so combining them never costs anyone their credit.
-                <ul className="mt-1 ml-7 space-y-0.5">
+                <ul className="mt-1 space-y-0.5">
                   {row.children.map((child) => (
                     <li
                       key={child.label}
+                      // Mirrors the parent row's columns exactly — same leading
+                      // rank gutter, same trailing share gutter — so the counts
+                      // line up in one column instead of drifting left.
                       className="text-ui-text-subtle flex items-baseline gap-2 text-xs"
                     >
-                      <span className="min-w-0 flex-1 truncate">
+                      <span className="w-5 shrink-0" aria-hidden="true" />
+                      <span className="min-w-0 flex-1 truncate pl-2">
                         via {child.label}
                       </span>
                       {typeof child.booked === "number" ? (
@@ -262,6 +271,7 @@ export function AnalyticsBreakdown({
                       <span className="shrink-0 tabular-nums">
                         {child.count}
                       </span>
+                      <span className="w-9 shrink-0" aria-hidden="true" />
                     </li>
                   ))}
                 </ul>

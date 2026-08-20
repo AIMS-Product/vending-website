@@ -343,8 +343,18 @@ function ratePct(numerator: number, denominator: number): number {
   return Math.round((numerator / denominator) * 1000) / 10;
 }
 
+/**
+ * The smallest prior-window count a percentage may be computed against.
+ *
+ * Below this the ratio is noise: the site cut over on 2026-07-27 and lead
+ * capture only starts 2026-07-06, so a 30-day comparison reaches back into a
+ * window with almost no data and reports things like "+17,533%" off a base of
+ * three. A missing comparison is honest; a spectacular meaningless one is not.
+ */
+const MIN_COMPARABLE_PRIOR = 10;
+
 function percentChange(value: number, prior: number): number | null {
-  if (prior <= 0) return null;
+  if (prior < MIN_COMPARABLE_PRIOR) return null;
   return Math.round(((value - prior) / prior) * 1000) / 10;
 }
 
