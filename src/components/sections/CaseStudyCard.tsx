@@ -10,12 +10,16 @@ import type { CaseStudyCard as CaseStudyCardData } from "@/lib/services/case-stu
 export function CaseStudyCard({
   caseStudy,
   headingLevel = "h3",
+  href,
 }: {
   caseStudy: CaseStudyCardData;
   /** The grid owns the section heading, so the card's title level varies. */
   headingLevel?: "h2" | "h3";
+  /** Overridable so the temporary preview route can link within itself. */
+  href?: string;
 }) {
   const Heading = headingLevel;
+  const cardHref = href ?? `/case-studies/${caseStudy.slug}`;
   const thumbnailUrl = caseStudy.cover_url ?? youtubeThumbnail(caseStudy);
 
   return (
@@ -55,7 +59,7 @@ export function CaseStudyCard({
             link per card keeps the tab order and the accessible name honest.
           */}
           <Link
-            href={`/case-studies/${caseStudy.slug}`}
+            href={cardHref}
             className="after:absolute after:inset-0 focus-visible:outline-none"
           >
             {caseStudy.title}

@@ -30,6 +30,11 @@ type CaseStudyArticleProps = {
   html: string;
   /** Already resolved and ordered by the page. Empty is a valid state. */
   related: readonly CaseStudyCardData[];
+  /**
+   * Overrides where the related cards link. Only the temporary preview route
+   * passes this; production uses the real `/case-studies/<slug>` URLs.
+   */
+  cardHrefFor?: (slug: string) => string;
 };
 
 /**
@@ -45,6 +50,7 @@ export function CaseStudyArticle({
   caseStudy,
   html,
   related,
+  cardHrefFor,
 }: CaseStudyArticleProps) {
   const headings = extractArticleHeadings(html);
   const stats = parseStats(caseStudy.stats);
@@ -131,7 +137,7 @@ export function CaseStudyArticle({
         </div>
       </div>
 
-      <MoreSuccessStories related={related} />
+      <MoreSuccessStories related={related} cardHrefFor={cardHrefFor} />
     </>
   );
 }
@@ -364,8 +370,10 @@ function ArticleSidebar({ headings }: { headings: string[] }) {
 
 function MoreSuccessStories({
   related,
+  cardHrefFor,
 }: {
   related: readonly CaseStudyCardData[];
+  cardHrefFor?: (slug: string) => string;
 }) {
   if (related.length === 0) return null;
 
@@ -378,7 +386,7 @@ function MoreSuccessStories({
         <ul className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {related.map((item) => (
             <li key={item.slug} className="min-w-0">
-              <CaseStudyCard caseStudy={item} />
+              <CaseStudyCard caseStudy={item} href={cardHrefFor?.(item.slug)} />
             </li>
           ))}
         </ul>
