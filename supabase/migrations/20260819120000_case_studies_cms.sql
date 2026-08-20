@@ -58,9 +58,11 @@ create table public.case_studies (
   constraint case_studies_youtube_video_id_shape
     check (youtube_video_id is null or youtube_video_id ~ '^[A-Za-z0-9_-]{6,}$'),
   constraint case_studies_stats_is_array
-    check (jsonb_typeof(stats) = 'array'),
-  constraint case_studies_published_needs_video
-    check (status <> 'published' or youtube_video_id is not null)
+    check (jsonb_typeof(stats) = 'array')
+  -- Video is deliberately OPTIONAL, including for published rows. A story
+  -- with a strong quote and real numbers is worth publishing before the
+  -- video exists; the template falls back to the cover image, then to a
+  -- text-only hero. Do not add a publish-requires-video constraint.
 );
 
 create index case_studies_published_idx

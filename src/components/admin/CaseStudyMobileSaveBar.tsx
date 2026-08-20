@@ -8,11 +8,11 @@ import { CaseStudyPublishButton } from "@/components/admin/CaseStudyPublishButto
 
 export function CaseStudyMobileSaveBar({
   formId,
-  publishDisabled,
+  publishDisabled = false,
   publishDisabledReason,
 }: {
   formId: string;
-  publishDisabled: boolean;
+  publishDisabled?: boolean;
   publishDisabledReason?: string;
 }) {
   return (

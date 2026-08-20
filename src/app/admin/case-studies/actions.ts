@@ -67,49 +67,43 @@ const youtubeField = z.string().transform((value, ctx) => {
   return resolved;
 });
 
-const postSchema = z
-  .object({
-    id: z.uuid().optional(),
-    title: z.string().trim().min(3, "Title needs at least 3 characters."),
-    slug: slugField,
-    member_name: z.string().trim().min(1, "Member name is required."),
-    member_role: z.string().trim().max(180, "Keep the role under 180 characters."),
-    excerpt: z.string().trim().max(240, "Keep excerpts under 240 characters."),
-    body: z.string(),
-    cover_url: z.string().trim(),
-    cover_alt: z.string().trim().max(180, "Alt text is too long."),
-    youtube_video_id: youtubeField,
-    quote: z.string().trim().max(600, "Keep the quote under 600 characters."),
-    quote_attribution: z
-      .string()
-      .trim()
-      .max(180, "Keep the attribution under 180 characters."),
-    monthly_revenue_usd: optionalIntField,
-    machine_count: optionalIntField,
-    location_count: optionalIntField,
-    months_to_result: optionalIntField,
-    prior_occupation: z
-      .string()
-      .trim()
-      .max(180, "Keep this under 180 characters."),
-    location_types: z.string(),
-    tags: z.string(),
-    related_slugs: z.string(),
-    stats: z.string(),
-    intent: z.enum(["save", "publish", "unpublish", "archive"]),
-  })
-  // The DB enforces `status <> 'published' or youtube_video_id is not
-  // null`. Block a publish attempt with no video here so the admin sees a
-  // clear message instead of a raw constraint-violation 500.
-  .superRefine((data, ctx) => {
-    if (data.intent === "publish" && !data.youtube_video_id) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["youtube_video_id"],
-        message: "Add a YouTube video before publishing.",
-      });
-    }
-  });
+const postSchema = z.object({
+  id: z.uuid().optional(),
+  title: z.string().trim().min(3, "Title needs at least 3 characters."),
+  slug: slugField,
+  member_name: z.string().trim().min(1, "Member name is required."),
+  member_role: z
+    .string()
+    .trim()
+    .max(180, "Keep the role under 180 characters."),
+  excerpt: z.string().trim().max(240, "Keep excerpts under 240 characters."),
+  body: z.string(),
+  cover_url: z.string().trim(),
+  cover_alt: z.string().trim().max(180, "Alt text is too long."),
+  youtube_video_id: youtubeField,
+  quote: z.string().trim().max(600, "Keep the quote under 600 characters."),
+  quote_attribution: z
+    .string()
+    .trim()
+    .max(180, "Keep the attribution under 180 characters."),
+  monthly_revenue_usd: optionalIntField,
+  machine_count: optionalIntField,
+  location_count: optionalIntField,
+  months_to_result: optionalIntField,
+  prior_occupation: z
+    .string()
+    .trim()
+    .max(180, "Keep this under 180 characters."),
+  location_types: z.string(),
+  tags: z.string(),
+  related_slugs: z.string(),
+  stats: z.string(),
+  intent: z.enum(["save", "publish", "unpublish", "archive"]),
+});
+
+// Video is deliberately optional, including for published stories — a strong
+// quote and real numbers stand on their own while the video is still being
+// edited. The template degrades to the cover image, then to a text-only hero.
 
 // I5: draft-only autosave payload. Deliberately NARROWER than postSchema — it
 // carries content fields only and has NO `intent`, so autosave can never

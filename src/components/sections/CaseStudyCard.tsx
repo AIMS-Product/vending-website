@@ -30,12 +30,18 @@ export function CaseStudyCard({
             className="object-cover"
           />
         ) : null}
-        <span
-          aria-hidden
-          className="absolute top-1/2 left-1/2 grid size-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-[#111111] bg-white/95"
-        >
-          <span className="ml-1 size-0 border-y-[10px] border-l-[16px] border-y-transparent border-l-[#111111]" />
-        </span>
+        {/*
+          Only promise a video when there is one. Video is optional on a case
+          study, and a play badge over a text-only story is a broken promise.
+        */}
+        {caseStudy.youtube_video_id ? (
+          <span
+            aria-hidden
+            className="absolute top-1/2 left-1/2 grid size-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-[#111111] bg-white/95"
+          >
+            <span className="ml-1 size-0 border-y-[10px] border-l-[16px] border-y-transparent border-l-[#111111]" />
+          </span>
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-5">

@@ -4,7 +4,10 @@ import type { FormEvent } from "react";
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { renderMarkdown } from "@/lib/markdown";
-import { saveCaseStudy, type EditorActionState } from "@/app/admin/case-studies/actions";
+import {
+  saveCaseStudy,
+  type EditorActionState,
+} from "@/app/admin/case-studies/actions";
 import { normalizeCaseStudySlug } from "@/app/admin/case-studies/case-study-slug";
 import {
   adminCardClass,
@@ -34,7 +37,6 @@ type CaseStudyEditorFormProps = {
 };
 
 const initialState: EditorActionState = { status: "idle" };
-const PUBLISH_BLOCKED_REASON = "Add a YouTube video before publishing.";
 
 export function CaseStudyEditorForm({
   caseStudy,
@@ -89,7 +91,6 @@ export function CaseStudyEditorForm({
   const visibleSlug = slugTouched ? slug : normalizeCaseStudySlug(title);
   const resolvedVideoId = resolveYoutubeVideoId(youtubeInput);
   const videoInputInvalid = resolvedVideoId === undefined;
-  const publishBlocked = !resolvedVideoId;
 
   // I5-equivalent: background autosave for existing DRAFT rows only. Gated
   // inside the hook on caseStudy.id (a brand-new case study has no row yet
@@ -156,7 +157,9 @@ export function CaseStudyEditorForm({
         onSubmit={handleManualSubmit}
         className="grid gap-8 pb-24 lg:grid-cols-[minmax(0,1fr)_320px] lg:pb-0"
       >
-        {caseStudy?.id && <input type="hidden" name="id" value={caseStudy.id} />}
+        {caseStudy?.id && (
+          <input type="hidden" name="id" value={caseStudy.id} />
+        )}
         <input type="hidden" name="stats" value={JSON.stringify(stats)} />
 
         <div className="space-y-6">
@@ -400,11 +403,7 @@ export function CaseStudyEditorForm({
               >
                 Save draft
               </button>
-              <CaseStudyPublishButton
-                className={adminPrimaryButtonClass}
-                disabled={publishBlocked}
-                disabledReason={PUBLISH_BLOCKED_REASON}
-              />
+              <CaseStudyPublishButton className={adminPrimaryButtonClass} />
               {canUnpublish && (
                 <button
                   type="submit"
@@ -555,11 +554,7 @@ export function CaseStudyEditorForm({
           </div>
         </div>
       </form>
-      <CaseStudyMobileSaveBar
-        formId="case-study-editor-form"
-        publishDisabled={publishBlocked}
-        publishDisabledReason={PUBLISH_BLOCKED_REASON}
-      />
+      <CaseStudyMobileSaveBar formId="case-study-editor-form" />
     </>
   );
 }

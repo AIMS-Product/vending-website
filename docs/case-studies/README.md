@@ -8,6 +8,43 @@ put together.
 - Public page: `/case-studies/<slug>`
 - Admin: `/admin/case-studies`
 
+## Adding a case study (for editors)
+
+No code, no deploy. About three minutes.
+
+1. Go to `/admin/case-studies` and press **New case study**.
+2. Fill in the fields. Only four are required:
+   - **Title** — the hook, not the person's name. "From laid off to $12K a
+     month" beats "Dave's story".
+   - **Member name** — exactly how they want to be credited. Do not invent a
+     surname; if you only have a first name, use the first name.
+   - **URL ending** — fills itself in from the title. Change it before
+     publishing if you want, but never after: the old link stops working.
+   - **Story** — the body copy.
+3. Everything else is optional and the page adapts to what you leave out:
+   - **YouTube link** — paste the full URL, any format. No video is fine; the
+     page falls back to the cover image, then to a text-only layout. It never
+     shows a broken player.
+   - **Results** — add up to four. Each is a number and a label. Leave the
+     whole thing empty and the strip disappears rather than showing gaps.
+   - **Pull quote** — the one line that hooks a prospect. Do not also paste it
+     into the story body; it will render twice.
+4. Press **Save** as often as you like. Drafts are invisible to the public.
+5. Press **Publish**. It is live within a minute.
+
+To take a page down, open it and press **Unpublish**. The link 404s
+immediately.
+
+### Before you publish
+
+Revenue figures come from what members said in an interview. Nobody has
+audited their books. **Run any number that goes on the site past Jess first.**
+
+### Video hosting
+
+The video field takes YouTube only. If a story needs to live on Vimeo
+instead, that is a code change — ask before promising it to anyone.
+
 ## Status: migration not yet applied
 
 The `case_studies` table does not exist in Supabase yet, so `/case-studies`
