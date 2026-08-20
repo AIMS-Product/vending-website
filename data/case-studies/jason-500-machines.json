@@ -1,0 +1,39 @@
+{
+  "slug": "jason-500-machines",
+  "video_id": "cGoI8lUHhh0",
+  "title": "How He Scaled to 500+ Vending Machines by Buying Routes",
+  "member_name": "Jason",
+  "member_role": "Former corporate middle manager",
+  "excerpt": "Jason left corporate management to build a vending business with his wife Abby, eventually buying a multi-million-dollar route with 500+ machines.",
+  "quote": "I wanted to get out of corporate America before the age of 50. That's what intrigued me about getting into vending.",
+  "quote_attribution": "Jason",
+  "body": "## Background\n\nJason spent his career as a \"people leader\" in corporate middle management and wanted out before turning 50. He runs the business with his wife, Abby. He found Mike through Instagram, had his first conversation in December 2022, and started in January 2023 while still holding his day job.\n\n## The Challenge\n\nBefore vending, Jason had looked at laundromats and investment properties, but the capital requirements and unclear near-term returns didn't pencil out. His first vending location — a single machine in a garden-style apartment complex — made about $100 a month and sat there for months before he had another spot to move it to.\n\n> It started with one garden-style apartment complex of one machine that did like a hundred bucks a month, and it was horrendous. Just horrendous. We left it in there for like three to six months until we had another location to put it at.\n\n## The Turning Point\n\nThe economics clicked when a 200-unit apartment complex started paying $2,500 a month for two machines, proving the model could scale. Not long after, he found a broker willing to sell an entire route at what looked like a four-times return.\n\n> Right behind that was a 200-unit apartment complex that started off at like $2,500 a month for two machines. We're like, \"Oh holy cow, there's something to this.\"\n\n## Where They Are Now\n\nTwo and a half to three years in, Jason completed an 11-month journey to acquire a multi-million-dollar route. He now runs north of 500 machines across roughly 200 accounts, moving 12 to 14 pallets of product a week with three full-time drivers, part-time support staff, and a full-time office manager. He's out of corporate America entirely and is targeting a 20 percent revenue increase on the acquired route through product and price changes alone.\n\n> I'm tired of listening to some middle manager or vice president spew off about this new thing that's going to be great. I like the simplicity of vending. You put a product out there, they're either going to buy it or they're not.\n",
+  "stats": [
+    {
+      "label": "Machines",
+      "value": "500+"
+    },
+    {
+      "label": "Locations",
+      "value": "~200 accounts"
+    },
+    {
+      "label": "Time to Acquire Route",
+      "value": "11 months"
+    }
+  ],
+  "monthly_revenue_usd": null,
+  "machine_count": 500,
+  "location_count": 200,
+  "months_to_result": null,
+  "prior_occupation": "Corporate middle manager (\"people leader\")",
+  "location_types": ["apartment"],
+  "tags": ["career-change", "scaling", "route-acquisition", "couple"],
+  "review_notes": [
+    "No monthly revenue figure was stated for the current combined business; only 'multi-million dollar route' purchase price and 12-14 pallets/week were given.",
+    "'North of 500 machines' used as machine_count floor of 500.",
+    "'A couple hundred accounts... a round number' used as location_count of 200.",
+    "Overall time in business stated loosely as 'two and a half to three years'; left months_to_result null rather than guess a single figure.",
+    "The closing quote was also the pull quote, so the duplicate blockquote was removed from the story body. Consider adding a different verbatim quote to that section."
+  ]
+}

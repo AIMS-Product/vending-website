@@ -1,0 +1,49 @@
+{
+  "slug": "lane-200k-per-year",
+  "video_id": "EyFph0g1z6U",
+  "title": "He Had No Sales Experience. Now It's $200K/Year",
+  "member_name": "Lane",
+  "member_role": "Geologist, underground mine",
+  "excerpt": "A geologist working 12-hour rotating shifts and a 3-hour daily commute built a vending route from zero sales experience to about $200K a year.",
+  "quote": "I just walked into a place, and luck was on my side I guess that day, cuz they said yes like right off the bat. They were like, 'This is exactly what we've been looking for.'",
+  "quote_attribution": "Lane",
+  "body": "## Background\n\nLane worked as a geologist at an underground mine, rotating 12-hour day and night shifts with a 1.5-hour commute each way, plus weekends and holidays. He and his wife had recently upsized homes and got caught by the 2022 mortgage-rate spike, paying about $600 more a month than planned. He wanted more control over his schedule and heard Mike Hoffman as a guest on a financial independence podcast. He joined Vendingpreneurs at the end of 2023.\n\n> I was working as a geologist at an underground mine, rotating day and night shifts, 12-hour shifts, with an hour-and-a-half commute.\n\n## The Challenge\n\nLane had no sales background and no experience in the vending industry. He stalled for roughly six months after joining without installing a single location.\n\n> I was scared to take those steps. I thought I needed to be an expert in everything. I was nervous about talking to people, feeling like you're trying to sell something. I've never been comfortable with that.\n\n## The Turning Point\n\nA call with Mike Hoffman convinced Lane the program offered more than a generic course. Eventually, worn down by lack of progress, he took what he had and made his first pitch.\n\n## Where They Are Now\n\nLane's first location went in about six months after joining. As of April 2026, roughly two and a half years in, he has 12 machines and is adding three more to reach 15, across a college, an industrial business, apartments, and an incoming government facility, at around $200,000 a year in revenue. One 100-unit machine at an apartment complex hit $4,000 in a single month and regularly does over $3,000. His biggest single transaction was $600 in one purchase. He left the mine for a lower-pay, lower-stress 9-to-5 that fits family life, and his wife quit her job to become operations manager of the business, which they named Henry's Market after their son.\n\n> I'm able to spend way more time with my son now... It's Henry's Market. That's what this is right here.\n",
+  "stats": [
+    {
+      "label": "Annual Revenue",
+      "value": "$200K"
+    },
+    {
+      "label": "Machines",
+      "value": "12"
+    },
+    {
+      "label": "Best Location",
+      "value": "$4K/mo"
+    }
+  ],
+  "monthly_revenue_usd": null,
+  "machine_count": 12,
+  "location_count": null,
+  "months_to_result": null,
+  "prior_occupation": "Geologist, underground mine",
+  "location_types": [
+    "college",
+    "industrial",
+    "apartments",
+    "government facility"
+  ],
+  "tags": [
+    "no-experience",
+    "career-change",
+    "family-business",
+    "part-time",
+    "scaling"
+  ],
+  "review_notes": [
+    "Annual revenue is stated as 'probably in that $200,000-ish a year revenue' - approximate, not exact.",
+    "monthly_revenue_usd left null because only an annual figure was given, per spec rule.",
+    "Body blockquote in 'Where They Are Now' was flagged by fidelity check and rewritten 2026-08-19: original spliced the $4,000/month location detail (from the 'where are you at now' answer) with the 'more time with my son / Henry's Market' line (from a much later 'how has this changed your life' answer) into one quote as if continuous. Replaced with only the verbatim Henry's Market portion, which is genuinely continuous in the transcript.",
+    "The closing quote was also the pull quote, so the duplicate blockquote was removed from the story body. Consider adding a different verbatim quote to that section."
+  ]
+}

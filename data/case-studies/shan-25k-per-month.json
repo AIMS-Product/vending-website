@@ -1,0 +1,37 @@
+{
+  "slug": "shan-25k-per-month",
+  "video_id": "yP4Y_BBAvq4",
+  "title": "How She Turned One Vending Location Into $25K a Month",
+  "member_name": "Shan",
+  "member_role": "Vending operator, Seattle WA",
+  "excerpt": "Shan relocated to Seattle for her husband's job, started vending to help fund a home remodel, and turned one micro market into $22-25K a month.",
+  "quote": "This one space changed everything for my husband and I.",
+  "quote_attribution": "Shan",
+  "body": "## Background\n\nShan relocated from the Bay Area to Seattle for her husband's new job. Her own role wasn't fully remote, leaving her under-employed and, in her words, bored. They had just bought a home that needed a remodel, so they were paying Seattle rent and a Seattle mortgage at the same time. Mike walked her through how to start a business from the ground up.\n\n> We were paying Seattle rent and a Seattle mortgage, which is a really fun thing to do — like, talk about just catching money on fire.\n\n## The Challenge\n\nShan had zero business background going in — she didn't even know what an LLC was. The first six months were overwhelming: inventory took over the living room and dining room of their 800-square-foot home, and within 48 hours of opening she got an email warning that the machine had already sold out and asking if she was coming back.\n\n> I had no business background. I had no business being in this business. I never knew what an LLC was. I didn't know what I was doing.\n\n## The Turning Point\n\nMike walked her through the fundamentals of starting a business before she had any idea the location would turn out to be special. She invested $10,000 to $12,000 in a micro market setup, which paid itself off quickly once the location took off.\n\n> I was really lucky to have Mike kind of walk me through a bunch of different areas and different steps about what does it really look like, how do you start your own business from the ground up.\n\n## Where They Are Now\n\nA year and a half in, Shan runs four locations. Her first — a micro market inside a mixed-use Seattle high-rise with condos, apartments, and a long-term hotel — averages $22,000 to $25,000 a month in sales. Smartwater alone brings in about $6,000 a month, and a six-pack of Charmin toilet paper sells for $16.99 at roughly 50 percent margin. She hired a stocker off Craigslist and moved into warehouse space with receiving, which finally made the business feel passive.\n\n> There is nothing passive when you get started. Now is passive.",
+  "stats": [
+    {
+      "label": "Monthly Revenue",
+      "value": "$22-25K"
+    },
+    {
+      "label": "Locations",
+      "value": "4"
+    },
+    {
+      "label": "Setup Cost",
+      "value": "$10-12K"
+    }
+  ],
+  "monthly_revenue_usd": 22000,
+  "machine_count": null,
+  "location_count": 4,
+  "months_to_result": 18,
+  "prior_occupation": null,
+  "location_types": ["micro-market"],
+  "tags": ["no-experience", "scaling", "couple"],
+  "review_notes": [
+    "Shan's own occupation/industry before vending was not named in the transcript, only that her role wasn't fully remote after relocating; left prior_occupation null.",
+    "Total machine count for the four locations was not stated; left null.",
+    "'A year and a half' used as months_to_result (18); not an exact figure Shan herself stated in months."
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "slug": "sandy-and-joe",
+  "video_id": "IxLBMQH7iYY",
+  "title": "How This Mom and Son Built a Profitable Vending Business Together",
+  "member_name": "Sandy & Joe",
+  "member_role": "Mother-son vending operators",
+  "excerpt": "A 20-year manufacturing veteran and her 14-year-old son run a small school-based vending route together, discovered after a conference presentation.",
+  "quote": "It was supposed to be a 40-hour week. It was becoming all-consuming. I was bringing home tons of tension, my family could feel it, so I started trying to figure out what I could create that's mine.",
+  "quote_attribution": "Sandy",
+  "body": "## Background\n\nSandy spent 20-plus years in manufacturing, running materials and buying, while her all-consuming job wore on her and her family. She and her 14-year-old son Joe, who is dyslexic like her and also has dysgraphia, attended a Wealth Without Wall Street event in Nashville, where Joe sat through Mike's entire hour-long presentation and, unprompted, told her they should do vending.\n\n> He listened to Mike's entire presentation and after the hour-long presentation he's like, \"Hey mom, we should do vending.\"\n\n## The Challenge\n\nSandy's job was consuming the family's life, and she was cautious about scaling too fast since they knew they'd soon move 1,441 miles to Tennessee. She'd also looked at land buying, wholesaling houses, and laundromats before vending and ruled all three out. An early location at a nursing home turned into a dud: she hadn't accounted for residents on tight budgets who couldn't manage hard, chewy snacks.\n\n> They said there were huge parties, made it seem like there's a hundred people there. No, it was like eight people. Of course they'll tell you anything just so they can get that amenity in there... and then it wasn't getting used, and we ended up moving it to the high school.\n\n## The Turning Point\n\nJoe's principal asked for a machine within days of Sandy meeting with her about his school plans, giving them their first location. Their first machine was installed about 60 to 90 days after the conference, and the middle school and high school teachers' lounges followed within weeks of each other.\n\n> She looked at me and she goes, \"We want a vending machine.\"\n\n## Where They Are Now\n\nA year in, Sandy and Joe run three machines across two schools, managed remotely from Tennessee through a partnership with the school resource officer, who stocks the machines in exchange for 5 percent back to the school. A four-week summer band camp housing 150 students in the high school turned the student machine, which normally does $500 to $800 a month, into an estimated $6,000 to $10,000 in that single month. Joe handles meetings, location setup, and stocking, and is learning QuickBooks and weekly reconciliation.\n\n> A guy comes to me and says, \"Did they tell you that we have a band camp that stays for four weeks straight and sleeps in the high school?\" We couldn't keep it stocked. We estimate we can do $6,000 to $10,000 just in that month.",
+  "stats": [
+    {
+      "label": "Peak Month Revenue",
+      "value": "$6-10K"
+    },
+    {
+      "label": "Machines",
+      "value": "3"
+    },
+    {
+      "label": "Locations",
+      "value": "2"
+    }
+  ],
+  "monthly_revenue_usd": null,
+  "machine_count": 3,
+  "location_count": 2,
+  "months_to_result": 12,
+  "prior_occupation": "Materials and buying manager, manufacturing (20+ years)",
+  "location_types": ["school"],
+  "tags": ["family-business", "part-time"],
+  "review_notes": [
+    "No steady total monthly revenue figure was given (only the $500-800 normal range for the student machine and the $6-10K band-camp spike); left monthly_revenue_usd null.",
+    "'One year mark' as of October 30 used for months_to_result (12)."
+  ]
+}

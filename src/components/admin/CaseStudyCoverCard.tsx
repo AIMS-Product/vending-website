@@ -1,0 +1,101 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { createSignedCaseStudyImageUpload } from "@/app/admin/case-studies/actions";
+import { adminCardClass, adminInputClass } from "@/components/admin/AdminUi";
+import { createClient } from "@/lib/supabase/client";
+
+// Cover fields extracted from CaseStudyEditorForm, mirroring NewsCoverCard.
+// State stays lifted to the parent (via props) so the autosave hook still
+// observes cover edits. Uploads go to the case-study-images bucket rather
+// than news-images — the DB migration provisions that bucket with its own
+// public-read / admin-write storage policies.
+
+type CaseStudyCoverCardProps = {
+  coverUrl: string;
+  coverAlt: string;
+  onCoverUrlChange: (value: string) => void;
+  onCoverAltChange: (value: string) => void;
+};
+
+export function CaseStudyCoverCard({
+  coverUrl,
+  coverAlt,
+  onCoverUrlChange,
+  onCoverAltChange,
+}: CaseStudyCoverCardProps) {
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [isUploading, startUploadTransition] = useTransition();
+
+  function handleFileChange(file: File | null) {
+    if (!file) return;
+    setUploadMessage(null);
+    startUploadTransition(async () => {
+      try {
+        const request = new FormData();
+        request.set("filename", file.name);
+        const signed = await createSignedCaseStudyImageUpload(request);
+        const supabase = createClient();
+        const { error } = await supabase.storage
+          .from("case-study-images")
+          .uploadToSignedUrl(signed.path, signed.token, file, {
+            contentType: file.type || "image/jpeg",
+            upsert: false,
+          });
+        if (error) throw error;
+        onCoverUrlChange(signed.publicUrl);
+        setUploadMessage("Cover image uploaded.");
+      } catch (error) {
+        console.error("case study cover upload failed", error);
+        setUploadMessage("Could not upload the image.");
+      }
+    });
+  }
+
+  return (
+    <div className={adminCardClass}>
+      <h2 className="text-ui-text text-sm font-semibold">Cover</h2>
+      <p className="text-ui-text-subtle mt-1 text-xs">
+        Optional — falls back to the YouTube thumbnail when left blank.
+      </p>
+      <label className="mt-4 block">
+        <span className="text-ui-text-muted text-sm font-medium">
+          Image URL
+        </span>
+        <input
+          name="cover_url"
+          aria-label="Cover image URL"
+          value={coverUrl}
+          onChange={(event) => onCoverUrlChange(event.target.value)}
+          className={adminInputClass}
+        />
+      </label>
+      <label className="mt-4 block">
+        <span className="text-ui-text-muted text-sm font-medium">Upload</span>
+        <input
+          type="file"
+          aria-label="Upload cover image"
+          accept="image/avif,image/webp,image/png,image/jpeg"
+          onChange={(event) =>
+            handleFileChange(event.target.files?.[0] ?? null)
+          }
+          disabled={isUploading}
+          className="text-ui-text-muted file:text-ui-accent file:rounded-ui file:bg-ui-accent-soft hover:file:bg-ui-accent/15 mt-2 block w-full text-sm file:mr-3 file:border-0 file:px-4 file:py-2 file:text-sm file:font-semibold"
+        />
+      </label>
+      {uploadMessage && (
+        <p className="text-ui-text-subtle mt-2 text-xs">{uploadMessage}</p>
+      )}
+      <label className="mt-4 block">
+        <span className="text-ui-text-muted text-sm font-medium">Alt text</span>
+        <input
+          name="cover_alt"
+          aria-label="Cover image alt text"
+          value={coverAlt}
+          onChange={(event) => onCoverAltChange(event.target.value)}
+          className={adminInputClass}
+        />
+      </label>
+    </div>
+  );
+}

@@ -1,0 +1,38 @@
+{
+  "slug": "john-and-lauren-sanchez",
+  "video_id": "io0UBay3XtU",
+  "title": "She Started a Vending Route",
+  "member_name": "John and Lauren Sanchez",
+  "member_role": "Home builder sales rep and stay-at-home mom, Orlando FL",
+  "excerpt": "A couple who moved cross-country with no plan built a family vending route to seven locations and a $14,500 best month while both still worked day jobs.",
+  "quote": "If there's any part of you that wants to have your own business — or specifically vending — you've got no reason not to do it. If you do the work, you ain't going to fail; it's going to work out.",
+  "quote_attribution": "John Sanchez",
+  "body": "## Background\nJohn and Lauren Sanchez moved from San Diego to Florida in June 2024 with, in John's words, \"nothing really promised to us.\" John held a real estate license and had previously run a personal training business; a remote sales job he took after the move fizzled out, and he now works full-time in sales for a home builder. Lauren stays home with their two-year-old. It became a family effort: John's father-in-law handles financing and his sister-in-law does the books. The connection to Vendingpreneurs came through Lauren's sister, who played college lacrosse at Oregon under Mike Hoffman's wife.\n\n> \"We didn't really have anything promised to us when we moved out here.\"\n\n## The Challenge\nAfter the move, their savings started running down and John's remote sales job didn't work out. The idea of a vending business sat untouched for months while the family just talked about it.\n\n> \"We had some savings saved up, and by the end of the year we were at a point — we're like, 'Shoot, this savings, man, we got to do something here.'\"\n\n## The Turning Point\nIn January 2025, John decided he had to act, and started doing lead generation and pop-ins in earnest. Their first contract came about a month later.\n\n> \"I really felt compelled — I got to put my hand to this, I want to get involved with this. So January 2025 I really started to do a lot of the lead generation, a lot of the pop-ins, and we got our first contract like a month later, in February 2025.\"\n\n## Where They Are Now\nThe Sanchezes now run seven locations, with their best month (April) bringing in about $14,500, averaging roughly $2,000 per location. John still works four days a week at his day job and stocks the route around it, alongside Lauren. Their goal is 10-plus locations and about $30,000 a month within a year.\n",
+  "stats": [
+    {
+      "label": "Best Month Revenue",
+      "value": "$14.5K"
+    },
+    {
+      "label": "Locations",
+      "value": "7"
+    },
+    {
+      "label": "Avg Revenue per Location",
+      "value": "$2K"
+    }
+  ],
+  "monthly_revenue_usd": null,
+  "machine_count": null,
+  "location_count": 7,
+  "months_to_result": null,
+  "prior_occupation": "John: personal training business owner, real estate license. Lauren: stay-at-home mom",
+  "location_types": ["student housing"],
+  "tags": ["couple", "family-business", "part-time"],
+  "review_notes": [
+    "Transcript is auto-generated; verify all dollar figures against the video before publishing.",
+    "No single stated 'current monthly revenue' figure — only a best-month figure ($14,500 in April) and a per-location average (~$2K) were given, so monthly_revenue_usd is left null per spec (annual/best-month figures go in stats only).",
+    "Exact join date is a hedge from John himself ('maybe August 2024') — not stated as certain.",
+    "The closing quote was also the pull quote, so the duplicate blockquote was removed from the story body. Consider adding a different verbatim quote to that section."
+  ]
+}

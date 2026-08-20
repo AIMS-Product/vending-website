@@ -1,0 +1,29 @@
+{
+  "slug": "tyrone-lewis",
+  "video_id": "co01wsvxJw8",
+  "title": "Months Without a Single Vending Location",
+  "member_name": "Tyrone Lewis",
+  "member_role": "Former Meta employee turned vending operator, SF Bay Area",
+  "excerpt": "A former Meta employee spent four months without landing a single vending location before his route grew to seven locations doing about $12,000 a month.",
+  "quote": "I'm not going to lie to you, I almost gave up. I joined in August; my first install didn't come until mid-December... Before that I felt like I was just walking against the wind.",
+  "quote_attribution": "Tyrone Lewis",
+  "body": "## Background\nTyrone Lewis spent five to six years at Meta as a global service manager for third-party providers, covering culinary and security vendors. He describes himself as \"the typical guy that went to the Bay Area to make hundreds of millions of dollars\" who ended up \"working behind a desk speaking to people in China.\" Before Meta he worked as a financial auditor and had traveled to 48 states. He got married last November, right before going full-time in vending, and left Meta before the company's layoffs.\n\n> \"I'm the typical guy that went to the Bay Area to make hundreds of millions of dollars, and I found myself working behind a desk speaking to people in China.\"\n\n## The Challenge\nTyrone joined Vendingpreneurs in August and did not land his first install until mid-December, four months with zero locations. He came close to quitting, and even considered sourcing machines himself on Craigslist instead.\n\n> \"I remember, even in the buy-in stage, it was just like, 'Man, do I want to spend — can I do this by myself? With vending machines, I could find them on Craigslist.'\"\n\n## The Turning Point\nInstead of quitting, he kept bringing his questions back to the Vendingpreneurs community, which told him to stick with it. He also got more analytical, sitting down to study foot traffic instead of pitching any space that would take a meeting.\n\n> \"You guys really said, 'Hey man, it's a slow burn, sit in it.' But once it tips, it tips.\"\n\n## Where They Are Now\nTyrone is now at seven locations doing about $12,000 a month, with a new install pushing him toward a projected $15,000. He expects to reach 10 locations by the end of summer, and landed three local union training centers along with a 24/7 ambulance medical response facility.\n\n> \"Try it for three months... this is your best chance to break the wheel... This was the best investment I made, only because of the comfort level and the community and the resources and the relationships you build.\"",
+  "stats": [
+    { "label": "Monthly Revenue", "value": "$12K" },
+    { "label": "Locations", "value": "7" },
+    { "label": "Time to First Location", "value": "4 months" }
+  ],
+  "monthly_revenue_usd": 12000,
+  "machine_count": null,
+  "location_count": 7,
+  "months_to_result": null,
+  "prior_occupation": "Global service manager at Meta; former financial auditor",
+  "location_types": ["union training center", "medical response facility"],
+  "tags": ["career-change", "no-experience", "scaling"],
+  "review_notes": [
+    "\"Tyrone Lewis\" is a phonetic spelling from auto-generated captions and is not confirmed — verify the name spelling before publishing.",
+    "Transcript is auto-generated; verify all dollar figures against the video before publishing.",
+    "\"Time to First Location\" (4 months) is calculated from his stated join month (August) and first-install month (mid-December), not a number he stated directly himself.",
+    "He mentioned a projected $15,000/month with a new install, but did not give a machine count for this route — machine_count left null."
+  ]
+}

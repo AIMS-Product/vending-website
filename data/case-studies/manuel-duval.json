@@ -1,0 +1,37 @@
+{
+  "slug": "manuel-duval",
+  "video_id": "-PO--G7fRq4",
+  "title": "How His 3rd Location Hit $8K a Month in Revenue While Working Full-Time",
+  "member_name": "Manuel Duval",
+  "member_role": "Detective sergeant, DC metro area",
+  "excerpt": "A 22-year law enforcement veteran and detective sergeant built a 10-location vending route around his full-time job, with one location on track for $8K.",
+  "quote": "My first two locations are duds. They are horrible. I have one killer location — it's a manufacturing plant, and we're on track for eight grand this month.",
+  "quote_attribution": "Manuel Duval",
+  "body": "## Background\n\nManuel is a detective sergeant in the DC metro area, a 22-year law enforcement veteran who spent five years as a homicide detective. His wife is a school teacher and their son is 11. Despite being high earners, taxes were straining their finances and they were living paycheck to paycheck, which sent Manuel down what he calls \"the YouTube rabbit hole\" for nearly two years.\n\n> My wife and I were considered high earners, and taxes was crushing us. We have to figure out a way how to not only stop living paycheck to paycheck — we need to figure out a way of how to get some other type of income that will be a tax advantage to us as a family.\n\n## The Challenge\n\nManuel had chased other side businesses before, including juicing and woodworking, but they were time-consuming and didn't produce meaningful income alongside his demanding W2 job. He'd also set his sights on a FedEx line-haul route, but the capital requirement was too high. Once he started vending, impatience got the better of him early on.\n\n> My first two locations are duds. They are horrible, and I can't wait till that year is up on those contracts so I can move those machines.\n\n## The Turning Point\n\nManuel came across Mike through a YouTube interview by creators he already followed and was drawn in immediately. He committed to showing up in the Vendingpreneurs community every day.\n\n> I came across Mike on YouTube — a few guys that I follow actually interviewed him, and I was intrigued after just seeing his interview. I was in.\n\n## Where They Are Now\n\nAbout a year and a half in, Manuel runs 10 locations with an 11th on order, all while still working full-time as a detective sergeant. His best location, a manufacturing plant he restocks every two days, is on track for $8,000 in a single month, pushing his total revenue to roughly $10,500 to $11,000 a month. He plans to retire from law enforcement in three years and run vending full-time.\n\n> I did not envision having this much success this fast.",
+  "stats": [
+    {
+      "label": "Monthly Revenue",
+      "value": "$10.5-11K"
+    },
+    {
+      "label": "Best Location",
+      "value": "$8K"
+    },
+    {
+      "label": "Locations",
+      "value": "10"
+    }
+  ],
+  "monthly_revenue_usd": 10500,
+  "machine_count": null,
+  "location_count": 10,
+  "months_to_result": null,
+  "prior_occupation": "Detective sergeant, law enforcement (22-year veteran, still current)",
+  "location_types": ["manufacturing", "apartment", "office"],
+  "tags": ["part-time", "scaling"],
+  "review_notes": [
+    "Total machine count across all 10 locations was not stated (only that the best location has 3 machines); left null.",
+    "Time in the program stated only as 'joined October 2024' / '~1.5 years' in the extraction; no exact month count given by Manuel on camera, so months_to_result left null.",
+    "Manuel still works full-time as a detective sergeant; 'prior_occupation' reflects his ongoing career, not a past one, since vending is run alongside it."
+  ]
+}
