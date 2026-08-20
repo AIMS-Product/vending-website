@@ -133,7 +133,7 @@ async function PreviewIndex() {
       <PreviewBanner />
       <section className="bg-[#f5fbff] px-5 pt-28 pb-20 lg:px-10 lg:pt-32">
         <div className="mx-auto max-w-[1500px]">
-          <h1 className="text-[clamp(2.5rem,5vw,4.5rem)] leading-[0.96] font-black text-[#111111] uppercase">
+          <h1 className="text-[clamp(2rem,3.8vw,3.4rem)] leading-[1.02] font-black text-[#111111] uppercase">
             Member success stories
           </h1>
           <p className="mt-6 max-w-3xl text-xl leading-8 font-semibold text-slate-700">

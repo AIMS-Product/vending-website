@@ -87,13 +87,13 @@ export function CaseStudyArticle({
               >
                 Case Studies
               </Link>
-              <span className="rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-xs font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
+              <span className="rounded-[8px] border-2 border-[#066a99] bg-[#066a99] px-4 py-2 text-xs font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
                 {caseStudy.member_name}
               </span>
             </div>
 
             <header className="mt-10">
-              <h1 className="max-w-[900px] text-[clamp(2.75rem,6vw,5.4rem)] leading-[0.96] font-black break-words text-[#111111] uppercase">
+              <h1 className="max-w-[900px] text-[clamp(2.25rem,4.4vw,4rem)] leading-[1.02] font-black break-words text-[#111111] uppercase">
                 {caseStudy.title}
               </h1>
               {caseStudy.excerpt && (
@@ -311,7 +311,7 @@ function ShareRail({ title, url }: { title: string; url: string }) {
             aria-label={link.label}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex size-12 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-white text-base font-black text-[#111111] shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5 hover:bg-[#eaf8ff]"
+            className="flex size-12 items-center justify-center rounded-[8px] border-2 border-[#066a99] bg-white text-base font-black text-[#066a99] shadow-[4px_4px_0_#55b8e8] transition hover:-translate-y-0.5 hover:bg-[#eaf8ff]"
           >
             {link.text}
           </a>
@@ -320,7 +320,7 @@ function ShareRail({ title, url }: { title: string; url: string }) {
         <a
           href={links[3].href}
           aria-label={links[3].label}
-          className="flex size-12 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-white text-base font-black text-[#111111] shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5 hover:bg-[#eaf8ff]"
+          className="flex size-12 items-center justify-center rounded-[8px] border-2 border-[#066a99] bg-white text-base font-black text-[#066a99] shadow-[4px_4px_0_#55b8e8] transition hover:-translate-y-0.5 hover:bg-[#eaf8ff]"
         >
           {links[3].text}
         </a>
@@ -334,7 +334,7 @@ function ArticleSidebar({ headings }: { headings: string[] }) {
     <aside className="hidden lg:block">
       <div className="sticky top-32 space-y-10">
         {headings.length > 0 && (
-          <section className="rounded-[12px] border-2 border-[#111111] bg-white p-7 shadow-[7px_7px_0_#111111]">
+          <section className="rounded-[12px] border-2 border-[#066a99] bg-white p-7 shadow-[7px_7px_0_#55b8e8]">
             <p className="inline-flex rounded-[5px] border border-[#9fe6ff] bg-[#d6f4ff] px-3 py-2 text-xs font-black text-[#111111] uppercase">
               In this story
             </p>
@@ -349,7 +349,7 @@ function ArticleSidebar({ headings }: { headings: string[] }) {
           </section>
         )}
 
-        <section className="rounded-[12px] border-2 border-[#111111] bg-[#111111] p-8 text-white shadow-[7px_7px_0_#55b8e8]">
+        <section className="rounded-[12px] border-2 border-[#066a99] bg-[#066a99] p-8 text-white shadow-[7px_7px_0_#55b8e8]">
           <h2 className="text-3xl leading-tight font-black uppercase">
             Start your own story.
           </h2>
@@ -358,7 +358,7 @@ function ArticleSidebar({ headings }: { headings: string[] }) {
           </p>
           <Link
             href="/contact"
-            className="mt-8 inline-flex min-h-14 w-full items-center justify-center rounded-[8px] bg-[#f47b3b] px-6 text-sm font-black text-[#111111] uppercase transition hover:-translate-y-0.5"
+            className="mt-8 inline-flex min-h-14 w-full items-center justify-center rounded-[8px] border-2 border-white bg-[#f47b3b] px-6 text-sm font-black text-[#111111] uppercase transition hover:-translate-y-0.5"
           >
             Book a call
           </Link>
