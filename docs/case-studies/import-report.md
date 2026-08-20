@@ -1,6 +1,6 @@
 # Case study import
 
-Mode: dry-run
+Mode: write
 Rows: 25
 
 Every row is imported as a **draft**. Revenue figures are self-reported

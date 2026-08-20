@@ -1,6 +1,5 @@
 import "server-only";
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { config } from "@/lib/config";
 import type { Database } from "@/types/database";
@@ -73,7 +72,7 @@ export async function listPublishedCaseStudies({
   limit = 50,
   offset = 0,
 }: { limit?: number; offset?: number } = {}) {
-  const supabase = await createClient();
+  const supabase = getBuildTimeClient();
   const { data, error } = await supabase
     .from("case_studies")
     .select(CARD_FIELDS)
@@ -116,7 +115,7 @@ export async function listCaseStudyCardsBySlugs(slugs: readonly string[]) {
   const wanted = slugs.filter(Boolean);
   if (wanted.length === 0) return [];
 
-  const supabase = await createClient();
+  const supabase = getBuildTimeClient();
   const { data, error } = await supabase
     .from("case_studies")
     .select(CARD_FIELDS)
