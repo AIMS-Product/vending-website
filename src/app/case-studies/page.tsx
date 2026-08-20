@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import { CaseStudiesHero } from "@/components/sections/CaseStudiesHero";
 import { CaseStudyIndex } from "@/components/sections/CaseStudyIndex";
+import { FeaturedCaseStudy } from "@/components/sections/FeaturedCaseStudy";
 import { CaseStudyQuotes } from "@/components/sections/CaseStudyQuotes";
 import { FinalCta } from "@/components/sections/FinalCta";
-import { listPublishedCaseStudies } from "@/lib/services/case-studies";
+import {
+  getFeaturedCaseStudy,
+  listPublishedCaseStudies,
+} from "@/lib/services/case-studies";
 import {
   applyCaseStudyFilters,
   buildTagFacets,
@@ -25,7 +29,10 @@ export default async function CaseStudiesPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const caseStudies = await listPublishedCaseStudies({ limit: 100 });
+  const [caseStudies, featured] = await Promise.all([
+    listPublishedCaseStudies({ limit: 100 }),
+    getFeaturedCaseStudy(),
+  ]);
 
   // Facets are built from the unfiltered set so the counts stay stable as the
   // visitor clicks, rather than collapsing to the current selection.
@@ -39,6 +46,7 @@ export default async function CaseStudiesPage({
   return (
     <>
       <CaseStudiesHero />
+      {featured ? <FeaturedCaseStudy caseStudy={featured} /> : null}
       <CaseStudyIndex
         caseStudies={visible}
         filters={filters}

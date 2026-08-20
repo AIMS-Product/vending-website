@@ -84,6 +84,7 @@ export function CaseStudyEditorForm({
     joinCommaList(caseStudy?.related_slugs ?? []),
   );
   const [stats, setStats] = useState(parseStats(caseStudy?.stats ?? []));
+  const [featured, setFeatured] = useState(caseStudy?.featured ?? false);
 
   const status = caseStudy?.status ?? "draft";
   const canUnpublish = status === "published";
@@ -505,6 +506,29 @@ export function CaseStudyEditorForm({
                 onChange={(event) => setPriorOccupation(event.target.value)}
                 className={`${adminInputClass} mt-1`}
               />
+            </label>
+            {/*
+              Only one story can be featured. The database trigger un-features
+              the previous one on save, so this is a plain checkbox rather than
+              a picker that has to know what is currently featured.
+            */}
+            <label className="border-ui-border mt-4 flex items-start gap-3 border-t pt-4">
+              <input
+                type="checkbox"
+                name="featured"
+                checked={featured}
+                onChange={(event) => setFeatured(event.target.checked)}
+                className="mt-0.5 size-4"
+              />
+              <span>
+                <span className="text-ui-text block text-xs font-semibold">
+                  Feature at the top of the case studies index
+                </span>
+                <span className="text-ui-text-muted mt-0.5 block text-xs">
+                  Replaces whichever story is featured now. Published stories
+                  only.
+                </span>
+              </span>
             </label>
           </div>
 

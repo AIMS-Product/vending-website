@@ -37,7 +37,7 @@ export type CaseStudyUpdate =
   Database["public"]["Tables"]["case_studies"]["Update"];
 
 const PUBLIC_FIELDS =
-  "id, slug, title, member_name, member_role, excerpt, youtube_video_id, quote, quote_attribution, body, cover_url, cover_alt, stats, monthly_revenue_usd, machine_count, location_count, months_to_result, prior_occupation, location_types, tags, related_slugs, published_at" as const;
+  "id, slug, title, member_name, member_role, excerpt, youtube_video_id, quote, quote_attribution, body, cover_url, cover_alt, stats, monthly_revenue_usd, machine_count, location_count, months_to_result, prior_occupation, location_types, tags, related_slugs, featured, published_at" as const;
 
 const CARD_FIELDS =
   "slug, title, member_name, member_role, excerpt, youtube_video_id, cover_url, cover_alt, monthly_revenue_usd, machine_count, location_count, prior_occupation, location_types, tags, published_at" as const;
@@ -64,6 +64,25 @@ export type CaseStudyCard = Pick<
   | "published_at"
 >;
 
+/**
+ * The featured story rendered as the index hero. Wider than a card: it also
+ * needs the pull quote and the curated stat set.
+ */
+export type FeaturedCaseStudy = Pick<
+  CaseStudy,
+  | "slug"
+  | "title"
+  | "member_name"
+  | "member_role"
+  | "excerpt"
+  | "youtube_video_id"
+  | "cover_url"
+  | "cover_alt"
+  | "quote"
+  | "quote_attribution"
+  | "stats"
+>;
+
 // ---------------------------------------------------------------------------
 // Public reads (anon-friendly, RLS-gated)
 // ---------------------------------------------------------------------------
@@ -85,6 +104,38 @@ export async function listPublishedCaseStudies({
     return [];
   }
   return (data ?? []) as CaseStudyCard[];
+}
+
+const FEATURED_FIELDS =
+  "slug, title, member_name, member_role, excerpt, youtube_video_id, cover_url, cover_alt, quote, quote_attribution, stats" as const;
+
+/**
+ * The story pinned to the top of the index.
+ *
+ * `featured` is a column rather than a hardcoded slug so the editor can swap
+ * who is featured without a deploy. A partial unique index plus a trigger
+ * guarantee at most one featured row, but the query still orders and limits:
+ * a read should not depend on a constraint holding to return one story.
+ *
+ * Returns null when nothing is featured, and the index simply renders without
+ * a hero.
+ */
+export async function getFeaturedCaseStudy(): Promise<FeaturedCaseStudy | null> {
+  const supabase = getBuildTimeClient();
+  const { data, error } = await supabase
+    .from("case_studies")
+    .select(FEATURED_FIELDS)
+    .eq("status", "published")
+    .eq("featured", true)
+    .order("published_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("getFeaturedCaseStudy failed", error);
+    return null;
+  }
+  return data;
 }
 
 export async function getPublishedCaseStudyBySlug(slug: string) {

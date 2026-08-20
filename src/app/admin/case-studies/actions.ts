@@ -98,6 +98,9 @@ const postSchema = z.object({
   tags: z.string(),
   related_slugs: z.string(),
   stats: z.string(),
+  // Unchecked checkboxes are absent from FormData, so this arrives as "" and
+  // means false. Only the browser's "on" (or an explicit "true") features it.
+  featured: z.string(),
   intent: z.enum(["save", "publish", "unpublish", "archive"]),
 });
 
@@ -198,6 +201,7 @@ export async function saveCaseStudy(
     tags: formData.get("tags") ?? "",
     related_slugs: formData.get("related_slugs") ?? "",
     stats: formData.get("stats") ?? "[]",
+    featured: formData.get("featured") ?? "",
     intent: formData.get("intent") ?? "save",
   });
 
@@ -233,6 +237,7 @@ export async function saveCaseStudy(
     location_count: post.location_count,
     months_to_result: post.months_to_result,
     prior_occupation: nullable(post.prior_occupation),
+    featured: post.featured === "on" || post.featured === "true",
     location_types: parseCommaList(post.location_types),
     tags: parseCommaList(post.tags),
     related_slugs: parseCommaList(post.related_slugs),

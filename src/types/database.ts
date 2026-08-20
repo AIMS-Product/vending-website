@@ -1108,6 +1108,7 @@ export type Database = {
           cover_url: string | null;
           created_at: string;
           excerpt: string | null;
+          featured: boolean;
           id: string;
           location_count: number | null;
           location_types: string[];
@@ -1135,6 +1136,7 @@ export type Database = {
           cover_url?: string | null;
           created_at?: string;
           excerpt?: string | null;
+          featured?: boolean;
           id?: string;
           location_count?: number | null;
           location_types?: string[];
@@ -1162,6 +1164,7 @@ export type Database = {
           cover_url?: string | null;
           created_at?: string;
           excerpt?: string | null;
+          featured?: boolean;
           id?: string;
           location_count?: number | null;
           location_types?: string[];

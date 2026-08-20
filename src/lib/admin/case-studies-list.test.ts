@@ -30,6 +30,7 @@ const baseCaseStudy: CaseStudyListItem = {
   status: "published",
   published_at: "2026-06-01T00:00:00.000Z",
   created_at: "2026-06-01T00:00:00.000Z",
+  featured: false,
   updated_at: "2026-06-01T00:00:00.000Z",
 };
 
