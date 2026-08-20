@@ -6,6 +6,10 @@ import type {
   CaseStudy,
   CaseStudyCard as CaseStudyCardData,
 } from "@/lib/services/case-studies";
+import {
+  buildRouteHighlights,
+  type RouteHighlightSource,
+} from "@/lib/case-studies/route-highlights";
 import { parseStats } from "@/lib/case-studies/stats";
 import { getVideoEmbed } from "@/lib/page-builder/video-embeds";
 import { siteUrl } from "@/lib/site";
@@ -25,16 +29,15 @@ type CaseStudyArticleProps = {
     | "cover_alt"
     | "stats"
     | "published_at"
+    // Sidebar route highlights. Coverage is uneven across the published
+    // stories, so the sidebar renders only what a given story actually has.
+    | "prior_occupation"
+    | "location_types"
   >;
   /** Sanitised HTML rendered from the markdown body. */
   html: string;
   /** Already resolved and ordered by the page. Empty is a valid state. */
   related: readonly CaseStudyCardData[];
-  /**
-   * Overrides where the related cards link. Only the temporary preview route
-   * passes this; production uses the real `/case-studies/<slug>` URLs.
-   */
-  cardHrefFor?: (slug: string) => string;
 };
 
 /**
@@ -50,9 +53,7 @@ export function CaseStudyArticle({
   caseStudy,
   html,
   related,
-  cardHrefFor,
 }: CaseStudyArticleProps) {
-  const headings = extractArticleHeadings(html);
   const stats = parseStats(caseStudy.stats);
   const articleUrl = new URL(
     `/case-studies/${caseStudy.slug}`,
@@ -133,11 +134,11 @@ export function CaseStudyArticle({
             />
           </article>
 
-          <ArticleSidebar headings={headings} />
+          <ArticleSidebar caseStudy={caseStudy} />
         </div>
       </div>
 
-      <MoreSuccessStories related={related} cardHrefFor={cardHrefFor} />
+      <MoreSuccessStories related={related} />
     </>
   );
 }
@@ -332,23 +333,31 @@ function ShareRail({ title, url }: { title: string; url: string }) {
   );
 }
 
-function ArticleSidebar({ headings }: { headings: string[] }) {
+function ArticleSidebar({ caseStudy }: { caseStudy: RouteHighlightSource }) {
+  const highlights = buildRouteHighlights(caseStudy);
+
   return (
     <aside className="hidden lg:block">
       <div className="sticky top-32 space-y-10">
-        {headings.length > 0 && (
+        {highlights.length > 0 && (
           <section className="rounded-[12px] border-2 border-[#066a99] bg-white p-7 shadow-[7px_7px_0_#55b8e8]">
             <p className="inline-flex rounded-[5px] border border-[#9fe6ff] bg-[#d6f4ff] px-3 py-2 text-xs font-black text-[#111111] uppercase">
-              In this story
+              Their route
             </p>
-            <ol className="mt-6 space-y-4 text-lg font-semibold text-[#066a99]">
-              {headings.slice(0, 6).map((heading, index) => (
-                <li key={`${heading}-${index}`} className="flex gap-3">
-                  <span>{index + 1}.</span>
-                  <span>{heading}</span>
-                </li>
+            {/* A description list, not an ordered list: these are labelled
+                facts about the member, and the order carries no meaning. */}
+            <dl className="mt-6 space-y-5">
+              {highlights.map((highlight) => (
+                <div key={highlight.label}>
+                  <dt className="text-xs font-black tracking-[0.12em] text-[#066a99] uppercase">
+                    {highlight.label}
+                  </dt>
+                  <dd className="mt-1.5 text-base leading-6 font-semibold text-[#111111]">
+                    {highlight.value}
+                  </dd>
+                </div>
               ))}
-            </ol>
+            </dl>
           </section>
         )}
 
@@ -373,10 +382,8 @@ function ArticleSidebar({ headings }: { headings: string[] }) {
 
 function MoreSuccessStories({
   related,
-  cardHrefFor,
 }: {
   related: readonly CaseStudyCardData[];
-  cardHrefFor?: (slug: string) => string;
 }) {
   if (related.length === 0) return null;
 
@@ -389,33 +396,11 @@ function MoreSuccessStories({
         <ul className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {related.map((item) => (
             <li key={item.slug} className="min-w-0">
-              <CaseStudyCard caseStudy={item} href={cardHrefFor?.(item.slug)} />
+              <CaseStudyCard caseStudy={item} />
             </li>
           ))}
         </ul>
       </div>
     </section>
   );
-}
-
-function extractArticleHeadings(html: string): string[] {
-  return [...html.matchAll(/<h2(?:\s[^>]*)?>(.*?)<\/h2>/gi)].flatMap(
-    (match) => {
-      const heading = decodeHtmlEntities(stripTags(match[1]).trim());
-      return heading ? [heading] : [];
-    },
-  );
-}
-
-function stripTags(value: string): string {
-  return value.replace(/<[^>]+>/g, " ");
-}
-
-function decodeHtmlEntities(value: string): string {
-  return value
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
 }

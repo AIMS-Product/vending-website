@@ -18,6 +18,8 @@ const caseStudy = {
     { label: "Machines", value: "26" },
   ],
   published_at: "2026-08-19T00:00:00.000Z",
+  prior_occupation: "High school teacher",
+  location_types: ["office", "retirement-community"],
 };
 
 const html =
