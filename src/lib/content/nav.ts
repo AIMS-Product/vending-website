@@ -51,3 +51,39 @@ export const footerColumns: ReadonlyArray<{
     ],
   },
 ];
+
+/**
+ * Brand social accounts, in the order they appear in the footer.
+ *
+ * Every handle here was confirmed live against the real account on 2026-08-20.
+ * Two the team might expect are deliberately absent: x.com/vendingpreneurs
+ * returns a 404 and facebook.com/vendingpreneurs is not publicly available, so
+ * linking either would ship a dead link. The Meta traffic in analytics is ad
+ * spend, not an organic page.
+ */
+export const socialLinks: ReadonlyArray<{
+  label: string;
+  href: string;
+  icon: "youtube" | "instagram" | "tiktok" | "linkedin";
+}> = [
+  {
+    label: "YouTube",
+    href: "https://www.youtube.com/@Vendingpreneurs",
+    icon: "youtube",
+  },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/vendingpreneurs/",
+    icon: "instagram",
+  },
+  {
+    label: "TikTok",
+    href: "https://www.tiktok.com/@vendingpreneurs",
+    icon: "tiktok",
+  },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/company/vendingpreneurs",
+    icon: "linkedin",
+  },
+];

@@ -45,12 +45,48 @@ describe("Header tap targets", () => {
 });
 
 describe("Footer tap targets", () => {
-  it("makes every footer link a padded block for a ≥44px mobile hit area", () => {
+  /**
+   * Two shapes satisfy the ≥44px rule, so the assertion checks the guarantee
+   * rather than one spelling of it: text links grow an invisible hit area with
+   * vertical padding, while the social icon buttons are a fixed 44px square
+   * (h-11 w-11) because there is no text to pad around.
+   */
+  const hasPaddedBlock = (tag: string) =>
+    /\bblock\b/.test(tag) && /\bpy-3\b/.test(tag);
+  const hasFixedTapBox = (tag: string) =>
+    /\bh-11\b/.test(tag) && /\bw-11\b/.test(tag);
+
+  it("gives every footer link a ≥44px mobile hit area", () => {
     const footerAnchors = anchorOpenTags(footerHtml);
     expect(footerAnchors.length).toBeGreaterThan(0);
     expect(
-      footerAnchors.every(
-        (tag) => /\bblock\b/.test(tag) && /\bpy-3\b/.test(tag),
+      footerAnchors.every((tag) => hasPaddedBlock(tag) || hasFixedTapBox(tag)),
+    ).toBe(true);
+  });
+
+  it("links every brand social account with an accessible name", () => {
+    // Handles were verified live on 2026-08-20; x.com and facebook.com are
+    // deliberately absent because neither account resolves.
+    for (const href of [
+      "https://www.youtube.com/@Vendingpreneurs",
+      "https://www.instagram.com/vendingpreneurs/",
+      "https://www.tiktok.com/@vendingpreneurs",
+      "https://www.linkedin.com/company/vendingpreneurs",
+    ]) {
+      expect(footerHtml).toContain(href);
+    }
+
+    // The mark is aria-hidden, so the sr-only label is the only accessible
+    // name each icon link has — without it they announce as bare URLs.
+    for (const label of ["YouTube", "Instagram", "TikTok", "LinkedIn"]) {
+      expect(footerHtml).toContain(`${label} — opens in a new tab`);
+    }
+
+    const socialAnchors = anchorOpenTags(footerHtml).filter(hasFixedTapBox);
+    expect(socialAnchors).toHaveLength(4);
+    expect(
+      socialAnchors.every((tag) =>
+        tag.includes('rel="noopener noreferrer me"'),
       ),
     ).toBe(true);
   });

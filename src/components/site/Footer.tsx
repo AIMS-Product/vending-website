@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SocialLinks } from "./SocialLinks";
 import { Wordmark } from "./Wordmark";
 import { footerColumns, type NavItem } from "@/lib/content/nav";
 import { cn } from "@/lib/utils";
@@ -14,7 +15,10 @@ export function Footer() {
   return (
     <footer className="border-t-2 border-[#111111] bg-[#f5fbff] px-5 py-14 lg:px-10">
       <div className="mx-auto grid max-w-[1500px] gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-20">
-        <Wordmark />
+        <div className="grid gap-5">
+          <Wordmark />
+          <SocialLinks />
+        </div>
 
         <nav
           aria-label="Footer"
