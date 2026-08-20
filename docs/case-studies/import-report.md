@@ -97,7 +97,7 @@ by members and have not been audited — check each story before publishing.
 
 ### `mallerie-rouch` — Mallerie Rouch
 
-- Name spelling 'Mallerie Rouch' is a phonetic rendering from auto-generated captions and is unconfirmed -- verify before publish.
+- Name spelling 'Mallerie Rouch' is a phonetic rendering from auto-generated captions and is unconfirmed — verify before publish.
 - months_to_result left null: the transcript gives per-location install months but no single explicit 'X months since joining' statement.
 - machine_count left null: only location count (6) is given; the transcript doesn't sum total machines across locations.
 
@@ -115,7 +115,7 @@ by members and have not been audited — check each story before publishing.
 
 ### `musa-sadi` — Musa Sadi
 
-- Name spelling 'Musa Sadi' is a phonetic rendering from auto-generated captions and is unconfirmed -- verify before publish.
+- Name spelling 'Musa Sadi' is a phonetic rendering from auto-generated captions and is unconfirmed — verify before publish.
 - The closing quote was also the pull quote, so the duplicate blockquote was removed from the story body. Consider adding a different verbatim quote to that section.
 
 ### `sandy-and-joe` — Sandy & Joe
@@ -131,12 +131,12 @@ by members and have not been audited — check each story before publishing.
 
 ### `tim-barnes` — Tim Barnes
 
-- The $90K figure is an in-month, on-track projection stated during filming ('we're on track this month to hit 90,000'), not a closed/final month total -- verify before publish.
+- The $90K figure is an in-month, on-track projection stated during filming ('we're on track this month to hit 90,000'), not a closed/final month total — verify before publish.
 
 ### `tom-canarino` — Tom Canarino
 
-- Name spelling 'Tom Canarino' is a phonetic rendering from auto-generated captions and is unconfirmed -- verify before publish.
-- The $18K/month hotel figure is derived from Tom's stated day-rate range ($500-700/day in the slow season, over 1,000+/day on launch weekends); he never states an $18K monthly total directly -- verify.
+- Name spelling 'Tom Canarino' is a phonetic rendering from auto-generated captions and is unconfirmed — verify before publish.
+- The $18K/month hotel figure is derived from Tom's stated day-rate range ($500-700/day in the slow season, over 1,000+/day on launch weekends); he never states an $18K monthly total directly — verify.
 - months_to_result and location_count left null: the transcript gives a 60-day timeline for his first locations and roughly a year for the headline hotel deal, but no single overall figure or total location count is stated.
 - The closing quote was also the pull quote, so the duplicate blockquote was removed from the story body. Consider adding a different verbatim quote to that section.
 
@@ -149,30 +149,30 @@ by members and have not been audited — check each story before publishing.
 
 ## All rows
 
-| Slug                      | Member                  | Video         | Monthly revenue | Tags                                                              |
-| ------------------------- | ----------------------- | ------------- | --------------- | ----------------------------------------------------------------- |
-| `andy-consulman`          | Andy Consulman          | `AqGrp4cw9Is` | $10,000         | career-change, first-location, scaling                            |
-| `anthony-kolodziej`       | Anthony Kolodziej       | `fsRX7K_Hg08` | $102,000        | career-change, laid-off, scaling, family-business                 |
-| `dj-50k-per-month`        | DJ                      | `6DKjZDolLhk` | $50,000         | career-change, family-business, scaling, route-acquisition        |
-| `evan-tomahong`           | Evan Tomahong           | `JKtCeSu6s48` | $7,000          | career-change, no-experience, first-location                      |
-| `graham-and-katie-parker` | Graham and Katie Parker | `heSbv_uG734` | $36,000         | couple, family-business, scaling, part-time                       |
-| `jason-500-machines`      | Jason                   | `cGoI8lUHhh0` | —               | career-change, scaling, route-acquisition, couple                 |
-| `javier-zeder`            | Javier Zeder            | `GO6C25-1mf8` | $8,500          | first-location, part-time, scaling                                |
-| `jesse-lee`               | Jesse Lee               | `MmVigkdyzL4` | —               | career-change, route-acquisition, first-location                  |
-| `joe-retiree-route`       | Joe                     | `gvvz2nMax0w` | $5,500          | retiree, scaling                                                  |
-| `john-and-lauren-sanchez` | John and Lauren Sanchez | `io0UBay3XtU` | —               | couple, family-business, part-time                                |
-| `john-real-estate-agent`  | John                    | `E-J7CvK4MNM` | $21,000         | career-change, scaling, first-location                            |
-| `kyle-40k-per-month`      | Kyle                    | `HHMaPdTKECs` | $35,000         | laid-off, scaling, part-time                                      |
-| `lane-200k-per-year`      | Lane                    | `EyFph0g1z6U` | —               | no-experience, career-change, family-business, part-time, scaling |
-| `madison-6-locations`     | Madison                 | `5y5geBPe3mM` | $10,000         | part-time, scaling                                                |
-| `mallerie-rouch`          | Mallerie Rouch          | `io1Jkei-yFs` | $4,000          | couple, family-business, part-time                                |
-| `manuel-duval`            | Manuel Duval            | `-PO--G7fRq4` | $10,500         | part-time, scaling                                                |
-| `matt-dicks`              | Matt Dicks              | `VrZ-d378Ofo` | $20,000         | career-change, family-business, full-time, scaling                |
-| `matt-morrison`           | Matt Morrison           | `tfjgFj0BLgI` | $43,000         | part-time, scaling                                                |
-| `michael-d-600k-per-year` | Michael D               | `U7KKbZHqBvg` | —               | no-experience, career-change, family-business, scaling            |
-| `musa-sadi`               | Musa Sadi               | `kb8ryBm6g9k` | $41,000         | career-change, scaling, route-acquisition                         |
-| `sandy-and-joe`           | Sandy & Joe             | `IxLBMQH7iYY` | —               | family-business, part-time                                        |
-| `shan-25k-per-month`      | Shan                    | `yP4Y_BBAvq4` | $22,000         | no-experience, scaling, couple                                    |
-| `tim-barnes`              | Tim Barnes              | `sGgnnwa2ySs` | $90,000         | scaling, full-time, career-change                                 |
-| `tom-canarino`            | Tom Canarino            | `8ih4aTXaot8` | $15,000         | scaling, route-acquisition, part-time                             |
-| `tyrone-lewis`            | Tyrone Lewis            | `co01wsvxJw8` | $12,000         | career-change, no-experience, scaling                             |
+| Slug | Member | Video | Monthly revenue | Tags |
+| --- | --- | --- | --- | --- |
+| `andy-consulman` | Andy Consulman | `AqGrp4cw9Is` | $10,000 | career-change, first-location, scaling |
+| `anthony-kolodziej` | Anthony Kolodziej | `fsRX7K_Hg08` | $102,000 | career-change, laid-off, scaling, family-business |
+| `dj-50k-per-month` | DJ | `6DKjZDolLhk` | $50,000 | career-change, family-business, scaling, route-acquisition |
+| `evan-tomahong` | Evan Tomahong | `JKtCeSu6s48` | $7,000 | career-change, no-experience, first-location |
+| `graham-and-katie-parker` | Graham and Katie Parker | `heSbv_uG734` | $36,000 | couple, family-business, scaling, part-time |
+| `jason-500-machines` | Jason | `cGoI8lUHhh0` | — | career-change, scaling, route-acquisition, couple |
+| `javier-zeder` | Javier Zeder | `GO6C25-1mf8` | $8,500 | first-location, part-time, scaling |
+| `jesse-lee` | Jesse Lee | `MmVigkdyzL4` | — | career-change, route-acquisition, first-location |
+| `joe-retiree-route` | Joe | `gvvz2nMax0w` | $5,500 | retiree, scaling |
+| `john-and-lauren-sanchez` | John and Lauren Sanchez | `io0UBay3XtU` | — | couple, family-business, part-time |
+| `john-real-estate-agent` | John | `E-J7CvK4MNM` | $21,000 | career-change, scaling, first-location |
+| `kyle-40k-per-month` | Kyle | `HHMaPdTKECs` | $35,000 | laid-off, scaling, part-time |
+| `lane-200k-per-year` | Lane | `EyFph0g1z6U` | — | no-experience, career-change, family-business, part-time, scaling |
+| `madison-6-locations` | Madison | `5y5geBPe3mM` | $10,000 | part-time, scaling |
+| `mallerie-rouch` | Mallerie Rouch | `io1Jkei-yFs` | $4,000 | couple, family-business, part-time |
+| `manuel-duval` | Manuel Duval | `-PO--G7fRq4` | $10,500 | part-time, scaling |
+| `matt-dicks` | Matt Dicks | `VrZ-d378Ofo` | $20,000 | career-change, family-business, full-time, scaling |
+| `matt-morrison` | Matt Morrison | `tfjgFj0BLgI` | $43,000 | part-time, scaling |
+| `michael-d-600k-per-year` | Michael D | `U7KKbZHqBvg` | — | no-experience, career-change, family-business, scaling |
+| `musa-sadi` | Musa Sadi | `kb8ryBm6g9k` | $41,000 | career-change, scaling, route-acquisition |
+| `sandy-and-joe` | Sandy & Joe | `IxLBMQH7iYY` | — | family-business, part-time |
+| `shan-25k-per-month` | Shan | `yP4Y_BBAvq4` | $22,000 | no-experience, scaling, couple |
+| `tim-barnes` | Tim Barnes | `sGgnnwa2ySs` | $90,000 | scaling, full-time, career-change |
+| `tom-canarino` | Tom Canarino | `8ih4aTXaot8` | $15,000 | scaling, route-acquisition, part-time |
+| `tyrone-lewis` | Tyrone Lewis | `co01wsvxJw8` | $12,000 | career-change, no-experience, scaling |
