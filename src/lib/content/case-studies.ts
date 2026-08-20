@@ -17,9 +17,8 @@ export type CaseStudyQuote = {
 };
 
 export const caseStudiesHero = {
-  eyebrow: "Real People, Real Routes",
-  title: "Case Studies",
-  body: "Members from across the country share how Vendingpreneurs took them from zero vending experience to a working route — in their own words.",
+  eyebrow: "Vendingpreneur Success Stories",
+  title: "Real People Building Real Vending Routes",
 } as const;
 
 /**

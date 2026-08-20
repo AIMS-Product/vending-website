@@ -23,6 +23,44 @@ export const REVENUE_BANDS = [
 
 export type RevenueBandId = (typeof REVENUE_BANDS)[number]["id"];
 
+/**
+ * The visible filter chips. Kody asked for one row, so the raw per-story tags
+ * are rolled up into six groups here rather than being rewritten on the rows —
+ * the underlying tags stay intact and available for future regrouping.
+ *
+ * Declaration order is the display order (Kody's, deliberate), not count order.
+ * A story matches a group if it carries any one of the group's tags, so the
+ * counts sum past the story total. That is expected: stories carry several tags.
+ */
+export const CASE_STUDY_TAG_GROUPS = [
+  {
+    id: "career-change",
+    label: "Career Change",
+    tags: ["career-change", "laid-off", "retiree"],
+  },
+  {
+    id: "family-couple",
+    label: "Family/Couple",
+    tags: ["family-business", "couple"],
+  },
+  {
+    id: "new-to-vending",
+    label: "New to Vending",
+    tags: ["first-location", "route-acquisition", "no-experience"],
+  },
+  { id: "part-time", label: "Part Time", tags: ["part-time"] },
+  { id: "full-time", label: "Full Time", tags: ["full-time"] },
+  { id: "scaling", label: "Scaling", tags: ["scaling"] },
+] as const;
+
+export type CaseStudyTagGroupId = (typeof CASE_STUDY_TAG_GROUPS)[number]["id"];
+
+function matchesTagGroup(tags: readonly string[], groupId: string): boolean {
+  const group = CASE_STUDY_TAG_GROUPS.find((entry) => entry.id === groupId);
+  if (!group) return false;
+  return group.tags.some((tag) => tags.includes(tag));
+}
+
 export type CaseStudyFilters = {
   tag: string | null;
   revenue: RevenueBandId | null;
@@ -42,12 +80,12 @@ function firstParam(value: string | string[] | undefined): string | null {
  */
 export function parseCaseStudyFilters(
   searchParams: Record<string, string | string[] | undefined>,
-  availableTags: readonly string[],
+  availableGroupIds: readonly string[],
 ): CaseStudyFilters {
   const tag = firstParam(searchParams.tag);
   const revenue = firstParam(searchParams.revenue);
   return {
-    tag: tag && availableTags.includes(tag) ? tag : null,
+    tag: tag && availableGroupIds.includes(tag) ? tag : null,
     revenue: REVENUE_BANDS.some((band) => band.id === revenue)
       ? (revenue as RevenueBandId)
       : null,
@@ -71,7 +109,9 @@ export function applyCaseStudyFilters(
   filters: CaseStudyFilters,
 ): CaseStudyCard[] {
   return caseStudies.filter((caseStudy) => {
-    if (filters.tag && !caseStudy.tags.includes(filters.tag)) return false;
+    if (filters.tag && !matchesTagGroup(caseStudy.tags, filters.tag)) {
+      return false;
+    }
     if (
       filters.revenue &&
       !matchesRevenueBand(caseStudy.monthly_revenue_usd, filters.revenue)
@@ -82,17 +122,15 @@ export function applyCaseStudyFilters(
   });
 }
 
-/** Tag facets, most common first, then alphabetical so the order is stable. */
+/** One facet per group, in declaration order. Empty groups are hidden. */
 export function buildTagFacets(caseStudies: readonly CaseStudyCard[]): Facet[] {
-  const counts = new Map<string, number>();
-  for (const caseStudy of caseStudies) {
-    for (const tag of caseStudy.tags) {
-      counts.set(tag, (counts.get(tag) ?? 0) + 1);
-    }
-  }
-  return [...counts.entries()]
-    .map(([value, count]) => ({ value, label: humanizeTag(value), count }))
-    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+  return CASE_STUDY_TAG_GROUPS.map((group) => ({
+    value: group.id,
+    label: group.label,
+    count: caseStudies.filter((caseStudy) =>
+      matchesTagGroup(caseStudy.tags, group.id),
+    ).length,
+  })).filter((facet) => facet.count > 0);
 }
 
 export function buildRevenueFacets(
@@ -105,12 +143,6 @@ export function buildRevenueFacets(
       matchesRevenueBand(caseStudy.monthly_revenue_usd, band.id),
     ).length,
   })).filter((facet) => facet.count > 0);
-}
-
-/** `route-acquisition` -> `Route acquisition`. */
-export function humanizeTag(tag: string): string {
-  const spaced = tag.replace(/-/g, " ");
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
 /**

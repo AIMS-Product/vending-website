@@ -41,7 +41,6 @@ const indexHtml = renderToStaticMarkup(
     caseStudies={[card]}
     filters={{ tag: null, revenue: null }}
     tagFacets={[{ value: "scaling", label: "Scaling", count: 1 }]}
-    revenueFacets={[{ value: "25k-50k", label: "$25K–$50K/mo", count: 1 }]}
     totalCount={1}
   />,
 );

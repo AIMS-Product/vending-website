@@ -12,7 +12,6 @@ type CaseStudyIndexProps = {
   caseStudies: readonly CaseStudyCardData[];
   filters: CaseStudyFilters;
   tagFacets: readonly Facet[];
-  revenueFacets: readonly Facet[];
   totalCount: number;
 };
 
@@ -25,7 +24,6 @@ export function CaseStudyIndex({
   caseStudies,
   filters,
   tagFacets,
-  revenueFacets,
   totalCount,
 }: CaseStudyIndexProps) {
   const isFiltered = Boolean(filters.tag || filters.revenue);
@@ -35,36 +33,16 @@ export function CaseStudyIndex({
       <div className="mx-auto max-w-[1500px]">
         <h2 className="sr-only">{caseStudySectionHeadings.stories}</h2>
 
-        {(revenueFacets.length > 0 || tagFacets.length > 0) && (
-          <div className="flex flex-col gap-6">
-            {revenueFacets.length > 0 && (
-              <FacetRow
-                legend="Monthly revenue"
-                facets={revenueFacets}
-                activeValue={filters.revenue}
-                hrefFor={(value) =>
-                  caseStudiesHref(filters, {
-                    revenue:
-                      value === filters.revenue
-                        ? null
-                        : (value as CaseStudyFilters["revenue"]),
-                  })
-                }
-              />
-            )}
-            {tagFacets.length > 0 && (
-              <FacetRow
-                legend="Story type"
-                facets={tagFacets}
-                activeValue={filters.tag}
-                hrefFor={(value) =>
-                  caseStudiesHref(filters, {
-                    tag: value === filters.tag ? null : value,
-                  })
-                }
-              />
-            )}
-          </div>
+        {tagFacets.length > 0 && (
+          <FacetRow
+            facets={tagFacets}
+            activeValue={filters.tag}
+            hrefFor={(value) =>
+              caseStudiesHref(filters, {
+                tag: value === filters.tag ? null : value,
+              })
+            }
+          />
         )}
 
         <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -111,21 +89,21 @@ export function CaseStudyIndex({
 }
 
 function FacetRow({
-  legend,
   facets,
   activeValue,
   hrefFor,
 }: {
-  legend: string;
   facets: readonly Facet[];
   activeValue: string | null;
   hrefFor: (value: string) => string;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <span className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
-        {legend}
-      </span>
+    // Labelled nav rather than a visible legend: one row of self-describing
+    // chips needs no heading, but assistive tech still needs the grouping.
+    <nav
+      aria-label="Filter stories"
+      className="flex flex-wrap items-center gap-3"
+    >
       {facets.map((facet) => {
         const isActive = facet.value === activeValue;
         return (
@@ -156,6 +134,6 @@ function FacetRow({
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }

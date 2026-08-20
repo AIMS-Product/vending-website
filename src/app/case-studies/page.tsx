@@ -6,7 +6,6 @@ import { FinalCta } from "@/components/sections/FinalCta";
 import { listPublishedCaseStudies } from "@/lib/services/case-studies";
 import {
   applyCaseStudyFilters,
-  buildRevenueFacets,
   buildTagFacets,
   parseCaseStudyFilters,
 } from "@/lib/case-studies/index-filters";
@@ -31,7 +30,6 @@ export default async function CaseStudiesPage({
   // Facets are built from the unfiltered set so the counts stay stable as the
   // visitor clicks, rather than collapsing to the current selection.
   const tagFacets = buildTagFacets(caseStudies);
-  const revenueFacets = buildRevenueFacets(caseStudies);
   const filters = parseCaseStudyFilters(
     params,
     tagFacets.map((facet) => facet.value),
@@ -45,7 +43,6 @@ export default async function CaseStudiesPage({
         caseStudies={visible}
         filters={filters}
         tagFacets={tagFacets}
-        revenueFacets={revenueFacets}
         totalCount={caseStudies.length}
       />
       <CaseStudyQuotes />

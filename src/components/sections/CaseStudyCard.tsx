@@ -10,16 +10,13 @@ import type { CaseStudyCard as CaseStudyCardData } from "@/lib/services/case-stu
 export function CaseStudyCard({
   caseStudy,
   headingLevel = "h3",
-  href,
 }: {
   caseStudy: CaseStudyCardData;
   /** The grid owns the section heading, so the card's title level varies. */
   headingLevel?: "h2" | "h3";
-  /** Overridable so the temporary preview route can link within itself. */
-  href?: string;
 }) {
   const Heading = headingLevel;
-  const cardHref = href ?? `/case-studies/${caseStudy.slug}`;
+  const cardHref = `/case-studies/${caseStudy.slug}`;
   const thumbnailUrl = caseStudy.cover_url ?? youtubeThumbnail(caseStudy);
 
   return (
@@ -48,11 +45,23 @@ export function CaseStudyCard({
         ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-5">
-        <p className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
-          {caseStudy.member_name}
-          {caseStudy.member_role ? ` · ${caseStudy.member_role}` : ""}
-        </p>
+      <div className="flex flex-1 flex-col gap-2.5 p-5">
+        {/*
+          Name and role were one small uppercase tracked line, which shouted
+          at the same volume as the uppercase title directly beneath it and
+          made the cards hard to skim. Three ranks now: the title is the only
+          uppercase element, the name reads as a name, the role recedes.
+        */}
+        <div>
+          <p className="text-sm leading-snug font-black text-[#111111]">
+            {caseStudy.member_name}
+          </p>
+          {caseStudy.member_role ? (
+            <p className="mt-0.5 text-xs leading-snug font-semibold text-slate-500">
+              {caseStudy.member_role}
+            </p>
+          ) : null}
+        </div>
         <Heading className="text-lg leading-tight font-black text-[#111111] uppercase">
           {/*
             The whole card is the target, but only the title is a link — one
