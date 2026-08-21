@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { parseChatLinks } from "@/lib/chatbot/parse-chat-links";
 
 export interface ChatDisplayMessage {
   role: "user" | "assistant";
@@ -49,6 +50,7 @@ export function ChatTranscript({
           personaName={personaName}
           avatarUrl={avatarUrl}
           brandColor={brandColor}
+          isStreaming
         />
       ) : null}
       {isWaiting && streamingText === null ? (
@@ -67,13 +69,20 @@ function MessageBubble({
   personaName,
   avatarUrl,
   brandColor,
+  isStreaming = false,
 }: {
   message: ChatDisplayMessage;
   personaName: string;
   avatarUrl: string | null;
   brandColor: string;
+  /** Still receiving chunks — render raw text; links resolve once the message completes. */
+  isStreaming?: boolean;
 }) {
   const isUser = message.role === "user";
+  // Links are only parsed into real anchors once the message is done
+  // streaming, so it's fine for `[text](url)` to show briefly mid-stream.
+  const content =
+    !isUser && !isStreaming ? parseChatLinks(message.content) : message.content;
   return (
     <div className={cn("flex items-end gap-2", isUser && "flex-row-reverse")}>
       {isUser ? null : (
@@ -90,7 +99,7 @@ function MessageBubble({
         )}
         style={isUser ? { backgroundColor: brandColor } : undefined}
       >
-        {message.content}
+        {content}
       </div>
     </div>
   );

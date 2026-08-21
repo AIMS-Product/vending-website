@@ -27,6 +27,13 @@ const CAPTURED_KEY = "vp_chat_captured";
 const DEFAULT_BRAND_COLOR = "#f47b3b";
 const ON_INTENT_DELAY_MS = 800;
 const LOOSE_EMAIL_PATTERN = /[^\s@]+@[^\s@]+\.[^\s@]+/;
+// Human-feeling response timing (naturalness pass): a real reply never lands
+// instantly, so the typing indicator holds for a bit before the stream is
+// rendered, and the scripted greeting/follow-up get the same treatment.
+const REPLY_TYPING_DELAY_MIN_MS = 1200;
+const REPLY_TYPING_DELAY_MAX_MS = 2200;
+const GREETING_TYPING_DELAY_MS = 800;
+const FOLLOW_UP_TYPING_DELAY_MS = 1200;
 
 type PublicChatbotConfig = {
   enabled: boolean;
@@ -124,26 +131,36 @@ export function ChatWidget() {
     if (!open || needsGate || hasGreetedRef.current || !config) return;
     hasGreetedRef.current = true;
     const timers: ReturnType<typeof setTimeout>[] = [];
-
-    const greeting = config.greeting;
-    if (greeting) {
-      timers.push(
-        setTimeout(
-          () => setMessages([{ role: "assistant", content: greeting }]),
-          0,
-        ),
-      );
-    }
     const followUpMessage = config.followUpMessage;
-    if (followUpMessage) {
+
+    // Deferred via setTimeout(fn, 0) rather than called directly in the
+    // effect body — same react-hooks/set-state-in-effect reasoning as below.
+    const showFollowUpTyping = () => {
+      if (!followUpMessage) return;
+      timers.push(setTimeout(() => setIsWaiting(true), 0));
       timers.push(
         setTimeout(() => {
           setMessages((prev) => [
             ...prev,
             { role: "assistant", content: followUpMessage },
           ]);
-        }, 600),
+          setIsWaiting(false);
+        }, FOLLOW_UP_TYPING_DELAY_MS),
       );
+    };
+
+    const greeting = config.greeting;
+    if (greeting) {
+      timers.push(setTimeout(() => setIsWaiting(true), 0));
+      timers.push(
+        setTimeout(() => {
+          setMessages([{ role: "assistant", content: greeting }]);
+          setIsWaiting(false);
+          showFollowUpTyping();
+        }, GREETING_TYPING_DELAY_MS),
+      );
+    } else {
+      showFollowUpTyping();
     }
     return () => timers.forEach(clearTimeout);
   }, [open, needsGate, config]);
@@ -177,6 +194,14 @@ export function ChatWidget() {
         writeSessionFlag(CAPTURED_KEY);
       }
 
+      // Human-feeling delay: the fetch below starts immediately, but nothing
+      // is rendered from the stream until this many ms have passed — the
+      // typing indicator (isWaiting && streamingText === null) covers the
+      // gap the whole time.
+      const revealAt =
+        Date.now() +
+        randomInt(REPLY_TYPING_DELAY_MIN_MS, REPLY_TYPING_DELAY_MAX_MS);
+
       try {
         const response = await fetch("/api/chatbot/chat", {
           method: "POST",
@@ -195,13 +220,24 @@ export function ChatWidget() {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let full = "";
-        setStreamingText("");
+        let revealed = false;
+
         for (;;) {
           const { done, value } = await reader.read();
           if (done) break;
           full += decoder.decode(value, { stream: true });
-          setStreamingText(full);
+          // A long reply can outlast the reveal delay — once it does, every
+          // further chunk streams in live like before. A short reply (the
+          // common case) just sits fully buffered until the delay below.
+          if (!revealed && Date.now() >= revealAt) revealed = true;
+          if (revealed) setStreamingText(full);
         }
+
+        if (!revealed) {
+          const remaining = revealAt - Date.now();
+          if (remaining > 0) await sleep(remaining);
+        }
+        setStreamingText(full);
 
         setMessages((prev) => [...prev, { role: "assistant", content: full }]);
         setStreamingText(null);
@@ -329,6 +365,7 @@ export function ChatWidget() {
         <LauncherButton
           brandColor={brandColor}
           personaName={config.personaName}
+          avatarUrl={config.avatarUrl}
           onClick={() => {
             setShowTeaser(false);
             setOpen(true);
@@ -380,6 +417,14 @@ function writeSessionFlag(key: string): void {
   } catch {
     // ignore
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function randomInt(min: number, max: number): number {
+  return Math.floor(min + Math.random() * (max - min));
 }
 
 function generateId(): string {

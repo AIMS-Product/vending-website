@@ -19,6 +19,7 @@ import {
   adminTextareaClass,
 } from "@/components/admin/AdminUi";
 import { CHATBOT_FLAGS, type ChatbotFlag } from "@/lib/chatbot/flags";
+import { parseChatLinks } from "@/lib/chatbot/parse-chat-links";
 import type { AdminChatbotConversationDetail } from "@/lib/services/chatbot-admin";
 
 const initialState: ChatbotActionState = { status: "idle" };
@@ -165,7 +166,13 @@ function MessageBubble({
             : "bg-ui-canvas text-ui-text border-ui-line border"
         }`}
       >
-        {message.content || (
+        {message.content ? (
+          isVisitor ? (
+            message.content
+          ) : (
+            parseChatLinks(message.content)
+          )
+        ) : (
           <span className="text-ui-text-subtle italic">(empty)</span>
         )}
       </div>

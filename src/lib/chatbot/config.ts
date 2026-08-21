@@ -79,6 +79,9 @@ export const DEFAULT_CHATBOT_CONFIG: ChatbotConfig = {
 
 export const CHATBOT_CONFIG_CACHE_TAG = "chatbot-config";
 
+/** Real-photo default so the widget never falls back to a plain letter circle. */
+export const DEFAULT_CHATBOT_AVATAR_URL = "/chatbot/mia.jpg";
+
 const CONFIG_FIELDS =
   "enabled, persona_name, avatar_url, greeting, follow_up_message, teaser_text, brand_color, idle_trigger_seconds, capture_mode, knowledge_base, model, lead_routing_emails, notify_enabled, updated_at" as const;
 
@@ -134,7 +137,11 @@ export function toPublicChatbotConfig(
   return {
     enabled: config.enabled,
     personaName: config.personaName,
-    avatarUrl: config.avatarUrl,
+    // Admin-set avatar_url wins when present; otherwise the widget gets the
+    // real-photo default rather than falling back to a letter circle. Kept
+    // here (the public projection), not in rowToConfig, so the admin edit
+    // form still shows an empty field when nothing is set.
+    avatarUrl: config.avatarUrl ?? DEFAULT_CHATBOT_AVATAR_URL,
     greeting: config.greeting,
     followUpMessage: config.followUpMessage,
     teaserText: config.teaserText,
@@ -218,7 +225,9 @@ function rowToConfig(row: ChatbotConfigRow): ChatbotConfig {
     teaserText: row.teaser_text,
     brandColor: row.brand_color,
     idleTriggerSeconds: row.idle_trigger_seconds,
-    captureMode: isCaptureMode(row.capture_mode) ? row.capture_mode : "on_intent",
+    captureMode: isCaptureMode(row.capture_mode)
+      ? row.capture_mode
+      : "on_intent",
     knowledgeBase: row.knowledge_base,
     model: row.model,
     leadRoutingEmails: row.lead_routing_emails,

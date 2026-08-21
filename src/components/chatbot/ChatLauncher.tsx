@@ -23,16 +23,25 @@ export function PanelHeader({
     >
       <div className="flex items-center gap-2">
         {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- small header avatar, no responsive sizing needed
-          <img
-            src={avatarUrl}
-            alt=""
-            width={28}
-            height={28}
-            className="h-7 w-7 rounded-full border-2 border-[#111111] object-cover"
-          />
+          <span className="relative inline-flex h-7 w-7 shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element -- small header avatar, no responsive sizing needed */}
+            <img
+              src={avatarUrl}
+              alt=""
+              width={28}
+              height={28}
+              className="h-7 w-7 rounded-full border-2 border-[#111111] object-cover"
+            />
+            <span
+              aria-hidden="true"
+              className="absolute right-0 bottom-0 h-2 w-2 rounded-full bg-[#22c55e] ring-2 ring-white"
+            />
+          </span>
         ) : null}
-        <p className="text-sm font-black text-white">{personaName}</p>
+        <div>
+          <p className="text-sm font-black text-white">{personaName}</p>
+          <p className="text-[11px] leading-none text-white/85">Online</p>
+        </div>
       </div>
       <button
         type="button"
@@ -91,10 +100,12 @@ export function MessageInput({
 export function LauncherButton({
   brandColor,
   personaName,
+  avatarUrl,
   onClick,
 }: {
   brandColor: string;
   personaName: string;
+  avatarUrl: string | null;
   onClick: () => void;
 }) {
   return (
@@ -102,10 +113,25 @@ export function LauncherButton({
       type="button"
       onClick={onClick}
       aria-label={`Open chat with ${personaName}`}
-      className="inline-flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#111111] text-white shadow-[4px_4px_0_#111111]"
+      className="relative inline-flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#111111] text-white shadow-[4px_4px_0_#111111]"
       style={{ backgroundColor: brandColor }}
     >
-      <ChatBubbleIcon />
+      {avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- small launcher avatar, no responsive sizing needed
+        <img
+          src={avatarUrl}
+          alt=""
+          width={56}
+          height={56}
+          className="h-full w-full rounded-full object-cover"
+        />
+      ) : (
+        <ChatBubbleIcon />
+      )}
+      <span
+        aria-hidden="true"
+        className="absolute right-0 bottom-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-[#22c55e]"
+      />
     </button>
   );
 }
