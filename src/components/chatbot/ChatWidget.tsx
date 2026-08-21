@@ -430,7 +430,7 @@ export function ChatWidget() {
           aria-modal="false"
           aria-label={`Chat with ${config.personaName}`}
           tabIndex={-1}
-          className="flex h-[520px] w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[8px] border-2 border-[#111111] bg-white shadow-[6px_6px_0_#111111] outline-none"
+          className="flex h-[680px] max-h-[calc(100vh-7rem)] w-[420px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[8px] border-2 border-[#111111] bg-white shadow-[6px_6px_0_#111111] outline-none"
         >
           <PanelHeader
             personaName={config.personaName}

@@ -73,7 +73,7 @@ export function QuickActionsBar({
 }) {
   if (actions.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-1.5 border-b-2 border-[#111111] bg-[#f8fafc] px-3 py-2">
+    <div className="flex flex-wrap gap-2 border-b-2 border-[#111111] bg-[#f8fafc] px-4 py-3">
       {actions.map((action) => (
         <Link
           key={action.url + action.label}
@@ -140,7 +140,7 @@ export function StarterQuestionChips({
 }) {
   if (questions.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-1.5 px-4 pb-2">
+    <div className="flex flex-wrap gap-2 px-4 pb-3">
       {questions.map((question) => (
         <button
           key={question}

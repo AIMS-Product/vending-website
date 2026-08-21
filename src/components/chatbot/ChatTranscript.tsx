@@ -33,7 +33,7 @@ export function ChatTranscript({
   return (
     <div
       aria-live="polite"
-      className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4"
+      className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-5"
     >
       {messages.map((message, index) => (
         <MessageBubble
@@ -94,7 +94,7 @@ function MessageBubble({
       )}
       <div
         className={cn(
-          "max-w-[80%] rounded-[8px] border-2 border-[#111111] px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap",
+          "max-w-[85%] rounded-[8px] border-2 border-[#111111] px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap",
           isUser ? "text-white" : "bg-white text-[#111111]",
         )}
         style={isUser ? { backgroundColor: brandColor } : undefined}
