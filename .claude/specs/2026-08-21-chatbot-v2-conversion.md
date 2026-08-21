@@ -132,21 +132,47 @@ scripts pass, production build succeeds.
 
 ### Before this goes live
 
-1. **Apply the migration by hand** —
+1. ~~**Apply the migration by hand**~~ — **DONE 2026-08-21.** Applied to the
+   production project `aacisvhkmsaabqdvdmmf` (AIMS org) and verified: both
+   columns, the table, and both functions exist and are executable by
+   service_role. `chatbot_log_unknown_question` was round-tripped twice to
+   confirm `ask_count` really increments (1 -> 2), then the probe row removed.
+
+   Original instruction, kept for reference —
    `supabase/migrations/20260821140000_chatbot_v2_conversion.sql`. It adds two
    columns, one table, and **two functions**
    (`chatbot_append_message`, `chatbot_log_unknown_question`). The code
    tolerates all of it being absent, but until it runs: booked-call KPIs read
    zero, the funnel's third step stays at zero, the Booked badge never shows,
    and no unanswered question is recorded.
-2. **Point the Calendly webhook at the deployment** and confirm
-   `CALENDLY_WEBHOOK_SIGNING_KEY` is set there. No signing key means every
-   webhook 401s and no booking is ever attributed.
-3. **Test the booking loop end to end on preview**: open the chat, get the
+
+2. ~~**Point the Calendly webhook at the deployment**~~ — **no longer
+   blocking.** `CALENDLY_WEBHOOK_SIGNING_KEY` exists on Preview only and never
+   has on Production, so that webhook 401s every delivery and
+   `calendly_bookings` has been frozen since 2026-08-03. This was already
+   found and decided on 2026-08-20 (see
+   `.claude/specs/2026-08-20-booking-attribution.md`): **Close is the source of
+   truth for "did this lead book a call"**, reconciled onto
+   `lead_submissions.call_booked_at` every 2 minutes, and 308 of 573 leads
+   already carry it.
+
+   The chatbot now counts a conversation as booked from EITHER signal — its
+   own `call_booked_at` (Calendly webhook) or the linked lead's (Close). So
+   the booked-call KPI, the funnel and the digest report real numbers today
+   with no Calendly credentials, and upgrade for free if the webhook is ever
+   fixed. Fixing Calendly stays a separate, Calendly-side task.
+
+3. **Set `RESEND_API_KEY` and `LEAD_NOTIFICATION_FROM` in production.** Neither
+   exists there today, so `send_resources_email` and the sales digest cannot
+   send. The bot is instructed never to claim it sent something the tool did
+   not actually send, so this degrades honestly rather than lying — but the
+   "I'll email that over" promise is the credibility unlock, and it is dead
+   until these are set.
+4. **Test the booking loop end to end on preview**: open the chat, get the
    calendar, book a real slot, then check the conversation row shows
    `call_booked_at` and the admin funnel's booked count moves. This is the one
    thing that cannot be proven locally.
-4. Confirm `NEXT_PUBLIC_DEFAULT_CALENDLY_URL` on the deployment matches the
+5. Confirm `NEXT_PUBLIC_DEFAULT_CALENDLY_URL` on the deployment matches the
    event the sales team actually watches.
 
 ### Known ceilings (deliberate, documented in code)
