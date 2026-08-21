@@ -60,6 +60,10 @@ export async function saveChatbotConfigAction(
       ? idleTriggerSeconds
       : 5,
     captureMode: text("captureMode") as ChatbotConfigInput["captureMode"],
+    captureAggressiveness: text(
+      "captureAggressiveness",
+    ) as ChatbotConfigInput["captureAggressiveness"],
+    exitIntentCapture: checked("exitIntentCapture"),
     knowledgeBase: optional("knowledgeBase"),
     model: text("model") || "gpt-4o-mini",
     leadRoutingEmails: optional("leadRoutingEmails"),

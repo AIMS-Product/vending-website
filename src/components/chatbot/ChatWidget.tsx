@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { captureAggressivenessThreshold } from "@/lib/chatbot/capture-thresholds";
 import {
   VP_CHAT_VISITOR_COOKIE_MAX_AGE_SECONDS,
   VP_CHAT_VISITOR_COOKIE_NAME,
@@ -32,6 +33,7 @@ const CAPTURED_KEY = "vp_chat_captured";
 // visitor already saw — see spec item 1.
 const OPEN_KEY = "vp_chat_open";
 const CAPTURE_OFFERED_KEY = "vp_chat_capture_offered";
+const EXIT_INTENT_OFFERED_KEY = "vp_chat_exit_intent_offered";
 const DEFAULT_BRAND_COLOR = "#f47b3b";
 const ON_INTENT_DELAY_MS = 800;
 const LOOSE_EMAIL_PATTERN = /[^\s@]+@[^\s@]+\.[^\s@]+/;
@@ -53,6 +55,8 @@ type PublicChatbotConfig = {
   brandColor: string | null;
   idleTriggerSeconds: number;
   captureMode: "pre_chat" | "on_intent" | "off";
+  captureAggressiveness: "relaxed" | "balanced" | "eager";
+  exitIntentCapture: boolean;
   starterQuestions: string[];
   quickActions: ChatbotQuickAction[];
 };
@@ -84,6 +88,10 @@ export function ChatWidget() {
   const [inputValue, setInputValue] = useState("");
   const [captured, setCaptured] = useState(() => readSessionFlag(CAPTURED_KEY));
   const [showInlineCapture, setShowInlineCapture] = useState(false);
+  // Which trigger is showing the inline capture card — changes its copy.
+  const [inlineCaptureContext, setInlineCaptureContext] = useState<
+    "on_intent" | "exit_intent"
+  >("on_intent");
   const [error, setError] = useState<string | null>(null);
   // Gates the greeting effect until the history fetch below resolves (found
   // or not) — otherwise a returning visitor would see the greeting flash
@@ -93,6 +101,9 @@ export function ChatWidget() {
   const sessionIdRef = useRef<string | null>(null);
   const assistantReplyCountRef = useRef(0);
   const hasOfferedCaptureRef = useRef(readSessionFlag(CAPTURE_OFFERED_KEY));
+  const hasOfferedExitIntentRef = useRef(
+    readSessionFlag(EXIT_INTENT_OFFERED_KEY),
+  );
   const hasGreetedRef = useRef(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -237,14 +248,57 @@ export function ChatWidget() {
       config?.captureMode !== "on_intent" ||
       captured ||
       hasOfferedCaptureRef.current ||
-      assistantReplyCountRef.current < 2
+      assistantReplyCountRef.current <
+        captureAggressivenessThreshold(config?.captureAggressiveness)
     ) {
       return;
     }
     hasOfferedCaptureRef.current = true;
     writeSessionFlag(CAPTURE_OFFERED_KEY);
-    setTimeout(() => setShowInlineCapture(true), ON_INTENT_DELAY_MS);
-  }, [config?.captureMode, captured]);
+    setTimeout(() => {
+      setInlineCaptureContext("on_intent");
+      setShowInlineCapture(true);
+    }, ON_INTENT_DELAY_MS);
+  }, [config?.captureMode, config?.captureAggressiveness, captured]);
+
+  // Exit-intent capture (spec item 3c): a desktop-only, once-per-session
+  // nudge when the visitor moves the cursor off the top of the viewport with
+  // an active, uncaptured conversation. Independent of captureMode/the
+  // on-intent trigger above — it's a separate lever the admin can toggle.
+  useEffect(() => {
+    if (!enabled || !config?.exitIntentCapture) return;
+    if (hasOfferedExitIntentRef.current) return;
+    // ponytail: pointer-fine is a coarse desktop heuristic (a touch laptop
+    // with a mouse also qualifies, which is fine) — upgrade to a real
+    // hover-capability check if false positives show up on touch devices.
+    if (!window.matchMedia("(pointer: fine)").matches) return;
+
+    const onMouseOut = (event: MouseEvent) => {
+      if (hasOfferedExitIntentRef.current) return;
+      if (captured || showInlineCapture) return;
+      if (!messages.some((message) => message.role === "user")) return;
+      // Standard exit-intent heuristic: the cursor left toward the top edge
+      // of the viewport with no related target, i.e. it actually left the
+      // document rather than moving between two elements inside it.
+      if (event.clientY > 0 || event.relatedTarget) return;
+
+      hasOfferedExitIntentRef.current = true;
+      writeSessionFlag(EXIT_INTENT_OFFERED_KEY);
+      setInlineCaptureContext("exit_intent");
+      setShowInlineCapture(true);
+      setOpen(true);
+    };
+
+    document.addEventListener("mouseout", onMouseOut);
+    return () => document.removeEventListener("mouseout", onMouseOut);
+  }, [
+    enabled,
+    config?.exitIntentCapture,
+    captured,
+    showInlineCapture,
+    messages,
+    setOpen,
+  ]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -409,8 +463,16 @@ export function ChatWidget() {
                   <ChatCaptureForm
                     variant="inline"
                     brandColor={brandColor}
-                    title="Want us to follow up?"
-                    body="Leave your email and the team can send more details."
+                    title={
+                      inlineCaptureContext === "exit_intent"
+                        ? "Before you go"
+                        : "Want us to follow up?"
+                    }
+                    body={
+                      inlineCaptureContext === "exit_intent"
+                        ? "Before you go — want me to email you this conversation plus the free roadmap?"
+                        : "Leave your email and the team can send more details."
+                    }
                     onSubmit={submitCapture}
                     onDismiss={() => setShowInlineCapture(false)}
                   />

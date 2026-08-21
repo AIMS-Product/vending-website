@@ -1576,8 +1576,10 @@ export type Database = {
         Row: {
           avatar_url: string | null;
           brand_color: string | null;
+          capture_aggressiveness: string;
           capture_mode: string;
           enabled: boolean;
+          exit_intent_capture: boolean;
           follow_up_message: string | null;
           greeting: string | null;
           id: number;
@@ -1595,8 +1597,10 @@ export type Database = {
         Insert: {
           avatar_url?: string | null;
           brand_color?: string | null;
+          capture_aggressiveness?: string;
           capture_mode?: string;
           enabled?: boolean;
+          exit_intent_capture?: boolean;
           follow_up_message?: string | null;
           greeting?: string | null;
           id?: number;
@@ -1614,8 +1618,10 @@ export type Database = {
         Update: {
           avatar_url?: string | null;
           brand_color?: string | null;
+          capture_aggressiveness?: string;
           capture_mode?: string;
           enabled?: boolean;
+          exit_intent_capture?: boolean;
           follow_up_message?: string | null;
           greeting?: string | null;
           id?: number;

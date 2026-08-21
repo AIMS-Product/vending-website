@@ -20,6 +20,9 @@ export class ChatbotConfigError extends Error {
 
 export type ChatbotCaptureMode = "pre_chat" | "on_intent" | "off";
 
+/** Which assistant reply triggers the on-intent inline capture card: eager=1st, balanced=2nd (default), relaxed=3rd. See captureAggressivenessThreshold in capture-thresholds.ts. */
+export type ChatbotCaptureAggressiveness = "relaxed" | "balanced" | "eager";
+
 export type ChatbotQuickAction = { label: string; url: string };
 
 /** Cap applied both on save (chatbotConfigInputSchema) and on read (parseQuickActions/parseStarterQuestions) — a hand-edited row can never exceed it either. */
@@ -36,6 +39,8 @@ export type ChatbotConfig = {
   brandColor: string | null;
   idleTriggerSeconds: number;
   captureMode: ChatbotCaptureMode;
+  captureAggressiveness: ChatbotCaptureAggressiveness;
+  exitIntentCapture: boolean;
   knowledgeBase: string | null;
   model: string;
   leadRoutingEmails: string | null;
@@ -61,6 +66,8 @@ export type PublicChatbotConfig = Pick<
   | "brandColor"
   | "idleTriggerSeconds"
   | "captureMode"
+  | "captureAggressiveness"
+  | "exitIntentCapture"
   | "starterQuestions"
   | "quickActions"
 >;
@@ -81,6 +88,8 @@ export const DEFAULT_CHATBOT_CONFIG: ChatbotConfig = {
   brandColor: null,
   idleTriggerSeconds: 5,
   captureMode: "on_intent",
+  captureAggressiveness: "balanced",
+  exitIntentCapture: true,
   knowledgeBase: null,
   model: "gpt-4o-mini",
   leadRoutingEmails: null,
@@ -96,10 +105,14 @@ export const CHATBOT_CONFIG_CACHE_TAG = "chatbot-config";
 export const DEFAULT_CHATBOT_AVATAR_URL = "/chatbot/mia.jpg";
 
 const CONFIG_FIELDS =
-  "enabled, persona_name, avatar_url, greeting, follow_up_message, teaser_text, brand_color, idle_trigger_seconds, capture_mode, knowledge_base, model, lead_routing_emails, notify_enabled, starter_questions, quick_actions, updated_at" as const;
+  "enabled, persona_name, avatar_url, greeting, follow_up_message, teaser_text, brand_color, idle_trigger_seconds, capture_mode, capture_aggressiveness, exit_intent_capture, knowledge_base, model, lead_routing_emails, notify_enabled, starter_questions, quick_actions, updated_at" as const;
 
-// Pre-migration column list — used as a fallback until the
-// 20260821120000_chatbot_quick_actions migration has been applied.
+// Pre-migration column list — used as a fallback until both the
+// 20260821120000_chatbot_quick_actions and 20260821130000_chatbot_capture_levers
+// migrations have been applied. A missing column on either one falls back to
+// this single tier (all four later-added columns served from in-code
+// defaults) rather than a per-migration tier — same coarse-but-safe pattern
+// the quick-actions column pair already used.
 const LEGACY_CONFIG_FIELDS =
   "enabled, persona_name, avatar_url, greeting, follow_up_message, teaser_text, brand_color, idle_trigger_seconds, capture_mode, knowledge_base, model, lead_routing_emails, notify_enabled, updated_at" as const;
 
@@ -120,6 +133,8 @@ function isMissingColumnError(message: string): boolean {
   return (
     message.includes("starter_questions") ||
     message.includes("quick_actions") ||
+    message.includes("capture_aggressiveness") ||
+    message.includes("exit_intent_capture") ||
     message.includes("42703")
   );
 }
@@ -132,7 +147,10 @@ type ChatbotConfigRow = Omit<
 
 type LegacyChatbotConfigRow = Omit<
   ChatbotConfigRow,
-  "starter_questions" | "quick_actions"
+  | "starter_questions"
+  | "quick_actions"
+  | "capture_aggressiveness"
+  | "exit_intent_capture"
 >;
 
 /** Uncached read. Never throws — fails soft to the defaults. */
@@ -162,6 +180,8 @@ export async function fetchChatbotConfig(
         quick_actions: DEFAULT_QUICK_ACTIONS.map((a) => ({
           ...a,
         })) as unknown as Json,
+        capture_aggressiveness: "balanced",
+        exit_intent_capture: true,
       });
     }
     if (!data) return DEFAULT_CHATBOT_CONFIG;
@@ -209,6 +229,8 @@ export function toPublicChatbotConfig(
     brandColor: config.brandColor,
     idleTriggerSeconds: config.idleTriggerSeconds,
     captureMode: config.captureMode,
+    captureAggressiveness: config.captureAggressiveness,
+    exitIntentCapture: config.exitIntentCapture,
     starterQuestions: config.starterQuestions,
     quickActions: config.quickActions,
   };
@@ -229,6 +251,8 @@ const chatbotConfigInputSchema = z.object({
     .nullable(),
   idleTriggerSeconds: z.number().int().min(0).max(600),
   captureMode: z.enum(["pre_chat", "on_intent", "off"]),
+  captureAggressiveness: z.enum(["relaxed", "balanced", "eager"]),
+  exitIntentCapture: z.boolean(),
   knowledgeBase: z.string().trim().max(20_000).nullable(),
   model: z.string().trim().min(1).max(80),
   leadRoutingEmails: z.string().trim().max(500).nullable(),
@@ -272,10 +296,14 @@ export async function saveChatbotConfig(
 
   if (error && isMissingColumnError(error.message)) {
     // Columns not migrated yet — save everything else so the rest of the form
-    // still works; chips/actions serve from in-code defaults until then.
+    // still works; chips/actions/capture levers serve from in-code defaults
+    // until then (the admin's choices for those fields are silently dropped,
+    // same tradeoff the quick-actions fallback already made).
     const {
       starter_questions: _sq,
       quick_actions: _qa,
+      capture_aggressiveness: _ca,
+      exit_intent_capture: _eic,
       ...legacyUpdate
     } = configToRow(parsed.data);
     const legacy = await client
@@ -294,6 +322,8 @@ export async function saveChatbotConfig(
       quick_actions: DEFAULT_QUICK_ACTIONS.map((a) => ({
         ...a,
       })) as unknown as Json,
+      capture_aggressiveness: "balanced",
+      exit_intent_capture: true,
     });
   }
 
@@ -332,6 +362,10 @@ function rowToConfig(row: ChatbotConfigRow): ChatbotConfig {
     captureMode: isCaptureMode(row.capture_mode)
       ? row.capture_mode
       : "on_intent",
+    captureAggressiveness: isCaptureAggressiveness(row.capture_aggressiveness)
+      ? row.capture_aggressiveness
+      : "balanced",
+    exitIntentCapture: row.exit_intent_capture,
     knowledgeBase: row.knowledge_base,
     model: row.model,
     leadRoutingEmails: row.lead_routing_emails,
@@ -355,6 +389,8 @@ function configToRow(
     brand_color: input.brandColor,
     idle_trigger_seconds: input.idleTriggerSeconds,
     capture_mode: input.captureMode,
+    capture_aggressiveness: input.captureAggressiveness,
+    exit_intent_capture: input.exitIntentCapture,
     knowledge_base: input.knowledgeBase,
     model: input.model,
     lead_routing_emails: input.leadRoutingEmails,
@@ -367,6 +403,12 @@ function configToRow(
 
 function isCaptureMode(value: string): value is ChatbotCaptureMode {
   return value === "pre_chat" || value === "on_intent" || value === "off";
+}
+
+function isCaptureAggressiveness(
+  value: string,
+): value is ChatbotCaptureAggressiveness {
+  return value === "relaxed" || value === "balanced" || value === "eager";
 }
 
 /** Defensive read of the stored `starter_questions` jsonb — never throws on a shape surprise (bad hand-edited data must not crash the widget). */

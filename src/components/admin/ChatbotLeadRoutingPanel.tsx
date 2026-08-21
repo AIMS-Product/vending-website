@@ -144,6 +144,14 @@ function HiddenConfigFields({ config }: { config: ChatbotConfig }) {
       <input type="hidden" name="captureMode" value={config.captureMode} />
       <input
         type="hidden"
+        name="captureAggressiveness"
+        value={config.captureAggressiveness}
+      />
+      {config.exitIntentCapture ? (
+        <input type="hidden" name="exitIntentCapture" value="on" />
+      ) : null}
+      <input
+        type="hidden"
         name="knowledgeBase"
         value={config.knowledgeBase ?? ""}
       />
