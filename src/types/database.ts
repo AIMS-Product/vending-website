@@ -1572,6 +1572,375 @@ export type Database = {
         };
         Relationships: [];
       };
+      chatbot_config: {
+        Row: {
+          avatar_url: string | null;
+          brand_color: string | null;
+          capture_mode: string;
+          enabled: boolean;
+          follow_up_message: string | null;
+          greeting: string | null;
+          id: number;
+          idle_trigger_seconds: number;
+          knowledge_base: string | null;
+          lead_routing_emails: string | null;
+          model: string;
+          notify_enabled: boolean;
+          persona_name: string;
+          teaser_text: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          avatar_url?: string | null;
+          brand_color?: string | null;
+          capture_mode?: string;
+          enabled?: boolean;
+          follow_up_message?: string | null;
+          greeting?: string | null;
+          id?: number;
+          idle_trigger_seconds?: number;
+          knowledge_base?: string | null;
+          lead_routing_emails?: string | null;
+          model?: string;
+          notify_enabled?: boolean;
+          persona_name?: string;
+          teaser_text?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          avatar_url?: string | null;
+          brand_color?: string | null;
+          capture_mode?: string;
+          enabled?: boolean;
+          follow_up_message?: string | null;
+          greeting?: string | null;
+          id?: number;
+          idle_trigger_seconds?: number;
+          knowledge_base?: string | null;
+          lead_routing_emails?: string | null;
+          model?: string;
+          notify_enabled?: boolean;
+          persona_name?: string;
+          teaser_text?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      chatbot_conversations: {
+        Row: {
+          captured_email: string | null;
+          captured_name: string | null;
+          captured_phone: string | null;
+          created_at: string;
+          handed_off_at: string | null;
+          handoff_reason: string | null;
+          id: string;
+          last_message_at: string;
+          lead_submission_id: string | null;
+          message_count: number;
+          messages: Json;
+          page_url: string | null;
+          prospect_profile: Json | null;
+          prospect_profile_emailed_at: string | null;
+          session_id: string;
+          status: string;
+          user_agent: string | null;
+          visitor_hash: string | null;
+        };
+        Insert: {
+          captured_email?: string | null;
+          captured_name?: string | null;
+          captured_phone?: string | null;
+          created_at?: string;
+          handed_off_at?: string | null;
+          handoff_reason?: string | null;
+          id?: string;
+          last_message_at?: string;
+          lead_submission_id?: string | null;
+          message_count?: number;
+          messages?: Json;
+          page_url?: string | null;
+          prospect_profile?: Json | null;
+          prospect_profile_emailed_at?: string | null;
+          session_id: string;
+          status?: string;
+          user_agent?: string | null;
+          visitor_hash?: string | null;
+        };
+        Update: {
+          captured_email?: string | null;
+          captured_name?: string | null;
+          captured_phone?: string | null;
+          created_at?: string;
+          handed_off_at?: string | null;
+          handoff_reason?: string | null;
+          id?: string;
+          last_message_at?: string;
+          lead_submission_id?: string | null;
+          message_count?: number;
+          messages?: Json;
+          page_url?: string | null;
+          prospect_profile?: Json | null;
+          prospect_profile_emailed_at?: string | null;
+          session_id?: string;
+          status?: string;
+          user_agent?: string | null;
+          visitor_hash?: string | null;
+        };
+        Relationships: [];
+      };
+      chatbot_conversation_flags: {
+        Row: {
+          conversation_id: string;
+          created_at: string;
+          created_by: string | null;
+          flag: string;
+          id: string;
+          note: string | null;
+        };
+        Insert: {
+          conversation_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          flag: string;
+          id?: string;
+          note?: string | null;
+        };
+        Update: {
+          conversation_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          flag?: string;
+          id?: string;
+          note?: string | null;
+        };
+        Relationships: [];
+      };
+      chatbot_learning_runs: {
+        Row: {
+          conversations_scanned: number;
+          error: string | null;
+          finished_at: string | null;
+          id: string;
+          ok: boolean | null;
+          records_written: number;
+          started_at: string;
+        };
+        Insert: {
+          conversations_scanned?: number;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          ok?: boolean | null;
+          records_written?: number;
+          started_at?: string;
+        };
+        Update: {
+          conversations_scanned?: number;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          ok?: boolean | null;
+          records_written?: number;
+          started_at?: string;
+        };
+        Relationships: [];
+      };
+      chatbot_learning_cases: {
+        Row: {
+          case_type: string;
+          confidence: number;
+          conversation_id: string | null;
+          created_at: string;
+          dedupe_key: string;
+          evidence: Json | null;
+          id: string;
+          reason_summary: string;
+          resolved_at: string | null;
+          status: string;
+        };
+        Insert: {
+          case_type: string;
+          confidence?: number;
+          conversation_id?: string | null;
+          created_at?: string;
+          dedupe_key: string;
+          evidence?: Json | null;
+          id?: string;
+          reason_summary: string;
+          resolved_at?: string | null;
+          status?: string;
+        };
+        Update: {
+          case_type?: string;
+          confidence?: number;
+          conversation_id?: string | null;
+          created_at?: string;
+          dedupe_key?: string;
+          evidence?: Json | null;
+          id?: string;
+          reason_summary?: string;
+          resolved_at?: string | null;
+          status?: string;
+        };
+        Relationships: [];
+      };
+      chatbot_follow_up_tasks: {
+        Row: {
+          channel: string;
+          conversation_id: string | null;
+          created_at: string;
+          dedupe_key: string;
+          draft_body: string | null;
+          draft_subject: string | null;
+          due_at: string | null;
+          id: string;
+          learning_case_id: string | null;
+          priority: number;
+          reason_summary: string;
+          status: string;
+          task_type: string;
+        };
+        Insert: {
+          channel?: string;
+          conversation_id?: string | null;
+          created_at?: string;
+          dedupe_key: string;
+          draft_body?: string | null;
+          draft_subject?: string | null;
+          due_at?: string | null;
+          id?: string;
+          learning_case_id?: string | null;
+          priority?: number;
+          reason_summary: string;
+          status?: string;
+          task_type: string;
+        };
+        Update: {
+          channel?: string;
+          conversation_id?: string | null;
+          created_at?: string;
+          dedupe_key?: string;
+          draft_body?: string | null;
+          draft_subject?: string | null;
+          due_at?: string | null;
+          id?: string;
+          learning_case_id?: string | null;
+          priority?: number;
+          reason_summary?: string;
+          status?: string;
+          task_type?: string;
+        };
+        Relationships: [];
+      };
+      chatbot_insights: {
+        Row: {
+          affected_count: number;
+          created_at: string;
+          dedupe_key: string;
+          evidence: Json | null;
+          id: string;
+          impact_score: number;
+          insight_type: string;
+          resolved_at: string | null;
+          status: string;
+          summary: string;
+          title: string;
+        };
+        Insert: {
+          affected_count?: number;
+          created_at?: string;
+          dedupe_key: string;
+          evidence?: Json | null;
+          id?: string;
+          impact_score?: number;
+          insight_type: string;
+          resolved_at?: string | null;
+          status?: string;
+          summary: string;
+          title: string;
+        };
+        Update: {
+          affected_count?: number;
+          created_at?: string;
+          dedupe_key?: string;
+          evidence?: Json | null;
+          id?: string;
+          impact_score?: number;
+          insight_type?: string;
+          resolved_at?: string | null;
+          status?: string;
+          summary?: string;
+          title?: string;
+        };
+        Relationships: [];
+      };
+      chatbot_knowledge_suggestions: {
+        Row: {
+          affected_count: number;
+          applied_at: string | null;
+          created_at: string;
+          dedupe_key: string;
+          id: string;
+          pattern_type: string;
+          source_case_ids: string[] | null;
+          status: string;
+          suggested_text: string;
+        };
+        Insert: {
+          affected_count?: number;
+          applied_at?: string | null;
+          created_at?: string;
+          dedupe_key: string;
+          id?: string;
+          pattern_type: string;
+          source_case_ids?: string[] | null;
+          status?: string;
+          suggested_text: string;
+        };
+        Update: {
+          affected_count?: number;
+          applied_at?: string | null;
+          created_at?: string;
+          dedupe_key?: string;
+          id?: string;
+          pattern_type?: string;
+          source_case_ids?: string[] | null;
+          status?: string;
+          suggested_text?: string;
+        };
+        Relationships: [];
+      };
+      chatbot_site_recommendations: {
+        Row: {
+          created_at: string;
+          dedupe_key: string;
+          id: string;
+          recommendation_type: string;
+          status: string;
+          suggested_body: string;
+          suggested_title: string;
+        };
+        Insert: {
+          created_at?: string;
+          dedupe_key: string;
+          id?: string;
+          recommendation_type: string;
+          status?: string;
+          suggested_body: string;
+          suggested_title: string;
+        };
+        Update: {
+          created_at?: string;
+          dedupe_key?: string;
+          id?: string;
+          recommendation_type?: string;
+          status?: string;
+          suggested_body?: string;
+          suggested_title?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       published_seo_pages: {
