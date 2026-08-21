@@ -442,6 +442,11 @@ export function ChatWidget() {
             if (!frame) continue;
 
             if (frame.t === "text") {
+              // Clears a "finding times…" line whose tool returned no card
+              // (e.g. the calendar was already open) — otherwise it would sit
+              // there through the rest of the turn, suppressing the typing
+              // indicator behind it.
+              setToolStatus(null);
               pending += frame.v;
               // A long reply can outlast the reveal delay — once it does,
               // every further chunk streams in live. A short reply (the

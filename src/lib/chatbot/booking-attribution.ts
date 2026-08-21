@@ -24,7 +24,7 @@ import type { Database, Json } from "@/types/database";
  * Calendly retry a booking we already have.
  */
 
-type AttributionClient = Pick<SupabaseClient<Database>, "from">;
+type AttributionClient = Pick<SupabaseClient<Database>, "from" | "rpc">;
 
 export type BookingAttributionResult =
   | { matched: false }
@@ -54,20 +54,41 @@ export async function applyChatbotBookingAttribution(
   const conversationId = matchedConversationId(event);
   if (!conversationId) return { matched: false };
 
-  const { data, error } = await client
-    .from("chatbot_conversations")
-    .select("id,messages")
-    .eq("id", conversationId)
-    .maybeSingle();
-
-  if (error || !data) {
+  const existing = await loadConversation(client, conversationId);
+  if (!existing) {
     // A utm_content that looks like a conversation id but isn't one — a
     // recycled link, a test booking, a deleted conversation. Not an error.
     return { matched: false };
   }
 
   const canceled = event.eventKind === "invitee.canceled";
-  const messages = toChatbotMessages(data.messages);
+
+  // Calendly retries failed deliveries and does not guarantee ordering, so a
+  // create can arrive AFTER its own cancellation (create delivery fails on a
+  // cold start, the cancel lands, the create is retried). Re-stamping then
+  // would resurrect a cancelled call and count it in callsBooked30d forever.
+  // A cleared call_booked_at with the same booked_event_uri is exactly the
+  // "this event was already cancelled" fingerprint.
+  if (
+    !canceled &&
+    existing.booked_event_uri === event.scheduledEventUri &&
+    existing.call_booked_at === null &&
+    existing.hasV2Columns
+  ) {
+    return { matched: false };
+  }
+
+  // Only clear on a cancellation for the event that is actually booked — a
+  // stale cancel for a previous, already-rebooked event must not wipe the
+  // live one.
+  if (
+    canceled &&
+    existing.hasV2Columns &&
+    existing.booked_event_uri !== null &&
+    existing.booked_event_uri !== event.scheduledEventUri
+  ) {
+    return { matched: false };
+  }
 
   const update: Database["public"]["Tables"]["chatbot_conversations"]["Update"] =
     canceled
@@ -77,36 +98,24 @@ export async function applyChatbotBookingAttribution(
           booked_event_uri: event.scheduledEventUri,
         };
 
+  const applied = await updateTolerantly(client, conversationId, update);
+
   // On a booking, drop a confirmation card into the transcript so a visitor
   // still sitting in the chat sees it land. Skipped when one is already there
   // (Calendly redelivers webhooks) and skipped entirely on a cancellation —
   // rewriting the transcript to say "cancelled" is not this system's job.
-  const alreadyConfirmed = messages.some(
-    (message) =>
-      message.kind === "booking_confirmed" &&
-      message.data?.event_uri === event.scheduledEventUri,
-  );
-  if (!canceled && !alreadyConfirmed) {
-    const confirmation: ChatbotMessage = {
-      role: "assistant",
-      content: "Booked. Check your email for the calendar invite.",
-      ts: new Date().toISOString(),
-      kind: "booking_confirmed",
-      data: {
-        event_uri: event.scheduledEventUri,
-        starts_at: event.eventStartAt,
-      },
-    };
-    // ponytail: read-modify-write on the messages array, so a chat turn
-    // completing in the same second can overwrite this card (the columns
-    // above are never clobbered — persistConversationTurn does not touch
-    // them, so the KPI and the funnel stay correct either way). Move to a
-    // jsonb append in SQL if the card ever goes missing in practice.
-    update.messages = [...messages, confirmation] as unknown as Json;
-    update.message_count = messages.length + 1;
+  if (!canceled) {
+    const messages = toChatbotMessages(existing.messages);
+    const alreadyConfirmed = messages.some(
+      (message) =>
+        message.kind === "booking_confirmed" &&
+        message.data?.event_uri === event.scheduledEventUri,
+    );
+    if (!alreadyConfirmed) {
+      await appendConfirmationCard(client, conversationId, event);
+    }
   }
 
-  const applied = await updateTolerantly(client, conversationId, update);
   if (!applied) return { matched: false };
 
   return {
@@ -114,6 +123,93 @@ export async function applyChatbotBookingAttribution(
     conversationId,
     action: canceled ? "canceled" : "booked",
   };
+}
+
+type ExistingConversation = {
+  messages: Json;
+  call_booked_at: string | null;
+  booked_event_uri: string | null;
+  /** False before the v2 migration is applied — the redelivery guards above cannot run without them. */
+  hasV2Columns: boolean;
+};
+
+async function loadConversation(
+  client: AttributionClient,
+  conversationId: string,
+): Promise<ExistingConversation | null> {
+  const full = await client
+    .from("chatbot_conversations")
+    .select("id,messages,call_booked_at,booked_event_uri")
+    .eq("id", conversationId)
+    .maybeSingle();
+
+  if (!full.error) {
+    if (!full.data) return null;
+    return {
+      messages: full.data.messages,
+      call_booked_at: full.data.call_booked_at,
+      booked_event_uri: full.data.booked_event_uri,
+      hasV2Columns: true,
+    };
+  }
+  if (!isMissingColumnError(full.error.message)) return null;
+
+  const legacy = await client
+    .from("chatbot_conversations")
+    .select("id,messages")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (legacy.error || !legacy.data) return null;
+  return {
+    messages: legacy.data.messages,
+    call_booked_at: null,
+    booked_event_uri: null,
+    hasV2Columns: false,
+  };
+}
+
+/**
+ * Appends via the chatbot_append_message SQL function rather than a
+ * read-modify-write.
+ *
+ * The chat route rewrites the WHOLE messages array once per turn, from a
+ * snapshot taken before its model calls — a window of up to a minute. A
+ * read-then-write here that interleaved with that would delete the visitor's
+ * turn and the assistant's reply outright. The SQL append cannot.
+ *
+ * The card can still be lost the other way (a chat turn's whole-array write
+ * landing after this append overwrites it). That is cosmetic and deliberate:
+ * every consumer of booking state reads call_booked_at, which is written
+ * separately above and is never clobbered.
+ */
+async function appendConfirmationCard(
+  client: AttributionClient,
+  conversationId: string,
+  event: CalendlyWebhookEvent,
+): Promise<void> {
+  const confirmation: ChatbotMessage = {
+    role: "assistant",
+    content: "Booked. Check your email for the calendar invite.",
+    ts: new Date().toISOString(),
+    kind: "booking_confirmed",
+    data: {
+      event_uri: event.scheduledEventUri,
+      starts_at: event.eventStartAt,
+    },
+  };
+
+  const { error } = await client.rpc("chatbot_append_message", {
+    p_conversation_id: conversationId,
+    p_message: confirmation as unknown as Json,
+  });
+  if (error) {
+    // Function not created yet (ships ahead of the migration). The booking is
+    // already recorded; only the in-chat card is missing.
+    console.warn("chatbot: could not append booking confirmation", {
+      conversationId,
+      error: error.message,
+    });
+  }
 }
 
 function matchedConversationId(event: CalendlyWebhookEvent): string | null {
@@ -124,9 +220,9 @@ function matchedConversationId(event: CalendlyWebhookEvent): string | null {
 }
 
 /**
- * Applies the update, retrying without the v2 columns if they do not exist
- * yet. The transcript card is worth writing on its own even before the
- * migration lands — it is what the visitor sees.
+ * Applies the column update, and reports whether it landed. Before the v2
+ * migration is applied there are no columns to write, so this is a no-op that
+ * returns false — the confirmation card is appended separately either way.
  */
 async function updateTolerantly(
   client: AttributionClient,
@@ -148,23 +244,5 @@ async function updateTolerantly(
     return false;
   }
 
-  const {
-    call_booked_at: _bookedAt,
-    booked_event_uri: _eventUri,
-    ...legacyUpdate
-  } = update;
-  if (Object.keys(legacyUpdate).length === 0) return false;
-
-  const legacy = await client
-    .from("chatbot_conversations")
-    .update(legacyUpdate)
-    .eq("id", conversationId);
-  if (legacy.error) {
-    console.warn("chatbot: could not write booking confirmation message", {
-      conversationId,
-      error: legacy.error.message,
-    });
-    return false;
-  }
-  return true;
+  return false;
 }

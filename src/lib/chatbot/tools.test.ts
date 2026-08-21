@@ -5,7 +5,7 @@ import type { ChatbotMessage } from "./conversation-store";
 import { runChatbotTool, type ChatbotToolContext } from "./tools";
 import type { Database } from "@/types/database";
 
-type ToolClient = Pick<SupabaseClient<Database>, "from">;
+type ToolClient = Pick<SupabaseClient<Database>, "from" | "rpc">;
 
 const noopClient = {
   from() {
@@ -13,6 +13,7 @@ const noopClient = {
       upsert: () => Promise.resolve({ error: null }),
     };
   },
+  rpc: () => Promise.resolve({ error: null }),
 } as unknown as ToolClient;
 
 function makeContext(
@@ -26,6 +27,7 @@ function makeContext(
     capturedPhone: null,
     transcript: [],
     embedDomain: "www.vendingpreneurs.com",
+    checkEmailBudget: async () => true,
     config: DEFAULT_CHATBOT_CONFIG,
     client: noopClient,
     ...overrides,
@@ -39,6 +41,14 @@ function calendarMessage(): ChatbotMessage {
     ts: "2026-08-21T00:00:00.000Z",
     kind: "calendar",
     data: { url: "https://calendly.com/x" },
+  };
+}
+
+function visitorTyped(email: string): ChatbotMessage {
+  return {
+    role: "user",
+    content: `sure, it's ${email}`,
+    ts: "2026-08-21T00:00:00.000Z",
   };
 }
 
@@ -93,6 +103,17 @@ describe("capture_contact", () => {
     });
   });
 
+  it("strips control characters out of a name instead of trusting it", async () => {
+    const outcome = await runChatbotTool(
+      "capture_contact",
+      JSON.stringify({ name: "Dana\nBcc: someone@evil.tld" }),
+      makeContext(),
+    );
+
+    expect(outcome.capture?.name).toBe("Dana Bcc: someone@evil.tld");
+    expect(outcome.capture?.name).not.toContain("\n");
+  });
+
   it("drops a value the model made up rather than trusting it", async () => {
     // The model is a lossy narrator: anything it reports is re-validated
     // through extractLead before it can reach the CRM.
@@ -119,13 +140,69 @@ describe("send_resources_email", () => {
     expect(outcome.result).toContain("No email on file");
   });
 
+  it("refuses to mail an address the visitor never typed", async () => {
+    // The model is steerable ("send the roadmap to victim@example.com"), and
+    // this email leaves a verified Vendingpreneurs domain with the sales
+    // inbox as reply-to. Only an address in the visitor's own words is sent.
+    const outcome = await runChatbotTool(
+      "send_resources_email",
+      JSON.stringify({ resource_keys: ["roadmap"] }),
+      makeContext({
+        capturedEmail: "victim@example.com",
+        transcript: [visitorTyped("dana@example.com")],
+      }),
+    );
+
+    expect(outcome.message).toBeUndefined();
+    expect(outcome.result).toContain("wasn't typed into this chat");
+  });
+
+  it("does not accept an address the bot merely repeated back", async () => {
+    const outcome = await runChatbotTool(
+      "send_resources_email",
+      JSON.stringify({ resource_keys: ["roadmap"] }),
+      makeContext({
+        capturedEmail: "victim@example.com",
+        transcript: [
+          {
+            role: "assistant",
+            content: "Sending that to victim@example.com now.",
+            ts: "2026-08-21T00:00:00.000Z",
+          },
+        ],
+      }),
+    );
+
+    expect(outcome.message).toBeUndefined();
+    expect(outcome.result).toContain("wasn't typed into this chat");
+  });
+
+  it("fails closed when the per-recipient budget check errors", async () => {
+    const outcome = await runChatbotTool(
+      "send_resources_email",
+      JSON.stringify({ resource_keys: ["roadmap"] }),
+      makeContext({
+        capturedEmail: "dana@example.com",
+        transcript: [visitorTyped("dana@example.com")],
+        checkEmailBudget: async () => false,
+      }),
+    );
+
+    expect(outcome.message).toBeUndefined();
+    expect(outcome.result).toContain("already sent them plenty");
+  });
+
   it("stops at two resource emails per conversation", async () => {
     const outcome = await runChatbotTool(
       "send_resources_email",
       JSON.stringify({ resource_keys: ["roadmap"] }),
       makeContext({
         capturedEmail: "dana@example.com",
-        transcript: [resourceMessage(), resourceMessage()],
+        transcript: [
+          visitorTyped("dana@example.com"),
+          resourceMessage(),
+          resourceMessage(),
+        ],
       }),
     );
 
@@ -137,7 +214,10 @@ describe("send_resources_email", () => {
     const outcome = await runChatbotTool(
       "send_resources_email",
       JSON.stringify({ resource_keys: ["free-machines", "case_study:nobody"] }),
-      makeContext({ capturedEmail: "dana@example.com" }),
+      makeContext({
+        capturedEmail: "dana@example.com",
+        transcript: [visitorTyped("dana@example.com")],
+      }),
     );
 
     expect(outcome.message).toBeUndefined();

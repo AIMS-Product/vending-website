@@ -59,6 +59,8 @@ export type StreamChatbotReplyOptions = {
   maxOutputTokens?: number;
   /** Omitted or empty means no `tools` key in the request at all. */
   tools?: ChatbotToolDefinition[];
+  /** Overrides STREAM_TIMEOUT_MS — a multi-call turn has to fit inside the route's maxDuration. */
+  timeoutMs?: number;
 };
 
 /**
@@ -95,7 +97,7 @@ export async function streamChatbotReply(
           ? { tools: options.tools, tool_choice: "auto" }
           : {}),
       }),
-      signal: AbortSignal.timeout(STREAM_TIMEOUT_MS),
+      signal: AbortSignal.timeout(options.timeoutMs ?? STREAM_TIMEOUT_MS),
     });
   } catch (error) {
     throw new ChatbotOpenAiError(

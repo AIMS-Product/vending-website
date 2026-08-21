@@ -57,3 +57,62 @@ alter table public.chatbot_unknown_questions enable row level security;
 
 comment on table public.chatbot_unknown_questions is
   'Questions the chatbot self-reported it could not answer confidently (flag_unknown_question tool). Reviewed and answered into the knowledge base at /admin/chatbot/insights. Service-role only.';
+
+-- ---------------------------------------------------------------------------
+-- Helper functions.
+--
+-- Both exist because PostgREST cannot express "modify a value based on its
+-- current value" — an upsert can only set literals, and a jsonb append needs
+-- the existing array. Doing either as read-then-write from the application
+-- opens a lost-update race against the chat route, which rewrites the whole
+-- messages array once per turn from a snapshot taken before the model call.
+-- ---------------------------------------------------------------------------
+
+-- Appends one message to a conversation transcript atomically. The Calendly
+-- webhook uses this to drop in a booking confirmation without ever reading
+-- and rewriting the array, which would delete any turn that landed in
+-- between.
+create or replace function public.chatbot_append_message(
+  p_conversation_id uuid,
+  p_message jsonb
+) returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.chatbot_conversations
+     set messages = coalesce(messages, '[]'::jsonb) || jsonb_build_array(p_message),
+         message_count = jsonb_array_length(coalesce(messages, '[]'::jsonb)) + 1
+   where id = p_conversation_id;
+$$;
+
+comment on function public.chatbot_append_message(uuid, jsonb) is
+  'Atomic single-message append to chatbot_conversations.messages. Used by the Calendly webhook so a booking confirmation can never clobber a concurrent chat turn.';
+
+-- Records a question the bot could not answer, incrementing the ask count on
+-- an existing row instead of overwriting it. `status` is deliberately left
+-- alone on conflict: a dismissed question stays dismissed rather than
+-- reappearing on the insights rail every time someone asks it again.
+create or replace function public.chatbot_log_unknown_question(
+  p_conversation_id uuid,
+  p_question text,
+  p_dedupe_key text
+) returns void
+language sql
+security definer
+set search_path = public
+as $$
+  insert into public.chatbot_unknown_questions
+    (conversation_id, question, dedupe_key)
+  values
+    (p_conversation_id, p_question, p_dedupe_key)
+  on conflict (dedupe_key) do update
+    set ask_count = public.chatbot_unknown_questions.ask_count + 1,
+        last_asked_at = now();
+$$;
+
+comment on function public.chatbot_log_unknown_question(uuid, text, text) is
+  'Upserts a self-reported answer gap, incrementing ask_count on repeat. The insights rail ranks by that count, so it must be a real increment rather than a fixed default.';
+
+revoke all on function public.chatbot_append_message(uuid, jsonb) from public, anon, authenticated;
+revoke all on function public.chatbot_log_unknown_question(uuid, text, text) from public, anon, authenticated;

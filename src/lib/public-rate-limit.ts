@@ -34,6 +34,12 @@ const LIMITS = {
   // only, no fan-out, so it gets the same generous per-minute budget as a
   // chat turn rather than the stricter lead-write budgets.
   chatbot_history: { windowMs: 60 * 1000, max: 60 },
+  // The chatbot's send_resources_email tool — the only path in the app that
+  // emails a visitor rather than the team. Spent per RECIPIENT as well as per
+  // IP, so no single address can be mailed repeatedly from fresh
+  // conversations. Tight on purpose: two sends is the intended ceiling for a
+  // real conversation, four covers a returning visitor over a day.
+  chatbot_resource_email: { windowMs: 24 * 60 * 60 * 1000, max: 4 },
 } as const;
 
 export type PublicRateLimitAction = keyof typeof LIMITS;

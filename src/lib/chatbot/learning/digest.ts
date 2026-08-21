@@ -154,7 +154,10 @@ export async function sendProfileEmailForConversation(
     capturedName: conv.capturedName,
     capturedEmail: conv.capturedEmail,
     capturedPhone: conv.capturedPhone,
-    ...bookingFieldsFor(conv),
+    ...bookingFieldsFor(
+      conv,
+      await fetchBookedConversationIds(client, [conv.id]),
+    ),
     profile,
   };
   const result = await sendChatbotProfileEmail(input, config);
@@ -365,13 +368,17 @@ export async function runChatbotCatchUpDigest(
     if (profile) await storeProfile(client, conv.id, profile);
   }
 
+  const bookedIds = await fetchBookedConversationIds(
+    client,
+    eligible.map((conv) => conv.id),
+  );
   const profileEntries: ChatbotProfileEmailInput[] = eligible.map((conv) => ({
     conversationId: conv.id,
     capturedName: conv.capturedName,
     capturedEmail: conv.capturedEmail,
     capturedPhone: conv.capturedPhone,
     profile: conv.prospectProfile ?? results.get(conv.id) ?? null,
-    ...bookingFieldsFor(conv),
+    ...bookingFieldsFor(conv, bookedIds),
   }));
 
   const emailResult = await sendChatbotDigestEmail(
@@ -407,27 +414,65 @@ export async function runChatbotCatchUpDigest(
 }
 
 /**
- * Booking state for a digest entry. Read off the transcript rather than the
- * call_booked_at column so it works before the v2 migration is applied and
- * needs no change to the queries above — the booking_confirmed message and
- * the column are written by the same webhook, in the same update.
+ * Booking state for a digest entry.
+ *
+ * `call_booked_at` is authoritative: it is the one value the Calendly webhook
+ * writes race-free. The transcript card is only a fallback for the window
+ * before the v2 migration is applied, because the card CAN be lost — a chat
+ * turn rewrites the whole messages array from a pre-model-call snapshot and
+ * can overwrite it. Reading the card alone would put someone who booked ten
+ * minutes ago at the top of the "CALL THESE NOW — they have not booked"
+ * block, which is precisely what this digest exists to avoid.
  */
-function bookingFieldsFor(conversation: {
-  id: string;
-  capturedName: string | null;
-  capturedEmail: string | null;
-  messages: ChatbotMessage[];
-}): { callBooked: boolean; bookingUrl: string | null } {
+function bookingFieldsFor(
+  conversation: {
+    id: string;
+    capturedName: string | null;
+    capturedEmail: string | null;
+    messages: ChatbotMessage[];
+  },
+  bookedIds: ReadonlySet<string>,
+): {
+  callBooked: boolean;
+  bookingUrl: string | null;
+} {
   return {
-    callBooked: conversation.messages.some(
-      (message) => message.kind === "booking_confirmed",
-    ),
+    callBooked:
+      bookedIds.has(conversation.id) ||
+      conversation.messages.some(
+        (message) => message.kind === "booking_confirmed",
+      ),
     bookingUrl: chatbotBookingUrl({
       conversationId: conversation.id,
       name: conversation.capturedName,
       email: conversation.capturedEmail,
     }),
   };
+}
+
+/**
+ * Which of these conversations have a live booked call, read from the
+ * authoritative column in one query. Returns an empty set (not an error)
+ * before the v2 migration is applied, at which point bookingFieldsFor falls
+ * back to the transcript card.
+ */
+async function fetchBookedConversationIds(
+  client: Client,
+  ids: string[],
+): Promise<ReadonlySet<string>> {
+  if (ids.length === 0) return new Set();
+  const { data, error } = await client
+    .from("chatbot_conversations")
+    .select("id")
+    .in("id", ids)
+    .not("call_booked_at", "is", null);
+  if (error) {
+    console.warn("chatbot: booked-call lookup unavailable for the digest", {
+      error: error.message,
+    });
+    return new Set();
+  }
+  return new Set((data ?? []).map((row) => row.id));
 }
 
 async function findCatchUpEligibleConversations(

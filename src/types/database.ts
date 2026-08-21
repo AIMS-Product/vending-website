@@ -2062,6 +2062,21 @@ export type Database = {
         };
         Returns: Json;
       };
+      chatbot_append_message: {
+        Args: {
+          p_conversation_id: string;
+          p_message: Json;
+        };
+        Returns: undefined;
+      };
+      chatbot_log_unknown_question: {
+        Args: {
+          p_conversation_id: string;
+          p_dedupe_key: string;
+          p_question: string;
+        };
+        Returns: undefined;
+      };
       is_app_admin: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;

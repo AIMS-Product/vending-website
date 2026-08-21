@@ -212,8 +212,6 @@ export type ChatbotResourceEmailInput = {
   visitorName: string | null;
   personaName: string;
   resources: ChatbotResource[];
-  /** One line the model wrote about why it's sending these. Sanitized before use. */
-  note: string | null;
   bookingUrl: string | null;
 };
 
@@ -248,8 +246,11 @@ export async function sendChatbotResourceEmail(
   const text = [
     greeting,
     "",
-    input.note?.trim() ||
-      "Here's what I mentioned in the chat — all free, nothing to sign up for.",
+    // Fixed copy, deliberately. An earlier draft let the model write this
+    // line; that turned a verified-domain sender with the sales inbox as
+    // reply-to into 400 characters of attacker-steerable text. The resource
+    // blurbs below already say what these are.
+    "Here's what I mentioned in the chat — all free, nothing to sign up for.",
     "",
     ...input.resources.map(
       (resource) =>

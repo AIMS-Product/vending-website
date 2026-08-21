@@ -29,7 +29,7 @@ import type { Database } from "@/types/database";
  *   record; nothing renders that isn't also stored.
  */
 
-type ToolClient = Pick<SupabaseClient<Database>, "from">;
+type ToolClient = Pick<SupabaseClient<Database>, "from" | "rpc">;
 
 export type ChatbotToolContext = {
   conversationId: string;
@@ -41,6 +41,11 @@ export type ChatbotToolContext = {
   transcript: ChatbotMessage[];
   /** Origin of the page hosting the widget, for the Calendly inline embed. */
   embedDomain: string | null;
+  /**
+   * Per-recipient outbound-email budget, injected so this module does not
+   * reach for the request's IP. Must fail CLOSED — see sendResourcesEmail.
+   */
+  checkEmailBudget: (email: string) => Promise<boolean>;
   config: ChatbotConfig;
   client: ToolClient;
 };
@@ -95,11 +100,6 @@ export const CHATBOT_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] = [
             type: "array",
             items: { type: "string" },
             description: `Which resources to send, max ${MAX_RESOURCES_PER_EMAIL}. Allowed values: ${CHATBOT_RESOURCE_KEYS.join(", ")} — where <slug> is a slug from the case study index.`,
-          },
-          note: {
-            type: "string",
-            description:
-              "One friendly sentence, in your own voice, on why you're sending these. No markdown.",
           },
         },
         required: ["resource_keys"],
@@ -251,7 +251,6 @@ function showBookingCalendar(context: ChatbotToolContext): ChatbotToolOutcome {
 
 const resourcesArgsSchema = z.object({
   resource_keys: z.array(z.string()).min(1).max(10),
-  note: z.string().trim().max(400).nullish(),
 });
 
 async function sendResourcesEmail(
@@ -270,6 +269,34 @@ async function sendResourcesEmail(
     return {
       result:
         "No email on file yet, so nothing was sent. Ask for their email in one short sentence first, then try again.",
+    };
+  }
+
+  // Only ever mail an address the VISITOR typed into the chat themselves.
+  //
+  // capturedEmail can also arrive via capture_contact, i.e. narrated by the
+  // model — and the model is steerable by the visitor ("send the roadmap to
+  // victim@example.com"). Without this check the tool is an open relay:
+  // arbitrary third parties receiving mail from a verified Vendingpreneurs
+  // sender with the sales inbox as reply-to. Requiring the address to appear
+  // in their own message text means the worst case is a visitor mailing
+  // themselves, which the site's lead forms already allow.
+  if (!emailAppearsInVisitorTurns(context)) {
+    return {
+      result:
+        "That address wasn't typed into this chat, so nothing was sent. Ask them to type the email address they want it sent to.",
+    };
+  }
+
+  // Per-recipient budget on top of the per-conversation cap below: the
+  // per-conversation cap alone still allows N conversations x 2 emails at one
+  // address. Fails closed here (unlike the fail-open public limiter) because
+  // an unbounded outbound mailer is worse than a missed resource email.
+  const withinBudget = await context.checkEmailBudget(context.capturedEmail);
+  if (!withinBudget) {
+    return {
+      result:
+        "We've already sent them plenty today, so nothing went out. Offer a call instead.",
     };
   }
 
@@ -307,7 +334,6 @@ async function sendResourcesEmail(
       visitorName: context.capturedName,
       personaName: context.personaName,
       resources,
-      note: parsed.data.note ?? null,
       bookingUrl,
     },
     context.config,
@@ -344,6 +370,21 @@ async function sendResourcesEmail(
   };
 }
 
+/**
+ * True when the captured address appears verbatim in something the visitor
+ * actually typed. Compared case-insensitively against user turns only —
+ * assistant turns are excluded so the model cannot launder an address by
+ * repeating it back and then citing its own message.
+ */
+function emailAppearsInVisitorTurns(context: ChatbotToolContext): boolean {
+  const email = context.capturedEmail?.trim().toLowerCase();
+  if (!email) return false;
+  return context.transcript.some(
+    (message) =>
+      message.role === "user" && message.content.toLowerCase().includes(email),
+  );
+}
+
 // ---------------------------------------------------------------------------
 // capture_contact
 // ---------------------------------------------------------------------------
@@ -355,10 +396,16 @@ const captureArgsSchema = z.object({
 });
 
 /**
- * Structured capture. The model is a lossy narrator, so every value it
- * reports is re-validated through the SAME extractLead() the free-text path
- * uses — a hallucinated or malformed email never reaches Close, it just
- * fails this check and gets dropped.
+ * Structured capture. The model is a lossy narrator, so email and phone are
+ * re-validated through the SAME extractLead() the free-text path uses — a
+ * hallucinated or malformed address never reaches Close, it just fails this
+ * check and gets dropped.
+ *
+ * `name` cannot go through extractLead: that path recognises names from
+ * sentence shapes ("I'm Dana"), and would reject the bare "Dana" this tool
+ * correctly reports. It is sanitized instead — a name is free text on the
+ * capture form too, so this is not a new trust boundary, but it must not
+ * carry newlines or control characters into an email greeting or Close.
  */
 function captureContact(args: unknown): ChatbotToolOutcome {
   const parsed = captureArgsSchema.safeParse(args);
@@ -371,7 +418,7 @@ function captureContact(args: unknown): ChatbotToolOutcome {
   const { name, email, phone } = parsed.data;
   const verifiedEmail = email ? extractLead(email).email : null;
   const verifiedPhone = phone ? extractLead(phone).phone : null;
-  const cleanName = name?.trim() || null;
+  const cleanName = sanitizeName(name);
 
   if (!verifiedEmail && !verifiedPhone && !cleanName) {
     return {
@@ -390,6 +437,18 @@ function captureContact(args: unknown): ChatbotToolOutcome {
     result: `Saved their ${saved.join(" and ")}. Don't repeat it back or thank them for it more than briefly, and never ask for it again.`,
     capture: { name: cleanName, email: verifiedEmail, phone: verifiedPhone },
   };
+}
+
+/** Single-line, printable, length-capped. Names are free text; they are not a licence to inject. */
+function sanitizeName(name: string | null | undefined): string | null {
+  if (!name) return null;
+  const cleaned = name
+
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+  return cleaned || null;
 }
 
 // ---------------------------------------------------------------------------
@@ -414,24 +473,19 @@ async function flagUnknownQuestion(
   const question = parsed.data.question;
   const dedupeKey = unknownQuestionDedupeKey(question);
 
-  // Upsert on the normalized key so the same gap asked a hundred ways is one
-  // row. The count bump is a separate best-effort RPC-free update: losing a
-  // count is harmless, losing the row is not.
-  const { error } = await context.client
-    .from("chatbot_unknown_questions")
-    .upsert(
-      {
-        conversation_id: context.conversationId,
-        question,
-        dedupe_key: dedupeKey,
-        last_asked_at: new Date().toISOString(),
-      },
-      { onConflict: "dedupe_key", ignoreDuplicates: false },
-    );
+  // Upsert-with-increment lives in SQL (chatbot_log_unknown_question) because
+  // PostgREST cannot express `ask_count = ask_count + 1` — a plain upsert
+  // silently leaves every row at the column default, which is exactly what
+  // the insights rail sorts by. Fails soft: before this migration is applied
+  // neither the table nor the function exists, and the visitor's turn must
+  // not care either way.
+  const { error } = await context.client.rpc("chatbot_log_unknown_question", {
+    p_conversation_id: context.conversationId,
+    p_question: question,
+    p_dedupe_key: dedupeKey,
+  });
 
   if (error) {
-    // Table not applied yet (this migration ships ahead of being run) — the
-    // visitor's turn must not care.
     console.warn("chatbot: could not log unknown question", {
       conversationId: context.conversationId,
       error: error.message,
