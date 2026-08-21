@@ -206,7 +206,7 @@ export function TeaserBubble({
   onDismiss: () => void;
 }) {
   return (
-    <div className="flex max-w-[240px] items-start gap-2 rounded-[8px] border-2 border-[#111111] bg-white px-3 py-2 shadow-[4px_4px_0_#111111]">
+    <div className="flex max-w-[290px] items-start gap-2 rounded-[8px] border-2 border-[#111111] bg-white px-3 py-2 shadow-[4px_4px_0_#111111]">
       {avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- small teaser avatar, no responsive sizing needed
         <img
@@ -220,7 +220,7 @@ export function TeaserBubble({
       <button
         type="button"
         onClick={onOpen}
-        className="flex-1 text-left text-sm text-[#111111]"
+        className="flex-1 text-left text-sm leading-snug text-[#111111]"
       >
         {text}
       </button>

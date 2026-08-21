@@ -544,6 +544,13 @@ export function ChatWidget() {
 
   const brandColor = config.brandColor || DEFAULT_BRAND_COLOR;
 
+  // The teaser bubble says exactly what Mia says when you open the panel.
+  // They were two separately-edited fields, so they drifted: the bubble
+  // promised one thing and the first message in the chat said another. The
+  // greeting is the real opening line, so it wins; teaserText only shows if
+  // no greeting is set at all.
+  const teaserMessage = config.greeting || config.teaserText;
+
   return (
     <div
       className={cn(
@@ -554,9 +561,9 @@ export function ChatWidget() {
         open && "max-sm:inset-0 max-sm:items-stretch max-sm:gap-0",
       )}
     >
-      {!open && showTeaser && config.teaserText ? (
+      {!open && showTeaser && teaserMessage ? (
         <TeaserBubble
-          text={config.teaserText}
+          text={teaserMessage}
           avatarUrl={config.avatarUrl}
           onOpen={() => {
             setShowTeaser(false);

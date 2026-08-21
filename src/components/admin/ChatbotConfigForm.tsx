@@ -226,7 +226,9 @@ export function ChatbotConfigForm({ config }: { config: ChatbotConfig }) {
             <div className="grid gap-3 sm:grid-cols-3">
               <label className={adminLabelClass}>
                 Teaser text{" "}
-                <span className="text-ui-text-subtle">(optional)</span>
+                <span className="text-ui-text-subtle">
+                  (fallback only — the bubble shows the greeting)
+                </span>
                 <input
                   name="teaserText"
                   value={values.teaserText}
@@ -415,9 +417,9 @@ export function ChatbotConfigForm({ config }: { config: ChatbotConfig }) {
             className="flex flex-col items-center gap-2"
             style={{ transform: "scale(0.9)", transformOrigin: "top center" }}
           >
-            {values.teaserText.trim() ? (
+            {(values.greeting || values.teaserText).trim() ? (
               <TeaserBubble
-                text={values.teaserText}
+                text={values.greeting || values.teaserText}
                 avatarUrl={previewAvatarUrl}
                 onOpen={() => {}}
                 onDismiss={() => {}}
