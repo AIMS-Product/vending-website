@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { BenefitIcon } from "@/components/sections/Benefits";
+import { Button } from "@/components/ui/Button";
 import { benefits } from "@/lib/content/home";
 import { benefitsV2 } from "@/lib/content/home-v2";
 import { cn } from "@/lib/utils";
@@ -101,6 +102,12 @@ export function BenefitsV2() {
             );
           })}
         </ul>
+
+        <div data-reveal className="mt-12">
+          <Button href={benefitsV2.teamCta.href} variant="ghost" showArrow>
+            {benefitsV2.teamCta.label}
+          </Button>
+        </div>
       </div>
     </section>
   );

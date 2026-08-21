@@ -17,20 +17,25 @@ export const heroV2 = {
     [{ text: "freedom", highlight: true }],
   ] satisfies ReadonlyArray<ReadonlyArray<HeroTitleSegment>>,
   badges: [
-    { value: "850+", label: "Entrepreneurs launched", tilt: "-5deg" },
-    { value: "$3M+", label: "In machine sales", tilt: "4deg" },
+    {
+      value: "$36K/mo",
+      label: "Graham & Katie · After one year",
+      tilt: "-4deg",
+    },
   ],
-  secondaryCta: { label: "See real results", href: "#success-stories" },
+  secondaryCta: {
+    label: "Get your free 90-day roadmap",
+    href: "/vending-route-blueprint",
+  },
 } as const;
 
 export const tickerV2 = {
   srSummary:
-    "Vendingpreneurs: 850+ entrepreneurs launched. $3M+ in machine sales. 3,000+ vending locations secured. Beginner friendly.",
+    "Vendingpreneurs: passive income, done right. Real people, real results. Trusted brands in our machines. Beginner friendly.",
   items: [
     "Passive income, done right",
-    "850+ entrepreneurs launched",
-    "$3M+ in machine sales",
-    "3,000+ locations secured",
+    "Real people, real results",
+    "Trusted brands in our machines",
     "Beginner friendly",
   ],
 } as const;
@@ -47,6 +52,7 @@ export const programV2 = {
 
 export const benefitsV2 = {
   eyebrow: "Why Vendingpreneurs",
+  teamCta: { label: "Meet our team", href: "/about" },
 } as const;
 
 export const testimonialsV2 = {

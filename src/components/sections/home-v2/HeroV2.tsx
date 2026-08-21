@@ -96,9 +96,7 @@ export function HeroV2() {
             <HeroBadge
               key={badge.label}
               badge={badge}
-              className={
-                index === 0 ? "top-6 -left-4 lg:-left-8" : "right-5 -bottom-5"
-              }
+              className="right-5 -bottom-5"
               delay={`${index * 0.7}s`}
             />
           ))}

@@ -46,6 +46,13 @@ export function StatsBand() {
             </div>
           ))}
         </dl>
+
+        <p
+          data-reveal
+          className="mt-10 max-w-2xl text-sm leading-6 font-semibold text-[#111111]/70"
+        >
+          {accelerator.statsDisclaimer}
+        </p>
       </div>
     </section>
   );

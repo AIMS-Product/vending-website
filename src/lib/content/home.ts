@@ -32,6 +32,10 @@ export const hero = {
   cta: { label: "Book Your Call", href: "/apply" },
 } as const;
 
+export const partnerStrip = {
+  title: "Trusted brands in our machines",
+} as const;
+
 /** Order matches the live Webflow strip: 365, Alani, Cantaloupe, Micromart, PepsiCo, Prime, Poppi, Doritos. */
 export const partnerLogos: ReadonlyArray<PartnerLogo> = [
   {
@@ -123,10 +127,12 @@ export const accelerator = {
     alt: "An entrepreneur using a Cantaloupe-branded vending kiosk",
   },
   stats: [
-    { value: "850+", label: "Entrepreneurs launched" },
-    { value: "$3M+", label: "Snack/Drink sales in Vendingpreneur machines" },
-    { value: "3,000+", label: "Vending locations w/our guidance" },
+    { value: "10-15", label: "Hours a week to run your route" },
+    { value: "< 30", label: "Days to place your first machine" },
+    { value: "$1.5K-$5K", label: "In revenue generated per month" },
   ] satisfies ReadonlyArray<Stat>,
+  statsDisclaimer:
+    "*Based on the average results of Vendingpreneur community members. Individual outcomes depend on personal investment, your market, and adherence to the program.",
   points: [
     "How to start a vending business with little upfront investment compared to Real Estate",
     "Which vending machines and products generate the highest profits",
