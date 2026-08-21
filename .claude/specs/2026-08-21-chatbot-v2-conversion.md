@@ -98,3 +98,65 @@ New/changed:
 4. `send_resources_email` + resource catalog + templates.
 5. `capture_contact` + `flag_unknown_question` + insights "unanswered" rail.
 6. Mobile sheet + polish + adversarial review + preview push.
+
+---
+
+## Build status (2026-08-21)
+
+All six items built on `feat/vp-chatbot`. Nothing pushed, nothing deployed.
+
+Commits: `eb78ade` (tools + in-chat booking + attribution), `9119b8a`
+(unanswered-question loop, call-first digest, mobile sheet), `a6bde88` (smoke
+checks), `a23bebd` (adversarial-review fixes).
+
+Verified locally: typecheck clean, 1590 tests pass, both chatbot smoke
+scripts pass, production build succeeds.
+
+### What changed from the plan
+
+- The chat stream is now **NDJSON frames**, not raw text. v1 streamed plain
+  text, which had nowhere to put a calendar or a resource card. Frames are
+  `text` / `flush` / `msg` / `status`, emitted in transcript order. Both ends
+  are ours, so this is a contained contract change.
+- **One tool round per turn, not two.** Call 1 may use tools; call 2 is given
+  no tools at all, so it can only answer in prose. That is what bounds the
+  turn and guarantees it never ends on an unanswered tool call.
+- `send_resources_email` does **not** let the model write the covering
+  sentence. An earlier draft did; review found that turned a verified-domain
+  sender with the sales inbox as reply-to into attacker-steerable text. The
+  copy is fixed, the recipient must have typed their own address into the
+  chat, and a per-recipient budget (4/day) gates every send and fails closed.
+- The Calendly webhook appends its confirmation card through a SQL function
+  rather than rewriting the transcript array — a read-modify-write there would
+  delete any chat turn that landed during the request.
+
+### Before this goes live
+
+1. **Apply the migration by hand** —
+   `supabase/migrations/20260821140000_chatbot_v2_conversion.sql`. It adds two
+   columns, one table, and **two functions**
+   (`chatbot_append_message`, `chatbot_log_unknown_question`). The code
+   tolerates all of it being absent, but until it runs: booked-call KPIs read
+   zero, the funnel's third step stays at zero, the Booked badge never shows,
+   and no unanswered question is recorded.
+2. **Point the Calendly webhook at the deployment** and confirm
+   `CALENDLY_WEBHOOK_SIGNING_KEY` is set there. No signing key means every
+   webhook 401s and no booking is ever attributed.
+3. **Test the booking loop end to end on preview**: open the chat, get the
+   calendar, book a real slot, then check the conversation row shows
+   `call_booked_at` and the admin funnel's booked count moves. This is the one
+   thing that cannot be proven locally.
+4. Confirm `NEXT_PUBLIC_DEFAULT_CALENDLY_URL` on the deployment matches the
+   event the sales team actually watches.
+
+### Known ceilings (deliberate, documented in code)
+
+- The in-chat booking confirmation card can be overwritten by a chat turn that
+  completes just after it (whole-array transcript write). Cosmetic only —
+  every consumer of booking state reads `call_booked_at`, which is written
+  separately and never clobbered.
+- The exit-intent calendar is injected client-side, so it is not in the stored
+  transcript and disappears on navigation. Attribution still holds: the URL
+  carries the conversation id.
+- Two OpenAI calls per turn doubles the worst-case output ceiling per turn
+  (700 -> 1400 tokens). `maxDuration = 90` bounds the wall clock.
