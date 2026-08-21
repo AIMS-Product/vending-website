@@ -8,7 +8,8 @@ const ALLOWED_HOSTS = new Set([
   "www.vendingpreneurs.com",
 ]);
 
-function isSafeChatLinkUrl(url: string): boolean {
+/** Exported for reuse wherever an admin-authored URL needs the same same-site check (e.g. quick_actions). */
+export function isSafeChatLinkUrl(url: string): boolean {
   if (url.startsWith("/")) return true;
   try {
     const parsed = new URL(url);

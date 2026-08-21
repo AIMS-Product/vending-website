@@ -4,8 +4,9 @@ import { revalidateTag, unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { config as envConfig } from "@/lib/config";
+import { isSafeChatLinkUrl } from "@/lib/chatbot/parse-chat-links";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Database } from "@/types/database";
+import type { Database, Json } from "@/types/database";
 
 type ChatbotConfigClient = Pick<SupabaseClient<Database>, "from">;
 type ServiceDeps = { client?: ChatbotConfigClient };
@@ -18,6 +19,12 @@ export class ChatbotConfigError extends Error {
 }
 
 export type ChatbotCaptureMode = "pre_chat" | "on_intent" | "off";
+
+export type ChatbotQuickAction = { label: string; url: string };
+
+/** Cap applied both on save (chatbotConfigInputSchema) and on read (parseQuickActions/parseStarterQuestions) — a hand-edited row can never exceed it either. */
+const MAX_QUICK_ACTIONS = 5;
+const MAX_STARTER_QUESTIONS = 5;
 
 export type ChatbotConfig = {
   enabled: boolean;
@@ -33,6 +40,8 @@ export type ChatbotConfig = {
   model: string;
   leadRoutingEmails: string | null;
   notifyEnabled: boolean;
+  starterQuestions: string[];
+  quickActions: ChatbotQuickAction[];
   updatedAt: string;
 };
 
@@ -52,6 +61,8 @@ export type PublicChatbotConfig = Pick<
   | "brandColor"
   | "idleTriggerSeconds"
   | "captureMode"
+  | "starterQuestions"
+  | "quickActions"
 >;
 
 /**
@@ -74,6 +85,8 @@ export const DEFAULT_CHATBOT_CONFIG: ChatbotConfig = {
   model: "gpt-4o-mini",
   leadRoutingEmails: null,
   notifyEnabled: true,
+  starterQuestions: [],
+  quickActions: [],
   updatedAt: new Date(0).toISOString(),
 };
 
@@ -83,7 +96,7 @@ export const CHATBOT_CONFIG_CACHE_TAG = "chatbot-config";
 export const DEFAULT_CHATBOT_AVATAR_URL = "/chatbot/mia.jpg";
 
 const CONFIG_FIELDS =
-  "enabled, persona_name, avatar_url, greeting, follow_up_message, teaser_text, brand_color, idle_trigger_seconds, capture_mode, knowledge_base, model, lead_routing_emails, notify_enabled, updated_at" as const;
+  "enabled, persona_name, avatar_url, greeting, follow_up_message, teaser_text, brand_color, idle_trigger_seconds, capture_mode, knowledge_base, model, lead_routing_emails, notify_enabled, starter_questions, quick_actions, updated_at" as const;
 
 // Matches CONFIG_FIELDS exactly (omits `id`, the only column not selected).
 type ChatbotConfigRow = Omit<
@@ -148,6 +161,8 @@ export function toPublicChatbotConfig(
     brandColor: config.brandColor,
     idleTriggerSeconds: config.idleTriggerSeconds,
     captureMode: config.captureMode,
+    starterQuestions: config.starterQuestions,
+    quickActions: config.quickActions,
   };
 }
 
@@ -170,6 +185,20 @@ const chatbotConfigInputSchema = z.object({
   model: z.string().trim().min(1).max(80),
   leadRoutingEmails: z.string().trim().max(500).nullable(),
   notifyEnabled: z.boolean(),
+  starterQuestions: z
+    .array(z.string().trim().min(1).max(200))
+    .max(MAX_STARTER_QUESTIONS),
+  quickActions: z
+    .array(
+      z.object({
+        label: z.string().trim().min(1).max(60),
+        url: z.string().trim().min(1).max(500).refine(isSafeChatLinkUrl, {
+          message:
+            "Quick action URL must be a relative path or link to vendingpreneurs.com.",
+        }),
+      }),
+    )
+    .max(MAX_QUICK_ACTIONS),
 });
 
 export type ChatbotConfigInput = z.infer<typeof chatbotConfigInputSchema>;
@@ -232,6 +261,8 @@ function rowToConfig(row: ChatbotConfigRow): ChatbotConfig {
     model: row.model,
     leadRoutingEmails: row.lead_routing_emails,
     notifyEnabled: row.notify_enabled,
+    starterQuestions: parseStarterQuestions(row.starter_questions),
+    quickActions: parseQuickActions(row.quick_actions),
     updatedAt: row.updated_at,
   };
 }
@@ -253,10 +284,43 @@ function configToRow(
     model: input.model,
     lead_routing_emails: input.leadRoutingEmails,
     notify_enabled: input.notifyEnabled,
+    starter_questions: input.starterQuestions as unknown as Json,
+    quick_actions: input.quickActions as unknown as Json,
     updated_at: new Date().toISOString(),
   };
 }
 
 function isCaptureMode(value: string): value is ChatbotCaptureMode {
   return value === "pre_chat" || value === "on_intent" || value === "off";
+}
+
+/** Defensive read of the stored `starter_questions` jsonb — never throws on a shape surprise (bad hand-edited data must not crash the widget). */
+function parseStarterQuestions(value: Json | null): string[] {
+  if (!Array.isArray(value)) return [];
+  const questions = value.filter(
+    (entry): entry is string =>
+      typeof entry === "string" && entry.trim().length > 0,
+  );
+  return questions.slice(0, MAX_STARTER_QUESTIONS);
+}
+
+/** Defensive read of the stored `quick_actions` jsonb — drops any entry with a missing/malformed field or an unsafe URL rather than throwing. */
+function parseQuickActions(value: Json | null): ChatbotQuickAction[] {
+  if (!Array.isArray(value)) return [];
+  const actions: ChatbotQuickAction[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+    const label = (entry as Record<string, unknown>).label;
+    const url = (entry as Record<string, unknown>).url;
+    if (
+      typeof label === "string" &&
+      label.trim() &&
+      typeof url === "string" &&
+      url.trim() &&
+      isSafeChatLinkUrl(url.trim())
+    ) {
+      actions.push({ label: label.trim(), url: url.trim() });
+    }
+  }
+  return actions.slice(0, MAX_QUICK_ACTIONS);
 }

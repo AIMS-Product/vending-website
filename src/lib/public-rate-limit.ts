@@ -30,6 +30,10 @@ const LIMITS = {
   // everyone else — this budget is per-IP and only spent on conversation
   // creation, so it never throttles an ongoing chat.
   chatbot_new_conversation: { windowMs: 60 * 60 * 1000, max: 15 },
+  // Transcript rehydration on page navigation (see history/route.ts) — read
+  // only, no fan-out, so it gets the same generous per-minute budget as a
+  // chat turn rather than the stricter lead-write budgets.
+  chatbot_history: { windowMs: 60 * 1000, max: 60 },
 } as const;
 
 export type PublicRateLimitAction = keyof typeof LIMITS;

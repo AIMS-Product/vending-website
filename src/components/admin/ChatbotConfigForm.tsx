@@ -15,12 +15,14 @@ import {
   adminSectionTitleClass,
   adminTextareaClass,
 } from "@/components/admin/AdminUi";
-import type { ChatbotConfig } from "@/lib/chatbot/config";
+import type { ChatbotConfig, ChatbotQuickAction } from "@/lib/chatbot/config";
+import { isSafeChatLinkUrl } from "@/lib/chatbot/parse-chat-links";
 
 const initialState: ChatbotActionState = { status: "idle" };
 
 const KB_MAX_CHARS = 20_000;
 const MODEL_OPTIONS = ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"];
+const MAX_LIST_ITEMS = 5;
 
 type Values = {
   enabled: boolean;
@@ -54,6 +56,12 @@ function initialValues(config: ChatbotConfig): Values {
 
 export function ChatbotConfigForm({ config }: { config: ChatbotConfig }) {
   const [values, setValues] = useState(() => initialValues(config));
+  const [starterQuestions, setStarterQuestions] = useState<string[]>(
+    () => config.starterQuestions,
+  );
+  const [quickActions, setQuickActions] = useState<ChatbotQuickAction[]>(
+    () => config.quickActions,
+  );
   const [state, formAction] = useActionState(
     saveChatbotConfigAction,
     initialState,
@@ -91,6 +99,16 @@ export function ChatbotConfigForm({ config }: { config: ChatbotConfig }) {
           {config.notifyEnabled ? (
             <input type="hidden" name="notifyEnabled" value="on" />
           ) : null}
+          <input
+            type="hidden"
+            name="starterQuestions"
+            value={JSON.stringify(starterQuestions)}
+          />
+          <input
+            type="hidden"
+            name="quickActions"
+            value={JSON.stringify(quickActions)}
+          />
           <div className="border-ui-line flex flex-wrap items-center justify-between gap-3 border-b p-4">
             <div>
               <h2 className={adminSectionTitleClass}>Chatbot</h2>
@@ -256,6 +274,29 @@ export function ChatbotConfigForm({ config }: { config: ChatbotConfig }) {
                 className={adminTextareaClass}
               />
             </label>
+
+            <h2 className={`${adminSectionTitleClass} mt-2`}>
+              Starter questions{" "}
+              <span className="text-ui-text-subtle font-normal">
+                (tappable chips shown before the visitor&apos;s first message,
+                max {MAX_LIST_ITEMS})
+              </span>
+            </h2>
+            <StarterQuestionsEditor
+              value={starterQuestions}
+              onChange={setStarterQuestions}
+            />
+
+            <h2 className={`${adminSectionTitleClass} mt-2`}>
+              Quick actions{" "}
+              <span className="text-ui-text-subtle font-normal">
+                (button row under the header, max {MAX_LIST_ITEMS})
+              </span>
+            </h2>
+            <QuickActionsEditor
+              value={quickActions}
+              onChange={setQuickActions}
+            />
           </div>
 
           <div className="border-ui-line flex flex-wrap items-center justify-end gap-3 border-t p-4">
@@ -316,6 +357,115 @@ export function ChatbotConfigForm({ config }: { config: ChatbotConfig }) {
           </div>
         </div>
       </aside>
+    </div>
+  );
+}
+
+function StarterQuestionsEditor({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  return (
+    <div className="grid gap-2">
+      {value.map((question, index) => (
+        <div key={index} className="flex items-center gap-2">
+          <input
+            value={question}
+            onChange={(event) =>
+              onChange(
+                value.map((v, i) => (i === index ? event.target.value : v)),
+              )
+            }
+            placeholder="How much does it cost to start?"
+            className={`${adminInputClass} flex-1`}
+          />
+          <button
+            type="button"
+            onClick={() => onChange(value.filter((_, i) => i !== index))}
+            className="text-ui-text-subtle text-xs font-medium hover:text-red-600"
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+      {value.length < MAX_LIST_ITEMS ? (
+        <button
+          type="button"
+          onClick={() => onChange([...value, ""])}
+          className="text-ui-text-subtle hover:text-ui-text w-fit text-xs font-medium underline underline-offset-2"
+        >
+          + Add question
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function QuickActionsEditor({
+  value,
+  onChange,
+}: {
+  value: ChatbotQuickAction[];
+  onChange: (next: ChatbotQuickAction[]) => void;
+}) {
+  const update = (index: number, patch: Partial<ChatbotQuickAction>) =>
+    onChange(
+      value.map((action, i) =>
+        i === index ? { ...action, ...patch } : action,
+      ),
+    );
+
+  return (
+    <div className="grid gap-2">
+      {value.map((action, index) => {
+        const urlIsValid =
+          !action.url.trim() || isSafeChatLinkUrl(action.url.trim());
+        return (
+          <div
+            key={index}
+            className="grid gap-1 sm:grid-cols-[1fr_1.4fr_auto] sm:items-start sm:gap-2"
+          >
+            <input
+              value={action.label}
+              onChange={(event) => update(index, { label: event.target.value })}
+              placeholder="Book a call"
+              className={adminInputClass}
+            />
+            <div>
+              <input
+                value={action.url}
+                onChange={(event) => update(index, { url: event.target.value })}
+                placeholder="/book-now"
+                className={adminInputClass}
+              />
+              {!urlIsValid ? (
+                <p className="mt-1 text-xs text-red-600">
+                  Must be a relative path or link to vendingpreneurs.com.
+                </p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={() => onChange(value.filter((_, i) => i !== index))}
+              className="text-ui-text-subtle text-xs font-medium hover:text-red-600"
+            >
+              Remove
+            </button>
+          </div>
+        );
+      })}
+      {value.length < MAX_LIST_ITEMS ? (
+        <button
+          type="button"
+          onClick={() => onChange([...value, { label: "", url: "" }])}
+          className="text-ui-text-subtle hover:text-ui-text w-fit text-xs font-medium underline underline-offset-2"
+        >
+          + Add action
+        </button>
+      ) : null}
     </div>
   );
 }

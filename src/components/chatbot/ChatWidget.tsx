@@ -18,12 +18,20 @@ import {
   LauncherButton,
   MessageInput,
   PanelHeader,
+  QuickActionsBar,
+  StarterQuestionChips,
   TeaserBubble,
 } from "@/components/chatbot/ChatLauncher";
+import type { ChatbotQuickAction } from "@/lib/chatbot/config";
 
 const SESSION_STORAGE_KEY = "vp_chat_session_id";
 const TEASER_DISMISSED_KEY = "vp_chat_teaser_dismissed";
 const CAPTURED_KEY = "vp_chat_captured";
+// Persisted so a page navigation (which remounts this component and wipes
+// React state) doesn't close an open panel or re-offer a capture card the
+// visitor already saw — see spec item 1.
+const OPEN_KEY = "vp_chat_open";
+const CAPTURE_OFFERED_KEY = "vp_chat_capture_offered";
 const DEFAULT_BRAND_COLOR = "#f47b3b";
 const ON_INTENT_DELAY_MS = 800;
 const LOOSE_EMAIL_PATTERN = /[^\s@]+@[^\s@]+\.[^\s@]+/;
@@ -45,6 +53,14 @@ type PublicChatbotConfig = {
   brandColor: string | null;
   idleTriggerSeconds: number;
   captureMode: "pre_chat" | "on_intent" | "off";
+  starterQuestions: string[];
+  quickActions: ChatbotQuickAction[];
+};
+
+type ChatHistoryResponse = {
+  messages: ChatDisplayMessage[];
+  status: string;
+  captured: boolean;
 };
 
 /**
@@ -55,26 +71,38 @@ type PublicChatbotConfig = {
 export function ChatWidget() {
   const pathname = usePathname() ?? "/";
   const [config, setConfig] = useState<PublicChatbotConfig | null>(null);
-  const [open, setOpen] = useState(false);
+  // Lazy initializers below read sessionStorage exactly once, before first
+  // paint, so a page navigation (which fully remounts this component) does
+  // not visibly close the panel, re-run the greeting, or forget what the
+  // visitor already dismissed/completed. Safe under SSR too — readSessionFlag's
+  // try/catch absorbs the ReferenceError from a missing `window`.
+  const [open, setOpenState] = useState(() => readSessionFlag(OPEN_KEY));
   const [showTeaser, setShowTeaser] = useState(false);
   const [messages, setMessages] = useState<ChatDisplayMessage[]>([]);
   const [streamingText, setStreamingText] = useState<string | null>(null);
   const [isWaiting, setIsWaiting] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  // Lazy initializer, not an effect: reads sessionStorage exactly once,
-  // before first paint. Safe under SSR too — readSessionFlag's try/catch
-  // absorbs the ReferenceError from a missing `window`.
   const [captured, setCaptured] = useState(() => readSessionFlag(CAPTURED_KEY));
   const [showInlineCapture, setShowInlineCapture] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Gates the greeting effect until the history fetch below resolves (found
+  // or not) — otherwise a returning visitor would see the greeting flash
+  // before their real transcript replaces it.
+  const [historyLoaded, setHistoryLoaded] = useState(false);
 
   const sessionIdRef = useRef<string | null>(null);
   const assistantReplyCountRef = useRef(0);
-  const hasOfferedCaptureRef = useRef(false);
+  const hasOfferedCaptureRef = useRef(readSessionFlag(CAPTURE_OFFERED_KEY));
   const hasGreetedRef = useRef(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+
+  const setOpen = useCallback((value: boolean) => {
+    setOpenState(value);
+    if (value) writeSessionFlag(OPEN_KEY);
+    else clearSessionFlag(OPEN_KEY);
+  }, []);
 
   // Admin pages never render the widget (see `enabled` below) — skip the
   // fetch entirely there too, so admin page loads make zero chatbot
@@ -87,10 +115,42 @@ export function ChatWidget() {
       .catch(() => setConfig(null));
   }, [isAdminRoute]);
 
+  // Session id + transcript rehydration. The conversation row is already
+  // authoritative server-side (see conversation-store.ts) — this just reads
+  // it back so a page navigation doesn't wipe what the visitor already said.
+  // A brand-new session id 404s harmlessly (no row yet).
   useEffect(() => {
     if (isAdminRoute) return;
-    sessionIdRef.current = readOrCreateSessionId();
+    const sessionId = readOrCreateSessionId();
+    sessionIdRef.current = sessionId;
     ensureVisitorCookie();
+
+    let cancelled = false;
+    fetch(`/api/chatbot/history?sessionId=${encodeURIComponent(sessionId)}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: ChatHistoryResponse | null) => {
+        if (cancelled) return;
+        if (data && data.messages.length > 0) {
+          setMessages(data.messages);
+          // The greeting/follow-up are never persisted server-side (see
+          // build-system-prompt/conversation-store) — they're a client-only
+          // prefix that only makes sense on a truly empty transcript, so a
+          // returning visitor skips straight to their real history instead
+          // of seeing the welcome message replay.
+          hasGreetedRef.current = true;
+        }
+        if (data?.captured) {
+          setCaptured(true);
+          writeSessionFlag(CAPTURED_KEY);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setHistoryLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [isAdminRoute]);
 
   const enabled = Boolean(config?.enabled) && !isAdminRoute;
@@ -117,7 +177,7 @@ export function ChatWidget() {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, [open, setOpen]);
 
   const needsGate = config?.captureMode === "pre_chat" && !captured;
 
@@ -128,7 +188,14 @@ export function ChatWidget() {
   // still reads as instant, 600ms for the follow-up is the deliberate beat
   // the spec calls for.
   useEffect(() => {
-    if (!open || needsGate || hasGreetedRef.current || !config) return;
+    if (
+      !open ||
+      needsGate ||
+      hasGreetedRef.current ||
+      !config ||
+      !historyLoaded
+    )
+      return;
     hasGreetedRef.current = true;
     const timers: ReturnType<typeof setTimeout>[] = [];
     const followUpMessage = config.followUpMessage;
@@ -163,7 +230,7 @@ export function ChatWidget() {
       showFollowUpTyping();
     }
     return () => timers.forEach(clearTimeout);
-  }, [open, needsGate, config]);
+  }, [open, needsGate, config, historyLoaded]);
 
   const maybeOfferInlineCapture = useCallback(() => {
     if (
@@ -175,6 +242,7 @@ export function ChatWidget() {
       return;
     }
     hasOfferedCaptureRef.current = true;
+    writeSessionFlag(CAPTURE_OFFERED_KEY);
     setTimeout(() => setShowInlineCapture(true), ON_INTENT_DELAY_MS);
   }, [config?.captureMode, captured]);
 
@@ -289,6 +357,7 @@ export function ChatWidget() {
       {!open && showTeaser && config.teaserText ? (
         <TeaserBubble
           text={config.teaserText}
+          avatarUrl={config.avatarUrl}
           onOpen={() => {
             setShowTeaser(false);
             setOpen(true);
@@ -315,6 +384,7 @@ export function ChatWidget() {
             brandColor={brandColor}
             onClose={() => setOpen(false)}
           />
+          <QuickActionsBar actions={config.quickActions} />
 
           {needsGate ? (
             <ChatCaptureForm
@@ -350,6 +420,12 @@ export function ChatWidget() {
                 <p className="px-4 pb-1 text-xs font-bold text-red-600">
                   {error}
                 </p>
+              ) : null}
+              {!messages.some((message) => message.role === "user") ? (
+                <StarterQuestionChips
+                  questions={config.starterQuestions}
+                  onSelect={sendMessage}
+                />
               ) : null}
               <MessageInput
                 brandColor={brandColor}
@@ -414,6 +490,14 @@ function readSessionFlag(key: string): boolean {
 function writeSessionFlag(key: string): void {
   try {
     window.sessionStorage.setItem(key, "1");
+  } catch {
+    // ignore
+  }
+}
+
+function clearSessionFlag(key: string): void {
+  try {
+    window.sessionStorage.removeItem(key);
   } catch {
     // ignore
   }

@@ -1,9 +1,13 @@
 /**
  * Presentational pieces split out of ChatWidget.tsx to keep that file under
  * the house ~400-line guideline: the panel header, message input bar,
- * closed-state launcher bubble, idle teaser bubble, and their icons. No
- * state of their own beyond the form input — ChatWidget owns everything.
+ * closed-state launcher bubble, idle teaser bubble, quick-actions bar, and
+ * their icons. No state of their own beyond the form input — ChatWidget owns
+ * everything.
  */
+
+import Link from "next/link";
+import type { ChatbotQuickAction } from "@/lib/chatbot/config";
 
 export function PanelHeader({
   personaName,
@@ -40,7 +44,13 @@ export function PanelHeader({
         ) : null}
         <div>
           <p className="text-sm font-black text-white">{personaName}</p>
-          <p className="text-[11px] leading-none text-white/85">Online</p>
+          <p className="flex items-center gap-1 text-[11px] leading-none text-white/85">
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 rounded-full bg-[#22c55e]"
+            />
+            Online · Usually replies instantly
+          </p>
         </div>
       </div>
       <button
@@ -51,6 +61,29 @@ export function PanelHeader({
       >
         <CloseIcon />
       </button>
+    </div>
+  );
+}
+
+/** Config-driven button row under the header — see ChatbotConfig.quickActions. Renders nothing when unconfigured. */
+export function QuickActionsBar({
+  actions,
+}: {
+  actions: ChatbotQuickAction[];
+}) {
+  if (actions.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5 border-b-2 border-[#111111] bg-[#f8fafc] px-3 py-2">
+      {actions.map((action) => (
+        <Link
+          key={action.url + action.label}
+          href={action.url}
+          className="inline-flex items-center gap-1 rounded-[6px] border-2 border-[#111111] bg-white px-2 py-1 text-xs font-bold text-[#111111] hover:bg-[#f3f4f6]"
+        >
+          <ArrowRightIcon />
+          {action.label}
+        </Link>
+      ))}
     </div>
   );
 }
@@ -97,6 +130,31 @@ export function MessageInput({
   );
 }
 
+/** Tappable pill chips above the input — see ChatbotConfig.starterQuestions. ChatWidget only renders this before the visitor's first message. */
+export function StarterQuestionChips({
+  questions,
+  onSelect,
+}: {
+  questions: string[];
+  onSelect: (question: string) => void;
+}) {
+  if (questions.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5 px-4 pb-2">
+      {questions.map((question) => (
+        <button
+          key={question}
+          type="button"
+          onClick={() => onSelect(question)}
+          className="rounded-full border-2 border-[#111111] bg-white px-3 py-1.5 text-xs font-bold text-[#111111] hover:bg-[#f3f4f6]"
+        >
+          {question}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function LauncherButton({
   brandColor,
   personaName,
@@ -138,15 +196,27 @@ export function LauncherButton({
 
 export function TeaserBubble({
   text,
+  avatarUrl,
   onOpen,
   onDismiss,
 }: {
   text: string;
+  avatarUrl: string | null;
   onOpen: () => void;
   onDismiss: () => void;
 }) {
   return (
     <div className="flex max-w-[240px] items-start gap-2 rounded-[8px] border-2 border-[#111111] bg-white px-3 py-2 shadow-[4px_4px_0_#111111]">
+      {avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- small teaser avatar, no responsive sizing needed
+        <img
+          src={avatarUrl}
+          alt=""
+          width={24}
+          height={24}
+          className="mt-0.5 h-6 w-6 shrink-0 rounded-full border-2 border-[#111111] object-cover"
+        />
+      ) : null}
       <button
         type="button"
         onClick={onOpen}
@@ -192,6 +262,24 @@ function SendIcon() {
       fill="none"
       stroke="currentColor"
       strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"

@@ -1587,6 +1587,8 @@ export type Database = {
           model: string;
           notify_enabled: boolean;
           persona_name: string;
+          quick_actions: Json;
+          starter_questions: Json;
           teaser_text: string | null;
           updated_at: string;
         };
@@ -1604,6 +1606,8 @@ export type Database = {
           model?: string;
           notify_enabled?: boolean;
           persona_name?: string;
+          quick_actions?: Json;
+          starter_questions?: Json;
           teaser_text?: string | null;
           updated_at?: string;
         };
@@ -1621,6 +1625,8 @@ export type Database = {
           model?: string;
           notify_enabled?: boolean;
           persona_name?: string;
+          quick_actions?: Json;
+          starter_questions?: Json;
           teaser_text?: string | null;
           updated_at?: string;
         };

@@ -9,6 +9,7 @@ import {
   loadChatbotConfigFresh,
   saveChatbotConfig,
   type ChatbotConfigInput,
+  type ChatbotQuickAction,
 } from "@/lib/chatbot/config";
 import {
   runChatbotCatchUpDigest,
@@ -63,6 +64,18 @@ export async function saveChatbotConfigAction(
     model: text("model") || "gpt-4o-mini",
     leadRoutingEmails: optional("leadRoutingEmails"),
     notifyEnabled: checked("notifyEnabled"),
+    // Trimmed and filtered here rather than left to zod: the list editors add
+    // a blank row for the admin to fill in, and an empty row left behind
+    // (never removed) should just drop silently, not fail the whole save.
+    starterQuestions: parseJsonArrayField<string>(text("starterQuestions"))
+      .map((question) => question.trim())
+      .filter(Boolean),
+    quickActions: parseJsonArrayField<ChatbotQuickAction>(text("quickActions"))
+      .map((action) => ({
+        label: action.label?.trim() ?? "",
+        url: action.url?.trim() ?? "",
+      }))
+      .filter((action) => action.label && action.url),
   };
 
   try {
@@ -313,6 +326,24 @@ export async function runChatbotLearningPassAction(): Promise<ChatbotActionState
     status: "saved",
     message: `Scanned ${result.conversationsScanned} conversations — ${result.cases} cases, ${result.followUpTasks} follow-up tasks, ${result.insights} insights, ${result.knowledgeSuggestions} knowledge fixes, ${result.siteRecommendations} site recommendations.`,
   };
+}
+
+/**
+ * Parses the JSON-encoded hidden-input value the starter-questions /
+ * quick-actions list editors post — malformed JSON (should never happen
+ * from the UI itself) falls back to empty rather than 500ing the save,
+ * matching parseStatsField's convention in the case-studies admin. The
+ * result is untrusted until chatbotConfigInputSchema (inside
+ * saveChatbotConfig) validates its actual shape.
+ */
+function parseJsonArrayField<T>(value: string): T[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? (parsed as T[]) : [];
+  } catch {
+    return [];
+  }
 }
 
 function revalidateConversationPaths(conversationId: string) {
