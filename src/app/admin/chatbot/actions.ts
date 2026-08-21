@@ -11,6 +11,11 @@ import {
   type ChatbotConfigInput,
 } from "@/lib/chatbot/config";
 import {
+  runChatbotCatchUpDigest,
+  sendProfileEmailForConversation,
+} from "@/lib/chatbot/learning/digest";
+import { runChatbotLearningPass } from "@/lib/chatbot/learning/run";
+import {
   adminCountMissedLeadCatchUp,
   adminHandOffConversation,
   adminSaveConversationNote,
@@ -153,9 +158,6 @@ export async function getChatbotCatchUpEligibleCountAction(
   return adminCountMissedLeadCatchUp(parsed.data.windowDays);
 }
 
-/** Ships with the Phase 4 learning loop (deterministic engine + digest
- *  email). The window/count UI is real; the send itself is intentionally a
- *  stub so it never silently no-ops without telling the admin why. */
 export async function sendChatbotCatchUpDigestAction(
   _prev: ChatbotActionState,
   formData: FormData,
@@ -168,13 +170,28 @@ export async function sendChatbotCatchUpDigestAction(
     return { status: "error", message: parsed.error.issues[0]!.message };
   }
 
-  const eligible = await adminCountMissedLeadCatchUp(parsed.data.windowDays);
+  const result = await runChatbotCatchUpDigest(parsed.data.windowDays);
+  revalidatePath(ADMIN_CHATBOT_PATH);
+
+  if (!result.eligible) {
+    return {
+      status: "info",
+      message: "No conversations qualify for that window.",
+    };
+  }
+  if (!result.emailed) {
+    return {
+      status: "error",
+      message: `Found ${result.eligible} conversation${result.eligible === 1 ? "" : "s"} but the digest email failed: ${result.emailError ?? "unknown error"}.`,
+    };
+  }
+
+  const budgetNote = result.timedOut
+    ? ` (${result.extractionIncomplete} still need extraction — the time budget ran out, run again to pick them up)`
+    : "";
   return {
-    status: "info",
-    message:
-      eligible > 0
-        ? `Catch-up digests aren't enabled yet — ${eligible} conversation${eligible === 1 ? "" : "s"} would qualify once the learning loop ships.`
-        : "Catch-up digests aren't enabled yet.",
+    status: "saved",
+    message: `Sent one digest covering ${result.eligible} conversation${result.eligible === 1 ? "" : "s"} (${result.extracted} freshly extracted, ${result.reusedProfile} reused)${budgetNote}.`,
   };
 }
 
@@ -263,9 +280,38 @@ export async function handOffConversationAction(
   }
 
   revalidateConversationPaths(parsed.data.conversationId);
+
+  // force: true — a handoff is an explicit "the team needs this now", so it
+  // ignores the 30-minute debounce that protects the cron/immediate-capture
+  // paths from double-sending.
+  const emailResult = await sendProfileEmailForConversation(
+    parsed.data.conversationId,
+    { force: true },
+  );
   return {
     status: "saved",
-    message: "Marked as handed off. The team notification ships with Phase 4.",
+    message: emailResult.sent
+      ? "Marked as handed off. Profile email sent to the team."
+      : `Marked as handed off. Profile email not sent: ${emailResult.reason ?? "unknown reason"}.`,
+  };
+}
+
+/** Drives the "Run learning pass" button on /admin/chatbot/insights. */
+export async function runChatbotLearningPassAction(): Promise<ChatbotActionState> {
+  await requireAdmin();
+
+  const result = await runChatbotLearningPass();
+  revalidatePath("/admin/chatbot/insights");
+
+  if (!result.ok) {
+    return {
+      status: "error",
+      message: result.error ?? "Learning pass failed.",
+    };
+  }
+  return {
+    status: "saved",
+    message: `Scanned ${result.conversationsScanned} conversations — ${result.cases} cases, ${result.followUpTasks} follow-up tasks, ${result.insights} insights, ${result.knowledgeSuggestions} knowledge fixes, ${result.siteRecommendations} site recommendations.`,
   };
 }
 

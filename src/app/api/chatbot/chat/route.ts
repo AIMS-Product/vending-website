@@ -24,6 +24,7 @@ import {
 import { loadChatbotConfig } from "@/lib/chatbot/config";
 import { extractLead } from "@/lib/chatbot/extract-lead";
 import { handleChatbotLeadCaptured } from "@/lib/chatbot/lead-capture";
+import { sendProfileEmailForConversation } from "@/lib/chatbot/learning/digest";
 import { ChatbotOpenAiError, streamChatbotReply } from "@/lib/chatbot/openai";
 import { stripChatbotFormatting } from "@/lib/chatbot/strip-formatting";
 import {
@@ -226,6 +227,19 @@ export async function POST(request: Request) {
         },
         { client },
       );
+
+      // Fire the profile email the moment we have something to say, rather
+      // than waiting for the every-10-minute digest cron — see spec wiring
+      // item 5a. Already inside `after()`, so this never delays the
+      // response; sendProfileEmailForConversation is fail-soft end to end.
+      try {
+        await sendProfileEmailForConversation(conversation.id, {}, { client });
+      } catch (error) {
+        console.warn("chatbot: immediate profile email failed", {
+          conversationId: conversation.id,
+          error: error instanceof Error ? error.message : "unknown error",
+        });
+      }
     }
   });
 

@@ -70,15 +70,26 @@ export default async function AdminChatbotPage({
       userEmail={user.email}
       userRole={role}
       actions={
-        <Link
-          href="/admin/chatbot/conversations"
-          className={adminSecondaryButtonClass}
-        >
-          <span aria-hidden="true">
-            <AdminIcon icon="message-square" />
-          </span>
-          Conversations
-        </Link>
+        <>
+          <Link
+            href="/admin/chatbot/insights"
+            className={adminSecondaryButtonClass}
+          >
+            <span aria-hidden="true">
+              <AdminIcon icon="target" />
+            </span>
+            Insights
+          </Link>
+          <Link
+            href="/admin/chatbot/conversations"
+            className={adminSecondaryButtonClass}
+          >
+            <span aria-hidden="true">
+              <AdminIcon icon="message-square" />
+            </span>
+            Conversations
+          </Link>
+        </>
       }
     >
       {loadError ? (

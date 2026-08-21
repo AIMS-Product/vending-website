@@ -16,6 +16,14 @@
     {
       "path": "/api/admin/close-sync/run",
       "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/admin/chatbot-learning/run",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/admin/chatbot-digest/run",
+      "schedule": "*/10 * * * *"
     }
   ]
 }
