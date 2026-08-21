@@ -35,6 +35,7 @@ export type ChatbotInsightsKpis = {
   insightsCount: number;
   knowledgeFixesCount: number;
   siteRecsCount: number;
+  unansweredQuestionsCount: number;
   lastLearningRun: {
     startedAt: string;
     finishedAt: string | null;
@@ -61,6 +62,7 @@ export async function getChatbotInsightsKpis(
     insightsCount,
     knowledgeFixesCount,
     siteRecsCount,
+    unansweredQuestionsCount,
     lastLearningRun,
   ] = await Promise.all([
     fetchConversationStats(client, start),
@@ -69,6 +71,7 @@ export async function getChatbotInsightsKpis(
     countOpen(client, "chatbot_insights", start),
     countOpen(client, "chatbot_knowledge_suggestions", start),
     countOpen(client, "chatbot_site_recommendations", start),
+    countUnansweredQuestions(client, start),
     fetchLastLearningRun(client),
   ]);
 
@@ -88,8 +91,23 @@ export async function getChatbotInsightsKpis(
     insightsCount,
     knowledgeFixesCount,
     siteRecsCount,
+    unansweredQuestionsCount,
     lastLearningRun,
   };
+}
+
+/** Its own counter rather than countOpen(): the table ships ahead of its migration and must fail soft to 0, not throw the page. */
+async function countUnansweredQuestions(
+  client: Client,
+  start: string,
+): Promise<number> {
+  const { count, error } = await client
+    .from("chatbot_unknown_questions")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "open")
+    .gte("last_asked_at", start);
+  if (error) return 0;
+  return count ?? 0;
 }
 
 async function fetchConversationStats(client: Client, start: string) {
@@ -467,6 +485,138 @@ export async function dismissKnowledgeSuggestion(
       status: "dismissed",
     },
   );
+}
+
+// --- Unanswered questions -------------------------------------------------
+
+export type AdminUnknownQuestion = {
+  id: string;
+  question: string;
+  askCount: number;
+  conversationId: string | null;
+  lastAskedAt: string;
+};
+
+/**
+ * Questions the model itself reported it could not answer (the
+ * flag_unknown_question tool). Unlike everything else on this page these are
+ * first-person gaps rather than inferred ones, which is what makes them the
+ * highest-signal thing to fix.
+ *
+ * Returns [] when the table does not exist yet — this ships ahead of its
+ * migration, and a missing table must degrade to an empty rail rather than
+ * failing the whole insights page.
+ */
+export async function listOpenUnknownQuestions(
+  range: AdminChatbotRange,
+  deps: ServiceDeps = {},
+): Promise<AdminUnknownQuestion[]> {
+  const client = deps.client ?? createAdminClient();
+  const start = windowStart(range, deps.now?.() ?? new Date());
+
+  const { data, error } = await client
+    .from("chatbot_unknown_questions")
+    .select("id, question, ask_count, conversation_id, last_asked_at")
+    .eq("status", "open")
+    .gte("last_asked_at", start)
+    .order("ask_count", { ascending: false })
+    .order("last_asked_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.warn("chatbot: unanswered questions unavailable", {
+      error: error.message,
+    });
+    return [];
+  }
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    question: row.question,
+    askCount: row.ask_count ?? 1,
+    conversationId: row.conversation_id,
+    lastAskedAt: row.last_asked_at,
+  }));
+}
+
+/**
+ * The self-learning loop closing: an admin's answer is appended to the same
+ * knowledge base the system prompt reads, so the next visitor who asks gets
+ * the real answer instead of another "the team will follow up".
+ */
+export async function answerUnknownQuestion(
+  id: string,
+  answer: string,
+  deps: ServiceDeps = {},
+): Promise<void> {
+  const client = deps.client ?? createAdminClient();
+  const now = deps.now?.() ?? new Date();
+
+  const trimmedAnswer = answer.trim();
+  if (!trimmedAnswer) {
+    throw new ChatbotAdminError("Write an answer before adding it.");
+  }
+
+  const { data: row, error: rowError } = await client
+    .from("chatbot_unknown_questions")
+    .select("question")
+    .eq("id", id)
+    .maybeSingle();
+  if (rowError || !row) {
+    throw new ChatbotAdminError("Could not load this question.");
+  }
+
+  const { data: configRow, error: configError } = await client
+    .from("chatbot_config")
+    .select("knowledge_base")
+    .eq("id", 1)
+    .maybeSingle();
+  if (configError) {
+    throw new ChatbotAdminError("Could not load the chatbot config.");
+  }
+
+  const entry = `Q: ${row.question}\nA: ${trimmedAnswer}`;
+  const existing = configRow?.knowledge_base?.trim();
+  const knowledgeBase = existing ? `${existing}\n\n${entry}` : entry;
+
+  const { error: updateError } = await client
+    .from("chatbot_config")
+    .update({ knowledge_base: knowledgeBase, updated_at: now.toISOString() })
+    .eq("id", 1);
+  if (updateError) {
+    throw new ChatbotAdminError("Could not update the knowledge base.");
+  }
+
+  const { error: statusError } = await client
+    .from("chatbot_unknown_questions")
+    .update({
+      status: "answered",
+      answer: trimmedAnswer,
+      answered_at: now.toISOString(),
+    })
+    .eq("id", id);
+  if (statusError) {
+    // The knowledge base already has the answer, which is the part that
+    // matters; the row just stays on the rail until someone dismisses it.
+    console.warn("chatbot: could not mark question answered", {
+      id,
+      error: statusError.message,
+    });
+  }
+
+  revalidateTag(CHATBOT_CONFIG_CACHE_TAG, "max");
+}
+
+export async function dismissUnknownQuestion(
+  id: string,
+  deps: ServiceDeps = {},
+): Promise<void> {
+  const client = deps.client ?? createAdminClient();
+  const { error } = await client
+    .from("chatbot_unknown_questions")
+    .update({ status: "dismissed" })
+    .eq("id", id);
+  if (error) throw new ChatbotAdminError("Could not dismiss this question.");
 }
 
 // --- Site recommendations -------------------------------------------------

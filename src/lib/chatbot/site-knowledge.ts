@@ -105,7 +105,8 @@ function loadCaseStudySummaries(): CaseStudySummary[] {
     summaries.push({
       slug: data.slug,
       memberName: data.member_name,
-      priorBackground: data.prior_occupation || data.member_role || "background not stated",
+      priorBackground:
+        data.prior_occupation || data.member_role || "background not stated",
       headlineResult: headlineResult(data),
       tags: data.tags,
       url: `/case-studies/${data.slug}`,

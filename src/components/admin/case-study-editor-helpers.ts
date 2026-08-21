@@ -30,9 +30,7 @@ const bareYoutubeIdPattern = /^[A-Za-z0-9_-]{6,}$/;
  * blank input and `undefined` when the input is non-blank but unresolvable
  * (a validation error, not a silently-dropped value).
  */
-export function resolveYoutubeVideoId(
-  raw: string,
-): string | null | undefined {
+export function resolveYoutubeVideoId(raw: string): string | null | undefined {
   const trimmed = raw.trim();
   if (!trimmed) return null;
   if (bareYoutubeIdPattern.test(trimmed)) return trimmed;

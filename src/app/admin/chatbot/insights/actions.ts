@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { ChatbotActionState } from "@/app/admin/chatbot/actions";
 import {
+  answerUnknownQuestion,
   applyKnowledgeSuggestion,
   dismissFollowUpTask,
   dismissKnowledgeSuggestion,
   dismissLearningCase,
   dismissSiteRecommendation,
+  dismissUnknownQuestion,
   markFollowUpTaskSent,
   markLearningCaseReviewed,
   markSiteRecommendationPlanned,
@@ -168,6 +170,63 @@ export async function dismissSiteRecommendationAction(
     await dismissSiteRecommendation(parsed.data.id);
   } catch (error) {
     return actionError(error, "Could not dismiss this recommendation.");
+  }
+  revalidatePath(INSIGHTS_PATH);
+  return { status: "saved", message: "Dismissed." };
+}
+
+const answerSchema = z.object({
+  id: z.uuid("Invalid question."),
+  answer: z
+    .string()
+    .trim()
+    .min(3, "Write an answer before adding it.")
+    .max(2000, "Keep the answer under 2000 characters."),
+});
+
+/**
+ * Closes the learning loop: the admin's answer goes straight into the
+ * knowledge base the live system prompt reads, so the next visitor asking the
+ * same thing gets a real answer.
+ */
+export async function answerUnknownQuestionAction(
+  _prev: ChatbotActionState,
+  formData: FormData,
+): Promise<ChatbotActionState> {
+  await requireAdmin();
+  const parsed = answerSchema.safeParse({
+    id: formData.get("id"),
+    answer: formData.get("answer"),
+  });
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: parsed.error.issues[0]?.message ?? "Invalid answer.",
+    };
+  }
+
+  try {
+    await answerUnknownQuestion(parsed.data.id, parsed.data.answer);
+  } catch (error) {
+    return actionError(error, "Could not add this answer.");
+  }
+  revalidatePath(INSIGHTS_PATH);
+  revalidatePath("/admin/chatbot");
+  return { status: "saved", message: "Added to the knowledge base." };
+}
+
+export async function dismissUnknownQuestionAction(
+  _prev: ChatbotActionState,
+  formData: FormData,
+): Promise<ChatbotActionState> {
+  await requireAdmin();
+  const parsed = parseId(formData);
+  if (!parsed.success) return { status: "error", message: "Invalid question." };
+
+  try {
+    await dismissUnknownQuestion(parsed.data.id);
+  } catch (error) {
+    return actionError(error, "Could not dismiss this question.");
   }
   revalidatePath(INSIGHTS_PATH);
   return { status: "saved", message: "Dismissed." };

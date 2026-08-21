@@ -45,7 +45,10 @@ export function formatTranscriptForExtraction(
   messages: readonly ChatbotTranscriptMessage[],
 ): string {
   return messages
-    .map((message) => `${message.role === "user" ? "Visitor" : "Mia"}: ${message.content}`)
+    .map(
+      (message) =>
+        `${message.role === "user" ? "Visitor" : "Mia"}: ${message.content}`,
+    )
     .join("\n");
 }
 

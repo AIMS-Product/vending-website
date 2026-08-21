@@ -15,11 +15,13 @@ import {
   adminSectionTitleClass,
 } from "@/components/admin/AdminUi";
 import { ChatbotInsightItemActions } from "@/components/admin/ChatbotInsightItemActions";
+import { ChatbotUnansweredQuestionCard } from "@/components/admin/ChatbotUnansweredQuestionCard";
 import type {
   AdminFollowUpTask,
   AdminKnowledgeSuggestion,
   AdminLearningCase,
   AdminSiteRecommendation,
+  AdminUnknownQuestion,
 } from "@/lib/services/chatbot-insights";
 
 const TASK_TYPE_LABELS: Record<string, string> = {
@@ -43,19 +45,60 @@ export function ChatbotInsightsLists({
   learningCases,
   knowledgeSuggestions,
   siteRecommendations,
+  unansweredQuestions,
 }: {
   followUpTasks: AdminFollowUpTask[];
   learningCases: AdminLearningCase[];
   knowledgeSuggestions: AdminKnowledgeSuggestion[];
   siteRecommendations: AdminSiteRecommendation[];
+  unansweredQuestions: AdminUnknownQuestion[];
 }) {
   return (
     <div className="grid gap-5 xl:grid-cols-2">
+      <UnansweredQuestionsPanel questions={unansweredQuestions} />
       <FollowUpTasksPanel tasks={followUpTasks} />
       <ObjectionsPanel cases={learningCases} />
       <KnowledgeFixesPanel suggestions={knowledgeSuggestions} />
       <SiteRecommendationsPanel recommendations={siteRecommendations} />
     </div>
+  );
+}
+
+/**
+ * The bot's own reported gaps, ahead of everything inferred — a question it
+ * said it could not answer is a stronger signal than any heuristic on this
+ * page, and answering one makes the bot permanently better.
+ */
+function UnansweredQuestionsPanel({
+  questions,
+}: {
+  questions: AdminUnknownQuestion[];
+}) {
+  return (
+    <section className={adminCardClass}>
+      <h2 className={adminSectionTitleClass}>
+        Questions the bot couldn&apos;t answer
+      </h2>
+      <p className="text-ui-text-subtle mt-1 text-xs">
+        Reported by the bot itself. Answer one and it goes straight into the
+        knowledge base for every future chat.
+      </p>
+      {questions.length ? (
+        <div className="mt-3 grid gap-3">
+          {questions.map((question) => (
+            <ChatbotUnansweredQuestionCard
+              key={question.id}
+              question={question}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="text-ui-text-muted mt-3 text-sm">
+          Nothing open — the bot answered everything it was asked in this
+          window.
+        </p>
+      )}
+    </section>
   );
 }
 

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { chatbotBookingUrl, CHATBOT_BOOKING_URL } from "@/lib/chatbot/booking";
 import type { ChatbotFlag } from "@/lib/services/chatbot-admin";
 import type { ChatbotMessage } from "@/lib/chatbot/conversation-store";
 import type { ProspectProfile } from "@/lib/chatbot/extract-prospect-profile";
@@ -107,12 +108,9 @@ export type LearningEngineResult = {
   siteRecommendations: SiteRecommendationOutput[];
 };
 
-// Matches the house convention in build-system-prompt.ts — same env var,
-// same fallback. Read once; the engine otherwise takes no other env/DB
-// dependency so it stays a pure function of its arguments.
-const DEFAULT_BOOKING_URL =
-  process.env.NEXT_PUBLIC_DEFAULT_CALENDLY_URL ??
-  "https://www.vendingpreneurs.com/book-now";
+// One booking destination for the whole system, from lib/chatbot/booking.ts.
+// The engine otherwise takes no env/DB dependency so it stays a pure function
+// of its arguments.
 
 const TOPIC_LABELS: Record<LearningTopic, string> = {
   pricing_cost: "pricing and cost",
@@ -178,7 +176,7 @@ export function runLearningEngine(
   options: { now: Date; bookingUrl?: string } = { now: new Date() },
 ): LearningEngineResult {
   const now = options.now;
-  const bookingUrl = options.bookingUrl ?? DEFAULT_BOOKING_URL;
+  const bookingUrlOverride = options.bookingUrl ?? null;
 
   const topicByConversationId = new Map<string, LearningTopic>();
   const cases: LearningCaseOutput[] = [];
@@ -196,7 +194,7 @@ export function runLearningEngine(
   const followUpTasks = buildFollowUpTasks(
     conversations,
     cases,
-    bookingUrl,
+    bookingUrlOverride,
     now,
   );
   const knowledgeSuggestions = buildKnowledgeSuggestions(cases);
@@ -335,7 +333,7 @@ const TASK_ELIGIBLE_CASE_TYPES = new Set<LearningCaseType>([
 function buildFollowUpTasks(
   conversations: LearningConversationInput[],
   cases: LearningCaseOutput[],
-  bookingUrl: string,
+  bookingUrlOverride: string | null,
   now: Date,
 ): FollowUpTaskOutput[] {
   const conversationById = new Map(conversations.map((c) => [c.id, c]));
@@ -347,6 +345,16 @@ function buildFollowUpTasks(
     const conv = conversationById.get(learningCase.conversationId);
     if (!conv?.capturedEmail) continue;
 
+    // Tagged with the conversation id, so a booking made from a rep-sent
+    // draft still attributes back to the chat that started it.
+    const bookingUrl =
+      bookingUrlOverride ??
+      chatbotBookingUrl({
+        conversationId: conv.id,
+        name: conv.capturedName,
+        email: conv.capturedEmail,
+      }) ??
+      CHATBOT_BOOKING_URL;
     const draft = draftForCase(learningCase.caseType, conv, bookingUrl, nowIso);
     tasks.push({
       conversationId: conv.id,

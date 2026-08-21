@@ -64,7 +64,7 @@ export function CaseStudyStatsEditor({
               type="button"
               onClick={() => removeRow(index)}
               aria-label={`Remove stat ${index + 1}`}
-              className="text-ui-text-subtle hover:bg-ui-bad/5 hover:text-ui-bad focus-visible:ring-ui-accent/35 mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-ui transition focus-visible:ring-2 focus-visible:outline-none"
+              className="text-ui-text-subtle hover:bg-ui-bad/5 hover:text-ui-bad focus-visible:ring-ui-accent/35 rounded-ui mt-0.5 inline-flex size-8 shrink-0 items-center justify-center transition focus-visible:ring-2 focus-visible:outline-none"
             >
               <svg
                 aria-hidden="true"
@@ -86,7 +86,7 @@ export function CaseStudyStatsEditor({
       <button
         type="button"
         onClick={addRow}
-        className="text-ui-accent hover:text-ui-accent-hover focus-visible:ring-ui-accent/35 mt-3 inline-flex items-center gap-1.5 rounded-ui text-sm font-semibold focus-visible:ring-2 focus-visible:outline-none"
+        className="text-ui-accent hover:text-ui-accent-hover focus-visible:ring-ui-accent/35 rounded-ui mt-3 inline-flex items-center gap-1.5 text-sm font-semibold focus-visible:ring-2 focus-visible:outline-none"
       >
         <svg
           aria-hidden="true"

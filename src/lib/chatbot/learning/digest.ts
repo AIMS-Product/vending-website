@@ -6,6 +6,7 @@ import {
   toChatbotMessages,
   type ChatbotMessage,
 } from "@/lib/chatbot/conversation-store";
+import { chatbotBookingUrl } from "@/lib/chatbot/booking";
 import {
   chatbotEmailsEnabled,
   sendChatbotDigestEmail,
@@ -153,6 +154,7 @@ export async function sendProfileEmailForConversation(
     capturedName: conv.capturedName,
     capturedEmail: conv.capturedEmail,
     capturedPhone: conv.capturedPhone,
+    ...bookingFieldsFor(conv),
     profile,
   };
   const result = await sendChatbotProfileEmail(input, config);
@@ -369,6 +371,7 @@ export async function runChatbotCatchUpDigest(
     capturedEmail: conv.capturedEmail,
     capturedPhone: conv.capturedPhone,
     profile: conv.prospectProfile ?? results.get(conv.id) ?? null,
+    ...bookingFieldsFor(conv),
   }));
 
   const emailResult = await sendChatbotDigestEmail(
@@ -400,6 +403,30 @@ export async function runChatbotCatchUpDigest(
     emailed: emailResult.ok,
     emailError: emailResult.ok ? undefined : emailResult.error,
     timedOut,
+  };
+}
+
+/**
+ * Booking state for a digest entry. Read off the transcript rather than the
+ * call_booked_at column so it works before the v2 migration is applied and
+ * needs no change to the queries above — the booking_confirmed message and
+ * the column are written by the same webhook, in the same update.
+ */
+function bookingFieldsFor(conversation: {
+  id: string;
+  capturedName: string | null;
+  capturedEmail: string | null;
+  messages: ChatbotMessage[];
+}): { callBooked: boolean; bookingUrl: string | null } {
+  return {
+    callBooked: conversation.messages.some(
+      (message) => message.kind === "booking_confirmed",
+    ),
+    bookingUrl: chatbotBookingUrl({
+      conversationId: conversation.id,
+      name: conversation.capturedName,
+      email: conversation.capturedEmail,
+    }),
   };
 }
 

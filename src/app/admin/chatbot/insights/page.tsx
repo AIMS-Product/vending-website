@@ -13,11 +13,13 @@ import {
   listOpenKnowledgeSuggestions,
   listOpenLearningCases,
   listOpenSiteRecommendations,
+  listOpenUnknownQuestions,
   type AdminChatbotRange,
   type AdminFollowUpTask,
   type AdminKnowledgeSuggestion,
   type AdminLearningCase,
   type AdminSiteRecommendation,
+  type AdminUnknownQuestion,
   type ChatbotInsightsKpis,
 } from "@/lib/services/chatbot-insights";
 import { requireAdmin } from "@/lib/supabase/auth";
@@ -43,6 +45,7 @@ const EMPTY_KPIS: ChatbotInsightsKpis = {
   insightsCount: 0,
   knowledgeFixesCount: 0,
   siteRecsCount: 0,
+  unansweredQuestionsCount: 0,
   lastLearningRun: null,
 };
 
@@ -62,6 +65,7 @@ export default async function AdminChatbotInsightsPage({
   let learningCases: AdminLearningCase[] = [];
   let knowledgeSuggestions: AdminKnowledgeSuggestion[] = [];
   let siteRecommendations: AdminSiteRecommendation[] = [];
+  let unansweredQuestions: AdminUnknownQuestion[] = [];
   let loadError = false;
 
   try {
@@ -71,12 +75,14 @@ export default async function AdminChatbotInsightsPage({
       learningCases,
       knowledgeSuggestions,
       siteRecommendations,
+      unansweredQuestions,
     ] = await Promise.all([
       getChatbotInsightsKpis(range),
       listOpenFollowUpTasks(range),
       listOpenLearningCases(range),
       listOpenKnowledgeSuggestions(range),
       listOpenSiteRecommendations(range),
+      listOpenUnknownQuestions(range),
     ]);
   } catch (error) {
     console.warn("chatbot insights page load failed", {
@@ -117,6 +123,7 @@ export default async function AdminChatbotInsightsPage({
           learningCases={learningCases}
           knowledgeSuggestions={knowledgeSuggestions}
           siteRecommendations={siteRecommendations}
+          unansweredQuestions={unansweredQuestions}
         />
       </div>
     </AdminShell>

@@ -25,6 +25,10 @@ export type ChatbotProfileEmailInput = {
   capturedEmail: string | null;
   capturedPhone: string | null;
   profile: ProspectProfile | null;
+  /** True once a Calendly booking was attributed to this conversation. */
+  callBooked?: boolean;
+  /** Conversation-tagged booking link, so a rep sending one keeps attribution intact. */
+  bookingUrl?: string | null;
 };
 
 type EmailDeps = { fetchImpl?: typeof fetch };
@@ -81,21 +85,45 @@ export async function sendChatbotDigestEmail(
   if (!hasResendConfig())
     return { ok: false, error: "Resend isn't configured." };
 
-  const ranked = [...input.profiles].sort(
-    (a, b) => hotnessScore(b.profile) - hotnessScore(a.profile),
-  );
+  // v2 ordering: the point of this email is phone calls, so people who asked
+  // to talk and have NOT booked go in their own block at the top. Everything
+  // else keeps the old hotness ranking below it.
+  const callNow = input.profiles
+    .filter(needsACallNow)
+    .sort((a, b) => hotnessScore(b.profile) - hotnessScore(a.profile));
+  const callNowIds = new Set(callNow.map((entry) => entry.conversationId));
+  const rest = input.profiles
+    .filter((entry) => !callNowIds.has(entry.conversationId))
+    .sort((a, b) => hotnessScore(b.profile) - hotnessScore(a.profile));
 
-  const subject = `Chatbot catch-up — ${ranked.length} conversation${ranked.length === 1 ? "" : "s"} to review`;
+  const subject = callNow.length
+    ? `Chatbot: ${callNow.length} to call now, ${rest.length} more to review`
+    : `Chatbot catch-up — ${rest.length} conversation${rest.length === 1 ? "" : "s"} to review`;
+
   const text = [
     subject,
     "",
-    ...ranked.flatMap((profile, index) => [
-      `${index + 1}. ${profileEmailSubject(profile)}`,
-      ...profileLines(profile).map((line) => `   ${line}`),
-      `   Full transcript: ${conversationUrl(profile.conversationId)}`,
-      "",
-    ]),
-  ].join("\n");
+    ...(callNow.length
+      ? [
+          "CALL THESE NOW — they asked to talk and have not booked:",
+          "",
+          ...callNow.flatMap((profile, index) =>
+            digestEntryLines(profile, index + 1, true),
+          ),
+        ]
+      : []),
+    ...(rest.length
+      ? [
+          callNow.length ? "EVERYONE ELSE:" : "",
+          "",
+          ...rest.flatMap((profile, index) =>
+            digestEntryLines(profile, index + 1, false),
+          ),
+        ]
+      : []),
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
 
   return sendResend({ subject, text, to: recipients }, deps.fetchImpl ?? fetch);
 }
@@ -147,6 +175,36 @@ async function sendResend(
       error: `Resend request failed: ${error instanceof Error ? error.message : "unknown error"}`,
     };
   }
+}
+
+/**
+ * Asked for a call and does not have one on the calendar. This is the only
+ * segment in the digest that is worth interrupting a rep's morning for.
+ */
+function needsACallNow(input: ChatbotProfileEmailInput): boolean {
+  if (input.callBooked) return false;
+  return Boolean(input.profile?.call_intent);
+}
+
+function digestEntryLines(
+  input: ChatbotProfileEmailInput,
+  position: number,
+  callFirst: boolean,
+): string[] {
+  return [
+    `${position}. ${profileEmailSubject(input)}`,
+    // Phone first in the call block: it is the action being asked for.
+    ...(callFirst && input.capturedPhone
+      ? [`   CALL: ${input.capturedPhone}`]
+      : []),
+    ...profileLines(input).map((line) => `   ${line}`),
+    ...(input.bookingUrl && !input.callBooked
+      ? [`   Send them a booking link: ${input.bookingUrl}`]
+      : []),
+    ...(input.callBooked ? ["   Already booked a call."] : []),
+    `   Full transcript: ${conversationUrl(input.conversationId)}`,
+    "",
+  ];
 }
 
 export type ChatbotResourceEmailInput = {

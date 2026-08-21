@@ -55,6 +55,11 @@ export function ChatbotInsightsOverview({
 
       <AdminMetricStrip>
         <AdminMetricPanel
+          label="Unanswered questions"
+          value={kpis.unansweredQuestionsCount}
+          caption="the bot said it didn't know"
+        />
+        <AdminMetricPanel
           label="Insights"
           value={kpis.insightsCount}
           caption="open"
