@@ -27,7 +27,10 @@ import { extractLead } from "@/lib/chatbot/extract-lead";
 import { handleChatbotLeadCaptured } from "@/lib/chatbot/lead-capture";
 import { sendProfileEmailForConversation } from "@/lib/chatbot/learning/digest";
 import type { ChatbotChatMessage } from "@/lib/chatbot/openai";
-import type { ChatbotToolContext } from "@/lib/chatbot/tools";
+import {
+  hasExplicitBookingIntent,
+  type ChatbotToolContext,
+} from "@/lib/chatbot/tools";
 import { createTurnStream } from "@/lib/chatbot/turn-stream";
 import {
   checkPublicRateLimit,
@@ -230,12 +233,23 @@ export async function POST(request: Request) {
   // Synchronous by construction: every failure mode (OpenAI down, a tool
   // throwing) happens once the stream is already being read, and is handled
   // inside it as a spoken fallback rather than an HTTP error.
+  // The one behaviour v2 exists for is too important to leave to the model's
+  // judgement: gpt-4o-mini answers "how do I book a call?" by writing "I'll
+  // open the calendar for you!" and then not opening it. When the visitor has
+  // asked plainly and no calendar is open yet, require the call instead of
+  // requesting it.
+  const forceTool =
+    !promptInput.hasSeenCalendar && hasExplicitBookingIntent(message)
+      ? "show_booking_calendar"
+      : undefined;
+
   const stream = createTurnStream({
     config,
     modelMessages,
     sink,
     captured,
     toolContext,
+    forceTool,
   });
 
   after(async () => {

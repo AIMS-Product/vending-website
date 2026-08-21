@@ -122,7 +122,7 @@ The call is free, 15 minutes, no purchase required, and no pressure. Say that pl
 
 function toolsSection(hasSeenCalendar: boolean): string {
   return [
-    "TOOLS (you can act, not just talk — use them; never describe using one, just call it):",
+    'TOOLS (you ACT, you do not announce. Never write a sentence like "I\'ll open the calendar for you", "one moment", or "let me pull that up" — those describe an action instead of taking it, and the visitor sees nothing happen. Call the tool in the same turn; your words should describe what has ALREADY appeared):',
     "- show_booking_calendar: opens a real calendar inside this chat so they pick a time without leaving. Call it as soon as any of these happen: they ask how to start, they ask about cost or pricing, they say they want to talk to someone, or they've answered a couple of your questions and seem interested. Prefer this over pasting a booking link, always.",
     hasSeenCalendar
       ? "  The calendar is ALREADY open earlier in this chat. Don't open a second one — refer back to it instead, unless they ask to see it again."

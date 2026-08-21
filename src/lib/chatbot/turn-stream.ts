@@ -51,6 +51,8 @@ export type TurnStreamInput = {
   sink: { messages: ChatbotMessage[] };
   captured: { name: string | null; email: string | null; phone: string | null };
   toolContext: ChatbotToolContext;
+  /** Requires this tool on the first call — see hasExplicitBookingIntent. */
+  forceTool?: string;
 };
 
 /**
@@ -94,6 +96,7 @@ export function createTurnStream(
             model: input.config.model,
             messages: input.modelMessages,
             tools: call === 0 ? [...CHATBOT_TOOL_DEFINITIONS] : undefined,
+            forceTool: call === 0 ? input.forceTool : undefined,
             // The follow-up call is a short confirmation sentence, and both
             // calls plus the tool round have to fit inside the route's
             // maxDuration. It gets a tighter budget than the first.

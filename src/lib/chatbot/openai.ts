@@ -61,6 +61,12 @@ export type StreamChatbotReplyOptions = {
   tools?: ChatbotToolDefinition[];
   /** Overrides STREAM_TIMEOUT_MS — a multi-call turn has to fit inside the route's maxDuration. */
   timeoutMs?: number;
+  /**
+   * Names a tool the model MUST call this turn. Small models narrate an
+   * action ("I'll open the calendar for you!") instead of taking it; when the
+   * visitor's intent is unambiguous we stop asking and require the call.
+   */
+  forceTool?: string;
 };
 
 /**
@@ -94,7 +100,15 @@ export async function streamChatbotReply(
         // rule: 1-3 sentences per turn) — this is a ceiling, not a target.
         max_tokens: options.maxOutputTokens ?? 700,
         ...(options.tools?.length
-          ? { tools: options.tools, tool_choice: "auto" }
+          ? {
+              tools: options.tools,
+              tool_choice: options.forceTool
+                ? {
+                    type: "function",
+                    function: { name: options.forceTool },
+                  }
+                : "auto",
+            }
           : {}),
       }),
       signal: AbortSignal.timeout(options.timeoutMs ?? STREAM_TIMEOUT_MS),
