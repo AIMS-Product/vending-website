@@ -15,20 +15,13 @@ export class ChatbotAdminError extends Error {
   }
 }
 
-export const CHATBOT_FLAGS = [
-  "quality_good",
-  "quality_bad",
-  "needs_prompt_tuning",
-  "lead_high_intent",
-  "lead_low_intent",
-  "followup_needed",
-  "handoff_missed",
-] as const;
-export type ChatbotFlag = (typeof CHATBOT_FLAGS)[number];
-
-export function isChatbotFlag(value: string): value is ChatbotFlag {
-  return (CHATBOT_FLAGS as readonly string[]).includes(value);
-}
+export { CHATBOT_FLAGS, isChatbotFlag } from "@/lib/chatbot/flags";
+export type { ChatbotFlag } from "@/lib/chatbot/flags";
+import {
+  CHATBOT_FLAGS,
+  isChatbotFlag,
+  type ChatbotFlag,
+} from "@/lib/chatbot/flags";
 
 // ponytail: the whole list/detail surface caps at the most recent N rows and
 // filters/sorts in memory rather than pushing search into SQL. Fine at

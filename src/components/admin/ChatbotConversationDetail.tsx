@@ -18,11 +18,8 @@ import {
   adminSectionTitleClass,
   adminTextareaClass,
 } from "@/components/admin/AdminUi";
-import {
-  CHATBOT_FLAGS,
-  type AdminChatbotConversationDetail,
-  type ChatbotFlag,
-} from "@/lib/services/chatbot-admin";
+import { CHATBOT_FLAGS, type ChatbotFlag } from "@/lib/chatbot/flags";
+import type { AdminChatbotConversationDetail } from "@/lib/services/chatbot-admin";
 
 const initialState: ChatbotActionState = { status: "idle" };
 
