@@ -65,6 +65,15 @@ export type SubmitLeadDeps = {
   fetchImpl?: typeof fetch;
   idFactory?: () => string;
   now?: () => Date;
+  /**
+   * Skips the Resend/Slack notification for this submit only — used by the
+   * chatbot lead-capture seam (src/lib/chatbot/lead-capture.ts), which sends
+   * a richer profile email instead (Phase 4) and must not double-email the
+   * team. Money Page tracking and Close sync are unaffected: they still run
+   * exactly as they do for every other lead. Leaves `status` at "received"
+   * rather than a notification outcome, since none was attempted.
+   */
+  skipNotification?: boolean;
 };
 
 const metadataSchema = z
@@ -173,27 +182,36 @@ export async function submitLead(
 
   const inserted = await insertLead(client, lead, idempotencyKey, env);
   await ensurePublicLeadCloseSync(client, lead, inserted, closeSyncQueuedAt);
-  const notification = await sendLeadNotifications(lead, {
-    env,
-    fetchImpl,
-  });
-  const attemptedAt = now().toISOString();
 
-  const patch: LeadUpdate = notification.ok
-    ? {
-        status: "notified",
-        notification_attempted_at: attemptedAt,
-        notification_sent_at: attemptedAt,
-        notification_error: null,
-      }
-    : {
-        status: "notification_failed",
-        notification_attempted_at: attemptedAt,
-        notification_sent_at: null,
-        notification_error: notification.error,
-      };
+  let notificationStatus: LeadRow["status"] = inserted.status;
+  let notificationError: string | null = null;
 
-  await updateNotificationStatus(client, inserted.id, patch);
+  if (!deps.skipNotification) {
+    const notification = await sendLeadNotifications(lead, {
+      env,
+      fetchImpl,
+    });
+    const attemptedAt = now().toISOString();
+
+    const patch: LeadUpdate = notification.ok
+      ? {
+          status: "notified",
+          notification_attempted_at: attemptedAt,
+          notification_sent_at: attemptedAt,
+          notification_error: null,
+        }
+      : {
+          status: "notification_failed",
+          notification_attempted_at: attemptedAt,
+          notification_sent_at: null,
+          notification_error: notification.error,
+        };
+
+    await updateNotificationStatus(client, inserted.id, patch);
+    notificationStatus = patch.status ?? "received";
+    notificationError = patch.notification_error ?? null;
+  }
+
   const moneyPageTracking = await sendMoneyPageLeadEvent(lead, inserted.id, {
     env,
     fetchImpl,
@@ -209,8 +227,8 @@ export async function submitLead(
     status: "accepted",
     leadId: inserted.id,
     duplicate: false,
-    notificationStatus: patch.status ?? "received",
-    notificationError: patch.notification_error ?? null,
+    notificationStatus,
+    notificationError,
   };
 }
 

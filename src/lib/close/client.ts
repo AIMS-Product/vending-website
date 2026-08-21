@@ -455,6 +455,10 @@ export const CLOSE_RESOURCE_TAGS = {
   financeTemplates: "lead-magnet-finance-templates",
   newsletter: "newsletter",
   websiteApplication: "website-application",
+  // Site chatbot leads (see close/sync.ts taggingValues). No "chatbot" choice
+  // exists on Close's Entry Source field, so this is the only place that
+  // signal is written — Entry Source stays unset for these leads.
+  chatbot: "chatbot",
 } as const;
 
 /**

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AttributionSessionTracker } from "@/components/attribution/AttributionSessionTracker";
+import { ChatWidget } from "@/components/chatbot/ChatWidget";
 import { TrackingScripts } from "@/components/tracking/TrackingScripts";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -62,6 +63,7 @@ export default async function RootLayout({
         <AttributionSessionTracker />
         <SitePopup popups={popups} />
         <TrackingScripts />
+        <ChatWidget />
         <Analytics />
         <SpeedInsights />
       </body>

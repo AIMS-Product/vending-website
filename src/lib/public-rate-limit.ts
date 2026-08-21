@@ -19,6 +19,12 @@ const LIMITS = {
   lead_submit: { windowMs: 10 * 60 * 1000, max: 8 },
   qualification_intake: { windowMs: 10 * 60 * 1000, max: 12 },
   attribution_event: { windowMs: 60 * 1000, max: 60 },
+  // Site chatbot (see .claude/specs/2026-08-20-site-chatbot.md §API): a chat
+  // turn is cheap to throttle generously (60/min covers real typing speed
+  // many times over); the capture-card/pre-chat-form submit reuses the same
+  // stricter budget as the public lead forms it feeds.
+  chatbot_chat: { windowMs: 60 * 1000, max: 60 },
+  chatbot_lead: { windowMs: 60 * 60 * 1000, max: 10 },
 } as const;
 
 export type PublicRateLimitAction = keyof typeof LIMITS;

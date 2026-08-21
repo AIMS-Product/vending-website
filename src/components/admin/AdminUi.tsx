@@ -14,6 +14,7 @@ export type AdminIconName =
   | "log-out"
   | "mail"
   | "megaphone"
+  | "message-square"
   | "more"
   | "newspaper"
   | "pencil"
@@ -337,6 +338,12 @@ export function AdminIcon({ icon }: { icon: AdminIconName }) {
           <path d="M3 11v3l14 5V6L3 11Z" />
           <path d="M17 8a4 4 0 0 1 0 9" />
           <path d="M7 14.5V19l3 1v-4.4" />
+        </svg>
+      );
+    case "message-square":
+      return (
+        <svg {...common}>
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10Z" />
         </svg>
       );
     case "more":

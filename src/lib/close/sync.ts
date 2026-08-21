@@ -70,7 +70,7 @@ const EVENT_FIELDS =
   "id,lead_submission_id,session_id,event_type,status,dedupe_key,payload,close_lead_id,close_contact_id,attempt_count,max_attempts,next_retry_at,last_attempted_at,synced_at,last_error,created_at,updated_at" as const;
 
 const LEAD_FIELDS =
-  "id,full_name,email,phone,source_path,landing_path,referrer,source_page_id,source_page_slug,target_keyword,source_block_id,source_cta_tracking_name,latest_qualification_form_id,utm_source,utm_medium,utm_campaign,utm_term,utm_content,close_lead_id,close_contact_id,close_sync_status,close_sync_attempt_count,close_sync_last_error" as const;
+  "id,full_name,email,phone,source_path,landing_path,referrer,source_page_id,source_page_slug,target_keyword,source_block_id,source_cta_tracking_name,latest_qualification_form_id,metadata,utm_source,utm_medium,utm_campaign,utm_term,utm_content,close_lead_id,close_contact_id,close_sync_status,close_sync_attempt_count,close_sync_last_error" as const;
 
 const RETRYABLE_STATUS_LIST = ["pending", "failed", "retrying"] as const;
 const RETRYABLE_STATUSES = new Set<string>(RETRYABLE_STATUS_LIST);
@@ -453,6 +453,19 @@ const {
 } = CLOSE_TAGGING_VALUES;
 
 function taggingValues(lead: LeadRow | null) {
+  // Chatbot leads are their own source, not a "Website-Apply" submit — check
+  // first so nothing below mislabels them. See isChatbotSourcedLead.
+  if (isChatbotSourcedLead(lead)) {
+    return {
+      // No "chatbot" choice exists on Close's Entry Source field (a strict
+      // choices list, see CLOSE_TAGGING_VALUES) — leave it unset rather than
+      // invent a label Close would 400 on. `undefined` is dropped by
+      // assignCustom, so nothing is sent for this field.
+      entry_source: undefined,
+      resource_tag: CLOSE_RESOURCE_TAGS.chatbot,
+    };
+  }
+
   const formId = lead?.latest_qualification_form_id;
   const isLeadMagnet =
     formId === LEAD_MAGNET_FORM_ID || formId === NEWSLETTER_FORM_ID;
@@ -464,6 +477,22 @@ function taggingValues(lead: LeadRow | null) {
       ? resourceTag(lead, formId)
       : CLOSE_RESOURCE_TAGS.websiteApplication,
   };
+}
+
+/**
+ * Chatbot leads flow through the same `submitLead()` pipeline as every other
+ * lead (see src/lib/chatbot/lead-capture.ts) — there is no separate form_type
+ * or qualification-form id to key off (form_type stays "contact" at the DB's
+ * request; latest_qualification_form_id is a real FK to qualification_forms
+ * and cannot hold a sentinel). `metadata.source` is the one field submitLead
+ * already threads through untouched for exactly this kind of tag.
+ */
+function isChatbotSourcedLead(lead: LeadRow | null): boolean {
+  const metadata = lead?.metadata;
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return false;
+  }
+  return (metadata as Record<string, unknown>).source === "chatbot";
 }
 
 /**

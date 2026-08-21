@@ -20,6 +20,7 @@ type AdminSection =
   | "forms"
   | "leads"
   | "popups"
+  | "chatbot"
   | "analytics"
   | "media"
   | "libraries"
@@ -38,6 +39,7 @@ type AdminShellIconName = Extract<
   | "list"
   | "mail"
   | "megaphone"
+  | "message-square"
   | "log-out"
   | "search"
   | "settings"
@@ -106,6 +108,13 @@ const contentSections: AdminNavSection[] = [
     href: "/admin/popups",
     description: "Site popup campaigns",
     icon: "megaphone",
+  },
+  {
+    id: "chatbot",
+    label: "Chatbot",
+    href: "/admin/chatbot",
+    description: "AI setter config & transcripts",
+    icon: "message-square",
   },
   {
     id: "analytics",
