@@ -1640,6 +1640,8 @@ export type Database = {
       };
       chatbot_conversations: {
         Row: {
+          booked_event_uri: string | null;
+          call_booked_at: string | null;
           captured_email: string | null;
           captured_name: string | null;
           captured_phone: string | null;
@@ -1660,6 +1662,8 @@ export type Database = {
           visitor_hash: string | null;
         };
         Insert: {
+          booked_event_uri?: string | null;
+          call_booked_at?: string | null;
           captured_email?: string | null;
           captured_name?: string | null;
           captured_phone?: string | null;
@@ -1680,6 +1684,8 @@ export type Database = {
           visitor_hash?: string | null;
         };
         Update: {
+          booked_event_uri?: string | null;
+          call_booked_at?: string | null;
           captured_email?: string | null;
           captured_name?: string | null;
           captured_phone?: string | null;
@@ -1698,6 +1704,45 @@ export type Database = {
           status?: string;
           user_agent?: string | null;
           visitor_hash?: string | null;
+        };
+        Relationships: [];
+      };
+      chatbot_unknown_questions: {
+        Row: {
+          answer: string | null;
+          answered_at: string | null;
+          ask_count: number;
+          conversation_id: string | null;
+          created_at: string;
+          dedupe_key: string;
+          id: string;
+          last_asked_at: string;
+          question: string;
+          status: string;
+        };
+        Insert: {
+          answer?: string | null;
+          answered_at?: string | null;
+          ask_count?: number;
+          conversation_id?: string | null;
+          created_at?: string;
+          dedupe_key: string;
+          id?: string;
+          last_asked_at?: string;
+          question: string;
+          status?: string;
+        };
+        Update: {
+          answer?: string | null;
+          answered_at?: string | null;
+          ask_count?: number;
+          conversation_id?: string | null;
+          created_at?: string;
+          dedupe_key?: string;
+          id?: string;
+          last_asked_at?: string;
+          question?: string;
+          status?: string;
         };
         Relationships: [];
       };

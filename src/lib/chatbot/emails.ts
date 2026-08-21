@@ -6,6 +6,7 @@ import {
   type ChatbotConfig,
 } from "@/lib/chatbot/config";
 import type { ProspectProfile } from "@/lib/chatbot/extract-prospect-profile";
+import type { ChatbotResource } from "@/lib/chatbot/resources";
 
 /**
  * Resend senders for the two email shapes the spec calls for: one
@@ -104,7 +105,14 @@ function hasResendConfig(): boolean {
 }
 
 async function sendResend(
-  message: { subject: string; text: string; to: string[] },
+  message: {
+    subject: string;
+    text: string;
+    to: string[];
+    /** Overrides the display name only — the address always stays the verified sender. */
+    fromName?: string;
+    replyTo?: string[];
+  },
   fetchImpl: typeof fetch,
 ): Promise<ChatbotEmailResult> {
   try {
@@ -115,10 +123,13 @@ async function sendResend(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: config.LEAD_NOTIFICATION_FROM,
+        from: message.fromName
+          ? withFromName(config.LEAD_NOTIFICATION_FROM, message.fromName)
+          : config.LEAD_NOTIFICATION_FROM,
         to: message.to,
         subject: message.subject,
         text: message.text,
+        ...(message.replyTo?.length ? { reply_to: message.replyTo } : {}),
       }),
     });
 
@@ -136,6 +147,95 @@ async function sendResend(
       error: `Resend request failed: ${error instanceof Error ? error.message : "unknown error"}`,
     };
   }
+}
+
+export type ChatbotResourceEmailInput = {
+  to: string;
+  visitorName: string | null;
+  personaName: string;
+  resources: ChatbotResource[];
+  /** One line the model wrote about why it's sending these. Sanitized before use. */
+  note: string | null;
+  bookingUrl: string | null;
+};
+
+/**
+ * The first email this system sends TO a visitor rather than to the team, and
+ * the reason "I'll send that over" can be a true statement. Deliberately
+ * plain text from the persona's display name with reply-to pointed at the
+ * sales inbox, so a reply lands with a human instead of bouncing.
+ *
+ * Unlike the team emails above this does NOT check chatbotEmailsEnabled():
+ * that flag mutes internal notifications. Refusing to deliver a resource the
+ * visitor just asked for because the team muted its own digest would be a
+ * broken promise to the visitor. It still requires Resend to be configured.
+ */
+export async function sendChatbotResourceEmail(
+  input: ChatbotResourceEmailInput,
+  chatbotConfig: ChatbotConfig,
+  deps: EmailDeps = {},
+): Promise<ChatbotEmailResult> {
+  if (!input.resources.length) return { ok: false, error: "Nothing to send." };
+  if (!hasResendConfig())
+    return { ok: false, error: "Resend isn't configured." };
+
+  const greeting = input.visitorName?.trim()
+    ? `Hey ${input.visitorName.trim()},`
+    : "Hey,";
+  const subject =
+    input.resources.length === 1
+      ? `${input.resources[0].title}`
+      : `The ${input.resources.length} things we talked about`;
+
+  const text = [
+    greeting,
+    "",
+    input.note?.trim() ||
+      "Here's what I mentioned in the chat — all free, nothing to sign up for.",
+    "",
+    ...input.resources.map(
+      (resource) =>
+        `${resource.title}\n${resource.blurb}\n${absoluteUrl(resource.url)}`,
+    ),
+    "",
+    ...(input.bookingUrl
+      ? [
+          `If you'd rather just talk it through, grab a free 15 minutes here: ${input.bookingUrl}`,
+          "",
+        ]
+      : []),
+    `- ${input.personaName}, Vendingpreneurs`,
+  ].join("\n\n");
+
+  // Replies go to the sales inbox, never to the no-reply sender.
+  const replyTo = chatbotLeadRoutingEmails(chatbotConfig);
+
+  return sendResend(
+    {
+      subject,
+      text,
+      to: [input.to],
+      fromName: `${input.personaName} from Vendingpreneurs`,
+      replyTo,
+    },
+    deps.fetchImpl ?? fetch,
+  );
+}
+
+function absoluteUrl(path: string): string {
+  if (!path.startsWith("/")) return path;
+  return `${publicConfig.siteUrl}${path}`;
+}
+
+/**
+ * Swaps the display name on a `Name <address@domain>` sender while keeping
+ * the address exactly as configured — a Resend send fails outright if the
+ * address is not on a verified domain, so the address is never derived.
+ */
+function withFromName(from: string | undefined, name: string): string {
+  const address = from?.match(/<([^>]+)>/)?.[1] ?? from ?? "";
+  if (!address) return from ?? "";
+  return `${name} <${address}>`;
 }
 
 function profileEmailSubject(input: ChatbotProfileEmailInput): string {

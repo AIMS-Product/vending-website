@@ -46,6 +46,8 @@ function makeConversation(
     prospect_profile: null,
     prospect_profile_emailed_at: null,
     lead_submission_id: null,
+    call_booked_at: null,
+    booked_event_uri: null,
     message_count: 0,
     last_message_at: "2026-08-01T00:00:00.000Z",
     handed_off_at: null,

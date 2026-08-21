@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { captureAggressivenessThreshold } from "@/lib/chatbot/capture-thresholds";
 import {
   VP_CHAT_VISITOR_COOKIE_MAX_AGE_SECONDS,
@@ -65,6 +66,8 @@ type ChatHistoryResponse = {
   messages: ChatDisplayMessage[];
   status: string;
   captured: boolean;
+  /** Conversation-tagged Calendly URL — null until a conversation row exists. */
+  bookingUrl: string | null;
 };
 
 /**
@@ -93,6 +96,8 @@ export function ChatWidget() {
     "on_intent" | "exit_intent"
   >("on_intent");
   const [error, setError] = useState<string | null>(null);
+  // Transient "Mia is finding times…" line while a server-side tool runs.
+  const [toolStatus, setToolStatus] = useState<"finding_times" | null>(null);
   // Gates the greeting effect until the history fetch below resolves (found
   // or not) — otherwise a returning visitor would see the greeting flash
   // before their real transcript replaces it.
@@ -261,6 +266,60 @@ export function ChatWidget() {
     }, ON_INTENT_DELAY_MS);
   }, [config?.captureMode, config?.captureAggressiveness, captured]);
 
+  /**
+   * Exit-intent offer, v2 order: the calendar first, the email card only as a
+   * fallback. Someone leaving is far more likely to give you fifteen minutes
+   * they can pick right now than an email address for a later follow-up.
+   *
+   * ponytail: the injected calendar message is client-side only, so it is not
+   * in the stored transcript and vanishes on navigation. Attribution still
+   * holds either way — the URL carries the conversation id. Persist it via a
+   * dedicated endpoint if the funnel ever needs "calendar shown on exit".
+   */
+  const offerExitIntent = useCallback(async () => {
+    const sessionId = sessionIdRef.current;
+    const showCaptureCard = () => {
+      setInlineCaptureContext("exit_intent");
+      setShowInlineCapture(true);
+    };
+
+    if (!sessionId || captured) {
+      if (!captured) showCaptureCard();
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/chatbot/history?sessionId=${encodeURIComponent(sessionId)}`,
+      );
+      const data: ChatHistoryResponse | null = response.ok
+        ? await response.json()
+        : null;
+
+      if (!data?.bookingUrl) {
+        showCaptureCard();
+        return;
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Before you go — want to just grab a time? Free, 15 minutes, no pressure.",
+        },
+        {
+          role: "assistant",
+          content: "Opened the booking calendar in the chat.",
+          kind: "calendar",
+          data: { url: data.bookingUrl },
+        },
+      ]);
+    } catch {
+      showCaptureCard();
+    }
+  }, [captured]);
+
   // Exit-intent capture (spec item 3c): a desktop-only, once-per-session
   // nudge when the visitor moves the cursor off the top of the viewport with
   // an active, uncaptured conversation. Independent of captureMode/the
@@ -275,7 +334,8 @@ export function ChatWidget() {
 
     const onMouseOut = (event: MouseEvent) => {
       if (hasOfferedExitIntentRef.current) return;
-      if (captured || showInlineCapture) return;
+      if (showInlineCapture) return;
+      if (messages.some((message) => message.kind === "calendar")) return;
       if (!messages.some((message) => message.role === "user")) return;
       // Standard exit-intent heuristic: the cursor left toward the top edge
       // of the viewport with no related target, i.e. it actually left the
@@ -284,9 +344,8 @@ export function ChatWidget() {
 
       hasOfferedExitIntentRef.current = true;
       writeSessionFlag(EXIT_INTENT_OFFERED_KEY);
-      setInlineCaptureContext("exit_intent");
-      setShowInlineCapture(true);
       setOpen(true);
+      void offerExitIntent();
     };
 
     document.addEventListener("mouseout", onMouseOut);
@@ -294,10 +353,10 @@ export function ChatWidget() {
   }, [
     enabled,
     config?.exitIntentCapture,
-    captured,
     showInlineCapture,
     messages,
     setOpen,
+    offerExitIntent,
   ]);
 
   const sendMessage = useCallback(
@@ -310,6 +369,7 @@ export function ChatWidget() {
       setInputValue("");
       setIsWaiting(true);
       setStreamingText(null);
+      setToolStatus(null);
 
       if (LOOSE_EMAIL_PATTERN.test(text)) {
         setCaptured(true);
@@ -339,35 +399,108 @@ export function ChatWidget() {
           throw new Error(`chat request failed with ${response.status}`);
         }
 
+        // The server speaks NDJSON frames (see /api/chatbot/chat) so one turn
+        // can interleave prose with an inline calendar or a resource card.
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let full = "";
+        let lineBuffer = "";
+        let pending = "";
         let revealed = false;
+        let produced = false;
+
+        const waitForReveal = async () => {
+          if (revealed) return;
+          const remaining = revealAt - Date.now();
+          if (remaining > 0) await sleep(remaining);
+          revealed = true;
+        };
+
+        // Commits the in-flight bubble. Called on an explicit `flush` frame,
+        // before any rich card (so ordering matches the transcript the server
+        // stored), and once more at stream end.
+        const flush = () => {
+          const committed = pending.trim();
+          pending = "";
+          setStreamingText(null);
+          if (!committed) return;
+          produced = true;
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: committed },
+          ]);
+        };
 
         for (;;) {
           const { done, value } = await reader.read();
           if (done) break;
-          full += decoder.decode(value, { stream: true });
-          // A long reply can outlast the reveal delay — once it does, every
-          // further chunk streams in live like before. A short reply (the
-          // common case) just sits fully buffered until the delay below.
-          if (!revealed && Date.now() >= revealAt) revealed = true;
-          if (revealed) setStreamingText(full);
+          lineBuffer += decoder.decode(value, { stream: true });
+          const lines = lineBuffer.split("\n");
+          lineBuffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            const frame = parseFrame(line);
+            if (!frame) continue;
+
+            if (frame.t === "text") {
+              pending += frame.v;
+              // A long reply can outlast the reveal delay — once it does,
+              // every further chunk streams in live. A short reply (the
+              // common case) sits buffered until the delay elapses.
+              if (!revealed && Date.now() >= revealAt) revealed = true;
+              if (revealed) setStreamingText(pending);
+              continue;
+            }
+
+            if (frame.t === "status") {
+              await waitForReveal();
+              setToolStatus(frame.v);
+              continue;
+            }
+
+            if (frame.t === "flush") {
+              await waitForReveal();
+              flush();
+              continue;
+            }
+
+            if (frame.t === "msg") {
+              await waitForReveal();
+              flush();
+              setToolStatus(null);
+              produced = true;
+              setMessages((prev) => [
+                ...prev,
+                {
+                  role: "assistant",
+                  content: frame.content,
+                  kind: frame.kind,
+                  data: frame.data ?? null,
+                },
+              ]);
+              if (frame.kind === "calendar") {
+                // A visitor looking at a live calendar must not then be
+                // handed a "leave your email" card.
+                setCaptured(true);
+                writeSessionFlag(CAPTURED_KEY);
+              }
+            }
+          }
         }
 
-        if (!revealed) {
-          const remaining = revealAt - Date.now();
-          if (remaining > 0) await sleep(remaining);
-        }
-        setStreamingText(full);
+        await waitForReveal();
+        flush();
+        setToolStatus(null);
 
-        setMessages((prev) => [...prev, { role: "assistant", content: full }]);
-        setStreamingText(null);
+        if (!produced) {
+          throw new Error("chat stream produced no messages");
+        }
+
         assistantReplyCountRef.current += 1;
         maybeOfferInlineCapture();
       } catch {
         setError("Something went wrong. Try sending that again.");
         setStreamingText(null);
+        setToolStatus(null);
       } finally {
         setIsWaiting(false);
       }
@@ -407,7 +540,15 @@ export function ChatWidget() {
   const brandColor = config.brandColor || DEFAULT_BRAND_COLOR;
 
   return (
-    <div className="fixed right-4 bottom-4 z-[90] flex flex-col items-end gap-2">
+    <div
+      className={cn(
+        "fixed right-4 bottom-4 z-[90] flex flex-col items-end gap-2",
+        // Below 640px an open panel takes the whole screen: the 420x680 panel
+        // leaves no room for a Calendly month view on a phone, which is
+        // exactly where the booking has to work.
+        open && "max-sm:inset-0 max-sm:items-stretch max-sm:gap-0",
+      )}
+    >
       {!open && showTeaser && config.teaserText ? (
         <TeaserBubble
           text={config.teaserText}
@@ -430,7 +571,10 @@ export function ChatWidget() {
           aria-modal="false"
           aria-label={`Chat with ${config.personaName}`}
           tabIndex={-1}
-          className="flex h-[680px] max-h-[calc(100vh-7rem)] w-[420px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[8px] border-2 border-[#111111] bg-white shadow-[6px_6px_0_#111111] outline-none"
+          className={cn(
+            "flex h-[680px] max-h-[calc(100vh-7rem)] w-[420px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[8px] border-2 border-[#111111] bg-white shadow-[6px_6px_0_#111111] outline-none",
+            "max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:rounded-none max-sm:border-0 max-sm:shadow-none",
+          )}
         >
           <PanelHeader
             personaName={config.personaName}
@@ -457,6 +601,7 @@ export function ChatWidget() {
                 messages={messages}
                 streamingText={streamingText}
                 isWaiting={isWaiting}
+                toolStatus={toolStatus}
               />
               {showInlineCapture ? (
                 <div className="px-4 pb-2">
@@ -562,6 +707,30 @@ function clearSessionFlag(key: string): void {
     window.sessionStorage.removeItem(key);
   } catch {
     // ignore
+  }
+}
+
+type ChatStreamFrame =
+  | { t: "text"; v: string }
+  | { t: "flush" }
+  | { t: "status"; v: "finding_times" }
+  | {
+      t: "msg";
+      content: string;
+      kind: NonNullable<ChatDisplayMessage["kind"]>;
+      data?: Record<string, unknown> | null;
+    };
+
+/** One NDJSON line to a frame. A malformed or unknown line is skipped, never thrown on. */
+function parseFrame(line: string): ChatStreamFrame | null {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = JSON.parse(trimmed) as ChatStreamFrame;
+    if (parsed && typeof parsed === "object" && "t" in parsed) return parsed;
+    return null;
+  } catch {
+    return null;
   }
 }
 

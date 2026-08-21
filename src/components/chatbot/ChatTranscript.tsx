@@ -1,9 +1,13 @@
 import { cn } from "@/lib/utils";
+import { ChatRichMessage } from "@/components/chatbot/ChatRichMessage";
 import { parseChatLinks } from "@/lib/chatbot/parse-chat-links";
 
 export interface ChatDisplayMessage {
   role: "user" | "assistant";
   content: string;
+  /** Absent means a plain text bubble — see conversation-store's ChatbotMessageKind. */
+  kind?: "text" | "calendar" | "resource_card" | "booking_confirmed";
+  data?: Record<string, unknown> | null;
 }
 
 interface ChatTranscriptProps {
@@ -14,6 +18,8 @@ interface ChatTranscriptProps {
   /** The in-flight assistant reply, appended chunk by chunk while streaming. */
   streamingText: string | null;
   isWaiting: boolean;
+  /** Set while a tool runs, e.g. "finding_times" as the calendar is fetched. */
+  toolStatus: "finding_times" | null;
 }
 
 /**
@@ -29,6 +35,7 @@ export function ChatTranscript({
   messages,
   streamingText,
   isWaiting,
+  toolStatus,
 }: ChatTranscriptProps) {
   return (
     <div
@@ -53,7 +60,15 @@ export function ChatTranscript({
           isStreaming
         />
       ) : null}
-      {isWaiting && streamingText === null ? (
+      {toolStatus === "finding_times" ? (
+        <PendingLine
+          personaName={personaName}
+          avatarUrl={avatarUrl}
+          brandColor={brandColor}
+          label={`${personaName} is finding times…`}
+        />
+      ) : null}
+      {isWaiting && streamingText === null && toolStatus === null ? (
         <TypingIndicator
           personaName={personaName}
           avatarUrl={avatarUrl}
@@ -63,6 +78,16 @@ export function ChatTranscript({
     </div>
   );
 }
+
+/**
+ * Entrance animation. Every bubble gets it, including rich cards — a card
+ * that pops in without the same rise reads as a page element rather than
+ * something the persona just sent. Same `motion-safe:animate-[...]` +
+ * @keyframes convention SitePopup uses, so there is one animation approach in
+ * the codebase rather than two.
+ */
+const ENTER_ANIMATION =
+  "motion-safe:animate-[vp-chat-message-in_220ms_ease-out]";
 
 function MessageBubble({
   message,
@@ -79,12 +104,35 @@ function MessageBubble({
   isStreaming?: boolean;
 }) {
   const isUser = message.role === "user";
+  const isRich = Boolean(message.kind && message.kind !== "text");
+
+  if (isRich) {
+    return (
+      <div className={cn("flex items-end gap-2", ENTER_ANIMATION)}>
+        <PersonaAvatar
+          personaName={personaName}
+          avatarUrl={avatarUrl}
+          brandColor={brandColor}
+        />
+        <ChatRichMessage message={message} brandColor={brandColor} />
+      </div>
+    );
+  }
+
   // Links are only parsed into real anchors once the message is done
   // streaming, so it's fine for `[text](url)` to show briefly mid-stream.
   const content =
     !isUser && !isStreaming ? parseChatLinks(message.content) : message.content;
   return (
-    <div className={cn("flex items-end gap-2", isUser && "flex-row-reverse")}>
+    <div
+      className={cn(
+        "flex items-end gap-2",
+        isUser && "flex-row-reverse",
+        // A streaming bubble re-renders on every chunk; re-running the
+        // entrance animation each time would make it flicker.
+        !isStreaming && ENTER_ANIMATION,
+      )}
+    >
       {isUser ? null : (
         <PersonaAvatar
           personaName={personaName}
@@ -100,6 +148,31 @@ function MessageBubble({
         style={isUser ? { backgroundColor: brandColor } : undefined}
       >
         {content}
+      </div>
+    </div>
+  );
+}
+
+function PendingLine({
+  personaName,
+  avatarUrl,
+  brandColor,
+  label,
+}: {
+  personaName: string;
+  avatarUrl: string | null;
+  brandColor: string;
+  label: string;
+}) {
+  return (
+    <div className={cn("flex items-end gap-2", ENTER_ANIMATION)}>
+      <PersonaAvatar
+        personaName={personaName}
+        avatarUrl={avatarUrl}
+        brandColor={brandColor}
+      />
+      <div className="rounded-[8px] border-2 border-dashed border-[#111111] bg-white px-3 py-2 text-[13px] font-bold text-[#4b5563]">
+        {label}
       </div>
     </div>
   );

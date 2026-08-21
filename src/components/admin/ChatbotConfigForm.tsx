@@ -438,6 +438,7 @@ export function ChatbotConfigForm({ config }: { config: ChatbotConfig }) {
                 messages={previewMessages}
                 streamingText={null}
                 isWaiting={false}
+                toolStatus={null}
               />
               <StarterQuestionChips
                 questions={starterQuestions}

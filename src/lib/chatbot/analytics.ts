@@ -14,7 +14,10 @@ type ConversationRow = Pick<
   | "captured_phone"
   | "messages"
   | "prospect_profile"
->;
+> & {
+  /** Absent until 20260821140000_chatbot_v2_conversion has been applied. */
+  call_booked_at?: string | null;
+};
 
 /**
  * Windowed count with a same-length prior comparison — the same
@@ -34,7 +37,20 @@ export type ChatbotAnalytics = {
   conversations30d: ChatbotAnalyticsMetric;
   conversations7d: number;
   leadsCaptured30d: ChatbotAnalyticsMetric;
+  /** The v2 headline: booked calls attributed to a chat conversation. */
+  callsBooked30d: ChatbotAnalyticsMetric;
   captureRatePct: number;
+  /**
+   * The slide for the sales team: how many conversations became captured
+   * leads, and how many of those became a call on the calendar.
+   */
+  funnel30d: {
+    conversations: number;
+    captured: number;
+    booked: number;
+    capturedRatePct: number;
+    bookedRatePct: number;
+  };
   avgMessagesPerConversation: number;
   dailyTrend: ChatbotDailyTrendRow[];
   topOpeningQuestions: ChatbotRankedRow[];
@@ -51,7 +67,15 @@ export const EMPTY_CHATBOT_ANALYTICS: ChatbotAnalytics = {
   conversations30d: { value: 0, prior: 0, deltaPct: null },
   conversations7d: 0,
   leadsCaptured30d: { value: 0, prior: 0, deltaPct: null },
+  callsBooked30d: { value: 0, prior: 0, deltaPct: null },
   captureRatePct: 0,
+  funnel30d: {
+    conversations: 0,
+    captured: 0,
+    booked: 0,
+    capturedRatePct: 0,
+    bookedRatePct: 0,
+  },
   avgMessagesPerConversation: 0,
   dailyTrend: [],
   topOpeningQuestions: [],
@@ -69,7 +93,18 @@ const FETCH_CAP = 4000;
 const TOP_N = 12;
 
 const ROW_FIELDS =
+  "id, created_at, message_count, captured_email, captured_phone, messages, prospect_profile, call_booked_at" as const;
+
+// Pre-migration column list — same tolerant-fallback pattern as
+// chatbot/config.ts. Without it, a deploy that lands before the v2 migration
+// is applied would blank the entire /admin/chatbot page rather than just the
+// one metric that has no data yet.
+const LEGACY_ROW_FIELDS =
   "id, created_at, message_count, captured_email, captured_phone, messages, prospect_profile" as const;
+
+function isMissingColumnError(message: string): boolean {
+  return message.includes("call_booked_at") || message.includes("42703");
+}
 
 type ServiceDeps = { client?: ChatbotAnalyticsClient; now?: () => Date };
 
@@ -94,7 +129,17 @@ export async function getChatbotAnalytics(
       .order("created_at", { ascending: false })
       .limit(FETCH_CAP);
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (!isMissingColumnError(error.message)) throw new Error(error.message);
+      const legacy = await client
+        .from("chatbot_conversations")
+        .select(LEGACY_ROW_FIELDS)
+        .gte("created_at", priorStart.toISOString())
+        .order("created_at", { ascending: false })
+        .limit(FETCH_CAP);
+      if (legacy.error) throw new Error(legacy.error.message);
+      return buildAnalytics((legacy.data ?? []) as ConversationRow[], now);
+    }
     return buildAnalytics((data ?? []) as ConversationRow[], now);
   } catch (error) {
     console.warn("chatbot analytics load failed, returning empty rollup", {
@@ -119,6 +164,8 @@ function buildAnalytics(rows: ConversationRow[], now: Date): ChatbotAnalytics {
 
   const currentCaptured = current.filter(isCaptured);
   const priorCaptured = prior.filter(isCaptured);
+  const currentBooked = current.filter(isBooked);
+  const priorBooked = prior.filter(isBooked);
 
   const totalMessages = current.reduce(
     (sum, row) => sum + (row.message_count ?? 0),
@@ -129,7 +176,19 @@ function buildAnalytics(rows: ConversationRow[], now: Date): ChatbotAnalytics {
     conversations30d: buildMetric(current.length, prior.length),
     conversations7d,
     leadsCaptured30d: buildMetric(currentCaptured.length, priorCaptured.length),
+    callsBooked30d: buildMetric(currentBooked.length, priorBooked.length),
     captureRatePct: ratePct(currentCaptured.length, current.length),
+    funnel30d: {
+      conversations: current.length,
+      captured: currentCaptured.length,
+      booked: currentBooked.length,
+      capturedRatePct: ratePct(currentCaptured.length, current.length),
+      // Deliberately measured against captured, not against all
+      // conversations: it answers "of the people who engaged enough to leave
+      // details, how many got on the calendar", which is the number the sales
+      // team can actually act on.
+      bookedRatePct: ratePct(currentBooked.length, currentCaptured.length),
+    },
     avgMessagesPerConversation: current.length
       ? Math.round((totalMessages / current.length) * 10) / 10
       : 0,
@@ -142,6 +201,11 @@ function buildAnalytics(rows: ConversationRow[], now: Date): ChatbotAnalytics {
 
 function isCaptured(row: ConversationRow): boolean {
   return Boolean(row.captured_email?.trim() || row.captured_phone?.trim());
+}
+
+/** A live booking. Cleared on cancellation by the Calendly webhook, so this counts calls still on the calendar. */
+function isBooked(row: ConversationRow): boolean {
+  return Boolean(row.call_booked_at);
 }
 
 function inWindow(createdAt: string, start: Date, end: Date): boolean {

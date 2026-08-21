@@ -8,9 +8,36 @@ import { config } from "@/lib/config";
 
 const CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
 
+export type ChatbotToolCall = {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+};
+
+/**
+ * Deliberately one loose shape rather than a discriminated union: this object
+ * is serialized straight into the OpenAI request body, and every consumer
+ * here builds it field by field. A union would buy type-safety the call site
+ * immediately has to cast its way out of.
+ *
+ * - `content` is null only on an assistant turn that is purely tool calls.
+ * - `tool_calls` belongs on an assistant message; `tool_call_id` on a `tool`
+ *   message answering one.
+ */
 export type ChatbotChatMessage = {
-  role: "system" | "user" | "assistant";
-  content: string;
+  role: "system" | "user" | "assistant" | "tool";
+  content: string | null;
+  tool_calls?: ChatbotToolCall[];
+  tool_call_id?: string;
+};
+
+export type ChatbotToolDefinition = {
+  type: "function";
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
 };
 
 export class ChatbotOpenAiError extends Error {
@@ -30,6 +57,8 @@ export type StreamChatbotReplyOptions = {
   apiKey?: string;
   fetchFn?: FetchLike;
   maxOutputTokens?: number;
+  /** Omitted or empty means no `tools` key in the request at all. */
+  tools?: ChatbotToolDefinition[];
 };
 
 /**
@@ -62,6 +91,9 @@ export async function streamChatbotReply(
         // Short replies by design (see build-system-prompt's FORMATTING
         // rule: 1-3 sentences per turn) — this is a ceiling, not a target.
         max_tokens: options.maxOutputTokens ?? 700,
+        ...(options.tools?.length
+          ? { tools: options.tools, tool_choice: "auto" }
+          : {}),
       }),
       signal: AbortSignal.timeout(STREAM_TIMEOUT_MS),
     });

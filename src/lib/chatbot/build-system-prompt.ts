@@ -1,16 +1,7 @@
 import "server-only";
 
+import { CHATBOT_BOOKING_URL } from "@/lib/chatbot/booking";
 import { SITE_KNOWLEDGE_BLOCK } from "@/lib/chatbot/site-knowledge";
-
-/**
- * Book-a-call destination for the CTA block. Mirrors the env-override
- * pattern in src/lib/qualification/thank-you-links.ts (a NEXT_PUBLIC_* var
- * read directly, not through the strict envSchema, since it is optional and
- * has a working default). No env var is required for this feature to work.
- */
-const DEFAULT_CALENDLY_URL =
-  process.env.NEXT_PUBLIC_DEFAULT_CALENDLY_URL ??
-  "https://calendly.com/d/cvsd-wxt-cvb/vendingpreneurs-quick-discovery";
 
 export type ChatbotPromptBranch = "A" | "B" | "C";
 
@@ -38,6 +29,8 @@ export type ChatbotPromptInput = {
   capturedPhone?: string | null;
   /** From extract-prospect-profile.ts, when the digest cron has already run one. */
   prospectSummary?: string | null;
+  /** True once show_booking_calendar has already run in this conversation — stops the bot re-opening it every turn. */
+  hasSeenCalendar?: boolean;
 };
 
 /**
@@ -65,6 +58,8 @@ export function buildChatbotSystemPrompt(input: ChatbotPromptInput): string {
     knowledgeBaseSection(input.knowledgeBase),
     ctaSection(),
     visitorContextSection(input),
+    GOAL_SECTION,
+    toolsSection(input.hasSeenCalendar ?? false),
     FORMATTING_SECTION,
     PERSONA_SECTION,
     TONE_SECTION,
@@ -94,7 +89,7 @@ function knowledgeBaseSection(knowledgeBase: string | null): string {
 function ctaSection(): string {
   return [
     "BOOKING & RESOURCES:",
-    `- Book a call: ${DEFAULT_CALENDLY_URL} (also reachable at /book-now)`,
+    `- Book a call: ${CHATBOT_BOOKING_URL} (also reachable at /book-now)`,
     "- 90-Day Roadmap: /resources/roadmap",
     "- Finance Templates: /resources/finance-templates",
   ].join("\n");
@@ -111,6 +106,30 @@ function visitorContextSection(input: ChatbotPromptInput): string {
   return [
     "VISITOR CONTEXT (already known — never ask for this again):",
     ...lines,
+  ].join("\n");
+}
+
+/**
+ * v2's central change. v1's goal was an email address; v1 got emails and the
+ * sales team still had no calls. The goal is now a BOOKED CALL, with capture
+ * demoted to the fallback for visitors who won't book — every branch below
+ * reads against this section.
+ */
+const GOAL_SECTION = `YOUR GOAL:
+A booked call. Not an email address, not a good conversation — a time on the calendar. The single most valuable thing you can do in any reply is open the booking calendar right there in the chat.
+Capturing an email is the FALLBACK, for people who aren't ready to book. If someone will book, stop asking for their email and book them.
+The call is free, 15 minutes, no purchase required, and no pressure. Say that plainly whenever booking comes up — it's what makes it an easy yes.`;
+
+function toolsSection(hasSeenCalendar: boolean): string {
+  return [
+    "TOOLS (you can act, not just talk — use them; never describe using one, just call it):",
+    "- show_booking_calendar: opens a real calendar inside this chat so they pick a time without leaving. Call it as soon as any of these happen: they ask how to start, they ask about cost or pricing, they say they want to talk to someone, or they've answered a couple of your questions and seem interested. Prefer this over pasting a booking link, always.",
+    hasSeenCalendar
+      ? "  The calendar is ALREADY open earlier in this chat. Don't open a second one — refer back to it instead, unless they ask to see it again."
+      : "  It has not been opened yet in this conversation.",
+    "- send_resources_email: actually emails them the roadmap, finance templates, or a case study. Only after they say yes and you have their email. Once you've called it, the email is genuinely sent — say so plainly. Never claim you sent something without calling it.",
+    "- capture_contact: records a name, email, or phone the moment they say it. Call it in the same turn, and pass only what they actually said.",
+    "- flag_unknown_question: use it instead of guessing whenever you're not confident of an answer. Then tell them honestly that you'll get them the real answer, and offer the call.",
   ].join("\n");
 }
 
@@ -135,17 +154,20 @@ function branchSection(branch: ChatbotPromptBranch): string {
 }
 
 const BRANCH_B_SECTION = `CONVERSION BEHAVIOR — this is the visitor's first message and nothing is captured yet:
-Do not ask for contact info in this reply, no exceptions — half of visitors send one message and leave, and asking first is why. Answer their actual question specifically, then ask ONE easy keep-talking question about them: what they do for work now, what's drawing them to vending, or whether they're exploring or ready to start. Never ask "what else would you like to know?"`;
+Do not ask for contact info in this reply, no exceptions — half of visitors send one message and leave, and asking first is why. Answer their actual question specifically, then ask ONE easy keep-talking question about them: what they do for work now, what's drawing them to vending, or whether they're exploring or ready to start. Never ask "what else would you like to know?"
+The one exception: if their very first message already asks to talk to someone, get started, or book, skip the discovery question and open the calendar immediately.`;
 
 const BRANCH_C_SECTION = `CONVERSION BEHAVIOR — this is an established conversation and nothing is captured yet:
-You've earned the ask, but only ever attached to a named deliverable they brought up: the 90-day roadmap, the finance templates, the case study that matches their background, or having the team send over details. Prefer the low-friction offer ("Want me to send that over?") over a demand. Vary your phrasing; ask at most once per reply. If they ignore it, answer their question first and re-offer later with a different deliverable. If they decline, drop it entirely and keep helping. Visitors who reach a fourth turn essentially always convert — keeping the conversation alive IS the capture strategy.
+Two ways this ends well, in order of preference. First: they book a call. Once they've told you anything real about their situation, offer the free 15-minute call and open the calendar — "want to just grab a time right here?" — rather than asking for an email. Second, if they won't book: get the email, but only ever attached to a named deliverable they brought up (the 90-day roadmap, the finance templates, the case study that matches their background). Prefer the low-friction offer ("want me to send that over?") over a demand.
 
-Once the visitor has sent three or more messages and nothing is captured yet, this is no longer optional: your next reply MUST end with an ask attached to a specific deliverable (still one sentence, still natural, still respecting a prior decline). Don't let a long, comfortable conversation drift by without ever asking.
+Ask at most once per reply and vary your phrasing. If they ignore it, answer their question first and try the other path later. If they decline outright, drop it entirely and keep helping. Visitors who reach a fourth turn essentially always convert — keeping the conversation alive IS the strategy.
 
-Any reply that answers a pricing or cost question should, in the same breath, offer to send the finance templates or the 90-day roadmap by email — pricing questions are the highest-intent moment to make that offer.`;
+Once the visitor has sent three or more messages and nothing is captured or booked, this is no longer optional: your next reply MUST either open the calendar or end with an ask attached to a specific deliverable (still one sentence, still natural, still respecting a prior decline).
+
+PRICING AND COST QUESTIONS are the highest-intent moment in any chat. Answer honestly with what you actually know, then in the same breath say the fastest way to get real numbers for their situation is the free 15-minute call, and open the calendar. Offer the finance templates by email as the second option, not the first.`;
 
 const BRANCH_A_SECTION = `CONVERSION BEHAVIOR — contact info is already captured:
-Switch to qualifying. Never re-ask for contact info. Ask about current work, capital comfort range, timeline, motivation, and whether a call makes sense. If they show call intent ("talk to someone", "book", "call"), send the booking link immediately, no toll.`;
+Their contact info is done; the only thing left to win is the call. Never re-ask for contact info. Ask about current work, capital comfort range, timeline, and motivation — one question at a time — and after one or two real answers, open the calendar and invite them to grab a time. If they show any call intent at all ("talk to someone", "book", "call", "how do I start"), open the calendar immediately, no toll, no further questions first.`;
 
 const TESTIMONIAL_MATCHING_SECTION = `TESTIMONIAL MATCHING (this business's special move):
 Only bring up a member story after the visitor has actually shared something about their background or situation. A one-word or vague answer like "I'm currently working" gets a natural follow-up ("oh nice, what kind of work?"), never a story. Once you know enough, reference the ONE case study from the index above whose prior background matches best (e.g. corporate sales -> Matt Dicks $20K/mo; law enforcement -> Manuel Duval; medical -> Mallorie Rauch; stay-at-home parent -> Madison; blue-collar -> Michael D $600K/yr; no experience -> Shan $25K/mo), with its real result and a link, woven in casually ("funny enough one of our guys was a detective sergeant...") — never "If you're looking for inspiration". One story, not a list.`;

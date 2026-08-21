@@ -1,7 +1,9 @@
 import "server-only";
 
 import { z } from "zod";
+import { chatbotBookingUrl } from "@/lib/chatbot/booking";
 import { loadChatbotConfig } from "@/lib/chatbot/config";
+import { publicConfig } from "@/lib/config";
 import { toChatbotMessages } from "@/lib/chatbot/conversation-store";
 import {
   checkPublicRateLimit,
@@ -52,7 +54,7 @@ export async function GET(request: Request) {
   const client = createAdminClient();
   const { data } = await client
     .from("chatbot_conversations")
-    .select("messages,status,captured_email,captured_phone")
+    .select("id,messages,status,captured_name,captured_email,captured_phone")
     .eq("session_id", parsed.data.sessionId)
     .maybeSingle();
 
@@ -62,13 +64,40 @@ export async function GET(request: Request) {
 
   return Response.json(
     {
-      messages: toChatbotMessages(data.messages).map(({ role, content }) => ({
-        role,
-        content,
-      })),
+      // `kind`/`data` ride along so a rehydrated transcript shows the same
+      // inline calendar and resource cards the visitor saw before they
+      // navigated — dropping them would silently downgrade the booking
+      // calendar to a plain sentence on every page change.
+      messages: toChatbotMessages(data.messages).map(
+        ({ role, content, kind, data: messageData }) => ({
+          role,
+          content,
+          ...(kind ? { kind, data: messageData ?? null } : {}),
+        }),
+      ),
       status: data.status,
       captured: Boolean(data.captured_email || data.captured_phone),
+      // The conversation-tagged Calendly URL, so the widget can open the
+      // calendar on exit intent without the visitor sending another turn.
+      // Built here rather than in the browser because the conversation id is
+      // the attribution key and never leaves the server otherwise.
+      bookingUrl: chatbotBookingUrl({
+        conversationId: data.id,
+        name: data.captured_name,
+        email: data.captured_email,
+        embed: true,
+        embedDomain: siteHostname(),
+      }),
     },
     { headers: { "Cache-Control": "no-store" } },
   );
+}
+
+/** Calendly requires the embedding page's domain on an inline embed. */
+function siteHostname(): string | null {
+  try {
+    return new URL(publicConfig.siteUrl).hostname;
+  } catch {
+    return null;
+  }
 }

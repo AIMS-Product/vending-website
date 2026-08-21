@@ -8,10 +8,37 @@ type ConversationClient = Pick<SupabaseClient<Database>, "from">;
 export type ChatbotConversation =
   Database["public"]["Tables"]["chatbot_conversations"]["Row"];
 
+/**
+ * Rich-message discriminator (v2). Absent means "text" — every message
+ * written before v2 shipped has no `kind`, so plain absence must keep
+ * rendering as an ordinary bubble forever. Never make this field required.
+ */
+export type ChatbotMessageKind =
+  | "text"
+  | "calendar"
+  | "resource_card"
+  | "booking_confirmed";
+
+export const CHATBOT_MESSAGE_KINDS: readonly ChatbotMessageKind[] = [
+  "text",
+  "calendar",
+  "resource_card",
+  "booking_confirmed",
+];
+
 export type ChatbotMessage = {
   role: "user" | "assistant";
+  /**
+   * Always a plain-language line, even on a rich message ("Opened the booking
+   * calendar in the chat."). It is what the model, the admin transcript
+   * viewer, and the learning engine read, so a rich message is never opaque
+   * to any of them.
+   */
   content: string;
   ts: string;
+  kind?: ChatbotMessageKind;
+  /** Renderer payload for a rich `kind` — the calendar URL, the resource card fields. */
+  data?: Record<string, Json>;
 };
 
 const CONVERSATION_FIELDS =
@@ -163,11 +190,26 @@ export function toChatbotMessages(value: Json | null): ChatbotMessage[] {
       typeof content === "string" &&
       content.length > 0
     ) {
-      messages.push({
+      const message: ChatbotMessage = {
         role,
         content,
         ts: typeof ts === "string" ? ts : new Date(0).toISOString(),
-      });
+      };
+      const kind = (entry as Record<string, unknown>).kind;
+      // An unrecognised kind (hand-edited row, a kind from a newer deploy)
+      // degrades to a plain bubble rather than rendering nothing.
+      if (
+        typeof kind === "string" &&
+        CHATBOT_MESSAGE_KINDS.includes(kind as ChatbotMessageKind) &&
+        kind !== "text"
+      ) {
+        message.kind = kind as ChatbotMessageKind;
+        const data = (entry as Record<string, unknown>).data;
+        if (data && typeof data === "object" && !Array.isArray(data)) {
+          message.data = data as Record<string, Json>;
+        }
+      }
+      messages.push(message);
     }
   }
   return messages;

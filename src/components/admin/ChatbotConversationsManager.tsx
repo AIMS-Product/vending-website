@@ -154,7 +154,14 @@ function ConversationRow({ item }: { item: AdminChatbotConversationListItem }) {
         {item.firstUserMessage ?? "—"}
       </td>
       <td className="px-3 py-3">
-        <AdminStatusBadge status={item.status} />
+        <div className="flex flex-wrap items-center gap-1.5">
+          <AdminStatusBadge status={item.status} />
+          {item.callBookedAt ? (
+            <span className="rounded-ui bg-ui-ok-fill text-ui-ok-ink inline-flex items-center px-1.5 py-0.5 text-[0.6875rem] font-medium">
+              Booked
+            </span>
+          ) : null}
+        </div>
       </td>
       <td className="text-ui-text px-3 py-3 tabular-nums">
         {item.messageCount}

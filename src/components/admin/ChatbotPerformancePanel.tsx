@@ -40,16 +40,19 @@ export function ChatbotPerformancePanel({
       </div>
 
       <AdminMetricStrip>
+        {/* Calls booked leads the strip on purpose: it is the number the
+            chatbot is actually accountable for. */}
+        <AdminMetricPanel
+          label="Calls booked (30d)"
+          value={analytics.callsBooked30d.value}
+          caption="booked from a chat"
+          delta={<DeltaChip metric={analytics.callsBooked30d} />}
+        />
         <AdminMetricPanel
           label="Conversations (30d)"
           value={analytics.conversations30d.value}
-          caption="vs prior 30 days"
+          caption={`${analytics.conversations7d} in the last 7 days`}
           delta={<DeltaChip metric={analytics.conversations30d} />}
-        />
-        <AdminMetricPanel
-          label="Last 7 days"
-          value={analytics.conversations7d}
-          caption="conversations"
         />
         <AdminMetricPanel
           label="Leads captured (30d)"
@@ -63,6 +66,8 @@ export function ChatbotPerformancePanel({
           caption={`avg ${analytics.avgMessagesPerConversation} messages / conversation`}
         />
       </AdminMetricStrip>
+
+      <ConversionFunnel funnel={analytics.funnel30d} />
 
       <nav
         className="border-ui-line flex flex-wrap gap-1 border-b"
@@ -94,6 +99,61 @@ export function ChatbotPerformancePanel({
       {tab === "volume" ? <VolumeTab analytics={analytics} /> : null}
       {tab === "questions" ? <QuestionsTab analytics={analytics} /> : null}
       {tab === "prospects" ? <ProspectsTab analytics={analytics} /> : null}
+    </section>
+  );
+}
+
+/**
+ * Conversations -> captured -> booked, over 30 days. Three numbers and two
+ * rates, because that is the whole argument: the chat talks to N people, gets
+ * details from some, and puts some of those on the calendar.
+ */
+function ConversionFunnel({
+  funnel,
+}: {
+  funnel: ChatbotAnalytics["funnel30d"];
+}) {
+  const steps = [
+    { label: "Conversations", value: funnel.conversations, rate: null },
+    {
+      label: "Contact captured",
+      value: funnel.captured,
+      rate: `${funnel.capturedRatePct}% of conversations`,
+    },
+    {
+      label: "Calls booked",
+      value: funnel.booked,
+      rate: `${funnel.bookedRatePct}% of captured leads`,
+    },
+  ];
+
+  return (
+    <section className={adminCardClass} aria-label="Chatbot conversion funnel">
+      <h2 className={adminEyebrowClass}>Conversion funnel (30 days)</h2>
+      {funnel.conversations === 0 ? (
+        <p className="text-ui-text-subtle mt-3 text-sm">
+          No conversations in the last 30 days yet.
+        </p>
+      ) : (
+        <ol className="mt-3 grid gap-2 sm:grid-cols-3">
+          {steps.map((step) => (
+            <li
+              key={step.label}
+              className="rounded-ui border-ui-line border p-3"
+            >
+              <p className="text-ui-text-subtle text-[0.6875rem] font-medium tracking-wide uppercase">
+                {step.label}
+              </p>
+              <p className="text-ui-text mt-1 text-2xl font-semibold tabular-nums">
+                {step.value}
+              </p>
+              <p className="text-ui-text-subtle mt-0.5 text-xs tabular-nums">
+                {step.rate ?? "starting point"}
+              </p>
+            </li>
+          ))}
+        </ol>
+      )}
     </section>
   );
 }

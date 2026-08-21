@@ -1,3 +1,4 @@
+import { applyChatbotBookingAttribution } from "@/lib/chatbot/booking-attribution";
 import { recordCalendlyBooking } from "@/lib/services/calendly-bookings";
 import { config } from "@/lib/config";
 import {
@@ -26,7 +27,20 @@ export async function POST(request: Request) {
       return Response.json({ ok: false }, { status: 400 });
     }
 
-    await recordCalendlyBooking(createAdminClient(), event);
+    const client = createAdminClient();
+    await recordCalendlyBooking(client, event);
+
+    // Chat attribution runs after the booking is safely recorded and never
+    // fails the webhook: a retry storm caused by a bookkeeping error would
+    // cost real bookings.
+    try {
+      await applyChatbotBookingAttribution(client, event);
+    } catch (error) {
+      console.warn("calendly webhook: chatbot attribution failed", {
+        name: error instanceof Error ? error.name : "UnknownError",
+      });
+    }
+
     return Response.json({ ok: true });
   } catch (error) {
     console.error("calendly webhook failed", {

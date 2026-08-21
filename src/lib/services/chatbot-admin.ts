@@ -48,6 +48,8 @@ export type AdminChatbotConversationListItem = {
   messageCount: number;
   lastMessageAt: string;
   createdAt: string;
+  /** Set when a Calendly booking was attributed to this conversation. Null once cancelled. */
+  callBookedAt: string | null;
   flags: ChatbotFlag[];
 };
 
@@ -69,7 +71,16 @@ export type AdminChatbotConversationsResult = {
 };
 
 const LIST_FIELDS =
+  "id, session_id, status, captured_name, captured_email, captured_phone, messages, message_count, last_message_at, created_at, call_booked_at" as const;
+
+// Pre-migration shape, same tolerant fallback as chatbot/config.ts — a deploy
+// ahead of the v2 migration loses the Booked badge, not the whole list.
+const LEGACY_LIST_FIELDS =
   "id, session_id, status, captured_name, captured_email, captured_phone, messages, message_count, last_message_at, created_at" as const;
+
+function isMissingColumnError(message: string): boolean {
+  return message.includes("call_booked_at") || message.includes("42703");
+}
 
 export async function adminListConversations(
   input: AdminListConversationsInput = {},
@@ -77,14 +88,13 @@ export async function adminListConversations(
 ): Promise<AdminChatbotConversationsResult> {
   const client = deps.client ?? createAdminClient();
 
-  const { data, error } = await client
+  const loaded = await client
     .from("chatbot_conversations")
     .select(LIST_FIELDS)
     .order("last_message_at", { ascending: false })
     .limit(LIST_CAP);
-  if (error) throw new ChatbotAdminError("Could not load conversations.");
 
-  const rows = (data ?? []) as Pick<
+  type ListRow = Pick<
     ConversationRow,
     | "id"
     | "session_id"
@@ -96,7 +106,25 @@ export async function adminListConversations(
     | "message_count"
     | "last_message_at"
     | "created_at"
-  >[];
+  > & { call_booked_at?: string | null };
+
+  let data = loaded.data as ListRow[] | null;
+  if (loaded.error) {
+    if (!isMissingColumnError(loaded.error.message)) {
+      throw new ChatbotAdminError("Could not load conversations.");
+    }
+    const legacy = await client
+      .from("chatbot_conversations")
+      .select(LEGACY_LIST_FIELDS)
+      .order("last_message_at", { ascending: false })
+      .limit(LIST_CAP);
+    if (legacy.error) {
+      throw new ChatbotAdminError("Could not load conversations.");
+    }
+    data = legacy.data as ListRow[] | null;
+  }
+
+  const rows = data ?? [];
 
   const ids = rows.map((row) => row.id);
   const flagsByConversation = await fetchFlagsFor(client, ids);
@@ -112,6 +140,7 @@ export async function adminListConversations(
     messageCount: row.message_count ?? 0,
     lastMessageAt: row.last_message_at,
     createdAt: row.created_at,
+    callBookedAt: row.call_booked_at ?? null,
     flags: flagsByConversation.get(row.id) ?? [],
   }));
 
