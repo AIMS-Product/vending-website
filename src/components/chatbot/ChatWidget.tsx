@@ -67,19 +67,25 @@ export function ChatWidget() {
   const hasGreetedRef = useRef(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+
+  // Admin pages never render the widget (see `enabled` below) — skip the
+  // fetch entirely there too, so admin page loads make zero chatbot
+  // requests instead of fetching config just to throw it away.
   useEffect(() => {
+    if (isAdminRoute) return;
     fetch("/api/chatbot/config")
       .then((response) => (response.ok ? response.json() : null))
       .then((data: PublicChatbotConfig | null) => setConfig(data))
       .catch(() => setConfig(null));
-  }, []);
+  }, [isAdminRoute]);
 
   useEffect(() => {
+    if (isAdminRoute) return;
     sessionIdRef.current = readOrCreateSessionId();
     ensureVisitorCookie();
-  }, []);
+  }, [isAdminRoute]);
 
-  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   const enabled = Boolean(config?.enabled) && !isAdminRoute;
 
   // Teaser bubble after idleTriggerSeconds (0 disables it), unless already

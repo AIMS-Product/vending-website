@@ -34,6 +34,11 @@ const DEBOUNCE_MINUTES = 30;
 const IDLE_MINUTES = 5;
 const STALE_HOURS = 24;
 const MAX_DIGEST_CRON_PER_RUN = 25;
+// Wider than the per-run cap: PostgREST cannot compare two columns
+// (prospect_profile_emailed_at vs last_message_at) in a filter, so the real
+// "anything new since the last email" check runs in code below, over a wider
+// candidate set, before the final cap is applied.
+const DIGEST_CRON_CANDIDATE_LIMIT = 100;
 const CATCH_UP_MAX_CONVERSATIONS = 200;
 const CATCH_UP_EXTRACTION_CONCURRENCY = 4;
 const CATCH_UP_EXTRACTION_BUDGET_MS = 50_000;
@@ -84,11 +89,15 @@ export type SendProfileEmailResult = { sent: boolean; reason?: string };
 
 /**
  * Single-conversation seam: extract (or reuse a stored) profile, send the
- * one-conversation email, stamp the debounce. Every path that stamps also
- * stamps on a failed send — the alternative (retry every cron tick forever
- * on a broken Resend key) is worse than waiting for the next debounce
- * window. `force` skips the debounce check only; it never skips the
- * "has a captured email or phone" requirement.
+ * one-conversation email, stamp the debounce. Extraction + persistence of
+ * the profile always runs once a contact is captured, independent of
+ * whether routing/Resend is configured — only the *stamp* is gated on an
+ * actual send attempt. A path that attempts a send stamps even on a failed
+ * send — the alternative (retry every cron tick forever on a broken Resend
+ * key) is worse than waiting for the next debounce window; a path that
+ * never attempts a send does not stamp, so a later config fix still finds
+ * the conversation eligible. `force` skips the debounce check only; it
+ * never skips the "has a captured email or phone" requirement.
  */
 export async function sendProfileEmailForConversation(
   conversationId: string,
@@ -117,18 +126,26 @@ export async function sendProfileEmailForConversation(
   }
 
   const config = await loadChatbotConfigFresh();
-  if (!chatbotEmailsEnabled(config)) {
-    // Stamp anyway (see file comment) — nothing left to retry toward.
-    await stampEmailed(client, conversationId, now);
-    return { sent: false, reason: "Lead routing is off or has no recipients." };
-  }
 
+  // Extract + persist regardless of whether an email can actually go out —
+  // routing being off or Resend being unconfigured must not cost the team
+  // the profile data itself. `if (!profile)` also means this only ever runs
+  // once per conversation: a re-read on the next call sees the stored value
+  // and skips straight past extraction.
   let profile = conv.prospectProfile;
   if (!profile) {
     profile = await extractProspectProfile(conv.messages, {
       model: config.model,
     });
     if (profile) await storeProfile(client, conversationId, profile);
+  }
+
+  if (!chatbotEmailsEnabled(config)) {
+    // No send was attempted, so do NOT stamp — stamping here without ever
+    // trying is exactly what left prospect_profile_emailed_at set while
+    // prospect_profile stayed null. Leave the conversation eligible so a
+    // later routing fix still picks it up.
+    return { sent: false, reason: "Lead routing is off or has no recipients." };
   }
 
   const input: ChatbotProfileEmailInput = {
@@ -239,9 +256,6 @@ async function findDigestCronEligibleConversations(
   const idleCutoff = new Date(
     now.getTime() - IDLE_MINUTES * 60_000,
   ).toISOString();
-  const debounceCutoff = new Date(
-    now.getTime() - DEBOUNCE_MINUTES * 60_000,
-  ).toISOString();
 
   const { data, error } = await client
     .from("chatbot_conversations")
@@ -251,13 +265,24 @@ async function findDigestCronEligibleConversations(
     .in("status", ["active", "lead_captured"])
     .lte("last_message_at", idleCutoff)
     .or("captured_email.not.is.null,captured_phone.not.is.null")
-    .or(
-      `prospect_profile_emailed_at.is.null,prospect_profile_emailed_at.lt.${debounceCutoff}`,
-    )
     .order("last_message_at", { ascending: true })
-    .limit(MAX_DIGEST_CRON_PER_RUN);
+    .limit(DIGEST_CRON_CANDIDATE_LIMIT);
   if (error) throw new Error(error.message);
-  return (data ?? []).map(toDigestConversation);
+
+  // Steady state must be zero eligible rows once nothing has happened since
+  // the last email — a wall-clock debounce (elapsed time since the email)
+  // can't express that, it just re-opens every DEBOUNCE_MINUTES forever.
+  // "Never emailed" or "a visitor turn landed after the last email" are the
+  // only two eligible states.
+  const eligible = (data ?? []).filter((row) => {
+    if (!row.prospect_profile_emailed_at) return true;
+    return (
+      new Date(row.prospect_profile_emailed_at).getTime() <
+      new Date(row.last_message_at).getTime()
+    );
+  });
+
+  return eligible.slice(0, MAX_DIGEST_CRON_PER_RUN).map(toDigestConversation);
 }
 
 export async function markStaleUncapturedConversationsAbandoned(

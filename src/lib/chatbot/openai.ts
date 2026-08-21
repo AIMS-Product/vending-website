@@ -39,26 +39,39 @@ export type StreamChatbotReplyOptions = {
  * request outright — a mid-stream OpenAI error still surfaces as SSE data
  * the caller must handle itself.
  */
+const STREAM_TIMEOUT_MS = 30_000;
+const EXTRACTION_TIMEOUT_MS = 15_000;
+
 export async function streamChatbotReply(
   options: StreamChatbotReplyOptions,
 ): Promise<Response> {
   const apiKey = resolveApiKey(options.apiKey);
 
-  const response = await (options.fetchFn ?? fetch)(CHAT_COMPLETIONS_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: options.model,
-      messages: options.messages,
-      stream: true,
-      // Short replies by design (see build-system-prompt's FORMATTING rule:
-      // 1-3 sentences per turn) — this is a ceiling, not a target.
-      max_tokens: options.maxOutputTokens ?? 700,
-    }),
-  });
+  let response: Response;
+  try {
+    response = await (options.fetchFn ?? fetch)(CHAT_COMPLETIONS_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: options.model,
+        messages: options.messages,
+        stream: true,
+        // Short replies by design (see build-system-prompt's FORMATTING
+        // rule: 1-3 sentences per turn) — this is a ceiling, not a target.
+        max_tokens: options.maxOutputTokens ?? 700,
+      }),
+      signal: AbortSignal.timeout(STREAM_TIMEOUT_MS),
+    });
+  } catch (error) {
+    throw new ChatbotOpenAiError(
+      isTimeoutError(error)
+        ? "OpenAI chat request timed out."
+        : `OpenAI chat request failed: ${errorMessage(error)}.`,
+    );
+  }
 
   if (!response.ok || !response.body) {
     throw new ChatbotOpenAiError(
@@ -89,22 +102,35 @@ export async function extractChatbotJson(
 ): Promise<unknown> {
   const apiKey = resolveApiKey(options.apiKey);
 
-  const response = await (options.fetchFn ?? fetch)(CHAT_COMPLETIONS_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: options.model,
-      messages: [
-        { role: "system", content: options.systemPrompt },
-        { role: "user", content: options.userContent },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0,
-    }),
-  });
+  let response: Response;
+  try {
+    response = await (options.fetchFn ?? fetch)(CHAT_COMPLETIONS_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: options.model,
+        messages: [
+          { role: "system", content: options.systemPrompt },
+          { role: "user", content: options.userContent },
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0,
+      }),
+      signal: AbortSignal.timeout(EXTRACTION_TIMEOUT_MS),
+    });
+  } catch (error) {
+    // Caller (extract-prospect-profile.ts) is fail-soft end to end — this
+    // still throws so it logs a specific reason there instead of a raw
+    // AbortError/DOMException.
+    throw new ChatbotOpenAiError(
+      isTimeoutError(error)
+        ? "OpenAI extraction request timed out."
+        : `OpenAI extraction request failed: ${errorMessage(error)}.`,
+    );
+  }
 
   const body = await response.text();
   if (!response.ok) {
@@ -118,18 +144,24 @@ export async function extractChatbotJson(
   try {
     payload = JSON.parse(body);
   } catch {
-    throw new ChatbotOpenAiError("OpenAI returned invalid JSON for extraction.");
+    throw new ChatbotOpenAiError(
+      "OpenAI returned invalid JSON for extraction.",
+    );
   }
 
   const content = extractChatCompletionText(payload);
   if (!content) {
-    throw new ChatbotOpenAiError("OpenAI returned an empty extraction response.");
+    throw new ChatbotOpenAiError(
+      "OpenAI returned an empty extraction response.",
+    );
   }
 
   try {
     return JSON.parse(content);
   } catch {
-    throw new ChatbotOpenAiError("OpenAI extraction content was not valid JSON.");
+    throw new ChatbotOpenAiError(
+      "OpenAI extraction content was not valid JSON.",
+    );
   }
 }
 
@@ -151,6 +183,20 @@ function extractChatCompletionText(payload: unknown): string | null {
   if (typeof message !== "object" || !message) return null;
   const content = (message as { content?: unknown }).content;
   return typeof content === "string" ? content : null;
+}
+
+// AbortSignal.timeout() rejects with a DOMException — "TimeoutError" on
+// modern runtimes, "AbortError" on older ones. Either means the same thing
+// here: the request took too long, not that OpenAI rejected it.
+function isTimeoutError(error: unknown): boolean {
+  return (
+    error instanceof DOMException &&
+    (error.name === "TimeoutError" || error.name === "AbortError")
+  );
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "unknown error";
 }
 
 async function safeErrorDetail(response: Response): Promise<string> {

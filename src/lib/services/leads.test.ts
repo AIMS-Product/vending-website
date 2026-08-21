@@ -521,6 +521,50 @@ describe("submitLead", () => {
     );
   });
 
+  it("skips notifications when skipNotification is set, leaving status received and sending nothing", async () => {
+    // Chatbot lead capture (src/lib/chatbot/lead-capture.ts) passes this —
+    // it sends its own profile email instead and must not double-email.
+    const { client, mocks } = buildLeadClient();
+    const fetchMock = vi.fn();
+
+    const result = await submitLead(validLead, {
+      client,
+      env: notificationEnv,
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      skipNotification: true,
+      now: () => new Date("2026-05-04T09:50:00.000Z"),
+    });
+
+    expect(result.status).toBe("accepted");
+    expect(result.notificationStatus).toBe("received");
+    expect(result.notificationError).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+    // Only the close-sync-status write happens — no notification-status
+    // update was ever attempted.
+    expect(mocks.update).toHaveBeenCalledTimes(1);
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ close_sync_status: "pending" }),
+    );
+  });
+
+  it("sends notifications by default when skipNotification is not set", async () => {
+    const { client, mocks } = buildLeadClient();
+    const fetchMock = successfulFetchMock();
+
+    const result = await submitLead(validLead, {
+      client,
+      env: notificationEnv,
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-05-04T09:55:00.000Z"),
+    });
+
+    expect(result.notificationStatus).toBe("notified");
+    expect(fetchMock).toHaveBeenCalled();
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "notified" }),
+    );
+  });
+
   it("posts accepted leads to Money Page when configured", async () => {
     const { client, mocks } = buildLeadClient();
     const fetchMock = successfulFetchMock();

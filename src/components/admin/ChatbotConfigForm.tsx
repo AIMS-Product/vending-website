@@ -97,6 +97,10 @@ export function ChatbotConfigForm({ config }: { config: ChatbotConfig }) {
               <p className="text-ui-text-subtle mt-1 text-xs">
                 Master switch for the on-site widget.
               </p>
+              <p className="text-ui-text-subtle mt-1 text-xs">
+                Changes take up to ~2 minutes to reach visitors (60s server
+                cache + 60s browser cache).
+              </p>
             </div>
             <label className="text-ui-text flex items-center gap-2 text-sm font-medium">
               <input

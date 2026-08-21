@@ -25,6 +25,11 @@ const LIMITS = {
   // stricter budget as the public lead forms it feeds.
   chatbot_chat: { windowMs: 60 * 1000, max: 60 },
   chatbot_lead: { windowMs: 60 * 60 * 1000, max: 10 },
+  // One IP spinning up new conversations (not turns on an existing one) is
+  // the cheap way to trip the global 2000/day cap and 503 the widget for
+  // everyone else — this budget is per-IP and only spent on conversation
+  // creation, so it never throttles an ongoing chat.
+  chatbot_new_conversation: { windowMs: 60 * 60 * 1000, max: 15 },
 } as const;
 
 export type PublicRateLimitAction = keyof typeof LIMITS;

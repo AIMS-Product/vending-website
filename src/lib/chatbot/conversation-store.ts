@@ -91,7 +91,22 @@ async function recallVisitor(client: ConversationClient, visitorHash: string) {
   return data ?? null;
 }
 
-/** Whole-array upsert of one chat turn — see chatbot_conversations comment: atomic single write. */
+/**
+ * Whole-array upsert of one chat turn — see chatbot_conversations comment:
+ * atomic single write.
+ *
+ * `conversation` is a snapshot read at the *start* of the request; the model
+ * call in between can take seconds, during which a concurrent request (the
+ * capture-card submit, another turn, the admin hand-off action) may have
+ * written a real value this snapshot doesn't know about. So this never
+ * writes a field from the stale snapshot as a fallback — a field is only
+ * ever included in the UPDATE when this turn's own value is truthy, which
+ * means "nothing changed this turn" leaves the column untouched rather than
+ * clobbering a newer value back to null. Same reasoning for `status`: the
+ * capture paths (handleChatbotLeadCaptured, the admin hand-off action) own
+ * every transition; the one exception here is the strict active ->
+ * lead_captured upgrade when THIS turn is what captured contact info.
+ */
 export async function persistConversationTurn(
   conversation: ChatbotConversation,
   patch: {
@@ -107,33 +122,28 @@ export async function persistConversationTurn(
   const client = deps.client ?? createAdminClient();
   const now = deps.now?.() ?? new Date();
 
-  const capturedEmail = patch.capturedEmail ?? conversation.captured_email;
-  const capturedPhone = patch.capturedPhone ?? conversation.captured_phone;
-  const hasCapture = Boolean(capturedEmail || capturedPhone);
-
-  // Only the two "live" states are chatbot-owned. handed_off / closed /
-  // lead_captured (once set) are left exactly as they are — the admin flow
-  // and the learning cron own those transitions.
-  const nextStatus =
-    conversation.status === "active" || conversation.status === "abandoned"
-      ? hasCapture
-        ? "lead_captured"
-        : "active"
-      : conversation.status;
-
-  const { error } = await client
-    .from("chatbot_conversations")
-    .update({
+  const update: Database["public"]["Tables"]["chatbot_conversations"]["Update"] =
+    {
       messages: patch.messages as unknown as Json,
       message_count: patch.messages.length,
       last_message_at: now.toISOString(),
-      captured_name: patch.capturedName ?? conversation.captured_name,
-      captured_email: capturedEmail,
-      captured_phone: capturedPhone,
-      page_url: patch.pageUrl ?? conversation.page_url,
-      visitor_hash: patch.visitorHash ?? conversation.visitor_hash,
-      status: nextStatus,
-    })
+    };
+  if (patch.capturedName) update.captured_name = patch.capturedName;
+  if (patch.capturedEmail) update.captured_email = patch.capturedEmail;
+  if (patch.capturedPhone) update.captured_phone = patch.capturedPhone;
+  if (patch.pageUrl) update.page_url = patch.pageUrl;
+  if (patch.visitorHash) update.visitor_hash = patch.visitorHash;
+
+  if (
+    conversation.status === "active" &&
+    (patch.capturedEmail || patch.capturedPhone)
+  ) {
+    update.status = "lead_captured";
+  }
+
+  const { error } = await client
+    .from("chatbot_conversations")
+    .update(update)
     .eq("id", conversation.id);
 
   if (error) throw new Error(error.message);

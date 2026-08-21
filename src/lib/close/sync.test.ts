@@ -1579,6 +1579,25 @@ describe("Close tagging fields", () => {
     });
   });
 
+  // Chatbot leads (src/lib/chatbot/lead-capture.ts, metadata.source ===
+  // "chatbot") are their own source: no "chatbot" choice exists on Close's
+  // Entry Source field, so it must be left unset rather than mislabelled as
+  // a Website-Apply submit.
+  it("tags a chatbot-sourced lead with no entry source and the chatbot resource tag", async () => {
+    const body = await createdLeadBody({
+      metadata: { source: "chatbot" },
+      latest_qualification_form_id: null,
+      source_path: "/chat",
+    });
+
+    expect(body).not.toHaveProperty("custom.cf_entry_source");
+    expect(body).toMatchObject({
+      "custom.cf_resource_tag": CLOSE_RESOURCE_TAGS.chatbot,
+    });
+  });
+
+  // Regression guard for the chatbot check above: a lead with no
+  // metadata.source === "chatbot" must still get its normal entry source.
   it("tags the call-booking form as Website-Apply / website-application", async () => {
     const body = await createdLeadBody({
       latest_qualification_form_id: "a1b2c3d4-0000-4000-8000-000000000001",

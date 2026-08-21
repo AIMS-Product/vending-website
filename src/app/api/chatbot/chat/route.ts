@@ -89,6 +89,30 @@ export async function POST(request: Request) {
   }
 
   const client = createAdminClient();
+
+  // Only a request that would CREATE a conversation row spends this budget —
+  // an existing session's turns are already covered by the per-minute chat
+  // limit above. Kept outside the global 2000/day cap check: that cap is the
+  // outer valve for total volume; this one stops a single IP from tripping
+  // it alone by spinning up new conversations.
+  const { data: existingConversation } = await client
+    .from("chatbot_conversations")
+    .select("id")
+    .eq("session_id", sessionId)
+    .maybeSingle();
+  if (!existingConversation) {
+    const allowedNewConversation = await checkPublicRateLimit(
+      "chatbot_new_conversation",
+      { ip },
+    );
+    if (!allowedNewConversation) {
+      return Response.json(
+        { message: TOO_MANY_REQUESTS_MESSAGE },
+        { status: 429 },
+      );
+    }
+  }
+
   const visitorId =
     (await cookies()).get(VP_CHAT_VISITOR_COOKIE_NAME)?.value ?? null;
   const visitorHash = visitorId ? hashVisitorId(visitorId) : null;
@@ -216,28 +240,49 @@ export async function POST(request: Request) {
     }
 
     if (isNewCapture) {
-      await handleChatbotLeadCaptured(
-        {
-          conversationId: conversation.id,
-          sessionId,
-          name: capturedName,
-          email: capturedEmail,
-          phone: capturedPhone,
-          pageUrl: pageUrl ?? null,
-        },
-        { client },
-      );
+      // A capture detected in free text must spend the same chatbot_lead
+      // budget the dedicated /api/chatbot/lead route enforces — otherwise
+      // the much looser 60/min chat limit lets a flood of chat turns create
+      // CRM leads at 60x the intended rate. A rejection here only skips lead
+      // creation and the profile email; the turn itself is already
+      // persisted above and is never affected.
+      const leadAllowed = await checkPublicRateLimit("chatbot_lead", {
+        ip,
+        email: capturedEmail,
+      });
 
-      // Fire the profile email the moment we have something to say, rather
-      // than waiting for the every-10-minute digest cron — see spec wiring
-      // item 5a. Already inside `after()`, so this never delays the
-      // response; sendProfileEmailForConversation is fail-soft end to end.
-      try {
-        await sendProfileEmailForConversation(conversation.id, {}, { client });
-      } catch (error) {
-        console.warn("chatbot: immediate profile email failed", {
+      if (leadAllowed) {
+        await handleChatbotLeadCaptured(
+          {
+            conversationId: conversation.id,
+            sessionId,
+            name: capturedName,
+            email: capturedEmail,
+            phone: capturedPhone,
+            pageUrl: pageUrl ?? null,
+          },
+          { client },
+        );
+
+        // Fire the profile email the moment we have something to say, rather
+        // than waiting for the every-10-minute digest cron — see spec wiring
+        // item 5a. Already inside `after()`, so this never delays the
+        // response; sendProfileEmailForConversation is fail-soft end to end.
+        try {
+          await sendProfileEmailForConversation(
+            conversation.id,
+            {},
+            { client },
+          );
+        } catch (error) {
+          console.warn("chatbot: immediate profile email failed", {
+            conversationId: conversation.id,
+            error: error instanceof Error ? error.message : "unknown error",
+          });
+        }
+      } else {
+        console.warn("chatbot: lead capture rate limited", {
           conversationId: conversation.id,
-          error: error instanceof Error ? error.message : "unknown error",
         });
       }
     }
