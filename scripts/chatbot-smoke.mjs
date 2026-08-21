@@ -71,16 +71,28 @@ function check(label, fn) {
     assert.match(branchB, /Do not ask for contact info in this reply/);
     assert.match(branchB, /TEAM-VERIFIED NOTES/);
   });
-  check("branch C prompt targets the established-conversation ask", () => {
-    assert.match(branchC, /You've earned the ask/);
+  check("branch C prompt prefers a booked call over an email ask", () => {
+    assert.match(branchC, /Two ways this ends well/);
+    assert.match(branchC, /open the calendar/);
   });
-  check("branch A prompt (captured this session) switches to qualifying", () => {
-    assert.match(branchA, /Switch to qualifying/);
+  check("branch A prompt (captured this session) chases the call", () => {
+    assert.match(branchA, /only thing left to win is the call/);
     assert.match(branchA, /Email: jane@example.com/);
   });
   check("branch selection prefers capture over turn count", () => {
-    assert.match(branchAReturning, /Switch to qualifying/);
+    assert.match(branchAReturning, /only thing left to win is the call/);
     assert.doesNotMatch(branchAReturning, /Do not ask for contact info/);
+  });
+  // v2: the goal changed from an email address to a time on the calendar, and
+  // the model is told it can act rather than only talk.
+  check("every branch carries the booked-call goal and the tool list", () => {
+    for (const prompt of [branchB, branchC, branchA]) {
+      assert.match(prompt, /YOUR GOAL:/);
+      assert.match(prompt, /A booked call\./);
+      assert.match(prompt, /show_booking_calendar/);
+      assert.match(prompt, /send_resources_email/);
+      assert.match(prompt, /flag_unknown_question/);
+    }
   });
 
   for (const [name, prompt] of [
