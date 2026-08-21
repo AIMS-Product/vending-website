@@ -116,3 +116,11 @@ comment on function public.chatbot_log_unknown_question(uuid, text, text) is
 
 revoke all on function public.chatbot_append_message(uuid, jsonb) from public, anon, authenticated;
 revoke all on function public.chatbot_log_unknown_question(uuid, text, text) from public, anon, authenticated;
+
+-- The revoke above is only half the pattern (see the seo_page_fn_revoke /
+-- seo_page_fn_grant pair). Without this grant both functions exist but are
+-- unexecutable, and because both call sites are fail-soft console.warn a
+-- permission denial would look exactly like "migration not applied yet" --
+-- silently no-op forever.
+grant execute on function public.chatbot_append_message(uuid, jsonb) to service_role;
+grant execute on function public.chatbot_log_unknown_question(uuid, text, text) to service_role;

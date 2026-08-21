@@ -42,6 +42,14 @@ export type ChatbotToolContext = {
   /** Origin of the page hosting the widget, for the Calendly inline embed. */
   embedDomain: string | null;
   /**
+   * The address already on the conversation row when this turn began — put
+   * there by the capture form or recalled from a previous session by cookie.
+   * Either way the visitor typed it into a first-party form themselves, so it
+   * is a legitimate recipient even though no user turn in THIS transcript
+   * contains it.
+   */
+  firstPartyEmail: string | null;
+  /**
    * Per-recipient outbound-email budget, injected so this module does not
    * reach for the request's IP. Must fail CLOSED — see sendResourcesEmail.
    */
@@ -371,14 +379,18 @@ async function sendResourcesEmail(
 }
 
 /**
- * True when the captured address appears verbatim in something the visitor
- * actually typed. Compared case-insensitively against user turns only —
- * assistant turns are excluded so the model cannot launder an address by
- * repeating it back and then citing its own message.
+ * True when the captured address is one the visitor themselves supplied:
+ * either already on the conversation row before this turn (capture form or
+ * cookie recall) or typed verbatim into one of their own messages.
+ *
+ * Compared case-insensitively, and against user turns ONLY — assistant turns
+ * are excluded so the model cannot launder an arbitrary address by repeating
+ * it back and then citing its own message as evidence.
  */
 function emailAppearsInVisitorTurns(context: ChatbotToolContext): boolean {
   const email = context.capturedEmail?.trim().toLowerCase();
   if (!email) return false;
+  if (context.firstPartyEmail?.trim().toLowerCase() === email) return true;
   return context.transcript.some(
     (message) =>
       message.role === "user" && message.content.toLowerCase().includes(email),

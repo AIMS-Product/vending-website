@@ -70,8 +70,22 @@ export function createTurnStream(
 
   return new ReadableStream<Uint8Array>({
     async start(controller) {
+      // Both swallow "Controller is already closed": the visitor can close the
+      // widget at any point, and a cancelled stream must not turn into an
+      // unhandled rejection that skips persistence.
       const emit = (frame: ChatStreamFrame) => {
-        controller.enqueue(encoder.encode(`${JSON.stringify(frame)}\n`));
+        try {
+          controller.enqueue(encoder.encode(`${JSON.stringify(frame)}\n`));
+        } catch {
+          // client went away
+        }
+      };
+      const closeStream = () => {
+        try {
+          controller.close();
+        } catch {
+          // already closed
+        }
       };
 
       try {
@@ -138,15 +152,20 @@ export function createTurnStream(
         if (input.sink.messages.length === 0) {
           const fallback =
             "Sorry, something glitched on my end. Mind sending that again?";
-          emit({ t: "text", v: fallback });
-          emit({ t: "flush" });
+          // Recorded BEFORE it is emitted. A visitor who closed the widget
+          // mid-turn has a cancelled stream, and enqueuing into that throws
+          // ("Controller is already closed") — doing it the other way round
+          // would lose the fallback and throw out of `finally`, so the turn
+          // would persist nothing at all.
           input.sink.messages.push({
             role: "assistant",
             content: fallback,
             ts: new Date().toISOString(),
           });
+          emit({ t: "text", v: fallback });
+          emit({ t: "flush" });
         }
-        controller.close();
+        closeStream();
       }
     },
   });

@@ -431,17 +431,23 @@ function bookingFieldsFor(
     capturedEmail: string | null;
     messages: ChatbotMessage[];
   },
-  bookedIds: ReadonlySet<string>,
+  bookedIds: ReadonlySet<string> | null,
 ): {
   callBooked: boolean;
   bookingUrl: string | null;
 } {
   return {
-    callBooked:
-      bookedIds.has(conversation.id) ||
-      conversation.messages.some(
-        (message) => message.kind === "booking_confirmed",
-      ),
+    // `null` means the booked-call lookup could not run at all (pre-migration,
+    // or a transient failure) — only then is the transcript card consulted.
+    // Never both: the webhook deliberately leaves the card in place on a
+    // cancellation and only clears the timestamp, so an OR here would report
+    // someone who just freed their slot as still booked and drop them out of
+    // the "call these now" block.
+    callBooked: bookedIds
+      ? bookedIds.has(conversation.id)
+      : conversation.messages.some(
+          (message) => message.kind === "booking_confirmed",
+        ),
     bookingUrl: chatbotBookingUrl({
       conversationId: conversation.id,
       name: conversation.capturedName,
@@ -451,28 +457,62 @@ function bookingFieldsFor(
 }
 
 /**
- * Which of these conversations have a live booked call, read from the
- * authoritative column in one query. Returns an empty set (not an error)
- * before the v2 migration is applied, at which point bookingFieldsFor falls
- * back to the transcript card.
+ * Which of these conversations have a live booked call. Reads both signals in
+ * one pass: the conversation's own call_booked_at (set by the Calendly
+ * webhook) and the linked lead's call_booked_at (reconciled from Close, which
+ * is the signal that actually works today — see
+ * .claude/specs/2026-08-20-booking-attribution.md).
+ *
+ * Returns null, not an empty set, when the lookup cannot run — the caller
+ * treats that as "unknown" and falls back to the transcript card.
  */
 async function fetchBookedConversationIds(
   client: Client,
   ids: string[],
-): Promise<ReadonlySet<string>> {
+): Promise<ReadonlySet<string> | null> {
   if (ids.length === 0) return new Set();
   const { data, error } = await client
     .from("chatbot_conversations")
-    .select("id")
-    .in("id", ids)
-    .not("call_booked_at", "is", null);
+    .select("id, lead_submission_id, call_booked_at")
+    .in("id", ids);
   if (error) {
     console.warn("chatbot: booked-call lookup unavailable for the digest", {
       error: error.message,
     });
-    return new Set();
+    return null;
   }
-  return new Set((data ?? []).map((row) => row.id));
+
+  const rows = data ?? [];
+  const booked = new Set(
+    rows.filter((row) => row.call_booked_at).map((row) => row.id),
+  );
+
+  const leadIds = rows
+    .filter((row) => !row.call_booked_at && row.lead_submission_id)
+    .map((row) => row.lead_submission_id as string);
+  if (leadIds.length === 0) return booked;
+
+  const leads = await client
+    .from("lead_submissions")
+    .select("id")
+    .in("id", leadIds)
+    .not("call_booked_at", "is", null);
+  if (leads.error) {
+    // The conversation-level signal still stands; only the Close-derived half
+    // is missing, so report what is known rather than nothing.
+    console.warn("chatbot: Close-reconciled booking lookup failed", {
+      error: leads.error.message,
+    });
+    return booked;
+  }
+
+  const bookedLeadIds = new Set((leads.data ?? []).map((row) => row.id));
+  for (const row of rows) {
+    if (row.lead_submission_id && bookedLeadIds.has(row.lead_submission_id)) {
+      booked.add(row.id);
+    }
+  }
+  return booked;
 }
 
 async function findCatchUpEligibleConversations(

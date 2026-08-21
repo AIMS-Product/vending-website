@@ -17,6 +17,7 @@ type ConversationRow = Pick<
 > & {
   /** Absent until 20260821140000_chatbot_v2_conversion has been applied. */
   call_booked_at?: string | null;
+  lead_submission_id?: string | null;
 };
 
 /**
@@ -93,14 +94,14 @@ const FETCH_CAP = 4000;
 const TOP_N = 12;
 
 const ROW_FIELDS =
-  "id, created_at, message_count, captured_email, captured_phone, messages, prospect_profile, call_booked_at" as const;
+  "id, created_at, message_count, captured_email, captured_phone, messages, prospect_profile, lead_submission_id, call_booked_at" as const;
 
 // Pre-migration column list — same tolerant-fallback pattern as
 // chatbot/config.ts. Without it, a deploy that lands before the v2 migration
 // is applied would blank the entire /admin/chatbot page rather than just the
 // one metric that has no data yet.
 const LEGACY_ROW_FIELDS =
-  "id, created_at, message_count, captured_email, captured_phone, messages, prospect_profile" as const;
+  "id, created_at, message_count, captured_email, captured_phone, messages, prospect_profile, lead_submission_id" as const;
 
 function isMissingColumnError(message: string): boolean {
   return message.includes("call_booked_at") || message.includes("42703");
@@ -129,6 +130,7 @@ export async function getChatbotAnalytics(
       .order("created_at", { ascending: false })
       .limit(FETCH_CAP);
 
+    let rows: ConversationRow[];
     if (error) {
       if (!isMissingColumnError(error.message)) throw new Error(error.message);
       const legacy = await client
@@ -138,9 +140,13 @@ export async function getChatbotAnalytics(
         .order("created_at", { ascending: false })
         .limit(FETCH_CAP);
       if (legacy.error) throw new Error(legacy.error.message);
-      return buildAnalytics((legacy.data ?? []) as ConversationRow[], now);
+      rows = (legacy.data ?? []) as ConversationRow[];
+    } else {
+      rows = (data ?? []) as ConversationRow[];
     }
-    return buildAnalytics((data ?? []) as ConversationRow[], now);
+
+    const bookedLeadIds = await fetchBookedLeadIds(client, rows);
+    return buildAnalytics(rows, now, bookedLeadIds);
   } catch (error) {
     console.warn("chatbot analytics load failed, returning empty rollup", {
       error: error instanceof Error ? error.message : "unknown error",
@@ -149,7 +155,50 @@ export async function getChatbotAnalytics(
   }
 }
 
-function buildAnalytics(rows: ConversationRow[], now: Date): ChatbotAnalytics {
+/**
+ * Lead ids whose call is booked according to Close.
+ *
+ * This is the signal that actually works today. The Calendly webhook has
+ * never had a signing key in production, so conversation.call_booked_at is
+ * empty there; the Close reconciliation
+ * (.claude/specs/2026-08-20-booking-attribution.md) already marks
+ * lead_submissions.call_booked_at for every synced lead, and every captured
+ * chatbot conversation carries a lead_submission_id. Counting both means the
+ * booked-call KPI reports real numbers with no Calendly work at all, and
+ * upgrades itself for free the day the webhook is fixed.
+ */
+async function fetchBookedLeadIds(
+  client: ChatbotAnalyticsClient,
+  rows: ConversationRow[],
+): Promise<ReadonlySet<string>> {
+  const leadIds = Array.from(
+    new Set(
+      rows
+        .map((row) => row.lead_submission_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  if (leadIds.length === 0) return new Set();
+
+  const { data, error } = await client
+    .from("lead_submissions")
+    .select("id")
+    .in("id", leadIds)
+    .not("call_booked_at", "is", null);
+  if (error) {
+    console.warn("chatbot analytics: Close-reconciled booking lookup failed", {
+      error: error.message,
+    });
+    return new Set();
+  }
+  return new Set((data ?? []).map((row) => row.id));
+}
+
+function buildAnalytics(
+  rows: ConversationRow[],
+  now: Date,
+  bookedLeadIds: ReadonlySet<string> = new Set(),
+): ChatbotAnalytics {
   const start = new Date(now.getTime() - WINDOW_DAYS * DAY_MS);
   const priorStart = new Date(start.getTime() - WINDOW_DAYS * DAY_MS);
   const sevenDaysAgo = new Date(now.getTime() - 7 * DAY_MS);
@@ -164,8 +213,9 @@ function buildAnalytics(rows: ConversationRow[], now: Date): ChatbotAnalytics {
 
   const currentCaptured = current.filter(isCaptured);
   const priorCaptured = prior.filter(isCaptured);
-  const currentBooked = current.filter(isBooked);
-  const priorBooked = prior.filter(isBooked);
+  const booked = (row: ConversationRow) => isBooked(row, bookedLeadIds);
+  const currentBooked = current.filter(booked);
+  const priorBooked = prior.filter(booked);
 
   const totalMessages = current.reduce(
     (sum, row) => sum + (row.message_count ?? 0),
@@ -203,9 +253,20 @@ function isCaptured(row: ConversationRow): boolean {
   return Boolean(row.captured_email?.trim() || row.captured_phone?.trim());
 }
 
-/** A live booking. Cleared on cancellation by the Calendly webhook, so this counts calls still on the calendar. */
-function isBooked(row: ConversationRow): boolean {
-  return Boolean(row.call_booked_at);
+/**
+ * A live booked call, from either signal: the Calendly webhook's stamp on the
+ * conversation, or Close's reconciled booking on the lead this conversation
+ * created. Both are cleared/absent once a call is cancelled, so this counts
+ * calls still on the calendar.
+ */
+function isBooked(
+  row: ConversationRow,
+  bookedLeadIds: ReadonlySet<string>,
+): boolean {
+  if (row.call_booked_at) return true;
+  return Boolean(
+    row.lead_submission_id && bookedLeadIds.has(row.lead_submission_id),
+  );
 }
 
 function inWindow(createdAt: string, start: Date, end: Date): boolean {

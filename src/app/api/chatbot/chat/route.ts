@@ -49,6 +49,14 @@ const chatRequestSchema = z.object({
   pageUrl: z.string().trim().max(2000).nullable().optional(),
 });
 
+/**
+ * Two OpenAI calls per turn (30s + 20s ceilings) plus a tool round that can
+ * make its own HTTP call. Declared explicitly: on the platform default a
+ * calendar-opening turn gets cut mid-stream, which truncates the reply AND
+ * skips `after()`, losing the visitor's message entirely.
+ */
+export const maxDuration = 90;
+
 export async function POST(request: Request) {
   const config = await loadChatbotConfig();
   if (!config.enabled) {
@@ -204,6 +212,7 @@ export async function POST(request: Request) {
     capturedPhone: captured.phone,
     transcript: historyForModel,
     embedDomain: siteHostname(),
+    firstPartyEmail: priorEmail,
     // failClosed, and it has to be explicit: checkPublicRateLimit swallows
     // its own errors and returns true, so a plain try/catch here would never
     // fire and this would silently uncap outbound mail during any Supabase

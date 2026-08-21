@@ -27,6 +27,7 @@ function makeContext(
     capturedPhone: null,
     transcript: [],
     embedDomain: "www.vendingpreneurs.com",
+    firstPartyEmail: null,
     checkEmailBudget: async () => true,
     config: DEFAULT_CHATBOT_CONFIG,
     client: noopClient,
@@ -175,6 +176,23 @@ describe("send_resources_email", () => {
 
     expect(outcome.message).toBeUndefined();
     expect(outcome.result).toContain("wasn't typed into this chat");
+  });
+
+  it("accepts an address captured by the form or recalled from a past visit", async () => {
+    // No user turn contains it — the capture card and the cookie recall both
+    // put it on the conversation row before the transcript existed.
+    const outcome = await runChatbotTool(
+      "send_resources_email",
+      JSON.stringify({ resource_keys: ["free-machines"] }),
+      makeContext({
+        capturedEmail: "dana@example.com",
+        firstPartyEmail: "dana@example.com",
+        transcript: [],
+      }),
+    );
+
+    expect(outcome.result).toContain("None of those resource keys exist");
+    expect(outcome.result).not.toContain("wasn't typed into this chat");
   });
 
   it("fails closed when the per-recipient budget check errors", async () => {
