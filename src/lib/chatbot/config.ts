@@ -98,10 +98,41 @@ export const DEFAULT_CHATBOT_AVATAR_URL = "/chatbot/mia.jpg";
 const CONFIG_FIELDS =
   "enabled, persona_name, avatar_url, greeting, follow_up_message, teaser_text, brand_color, idle_trigger_seconds, capture_mode, knowledge_base, model, lead_routing_emails, notify_enabled, starter_questions, quick_actions, updated_at" as const;
 
+// Pre-migration column list — used as a fallback until the
+// 20260821120000_chatbot_quick_actions migration has been applied.
+const LEGACY_CONFIG_FIELDS =
+  "enabled, persona_name, avatar_url, greeting, follow_up_message, teaser_text, brand_color, idle_trigger_seconds, capture_mode, knowledge_base, model, lead_routing_emails, notify_enabled, updated_at" as const;
+
+/** In-code defaults mirroring the migration's seed — served until the
+ * starter_questions/quick_actions columns exist in the database. */
+export const DEFAULT_STARTER_QUESTIONS: readonly string[] = [
+  "How much does it cost to start?",
+  "Do I need experience?",
+  "How does the program work?",
+];
+export const DEFAULT_QUICK_ACTIONS: readonly ChatbotQuickAction[] = [
+  { label: "Book a call", url: "/book-now" },
+  { label: "Free 90-day roadmap", url: "/resources/roadmap" },
+  { label: "Success stories", url: "/case-studies" },
+];
+
+function isMissingColumnError(message: string): boolean {
+  return (
+    message.includes("starter_questions") ||
+    message.includes("quick_actions") ||
+    message.includes("42703")
+  );
+}
+
 // Matches CONFIG_FIELDS exactly (omits `id`, the only column not selected).
 type ChatbotConfigRow = Omit<
   Database["public"]["Tables"]["chatbot_config"]["Row"],
   "id"
+>;
+
+type LegacyChatbotConfigRow = Omit<
+  ChatbotConfigRow,
+  "starter_questions" | "quick_actions"
 >;
 
 /** Uncached read. Never throws — fails soft to the defaults. */
@@ -115,7 +146,24 @@ export async function fetchChatbotConfig(
       .select(CONFIG_FIELDS)
       .eq("id", 1)
       .maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (!isMissingColumnError(error.message)) throw new Error(error.message);
+      // Columns not migrated yet — read the legacy shape and default the rest.
+      const legacy = await client
+        .from("chatbot_config")
+        .select(LEGACY_CONFIG_FIELDS)
+        .eq("id", 1)
+        .maybeSingle();
+      if (legacy.error) throw new Error(legacy.error.message);
+      if (!legacy.data) return DEFAULT_CHATBOT_CONFIG;
+      return rowToConfig({
+        ...(legacy.data as LegacyChatbotConfigRow),
+        starter_questions: [...DEFAULT_STARTER_QUESTIONS] as unknown as Json,
+        quick_actions: DEFAULT_QUICK_ACTIONS.map((a) => ({
+          ...a,
+        })) as unknown as Json,
+      });
+    }
     if (!data) return DEFAULT_CHATBOT_CONFIG;
     return rowToConfig(data);
   } catch (error) {
@@ -221,6 +269,33 @@ export async function saveChatbotConfig(
     .eq("id", 1)
     .select(CONFIG_FIELDS)
     .single();
+
+  if (error && isMissingColumnError(error.message)) {
+    // Columns not migrated yet — save everything else so the rest of the form
+    // still works; chips/actions serve from in-code defaults until then.
+    const {
+      starter_questions: _sq,
+      quick_actions: _qa,
+      ...legacyUpdate
+    } = configToRow(parsed.data);
+    const legacy = await client
+      .from("chatbot_config")
+      .update(legacyUpdate)
+      .eq("id", 1)
+      .select(LEGACY_CONFIG_FIELDS)
+      .single();
+    if (legacy.error || !legacy.data) {
+      throw new ChatbotConfigError("Could not save chatbot configuration.");
+    }
+    revalidateTag(CHATBOT_CONFIG_CACHE_TAG, "max");
+    return rowToConfig({
+      ...(legacy.data as LegacyChatbotConfigRow),
+      starter_questions: [...DEFAULT_STARTER_QUESTIONS] as unknown as Json,
+      quick_actions: DEFAULT_QUICK_ACTIONS.map((a) => ({
+        ...a,
+      })) as unknown as Json,
+    });
+  }
 
   if (error || !data) {
     throw new ChatbotConfigError("Could not save chatbot configuration.");
