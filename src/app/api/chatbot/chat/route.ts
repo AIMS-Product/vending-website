@@ -204,19 +204,16 @@ export async function POST(request: Request) {
     capturedPhone: captured.phone,
     transcript: historyForModel,
     embedDomain: siteHostname(),
-    // Fails CLOSED: an unbounded outbound mailer is worse than a missed
-    // resource email, so a limiter error blocks the send rather than
-    // allowing it (checkPublicRateLimit itself fails open by design).
-    checkEmailBudget: async (email: string) => {
-      try {
-        return await checkPublicRateLimit("chatbot_resource_email", {
-          ip,
-          email,
-        });
-      } catch {
-        return false;
-      }
-    },
+    // failClosed, and it has to be explicit: checkPublicRateLimit swallows
+    // its own errors and returns true, so a plain try/catch here would never
+    // fire and this would silently uncap outbound mail during any Supabase
+    // blip. An unbounded mailer is worse than a missed resource email.
+    checkEmailBudget: (email: string) =>
+      checkPublicRateLimit(
+        "chatbot_resource_email",
+        { ip, email },
+        { failClosed: true },
+      ),
     config,
     client,
   };

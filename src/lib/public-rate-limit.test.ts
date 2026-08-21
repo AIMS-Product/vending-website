@@ -251,6 +251,36 @@ describe("checkPublicRateLimit", () => {
   });
 });
 
+describe("failure mode", () => {
+  const exploding = {
+    from() {
+      throw new Error("supabase is down");
+    },
+  } as unknown as RateLimitClient;
+
+  it("fails open by default, so an outage never blocks a real lead", async () => {
+    const allowed = await checkPublicRateLimit(
+      "lead_submit",
+      { ip: "203.0.113.9" },
+      { client: exploding, now },
+    );
+
+    expect(allowed).toBe(true);
+  });
+
+  it("fails closed when asked, so an outage cannot uncap outbound mail", async () => {
+    // chatbot_resource_email is the only action that mails a member of the
+    // public. An unmetered success there is worse than a false rejection.
+    const allowed = await checkPublicRateLimit(
+      "chatbot_resource_email",
+      { ip: "203.0.113.9", email: "dana@example.com" },
+      { client: exploding, now, failClosed: true },
+    );
+
+    expect(allowed).toBe(false);
+  });
+});
+
 describe("prunePublicRequestHits", () => {
   it("drops hits past the 24-hour retention window and keeps the rest", async () => {
     const old = new Date(NOW.getTime() - 25 * 60 * 60 * 1000).toISOString();

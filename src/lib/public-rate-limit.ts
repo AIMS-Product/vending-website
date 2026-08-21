@@ -59,6 +59,17 @@ const RETENTION_MS = 24 * 60 * 60 * 1000;
 export type PublicRateLimitDeps = {
   client?: RateLimitClient;
   now?: () => Date;
+  /**
+   * Invert the failure mode for actions where an unmetered success is worse
+   * than a false rejection.
+   *
+   * Every action here fails OPEN by default, which is right when the limiter
+   * guards a form submit: a Supabase blip should not stop a real lead from
+   * reaching the team. It is wrong for `chatbot_resource_email`, the one
+   * action that sends mail to a member of the public — there, a limiter
+   * outage would uncap an outbound mailer. Those callers pass true.
+   */
+  failClosed?: boolean;
 };
 
 /**
@@ -118,11 +129,15 @@ export async function checkPublicRateLimit(
     });
     if (inserted.error) throw new Error(inserted.error.message);
   } catch (error) {
-    console.warn("public rate limit check failed open", {
-      action,
-      error: error instanceof Error ? error.message : "unknown error",
-    });
-    return true;
+    const failClosed = deps.failClosed ?? false;
+    console.warn(
+      `public rate limit check failed ${failClosed ? "closed" : "open"}`,
+      {
+        action,
+        error: error instanceof Error ? error.message : "unknown error",
+      },
+    );
+    return !failClosed;
   }
 
   return true;
