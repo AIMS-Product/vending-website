@@ -9,8 +9,12 @@
  * working default). No env var is required for this feature to work.
  */
 export const CHATBOT_BOOKING_URL =
-  process.env.NEXT_PUBLIC_DEFAULT_CALENDLY_URL ??
-  "https://calendly.com/d/cvsd-wxt-cvb/vendingpreneurs-quick-discovery";
+  // Chatbot-specific override first — NEXT_PUBLIC_DEFAULT_CALENDLY_URL is
+  // shared with the qualification thank-you flow and must not be repointed
+  // for chatbot needs. Default: the Vendingpreneurs Consultation calendar
+  // (Kody, 2026-08-24).
+  process.env.NEXT_PUBLIC_CHATBOT_CALENDLY_URL ??
+  "https://calendly.com/d/cxfn-hh2-h8g/vendingpreneurs-consultation";
 
 /**
  * The attribution chain in two values. Calendly echoes whatever `utm_*`
