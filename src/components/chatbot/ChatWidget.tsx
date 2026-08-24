@@ -41,8 +41,8 @@ const LOOSE_EMAIL_PATTERN = /[^\s@]+@[^\s@]+\.[^\s@]+/;
 // Human-feeling response timing (naturalness pass): a real reply never lands
 // instantly, so the typing indicator holds for a bit before the stream is
 // rendered, and the scripted greeting/follow-up get the same treatment.
-const REPLY_TYPING_DELAY_MIN_MS = 1200;
-const REPLY_TYPING_DELAY_MAX_MS = 2200;
+const REPLY_TYPING_DELAY_MIN_MS = 2200;
+const REPLY_TYPING_DELAY_MAX_MS = 4200;
 const GREETING_TYPING_DELAY_MS = 800;
 const FOLLOW_UP_TYPING_DELAY_MS = 1200;
 
