@@ -42,8 +42,8 @@ export const CHATBOT_RESOURCE_CATALOG: readonly ChatbotResource[] = [
   },
 ];
 
-/** `case_study:<slug>` selects one specific member story from the same index the prompt shows the model. */
-const CASE_STUDY_KEY_PREFIX = "case_study:";
+/** `case_study:<slug>` selects one specific member story from the same index the prompt shows the model. Exported so emails.ts can detect a single-case-study send and build its personal template. */
+export const CASE_STUDY_KEY_PREFIX = "case_study:";
 
 export const CHATBOT_RESOURCE_KEYS: readonly string[] = [
   ...CHATBOT_RESOURCE_CATALOG.map((resource) => resource.key),
@@ -84,7 +84,9 @@ function caseStudyResource(slug: string): ChatbotResource | null {
   if (!study) return null;
   return {
     key: `${CASE_STUDY_KEY_PREFIX}${study.slug}`,
-    title: `${study.memberName} — ${study.headlineResult}`,
+    // Colon, not an em dash — no em/en dashes in any generated email
+    // (subjects included); this title is used verbatim as a subject line.
+    title: `${study.memberName}: ${study.headlineResult}`,
     blurb: `Was ${study.priorBackground} before starting a route.`,
     url: study.url,
   };

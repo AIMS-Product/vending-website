@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  sanitizeDashes,
   sendChatbotProfileEmail,
   sendChatbotResourceEmail,
   type ChatbotProfileEmailInput,
@@ -39,6 +40,30 @@ const roadmapResource: ChatbotResource = {
   title: "The 90-Day Vending Route Roadmap",
   blurb: "The free 90-day plan.",
   url: "/resources/roadmap",
+};
+
+const evanCaseStudyResource: ChatbotResource = {
+  key: "case_study:evan-tomahong",
+  title: "Evan Tomahong: 40 machines in 18 months",
+  blurb: "Was a line cook before starting a route.",
+  url: "/case-studies/evan-tomahong",
+};
+
+const teacherProfile = {
+  name: "Jordan Rivera",
+  email: null,
+  phone: null,
+  current_work: "teaching high school",
+  capital_signal: null,
+  timeline: null,
+  state_or_market: null,
+  motivation: null,
+  objections: [],
+  resources_wanted: [],
+  call_intent: false,
+  sentiment: null,
+  follow_up_needed: false,
+  summary: null,
 };
 
 /** Captures the exact Resend payload each test sends, without a real network call. */
@@ -189,6 +214,75 @@ describe("sendChatbotResourceEmail", () => {
     expect(text).not.toContain("—");
     expect(text).toContain("Mia\nVendingpreneurs");
   });
+
+  it("sends both text and html for every lead-facing resource email", async () => {
+    resetMockConfig();
+    const { calls, fetchImpl } = captureFetch();
+    await sendChatbotResourceEmail(baseInput, DEFAULT_CHATBOT_CONFIG, {
+      fetchImpl,
+    });
+    expect(typeof calls[0].body.text).toBe("string");
+    expect(typeof calls[0].body.html).toBe("string");
+    expect(calls[0].body.html as string).toContain("<html>");
+    expect(calls[0].body.html as string).toContain("max-width:560px");
+  });
+
+  it("greets by first name when visitorName is set, and falls back to profile.name, then to a plain 'Hey,'", async () => {
+    resetMockConfig();
+    const { calls, fetchImpl } = captureFetch();
+    await sendChatbotResourceEmail(
+      { ...baseInput, visitorName: "Jordan Rivera" },
+      DEFAULT_CHATBOT_CONFIG,
+      { fetchImpl },
+    );
+    expect(calls[0].body.text as string).toMatch(/^Hey Jordan,/);
+
+    const { calls: calls2, fetchImpl: fetchImpl2 } = captureFetch();
+    await sendChatbotResourceEmail(
+      { ...baseInput, visitorName: null, profile: teacherProfile },
+      DEFAULT_CHATBOT_CONFIG,
+      { fetchImpl: fetchImpl2 },
+    );
+    expect(calls2[0].body.text as string).toMatch(/^Hey Jordan,/);
+
+    const { calls: calls3, fetchImpl: fetchImpl3 } = captureFetch();
+    await sendChatbotResourceEmail(
+      { ...baseInput, visitorName: null, profile: null },
+      DEFAULT_CHATBOT_CONFIG,
+      { fetchImpl: fetchImpl3 },
+    );
+    expect(calls3[0].body.text as string).toMatch(/^Hey,/);
+  });
+
+  it("gives a single case-study send Mia's personal subject and a story link, never a bare em/en dash", async () => {
+    resetMockConfig();
+    const { calls, fetchImpl } = captureFetch();
+    await sendChatbotResourceEmail(
+      {
+        ...baseInput,
+        resources: [evanCaseStudyResource],
+        profile: teacherProfile,
+      },
+      DEFAULT_CHATBOT_CONFIG,
+      { fetchImpl },
+    );
+    const { subject, text, html } = calls[0].body as {
+      subject: string;
+      text: string;
+      html: string;
+    };
+    expect(subject).toBe("The member story I mentioned");
+    expect(text).toContain(
+      "You mentioned teaching high school. Evan was a line cook before starting a route too.",
+    );
+    expect(text).toContain(
+      "https://www.vendingpreneurs.com/case-studies/evan-tomahong",
+    );
+    expect(html).toContain(">Read Evan&#39;s story<");
+    for (const value of [subject, text, html]) {
+      expect(value).not.toMatch(/[—–]/);
+    }
+  });
 });
 
 describe("sendChatbotProfileEmail", () => {
@@ -250,6 +344,27 @@ describe("sendChatbotProfileEmail", () => {
     ].map((needle) => text.indexOf(needle));
     expect(order.every((index) => index >= 0)).toBe(true);
     expect(order).toEqual([...order].sort((a, b) => a - b));
-    expect(calls[0].body.subject).toBe("Chatbot lead: Jordan — wants a call");
+    expect(calls[0].body.subject).toBe("Chatbot lead: Jordan, wants a call");
+  });
+});
+
+describe("sanitizeDashes", () => {
+  it("turns a spaced em or en dash into a comma", () => {
+    expect(sanitizeDashes("Evan Tomahong — 40 machines in 18 months")).toBe(
+      "Evan Tomahong, 40 machines in 18 months",
+    );
+    expect(sanitizeDashes("Chatbot catch-up – 3 to review")).toBe(
+      "Chatbot catch-up, 3 to review",
+    );
+  });
+
+  it("turns an unspaced dash (a number range) into a plain hyphen", () => {
+    expect(sanitizeDashes("20–30 machines")).toBe("20-30 machines");
+  });
+
+  it("leaves text without an em/en dash untouched", () => {
+    expect(sanitizeDashes("Hey Jordan, here's what I promised.")).toBe(
+      "Hey Jordan, here's what I promised.",
+    );
   });
 });

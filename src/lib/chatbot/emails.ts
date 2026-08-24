@@ -6,7 +6,10 @@ import {
   type ChatbotConfig,
 } from "@/lib/chatbot/config";
 import type { ProspectProfile } from "@/lib/chatbot/extract-prospect-profile";
-import type { ChatbotResource } from "@/lib/chatbot/resources";
+import {
+  CASE_STUDY_KEY_PREFIX,
+  type ChatbotResource,
+} from "@/lib/chatbot/resources";
 
 /**
  * Resend senders for the two email shapes the spec calls for: one
@@ -163,6 +166,8 @@ async function sendResend(
   message: {
     subject: string;
     text: string;
+    /** Lead-facing sends only (sendChatbotResourceEmail) — team digests stay plain text. */
+    html?: string;
     to: string[];
     /** Overrides the display name only — the address always stays the verified sender. */
     fromName?: string;
@@ -172,6 +177,13 @@ async function sendResend(
 ): Promise<ChatbotEmailResult> {
   try {
     const from = resolveFromAddress();
+    // Single choke point: every sender in this file (lead-facing and
+    // team-facing) routes through sendResend, so sanitizing here — instead
+    // of in each sender — is the one place that guarantees no em/en dash
+    // ever reaches Resend, including inside LLM-extracted profile text.
+    const subject = sanitizeDashes(message.subject);
+    const text = sanitizeDashes(message.text);
+    const html = message.html ? sanitizeDashes(message.html) : undefined;
     const response = await fetchImpl("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -181,8 +193,9 @@ async function sendResend(
       body: JSON.stringify({
         from: message.fromName ? withFromName(from, message.fromName) : from,
         to: message.to,
-        subject: message.subject,
-        text: message.text,
+        subject,
+        text,
+        ...(html ? { html } : {}),
         ...(message.replyTo?.length ? { reply_to: message.replyTo } : {}),
       }),
     });
@@ -267,36 +280,7 @@ export async function sendChatbotResourceEmail(
   if (!hasResendConfig())
     return { ok: false, error: "Resend isn't configured." };
 
-  const greeting = input.visitorName?.trim()
-    ? `Hey ${input.visitorName.trim()},`
-    : "Hey,";
-  const subject =
-    input.resources.length === 1
-      ? `${input.resources[0].title}`
-      : `The ${input.resources.length} things we talked about`;
-
-  const openerLine = personalOpener(input.profile ?? null);
-
-  // One blank line between paragraphs — join("\n\n") already inserts it
-  // between array items, so no item here should also carry its own "".
-  const text = [
-    greeting,
-    // Fixed copy, deliberately. An earlier draft let the model write this
-    // line; that turned a verified-domain sender with the sales inbox as
-    // reply-to into 400 characters of attacker-steerable text. The resource
-    // blurbs below already say what these are.
-    `${openerLine} All free, nothing to sign up for.`,
-    ...input.resources.map(
-      (resource) =>
-        `${resource.title}\n${resource.blurb}\n${absoluteUrl(resource.url)}`,
-    ),
-    ...(input.bookingUrl
-      ? [
-          `If you'd rather just talk it through, grab a free 15 minutes here: ${input.bookingUrl}`,
-        ]
-      : []),
-    `${input.personaName}\nVendingpreneurs`,
-  ].join("\n\n");
+  const content = buildResourceEmailContent(input);
 
   // Replies go to the sales inbox by default. If routing is off/unset, fall
   // back to the from-address itself rather than omitting reply-to — a real
@@ -308,8 +292,9 @@ export async function sendChatbotResourceEmail(
 
   return sendResend(
     {
-      subject,
-      text,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
       to: [input.to],
       fromName: `${input.personaName} at Vendingpreneurs`,
       replyTo,
@@ -318,24 +303,222 @@ export async function sendChatbotResourceEmail(
   );
 }
 
+const BRAND_BLUE = "#1f72a5";
+
+type ResourceEmailContent = { subject: string; text: string; html: string };
+
 /**
- * One line referencing what the visitor already told the bot, so the email
- * reads like Mia picking the conversation back up rather than a form
- * response. Both source fields are free-text model extractions, so this is
- * built to read naturally after "about ___" regardless of whether the value
- * is a noun phrase ("managing a retail store") or a gerund phrase ("wanting
- * more flexibility") — the two shapes the extraction prompt actually produces.
- * Falls back to a plain opener when nothing's been extracted yet, which is
- * the common case: extraction usually runs later, on idle.
+ * Builds both the text and HTML bodies from the same content decisions, so
+ * they can never drift into saying different things. Two shapes:
+ *
+ * - A single specific member story (`case_study:<slug>`, and only that) gets
+ *   Mia's personal case-study treatment: a subject in her voice instead of
+ *   the story's title, and — when a profile detail exists — one line
+ *   connecting the visitor's own situation to the member's before the story
+ *   link (item 3 of the 2026-08-24 polish pass).
+ * - Everything else (roadmap, worksheet, the case-study index, or a
+ *   multi-resource send) keeps the original "here's what I promised"
+ *   template.
  */
-function personalOpener(profile: ProspectProfile | null): string {
-  const detail = profile?.current_work?.trim() || profile?.motivation?.trim();
-  if (!detail) return "Here's what I promised.";
-  return `Following up on what you shared about ${lowerFirst(detail)}, here's what I promised.`;
+function buildResourceEmailContent(
+  input: ChatbotResourceEmailInput,
+): ResourceEmailContent {
+  const profile = input.profile ?? null;
+  const firstName =
+    firstNameFrom(input.visitorName) ?? firstNameFrom(profile?.name);
+  const greeting = firstName ? `Hey ${firstName},` : "Hey,";
+
+  const soleCaseStudy = soleCaseStudyResource(input.resources);
+  const { subject, openerText } = soleCaseStudy
+    ? caseStudyOpener(soleCaseStudy, profile)
+    : generalOpener(input.resources, profile);
+
+  const resourceTextBlocks = input.resources.map(
+    (resource) =>
+      `${resource.title}\n${resource.blurb}\n${absoluteUrl(resource.url)}`,
+  );
+  const resourceHtmlBlocks = input.resources.map(
+    (resource) =>
+      `<strong>${escapeHtml(resource.title)}</strong><br>${escapeHtml(resource.blurb)}<br>` +
+      `<a href="${escapeHtml(absoluteUrl(resource.url))}" style="color:${BRAND_BLUE};">${escapeHtml(anchorTextFor(resource))}</a>`,
+  );
+
+  const bookingText = input.bookingUrl
+    ? [
+        `If you'd rather just talk it through, grab a free 15 minutes here: ${input.bookingUrl}`,
+      ]
+    : [];
+  const bookingHtml = input.bookingUrl
+    ? [
+        `If you'd rather just talk it through, <a href="${escapeHtml(input.bookingUrl)}" style="color:${BRAND_BLUE};">grab a free 15 minutes</a>.`,
+      ]
+    : [];
+
+  // One blank line between paragraphs — join("\n\n") already inserts it
+  // between array items, so no item here should also carry its own "".
+  const text = [
+    greeting,
+    openerText,
+    ...resourceTextBlocks,
+    ...bookingText,
+    `${input.personaName}\nVendingpreneurs`,
+  ].join("\n\n");
+
+  const html = htmlEmailDocument([
+    escapeHtml(greeting),
+    escapeHtml(openerText),
+    ...resourceHtmlBlocks,
+    ...bookingHtml,
+    `${escapeHtml(input.personaName)}<br>Vendingpreneurs`,
+  ]);
+
+  return { subject, text, html };
+}
+
+function generalOpener(
+  resources: ChatbotResource[],
+  profile: ProspectProfile | null,
+): { subject: string; openerText: string } {
+  const subject =
+    resources.length === 1
+      ? resources[0].title
+      : `The ${resources.length} things we talked about`;
+
+  // Fixed copy, deliberately. An earlier draft let the model write this
+  // line; that turned a verified-domain sender with the sales inbox as
+  // reply-to into 400 characters of attacker-steerable text. The resource
+  // blurbs below already say what these are.
+  const detail = personalDetail(profile);
+  const openerText = detail
+    ? `Following up on what you shared about ${lowerFirst(detail)}, here's what I promised. All free, nothing to sign up for.`
+    : "Here's what I promised. All free, nothing to sign up for.";
+  return { subject, openerText };
+}
+
+/**
+ * Mia's voice, not a form response: the subject names what this is ("the
+ * member story I mentioned"), never the story's own title. The connector
+ * line reuses the exact "was {background} before starting a route" fragment
+ * already validated in resources.ts's own blurb copy, rather than
+ * re-deriving new phrasing that might not read naturally for every
+ * background string in the case-study data.
+ */
+function caseStudyOpener(
+  resource: ChatbotResource,
+  profile: ProspectProfile | null,
+): { subject: string; openerText: string } {
+  const subject = "The member story I mentioned";
+  const memberFirstName =
+    firstNameFrom(caseStudyMemberName(resource)) ?? "They";
+  const detail = personalDetail(profile);
+  const background = priorBackgroundFrom(resource);
+  const openerText =
+    detail && background
+      ? `You mentioned ${lowerFirst(detail)}. ${memberFirstName} was ${background} before starting a route too.`
+      : "Here's the story I mentioned.";
+  return { subject, openerText };
+}
+
+/**
+ * One line referencing what the visitor already told the bot. Both source
+ * fields are free-text model extractions, so this is built to read
+ * naturally after "about ___" regardless of whether the value is a noun
+ * phrase ("managing a retail store") or a gerund phrase ("wanting more
+ * flexibility") — the two shapes the extraction prompt actually produces.
+ * Returns null when nothing's been extracted yet, which is the common case:
+ * extraction usually runs later, on idle.
+ */
+function personalDetail(profile: ProspectProfile | null): string | null {
+  return profile?.current_work?.trim() || profile?.motivation?.trim() || null;
+}
+
+function soleCaseStudyResource(
+  resources: ChatbotResource[],
+): ChatbotResource | null {
+  return resources.length === 1 &&
+    resources[0].key.startsWith(CASE_STUDY_KEY_PREFIX)
+    ? resources[0]
+    : null;
+}
+
+/** Title is `{memberName}: {headlineResult}` (see resources.ts) — the part before the first ": ". */
+function caseStudyMemberName(resource: ChatbotResource): string {
+  const idx = resource.title.indexOf(": ");
+  return idx === -1 ? resource.title : resource.title.slice(0, idx);
+}
+
+/** Pulls the background fragment back out of the blurb resources.ts already built ("Was {background} before starting a route."). */
+function priorBackgroundFrom(resource: ChatbotResource): string | null {
+  return (
+    resource.blurb.match(/^Was (.+) before starting a route\.$/)?.[1] ?? null
+  );
+}
+
+/** Real anchor text instead of a bare URL — required for every link in the HTML body. */
+function anchorTextFor(resource: ChatbotResource): string {
+  if (resource.key.startsWith(CASE_STUDY_KEY_PREFIX)) {
+    const name = firstNameFrom(caseStudyMemberName(resource)) ?? "their";
+    return `Read ${name}'s story`;
+  }
+  if (resource.key === "roadmap") return "Get the roadmap";
+  if (resource.key === "finance_templates") return "Get the worksheet";
+  if (resource.key === "case_studies") return "See the stories";
+  return resource.title;
+}
+
+function firstNameFrom(name: string | null | undefined): string | null {
+  const trimmed = name?.trim();
+  return trimmed ? trimmed.split(/\s+/)[0] : null;
 }
 
 function lowerFirst(value: string): string {
   return value.length ? value[0].toLowerCase() + value.slice(1) : value;
+}
+
+/**
+ * Escapes text interpolated into the HTML body. Visitor name and profile
+ * fields (current_work, motivation, ...) are ultimately visitor-influenced —
+ * current_work/motivation are LLM extractions over the visitor's own chat
+ * turns — so this is a trust-boundary requirement, not decoration.
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Premium-simple, matching the light site: system font stack, ~560px max
+ * width, generous whitespace, no images, no heavy button styling, no
+ * emojis. `paragraphsHtml` entries are pre-escaped/pre-built inner HTML for
+ * one `<p>` each.
+ */
+function htmlEmailDocument(paragraphsHtml: string[]): string {
+  const body = paragraphsHtml
+    .map((paragraph) => `<p style="margin:0 0 20px;">${paragraph}</p>`)
+    .join("\n");
+  return `<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background:#ffffff;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td align="center" style="padding:40px 20px;">
+          <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+            <tr>
+              <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#1a1a1a;">
+${body}
+                <p style="margin:32px 0 0;font-size:12px;color:#8a8a8a;">Vendingpreneurs &middot; vendingpreneurs.com</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
 }
 
 function absoluteUrl(path: string): string {
@@ -363,7 +546,7 @@ function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }
 
-/** `{name or email} — {call intent? 'wants a call' : topic}`, shared by the subject line and each digest row. */
+/** `{name or email}, {call intent? 'wants a call' : topic}`, shared by the subject line and each digest row. Comma, not an em dash — see sanitizeDashes below. */
 function leadLabel(input: ChatbotProfileEmailInput): string {
   const name =
     input.capturedName?.trim() ||
@@ -376,7 +559,7 @@ function leadLabel(input: ChatbotProfileEmailInput): string {
         input.profile?.summary?.trim() || "chatted with the site chatbot",
         60,
       );
-  return `${name} — ${tail}`;
+  return `${name}, ${tail}`;
 }
 
 function profileEmailSubject(input: ChatbotProfileEmailInput): string {
@@ -434,6 +617,21 @@ function hotnessScore(profile: ProspectProfile | null): number {
   if (profile.timeline) score += 1;
   if (profile.capital_signal) score += 1;
   return score;
+}
+
+/**
+ * No em/en dashes anywhere in a generated email, subjects included (brand
+ * rule, 2026-08-24). Called once, from sendResend, so it covers every sender
+ * without needing to be threaded through each one — including the parts
+ * this file doesn't fully control, like extract-prospect-profile.ts's
+ * LLM-written `summary`. A spaced dash reads as a clause break -> comma; an
+ * unspaced one (a number range like "20–30") -> a plain hyphen. Title-style
+ * "Name — Result" strings are fixed at the source (resources.ts's
+ * caseStudyResource, leadLabel above) so they read as "Name: Result" /
+ * "Name, tail" instead of falling through to this blunter fallback.
+ */
+export function sanitizeDashes(text: string): string {
+  return text.replace(/\s[—–]\s/g, ", ").replace(/[—–]/g, "-");
 }
 
 async function safeResponseText(response: Response): Promise<string> {
