@@ -52,6 +52,12 @@ const MAX_LOOKBACK_DAYS = 90;
 export type ReconcileChatbotBookingsOptions = {
   lookbackDays?: number;
   dryRun?: boolean;
+  /**
+   * HTTP call ceiling. Left at the client default for the daily cron; raised
+   * only for a deliberate one-off backfill, where the full history needs far
+   * more than one day's worth of requests.
+   */
+  maxRequests?: number;
 };
 
 export type ReconcileChatbotBookingsDeps = {
@@ -243,6 +249,7 @@ export async function reconcileChatbotBookings(
   const calendly = createCalendlyApiClient({
     token,
     fetchImpl: deps.fetchImpl,
+    ...(options.maxRequests ? { maxRequests: options.maxRequests } : {}),
   });
 
   const summary = emptyResult(true, dryRun);

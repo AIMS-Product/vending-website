@@ -53,7 +53,13 @@ export type CalendlyScheduledEvent = {
 export type CalendlyApiClient = ReturnType<typeof createCalendlyApiClient>;
 
 /** Hard cap on total HTTP calls in one sweep. A wide lookback window must not run away. */
-const MAX_REQUESTS_PER_SWEEP = 500;
+/**
+ * Default ceiling on HTTP calls per sweep. One request per scheduled event is
+ * needed to read its invitees, and this org runs ~14 events a day across its
+ * calendars, so a 30-day window is already ~450 calls. The daily cron keeps
+ * this default; a one-off historical backfill raises it explicitly.
+ */
+const DEFAULT_MAX_REQUESTS_PER_SWEEP = 500;
 /** Hard cap on pages walked per paginated list. Calendly's next_page_token is trusted, but bounded. */
 const MAX_PAGES_PER_LIST = 50;
 const MAX_ATTEMPTS_PER_REQUEST = 3;
@@ -107,10 +113,13 @@ export function createCalendlyApiClient({
   token,
   baseUrl = "https://api.calendly.com",
   fetchImpl = fetch,
+  maxRequests = DEFAULT_MAX_REQUESTS_PER_SWEEP,
 }: {
   token?: string;
   baseUrl?: string;
   fetchImpl?: typeof fetch;
+  /** Raise only for a deliberate one-off historical backfill. */
+  maxRequests?: number;
 }) {
   if (!token) {
     throw new CalendlyConfigError("Calendly API token is not configured.");
@@ -121,7 +130,7 @@ export function createCalendlyApiClient({
 
   async function request<T>(pathOrUrl: string): Promise<T> {
     requestCount += 1;
-    if (requestCount > MAX_REQUESTS_PER_SWEEP) {
+    if (requestCount > maxRequests) {
       throw new CalendlyApiError(0, "Calendly sweep exceeded its request cap.");
     }
 
@@ -220,26 +229,27 @@ export function createCalendlyApiClient({
       maxStartTime: string;
     }): Promise<CalendlyScheduledEvent[]> {
       const events: CalendlyScheduledEvent[] = [];
-      let pageToken: string | null = null;
+      const params = new URLSearchParams({
+        organization: organizationUri,
+        min_start_time: minStartTime,
+        max_start_time: maxStartTime,
+        status: "active",
+        count: String(PAGE_SIZE),
+      });
 
-      for (let page = 0; page < MAX_PAGES_PER_LIST; page++) {
-        const params = new URLSearchParams({
-          organization: organizationUri,
-          min_start_time: minStartTime,
-          max_start_time: maxStartTime,
-          status: "active",
-          count: String(PAGE_SIZE),
-        });
-        if (pageToken) params.set("page_token", pageToken);
-
-        const data = await request<{
-          collection: CalendlyScheduledEvent[];
-          pagination: { next_page_token: string | null };
-        }>(`/scheduled_events?${params.toString()}`);
-
+      // Follow `pagination.next_page` rather than rebuilding the query with a
+      // page_token. Calendly rejects a reconstructed request with
+      // "page_token is invalid" (confirmed against the live API); the absolute
+      // next_page URL it hands back is the supported way to page. request()
+      // pins that URL to the configured origin before sending the token.
+      let next: string | null = `/scheduled_events?${params.toString()}`;
+      for (let page = 0; page < MAX_PAGES_PER_LIST && next; page++) {
+        const data: {
+          collection?: CalendlyScheduledEvent[];
+          pagination?: { next_page?: string | null };
+        } = await request(next);
         events.push(...(data.collection ?? []));
-        pageToken = data.pagination?.next_page_token ?? null;
-        if (!pageToken) break;
+        next = data.pagination?.next_page ?? null;
       }
 
       return events;
@@ -248,20 +258,15 @@ export function createCalendlyApiClient({
     /** Lists invitees for one scheduled event, paginating the same way. */
     async listEventInvitees(eventUri: string): Promise<CalendlyInvitee[]> {
       const invitees: CalendlyInvitee[] = [];
-      let pageToken: string | null = null;
+      let next: string | null = `${eventUri}/invitees?count=${PAGE_SIZE}`;
 
-      for (let page = 0; page < MAX_PAGES_PER_LIST; page++) {
-        const params = new URLSearchParams({ count: String(PAGE_SIZE) });
-        if (pageToken) params.set("page_token", pageToken);
-
-        const data = await request<{
-          collection: CalendlyInvitee[];
-          pagination: { next_page_token: string | null };
-        }>(`${eventUri}/invitees?${params.toString()}`);
-
+      for (let page = 0; page < MAX_PAGES_PER_LIST && next; page++) {
+        const data: {
+          collection?: CalendlyInvitee[];
+          pagination?: { next_page?: string | null };
+        } = await request(next);
         invitees.push(...(data.collection ?? []));
-        pageToken = data.pagination?.next_page_token ?? null;
-        if (!pageToken) break;
+        next = data.pagination?.next_page ?? null;
       }
 
       return invitees;

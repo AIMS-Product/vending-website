@@ -6,7 +6,7 @@ import { footerColumns, headerCta, primaryNav } from "./nav";
 // was hardcoded in Header.tsx.
 describe("site navigation", () => {
   it("uses Kody's header CTA wording and sends it to the contact funnel", () => {
-    expect(headerCta.label).toBe("Get Started");
+    expect(headerCta.label).toBe("Get in Touch");
     expect(headerCta.href).toBe("/contact");
   });
 

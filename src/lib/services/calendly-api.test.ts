@@ -46,7 +46,7 @@ describe("createCalendlyApiClient", () => {
     });
   });
 
-  it("paginates scheduled events across two pages via next_page_token", async () => {
+  it("paginates scheduled events across two pages by following next_page", async () => {
     const fetchImpl = vi.fn();
     fetchImpl
       .mockResolvedValueOnce(
@@ -60,7 +60,10 @@ describe("createCalendlyApiClient", () => {
               status: "active",
             },
           ],
-          pagination: { next_page_token: "page-2" },
+          pagination: {
+            next_page:
+              "https://api.calendly.com/scheduled_events?page_token=page-2",
+          },
         }),
       )
       .mockResolvedValueOnce(
@@ -74,7 +77,7 @@ describe("createCalendlyApiClient", () => {
               status: "active",
             },
           ],
-          pagination: { next_page_token: null },
+          pagination: { next_page: null },
         }),
       );
 
@@ -110,7 +113,10 @@ describe("createCalendlyApiClient", () => {
               created_at: "2026-01-01T00:00:00Z",
             },
           ],
-          pagination: { next_page_token: "next" },
+          pagination: {
+            next_page:
+              "https://api.calendly.com/scheduled_events/e1/invitees?page_token=next",
+          },
         }),
       )
       .mockResolvedValueOnce(
@@ -124,7 +130,7 @@ describe("createCalendlyApiClient", () => {
               created_at: "2026-01-01T00:00:00Z",
             },
           ],
-          pagination: { next_page_token: null },
+          pagination: { next_page: null },
         }),
       );
 

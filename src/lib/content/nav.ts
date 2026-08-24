@@ -8,7 +8,7 @@ export type NavItem = {
  * The header's primary conversion button. Lived inline in Header.tsx until
  * 2026-08-10; copy belongs in a content module like every other string.
  */
-export const headerCta = { label: "Get Started", href: "/contact" } as const;
+export const headerCta = { label: "Get in Touch", href: "/contact" } as const;
 
 // Nav labels describe their destination directly — a visitor can predict
 // where each link goes from its label alone.

@@ -40,13 +40,13 @@ function buildCalendlyFetch(invitees: unknown[]) {
             status: "active",
           },
         ],
-        pagination: { next_page_token: null },
+        pagination: { next_page: null },
       });
     }
     if (url.startsWith(`${EVENT_URI}/invitees`)) {
       return jsonResponse({
         collection: invitees,
-        pagination: { next_page_token: null },
+        pagination: { next_page: null },
       });
     }
     throw new Error(`Unexpected URL in test: ${url}`);

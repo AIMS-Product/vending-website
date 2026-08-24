@@ -29,11 +29,11 @@ export const hero = {
     src: "/images/sections/hero.avif",
     alt: "An entrepreneur stocking a smart vending machine",
   },
-  cta: { label: "See If Your Market Fits", href: "/apply" },
+  cta: { label: "See if your market is a fit?", href: "/apply" },
 } as const;
 
 export const partnerStrip = {
-  title: "Trusted Vendingpreneur Partner",
+  title: "Trusted Vendingpreneur Partners",
 } as const;
 
 /** Order matches the live Webflow strip: 365, Alani, Cantaloupe, Micromart, PepsiCo, Prime, Poppi, Doritos. */
@@ -129,7 +129,7 @@ export const accelerator = {
   stats: [
     { value: "2-15", label: "Hours a week to run your route" },
     { value: "< 90", label: "Days to place your first machine" },
-    { value: "$1-$250K", label: "In revenue generated per month" },
+    { value: "$1K-$250K", label: "In revenue generated per month" },
   ] satisfies ReadonlyArray<Stat>,
   statsDisclaimer:
     "*Based on the average results of Vendingpreneur community members. Individual outcomes depend on personal investment, your market, and adherence to the program.",
@@ -144,15 +144,15 @@ export const accelerator = {
     label: "Bonus:",
     body: "Get access to discounted vending machines and bulk product deals to increase your bottom line.",
   },
-  cta: { label: "See If Your Market Fits", href: "/apply" },
+  cta: { label: "See if your market is a fit?", href: "/apply" },
 } as const;
 
 export const finalCta = {
-  title: "Join the Vending Accelerator Program",
-  body: "Get the process, tools, and expert guidance to build your vending route in 90 days.",
+  title: "Curious if your market is a fit?",
+  body: "Book a free 15-minute call and we will look at your market with you. No purchase required.",
   image: {
     src: "/images/sections/cta.avif",
     alt: "A customer tapping a phone to pay at a smart vending machine",
   },
-  cta: { label: "See If Your Market Fits", href: "/apply" },
+  cta: { label: "Book here", href: "/apply" },
 } as const;
