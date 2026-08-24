@@ -107,3 +107,28 @@ describe("closing a booking", () => {
     expect(prompt).not.toContain("find a time that works");
   });
 });
+
+describe("the pricing rule does not gag earnings answers", () => {
+  // Live on production the first version of this rule made Mia answer "how
+  // much can I make?" with "I can't share specific numbers on earnings" and
+  // then the plans-and-financing line. Member results are the proof that sells
+  // the call; refusing to cite them is worse than the bug being fixed.
+  it("says plainly that the rule is about cost, not earnings", () => {
+    const prompt = buildChatbotSystemPrompt(base);
+    expect(prompt).toContain("ONLY about what the visitor would PAY us");
+    expect(prompt).toContain("is an earnings question");
+  });
+
+  it("does not claim to override every other instruction", () => {
+    // It used to, which is how it outranked TESTIMONIAL MATCHING.
+    expect(buildChatbotSystemPrompt(base)).not.toContain(
+      "overrides every other instruction",
+    );
+  });
+
+  it("still keeps the mandatory member-story rule intact", () => {
+    const prompt = buildChatbotSystemPrompt(base);
+    expect(prompt).toContain("TESTIMONIAL MATCHING");
+    expect(prompt).toContain("a story with no link is a failure");
+  });
+});
