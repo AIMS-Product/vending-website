@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { writeChatbotEngagementNote } from "@/lib/chatbot/close-engagement-note";
 import { loadChatbotConfigFresh } from "@/lib/chatbot/config";
 import {
   toChatbotMessages,
@@ -239,7 +240,20 @@ async function storeProfile(
       conversationId,
       error: error.message,
     });
+    return;
   }
+
+  // The occupation and background a rep wants only exist from this moment on.
+  // The Close sync already wrote a first-pass engagement note minutes ago,
+  // before extraction had run, so this is what gets the background onto the
+  // lead. Deliberately hung off storeProfile rather than its two callers:
+  // both routes into extraction end here, and a guard in one caller would
+  // leave the other silently missing it.
+  //
+  // Never throws and never blocks the digest. writeChatbotEngagementNote
+  // handles a lead that does not exist yet, is already noted, or has no Close
+  // record at all, and swallows its own failures.
+  await writeChatbotEngagementNote({ conversationId }, { client });
 }
 
 export type DigestCronResult = {

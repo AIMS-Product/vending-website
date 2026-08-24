@@ -139,3 +139,37 @@ describe("persistConversationTurn", () => {
     expect(fake.updates[2]).not.toHaveProperty("status");
   });
 });
+
+describe("persistConversationTurn, entry page", () => {
+  /**
+   * page_url answers "what page pulled this visitor in", and the widget
+   * survives navigation, so a later turn sent from a different page must not
+   * rewrite it. It fed a rep the last page the visitor happened to be on
+   * instead of the one that brought them.
+   */
+  it("does not rewrite the entry page when the visitor navigates mid-chat", async () => {
+    const fake = fakeClient();
+    const conversation = makeConversation({ page_url: "/start" });
+
+    await persistConversationTurn(
+      conversation,
+      { messages: [], pageUrl: "/pricing" },
+      { client: fake.client, now },
+    );
+
+    expect(fake.updates[0]).not.toHaveProperty("page_url");
+  });
+
+  it("still records a page when the conversation has none yet", async () => {
+    const fake = fakeClient();
+    const conversation = makeConversation({ page_url: null });
+
+    await persistConversationTurn(
+      conversation,
+      { messages: [], pageUrl: "/pricing" },
+      { client: fake.client, now },
+    );
+
+    expect(fake.updates[0]).toMatchObject({ page_url: "/pricing" });
+  });
+});

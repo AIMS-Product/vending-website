@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { writeChatbotEngagementNote } from "@/lib/chatbot/close-engagement-note";
 import { config } from "@/lib/config";
 import { LEAD_MAGNET_FORM_ID } from "@/lib/content/lead-magnets";
 import { NEWSLETTER_FORM_ID } from "@/lib/content/newsletter";
@@ -253,6 +254,33 @@ async function processCloseSyncEvent(
         close_lead_id: syncedIds.leadId,
         close_contact_id: syncedIds.contactId,
       });
+
+      // The Close lead now exists, so the website-engagement briefing has
+      // somewhere to land. Deliberately AFTER the event and the lead are both
+      // marked synced: this is additive context, and a lead that reached Close
+      // successfully must never be reported as failed because a note did not
+      // post. writeChatbotEngagementNote swallows its own errors; the catch
+      // here covers the unexpected rest. A lead with no chat behind it exits
+      // after one indexed Supabase read and never touches Close.
+      try {
+        await writeChatbotEngagementNote(
+          {
+            leadSubmissionId: event.lead_submission_id,
+            closeLeadId: syncedIds.leadId,
+          },
+          // Reuse the drain's own Supabase client rather than opening a
+          // second admin connection, and so a test's injected client is
+          // honoured here too instead of reaching for the real one.
+          { client },
+        );
+      } catch (enrichmentError) {
+        console.warn("close sync: engagement note failed", {
+          name:
+            enrichmentError instanceof Error
+              ? enrichmentError.name
+              : "UnknownError",
+        });
+      }
     }
     return "synced";
   } catch (error) {

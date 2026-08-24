@@ -158,7 +158,16 @@ export async function persistConversationTurn(
   if (patch.capturedName) update.captured_name = patch.capturedName;
   if (patch.capturedEmail) update.captured_email = patch.capturedEmail;
   if (patch.capturedPhone) update.captured_phone = patch.capturedPhone;
-  if (patch.pageUrl) update.page_url = patch.pageUrl;
+  // Write-once: page_url is the page that pulled this visitor in, and the
+  // widget survives navigation, so overwriting it on every turn quietly
+  // turned it into "the last page they happened to be on". Same first-touch
+  // rule the codebase already applies to Entry Source and Resource Tag in
+  // Close (see closeTaggingPayload) -- re-sending stomps the real answer.
+  // Still fills a null, so a conversation that started before the client sent
+  // a page can record one later.
+  if (patch.pageUrl && !conversation.page_url) {
+    update.page_url = patch.pageUrl;
+  }
   if (patch.visitorHash) update.visitor_hash = patch.visitorHash;
 
   if (

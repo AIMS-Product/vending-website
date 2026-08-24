@@ -52,7 +52,15 @@ assumes.
 
 ## OPEN ITEMS, highest value first
 
-### 1. The production Calendly webhook is still dead (do this first)
+### 1. RESOLVED 2026-08-24 -- the production Calendly webhook is live
+
+> Subscription `a65a4f8c-c66c-4294-8b7f-6eb421c67340` now points at
+> www.vendingpreneurs.com and `CALENDLY_WEBHOOK_SIGNING_KEY` is set on
+> Production. See `.claude/specs/2026-08-24-chatbot-close-engagement-enrichment.md`.
+> The old preview subscription turned out to be `disabled`, not just
+> mis-targeted. Everything below is the original diagnosis, kept for context.
+
+#### Original note
 
 `CALENDLY_WEBHOOK_SIGNING_KEY` exists on **Preview only**, and
 `vercel env pull` returns `""` for sensitive vars so the Preview value cannot be
