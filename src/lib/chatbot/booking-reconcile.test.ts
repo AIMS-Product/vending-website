@@ -117,11 +117,18 @@ function buildFakeSupabase({
         select: (columns: string) => {
           if (columns.includes("created_at")) {
             return {
-              ilike: () => ({
-                order: () => ({
-                  limit: async () => ({ data: emailMatchRows, error: null }),
-                }),
-              }),
+              // booking-attribution now bounds the email-match window in SQL,
+              // so the chain has to accept gte/lte as well.
+              ilike: () => {
+                const chain: Record<string, unknown> = {
+                  order: () => ({
+                    limit: async () => ({ data: emailMatchRows, error: null }),
+                  }),
+                };
+                chain.gte = () => chain;
+                chain.lte = () => chain;
+                return chain;
+              },
             };
           }
           return {

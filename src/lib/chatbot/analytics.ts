@@ -47,8 +47,8 @@ export type ChatbotFunnelStageCounts = {
 export type ChatbotFunnelWindow = ChatbotFunnelStageCounts & {
   days: number;
   engagedRatePct: number;
-  capturedRatePct: number;
-  bookedRatePct: number;
+  capturedRateOfEngagedPct: number;
+  bookedRateOfCapturedPct: number;
   overallBookedRatePct: number;
   /**
    * Same four counts, split by where the booking happened. Only trustworthy
@@ -57,6 +57,16 @@ export type ChatbotFunnelWindow = ChatbotFunnelStageCounts & {
   bySource: {
     inChat: ChatbotFunnelStageCounts;
     assisted: ChatbotFunnelStageCounts;
+    /**
+     * Booked, but with no recorded attribution source.
+     *
+     * Most bookings reach us through Close's reconciler rather than the
+     * Calendly webhook (which cannot verify its signature in production), and
+     * those rows carry neither attribution_source nor booked_event_uri. Without
+     * this bucket inChat + assisted silently fails to add up to booked, and the
+     * split reads as if most calls simply did not happen.
+     */
+    unrecorded: ChatbotFunnelStageCounts;
   };
 };
 
@@ -145,10 +155,14 @@ function emptyFunnelWindow(days: number): ChatbotFunnelWindow {
     days,
     ...emptyStage,
     engagedRatePct: 0,
-    capturedRatePct: 0,
-    bookedRatePct: 0,
+    capturedRateOfEngagedPct: 0,
+    bookedRateOfCapturedPct: 0,
     overallBookedRatePct: 0,
-    bySource: { inChat: { ...emptyStage }, assisted: { ...emptyStage } },
+    bySource: {
+      inChat: { ...emptyStage },
+      assisted: { ...emptyStage },
+      unrecorded: { ...emptyStage },
+    },
   };
 }
 
@@ -179,11 +193,22 @@ const ROW_FIELDS_NO_ATTRIBUTION =
 const LEGACY_ROW_FIELDS =
   "id, created_at, message_count, captured_email, captured_phone, messages, prospect_profile, lead_submission_id" as const;
 
+/**
+ * Requires BOTH one of our column names and an undefined-column signal. A bare
+ * name match alone let any unrelated error that happened to mention the column
+ * fall back to a narrower select, which quietly dropped a metric instead of
+ * surfacing the real failure.
+ */
 function isMissingColumnError(message: string): boolean {
-  return (
+  const namesAColumn =
     message.includes("call_booked_at") ||
-    message.includes("attribution_source") ||
-    message.includes("42703")
+    message.includes("booked_event_uri") ||
+    message.includes("attribution_source");
+  if (!namesAColumn) return false;
+  return (
+    message.includes("42703") ||
+    message.includes("does not exist") ||
+    message.includes("could not find")
   );
 }
 
@@ -396,15 +421,32 @@ function isEngaged(row: ConversationRow): boolean {
   return (row.message_count ?? 0) >= 3;
 }
 
+/**
+ * The four stages, as genuinely NESTED sets.
+ *
+ * The raw predicates are independent, and that made the panel lie: someone who
+ * hands over an email on message two is captured but not "engaged" by a
+ * 3-message rule, so captured could exceed engaged and the strip could render
+ * a conversion rate above 100%. Sharing contact details IS engagement, and a
+ * booked call implies both, so each stage absorbs the ones below it. Rates
+ * between consecutive stages are then always meaningful.
+ */
 function buildFunnelStageCounts(
   rows: ConversationRow[],
   bookedLeadIds: ReadonlySet<string>,
 ): ChatbotFunnelStageCounts {
+  const booked = rows.filter((row) => isBooked(row, bookedLeadIds));
+  const captured = rows.filter(
+    (row) => isCaptured(row) || isBooked(row, bookedLeadIds),
+  );
+  const engaged = rows.filter(
+    (row) => isEngaged(row) || isCaptured(row) || isBooked(row, bookedLeadIds),
+  );
   return {
     conversations: rows.length,
-    engaged: rows.filter(isEngaged).length,
-    captured: rows.filter(isCaptured).length,
-    booked: rows.filter((row) => isBooked(row, bookedLeadIds)).length,
+    engaged: engaged.length,
+    captured: captured.length,
+    booked: booked.length,
   };
 }
 
@@ -438,10 +480,12 @@ function buildFunnelWindow(
 
   const inChatRows: ConversationRow[] = [];
   const assistedRows: ConversationRow[] = [];
+  const unrecordedRows: ConversationRow[] = [];
   for (const row of windowRows) {
     const source = resolveAttributionSource(row, bookedLeadIds);
     if (source === "in_chat") inChatRows.push(row);
     else if (source === "assisted") assistedRows.push(row);
+    else if (isBooked(row, bookedLeadIds)) unrecordedRows.push(row);
   }
 
   const stage = buildFunnelStageCounts(windowRows, bookedLeadIds);
@@ -449,12 +493,18 @@ function buildFunnelWindow(
     days,
     ...stage,
     engagedRatePct: ratePct(stage.engaged, stage.conversations),
-    capturedRatePct: ratePct(stage.captured, stage.engaged),
-    bookedRatePct: ratePct(stage.booked, stage.captured),
+    // Named for their denominators on purpose: the older funnel30d block below
+    // also has a `capturedRatePct`, measured against conversations rather than
+    // engaged. Two different numbers under one name in one payload is how a
+    // dashboard and a digest end up quoting different figures for the same
+    // thing.
+    capturedRateOfEngagedPct: ratePct(stage.captured, stage.engaged),
+    bookedRateOfCapturedPct: ratePct(stage.booked, stage.captured),
     overallBookedRatePct: ratePct(stage.booked, stage.conversations),
     bySource: {
       inChat: buildFunnelStageCounts(inChatRows, bookedLeadIds),
       assisted: buildFunnelStageCounts(assistedRows, bookedLeadIds),
+      unrecorded: buildFunnelStageCounts(unrecordedRows, bookedLeadIds),
     },
   };
 }

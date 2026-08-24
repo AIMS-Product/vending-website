@@ -315,6 +315,12 @@ describe("shouldForceBookingCalendar", () => {
     "how much time does this take",
     "how much work is it each week",
     "how much experience do I need",
+    // The veto used to require the earnings word immediately after "how much",
+    // so every phrasing with something in between failed open.
+    "how much does the average member make per month",
+    "how much can a single machine bring in",
+    "how much revenue should I expect",
+    "how much time per week does a route take",
   ])("leaves a non-cost question alone: %j", (message) => {
     expect(shouldForceBookingCalendar(message)).toBe(false);
   });

@@ -25,7 +25,7 @@
  * location counts would drown the signal.
  */
 const AMOUNT_PATTERN =
-  /(?:\$\s?\d[\d,]*(?:\.\d+)?\s?[kKmM]?)|(?:\b\d[\d,]*(?:\.\d+)?\s?[kKmM]?\s?(?:dollars|usd)\b)|(?:\busd\s?\d[\d,]*(?:\.\d+)?\s?[kKmM]?)/gi;
+  /(?:\$\s?\d[\d,]*(?:\.\d+)?(?:\s?[kKmM]\b)?)|(?:\b\d[\d,]*(?:\.\d+)?(?:\s?[kKmM])?\s?(?:dollars|usd)\b)|(?:\busd\s?\d[\d,]*(?:\.\d+)?(?:\s?[kKmM]\b)?)|(?:\b\d{1,4}(?:\.\d+)?\s?[kK]\b)/gi;
 
 /**
  * Words that make a nearby amount a statement about what someone PAYS.
@@ -33,7 +33,19 @@ const AMOUNT_PATTERN =
  * exact sentence that shipped to a real lead.
  */
 const COST_CONTEXT_PATTERN =
-  /\b(cost|costs|costing|price|prices|priced|pricing|invest|investment|investing|spend|spends|spent|spending|pay|pays|paid|paying|afford|affordable|upfront|up-front|budget|capital|fee|fees|deposit|financ\w*|expense|expenses|outlay|ticket|tuition|enrol\w*|start|started|starting|startup|start-up|get\s+going|buy\s?-?in)\b/i;
+  /\b(cost|costs|costing|price|prices|priced|pricing|invest|investment|investing|spend|spends|spent|spending|pay|pays|paid|paying|afford|affordable|upfront|up-front|budget|capital|fee|fees|deposit|financ\w*|expense|expenses|outlay|ticket|tuition|enrol\w*|start|started|starting|startup|start-up|get\s+going|buy\s?-?in|runs?\s+(?:about|around|roughly)|all\s+in|per\s+machine|out\s+of\s+pocket)\b/i;
+
+/**
+ * Cost words that are NOT also normal member-story vocabulary.
+ *
+ * "started" is in COST_CONTEXT_PATTERN because "spend X to get started" is the
+ * sentence that shipped, but it is also in half the case studies ("Shan
+ * started with no experience"). These are the words that only ever appear
+ * around money someone PAYS, and they are strong enough to beat an ambiguous
+ * time-period marker. See the ordering note on findPriceLeak.
+ */
+const STRONG_COST_PATTERN =
+  /\b(cost|costs|costing|price|prices|priced|pricing|invest|investment|investing|spend|spends|spent|spending|afford|affordable|upfront|up-front|budget|fee|fees|deposit|financ\w*|expense|expenses|outlay|tuition|out\s+of\s+pocket|per\s+machine|all\s+in|runs?\s+(?:about|around|roughly))\b/i;
 
 /**
  * Words that make a nearby amount a statement about what someone EARNED.
@@ -42,8 +54,17 @@ const COST_CONTEXT_PATTERN =
  * leak. Checked before the cost context, and it wins: "Shan does $25K/mo since
  * he started" contains "started" and is plainly not a price.
  */
-const REVENUE_CONTEXT_PATTERN =
-  /(?:\/\s?(?:mo|month|yr|year)\b)|(?:\b(?:a|per)\s+(?:month|year|week|day)\b)|(?:\bmonthly\b)|(?:\bannual\w*\b)|(?:\bin\s+(?:sales|revenue|profit)\b)|(?:\b(?:revenue|sales|profit|margin|earn\w*|mak(?:e|es|ing)|made|pull\w*|gross\w*|nets?|netting|brings?|bringing|generat\w*|does|doing|did)\b)/i;
+const EARNINGS_WORD_PATTERN =
+  /(?:\bin\s+(?:sales|revenue|profit)\b)|(?:\b(?:revenue|sales|profit|margin|income|earn\w*|mak(?:e|es|ing)|made|pull\w*|gross\w*|nets?|netting|brings?|bringing|generat\w*|does|doing|did)\b)/i;
+
+/**
+ * A recurring-period marker, which on its own says nothing about direction.
+ * "$4K a month" is Mallorie's income; "$2,500 a month to operate" is a cost.
+ * Treating these as proof of revenue is what made a recurring cost invisible,
+ * so they now only veto when no STRONG cost word is present.
+ */
+const PERIOD_MARKER_PATTERN =
+  /(?:\/\s?(?:mo|month|yr|year)\b)|(?:\b(?:a|per)\s+(?:month|year|week|day)\b)|(?:\bmonthly\b)|(?:\bannual\w*\b)/i;
 
 /** How far either side of the amount to read for context. */
 const CONTEXT_RADIUS = 140;
@@ -58,10 +79,17 @@ export type PriceLeak = {
 /**
  * Returns the first amount in `text` that reads as a price, or null.
  *
- * Order matters: revenue framing is checked first and short-circuits, because
+ * Order matters: earnings framing is checked first and short-circuits, because
  * every member story in the prompt pairs a dollar figure with words like
  * "started". Without that precedence, citing a case study would flag every
  * time and the flag would stop meaning anything.
+ *
+ * Recall is deliberately imperfect. A regex cannot read "it runs about that
+ * much to operate" as a price, and chasing the last few shapes would start
+ * flagging real member results, which is the failure that makes a monitor
+ * worthless. Layers 1 and 2 (the figure removed from the prompt, and the
+ * absolute PRICING rule) are the prevention; this exists so a recurrence is
+ * SEEN rather than silent.
  */
 export function findPriceLeak(text: string): PriceLeak | null {
   if (!text) return null;
@@ -73,8 +101,17 @@ export function findPriceLeak(text: string): PriceLeak | null {
       Math.min(text.length, index + match[0].length + CONTEXT_RADIUS),
     );
 
-    if (REVENUE_CONTEXT_PATTERN.test(context)) continue;
-    if (!COST_CONTEXT_PATTERN.test(context)) continue;
+    // An unambiguous earnings word always wins: member results are the proof
+    // engine of this chat and are full of legitimate dollar figures.
+    if (EARNINGS_WORD_PATTERN.test(context)) continue;
+
+    // A bare period marker only wins when nothing strongly says "cost". That
+    // asymmetry is the whole point: "$4K a month" with no cost word is income,
+    // "$2,500 a month" next to "costs" is a price.
+    const strongCost = STRONG_COST_PATTERN.test(context);
+    if (!strongCost && PERIOD_MARKER_PATTERN.test(context)) continue;
+
+    if (!strongCost && !COST_CONTEXT_PATTERN.test(context)) continue;
 
     return { amount: match[0].trim(), context: context.trim() };
   }

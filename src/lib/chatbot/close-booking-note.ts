@@ -66,6 +66,11 @@ export async function stampChatbotBookingOnCloseLead(
     // reconciliation sweep will not. Upgrade path if that race ever matters:
     // a unique constraint on a small "close_booking_notes" table keyed by the
     // same marker.
+    // ponytail: the marker is looked for in the newest page of notes only
+    // (client.ts sends _limit=50, unpaginated). A lead that accumulates 50
+    // newer notes could take a second copy of this one. Acceptable: a booking
+    // note is written within minutes of the booking, and the sweep is
+    // idempotent on the same day. Upgrade path is the dedupe table below.
     const alreadyNoted = await hasExistingNote(closeClient, leadId, marker);
     if (alreadyNoted) return;
 

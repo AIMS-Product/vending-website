@@ -59,13 +59,26 @@ export const EMAIL_MATCH_WINDOW_DAYS = 30;
 /** Small candidate page for the email lookup -- one email rarely has more than a few conversations. */
 const EMAIL_MATCH_CANDIDATE_LIMIT = 5;
 
-/** Postgres "column does not exist" -- this migration ships ahead of being applied. */
+/**
+ * Postgres "column does not exist" (42703) -- these migrations ship ahead of
+ * being applied by hand.
+ *
+ * Requires BOTH the undefined-column code and one of our column names. A bare
+ * substring match on the name alone was enough for any unrelated error that
+ * happened to mention the column (a constraint violation, a permission error)
+ * to be read as "the migration is not applied", which silently downgraded the
+ * write instead of surfacing the real problem.
+ */
 function isMissingColumnError(message: string): boolean {
-  return (
+  const namesAColumn =
     message.includes("call_booked_at") ||
     message.includes("booked_event_uri") ||
-    message.includes("attribution_source") ||
-    message.includes("42703")
+    message.includes("attribution_source");
+  if (!namesAColumn) return false;
+  return (
+    message.includes("42703") ||
+    message.includes("does not exist") ||
+    message.includes("could not find")
   );
 }
 
@@ -137,27 +150,56 @@ async function applyMatchedAttribution(
     return { matched: false };
   }
 
+  const sameEvent =
+    existing.hasV2Columns &&
+    existing.booked_event_uri === event.scheduledEventUri;
+
   if (canceled) {
     if (isCancelGuarded(existing, event, source)) return { matched: false };
-  } else if (
+  } else if (sameEvent && existing.call_booked_at === null) {
     // Calendly retries failed deliveries and does not guarantee ordering, so
     // a create can arrive AFTER its own cancellation (create delivery fails
     // on a cold start, the cancel lands, the create is retried). Re-stamping
     // then would resurrect a cancelled call and count it in callsBooked30d
     // forever. A cleared call_booked_at with the same booked_event_uri is
     // exactly the "this event was already cancelled" fingerprint.
-    existing.booked_event_uri === event.scheduledEventUri &&
-    existing.call_booked_at === null &&
-    existing.hasV2Columns
-  ) {
     return { matched: false };
+  } else if (sameEvent && existing.call_booked_at !== null) {
+    // Already recorded, and this is the same Calendly event.
+    //
+    // This is what makes re-processing genuinely idempotent, which the daily
+    // reconciliation sweep's whole safety argument rests on. Without it the
+    // write below moved call_booked_at forward to the run time on EVERY pass,
+    // so a call booked in June would keep reading as booked today and would
+    // never age out of the 7/30/90 day funnel windows.
+    //
+    // The one thing still worth writing is an upgrade of the label: an exact
+    // in_chat match arriving after an inferred email_match is better evidence
+    // for the same booking, so take the label and leave the timestamp alone.
+    const upgradesLabel =
+      source === "in_chat" && existing.attribution_source === "email_match";
+    if (!upgradesLabel) return { matched: false };
+
+    const upgraded = await updateTolerantly(client, conversationId, {
+      attribution_source: source,
+    });
+    if (!upgraded) return { matched: false };
+    return {
+      matched: true,
+      conversationId,
+      action: "booked",
+      attributionSource: source,
+    };
   }
 
   const update: Database["public"]["Tables"]["chatbot_conversations"]["Update"] =
     canceled
       ? { call_booked_at: null }
       : {
-          call_booked_at: new Date().toISOString(),
+          // Calendly's own record of when they booked, not when we processed
+          // it. Identical in practice on a live webhook; the difference is the
+          // whole point for a sweep replaying historical bookings.
+          call_booked_at: event.inviteeCreatedAt ?? new Date().toISOString(),
           booked_event_uri: event.scheduledEventUri,
           attribution_source: source,
         };
@@ -349,9 +391,24 @@ function escapeLikePattern(value: string): string {
  * is a naive stand-in; upgrade path is parsing payload.created_at directly
  * in calendly-webhook.ts if this ever needs to be exact.
  */
+/**
+ * When the booking was MADE, which is what the email-match window is measured
+ * back from.
+ *
+ * `eventStartAt` is the wrong anchor: it is when the CALL happens, always in
+ * the future at booking time. Anchoring a trailing 30-day window on a call
+ * scheduled three weeks out slides the window three weeks forward and drops
+ * the conversations at its near end, which are exactly the recent ones most
+ * likely to be the real match. `inviteeCreatedAt` is Calendly's own record of
+ * the booking moment, so it is the anchor; the event start is only a last
+ * resort for an old payload that lacks it.
+ */
 function resolveBookingTime(event: CalendlyWebhookEvent): Date {
-  const candidate = event.eventStartAt ? new Date(event.eventStartAt) : null;
-  if (candidate && !Number.isNaN(candidate.getTime())) return candidate;
+  for (const value of [event.inviteeCreatedAt, event.eventStartAt]) {
+    if (!value) continue;
+    const candidate = new Date(value);
+    if (!Number.isNaN(candidate.getTime())) return candidate;
+  }
   return new Date();
 }
 
@@ -373,10 +430,16 @@ async function findEmailMatchedConversationId(
     bookingTime.getTime() - EMAIL_MATCH_WINDOW_DAYS * 24 * 60 * 60 * 1000,
   );
 
+  // The window is applied in SQL, not just in JS below. With only a LIMIT, a
+  // visitor with more than EMAIL_MATCH_CANDIDATE_LIMIT conversations newer than
+  // the window would fill the page entirely and the real in-window match would
+  // never be returned.
   const { data, error } = await client
     .from("chatbot_conversations")
-    .select("id,created_at")
+    .select("id,created_at,captured_email")
     .ilike("captured_email", escapeLikePattern(email))
+    .gte("created_at", windowStart.toISOString())
+    .lte("created_at", bookingTime.toISOString())
     .order("created_at", { ascending: false })
     .limit(EMAIL_MATCH_CANDIDATE_LIMIT);
 
@@ -388,7 +451,18 @@ async function findEmailMatchedConversationId(
   }
   if (!data) return null;
 
+  const normalizedEmail = email.toLowerCase();
+
   const withinWindow = data.find((row) => {
+    // Re-check the address in JS rather than trusting the pattern.
+    // PostgREST treats `*` in an ilike pattern as a wildcard of its own, which
+    // escapeLikePattern cannot escape away, so a pathological address could in
+    // principle widen the match server-side. An exact comparison here makes any
+    // such leakage harmless instead of attributing a booking to a stranger's
+    // conversation.
+    if ((row.captured_email ?? "").trim().toLowerCase() !== normalizedEmail) {
+      return false;
+    }
     const createdAt = new Date(row.created_at);
     return (
       !Number.isNaN(createdAt.getTime()) &&

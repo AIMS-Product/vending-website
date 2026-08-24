@@ -22,6 +22,13 @@ import type { Database } from "@/types/database";
  * recordCalendlyBooking + applyChatbotBookingAttribution path the webhook
  * uses, so both attribution matchers (in_chat, email_match) apply for free.
  *
+ * SCOPE: bookings only, never cancellations. The sweep lists active events and
+ * skips non-active invitees, so a call that was booked and later cancelled
+ * stays booked in our tables until the Calendly webhook works again or Close's
+ * reconciler clears the linked lead. Recording a cancelled invitee as
+ * "invitee.created" would be strictly worse, so this is a known gap rather
+ * than an oversight.
+ *
  * Safe to re-run: recordCalendlyBooking upserts on invitee_uri, and
  * applyChatbotBookingAttribution's own guards (isInChatAttributed,
  * isCancelGuarded, the booked_event_uri check) make re-processing an
@@ -29,6 +36,15 @@ import type { Database } from "@/types/database";
  */
 
 type ReconcileClient = Pick<SupabaseClient<Database>, "from" | "rpc">;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * How far ahead to look for calls that have been booked but not yet held.
+ * Calendly's own scheduling horizon for these event types is well inside this,
+ * so it is a ceiling rather than a filter.
+ */
+const FORWARD_WINDOW_DAYS = 120;
 
 const DEFAULT_LOOKBACK_DAYS = 30;
 const MAX_LOOKBACK_DAYS = 90;
@@ -103,6 +119,10 @@ function toWebhookEvent(
     scheduledEventName: event.name ?? null,
     eventStartAt: event.start_time ?? null,
     eventEndAt: event.end_time ?? null,
+    // Calendly's own record of when they booked. Without it every backfilled
+    // booking would be stamped with the sweep's run time and land in the
+    // wrong funnel window.
+    inviteeCreatedAt: invitee.created_at ?? null,
     rawPayload: { invitee, scheduledEvent: event },
   };
 }
@@ -206,10 +226,17 @@ export async function reconcileChatbotBookings(
 
   const lookbackDays = clampLookbackDays(options.lookbackDays);
   const now = deps.now ?? new Date();
+  // Calendly filters /scheduled_events by when the CALL starts, not by when it
+  // was booked. Capping max_start_time at now would therefore return only
+  // calls that have already happened and miss every upcoming one, which is
+  // most of what a booking sweep exists to find: someone booking today books
+  // for next week. So the window reaches forward as well as back.
   const minStartTime = new Date(
-    now.getTime() - lookbackDays * 24 * 60 * 60 * 1000,
+    now.getTime() - lookbackDays * DAY_MS,
   ).toISOString();
-  const maxStartTime = now.toISOString();
+  const maxStartTime = new Date(
+    now.getTime() + FORWARD_WINDOW_DAYS * DAY_MS,
+  ).toISOString();
 
   const realClient = deps.supabaseClient ?? createAdminClient();
   const writeClient = dryRun ? createDryRunClient(realClient) : realClient;
@@ -220,12 +247,22 @@ export async function reconcileChatbotBookings(
 
   const summary = emptyResult(true, dryRun);
 
-  const organizationUri = await calendly.getCurrentOrganizationUri();
-  const events = await calendly.listScheduledEvents({
-    organizationUri,
-    minStartTime,
-    maxStartTime,
-  });
+  // A thrown Calendly error (the request cap, a 5xx after retries, a bad
+  // response shape) must not 500 the route and discard the counts: every write
+  // already made is durable and idempotent, so the honest outcome is a partial
+  // summary with the reason recorded.
+  let events: CalendlyScheduledEvent[];
+  try {
+    const organizationUri = await calendly.getCurrentOrganizationUri();
+    events = await calendly.listScheduledEvents({
+      organizationUri,
+      minStartTime,
+      maxStartTime,
+    });
+  } catch (error) {
+    summary.errors.push({ inviteeUri: null, message: errorMessage(error) });
+    return summary;
+  }
   summary.eventsScanned = events.length;
 
   for (const event of events) {

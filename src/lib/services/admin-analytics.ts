@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveChannel } from "@/lib/analytics/channel";
+import { CHATBOT_LEAD_SOURCE } from "@/lib/chatbot/lead-capture";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
 import { isInternalLead } from "@/lib/services/admin-analytics-internal";
@@ -546,7 +547,7 @@ function isChatbotLead(lead: LeadAnalyticsRow): boolean {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
     return false;
   }
-  return (metadata as Record<string, unknown>).source === "chatbot";
+  return (metadata as Record<string, unknown>).source === CHATBOT_LEAD_SOURCE;
 }
 
 function buildChannelRollup(

@@ -10,6 +10,7 @@ const createdEvent: CalendlyWebhookEvent = {
   inviteeName: "Jane Applicant",
   inviteeEmail: "Jane@Example.com",
   cancelReason: null,
+  inviteeCreatedAt: "2026-08-20T09:00:00.000Z",
   utmSource: "google",
   utmMedium: "cpc",
   utmCampaign: "spring",

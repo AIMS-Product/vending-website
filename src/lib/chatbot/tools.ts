@@ -149,6 +149,14 @@ const NOT_ABOUT_COST_PATTERNS: readonly RegExp[] = [
   /\bhow\s+much\s+(time|work|effort|experience|training|space|inventory|product)\b/i,
 ];
 
+/**
+ * Earnings and workload vocabulary. Any of these anywhere in the message means
+ * a bare "how much" is asking what they could MAKE or how much WORK it is, not
+ * what it costs, and both of those have real answers from the member results.
+ */
+const EARNINGS_OR_EFFORT_WORD =
+  /\b(make|makes|making|made|earn\w*|profit\w*|revenue|income|bring\w*|pull\w*|gross\w*|net|nets|take\s*home|hours?|time|work|effort|experience|training)\b/i;
+
 /** An unambiguous money word, which overrides the vetoes above. */
 const EXPLICIT_COST_WORD =
   /\b(cost|costs|pricing|prices?|priced|fee|fees|deposit|financ\w*|afford|affordable|invest|investment|upfront|up\s*front|budget|capital|payment\s+plan)\b/i;
@@ -162,7 +170,13 @@ export function hasCostIntent(message: string): boolean {
   if (!COST_INTENT_PATTERNS.some((pattern) => pattern.test(message))) {
     return false;
   }
+  // An explicit money word settles it, whatever else the sentence contains.
   if (EXPLICIT_COST_WORD.test(message)) return true;
+  // Otherwise the only trigger can be the bare "how much", and an earnings or
+  // workload word ANYWHERE in the message means it is not a cost question.
+  // Requiring the word right after "how much" failed open on every phrasing
+  // that put something in between ("how much does the average member make").
+  if (EARNINGS_OR_EFFORT_WORD.test(message)) return false;
   return !NOT_ABOUT_COST_PATTERNS.some((pattern) => pattern.test(message));
 }
 

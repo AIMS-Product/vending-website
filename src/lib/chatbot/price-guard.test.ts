@@ -62,6 +62,31 @@ describe("findPriceLeak", () => {
     expect(leak?.context).toContain("$7,500");
   });
 
+  it.each([
+    // A recurring COST reads exactly like a recurring revenue figure. Treating
+    // every "a month" as revenue made these invisible.
+    ["it costs about $2,500 a month to operate", "$2,500"],
+    ["expect to pay around $1,200 monthly in fees", "$1,200"],
+    ["the investment runs about $8,000 per year", "$8,000"],
+    // Bare "5k" next to an unambiguous cost word.
+    ["the startup cost is around 5k", "5k"],
+    ["budget 10k for machines", "10k"],
+  ])("catches a recurring or shorthand cost: %j", (text, amount) => {
+    expect(findPriceLeak(text)?.amount).toBe(amount);
+  });
+
+  it.each([
+    // Still must not fire on member results, which is what makes the flag mean
+    // something. Every one of these carries a period marker.
+    "Mallorie is a PA making $4K a month on the side",
+    "Andy pulls $10K/mo from 2 locations",
+    "Michael D is at $600K/yr in revenue",
+    "her best month brought in $18,000",
+    "Shan does 25k a month now",
+  ])("does not fire on member results with a period marker: %j", (text) => {
+    expect(findPriceLeak(text)).toBeNull();
+  });
+
   it("is null on empty input", () => {
     expect(findPriceLeak("")).toBeNull();
   });

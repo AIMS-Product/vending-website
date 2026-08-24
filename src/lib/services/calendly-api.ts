@@ -73,6 +73,32 @@ async function safeResponseText(response: Response): Promise<string> {
   }
 }
 
+/**
+ * Returns `absoluteUrl` only if it points at the same origin as the configured
+ * base. Throws otherwise, so a malformed or hostile `uri` in an API response
+ * cannot redirect an authenticated request off-host.
+ */
+function assertSameOrigin(absoluteUrl: string, baseUrl: string): string {
+  let parsed: URL;
+  let base: URL;
+  try {
+    parsed = new URL(absoluteUrl);
+    base = new URL(baseUrl);
+  } catch {
+    throw new CalendlyApiError(
+      0,
+      "Calendly returned an unusable resource URL.",
+    );
+  }
+  if (parsed.origin !== base.origin) {
+    throw new CalendlyApiError(
+      0,
+      "Calendly returned a resource URL on an unexpected host.",
+    );
+  }
+  return parsed.toString();
+}
+
 function delayMs(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -99,8 +125,13 @@ export function createCalendlyApiClient({
       throw new CalendlyApiError(0, "Calendly sweep exceeded its request cap.");
     }
 
+    // listEventInvitees builds its path from a `uri` that came back in a
+    // previous API response, so the absolute branch is reachable with
+    // server-supplied data. Pin it to the configured host: this request
+    // carries a bearer token, and sending that to whatever host a response
+    // named would hand the credential away.
     const url = pathOrUrl.startsWith("http")
-      ? pathOrUrl
+      ? assertSameOrigin(pathOrUrl, normalizedBaseUrl)
       : `${normalizedBaseUrl}${pathOrUrl}`;
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS_PER_REQUEST; attempt++) {
@@ -176,7 +207,7 @@ export function createCalendlyApiClient({
           pagination: { next_page_token: string | null };
         }>(`/scheduled_events?${params.toString()}`);
 
-        events.push(...data.collection);
+        events.push(...(data.collection ?? []));
         pageToken = data.pagination?.next_page_token ?? null;
         if (!pageToken) break;
       }
@@ -198,7 +229,7 @@ export function createCalendlyApiClient({
           pagination: { next_page_token: string | null };
         }>(`${eventUri}/invitees?${params.toString()}`);
 
-        invitees.push(...data.collection);
+        invitees.push(...(data.collection ?? []));
         pageToken = data.pagination?.next_page_token ?? null;
         if (!pageToken) break;
       }

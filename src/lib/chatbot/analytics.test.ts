@@ -90,7 +90,7 @@ function fakeClient(options: {
 }
 
 describe("getChatbotAnalytics funnels", () => {
-  it("counts the four stages independently: engaged, captured and booked are separate criteria", async () => {
+  it("counts the four stages as nested sets, so no rate can exceed 100%", async () => {
     const rows: FakeRow[] = [
       {
         id: "a",
@@ -124,14 +124,24 @@ describe("getChatbotAnalytics funnels", () => {
     });
 
     const d30 = analytics.funnels.d30;
+    // Row d is booked via Close reconciliation on only 2 messages and with no
+    // captured contact on the conversation itself. Counted independently it
+    // would sit in `booked` but not in `captured` or `engaged`, which is what
+    // let the strip render a conversion rate above 100%. A booked call implies
+    // both of the stages above it, so d is absorbed upward.
     expect(d30.conversations).toBe(4);
-    expect(d30.engaged).toBe(2); // b, c
-    expect(d30.captured).toBe(2); // b, c
+    expect(d30.engaged).toBe(3); // b, c, d
+    expect(d30.captured).toBe(3); // b, c, d
     expect(d30.booked).toBe(2); // c (own timestamp), d (Close reconciliation)
-    expect(d30.engagedRatePct).toBe(50);
-    expect(d30.capturedRatePct).toBe(100);
-    expect(d30.bookedRatePct).toBe(100);
+    expect(d30.engagedRatePct).toBe(75);
+    expect(d30.capturedRateOfEngagedPct).toBe(100);
+    expect(d30.bookedRateOfCapturedPct).toBe(66.7);
     expect(d30.overallBookedRatePct).toBe(50);
+
+    // The nesting contract itself, which is what stops a rate over 100%.
+    expect(d30.engaged).toBeLessThanOrEqual(d30.conversations);
+    expect(d30.captured).toBeLessThanOrEqual(d30.engaged);
+    expect(d30.booked).toBeLessThanOrEqual(d30.captured);
   });
 
   it("buckets conversations into the 7/30/90 day windows correctly", async () => {

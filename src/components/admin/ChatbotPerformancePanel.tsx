@@ -140,7 +140,10 @@ function FunnelStrip({
             <label
               key={option.days}
               htmlFor={`chatbot-funnel-window-${option.days}`}
-              className="text-ui-text-subtle has-checked:bg-ui-accent rounded-[calc(var(--radius-ui)-2px)] px-2.5 py-1 font-medium transition has-checked:text-white"
+              // The radio itself is sr-only, so without a has-focus-visible
+              // ring a keyboard user tabbing through this control sees nothing
+              // move at all.
+              className="text-ui-text-subtle has-checked:bg-ui-accent has-focus-visible:ring-ui-accent rounded-[calc(var(--radius-ui)-2px)] px-2.5 py-1 font-medium transition has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-offset-1"
             >
               <input
                 type="radio"
@@ -204,7 +207,7 @@ function FunnelWindowPanel({
     },
     {
       key: "engaged",
-      label: "Engaged (3+ messages)",
+      label: "Engaged (3+ messages or shared contact)",
       value: funnelWindow.engaged,
       rate: `${funnelWindow.engagedRatePct}% of conversations`,
     },
@@ -212,13 +215,13 @@ function FunnelWindowPanel({
       key: "captured",
       label: "Contact captured",
       value: funnelWindow.captured,
-      rate: `${funnelWindow.capturedRatePct}% of engaged`,
+      rate: `${funnelWindow.capturedRateOfEngagedPct}% of engaged`,
     },
     {
       key: "booked",
       label: "Calls booked",
       value: funnelWindow.booked,
-      rate: `${funnelWindow.bookedRatePct}% of captured`,
+      rate: `${funnelWindow.bookedRateOfCapturedPct}% of captured`,
     },
   ];
 
@@ -271,6 +274,17 @@ function FunnelWindowPanel({
                   label="Chatted first, booked later"
                   value={funnelWindow.bySource.assisted.booked}
                 />
+                {/* Shown only when it is not zero, so the two columns above
+                    always add up to the booked count. Most bookings reach us
+                    through Close rather than the Calendly webhook, and those
+                    carry no source, so hiding this would make the split look
+                    like calls went missing. */}
+                {funnelWindow.bySource.unrecorded.booked > 0 ? (
+                  <FunnelSplitStat
+                    label="Booked, source not recorded"
+                    value={funnelWindow.bySource.unrecorded.booked}
+                  />
+                ) : null}
               </div>
             ) : (
               <p className="text-ui-text-subtle text-xs">
