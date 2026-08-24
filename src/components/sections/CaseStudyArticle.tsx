@@ -213,8 +213,10 @@ function StatsStrip({
           key={`${stat.label}-${stat.value}`}
           className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#2a8fcc]"
         >
-          <p className="text-[clamp(1.75rem,3vw,2.5rem)] leading-none font-black text-[#111111] tabular-nums">
-            {stat.value}
+          <p className="text-[clamp(1.5rem,2.6vw,2.5rem)] leading-none font-black [overflow-wrap:anywhere] break-words text-[#111111] tabular-nums">
+            {/* Zero-width space after "/" gives values like "$1,700/mo" a
+                wrap point instead of painting past the tile border. */}
+            {stat.value.replaceAll("/", "/​")}
           </p>
           <p className="mt-3 text-xs font-black tracking-[0.12em] text-[#066a99] uppercase">
             {stat.label}
