@@ -172,11 +172,41 @@ export function createCalendlyApiClient({
 
   return {
     /** Resolves the organization uri for the account that owns this token. Never hardcode an org id. */
+    /**
+     * Resolves the organization URI, tolerating a token without `users:read`.
+     *
+     * A previous Vendingpreneurs PAT was issued without that scope and
+     * /users/me 401'd, which would fail this sweep on its very first request.
+     * organization_memberships returns the same URI and sits under a different
+     * scope, so it is the fallback rather than a second guess.
+     */
     async getCurrentOrganizationUri(): Promise<string> {
-      const data = await request<{
-        resource: { current_organization: string };
-      }>("/users/me");
-      return data.resource.current_organization;
+      try {
+        const data = await request<{
+          resource: { current_organization: string };
+        }>("/users/me");
+        if (data.resource?.current_organization) {
+          return data.resource.current_organization;
+        }
+      } catch (error) {
+        if (!(error instanceof CalendlyApiError) || error.status < 400)
+          throw error;
+        console.warn("calendly: /users/me unavailable, trying memberships", {
+          status: error.status,
+        });
+      }
+
+      const memberships = await request<{
+        collection?: Array<{ organization?: string }>;
+      }>("/organization_memberships?count=1");
+      const uri = memberships.collection?.[0]?.organization;
+      if (!uri) {
+        throw new CalendlyApiError(
+          0,
+          "Could not resolve the Calendly organization from this token.",
+        );
+      }
+      return uri;
     },
 
     /** Lists active scheduled events in the window, paginating via next_page_token with a hard page cap. */

@@ -55,10 +55,23 @@ export const benefitsV2 = {
   teamCta: { label: "Meet our team", href: "/about" },
 } as const;
 
-export const testimonialsV2 = {
+/** The video case-study strip directly under the partner ticker. */
+export const caseStudiesStripV2 = {
   eyebrow: "Success stories",
   title: "Real people, real results",
-  body: "See how others have built profitable vending businesses with our coaching.",
+  body: "Real members, filmed in their own words, with the numbers they actually hit.",
+  allStoriesLabel: "See every story",
+} as const;
+
+/**
+ * The written reviews further down the page. Headed differently from the video
+ * strip above on purpose: two bands both titled "Real people, real results"
+ * reads as a duplicate rather than a second kind of proof.
+ */
+export const testimonialsV2 = {
+  eyebrow: "In their own words",
+  title: "What members say",
+  body: "Written reviews from operators who joined with no vending experience.",
 } as const;
 
 export const finalCtaV2 = {

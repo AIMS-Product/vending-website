@@ -184,3 +184,55 @@ describe("createCalendlyApiClient", () => {
     expect((caught as Error).message).toContain("[redacted]");
   });
 });
+
+describe("organization resolution", () => {
+  // A prior Vendingpreneurs PAT shipped without users:read, which would have
+  // failed the sweep on its very first request.
+  it("falls back to organization_memberships when /users/me is forbidden", async () => {
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/users/me")) {
+        return new Response(JSON.stringify({ message: "forbidden" }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (url.includes("/organization_memberships")) {
+        return new Response(
+          JSON.stringify({
+            collection: [
+              { organization: "https://api.calendly.com/organizations/org-9" },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      throw new Error("unexpected url " + url);
+    });
+
+    const client = createCalendlyApiClient({ token: "tok", fetchImpl });
+    await expect(client.getCurrentOrganizationUri()).resolves.toBe(
+      "https://api.calendly.com/organizations/org-9",
+    );
+  });
+
+  it("still prefers /users/me when the token can read it", async () => {
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            resource: {
+              current_organization:
+                "https://api.calendly.com/organizations/org-1",
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+    );
+    const client = createCalendlyApiClient({ token: "tok", fetchImpl });
+    await expect(client.getCurrentOrganizationUri()).resolves.toContain(
+      "org-1",
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+});

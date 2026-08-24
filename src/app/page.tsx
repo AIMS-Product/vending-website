@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Anton } from "next/font/google";
 import { BrandStrip } from "@/components/sections/BrandStrip";
 import { BenefitsV2 } from "@/components/sections/home-v2/BenefitsV2";
+import { CaseStudiesStrip } from "@/components/sections/home-v2/CaseStudiesStrip";
 import { FinalCtaV2 } from "@/components/sections/home-v2/FinalCtaV2";
 import { HeroV2 } from "@/components/sections/home-v2/HeroV2";
 import { ProgramV2 } from "@/components/sections/home-v2/ProgramV2";
@@ -22,6 +23,8 @@ const anton = Anton({
   display: "swap",
 });
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   alternates: {
     canonical: "/",
@@ -35,14 +38,16 @@ export default function Home() {
       <RevealObserver />
       <HeroV2 />
       <BrandStrip />
-      {/* Case studies sit directly under the partner ticker: the proof is the
-          strongest thing on this page, so it goes above the explanation of the
-          program rather than below it. */}
-      <TestimonialsV2 />
+      {/* The member video stories sit directly under the partner ticker: the
+          proof is the strongest thing on this page, so it goes above the
+          explanation of the program rather than below it. The written quotes
+          stay lower down, where they back the pitch up rather than open it. */}
+      <CaseStudiesStrip />
       <ProgramV2 />
       <StatsBand />
       <BenefitsV2 />
       <TickerStrip />
+      <TestimonialsV2 />
       <FinalCtaV2 />
     </div>
   );
