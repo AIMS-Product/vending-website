@@ -306,7 +306,7 @@ export function ChatWidget() {
         {
           role: "assistant",
           content:
-            "Before you go — want to just grab a time? Free, 15 minutes, no pressure.",
+            "Before you go, want to just grab a time? Free, 15 minutes, no pressure.",
         },
         {
           role: "assistant",
@@ -627,7 +627,7 @@ export function ChatWidget() {
                     }
                     body={
                       inlineCaptureContext === "exit_intent"
-                        ? "Before you go — want me to email you this conversation plus the free roadmap?"
+                        ? "Before you go, want me to email you this conversation plus the free roadmap?"
                         : "Leave your email and the team can send more details."
                     }
                     onSubmit={submitCapture}
