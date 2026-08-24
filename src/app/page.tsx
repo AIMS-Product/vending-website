@@ -35,11 +35,14 @@ export default function Home() {
       <RevealObserver />
       <HeroV2 />
       <BrandStrip />
+      {/* Case studies sit directly under the partner ticker: the proof is the
+          strongest thing on this page, so it goes above the explanation of the
+          program rather than below it. */}
+      <TestimonialsV2 />
       <ProgramV2 />
       <StatsBand />
       <BenefitsV2 />
       <TickerStrip />
-      <TestimonialsV2 />
       <FinalCtaV2 />
     </div>
   );

@@ -15,7 +15,7 @@ const cardStyles = [
     chip: "bg-[#2a8fcc]",
     dark: true,
   },
-  { span: "lg:col-span-7", surface: "bg-[#ffe3d1]", chip: "bg-white" },
+  { span: "lg:col-span-7", surface: "bg-[#eaf8ff]", chip: "bg-white" },
 ] as const;
 
 export function BenefitsV2() {

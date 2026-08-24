@@ -62,9 +62,10 @@ export const testimonialsV2 = {
 } as const;
 
 export const finalCtaV2 = {
-  marqueeWord: "Apply now",
+  marqueeWord: "Find out",
   // Two lines because the band renders them as stacked display type; the second
-  // line carries the highlight.
-  titleLines: ["Join the Vending", "Accelerator Program"],
+  // line carries the highlight. Framed as a fit question rather than "join the
+  // program": the ask is a low-commitment qualification, not a commitment.
+  titleLines: ["Let's see if your", "market is a fit"],
   ghostWord: "Freedom",
 } as const;

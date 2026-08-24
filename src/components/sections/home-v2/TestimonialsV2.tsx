@@ -1,9 +1,11 @@
 import type { CSSProperties } from "react";
+import { Button } from "@/components/ui/Button";
 import {
   QuoteTestimonialCard,
   VideoTestimonialCard,
 } from "@/components/sections/Testimonials";
 import { caseStudyQuotes, caseStudyVideos } from "@/lib/content/case-studies";
+import { accelerator } from "@/lib/content/home";
 import { testimonialsV2 } from "@/lib/content/home-v2";
 import { cn } from "@/lib/utils";
 
@@ -82,6 +84,14 @@ export function TestimonialsV2() {
             </li>
           ))}
         </ul>
+
+        {/* The section now sits high on the page, so it has to offer the next
+            step itself rather than relying on the final CTA band far below. */}
+        <div className="mt-14 flex justify-center" data-reveal>
+          <Button href={accelerator.cta.href} showArrow>
+            {accelerator.cta.label}
+          </Button>
+        </div>
       </div>
     </section>
   );

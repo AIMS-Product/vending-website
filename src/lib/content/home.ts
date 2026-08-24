@@ -29,11 +29,11 @@ export const hero = {
     src: "/images/sections/hero.avif",
     alt: "An entrepreneur stocking a smart vending machine",
   },
-  cta: { label: "Book Your Call", href: "/apply" },
+  cta: { label: "See If Your Market Fits", href: "/apply" },
 } as const;
 
 export const partnerStrip = {
-  title: "Trusted brands in our machines",
+  title: "Trusted Vendingpreneur Partner",
 } as const;
 
 /** Order matches the live Webflow strip: 365, Alani, Cantaloupe, Micromart, PepsiCo, Prime, Poppi, Doritos. */
@@ -127,9 +127,9 @@ export const accelerator = {
     alt: "An entrepreneur using a Cantaloupe-branded vending kiosk",
   },
   stats: [
-    { value: "10-15", label: "Hours a week to run your route" },
-    { value: "< 30", label: "Days to place your first machine" },
-    { value: "$1.5K-$5K", label: "In revenue generated per month" },
+    { value: "2-15", label: "Hours a week to run your route" },
+    { value: "< 90", label: "Days to place your first machine" },
+    { value: "$1-$250K", label: "In revenue generated per month" },
   ] satisfies ReadonlyArray<Stat>,
   statsDisclaimer:
     "*Based on the average results of Vendingpreneur community members. Individual outcomes depend on personal investment, your market, and adherence to the program.",
@@ -144,7 +144,7 @@ export const accelerator = {
     label: "Bonus:",
     body: "Get access to discounted vending machines and bulk product deals to increase your bottom line.",
   },
-  cta: { label: "Book Your Call", href: "/apply" },
+  cta: { label: "See If Your Market Fits", href: "/apply" },
 } as const;
 
 export const finalCta = {
@@ -154,5 +154,5 @@ export const finalCta = {
     src: "/images/sections/cta.avif",
     alt: "A customer tapping a phone to pay at a smart vending machine",
   },
-  cta: { label: "Book Your Call", href: "/apply" },
+  cta: { label: "See If Your Market Fits", href: "/apply" },
 } as const;
