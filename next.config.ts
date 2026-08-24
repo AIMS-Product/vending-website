@@ -83,6 +83,18 @@ const nextConfig: NextConfig = {
         destination: "/privacy",
         permanent: true,
       },
+      // News consolidation — three older location posts now fold into the
+      // /news/best-vending-locations pillar. Their DB rows are archived so the
+      // canonical URL is the only one that renders.
+      ...[
+        "/news/best-vending-locations-1",
+        "/news/best-vending-locations-1-f15cf",
+        "/news/how-to-choose-the-perfect-location-for-vending-machine",
+      ].map((source) => ({
+        source,
+        destination: "/news/best-vending-locations",
+        permanent: true,
+      })),
       ...legacyLeadRedirects.map(({ source, destination }) => ({
         source,
         destination,

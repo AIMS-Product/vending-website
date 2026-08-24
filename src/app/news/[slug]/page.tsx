@@ -8,6 +8,7 @@ import {
   listPublishedSlugs,
 } from "@/lib/services/news";
 import { renderMarkdown } from "@/lib/markdown";
+import { newsStructuredData } from "@/lib/news/structured-data";
 
 type Params = { slug: string };
 
@@ -54,8 +55,16 @@ export default async function NewsArticlePage({
   const post = await getPublishedPost(slug);
   if (!post) notFound();
   const html = await renderMarkdown(post.body);
+  const structuredData = newsStructuredData(post.body);
   return (
     <>
+      {structuredData && (
+        <script
+          type="application/ld+json"
+          // Serialised server-side from our own columns, never from user input.
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+      )}
       <NewsArticle post={post} html={html} />
       <FinalCta />
     </>
