@@ -155,19 +155,24 @@ function FunnelStrip({
         </div>
       </div>
 
+      {/* The visibility variant is passed as a LITERAL string, never built by
+          interpolation. Tailwind generates CSS by scanning source text for
+          whole class names: a template like `[:has(#${id}:checked)_&]:block`
+          produces no rule at all, so every panel keeps `hidden` and the funnel
+          renders blank. That shipped once; these three strings are the fix. */}
       <FunnelWindowPanel
         funnelWindow={funnels.d7}
-        radioId="chatbot-funnel-window-7"
+        visibleClass="[:has(#chatbot-funnel-window-7:checked)_&]:block"
         attributionSplitTrustworthy={attributionSplitTrustworthy}
       />
       <FunnelWindowPanel
         funnelWindow={funnels.d30}
-        radioId="chatbot-funnel-window-30"
+        visibleClass="[:has(#chatbot-funnel-window-30:checked)_&]:block"
         attributionSplitTrustworthy={attributionSplitTrustworthy}
       />
       <FunnelWindowPanel
         funnelWindow={funnels.d90}
-        radioId="chatbot-funnel-window-90"
+        visibleClass="[:has(#chatbot-funnel-window-90:checked)_&]:block"
         attributionSplitTrustworthy={attributionSplitTrustworthy}
       />
     </section>
@@ -182,11 +187,12 @@ function FunnelStrip({
  */
 function FunnelWindowPanel({
   funnelWindow,
-  radioId,
+  visibleClass,
   attributionSplitTrustworthy,
 }: {
   funnelWindow: ChatbotAnalytics["funnels"]["d30"];
-  radioId: string;
+  /** A literal Tailwind variant class, not an interpolated one. See the call site. */
+  visibleClass: string;
   attributionSplitTrustworthy: boolean;
 }) {
   const stages = [
@@ -217,7 +223,7 @@ function FunnelWindowPanel({
   ];
 
   return (
-    <div className={`mt-3 hidden [:has(#${radioId}:checked)_&]:block`}>
+    <div className={`mt-3 hidden ${visibleClass}`}>
       {funnelWindow.conversations === 0 ? (
         <p className="text-ui-text-subtle text-sm">
           No data yet for this time range.

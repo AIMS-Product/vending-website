@@ -18,6 +18,21 @@ _"$1,500-$5,000 a month in revenue per member"_. The model read a **revenue**
 range back as an **investment** range, relabelled it, and stated it with total
 confidence to a lead who then went to book.
 
+**It was not reciting that figure. It was inventing a new one every time.** A
+live baseline against production on 2026-08-24 at 17:44 UTC, same question, got
+a completely different range:
+
+> "Many members typically invest between $3,000 to $10,000 to get their first
+> machine and start their route."
+
+So the `$1,500-$5,000` in PROGRAM_FACTS was an **anchor**, not a script: having
+any dollar figures in context was enough for the model to confidently
+manufacture a plausible cost range on demand. Deleting the one figure was
+therefore never going to be sufficient on its own, which is why the defence
+below is four layers rather than one edit. That same baseline reply also said
+"Want to pick a time?" without opening the calendar, which is the second half
+of the fix.
+
 Two things made it worse than a one-off:
 
 - **"How much does it cost to start?" is the first starter-question chip on the
