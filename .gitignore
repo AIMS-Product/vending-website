@@ -48,3 +48,6 @@ reports/ux-persona-review/ux-review.html
 
 # Playwright MCP tool output — console logs and page dumps, always local
 .playwright-mcp/
+
+# Agent scratch worktrees
+.claude/worktrees/

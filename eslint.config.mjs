@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     // to their own src/, so linting or typechecking them from here reports
     // errors that do not exist.
     "apps/**",
+    // Agent scratch worktrees. Nested checkouts with their own .next build
+    // output; not part of this app's program.
+    ".claude/worktrees/**",
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
