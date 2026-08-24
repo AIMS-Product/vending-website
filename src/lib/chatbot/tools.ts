@@ -104,6 +104,77 @@ export function hasExplicitBookingIntent(message: string): boolean {
   return BOOKING_INTENT_PATTERNS.some((pattern) => pattern.test(message));
 }
 
+/**
+ * Cost questions, which are both the highest-intent moment in a chat and the
+ * one the bot has already got badly wrong.
+ *
+ * "How much does it cost to start?" was a real visitor's first message on
+ * 2026-08-24. The model answered with an invented dollar range and did NOT
+ * open the calendar, even though the tool description and the prompt both tell
+ * it to on exactly this question. So the calendar stops being a request here
+ * too: a cost question is treated as booking intent.
+ *
+ * Kept separate from BOOKING_INTENT_PATTERNS so the narrow "asked to book"
+ * meaning of hasExplicitBookingIntent stays intact for its own callers.
+ */
+const COST_INTENT_PATTERNS: readonly RegExp[] = [
+  /\bhow\s+much\b/i,
+  /\b(cost|costs|pricing|prices?)\b/i,
+  /\b(afford|affordable)\b/i,
+  /\bup\s*front\b/i,
+  /\b(start|get\s*started|startup|start[-\s]?up)\s+(cost|capital|money|budget|investment)\b/i,
+  /\b(investment|invest)\s+(required|needed|amount|range)\b/i,
+  /\bhow\s+(expensive|cheap)\b/i,
+  /\b(what|whats|what's)\s+(the\s+)?(price|cost|investment|damage)\b/i,
+  /\b(financ\w+|payment\s+plan|monthly\s+payment)\b/i,
+  /\b(fee|fees|deposit)\b/i,
+];
+
+/**
+ * "How much" is not always about money.
+ *
+ * "How much can I make?" and "how much time does this take?" both match the
+ * broad `how much` pattern above, and both would be answered with the
+ * plans-and-financing line, which is simply the wrong answer to an earnings or
+ * a workload question. Those get to keep the normal conversation: the model
+ * answers from the member results and the program facts, which are real.
+ *
+ * Only used to veto the bare `how much` case. A message that names cost, price,
+ * financing or a fee outright is a cost question no matter what else is in it,
+ * so an explicit cost word always wins over this.
+ */
+const NOT_ABOUT_COST_PATTERNS: readonly RegExp[] = [
+  /\bhow\s+much\s+(can|could|do|does|will|would|might)?\s*(i|you|we|they|one|someone|people|members?)?\s*(make|earn|profit|bring|pull|net|gross)\b/i,
+  /\bhow\s+much\s+(revenue|profit|income|money)\s+(can|could|do|does|will|would|is|are)\b/i,
+  /\bhow\s+much\s+(time|work|effort|experience|training|space|inventory|product)\b/i,
+];
+
+/** An unambiguous money word, which overrides the vetoes above. */
+const EXPLICIT_COST_WORD =
+  /\b(cost|costs|pricing|prices?|priced|fee|fees|deposit|financ\w*|afford|affordable|invest|investment|upfront|up\s*front|budget|capital|payment\s+plan)\b/i;
+
+/**
+ * True when the visitor is asking what anything costs, in any phrasing. The
+ * prompt's PRICING rule owns what the bot SAYS; this owns whether the calendar
+ * actually opens, because the model demonstrably will not open it on its own.
+ */
+export function hasCostIntent(message: string): boolean {
+  if (!COST_INTENT_PATTERNS.some((pattern) => pattern.test(message))) {
+    return false;
+  }
+  if (EXPLICIT_COST_WORD.test(message)) return true;
+  return !NOT_ABOUT_COST_PATTERNS.some((pattern) => pattern.test(message));
+}
+
+/**
+ * The single question the chat route asks before deciding to require
+ * show_booking_calendar rather than offer it. Callers must also check the
+ * calendar has not already been shown.
+ */
+export function shouldForceBookingCalendar(message: string): boolean {
+  return hasExplicitBookingIntent(message) || hasCostIntent(message);
+}
+
 /** Hard ceiling on resource emails per conversation, counted off the transcript. */
 export const MAX_RESOURCE_EMAILS_PER_CONVERSATION = 2;
 

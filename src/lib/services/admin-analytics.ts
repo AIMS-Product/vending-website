@@ -48,6 +48,7 @@ type LeadAnalyticsRow = Pick<
   | "latest_qualification_started_at"
   | "latest_qualification_completed_at"
   | "call_booked_at"
+  | "metadata"
 >;
 
 type BookingAnalyticsRow = Pick<
@@ -146,7 +147,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const TOP_N = 12;
 
 const LEAD_ANALYTICS_FIELDS =
-  "id,created_at,email,full_name,source_path,landing_path,referrer,utm_source,utm_medium,utm_campaign,utm_term,utm_content,timeline,budget,business_stage,state_region,lifecycle_status,close_sync_status,qualification_summary,latest_qualification_form_id,latest_qualification_started_at,latest_qualification_completed_at,call_booked_at" as const;
+  "id,created_at,email,full_name,source_path,landing_path,referrer,utm_source,utm_medium,utm_campaign,utm_term,utm_content,timeline,budget,business_stage,state_region,lifecycle_status,close_sync_status,qualification_summary,latest_qualification_form_id,latest_qualification_started_at,latest_qualification_completed_at,call_booked_at,metadata" as const;
 const BOOKING_ANALYTICS_FIELDS =
   "id,created_at,status,scheduled_event_name,invitee_email,lead_submission_id" as const;
 
@@ -535,6 +536,19 @@ function topNWithBookings(
  * the raw value understated every channel that more than one person tags links
  * for. Untagged leads resolve to Website; see resolveChannel.
  */
+/**
+ * Chatbot-captured leads are tagged on `metadata.source`, not on entry_source
+ * (a strict-choices field in Close the chatbot path deliberately leaves alone)
+ * and not on utm_source (which stays the visitor's real campaign).
+ */
+function isChatbotLead(lead: LeadAnalyticsRow): boolean {
+  const metadata = lead.metadata;
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return false;
+  }
+  return (metadata as Record<string, unknown>).source === "chatbot";
+}
+
 function buildChannelRollup(
   leads: LeadAnalyticsRow[],
   limit: number,
@@ -547,7 +561,9 @@ function buildChannelRollup(
   const groups = new Map<string, Group>();
 
   for (const lead of leads) {
-    const { channel, person } = resolveChannel(lead.utm_source);
+    const { channel, person } = resolveChannel(lead.utm_source, {
+      capturedByChatbot: isChatbotLead(lead),
+    });
     const group = groups.get(channel) ?? {
       count: 0,
       booked: 0,

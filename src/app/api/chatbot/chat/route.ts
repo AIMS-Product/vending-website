@@ -28,8 +28,9 @@ import { prospectProfileSchema } from "@/lib/chatbot/extract-prospect-profile";
 import { handleChatbotLeadCaptured } from "@/lib/chatbot/lead-capture";
 import { sendProfileEmailForConversation } from "@/lib/chatbot/learning/digest";
 import type { ChatbotChatMessage } from "@/lib/chatbot/openai";
+import { findPriceLeakInReplies } from "@/lib/chatbot/price-guard";
 import {
-  hasExplicitBookingIntent,
+  shouldForceBookingCalendar,
   type ChatbotToolContext,
 } from "@/lib/chatbot/tools";
 import { createTurnStream } from "@/lib/chatbot/turn-stream";
@@ -165,7 +166,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         message:
-          "This conversation has gotten too long to continue here — try starting a new chat.",
+          "This conversation has gotten too long to continue here. Try starting a new chat.",
       },
       { status: 400 },
     );
@@ -194,6 +195,10 @@ export async function POST(request: Request) {
     capturedPhone: captured.phone,
     prospectSummary: prospectSummaryFrom(conversation.prospect_profile),
     hasSeenCalendar: priorMessages.some((m) => m.kind === "calendar"),
+    userTurnsSinceCalendar: userTurnsSinceCalendar(priorMessages),
+    hasConfirmedBooking: priorMessages.some(
+      (m) => m.kind === "booking_confirmed",
+    ),
   };
 
   const modelMessages: ChatbotChatMessage[] = [
@@ -243,7 +248,7 @@ export async function POST(request: Request) {
   // asked plainly and no calendar is open yet, require the call instead of
   // requesting it.
   const forceTool =
-    !promptInput.hasSeenCalendar && hasExplicitBookingIntent(message)
+    !promptInput.hasSeenCalendar && shouldForceBookingCalendar(message)
       ? "show_booking_calendar"
       : undefined;
 
@@ -262,6 +267,8 @@ export async function POST(request: Request) {
     // and dropping it would lose both the turn and any contact details it
     // carried. createTurnStream also guarantees at least a spoken fallback.
     const newMessages = [...historyForModel, ...sink.messages];
+
+    await flagPriceLeak(conversation.id, sink.messages, client);
 
     try {
       await persistConversationTurn(
@@ -355,6 +362,77 @@ function trimToBudget(messages: ChatbotMessage[]): ChatbotMessage[] {
     kept.unshift(messages[i]);
   }
   return kept;
+}
+
+/**
+ * Visitor turns taken since the in-chat calendar last appeared, or null if it
+ * never has. Drives the one-time "did you find a time?" nudge in the system
+ * prompt; see bookingFollowThroughSection.
+ */
+function userTurnsSinceCalendar(
+  priorMessages: readonly ChatbotMessage[],
+): number | null {
+  const lastCalendarIndex = priorMessages.findLastIndex(
+    (m) => m.kind === "calendar",
+  );
+  if (lastCalendarIndex === -1) return null;
+  return priorMessages
+    .slice(lastCalendarIndex + 1)
+    .filter((m) => m.role === "user").length;
+}
+
+/**
+ * Layer 3 of the never-state-a-price defence: read back what the model just
+ * said and flag the conversation when a currency amount turns up next to cost
+ * language. See lib/chatbot/price-guard.ts for why this observes instead of
+ * blocking.
+ *
+ * Fail-soft and deliberately never rethrown: this runs inside after(), where
+ * throwing would skip persisting the visitor's turn. A missed flag costs a
+ * review; a lost turn costs the lead.
+ */
+async function flagPriceLeak(
+  conversationId: string,
+  turnMessages: readonly ChatbotMessage[],
+  client: ReturnType<typeof createAdminClient>,
+): Promise<void> {
+  const leak = findPriceLeakInReplies(
+    turnMessages.filter((m) => m.role === "assistant").map((m) => m.content),
+  );
+  if (!leak) return;
+
+  // console.error, not warn: the prompt is supposed to make this impossible,
+  // so every occurrence is a regression worth seeing in the Vercel logs.
+  console.error("chatbot: price stated in a reply", {
+    conversationId,
+    amount: leak.amount,
+    context: leak.context,
+  });
+
+  try {
+    // Idempotent by the table's unique (conversation_id, flag): a second leak
+    // in the same conversation keeps the first note rather than duplicating
+    // the row or clobbering it.
+    const { error } = await client.from("chatbot_conversation_flags").upsert(
+      {
+        conversation_id: conversationId,
+        flag: "needs_prompt_tuning",
+        note: `Stated a price: ${leak.amount}. "${leak.context}"`,
+      },
+      { onConflict: "conversation_id,flag", ignoreDuplicates: true },
+    );
+    if (error) {
+      console.warn("chatbot: could not flag price leak", {
+        conversationId,
+        error: error.message,
+      });
+    }
+  } catch (error) {
+    console.warn("chatbot: could not flag price leak", {
+      conversationId,
+      error: error instanceof Error ? error.message : "unknown error",
+    });
+  }
 }
 
 /** Calendly requires the embedding page's domain on an inline embed. */

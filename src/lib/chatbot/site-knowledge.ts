@@ -115,9 +115,23 @@ function loadCaseStudySummaries(): CaseStudySummary[] {
   return summaries;
 }
 
+/**
+ * Stat labels that describe what a member SPENT, not what they earned. One
+ * case study carries a "Setup Cost" stat, and it is index 2 today so the
+ * slice below happens to miss it. That is luck, not a guarantee: a single
+ * reorder of that JSON file would put a dollar cost into the system prompt,
+ * and the bot restating an individual member's setup cost as the program's
+ * price is exactly the failure this filter exists to make impossible.
+ * Prices never enter the prompt (see PROGRAM_FACTS and the CONTENT RULES).
+ */
+const COST_STAT_LABEL_PATTERN = /cost|price|invest|spend|capital|startup|fee/i;
+
 function headlineResult(data: z.infer<typeof caseStudyFileSchema>): string {
-  if (data.stats.length > 0) {
-    return data.stats
+  const resultStats = data.stats.filter(
+    (stat) => !COST_STAT_LABEL_PATTERN.test(stat.label),
+  );
+  if (resultStats.length > 0) {
+    return resultStats
       .slice(0, 2)
       .map((stat) => `${stat.label.toLowerCase()} ${stat.value}`)
       .join(", ");
@@ -176,7 +190,8 @@ function buildRouteMap(): string {
  * about.ts, and apply-page.ts so the bot never invents numbers.
  */
 const PROGRAM_FACTS = `Vendingpreneurs is a mentorship community and accelerator program (founded by Mike Hoffman) that teaches people how to launch and scale a vending machine or micro-market route, from zero experience through full-time income. The program includes step-by-step training, weekly group coaching plus 1-on-1 ambassador sessions, pre-negotiated discounts on machines and bulk product, and a community of active operators.
-Typical member proof points: 850+ entrepreneurs launched, 3,000+ locations placed, $3 million+ in vending sales. Program averages: 10-15 hours a week to run a route, under 30 days to place a first machine, $1,500-$5,000 a month in revenue per member (results vary by market, capital, and effort — never state these as guarantees).
+Typical member proof points: 850+ entrepreneurs launched, 3,000+ locations placed, $3 million+ in vending sales. Program averages: 10-15 hours a week to run a route, under 30 days to place a first machine (results vary by market, capital, and effort, and are never guarantees).
+COST AND PRICING: you do not know what anything costs and there is no published number. There are several different plans, and a lot of financing partners, so what someone actually pays depends entirely on which plan fits their goals. Nobody can quote that in a chat, and no figure you might infer from the numbers above is a price. The only correct answer to any cost question is the plans-and-financing line plus the calendar.
 How to get started: the visitor books a free strategy call at /contact (also reachable at /book-now). There is a short qualification quiz first; after it they're offered a call time. No purchase is required to book or take the call.`;
 
 /**

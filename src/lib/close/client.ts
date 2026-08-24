@@ -95,6 +95,17 @@ type CloseNotePayload = {
   note_html: string;
 };
 
+/**
+ * A note read back from Close's `/activity/note/` list endpoint. Both `note`
+ * and `note_html` come back populated (Close derives one from the other), so
+ * either is fine to scan for a marker.
+ */
+export type CloseNoteResult = {
+  id: string;
+  note?: string | null;
+  note_html?: string | null;
+};
+
 // Shapes confirmed against a real GET /contact/{id}/ on the production org.
 // Phones also carry derived `country` and `phone_formatted`, which are read-only
 // and deliberately not modelled — sync.ts strips them before any write.
@@ -383,6 +394,19 @@ export function createCloseClient({
     },
     createNote(payload: CloseNotePayload) {
       return request<{ id: string }>("POST", "/activity/note/", payload);
+    },
+    /**
+     * The lead's existing notes, newest first. Close's note-create endpoint
+     * has no idempotency key or dedupe parameter (checked against
+     * developer.close.com), so a caller that must not double-post a note for
+     * the same event (a redelivered webhook, a reconciliation sweep) has to
+     * list first and check for its own marker before creating one.
+     */
+    listLeadNotes(leadId: string) {
+      return request<{ data?: CloseNoteResult[] }>(
+        "GET",
+        `/activity/note/?lead_id=${encodeURIComponent(leadId)}&_limit=50`,
+      );
     },
     createTask(payload: CloseTaskPayload) {
       return request<{ id: string }>("POST", "/task/", payload);

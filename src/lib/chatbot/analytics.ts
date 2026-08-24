@@ -14,6 +14,8 @@ type ConversationRow = Pick<
   | "captured_phone"
   | "messages"
   | "prospect_profile"
+  | "booked_event_uri"
+  | "attribution_source"
 > & {
   /** Absent until 20260821140000_chatbot_v2_conversion has been applied. */
   call_booked_at?: string | null;
@@ -33,6 +35,30 @@ export type ChatbotAnalyticsMetric = {
 
 export type ChatbotDailyTrendRow = { date: string; count: number };
 export type ChatbotRankedRow = { label: string; count: number };
+
+/** Raw counts for one stage of the funnel, for one slice (whole window or one attribution bucket). */
+export type ChatbotFunnelStageCounts = {
+  conversations: number;
+  engaged: number;
+  captured: number;
+  booked: number;
+};
+
+export type ChatbotFunnelWindow = ChatbotFunnelStageCounts & {
+  days: number;
+  engagedRatePct: number;
+  capturedRatePct: number;
+  bookedRatePct: number;
+  overallBookedRatePct: number;
+  /**
+   * Same four counts, split by where the booking happened. Only trustworthy
+   * once `attributionSplitTrustworthy` is true — see resolveAttributionSource.
+   */
+  bySource: {
+    inChat: ChatbotFunnelStageCounts;
+    assisted: ChatbotFunnelStageCounts;
+  };
+};
 
 export type ChatbotAnalytics = {
   conversations30d: ChatbotAnalyticsMetric;
@@ -62,6 +88,24 @@ export type ChatbotAnalytics = {
     timeline: ChatbotRankedRow[];
     callIntent: ChatbotRankedRow[];
   };
+  /**
+   * The four-stage funnel (conversations -> engaged -> captured -> booked)
+   * over three windows, each also split by where the booking happened.
+   * Additive alongside `funnel30d`, which other surfaces (insights, digest)
+   * already read and which keeps its original 3-stage shape unchanged.
+   */
+  funnels: {
+    d7: ChatbotFunnelWindow;
+    d30: ChatbotFunnelWindow;
+    d90: ChatbotFunnelWindow;
+  };
+  /**
+   * False until the attribution_source column has been read successfully at
+   * least once for this rollup. When false, every bySource count is a
+   * heuristic-only guess (or all zero) and the UI should say so rather than
+   * render a confident split.
+   */
+  attributionSplitTrustworthy: boolean;
 };
 
 export const EMPTY_CHATBOT_ANALYTICS: ChatbotAnalytics = {
@@ -82,21 +126,53 @@ export const EMPTY_CHATBOT_ANALYTICS: ChatbotAnalytics = {
   topOpeningQuestions: [],
   keywordFrequency: [],
   prospectDistributions: { capitalSignal: [], timeline: [], callIntent: [] },
+  funnels: {
+    d7: emptyFunnelWindow(7),
+    d30: emptyFunnelWindow(30),
+    d90: emptyFunnelWindow(90),
+  },
+  attributionSplitTrustworthy: false,
 };
+
+function emptyFunnelWindow(days: number): ChatbotFunnelWindow {
+  const emptyStage: ChatbotFunnelStageCounts = {
+    conversations: 0,
+    engaged: 0,
+    captured: 0,
+    booked: 0,
+  };
+  return {
+    days,
+    ...emptyStage,
+    engagedRatePct: 0,
+    capturedRatePct: 0,
+    bookedRatePct: 0,
+    overallBookedRatePct: 0,
+    bySource: { inChat: { ...emptyStage }, assisted: { ...emptyStage } },
+  };
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WINDOW_DAYS = 30;
+const FETCH_WINDOW_DAYS = 90;
 // ponytail: caps the rollup at the most recent 4000 rows instead of a real
 // aggregate query. Fine at chatbot launch volume — move to SQL-side
 // aggregation (date_trunc + count) once conversation volume makes an
-// in-memory scan slow.
+// in-memory scan slow. At >~44 conversations/day sustained, 90 days of rows
+// exceeds this cap and the 90d funnel silently undercounts — watch
+// funnels.d90.conversations against that ceiling as volume grows.
 const FETCH_CAP = 4000;
 const TOP_N = 12;
 
 const ROW_FIELDS =
-  "id, created_at, message_count, captured_email, captured_phone, messages, prospect_profile, lead_submission_id, call_booked_at" as const;
+  "id, created_at, message_count, captured_email, captured_phone, messages, prospect_profile, lead_submission_id, call_booked_at, booked_event_uri, attribution_source" as const;
 
-// Pre-migration column list — same tolerant-fallback pattern as
+// One column back from ROW_FIELDS: call_booked_at + booked_event_uri already
+// applied, but the (hand-applied) attribution_source migration is not.
+const ROW_FIELDS_NO_ATTRIBUTION =
+  "id, created_at, message_count, captured_email, captured_phone, messages, prospect_profile, lead_submission_id, call_booked_at, booked_event_uri" as const;
+
+// Pre-v2-migration column list — same tolerant-fallback pattern as
 // chatbot/config.ts. Without it, a deploy that lands before the v2 migration
 // is applied would blank the entire /admin/chatbot page rather than just the
 // one metric that has no data yet.
@@ -104,7 +180,11 @@ const LEGACY_ROW_FIELDS =
   "id, created_at, message_count, captured_email, captured_phone, messages, prospect_profile, lead_submission_id" as const;
 
 function isMissingColumnError(message: string): boolean {
-  return message.includes("call_booked_at") || message.includes("42703");
+  return (
+    message.includes("call_booked_at") ||
+    message.includes("attribution_source") ||
+    message.includes("42703")
+  );
 }
 
 type ServiceDeps = { client?: ChatbotAnalyticsClient; now?: () => Date };
@@ -121,38 +201,90 @@ export async function getChatbotAnalytics(
   try {
     const client = deps.client ?? createAdminClient();
     const now = deps.now ? deps.now() : new Date();
-    const priorStart = new Date(now.getTime() - 2 * WINDOW_DAYS * DAY_MS);
+    // Prior-window comparisons (conversations30d etc.) need 2x WINDOW_DAYS of
+    // history; the widest funnel window needs FETCH_WINDOW_DAYS. Fetch back
+    // far enough for both in one query.
+    const fetchStart = new Date(
+      now.getTime() - Math.max(2 * WINDOW_DAYS, FETCH_WINDOW_DAYS) * DAY_MS,
+    );
 
-    const { data, error } = await client
-      .from("chatbot_conversations")
-      .select(ROW_FIELDS)
-      .gte("created_at", priorStart.toISOString())
-      .order("created_at", { ascending: false })
-      .limit(FETCH_CAP);
-
-    let rows: ConversationRow[];
-    if (error) {
-      if (!isMissingColumnError(error.message)) throw new Error(error.message);
-      const legacy = await client
-        .from("chatbot_conversations")
-        .select(LEGACY_ROW_FIELDS)
-        .gte("created_at", priorStart.toISOString())
-        .order("created_at", { ascending: false })
-        .limit(FETCH_CAP);
-      if (legacy.error) throw new Error(legacy.error.message);
-      rows = (legacy.data ?? []) as ConversationRow[];
-    } else {
-      rows = (data ?? []) as ConversationRow[];
-    }
+    const { rows, attributionSplitTrustworthy } = await fetchConversationRows(
+      client,
+      fetchStart,
+    );
 
     const bookedLeadIds = await fetchBookedLeadIds(client, rows);
-    return buildAnalytics(rows, now, bookedLeadIds);
+    return buildAnalytics(
+      rows,
+      now,
+      bookedLeadIds,
+      attributionSplitTrustworthy,
+    );
   } catch (error) {
     console.warn("chatbot analytics load failed, returning empty rollup", {
       error: error instanceof Error ? error.message : "unknown error",
     });
     return EMPTY_CHATBOT_ANALYTICS;
   }
+}
+
+/**
+ * Cascading tolerant fetch: try the full row shape, then drop
+ * attribution_source (the newest, hand-applied migration), then drop
+ * call_booked_at/booked_event_uri too (the v2 migration). Whichever tier
+ * succeeds wins — a deploy ahead of any one migration degrades that one
+ * signal instead of blanking the whole admin page. Each tier is inlined
+ * (rather than sharing one `.select(fields)` helper) because Supabase infers
+ * the returned row shape from the literal string passed to `.select()` —
+ * widening that to a `string` parameter breaks the inference entirely.
+ */
+async function fetchConversationRows(
+  client: ChatbotAnalyticsClient,
+  fetchStart: Date,
+): Promise<{ rows: ConversationRow[]; attributionSplitTrustworthy: boolean }> {
+  const full = await client
+    .from("chatbot_conversations")
+    .select(ROW_FIELDS)
+    .gte("created_at", fetchStart.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(FETCH_CAP);
+  if (!full.error) {
+    return {
+      rows: (full.data ?? []) as ConversationRow[],
+      attributionSplitTrustworthy: true,
+    };
+  }
+  if (!isMissingColumnError(full.error.message)) {
+    throw new Error(full.error.message);
+  }
+
+  const noAttribution = await client
+    .from("chatbot_conversations")
+    .select(ROW_FIELDS_NO_ATTRIBUTION)
+    .gte("created_at", fetchStart.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(FETCH_CAP);
+  if (!noAttribution.error) {
+    return {
+      rows: (noAttribution.data ?? []) as ConversationRow[],
+      attributionSplitTrustworthy: false,
+    };
+  }
+  if (!isMissingColumnError(noAttribution.error.message)) {
+    throw new Error(noAttribution.error.message);
+  }
+
+  const legacy = await client
+    .from("chatbot_conversations")
+    .select(LEGACY_ROW_FIELDS)
+    .gte("created_at", fetchStart.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(FETCH_CAP);
+  if (legacy.error) throw new Error(legacy.error.message);
+  return {
+    rows: (legacy.data ?? []) as ConversationRow[],
+    attributionSplitTrustworthy: false,
+  };
 }
 
 /**
@@ -198,6 +330,7 @@ function buildAnalytics(
   rows: ConversationRow[],
   now: Date,
   bookedLeadIds: ReadonlySet<string> = new Set(),
+  attributionSplitTrustworthy = false,
 ): ChatbotAnalytics {
   const start = new Date(now.getTime() - WINDOW_DAYS * DAY_MS);
   const priorStart = new Date(start.getTime() - WINDOW_DAYS * DAY_MS);
@@ -246,11 +379,84 @@ function buildAnalytics(
     topOpeningQuestions: topOpeningQuestions(current),
     keywordFrequency: keywordFrequency(current),
     prospectDistributions: buildProspectDistributions(current),
+    funnels: {
+      d7: buildFunnelWindow(7, rows, now, bookedLeadIds),
+      d30: buildFunnelWindow(30, rows, now, bookedLeadIds),
+      d90: buildFunnelWindow(90, rows, now, bookedLeadIds),
+    },
+    attributionSplitTrustworthy,
   };
 }
 
 function isCaptured(row: ConversationRow): boolean {
   return Boolean(row.captured_email?.trim() || row.captured_phone?.trim());
+}
+
+function isEngaged(row: ConversationRow): boolean {
+  return (row.message_count ?? 0) >= 3;
+}
+
+function buildFunnelStageCounts(
+  rows: ConversationRow[],
+  bookedLeadIds: ReadonlySet<string>,
+): ChatbotFunnelStageCounts {
+  return {
+    conversations: rows.length,
+    engaged: rows.filter(isEngaged).length,
+    captured: rows.filter(isCaptured).length,
+    booked: rows.filter((row) => isBooked(row, bookedLeadIds)).length,
+  };
+}
+
+/**
+ * Which side of the funnel a conversation's booking belongs to. The
+ * attribution_source column (in_chat / email_match) wins when present; when
+ * it is absent or unset on this row — pre-migration deploy, or a
+ * conversation that predates the column — a booked call that still carries
+ * a Calendly event URI was booked in-chat before the label existed, so it
+ * counts there. Everything else can't be honestly classified and is left
+ * out of the split entirely (neither bucket).
+ */
+function resolveAttributionSource(
+  row: ConversationRow,
+  bookedLeadIds: ReadonlySet<string>,
+): "in_chat" | "assisted" | null {
+  if (row.attribution_source === "in_chat") return "in_chat";
+  if (row.attribution_source === "email_match") return "assisted";
+  if (isBooked(row, bookedLeadIds) && row.booked_event_uri) return "in_chat";
+  return null;
+}
+
+function buildFunnelWindow(
+  days: number,
+  rows: ConversationRow[],
+  now: Date,
+  bookedLeadIds: ReadonlySet<string>,
+): ChatbotFunnelWindow {
+  const start = new Date(now.getTime() - days * DAY_MS);
+  const windowRows = rows.filter((row) => inWindow(row.created_at, start, now));
+
+  const inChatRows: ConversationRow[] = [];
+  const assistedRows: ConversationRow[] = [];
+  for (const row of windowRows) {
+    const source = resolveAttributionSource(row, bookedLeadIds);
+    if (source === "in_chat") inChatRows.push(row);
+    else if (source === "assisted") assistedRows.push(row);
+  }
+
+  const stage = buildFunnelStageCounts(windowRows, bookedLeadIds);
+  return {
+    days,
+    ...stage,
+    engagedRatePct: ratePct(stage.engaged, stage.conversations),
+    capturedRatePct: ratePct(stage.captured, stage.engaged),
+    bookedRatePct: ratePct(stage.booked, stage.captured),
+    overallBookedRatePct: ratePct(stage.booked, stage.conversations),
+    bySource: {
+      inChat: buildFunnelStageCounts(inChatRows, bookedLeadIds),
+      assisted: buildFunnelStageCounts(assistedRows, bookedLeadIds),
+    },
+  };
 }
 
 /**

@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DEFAULT_CHATBOT_CONFIG } from "./config";
 import type { ChatbotMessage } from "./conversation-store";
-import { runChatbotTool, type ChatbotToolContext } from "./tools";
+import {
+  hasCostIntent,
+  runChatbotTool,
+  shouldForceBookingCalendar,
+  type ChatbotToolContext,
+} from "./tools";
 import type { Database } from "@/types/database";
 
 type ToolClient = Pick<SupabaseClient<Database>, "from" | "rpc">;
@@ -260,4 +265,69 @@ describe("runChatbotTool", () => {
     expect(malformed.result).toContain("malformed");
     expect(unknown.result).toContain("Unknown tool");
   });
+});
+
+describe("shouldForceBookingCalendar", () => {
+  it.each([
+    // The exact first message from the 2026-08-24 conversation where the bot
+    // invented a price and never opened the calendar.
+    "How much does it cost to start?",
+    "how much is it",
+    "whats the price",
+    "what's the investment required",
+    "how much do I need to get started",
+    "is there financing",
+    "any startup capital needed?",
+    "how expensive is this",
+    "is there a deposit",
+    "what are the fees",
+    "can I afford this on a teacher salary",
+    "how much up front",
+  ])("forces the calendar on a cost question: %j", (message) => {
+    expect(hasCostIntent(message)).toBe(true);
+    expect(shouldForceBookingCalendar(message)).toBe(true);
+  });
+
+  it.each([
+    "book a call",
+    "can I talk to someone",
+    "when can we talk",
+    "show me the calendar",
+  ])("still forces it on plain booking intent: %j", (message) => {
+    expect(shouldForceBookingCalendar(message)).toBe(true);
+  });
+
+  it.each([
+    // Left to the model's judgement on purpose: forcing a calendar on someone
+    // who is still browsing converts worse than missing one.
+    "what is vending",
+    "do I need experience",
+    "I'm a teacher looking for side income",
+    "how many hours a week is it",
+    "how long until my first machine",
+    "tell me about Mallorie",
+    // "how much" is not always about money. Answering an earnings or workload
+    // question with the plans-and-financing line is simply the wrong answer,
+    // and the member results that DO answer it are real and in the prompt.
+    "how much can I make",
+    "how much could someone earn doing this",
+    "how much money do members make",
+    "how much time does this take",
+    "how much work is it each week",
+    "how much experience do I need",
+  ])("leaves a non-cost question alone: %j", (message) => {
+    expect(shouldForceBookingCalendar(message)).toBe(false);
+  });
+
+  it.each([
+    // An explicit money word wins even when an earnings phrase is also present.
+    "how much can I make and what does it cost",
+    "how much do I need to invest",
+    "how much money do I need upfront",
+  ])(
+    "still treats an explicit money word as a cost question: %j",
+    (message) => {
+      expect(hasCostIntent(message)).toBe(true);
+    },
+  );
 });
