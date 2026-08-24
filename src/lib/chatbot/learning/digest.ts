@@ -18,6 +18,7 @@ import {
   prospectProfileSchema,
   type ProspectProfile,
 } from "@/lib/chatbot/extract-prospect-profile";
+import { postChatbotLeadToSlack } from "@/lib/chatbot/slack";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json } from "@/types/database";
 
@@ -84,21 +85,28 @@ function parseProspectProfile(value: Json | null): ProspectProfile | null {
 }
 
 const CONVERSATION_ROW_FIELDS =
-  "id, session_id, captured_name, captured_email, captured_phone, messages, prospect_profile, prospect_profile_emailed_at" as const;
+  "id, session_id, captured_name, captured_email, captured_phone, messages, prospect_profile, prospect_profile_emailed_at, page_url, handed_off_at" as const;
 
 export type SendProfileEmailResult = { sent: boolean; reason?: string };
 
 /**
- * Single-conversation seam: extract (or reuse a stored) profile, send the
- * one-conversation email, stamp the debounce. Extraction + persistence of
- * the profile always runs once a contact is captured, independent of
- * whether routing/Resend is configured — only the *stamp* is gated on an
- * actual send attempt. A path that attempts a send stamps even on a failed
- * send — the alternative (retry every cron tick forever on a broken Resend
- * key) is worse than waiting for the next debounce window; a path that
- * never attempts a send does not stamp, so a later config fix still finds
- * the conversation eligible. `force` skips the debounce check only; it
- * never skips the "has a captured email or phone" requirement.
+ * Single-conversation seam: extract (or reuse a stored) profile, post to
+ * Slack, send the one-conversation email, stamp the debounce. Extraction +
+ * persistence of the profile always runs once a contact is captured,
+ * independent of whether routing/Resend is configured — only the *stamp* is
+ * gated on an actual send attempt. A path that attempts a send stamps even
+ * on a failed send — the alternative (retry every cron tick forever on a
+ * broken Resend key) is worse than waiting for the next debounce window; a
+ * path that never attempts a send does not stamp, so a later config fix
+ * still finds the conversation eligible. `force` skips the debounce check
+ * only; it never skips the "has a captured email or phone" requirement.
+ *
+ * Slack (src/lib/chatbot/slack.ts) is posted independently of Resend/email
+ * routing — RESEND_API_KEY is not configured in this project's Vercel env,
+ * so Slack is the only channel that reliably reaches the team today. A
+ * successful Slack post counts as a "send attempt" for the debounce stamp
+ * even when email routing is off, so this still fires exactly once per
+ * eligible event without email configured.
  */
 export async function sendProfileEmailForConversation(
   conversationId: string,
@@ -141,11 +149,31 @@ export async function sendProfileEmailForConversation(
     if (profile) await storeProfile(client, conversationId, profile);
   }
 
+  // Independent of email routing: Slack is posted regardless of whether
+  // Resend/lead-routing is configured, so a missing Resend key never
+  // silences the team the way it did before this channel existed.
+  const slackPosted = await postChatbotLeadToSlack(
+    {
+      id: conv.id,
+      personaName: config.personaName,
+      handedOff: Boolean(data.handed_off_at),
+      capturedName: conv.capturedName,
+      capturedEmail: conv.capturedEmail,
+      capturedPhone: conv.capturedPhone,
+      pageUrl: data.page_url,
+      messages: conv.messages,
+    },
+    profile,
+  );
+
   if (!chatbotEmailsEnabled(config)) {
-    // No send was attempted, so do NOT stamp — stamping here without ever
-    // trying is exactly what left prospect_profile_emailed_at set while
-    // prospect_profile stayed null. Leave the conversation eligible so a
-    // later routing fix still picks it up.
+    // No email send was attempted. A successful Slack post still counts as
+    // a send attempt so the debounce works with Resend absent — otherwise
+    // every cron tick would re-post to Slack forever. Stamping here without
+    // ever attempting anything (the old bug) is exactly what left
+    // prospect_profile_emailed_at set while prospect_profile stayed null;
+    // that risk doesn't apply here since a real Slack post just happened.
+    if (slackPosted) await stampEmailed(client, conversationId, now);
     return { sent: false, reason: "Lead routing is off or has no recipients." };
   }
 
