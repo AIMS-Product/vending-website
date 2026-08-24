@@ -286,7 +286,7 @@ function RuntimeControls({
       <button
         type="submit"
         disabled={pending}
-        className="min-h-12 rounded-[8px] border-2 border-[#111111] bg-[#2a8fcc] px-6 text-sm font-black text-[#111111] shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-wait disabled:opacity-70"
+        className="bg-brand-700 min-h-12 rounded-[8px] border-2 border-[#111111] px-6 text-sm font-black text-white shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-wait disabled:opacity-70"
       >
         {pending ? "Saving..." : isLast ? "Complete" : "Continue"}
       </button>
@@ -518,7 +518,7 @@ function CompletionPanel({ redirectPath }: { redirectPath: string }) {
         </p>
         <Link
           href={redirectPath}
-          className="mt-8 inline-flex min-h-12 w-fit items-center rounded-[8px] border-2 border-[#111111] bg-[#2a8fcc] px-6 text-sm font-black text-[#111111] shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5"
+          className="bg-brand-700 mt-8 inline-flex min-h-12 w-fit items-center rounded-[8px] border-2 border-[#111111] px-6 text-sm font-black text-white shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5"
         >
           Continue to next step
         </Link>

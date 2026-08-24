@@ -401,7 +401,7 @@ function SubmitButton({
       type="submit"
       disabled={pending}
       data-gtm="newsletter-signup-submit"
-      className="min-h-14 w-full rounded-lg border-2 border-slate-950 bg-[#2a8fcc] px-6 py-3 text-base font-black text-slate-950 shadow-[5px_5px_0_#0f172a] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+      className="bg-brand-700 min-h-14 w-full rounded-lg border-2 border-slate-950 px-6 py-3 text-base font-black text-white shadow-[5px_5px_0_#0f172a] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? "Submitting..." : children}
     </button>

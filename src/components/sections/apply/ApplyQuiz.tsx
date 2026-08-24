@@ -16,6 +16,7 @@ type ApplyQuizProps = {
   // right for you" describes questions that funnel no longer asks.
   bookingEmbedUrl?: string;
   title?: string;
+  accent?: "blue" | "orange";
 };
 
 // The dark two-panel quiz band. The left card holds the inline qualification
@@ -30,6 +31,7 @@ export function ApplyQuiz({
   idempotencyKey,
   bookingEmbedUrl,
   title = applyQuiz.title,
+  accent = "blue",
 }: ApplyQuizProps) {
   return (
     <section
@@ -64,6 +66,7 @@ export function ApplyQuiz({
               inlineQualification
               bookingEmbedUrl={bookingEmbedUrl}
               submitLabel={applyQuiz.submitLabel}
+              accent={accent}
             />
           </div>
 

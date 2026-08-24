@@ -727,7 +727,7 @@ function ResourceLeadFormPreview({
       </div>
       <span
         aria-disabled="true"
-        className="inline-flex min-h-12 max-w-max items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#2a8fcc] px-7 py-3 text-sm font-black text-[#111111] uppercase opacity-80 shadow-[5px_5px_0_#111111]"
+        className="bg-brand-700 inline-flex min-h-12 max-w-max items-center justify-center rounded-[8px] border-2 border-[#111111] px-7 py-3 text-sm font-black text-white uppercase opacity-80 shadow-[5px_5px_0_#111111]"
       >
         {submitLabel || "Submit application"}
       </span>

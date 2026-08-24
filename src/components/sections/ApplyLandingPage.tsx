@@ -18,6 +18,11 @@ type ApplyLandingPageProps = {
   // ApplyQuiz. Every other page leaves it undefined and keeps the scored funnel.
   bookingEmbedUrl?: string;
   quizTitle?: string;
+  // /contact only (Kody, 2026-08-24): keeps this funnel's own CTAs orange so
+  // they read as distinct from the rest of the now-blue-accented site. Every
+  // other page rendering this component (/book-now, /booking-youtube,
+  // /booking-meta) leaves it unset and stays on the brand-blue button fill.
+  accent?: "blue" | "orange";
 };
 
 // Custom-coded /apply landing page. Section order + copy come from Kody's
@@ -28,10 +33,11 @@ export function ApplyLandingPage({
   idempotencyKey,
   bookingEmbedUrl,
   quizTitle,
+  accent = "blue",
 }: ApplyLandingPageProps) {
   return (
     <>
-      <ApplyHero />
+      <ApplyHero accent={accent} />
       <ApplyVsl />
       {/* The form sits directly under the video (Kody, 2026-07-28): at the
           bottom of the page it was losing visitors who never scrolled that far.
@@ -41,6 +47,7 @@ export function ApplyLandingPage({
         idempotencyKey={idempotencyKey}
         bookingEmbedUrl={bookingEmbedUrl}
         title={quizTitle}
+        accent={accent}
       />
       <ApplyTools />
       <ApplyTestimonials />

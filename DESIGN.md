@@ -12,6 +12,33 @@ The public language does not belong in the admin. It was tried, and a table of
 hard-shadowed pills at fourteen rows reads as noise. The admin's only job is to
 let someone scan state and act.
 
+## Public site accent rules (Kody, 2026-08-24)
+
+Three colours, three jobs. Don't reuse one for another:
+
+- **Orange `#f47b3b`** — the top nav CTA, and the `/contact` conversion
+  surfaces only (the hero primary CTA and the lead form's submit + post-submit
+  booking CTA). Also error/warning. Everything else that used to be orange is
+  now brand blue. This is what keeps the two highest-intent conversion points
+  legible against a page that is otherwise blue.
+- **Button blue `--brand-700` / `#1f72a5`** — every blue-filled button
+  (`<button>`/`<a>` styled as a CTA) outside the two orange surfaces above.
+  White text. `--brand-600` (`#2a8fcc`) only clears 3.56:1 with white — below
+  WCAG AA's 4.5:1 — so filled buttons use the darker `--brand-700` step of the
+  existing brand scale instead (5.24:1, already registered as `bg-brand-700` /
+  `text-brand-700` via the `@theme` block). Don't invent a new hex for this;
+  `--brand-700` was already in the token scale, just unused.
+- **Accent blue `--brand-600` / `#2a8fcc`** — every non-button use: borders,
+  focus rings, highlights, icon badges, chips, backgrounds. These pair
+  `#2a8fcc` with dark `#111111` ink or icons, not white text, so the 3.56:1
+  ratio never applies to them.
+
+Components rendered on `/contact` and elsewhere (`ApplyCtaButton`,
+`ApplyHero`, `ApplyQuiz`, `PublicLeadForm`, `ApplyLandingPage`) take an
+`accent?: "blue" | "orange"` prop defaulting to `"blue"`; only
+`src/app/contact/page.tsx` passes `"orange"`. `/book-now`, `/booking-youtube`,
+and `/booking-meta` render the same components and stay blue.
+
 ## Admin tokens
 
 Defined in `src/app/globals.css`, exposed as Tailwind utilities

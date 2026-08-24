@@ -26,11 +26,14 @@ export function Button(props: LinkProps | ButtonProps) {
   const { variant = "primary", className, children, showArrow = false } = props;
 
   const base =
-    "group inline-flex min-h-12 items-center justify-center gap-3 rounded-[8px] border-2 border-[#111111] px-6 py-3 text-sm font-black uppercase text-[#111111] shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 active:translate-y-0 active:shadow-[3px_3px_0_#111111]";
+    "group inline-flex min-h-12 items-center justify-center gap-3 rounded-[8px] border-2 border-[#111111] px-6 py-3 text-sm font-black uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 active:translate-y-0 active:shadow-[3px_3px_0_#111111]";
 
+  // Primary is filled with brand-700 (darker step of the existing brand
+  // scale) rather than the accent brand-600 (#2a8fcc): white text on #2a8fcc
+  // is only 3.56:1, below WCAG AA. brand-700 clears 5.24:1.
   const styles: Record<Variant, string> = {
-    primary: "bg-[#2a8fcc]",
-    ghost: "bg-white hover:bg-[#eaf8ff]",
+    primary: "bg-brand-700 text-white",
+    ghost: "bg-white text-[#111111] hover:bg-[#eaf8ff]",
   };
 
   const inner = (

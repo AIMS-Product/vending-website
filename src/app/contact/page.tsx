@@ -23,6 +23,10 @@ export default async function ContactPage({
   const attribution = buildLeadAttribution(await searchParams, "/contact");
 
   return (
-    <ApplyLandingPage attribution={attribution} idempotencyKey={randomUUID()} />
+    <ApplyLandingPage
+      attribution={attribution}
+      idempotencyKey={randomUUID()}
+      accent="orange"
+    />
   );
 }

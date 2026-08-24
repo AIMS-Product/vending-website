@@ -4,9 +4,11 @@ import { ApplyCtaButton } from "./ApplyCtaButton";
 export function ApplyHero({
   body = applyHero.body,
   ctaLabel = applyHero.ctaLabel,
+  accent = "blue",
 }: {
   body?: string;
   ctaLabel?: string;
+  accent?: "blue" | "orange";
 } = {}) {
   return (
     <section className="relative isolate overflow-hidden">
@@ -38,7 +40,7 @@ export function ApplyHero({
             {body}
           </p>
           <div className="mt-8">
-            <ApplyCtaButton>{ctaLabel}</ApplyCtaButton>
+            <ApplyCtaButton accent={accent}>{ctaLabel}</ApplyCtaButton>
             <p className="mt-3.5 text-sm font-medium text-slate-500">
               {CTA_TRUST_LINE}
             </p>

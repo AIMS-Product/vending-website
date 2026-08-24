@@ -204,7 +204,7 @@ function ArticleSidebar({ headings }: { headings: string[] }) {
           </p>
           <Link
             href="/contact"
-            className="mt-8 inline-flex min-h-14 w-full items-center justify-center rounded-[8px] bg-[#2a8fcc] px-6 text-sm font-black text-[#111111] uppercase transition hover:-translate-y-0.5"
+            className="bg-brand-700 mt-8 inline-flex min-h-14 w-full items-center justify-center rounded-[8px] px-6 text-sm font-black text-white uppercase transition hover:-translate-y-0.5"
           >
             Step inside
           </Link>
