@@ -254,6 +254,8 @@ export type ChatbotResourceEmailInput = {
   bookingUrl: string | null;
   /** Whatever's been extracted for this conversation so far — often null, since extraction usually runs later on idle. Used only for the opening line. */
   profile?: ProspectProfile | null;
+  /** Model-authored bridge sentence from the send_resources_email tool call — the model picked the story and knows why it fits, so IT states the relevance. Templates must never fabricate a similarity. */
+  connection?: string | null;
 };
 
 /**
@@ -330,7 +332,7 @@ function buildResourceEmailContent(
 
   const soleCaseStudy = soleCaseStudyResource(input.resources);
   const { subject, openerText } = soleCaseStudy
-    ? caseStudyOpener(soleCaseStudy, profile)
+    ? caseStudyOpener(input.connection ?? null)
     : generalOpener(input.resources, profile);
 
   const resourceTextBlocks = input.resources.map(
@@ -403,20 +405,18 @@ function generalOpener(
  * re-deriving new phrasing that might not read naturally for every
  * background string in the case-study data.
  */
-function caseStudyOpener(
-  resource: ChatbotResource,
-  profile: ProspectProfile | null,
-): { subject: string; openerText: string } {
-  const subject = "The member story I mentioned";
-  const memberFirstName =
-    firstNameFrom(caseStudyMemberName(resource)) ?? "They";
-  const detail = personalDetail(profile);
-  const background = priorBackgroundFrom(resource);
+function caseStudyOpener(connection: string | null): {
+  subject: string;
+  openerText: string;
+} {
+  // The relevance claim comes from the model's tool call ("connection") — it
+  // chose the story mid-conversation and knows why it fits. A template gluing
+  // the visitor's background to the member's with "too" fabricates
+  // similarities ("you teach; he was a line cook too"), so it must never
+  // guess. No connection provided -> a neutral opener.
   const openerText =
-    detail && background
-      ? `You mentioned ${lowerFirst(detail)}. ${memberFirstName} was ${background} before starting a route too.`
-      : "Here's the story I mentioned.";
-  return { subject, openerText };
+    connection?.trim() || "Here's the story I mentioned in chat.";
+  return { subject: "The member story I mentioned", openerText };
 }
 
 /**

@@ -140,7 +140,12 @@ export const CHATBOT_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] = [
           resource_keys: {
             type: "array",
             items: { type: "string" },
-            description: `Which resources to send, max ${MAX_RESOURCES_PER_EMAIL}. Allowed values: ${CHATBOT_RESOURCE_KEYS.join(", ")} — where <slug> is a slug from the case study index.`,
+            description: `Which resources to send, max ${MAX_RESOURCES_PER_EMAIL}. Allowed values: ${CHATBOT_RESOURCE_KEYS.join(", ")} — where <slug> is a slug from the case study index. When sending a case study, send the SAME story you cited in chat, never a different one.`,
+          },
+          connection: {
+            type: "string",
+            description:
+              "REQUIRED when sending a case study: one short sentence in your own voice for the email opener, explaining why this story fits what THEY told you (e.g. 'She built hers around a full-time job, so your teaching schedule maps well.'). Never fabricate a similarity that does not exist; if there is no real bridge, describe the result instead ('His first 18 months show what the ramp can look like.'). Plain prose, no markdown, no dashes.",
           },
         },
         required: ["resource_keys"],
@@ -292,6 +297,7 @@ function showBookingCalendar(context: ChatbotToolContext): ChatbotToolOutcome {
 
 const resourcesArgsSchema = z.object({
   resource_keys: z.array(z.string()).min(1).max(10),
+  connection: z.string().max(240).optional(),
 });
 
 async function sendResourcesEmail(
@@ -377,6 +383,7 @@ async function sendResourcesEmail(
       resources,
       bookingUrl,
       profile: context.prospectProfile,
+      connection: parsed.data.connection ?? null,
     },
     context.config,
   );
