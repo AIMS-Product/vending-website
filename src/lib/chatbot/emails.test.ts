@@ -272,9 +272,9 @@ describe("sendChatbotResourceEmail", () => {
       html: string;
     };
     expect(subject).toBe("The member story I mentioned");
-    expect(text).toContain(
-      "You mentioned teaching high school. Evan was a line cook before starting a route too.",
-    );
+    // The opener never fabricates a similarity: without a model-authored
+    // connection sentence it stays neutral.
+    expect(text).toContain("Here's the story I mentioned in chat.");
     expect(text).toContain(
       "https://www.vendingpreneurs.com/case-studies/evan-tomahong",
     );
@@ -282,6 +282,24 @@ describe("sendChatbotResourceEmail", () => {
     for (const value of [subject, text, html]) {
       expect(value).not.toMatch(/[—–]/);
     }
+  });
+
+  it("uses the model-authored connection sentence as the case-study opener when provided", async () => {
+    resetMockConfig();
+    const { calls, fetchImpl } = captureFetch();
+    await sendChatbotResourceEmail(
+      {
+        ...baseInput,
+        resources: [evanCaseStudyResource],
+        connection:
+          "You said you want something outside teaching hours, and Evan built his route in the evenings.",
+      },
+      DEFAULT_CHATBOT_CONFIG,
+      { fetchImpl },
+    );
+    const text = calls[0].body.text as string;
+    expect(text).toContain("Evan built his route in the evenings");
+    expect(text).not.toContain("Here's the story I mentioned in chat.");
   });
 });
 
