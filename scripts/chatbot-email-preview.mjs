@@ -11,6 +11,7 @@
 // that file for why. This script never touches Supabase: every email sender
 // here is a pure function of its input plus env, so a fake fetch is enough.
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -50,29 +51,47 @@ const routedConfig = {
   leadRoutingEmails: "sales@vendingpreneurs.com",
 };
 
-/** Fake Resend endpoint: captures the payload, prints it, sends nothing. */
+let previewCount = 0;
+
+/**
+ * Fake Resend endpoint: captures the payload, prints it as one delimited
+ * JSON block, sends nothing. JSON (not the old hand-indented text dump) so a
+ * "===" heading or a blank line inside the email body can never be mistaken
+ * for a script section separator — every byte of the actual subject/text/
+ * html is inside quoted JSON string values. If an html part is present it's
+ * also written to a small /tmp file so it can be opened in a browser.
+ */
 function previewFetch() {
   return async (_url, init) => {
     const body = JSON.parse(init.body);
-    console.log(`from:      ${body.from}`);
-    console.log(`to:        ${body.to.join(", ")}`);
-    if (body.reply_to) console.log(`reply-to:  ${body.reply_to.join(", ")}`);
-    console.log(`subject:   ${body.subject}`);
-    console.log("body:");
-    console.log(indent(body.text));
+    previewCount += 1;
+    console.log("--- RESEND PAYLOAD (not email content until the closing marker) ---");
+    console.log(
+      JSON.stringify(
+        {
+          from: body.from,
+          to: body.to,
+          reply_to: body.reply_to ?? null,
+          subject: body.subject,
+          text: body.text,
+          html: body.html ?? null,
+        },
+        null,
+        2,
+      ),
+    );
+    console.log("--- END RESEND PAYLOAD ---");
+    if (body.html) {
+      const htmlPath = path.join(os.tmpdir(), `chatbot-email-preview-${previewCount}.html`);
+      fs.writeFileSync(htmlPath, body.html);
+      console.log(`html rendered to: ${htmlPath}`);
+    }
     return new Response(null, { status: 200 });
   };
 }
 
-function indent(text) {
-  return text
-    .split("\n")
-    .map((line) => `  ${line}`)
-    .join("\n");
-}
-
 function heading(title) {
-  console.log(`\n${"=".repeat(70)}\n${title}\n${"=".repeat(70)}`);
+  console.log(`\n>>> SCRIPT SECTION (not email content): ${title}`);
 }
 
 // --- 1. Lead-facing resource email, WITH a prospect profile (the common
@@ -125,22 +144,54 @@ await sendChatbotResourceEmail(
 
 // --- 2. Lead-facing resource email, WITHOUT a profile yet (extraction runs
 //        later on idle, so this is actually the more common real case). --
-heading("LEAD-FACING: send_resources_email — no profile extracted yet");
+heading("LEAD-FACING: send_resources_email (case study) - no profile extracted yet");
+const evanCaseStudy = {
+  key: "case_study:evan-tomahong",
+  title: "Evan Tomahong: 40 machines in 18 months",
+  blurb: "Was a line cook before starting a route.",
+  url: "/case-studies/evan-tomahong",
+};
 await sendChatbotResourceEmail(
   {
     to: "sam.taylor@example.com",
     visitorName: null,
     personaName: "Mia",
-    resources: [
-      {
-        key: "case_study:evan-tomahong",
-        title: "Evan Tomahong — 40 machines in 18 months",
-        blurb: "Was a line cook before starting a route.",
-        url: "/case-studies/evan-tomahong",
-      },
-    ],
+    resources: [evanCaseStudy],
     bookingUrl: null,
     profile: null,
+  },
+  routedConfig,
+  { fetchImpl: previewFetch() },
+);
+
+// --- 2b. Same case-study send, WITH a profile (a teacher) — the showcase
+//         for the personal connector line + Mia-voice subject (item 3 of the
+//         2026-08-24 polish pass). -----------------------------------------
+heading("LEAD-FACING: send_resources_email (case study) - teacher profile");
+await sendChatbotResourceEmail(
+  {
+    to: "casey.teacher@example.com",
+    visitorName: "Casey",
+    personaName: "Mia",
+    resources: [evanCaseStudy],
+    bookingUrl:
+      "https://calendly.com/d/cxv9-jg6-m53/vending-accelerator-call?utm_source=chatbot&utm_medium=site_chat&utm_content=conv-preview",
+    profile: {
+      name: "Casey Morgan",
+      email: "casey.teacher@example.com",
+      phone: null,
+      current_work: "teaching high school",
+      capital_signal: "has about $8k saved",
+      timeline: "wants to start next summer",
+      state_or_market: "Arizona",
+      motivation: "wants income outside the classroom",
+      objections: [],
+      resources_wanted: ["case_study:evan-tomahong"],
+      call_intent: false,
+      sentiment: "curious",
+      follow_up_needed: true,
+      summary: "High school teacher in Arizona, ~$8k saved, exploring a route for next summer.",
+    },
   },
   routedConfig,
   { fetchImpl: previewFetch() },
