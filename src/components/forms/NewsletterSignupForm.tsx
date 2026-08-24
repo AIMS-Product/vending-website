@@ -147,7 +147,7 @@ export function NewsletterSignupForm({
         role="status"
         className="rounded-xl border-2 border-slate-900 bg-amber-50 p-8 text-center shadow-[7px_7px_0_#0f172a]"
       >
-        <p className="text-xs font-black tracking-[0.18em] text-orange-700 uppercase">
+        <p className="text-xs font-black tracking-[0.18em] text-[#066a99] uppercase">
           Signup complete
         </p>
         <h2 className="mt-3 text-3xl font-black text-slate-950">
@@ -233,7 +233,7 @@ export function NewsletterSignupForm({
       className="space-y-6"
     >
       <input type="hidden" name="session_token" value={sessionToken ?? ""} />
-      <p className="text-xs font-black tracking-[0.18em] text-orange-700 uppercase">
+      <p className="text-xs font-black tracking-[0.18em] text-[#066a99] uppercase">
         Step 2 of 2 — optional
       </p>
       <div>
@@ -342,7 +342,7 @@ function ConsentField({
           value="true"
           required={required}
           defaultChecked={defaultChecked}
-          className="mt-1 size-5 shrink-0 accent-orange-600"
+          className="mt-1 size-5 shrink-0 accent-[#2a8fcc]"
         />
         <span>{children}</span>
       </label>
@@ -371,14 +371,14 @@ function ChoiceGroup({
         {options.map((option) => (
           <label
             key={option.value}
-            className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-slate-300 bg-white px-3 py-3 text-sm font-semibold text-slate-700 has-checked:border-orange-500 has-checked:bg-orange-50"
+            className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-slate-300 bg-white px-3 py-3 text-sm font-semibold text-slate-700 has-checked:border-[#2a8fcc] has-checked:bg-[#eaf6ff]"
           >
             <input
               type="checkbox"
               name={name}
               value={option.value}
               defaultChecked={selected.includes(option.value)}
-              className="size-4 accent-orange-600"
+              className="size-4 accent-[#2a8fcc]"
             />
             {option.label}
           </label>
@@ -401,7 +401,7 @@ function SubmitButton({
       type="submit"
       disabled={pending}
       data-gtm="newsletter-signup-submit"
-      className="min-h-14 w-full rounded-lg border-2 border-slate-950 bg-orange-500 px-6 py-3 text-base font-black text-slate-950 shadow-[5px_5px_0_#0f172a] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+      className="min-h-14 w-full rounded-lg border-2 border-slate-950 bg-[#2a8fcc] px-6 py-3 text-base font-black text-slate-950 shadow-[5px_5px_0_#0f172a] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? "Submitting..." : children}
     </button>

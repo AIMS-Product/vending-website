@@ -35,7 +35,7 @@ const CAPTURED_KEY = "vp_chat_captured";
 const OPEN_KEY = "vp_chat_open";
 const CAPTURE_OFFERED_KEY = "vp_chat_capture_offered";
 const EXIT_INTENT_OFFERED_KEY = "vp_chat_exit_intent_offered";
-const DEFAULT_BRAND_COLOR = "#f47b3b";
+const DEFAULT_BRAND_COLOR = "#2a8fcc";
 const ON_INTENT_DELAY_MS = 800;
 const LOOSE_EMAIL_PATTERN = /[^\s@]+@[^\s@]+\.[^\s@]+/;
 // Human-feeling response timing (naturalness pass): a real reply never lands

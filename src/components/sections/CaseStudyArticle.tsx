@@ -211,7 +211,7 @@ function StatsStrip({
       {stats.map((stat) => (
         <div
           key={`${stat.label}-${stat.value}`}
-          className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#f47b3b]"
+          className="rounded-[10px] border-2 border-[#111111] bg-white p-5 shadow-[5px_5px_0_#2a8fcc]"
         >
           <p className="text-[clamp(1.75rem,3vw,2.5rem)] leading-none font-black text-[#111111] tabular-nums">
             {stat.value}
@@ -373,7 +373,7 @@ function ArticleSidebar({ caseStudy }: { caseStudy: RouteHighlightSource }) {
           </p>
           <Link
             href="/contact"
-            className="mt-8 inline-flex min-h-14 w-full items-center justify-center rounded-[8px] border-2 border-white bg-[#f47b3b] px-6 text-sm font-black text-[#111111] uppercase transition hover:-translate-y-0.5"
+            className="mt-8 inline-flex min-h-14 w-full items-center justify-center rounded-[8px] border-2 border-white bg-[#2a8fcc] px-6 text-sm font-black text-[#111111] uppercase transition hover:-translate-y-0.5"
           >
             Book a call
           </Link>

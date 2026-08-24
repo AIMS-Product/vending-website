@@ -98,7 +98,7 @@ const popupFieldsSchema: z.ZodType<PopupTemplateFields> = z.object({
   accentColor: z
     .string()
     .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, {
-      message: "Accent colour must be a hex value like #f47b3b.",
+      message: "Accent colour must be a hex value like #2a8fcc.",
     })
     .nullable(),
 });

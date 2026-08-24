@@ -42,7 +42,7 @@ export function AcceleratorProgram() {
               <li key={point} className="flex items-start gap-3">
                 <span
                   aria-hidden
-                  className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-[#111111] bg-[#f47b3b] text-[#111111]"
+                  className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-[#111111] bg-[#2a8fcc] text-[#111111]"
                 >
                   <svg viewBox="0 0 16 16" className="size-3" fill="none">
                     <path

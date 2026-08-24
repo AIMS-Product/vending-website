@@ -235,7 +235,7 @@ function RuntimeHeader({
 }) {
   return (
     <header className="flex items-center gap-5 border-b-2 border-[#111111] py-4">
-      <div className="flex size-11 shrink-0 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] shadow-[3px_3px_0_#111111]">
+      <div className="flex size-11 shrink-0 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#2a8fcc] shadow-[3px_3px_0_#111111]">
         <span className="text-lg font-black text-[#111111]">V</span>
       </div>
       <div className="min-w-0 flex-1">
@@ -286,7 +286,7 @@ function RuntimeControls({
       <button
         type="submit"
         disabled={pending}
-        className="min-h-12 rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-6 text-sm font-black text-[#111111] shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-wait disabled:opacity-70"
+        className="min-h-12 rounded-[8px] border-2 border-[#111111] bg-[#2a8fcc] px-6 text-sm font-black text-[#111111] shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-wait disabled:opacity-70"
       >
         {pending ? "Saving..." : isLast ? "Complete" : "Continue"}
       </button>
@@ -473,11 +473,11 @@ function VisualPanel() {
               <div className="h-3 w-40 rounded-full bg-slate-200" />
               <div className="h-3 w-32 rounded-full bg-slate-200" />
             </div>
-            <div className="rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] p-2 shadow-[4px_4px_0_#111111]">
+            <div className="rounded-[8px] border-2 border-[#111111] bg-[#2a8fcc] p-2 shadow-[4px_4px_0_#111111]">
               <div className="rounded border-2 border-[#111111] bg-white p-1">
                 <div className="h-3 rounded bg-[#55b8e8]" />
                 <div className="mt-2 grid grid-cols-3 gap-1">
-                  <span className="h-5 rounded bg-[#f47b3b]" />
+                  <span className="h-5 rounded bg-[#2a8fcc]" />
                   <span className="h-5 rounded bg-[#55b8e8]" />
                   <span className="h-5 rounded bg-slate-900" />
                 </div>
@@ -485,17 +485,17 @@ function VisualPanel() {
             </div>
           </div>
           <div className="relative mt-8 h-64 overflow-hidden rounded-[8px] border-2 border-[#111111] bg-white">
-            <div className="absolute top-8 left-7 size-5 rounded-full border-2 border-[#111111] bg-[#f47b3b]" />
+            <div className="absolute top-8 left-7 size-5 rounded-full border-2 border-[#111111] bg-[#2a8fcc]" />
             <div className="absolute top-28 left-28 size-5 rounded-full border-2 border-[#111111] bg-[#55b8e8]" />
-            <div className="absolute right-10 bottom-12 size-5 rounded-full border-2 border-[#111111] bg-[#f47b3b]" />
+            <div className="absolute right-10 bottom-12 size-5 rounded-full border-2 border-[#111111] bg-[#2a8fcc]" />
             <div className="absolute top-12 left-12 h-28 w-40 rotate-12 rounded-[40px] border-4 border-dashed border-[#0b63f6]" />
             <div className="absolute right-8 bottom-8 h-28 w-20 rounded-[8px] border-2 border-[#111111] bg-[#eaf6ff] p-2 shadow-[4px_4px_0_#111111]">
               <div className="h-8 rounded border-2 border-[#111111] bg-white" />
               <div className="mt-3 grid grid-cols-2 gap-1">
-                <span className="h-4 rounded bg-[#f47b3b]" />
+                <span className="h-4 rounded bg-[#2a8fcc]" />
                 <span className="h-4 rounded bg-[#55b8e8]" />
                 <span className="h-4 rounded bg-[#55b8e8]" />
-                <span className="h-4 rounded bg-[#f47b3b]" />
+                <span className="h-4 rounded bg-[#2a8fcc]" />
               </div>
             </div>
           </div>
@@ -518,7 +518,7 @@ function CompletionPanel({ redirectPath }: { redirectPath: string }) {
         </p>
         <Link
           href={redirectPath}
-          className="mt-8 inline-flex min-h-12 w-fit items-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-6 text-sm font-black text-[#111111] shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5"
+          className="mt-8 inline-flex min-h-12 w-fit items-center rounded-[8px] border-2 border-[#111111] bg-[#2a8fcc] px-6 text-sm font-black text-[#111111] shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5"
         >
           Continue to next step
         </Link>

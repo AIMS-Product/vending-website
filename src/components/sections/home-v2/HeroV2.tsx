@@ -17,7 +17,7 @@ export function HeroV2() {
       <div className="mx-auto grid max-w-[1500px] items-center gap-14 px-5 pt-16 pb-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:px-10 lg:pt-24 lg:pb-20">
         <div className="flex flex-col">
           <p className="v2-rise inline-flex w-fit items-center gap-2.5 rounded-full border-2 border-[#111111] bg-white px-4 py-1.5 text-xs font-black tracking-wide text-[#111111] uppercase shadow-[3px_3px_0_#111111]">
-            <span aria-hidden className="size-2 rounded-full bg-[#f47b3b]" />
+            <span aria-hidden className="size-2 rounded-full bg-[#2a8fcc]" />
             {heroV2.eyebrow}
           </p>
 

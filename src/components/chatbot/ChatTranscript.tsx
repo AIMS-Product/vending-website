@@ -143,7 +143,7 @@ function MessageBubble({
       <div
         className={cn(
           "max-w-[85%] rounded-[8px] border-2 border-[#111111] px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap",
-          isUser ? "text-white" : "bg-white text-[#111111]",
+          isUser ? "text-[#111111]" : "bg-white text-[#111111]",
         )}
         style={isUser ? { backgroundColor: brandColor } : undefined}
       >
@@ -230,7 +230,7 @@ function PersonaAvatar({
   return (
     <div
       aria-hidden="true"
-      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-[#111111] text-xs font-black text-white"
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-[#111111] text-xs font-black text-[#111111]"
       style={{ backgroundColor: brandColor }}
     >
       {personaName.slice(0, 1).toUpperCase()}

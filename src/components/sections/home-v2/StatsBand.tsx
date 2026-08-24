@@ -5,7 +5,7 @@ import { statsBandV2 } from "@/lib/content/home-v2";
 
 export function StatsBand() {
   return (
-    <section className="relative overflow-hidden border-y-2 border-[#111111] bg-[#f47b3b] px-5 py-20 lg:px-10 lg:py-28">
+    <section className="relative overflow-hidden border-y-2 border-[#111111] bg-[#2a8fcc] px-5 py-20 lg:px-10 lg:py-28">
       <div aria-hidden className="v2-dots-ink absolute inset-0 opacity-30" />
       <span
         aria-hidden

@@ -291,7 +291,7 @@ function CtaCanvasEditor({
 }) {
   return (
     <div className="px-3 py-4 sm:px-4">
-      <label className="inline-flex min-h-12 max-w-sm items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
+      <label className="inline-flex min-h-12 max-w-sm items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#2a8fcc] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
         <span className="sr-only">CTA label</span>
         <input
           aria-label="CTA label"
@@ -804,7 +804,7 @@ export function BlockEditor({
                     <div className={disabledLeadFieldClass}>Market</div>
                   </div>
                   <div>
-                    <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
+                    <label className="inline-flex max-w-xs rounded-[8px] border-2 border-[#111111] bg-[#2a8fcc] px-5 py-3 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111]">
                       <span className="sr-only">Submit label</span>
                       <input
                         aria-label="Submit label"

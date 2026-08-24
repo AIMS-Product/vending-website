@@ -140,7 +140,7 @@ function PreCallPrep() {
             >
               <span
                 aria-hidden
-                className="flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-[#111111] bg-[#f47b3b] text-sm font-black text-[#111111]"
+                className="flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-[#111111] bg-[#2a8fcc] text-sm font-black text-[#111111]"
               >
                 {index + 1}
               </span>

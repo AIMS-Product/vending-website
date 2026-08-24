@@ -323,7 +323,7 @@ describe("PopupCard rendering", () => {
           featuredValue: { label: "Free", value: "Roadmap", note: null },
           offerCode: "VP-LAUNCH",
           dismissText: "No thanks",
-          accentColor: "#f47b3b",
+          accentColor: "#2a8fcc",
         })}
         onClose={() => {}}
       />,

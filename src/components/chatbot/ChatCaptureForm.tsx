@@ -116,7 +116,7 @@ export function ChatCaptureForm({
         <button
           type="submit"
           disabled={submitting}
-          className="inline-flex min-h-10 flex-1 items-center justify-center rounded-[6px] border-2 border-[#111111] px-4 text-sm font-black text-white uppercase shadow-[3px_3px_0_#111111] disabled:opacity-60"
+          className="inline-flex min-h-10 flex-1 items-center justify-center rounded-[6px] border-2 border-[#111111] px-4 text-sm font-black text-[#111111] uppercase shadow-[3px_3px_0_#111111] disabled:opacity-60"
           style={{ backgroundColor: brandColor }}
         >
           {submitting ? "Sending..." : "Continue"}

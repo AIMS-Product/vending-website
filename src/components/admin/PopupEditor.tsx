@@ -217,7 +217,7 @@ export function PopupEditor({ entry }: { entry: AdminPopup }) {
                   name="accentColor"
                   value={values.accentColor}
                   onChange={set("accentColor")}
-                  placeholder="#f47b3b"
+                  placeholder="#2a8fcc"
                   className={adminInputClass}
                 />
               </label>

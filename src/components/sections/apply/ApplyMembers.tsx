@@ -38,7 +38,7 @@ export function ApplyMembers() {
               {/* Play badge — signals the card opens a video, brightens on hover. */}
               <span
                 aria-hidden
-                className="absolute top-4 right-4 flex size-11 items-center justify-center rounded-full border-2 border-white bg-[#111111]/70 text-white shadow-[3px_3px_0_rgba(0,0,0,0.25)] backdrop-blur-sm transition group-hover:bg-[#f47b3b] group-hover:text-[#111111]"
+                className="absolute top-4 right-4 flex size-11 items-center justify-center rounded-full border-2 border-white bg-[#111111]/70 text-white shadow-[3px_3px_0_rgba(0,0,0,0.25)] backdrop-blur-sm transition group-hover:bg-[#2a8fcc] group-hover:text-[#111111]"
               >
                 <svg
                   viewBox="0 0 24 24"

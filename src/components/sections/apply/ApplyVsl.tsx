@@ -68,7 +68,7 @@ export function ApplyVsl({
             />
             <span className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/30" />
             <span className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-              <span className="flex size-[82px] items-center justify-center rounded-full border-2 border-[#111111] bg-[#f47b3b] shadow-[4px_4px_0_#111111] transition group-hover:-translate-y-0.5 group-hover:shadow-[6px_6px_0_#111111]">
+              <span className="flex size-[82px] items-center justify-center rounded-full border-2 border-[#111111] bg-[#2a8fcc] shadow-[4px_4px_0_#111111] transition group-hover:-translate-y-0.5 group-hover:shadow-[6px_6px_0_#111111]">
                 <PlayIcon className="size-7 translate-x-0.5 text-[#111111]" />
               </span>
               <span className="text-sm font-black tracking-[0.1em] text-white uppercase [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">

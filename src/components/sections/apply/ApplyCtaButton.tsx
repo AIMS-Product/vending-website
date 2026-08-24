@@ -20,7 +20,7 @@ export function ApplyCtaButton({
     <a
       href={`#${APPLY_QUIZ_ANCHOR}`}
       className={cn(
-        "group inline-flex items-center justify-center gap-3 rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none active:translate-y-0 active:shadow-[3px_3px_0_#111111]",
+        "group inline-flex items-center justify-center gap-3 rounded-[8px] border-2 border-[#111111] bg-[#2a8fcc] font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none active:translate-y-0 active:shadow-[3px_3px_0_#111111]",
         size === "lg"
           ? "min-h-13 px-7 py-3.5 text-sm"
           : "min-h-11 px-6 py-3 text-sm",

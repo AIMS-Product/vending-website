@@ -29,7 +29,7 @@ export function Button(props: LinkProps | ButtonProps) {
     "group inline-flex min-h-12 items-center justify-center gap-3 rounded-[8px] border-2 border-[#111111] px-6 py-3 text-sm font-black uppercase text-[#111111] shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 active:translate-y-0 active:shadow-[3px_3px_0_#111111]";
 
   const styles: Record<Variant, string> = {
-    primary: "bg-[#f47b3b]",
+    primary: "bg-[#2a8fcc]",
     ghost: "bg-white hover:bg-[#eaf8ff]",
   };
 

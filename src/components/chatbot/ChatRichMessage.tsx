@@ -139,7 +139,7 @@ function CardHeader({
 }) {
   return (
     <div
-      className="flex items-center gap-2 border-b-2 border-[#111111] px-3 py-2 text-[13px] font-black text-white"
+      className="flex items-center gap-2 border-b-2 border-[#111111] px-3 py-2 text-[13px] font-black text-[#111111]"
       style={{ backgroundColor: brandColor }}
     >
       {icon}

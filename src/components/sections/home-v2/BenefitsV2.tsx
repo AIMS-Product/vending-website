@@ -12,7 +12,7 @@ const cardStyles = [
   {
     span: "lg:col-span-5",
     surface: "bg-[#111111]",
-    chip: "bg-[#f47b3b]",
+    chip: "bg-[#2a8fcc]",
     dark: true,
   },
   { span: "lg:col-span-7", surface: "bg-[#ffe3d1]", chip: "bg-white" },
@@ -68,7 +68,7 @@ export function BenefitsV2() {
               >
                 <div
                   className={cn(
-                    "group flex w-full flex-col rounded-[14px] border-2 border-[#111111] p-8 shadow-[7px_7px_0_#55b8e8] transition hover:-translate-y-1 hover:shadow-[10px_10px_0_#f47b3b]",
+                    "group flex w-full flex-col rounded-[14px] border-2 border-[#111111] p-8 shadow-[7px_7px_0_#55b8e8] transition hover:-translate-y-1 hover:shadow-[10px_10px_0_#2a8fcc]",
                     style.surface,
                   )}
                 >

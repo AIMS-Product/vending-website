@@ -43,7 +43,7 @@ export function ApplyRoadmap({
                 <h3 className="text-lg font-black text-[#111111]">
                   {phase.range}
                 </h3>
-                <p className="mt-0.5 text-base font-black text-[#f47b3b]">
+                <p className="mt-0.5 text-base font-black text-[#066a99]">
                   {phase.title}
                 </p>
                 <p className="mt-2 text-[15px] leading-relaxed font-semibold text-slate-700">

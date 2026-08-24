@@ -83,7 +83,7 @@ export function QuoteTestimonialCard({ quote }: { quote: CaseStudyQuote }) {
 
 function Stars() {
   return (
-    <div className="flex gap-0.5 text-[#f47b3b]">
+    <div className="flex gap-0.5 text-[#2a8fcc]">
       <span className="sr-only">5 out of 5 stars</span>
       {[1, 2, 3, 4, 5].map((star) => (
         <svg

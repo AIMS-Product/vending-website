@@ -48,7 +48,7 @@ export interface Popup {
   featuredValue: { label: string; value: string; note: string | null } | null;
   offerCode: string | null;
   dismissText: string | null;
-  /** Hex accent for the top gradient bar + primary CTA. null = brand orange, no bar. */
+  /** Hex accent for the top gradient bar + primary CTA. null = brand blue, no bar. */
   accentColor: string | null;
 }
 
@@ -190,7 +190,7 @@ export const POPUP_TEMPLATES: PopupTemplate[] = [
       },
       offerCode: null,
       dismissText: "Maybe later",
-      accentColor: "#f47b3b",
+      accentColor: "#2a8fcc",
     },
   },
   {
@@ -213,7 +213,7 @@ export const POPUP_TEMPLATES: PopupTemplate[] = [
       featuredValue: null,
       offerCode: "VENDING100",
       dismissText: "No thanks",
-      accentColor: "#f47b3b",
+      accentColor: "#2a8fcc",
     },
   },
   {

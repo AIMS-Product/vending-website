@@ -33,7 +33,7 @@ export function BookingForm({
       }}
     >
       <div className="mx-auto max-w-[1120px] px-5 py-24 lg:px-10">
-        <p className="text-center text-xs font-black tracking-[0.14em] text-[#f47b3b] uppercase">
+        <p className="text-center text-xs font-black tracking-[0.14em] text-[#2a8fcc] uppercase">
           Book your free call
         </p>
         <h2 className="mt-4 text-center text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.05] font-black text-white uppercase">
@@ -56,7 +56,7 @@ export function BookingForm({
           <aside className="flex w-full shrink-0 flex-col gap-[18px] lg:w-[300px]">
             <figure className="rounded-[14px] border-2 border-white/15 bg-white/[0.06] p-6">
               <StarRow
-                className="mb-3 flex gap-0.5 text-[#f47b3b]"
+                className="mb-3 flex gap-0.5 text-[#2a8fcc]"
                 starClassName="size-[18px]"
               />
               <blockquote className="text-[17px] leading-snug font-black text-white">
@@ -72,7 +72,7 @@ export function BookingForm({
                 <div key={stat.label} className="flex items-center gap-3">
                   <span
                     className={`text-3xl leading-none font-black ${
-                      index === 0 ? "text-[#f47b3b]" : "text-white"
+                      index === 0 ? "text-[#2a8fcc]" : "text-white"
                     }`}
                   >
                     {stat.value}
@@ -85,7 +85,7 @@ export function BookingForm({
             </div>
 
             <p className="flex items-center gap-2 text-[13px] font-semibold text-white/70">
-              <LockIcon className="size-3.5 text-[#f47b3b]" />
+              <LockIcon className="size-3.5 text-[#2a8fcc]" />
               {applyQuiz.rail.availabilityNote}
             </p>
           </aside>

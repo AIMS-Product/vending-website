@@ -2,11 +2,11 @@
 
 Two surfaces, two jobs. Don't mix them.
 
-|          | Public site                                         | Admin Studio (`/admin/*`)                              |
-| -------- | --------------------------------------------------- | ------------------------------------------------------ |
-| Job      | Design **is** the product. Convert visitors.        | Design **serves** the product. Get out of the way.     |
-| Language | Offset brutalist: ink borders, hard shadows, orange | Quiet tool: white surfaces, hairlines, one blue accent |
-| Tokens   | `--brand-*`, `#111111`, `#f47b3b`, `#55b8e8`        | `--ui-*`                                               |
+|          | Public site                                       | Admin Studio (`/admin/*`)                              |
+| -------- | ------------------------------------------------- | ------------------------------------------------------ |
+| Job      | Design **is** the product. Convert visitors.      | Design **serves** the product. Get out of the way.     |
+| Language | Offset brutalist: ink borders, hard shadows, blue | Quiet tool: white surfaces, hairlines, one blue accent |
+| Tokens   | `--brand-*`, `#111111`, `#2a8fcc`, `#55b8e8`      | `--ui-*`                                               |
 
 The public language does not belong in the admin. It was tried, and a table of
 hard-shadowed pills at fourteen rows reads as noise. The admin's only job is to

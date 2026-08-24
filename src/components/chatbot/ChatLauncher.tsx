@@ -43,8 +43,8 @@ export function PanelHeader({
           </span>
         ) : null}
         <div>
-          <p className="text-sm font-black text-white">{personaName}</p>
-          <p className="flex items-center gap-1 text-[11px] leading-none text-white/85">
+          <p className="text-sm font-black text-[#111111]">{personaName}</p>
+          <p className="flex items-center gap-1 text-[11px] leading-none text-[#111111]/75">
             <span
               aria-hidden="true"
               className="h-1.5 w-1.5 rounded-full bg-[#22c55e]"
@@ -57,7 +57,7 @@ export function PanelHeader({
         type="button"
         onClick={onClose}
         aria-label="Close chat"
-        className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] text-white hover:bg-black/10"
+        className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] text-[#111111] hover:bg-black/10"
       >
         <CloseIcon />
       </button>
@@ -121,7 +121,7 @@ export function MessageInput({
         type="submit"
         disabled={disabled || !value.trim()}
         aria-label="Send message"
-        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[6px] border-2 border-[#111111] text-white disabled:opacity-50"
+        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[6px] border-2 border-[#111111] text-[#111111] disabled:opacity-50"
         style={{ backgroundColor: brandColor }}
       >
         <SendIcon />
@@ -171,7 +171,7 @@ export function LauncherButton({
       type="button"
       onClick={onClick}
       aria-label={`Open chat with ${personaName}`}
-      className="relative inline-flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#111111] text-white shadow-[4px_4px_0_#111111]"
+      className="relative inline-flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#111111] text-[#111111] shadow-[4px_4px_0_#111111]"
       style={{ backgroundColor: brandColor }}
     >
       {avatarUrl ? (

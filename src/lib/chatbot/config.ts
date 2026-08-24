@@ -246,7 +246,7 @@ const chatbotConfigInputSchema = z.object({
   brandColor: z
     .string()
     .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, {
-      message: "Brand colour must be a hex value like #f47b3b.",
+      message: "Brand colour must be a hex value like #2a8fcc.",
     })
     .nullable(),
   idleTriggerSeconds: z.number().int().min(0).max(600),

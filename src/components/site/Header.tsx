@@ -41,7 +41,7 @@ export function Header() {
 
         <Link
           href={headerCta.href}
-          className="hidden min-h-12 items-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none lg:inline-flex"
+          className="hidden min-h-12 items-center rounded-[8px] border-2 border-[#111111] bg-[#2a8fcc] px-7 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none lg:inline-flex"
         >
           {headerCta.label}
         </Link>
@@ -102,7 +102,7 @@ export function Header() {
           ))}
           <Link
             href={headerCta.href}
-            className="mt-3 inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-6 text-sm font-black text-[#111111] uppercase shadow-[4px_4px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="mt-3 inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#2a8fcc] px-6 text-sm font-black text-[#111111] uppercase shadow-[4px_4px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:ring-offset-2 focus-visible:outline-none"
             onClick={() => setMenuOpen(false)}
           >
             {headerCta.label}

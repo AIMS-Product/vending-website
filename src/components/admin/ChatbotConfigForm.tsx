@@ -35,7 +35,7 @@ const MODEL_OPTIONS = ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"];
 const MAX_LIST_ITEMS = 5;
 // Mirrors ChatWidget.tsx's own local constants — that file can't import them
 // from lib/chatbot/config.ts (server-only), and neither can this one.
-const PREVIEW_DEFAULT_BRAND_COLOR = "#f47b3b";
+const PREVIEW_DEFAULT_BRAND_COLOR = "#2a8fcc";
 const PREVIEW_DEFAULT_AVATAR_URL = "/chatbot/mia.jpg";
 
 type Values = {
@@ -243,7 +243,7 @@ export function ChatbotConfigForm({ config }: { config: ChatbotConfig }) {
                   name="brandColor"
                   value={values.brandColor}
                   onChange={set("brandColor")}
-                  placeholder="#f47b3b"
+                  placeholder="#2a8fcc"
                   className={adminInputClass}
                 />
               </label>

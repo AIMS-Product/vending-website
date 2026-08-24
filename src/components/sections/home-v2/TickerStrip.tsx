@@ -36,7 +36,7 @@ function Star() {
     <svg
       viewBox="0 0 20 20"
       fill="currentColor"
-      className="size-5 shrink-0 text-[#f47b3b]"
+      className="size-5 shrink-0 text-[#2a8fcc]"
       aria-hidden
     >
       <path d="M10 1.5l2.7 5.5 6 0.9-4.3 4.3 1 6-5.4-2.9-5.4 2.9 1-6L1.3 7.9l6-0.9z" />

@@ -42,7 +42,7 @@ export function ApplyYouTube({
                     rel="noopener noreferrer"
                     className="flex items-center gap-3.5 rounded-[10px] border-2 border-[#111111] bg-white p-4 shadow-[3px_3px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:outline-none"
                   >
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b]">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-[#2a8fcc]">
                       <PlayIcon className="size-4 text-[#111111]" />
                     </span>
                     <span className="text-[15px] leading-snug font-semibold text-[#111111]">

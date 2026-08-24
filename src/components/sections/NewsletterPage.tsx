@@ -27,10 +27,10 @@ export async function NewsletterPage({
   return (
     <div className="overflow-hidden bg-[#fffaf0] text-slate-950">
       <section className="relative border-b-2 border-slate-950 px-5 py-14 sm:px-8 lg:py-20">
-        <div className="absolute inset-x-0 top-0 h-2 bg-orange-500" />
+        <div className="absolute inset-x-0 top-0 h-2 bg-[#2a8fcc]" />
         <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
           <div>
-            <p className="text-sm font-black tracking-[0.2em] text-orange-700 uppercase">
+            <p className="text-sm font-black tracking-[0.2em] text-[#066a99] uppercase">
               {newsletterPageContent.hero.eyebrow}
             </p>
             <h1 className="mt-5 max-w-3xl text-5xl leading-[0.97] font-black tracking-[-0.045em] text-balance sm:text-6xl lg:text-7xl">
@@ -98,7 +98,7 @@ export async function NewsletterPage({
               <article
                 key={expert.name}
                 className={`grid gap-6 rounded-2xl border-2 border-slate-950 p-7 shadow-[7px_7px_0_#0f172a] sm:grid-cols-[8rem_1fr] ${
-                  index === 0 ? "bg-sky-100" : "bg-orange-100"
+                  index === 0 ? "bg-sky-100" : "bg-[#eaf6ff]"
                 }`}
               >
                 <Image
@@ -109,7 +109,7 @@ export async function NewsletterPage({
                   className="aspect-square w-32 rounded-xl border-2 border-slate-950 object-cover"
                 />
                 <div>
-                  <p className="text-xs font-black tracking-[0.14em] text-orange-700 uppercase">
+                  <p className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
                     {expert.publication}
                   </p>
                   <h3 className="mt-2 text-2xl font-black">{expert.name}</h3>
@@ -123,7 +123,7 @@ export async function NewsletterPage({
         </div>
       </section>
 
-      <section className="border-y-2 border-slate-950 bg-orange-500 px-5 py-14 text-center sm:px-8">
+      <section className="border-y-2 border-slate-950 bg-[#2a8fcc] px-5 py-14 text-center sm:px-8">
         <h2 className="mx-auto max-w-4xl text-4xl leading-tight font-black tracking-tight sm:text-5xl">
           {newsletterPageContent.closingHeading}
         </h2>

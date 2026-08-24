@@ -202,5 +202,5 @@ export function resourceCtaClass(variant: PageBlock["variant"]) {
   if (variant === "text") {
     return "text-sm font-black uppercase text-[#066a99] hover:text-[#111111]";
   }
-  return `${base} bg-[#f47b3b] text-[#111111]`;
+  return `${base} bg-[#2a8fcc] text-[#111111]`;
 }

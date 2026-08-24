@@ -11,7 +11,7 @@ export function FinalCtaV2() {
     <section className="relative overflow-hidden border-t-2 border-[#111111] bg-[#111111]">
       <div
         aria-hidden
-        className="overflow-hidden border-b-2 border-[#111111] bg-[#f47b3b] py-2.5"
+        className="overflow-hidden border-b-2 border-[#111111] bg-[#2a8fcc] py-2.5"
       >
         <div className="v2-marquee flex w-max gap-10 hover:[animation-play-state:paused]">
           {marqueeWords.map((word, index) => (

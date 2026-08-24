@@ -44,7 +44,7 @@ export function ApplyFaq({
                   <span>{item.q}</span>
                   <ChevronDownIcon
                     className={cn(
-                      "size-5 shrink-0 text-[#f47b3b] transition-transform",
+                      "size-5 shrink-0 text-[#2a8fcc] transition-transform",
                       open && "rotate-180",
                     )}
                   />
