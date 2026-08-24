@@ -8,6 +8,7 @@ import type { ChatbotConfig } from "@/lib/chatbot/config";
 import type { ChatbotMessage } from "@/lib/chatbot/conversation-store";
 import { sendChatbotResourceEmail } from "@/lib/chatbot/emails";
 import { extractLead } from "@/lib/chatbot/extract-lead";
+import type { ProspectProfile } from "@/lib/chatbot/extract-prospect-profile";
 import {
   CHATBOT_RESOURCE_KEYS,
   MAX_RESOURCES_PER_EMAIL,
@@ -37,6 +38,8 @@ export type ChatbotToolContext = {
   capturedName: string | null;
   capturedEmail: string | null;
   capturedPhone: string | null;
+  /** Whatever's been extracted so far — usually null this early; extraction runs later, on idle. Used only to personalize the resource email. */
+  prospectProfile: ProspectProfile | null;
   /** Turns so far this conversation, including rich ones — used for the per-conversation email cap. */
   transcript: ChatbotMessage[];
   /** Origin of the page hosting the widget, for the Calendly inline embed. */
@@ -373,6 +376,7 @@ async function sendResourcesEmail(
       personaName: context.personaName,
       resources,
       bookingUrl,
+      profile: context.prospectProfile,
     },
     context.config,
   );

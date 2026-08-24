@@ -29,6 +29,12 @@ const envSchema = z.object({
   RESEND_API_KEY: optionalEnv,
   LEAD_NOTIFICATION_TO: optionalEnv,
   LEAD_NOTIFICATION_FROM: optionalEnv,
+  // Secondary from-address source: some Resend setups configure this name
+  // instead of LEAD_NOTIFICATION_FROM. The chatbot email sender (see
+  // src/lib/chatbot/emails.ts resolveFromAddress) tries LEAD_NOTIFICATION_FROM
+  // first, then this, then a hardcoded default — so a send never fails purely
+  // because one specific env var name wasn't the one that got set.
+  RESEND_FROM_EMAIL: optionalEnv,
   LEAD_NOTIFICATION_SUBJECT_PREFIX: optionalEnv,
   SLACK_WEBHOOK_URL: optionalEnv,
   MONEY_PAGE_INGEST_URL: optionalTrimmedOptionalEnv,
@@ -112,6 +118,7 @@ const parsed = envSchema.safeParse({
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   LEAD_NOTIFICATION_TO: process.env.LEAD_NOTIFICATION_TO,
   LEAD_NOTIFICATION_FROM: process.env.LEAD_NOTIFICATION_FROM,
+  RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
   LEAD_NOTIFICATION_SUBJECT_PREFIX:
     process.env.LEAD_NOTIFICATION_SUBJECT_PREFIX,
   SLACK_WEBHOOK_URL: process.env.SLACK_WEBHOOK_URL,

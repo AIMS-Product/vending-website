@@ -24,6 +24,7 @@ import {
 import { loadChatbotConfig } from "@/lib/chatbot/config";
 import { publicConfig } from "@/lib/config";
 import { extractLead } from "@/lib/chatbot/extract-lead";
+import { prospectProfileSchema } from "@/lib/chatbot/extract-prospect-profile";
 import { handleChatbotLeadCaptured } from "@/lib/chatbot/lead-capture";
 import { sendProfileEmailForConversation } from "@/lib/chatbot/learning/digest";
 import type { ChatbotChatMessage } from "@/lib/chatbot/openai";
@@ -213,6 +214,9 @@ export async function POST(request: Request) {
     capturedName: captured.name,
     capturedEmail: captured.email,
     capturedPhone: captured.phone,
+    prospectProfile:
+      prospectProfileSchema.safeParse(conversation.prospect_profile).data ??
+      null,
     transcript: historyForModel,
     embedDomain: siteHostname(),
     firstPartyEmail: priorEmail,

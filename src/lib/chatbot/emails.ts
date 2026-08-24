@@ -43,6 +43,16 @@ export async function sendChatbotProfileEmail(
   chatbotConfig: ChatbotConfig,
   deps: EmailDeps = {},
 ): Promise<ChatbotEmailResult> {
+  if (!input.capturedEmail && !input.capturedPhone) {
+    // Defense in depth: the only caller (learning/digest.ts) already checks
+    // this before extracting/emailing, but a team email with no way to reach
+    // the lead is a critical-field gap either way — skip and log rather than
+    // send an email that tells nobody how to follow up.
+    console.warn("chatbot: profile email skipped, no contact captured", {
+      conversationId: input.conversationId,
+    });
+    return { ok: false, error: "No contact captured." };
+  }
   if (!chatbotEmailsEnabled(chatbotConfig)) {
     return { ok: false, error: "Lead routing is off or has no recipients." };
   }
@@ -128,8 +138,25 @@ export async function sendChatbotDigestEmail(
   return sendResend({ subject, text, to: recipients }, deps.fetchImpl ?? fetch);
 }
 
+/** Used only if neither env var is set — keeps a send working the moment RESEND_API_KEY lands, even before the from-address is configured. */
+const FALLBACK_FROM_ADDRESS = "Vendingpreneurs <hello@vendingpreneurs.com>";
+
+/**
+ * From-address chain every chatbot sender goes through: the dedicated lead
+ * var, then the general Resend var, then a hardcoded default. Only
+ * RESEND_API_KEY is treated as "not configured" (see hasResendConfig) —
+ * the from-address always resolves to something sendable.
+ */
+function resolveFromAddress(): string {
+  return (
+    config.LEAD_NOTIFICATION_FROM?.trim() ||
+    config.RESEND_FROM_EMAIL?.trim() ||
+    FALLBACK_FROM_ADDRESS
+  );
+}
+
 function hasResendConfig(): boolean {
-  return Boolean(config.RESEND_API_KEY && config.LEAD_NOTIFICATION_FROM);
+  return Boolean(config.RESEND_API_KEY);
 }
 
 async function sendResend(
@@ -144,6 +171,7 @@ async function sendResend(
   fetchImpl: typeof fetch,
 ): Promise<ChatbotEmailResult> {
   try {
+    const from = resolveFromAddress();
     const response = await fetchImpl("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -151,9 +179,7 @@ async function sendResend(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: message.fromName
-          ? withFromName(config.LEAD_NOTIFICATION_FROM, message.fromName)
-          : config.LEAD_NOTIFICATION_FROM,
+        from: message.fromName ? withFromName(from, message.fromName) : from,
         to: message.to,
         subject: message.subject,
         text: message.text,
@@ -192,7 +218,7 @@ function digestEntryLines(
   callFirst: boolean,
 ): string[] {
   return [
-    `${position}. ${profileEmailSubject(input)}`,
+    `${position}. ${leadLabel(input)}`,
     // Phone first in the call block: it is the action being asked for.
     ...(callFirst && input.capturedPhone
       ? [`   CALL: ${input.capturedPhone}`]
@@ -213,6 +239,8 @@ export type ChatbotResourceEmailInput = {
   personaName: string;
   resources: ChatbotResource[];
   bookingUrl: string | null;
+  /** Whatever's been extracted for this conversation so far — often null, since extraction usually runs later on idle. Used only for the opening line. */
+  profile?: ProspectProfile | null;
 };
 
 /**
@@ -231,6 +259,10 @@ export async function sendChatbotResourceEmail(
   chatbotConfig: ChatbotConfig,
   deps: EmailDeps = {},
 ): Promise<ChatbotEmailResult> {
+  if (!input.to.trim()) {
+    console.warn("chatbot: resource email skipped, no recipient address");
+    return { ok: false, error: "No recipient email." };
+  }
   if (!input.resources.length) return { ok: false, error: "Nothing to send." };
   if (!hasResendConfig())
     return { ok: false, error: "Resend isn't configured." };
@@ -243,42 +275,67 @@ export async function sendChatbotResourceEmail(
       ? `${input.resources[0].title}`
       : `The ${input.resources.length} things we talked about`;
 
+  const openerLine = personalOpener(input.profile ?? null);
+
+  // One blank line between paragraphs — join("\n\n") already inserts it
+  // between array items, so no item here should also carry its own "".
   const text = [
     greeting,
-    "",
     // Fixed copy, deliberately. An earlier draft let the model write this
     // line; that turned a verified-domain sender with the sales inbox as
     // reply-to into 400 characters of attacker-steerable text. The resource
     // blurbs below already say what these are.
-    "Here's what I mentioned in the chat — all free, nothing to sign up for.",
-    "",
+    `${openerLine} All free, nothing to sign up for.`,
     ...input.resources.map(
       (resource) =>
         `${resource.title}\n${resource.blurb}\n${absoluteUrl(resource.url)}`,
     ),
-    "",
     ...(input.bookingUrl
       ? [
           `If you'd rather just talk it through, grab a free 15 minutes here: ${input.bookingUrl}`,
-          "",
         ]
       : []),
-    `- ${input.personaName}, Vendingpreneurs`,
+    `${input.personaName}\nVendingpreneurs`,
   ].join("\n\n");
 
-  // Replies go to the sales inbox, never to the no-reply sender.
-  const replyTo = chatbotLeadRoutingEmails(chatbotConfig);
+  // Replies go to the sales inbox by default. If routing is off/unset, fall
+  // back to the from-address itself rather than omitting reply-to — a real
+  // reply from a visitor should always land somewhere, never bounce.
+  const teamReplyTo = chatbotLeadRoutingEmails(chatbotConfig);
+  const replyTo = teamReplyTo.length
+    ? teamReplyTo
+    : [addressOnly(resolveFromAddress())];
 
   return sendResend(
     {
       subject,
       text,
       to: [input.to],
-      fromName: `${input.personaName} from Vendingpreneurs`,
+      fromName: `${input.personaName} at Vendingpreneurs`,
       replyTo,
     },
     deps.fetchImpl ?? fetch,
   );
+}
+
+/**
+ * One line referencing what the visitor already told the bot, so the email
+ * reads like Mia picking the conversation back up rather than a form
+ * response. Both source fields are free-text model extractions, so this is
+ * built to read naturally after "about ___" regardless of whether the value
+ * is a noun phrase ("managing a retail store") or a gerund phrase ("wanting
+ * more flexibility") — the two shapes the extraction prompt actually produces.
+ * Falls back to a plain opener when nothing's been extracted yet, which is
+ * the common case: extraction usually runs later, on idle.
+ */
+function personalOpener(profile: ProspectProfile | null): string {
+  const detail = profile?.current_work?.trim() || profile?.motivation?.trim();
+  if (!detail) return "Here's what I promised.";
+  return `Following up on what you shared about ${lowerFirst(detail)}, here's what I promised.`;
+}
+
+function lowerFirst(value: string): string {
+  return value.length ? value[0].toLowerCase() + value.slice(1) : value;
 }
 
 function absoluteUrl(path: string): string {
@@ -291,32 +348,59 @@ function absoluteUrl(path: string): string {
  * the address exactly as configured — a Resend send fails outright if the
  * address is not on a verified domain, so the address is never derived.
  */
-function withFromName(from: string | undefined, name: string): string {
-  const address = from?.match(/<([^>]+)>/)?.[1] ?? from ?? "";
-  if (!address) return from ?? "";
+function withFromName(from: string, name: string): string {
+  const address = addressOnly(from);
+  if (!address) return from;
   return `${name} <${address}>`;
 }
 
-function profileEmailSubject(input: ChatbotProfileEmailInput): string {
+/** Bare `address@domain` out of a `Name <address@domain>` sender, or the input unchanged if it's already bare. */
+function addressOnly(from: string): string {
+  return from.match(/<([^>]+)>/)?.[1] ?? from;
+}
+
+function truncate(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+}
+
+/** `{name or email} — {call intent? 'wants a call' : topic}`, shared by the subject line and each digest row. */
+function leadLabel(input: ChatbotProfileEmailInput): string {
   const name =
     input.capturedName?.trim() ||
     input.capturedEmail ||
     input.capturedPhone ||
     "A visitor";
-  return `${name} chatted with the site chatbot`;
+  const tail = input.profile?.call_intent
+    ? "wants a call"
+    : truncate(
+        input.profile?.summary?.trim() || "chatted with the site chatbot",
+        60,
+      );
+  return `${name} — ${tail}`;
 }
 
+function profileEmailSubject(input: ChatbotProfileEmailInput): string {
+  return `Chatbot lead: ${leadLabel(input)}`;
+}
+
+/**
+ * Scannable order: contact, then call intent (the one signal that decides
+ * whether this gets a same-day reply), then capital/timeline/motivation, then
+ * the lower-priority extras, then the one-sentence summary last. The
+ * transcript link is appended by each caller, after this.
+ */
 function profileLines(input: ChatbotProfileEmailInput): string[] {
   const p = input.profile;
   return [
     fieldLine("Name", input.capturedName ?? p?.name),
     fieldLine("Email", input.capturedEmail ?? p?.email),
     fieldLine("Phone", input.capturedPhone ?? p?.phone),
-    fieldLine("Current work", p?.current_work),
+    fieldLine("Call intent", p ? (p.call_intent ? "Yes" : "No") : null),
     fieldLine("Capital signal", p?.capital_signal),
     fieldLine("Timeline", p?.timeline),
-    fieldLine("Market", p?.state_or_market),
     fieldLine("Motivation", p?.motivation),
+    fieldLine("Current work", p?.current_work),
+    fieldLine("Market", p?.state_or_market),
     fieldLine("Sentiment", p?.sentiment),
     fieldLine(
       "Follow-up needed",

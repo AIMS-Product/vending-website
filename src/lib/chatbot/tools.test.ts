@@ -25,6 +25,7 @@ function makeContext(
     capturedName: null,
     capturedEmail: null,
     capturedPhone: null,
+    prospectProfile: null,
     transcript: [],
     embedDomain: "www.vendingpreneurs.com",
     firstPartyEmail: null,
