@@ -213,3 +213,42 @@ once. A real backlog, unrelated to this work, **not touched**.
 - **Watch for the fix reintroducing the bug.** "Name a concrete slot" would have
   had Mia inventing calendar times she cannot see, one layer down from
   inventing prices.
+
+## Live verification on www.vendingpreneurs.com (2026-08-24, after deploy)
+
+All against the real production endpoint, with obviously-labeled `zz-claude-test-*`
+session ids, every row deleted afterwards. No test lead ever reached Close.
+
+| Asked                                  | Result                                                                                                                                         |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| "How much does it cost to start?"      | No figure. Plans-and-financing line. Calendar opened in the SAME turn carrying `utm_source=chatbot&utm_content=<conversation id>`.             |
+| (next turn) "ok thanks"                | "Did you manage to find a time that works for you? If nothing on there fits, the team can work around your schedule!" Fires once, as designed. |
+| "whats the investment to get started?" | No figure, correct line, calendar opened. Different wording, same result.                                                                      |
+| "how much can I make with this?"       | Anthony Kolodziej named, his real result, with the case-study link. Correctly NOT the pricing line.                                            |
+
+The baseline before the fix, same endpoint, same question:
+"Many members typically invest between $3,000 to $10,000..." with no calendar.
+
+### One regression found by this verification, and fixed
+
+The first deploy made the pricing rule too wide. "How much can I make?" got
+"I can't share specific numbers on earnings" plus the plans-and-financing line.
+`PRICING_SECTION` claimed to override every other instruction, so it outranked
+TESTIMONIAL MATCHING, and CONTENT RULES read as a blanket ban on earnings talk.
+Now scoped explicitly to what the visitor would PAY, with "how much can I make"
+named as an earnings question. Re-verified live, output above.
+
+## Found and deliberately NOT fixed
+
+1. **Em dashes reach the browser during streaming.** `turn-stream.ts` streams
+   each raw `delta` to the client and only runs `stripChatbotFormatting()` on
+   the final text it PERSISTS. So the stored transcript is clean but the visitor
+   watches the unsanitized text render, and the `flush` event carries no payload
+   to replace it with. Fixing it means changing the streaming contract in both
+   `turn-stream.ts` and `ChatWidget.tsx`. Pre-existing, display-only.
+2. **Narration without action, on paths that are not forced.** The earnings reply
+   ended "I'll pull up the calendar now" and no calendar appeared. This is the
+   documented `gpt-4o-mini` trait the forced-tool path exists for; cost and
+   booking intent are covered, this phrasing was not. A deterministic guard
+   (reply promises a calendar + no calendar card this turn -> emit one) would
+   close the class. Upgrading the model probably closes it more cheaply.
