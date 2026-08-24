@@ -1640,6 +1640,7 @@ export type Database = {
       };
       chatbot_conversations: {
         Row: {
+          attribution_source: string | null;
           booked_event_uri: string | null;
           call_booked_at: string | null;
           captured_email: string | null;
@@ -1662,6 +1663,7 @@ export type Database = {
           visitor_hash: string | null;
         };
         Insert: {
+          attribution_source?: string | null;
           booked_event_uri?: string | null;
           call_booked_at?: string | null;
           captured_email?: string | null;
@@ -1684,6 +1686,7 @@ export type Database = {
           visitor_hash?: string | null;
         };
         Update: {
+          attribution_source?: string | null;
           booked_event_uri?: string | null;
           call_booked_at?: string | null;
           captured_email?: string | null;

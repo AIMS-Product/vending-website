@@ -1,4 +1,5 @@
 import { applyChatbotBookingAttribution } from "@/lib/chatbot/booking-attribution";
+import { stampChatbotBookingOnCloseLead } from "@/lib/chatbot/close-booking-note";
 import { recordCalendlyBooking } from "@/lib/services/calendly-bookings";
 import { config } from "@/lib/config";
 import {
@@ -34,7 +35,15 @@ export async function POST(request: Request) {
     // fails the webhook: a retry storm caused by a bookkeeping error would
     // cost real bookings.
     try {
-      await applyChatbotBookingAttribution(client, event);
+      const attribution = await applyChatbotBookingAttribution(client, event);
+      if (attribution.matched && attribution.action === "booked") {
+        await stampChatbotBookingOnCloseLead({
+          conversationId: attribution.conversationId,
+          attributionSource: attribution.attributionSource,
+          scheduledEventName: event.scheduledEventName,
+          eventStartAt: event.eventStartAt,
+        });
+      }
     } catch (error) {
       console.warn("calendly webhook: chatbot attribution failed", {
         name: error instanceof Error ? error.name : "UnknownError",

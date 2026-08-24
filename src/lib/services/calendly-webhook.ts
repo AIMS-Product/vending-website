@@ -33,6 +33,7 @@ const calendlyInviteePayloadSchema = z
     uri: z.string().min(1),
     name: z.string().nullish(),
     email: z.string().nullish(),
+    created_at: z.string().nullish(),
     cancel_url: z.string().nullish(),
     reschedule_url: z.string().nullish(),
     cancellation: cancellationSchema.nullish(),
@@ -63,6 +64,15 @@ export type CalendlyWebhookEvent = {
   scheduledEventName: string | null;
   eventStartAt: string | null;
   eventEndAt: string | null;
+  /**
+   * When the invitee actually booked, from Calendly's own record.
+   *
+   * On a live webhook this is within seconds of now(), so it makes no
+   * difference. It matters for the reconciliation sweep, which replays
+   * historical bookings: without it, a call booked three weeks ago gets
+   * recorded as booked today and lands in the wrong funnel window.
+   */
+  inviteeCreatedAt: string | null;
   rawPayload: unknown;
 };
 
@@ -167,6 +177,7 @@ export function parseCalendlyEvent(
     scheduledEventName: scheduledEvent?.name ?? null,
     eventStartAt: scheduledEvent?.start_time ?? null,
     eventEndAt: scheduledEvent?.end_time ?? null,
+    inviteeCreatedAt: invitee.created_at ?? null,
     rawPayload: payload,
   };
 }

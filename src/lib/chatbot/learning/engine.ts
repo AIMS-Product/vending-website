@@ -393,7 +393,7 @@ function draftForCase(
       priority: 1,
       dueAt: nowIso,
       subject: "Following up on your vending business questions",
-      body: `Hey ${name}, saw you were asking about hopping on a call — happy to set that up whenever works for you. Here's the link to grab a time: ${bookingUrl}. Talk soon!`,
+      body: `Hey ${name}, saw you were asking about hopping on a call, happy to set that up whenever works for you. Here's the link to grab a time: ${bookingUrl}. Talk soon!`,
     };
   }
 
@@ -403,7 +403,7 @@ function draftForCase(
     priority: 2,
     dueAt: nowIso,
     subject: "Checking back in",
-    body: `Hey ${name}, wanted to circle back — still exploring the vending business idea? Happy to answer anything or set up a quick call if that's easier: ${bookingUrl}`,
+    body: `Hey ${name}, wanted to circle back, still exploring the vending business idea? Happy to answer anything or set up a quick call if that's easier: ${bookingUrl}`,
   };
 }
 

@@ -125,6 +125,7 @@ describe("parseCalendlyEvent", () => {
         uri: "https://api.calendly.com/scheduled_events/abc/invitees/123",
         name: "Jane Applicant",
         email: "jane@example.com",
+        created_at: "2026-07-25T09:12:00.000000Z",
         tracking: {
           utm_source: "google",
           utm_medium: "cpc",
@@ -148,6 +149,10 @@ describe("parseCalendlyEvent", () => {
       inviteeUri: "https://api.calendly.com/scheduled_events/abc/invitees/123",
       inviteeName: "Jane Applicant",
       inviteeEmail: "jane@example.com",
+      // Calendly's own booking time. The reconciliation sweep stamps
+      // call_booked_at from this, so a replayed booking keeps its real date
+      // instead of the sweep's run time.
+      inviteeCreatedAt: "2026-07-25T09:12:00.000000Z",
       cancelReason: null,
       utmSource: "google",
       utmMedium: "cpc",
@@ -183,6 +188,9 @@ describe("parseCalendlyEvent", () => {
       inviteeName: "Jane Applicant",
       inviteeEmail: "jane@example.com",
       cancelReason: "Schedule conflict",
+      // Absent from this payload, so null. The field is optional on purpose:
+      // an older Calendly payload without it still parses.
+      inviteeCreatedAt: null,
       utmSource: null,
       utmMedium: null,
       utmCampaign: null,

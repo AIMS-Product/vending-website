@@ -32,6 +32,14 @@ export type ChatbotProfileEmailInput = {
   callBooked?: boolean;
   /** Conversation-tagged booking link, so a rep sending one keeps attribution intact. */
   bookingUrl?: string | null;
+  /**
+   * True when the deterministic learning engine (not the LLM profile
+   * extraction) independently concluded this visitor asked to talk and has
+   * not booked - see learning/engine.ts's `call_intent_no_booking` case /
+   * `invite_to_call` task. Backstops `profile?.call_intent` for
+   * conversations where extraction hasn't run yet or the model missed it.
+   */
+  askedForCall?: boolean;
 };
 
 type EmailDeps = { fetchImpl?: typeof fetch };
@@ -219,10 +227,14 @@ async function sendResend(
 /**
  * Asked for a call and does not have one on the calendar. This is the only
  * segment in the digest that is worth interrupting a rep's morning for.
+ * Trusts either signal that says "asked to talk": the LLM-extracted profile
+ * field, or the deterministic learning-engine regex (`askedForCall`) - the
+ * latter catches conversations where extraction hasn't run yet or missed it.
+ * "Already booked" always wins over both.
  */
 function needsACallNow(input: ChatbotProfileEmailInput): boolean {
   if (input.callBooked) return false;
-  return Boolean(input.profile?.call_intent);
+  return Boolean(input.profile?.call_intent) || Boolean(input.askedForCall);
 }
 
 function digestEntryLines(

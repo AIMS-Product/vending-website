@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { resolveChannel, UNKNOWN_CHANNEL, WEBSITE_CHANNEL } from "./channel";
+import {
+  CHATBOT_CHANNEL,
+  resolveChannel,
+  UNKNOWN_CHANNEL,
+  WEBSITE_CHANNEL,
+} from "./channel";
 
 describe("resolveChannel", () => {
   it("merges the capitalisation split that was under-reporting Instagram", () => {
@@ -59,5 +64,38 @@ describe("resolveChannel", () => {
 
   it("flags a punctuation-only tag rather than counting it as Website", () => {
     expect(resolveChannel("_____").channel).toBe(UNKNOWN_CHANNEL);
+  });
+});
+
+describe("chatbot channel", () => {
+  it("gives an untagged chatbot capture its own channel", () => {
+    expect(resolveChannel(null, { capturedByChatbot: true })).toEqual({
+      channel: CHATBOT_CHANNEL,
+      person: null,
+    });
+  });
+
+  it("still calls an untagged non-chatbot lead Website", () => {
+    expect(resolveChannel(null)).toEqual({
+      channel: WEBSITE_CHANNEL,
+      person: null,
+    });
+    expect(resolveChannel(null, { capturedByChatbot: false })).toEqual({
+      channel: WEBSITE_CHANNEL,
+      person: null,
+    });
+  });
+
+  it("keeps the real campaign when a chatbot lead arrived from one", () => {
+    // Instagram brought them; the chatbot only caught them. Crediting the
+    // chatbot here would quietly shrink Instagram.
+    expect(resolveChannel("mike-ig", { capturedByChatbot: true })).toEqual({
+      channel: "Instagram",
+      person: "Mike",
+    });
+  });
+
+  it("resolves an explicitly chatbot-tagged link", () => {
+    expect(resolveChannel("chatbot").channel).toBe(CHATBOT_CHANNEL);
   });
 });

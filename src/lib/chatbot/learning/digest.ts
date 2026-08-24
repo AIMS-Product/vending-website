@@ -400,12 +400,17 @@ export async function runChatbotCatchUpDigest(
     client,
     eligible.map((conv) => conv.id),
   );
+  const askedForCallIds = await fetchOpenInviteToCallConversationIds(
+    client,
+    eligible.map((conv) => conv.id),
+  );
   const profileEntries: ChatbotProfileEmailInput[] = eligible.map((conv) => ({
     conversationId: conv.id,
     capturedName: conv.capturedName,
     capturedEmail: conv.capturedEmail,
     capturedPhone: conv.capturedPhone,
     profile: conv.prospectProfile ?? results.get(conv.id) ?? null,
+    askedForCall: askedForCallIds.has(conv.id),
     ...bookingFieldsFor(conv, bookedIds),
   }));
 
@@ -541,6 +546,48 @@ async function fetchBookedConversationIds(
     }
   }
   return booked;
+}
+
+/**
+ * Conversation ids with an open (not yet sent/dismissed) `invite_to_call`
+ * follow-up task - the deterministic signal the learning engine
+ * (learning/engine.ts) already derived from the transcript via regex,
+ * independent of whether LLM profile extraction ran or caught it. One query
+ * for the whole batch, same shape as fetchBookedConversationIds above.
+ *
+ * Returns an empty set (never throws) on any failure so a digest still sends
+ * with the LLM-only signal rather than not sending at all - see spec note on
+ * runChatbotCatchUpDigest.
+ */
+async function fetchOpenInviteToCallConversationIds(
+  client: Client,
+  ids: string[],
+): Promise<ReadonlySet<string>> {
+  if (ids.length === 0) return new Set();
+  try {
+    const { data, error } = await client
+      .from("chatbot_follow_up_tasks")
+      .select("conversation_id")
+      .eq("task_type", "invite_to_call")
+      .eq("status", "open")
+      .in("conversation_id", ids);
+    if (error) {
+      console.warn("chatbot: invite_to_call lookup failed for the digest", {
+        error: error.message,
+      });
+      return new Set();
+    }
+    return new Set(
+      (data ?? [])
+        .map((row) => row.conversation_id)
+        .filter((id): id is string => Boolean(id)),
+    );
+  } catch (error) {
+    console.warn("chatbot: invite_to_call lookup threw for the digest", {
+      error: error instanceof Error ? error.message : "unknown error",
+    });
+    return new Set();
+  }
 }
 
 async function findCatchUpEligibleConversations(

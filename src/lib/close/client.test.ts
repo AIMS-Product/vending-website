@@ -104,3 +104,37 @@ describe("searchContactsByEmail", () => {
     expect(url).toContain(encodeURIComponent('email:"weird@example.com"'));
   });
 });
+
+describe("createNote", () => {
+  it("posts to /activity/note/ with the lead id and note body", async () => {
+    const fetchImpl = stubFetch({ id: "acti_1" });
+
+    await client(fetchImpl).createNote({
+      lead_id: "lead_1",
+      note_html: "<body><p>hi</p></body>",
+    });
+
+    const [url, init] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock
+      .calls[0];
+    expect(url).toBe("https://api.close.test/api/v1/activity/note/");
+    expect(JSON.parse((init as RequestInit).body as string)).toEqual({
+      lead_id: "lead_1",
+      note_html: "<body><p>hi</p></body>",
+    });
+  });
+});
+
+describe("listLeadNotes", () => {
+  it("filters by lead id", async () => {
+    const fetchImpl = stubFetch({ data: [{ id: "acti_1", note: "hi" }] });
+
+    const result = await client(fetchImpl).listLeadNotes("lead_1");
+
+    const [url] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock
+      .calls[0];
+    expect(url).toBe(
+      "https://api.close.test/api/v1/activity/note/?lead_id=lead_1&_limit=50",
+    );
+    expect(result.data).toEqual([{ id: "acti_1", note: "hi" }]);
+  });
+});

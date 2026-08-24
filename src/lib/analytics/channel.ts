@@ -32,6 +32,18 @@ export const WEBSITE_CHANNEL = "Website";
 /** Shown when a tag exists but means nothing (e.g. a link built with "_____"). */
 export const UNKNOWN_CHANNEL = "Unknown";
 
+/**
+ * The on-site AI setter.
+ *
+ * Chatbot leads are captured mid-conversation rather than through a form on a
+ * campaign link, so they carry no utm_source at all and used to roll up as
+ * Website, making the chatbot invisible as a channel. Callers pass
+ * `capturedByChatbot` for those (see buildChannelRollup), which only overrides
+ * the UNTAGGED case: a visitor who arrived from an Instagram ad and then
+ * chatted still belongs to Instagram, because Instagram is what brought them.
+ */
+export const CHATBOT_CHANNEL = "Chatbot";
+
 type ChannelRule = { channel: string; person?: string };
 
 /**
@@ -77,6 +89,9 @@ const EXACT: Record<string, ChannelRule> = {
   // Tag used by the vendingpreneurs.ai funnel's "Apply Now" button.
   web: { channel: WEBSITE_CHANNEL },
   website: { channel: WEBSITE_CHANNEL },
+
+  // The in-chat booking calendar tags itself; see CHATBOT_BOOKING_UTM_SOURCE.
+  chatbot: { channel: CHATBOT_CHANNEL },
 };
 
 /**
@@ -113,9 +128,15 @@ const MEANINGLESS = /^[^a-z0-9]*$/;
  */
 export function resolveChannel(
   utmSource: string | null | undefined,
+  options: { capturedByChatbot?: boolean } = {},
 ): ChannelAttribution {
   const raw = utmSource?.trim().toLowerCase() ?? "";
-  if (!raw) return { channel: WEBSITE_CHANNEL, person: null };
+  if (!raw) {
+    return {
+      channel: options.capturedByChatbot ? CHATBOT_CHANNEL : WEBSITE_CHANNEL,
+      person: null,
+    };
+  }
   if (MEANINGLESS.test(raw)) return { channel: UNKNOWN_CHANNEL, person: null };
 
   const exact = EXACT[raw];

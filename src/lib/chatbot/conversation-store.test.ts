@@ -45,6 +45,7 @@ function makeConversation(
     captured_phone: null,
     prospect_profile: null,
     prospect_profile_emailed_at: null,
+    attribution_source: null,
     lead_submission_id: null,
     call_booked_at: null,
     booked_event_uri: null,
