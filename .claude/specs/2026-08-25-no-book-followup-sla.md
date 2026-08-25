@@ -42,37 +42,66 @@ Both described as: **"They contacted US in the last 24 hours and nothing is book
   `/admin/chatbot/conversations?outcome=calendar_abandoned`, and the
   "Who did not book" tab on `/admin/chatbot`. Read-only, sent nowhere.
 
-## THE BLOCKER — a Smart List is a saved search, not a container
+## THE QUERY — decoded from Adam's screenshot 2026-08-25 (no longer a blocker)
 
-You cannot push a record into a Close Smart List. A lead appears in one when it
-**matches the list's query**. So the work is not "push", it is "make our leads
-satisfy that query". Two unknowns, neither answerable from this repo:
+A Close Smart List is a saved search, not a container: you cannot push a record
+into one. A lead appears when it MATCHES the query. Here is the real query for
+`L2 · ⚡ Warm Reply — TODAY` (11 filters, 13 leads at time of reading):
 
-1. **What does "contacted US" key on?** If it is Close's built-in inbound
-   communication activity, a website form fill will _never_ match, because we
-   create a lead — no inbound email/SMS/call exists on it. Making it match
-   would mean logging an inbound-shaped activity on the lead at submit time.
-   If instead it keys on a custom field Stephen maintains, we may already be
-   one field-write away.
-2. **What does "nothing is booked" key on?** Probably lead status not being
-   "Call Booked", possibly a custom field.
+```
+Where all of:
+  Current status:  NOT (4 statuses, collapsed in the screenshot - STILL NEEDED)
+  Local time:      between 08:00am and 9:00pm
+and any of:
+  there IS an SMS Activity   with Direction "Incoming" and Date created within 1 day
+  or  there IS an Email Activity with Direction "Incoming" and Date created within 1 day
+  or  there IS a  Call Activity  with Direction "Incoming" and Date created within 1 day
+and there IS NOT an Opportunity with Current status in (3 statuses)
+and any of:
+  Lead Owner = Me   OR   Lead Owner not present
+```
 
-**"L2" means Lane 2 — Stephen's automation.** The hard constraint from the
-previous handoff applies directly here: **never write `Recapture State` or
-`Ever Had Call`.** Close's Lane 2 automation owns them; writing them changes
-which leads that automation picks up. Also never write `entry_source` (strict
-choices field, 400s the whole update on an unexpected value).
+Its own description: "They contacted US in the last 24 hours and nothing is
+booked. The hottest cohort we have and historically the biggest leak.
+Same-day SLA - this list should self-clear."
 
-### To unblock, get ONE of these
+### What this means, concretely
 
-- The saved search definition for both lists (Stephen can screenshot the filter
-  builder), **or**
-- A Close API key on the machine, then `GET /api/v1/saved_search/` returns the
-  query directly. There is no Close key in `.env.local` and `vercel env pull`
-  returns empty for encrypted values, so this cannot be self-served.
+**"Contacted US" is real communication activity, not a tag and not a custom
+field.** It requires an SMS, Email or Call activity ON the lead, with
+`direction = incoming`, created within the last day.
 
-Do not guess at the query and write fields speculatively. A wrong write to a
-Lane 2 field silently changes who Stephen's automation calls.
+**A website form submit creates none of those.** We create a Close lead and a
+contact. No activity is logged. So today our form leads can never appear in
+this list, no matter what tags or custom fields we set. Tagging cannot fix
+this; only an activity can.
+
+**The fix: log an incoming Email Activity on the Close lead at submit time**,
+carrying what the visitor actually submitted. This is accurate rather than
+synthetic - they did contact us, through the website form. Close supports it:
+`POST /api/v1/activity/email/` with `direction: "incoming"` (SMS and Call
+activity endpoints exist too; email is the honest fit for a form).
+
+### Do NOT write Recapture State
+
+It is a visible column on this list with values `Hot-Inbound`, `Booked`,
+`Active-Nurture`. Stephen's Lane 2 automation computes it FROM the activity
+above. The standing constraint holds: never write `Recapture State` or
+`Ever Had Call`. Log the activity and let his automation do its job. Same for
+`entry_source` (strict choices field, 400s the whole update).
+
+### Still needed from Stephen before building
+
+1. **The 4 excluded lead statuses** behind `Current status: not [4]`. Our leads
+   land as **"New"** (`CLOSE_LEAD_STATUS_ID`). If "New" is one of the four,
+   every website lead is excluded and logging activity achieves nothing.
+2. The 3 Opportunity statuses in the "is not" clause, to confirm a website lead
+   with no opportunity passes it (it should).
+3. Confirmation that `Lead Owner not present` is how our unowned leads read.
+
+A Close API key on the machine would answer all three via
+`GET /api/v1/saved_search/` and `GET /api/v1/status/lead/`. There is none in
+`.env.local`, and `vercel env pull` returns empty for encrypted values.
 
 ## Slice 1 — Slack no-book alert (UNBLOCKED, Adam said yes)
 
@@ -95,14 +124,27 @@ Independent of the Close question. Build this first.
   current destination cannot be read from here.
 - Add an 8am digest of yesterday's stragglers as a safety net.
 
-## Slice 2 — Close Smart List membership (BLOCKED on the query definition)
+## Slice 2 — Close Smart List membership (query known, needs the 4 statuses)
 
-Once the query is known, make the lead match it. Expected shape: log an
-inbound-flavoured activity or note on the Close lead at submit time so
-"they contacted us" is true, and leave every Lane 2 field alone.
+Log an **incoming Email Activity** on the Close lead when a form is submitted,
+so "they contacted us" becomes true in Close's own terms. Leave every Lane 2
+field alone and let Stephen's automation stamp Recapture State.
 
-`close-booking-note.ts` and `close-engagement-note.ts` already write notes with
-check-then-act dedupe — extend one of those rather than adding a third writer.
+- New event type on the existing outbox (`close_sync_events`), not a new
+  delivery path. It already has dedupe, retry, and needs_review parking.
+- `close-booking-note.ts` / `close-engagement-note.ts` show the house pattern
+  for writing to Close with check-then-act dedupe. An activity is a different
+  endpoint from a note, but follow the same shape rather than inventing one.
+- Idempotent: one activity per lead submit, never one per sync attempt. A
+  duplicate incoming activity would re-warm a lead that has gone cold and put
+  it back in a same-day SLA list it has already left.
+- The list self-clears after 24 hours by design. Do not re-log activity to keep
+  someone in it.
+- Gate behind an env flag so it can be switched off without a deploy if it
+  floods the setters' list.
+
+**Verify on ONE obviously-labelled test lead before enabling it broadly**, and
+confirm with Stephen that it lands in his list the way he expects.
 
 ## Verification bar (non-negotiable)
 
