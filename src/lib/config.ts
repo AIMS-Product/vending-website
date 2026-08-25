@@ -45,6 +45,21 @@ const envSchema = z.object({
   CLOSE_API_KEY: optionalTrimmedOptionalEnv,
   CLOSE_API_BASE_URL: optionalTrimmedOptionalEnv,
   CLOSE_LEAD_STATUS_ID: optionalTrimmedOptionalEnv,
+  /**
+   * Off unless it is exactly "true". Gates the incoming-email activity that
+   * puts a no-book lead into Stephen's "Warm Reply - TODAY" smart list, at both
+   * the enqueue and the drain. Two reasons it defaults off: the event_type
+   * migration is hand-applied to prod, and the activity changes which leads a
+   * live setter list matches — that is a switch a human turns on, deliberately,
+   * after one test lead has been checked.
+   */
+  CLOSE_WARM_REPLY_ACTIVITY_ENABLED: optionalTrimmedOptionalEnv,
+  /**
+   * Kill switch for the 10-minute no-book Slack alert. Default ON; set to the
+   * string "false" to stop it. Separate from SLACK_WEBHOOK_URL on purpose, so
+   * silencing this alert does not also silence the real lead notifications.
+   */
+  NO_BOOK_ALERT_ENABLED: optionalTrimmedOptionalEnv,
   CLOSE_FOLLOW_UP_ASSIGNED_TO: optionalTrimmedOptionalEnv,
   CLOSE_QUALIFICATION_STATUS_FIELD_ID: optionalTrimmedOptionalEnv,
   CLOSE_VP_SESSION_ID_FIELD_ID: optionalTrimmedOptionalEnv,
@@ -131,6 +146,9 @@ const parsed = envSchema.safeParse({
   CLOSE_API_KEY: process.env.CLOSE_API_KEY,
   CLOSE_API_BASE_URL: process.env.CLOSE_API_BASE_URL,
   CLOSE_LEAD_STATUS_ID: process.env.CLOSE_LEAD_STATUS_ID,
+  CLOSE_WARM_REPLY_ACTIVITY_ENABLED:
+    process.env.CLOSE_WARM_REPLY_ACTIVITY_ENABLED,
+  NO_BOOK_ALERT_ENABLED: process.env.NO_BOOK_ALERT_ENABLED,
   CLOSE_FOLLOW_UP_ASSIGNED_TO: process.env.CLOSE_FOLLOW_UP_ASSIGNED_TO,
   CLOSE_QUALIFICATION_STATUS_FIELD_ID:
     process.env.CLOSE_QUALIFICATION_STATUS_FIELD_ID,

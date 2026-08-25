@@ -28,6 +28,10 @@
     {
       "path": "/api/admin/chatbot-booking-reconcile/run",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/admin/no-book-alert/run",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

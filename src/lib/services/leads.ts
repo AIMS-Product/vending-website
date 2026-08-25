@@ -20,6 +20,8 @@ import {
   isDuplicateDedupeError,
   leadCreateOrUpdateDedupeKey,
 } from "@/lib/close/dedupe";
+import { CHATBOT_LEAD_SOURCE } from "@/lib/chatbot/lead-capture";
+import { queueWarmReplyActivity } from "@/lib/close/warm-reply-activity";
 import type { Database, Json, Tables } from "@/types/database";
 
 type LeadRow = Tables<"lead_submissions">;
@@ -182,6 +184,28 @@ export async function submitLead(
 
   const inserted = await insertLead(client, lead, idempotencyKey, env);
   await ensurePublicLeadCloseSync(client, lead, inserted, closeSyncQueuedAt);
+
+  // New captures only, not the duplicate-idempotency-key path above: a
+  // re-submit is the same lead row, whose activity is already queued or already
+  // logged. Fail-soft by contract (see queueWarmReplyActivity) -- a follow-up
+  // job must never fail a lead that is already stored and already queued to
+  // Close. Covers the chatbot too, which reaches Close through this same
+  // submitLead pipeline.
+  await queueWarmReplyActivity(client, {
+    leadSubmissionId: inserted.id,
+    closeLeadId: inserted.close_lead_id,
+    closeContactId: inserted.close_contact_id,
+    source:
+      lead.metadata?.source === CHATBOT_LEAD_SOURCE
+        ? "chatbot"
+        : "public_lead_form",
+    fullName: lead.fullName,
+    email: lead.email,
+    phone: lead.phone,
+    sourcePath: lead.sourcePath,
+    message: lead.message,
+    capturedAt: now(),
+  });
 
   let notificationStatus: LeadRow["status"] = inserted.status;
   let notificationError: string | null = null;
@@ -569,18 +593,34 @@ async function sendResendEmail(
   }
 }
 
-async function sendSlackWebhook(
+function sendSlackWebhook(
   lead: NotifiableLead,
   webhookUrl: string,
   fetchImpl: typeof fetch,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  // See sendResendEmail: a rejecting fetch has to become a failed notification,
-  // not a failed lead submit.
+  return postSlackWebhook(webhookUrl, formatSlackText(lead), fetchImpl);
+}
+
+/**
+ * The house Slack post. The only place in this file that talks to Slack, and the
+ * one the no-book follow-up alert (services/no-book-alert.ts) reuses rather than
+ * standing up a second webhook path with its own error handling to drift out of
+ * sync with this one.
+ *
+ * Same contract as sendResendEmail: a rejecting fetch becomes a failed
+ * notification, never a thrown error. Every caller sits either inside a lead
+ * submit or inside a cron drain, and neither can afford to fail over a message.
+ */
+export async function postSlackWebhook(
+  webhookUrl: string,
+  text: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const response = await fetchImpl(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: formatSlackText(lead) }),
+      body: JSON.stringify({ text }),
     });
 
     if (!response.ok) {

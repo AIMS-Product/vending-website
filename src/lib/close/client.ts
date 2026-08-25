@@ -96,6 +96,40 @@ type CloseNotePayload = {
 };
 
 /**
+ * An INCOMING email activity to log on a Close lead.
+ *
+ * `direction` is deliberately absent: it is not writable. Close derives it from
+ * `status`, and `inbox` ("log an already received email") is the only status
+ * that yields `direction: "incoming"` — which is the one thing Stephen's warm
+ * reply smart list actually filters on. `sender` is REQUIRED for `inbox`.
+ *
+ * Never use `outbox` or `scheduled` here. Those make Close actually SEND the
+ * mail to the address in `to`, from the org's own mailbox.
+ */
+type CloseEmailActivityPayload = {
+  lead_id: string;
+  contact_id?: string | null;
+  status: "inbox";
+  sender: string;
+  to?: string[];
+  subject?: string;
+  body_text?: string;
+  date_created?: string;
+};
+
+/**
+ * An email activity read back from `/activity/email/`. Only the fields the
+ * once-per-capture check needs: the marker is embedded in `body_text`, and
+ * `direction` is read back to confirm Close derived "incoming" as expected.
+ */
+export type CloseEmailActivityResult = {
+  id: string;
+  direction?: string | null;
+  subject?: string | null;
+  body_text?: string | null;
+};
+
+/**
  * A note read back from Close's `/activity/note/` list endpoint. Both `note`
  * and `note_html` come back populated (Close derives one from the other), so
  * either is fine to scan for a marker.
@@ -406,6 +440,32 @@ export function createCloseClient({
       return request<{ data?: CloseNoteResult[] }>(
         "GET",
         `/activity/note/?lead_id=${encodeURIComponent(leadId)}&_limit=50`,
+      );
+    },
+    /**
+     * Logs an already-received email on the lead. This is the ONLY write in
+     * this client that changes which leads a Close smart list matches, so it is
+     * gated by CLOSE_WARM_REPLY_ACTIVITY_ENABLED at both the enqueue and the
+     * drain (see warm-reply-activity.ts).
+     */
+    createEmailActivity(payload: CloseEmailActivityPayload) {
+      return request<{ id: string; direction?: string | null }>(
+        "POST",
+        "/activity/email/",
+        payload,
+      );
+    },
+    /**
+     * The lead's existing email activities, for the same reason listLeadNotes
+     * exists: Close's activity-create endpoints have no idempotency key, so a
+     * caller that must not double-post has to look for its own marker first.
+     * A duplicate incoming activity would re-warm a lead that has gone cold and
+     * drop it back into a same-day SLA list it has already left.
+     */
+    listLeadEmailActivities(leadId: string) {
+      return request<{ data?: CloseEmailActivityResult[] }>(
+        "GET",
+        `/activity/email/?lead_id=${encodeURIComponent(leadId)}&_limit=50`,
       );
     },
     createTask(payload: CloseTaskPayload) {

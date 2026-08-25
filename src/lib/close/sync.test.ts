@@ -354,6 +354,50 @@ describe("adminRunCloseSync", () => {
     vi.clearAllMocks();
   });
 
+  it("a warm reply failure does not overwrite the LEAD's own Close sync state", async () => {
+    // warm_reply_activity is the only event type that runs on EVERY capture, so
+    // it is the usual last writer of close_sync_status. Before this guard, a
+    // lead whose lead_create_or_update had parked at needs_review had its
+    // original diagnosis overwritten by the warm reply's own retry errors, and a
+    // warm reply that succeeded stamped the lead "synced" over a dead-lettered
+    // enrichment. /admin/leads counts leads, not events, so the failed-sync
+    // banner went wrong in both directions.
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          id: "evt_warm",
+          event_type: "warm_reply_activity",
+          close_lead_id: null,
+        }),
+      ],
+      leads: [
+        makeLead({
+          close_lead_id: null,
+          close_sync_status: "needs_review",
+          close_sync_last_error: "Multiple Close contacts matched",
+        }),
+      ],
+    });
+
+    await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "key" }),
+      fetchImpl: vi.fn() as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    // The event row records its own outcome.
+    expect(fake.state.events[0].status).toBe("failed");
+    // The lead keeps its real diagnosis, and nothing was written to it at all.
+    expect(fake.state.leads[0]).toMatchObject({
+      close_sync_status: "needs_review",
+      close_sync_last_error: "Multiple Close contacts matched",
+    });
+    expect(
+      fake.state.updates.filter((u) => u.table === "lead_submissions"),
+    ).toHaveLength(0);
+  });
+
   it("records retryable failure without calling Close when config is missing", async () => {
     const fake = buildClient();
     const fetchMock = vi.fn();

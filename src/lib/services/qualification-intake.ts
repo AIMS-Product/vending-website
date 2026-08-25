@@ -22,6 +22,10 @@ import {
   leadCreateOrUpdateDedupeKey,
 } from "@/lib/close/dedupe";
 import {
+  isBookingIntentForm,
+  queueWarmReplyActivity,
+} from "@/lib/close/warm-reply-activity";
+import {
   getQualificationFormVersion,
   resolveDefaultQualificationFormVersion,
   resolvePublishedQualificationFormVersion,
@@ -180,6 +184,30 @@ export async function createQualificationIntakeSession(
     formVersion,
     nowIso,
   });
+
+  // Same follow-up SLA as the contact form, but only for a form that is
+  // actually asking for a call. A newsletter signup reaches this same function
+  // (newsletter-signup.ts passes NEWSLETTER_FORM_ID) and must never be logged
+  // as "they contacted us about getting started".
+  //
+  // Rides its own dedupe key, so a re-submit that reuses this lead row queues
+  // nothing new, and fail-soft by contract so it can never fail an intake that
+  // has already been accepted.
+  if (isBookingIntentForm(formVersion.formId)) {
+    await queueWarmReplyActivity(client, {
+      leadSubmissionId: lead.id,
+      sessionId: session.id,
+      closeLeadId: lead.close_lead_id,
+      closeContactId: lead.close_contact_id,
+      source: "qualification_intake",
+      fullName: intake.fullName,
+      email: intake.email,
+      phone: intake.phone,
+      sourcePath: intake.sourcePath,
+      message: null,
+      capturedAt: now,
+    });
+  }
 
   return {
     status: "accepted",

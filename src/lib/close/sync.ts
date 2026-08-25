@@ -12,6 +12,10 @@ import {
   jsonStringAt as stringAt,
 } from "@/lib/json-access";
 import { normalizePhone } from "@/lib/phone";
+import {
+  CloseWarmReplyNoSenderError,
+  syncWarmReplyActivity,
+} from "@/lib/close/warm-reply-activity";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
 import {
@@ -209,7 +213,7 @@ async function processCloseSyncEvent(
   // retryable, so without the claim two concurrent drains would both call
   // createLead and produce duplicate Close records for one person.
   if (!claimed) return "skipped";
-  if (event.lead_submission_id) {
+  if (event.lead_submission_id && writesLeadSyncState(event)) {
     await updateLead(client, event.lead_submission_id, {
       close_sync_status: "retrying",
       close_sync_attempt_count: attemptCount,
@@ -232,6 +236,7 @@ async function processCloseSyncEvent(
       ? await getLead(client, event.lead_submission_id)
       : null;
     const syncedIds = await dispatchCloseEvent(event, {
+      client,
       close,
       closeConfig,
       lead,
@@ -245,7 +250,7 @@ async function processCloseSyncEvent(
       close_contact_id: syncedIds.contactId,
       attempt_count: attemptCount,
     });
-    if (event.lead_submission_id) {
+    if (event.lead_submission_id && writesLeadSyncState(event)) {
       await updateLead(client, event.lead_submission_id, {
         close_sync_status: "synced",
         close_sync_attempt_count: attemptCount,
@@ -284,7 +289,13 @@ async function processCloseSyncEvent(
     }
     return "synced";
   } catch (error) {
-    if (error instanceof CloseNeedsReviewError) {
+    // A warm reply with no captured email can never succeed on a retry, so it
+    // parks for a human exactly like the other terminal cases rather than
+    // burning every attempt down to dead_letter.
+    if (
+      error instanceof CloseNeedsReviewError ||
+      error instanceof CloseWarmReplyNoSenderError
+    ) {
       await recordNeedsReview(client, event, {
         attemptCount,
         nowIso,
@@ -303,7 +314,7 @@ async function processCloseSyncEvent(
       next_retry_at: nextRetryAt(now, attemptCount).toISOString(),
       last_error: message,
     });
-    if (event.lead_submission_id) {
+    if (event.lead_submission_id && writesLeadSyncState(event)) {
       await updateLead(client, event.lead_submission_id, {
         close_sync_status: status,
         close_sync_attempt_count: attemptCount,
@@ -316,13 +327,42 @@ async function processCloseSyncEvent(
   }
 }
 
+/**
+ * Whether an event's outcome should also be written onto the LEAD's
+ * close_sync_status / close_sync_last_error.
+ *
+ * `warm_reply_activity` is excluded, and it is the only exclusion. Every other
+ * event type either creates the Close record or enriches it, so its outcome IS
+ * the lead's sync state. The warm reply is a follow-up job that runs on every
+ * single capture, which makes it the usual LAST writer of those columns, and
+ * that broke two things:
+ *
+ * - A lead whose lead_create_or_update parked at needs_review ("Multiple Close
+ *   contacts matched") has no close_lead_id, so the warm reply then throws
+ *   "missing a Close lead ID" on every drain and overwrites the original
+ *   diagnosis in close_sync_last_error with its own, all the way to dead_letter.
+ * - A warm reply that succeeds stamps the lead `synced` even when a
+ *   qualification_enrichment event dead-lettered, hiding it from the
+ *   /admin/leads failed-sync banner (admin-overview.ts counts leads, not
+ *   events).
+ *
+ * The event row itself still records its own status, retries and errors, so
+ * nothing is lost: it moves out of a column that means "did this lead reach
+ * Close" and into the row that means "did this job run".
+ */
+function writesLeadSyncState(event: CloseSyncEventRow): boolean {
+  return event.event_type !== "warm_reply_activity";
+}
+
 async function dispatchCloseEvent(
   event: CloseSyncEventRow,
   {
+    client,
     close,
     closeConfig,
     lead,
   }: {
+    client: CloseSyncClient;
     close: CloseClient;
     closeConfig: CloseConfig;
     lead: LeadRow | null;
@@ -352,6 +392,9 @@ async function dispatchCloseEvent(
   }
   if (event.event_type === "manual_retry") {
     return syncLeadCreateOrUpdate(event, { close, closeConfig, lead });
+  }
+  if (event.event_type === "warm_reply_activity") {
+    return syncWarmReplyActivity(event, { client, close, lead });
   }
   throw new Error(`Unsupported Close sync event type: ${event.event_type}`);
 }
@@ -921,7 +964,7 @@ async function recordNeedsReview(
     last_attempted_at: nowIso,
     last_error: safeMessage,
   });
-  if (event.lead_submission_id) {
+  if (event.lead_submission_id && writesLeadSyncState(event)) {
     await updateLead(client, event.lead_submission_id, {
       close_sync_status: "needs_review",
       close_sync_attempt_count: attemptCount,
