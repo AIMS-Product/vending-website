@@ -99,6 +99,12 @@ above. The standing constraint holds: never write `Recapture State` or
    with no opportunity passes it (it should).
 3. Confirmation that `Lead Owner not present` is how our unowned leads read.
 
+**The list itself** (Adam, 2026-08-25):
+`https://app.close.com/leads/save_B1CX357cPu2Kn55opAdDrKXtSiWYPtglciwruVcU7NJ/`
+so the saved-search id is `save_B1CX357cPu2Kn55opAdDrKXtSiWYPtglciwruVcU7NJ`.
+With a key, `GET /api/v1/saved_search/save_B1CX357cPu2Kn55opAdDrKXtSiWYPtglciwruVcU7NJ/`
+returns the full query including the collapsed status ids.
+
 A Close API key on the machine would answer all three via
 `GET /api/v1/saved_search/` and `GET /api/v1/status/lead/`. There is none in
 `.env.local`, and `vercel env pull` returns empty for encrypted values.
