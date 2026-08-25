@@ -171,6 +171,49 @@ Still open, and worth knowing: an alert whose Slack post keeps failing for more
 than two hours is lost for good once the lead leaves the 120-minute window. That
 is the deliberate cost of bounding the window.
 
+## RESOLVED 2026-08-25: the statuses, and a mislabelled list
+
+Read directly from Close with the production `CLOSE_API_KEY`. It turns out
+`vercel env pull` DOES return that key: only vars explicitly marked sensitive
+come back empty, and `CLOSE_API_KEY` was not one of them (`CLOSE_LEAD_STATUS_ID`
+was). No key was pasted into chat and the pulled file was deleted after use.
+
+**The four excluded statuses are: Closed / Won, Do Not Contact, Outside the US,
+Disqualified.** Our leads land as **New**
+(`stat_EwxduBOxA2CLBUrvXAyB7ZrVXKGw7v9i5xz0f2JuIY9`, verified on three real
+synced leads). New is NOT excluded, so the blocker is cleared and logging the
+activity will work.
+
+**The saved-search id in the earlier spec is the wrong list.**
+
+| id                                                 | actual name                                | filters on incoming activity?                                        |
+| -------------------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------- |
+| `save_B1CX357cPu2Kn55opAdDrKXtSiWYPtglciwruVcU7NJ` | L2 · Setter · Hot Inbound - SLA (< 1 hour) | **No.** Lead `date_created` within 1 hour, plus no completed meeting |
+| `save_PK5iUw2HN6zQxZ5GHbFHgqYCG33qpBVhzO5PTMoVST3` | L2 · Warm Reply - TODAY                    | Yes. Incoming SMS/email/call within 1 day                            |
+| `save_GwXm7NhHZwjcFmLjIMmmtCfUQSeQ4p0v7hFGaTaZcXU` | L2 · Setter · Warm Reply - TODAY           | Yes. Same                                                            |
+
+All three exclude the same four statuses. The decoded query in the earlier spec
+was right about the mechanism and wrong about which id it belonged to. The code
+needs no change: it never references a list id, it just makes the activity true.
+
+Note when reading these over the API: the real query lives in **`s_query`**.
+`query` is `null` on these records, which makes a naive read look like the list
+has no filters at all.
+
+**Why the activity approach beats the date-based list for returning people.** One
+lead checked today (`warre***`) submitted the form at 18:47 but its Close lead was
+created on Aug 22: a returning visitor whose existing Close lead was reused. Any
+list keyed on the LEAD's `date_created` can never surface them again, however
+many times they come back. An activity is dated when it is logged, so it does.
+
+**Two remaining gates on the Warm Reply list, both fine but worth knowing:**
+Lead Owner must be the viewer or unset (ours are unset, so it passes), and the
+lead's local time must be between 08:00 and 21:00. A capture outside the
+prospect's own business hours will not appear until that window reopens.
+
+Also confirmed on live data: our leads carry **zero incoming email activities**
+today, which is exactly why none of them has ever appeared in a Warm Reply list.
+
 ## Checked against production before pushing
 
 Read-only, no writes. The cron's exact query was run against prod
