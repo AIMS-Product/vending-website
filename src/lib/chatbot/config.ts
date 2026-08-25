@@ -118,8 +118,17 @@ const LEGACY_CONFIG_FIELDS =
 
 /** In-code defaults mirroring the migration's seed — served until the
  * starter_questions/quick_actions columns exist in the database. */
+/**
+ * No cost question here on purpose. "How much does it cost to start?" was the
+ * most-clicked chip on the site and the worst-converting path in the product:
+ * nine of twenty conversations in the fortnight to 2026-08-25 opened with it
+ * and one booked. The bot is under an absolute rule never to state a price, so
+ * the chip promised an answer the assistant cannot give and spent the
+ * visitor's one question on a redirect. Visitors who want the number still ask
+ * it in their own words, and that path is handled; this just stops the site
+ * suggesting it.
+ */
 export const DEFAULT_STARTER_QUESTIONS: readonly string[] = [
-  "How much does it cost to start?",
   "Do I need experience?",
   "How does the program work?",
 ];

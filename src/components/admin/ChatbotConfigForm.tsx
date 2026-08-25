@@ -479,7 +479,7 @@ function StarterQuestionsEditor({
                 value.map((v, i) => (i === index ? event.target.value : v)),
               )
             }
-            placeholder="How much does it cost to start?"
+            placeholder="How does the program work?"
             className={`${adminInputClass} flex-1`}
           />
           <button
