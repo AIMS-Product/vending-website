@@ -2,6 +2,11 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  askedAboutCost,
+  calendarWasShown,
+  deriveConversationOutcome,
+} from "@/lib/chatbot/outcomes";
 import type { Database, Json, Tables } from "@/types/database";
 
 type ChatbotAnalyticsClient = Pick<SupabaseClient<Database>, "from">;
@@ -70,6 +75,29 @@ export type ChatbotFunnelWindow = ChatbotFunnelStageCounts & {
   };
 };
 
+/**
+ * What happened to the visitors we did not book, and what the cost question
+ * specifically did to them. Cost is broken out because it is the single most
+ * common opening message on this site and the one the bot answers with a
+ * calendar instead of a number.
+ */
+export type ChatbotOutcomeWindow = {
+  days: number;
+  total: number;
+  booked: number;
+  calendarAbandoned: number;
+  capturedNoBooking: number;
+  leftNoContact: number;
+  open: number;
+  /** The cost-question cohort, tracked stage by stage through the same window. */
+  costQuestion: {
+    asked: number;
+    sawCalendar: number;
+    captured: number;
+    booked: number;
+  };
+};
+
 export type ChatbotAnalytics = {
   conversations30d: ChatbotAnalyticsMetric;
   conversations7d: number;
@@ -116,7 +144,20 @@ export type ChatbotAnalytics = {
    * render a confident split.
    */
   attributionSplitTrustworthy: boolean;
+  /** Outcome breakdown for the last 7 and 30 days. See ChatbotOutcomeWindow. */
+  outcomes: { d7: ChatbotOutcomeWindow; d30: ChatbotOutcomeWindow };
 };
+
+const emptyOutcomeWindow = (days: number): ChatbotOutcomeWindow => ({
+  days,
+  total: 0,
+  booked: 0,
+  calendarAbandoned: 0,
+  capturedNoBooking: 0,
+  leftNoContact: 0,
+  open: 0,
+  costQuestion: { asked: 0, sawCalendar: 0, captured: 0, booked: 0 },
+});
 
 export const EMPTY_CHATBOT_ANALYTICS: ChatbotAnalytics = {
   conversations30d: { value: 0, prior: 0, deltaPct: null },
@@ -142,6 +183,7 @@ export const EMPTY_CHATBOT_ANALYTICS: ChatbotAnalytics = {
     d90: emptyFunnelWindow(90),
   },
   attributionSplitTrustworthy: false,
+  outcomes: { d7: emptyOutcomeWindow(7), d30: emptyOutcomeWindow(30) },
 };
 
 function emptyFunnelWindow(days: number): ChatbotFunnelWindow {
@@ -238,7 +280,10 @@ export async function getChatbotAnalytics(
       fetchStart,
     );
 
-    const bookedLeadIds = await fetchBookedLeadIds(client, rows);
+    const { ids: bookedLeadIds } = await fetchBookedLeadIds(
+      client,
+      rows.map((row) => row.lead_submission_id),
+    );
     return buildAnalytics(
       rows,
       now,
@@ -324,32 +369,51 @@ async function fetchConversationRows(
  * booked-call KPI reports real numbers with no Calendly work at all, and
  * upgrades itself for free the day the webhook is fixed.
  */
-async function fetchBookedLeadIds(
+/**
+ * Shared with /admin/chatbot/conversations: most bookings on this site reach
+ * us through the Close reconciler rather than the Calendly webhook, and those
+ * land on the LEAD row, not the conversation row. Any surface that decides
+ * "did this conversation book?" from `call_booked_at` alone reports people who
+ * are on a rep's calendar as abandoned.
+ */
+export async function fetchBookedLeadIds(
   client: ChatbotAnalyticsClient,
-  rows: ConversationRow[],
-): Promise<ReadonlySet<string>> {
+  candidateLeadIds: readonly (string | null | undefined)[],
+): Promise<{ ids: ReadonlySet<string>; complete: boolean }> {
   const leadIds = Array.from(
-    new Set(
-      rows
-        .map((row) => row.lead_submission_id)
-        .filter((id): id is string => Boolean(id)),
-    ),
+    new Set(candidateLeadIds.filter((id): id is string => Boolean(id))),
   );
-  if (leadIds.length === 0) return new Set();
+  if (leadIds.length === 0) return { ids: new Set(), complete: true };
 
-  const { data, error } = await client
-    .from("lead_submissions")
-    .select("id")
-    .in("id", leadIds)
-    .not("call_booked_at", "is", null);
-  if (error) {
-    console.warn("chatbot analytics: Close-reconciled booking lookup failed", {
-      error: error.message,
-    });
-    return new Set();
+  // Chunked because these ids ride in the query string: a full page of
+  // conversations is up to 500 UUIDs, roughly 20KB, past what proxies in front
+  // of PostgREST will accept on a GET.
+  const ids = new Set<string>();
+  for (let start = 0; start < leadIds.length; start += LEAD_LOOKUP_CHUNK) {
+    const chunk = leadIds.slice(start, start + LEAD_LOOKUP_CHUNK);
+    const { data, error } = await client
+      .from("lead_submissions")
+      .select("id")
+      .in("id", chunk)
+      .not("call_booked_at", "is", null);
+    if (error) {
+      console.warn(
+        "chatbot analytics: Close-reconciled booking lookup failed",
+        {
+          error: error.message,
+        },
+      );
+      // Partial results would understate bookings and overstate the leak, so
+      // the caller is told the answer is incomplete rather than handed a set
+      // that looks authoritative.
+      return { ids, complete: false };
+    }
+    for (const row of data ?? []) ids.add(row.id);
   }
-  return new Set((data ?? []).map((row) => row.id));
+  return { ids, complete: true };
 }
+
+const LEAD_LOOKUP_CHUNK = 100;
 
 function buildAnalytics(
   rows: ConversationRow[],
@@ -410,7 +474,60 @@ function buildAnalytics(
       d90: buildFunnelWindow(90, rows, now, bookedLeadIds),
     },
     attributionSplitTrustworthy,
+    outcomes: {
+      d7: buildOutcomeWindow(7, rows, now, bookedLeadIds),
+      d30: buildOutcomeWindow(WINDOW_DAYS, rows, now, bookedLeadIds),
+    },
   };
+}
+
+/**
+ * Outcome rollup for one window. `isBooked` (not just call_booked_at) decides
+ * the booked case so a call reconciled through the lead row counts the same as
+ * one the Calendly webhook caught — otherwise the dashboard would show people
+ * as abandoned who are on a rep's calendar.
+ */
+function buildOutcomeWindow(
+  days: number,
+  rows: ConversationRow[],
+  now: Date,
+  bookedLeadIds: ReadonlySet<string>,
+): ChatbotOutcomeWindow {
+  const start = new Date(now.getTime() - days * DAY_MS);
+  const windowRows = rows.filter((row) => inWindow(row.created_at, start, now));
+
+  const result = emptyOutcomeWindow(days);
+  result.total = windowRows.length;
+
+  for (const row of windowRows) {
+    const booked = isBooked(row, bookedLeadIds);
+    const outcome = deriveConversationOutcome(
+      {
+        messages: row.messages,
+        capturedEmail: row.captured_email,
+        capturedPhone: row.captured_phone,
+        callBookedAt: booked ? (row.call_booked_at ?? row.created_at) : null,
+        lastMessageAt: null,
+        createdAt: row.created_at,
+      },
+      now,
+    );
+
+    if (outcome === "booked") result.booked += 1;
+    else if (outcome === "calendar_abandoned") result.calendarAbandoned += 1;
+    else if (outcome === "captured_no_booking") result.capturedNoBooking += 1;
+    else if (outcome === "left_no_contact") result.leftNoContact += 1;
+    else result.open += 1;
+
+    if (askedAboutCost(row.messages)) {
+      result.costQuestion.asked += 1;
+      if (calendarWasShown(row.messages)) result.costQuestion.sawCalendar += 1;
+      if (isCaptured(row)) result.costQuestion.captured += 1;
+      if (booked) result.costQuestion.booked += 1;
+    }
+  }
+
+  return result;
 }
 
 function isCaptured(row: ConversationRow): boolean {

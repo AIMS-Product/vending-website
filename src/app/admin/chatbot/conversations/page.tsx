@@ -20,10 +20,21 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+const OUTCOME_PARAMS: readonly string[] = [
+  "all",
+  "booked",
+  "calendar_abandoned",
+  "captured_no_booking",
+  "left_no_contact",
+  "open",
+  "asked_about_cost",
+];
+
 type SearchParams = {
   q?: string | string[];
   sort?: string | string[];
   flag?: string | string[];
+  outcome?: string | string[];
 };
 
 const EMPTY_RESULT: AdminChatbotConversationsResult = {
@@ -41,6 +52,15 @@ const EMPTY_RESULT: AdminChatbotConversationsResult = {
     followup_needed: 0,
     handoff_missed: 0,
   },
+  outcomeCounts: {
+    booked: 0,
+    calendar_abandoned: 0,
+    captured_no_booking: 0,
+    left_no_contact: 0,
+    open: 0,
+  },
+  costQuestionCount: 0,
+  outcomesTrustworthy: false,
 };
 
 export default async function AdminChatbotConversationsPage({
@@ -56,11 +76,16 @@ export default async function AdminChatbotConversationsPage({
   const sort =
     (singleParam(params.sort) as AdminChatbotSort | undefined) ?? "newest";
   const flag = singleParam(params.flag) ?? "all";
+  // An unknown ?outcome= would filter nothing and leave no chip highlighted,
+  // so it falls back to "all" rather than rendering a list that silently
+  // disagrees with its own controls.
+  const outcomeParam = singleParam(params.outcome) ?? "all";
+  const outcome = OUTCOME_PARAMS.includes(outcomeParam) ? outcomeParam : "all";
 
   let result = EMPTY_RESULT;
   let loadError = false;
   try {
-    result = await adminListConversations({ q, sort, flag });
+    result = await adminListConversations({ q, sort, flag, outcome });
   } catch (error) {
     console.warn("chatbot conversations list failed", {
       error: error instanceof Error ? error.message : "unknown error",
@@ -96,6 +121,7 @@ export default async function AdminChatbotConversationsPage({
         q={q}
         sort={sort}
         flag={flag}
+        outcome={outcome}
       />
     </AdminShell>
   );

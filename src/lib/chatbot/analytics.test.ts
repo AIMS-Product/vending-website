@@ -261,3 +261,118 @@ describe("getChatbotAnalytics funnels", () => {
     expect(analytics.funnels.d30.conversations).toBe(1);
   });
 });
+
+describe("outcome rollup", () => {
+  const calendarTranscript = (question: string) => [
+    { role: "user", content: question, ts: daysAgo(3) },
+    {
+      role: "assistant",
+      content: "Opened the booking calendar in the chat.",
+      ts: daysAgo(3),
+      kind: "calendar",
+    },
+  ];
+
+  it("splits the last 30 days by what actually happened", async () => {
+    const analytics = await getChatbotAnalytics({
+      now: () => NOW,
+      client: fakeClient({
+        rows: [
+          {
+            id: "booked",
+            created_at: daysAgo(3),
+            message_count: 5,
+            messages: calendarTranscript("How much does it cost to start?"),
+            captured_email: "booked@example.com",
+            call_booked_at: daysAgo(3),
+          },
+          {
+            id: "abandoned",
+            created_at: daysAgo(3),
+            message_count: 3,
+            messages: calendarTranscript("How much does it cost to start?"),
+          },
+          {
+            id: "captured-only",
+            created_at: daysAgo(4),
+            message_count: 4,
+            messages: [
+              { role: "user", content: "How does the program work?", ts: daysAgo(4) },
+            ],
+            captured_email: "warm@example.com",
+          },
+          {
+            id: "gone",
+            created_at: daysAgo(5),
+            message_count: 1,
+            messages: [
+              { role: "user", content: "where do i sign up", ts: daysAgo(5) },
+            ],
+          },
+        ],
+      }) as never,
+    });
+
+    expect(analytics.outcomes.d30).toMatchObject({
+      days: 30,
+      total: 4,
+      booked: 1,
+      calendarAbandoned: 1,
+      capturedNoBooking: 1,
+      leftNoContact: 1,
+      open: 0,
+    });
+    // Both cost askers saw a calendar; only one of them booked.
+    expect(analytics.outcomes.d30.costQuestion).toEqual({
+      asked: 2,
+      sawCalendar: 2,
+      captured: 1,
+      booked: 1,
+    });
+  });
+
+  it("counts a call reconciled through the lead row as booked, not abandoned", async () => {
+    const analytics = await getChatbotAnalytics({
+      now: () => NOW,
+      client: fakeClient({
+        rows: [
+          {
+            id: "reconciled",
+            created_at: daysAgo(2),
+            message_count: 4,
+            messages: calendarTranscript("what does it cost?"),
+            lead_submission_id: "lead-1",
+          },
+        ],
+        bookedLeadIds: ["lead-1"],
+      }) as never,
+    });
+
+    expect(analytics.outcomes.d30.booked).toBe(1);
+    expect(analytics.outcomes.d30.calendarAbandoned).toBe(0);
+  });
+
+  it("leaves a chat that is still moving out of the lost buckets", async () => {
+    const analytics = await getChatbotAnalytics({
+      now: () => NOW,
+      client: fakeClient({
+        rows: [
+          {
+            id: "live",
+            created_at: new Date(NOW.getTime() - 60_000).toISOString(),
+            message_count: 2,
+            messages: [
+              {
+                role: "user",
+                content: "How much does it cost?",
+                ts: new Date(NOW.getTime() - 60_000).toISOString(),
+              },
+            ],
+          },
+        ],
+      }) as never,
+    });
+
+    expect(analytics.outcomes.d7).toMatchObject({ open: 1, leftNoContact: 0 });
+  });
+});

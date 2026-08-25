@@ -37,6 +37,54 @@ const CAPTURE_OFFERED_KEY = "vp_chat_capture_offered";
 const EXIT_INTENT_OFFERED_KEY = "vp_chat_exit_intent_offered";
 const DEFAULT_BRAND_COLOR = "#2a8fcc";
 const ON_INTENT_DELAY_MS = 800;
+/**
+ * How long the in-chat calendar gets alone with the visitor before the capture
+ * card appears underneath it. Long enough not to talk over someone who is
+ * picking a time, short enough to still be there when they decide not to.
+ */
+const CALENDAR_CAPTURE_DELAY_MS = 45_000;
+
+/**
+ * Copy for the inline capture card, per trigger. The calendar variant asks for
+ * a reason the visitor already has ("none of these times work") rather than
+ * repeating an offer they just declined.
+ */
+/**
+ * The origin of the Calendly embed currently in the transcript. Used to check
+ * postMessage senders, so it must come from the URL we actually rendered.
+ */
+function calendarOrigin(messages: ChatDisplayMessage[]): string | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.kind !== "calendar") continue;
+    const url = message.data?.url;
+    if (typeof url !== "string") continue;
+    try {
+      return new URL(url).origin;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+const CAPTURE_CARD_COPY = {
+  on_intent: {
+    title: "Want us to follow up?",
+    body: "Leave your email and the team can send more details.",
+  },
+  exit_intent: {
+    title: "Before you go",
+    body: "Before you go, want me to email you this conversation plus the free roadmap?",
+  },
+  calendar_shown: {
+    // No promise of a price: the bot is under an absolute rule never to state
+    // one, so "I will send the breakdown" would be a promise it cannot keep.
+    // A rep following up from Close is what actually happens next.
+    title: "None of those times work?",
+    body: "Leave your email and the team will follow up with times that do.",
+  },
+} as const;
 const LOOSE_EMAIL_PATTERN = /[^\s@]+@[^\s@]+\.[^\s@]+/;
 // Human-feeling response timing (naturalness pass): a real reply never lands
 // instantly, so the typing indicator holds for a bit before the stream is
@@ -93,7 +141,7 @@ export function ChatWidget() {
   const [showInlineCapture, setShowInlineCapture] = useState(false);
   // Which trigger is showing the inline capture card — changes its copy.
   const [inlineCaptureContext, setInlineCaptureContext] = useState<
-    "on_intent" | "exit_intent"
+    "on_intent" | "exit_intent" | "calendar_shown"
   >("on_intent");
   const [error, setError] = useState<string | null>(null);
   // Transient "Mia is finding times…" line while a server-side tool runs.
@@ -110,6 +158,17 @@ export function ChatWidget() {
     readSessionFlag(EXIT_INTENT_OFFERED_KEY),
   );
   const hasGreetedRef = useRef(false);
+  // Mirrors of state the deferred calendar-capture timer has to read at fire
+  // time, minutes after the closure that armed it was created.
+  const capturedRef = useRef(captured);
+  const messagesRef = useRef<ChatDisplayMessage[]>([]);
+  const openRef = useRef(false);
+  const showInlineCaptureRef = useRef(false);
+  /** Set by the Calendly embed's own confirmation event. See the effect below. */
+  const bookedRef = useRef(false);
+  const calendarCaptureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const panelRef = useRef<HTMLDivElement>(null);
 
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
@@ -248,6 +307,108 @@ export function ChatWidget() {
     return () => timers.forEach(clearTimeout);
   }, [open, needsGate, config, historyLoaded]);
 
+  useEffect(() => {
+    capturedRef.current = captured;
+  }, [captured]);
+
+  /**
+   * The only in-session proof that a booking happened. The confirmation
+   * message the transcript eventually carries is written server-side by the
+   * Calendly webhook or the reconciler cron, minutes later, so nothing on this
+   * page can wait for it: without this listener the deferred capture card
+   * below would ask a visitor for their email seconds after they finished
+   * booking. Calendly posts `calendly.event_scheduled` from the embed as soon
+   * as the invitee confirms.
+   */
+  useEffect(() => {
+    const onCalendlyMessage = (event: MessageEvent) => {
+      // Origin taken from the calendar URL actually rendered, not a hardcoded
+      // host: NEXT_PUBLIC_CHATBOT_CALENDLY_URL can point at a Calendly custom
+      // domain, and a hardcoded check would stop matching with no error
+      // anywhere, silently restoring the bug this listener exists to prevent.
+      if (event.origin !== calendarOrigin(messagesRef.current)) return;
+      const data = event.data as { event?: unknown } | null;
+      if (!data || typeof data !== "object") return;
+      if (data.event !== "calendly.event_scheduled") return;
+      // They just gave Calendly their name and email. Asking again would be
+      // both redundant and a bad look under a confirmed booking.
+      bookedRef.current = true;
+      if (calendarCaptureTimerRef.current) {
+        clearTimeout(calendarCaptureTimerRef.current);
+        calendarCaptureTimerRef.current = null;
+      }
+      setCaptured(true);
+      writeSessionFlag(CAPTURED_KEY);
+      setShowInlineCapture(false);
+    };
+
+    window.addEventListener("message", onCalendlyMessage);
+    return () => window.removeEventListener("message", onCalendlyMessage);
+  }, []);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
+
+  useEffect(() => {
+    showInlineCaptureRef.current = showInlineCapture;
+  }, [showInlineCapture]);
+
+  useEffect(
+    () => () => {
+      if (calendarCaptureTimerRef.current) {
+        clearTimeout(calendarCaptureTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  /**
+   * The calendar used to end the conversation for us: showing it marked the
+   * visitor "captured" so no card would ever interrupt the booking, and a
+   * visitor who then did not book left us holding nothing at all. Most cost
+   * questions ended exactly there.
+   *
+   * Now the calendar still goes first and uninterrupted, and the capture card
+   * follows it only if the booking did not happen. Booking remains the win;
+   * this just stops a no-book being a total loss.
+   */
+  const armCalendarCapture = useCallback(() => {
+    // "off" is an admin decision that no capture card should ever appear.
+    if (config?.captureMode === "off") return;
+    if (calendarCaptureTimerRef.current) return;
+    // Once offered and dismissed, that is an answer. Re-asking is nagging.
+    if (hasOfferedCaptureRef.current) return;
+
+    calendarCaptureTimerRef.current = setTimeout(() => {
+      calendarCaptureTimerRef.current = null;
+      if (capturedRef.current || bookedRef.current) return;
+      // Booked in a previous session, or confirmed server-side since.
+      if (
+        messagesRef.current.some(
+          (message) => message.kind === "booking_confirmed",
+        )
+      ) {
+        return;
+      }
+      // Never swap the copy out from under an open card, and never queue one
+      // up behind a closed panel for the visitor to meet on some later visit.
+      if (showInlineCaptureRef.current || !openRef.current) return;
+      // Re-read, not the arm-time value: the card is commonly offered and
+      // dismissed inside this 45 second window, and a dismissal is an answer.
+      if (hasOfferedCaptureRef.current) return;
+
+      hasOfferedCaptureRef.current = true;
+      writeSessionFlag(CAPTURE_OFFERED_KEY);
+      setInlineCaptureContext("calendar_shown");
+      setShowInlineCapture(true);
+    }, CALENDAR_CAPTURE_DELAY_MS);
+  }, [config?.captureMode]);
+
   const maybeOfferInlineCapture = useCallback(() => {
     if (
       config?.captureMode !== "on_intent" ||
@@ -260,8 +421,18 @@ export function ChatWidget() {
     }
     hasOfferedCaptureRef.current = true;
     writeSessionFlag(CAPTURE_OFFERED_KEY);
+    // Read through the ref, not the closed-over `messages`: this runs at the
+    // end of the same turn that appended the calendar, and the closure this
+    // callback was created with predates it. A calendar restored by the
+    // history fetch after a page navigation counts the same as one this
+    // session opened.
+    const context = messagesRef.current.some(
+      (message) => message.kind === "calendar",
+    )
+      ? "calendar_shown"
+      : "on_intent";
     setTimeout(() => {
-      setInlineCaptureContext("on_intent");
+      setInlineCaptureContext(context);
       setShowInlineCapture(true);
     }, ON_INTENT_DELAY_MS);
   }, [config?.captureMode, config?.captureAggressiveness, captured]);
@@ -278,6 +449,16 @@ export function ChatWidget() {
    */
   const offerExitIntent = useCallback(async () => {
     const sessionId = sessionIdRef.current;
+    // Nothing is offered to someone who already booked, whether we learned it
+    // from the embed this session or from a confirmation the server wrote.
+    if (
+      bookedRef.current ||
+      messagesRef.current.some(
+        (message) => message.kind === "booking_confirmed",
+      )
+    ) {
+      return;
+    }
     const showCaptureCard = () => {
       setInlineCaptureContext("exit_intent");
       setShowInlineCapture(true);
@@ -288,6 +469,14 @@ export function ChatWidget() {
       return;
     }
 
+    // A calendar is already on screen. A second identical embed underneath it
+    // is not a stronger offer, it just looks broken, so the card is the only
+    // thing left to offer someone on their way out.
+    if (messagesRef.current.some((message) => message.kind === "calendar")) {
+      showCaptureCard();
+      return;
+    }
+
     try {
       const response = await fetch(
         `/api/chatbot/history?sessionId=${encodeURIComponent(sessionId)}`,
@@ -295,6 +484,14 @@ export function ChatWidget() {
       const data: ChatHistoryResponse | null = response.ok
         ? await response.json()
         : null;
+
+      // Server-side truth beats the local flag: a booking or a capture made in
+      // another tab since this session started shows up here first.
+      if (data?.captured) {
+        setCaptured(true);
+        writeSessionFlag(CAPTURED_KEY);
+        return;
+      }
 
       if (!data?.bookingUrl) {
         showCaptureCard();
@@ -335,7 +532,12 @@ export function ChatWidget() {
     const onMouseOut = (event: MouseEvent) => {
       if (hasOfferedExitIntentRef.current) return;
       if (showInlineCapture) return;
-      if (messages.some((message) => message.kind === "calendar")) return;
+      // A shown calendar no longer silences exit intent, because a visitor who
+      // did not book is exactly who this is for. offerExitIntent offers the
+      // capture card rather than a second calendar in that case.
+      if (messages.some((message) => message.kind === "booking_confirmed")) {
+        return;
+      }
       if (!messages.some((message) => message.role === "user")) return;
       // Standard exit-intent heuristic: the cursor left toward the top edge
       // of the viewport with no related target, i.e. it actually left the
@@ -483,10 +685,10 @@ export function ChatWidget() {
                 },
               ]);
               if (frame.kind === "calendar") {
-                // A visitor looking at a live calendar must not then be
-                // handed a "leave your email" card.
-                setCaptured(true);
-                writeSessionFlag(CAPTURED_KEY);
+                // Not marked captured: see armCalendarCapture. The card is
+                // deferred, not cancelled, so a visitor who looks at the
+                // calendar and leaves is still reachable.
+                armCalendarCapture();
               }
             }
           }
@@ -510,7 +712,7 @@ export function ChatWidget() {
         setIsWaiting(false);
       }
     },
-    [isWaiting, maybeOfferInlineCapture],
+    [isWaiting, maybeOfferInlineCapture, armCalendarCapture],
   );
 
   const submitCapture = useCallback(async (values: ChatCaptureValues) => {
@@ -620,16 +822,8 @@ export function ChatWidget() {
                   <ChatCaptureForm
                     variant="inline"
                     brandColor={brandColor}
-                    title={
-                      inlineCaptureContext === "exit_intent"
-                        ? "Before you go"
-                        : "Want us to follow up?"
-                    }
-                    body={
-                      inlineCaptureContext === "exit_intent"
-                        ? "Before you go, want me to email you this conversation plus the free roadmap?"
-                        : "Leave your email and the team can send more details."
-                    }
+                    title={CAPTURE_CARD_COPY[inlineCaptureContext].title}
+                    body={CAPTURE_CARD_COPY[inlineCaptureContext].body}
                     onSubmit={submitCapture}
                     onDismiss={() => setShowInlineCapture(false)}
                   />

@@ -15,6 +15,14 @@ export class ChatbotAdminError extends Error {
   }
 }
 
+import { fetchBookedLeadIds } from "@/lib/chatbot/analytics";
+import {
+  askedAboutCost,
+  deriveConversationOutcome,
+  type ChatbotConversationOutcome,
+} from "@/lib/chatbot/outcomes";
+
+export type { ChatbotConversationOutcome };
 export { CHATBOT_FLAGS, isChatbotFlag } from "@/lib/chatbot/flags";
 export type { ChatbotFlag } from "@/lib/chatbot/flags";
 import {
@@ -48,8 +56,18 @@ export type AdminChatbotConversationListItem = {
   messageCount: number;
   lastMessageAt: string;
   createdAt: string;
-  /** Set when a Calendly booking was attributed to this conversation. Null once cancelled. */
+  /**
+   * Truthy when this conversation led to a booked call. NOT a reliable
+   * timestamp: when the booking was reconciled onto the lead rather than the
+   * conversation we have no booking time of our own and this carries the
+   * conversation's last-activity stamp instead. Render it as a yes/no, never
+   * as a date. Null once cancelled.
+   */
   callBookedAt: string | null;
+  /** Derived from the transcript, not stored. See lib/chatbot/outcomes.ts. */
+  outcome: ChatbotConversationOutcome;
+  /** True when the visitor asked what it costs — the site's most common question. */
+  askedAboutCost: boolean;
   flags: ChatbotFlag[];
 };
 
@@ -59,6 +77,8 @@ export type AdminListConversationsInput = {
   q?: string | null;
   sort?: AdminChatbotSort;
   flag?: string | null;
+  /** One ChatbotConversationOutcome, or "all". */
+  outcome?: string | null;
 };
 
 export type AdminChatbotConversationsResult = {
@@ -68,10 +88,18 @@ export type AdminChatbotConversationsResult = {
   missedHandoffCount: number;
   badQualityCount: number;
   flagCounts: Record<ChatbotFlag, number>;
+  outcomeCounts: Record<ChatbotConversationOutcome, number>;
+  /** Of every conversation in the window, how many asked what it costs. */
+  costQuestionCount: number;
+  /**
+   * False when the booking column could not be read, which makes every outcome
+   * a guess. The UI hides the outcome filters and tiles rather than show them.
+   */
+  outcomesTrustworthy: boolean;
 };
 
 const LIST_FIELDS =
-  "id, session_id, status, captured_name, captured_email, captured_phone, messages, message_count, last_message_at, created_at, call_booked_at" as const;
+  "id, session_id, status, captured_name, captured_email, captured_phone, messages, message_count, last_message_at, created_at, call_booked_at, lead_submission_id" as const;
 
 // Pre-migration shape, same tolerant fallback as chatbot/config.ts — a deploy
 // ahead of the v2 migration loses the Booked badge, not the whole list.
@@ -106,7 +134,7 @@ export async function adminListConversations(
     | "message_count"
     | "last_message_at"
     | "created_at"
-  > & { call_booked_at?: string | null };
+  > & { call_booked_at?: string | null; lead_submission_id?: string | null };
 
   let data = loaded.data as ListRow[] | null;
   if (loaded.error) {
@@ -125,9 +153,29 @@ export async function adminListConversations(
   }
 
   const rows = data ?? [];
+  // False on the pre-migration fallback above, where call_booked_at is not
+  // selected at all: without it every booked conversation would derive as
+  // "saw the calendar, did not book". A wrong number is worse than none, so
+  // the surfaces hide the outcome split rather than print it.
+  const outcomesTrustworthy = !loaded.error;
 
   const ids = rows.map((row) => row.id);
-  const flagsByConversation = await fetchFlagsFor(client, ids);
+  const [flagsByConversation, booked] = await Promise.all([
+    fetchFlagsFor(client, ids),
+    outcomesTrustworthy
+      ? fetchBookedLeadIds(
+          client,
+          rows.map((row) => row.lead_submission_id),
+        )
+      : Promise.resolve({
+          ids: new Set<string>() as ReadonlySet<string>,
+          complete: false,
+        }),
+  ]);
+  const bookedLeadIds = booked.ids;
+  // An incomplete booking lookup would render reconciled bookings as
+  // abandoned, which is the one number this whole surface exists to get right.
+  const outcomesReportable = outcomesTrustworthy && booked.complete;
 
   let items: AdminChatbotConversationListItem[] = rows.map((row) => ({
     id: row.id,
@@ -140,7 +188,16 @@ export async function adminListConversations(
     messageCount: row.message_count ?? 0,
     lastMessageAt: row.last_message_at,
     createdAt: row.created_at,
-    callBookedAt: row.call_booked_at ?? null,
+    callBookedAt: bookedCallAt(row, bookedLeadIds),
+    outcome: deriveConversationOutcome({
+      messages: row.messages,
+      capturedEmail: row.captured_email,
+      capturedPhone: row.captured_phone,
+      callBookedAt: bookedCallAt(row, bookedLeadIds),
+      lastMessageAt: row.last_message_at,
+      createdAt: row.created_at,
+    }),
+    askedAboutCost: askedAboutCost(row.messages),
     flags: flagsByConversation.get(row.id) ?? [],
   }));
 
@@ -153,6 +210,13 @@ export async function adminListConversations(
   const badQualityCount = flagCounts.quality_bad;
   const totalCount = items.length;
 
+  const outcomeCounts = emptyOutcomeCounts();
+  let costQuestionCount = 0;
+  for (const item of items) {
+    outcomeCounts[item.outcome] += 1;
+    if (item.askedAboutCost) costQuestionCount += 1;
+  }
+
   const q = input.q?.trim().toLowerCase();
   if (q) {
     items = items.filter((item) => matchesSearch(item, q));
@@ -161,6 +225,18 @@ export async function adminListConversations(
   const flagFilter = input.flag?.trim();
   if (flagFilter && flagFilter !== "all" && isChatbotFlag(flagFilter)) {
     items = items.filter((item) => item.flags.includes(flagFilter));
+  }
+
+  // Not applied when the outcomes are not reportable: the chips and badges are
+  // hidden in that state, so a filter surviving in the URL would silently
+  // shrink the list with no visible control to clear it.
+  const outcomeFilter = outcomesReportable ? input.outcome?.trim() : null;
+  if (outcomeFilter && outcomeFilter !== "all") {
+    if (outcomeFilter === "asked_about_cost") {
+      items = items.filter((item) => item.askedAboutCost);
+    } else if (isConversationOutcome(outcomeFilter)) {
+      items = items.filter((item) => item.outcome === outcomeFilter);
+    }
   }
 
   items = sortConversations(items, input.sort ?? "newest");
@@ -172,7 +248,47 @@ export async function adminListConversations(
     missedHandoffCount,
     badQualityCount,
     flagCounts,
+    outcomeCounts,
+    costQuestionCount,
+    outcomesTrustworthy: outcomesReportable,
   };
+}
+
+/**
+ * When the booking is recorded on the lead rather than the conversation, we
+ * have no booking timestamp of our own. The conversation's own last-activity
+ * stamp stands in: the outcome only needs "yes, booked", and the badge reads
+ * off the same value the list already sorts by.
+ */
+function bookedCallAt(
+  row: {
+    call_booked_at?: string | null;
+    lead_submission_id?: string | null;
+    last_message_at: string;
+  },
+  bookedLeadIds: ReadonlySet<string>,
+): string | null {
+  if (row.call_booked_at) return row.call_booked_at;
+  if (row.lead_submission_id && bookedLeadIds.has(row.lead_submission_id)) {
+    return row.last_message_at;
+  }
+  return null;
+}
+
+function emptyOutcomeCounts(): Record<ChatbotConversationOutcome, number> {
+  return {
+    booked: 0,
+    calendar_abandoned: 0,
+    captured_no_booking: 0,
+    left_no_contact: 0,
+    open: 0,
+  };
+}
+
+function isConversationOutcome(
+  value: string,
+): value is ChatbotConversationOutcome {
+  return value in emptyOutcomeCounts();
 }
 
 function matchesSearch(

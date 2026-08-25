@@ -10,6 +10,7 @@ import type {
   AdminChatbotConversationListItem,
   AdminChatbotConversationsResult,
   AdminChatbotSort,
+  ChatbotConversationOutcome,
 } from "@/lib/services/chatbot-admin";
 
 const FLAG_LABELS: Record<ChatbotFlag, string> = {
@@ -20,6 +21,41 @@ const FLAG_LABELS: Record<ChatbotFlag, string> = {
   lead_low_intent: "Low intent",
   followup_needed: "Follow-up needed",
   handoff_missed: "Missed handoff",
+};
+
+/**
+ * The outcome filter, ordered by what the team should work first: people who
+ * saw a calendar and did not book, then people we can still reach, then the
+ * ones we lost outright. "Asked about cost" is not an outcome — it is the
+ * cohort cut, kept alongside because it is the site's most common question.
+ */
+const OUTCOME_CHIPS: { value: string; label: string }[] = [
+  { value: "calendar_abandoned", label: "Saw calendar, no booking" },
+  { value: "captured_no_booking", label: "Reachable, no booking" },
+  { value: "left_no_contact", label: "Left with nothing" },
+  { value: "booked", label: "Booked" },
+  { value: "open", label: "In progress" },
+  { value: "asked_about_cost", label: "Asked about cost" },
+];
+
+const OUTCOME_BADGES: Record<
+  ChatbotConversationOutcome,
+  { label: string; tone: string } | null
+> = {
+  booked: null,
+  calendar_abandoned: {
+    label: "Saw calendar, no booking",
+    tone: "bg-ui-warn-fill text-ui-warn-ink",
+  },
+  captured_no_booking: {
+    label: "No booking yet",
+    tone: "bg-ui-line text-ui-text-muted",
+  },
+  left_no_contact: {
+    label: "Nothing captured",
+    tone: "bg-ui-line text-ui-text-muted",
+  },
+  open: null,
 };
 
 const SORT_OPTIONS: { value: AdminChatbotSort; label: string }[] = [
@@ -33,11 +69,13 @@ export function ChatbotConversationsManager({
   q,
   sort,
   flag,
+  outcome,
 }: {
   result: AdminChatbotConversationsResult;
   q: string;
   sort: AdminChatbotSort;
   flag: string;
+  outcome: string;
 }) {
   return (
     <div className="grid gap-5">
@@ -47,33 +85,75 @@ export function ChatbotConversationsManager({
           value={result.totalCount}
           caption="conversations"
         />
-        <AdminMetricPanel
-          label="High intent"
-          value={result.highIntentCount}
-          caption="flagged"
-        />
-        <AdminMetricPanel
-          label="Missed handoffs"
-          value={result.missedHandoffCount}
-          caption="flagged"
-        />
-        <AdminMetricPanel
-          label="Bad quality"
-          value={result.badQualityCount}
-          caption="flagged"
-        />
+        {result.outcomesTrustworthy ? (
+          <>
+            <AdminMetricPanel
+              label="Booked"
+              value={result.outcomeCounts.booked}
+              caption="calls on the calendar"
+            />
+            <AdminMetricPanel
+              label="Saw calendar, no booking"
+              value={result.outcomeCounts.calendar_abandoned}
+              caption="the leak"
+            />
+            <AdminMetricPanel
+              label="Left with nothing"
+              value={result.outcomeCounts.left_no_contact}
+              caption="no contact captured"
+            />
+            <AdminMetricPanel
+              label="Asked about cost"
+              value={result.costQuestionCount}
+              caption="of all conversations"
+            />
+          </>
+        ) : (
+          // Pre-migration fallback: the outcome split is unknowable, so the
+          // strip keeps the flag metrics that still work rather than leaving
+          // a single lonely Total tile.
+          <>
+            <AdminMetricPanel
+              label="High intent"
+              value={result.highIntentCount}
+              caption="flagged"
+            />
+            <AdminMetricPanel
+              label="Missed handoffs"
+              value={result.missedHandoffCount}
+              caption="flagged"
+            />
+            <AdminMetricPanel
+              label="Bad quality"
+              value={result.badQualityCount}
+              caption="flagged"
+            />
+          </>
+        )}
       </AdminMetricStrip>
 
       <section className={adminPanelClass}>
         <div className="border-ui-line grid gap-3 border-b p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <SearchForm q={q} sort={sort} flag={flag} />
-            <SortNav active={sort} q={q} flag={flag} />
+            <SearchForm q={q} sort={sort} flag={flag} outcome={outcome} />
+            <SortNav active={sort} q={q} flag={flag} outcome={outcome} />
           </div>
+          {result.outcomesTrustworthy ? (
+            <OutcomeChips
+              active={outcome}
+              q={q}
+              sort={sort}
+              flag={flag}
+              counts={result.outcomeCounts}
+              costQuestionCount={result.costQuestionCount}
+              total={result.totalCount}
+            />
+          ) : null}
           <FlagChips
             active={flag}
             q={q}
             sort={sort}
+            outcome={outcome}
             counts={result.flagCounts}
             total={result.totalCount}
           />
@@ -103,7 +183,11 @@ export function ChatbotConversationsManager({
               </thead>
               <tbody className="divide-ui-line divide-y">
                 {result.items.map((item) => (
-                  <ConversationRow key={item.id} item={item} />
+                  <ConversationRow
+                    key={item.id}
+                    item={item}
+                    showOutcome={result.outcomesTrustworthy}
+                  />
                 ))}
               </tbody>
             </table>
@@ -124,7 +208,13 @@ export function ChatbotConversationsManager({
   );
 }
 
-function ConversationRow({ item }: { item: AdminChatbotConversationListItem }) {
+function ConversationRow({
+  item,
+  showOutcome,
+}: {
+  item: AdminChatbotConversationListItem;
+  showOutcome: boolean;
+}) {
   return (
     <tr className="hover:bg-ui-canvas">
       <td className="px-4 py-3">
@@ -161,6 +251,12 @@ function ConversationRow({ item }: { item: AdminChatbotConversationListItem }) {
               Booked
             </span>
           ) : null}
+          {showOutcome ? <OutcomeBadge outcome={item.outcome} /> : null}
+          {item.askedAboutCost ? (
+            <span className="rounded-ui bg-ui-line text-ui-text-muted inline-flex items-center px-1.5 py-0.5 text-[0.6875rem] font-medium">
+              Asked cost
+            </span>
+          ) : null}
         </div>
       </td>
       <td className="text-ui-text px-3 py-3 tabular-nums">
@@ -177,15 +273,18 @@ function SearchForm({
   q,
   sort,
   flag,
+  outcome,
 }: {
   q: string;
   sort: AdminChatbotSort;
   flag: string;
+  outcome: string;
 }) {
   return (
     <form method="GET" className="flex items-center gap-2">
       <input type="hidden" name="sort" value={sort} />
       <input type="hidden" name="flag" value={flag} />
+      <input type="hidden" name="outcome" value={outcome} />
       <input
         type="search"
         name="q"
@@ -207,10 +306,12 @@ function SortNav({
   active,
   q,
   flag,
+  outcome,
 }: {
   active: AdminChatbotSort;
   q: string;
   flag: string;
+  outcome: string;
 }) {
   return (
     <nav
@@ -220,7 +321,7 @@ function SortNav({
       {SORT_OPTIONS.map((option) => (
         <Link
           key={option.value}
-          href={conversationsHref({ q, flag, sort: option.value })}
+          href={conversationsHref({ q, flag, outcome, sort: option.value })}
           aria-current={active === option.value ? "page" : undefined}
           className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] transition ${
             active === option.value
@@ -239,12 +340,14 @@ function FlagChips({
   active,
   q,
   sort,
+  outcome,
   counts,
   total,
 }: {
   active: string;
   q: string;
   sort: AdminChatbotSort;
+  outcome: string;
   counts: Record<ChatbotFlag, number>;
   total: number;
 }) {
@@ -254,7 +357,7 @@ function FlagChips({
       aria-label="Flag filters"
     >
       <Link
-        href={conversationsHref({ q, sort, flag: "all" })}
+        href={conversationsHref({ q, sort, flag: "all", outcome })}
         aria-current={active === "all" ? "page" : undefined}
         className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] transition ${
           active === "all"
@@ -267,7 +370,7 @@ function FlagChips({
       {CHATBOT_FLAGS.map((flagValue) => (
         <Link
           key={flagValue}
-          href={conversationsHref({ q, sort, flag: flagValue })}
+          href={conversationsHref({ q, sort, flag: flagValue, outcome })}
           aria-current={active === flagValue ? "page" : undefined}
           className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] transition ${
             active === flagValue
@@ -286,15 +389,85 @@ function conversationsHref(params: {
   q: string;
   sort: AdminChatbotSort;
   flag: string;
+  outcome: string;
 }): string {
   const search = new URLSearchParams();
   if (params.q) search.set("q", params.q);
   if (params.sort !== "newest") search.set("sort", params.sort);
   if (params.flag !== "all") search.set("flag", params.flag);
+  if (params.outcome !== "all") search.set("outcome", params.outcome);
   const qs = search.toString();
   return qs
     ? `/admin/chatbot/conversations?${qs}`
     : "/admin/chatbot/conversations";
+}
+
+function OutcomeBadge({ outcome }: { outcome: ChatbotConversationOutcome }) {
+  const badge = OUTCOME_BADGES[outcome];
+  if (!badge) return null;
+  return (
+    <span
+      className={`rounded-ui inline-flex items-center px-1.5 py-0.5 text-[0.6875rem] font-medium ${badge.tone}`}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
+function OutcomeChips({
+  active,
+  q,
+  sort,
+  flag,
+  counts,
+  costQuestionCount,
+  total,
+}: {
+  active: string;
+  q: string;
+  sort: AdminChatbotSort;
+  flag: string;
+  counts: Record<ChatbotConversationOutcome, number>;
+  costQuestionCount: number;
+  total: number;
+}) {
+  const countFor = (value: string) =>
+    value === "asked_about_cost"
+      ? costQuestionCount
+      : (counts[value as ChatbotConversationOutcome] ?? 0);
+
+  return (
+    <nav
+      className="rounded-ui border-ui-line bg-ui-canvas inline-flex flex-wrap items-center gap-0.5 border p-0.5"
+      aria-label="Outcome filters"
+    >
+      <Link
+        href={conversationsHref({ q, sort, flag, outcome: "all" })}
+        aria-current={active === "all" ? "page" : undefined}
+        className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] transition ${
+          active === "all"
+            ? "bg-ui-surface text-ui-text shadow-ui font-medium"
+            : "text-ui-text-muted hover:text-ui-text"
+        }`}
+      >
+        Every outcome {total}
+      </Link>
+      {OUTCOME_CHIPS.map((chip) => (
+        <Link
+          key={chip.value}
+          href={conversationsHref({ q, sort, flag, outcome: chip.value })}
+          aria-current={active === chip.value ? "page" : undefined}
+          className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] transition ${
+            active === chip.value
+              ? "bg-ui-surface text-ui-text shadow-ui font-medium"
+              : "text-ui-text-muted hover:text-ui-text"
+          }`}
+        >
+          {chip.label} {countFor(chip.value)}
+        </Link>
+      ))}
+    </nav>
+  );
 }
 
 function relativeTime(iso: string): string {

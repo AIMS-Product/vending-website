@@ -58,6 +58,12 @@ export type AdminLeadListItem = {
   closeSyncStatus: string | null;
   closeSyncLastError: string | null;
   callBookedAt: string | null;
+  /**
+   * When the Close reconciler last checked this lead. Null means it has never
+   * been checked, so "no call booked" is unknown rather than false. The
+   * "No call booked" filter and its metric tile both key off this.
+   */
+  callReconciledAt: string | null;
   /** Close lead status label, or null when Close has no answer for this lead. */
   callStatus: string | null;
   /** The Close lead we synced no longer exists (merged or deleted). */
@@ -139,7 +145,7 @@ export class LeadAdminServiceError extends Error {
 }
 
 const LEAD_FIELDS =
-  "id,full_name,email,phone,message,state_region,business_stage,budget,timeline,lifecycle_status,qualification_summary,latest_qualification_session_id,close_sync_status,close_sync_last_error,call_booked_at,call_status,source_path,landing_path,source_page_slug,source_block_id,source_cta_tracking_name,utm_source,utm_medium,utm_campaign,metadata,created_at" as const;
+  "id,full_name,email,phone,message,state_region,business_stage,budget,timeline,lifecycle_status,qualification_summary,latest_qualification_session_id,close_sync_status,close_sync_last_error,call_booked_at,call_status,call_reconciled_at,source_path,landing_path,source_page_slug,source_block_id,source_cta_tracking_name,utm_source,utm_medium,utm_campaign,metadata,created_at" as const;
 const SESSION_FIELDS =
   "id,lead_submission_id,status,answer_count,current_question_id,normalized_summary,experiment_key,variant_key,started_at,completed_at,stale_at,expires_at,created_at" as const;
 const ANSWER_FIELDS =
@@ -457,6 +463,7 @@ function mapLeadListItem(
     closeSyncStatus: lead.close_sync_status,
     closeSyncLastError: lead.close_sync_last_error,
     callBookedAt: lead.call_booked_at,
+    callReconciledAt: lead.call_reconciled_at,
     // The reconciler's internal marker never reaches the client: the UI gets a
     // flag, not a sentinel string it would have to know how to spell.
     callStatus:

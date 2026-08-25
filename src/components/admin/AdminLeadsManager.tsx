@@ -118,6 +118,13 @@ export function AdminLeadsManager({
     (lead) => lead.lifecycleStatus === "qualified",
   ).length;
   const bookedCount = leads.filter((lead) => lead.callBookedAt).length;
+  // The number this page never showed: people who submitted a form and never
+  // got on a calendar. Same two columns as the "No call booked" filter in
+  // lead-admin.ts, so the tile and the filtered list can never disagree; a
+  // lead the reconciler has not reached yet is unknown, not un-booked.
+  const notBookedCount = leads.filter(
+    (lead) => !lead.callBookedAt && lead.callReconciledAt !== null,
+  ).length;
   const failedSyncCount = leads.filter((lead) =>
     ["failed", "needs_review", "dead_letter"].includes(
       lead.closeSyncStatus ?? "",
@@ -158,6 +165,13 @@ export function AdminLeadsManager({
           tone="green"
           label="Booked a call"
           value={bookedCount}
+          caption="of the leads shown"
+        />
+        <AdminMetricPanel
+          icon="help"
+          tone={notBookedCount ? "amber" : "slate"}
+          label="No call booked"
+          value={notBookedCount}
           caption="of the leads shown"
         />
         <AdminMetricPanel

@@ -21,6 +21,7 @@ const lead: AdminLeadListItem = {
   closeSyncStatus: "failed",
   closeSyncLastError: "Close API key is not configured.",
   callBookedAt: "2026-08-21",
+  callReconciledAt: "2026-08-21",
   callStatus: "☎️ Call Booked",
   callLeadMissing: false,
   sourcePath: "/resources/vending-machine-cost",

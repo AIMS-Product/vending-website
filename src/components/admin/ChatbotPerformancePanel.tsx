@@ -10,6 +10,7 @@ import type { ChatbotAnalytics } from "@/lib/chatbot/analytics";
 import type { ChatbotConfig } from "@/lib/chatbot/config";
 
 const TABS = [
+  { key: "outcomes", label: "Who did not book" },
   { key: "volume", label: "Volume" },
   { key: "questions", label: "Questions" },
   { key: "prospects", label: "Prospects" },
@@ -99,6 +100,7 @@ export function ChatbotPerformancePanel({
         })}
       </nav>
 
+      {tab === "outcomes" ? <OutcomesTab analytics={analytics} /> : null}
       {tab === "volume" ? <VolumeTab analytics={analytics} /> : null}
       {tab === "questions" ? <QuestionsTab analytics={analytics} /> : null}
       {tab === "prospects" ? <ProspectsTab analytics={analytics} /> : null}
@@ -306,6 +308,86 @@ function FunnelSplitStat({ label, value }: { label: string; value: number }) {
       <p className="text-ui-text mt-0.5 text-lg font-semibold tabular-nums">
         {value}
       </p>
+    </div>
+  );
+}
+
+/**
+ * The daily accountability view: of everyone who chatted, who is on a
+ * calendar, who is reachable, and who left holding nothing. The cost-question
+ * row is broken out because it is the most common opening message on the site
+ * and the one the bot answers with a calendar rather than a number, so it is
+ * where a change in the script shows up first.
+ */
+function OutcomesTab({ analytics }: { analytics: ChatbotAnalytics }) {
+  const windows = [analytics.outcomes.d7, analytics.outcomes.d30];
+  return (
+    <div className="grid gap-5">
+      {windows.map((period) => {
+        const unreachable = period.calendarAbandoned + period.leftNoContact;
+        return (
+          <section
+            key={period.days}
+            className={adminCardClass}
+            aria-label={`Conversation outcomes, last ${period.days} days`}
+          >
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className={adminEyebrowClass}>
+                Last {period.days} days &middot; {period.total} conversations
+              </h2>
+              <p className="text-ui-text-subtle text-xs tabular-nums">
+                {unreachable} we cannot contact
+              </p>
+            </div>
+
+            <div className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+              <FunnelSplitStat label="Booked a call" value={period.booked} />
+              <FunnelSplitStat
+                label="Saw the calendar, did not book"
+                value={period.calendarAbandoned}
+              />
+              <FunnelSplitStat
+                label="Gave details, no booking"
+                value={period.capturedNoBooking}
+              />
+              <FunnelSplitStat
+                label="Left with nothing"
+                value={period.leftNoContact}
+              />
+              <FunnelSplitStat label="Still in progress" value={period.open} />
+            </div>
+
+            <h3 className="text-ui-text mt-5 text-sm font-semibold">
+              Visitors who asked what it costs
+            </h3>
+            <p className="text-ui-text-subtle mt-1 text-xs">
+              The bot never states a price. It opens the calendar instead, so
+              this cohort is the clearest read on whether that is working. These
+              four are counted independently, not as stages: someone can book
+              through Calendly without ever leaving contact details in the chat,
+              so Booked can exceed the count above it.
+            </p>
+            <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+              <FunnelSplitStat
+                label="Asked about cost"
+                value={period.costQuestion.asked}
+              />
+              <FunnelSplitStat
+                label="Were shown a calendar"
+                value={period.costQuestion.sawCalendar}
+              />
+              <FunnelSplitStat
+                label="Left contact details"
+                value={period.costQuestion.captured}
+              />
+              <FunnelSplitStat
+                label="Booked"
+                value={period.costQuestion.booked}
+              />
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
