@@ -1,3 +1,5 @@
+import { listSolutionSlugs } from "@/lib/content/solutions";
+
 /**
  * Public paths under a builder route prefix that are served by a real app
  * route instead of a `seo_pages` row.
@@ -15,6 +17,10 @@ export const CODED_ROUTE_PATHS: ReadonlySet<string> = new Set([
   "/resources/roadmap-thank-you",
   "/resources/finance-templates",
   "/resources/finance-templates-thank-you",
+  // `/solutions` is a builder prefix, so every coded solution page has to be
+  // registered here or the proxy 404s it. Derived from the registry so adding
+  // a solution stays a one-file change.
+  ...listSolutionSlugs().map((slug) => `/solutions/${slug}`),
 ]);
 
 export function isCodedRoutePath(path: string) {
