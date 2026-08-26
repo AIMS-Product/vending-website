@@ -236,7 +236,7 @@ export const terms: LegalDoc = {
       blocks: [
         {
           kind: "p",
-          text: "We will retain your data for as long as necessary to provide services and fulfill the purposes outlined in these Terms. You may request deletion of your data at any time by contacting us at privacy@modernamenities.com (for VENDInsights) or privacy@vendingpreneurs.com (for membership services). Upon receiving a deletion request:",
+          text: "We will retain your data for as long as necessary to provide services and fulfill the purposes outlined in these Terms. You may request deletion of your data at any time by contacting us at privacy@modern-amenities.com (for VENDInsights) or privacy@vendingpreneurs.com (for membership services). Upon receiving a deletion request:",
         },
         {
           kind: "ul",
@@ -290,7 +290,7 @@ export const terms: LegalDoc = {
         },
         {
           kind: "p",
-          text: "To exercise any of these rights, contact us at privacy@modernamenities.com (VENDInsights) or privacy@vendingpreneurs.com (membership services). We will respond to your request within 30 days.",
+          text: "To exercise any of these rights, contact us at privacy@modern-amenities.com (VENDInsights) or privacy@vendingpreneurs.com (membership services). We will respond to your request within 30 days.",
         },
       ],
     },
@@ -384,7 +384,7 @@ export const terms: LegalDoc = {
         },
         {
           kind: "p",
-          text: "You may terminate your VENDInsights participation at any time by contacting us at privacy@modernamenities.com. Anonymized data may remain in aggregated datasets after termination.",
+          text: "You may terminate your VENDInsights participation at any time by contacting us at privacy@modern-amenities.com. Anonymized data may remain in aggregated datasets after termination.",
         },
       ],
     },
@@ -426,7 +426,7 @@ export const terms: LegalDoc = {
         },
         {
           kind: "p-strong",
-          text: "Modern Amenities (VENDInsights) — Email: privacy@modernamenities.com",
+          text: "Modern Amenities (VENDInsights) — Email: privacy@modern-amenities.com",
         },
       ],
     },

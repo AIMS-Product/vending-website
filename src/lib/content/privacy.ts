@@ -539,7 +539,7 @@ export const privacy: LegalDoc = {
           kind: "ul",
           items: [
             {
-              text: "Email: privacy@vendingpreneurs.com (membership services) or privacy@modernamenities.com (VENDInsights)",
+              text: "Email: privacy@vendingpreneurs.com (membership services) or privacy@modern-amenities.com (VENDInsights)",
             },
             { text: "Mail: 91302 Coburg Industrial Way, Coburg, OR 97408" },
             { text: "SMS Opt-Out: Reply STOP to any SMS message" },
@@ -672,7 +672,7 @@ export const privacy: LegalDoc = {
         },
         {
           kind: "p-strong",
-          text: "Modern Amenities (VENDInsights) — Attention: Privacy Officer — Email: privacy@modernamenities.com",
+          text: "Modern Amenities (VENDInsights) — Attention: Privacy Officer — Email: privacy@modern-amenities.com",
         },
         {
           kind: "p-strong",
