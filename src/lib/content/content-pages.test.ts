@@ -45,6 +45,14 @@ const registries: ReadonlyArray<{
 // Every internal /solutions/* or /process/* link on any page has to land on a
 // page that exists — these registries cross-link heavily, and a typo'd slug
 // is a 404 the build will not complain about.
+/**
+ * Every `id` the shared template puts in the document that a record is allowed
+ * to link to. `how-it-works` is the journey section in `ContentJourney`; the
+ * per-step `step-N` ids are generated, not authored, so they are not offered
+ * here. Keep in step with the template.
+ */
+const TEMPLATE_ANCHORS = ["#how-it-works"];
+
 const knownPaths = new Set(
   registries.flatMap((registry) =>
     registry.slugs.map((slug) => `${registry.prefix}/${slug}`),
@@ -111,6 +119,14 @@ describe.each(registries)("$name content", (registry) => {
         ...page.related.map((item) => item.href),
       ];
       for (const href of hrefs) {
+        // An in-page anchor is the third legal shape, alongside a site-relative
+        // path and an absolute https URL. Only the ids the template actually
+        // renders are allowed: a `#`-link to an id nothing emits is a dead CTA
+        // that no 404 check would ever catch.
+        if (href.startsWith("#")) {
+          expect(TEMPLATE_ANCHORS).toContain(href);
+          continue;
+        }
         expect(href.startsWith("/") || href.startsWith("https://")).toBe(true);
         // /apply 301s to /contact, so linking it costs a redirect hop.
         expect(href.startsWith("/apply")).toBe(false);

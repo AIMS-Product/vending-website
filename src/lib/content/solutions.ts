@@ -27,22 +27,22 @@ export const solutions: ReadonlyArray<Solution> = [
     parent: PARENT,
     breadcrumb: "Locations",
     eyebrow: "VendScout",
-    title: "Find, pitch, and secure vending locations",
+    title: "Find, Pitch, and Secure Vending Machine Locations",
     intro:
-      "Stop driving neighborhoods hoping to spot a good lobby. VendScout hands you a ranked list of real locations, a professional website that makes you look like the obvious choice, and a signed contract the same day you pitch — so the only thing standing between you and your next machine is a phone call.",
-    metaTitle: "VendScout — Find, Pitch, and Secure Vending Locations",
+      "Stop driving neighborhoods hoping to spot a good lobby. VendScout ranks real locations, builds your pitch site, and gets contracts signed, so the only thing standing between you and your next machine is a phone call.",
+    metaTitle: "VendScout · Vendingpreneurs' Vending Machine Location Finder",
     metaDescription:
-      "VendScout ranks real vending locations off the map, builds you a professional site that pitches for you, and sends an e-signature-ready contract before the prospect goes cold.",
+      "VendScout is Vendingpreneurs' vending machine location finder: ranked leads, a pitch-ready website, and a signed contract, all in one system.",
     ctas: [
       { label: "Start Your Vending Business", href: "/contact" },
-      { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
+      { label: "See How it Works", href: "#how-it-works", variant: "ghost" },
     ],
     hero: {
       video: "https://www.vendhubhq.com/sales/videos/vendscout-v1.mp4",
       poster: "https://www.vendhubhq.com/sales/videos/vendscout-v1-poster.jpg",
       width: 1700,
       height: 1032,
-      alt: "VendScout product walkthrough",
+      alt: "VendScout dashboard showing ranked vending machine location leads",
     },
 
     // Real operator quotes go here — three of them, one per stage (finding,
@@ -50,18 +50,17 @@ export const solutions: ReadonlyArray<Solution> = [
     // so the page ships without placeholder proof.
     testimonials: [],
 
-    thesis:
-      "You don't need a sales background to win locations. You need a system that does the finding, the pitching, and the paperwork for you — VendScout is that system.",
+    thesis: "Finding locations has never been easier.",
     steps: [
       {
         label: "01 · Find",
         title: "Ranked locations, in seconds",
-        body: "Qualified offices, gyms, hospitals, and apartments pulled off the map — not a list you guess at.",
+        body: "Qualified offices, gyms, hospitals, and apartments pulled off the map. No guesswork.",
       },
       {
         label: "02 · Pitch",
         title: "A site that pitches for you",
-        body: "Your branding, your domain, live in minutes — so you look like the obvious choice.",
+        body: "Your branding, your domain, live in minutes.",
       },
       {
         label: "03 · Secure",
@@ -69,16 +68,17 @@ export const solutions: ReadonlyArray<Solution> = [
         body: "Auto-filled, e-signature-ready contracts sent before the prospect goes cold.",
       },
     ],
+    stepsCta: { label: "Find Locations", href: "/contact" },
     features: [
       {
         eyebrow: "Find locations",
-        title: "Your next 100 locations, found before your coffee gets cold.",
-        body: "Driving routes and cold pop-ins are how most new operators burn their first three months. VendScout pulls ranked, qualified locations off Google Maps in seconds — the offices, gyms, hospitals, and apartment complexes actually worth pitching, not a list you have to guess your way through.",
+        title: "Your next 100 locations, found before your coffee gets cold",
+        body: "Driving routes and cold pop-ins burn most new operators' first three months. VendScout pulls ranked, qualified locations off Google Maps in seconds: offices, gyms, hospitals, and apartment complexes actually worth pitching.",
         points: [
-          "Search any zip and radius: offices, gyms, hospitals, apartments, schools",
-          "Every result comes with phone, email, address, and reviews already pulled",
-          "Ranked by foot-traffic signal and location type, not guesswork",
-          "One click imports your picks straight into your pipeline — no retyping, no spreadsheets",
+          "Search by zip and radius: offices, gyms, hospitals, apartments, schools",
+          "Phone, email, address, and reviews pulled for every result",
+          "Ranked by foot traffic and location type",
+          "One click imports your picks into your pipeline",
         ],
         media: {
           video: "https://www.vendhubhq.com/sales/videos/scout-map.mp4",
@@ -90,13 +90,13 @@ export const solutions: ReadonlyArray<Solution> = [
       },
       {
         eyebrow: "Pitch with confidence",
-        title: "Show up looking like you've done this a hundred times.",
-        body: "Locations don't sign with operators who look like a side hustle. VendScout builds you a real vending website in minutes — your branding, your domain, a page that makes the pitch before you even open your mouth. Send the link before the meeting and walk in as the professional choice, not the unknown.",
+        title: "Show up looking like you've done this a hundred times",
+        body: "Locations don't sign with operators who look like a side hustle. VendScout builds your professional vending business website in minutes: your branding, your domain, live before your first meeting. Send the link ahead and walk in as the obvious choice.",
         points: [
-          "Pick a template and add your colors — live in minutes",
+          "Pick a template, add your colors, live in minutes",
           "Custom domain support, like yourvendingbiz.com",
-          "Built-in lead-capture forms wired straight to your pipeline",
-          "SEO-optimized pages so locations can find you first",
+          "Lead-capture forms wired to your pipeline",
+          "SEO-optimized pages so locations find you first",
         ],
         media: {
           video: "https://www.vendhubhq.com/sales/videos/website.mp4",
@@ -109,12 +109,12 @@ export const solutions: ReadonlyArray<Solution> = [
       {
         eyebrow: "Secure the deal",
         title:
-          "Weeks of “let me run it by corporate” become one signed contract.",
-        body: "The deal dies in the gap between the handshake and the paperwork. VendScout closes that gap: pick a template, auto-fill it from your CRM, and send a branded, e-signature-ready contract before the prospect has time to go cold.",
+          "Weeks of “let me run it by corporate” become one signed contract",
+        body: "The deal dies in the gap between the handshake and the paperwork. VendScout closes it: pick a template, auto-fill from your CRM, and send a branded, e-signature-ready contract before the prospect goes cold.",
         points: [
-          "Templates for the common deal structures, ready to send",
+          "Templates for common deal structures",
           "Auto-populated with location, operator, term, and commission",
-          "Photorealistic mockups so the location can picture the machine in place",
+          "Photorealistic mockups of the machine in place",
           "Branded PDF export, e-signature ready",
         ],
         media: {
@@ -128,11 +128,11 @@ export const solutions: ReadonlyArray<Solution> = [
       },
     ],
     closing: {
-      title: "Your first location is closer than you think.",
-      body: "Every operator in the Vendingpreneurs community started with one signed location. VendScout is how you get there faster — find the lead, make the pitch, sign the deal.",
+      title: "Your first location is closer than you think",
+      body: "Every operator in the Vendingpreneurs community started with one signed location. VendScout gets you there faster: find the lead, make the pitch, sign the deal.",
       ctas: [
         { label: "Start Your Vending Business", href: "/contact" },
-        { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
+        { label: "See How it Works", href: "#how-it-works", variant: "ghost" },
       ],
     },
     related: [
@@ -168,7 +168,7 @@ export const solutions: ReadonlyArray<Solution> = [
       "Pre-negotiated, below-retail pricing across 5,000+ SKUs. Buying through the right channels moves product cost from roughly 50% of sales toward 33% — the difference between a busy machine and a profitable one.",
     ctas: [
       { label: "Start Your Vending Business", href: "/contact" },
-      { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
+      { label: "See How it Works", href: "#how-it-works", variant: "ghost" },
     ],
     hero: {
       video: "https://www.vendhubhq.com/sales/videos/pantry.mp4",
@@ -292,7 +292,7 @@ export const solutions: ReadonlyArray<Solution> = [
       "Combo machines, chilled units, micro markets, and coffee service earn in different rooms. What each format costs to run, what it grosses, and how long it takes to pay itself back.",
     ctas: [
       { label: "Start Your Vending Business", href: "/contact" },
-      { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
+      { label: "See How it Works", href: "#how-it-works", variant: "ghost" },
     ],
     hero: {
       video: "https://www.vendhubhq.com/sales/videos/equipment.mp4",
@@ -408,7 +408,7 @@ export const solutions: ReadonlyArray<Solution> = [
       "Multi-site and national vending accounts are one negotiation that places machines across many buildings. What they ask for, what they pay, and how to be ready before one lands.",
     ctas: [
       { label: "Talk to an operator", href: "/contact" },
-      { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
+      { label: "See How it Works", href: "#how-it-works", variant: "ghost" },
     ],
     testimonials: [],
     thesis:
@@ -517,7 +517,7 @@ export const solutions: ReadonlyArray<Solution> = [
       "Step-by-step training, weekly group coaching, and 1-on-1 ambassador sessions. 850+ entrepreneurs launched, 3,000+ locations placed, and a 90-day path to your first machine.",
     ctas: [
       { label: "See if your market is a fit", href: "/contact" },
-      { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
+      { label: "See How it Works", href: "#how-it-works", variant: "ghost" },
     ],
     testimonials: [],
     thesis:
@@ -623,7 +623,7 @@ export const solutions: ReadonlyArray<Solution> = [
       "365 Retail Markets, Alani Nu, Cantaloupe, Micromart, PepsiCo, Prime, Poppi, and Doritos. The equipment, product, and payment relationships behind every Vendingpreneurs member route.",
     ctas: [
       { label: "Start Your Vending Business", href: "/contact" },
-      { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
+      { label: "See How it Works", href: "#how-it-works", variant: "ghost" },
     ],
     testimonials: [],
     thesis:
@@ -729,7 +729,7 @@ export const solutions: ReadonlyArray<Solution> = [
       "Most vending operators finance rather than pay cash. How equipment notes work, what payback looks like at 18 to 24 months, and how to size a route you can actually service.",
     ctas: [
       { label: "Talk to an operator", href: "/contact" },
-      { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
+      { label: "See How it Works", href: "#how-it-works", variant: "ghost" },
     ],
     testimonials: [],
     thesis:
@@ -838,7 +838,7 @@ export const solutions: ReadonlyArray<Solution> = [
       "Weekly coaching calls, 1-on-1 ambassador sessions, and a live operator community. The questions that stop new operators get answered by people currently running routes.",
     ctas: [
       { label: "Start Your Vending Business", href: "/contact" },
-      { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
+      { label: "See How it Works", href: "#how-it-works", variant: "ghost" },
     ],
     testimonials: [],
     thesis:

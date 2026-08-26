@@ -132,6 +132,12 @@ export type ContentPage = {
   /** The one-sentence argument, set as a large centred h2. */
   thesis: string;
   steps: ReadonlyArray<PageStep>;
+  /**
+   * Optional single CTA under the step rail, for a page that can name the
+   * next action before the reader has scrolled all three blocks. Skipped when
+   * omitted — most pages let the closing card carry the ask.
+   */
+  stepsCta?: PageCta;
   features: ReadonlyArray<PageFeature>;
   closing: {
     title: string;

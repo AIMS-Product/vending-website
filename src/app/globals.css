@@ -78,6 +78,11 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
 
+  /* Exponential ease-out. Everything decelerates into place; nothing bounces
+     or overshoots. One curve for the whole public site so a tab highlight and
+     a card lift move with the same hand. */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+
   --color-brand-50: var(--brand-50);
   --color-brand-100: var(--brand-100);
   --color-brand-200: var(--brand-200);
@@ -226,6 +231,60 @@ body:has([data-hide-site-footer="true"]) > footer {
   .brand-marquee {
     animation: none;
   }
+}
+
+/* ── Scroll-linked reveals ───────────────────────────────────────────────
+   Content pages reveal their blocks as they enter the viewport. This is a
+   native scroll-driven animation, not JavaScript: no observer, no hydration
+   cost, and nothing to go wrong.
+
+   The default state is *visible*. The animation only ever applies inside the
+   @supports block, so a browser without `animation-timeline` (Safari and
+   Firefox today) and anyone who asked for reduced motion get the finished
+   layout with no fade at all — never a blank page waiting on a script.
+
+   Each `.reveal-item` gets its own `view()` timeline, so a list staggers by
+   its own geometry without a single hand-written animation-delay. */
+@keyframes reveal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal-block {
+      animation: reveal-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 5% entry 45%;
+    }
+
+    .reveal-item {
+      animation: reveal-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 50%;
+    }
+  }
+
+  /* Anchor jumps (the hero's "See how it works", every rail chip) glide
+     instead of teleporting. */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* The journey rail scrolls sideways on a phone. The chips are the affordance;
+   a scrollbar under them just adds a grey line to a bordered card. */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* News article body. Rendered from sanitised markdown via
