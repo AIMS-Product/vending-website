@@ -43,6 +43,7 @@ export const RESERVED_ROUTE_SEGMENTS = new Set([
   "process",
   "resources",
   "solutions",
+  "spam-policy",
   "terms",
   "thank-you-for-applying",
   "videos",

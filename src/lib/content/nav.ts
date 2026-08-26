@@ -48,6 +48,7 @@ export const footerColumns: ReadonlyArray<{
       { label: "Contact Us", href: "/contact" },
       { label: "Terms", href: "/terms" },
       { label: "Privacy Policy", href: "/privacy" },
+      { label: "Spam Policy", href: "/spam-policy" },
     ],
   },
 ];

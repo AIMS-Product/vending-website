@@ -18,4 +18,5 @@ export const staticRoutes = [
   { path: "/contact", priority: 0.8, changeFrequency: "monthly" },
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/spam-policy", priority: 0.3, changeFrequency: "yearly" },
 ] as const;
