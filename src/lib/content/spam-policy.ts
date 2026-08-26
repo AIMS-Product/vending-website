@@ -11,11 +11,10 @@ import type { LegalDoc } from "./legal";
  * If one changes, change the other — a contradiction between the two is the
  * kind of thing a complaint gets built on.
  *
- * Deliberately NOT claimed here: that our commercial email carries a valid
- * physical postal address. CAN-SPAM requires one, but no postal address is
- * published anywhere on this site, so the claim could not be verified when
- * this page was written. Confirm what the sending platform appends to a
- * footer, then add it to section 2 — do not add it on assumption.
+ * The postal address in section 6 is the one `privacy.ts` already publishes
+ * for Vendingpreneurs Membership Services. Keep the two identical: CAN-SPAM
+ * wants a real address, and two legal pages naming different ones is worse
+ * than either on its own.
  */
 export const spamPolicy: LegalDoc = {
   title: "Anti-Spam Policy",
@@ -61,6 +60,10 @@ export const spamPolicy: LegalDoc = {
             {
               lead: "Honor opt-outs promptly:",
               text: "act on opt-out requests in a timely manner after a request is received.",
+            },
+            {
+              lead: "Include a real address:",
+              text: "include a valid physical postal address for Vendingpreneurs, as the CAN-SPAM Act requires.",
             },
           ],
         },
@@ -126,7 +129,11 @@ export const spamPolicy: LegalDoc = {
       blocks: [
         {
           kind: "p",
-          text: "If you believe you have received an unsolicited message that violates this policy, or a message that improperly references this website, please contact us at support@vendingpreneurs.com so the matter can be reviewed.",
+          text: "If you believe you have received an unsolicited message that violates this policy, or a message that improperly references this website, please contact us so the matter can be reviewed.",
+        },
+        {
+          kind: "p-strong",
+          text: "Vendingpreneurs — Email: support@vendingpreneurs.com — Mail: 91302 Coburg Industrial Way, Coburg, OR 97408",
         },
         {
           kind: "p",
