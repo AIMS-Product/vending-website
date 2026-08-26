@@ -2,14 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import type {
-  Solution,
-  SolutionCta,
-  SolutionFeature,
-  SolutionMedia,
-  SolutionRelated,
-  SolutionStep,
-  SolutionTestimonial,
-} from "@/lib/content/solutions";
+  ContentPage as ContentPageData,
+  PageCta,
+  PageFeature,
+  PageMedia,
+  PageRelated,
+  PageStat,
+  PageStep,
+  PageTestimonial,
+} from "@/lib/content/content-page";
 
 const CARD =
   "rounded-[12px] border-2 border-[#111111] bg-white shadow-[8px_8px_0_#55b8e8]";
@@ -18,26 +19,26 @@ const SECTION = "px-5 py-20 lg:px-10 lg:py-28";
 const WRAP = "mx-auto max-w-[1500px]";
 
 /**
- * The `/solutions/<slug>` template. Every section is driven by the `Solution`
- * record; sections with no content (testimonials, related) are skipped rather
- * than rendered empty.
+ * The template behind `/solutions/<slug>` and `/process/<slug>`. Every section
+ * is driven by the record; sections with no content (testimonials, related)
+ * are skipped rather than rendered empty.
  */
-export function SolutionPage({ solution }: { solution: Solution }) {
+export function ContentPage({ page }: { page: ContentPageData }) {
   return (
     <>
-      <Hero solution={solution} />
-      {solution.testimonials.length > 0 && (
-        <Proof testimonials={solution.testimonials} />
+      <Hero page={page} />
+      {page.testimonials.length > 0 && (
+        <Proof testimonials={page.testimonials} />
       )}
-      <Thesis thesis={solution.thesis} steps={solution.steps} />
-      <Features features={solution.features} />
-      <Closing closing={solution.closing} />
-      {solution.related.length > 0 && <Related related={solution.related} />}
+      <Thesis thesis={page.thesis} steps={page.steps} />
+      <Features features={page.features} />
+      <Closing closing={page.closing} />
+      {page.related.length > 0 && <Related related={page.related} />}
     </>
   );
 }
 
-function Hero({ solution }: { solution: Solution }) {
+function Hero({ page }: { page: ContentPageData }) {
   return (
     <section className={`bg-white ${SECTION}`}>
       <div className={WRAP}>
@@ -50,34 +51,52 @@ function Hero({ solution }: { solution: Solution }) {
             </li>
             <li aria-hidden>›</li>
             <li>
-              <Link href="/solutions" className="hover:text-brand-700">
-                Solutions
+              <Link href={page.parent.href} className="hover:text-brand-700">
+                {page.parent.label}
               </Link>
             </li>
             <li aria-hidden>›</li>
             <li aria-current="page" className="text-[#111111]">
-              {solution.breadcrumb}
+              {page.breadcrumb}
             </li>
           </ol>
         </nav>
 
-        <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+        <div
+          className={
+            page.hero
+              ? "grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16"
+              : ""
+          }
+        >
           <div className="min-w-0">
-            <p className={EYEBROW}>{solution.eyebrow}</p>
-            <h1 className="mt-4 text-4xl leading-tight font-black break-words text-[#111111] uppercase sm:text-5xl lg:text-6xl">
-              {solution.title}
+            <p className={EYEBROW}>{page.eyebrow}</p>
+            {/* Without a visual beside it the headline carries the whole row,
+                so it gets the wider measure and the larger step. */}
+            <h1
+              className={`mt-4 text-4xl leading-tight font-black break-words text-[#111111] uppercase sm:text-5xl lg:text-6xl ${
+                page.hero ? "" : "max-w-5xl lg:text-7xl"
+              }`}
+            >
+              {page.title}
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 font-semibold text-slate-700">
-              {solution.intro}
+            <p
+              className={`mt-6 text-lg leading-8 font-semibold text-slate-700 ${
+                page.hero ? "max-w-xl" : "max-w-3xl"
+              }`}
+            >
+              {page.intro}
             </p>
-            <CtaRow ctas={solution.ctas} className="mt-8" />
+            <CtaRow ctas={page.ctas} className="mt-8" />
           </div>
-          <Media
-            media={solution.hero}
-            className="shadow-[10px_10px_0_#55b8e8]"
-            sizes="(max-width: 1024px) 100vw, 45vw"
-            priority
-          />
+          {page.hero && (
+            <Media
+              media={page.hero}
+              className="shadow-[10px_10px_0_#55b8e8]"
+              sizes="(max-width: 1024px) 100vw, 45vw"
+              priority
+            />
+          )}
         </div>
       </div>
     </section>
@@ -87,7 +106,7 @@ function Hero({ solution }: { solution: Solution }) {
 function Proof({
   testimonials,
 }: {
-  testimonials: ReadonlyArray<SolutionTestimonial>;
+  testimonials: ReadonlyArray<PageTestimonial>;
 }) {
   return (
     <section className={`bg-[#f5fbff] ${SECTION}`}>
@@ -132,7 +151,7 @@ function Thesis({
   steps,
 }: {
   thesis: string;
-  steps: ReadonlyArray<SolutionStep>;
+  steps: ReadonlyArray<PageStep>;
 }) {
   return (
     <section className={`bg-white ${SECTION}`}>
@@ -164,7 +183,7 @@ function Thesis({
   );
 }
 
-function Features({ features }: { features: ReadonlyArray<SolutionFeature> }) {
+function Features({ features }: { features: ReadonlyArray<PageFeature> }) {
   return (
     <section className={`bg-[#f5fbff] ${SECTION}`}>
       <div className={`${WRAP} flex flex-col gap-20 lg:gap-28`}>
@@ -186,38 +205,90 @@ function FeatureBlock({
   feature,
   mediaFirst,
 }: {
-  feature: SolutionFeature;
+  feature: PageFeature;
   mediaFirst: boolean;
 }) {
+  const { media } = feature;
+
+  const copy = (
+    <div className="min-w-0">
+      <p className={EYEBROW}>{feature.eyebrow}</p>
+      <h2
+        className={`mt-4 text-3xl leading-tight font-black break-words text-[#111111] uppercase sm:text-4xl ${
+          media ? "" : "max-w-4xl"
+        }`}
+      >
+        {feature.title}
+      </h2>
+      <p
+        className={`mt-5 text-lg leading-8 font-semibold text-slate-700 ${
+          media ? "" : "max-w-3xl"
+        }`}
+      >
+        {feature.body}
+      </p>
+      {/* At full width a single column of checks leaves half the row empty,
+          so the points run two-up from the large breakpoint. */}
+      <ul
+        className={`mt-7 gap-x-10 gap-y-4 ${
+          media ? "space-y-4" : "grid sm:grid-cols-2"
+        }`}
+      >
+        {feature.points.map((point) => (
+          <li key={point} className="flex gap-4">
+            <CheckIcon />
+            <span className="font-semibold text-slate-700">{point}</span>
+          </li>
+        ))}
+      </ul>
+      {feature.stats && feature.stats.length > 0 && (
+        <StatStrip stats={feature.stats} />
+      )}
+    </div>
+  );
+
+  if (!media) return copy;
+
   return (
     <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
       <Media
-        media={feature.media}
+        media={media}
         className={mediaFirst ? "" : "lg:order-2"}
         sizes="(max-width: 1024px) 100vw, 50vw"
       />
-      <div className="min-w-0">
-        <p className={EYEBROW}>{feature.eyebrow}</p>
-        <h2 className="mt-4 text-3xl leading-tight font-black break-words text-[#111111] uppercase sm:text-4xl">
-          {feature.title}
-        </h2>
-        <p className="mt-5 text-lg leading-8 font-semibold text-slate-700">
-          {feature.body}
-        </p>
-        <ul className="mt-7 space-y-4">
-          {feature.points.map((point) => (
-            <li key={point} className="flex gap-4">
-              <CheckIcon />
-              <span className="font-semibold text-slate-700">{point}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {copy}
     </div>
   );
 }
 
-function Closing({ closing }: { closing: Solution["closing"] }) {
+/**
+ * The figures a block is arguing with, set large. This is what replaced the
+ * decorative frame on number-heavy blocks: the numbers are the visual.
+ */
+function StatStrip({ stats }: { stats: ReadonlyArray<PageStat> }) {
+  return (
+    <dl className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {stats.map((stat) => (
+        <div
+          key={stat.label}
+          className="rounded-[12px] border-2 border-[#111111] bg-white p-6 shadow-[6px_6px_0_#55b8e8]"
+        >
+          <dt className="sr-only">{stat.label}</dt>
+          <dd>
+            <span className="block text-3xl leading-none font-black text-[#111111]">
+              {stat.value}
+            </span>
+            <span className="mt-3 block text-sm leading-6 font-semibold text-slate-600">
+              {stat.label}
+            </span>
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function Closing({ closing }: { closing: ContentPageData["closing"] }) {
   return (
     <section className={`bg-white ${SECTION}`}>
       <div
@@ -235,7 +306,7 @@ function Closing({ closing }: { closing: Solution["closing"] }) {
   );
 }
 
-function Related({ related }: { related: ReadonlyArray<SolutionRelated> }) {
+function Related({ related }: { related: ReadonlyArray<PageRelated> }) {
   return (
     <section className={`bg-[#f5fbff] ${SECTION}`}>
       <div className={WRAP}>
@@ -264,7 +335,7 @@ function CtaRow({
   ctas,
   className,
 }: {
-  ctas: ReadonlyArray<SolutionCta>;
+  ctas: ReadonlyArray<PageCta>;
   className?: string;
 }) {
   if (ctas.length === 0) return null;
@@ -298,7 +369,7 @@ function Media({
   sizes,
   priority = false,
 }: {
-  media: SolutionMedia;
+  media: PageMedia;
   className?: string;
   sizes: string;
   priority?: boolean;

@@ -3,6 +3,11 @@
  * lib/chatbot/site-knowledge.ts. Kept in its own zero-dependency module so
  * importing the route list (e.g. for the chatbot's route map, built on every
  * chat request) never pulls in sitemap.ts's DB-touching service imports.
+ *
+ * `/process` is deliberately absent: the section is on production but held back
+ * from search until its copy is signed off, and listing it here would have the
+ * chatbot recommending it. Add it when the `noindex` flags come off the steps —
+ * sitemap.ts already publishes the index at that point on its own.
  */
 export const staticRoutes = [
   { path: "/", priority: 1, changeFrequency: "weekly" },

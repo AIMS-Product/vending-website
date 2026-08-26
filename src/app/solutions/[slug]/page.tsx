@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SolutionPage } from "@/components/sections/SolutionPage";
+import { ContentPage } from "@/components/sections/ContentPage";
 import { getSolution, listSolutionSlugs } from "@/lib/content/solutions";
 
 type Params = { slug: string };
@@ -26,6 +26,9 @@ export async function generateMetadata({
   return {
     title,
     description,
+    // `follow` stays on: a held-back page should still pass link equity and
+    // let a crawler reach what it points at.
+    ...(solution.noindex ? { robots: { index: false, follow: true } } : {}),
     alternates: { canonical: `/solutions/${solution.slug}` },
     openGraph: {
       title,
@@ -41,5 +44,5 @@ export default async function Page({ params }: { params: Promise<Params> }) {
   const solution = getSolution(slug);
   if (!solution) notFound();
 
-  return <SolutionPage solution={solution} />;
+  return <ContentPage page={solution} />;
 }
