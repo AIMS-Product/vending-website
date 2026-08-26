@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/site";
 import { staticRoutes } from "@/lib/content/site-routes";
+import { listSolutionSlugs } from "@/lib/content/solutions";
 import { listPublishedSlugs } from "@/lib/services/news";
 import { listPublishedCaseStudySlugs } from "@/lib/services/case-studies";
 import { listSitemapSeoPages } from "@/lib/services/seo-page-public";
@@ -33,6 +34,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.7,
+    })),
+    ...listSolutionSlugs().map((slug) => ({
+      url: absoluteUrl(`/solutions/${slug}`),
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
     })),
     ...resourcePages.map((page) => ({
       url: absoluteUrl(page.route_path),
