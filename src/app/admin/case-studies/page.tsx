@@ -93,10 +93,7 @@ export default async function AdminCaseStudiesPage({
             </span>
             Blog and news
           </Link>
-          <Link
-            href="/admin/case-studies/new"
-            className={adminPrimaryButtonClass}
-          >
+          <Link href="/admin/case-studies/new" className={adminPrimaryButtonClass}>
             <span aria-hidden="true">
               <AdminIcon icon="plus" />
             </span>
