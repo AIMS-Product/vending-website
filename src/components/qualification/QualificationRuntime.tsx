@@ -7,7 +7,6 @@ import type { QualificationAnswerActionState } from "@/app/qualify/[sessionToken
 import type { QualificationQuestionSnapshot } from "@/lib/qualification/forms";
 import { filterVpOperatorPathQuestions } from "@/lib/qualification/vp-fields";
 import type { Json } from "@/types/database";
-import { cn } from "@/lib/utils";
 
 export type QualificationRuntimeSession = {
   status: "active" | "completed";
@@ -364,22 +363,17 @@ function controlForQuestion(
   }
 
   if (question.type === "consent") {
-    const selected = value === true;
     return (
-      <label
-        role="checkbox"
-        aria-checked={selected}
-        className={choiceRowClass(selected)}
-      >
+      <label className={choiceRowClass}>
         <input
-          className="sr-only"
+          className="peer sr-only"
           type="checkbox"
           name="answer_value"
           value="true"
-          defaultChecked={selected}
+          defaultChecked={value === true}
           {...ariaProps}
         />
-        <span className={indicatorClass(selected)} />
+        <span className={choiceIndicatorClass} />
         <span>{question.label}</span>
       </label>
     );
@@ -440,20 +434,15 @@ function ChoiceRows({
         const optionValue = option.value ?? option.id;
         const selected = values.includes(optionValue);
         return (
-          <label
-            key={option.id}
-            role={multiple ? "checkbox" : "radio"}
-            aria-checked={selected}
-            className={choiceRowClass(selected)}
-          >
+          <label key={option.id} className={choiceRowClass}>
             <input
-              className="sr-only"
+              className="peer sr-only"
               type={multiple ? "checkbox" : "radio"}
               name="answer_value"
               value={optionValue}
               defaultChecked={selected}
             />
-            <span className={indicatorClass(selected)} />
+            <span className={choiceIndicatorClass} />
             <span>{option.label}</span>
           </label>
         );
@@ -619,19 +608,22 @@ function textValue(value: Json | undefined) {
   return "";
 }
 
-function choiceRowClass(selected: boolean) {
-  return cn(
-    "flex min-h-14 cursor-pointer items-center gap-4 rounded-[8px] border-2 border-[#111111] bg-white px-4 py-3 text-base font-black text-slate-950 shadow-[4px_4px_0_#111111] transition focus-within:ring-2 focus-within:ring-[#0b63f6] focus-within:ring-offset-2 hover:-translate-y-0.5",
-    selected && "bg-[#eaf6ff] shadow-[4px_4px_0_#55b8e8]",
-  );
-}
+/**
+ * Selected styling comes from the input's own `:checked` state, not from a
+ * React prop.
+ *
+ * These inputs are uncontrolled (`defaultChecked`, no `onChange`) because the
+ * answer is read off FormData on submit. Painting them from the server-sent
+ * `value` meant a click toggled the real input but changed nothing on screen
+ * until the next round-trip, so the row read as unclickable and people stalled
+ * on the consent question. `has-[:checked]` styles the row, `peer-checked`
+ * the dot — both update on the click itself.
+ */
+const choiceRowClass =
+  "flex min-h-14 cursor-pointer items-center gap-4 rounded-[8px] border-2 border-[#111111] bg-white px-4 py-3 text-base font-black text-slate-950 shadow-[4px_4px_0_#111111] transition focus-within:ring-2 focus-within:ring-[#0b63f6] focus-within:ring-offset-2 hover:-translate-y-0.5 has-[:checked]:bg-[#eaf6ff] has-[:checked]:shadow-[4px_4px_0_#55b8e8]";
 
-function indicatorClass(selected: boolean) {
-  return cn(
-    "pointer-events-none flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-[#111111] bg-white",
-    selected && "bg-[#0b63f6] shadow-[inset_0_0_0_4px_#ffffff]",
-  );
-}
+const choiceIndicatorClass =
+  "pointer-events-none flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-[#111111] bg-white peer-checked:bg-[#0b63f6] peer-checked:shadow-[inset_0_0_0_4px_#ffffff]";
 
 const textInputClass =
   "min-h-14 w-full rounded-[8px] border-2 border-[#111111] bg-white px-4 py-3 text-base font-semibold text-slate-950 shadow-[4px_4px_0_#111111] outline-none transition placeholder:text-slate-400 focus:ring-2 focus:ring-[#0b63f6] focus:ring-offset-2";

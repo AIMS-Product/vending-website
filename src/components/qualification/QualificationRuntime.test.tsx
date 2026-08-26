@@ -93,7 +93,13 @@ describe("QualificationRuntime", () => {
     expect(html).toContain("Saved as you continue");
     expect(html).toContain("Back");
     expect(html).toContain("Continue");
-    expect(html).toContain('aria-checked="true"');
+    // The saved answer is pre-checked on the native input, and the row + dot
+    // are painted from that :checked state rather than from a React prop — so
+    // clicking an option repaints immediately instead of waiting for the next
+    // server round-trip (which read as an unclickable row on the consent step).
+    expect(html).toContain('checked=""');
+    expect(html).toContain("has-[:checked]:bg-[#eaf6ff]");
+    expect(html).toContain("peer-checked:bg-[#0b63f6]");
     expect(html).toContain('value="25000-50000"');
     expect(html).toContain('name="question_id"');
     expect(html).toContain('data-motion-scope="qualification-runtime"');
