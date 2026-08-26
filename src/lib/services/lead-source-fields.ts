@@ -63,6 +63,25 @@ export const optionalText = (label: string, max: number) =>
     .optional()
     .transform((value) => value ?? null);
 
+/**
+ * A source page id that is not a real `seo_pages` row is dropped rather than
+ * rejected.
+ *
+ * `lead_submissions.source_page_id` is a uuid with an FK to `seo_pages`, but
+ * a coded lead-magnet page (`/resources/roadmap`, `/resources/finance-
+ * templates`) has no row there and carries a synthetic id like
+ * `coded:roadmap`. Passing that through failed the insert with 22P02 and cost
+ * the lead. Attribution is best-effort and `sourcePageSlug` still names the
+ * page, so a value the column cannot hold is worth less than the submission.
+ */
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const optionalUuid = (label: string) =>
+  optionalText(label, 80).transform((value) =>
+    value && UUID_PATTERN.test(value) ? value : null,
+  );
+
 export const emailText = () =>
   z
     .preprocess(stringifyFormValue, z.email())
@@ -82,7 +101,7 @@ export const leadSourceSchemaFields = {
   latestReferrer: optionalText("Latest referrer", 1000),
   latestTouchAt: optionalText("Latest touch timestamp", 80),
   userAgent: optionalText("User agent", 1000),
-  sourcePageId: optionalText("Source page ID", 80),
+  sourcePageId: optionalUuid("Source page ID"),
   sourcePageSlug: optionalText("Source page slug", 160),
   targetKeyword: optionalText("Target keyword", 180),
   sourceBlockId: optionalText("Source block ID", 120),
