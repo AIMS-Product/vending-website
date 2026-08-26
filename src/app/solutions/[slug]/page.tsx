@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SolutionPage } from "@/components/sections/SolutionPage";
+import { ContentPage } from "@/components/sections/ContentPage";
 import { getSolution, listSolutionSlugs } from "@/lib/content/solutions";
 
 type Params = { slug: string };
@@ -41,5 +41,5 @@ export default async function Page({ params }: { params: Promise<Params> }) {
   const solution = getSolution(slug);
   if (!solution) notFound();
 
-  return <SolutionPage solution={solution} />;
+  return <ContentPage page={solution} />;
 }

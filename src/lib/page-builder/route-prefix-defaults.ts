@@ -40,6 +40,7 @@ export const RESERVED_ROUTE_SEGMENTS = new Set([
   "news",
   "pre-call-resources",
   "privacy",
+  "process",
   "resources",
   "solutions",
   "terms",

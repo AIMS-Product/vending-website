@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/site";
 import { staticRoutes } from "@/lib/content/site-routes";
+import { listProcessSlugs } from "@/lib/content/process";
 import { listSolutionSlugs } from "@/lib/content/solutions";
 import { listPublishedSlugs } from "@/lib/services/news";
 import { listPublishedCaseStudySlugs } from "@/lib/services/case-studies";
@@ -40,6 +41,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.8,
+    })),
+    ...listProcessSlugs().map((slug) => ({
+      url: absoluteUrl(`/process/${slug}`),
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
     })),
     ...resourcePages.map((page) => ({
       url: absoluteUrl(page.route_path),

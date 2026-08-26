@@ -9,6 +9,7 @@ export const staticRoutes = [
   { path: "/about", priority: 0.8, changeFrequency: "monthly" },
   { path: "/case-studies", priority: 0.8, changeFrequency: "monthly" },
   { path: "/solutions", priority: 0.8, changeFrequency: "monthly" },
+  { path: "/process", priority: 0.8, changeFrequency: "monthly" },
   { path: "/news", priority: 0.7, changeFrequency: "weekly" },
   { path: "/contact", priority: 0.8, changeFrequency: "monthly" },
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
