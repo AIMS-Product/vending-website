@@ -31,6 +31,7 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
   {
     slug: "find-locations",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "Find Profitable Vending Locations",
     eyebrow: "Step 01",
     title: "Find profitable vending locations",
@@ -130,6 +131,7 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
   {
     slug: "choose-machines",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "Choose the Right Vending Machine",
     eyebrow: "Step 02",
     title: "Choose the right vending machine",
@@ -242,6 +244,7 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
   {
     slug: "pitch",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "Deliver a Compelling Pitch",
     eyebrow: "Step 03",
     title: "Deliver a compelling pitch",
@@ -341,6 +344,7 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
   {
     slug: "contract",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "Draft Your Contract",
     eyebrow: "Step 04",
     title: "Draft your contract",
@@ -442,6 +446,7 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
   {
     slug: "select-products",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "Select a Winning Product Mix",
     eyebrow: "Step 05",
     title: "Select a winning product mix",
@@ -560,6 +565,7 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
   {
     slug: "optimize",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "Review & Optimize Your Vending Location",
     eyebrow: "Step 06",
     title: "Review and optimize your vending location",
@@ -671,6 +677,7 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
   {
     slug: "scale",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "Scale Your Vending Route",
     eyebrow: "Step 07",
     title: "Scale your vending route",
@@ -787,6 +794,20 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
 export function listProcessSlugs(): ReadonlyArray<string> {
   return processSteps.map((step) => step.slug);
 }
+
+/** Slugs that belong in the sitemap — everything not held back from search. */
+export function listIndexableProcessSlugs(): ReadonlyArray<string> {
+  return processSteps.filter((step) => !step.noindex).map((step) => step.slug);
+}
+
+/**
+ * The `/process` index is held back exactly as long as every step under it is.
+ * Derived rather than a second flag, so the section can never end up half
+ * published — clearing the step flags publishes the index with them.
+ */
+export const processSectionIsHeldBack = processSteps.every(
+  (step) => step.noindex,
+);
 
 export function getProcessStep(slug: string): ProcessStep | undefined {
   return processSteps.find((step) => step.slug === slug);

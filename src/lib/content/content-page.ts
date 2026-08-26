@@ -119,6 +119,14 @@ export type ContentPage = {
   /** <title> and meta description. Falls back to title/intro when omitted. */
   metaTitle?: string;
   metaDescription?: string;
+  /**
+   * Hold the page back from search: emits `noindex, follow` and drops the page
+   * from the sitemap. The page still resolves normally at its URL.
+   *
+   * Set while copy is live on production but not yet signed off. Removing the
+   * flag is the whole act of publishing it — there is no second switch.
+   */
+  noindex?: boolean;
   /** Proof cards. Section is skipped entirely when empty. */
   testimonials: ReadonlyArray<PageTestimonial>;
   /** The one-sentence argument, set as a large centred h2. */

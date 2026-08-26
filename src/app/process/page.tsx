@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { processIndex, processSteps } from "@/lib/content/process";
+import {
+  processIndex,
+  processSectionIsHeldBack,
+  processSteps,
+} from "@/lib/content/process";
 
 export const metadata: Metadata = {
   title: "The Vendingpreneurs Process",
   description: processIndex.intro,
   alternates: { canonical: "/process" },
+  ...(processSectionIsHeldBack
+    ? { robots: { index: false, follow: true } }
+    : {}),
 };
 
 export default function ProcessIndexPage() {

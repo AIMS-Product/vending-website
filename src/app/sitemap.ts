@@ -1,8 +1,11 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/site";
 import { staticRoutes } from "@/lib/content/site-routes";
-import { listProcessSlugs } from "@/lib/content/process";
-import { listSolutionSlugs } from "@/lib/content/solutions";
+import {
+  listIndexableProcessSlugs,
+  processSectionIsHeldBack,
+} from "@/lib/content/process";
+import { listIndexableSolutionSlugs } from "@/lib/content/solutions";
 import { listPublishedSlugs } from "@/lib/services/news";
 import { listPublishedCaseStudySlugs } from "@/lib/services/case-studies";
 import { listSitemapSeoPages } from "@/lib/services/seo-page-public";
@@ -36,13 +39,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
-    ...listSolutionSlugs().map((slug) => ({
+    ...listIndexableSolutionSlugs().map((slug) => ({
       url: absoluteUrl(`/solutions/${slug}`),
       lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.8,
     })),
-    ...listProcessSlugs().map((slug) => ({
+    // The /process index lives here rather than in `staticRoutes`: that list
+    // also feeds the chatbot's route map, and a section held back from search
+    // should not be recommended in chat either.
+    ...(processSectionIsHeldBack
+      ? []
+      : [
+          {
+            url: absoluteUrl("/process"),
+            lastModified: now,
+            changeFrequency: "monthly" as const,
+            priority: 0.8,
+          },
+        ]),
+    ...listIndexableProcessSlugs().map((slug) => ({
       url: absoluteUrl(`/process/${slug}`),
       lastModified: now,
       changeFrequency: "monthly" as const,

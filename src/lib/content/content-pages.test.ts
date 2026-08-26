@@ -2,11 +2,18 @@ import { describe, expect, it } from "vitest";
 import type { ContentPage } from "./content-page";
 import {
   getProcessStep,
+  listIndexableProcessSlugs,
   listProcessSlugs,
   processNeighbours,
+  processSectionIsHeldBack,
   processSteps,
 } from "./process";
-import { getSolution, listSolutionSlugs, solutions } from "./solutions";
+import {
+  getSolution,
+  listIndexableSolutionSlugs,
+  listSolutionSlugs,
+  solutions,
+} from "./solutions";
 
 /**
  * Both registries feed the same template, so the structural guards run over
@@ -138,5 +145,34 @@ describe("process ordering", () => {
     processSteps.forEach((step, index) => {
       expect(step.eyebrow).toBe(`Step ${String(index + 1).padStart(2, "0")}`);
     });
+  });
+});
+
+describe("search hold-back", () => {
+  // /solutions/vendscout shipped to production and is already indexed.
+  // Flagging it would retract a live page from search, which is a very
+  // different act from holding an unpublished one back.
+  it("leaves the already-published solution page indexable", () => {
+    expect(getSolution("vendscout")?.noindex).toBeUndefined();
+    expect(listIndexableSolutionSlugs()).toContain("vendscout");
+  });
+
+  it("keeps held-back pages out of the sitemap", () => {
+    for (const page of [...solutions, ...processSteps]) {
+      const list = page.slug.startsWith("vendscout")
+        ? listIndexableSolutionSlugs()
+        : solutions.includes(page)
+          ? listIndexableSolutionSlugs()
+          : listIndexableProcessSlugs();
+      expect(list.includes(page.slug)).toBe(!page.noindex);
+    }
+  });
+
+  // The index must never outlive its children in search: a published index
+  // listing seven noindexed pages is a crawl dead end.
+  it("holds the process index back exactly while its steps are", () => {
+    expect(processSectionIsHeldBack).toBe(
+      processSteps.every((step) => step.noindex),
+    );
   });
 });

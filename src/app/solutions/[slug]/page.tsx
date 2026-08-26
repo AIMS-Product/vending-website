@@ -26,6 +26,9 @@ export async function generateMetadata({
   return {
     title,
     description,
+    // `follow` stays on: a held-back page should still pass link equity and
+    // let a crawler reach what it points at.
+    ...(solution.noindex ? { robots: { index: false, follow: true } } : {}),
     alternates: { canonical: `/solutions/${solution.slug}` },
     openGraph: {
       title,

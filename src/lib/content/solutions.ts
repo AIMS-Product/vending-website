@@ -156,6 +156,7 @@ export const solutions: ReadonlyArray<Solution> = [
   {
     slug: "marketplace",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "Product",
     eyebrow: "Product Marketplace",
     title: "Buy your product below retail, not at the warehouse club",
@@ -280,6 +281,7 @@ export const solutions: ReadonlyArray<Solution> = [
   {
     slug: "equipment",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "Equipment",
     eyebrow: "Equipment",
     title: "Put the right machine in the right account",
@@ -395,6 +397,7 @@ export const solutions: ReadonlyArray<Solution> = [
   {
     slug: "national-contracts",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "National Contracts",
     eyebrow: "National Contracts",
     title: "Win the accounts that come with more than one building",
@@ -503,6 +506,7 @@ export const solutions: ReadonlyArray<Solution> = [
   {
     slug: "coaching",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "Coaching",
     eyebrow: "Professional Coaching",
     title: "Learn the route from people currently running one",
@@ -608,6 +612,7 @@ export const solutions: ReadonlyArray<Solution> = [
   {
     slug: "partners",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "Partners",
     eyebrow: "Partner Network",
     title: "The brands and suppliers behind every member route",
@@ -713,6 +718,7 @@ export const solutions: ReadonlyArray<Solution> = [
   {
     slug: "financing",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "Financing",
     eyebrow: "Financing",
     title: "Fund the machines without emptying your savings",
@@ -821,6 +827,7 @@ export const solutions: ReadonlyArray<Solution> = [
   {
     slug: "support",
     parent: PARENT,
+    noindex: true,
     breadcrumb: "Support",
     eyebrow: "Expert Customer Support",
     title: "Someone who has hit this exact problem, this week",
@@ -922,6 +929,11 @@ export const solutions: ReadonlyArray<Solution> = [
 
 export function listSolutionSlugs(): ReadonlyArray<string> {
   return solutions.map((solution) => solution.slug);
+}
+
+/** Slugs that belong in the sitemap — everything not held back from search. */
+export function listIndexableSolutionSlugs(): ReadonlyArray<string> {
+  return solutions.filter((s) => !s.noindex).map((s) => s.slug);
 }
 
 export function getSolution(slug: string): Solution | undefined {
