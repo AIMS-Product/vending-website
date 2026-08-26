@@ -207,9 +207,11 @@ export const solutions: ReadonlyArray<Solution> = [
           "Pricing that does not require you to buy a pallet to qualify",
           "The same channel that discounts product also discounts equipment",
         ],
-        media: {
-          alt: "The product catalog, showing operator pricing against retail",
-        },
+        stats: [
+          { value: "5,000+", label: "SKUs at operator pricing" },
+          { value: "Below retail", label: "on product and equipment" },
+          { value: "Machine 1", label: "when the pricing starts" },
+        ],
       },
       {
         eyebrow: "Where the margin goes",
@@ -221,9 +223,21 @@ export const solutions: ReadonlyArray<Solution> = [
           "A single machine grosses roughly $150 to $400 a month",
           "Net margin after product, commission, and fees typically lands at 20% to 35%",
         ],
-        media: {
-          alt: "A per-machine margin breakdown, product cost against net take-home",
-        },
+        stats: [
+          {
+            value: "~50%",
+            label: "Industry-typical product cost, as a share of sales",
+          },
+          {
+            value: "~33%",
+            label: "What operators buying through the network run",
+          },
+          { value: "$150–$400", label: "Gross per machine, per month" },
+          {
+            value: "20–35%",
+            label: "Net margin after product, commission and fees",
+          },
+        ],
       },
       {
         eyebrow: "Match product to the room",
@@ -235,9 +249,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "Swap the losers out on the next order instead of the next quarter",
           "Reorder against what actually sold, not what you assumed would",
         ],
-        media: {
-          alt: "Two location planograms side by side, showing different product mixes",
-        },
       },
     ],
     closing: {
@@ -319,9 +330,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "Micro markets — an open store for buildings with the traffic to support one",
           "Coffee service — a small add-on that earns beside anything else you place",
         ],
-        media: {
-          alt: "The four equipment formats side by side at the same scale",
-        },
       },
       {
         eyebrow: "Run the numbers first",
@@ -333,9 +341,18 @@ export const solutions: ReadonlyArray<Solution> = [
           "Telemetry and software run about $9 to $60 per machine, per month",
           "Payback typically lands at 18 to 24 months on a well-placed machine",
         ],
-        media: {
-          alt: "A single-machine profit and loss, gross through to net",
-        },
+        stats: [
+          { value: "$150–$400", label: "Gross per machine, per month" },
+          { value: "20–35%", label: "Net margin after costs" },
+          {
+            value: "$9–$60",
+            label: "Telemetry and software, per machine per month",
+          },
+          {
+            value: "18–24 mo",
+            label: "Typical payback on a well-placed machine",
+          },
+        ],
       },
       {
         eyebrow: "Buy it once",
@@ -347,9 +364,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "Capacity matched to how often you can realistically service the account",
           "Pre-negotiated machine deals and financing partners through the network",
         ],
-        media: {
-          alt: "A machine specification checklist against an account profile",
-        },
       },
     ],
     closing: {
@@ -393,9 +407,6 @@ export const solutions: ReadonlyArray<Solution> = [
       { label: "Talk to an operator", href: "/contact" },
       { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
     ],
-    hero: {
-      alt: "A multi-site account map, one agreement across several buildings",
-    },
     testimonials: [],
     thesis:
       "The operators who win multi-site accounts are rarely the biggest. They are the ones who could answer every question the account asked on the first call.",
@@ -429,7 +440,10 @@ export const solutions: ReadonlyArray<Solution> = [
           "Commission negotiated once, across the whole portfolio",
         ],
         media: {
-          alt: "A multi-site account approval path, from site contact to signed scope",
+          src: "/images/content/national-contracts.avif",
+          width: 1600,
+          height: 1067,
+          alt: "Two people closing an agreement in a meeting",
         },
       },
       {
@@ -442,9 +456,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "References from accounts that look like the ones you are pitching",
           "Enough route capacity to take on every site on the list at once",
         ],
-        media: {
-          alt: "The document set a multi-site account asks for before signing",
-        },
       },
       {
         eyebrow: "Grow into it",
@@ -457,9 +468,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "Build capacity before you pitch, not after you win",
           "Work the accounts you already have before chasing the ones you don't",
         ],
-        media: {
-          alt: "One serviced building expanding into a portfolio of sites",
-        },
       },
     ],
     closing: {
@@ -507,9 +515,6 @@ export const solutions: ReadonlyArray<Solution> = [
       { label: "See if your market is a fit", href: "/contact" },
       { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
     ],
-    hero: {
-      alt: "A weekly group coaching session with Vendingpreneurs members",
-    },
     testimonials: [],
     thesis:
       "A course is videos you watch alone. This is a live operator community, weekly coaching, and 1-on-1 ambassadors — you build the business, you don't just study it.",
@@ -542,9 +547,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "Step-by-step training you work through in order, not a video library",
           "A community of operators at every stage, from first pop-in to full-time route",
         ],
-        media: {
-          alt: "The weekly coaching and ambassador session schedule",
-        },
       },
       {
         eyebrow: "What it covers",
@@ -558,9 +560,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "Automation and scaling strategies to maximize your time and revenue",
           "The common mistakes new operators make, and how to avoid them",
         ],
-        media: {
-          alt: "The Vending Accelerator Program curriculum, phase by phase",
-        },
       },
       {
         eyebrow: "Who it's for",
@@ -572,9 +571,12 @@ export const solutions: ReadonlyArray<Solution> = [
           "2 to 15 hours a week to run a route once it's placed",
           "Under 90 days from starting to a first machine earning",
         ],
-        media: {
-          alt: "Community results: entrepreneurs launched and locations placed",
-        },
+        stats: [
+          { value: "850+", label: "Entrepreneurs launched" },
+          { value: "3,000+", label: "Locations placed" },
+          { value: "2–15 hrs", label: "A week to run a placed route" },
+          { value: "< 90 days", label: "To a first machine earning" },
+        ],
       },
     ],
     closing: {
@@ -618,9 +620,6 @@ export const solutions: ReadonlyArray<Solution> = [
       { label: "Start Your Vending Business", href: "/contact" },
       { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
     ],
-    hero: {
-      alt: "The Vendingpreneurs partner brands",
-    },
     testimonials: [],
     thesis:
       "Leverage in this business is mostly relationships you have not had time to build yet. The network lends you the ones that matter on day one.",
@@ -652,9 +651,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "PepsiCo and Doritos — the mainstream snack and drink lines every machine needs",
           "Prime, Poppi, and Alani Nu — the higher-margin brands that move in gyms and student housing",
         ],
-        media: {
-          alt: "The eight Vendingpreneurs partner brands",
-        },
       },
       {
         eyebrow: "What it gets you",
@@ -666,9 +662,11 @@ export const solutions: ReadonlyArray<Solution> = [
           "Payment and telemetry hardware that reports sales without a site visit",
           "Financing and equipment partners reachable through the same network",
         ],
-        media: {
-          alt: "Member pricing against the pricing a single-machine operator is quoted",
-        },
+        stats: [
+          { value: "5,000+", label: "SKUs below retail" },
+          { value: "8", label: "Brand and platform partners" },
+          { value: "Pre-negotiated", label: "Machine and equipment deals" },
+        ],
       },
       {
         eyebrow: "Where it matters",
@@ -680,9 +678,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "Equipment and cooler placements that come through the brand, not through you",
           "Answers from operators who have already worked the same relationship",
         ],
-        media: {
-          alt: "A location with an existing brand agreement being taken over",
-        },
       },
     ],
     closing: {
@@ -730,9 +725,6 @@ export const solutions: ReadonlyArray<Solution> = [
       { label: "Talk to an operator", href: "/contact" },
       { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
     ],
-    hero: {
-      alt: "An equipment financing worksheet, payment against machine cash flow",
-    },
     testimonials: [],
     thesis:
       "The question is not whether you can afford a machine. It is whether the location you signed can cover the payment while you learn the rest of the business.",
@@ -765,9 +757,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "Cash flow lets you pay the note down early once placements are earning",
           "Little upfront investment compared to real estate on the same monthly income",
         ],
-        media: {
-          alt: "Cash purchase against a financed note over the same 24 months",
-        },
       },
       {
         eyebrow: "Make the payment safe",
@@ -780,9 +769,15 @@ export const solutions: ReadonlyArray<Solution> = [
           "Telemetry and software at about $9 to $60 per machine, per month",
           "Location commission of 5% to 25% of gross, though many amenity placements ask for nothing",
         ],
-        media: {
-          alt: "A machine's monthly net set against a financing payment",
-        },
+        stats: [
+          { value: "$150–$400", label: "Gross per machine, per month" },
+          { value: "20–35%", label: "Net margin after costs" },
+          {
+            value: "5–25%",
+            label: "Location commission, where it applies at all",
+          },
+          { value: "18–24 mo", label: "Typical payback window" },
+        ],
       },
       {
         eyebrow: "Where to get it",
@@ -795,9 +790,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "Bring a signed or near-signed location to the conversation, not a hypothetical",
           "We will not quote a number without looking at your actual plan",
         ],
-        media: {
-          alt: "The financing conversation checklist before a first placement",
-        },
       },
     ],
     closing: {
@@ -841,9 +833,6 @@ export const solutions: ReadonlyArray<Solution> = [
       { label: "Start Your Vending Business", href: "/contact" },
       { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
     ],
-    hero: {
-      alt: "An operator getting an answer from the community on a route question",
-    },
     testimonials: [],
     thesis:
       "Every problem you are about to hit has already happened to somebody in this community. Support is mostly a matter of reaching them before it costs you the account.",
@@ -875,9 +864,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "1-on-1 ambassador sessions on your locations, pitches, and product",
           "Answers from people with live routes, not from a script",
         ],
-        media: {
-          alt: "The three support channels: community, group call, ambassador session",
-        },
       },
       {
         eyebrow: "What people actually ask",
@@ -889,9 +875,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "Whether a slow location is fixable or should be relocated",
           "How to price into a building that already has another operator in it",
         ],
-        media: {
-          alt: "Real operator questions and the answers they received",
-        },
       },
       {
         eyebrow: "When you need a person",
@@ -903,9 +886,6 @@ export const solutions: ReadonlyArray<Solution> = [
           "Bring the specific account, contract, or machine you are stuck on",
           "Talk to operators, not to a sales desk",
         ],
-        media: {
-          alt: "Booking a call with the Vendingpreneurs team",
-        },
       },
     ],
     closing: {

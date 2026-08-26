@@ -69,23 +69,26 @@ describe.each(registries)("$name content", (registry) => {
       expect(page.closing.ctas.length).toBeGreaterThan(0);
       expect(page.parent.href.startsWith("/")).toBe(true);
       expect(page.parent.label.length).toBeGreaterThan(0);
-      // Media without a src falls back to a labelled frame, so alt is never
-      // optional — it is the only thing a screen reader (or the placeholder)
-      // has to go on.
+      // Media is optional — most blocks carry no visual by design. When one
+      // IS present, alt is not optional: it is the only thing a screen reader
+      // (or the empty-frame fallback) has to go on.
       for (const feature of page.features) {
-        expect(feature.media.alt.length).toBeGreaterThan(0);
+        if (feature.media) expect(feature.media.alt.length).toBeGreaterThan(0);
+        for (const stat of feature.stats ?? []) {
+          expect(stat.value.length).toBeGreaterThan(0);
+          expect(stat.label.length).toBeGreaterThan(0);
+        }
       }
-      expect(page.hero.alt.length).toBeGreaterThan(0);
+      if (page.hero) expect(page.hero.alt.length).toBeGreaterThan(0);
     }
   });
 
   // A video without intrinsic dimensions falls back to a 16:9 frame, which
   // pillarboxes these 1700x1080 screen recordings with black bars.
   it("gives every video its intrinsic width and height", () => {
-    const media = registry.pages.flatMap((page) => [
-      page.hero,
-      ...page.features.map((feature) => feature.media),
-    ]);
+    const media = registry.pages
+      .flatMap((page) => [page.hero, ...page.features.map((f) => f.media)])
+      .filter((entry) => entry !== undefined);
     for (const item of media.filter((entry) => entry.video)) {
       expect(item.width).toBeGreaterThan(0);
       expect(item.height).toBeGreaterThan(0);

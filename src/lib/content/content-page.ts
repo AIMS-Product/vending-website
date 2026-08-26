@@ -61,13 +61,32 @@ export type PageStep = {
   body: string;
 };
 
-/** An alternating copy/visual block. Media side alternates automatically. */
+/**
+ * A copy block. With `media` it renders as an alternating two-column block and
+ * the visual side flips automatically. Without it the block goes full width —
+ * no reserved frame, no placeholder — which is the default here: there is one
+ * hero asset per page at most, and inventing a decorative image per block
+ * would mean thirteen more files to keep current.
+ */
 export type PageFeature = {
   eyebrow: string;
   title: string;
   body: string;
   points: ReadonlyArray<string>;
-  media: PageMedia;
+  media?: PageMedia;
+  /** Rendered as a card strip under the copy. Skipped when empty. */
+  stats?: ReadonlyArray<PageStat>;
+};
+
+/**
+ * A figure worth setting large. Number-heavy feature blocks render these as
+ * cards instead of burying the same figure in a bullet — the numbers are the
+ * strongest content on these pages and a stock photo beside them is noise.
+ */
+export type PageStat = {
+  /** The figure itself, e.g. "33%" or "18–24 mo". */
+  value: string;
+  label: string;
 };
 
 export type PageRelated = {
@@ -91,7 +110,12 @@ export type ContentPage = {
   title: string;
   intro: string;
   ctas: ReadonlyArray<PageCta>;
-  hero: PageMedia;
+  /**
+   * One asset per page, at most. Omitted entirely on pages where no honest
+   * visual exists — the hero then sets its copy full width rather than
+   * pairing it with a frame that means nothing.
+   */
+  hero?: PageMedia;
   /** <title> and meta description. Falls back to title/intro when omitted. */
   metaTitle?: string;
   metaDescription?: string;

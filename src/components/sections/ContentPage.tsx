@@ -7,6 +7,7 @@ import type {
   PageFeature,
   PageMedia,
   PageRelated,
+  PageStat,
   PageStep,
   PageTestimonial,
 } from "@/lib/content/content-page";
@@ -61,23 +62,41 @@ function Hero({ page }: { page: ContentPageData }) {
           </ol>
         </nav>
 
-        <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+        <div
+          className={
+            page.hero
+              ? "grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16"
+              : ""
+          }
+        >
           <div className="min-w-0">
             <p className={EYEBROW}>{page.eyebrow}</p>
-            <h1 className="mt-4 text-4xl leading-tight font-black break-words text-[#111111] uppercase sm:text-5xl lg:text-6xl">
+            {/* Without a visual beside it the headline carries the whole row,
+                so it gets the wider measure and the larger step. */}
+            <h1
+              className={`mt-4 text-4xl leading-tight font-black break-words text-[#111111] uppercase sm:text-5xl lg:text-6xl ${
+                page.hero ? "" : "max-w-5xl lg:text-7xl"
+              }`}
+            >
               {page.title}
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 font-semibold text-slate-700">
+            <p
+              className={`mt-6 text-lg leading-8 font-semibold text-slate-700 ${
+                page.hero ? "max-w-xl" : "max-w-3xl"
+              }`}
+            >
               {page.intro}
             </p>
             <CtaRow ctas={page.ctas} className="mt-8" />
           </div>
-          <Media
-            media={page.hero}
-            className="shadow-[10px_10px_0_#55b8e8]"
-            sizes="(max-width: 1024px) 100vw, 45vw"
-            priority
-          />
+          {page.hero && (
+            <Media
+              media={page.hero}
+              className="shadow-[10px_10px_0_#55b8e8]"
+              sizes="(max-width: 1024px) 100vw, 45vw"
+              priority
+            />
+          )}
         </div>
       </div>
     </section>
@@ -189,31 +208,83 @@ function FeatureBlock({
   feature: PageFeature;
   mediaFirst: boolean;
 }) {
+  const { media } = feature;
+
+  const copy = (
+    <div className="min-w-0">
+      <p className={EYEBROW}>{feature.eyebrow}</p>
+      <h2
+        className={`mt-4 text-3xl leading-tight font-black break-words text-[#111111] uppercase sm:text-4xl ${
+          media ? "" : "max-w-4xl"
+        }`}
+      >
+        {feature.title}
+      </h2>
+      <p
+        className={`mt-5 text-lg leading-8 font-semibold text-slate-700 ${
+          media ? "" : "max-w-3xl"
+        }`}
+      >
+        {feature.body}
+      </p>
+      {/* At full width a single column of checks leaves half the row empty,
+          so the points run two-up from the large breakpoint. */}
+      <ul
+        className={`mt-7 gap-x-10 gap-y-4 ${
+          media ? "space-y-4" : "grid sm:grid-cols-2"
+        }`}
+      >
+        {feature.points.map((point) => (
+          <li key={point} className="flex gap-4">
+            <CheckIcon />
+            <span className="font-semibold text-slate-700">{point}</span>
+          </li>
+        ))}
+      </ul>
+      {feature.stats && feature.stats.length > 0 && (
+        <StatStrip stats={feature.stats} />
+      )}
+    </div>
+  );
+
+  if (!media) return copy;
+
   return (
     <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
       <Media
-        media={feature.media}
+        media={media}
         className={mediaFirst ? "" : "lg:order-2"}
         sizes="(max-width: 1024px) 100vw, 50vw"
       />
-      <div className="min-w-0">
-        <p className={EYEBROW}>{feature.eyebrow}</p>
-        <h2 className="mt-4 text-3xl leading-tight font-black break-words text-[#111111] uppercase sm:text-4xl">
-          {feature.title}
-        </h2>
-        <p className="mt-5 text-lg leading-8 font-semibold text-slate-700">
-          {feature.body}
-        </p>
-        <ul className="mt-7 space-y-4">
-          {feature.points.map((point) => (
-            <li key={point} className="flex gap-4">
-              <CheckIcon />
-              <span className="font-semibold text-slate-700">{point}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {copy}
     </div>
+  );
+}
+
+/**
+ * The figures a block is arguing with, set large. This is what replaced the
+ * decorative frame on number-heavy blocks: the numbers are the visual.
+ */
+function StatStrip({ stats }: { stats: ReadonlyArray<PageStat> }) {
+  return (
+    <dl className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {stats.map((stat) => (
+        <div
+          key={stat.label}
+          className="rounded-[12px] border-2 border-[#111111] bg-white p-6 shadow-[6px_6px_0_#55b8e8]"
+        >
+          <dt className="sr-only">{stat.label}</dt>
+          <dd>
+            <span className="block text-3xl leading-none font-black text-[#111111]">
+              {stat.value}
+            </span>
+            <span className="mt-3 block text-sm leading-6 font-semibold text-slate-600">
+              {stat.label}
+            </span>
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

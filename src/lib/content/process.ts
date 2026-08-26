@@ -49,9 +49,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
         variant: "ghost",
       },
     ],
-    hero: {
-      alt: "Qualifying a vending location: building type, foot traffic, and access hours",
-    },
     testimonials: [],
     thesis:
       "You are not looking for a building that will accept a machine. You are looking for a building where people cannot easily go anywhere else.",
@@ -84,9 +81,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Manufacturing plants and warehouses — shift workers with limited time and few alternatives",
           "Schools, hotels, and government buildings — steady traffic and long access hours",
         ],
-        media: {
-          alt: "The building types that recur across member routes",
-        },
       },
       {
         eyebrow: "Qualify before you commit",
@@ -99,7 +93,10 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Check the access hours — a building locked at 6pm is a different business than one that isn't",
         ],
         media: {
-          alt: "A site visit checklist for qualifying foot traffic",
+          src: "/images/content/find-locations.avif",
+          width: 1600,
+          height: 1067,
+          alt: "People working and moving through a shared building interior",
         },
       },
       {
@@ -112,9 +109,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Start where you already go; the places you visit weekly are places you already understand",
           "Keep the list alive: a no today is often a yes when the current operator lapses",
         ],
-        media: {
-          alt: "A ranked shortlist of five candidate locations",
-        },
       },
     ],
     closing: {
@@ -154,9 +148,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
         variant: "ghost",
       },
     ],
-    hero: {
-      alt: "Vending machine formats compared against building types",
-    },
     testimonials: [],
     thesis:
       "Buy the machine the building needs, not the machine you can get the best price on. One of those decisions lasts five years.",
@@ -189,7 +180,10 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Coffee — a low-cost add-on beside an existing placement",
         ],
         media: {
-          alt: "The four machine formats matched to building types",
+          src: "/images/content/choose-machines.avif",
+          width: 1600,
+          height: 1067,
+          alt: "Vending machines installed along a building corridor",
         },
       },
       {
@@ -203,9 +197,13 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Capacity matched to how often you can realistically service that account",
           "Telemetry and software typically run $9 to $60 per machine, per month",
         ],
-        media: {
-          alt: "A machine specification checklist for a first placement",
-        },
+        stats: [
+          {
+            value: "$9–$60",
+            label: "Telemetry and software, per machine per month",
+          },
+          { value: "Cashless", label: "Non-negotiable on every placement" },
+        ],
       },
       {
         eyebrow: "What it has to earn",
@@ -217,9 +215,12 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Payback typically at 18 to 24 months on a well-placed machine",
           "New and used equipment ranges widely; most operators finance rather than pay cash",
         ],
-        media: {
-          alt: "A single machine's economics from gross through to payback date",
-        },
+        stats: [
+          { value: "$150–$400", label: "Gross per machine, per month" },
+          { value: "20–35%", label: "Net margin after costs" },
+          { value: "$40–$120", label: "Net per machine, per month" },
+          { value: "18–24 mo", label: "Typical payback window" },
+        ],
       },
     ],
     closing: {
@@ -259,9 +260,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
         variant: "ghost",
       },
     ],
-    hero: {
-      alt: "An operator pitching a vending placement to a property manager",
-    },
     testimonials: [],
     thesis:
       "You are not asking for a favour. You are offering a building an amenity that costs it nothing, and the pitch should sound like that.",
@@ -294,7 +292,10 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Work all five shortlisted locations, not the one that was friendliest",
         ],
         media: {
-          alt: "The pop-in sequence, first visit through to a decision-maker meeting",
+          src: "/images/content/pitch.avif",
+          width: 1600,
+          height: 1066,
+          alt: "An operator and a decision-maker shaking hands across a desk",
         },
       },
       {
@@ -307,9 +308,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Bring specifics about their building, not a generic script",
           "Cost is the objection people lead with; the amenity framing removes it",
         ],
-        media: {
-          alt: "The free-amenity pitch structure",
-        },
       },
       {
         eyebrow: "Close it the same day",
@@ -322,9 +320,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Send anything you promised the same day, without exception",
           "Agree the install date in the meeting, not in a follow-up email",
         ],
-        media: {
-          alt: "A signed one-page agreement and a leave-behind flyer",
-        },
       },
     ],
     closing: {
@@ -364,9 +359,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
         variant: "ghost",
       },
     ],
-    hero: {
-      alt: "A one-page vending location agreement ready for signature",
-    },
     testimonials: [],
     thesis:
       "Your first contracts should be short enough to sign in a hallway and short enough in term that a bad location costs you a season, not a year.",
@@ -398,9 +390,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "What they get: a commission percentage, or the amenity at no cost",
           "Term length, renewal, and how either party terminates",
         ],
-        media: {
-          alt: "The five sections of a one-page location agreement",
-        },
       },
       {
         eyebrow: "Commission",
@@ -412,9 +401,10 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Quote commission on gross and say so explicitly, so there's no dispute later",
           "A high commission on a great location can still beat a free slow one — run the numbers",
         ],
-        media: {
-          alt: "Net take-home at 0%, 10%, and 25% commission on the same machine",
-        },
+        stats: [
+          { value: "5–25%", label: "Of gross, where commission applies" },
+          { value: "Many", label: "Amenity placements that ask for nothing" },
+        ],
       },
       {
         eyebrow: "The term",
@@ -427,9 +417,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Make sure you can remove the machine without penalty at term end",
           "Get it in writing that the machine remains your property throughout",
         ],
-        media: {
-          alt: "A performance and exit clause in a location agreement",
-        },
       },
     ],
     closing: {
@@ -473,9 +460,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
         variant: "ghost",
       },
     ],
-    hero: {
-      alt: "A vending planogram built for a specific building type",
-    },
     testimonials: [],
     thesis:
       "The machine in a gym and the machine in a courthouse should not be stocked the same way, and the one that is will lose to the one that isn't.",
@@ -508,7 +492,10 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Plants and warehouses — substantial food that fits inside a short break",
         ],
         media: {
-          alt: "Three planograms for three different building types",
+          src: "/images/content/select-products.avif",
+          width: 1600,
+          height: 1067,
+          alt: "Snacks arranged on the shelves of a stocked vending machine",
         },
       },
       {
@@ -521,9 +508,21 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Set each vend price against your real landed cost, item by item",
           "Higher-margin specialty items belong where the audience will pay for them",
         ],
-        media: {
-          alt: "Product cost at 50% against 33% on the same monthly revenue",
-        },
+        stats: [
+          {
+            value: "~50%",
+            label: "Industry-typical product cost, as a share of sales",
+          },
+          {
+            value: "~33%",
+            label: "What operators buying through the network run",
+          },
+          { value: "$150–$400", label: "Gross per machine, per month" },
+          {
+            value: "20–35%",
+            label: "Net margin after product, commission and fees",
+          },
+        ],
       },
       {
         eyebrow: "Then adjust",
@@ -536,9 +535,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Cut the non-movers on the next order rather than the next quarter",
           "Widen the winners; a proven item deserves more slots than a hopeful one",
         ],
-        media: {
-          alt: "First-month sales data driving the second planogram",
-        },
       },
     ],
     closing: {
@@ -582,9 +578,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
         variant: "ghost",
       },
     ],
-    hero: {
-      alt: "A per-machine performance review: sales, margin, and shrink",
-    },
     testimonials: [],
     thesis:
       "The operator flying blind can't pull the loser or clone the winner, so the whole route drifts. Reviewing one machine properly is what makes the next ten deliberate.",
@@ -617,9 +610,10 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Back sales tax out before you call anything profit",
           "Compare machines against each other, not against a target you invented",
         ],
-        media: {
-          alt: "A per-machine monthly margin table across a small route",
-        },
+        stats: [
+          { value: "20–35%", label: "Net margin on a healthy placement" },
+          { value: "$40–$120", label: "Net per machine, per month" },
+        ],
       },
       {
         eyebrow: "Find the leaks",
@@ -631,9 +625,16 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Check the bill validator before assuming theft — jams are common and silent",
           "Fix it on machine one before the same blind spot runs across twenty",
         ],
-        media: {
-          alt: "Telemetry sales reconciled against collections, flagging a 3% variance",
-        },
+        stats: [
+          {
+            value: "3%",
+            label: "Variance above which a gap is a problem, not noise",
+          },
+          {
+            value: "Monthly",
+            label: "How often to reconcile telemetry against collections",
+          },
+        ],
       },
       {
         eyebrow: "Act on it",
@@ -645,9 +646,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Watch for seasonal patterns before you condemn a location on one quiet month",
           "Use machine one's real numbers to make the case for machine two",
         ],
-        media: {
-          alt: "A placement decision: tune, hold, or relocate",
-        },
       },
     ],
     closing: {
@@ -687,9 +685,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
       { label: "Talk to an operator", href: "/contact" },
       { label: "See Real Routes", href: "/case-studies", variant: "ghost" },
     ],
-    hero: {
-      alt: "A route grown across multiple locations with a service schedule",
-    },
     testimonials: [],
     thesis:
       "Every machine you add multiplies whatever your route already is. Fix the system on three machines, because it will not get easier to fix on thirty.",
@@ -722,7 +717,10 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Members run placed routes on roughly 2 to 15 hours a week",
         ],
         media: {
-          alt: "The point on a route where restocking gets handed off",
+          src: "/images/content/scale.avif",
+          width: 1600,
+          height: 1067,
+          alt: "A warehouse aisle of racked inventory ready for a route",
         },
       },
       {
@@ -735,9 +733,17 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "A six-figure net points to low-to-mid dozens of well-placed machines",
           "Machine count without placement quality just multiplies a weak result",
         ],
-        media: {
-          alt: "Net monthly profit plotted against machine count",
-        },
+        stats: [
+          {
+            value: "15–25+",
+            label: "Well-placed machines for a full-time income",
+          },
+          {
+            value: "$1,200–$3,000+",
+            label: "Net profit per month at that count",
+          },
+          { value: "2–15 hrs", label: "A week to run a placed route" },
+        ],
       },
       {
         eyebrow: "Two ways to grow",
@@ -749,9 +755,6 @@ export const processSteps: ReadonlyArray<ProcessStep> = [
           "Evaluate an acquisition on the same per-machine margin you use on your own",
           "Either path needs the service capacity in place before, not after",
         ],
-        media: {
-          alt: "Organic growth against route acquisition as scaling paths",
-        },
       },
     ],
     closing: {
