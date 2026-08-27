@@ -375,7 +375,8 @@ describe("outcome rollup", () => {
     const day = analytics.dailyTrend.find(
       (row) => row.date === daysAgo(3).slice(0, 10),
     );
-    expect(day).toMatchObject({ count: 1, booked: 1 });
+    expect(day).toMatchObject({ count: 1, booked: 1, captured: 1 });
+    expect(analytics.dailyTrendPrior).toHaveLength(30);
   });
 
   it("counts a call reconciled through the lead row as booked, not abandoned", async () => {

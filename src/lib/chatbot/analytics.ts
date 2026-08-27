@@ -43,6 +43,8 @@ export type ChatbotDailyTrendRow = {
   count: number;
   /** Conversations started that day that ended with a call on the calendar. */
   booked: number;
+  /** Conversations started that day that left an email or phone. */
+  captured: number;
 };
 
 /**
@@ -138,6 +140,8 @@ export type ChatbotAnalytics = {
   };
   avgMessagesPerConversation: number;
   dailyTrend: ChatbotDailyTrendRow[];
+  /** The 30 days before `dailyTrend`, same shape, for the comparison line. */
+  dailyTrendPrior: ChatbotDailyTrendRow[];
   topOpeningQuestions: ChatbotRankedRow[];
   keywordFrequency: ChatbotRankedRow[];
   /** Empty until conversations start carrying an extracted prospect_profile. */
@@ -200,6 +204,7 @@ export const EMPTY_CHATBOT_ANALYTICS: ChatbotAnalytics = {
   },
   avgMessagesPerConversation: 0,
   dailyTrend: [],
+  dailyTrendPrior: [],
   topOpeningQuestions: [],
   keywordFrequency: [],
   prospectDistributions: { capitalSignal: [], timeline: [], callIntent: [] },
@@ -496,6 +501,7 @@ function buildAnalytics(
       ? Math.round((totalMessages / current.length) * 10) / 10
       : 0,
     dailyTrend: buildDailyTrend(current, start, now, bookedLeadIds),
+    dailyTrendPrior: buildDailyTrend(prior, priorStart, start, bookedLeadIds),
     topOpeningQuestions: topOpeningQuestions(current),
     keywordFrequency: keywordFrequency(current),
     prospectDistributions: buildProspectDistributions(current),
@@ -757,20 +763,23 @@ function buildDailyTrend(
   end: Date,
   bookedLeadIds: ReadonlySet<string>,
 ): ChatbotDailyTrendRow[] {
-  const buckets = new Map<string, { count: number; booked: number }>();
+  type Cell = { count: number; booked: number; captured: number };
+  const empty: Cell = { count: 0, booked: 0, captured: 0 };
+  const buckets = new Map<string, Cell>();
   for (
     let cursor = new Date(start);
     cursor < end;
     cursor = new Date(cursor.getTime() + DAY_MS)
   ) {
-    buckets.set(dateKey(cursor), { count: 0, booked: 0 });
+    buckets.set(dateKey(cursor), empty);
   }
   for (const row of rows) {
     const key = dateKey(new Date(row.created_at));
-    const prev = buckets.get(key) ?? { count: 0, booked: 0 };
+    const prev = buckets.get(key) ?? empty;
     buckets.set(key, {
       count: prev.count + 1,
       booked: prev.booked + (isBooked(row, bookedLeadIds) ? 1 : 0),
+      captured: prev.captured + (isCaptured(row) ? 1 : 0),
     });
   }
   return Array.from(buckets.entries()).map(([date, value]) => ({
