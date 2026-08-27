@@ -26,3 +26,14 @@ to improve, what people ask, where they get blocked.
 
 - Insights page stays; the Overview only summarises it.
 - SQL-side aggregation (rollup still in-memory, FETCH_CAP 4000).
+
+## Addendum (same day)
+
+- Blue chart treatment (PR #18): smooth gradient area trend with dashed
+  prior-30 line + hover tooltip, sparklines in KPI cards, journey bars.
+- Booking stamp at the foot of every booked transcript: booked-at, call time,
+  and the consultant Calendly assigned. Host comes from
+  `raw_payload.scheduled_event.event_memberships[].user_name` (webhook) or the
+  same key the embed `/api/chatbot/booked` route now stores. Close-only
+  bookings stamp `call_booked_at` without a host. No migration.
+- Adam's test chats: deleting prod rows was blocked for me; SQL handed to Adam.

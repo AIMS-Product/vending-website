@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { adminListConversations } from "@/lib/services/chatbot-admin";
+import {
+  adminListConversations,
+  hostNameFromPayload,
+} from "@/lib/services/chatbot-admin";
 
 const NOW = new Date();
 const STALE = new Date(NOW.getTime() - 3 * 60 * 60 * 1000).toISOString();
@@ -207,5 +210,34 @@ describe("adminListConversations outcomes", () => {
     // The chips are hidden in this state, so a filter left in the URL must not
     // silently shrink the list.
     expect(result.items).toHaveLength(1);
+  });
+});
+
+describe("hostNameFromPayload", () => {
+  it("reads the consultant from a webhook payload and from the embed route's shape", () => {
+    expect(
+      hostNameFromPayload({
+        scheduled_event: {
+          event_memberships: [{ user_name: "Kody Lee", user_email: "k@x.com" }],
+        },
+      }),
+    ).toBe("Kody Lee");
+    expect(
+      hostNameFromPayload({
+        payload: {
+          scheduled_event: {
+            event_memberships: [{ user_name: "A" }, { user_name: "B" }],
+          },
+        },
+      }),
+    ).toBe("A, B");
+  });
+
+  it("returns null instead of guessing", () => {
+    expect(hostNameFromPayload(null)).toBeNull();
+    expect(hostNameFromPayload({ source: "embed_postmessage" })).toBeNull();
+    expect(
+      hostNameFromPayload({ scheduled_event: { event_memberships: [{}] } }),
+    ).toBeNull();
   });
 });

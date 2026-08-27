@@ -50,6 +50,11 @@ export type CalendlyScheduledEvent = {
   start_time: string | null;
   end_time: string | null;
   status: string;
+  /** The host(s) Calendly assigned; on a round-robin this is who takes the call. */
+  event_memberships?: Array<{
+    user_name?: string | null;
+    user_email?: string | null;
+  }> | null;
 };
 
 export type CalendlyApiClient = ReturnType<typeof createCalendlyApiClient>;

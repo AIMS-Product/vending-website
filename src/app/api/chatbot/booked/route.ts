@@ -97,7 +97,13 @@ export async function POST(request: Request) {
       eventStartAt: scheduled?.start_time ?? null,
       eventEndAt: scheduled?.end_time ?? null,
       inviteeCreatedAt: invitee.created_at ?? null,
-      rawPayload: { source: "embed_postmessage", inviteeUri },
+      // scheduled_event is kept so the admin transcript can say who the
+      // call is with (event_memberships) without another Calendly round trip.
+      rawPayload: {
+        source: "embed_postmessage",
+        inviteeUri,
+        scheduled_event: scheduled ?? null,
+      },
     };
   } catch (error) {
     console.error("chatbot booked: calendly lookup failed", {
