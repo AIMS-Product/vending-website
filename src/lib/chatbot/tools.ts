@@ -515,6 +515,30 @@ async function sendResourcesEmail(
     };
   }
 
+  // "I haven't received anything" must not become a blind second copy of the
+  // same email to the same address (it did, on 2026-08-27, and burned the
+  // per-conversation cap). Same address + a card already in the transcript =
+  // walk them through finding it first.
+  const recipient = context.capturedEmail.toLowerCase();
+  const priorCard = [...context.transcript]
+    .reverse()
+    .find(
+      (message) =>
+        message.kind === "resource_card" &&
+        typeof message.data?.email === "string" &&
+        message.data.email.toLowerCase() === recipient,
+    );
+  if (priorCard) {
+    const when = new Date(priorCard.ts);
+    const minutesAgo = Math.max(
+      0,
+      Math.round((Date.now() - when.getTime()) / 60_000),
+    );
+    return {
+      result: `Nothing was re-sent: an email already went to ${context.capturedEmail} ${minutesAgo} minute${minutesAgo === 1 ? "" : "s"} ago and Resend accepted it. Do not promise another copy. Tell them to check Promotions and Spam and search their inbox for "Vendingpreneurs", ask them to confirm the address is spelled right (read it back to them), and give them the direct link to the resource right here in the chat as a markdown link so they have it either way. Only if they give a DIFFERENT address should you call this tool again.`,
+    };
+  }
+
   const resources = resolveChatbotResources(parsed.data.resource_keys);
   if (!resources.length) {
     return {
