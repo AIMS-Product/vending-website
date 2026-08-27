@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import {
   handOffConversationAction,
+  resendHandoffEmailAction,
   saveConversationNoteAction,
   toggleConversationFlagAction,
   type ChatbotActionState,
@@ -13,6 +14,7 @@ import {
   AdminStatusBadge,
   adminCardClass,
   adminInputClass,
+  adminSmallButtonClass,
   adminPrimaryButtonClass,
   adminSecondaryButtonClass,
   adminSectionTitleClass,
@@ -46,6 +48,8 @@ export function ChatbotConversationDetail({
         <Transcript
           messages={conversation.messages}
           booking={conversation.booking}
+          handoffEmail={conversation.handoffEmail}
+          handedOffAt={conversation.handedOffAt}
         />
       </div>
 
@@ -141,9 +145,13 @@ function MetaItem({ label, value }: { label: string; value: string }) {
 function Transcript({
   messages,
   booking,
+  handoffEmail,
+  handedOffAt,
 }: {
   messages: AdminChatbotConversationDetail["messages"];
   booking: AdminChatbotConversationDetail["booking"];
+  handoffEmail: AdminChatbotConversationDetail["handoffEmail"];
+  handedOffAt: string | null;
 }) {
   return (
     <section className={adminCardClass} aria-label="Transcript">
@@ -160,6 +168,9 @@ function Transcript({
       ) : (
         <p className="text-ui-text-muted mt-3 text-sm">No messages recorded.</p>
       )}
+      {handedOffAt || handoffEmail ? (
+        <HandoffStamp handoffEmail={handoffEmail} handedOffAt={handedOffAt} />
+      ) : null}
       {booking ? <BookingStamp booking={booking} /> : null}
     </section>
   );
@@ -380,8 +391,9 @@ function HandoffPanel({
     <section className={adminCardClass}>
       <h2 className={adminSectionTitleClass}>Hand off to team</h2>
       <p className="text-ui-text-subtle mt-1 text-xs">
-        Marks this conversation as needing a human follow-up. The team
-        notification email ships with Phase 4 — this records the handoff now.
+        Emails the full transcript to the team right now and records who got it.
+        Reasons starting with [support] go to the support inbox; everything else
+        goes to the lead-routing recipients.
       </p>
       <form action={formAction} className="mt-2 grid gap-2">
         <input type="hidden" name="conversationId" value={conversation.id} />
@@ -404,7 +416,43 @@ function HandoffPanel({
           ) : null}
         </div>
       </form>
+      {alreadyHandedOff ? (
+        <ResendHandoffForm conversationId={conversation.id} reason={reason} />
+      ) : null}
     </section>
+  );
+}
+
+function ResendHandoffForm({
+  conversationId,
+  reason,
+}: {
+  conversationId: string;
+  reason: string;
+}) {
+  const [state, formAction] = useActionState(
+    resendHandoffEmailAction,
+    initialState,
+  );
+  return (
+    <form
+      action={formAction}
+      className="mt-3 flex flex-wrap items-center gap-3"
+    >
+      <input type="hidden" name="conversationId" value={conversationId} />
+      <input type="hidden" name="reason" value={reason} />
+      <button type="submit" className={adminSmallButtonClass}>
+        Resend hand-off email
+      </button>
+      {state.status !== "idle" ? (
+        <p
+          className={`text-xs font-medium ${state.status === "error" ? "text-red-600" : "text-emerald-700"}`}
+          role={state.status === "error" ? "alert" : "status"}
+        >
+          {state.message}
+        </p>
+      ) : null}
+    </form>
   );
 }
 
@@ -418,6 +466,58 @@ function HandoffButton({ alreadyHandedOff }: { alreadyHandedOff: boolean }) {
     >
       {pending ? "Saving..." : alreadyHandedOff ? "Update handoff" : "Hand off"}
     </button>
+  );
+}
+
+/**
+ * Did the promise "a teammate will email you" get kept? Green with the inbox
+ * and time when it did; amber with the reason when it did not. A hand-off
+ * with no receipt at all predates the email and says so.
+ */
+function HandoffStamp({
+  handoffEmail,
+  handedOffAt,
+}: {
+  handoffEmail: AdminChatbotConversationDetail["handoffEmail"];
+  handedOffAt: string | null;
+}) {
+  if (handoffEmail?.sentAt) {
+    return (
+      <div
+        className="border-ui-ok/40 bg-ui-ok-fill rounded-ui mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border px-3 py-2.5 text-sm"
+        role="status"
+      >
+        <span
+          className="bg-ui-ok inline-block size-2 shrink-0 rounded-full"
+          aria-hidden="true"
+        />
+        <span className="text-ui-ok-ink font-semibold">
+          Handed off by email {formatDateTime(handoffEmail.sentAt)}
+        </span>
+        <span className="text-ui-text">sent to {handoffEmail.to}</span>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="border-ui-warn/40 bg-ui-warn-fill rounded-ui mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border px-3 py-2.5 text-sm"
+      role="status"
+    >
+      <span
+        className="bg-ui-warn inline-block size-2 shrink-0 rounded-full"
+        aria-hidden="true"
+      />
+      <span className="text-ui-warn-ink font-semibold">
+        {handoffEmail
+          ? "Hand-off email failed"
+          : `Handed off ${handedOffAt ? formatDateTime(handedOffAt) : ""}, no email sent`}
+      </span>
+      <span className="text-ui-text">
+        {handoffEmail && "error" in handoffEmail
+          ? handoffEmail.error
+          : "Recorded before hand-off emails existed. Use Resend below."}
+      </span>
+    </div>
   );
 }
 

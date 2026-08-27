@@ -138,6 +138,11 @@ export function ChatbotConfigForm({ config }: { config: ChatbotConfig }) {
             name="leadRoutingEmails"
             value={config.leadRoutingEmails ?? ""}
           />
+          <input
+            type="hidden"
+            name="supportEmail"
+            value={config.supportEmail ?? ""}
+          />
           {config.notifyEnabled ? (
             <input type="hidden" name="notifyEnabled" value="on" />
           ) : null}

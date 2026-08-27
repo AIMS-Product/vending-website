@@ -2,6 +2,11 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { prospectSummaryFrom } from "@/lib/chatbot/conversation-store";
+import { loadChatbotConfigFresh } from "@/lib/chatbot/config";
+import {
+  emailHandoff,
+  type HandoffEmailReceipt,
+} from "@/lib/chatbot/handoff-email";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
 
@@ -354,6 +359,10 @@ export type AdminChatbotBooking = {
   source: "calendly" | "close";
 };
 
+/** Delivery receipt for the hand-off email, shown at the foot of the transcript. */
+export type AdminChatbotHandoffEmail =
+  { sentAt: string; to: string } | { sentAt: null; error: string };
+
 export type AdminChatbotConversationDetail = {
   id: string;
   sessionId: string;
@@ -373,6 +382,7 @@ export type AdminChatbotConversationDetail = {
   prospectProfileSummary: string | null;
   linkedLead: AdminChatbotLinkedLead;
   booking: AdminChatbotBooking | null;
+  handoffEmail: AdminChatbotHandoffEmail | null;
 };
 
 export async function adminGetConversationDetail(
@@ -384,7 +394,7 @@ export async function adminGetConversationDetail(
   const { data: conversation, error } = await client
     .from("chatbot_conversations")
     .select(
-      "id, session_id, status, page_url, user_agent, captured_name, captured_email, captured_phone, messages, message_count, created_at, last_message_at, handed_off_at, handoff_reason, prospect_profile, lead_submission_id, call_booked_at",
+      "id, session_id, status, page_url, user_agent, captured_name, captured_email, captured_phone, messages, message_count, created_at, last_message_at, handed_off_at, handoff_reason, handoff_emailed_at, handoff_emailed_to, handoff_email_error, prospect_profile, lead_submission_id, call_booked_at",
     )
     .eq("id", conversationId)
     .maybeSingle();
@@ -439,6 +449,14 @@ export async function adminGetConversationDetail(
     ),
     linkedLead,
     booking,
+    handoffEmail: conversation.handoff_emailed_at
+      ? {
+          sentAt: conversation.handoff_emailed_at,
+          to: conversation.handoff_emailed_to ?? "",
+        }
+      : conversation.handoff_email_error
+        ? { sentAt: null, error: conversation.handoff_email_error }
+        : null,
   };
 }
 
@@ -604,26 +622,60 @@ export async function adminSaveConversationNote(
 export type AdminHandOffInput = {
   conversationId: string;
   reason: string;
+  actorEmail: string;
 };
 
 export async function adminHandOffConversation(
   input: AdminHandOffInput,
   deps: ServiceDeps = {},
-): Promise<void> {
+): Promise<HandoffEmailReceipt> {
   const client = deps.client ?? createAdminClient();
   const now = deps.now ? deps.now() : new Date();
+  const reason =
+    input.reason.trim() || "Handed off from the admin conversation view.";
 
   const { error } = await client
     .from("chatbot_conversations")
     .update({
       status: "handed_off",
       handed_off_at: now.toISOString(),
-      handoff_reason:
-        input.reason.trim() || "Handed off from the admin conversation view.",
+      handoff_reason: reason,
     })
     .eq("id", input.conversationId);
   if (error)
     throw new ChatbotAdminError("Could not hand this conversation off.");
+
+  return adminSendHandoffEmail(
+    {
+      conversationId: input.conversationId,
+      reason,
+      actorEmail: input.actorEmail,
+    },
+    deps,
+  );
+}
+
+/**
+ * Send (or resend) the hand-off email for one conversation. A reason that
+ * starts with "[support]" (the bot's own tag) routes to the support inbox;
+ * anything else goes to the lead-routing recipients.
+ */
+export async function adminSendHandoffEmail(
+  input: { conversationId: string; reason: string; actorEmail: string },
+  deps: ServiceDeps = {},
+): Promise<HandoffEmailReceipt> {
+  const client = deps.client ?? createAdminClient();
+  const config = await loadChatbotConfigFresh();
+  const isSupport = /^\[support\]/i.test(input.reason.trim());
+  return emailHandoff(
+    {
+      conversationId: input.conversationId,
+      reason: isSupport ? "support" : "manual",
+      summary: input.reason,
+      triggeredBy: input.actorEmail,
+    },
+    { client, config, now: deps.now },
+  );
 }
 
 /**

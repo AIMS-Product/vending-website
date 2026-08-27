@@ -1586,6 +1586,7 @@ export type Database = {
           idle_trigger_seconds: number;
           knowledge_base: string | null;
           lead_routing_emails: string | null;
+          support_email: string | null;
           model: string;
           notify_enabled: boolean;
           persona_name: string;
@@ -1607,6 +1608,7 @@ export type Database = {
           idle_trigger_seconds?: number;
           knowledge_base?: string | null;
           lead_routing_emails?: string | null;
+          support_email?: string | null;
           model?: string;
           notify_enabled?: boolean;
           persona_name?: string;
@@ -1628,6 +1630,7 @@ export type Database = {
           idle_trigger_seconds?: number;
           knowledge_base?: string | null;
           lead_routing_emails?: string | null;
+          support_email?: string | null;
           model?: string;
           notify_enabled?: boolean;
           persona_name?: string;
@@ -1649,6 +1652,9 @@ export type Database = {
           created_at: string;
           handed_off_at: string | null;
           handoff_reason: string | null;
+          handoff_emailed_at: string | null;
+          handoff_emailed_to: string | null;
+          handoff_email_error: string | null;
           id: string;
           last_message_at: string;
           lead_submission_id: string | null;
@@ -1672,6 +1678,9 @@ export type Database = {
           created_at?: string;
           handed_off_at?: string | null;
           handoff_reason?: string | null;
+          handoff_emailed_at?: string | null;
+          handoff_emailed_to?: string | null;
+          handoff_email_error?: string | null;
           id?: string;
           last_message_at?: string;
           lead_submission_id?: string | null;
@@ -1695,6 +1704,9 @@ export type Database = {
           created_at?: string;
           handed_off_at?: string | null;
           handoff_reason?: string | null;
+          handoff_emailed_at?: string | null;
+          handoff_emailed_to?: string | null;
+          handoff_email_error?: string | null;
           id?: string;
           last_message_at?: string;
           lead_submission_id?: string | null;
@@ -2144,12 +2156,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -2171,13 +2183,12 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -2196,13 +2207,12 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -2221,13 +2231,12 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -2240,11 +2249,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }

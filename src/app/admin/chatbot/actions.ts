@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import type { HandoffEmailReceipt } from "@/lib/chatbot/handoff-email";
 import { config as envConfig } from "@/lib/config";
 import {
   ChatbotConfigError,
@@ -19,6 +20,7 @@ import { runChatbotLearningPass } from "@/lib/chatbot/learning/run";
 import {
   adminCountMissedLeadCatchUp,
   adminHandOffConversation,
+  adminSendHandoffEmail,
   adminSaveConversationNote,
   adminToggleConversationFlag,
   ChatbotAdminError,
@@ -67,6 +69,7 @@ export async function saveChatbotConfigAction(
     knowledgeBase: optional("knowledgeBase"),
     model: text("model") || "gpt-4o-mini",
     leadRoutingEmails: optional("leadRoutingEmails"),
+    supportEmail: optional("supportEmail"),
     notifyEnabled: checked("notifyEnabled"),
     // Trimmed and filtered here rather than left to zod: the list editors add
     // a blank row for the admin to fill in, and an empty row left behind
@@ -281,7 +284,7 @@ export async function handOffConversationAction(
   _prev: ChatbotActionState,
   formData: FormData,
 ): Promise<ChatbotActionState> {
-  await requireAdmin();
+  const { user } = await requireAdmin();
   const parsed = handOffSchema.safeParse({
     conversationId: formData.get("conversationId"),
     reason: formData.get("reason"),
@@ -290,26 +293,56 @@ export async function handOffConversationAction(
     return { status: "error", message: parsed.error.issues[0]!.message };
   }
 
+  let receipt: HandoffEmailReceipt;
   try {
-    await adminHandOffConversation(parsed.data);
+    receipt = await adminHandOffConversation({
+      ...parsed.data,
+      actorEmail: user.email ?? "an admin",
+    });
   } catch (error) {
     return actionError(error, "Could not hand this conversation off.");
   }
 
   revalidateConversationPaths(parsed.data.conversationId);
+  return receiptState(receipt, "Handed off.");
+}
 
-  // force: true — a handoff is an explicit "the team needs this now", so it
-  // ignores the 30-minute debounce that protects the cron/immediate-capture
-  // paths from double-sending.
-  const emailResult = await sendProfileEmailForConversation(
-    parsed.data.conversationId,
-    { force: true },
-  );
+/** The "Resend hand-off email" button: same email, same routing, fresh receipt. */
+export async function resendHandoffEmailAction(
+  _prev: ChatbotActionState,
+  formData: FormData,
+): Promise<ChatbotActionState> {
+  const { user } = await requireAdmin();
+  const parsed = handOffSchema.safeParse({
+    conversationId: formData.get("conversationId"),
+    reason: formData.get("reason"),
+  });
+  if (!parsed.success) {
+    return { status: "error", message: parsed.error.issues[0]!.message };
+  }
+  const receipt = await adminSendHandoffEmail({
+    conversationId: parsed.data.conversationId,
+    reason:
+      parsed.data.reason || "Handed off from the admin conversation view.",
+    actorEmail: user.email ?? "an admin",
+  });
+  revalidateConversationPaths(parsed.data.conversationId);
+  return receiptState(receipt, "");
+}
+
+function receiptState(
+  receipt: HandoffEmailReceipt,
+  prefix: string,
+): ChatbotActionState {
+  if (receipt.sent) {
+    return {
+      status: "saved",
+      message: `${prefix} Email sent to ${receipt.to.join(", ")}.`.trim(),
+    };
+  }
   return {
-    status: "saved",
-    message: emailResult.sent
-      ? "Marked as handed off. Profile email sent to the team."
-      : `Marked as handed off. Profile email not sent: ${emailResult.reason ?? "unknown reason"}.`,
+    status: "error",
+    message: `${prefix} Email NOT sent: ${receipt.error}`.trim(),
   };
 }
 

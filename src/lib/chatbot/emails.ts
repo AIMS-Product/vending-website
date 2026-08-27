@@ -149,6 +149,21 @@ export async function sendChatbotDigestEmail(
   return sendResend({ subject, text, to: recipients }, deps.fetchImpl ?? fetch);
 }
 
+/**
+ * One hand-off email: the visitor's details and the full transcript, to the
+ * inbox that owns the request. Reply-to is the visitor so the teammate can
+ * answer them directly. See lib/chatbot/handoff-email.ts for routing.
+ */
+export async function sendChatbotHandoffEmail(
+  message: { to: string[]; subject: string; text: string; replyTo?: string[] },
+  deps: { fetchImpl?: typeof fetch } = {},
+): Promise<ChatbotEmailResult> {
+  if (!hasResendConfig()) {
+    return { ok: false, error: "RESEND_API_KEY is not configured." };
+  }
+  return sendResend(message, deps.fetchImpl ?? fetch);
+}
+
 /** Used only if neither env var is set — keeps a send working the moment RESEND_API_KEY lands, even before the from-address is configured. */
 const FALLBACK_FROM_ADDRESS = "Vendingpreneurs <hello@vendingpreneurs.com>";
 

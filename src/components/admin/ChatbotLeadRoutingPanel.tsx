@@ -31,6 +31,7 @@ const CATCH_UP_WINDOWS = [7, 30, 90] as const;
  */
 export function ChatbotLeadRoutingPanel({ config }: { config: ChatbotConfig }) {
   const [recipients, setRecipients] = useState(config.leadRoutingEmails ?? "");
+  const [supportEmail, setSupportEmail] = useState(config.supportEmail ?? "");
   const [notifyEnabled, setNotifyEnabled] = useState(config.notifyEnabled);
   const [saveState, saveAction] = useActionState(
     saveChatbotConfigAction,
@@ -74,6 +75,20 @@ export function ChatbotLeadRoutingPanel({ config }: { config: ChatbotConfig }) {
                 Doesn&apos;t look like an email: {invalidEntries.join(", ")}
               </span>
             ) : null}
+          </label>
+          <label className={adminLabelClass}>
+            Support hand-offs go to{" "}
+            <span className="text-ui-text-subtle">
+              (existing customers: pause, billing, login)
+            </span>
+            <input
+              name="supportEmail"
+              type="email"
+              value={supportEmail}
+              onChange={(event) => setSupportEmail(event.target.value)}
+              placeholder="jade@modern-amenities.com"
+              className={adminInputClass}
+            />
           </label>
           <label className="text-ui-text flex items-center gap-2 text-sm font-medium">
             <input

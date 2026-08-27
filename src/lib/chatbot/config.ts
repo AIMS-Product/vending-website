@@ -44,6 +44,8 @@ export type ChatbotConfig = {
   knowledgeBase: string | null;
   model: string;
   leadRoutingEmails: string | null;
+  /** Support-reason hand-offs go here; null = DEFAULT_SUPPORT_EMAIL. */
+  supportEmail: string | null;
   notifyEnabled: boolean;
   starterQuestions: string[];
   quickActions: ChatbotQuickAction[];
@@ -93,6 +95,7 @@ export const DEFAULT_CHATBOT_CONFIG: ChatbotConfig = {
   knowledgeBase: null,
   model: "gpt-4o-mini",
   leadRoutingEmails: null,
+  supportEmail: null,
   notifyEnabled: true,
   starterQuestions: [],
   quickActions: [],
@@ -105,7 +108,7 @@ export const CHATBOT_CONFIG_CACHE_TAG = "chatbot-config";
 export const DEFAULT_CHATBOT_AVATAR_URL = "/chatbot/mia.jpg";
 
 const CONFIG_FIELDS =
-  "enabled, persona_name, avatar_url, greeting, follow_up_message, teaser_text, brand_color, idle_trigger_seconds, capture_mode, capture_aggressiveness, exit_intent_capture, knowledge_base, model, lead_routing_emails, notify_enabled, starter_questions, quick_actions, updated_at" as const;
+  "enabled, persona_name, avatar_url, greeting, follow_up_message, teaser_text, brand_color, idle_trigger_seconds, capture_mode, capture_aggressiveness, exit_intent_capture, knowledge_base, model, lead_routing_emails, support_email, notify_enabled, starter_questions, quick_actions, updated_at" as const;
 
 // Pre-migration column list — used as a fallback until both the
 // 20260821120000_chatbot_quick_actions and 20260821130000_chatbot_capture_levers
@@ -144,6 +147,7 @@ function isMissingColumnError(message: string): boolean {
     message.includes("quick_actions") ||
     message.includes("capture_aggressiveness") ||
     message.includes("exit_intent_capture") ||
+    message.includes("support_email") ||
     message.includes("42703")
   );
 }
@@ -160,6 +164,7 @@ type LegacyChatbotConfigRow = Omit<
   | "quick_actions"
   | "capture_aggressiveness"
   | "exit_intent_capture"
+  | "support_email"
 >;
 
 /** Uncached read. Never throws — fails soft to the defaults. */
@@ -191,6 +196,7 @@ export async function fetchChatbotConfig(
         })) as unknown as Json,
         capture_aggressiveness: "balanced",
         exit_intent_capture: true,
+        support_email: null,
       });
     }
     if (!data) return DEFAULT_CHATBOT_CONFIG;
@@ -265,6 +271,7 @@ const chatbotConfigInputSchema = z.object({
   knowledgeBase: z.string().trim().max(20_000).nullable(),
   model: z.string().trim().min(1).max(80),
   leadRoutingEmails: z.string().trim().max(500).nullable(),
+  supportEmail: z.string().trim().email().max(200).nullable(),
   notifyEnabled: z.boolean(),
   starterQuestions: z
     .array(z.string().trim().min(1).max(200))
@@ -313,6 +320,7 @@ export async function saveChatbotConfig(
       quick_actions: _qa,
       capture_aggressiveness: _ca,
       exit_intent_capture: _eic,
+      support_email: _se,
       ...legacyUpdate
     } = configToRow(parsed.data);
     const legacy = await client
@@ -333,6 +341,7 @@ export async function saveChatbotConfig(
       })) as unknown as Json,
       capture_aggressiveness: "balanced",
       exit_intent_capture: true,
+      support_email: null,
     });
   }
 
@@ -348,6 +357,13 @@ export async function saveChatbotConfig(
  * Routing recipients for the profile/digest emails: the admin-set list, or
  * LEAD_NOTIFICATION_TO when blank.
  */
+export const DEFAULT_SUPPORT_EMAIL = "jade@modern-amenities.com";
+
+/** Recipient for support-reason hand-offs (existing customers). */
+export function chatbotSupportEmail(config: ChatbotConfig): string {
+  return config.supportEmail?.trim() || DEFAULT_SUPPORT_EMAIL;
+}
+
 export function chatbotLeadRoutingEmails(config: ChatbotConfig): string[] {
   const raw =
     config.leadRoutingEmails?.trim() || envConfig.LEAD_NOTIFICATION_TO?.trim();
@@ -378,6 +394,7 @@ function rowToConfig(row: ChatbotConfigRow): ChatbotConfig {
     knowledgeBase: row.knowledge_base,
     model: row.model,
     leadRoutingEmails: row.lead_routing_emails,
+    supportEmail: row.support_email ?? null,
     notifyEnabled: row.notify_enabled,
     starterQuestions: parseStarterQuestions(row.starter_questions),
     quickActions: parseQuickActions(row.quick_actions),
@@ -403,6 +420,7 @@ function configToRow(
     knowledge_base: input.knowledgeBase,
     model: input.model,
     lead_routing_emails: input.leadRoutingEmails,
+    support_email: input.supportEmail,
     notify_enabled: input.notifyEnabled,
     starter_questions: input.starterQuestions as unknown as Json,
     quick_actions: input.quickActions as unknown as Json,
