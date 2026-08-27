@@ -78,6 +78,7 @@ export function rewriteForOpenCalendar(text: string): string {
     .filter((sentence) => !CALENDAR_PROMISE.test(sentence))
     .join(" ")
     .trim();
-  if (!output) return "The calendar is right here in the chat, grab whichever time works for you.";
+  if (!output)
+    return "The calendar is right here in the chat, grab whichever time works for you.";
   return output;
 }

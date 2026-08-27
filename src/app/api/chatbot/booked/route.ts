@@ -47,7 +47,10 @@ export async function POST(request: Request) {
   const ip = requestIp(request.headers);
   const allowed = await checkPublicRateLimit("chatbot_booked", { ip });
   if (!allowed) {
-    return Response.json({ message: TOO_MANY_REQUESTS_MESSAGE }, { status: 429 });
+    return Response.json(
+      { message: TOO_MANY_REQUESTS_MESSAGE },
+      { status: 429 },
+    );
   }
 
   const parsed = bookedRequestSchema.safeParse(await safeJson(request));

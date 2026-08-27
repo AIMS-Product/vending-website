@@ -9,6 +9,7 @@ import {
   safeTimeZone,
 } from "@/lib/chatbot/availability";
 import { chatbotBookingUrl } from "@/lib/chatbot/booking";
+import { writeChatbotHandoffsToClose } from "@/lib/chatbot/close-handoff";
 import type { ChatbotConfig } from "@/lib/chatbot/config";
 import type { ChatbotMessage } from "@/lib/chatbot/conversation-store";
 import { sendChatbotResourceEmail } from "@/lib/chatbot/emails";
@@ -769,7 +770,8 @@ async function flagForTeam(
     .join(" · ");
 
   const now = new Date().toISOString();
-  const taskType = reason === "callback" ? "invite_to_call" : "general_follow_up";
+  const taskType =
+    reason === "callback" ? "invite_to_call" : "general_follow_up";
   const { error: taskError } = await context.client
     .from("chatbot_follow_up_tasks")
     .upsert(
@@ -801,6 +803,13 @@ async function flagForTeam(
       note: reasonSummary.slice(0, 500),
     },
     { onConflict: "conversation_id,flag", ignoreDuplicates: true },
+  );
+
+  // Straight into the rep's Close task list when the lead already exists;
+  // otherwise the sync drain pushes it the moment the lead is created.
+  await writeChatbotHandoffsToClose(
+    { conversationId: context.conversationId },
+    { client: context.client },
   );
 
   const channel = context.capturedPhone ? "text or call" : "email";

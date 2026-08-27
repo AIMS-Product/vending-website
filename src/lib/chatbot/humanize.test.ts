@@ -13,7 +13,9 @@ describe("humanizeChatbotReply", () => {
         "That's awesome! If you're looking for inspiration, one of our members is a detective.",
         { exclamationsAlreadyUsed: 0 },
       ),
-    ).toBe("If you're looking for inspiration, one of our members is a detective.");
+    ).toBe(
+      "If you're looking for inspiration, one of our members is a detective.",
+    );
     expect(
       humanizeChatbotReply("Absolutely! You're eligible.", {
         exclamationsAlreadyUsed: 0,
@@ -33,7 +35,9 @@ describe("humanizeChatbotReply", () => {
       }),
     ).toBe("Nice! Grab a time. Talk soon.");
     expect(
-      humanizeChatbotReply("Nice! Grab a time!", { exclamationsAlreadyUsed: 1 }),
+      humanizeChatbotReply("Nice! Grab a time!", {
+        exclamationsAlreadyUsed: 1,
+      }),
     ).toBe("Nice. Grab a time.");
   });
 

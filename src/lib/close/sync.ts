@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { writeChatbotEngagementNote } from "@/lib/chatbot/close-engagement-note";
+import { writeChatbotHandoffsToClose } from "@/lib/chatbot/close-handoff";
 import { config } from "@/lib/config";
 import { LEAD_MAGNET_FORM_ID } from "@/lib/content/lead-magnets";
 import { NEWSLETTER_FORM_ID } from "@/lib/content/newsletter";
@@ -276,6 +277,14 @@ async function processCloseSyncEvent(
           // Reuse the drain's own Supabase client rather than opening a
           // second admin connection, and so a test's injected client is
           // honoured here too instead of reaching for the real one.
+          { client },
+        );
+        // Any hand-off the chat recorded before this lead existed in Close.
+        await writeChatbotHandoffsToClose(
+          {
+            leadSubmissionId: event.lead_submission_id,
+            closeLeadId: syncedIds.leadId,
+          },
           { client },
         );
       } catch (enrichmentError) {

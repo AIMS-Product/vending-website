@@ -51,6 +51,15 @@ in Calendly. Report: https://claude.ai/code/artifact/f3b5d762-5a4d-4bd4-ae76-44f
    signing key in Vercel Production, delete the two disabled subscriptions.
    Takes effect on the next production deploy.
 
+7. **Hand-offs reach Close.** Every `flag_for_team` request becomes one note
+   (marker-deduped) plus one Close task dated today on the lead, so it shows
+   in the owning rep's task list. Runs from the tool and again from the Close
+   sync drain after lead creation. Chatbot leads already get Recapture State
+   Hot-Inbound from Stephen's Lane 2 reconciler (verified on live leads), so
+   they surface in the L2 Setter lists like form fills. Entry Source stays
+   blank: adding a "Chatbot" choice to the field was blocked for me; Adam or
+   Stephen add it in Close, then `taggingValues()` sends it (one line).
+
 ## Invariants (tier 1: webhooks + booking state)
 
 - `/api/chatbot/booked` trusts NOTHING from the browser except the invitee
@@ -61,7 +70,7 @@ in Calendly. Report: https://claude.ai/code/artifact/f3b5d762-5a4d-4bd4-ae76-44f
 - Never state a price. Unchanged. The pricing rewrite changes framing only.
 - `flag_for_team` writes a task and a handoff mark; it never emails a visitor
   and never auto-sends anything.
-- No push. `main` auto-publishes; Adam pushes.
+- Pushed and merged 2026-08-27 on Adam's go-ahead (PR #11).
 
 ## Out of scope, flagged
 

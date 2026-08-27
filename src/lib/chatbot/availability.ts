@@ -32,7 +32,8 @@ export type AvailabilityInput = {
 export async function fetchChatbotAvailability(
   input: AvailabilityInput,
 ): Promise<string[]> {
-  const eventTypeUri = input.eventTypeUri ?? CHATBOT_CONSULTATION_EVENT_TYPE_URI;
+  const eventTypeUri =
+    input.eventTypeUri ?? CHATBOT_CONSULTATION_EVENT_TYPE_URI;
   const now = input.now ?? new Date();
   const cached = cache.get(eventTypeUri);
   if (cached && now.getTime() - cached.at < CACHE_TTL_MS) return cached.slots;

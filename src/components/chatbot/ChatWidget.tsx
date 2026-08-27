@@ -988,7 +988,8 @@ async function confirmBookingInChat(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sessionId, inviteeUri }),
     });
-    if (!response.ok) throw new Error(`booked request failed ${response.status}`);
+    if (!response.ok)
+      throw new Error(`booked request failed ${response.status}`);
     const data = (await response.json()) as { message?: ChatDisplayMessage };
     append(data.message ?? fallback);
   } catch {
