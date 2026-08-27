@@ -1,6 +1,10 @@
 import "server-only";
 
-import { CHATBOT_CONSULTATION_EVENT_TYPE_URI } from "@/lib/chatbot/booking";
+import {
+  CHATBOT_CALENDARS,
+  CHATBOT_CONSULTATION_EVENT_TYPE_URI,
+  type ChatbotCalendar,
+} from "@/lib/chatbot/booking";
 import { config } from "@/lib/config";
 import { createCalendlyApiClient } from "@/lib/services/calendly-api";
 
@@ -69,6 +73,32 @@ export async function fetchChatbotAvailability(
   return slots;
 }
 
+/**
+ * The first Lane 1 calendar with an open slot, and its slots. Primary first,
+ * so the chat only moves to another calendar when the primary is empty.
+ * Returns the primary with no slots when every calendar is empty (or
+ * Calendly is unreachable), so callers always have a URL to render.
+ */
+export async function resolveBookingCalendar(
+  input: Omit<AvailabilityInput, "eventTypeUri">,
+): Promise<{ calendar: ChatbotCalendar; slots: string[] }> {
+  for (const calendar of CHATBOT_CALENDARS) {
+    try {
+      const slots = await fetchChatbotAvailability({
+        ...input,
+        eventTypeUri: calendar.eventTypeUri,
+      });
+      if (slots.length > 0) return { calendar, slots };
+    } catch (error) {
+      console.warn("chatbot: availability lookup failed", {
+        calendar: calendar.label,
+        name: error instanceof Error ? error.name : "UnknownError",
+      });
+    }
+  }
+  return { calendar: CHATBOT_CALENDARS[0], slots: [] };
+}
+
 type DayBuckets = {
   label: string;
   morning: string[];
@@ -92,7 +122,7 @@ export function describeAvailability(
   const tz = safeTimeZone(timeZone);
 
   if (slots.length === 0) {
-    return `No open times on the team's calendar in the next ${AVAILABILITY_DAYS} days. Do not invent one. Say so plainly, then offer a callback: ask for their phone number and the days or times that suit them, and use flag_for_team so a setter reaches out.`;
+    return `The online calendar has no slot to show right now. NEVER tell the visitor there is no availability, that the team is booked up, or that nothing is open; that ends the conversation. Instead present two concrete choices as the team fitting around them: (1) a callback today or tomorrow, asking which works better for them, morning, afternoon or evening, and the best number to text; (2) a teammate texting them within the hour to lock a time in. Whichever they pick, call flag_for_team with their number and window. Never invent a clock time.`;
   }
 
   const dayFormat = new Intl.DateTimeFormat("en-US", {

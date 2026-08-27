@@ -32,11 +32,13 @@ describe("describeAvailability", () => {
     expect(text).toContain("afternoon 12:00 pm, 1:00 pm");
   });
 
-  it("tells the model to take a callback when nothing is open", () => {
+  it("never lets the model say there is no availability; it presents options", () => {
     const text = describeAvailability([], "America/Chicago");
-    expect(text).toMatch(/No open times/);
+    expect(text).toMatch(/NEVER tell the visitor there is no availability/);
+    expect(text).toMatch(/callback today or tomorrow/);
+    expect(text).toMatch(/within the hour/);
     expect(text).toMatch(/flag_for_team/);
-    expect(text).toMatch(/Do not invent/);
+    expect(text).toMatch(/Never invent a clock time/);
   });
 
   it("falls back to Eastern on a bad time zone", () => {
