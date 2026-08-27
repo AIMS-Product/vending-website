@@ -39,6 +39,8 @@ export type CalendlyInvitee = {
   name: string | null;
   status: string;
   created_at: string;
+  /** Absolute URI of the scheduled event this invitee belongs to. */
+  event?: string | null;
   tracking?: CalendlyTracking | null;
 };
 
@@ -270,6 +272,48 @@ export function createCalendlyApiClient({
       }
 
       return invitees;
+    },
+
+    /** One invitee by its absolute URI (from a webhook payload or the embed's postMessage). */
+    async getInvitee(inviteeUri: string): Promise<CalendlyInvitee | null> {
+      const data: { resource?: CalendlyInvitee } = await request(inviteeUri);
+      return data.resource ?? null;
+    },
+
+    /** One scheduled event by its absolute URI. */
+    async getScheduledEvent(
+      eventUri: string,
+    ): Promise<CalendlyScheduledEvent | null> {
+      const data: { resource?: CalendlyScheduledEvent } =
+        await request(eventUri);
+      return data.resource ?? null;
+    },
+
+    /**
+     * Open slots for one event type between two instants. Calendly caps the
+     * range at 7 days per request, so callers wanting more call this in
+     * windows. Returns start times as ISO strings.
+     */
+    async listAvailableTimes({
+      eventTypeUri,
+      startTime,
+      endTime,
+    }: {
+      eventTypeUri: string;
+      startTime: string;
+      endTime: string;
+    }): Promise<string[]> {
+      const params = new URLSearchParams({
+        event_type: eventTypeUri,
+        start_time: startTime,
+        end_time: endTime,
+      });
+      const data: {
+        collection?: Array<{ start_time?: string; status?: string }>;
+      } = await request(`/event_type_available_times?${params.toString()}`);
+      return (data.collection ?? [])
+        .filter((slot) => slot.status !== "unavailable" && slot.start_time)
+        .map((slot) => slot.start_time as string);
     },
   };
 }

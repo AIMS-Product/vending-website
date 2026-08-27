@@ -327,9 +327,18 @@ export function ChatWidget() {
       // domain, and a hardcoded check would stop matching with no error
       // anywhere, silently restoring the bug this listener exists to prevent.
       if (event.origin !== calendarOrigin(messagesRef.current)) return;
-      const data = event.data as { event?: unknown } | null;
+      const data = event.data as {
+        event?: unknown;
+        payload?: { invitee?: { uri?: unknown } } | null;
+      } | null;
       if (!data || typeof data !== "object") return;
       if (data.event !== "calendly.event_scheduled") return;
+      const inviteeUri = data.payload?.invitee?.uri;
+      void confirmBookingInChat(
+        sessionIdRef.current,
+        typeof inviteeUri === "string" ? inviteeUri : null,
+        (message) => setMessages((prev) => [...prev, message]),
+      );
       // They just gave Calendly their name and email. Asking again would be
       // both redundant and a bad look under a confirmed booking.
       bookedRef.current = true;
@@ -594,6 +603,7 @@ export function ChatWidget() {
             sessionId,
             message: text,
             pageUrl: window.location.pathname,
+            timeZone: browserTimeZone(),
           }),
         });
 
@@ -620,8 +630,10 @@ export function ChatWidget() {
         // Commits the in-flight bubble. Called on an explicit `flush` frame,
         // before any rich card (so ordering matches the transcript the server
         // stored), and once more at stream end.
-        const flush = () => {
-          const committed = pending.trim();
+        const flush = (finalText?: string) => {
+          // The server's flush carries the cleaned final text; what streamed
+          // in was the raw model output.
+          const committed = (finalText ?? pending).trim();
           pending = "";
           setStreamingText(null);
           if (!committed) return;
@@ -666,7 +678,7 @@ export function ChatWidget() {
 
             if (frame.t === "flush") {
               await waitForReveal();
-              flush();
+              flush(frame.v);
               continue;
             }
 
@@ -918,7 +930,7 @@ function clearSessionFlag(key: string): void {
 
 type ChatStreamFrame =
   | { t: "text"; v: string }
-  | { t: "flush" }
+  | { t: "flush"; v?: string }
   | { t: "status"; v: "finding_times" }
   | {
       t: "msg";
@@ -937,6 +949,50 @@ function parseFrame(line: string): ChatStreamFrame | null {
     return null;
   } catch {
     return null;
+  }
+}
+
+function browserTimeZone(): string | null {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Turns the embed's "event scheduled" signal into a confirmation the visitor
+ * can see and the transcript keeps. The server verifies the booking with
+ * Calendly (the invitee's utm_content must be this conversation) and returns
+ * the same card the webhook would have written; on any failure the visitor
+ * still gets a plain confirmation line so the chat never ends on silence.
+ */
+async function confirmBookingInChat(
+  sessionId: string | null,
+  inviteeUri: string | null,
+  append: (message: ChatDisplayMessage) => void,
+): Promise<void> {
+  const fallback: ChatDisplayMessage = {
+    role: "assistant",
+    content: "Booked. Check your email for the calendar invite.",
+    kind: "booking_confirmed",
+    data: { event_uri: null, starts_at: null },
+  };
+  if (!sessionId || !inviteeUri) {
+    append(fallback);
+    return;
+  }
+  try {
+    const response = await fetch("/api/chatbot/booked", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, inviteeUri }),
+    });
+    if (!response.ok) throw new Error(`booked request failed ${response.status}`);
+    const data = (await response.json()) as { message?: ChatDisplayMessage };
+    append(data.message ?? fallback);
+  } catch {
+    append(fallback);
   }
 }
 

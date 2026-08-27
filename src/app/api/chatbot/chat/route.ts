@@ -52,6 +52,7 @@ const chatRequestSchema = z.object({
   sessionId: z.string().trim().min(8).max(200),
   message: z.string().trim().min(1).max(CHATBOT_INPUT_LIMITS.maxMessageChars),
   pageUrl: z.string().trim().max(2000).nullable().optional(),
+  timeZone: z.string().trim().max(64).nullable().optional(),
 });
 
 /**
@@ -94,7 +95,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const { sessionId, message, pageUrl } = parsed.data;
+  const { sessionId, message, pageUrl, timeZone } = parsed.data;
 
   if (!(await isUnderChatbotDailyCap())) {
     return Response.json(
@@ -237,6 +238,7 @@ export async function POST(request: Request) {
       ),
     config,
     client,
+    timeZone: timeZone ?? null,
   };
 
   // Synchronous by construction: every failure mode (OpenAI down, a tool

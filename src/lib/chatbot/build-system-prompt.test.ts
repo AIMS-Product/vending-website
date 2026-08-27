@@ -70,7 +70,7 @@ describe("closing a booking", () => {
     // invent-a-fact failure as the price. Concrete, but never a specific hour
     // the visitor did not say first.
     expect(prompt).toContain(
-      "never name a clock time the visitor did not name",
+      "ONLY source of a clock time you may say",
     );
   });
 

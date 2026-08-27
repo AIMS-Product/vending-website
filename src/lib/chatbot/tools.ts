@@ -3,6 +3,11 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import {
+  describeAvailability,
+  fetchChatbotAvailability,
+  safeTimeZone,
+} from "@/lib/chatbot/availability";
 import { chatbotBookingUrl } from "@/lib/chatbot/booking";
 import type { ChatbotConfig } from "@/lib/chatbot/config";
 import type { ChatbotMessage } from "@/lib/chatbot/conversation-store";
@@ -32,6 +37,9 @@ import type { Database } from "@/types/database";
 
 type ToolClient = Pick<SupabaseClient<Database>, "from" | "rpc">;
 
+/** Where a flag_for_team request came from, for the setter reading it. */
+const FLAG_REASONS = ["callback", "support", "accessibility", "other"] as const;
+
 export type ChatbotToolContext = {
   conversationId: string;
   personaName: string;
@@ -59,6 +67,8 @@ export type ChatbotToolContext = {
   checkEmailBudget: (email: string) => Promise<boolean>;
   config: ChatbotConfig;
   client: ToolClient;
+  /** IANA zone from the visitor's browser, for get_available_times. */
+  timeZone?: string | null;
 };
 
 export type ChatbotToolOutcome = {
@@ -268,6 +278,51 @@ export const CHATBOT_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] = [
   {
     type: "function",
     function: {
+      name: "get_available_times",
+      description:
+        "Read the team's REAL open call times for the next two weeks, in the visitor's time zone. Call it whenever you are about to suggest a time, whenever they name a day or a window ('Thursday after 6', 'tomorrow morning', 'now'), and whenever they say nothing on the calendar works. Never name a clock time you did not get from this tool.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: [],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "flag_for_team",
+      description:
+        "Hand this visitor to a human on the team. Use it when: no open time fits and they want a callback (needs their phone number first), they are an existing member with a login / billing / renewal / cancellation question, they cannot do a phone call (hearing, accessibility, prefers text or email), or the calendar is not working for them. Records the request for a setter and marks the chat as handed off. Tell them plainly that a real person will reach out, and by when (same day on weekdays).",
+      parameters: {
+        type: "object",
+        properties: {
+          reason: {
+            type: "string",
+            enum: [...FLAG_REASONS],
+            description:
+              "callback = wants a call outside the open times; support = existing member needs the support team; accessibility = cannot do a phone call; other = anything else a human must handle.",
+          },
+          summary: {
+            type: "string",
+            description:
+              "One or two plain sentences for the teammate picking this up: who they are, what they want, and any time window they gave. Quote their words where useful.",
+          },
+          preferred_window: {
+            type: "string",
+            description:
+              "Their preferred days / times for a callback, exactly as they said it, when they gave one.",
+          },
+        },
+        required: ["reason", "summary"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "flag_unknown_question",
       description:
         "Report a question you could not answer confidently from the facts you were given. Call this in the same turn you tell the visitor you'll have the team follow up. This is how the team learns what the site is missing — use it honestly rather than guessing an answer.",
@@ -316,6 +371,10 @@ export async function runChatbotTool(
         return captureContact(args);
       case "flag_unknown_question":
         return await flagUnknownQuestion(args, context);
+      case "get_available_times":
+        return await getAvailableTimes(context);
+      case "flag_for_team":
+        return await flagForTeam(args, context);
       default:
         return { result: `Unknown tool "${name}". Reply normally instead.` };
     }
@@ -643,4 +702,112 @@ function unknownQuestionDedupeKey(question: string): string {
     .replace(/\s+/g, " ")
     .trim();
   return createHash("sha256").update(normalized).digest("hex").slice(0, 32);
+}
+
+// ---------------------------------------------------------------------------
+// get_available_times
+// ---------------------------------------------------------------------------
+
+async function getAvailableTimes(
+  context: ChatbotToolContext,
+): Promise<ChatbotToolOutcome> {
+  const timeZone = safeTimeZone(context.timeZone);
+  const slots = await fetchChatbotAvailability({ timeZone });
+  const calendarOpen = context.transcript.some((m) => m.kind === "calendar");
+  const description = describeAvailability(slots, timeZone);
+  return {
+    result: calendarOpen
+      ? `${description}\nThe calendar is already open in the chat; point them at the slot by day and time.`
+      : `${description}\nThe calendar is not open yet; call show_booking_calendar in this same turn so they can take the slot you name.`,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// flag_for_team
+// ---------------------------------------------------------------------------
+
+const flagForTeamArgsSchema = z.object({
+  reason: z.enum(FLAG_REASONS),
+  summary: z.string().trim().min(1).max(600),
+  preferred_window: z.string().trim().max(200).optional(),
+});
+
+async function flagForTeam(
+  args: unknown,
+  context: ChatbotToolContext,
+): Promise<ChatbotToolOutcome> {
+  const parsed = flagForTeamArgsSchema.safeParse(args);
+  if (!parsed.success) {
+    return {
+      result:
+        "That request wasn't understood. Tell them you'll get a teammate to follow up and try again with a short summary.",
+    };
+  }
+  const { reason, summary, preferred_window: preferredWindow } = parsed.data;
+
+  const hasContact = Boolean(context.capturedPhone || context.capturedEmail);
+  if (reason === "callback" && !context.capturedPhone) {
+    return {
+      result:
+        "No phone number on file, so a callback cannot be arranged yet. Ask for the best number to text or call, in one short sentence, and call this again once they give it.",
+    };
+  }
+  if (!hasContact) {
+    return {
+      result:
+        "No email or phone on file, so the team has no way to reach them. Ask for one in a single short sentence, then call this again.",
+    };
+  }
+
+  const reasonSummary = [
+    `[${reason}] ${summary}`,
+    preferredWindow ? `Preferred window: ${preferredWindow}` : null,
+    context.capturedPhone ? `Phone: ${context.capturedPhone}` : null,
+    context.capturedEmail ? `Email: ${context.capturedEmail}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const now = new Date().toISOString();
+  const taskType = reason === "callback" ? "invite_to_call" : "general_follow_up";
+  const { error: taskError } = await context.client
+    .from("chatbot_follow_up_tasks")
+    .upsert(
+      {
+        conversation_id: context.conversationId,
+        task_type: taskType,
+        priority: 1,
+        channel: context.capturedPhone ? "phone" : "email",
+        reason_summary: reasonSummary,
+        // One live request per conversation and reason; a repeat replaces
+        // the summary rather than stacking duplicates for the setter.
+        dedupe_key: `flag_for_team:${context.conversationId}:${reason}`,
+        due_at: now,
+      },
+      { onConflict: "dedupe_key" },
+    );
+  if (taskError) throw new Error(taskError.message);
+
+  const { error: handoffError } = await context.client
+    .from("chatbot_conversations")
+    .update({ handed_off_at: now, handoff_reason: reasonSummary.slice(0, 500) })
+    .eq("id", context.conversationId);
+  if (handoffError) throw new Error(handoffError.message);
+
+  await context.client.from("chatbot_conversation_flags").upsert(
+    {
+      conversation_id: context.conversationId,
+      flag: "followup_needed",
+      note: reasonSummary.slice(0, 500),
+    },
+    { onConflict: "conversation_id,flag", ignoreDuplicates: true },
+  );
+
+  const channel = context.capturedPhone ? "text or call" : "email";
+  return {
+    result:
+      reason === "support"
+        ? `Recorded for the support team. Tell them a teammate will ${channel} them within one business day, and that they can also reach support@vendingpreneurs.com directly. Do not keep selling.`
+        : `Recorded for the team. Tell them a teammate will ${channel} them, same day on weekdays${preferredWindow ? `, aiming for ${preferredWindow}` : ""}. Say it in one or two sentences and stop asking for a booking.`,
+  };
 }
