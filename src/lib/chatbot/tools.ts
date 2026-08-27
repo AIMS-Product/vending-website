@@ -13,6 +13,7 @@ import { writeChatbotHandoffsToClose } from "@/lib/chatbot/close-handoff";
 import type { ChatbotConfig } from "@/lib/chatbot/config";
 import type { ChatbotMessage } from "@/lib/chatbot/conversation-store";
 import { sendChatbotResourceEmail } from "@/lib/chatbot/emails";
+import { emailHandoff } from "@/lib/chatbot/handoff-email";
 import { extractLead } from "@/lib/chatbot/extract-lead";
 import type { ProspectProfile } from "@/lib/chatbot/extract-prospect-profile";
 import {
@@ -859,6 +860,25 @@ async function flagForTeam(
     { conversationId: context.conversationId },
     { client: context.client },
   );
+
+  // The promise the bot is about to make ("a teammate will email you") is
+  // kept here, not by someone noticing a row in the admin.
+  const receipt = await emailHandoff(
+    {
+      conversationId: context.conversationId,
+      reason,
+      summary,
+      preferredWindow,
+      triggeredBy: `${context.personaName} (site chat)`,
+    },
+    { client: context.client, config: context.config },
+  );
+  if (!receipt.sent) {
+    console.error("chatbot handoff email failed", {
+      conversationId: context.conversationId,
+      error: receipt.error,
+    });
+  }
 
   const channel = context.capturedPhone ? "text or call" : "email";
   return {
