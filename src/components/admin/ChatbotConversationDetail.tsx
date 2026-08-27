@@ -385,7 +385,10 @@ function HandoffPanel({
     handOffConversationAction,
     initialState,
   );
-  const alreadyHandedOff = conversation.status === "handed_off";
+  // The bot's flag_for_team stamps handed_off_at without changing status, so
+  // status alone hid the Resend button on exactly the hand-offs that need it.
+  const alreadyHandedOff =
+    conversation.status === "handed_off" || Boolean(conversation.handedOffAt);
 
   return (
     <section className={adminCardClass}>
