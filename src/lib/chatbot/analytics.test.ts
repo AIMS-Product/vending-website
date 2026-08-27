@@ -297,7 +297,11 @@ describe("outcome rollup", () => {
             created_at: daysAgo(4),
             message_count: 4,
             messages: [
-              { role: "user", content: "How does the program work?", ts: daysAgo(4) },
+              {
+                role: "user",
+                content: "How does the program work?",
+                ts: daysAgo(4),
+              },
             ],
             captured_email: "warm@example.com",
           },
@@ -329,6 +333,49 @@ describe("outcome rollup", () => {
       captured: 1,
       booked: 1,
     });
+  });
+
+  it("buckets drop-off by visitor turns and stamps booked calls on the daily trend", async () => {
+    const analytics = await getChatbotAnalytics({
+      now: () => NOW,
+      client: fakeClient({
+        rows: [
+          {
+            id: "booked",
+            created_at: daysAgo(3),
+            message_count: 5,
+            messages: [
+              ...calendarTranscript("How much does it cost to start?"),
+              { role: "user", content: "ok", ts: daysAgo(3) },
+              { role: "assistant", content: "Great.", ts: daysAgo(3) },
+              { role: "user", content: "booked", ts: daysAgo(3) },
+            ],
+            captured_email: "booked@example.com",
+            call_booked_at: daysAgo(3),
+          },
+          {
+            id: "gone",
+            created_at: daysAgo(5),
+            message_count: 1,
+            messages: [
+              { role: "user", content: "where do i sign up", ts: daysAgo(5) },
+            ],
+          },
+        ],
+      }) as never,
+    });
+
+    const byLabel = Object.fromEntries(
+      analytics.dropOff.map((b) => [b.label, b]),
+    );
+    expect(byLabel["1 message"]).toMatchObject({ total: 1, leftNoContact: 1 });
+    expect(byLabel["3-4"]).toMatchObject({ total: 1, booked: 1 });
+    expect(analytics.dropOff).toHaveLength(5);
+
+    const day = analytics.dailyTrend.find(
+      (row) => row.date === daysAgo(3).slice(0, 10),
+    );
+    expect(day).toMatchObject({ count: 1, booked: 1 });
   });
 
   it("counts a call reconciled through the lead row as booked, not abandoned", async () => {
