@@ -281,10 +281,16 @@ export const CHATBOT_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] = [
     function: {
       name: "get_available_times",
       description:
-        "Read the team's REAL open call times for the next two weeks, in the visitor's time zone. Call it whenever you are about to suggest a time, whenever they name a day or a window ('Thursday after 6', 'tomorrow morning', 'now'), and whenever they say nothing on the calendar works. Never name a clock time you did not get from this tool.",
+        "Read the team's REAL open call times for the next two weeks, in the visitor's time zone. Without a day you get a capped SUMMARY (first few times per part of day). With a day you get EVERY open slot on that day. Call it with the day whenever they name a date or a time ('2pm on the 31st', 'Thursday after 6', 'tomorrow morning') and answer from the full list. Never say a time is unavailable based on the summary. Never name a clock time you did not get from this tool.",
       parameters: {
         type: "object",
-        properties: {},
+        properties: {
+          day: {
+            type: "string",
+            description:
+              "Optional. A calendar day in the visitor's time zone as YYYY-MM-DD. Returns every open slot on that day.",
+          },
+        },
         required: [],
         additionalProperties: false,
       },
@@ -373,7 +379,7 @@ export async function runChatbotTool(
       case "flag_unknown_question":
         return await flagUnknownQuestion(args, context);
       case "get_available_times":
-        return await getAvailableTimes(context);
+        return await getAvailableTimes(args, context);
       case "flag_for_team":
         return await flagForTeam(args, context);
       default:
@@ -742,13 +748,22 @@ function unknownQuestionDedupeKey(question: string): string {
 // get_available_times
 // ---------------------------------------------------------------------------
 
+const availabilityArgsSchema = z.object({
+  day: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+});
+
 async function getAvailableTimes(
+  args: unknown,
   context: ChatbotToolContext,
 ): Promise<ChatbotToolOutcome> {
+  const day = availabilityArgsSchema.safeParse(args).data?.day ?? null;
   const timeZone = safeTimeZone(context.timeZone);
   const { slots } = await resolveBookingCalendar({ timeZone });
   const calendarOpen = context.transcript.some((m) => m.kind === "calendar");
-  const description = describeAvailability(slots, timeZone);
+  const description = describeAvailability(slots, timeZone, { day });
   return {
     result: calendarOpen
       ? `${description}\nThe calendar is already open in the chat; point them at the slot by day and time.`
