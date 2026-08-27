@@ -100,7 +100,7 @@ export default async function AdminChatbotInsightsPage({
       userEmail={user.email}
       userRole={role}
       actions={
-        <Link href="/admin/chatbot" className={adminSecondaryButtonClass}>
+        <Link href="/admin/chatbot/settings" className={adminSecondaryButtonClass}>
           <span aria-hidden="true">
             <AdminIcon icon="settings" />
           </span>

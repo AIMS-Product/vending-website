@@ -5,9 +5,7 @@ import {
   AdminIcon,
   adminSecondaryButtonClass,
 } from "@/components/admin/AdminUi";
-import { ChatbotConfigForm } from "@/components/admin/ChatbotConfigForm";
-import { ChatbotLeadRoutingPanel } from "@/components/admin/ChatbotLeadRoutingPanel";
-import { ChatbotPerformancePanel } from "@/components/admin/ChatbotPerformancePanel";
+import { ChatbotOverview } from "@/components/admin/ChatbotOverview";
 import {
   EMPTY_CHATBOT_ANALYTICS,
   getChatbotAnalytics,
@@ -19,16 +17,35 @@ import {
   type ChatbotConfig,
 } from "@/lib/chatbot/config";
 import { adminGetLatestActivity } from "@/lib/services/chatbot-admin";
+import {
+  getChatbotInsightsKpis,
+  type AdminChatbotRange,
+  type ChatbotInsightsKpis,
+} from "@/lib/services/chatbot-insights";
 import { requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
-  title: "Chatbot admin",
+  title: "Chatbot",
   robots: { index: false, follow: false },
 };
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = { tab?: string | string[] };
+type SearchParams = { range?: string | string[] };
+
+const EMPTY_KPIS: ChatbotInsightsKpis = {
+  conversations: 0,
+  captureRate: 0,
+  avgMessages: 0,
+  needsPromptTuningCount: 0,
+  followUpTasksReadyCount: 0,
+  followUpTasksDueTodayCount: 0,
+  insightsCount: 0,
+  knowledgeFixesCount: 0,
+  siteRecsCount: 0,
+  unansweredQuestionsCount: 0,
+  lastLearningRun: null,
+};
 
 export default async function AdminChatbotPage({
   searchParams,
@@ -39,19 +56,20 @@ export default async function AdminChatbotPage({
     requireAdmin(),
     searchParams,
   ]);
-  const tab = singleParam(params.tab);
+  const range = parseRange(params.range);
 
-  // The chatbot migration ships ahead of being applied in every environment
-  // (see the spec) — a missing table reads as "off, no activity" rather than
-  // a hard error.
+  // A missing table reads as "off, no activity" rather than a hard error; the
+  // migration can ship ahead of being applied in every environment.
   let config: ChatbotConfig = DEFAULT_CHATBOT_CONFIG;
   let analytics: ChatbotAnalytics = EMPTY_CHATBOT_ANALYTICS;
+  let kpis: ChatbotInsightsKpis = EMPTY_KPIS;
   let latestActivity: string | null = null;
   let loadError = false;
   try {
-    [config, analytics, latestActivity] = await Promise.all([
+    [config, analytics, kpis, latestActivity] = await Promise.all([
       loadChatbotConfigFresh(),
       getChatbotAnalytics(),
+      getChatbotInsightsKpis(range),
       adminGetLatestActivity(),
     ]);
   } catch (error) {
@@ -66,11 +84,20 @@ export default async function AdminChatbotPage({
       activeSection="chatbot"
       eyebrow="Site chatbot"
       title="Chatbot"
-      description="Configure the on-site AI setter, review performance, and route captured leads."
+      description="How conversations with Mia are going, where they stop, and what needs a human."
       userEmail={user.email}
       userRole={role}
       actions={
         <>
+          <Link
+            href="/admin/chatbot/conversations"
+            className={adminSecondaryButtonClass}
+          >
+            <span aria-hidden="true">
+              <AdminIcon icon="message-square" />
+            </span>
+            Conversations
+          </Link>
           <Link
             href="/admin/chatbot/insights"
             className={adminSecondaryButtonClass}
@@ -81,13 +108,13 @@ export default async function AdminChatbotPage({
             Insights
           </Link>
           <Link
-            href="/admin/chatbot/conversations"
+            href="/admin/chatbot/settings"
             className={adminSecondaryButtonClass}
           >
             <span aria-hidden="true">
-              <AdminIcon icon="message-square" />
+              <AdminIcon icon="settings" />
             </span>
-            Conversations
+            Settings
           </Link>
         </>
       }
@@ -95,24 +122,20 @@ export default async function AdminChatbotPage({
       {loadError ? (
         <p className="text-ui-text-muted mb-5 text-sm">
           The chatbot tables aren&apos;t provisioned in this environment yet.
-          Settings below will start working once the migration is applied.
         </p>
       ) : null}
-
-      <div className="grid gap-5">
-        <ChatbotPerformancePanel
-          analytics={analytics}
-          config={config}
-          latestActivity={latestActivity}
-          activeTab={tab}
-        />
-        <ChatbotConfigForm config={config} />
-        <ChatbotLeadRoutingPanel config={config} />
-      </div>
+      <ChatbotOverview
+        analytics={analytics}
+        kpis={kpis}
+        range={range}
+        enabled={config.enabled}
+        latestActivity={latestActivity}
+      />
     </AdminShell>
   );
 }
 
-function singleParam(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
+function parseRange(value: string | string[] | undefined): AdminChatbotRange {
+  const raw = Number(Array.isArray(value) ? value[0] : value);
+  return raw === 7 || raw === 90 ? raw : 30;
 }

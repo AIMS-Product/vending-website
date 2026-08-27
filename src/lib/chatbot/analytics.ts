@@ -38,7 +38,27 @@ export type ChatbotAnalyticsMetric = {
   deltaPct: number | null;
 };
 
-export type ChatbotDailyTrendRow = { date: string; count: number };
+export type ChatbotDailyTrendRow = {
+  date: string;
+  count: number;
+  /** Conversations started that day that ended with a call on the calendar. */
+  booked: number;
+};
+
+/**
+ * Where conversations end, by how many turns the visitor took. The admin
+ * overview stacks these to show whether people leave after one message
+ * (the greeting/first answer is the problem) or deep in (the close is).
+ */
+export type ChatbotDropOffBucket = {
+  label: string;
+  total: number;
+  booked: number;
+  calendarAbandoned: number;
+  capturedNoBooking: number;
+  leftNoContact: number;
+  open: number;
+};
 export type ChatbotRankedRow = { label: string; count: number };
 
 /** Raw counts for one stage of the funnel, for one slice (whole window or one attribution bucket). */
@@ -144,8 +164,14 @@ export type ChatbotAnalytics = {
    * render a confident split.
    */
   attributionSplitTrustworthy: boolean;
-  /** Outcome breakdown for the last 7 and 30 days. See ChatbotOutcomeWindow. */
-  outcomes: { d7: ChatbotOutcomeWindow; d30: ChatbotOutcomeWindow };
+  /** Outcome breakdown for the last 7, 30 and 90 days. See ChatbotOutcomeWindow. */
+  outcomes: {
+    d7: ChatbotOutcomeWindow;
+    d30: ChatbotOutcomeWindow;
+    d90: ChatbotOutcomeWindow;
+  };
+  /** Last 30 days, bucketed by visitor turns. See ChatbotDropOffBucket. */
+  dropOff: ChatbotDropOffBucket[];
 };
 
 const emptyOutcomeWindow = (days: number): ChatbotOutcomeWindow => ({
@@ -183,7 +209,12 @@ export const EMPTY_CHATBOT_ANALYTICS: ChatbotAnalytics = {
     d90: emptyFunnelWindow(90),
   },
   attributionSplitTrustworthy: false,
-  outcomes: { d7: emptyOutcomeWindow(7), d30: emptyOutcomeWindow(30) },
+  outcomes: {
+    d7: emptyOutcomeWindow(7),
+    d30: emptyOutcomeWindow(30),
+    d90: emptyOutcomeWindow(90),
+  },
+  dropOff: [],
 };
 
 function emptyFunnelWindow(days: number): ChatbotFunnelWindow {
@@ -464,7 +495,7 @@ function buildAnalytics(
     avgMessagesPerConversation: current.length
       ? Math.round((totalMessages / current.length) * 10) / 10
       : 0,
-    dailyTrend: buildDailyTrend(current, start, now),
+    dailyTrend: buildDailyTrend(current, start, now, bookedLeadIds),
     topOpeningQuestions: topOpeningQuestions(current),
     keywordFrequency: keywordFrequency(current),
     prospectDistributions: buildProspectDistributions(current),
@@ -477,8 +508,77 @@ function buildAnalytics(
     outcomes: {
       d7: buildOutcomeWindow(7, rows, now, bookedLeadIds),
       d30: buildOutcomeWindow(WINDOW_DAYS, rows, now, bookedLeadIds),
+      d90: buildOutcomeWindow(90, rows, now, bookedLeadIds),
     },
+    dropOff: buildDropOff(current, now, bookedLeadIds),
   };
+}
+
+const DROP_OFF_BUCKETS: ReadonlyArray<{ label: string; max: number }> = [
+  { label: "1 message", max: 1 },
+  { label: "2", max: 2 },
+  { label: "3-4", max: 4 },
+  { label: "5-9", max: 9 },
+  { label: "10+", max: Infinity },
+];
+
+function outcomeOf(
+  row: ConversationRow,
+  now: Date,
+  bookedLeadIds: ReadonlySet<string>,
+) {
+  const booked = isBooked(row, bookedLeadIds);
+  return deriveConversationOutcome(
+    {
+      messages: row.messages,
+      capturedEmail: row.captured_email,
+      capturedPhone: row.captured_phone,
+      callBookedAt: booked ? (row.call_booked_at ?? row.created_at) : null,
+      lastMessageAt: null,
+      createdAt: row.created_at,
+    },
+    now,
+  );
+}
+
+function userTurns(messages: Json): number {
+  if (!Array.isArray(messages)) return 0;
+  return messages.filter(
+    (m) =>
+      typeof m === "object" &&
+      m !== null &&
+      (m as { role?: unknown }).role === "user",
+  ).length;
+}
+
+function buildDropOff(
+  rows: ConversationRow[],
+  now: Date,
+  bookedLeadIds: ReadonlySet<string>,
+): ChatbotDropOffBucket[] {
+  const buckets = DROP_OFF_BUCKETS.map((b) => ({
+    label: b.label,
+    total: 0,
+    booked: 0,
+    calendarAbandoned: 0,
+    capturedNoBooking: 0,
+    leftNoContact: 0,
+    open: 0,
+  }));
+  for (const row of rows) {
+    const turns = userTurns(row.messages);
+    if (turns === 0) continue;
+    const index = DROP_OFF_BUCKETS.findIndex((b) => turns <= b.max);
+    const bucket = buckets[index];
+    bucket.total += 1;
+    const outcome = outcomeOf(row, now, bookedLeadIds);
+    if (outcome === "booked") bucket.booked += 1;
+    else if (outcome === "calendar_abandoned") bucket.calendarAbandoned += 1;
+    else if (outcome === "captured_no_booking") bucket.capturedNoBooking += 1;
+    else if (outcome === "left_no_contact") bucket.leftNoContact += 1;
+    else bucket.open += 1;
+  }
+  return buckets;
 }
 
 /**
@@ -501,17 +601,7 @@ function buildOutcomeWindow(
 
   for (const row of windowRows) {
     const booked = isBooked(row, bookedLeadIds);
-    const outcome = deriveConversationOutcome(
-      {
-        messages: row.messages,
-        capturedEmail: row.captured_email,
-        capturedPhone: row.captured_phone,
-        callBookedAt: booked ? (row.call_booked_at ?? row.created_at) : null,
-        lastMessageAt: null,
-        createdAt: row.created_at,
-      },
-      now,
-    );
+    const outcome = outcomeOf(row, now, bookedLeadIds);
 
     if (outcome === "booked") result.booked += 1;
     else if (outcome === "calendar_abandoned") result.calendarAbandoned += 1;
@@ -665,22 +755,27 @@ function buildDailyTrend(
   rows: ConversationRow[],
   start: Date,
   end: Date,
+  bookedLeadIds: ReadonlySet<string>,
 ): ChatbotDailyTrendRow[] {
-  const buckets = new Map<string, number>();
+  const buckets = new Map<string, { count: number; booked: number }>();
   for (
     let cursor = new Date(start);
     cursor < end;
     cursor = new Date(cursor.getTime() + DAY_MS)
   ) {
-    buckets.set(dateKey(cursor), 0);
+    buckets.set(dateKey(cursor), { count: 0, booked: 0 });
   }
   for (const row of rows) {
     const key = dateKey(new Date(row.created_at));
-    buckets.set(key, (buckets.get(key) ?? 0) + 1);
+    const prev = buckets.get(key) ?? { count: 0, booked: 0 };
+    buckets.set(key, {
+      count: prev.count + 1,
+      booked: prev.booked + (isBooked(row, bookedLeadIds) ? 1 : 0),
+    });
   }
-  return Array.from(buckets.entries()).map(([date, count]) => ({
+  return Array.from(buckets.entries()).map(([date, value]) => ({
     date,
-    count,
+    ...value,
   }));
 }
 
