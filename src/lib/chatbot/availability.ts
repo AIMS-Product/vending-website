@@ -115,11 +115,18 @@ type DayBuckets = {
 export function describeAvailability(
   slots: readonly string[],
   timeZone: string,
-  options: { perBucket?: number; maxDays?: number } = {},
+  options: { perBucket?: number; maxDays?: number; day?: string | null } = {},
 ): string {
-  const perBucket = options.perBucket ?? 3;
+  const perBucket = options.perBucket ?? 4;
   const maxDays = options.maxDays ?? 7;
   const tz = safeTimeZone(timeZone);
+
+  // A specific day: every slot on it, uncapped, so "can we do 2pm on the
+  // 31st?" is answered from the full list. The capped summary below once made
+  // the model deny a 2:00pm that existed because only 12:00-12:30 were shown.
+  if (options.day) {
+    return describeDay(slots, tz, options.day);
+  }
 
   if (slots.length === 0) {
     return `The online calendar has no slot to show right now. NEVER tell the visitor there is no availability, that the team is booked up, or that nothing is open; that ends the conversation. Instead present two concrete choices as the team fitting around them: (1) a callback today or tomorrow, asking which works better for them, morning, afternoon or evening, and the best number to text; (2) a teammate texting them within the hour to lock a time in. Whichever they pick, call flag_for_team with their number and window. Never invent a clock time.`;
@@ -175,6 +182,7 @@ export function describeAvailability(
   const tzLabel = tz.replace(/_/g, " ");
   return [
     `Open times on the team's calendar, shown in the visitor's time zone (${tzLabel}). Only ever name a time from this list.`,
+    `IMPORTANT: this is a SUMMARY. Each part of the day shows only its first ${perBucket} times; more are usually open. Never tell a visitor a specific time is unavailable from this summary. When they ask about a particular day or time, call get_available_times again with that day (YYYY-MM-DD) to get every open slot before answering.`,
     ...lines,
     `Earliest: ${dayFormat.format(first)} at ${timeFormat.format(first).toLowerCase()}.`,
     days.size > maxDays
@@ -183,6 +191,33 @@ export function describeAvailability(
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function describeDay(
+  slots: readonly string[],
+  tz: string,
+  day: string,
+): string {
+  const isoDay = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const timeFormat = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const times = slots
+    .map((iso) => new Date(iso))
+    .filter((d) => !Number.isNaN(d.getTime()) && isoDay.format(d) === day)
+    .map((d) => timeFormat.format(d).toLowerCase());
+  const tzLabel = tz.replace(/_/g, " ");
+  if (times.length === 0) {
+    return `No open times on ${day} (${tzLabel}). Do not offer a time on that day. Offer the nearest open day from the summary instead, or a callback via flag_for_team.`;
+  }
+  return `Every open time on ${day}, in the visitor's time zone (${tzLabel}): ${times.join(", ")}. This list is complete for that day: a time on it is bookable, a time not on it is not.`;
 }
 
 export function safeTimeZone(value: string | null | undefined): string {

@@ -20,6 +20,34 @@ describe("describeAvailability", () => {
     expect(text).toContain("Earliest: Thu, Aug 27 at 10:15 am.");
   });
 
+  it("returns every slot for a requested day, uncapped, and says the list is complete", () => {
+    const slots = [
+      "2026-08-31T19:00:00Z", // 12:00pm PT
+      "2026-08-31T19:15:00Z",
+      "2026-08-31T19:30:00Z",
+      "2026-08-31T21:00:00Z", // 2:00pm PT
+      "2026-09-01T19:00:00Z",
+    ];
+    const text = describeAvailability(slots, "America/Los_Angeles", {
+      day: "2026-08-31",
+    });
+    expect(text).toContain("12:00 pm, 12:15 pm, 12:30 pm, 2:00 pm");
+    expect(text).toMatch(/complete for that day/);
+    expect(text).not.toContain("Sep 1");
+    expect(
+      describeAvailability(slots, "America/Los_Angeles", { day: "2026-09-05" }),
+    ).toMatch(/No open times on 2026-09-05/);
+  });
+
+  it("warns the model that the summary is capped", () => {
+    const text = describeAvailability(
+      ["2026-08-31T19:00:00Z"],
+      "America/Los_Angeles",
+    );
+    expect(text).toMatch(/this is a SUMMARY/);
+    expect(text).toMatch(/Never tell a visitor a specific time is unavailable/);
+  });
+
   it("caps each bucket so the tool result stays short", () => {
     const slots = Array.from(
       { length: 8 },
