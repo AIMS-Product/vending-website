@@ -27,6 +27,17 @@ export const CHATBOT_BOOKING_URL =
  * src/lib/chatbot/booking-attribution.ts in the same commit — they are one
  * contract split across two systems.
  */
+/**
+ * The Calendly event type behind CHATBOT_BOOKING_URL. The `d/` scheduling link
+ * cannot be resolved to its event type through the API, so this is pinned by
+ * hand (Vendingpreneurs Consultation, round robin, 45 min; found from the
+ * scheduled events chat bookings produced). Used for the get_available_times
+ * tool only; the embed still uses the URL above.
+ */
+export const CHATBOT_CONSULTATION_EVENT_TYPE_URI =
+  process.env.CALENDLY_CHATBOT_EVENT_TYPE_URI ??
+  "https://api.calendly.com/event_types/3acb4582-147a-4652-ad6b-5effe4a1b755";
+
 export const CHATBOT_BOOKING_UTM_SOURCE = "chatbot";
 export const CHATBOT_BOOKING_UTM_MEDIUM = "site_chat";
 

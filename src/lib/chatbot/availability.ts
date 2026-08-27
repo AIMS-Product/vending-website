@@ -1,0 +1,167 @@
+import "server-only";
+
+import { CHATBOT_CONSULTATION_EVENT_TYPE_URI } from "@/lib/chatbot/booking";
+import { config } from "@/lib/config";
+import { createCalendlyApiClient } from "@/lib/services/calendly-api";
+
+/**
+ * Real open times for the consultation calendar, worded for the model.
+ *
+ * Until now Mia could only say "grab the first slot on there". Three visitors
+ * in one week hit a calendar with no dates they could pick and the bot kept
+ * inventing slots ("select the 10:00 AM on September 7"). This is the layer
+ * that lets it say what is actually open, and say honestly when nothing is.
+ */
+
+export const AVAILABILITY_DAYS = 14;
+/** Calendly caps event_type_available_times at 7 days per request. */
+const WINDOW_DAYS = 7;
+const CACHE_TTL_MS = 60_000;
+
+// ponytail: one process-wide cache keyed by event type; per-instance on Fluid
+// Compute, which is fine for a 60s TTL. Move to Redis if this ever fans out.
+const cache = new Map<string, { at: number; slots: string[] }>();
+
+export type AvailabilityInput = {
+  timeZone: string;
+  now?: Date;
+  eventTypeUri?: string;
+  fetchSlots?: (start: string, end: string) => Promise<string[]>;
+};
+
+export async function fetchChatbotAvailability(
+  input: AvailabilityInput,
+): Promise<string[]> {
+  const eventTypeUri =
+    input.eventTypeUri ?? CHATBOT_CONSULTATION_EVENT_TYPE_URI;
+  const now = input.now ?? new Date();
+  const cached = cache.get(eventTypeUri);
+  if (cached && now.getTime() - cached.at < CACHE_TTL_MS) return cached.slots;
+
+  const fetchSlots =
+    input.fetchSlots ??
+    (async (start: string, end: string) => {
+      const client = createCalendlyApiClient({
+        token: config.CALENDLY_API_TOKEN,
+        maxRequests: 6,
+      });
+      return client.listAvailableTimes({
+        eventTypeUri,
+        startTime: start,
+        endTime: end,
+      });
+    });
+
+  const windows: Array<Promise<string[]>> = [];
+  // Calendly rejects a start_time in the past; lead by a minute.
+  let start = new Date(now.getTime() + 60_000);
+  const horizon = new Date(now.getTime() + AVAILABILITY_DAYS * 86_400_000);
+  while (start < horizon) {
+    const end = new Date(
+      Math.min(start.getTime() + WINDOW_DAYS * 86_400_000, horizon.getTime()),
+    );
+    windows.push(fetchSlots(start.toISOString(), end.toISOString()));
+    start = end;
+  }
+
+  const slots = (await Promise.all(windows)).flat().sort();
+  cache.set(eventTypeUri, { at: now.getTime(), slots });
+  return slots;
+}
+
+type DayBuckets = {
+  label: string;
+  morning: string[];
+  afternoon: string[];
+  evening: string[];
+};
+
+/**
+ * Turns raw ISO start times into the sentence the model reads. Groups by the
+ * VISITOR's day, buckets morning / afternoon / evening (so "after 6 so my
+ * husband can join" has a real answer), and caps each bucket so the tool
+ * result stays a few lines.
+ */
+export function describeAvailability(
+  slots: readonly string[],
+  timeZone: string,
+  options: { perBucket?: number; maxDays?: number } = {},
+): string {
+  const perBucket = options.perBucket ?? 3;
+  const maxDays = options.maxDays ?? 7;
+  const tz = safeTimeZone(timeZone);
+
+  if (slots.length === 0) {
+    return `No open times on the team's calendar in the next ${AVAILABILITY_DAYS} days. Do not invent one. Say so plainly, then offer a callback: ask for their phone number and the days or times that suit them, and use flag_for_team so a setter reaches out.`;
+  }
+
+  const dayFormat = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+  const timeFormat = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const hourFormat = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    hour: "numeric",
+    hour12: false,
+  });
+
+  const days = new Map<string, DayBuckets>();
+  for (const iso of slots) {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) continue;
+    const label = dayFormat.format(date);
+    const hour = Number(hourFormat.format(date).replace(/\D/g, ""));
+    const bucket: keyof Omit<DayBuckets, "label"> =
+      hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    const day = days.get(label) ?? {
+      label,
+      morning: [],
+      afternoon: [],
+      evening: [],
+    };
+    if (day[bucket].length < perBucket) {
+      day[bucket] = [...day[bucket], timeFormat.format(date).toLowerCase()];
+    }
+    days.set(label, day);
+  }
+
+  const lines = [...days.values()].slice(0, maxDays).map((day) => {
+    const parts = [
+      day.morning.length ? `morning ${day.morning.join(", ")}` : null,
+      day.afternoon.length ? `afternoon ${day.afternoon.join(", ")}` : null,
+      day.evening.length ? `evening ${day.evening.join(", ")}` : null,
+    ].filter(Boolean);
+    return `${day.label}: ${parts.join(" | ")}`;
+  });
+
+  const first = new Date(slots[0]);
+  const tzLabel = tz.replace(/_/g, " ");
+  return [
+    `Open times on the team's calendar, shown in the visitor's time zone (${tzLabel}). Only ever name a time from this list.`,
+    ...lines,
+    `Earliest: ${dayFormat.format(first)} at ${timeFormat.format(first).toLowerCase()}.`,
+    days.size > maxDays
+      ? `More days are open after these; the calendar in the chat shows them all.`
+      : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function safeTimeZone(value: string | null | undefined): string {
+  const candidate = value?.trim();
+  if (!candidate) return "America/New_York";
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: candidate });
+    return candidate;
+  } catch {
+    return "America/New_York";
+  }
+}

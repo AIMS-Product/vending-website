@@ -7,6 +7,12 @@ import {
   type ChatbotToolCall,
 } from "@/lib/chatbot/openai";
 import type { ChatbotMessage } from "@/lib/chatbot/conversation-store";
+import {
+  countExclamations,
+  humanizeChatbotReply,
+  needsCalendarGuard,
+  rewriteForOpenCalendar,
+} from "@/lib/chatbot/humanize";
 import { stripChatbotFormatting } from "@/lib/chatbot/strip-formatting";
 import {
   CHATBOT_TOOL_DEFINITIONS,
@@ -31,7 +37,7 @@ import {
  */
 export type ChatStreamFrame =
   | { t: "text"; v: string }
-  | { t: "flush" }
+  | { t: "flush"; v?: string }
   | { t: "status"; v: "finding_times" }
   | {
       t: "msg";
@@ -112,14 +118,53 @@ export function createTurnStream(
             (delta) => emit({ t: "text", v: delta }),
           );
 
-          const finalText = stripChatbotFormatting(text);
+          // The model wrote about a calendar instead of opening one (a link,
+          // "one moment", "I can't show it"). Open it for them and rewrite
+          // the sentence so it describes what is now on screen.
+          const calendarShown = input.toolContext.transcript.some(
+            (m) => m.kind === "calendar",
+          );
+          const callsCalendar = toolCalls.some(
+            (c) => c.function.name === "show_booking_calendar",
+          );
+          const guard =
+            !calendarShown && !callsCalendar && needsCalendarGuard(text);
+
+          let finalText = stripChatbotFormatting(
+            guard ? rewriteForOpenCalendar(text) : text,
+          );
+          finalText = humanizeChatbotReply(finalText, {
+            exclamationsAlreadyUsed: countExclamations([
+              ...input.toolContext.transcript
+                .filter((m) => m.role === "assistant")
+                .map((m) => m.content),
+              ...input.sink.messages.map((m) => m.content),
+            ]),
+          });
           if (finalText) {
-            emit({ t: "flush" });
+            // The flush carries the final text: the visitor watched the raw
+            // stream, and this is what replaces it (and what is stored).
+            emit({ t: "flush", v: finalText });
             input.sink.messages.push({
               role: "assistant",
               content: finalText,
               ts: new Date().toISOString(),
             });
+          }
+
+          if (guard) {
+            await runToolRound(
+              [
+                {
+                  id: `guard_${Date.now()}`,
+                  type: "function",
+                  function: { name: "show_booking_calendar", arguments: "{}" },
+                },
+              ],
+              input,
+              emit,
+              { feedModel: false },
+            );
           }
 
           if (toolCalls.length === 0) break;
@@ -178,9 +223,13 @@ async function runToolRound(
   toolCalls: ChatbotToolCall[],
   input: TurnStreamInput,
   emit: (frame: ChatStreamFrame) => void,
+  options: { feedModel?: boolean } = {},
 ): Promise<void> {
   for (const toolCall of toolCalls) {
-    if (toolCall.function.name === "show_booking_calendar") {
+    if (
+      toolCall.function.name === "show_booking_calendar" ||
+      toolCall.function.name === "get_available_times"
+    ) {
       emit({ t: "status", v: "finding_times" });
     }
 
@@ -190,11 +239,15 @@ async function runToolRound(
       input.toolContext,
     );
 
-    input.modelMessages.push({
-      role: "tool",
-      tool_call_id: toolCall.id,
-      content: outcome.result,
-    });
+    // A guard-initiated call has no matching assistant tool_calls entry, so
+    // its result must not be fed back or OpenAI rejects the next request.
+    if (options.feedModel !== false) {
+      input.modelMessages.push({
+        role: "tool",
+        tool_call_id: toolCall.id,
+        content: outcome.result,
+      });
+    }
 
     if (outcome.capture) {
       // First value wins, exactly like the free-text path: a later turn never

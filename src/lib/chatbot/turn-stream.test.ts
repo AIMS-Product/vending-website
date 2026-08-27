@@ -124,7 +124,7 @@ describe("createTurnStream", () => {
       "Hey ",
       "there.",
     ]);
-    expect(frames.at(-1)).toEqual({ t: "flush" });
+    expect(frames.at(-1)).toEqual({ t: "flush", v: "Hey there." });
     expect(sink.messages).toHaveLength(1);
     expect(sink.messages[0].content).toBe("Hey there.");
     expect(streamChatbotReply).toHaveBeenCalledTimes(1);
