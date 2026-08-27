@@ -25,6 +25,7 @@ import {
   TeaserBubble,
 } from "@/components/chatbot/ChatLauncher";
 import type { ChatbotQuickAction } from "@/lib/chatbot/config";
+import { playReceiveSound, playSendSound } from "@/lib/chatbot/sounds";
 
 const SESSION_STORAGE_KEY = "vp_chat_session_id";
 const TEASER_DISMISSED_KEY = "vp_chat_teaser_dismissed";
@@ -576,6 +577,7 @@ export function ChatWidget() {
       if (!sessionId || !text.trim() || isWaiting) return;
 
       setError(null);
+      playSendSound();
       setMessages((prev) => [...prev, { role: "user", content: text }]);
       setInputValue("");
       setIsWaiting(true);
@@ -638,6 +640,7 @@ export function ChatWidget() {
           setStreamingText(null);
           if (!committed) return;
           produced = true;
+          playReceiveSound();
           setMessages((prev) => [
             ...prev,
             { role: "assistant", content: committed },
@@ -687,6 +690,7 @@ export function ChatWidget() {
               flush();
               setToolStatus(null);
               produced = true;
+              playReceiveSound();
               setMessages((prev) => [
                 ...prev,
                 {
