@@ -132,3 +132,23 @@ describe("the pricing rule does not gag earnings answers", () => {
     expect(prompt).toContain("a story with no link is a failure");
   });
 });
+
+describe("the visitor's name", () => {
+  it("asks for the first name early when none is known", () => {
+    const prompt = buildChatbotSystemPrompt(base);
+    expect(prompt).toContain("You do not know their name yet");
+    expect(prompt).toContain("first or second reply");
+    expect(prompt).toContain("I'm Mia, by the way");
+  });
+
+  it("uses a known first name naturally and never asks again", () => {
+    const prompt = buildChatbotSystemPrompt({
+      ...base,
+      capturedName: "Jordan Lee",
+    });
+    expect(prompt).toContain("You are talking with Jordan.");
+    expect(prompt).toContain("Jordan, want to just grab a time right here?");
+    expect(prompt).toContain("Never ask for their name again");
+    expect(prompt).not.toContain("You do not know their name yet");
+  });
+});
