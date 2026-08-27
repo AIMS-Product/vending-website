@@ -5,7 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
   describeAvailability,
-  fetchChatbotAvailability,
+  resolveBookingCalendar,
   safeTimeZone,
 } from "@/lib/chatbot/availability";
 import { chatbotBookingUrl } from "@/lib/chatbot/booking";
@@ -365,7 +365,7 @@ export async function runChatbotTool(
   try {
     switch (name) {
       case "show_booking_calendar":
-        return showBookingCalendar(context);
+        return await showBookingCalendar(context);
       case "send_resources_email":
         return await sendResourcesEmail(args, context);
       case "capture_contact":
@@ -396,10 +396,18 @@ export async function runChatbotTool(
 // show_booking_calendar
 // ---------------------------------------------------------------------------
 
-function showBookingCalendar(context: ChatbotToolContext): ChatbotToolOutcome {
+async function showBookingCalendar(
+  context: ChatbotToolContext,
+): Promise<ChatbotToolOutcome> {
   const alreadyShown = context.transcript.some(
     (message) => message.kind === "calendar",
   );
+
+  // Open whichever Lane 1 calendar actually has a slot, so the visitor never
+  // meets a wall of greyed-out days. Cached for 60s; fails soft to primary.
+  const { calendar } = await resolveBookingCalendar({
+    timeZone: safeTimeZone(context.timeZone),
+  });
 
   const url = chatbotBookingUrl({
     conversationId: context.conversationId,
@@ -407,6 +415,7 @@ function showBookingCalendar(context: ChatbotToolContext): ChatbotToolOutcome {
     email: context.capturedEmail,
     embed: true,
     embedDomain: context.embedDomain,
+    baseUrl: calendar.url,
   });
 
   if (!url) {
@@ -713,7 +722,7 @@ async function getAvailableTimes(
   context: ChatbotToolContext,
 ): Promise<ChatbotToolOutcome> {
   const timeZone = safeTimeZone(context.timeZone);
-  const slots = await fetchChatbotAvailability({ timeZone });
+  const { slots } = await resolveBookingCalendar({ timeZone });
   const calendarOpen = context.transcript.some((m) => m.kind === "calendar");
   const description = describeAvailability(slots, timeZone);
   return {

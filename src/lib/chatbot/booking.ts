@@ -14,7 +14,10 @@ export const CHATBOT_BOOKING_URL =
   // for chatbot needs. Default: the Vendingpreneurs Consultation calendar
   // (Kody, 2026-08-24).
   process.env.NEXT_PUBLIC_CHATBOT_CALENDLY_URL ??
-  "https://calendly.com/d/cxfn-hh2-h8g/vendingpreneurs-consultation";
+  // "Vendingpreneurs Consultation Call", LANE 1 - Top 2 Closers. Switched from
+  // d/cxfn-hh2-h8g on 2026-08-27: that event type showed every day unavailable
+  // for five weeks while this one, with the same closers, had open slots.
+  "https://calendly.com/d/cvr6-cfd-zgd/vendingpreneurs-consultation-call";
 
 /**
  * The attribution chain in two values. Calendly echoes whatever `utm_*`
@@ -36,7 +39,40 @@ export const CHATBOT_BOOKING_URL =
  */
 export const CHATBOT_CONSULTATION_EVENT_TYPE_URI =
   process.env.CALENDLY_CHATBOT_EVENT_TYPE_URI ??
-  "https://api.calendly.com/event_types/3acb4582-147a-4652-ad6b-5effe4a1b755";
+  "https://api.calendly.com/event_types/5603d7cc-ca99-4192-a11e-a55b186ce61d";
+
+export type ChatbotCalendar = {
+  url: string;
+  eventTypeUri: string;
+  label: string;
+};
+
+/**
+ * Every Lane 1 calendar the chat may book into, primary first. All of them
+ * are round robins over the same seven closers; they differ only in their own
+ * date-range and cap settings, which is exactly why one can be empty while
+ * another has slots. The availability tool walks this list so the visitor is
+ * always offered a real time when any Lane 1 calendar has one.
+ */
+export const CHATBOT_CALENDARS: readonly ChatbotCalendar[] = [
+  {
+    label: "Vendingpreneurs Consultation Call",
+    url: CHATBOT_BOOKING_URL,
+    eventTypeUri: CHATBOT_CONSULTATION_EVENT_TYPE_URI,
+  },
+  {
+    label: "Vending Consult Call",
+    url: "https://calendly.com/d/dv5z-5xz-rby/vending-consult-call",
+    eventTypeUri:
+      "https://api.calendly.com/event_types/56a1f6dc-2095-4b22-8ad2-b258da957e80",
+  },
+  {
+    label: "Vendingpreneurs Consultation",
+    url: "https://calendly.com/d/cxfn-hh2-h8g/vendingpreneurs-consultation",
+    eventTypeUri:
+      "https://api.calendly.com/event_types/3acb4582-147a-4652-ad6b-5effe4a1b755",
+  },
+];
 
 export const CHATBOT_BOOKING_UTM_SOURCE = "chatbot";
 export const CHATBOT_BOOKING_UTM_MEDIUM = "site_chat";
@@ -50,6 +86,8 @@ export type ChatbotBookingUrlOptions = {
   embed?: boolean;
   /** Origin hosting the iframe — Calendly requires it for inline embeds. */
   embedDomain?: string | null;
+  /** A Lane 1 calendar other than the primary, when that one has the open slots. */
+  baseUrl?: string;
 };
 
 /**
@@ -62,7 +100,7 @@ export function chatbotBookingUrl(
 ): string | null {
   let url: URL;
   try {
-    url = new URL(CHATBOT_BOOKING_URL);
+    url = new URL(options.baseUrl ?? CHATBOT_BOOKING_URL);
   } catch {
     return null;
   }
