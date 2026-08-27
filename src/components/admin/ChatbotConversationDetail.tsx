@@ -43,7 +43,10 @@ export function ChatbotConversationDetail({
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="grid gap-5">
         <MetaChips conversation={conversation} />
-        <Transcript messages={conversation.messages} />
+        <Transcript
+          messages={conversation.messages}
+          booking={conversation.booking}
+        />
       </div>
 
       <div className="grid gap-5">
@@ -71,6 +74,14 @@ function MetaChips({
     <section className={adminCardClass}>
       <div className="flex flex-wrap items-center gap-2">
         <AdminStatusBadge status={conversation.status} />
+        {conversation.booking ? (
+          <span className="bg-ui-ok-fill text-ui-ok-ink rounded-full px-2.5 py-0.5 text-xs font-medium">
+            Booked {formatDateTime(conversation.booking.bookedAt)}
+            {conversation.booking.hostName
+              ? ` with ${conversation.booking.hostName}`
+              : ""}
+          </span>
+        ) : null}
         {conversation.handedOffAt ? (
           <span className="bg-ui-line text-ui-text-muted rounded-full px-2.5 py-0.5 text-xs font-medium">
             Handed off {formatDateTime(conversation.handedOffAt)}
@@ -129,8 +140,10 @@ function MetaItem({ label, value }: { label: string; value: string }) {
 
 function Transcript({
   messages,
+  booking,
 }: {
   messages: AdminChatbotConversationDetail["messages"];
+  booking: AdminChatbotConversationDetail["booking"];
 }) {
   return (
     <section className={adminCardClass} aria-label="Transcript">
@@ -147,6 +160,7 @@ function Transcript({
       ) : (
         <p className="text-ui-text-muted mt-3 text-sm">No messages recorded.</p>
       )}
+      {booking ? <BookingStamp booking={booking} /> : null}
     </section>
   );
 }
@@ -404,6 +418,44 @@ function HandoffButton({ alreadyHandedOff }: { alreadyHandedOff: boolean }) {
     >
       {pending ? "Saving..." : alreadyHandedOff ? "Update handoff" : "Hand off"}
     </button>
+  );
+}
+
+/**
+ * The one line the team asked for at the foot of every booked chat: when the
+ * booking happened, when the call is, and which consultant has it.
+ */
+function BookingStamp({
+  booking,
+}: {
+  booking: NonNullable<AdminChatbotConversationDetail["booking"]>;
+}) {
+  return (
+    <div
+      className="border-ui-ok/40 bg-ui-ok-fill rounded-ui mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border px-3 py-2.5 text-sm"
+      role="status"
+    >
+      <span
+        className="bg-ui-ok inline-block size-2 shrink-0 rounded-full"
+        aria-hidden="true"
+      />
+      <span className="text-ui-ok-ink font-semibold">
+        Call booked {formatDateTime(booking.bookedAt)}
+      </span>
+      {booking.eventStartAt ? (
+        <span className="text-ui-text">
+          {booking.eventName ?? "Call"} on{" "}
+          {formatDateTime(booking.eventStartAt)}
+        </span>
+      ) : null}
+      <span className="text-ui-text">
+        {booking.hostName
+          ? `with ${booking.hostName}`
+          : booking.source === "close"
+            ? "recorded in Close; consultant not on file"
+            : "consultant not on the Calendly record"}
+      </span>
+    </div>
   );
 }
 

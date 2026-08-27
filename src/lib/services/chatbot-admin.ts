@@ -342,6 +342,18 @@ export type AdminChatbotLinkedLead = {
   closeSyncStatus: string | null;
 } | null;
 
+/** The call this chat produced, for the stamp at the foot of the transcript. */
+export type AdminChatbotBooking = {
+  /** When the booking was made (Calendly's record, or Close's reconcile). */
+  bookedAt: string;
+  /** When the call itself happens. */
+  eventStartAt: string | null;
+  eventName: string | null;
+  /** The consultant Calendly assigned. Null when the record never said. */
+  hostName: string | null;
+  source: "calendly" | "close";
+};
+
 export type AdminChatbotConversationDetail = {
   id: string;
   sessionId: string;
@@ -360,6 +372,7 @@ export type AdminChatbotConversationDetail = {
   flags: AdminChatbotFlagRow[];
   prospectProfileSummary: string | null;
   linkedLead: AdminChatbotLinkedLead;
+  booking: AdminChatbotBooking | null;
 };
 
 export async function adminGetConversationDetail(
@@ -371,7 +384,7 @@ export async function adminGetConversationDetail(
   const { data: conversation, error } = await client
     .from("chatbot_conversations")
     .select(
-      "id, session_id, status, page_url, user_agent, captured_name, captured_email, captured_phone, messages, message_count, created_at, last_message_at, handed_off_at, handoff_reason, prospect_profile, lead_submission_id",
+      "id, session_id, status, page_url, user_agent, captured_name, captured_email, captured_phone, messages, message_count, created_at, last_message_at, handed_off_at, handoff_reason, prospect_profile, lead_submission_id, call_booked_at",
     )
     .eq("id", conversationId)
     .maybeSingle();
@@ -387,10 +400,14 @@ export async function adminGetConversationDetail(
     throw new ChatbotAdminError("Could not load this conversation's flags.");
   }
 
-  const linkedLead = await fetchLinkedLead(
-    client,
-    conversation.lead_submission_id,
-  );
+  const [linkedLead, booking] = await Promise.all([
+    fetchLinkedLead(client, conversation.lead_submission_id),
+    fetchConversationBooking(client, {
+      conversationId: conversation.id,
+      leadSubmissionId: conversation.lead_submission_id,
+      callBookedAt: conversation.call_booked_at ?? null,
+    }),
+  ]);
 
   return {
     id: conversation.id,
@@ -421,7 +438,89 @@ export async function adminGetConversationDetail(
       conversation.prospect_profile,
     ),
     linkedLead,
+    booking,
   };
+}
+
+/**
+ * The Calendly booking behind this chat: matched by the conversation id the
+ * embed URL put in utm_content, or by the lead the chat created. A call that
+ * only Close knows about (reconciled onto the lead) still gets a stamp from
+ * call_booked_at, just without the host.
+ */
+async function fetchConversationBooking(
+  client: ChatbotAdminClient,
+  input: {
+    conversationId: string;
+    leadSubmissionId: string | null | undefined;
+    callBookedAt: string | null;
+  },
+): Promise<AdminChatbotBooking | null> {
+  const match = [
+    `utm_content.eq.${input.conversationId}`,
+    input.leadSubmissionId
+      ? `lead_submission_id.eq.${input.leadSubmissionId}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(",");
+  const { data, error } = await client
+    .from("calendly_bookings")
+    .select(
+      "created_at, event_start_at, scheduled_event_name, raw_payload, status",
+    )
+    .or(match)
+    .eq("status", "booked")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    console.warn("chatbot admin: booking lookup failed", {
+      message: error.message,
+    });
+  }
+  if (data) {
+    return {
+      bookedAt: data.created_at,
+      eventStartAt: data.event_start_at,
+      eventName: data.scheduled_event_name,
+      hostName: hostNameFromPayload(data.raw_payload),
+      source: "calendly",
+    };
+  }
+  if (input.callBookedAt) {
+    return {
+      bookedAt: input.callBookedAt,
+      eventStartAt: null,
+      eventName: null,
+      hostName: null,
+      source: "close",
+    };
+  }
+  return null;
+}
+
+/**
+ * Who Calendly assigned. Webhook payloads carry it at
+ * `scheduled_event.event_memberships[].user_name`; the embed route stores the
+ * scheduled event under the same key. Anything else is null, never a guess.
+ */
+export function hostNameFromPayload(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const record = payload as Record<string, unknown>;
+  const event = (record.scheduled_event ??
+    (record.payload as Record<string, unknown> | undefined)
+      ?.scheduled_event) as Record<string, unknown> | undefined;
+  const memberships = event?.event_memberships;
+  if (!Array.isArray(memberships)) return null;
+  const names = memberships
+    .map((m) =>
+      m && typeof m === "object"
+        ? (m as { user_name?: unknown }).user_name
+        : null,
+    )
+    .filter((n): n is string => typeof n === "string" && n.trim().length > 0);
+  return names.length ? names.join(", ") : null;
 }
 
 export type AdminToggleFlagInput = {
