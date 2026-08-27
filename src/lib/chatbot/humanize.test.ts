@@ -41,6 +41,17 @@ describe("humanizeChatbotReply", () => {
     ).toBe("Nice. Grab a time.");
   });
 
+  it("never lets a reply call it a sales call or a sales team", () => {
+    expect(
+      humanizeChatbotReply(
+        "It's not a sales call. The sales team will walk you through it.",
+        { exclamationsAlreadyUsed: 0 },
+      ),
+    ).toBe(
+      "It's not a call with a vending consultant. The vending consultants will walk you through it.",
+    );
+  });
+
   it("never returns an empty reply", () => {
     expect(
       humanizeChatbotReply("Awesome!", { exclamationsAlreadyUsed: 0 }),
