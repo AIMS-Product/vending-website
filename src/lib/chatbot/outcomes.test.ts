@@ -57,7 +57,10 @@ describe("deriveConversationOutcome", () => {
 
   it("counts a phone-only capture as captured", () => {
     expect(
-      deriveConversationOutcome(conversation({ capturedPhone: "5555555555" }), NOW),
+      deriveConversationOutcome(
+        conversation({ capturedPhone: "5555555555" }),
+        NOW,
+      ),
     ).toBe("captured_no_booking");
   });
 

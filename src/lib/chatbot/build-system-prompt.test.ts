@@ -160,3 +160,53 @@ describe("the call is with a vending consultant, never a sales team", () => {
     expect(prompt).toContain("Offer the finance templates by name");
   });
 });
+
+describe("the prompt never shows the model a booking link", () => {
+  // Seven live conversations (Aug 21-27) got a /book-now link or "I'll open the
+  // calendar" instead of the inline calendar. humanize.ts's calendar guard
+  // catches those replies and rewrites them, so the visitor reads mangled prose
+  // over a force-opened calendar. The reason the model wrote one at all was
+  // this prompt: FORMATTING's LINKS rule offered "you can grab a time
+  // [here](/book-now)" as a worked example of good anchor text, two sections
+  // below the CTA rule forbidding exactly that. Turning the guard's own
+  // detector on the prompt keeps the contradiction from coming back.
+  const branches = [
+    { label: "first turn", input: { ...base, userTurnCount: 1 } },
+    { label: "established", input: base },
+    {
+      label: "captured",
+      input: { ...base, capturedEmail: "someone@example.com" },
+    },
+    { label: "booked", input: { ...base, hasConfirmedBooking: true } },
+  ];
+
+  it.each(branches)(
+    "has no markdown booking link on the $label prompt",
+    ({ input }) => {
+      const prompt = buildChatbotSystemPrompt(input);
+      // The link SHAPE, not the string: ctaSection names /book-now in prose to
+      // forbid it, and that mention has to survive.
+      expect(prompt).not.toMatch(/]\(\/book-now/);
+      expect(prompt).not.toMatch(/]\(https?:\/\/calendly\.com/i);
+      expect(prompt).toContain("Never paste");
+    },
+  );
+
+  it("says outright that booking has no anchor text", () => {
+    const prompt = buildChatbotSystemPrompt(base);
+    expect(prompt).toContain("Booking is the one thing that is never a link");
+  });
+
+  // LANGUAGE bans "sales call" and "sales team", and humanize.ts rewrites both
+  // in the model's output. EXISTING MEMBERS said "the sales chat is not the
+  // right place for account help" — a third phrasing that was neither banned
+  // nor rewritten, in the prompt that teaches the rule.
+  //
+  // Asserted narrowly rather than as a blanket ban on "sales": several real
+  // members worked in sales (Graham Parker, medical device sales rep; Matt
+  // Morrison, sales team manager) and OBJECTIONS quotes visitors asking "is
+  // this a sales call". Those all belong.
+  it("does not call this conversation a sales chat", () => {
+    expect(buildChatbotSystemPrompt(base)).not.toMatch(/sales chat/i);
+  });
+});
