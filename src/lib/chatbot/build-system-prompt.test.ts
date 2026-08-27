@@ -69,9 +69,7 @@ describe("closing a booking", () => {
     // Mia has no availability data, so a named clock time would be the same
     // invent-a-fact failure as the price. Concrete, but never a specific hour
     // the visitor did not say first.
-    expect(prompt).toContain(
-      "ONLY source of a clock time you may say",
-    );
+    expect(prompt).toContain("ONLY source of a clock time you may say");
   });
 
   it("asks on the visitor's first message after the calendar appeared", () => {
@@ -138,7 +136,8 @@ describe("the visitor's name", () => {
     const prompt = buildChatbotSystemPrompt(base);
     expect(prompt).toContain("You do not know their name yet");
     expect(prompt).toContain("first or second reply");
-    expect(prompt).toContain("I'm Mia, by the way");
+    expect(prompt).toContain("Who do I have the pleasure of speaking with?");
+    expect(prompt).toContain('Never "what should I call you"');
   });
 
   it("uses a known first name naturally and never asks again", () => {
@@ -150,5 +149,14 @@ describe("the visitor's name", () => {
     expect(prompt).toContain("Jordan, want to just grab a time right here?");
     expect(prompt).toContain("Never ask for their name again");
     expect(prompt).not.toContain("You do not know their name yet");
+  });
+});
+
+describe("the call is with a vending consultant, never a sales team", () => {
+  it("tells the model the vocabulary and the escalation for repeated cost pushes", () => {
+    const prompt = buildChatbotSystemPrompt(base);
+    expect(prompt).toContain("Never call them a sales team");
+    expect(prompt).toContain("never open the calendar twice in a row");
+    expect(prompt).toContain("Offer the finance templates by name");
   });
 });

@@ -19,6 +19,18 @@ export function humanizeChatbotReply(
 ): string {
   let output = text.trim();
 
+  // The team are vending consultants; the transcripts kept saying "the sales
+  // team" / "a sales call", which is exactly what makes a visitor feel pushed.
+  output = output
+    .replace(
+      /\b(?:a |the )?sales (?:call|conversation)\b/gi,
+      "a call with a vending consultant",
+    )
+    .replace(
+      /\bsales (?:team|rep|reps|person|people)\b/gi,
+      "vending consultants",
+    );
+
   // Strip a forbidden opener once, then again in case two are stacked
   // ("That's great! Absolutely!").
   for (let i = 0; i < 2; i += 1) {
