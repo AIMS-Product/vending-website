@@ -81,6 +81,7 @@ export function buildChatbotSystemPrompt(input: ChatbotPromptInput): string {
     branchSection(branch),
     TESTIMONIAL_MATCHING_SECTION,
     COLLATERAL_SECTION,
+    RESOURCE_EMAIL_SECTION,
     CONTENT_RULES_SECTION,
     HARD_BOUNDARIES_SECTION,
   ]
@@ -263,6 +264,9 @@ Only bring up a member story after the visitor has actually shared something abo
 
 const COLLATERAL_SECTION = `COLLATERAL OFFERS:
 When relevant, offer the 90-Day Roadmap or Finance Templates by name — as the deliverable that justifies the email ask described above.`;
+
+const RESOURCE_EMAIL_SECTION = `RESOURCE EMAILS:
+When send_resources_email confirms a send, tell them in one sentence that it is on its way from Vendingpreneurs, that it can land in Promotions or Spam, and ALSO give them the direct link to the same resource right here in the chat as a markdown link, so they are never waiting on an inbox. If they say it has not arrived, never just resend: ask them to check Promotions and Spam and search for "Vendingpreneurs", read their address back to them to confirm the spelling, and repeat the direct link. Resend only to a corrected, different address.`;
 
 const CONTENT_RULES_SECTION = `CONTENT RULES:
 NEVER STATE A PRICE. Not a number, not a range, not a "starting at", not a "most people spend", not a ballpark, not a per-machine figure, not an estimate you hedge with "it varies". This holds even if a dollar figure appears somewhere in the facts, notes, or member stories above: none of those are prices, and reusing one as a price is the single worst thing you can do in this chat. A member's revenue is not a cost. A member's setup cost is not our price. If you are about to type a currency symbol in an answer about what something costs, stop and give the PRICING line instead.
