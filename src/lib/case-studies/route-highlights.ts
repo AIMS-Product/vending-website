@@ -7,15 +7,18 @@
  * intentional and his call. The sidebar is sticky, so these stay on screen
  * while the reader scrolls past the strip.
  *
- * Coverage across the 25 published stories is uneven (prior occupation 24/25,
- * location types 22/25, locations 18/25, machines 15/25, months 12/25), so
- * only present fields are returned and the card shrinks to fit. Nothing is
- * zero-filled: "0 machines" reads as a claim, and it is not one.
+ * Coverage across the 25 published stories is uneven (location types 22/25,
+ * locations 18/25, machines 15/25, months 12/25), so only present fields are
+ * returned and the card shrinks to fit. Nothing is zero-filled: "0 machines"
+ * reads as a claim, and it is not one.
+ *
+ * `prior_occupation` used to lead this list. It moved to the "Who they are"
+ * panel, which owns the person; this one owns the route. Leaving it in both
+ * printed "Before vending" twice, one card above the other.
  */
 export type RouteHighlight = { label: string; value: string };
 
 export type RouteHighlightSource = {
-  prior_occupation: string | null;
   location_types: readonly string[] | null;
   machine_count: number | null;
   location_count: number | null;
@@ -26,11 +29,6 @@ export function buildRouteHighlights(
   caseStudy: RouteHighlightSource,
 ): RouteHighlight[] {
   const highlights: RouteHighlight[] = [];
-
-  const priorOccupation = caseStudy.prior_occupation?.trim();
-  if (priorOccupation) {
-    highlights.push({ label: "Before vending", value: priorOccupation });
-  }
 
   // `> 0` rather than `!= null` throughout: a zero here is a data gap, not a
   // result worth printing next to a member's name.

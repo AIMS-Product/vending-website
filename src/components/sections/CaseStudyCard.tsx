@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CaseStudyCard as CaseStudyCardData } from "@/lib/services/case-studies";
+import { humanBadges } from "@/lib/case-studies/index-filters";
 
 /**
  * The one card used by both the index grid and the "More Success Stories"
@@ -18,6 +19,10 @@ export function CaseStudyCard({
   const Heading = headingLevel;
   const cardHref = `/case-studies/${caseStudy.slug}`;
   const thumbnailUrl = caseStudy.cover_url ?? youtubeThumbnail(caseStudy);
+  // Two at most. The card is already carrying a name, a role, a title and an
+  // excerpt; a third badge pushes the excerpt below the fold of the card and
+  // the grid stops scanning.
+  const badges = humanBadges(caseStudy.tags, 2);
 
   return (
     <article className="relative flex h-full flex-col overflow-hidden rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8] transition focus-within:-translate-y-0.5 hover:-translate-y-0.5 hover:shadow-[9px_9px_0_#55b8e8]">
@@ -78,6 +83,22 @@ export function CaseStudyCard({
           <p className="line-clamp-3 text-sm leading-relaxed font-semibold text-slate-600">
             {caseStudy.excerpt}
           </p>
+        ) : null}
+        {/*
+          Pushed to the bottom of the card so every card's badges sit on one
+          line however long the excerpt above them runs.
+        */}
+        {badges.length > 0 ? (
+          <ul className="mt-auto flex flex-wrap gap-1.5 pt-1">
+            {badges.map((badge) => (
+              <li
+                key={badge}
+                className="rounded-full border border-[#111111] bg-[#eaf8ff] px-2.5 py-1 text-[11px] leading-none font-black text-[#111111]"
+              >
+                {badge}
+              </li>
+            ))}
+          </ul>
         ) : null}
       </div>
     </article>

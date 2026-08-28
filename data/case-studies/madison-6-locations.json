@@ -32,7 +32,14 @@
   "months_to_result": 10,
   "prior_occupation": "Sales professional, then stay-at-home mom for 5 years",
   "location_types": ["manufacturing", "condo", "school"],
-  "tags": ["part-time", "scaling"],
+  "tags": [
+    "part-time",
+    "scaling",
+    "from-sales",
+    "stay-at-home-parent",
+    "built-solo",
+    "raising-kids"
+  ],
   "review_notes": [
     "Revenue is a stated range ($10-12K/month); per spec, monthly_revenue_usd uses the low end (10000) and the full range is shown in stats.",
     "Transcript is auto-generated; verify all dollar figures against the video before publishing.",

@@ -32,7 +32,16 @@
   "months_to_result": null,
   "prior_occupation": "Real estate agent for 14 years; owns rental properties",
   "location_types": ["apartment"],
-  "tags": ["career-change", "scaling", "first-location"],
+  "tags": [
+    "career-change",
+    "scaling",
+    "first-location",
+    "from-real-estate",
+    "already-self-employed",
+    "built-solo",
+    "started-after-50",
+    "money-was-tight"
+  ],
   "review_notes": [
     "Surname was spoken phonetically as 'Nukem' in the transcript and video credits but is unconfirmed — per instructions, using only 'John' and not printing that surname.",
     "Transcript is auto-generated; verify all dollar figures against the video before publishing.",

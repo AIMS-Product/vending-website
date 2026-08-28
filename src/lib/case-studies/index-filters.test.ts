@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   applyCaseStudyFilters,
+  buildCareerFacets,
+  CAREER_TAG_GROUPS,
+  humanBadges,
+  HUMAN_BADGES,
   CASE_STUDY_TAG_GROUPS,
   buildRevenueFacets,
   buildTagFacets,
@@ -56,7 +60,7 @@ describe("parseCaseStudyFilters", () => {
       parseCaseStudyFilters({ tag: "career-change", revenue: "10k-25k" }, [
         "career-change",
       ]),
-    ).toEqual({ tag: "career-change", revenue: "10k-25k" });
+    ).toEqual({ tag: "career-change", career: null, revenue: "10k-25k" });
   });
 
   it("drops unknown values instead of returning an empty page", () => {
@@ -64,7 +68,7 @@ describe("parseCaseStudyFilters", () => {
       parseCaseStudyFilters({ tag: "nope", revenue: "bogus" }, [
         "career-change",
       ]),
-    ).toEqual({ tag: null, revenue: null });
+    ).toEqual({ tag: null, career: null, revenue: null });
   });
 
   it("drops a raw underlying tag, which is no longer a valid chip", () => {
@@ -98,7 +102,11 @@ describe("applyCaseStudyFilters", () => {
 
   it("returns everything when nothing is selected", () => {
     expect(
-      applyCaseStudyFilters(caseStudies, { tag: null, revenue: null }),
+      applyCaseStudyFilters(caseStudies, {
+        tag: null,
+        career: null,
+        revenue: null,
+      }),
     ).toHaveLength(3);
   });
 
@@ -106,6 +114,7 @@ describe("applyCaseStudyFilters", () => {
     // `retiree` and `laid-off` both roll up into Career Change.
     const result = applyCaseStudyFilters(caseStudies, {
       tag: "career-change",
+      career: null,
       revenue: null,
     });
     expect(result.map((entry) => entry.slug)).toEqual(["a", "c"]);
@@ -114,6 +123,7 @@ describe("applyCaseStudyFilters", () => {
   it("intersects tag and revenue rather than unioning them", () => {
     const result = applyCaseStudyFilters(caseStudies, {
       tag: "career-change",
+      career: null,
       revenue: "under-10k",
     });
     expect(result.map((entry) => entry.slug)).toEqual(["a"]);
@@ -168,16 +178,106 @@ describe("facets", () => {
 describe("caseStudiesHref", () => {
   it("drops the query entirely when no filter is active", () => {
     expect(
-      caseStudiesHref({ tag: "career-change", revenue: null }, { tag: null }),
+      caseStudiesHref(
+        { tag: "career-change", career: null, revenue: null },
+        { tag: null },
+      ),
     ).toBe("/case-studies");
   });
 
   it("preserves the other facet when toggling one", () => {
     expect(
       caseStudiesHref(
-        { tag: "career-change", revenue: "under-10k" },
+        { tag: "career-change", career: null, revenue: "under-10k" },
         { tag: null },
       ),
     ).toBe("/case-studies?revenue=under-10k");
+  });
+});
+
+describe("career filter (row 2)", () => {
+  const caseStudies = [
+    card({ slug: "cop", tags: ["from-public-safety", "kept-the-day-job"] }),
+    card({
+      slug: "anthony",
+      tags: ["from-corporate", "from-sales", "from-real-estate"],
+    }),
+    card({ slug: "shan", tags: ["after-a-big-move"] }),
+  ];
+
+  it("shows a story under every career it carries, not just the first", () => {
+    for (const career of ["corporate", "sales", "real-estate"]) {
+      expect(
+        applyCaseStudyFilters(caseStudies, {
+          tag: null,
+          career,
+          revenue: null,
+        }).map((entry) => entry.slug),
+      ).toEqual(["anthony"]);
+    }
+  });
+
+  it("intersects the two rows rather than unioning them", () => {
+    // Regression guard: row 1 and row 2 answer different questions, so
+    // picking one from each must narrow, never widen.
+    expect(
+      applyCaseStudyFilters(caseStudies, {
+        tag: "part-time",
+        career: "corporate",
+        revenue: null,
+      }),
+    ).toHaveLength(0);
+  });
+
+  it("drops an unknown career instead of returning an empty page", () => {
+    expect(
+      parseCaseStudyFilters({ career: "astronaut" }, [], ["corporate"]).career,
+    ).toBeNull();
+  });
+
+  it("keeps the two rows on separate query params", () => {
+    expect(
+      caseStudiesHref(
+        { tag: "scaling", career: null, revenue: null },
+        { career: "corporate" },
+      ),
+    ).toBe("/case-studies?tag=scaling&career=corporate");
+  });
+
+  it("hides careers no story matches", () => {
+    expect(buildCareerFacets(caseStudies).map((facet) => facet.value)).toEqual([
+      "corporate",
+      "sales",
+      "real-estate",
+      "public-safety",
+    ]);
+  });
+
+  it("gives every career group its own tag, so counts cannot double up", () => {
+    const tags = CAREER_TAG_GROUPS.flatMap((group) => group.tags);
+    expect(new Set(tags).size).toBe(tags.length);
+  });
+});
+
+describe("humanBadges", () => {
+  it("orders by who-they-built-it-with before how-they-felt", () => {
+    // The card only has room for two. The spouse is the fact that makes a
+    // stranger relatable; burnout is the fact every story shares.
+    expect(
+      humanBadges(["burned-out", "with-spouse", "raising-kids"], 2),
+    ).toEqual(["Built it with their spouse", "Raising kids while building"]);
+  });
+
+  it("returns nothing for a story with no human tags", () => {
+    expect(humanBadges(["scaling", "first-location"])).toEqual([]);
+  });
+
+  it("never surfaces a tag the site deliberately does not index people by", () => {
+    // Bereavement, special-needs children and bankruptcy are all evidenced in
+    // the bodies and are all deliberately absent. This fails loudly if one is
+    // ever added to the badge list.
+    const banned = ["bereavement", "special-needs-child", "bankruptcy"];
+    const badgeTags = HUMAN_BADGES.map((badge) => badge.tag);
+    for (const tag of banned) expect(badgeTags).not.toContain(tag);
   });
 });

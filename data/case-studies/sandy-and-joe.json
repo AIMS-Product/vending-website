@@ -28,7 +28,15 @@
   "months_to_result": 12,
   "prior_occupation": "Materials and buying manager, manufacturing (20+ years)",
   "location_types": ["school"],
-  "tags": ["family-business", "part-time"],
+  "tags": [
+    "family-business",
+    "part-time",
+    "from-corporate",
+    "with-their-kids",
+    "raising-kids",
+    "burned-out",
+    "after-a-big-move"
+  ],
   "review_notes": [
     "No steady total monthly revenue figure was given (only the $500-800 normal range for the student machine and the $6-10K band-camp spike); left monthly_revenue_usd null.",
     "'One year mark' as of October 30 used for months_to_result (12)."

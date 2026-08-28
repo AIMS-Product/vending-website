@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { CaseStudyCard } from "@/components/sections/CaseStudyCard";
 import type { CaseStudyCard as CaseStudyCardData } from "@/lib/services/case-studies";
-import { caseStudySectionHeadings } from "@/lib/content/case-studies";
+import {
+  caseStudySectionHeadings,
+  caseStudySectionIntro,
+} from "@/lib/content/case-studies";
 import {
   caseStudiesHref,
   type CaseStudyFilters,
@@ -12,6 +15,7 @@ type CaseStudyIndexProps = {
   caseStudies: readonly CaseStudyCardData[];
   filters: CaseStudyFilters;
   tagFacets: readonly Facet[];
+  careerFacets: readonly Facet[];
   totalCount: number;
 };
 
@@ -24,26 +28,56 @@ export function CaseStudyIndex({
   caseStudies,
   filters,
   tagFacets,
+  careerFacets,
   totalCount,
 }: CaseStudyIndexProps) {
-  const isFiltered = Boolean(filters.tag || filters.revenue);
+  const isFiltered = Boolean(filters.tag || filters.career || filters.revenue);
 
   return (
     <section className="border-t-2 border-[#111111] bg-[#f5fbff] px-5 py-16 lg:px-10 lg:py-20">
       <div className="mx-auto max-w-[1500px]">
-        <h2 className="sr-only">{caseStudySectionHeadings.stories}</h2>
+        <h2 className="text-[clamp(1.75rem,2.6vw,2.5rem)] leading-[1.05] font-black text-[#111111] uppercase">
+          {caseStudySectionHeadings.stories}
+        </h2>
+        <p className="mt-4 mb-8 max-w-[720px] text-base leading-relaxed font-semibold text-slate-600">
+          {caseStudySectionIntro}
+        </p>
 
-        {tagFacets.length > 0 && (
-          <FacetRow
-            facets={tagFacets}
-            activeValue={filters.tag}
-            hrefFor={(value) =>
-              caseStudiesHref(filters, {
-                tag: value === filters.tag ? null : value,
-              })
-            }
-          />
-        )}
+        <div className="space-y-6">
+          {tagFacets.length > 0 && (
+            <FacetRow
+              label="Filter stories by situation"
+              legend="Their situation"
+              facets={tagFacets}
+              activeValue={filters.tag}
+              hrefFor={(value) =>
+                caseStudiesHref(filters, {
+                  tag: value === filters.tag ? null : value,
+                })
+              }
+            />
+          )}
+
+          {/*
+          A second row rather than more chips in the first: "what kind of story
+          is this" and "what did this person do before" are different questions,
+          and a visitor looking for their own old job should not have to read
+          past six business-shape chips to find it.
+        */}
+          {careerFacets.length > 0 && (
+            <FacetRow
+              label="Filter stories by what they did before vending"
+              legend="What they did before"
+              facets={careerFacets}
+              activeValue={filters.career}
+              hrefFor={(value) =>
+                caseStudiesHref(filters, {
+                  career: value === filters.career ? null : value,
+                })
+              }
+            />
+          )}
+        </div>
 
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <p
@@ -89,21 +123,26 @@ export function CaseStudyIndex({
 }
 
 function FacetRow({
+  label,
+  legend,
   facets,
   activeValue,
   hrefFor,
 }: {
+  label: string;
+  legend: string;
   facets: readonly Facet[];
   activeValue: string | null;
   hrefFor: (value: string) => string;
 }) {
   return (
-    // Labelled nav rather than a visible legend: one row of self-describing
-    // chips needs no heading, but assistive tech still needs the grouping.
-    <nav
-      aria-label="Filter stories"
-      className="flex flex-wrap items-center gap-3"
-    >
+    // Two rows now, so each carries a visible legend as well as the accessible
+    // name — with one row the chips were self-describing, with two they are
+    // only self-describing if you already know the axes.
+    <nav aria-label={label} className="flex flex-wrap items-center gap-3">
+      <span className="w-full text-xs font-black tracking-[0.12em] text-slate-500 uppercase">
+        {legend}
+      </span>
       {facets.map((facet) => {
         const isActive = facet.value === activeValue;
         return (

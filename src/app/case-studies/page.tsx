@@ -10,6 +10,7 @@ import {
 } from "@/lib/services/case-studies";
 import {
   applyCaseStudyFilters,
+  buildCareerFacets,
   buildTagFacets,
   parseCaseStudyFilters,
 } from "@/lib/case-studies/index-filters";
@@ -37,9 +38,11 @@ export default async function CaseStudiesPage({
   // Facets are built from the unfiltered set so the counts stay stable as the
   // visitor clicks, rather than collapsing to the current selection.
   const tagFacets = buildTagFacets(caseStudies);
+  const careerFacets = buildCareerFacets(caseStudies);
   const filters = parseCaseStudyFilters(
     params,
     tagFacets.map((facet) => facet.value),
+    careerFacets.map((facet) => facet.value),
   );
   const visible = applyCaseStudyFilters(caseStudies, filters);
 
@@ -51,6 +54,7 @@ export default async function CaseStudiesPage({
         caseStudies={visible}
         filters={filters}
         tagFacets={tagFacets}
+        careerFacets={careerFacets}
         totalCount={caseStudies.length}
       />
       <CaseStudyQuotes />

@@ -9,9 +9,18 @@
   "quote_attribution": "Jesse Lee",
   "body": "## Background\nJesse Lee, 44, of Rapid City, South Dakota, had owned a food truck for 10 years — work he describes as feast-or-famine, watching his money climb every summer and drain away every winter. The market had also gotten saturated: 70 food trucks now compete in a town of under 100,000 people. Before the food truck, he ran a utilities and excavation construction company in Denver that a business partner bankrupted after a buyout. He researched other income options for 18 months and followed Vendingpreneurs founder Mike Hoffman for about six months before signing up.\n\n> \"For the past year and a half I've been researching and researching and researching on some kind of other income.\"\n\n## The Challenge\nJesse says cost is usually the objection people lead with, but for him the bigger fear was doing it wrong alone — not knowing how to structure a contract, and feeling out of his depth with technology.\n\n> \"It's probably usually about the cost, right? But if you don't have a correct contract, as far as I'm concerned, anything could happen to you. Anything tech, I'm an idiot.\"\n\n## The Turning Point\nMike responded to him personally on Instagram, which Jesse found surprising for someone with no obligation to help a stranger. The decision itself came fast: the same day he signed up, he had his first serious pop-in meeting and needed a contract and flyer ready to go.\n\n> \"The fact that he would actually respond to me — just some random guy on Instagram — I thought it was actually pretty cool that you would help somebody when you don't need to do that.\"\n\n## Where They Are Now\nThirty days in, Jesse has placed three of his own locations — an office building, the biggest dentist office in Rapid City, and an apartment complex signed the day before the interview — and bought an 18-location drink route already doing about $7,000 a month on its own, seller-financed with no bank loan. He's now up to 23 machines total, with a goal of 40 within 17 months.\n\n> \"Finally I found something that got me motivated again to get back up and get my ass off the couch.\"",
   "stats": [
-    { "label": "Purchased Route Revenue", "value": "$7K/mo" },
-    { "label": "Machines", "value": "23" },
-    { "label": "Time in Business", "value": "30 days" }
+    {
+      "label": "Purchased Route Revenue",
+      "value": "$7K/mo"
+    },
+    {
+      "label": "Machines",
+      "value": "23"
+    },
+    {
+      "label": "Time in Business",
+      "value": "30 days"
+    }
   ],
   "monthly_revenue_usd": null,
   "machine_count": 23,
@@ -19,7 +28,16 @@
   "months_to_result": null,
   "prior_occupation": "Owned a food truck for 10 years; before that ran a utilities/excavation construction company in Denver",
   "location_types": ["office", "dental office", "apartment"],
-  "tags": ["career-change", "route-acquisition", "first-location"],
+  "tags": [
+    "career-change",
+    "route-acquisition",
+    "first-location",
+    "from-food-hospitality",
+    "from-trades",
+    "already-self-employed",
+    "built-solo",
+    "after-a-failed-business"
+  ],
   "review_notes": [
     "Transcript is auto-generated; verify all dollar figures against the video before publishing.",
     "The $7,000/month figure is specifically the purchased route's existing revenue, not Jesse's combined monthly revenue across all locations — monthly_revenue_usd left null since no single 'his revenue' monthly figure was stated.",

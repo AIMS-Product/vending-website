@@ -19,17 +19,27 @@ export type CaseStudyQuote = {
 export const caseStudiesHero = {
   eyebrow: "Vendingpreneur Success Stories",
   title: "Real People Building Real Vending Routes",
+  // No job titles here by design. Naming specific professions reads as a
+  // claim that people in those jobs leave them for vending, which is not a
+  // claim this page makes. The filters below carry that detail per story,
+  // where it is attributable to a named member.
+  body: "Every story here is a real member, in their own words \u2014 how they started, what it took, and what the route looks like now.",
 } as const;
 
 /**
- * Screen-reader-only section labels. The case-studies page has no visible
- * section headings between the h1 and the per-card h3s; these give the
- * document a sequential h1 → h2 → h3 outline without altering the visual design.
+ * Section labels between the h1 and the per-card h3s, keeping the document on
+ * a sequential h1 → h2 → h3 outline. `stories` is now visible: with two rows
+ * of filter chips the reader needs to be told what they are filtering, which
+ * a screen-reader-only label could not do.
  */
 export const caseStudySectionHeadings = {
-  stories: "Member success stories",
+  stories: "Find someone like you",
   quotes: "Written testimonials",
 } as const;
+
+/** Sits under the section h2, above the filter rows. */
+export const caseStudySectionIntro =
+  "Filter by the shape of their business, or by who they were before they started one." as const;
 
 export const caseStudyVideos: ReadonlyArray<CaseStudyVideo> = [
   {

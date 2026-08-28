@@ -28,7 +28,17 @@
   "months_to_result": null,
   "prior_occupation": "Corporate middle manager (\"people leader\")",
   "location_types": ["apartment"],
-  "tags": ["career-change", "scaling", "route-acquisition", "couple"],
+  "tags": [
+    "career-change",
+    "scaling",
+    "route-acquisition",
+    "couple",
+    "from-corporate",
+    "kept-the-day-job",
+    "quit-the-job",
+    "with-spouse",
+    "burned-out"
+  ],
   "review_notes": [
     "No monthly revenue figure was stated for the current combined business; only 'multi-million dollar route' purchase price and 12-14 pallets/week were given.",
     "'North of 500 machines' used as machine_count floor of 500.",

@@ -10,6 +10,9 @@ export function CaseStudiesHero() {
         <h1 className="mt-8 text-[clamp(2.25rem,4.6vw,4.25rem)] leading-[1.05] font-black text-[#111111] uppercase">
           {caseStudiesHero.title}
         </h1>
+        <p className="mx-auto mt-6 max-w-[760px] text-lg leading-relaxed font-semibold text-slate-700 lg:text-xl">
+          {caseStudiesHero.body}
+        </p>
       </div>
     </section>
   );

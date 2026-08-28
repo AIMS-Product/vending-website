@@ -19,6 +19,7 @@ const caseStudy = {
   ],
   published_at: "2026-08-19T00:00:00.000Z",
   prior_occupation: "High school teacher",
+  tags: ["from-food-hospitality", "between-jobs", "built-solo", "burned-out"],
   location_types: ["office", "retirement-community"],
   machine_count: 26,
   location_count: 22,
@@ -89,5 +90,16 @@ describe("CaseStudyArticle", () => {
 
   it("hides the related rail when there is nothing to show", () => {
     expect(render()).not.toContain("More success stories");
+  });
+
+  it("prints 'Before vending' exactly once", () => {
+    // It used to lead the route-highlights list AND the new "Who they are"
+    // panel, so the sidebar showed the same fact in two stacked cards.
+    const markup = render();
+    expect(markup.split("Before vending").length - 1).toBe(1);
+  });
+
+  it("shows the human badges in the sidebar", () => {
+    expect(render()).toContain("Between jobs");
   });
 });

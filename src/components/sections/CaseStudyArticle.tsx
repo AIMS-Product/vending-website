@@ -11,6 +11,7 @@ import {
   type RouteHighlightSource,
 } from "@/lib/case-studies/route-highlights";
 import { parseStats } from "@/lib/case-studies/stats";
+import { humanBadges } from "@/lib/case-studies/index-filters";
 import { getVideoEmbed } from "@/lib/page-builder/video-embeds";
 import { siteUrl } from "@/lib/site";
 
@@ -32,6 +33,7 @@ type CaseStudyArticleProps = {
     // Sidebar route highlights. Coverage is uneven across the published
     // stories, so the sidebar renders only what a given story actually has.
     | "prior_occupation"
+    | "tags"
     | "location_types"
     | "machine_count"
     | "location_count"
@@ -137,7 +139,11 @@ export function CaseStudyArticle({
             />
           </article>
 
-          <ArticleSidebar caseStudy={caseStudy} />
+          <ArticleSidebar
+            caseStudy={caseStudy}
+            priorOccupation={caseStudy.prior_occupation}
+            tags={caseStudy.tags ?? []}
+          />
         </div>
       </div>
 
@@ -338,12 +344,56 @@ function ShareRail({ title, url }: { title: string; url: string }) {
   );
 }
 
-function ArticleSidebar({ caseStudy }: { caseStudy: RouteHighlightSource }) {
+function ArticleSidebar({
+  caseStudy,
+  priorOccupation,
+  tags,
+}: {
+  caseStudy: RouteHighlightSource;
+  priorOccupation: string | null;
+  tags: readonly string[];
+}) {
   const highlights = buildRouteHighlights(caseStudy);
+  // Everything, not the card's two. Someone who opened the story wants the
+  // person; the grid was the place to be brief.
+  const badges = humanBadges(tags);
 
   return (
     <aside className="hidden lg:block">
       <div className="sticky top-32 space-y-10">
+        {/*
+          Deliberately above "Their route". The revenue is why the story is
+          on the site; who they were is why a visitor keeps reading it.
+        */}
+        {(priorOccupation || badges.length > 0) && (
+          <section className="rounded-[12px] border-2 border-[#066a99] bg-white p-7 shadow-[7px_7px_0_#55b8e8]">
+            <p className="inline-flex rounded-[5px] border border-[#9fe6ff] bg-[#d6f4ff] px-3 py-2 text-xs font-black text-[#111111] uppercase">
+              Who they are
+            </p>
+            {priorOccupation && (
+              <div className="mt-6">
+                <p className="text-xs font-black tracking-[0.12em] text-[#066a99] uppercase">
+                  Before vending
+                </p>
+                <p className="mt-1.5 text-base leading-6 font-semibold text-[#111111]">
+                  {priorOccupation}
+                </p>
+              </div>
+            )}
+            {badges.length > 0 && (
+              <ul className="mt-6 flex flex-wrap gap-2">
+                {badges.map((badge) => (
+                  <li
+                    key={badge}
+                    className="rounded-full border border-[#111111] bg-[#eaf8ff] px-3 py-1.5 text-xs leading-none font-black text-[#111111]"
+                  >
+                    {badge}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
         {highlights.length > 0 && (
           <section className="rounded-[12px] border-2 border-[#066a99] bg-white p-7 shadow-[7px_7px_0_#55b8e8]">
             <p className="inline-flex rounded-[5px] border border-[#9fe6ff] bg-[#d6f4ff] px-3 py-2 text-xs font-black text-[#111111] uppercase">

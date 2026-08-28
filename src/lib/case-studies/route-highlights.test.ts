@@ -3,7 +3,6 @@ import { buildRouteHighlights } from "./route-highlights";
 
 function source(overrides = {}) {
   return {
-    prior_occupation: null,
     location_types: null,
     machine_count: null,
     location_count: null,
@@ -19,9 +18,9 @@ describe("buildRouteHighlights", () => {
   });
 
   it("omits missing fields instead of zero-filling them", () => {
-    expect(
-      buildRouteHighlights(source({ prior_occupation: "Teacher" })),
-    ).toEqual([{ label: "Before vending", value: "Teacher" }]);
+    expect(buildRouteHighlights(source({ machine_count: 26 }))).toEqual([
+      { label: "Machines", value: "26" },
+    ]);
   });
 
   it("treats a zero count as a data gap, not a result", () => {
@@ -36,7 +35,6 @@ describe("buildRouteHighlights", () => {
   it("carries the numbers Kody asked for, in a stable order", () => {
     const highlights = buildRouteHighlights(
       source({
-        prior_occupation: "Teacher",
         machine_count: 26,
         location_count: 22,
         months_to_result: 11,
@@ -44,7 +42,6 @@ describe("buildRouteHighlights", () => {
       }),
     );
     expect(highlights).toEqual([
-      { label: "Before vending", value: "Teacher" },
       { label: "Machines", value: "26" },
       { label: "Locations", value: "22" },
       { label: "Months in the program", value: "11 months" },
@@ -71,9 +68,7 @@ describe("buildRouteHighlights", () => {
 
   it("ignores blank entries rather than rendering separators", () => {
     expect(
-      buildRouteHighlights(
-        source({ prior_occupation: "   ", location_types: ["", "  "] }),
-      ),
+      buildRouteHighlights(source({ location_types: ["", "  "] })),
     ).toEqual([]);
   });
 });

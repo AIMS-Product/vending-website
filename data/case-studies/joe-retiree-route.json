@@ -28,7 +28,15 @@
   "months_to_result": 36,
   "prior_occupation": "Car business (auto sales); former professional bowler",
   "location_types": ["courthouse", "government-building", "apartment"],
-  "tags": ["retiree", "scaling"],
+  "tags": [
+    "retiree",
+    "scaling",
+    "from-sales",
+    "built-solo",
+    "started-after-50",
+    "burned-out",
+    "after-a-failed-business"
+  ],
   "review_notes": [
     "Body quote 'It wasn't a get-rich scheme...low threshold for investment...' spans a brief interviewer (Anthony) clarifying question ('for someone just starting out...you were working when you first started as well') between the two sentences. Both sentences are Joe's, same topic (why he chose vending), no meaning distortion, but it is not one unbroken utterance - left as-is per conservative policy but flagging for a second look."
   ]

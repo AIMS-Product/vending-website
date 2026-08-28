@@ -9,9 +9,18 @@
   "quote_attribution": "Anthony Kolodziej",
   "body": "## Background\n\nAnthony Kolodziej ran fix-and-flip and rental real estate from 2009 to 2016, then worked as head of business development at a real estate company on a six-figure W2 salary from 2017 to 2023. He was the breadwinner for his wife Taylor and their two kids, then ages three and five. After watching a colleague get laid off in August 2023, he knew he was likely next.\n\n> Our family is a customer every Saturday at our gymnastics class.\n\n## The Challenge\n\nAnthony had zero vending experience, and his wife pushed back hard on the cost and timing given his looming layoff.\n\n> For me, I have zero experience in vending. I have no idea. I don't know who to go to. I don't know which machine to get. I don't know anything about this business besides that our family is a customer every Saturday at our gymnastics class.\n\n## The Turning Point\n\nAnthony pitched his wife on the community as a \"pseudo board of directors,\" drawing on how long it had taken him to build his real estate network from scratch. His first 24/7 install then changed her mind for good.\n\n> View it as a pseudo board of directors. Here's a community of people that have been very successful inside, already successful operators, where I'm able to basically pick their brain.\n\n## Where They Are Now\n\nAnthony joined the community on September 27, 2023, and was laid off the next day. At recording, about two years in, he had 45 locations and 79 machines doing over $102,000 in revenue the prior month, with about seven locations averaging $5,500 to $6,500 a month each. He hired an ops manager 30-45 days before recording, dropping his own time on the route from 8-10 hours a week to about 2 hours a week. He now runs VendHub.\n\n> For 30 days straight I woke up every single day and told my wife how much money we made the night before. A week and a half in, my wife goes, 'Could you imagine if we had, like, five of these?'",
   "stats": [
-    { "label": "Monthly Revenue", "value": "$102K" },
-    { "label": "Locations", "value": "45" },
-    { "label": "Machines", "value": "79" }
+    {
+      "label": "Monthly Revenue",
+      "value": "$102K"
+    },
+    {
+      "label": "Locations",
+      "value": "45"
+    },
+    {
+      "label": "Machines",
+      "value": "79"
+    }
   ],
   "monthly_revenue_usd": 102000,
   "machine_count": 79,
@@ -19,7 +28,19 @@
   "months_to_result": null,
   "prior_occupation": "Real estate entrepreneur; head of business development (corporate W2)",
   "location_types": ["apartment", "office"],
-  "tags": ["career-change", "laid-off", "scaling", "family-business"],
+  "tags": [
+    "career-change",
+    "laid-off",
+    "scaling",
+    "from-corporate",
+    "from-sales",
+    "from-real-estate",
+    "between-jobs",
+    "built-solo",
+    "raising-kids",
+    "sole-breadwinner",
+    "layoff-or-ai-hedge"
+  ],
   "review_notes": [
     "The transcript's auto-caption misspells his surname as 'Colloj'; corrected to Kolodziej per instruction.",
     "The transcript itself mis-transcribes the monthly revenue figure as '$12,000' in Anthony's own line, but Mike Hoffman immediately confirms 'you did 102 grand' and the video title states $102K/month, so $102,000 is used as the sourced figure."

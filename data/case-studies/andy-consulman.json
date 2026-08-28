@@ -28,7 +28,16 @@
   "months_to_result": 4,
   "prior_occupation": "Corporate retail executive",
   "location_types": ["fitness center"],
-  "tags": ["career-change", "first-location", "scaling"],
+  "tags": [
+    "career-change",
+    "first-location",
+    "scaling",
+    "from-corporate",
+    "quit-the-job",
+    "with-a-business-partner",
+    "burned-out",
+    "full-time"
+  ],
   "review_notes": [
     "Name spelling 'Andy Consulman' is a phonetic auto-caption spelling and is not confirmed - verify against the video before publishing.",
     "The closing quote was also the pull quote, so the duplicate blockquote was removed from the story body. Consider adding a different verbatim quote to that section."

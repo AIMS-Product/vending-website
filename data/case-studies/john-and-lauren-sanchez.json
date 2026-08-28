@@ -28,7 +28,20 @@
   "months_to_result": null,
   "prior_occupation": "John: personal training business owner, real estate license. Lauren: stay-at-home mom",
   "location_types": ["student housing"],
-  "tags": ["couple", "family-business", "part-time"],
+  "tags": [
+    "couple",
+    "family-business",
+    "part-time",
+    "from-fitness",
+    "from-real-estate",
+    "from-sales",
+    "kept-the-day-job",
+    "stay-at-home-parent",
+    "with-spouse",
+    "raising-kids",
+    "after-a-big-move",
+    "money-was-tight"
+  ],
   "review_notes": [
     "Transcript is auto-generated; verify all dollar figures against the video before publishing.",
     "No single stated 'current monthly revenue' figure — only a best-month figure ($14,500 in April) and a per-location average (~$2K) were given, so monthly_revenue_usd is left null per spec (annual/best-month figures go in stats only).",

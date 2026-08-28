@@ -38,7 +38,16 @@
     "apartment",
     "school"
   ],
-  "tags": ["couple", "family-business", "part-time"],
+  "tags": [
+    "couple",
+    "family-business",
+    "part-time",
+    "from-healthcare",
+    "kept-the-day-job",
+    "with-spouse",
+    "with-their-kids",
+    "raising-kids"
+  ],
   "review_notes": [
     "Name spelling 'Mallerie Rouch' is a phonetic rendering from auto-generated captions and is unconfirmed — verify before publish.",
     "months_to_result left null: the transcript gives per-location install months but no single explicit 'X months since joining' statement.",

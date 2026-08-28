@@ -28,7 +28,16 @@
   "months_to_result": 21,
   "prior_occupation": "Personal trainer and fitness gym manager",
   "location_types": [],
-  "tags": ["laid-off", "scaling", "part-time"],
+  "tags": [
+    "laid-off",
+    "scaling",
+    "part-time",
+    "from-sales",
+    "from-fitness",
+    "between-jobs",
+    "already-self-employed",
+    "built-solo"
+  ],
   "review_notes": [
     "Monthly revenue stated as a range ($35-40K); low end used for monthly_revenue_usd per spec.",
     "Machine count stated as a range (25-30); low end used for machine_count.",

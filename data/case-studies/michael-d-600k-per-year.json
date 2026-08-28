@@ -9,9 +9,18 @@
   "quote_attribution": "Michael D",
   "body": "## Background\n\nMichael D worked every blue-collar job he could find, with no college and no official training: Air Force, construction, ironwork 300 feet in the air, and two and a half years as a mailman. By the time he found Vendingpreneurs he was running a volatile crypto-mining farm in Dallas, and his wife had worked at Exxon for 20 years while he tried to make enough for her to come home. He joined in February 2024.\n\n> I found this ad. I'm very weary about these ads and everything. But then something about this Michael Hoffman guy really resonated with me.\n\n## The Challenge\n\nMichael had tried plenty of things on his own before, and this time he needed help getting started. The wait for his first signed contract also tested his confidence.\n\n> If I'm being honest, Anthony, I needed a little push. I've done plenty of things on my own in my life, but at that point in time I just needed that push.\n\n## The Turning Point\n\nOver dinner with his wife, Michael decided to commit, drawn partly by the program's lead system and territory structure.\n\n> We went out to dinner one night and had a discussion. I said, I think it's time. I think I'm actually going to pull the trigger.\n\n## Where They Are Now\n\nMichael's first location, an apartment complex found through a lead that had landed in spam, was installed in April 2024 after about six weeks between pop-in and signed contract. About two years in, he runs 18 deliberately high-value machines generating roughly $650,000 in gross revenue a year, with 15-20 unsigned contracts pending and an estimate of crossing $1 million by April. His best single location, a Stockwell machine, was doing $70,000 a year. He brought his stepson Austin on as an acquirer and is formalizing him as a partner; Michael took his first personal pay from the business after about 18 months.\n\n> I've got one, that one Stockwell was doing $70,000 a year. One Stockwell. It just blows your mind, right?",
   "stats": [
-    { "label": "Annual Revenue", "value": "$650K" },
-    { "label": "Machines", "value": "18" },
-    { "label": "Best Location", "value": "$70K/yr" }
+    {
+      "label": "Annual Revenue",
+      "value": "$650K"
+    },
+    {
+      "label": "Machines",
+      "value": "18"
+    },
+    {
+      "label": "Best Location",
+      "value": "$70K/yr"
+    }
   ],
   "monthly_revenue_usd": null,
   "machine_count": 18,
@@ -19,6 +28,15 @@
   "months_to_result": null,
   "prior_occupation": "Blue-collar worker (Air Force, construction, mail carrier); ran a crypto-mining farm",
   "location_types": ["apartment"],
-  "tags": ["no-experience", "career-change", "family-business", "scaling"],
+  "tags": [
+    "no-experience",
+    "career-change",
+    "family-business",
+    "scaling",
+    "from-trades",
+    "from-public-safety",
+    "already-self-employed",
+    "with-their-kids"
+  ],
   "review_notes": []
 }

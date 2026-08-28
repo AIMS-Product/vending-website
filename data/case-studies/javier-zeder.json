@@ -28,7 +28,13 @@
   "months_to_result": 1,
   "prior_occupation": "Recent college graduate; helped with family businesses",
   "location_types": ["hotel"],
-  "tags": ["first-location", "part-time", "scaling"],
+  "tags": [
+    "first-location",
+    "part-time",
+    "kept-the-day-job",
+    "built-solo",
+    "recent-grad"
+  ],
   "review_notes": [
     "machine_count left null: the location is described as one open-market unit, but the transcript never states a distinct machine count.",
     "The closing quote was also the pull quote, so the duplicate blockquote was removed from the story body. Consider adding a different verbatim quote to that section."

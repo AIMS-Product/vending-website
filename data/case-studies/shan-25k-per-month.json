@@ -28,7 +28,13 @@
   "months_to_result": 18,
   "prior_occupation": null,
   "location_types": ["micro-market"],
-  "tags": ["no-experience", "scaling", "couple"],
+  "tags": [
+    "no-experience",
+    "scaling",
+    "couple",
+    "after-a-big-move",
+    "money-was-tight"
+  ],
   "review_notes": [
     "Shan's own occupation/industry before vending was not named in the transcript, only that her role wasn't fully remote after relocating; left prior_occupation null.",
     "Total machine count for the four locations was not stated; left null.",

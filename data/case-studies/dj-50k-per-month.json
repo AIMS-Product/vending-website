@@ -9,9 +9,18 @@
   "quote_attribution": "DJ",
   "body": "## Background\n\nDJ and his wife got into business ownership in 2016. During COVID, a restaurant they owned failed and they went into bankruptcy, forcing both of them back into the workforce in 2021; DJ went into the mortgage industry. He started vending on his own through Naturals2Go, installing his first of four machines in April 2024, before meeting Mike Hoffman at a Wealth Without Wall Street conference in August 2024.\n\n> During COVID, one of the businesses we owned, a little restaurant that just never had a chance to get off the ground, it failed, and we went into bankruptcy as a result of that.\n\n## The Challenge\n\nDJ had already committed to one vending program and had no outside community to validate whether paying for a second one made sense.\n\n> We didn't really look into anything else when we were doing it. Explore different avenues, because you don't know what you don't know, and we really didn't know anything.\n\n## The Turning Point\n\nSeeing Mike Hoffman present at the conference sold him immediately, backed by the appeal of machine flexibility and a community to shorten the learning curve.\n\n> When Mike was up there speaking, I was just like, 'This is my guy right here.' I was so excited. Called my wife, I went up and introduced myself to Mike.\n\n## Where They Are Now\n\nDJ joined in August 2024 with 4 machines and didn't place his fifth until November 2024. By December 2025, he had 33 machines across 17-18 locations, grossing close to $600,000 annualized, or about $50,000 a month. His highest location is student housing at about $8,000 a month; his second-best is a 24/7 warehouse with about 150 employees at around $7,000 a month. He runs three drivers plus a warehouse picker and says vending has replaced at least half of his income from the mortgage business.\n\n> We went from four machines at that time. I'll be installing 32 and 33 next week, so we'll have 33 machines before the end of the year.",
   "stats": [
-    { "label": "Monthly Revenue", "value": "$50K" },
-    { "label": "Machines", "value": "33" },
-    { "label": "Locations", "value": "17-18" }
+    {
+      "label": "Monthly Revenue",
+      "value": "$50K"
+    },
+    {
+      "label": "Machines",
+      "value": "33"
+    },
+    {
+      "label": "Locations",
+      "value": "17-18"
+    }
   ],
   "monthly_revenue_usd": 50000,
   "machine_count": 33,
@@ -19,7 +28,15 @@
   "months_to_result": 12,
   "prior_occupation": "Mortgage industry; prior restaurant owner",
   "location_types": ["student housing", "warehouse"],
-  "tags": ["career-change", "family-business", "scaling", "route-acquisition"],
+  "tags": [
+    "career-change",
+    "family-business",
+    "scaling",
+    "from-finance",
+    "from-food-hospitality",
+    "kept-the-day-job",
+    "after-a-failed-business"
+  ],
   "review_notes": [
     "Location count stated as 'I want to say it's like 17 or 18' - DJ's own estimate, not exact; low end (17) used per range rule."
   ]

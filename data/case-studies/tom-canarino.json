@@ -32,7 +32,14 @@
   "months_to_result": null,
   "prior_occupation": "Digital marketing agency owner",
   "location_types": ["hotel", "residential", "student housing"],
-  "tags": ["scaling", "route-acquisition", "part-time"],
+  "tags": [
+    "scaling",
+    "route-acquisition",
+    "part-time",
+    "already-self-employed",
+    "built-solo",
+    "layoff-or-ai-hedge"
+  ],
   "review_notes": [
     "Name spelling 'Tom Canarino' is a phonetic rendering from auto-generated captions and is unconfirmed — verify before publish.",
     "The $18K/month hotel figure is derived from Tom's stated day-rate range ($500-700/day in the slow season, over 1,000+/day on launch weekends); he never states an $18K monthly total directly — verify.",
