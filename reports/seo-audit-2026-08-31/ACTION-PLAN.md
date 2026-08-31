@@ -22,7 +22,7 @@ Sequenced backlog from the full audit. Each code slice ships via the normal flow
 
 - Add legacy-route existence check for unknown single-segment paths in `src/proxy.ts` using its existing `notFoundResponse()` (proxy.ts:41-49), mirroring the `REMOVED_PUBLIC_PATHS` pattern (proxy.ts:51,158-160).
 - Ship AFTER S1 so newly-redirected URLs never 404 in between.
-- Also mitigates the sitemap mis-route symptom (a race would 404 clean instead of serving HTML as the sitemap).
+- Scope: single-segment paths only. Does NOT touch the sitemap route race (dotted paths never reach the proxy) or multi-segment soft-404s (e.g. `/case-studies/zzz`) — those stream through the root `loading.tsx` boundary; scoping that boundary down is the follow-up (S2b) if they matter.
 
 ## P1 — Code slices
 

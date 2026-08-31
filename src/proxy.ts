@@ -19,6 +19,7 @@ import {
   supabaseAuthErrorRedirectPath,
 } from "@/lib/supabase/auth-redirects";
 import { isCodedRoutePath } from "@/lib/page-builder/coded-route-paths";
+import { isUnknownSingleSegmentPublicPath } from "@/lib/routing/single-segment-routes";
 import { isDevAdminAuthBypassEnabled } from "@/lib/supabase/dev-auth";
 import { updateSession } from "@/lib/supabase/middleware";
 
@@ -272,6 +273,17 @@ export async function proxy(request: NextRequest) {
         resolveRedirectDestination(request, redirect.destination_path),
         redirect.status_code,
       );
+    }
+
+    // A single-segment path that matches neither a filesystem route nor a
+    // legacy lead route can only land in `[legacyLeadPath]`'s notFound(),
+    // which the root loading.tsx Suspense boundary streams as a 200 shell
+    // (soft-404) — the status code is flushed before notFound() runs. Return
+    // the real 404 here, pre-routing, where the status is still ours.
+    // next.config redirects fired before the proxy and the Studio redirect
+    // lookup ran above, so nothing redirectable reaches this check.
+    if (isUnknownSingleSegmentPublicPath(path)) {
+      return notFoundResponse();
     }
 
     return NextResponse.next();
