@@ -32,10 +32,55 @@ const schema: SanitizeSchema = {
   },
 };
 
+// Hosts whose article-body images may be routed through the Next.js image
+// optimizer. Must stay a subset of next.config.ts `images.remotePatterns` —
+// an unlisted host would 400 from /_next/image, so it is left untouched.
+const OPTIMIZABLE_IMAGE_HOSTS = new Set([
+  "aacisvhkmsaabqdvdmmf.supabase.co",
+  "cdn.prod.website-files.com",
+]);
+
+type HastNode = {
+  type: string;
+  tagName?: string;
+  properties?: Record<string, unknown>;
+  children?: HastNode[];
+};
+
+/**
+ * CMS markdown emits plain `<img>` tags, which shipped ~350KB raw JPEGs per
+ * image with no lazy-loading (2026-08-31 SEO audit). Rewrite each remote image
+ * on an allowed host through `/_next/image` (AVIF/WebP + resize) and default
+ * `loading="lazy"` / `decoding="async"`. Runs after sanitisation so the src
+ * it rewrites has already passed the protocol allowlist.
+ */
+function rehypeOptimizeImages() {
+  const visit = (node: HastNode) => {
+    if (node.tagName === "img" && node.properties) {
+      const src = node.properties.src;
+      if (typeof src === "string" && /^https?:\/\//.test(src)) {
+        try {
+          const host = new URL(src).hostname;
+          if (OPTIMIZABLE_IMAGE_HOSTS.has(host)) {
+            node.properties.src = `/_next/image?url=${encodeURIComponent(src)}&w=1200&q=75`;
+          }
+        } catch {
+          // Unparseable URL — leave the sanitised src as-is.
+        }
+      }
+      node.properties.loading ??= "lazy";
+      node.properties.decoding ??= "async";
+    }
+    for (const child of node.children ?? []) visit(child);
+  };
+  return (tree: HastNode) => visit(tree);
+}
+
 const processor = unified()
   .use(remarkParse)
   .use(remarkRehype)
   .use(rehypeSanitize, schema)
+  .use(rehypeOptimizeImages)
   .use(rehypeStringify);
 
 /**

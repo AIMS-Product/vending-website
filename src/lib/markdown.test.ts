@@ -72,3 +72,29 @@ describe("renderMarkdown", () => {
     expect(html).toContain("const x = 1;");
   });
 });
+
+describe("renderMarkdown image optimization", () => {
+  it("routes allowed-host images through the Next image optimizer, lazily", async () => {
+    const html = await renderMarkdown(
+      "![restock](https://aacisvhkmsaabqdvdmmf.supabase.co/storage/v1/object/public/news/restock.jpg)",
+    );
+    expect(html).toContain(
+      'src="/_next/image?url=https%3A%2F%2Faacisvhkmsaabqdvdmmf.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fnews%2Frestock.jpg&#x26;w=1200&#x26;q=75"',
+    );
+    expect(html).toContain('loading="lazy"');
+    expect(html).toContain('decoding="async"');
+    expect(html).toContain('alt="restock"');
+  });
+
+  it("leaves images on unlisted hosts unrewritten (optimizer would 400)", async () => {
+    const html = await renderMarkdown("![x](https://example.com/photo.jpg)");
+    expect(html).toContain('src="https://example.com/photo.jpg"');
+    expect(html).toContain('loading="lazy"');
+  });
+
+  it("leaves root-relative images unrewritten but still lazy", async () => {
+    const html = await renderMarkdown("![alt](/images/news/cover.jpg)");
+    expect(html).toContain('src="/images/news/cover.jpg"');
+    expect(html).toContain('loading="lazy"');
+  });
+});

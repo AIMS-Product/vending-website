@@ -18,7 +18,6 @@ import Script from "next/script";
  */
 const META_PIXEL_ID = "2008180456764704";
 const HUBSPOT_ID = "48512363";
-const VIDALYTICS_ID = "vid_glb_erwZUUrS";
 
 // Webflow served the Google loader through its own first-party-mode path
 // (`/lsfr…`), which only existed on Webflow's edge — so the loader here is the
@@ -106,19 +105,19 @@ fbq('track', 'PageView');`}
         strategy="afterInteractive"
       />
 
-      {/* HubSpot */}
+      {/* HubSpot — forms/chat loader; nothing on the page blocks on it, so it
+          can wait for idle instead of joining the post-hydration burst (and
+          lazyOnload also drops its <head> preload competing with LCP). */}
       <Script
         id="hs-script-loader"
         src={`https://js.hs-scripts.com/${HUBSPOT_ID}.js`}
-        strategy="afterInteractive"
+        strategy="lazyOnload"
       />
 
-      {/* Vidalytics */}
-      <Script
-        id={VIDALYTICS_ID}
-        src="https://fast.vidalytics.com/js/global.min.js"
-        strategy="afterInteractive"
-      />
+      {/* Vidalytics: removed 2026-08-31 — no page embeds a Vidalytics player
+          (VSL pages use the ApplyVsl YouTube facade). Re-add scoped to the VSL
+          pages, not sitewide, in the same change that ships the real embed
+          (see PreCallResourcesPage's VSL SWAP note). */}
 
       {/* RightMessage — personalization */}
       <Script id="rightmessage" strategy="afterInteractive">
