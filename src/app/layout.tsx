@@ -10,6 +10,7 @@ import { Footer } from "@/components/site/Footer";
 import { SitePopup } from "@/components/site/SitePopup";
 import { loadSitePopups } from "@/lib/services/popups";
 import { siteUrl } from "@/lib/site";
+import { siteStructuredData } from "@/lib/site-structured-data";
 import "./globals.css";
 
 // `display: "optional"` (not the "swap" default) is deliberate: it gives the
@@ -52,6 +53,13 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
+        <script
+          type="application/ld+json"
+          // Serialised server-side from our own static config, never from user input.
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(siteStructuredData()),
+          }}
+        />
         <a href="#main-content" className="skip-to-content">
           Skip to content
         </a>

@@ -48,6 +48,10 @@ export const applyVsl = {
   badge: "Free training",
   watchLabel: "Watch Mike's story",
   youtubeId: "P-Z1BZ9M-Fg",
+  // Real publish date from YouTube's own player data for P-Z1BZ9M-Fg
+  // (ytInitialPlayerResponse.microformat, read 2026-08-31). Required by the
+  // VideoObject schema on /contact — update it if the VSL video is swapped.
+  publishedAt: "2026-07-22T06:15:25-07:00",
   videoHref: "https://youtu.be/P-Z1BZ9M-Fg",
   caption: [
     {

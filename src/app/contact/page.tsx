@@ -6,6 +6,7 @@ import {
   buildLeadAttribution,
   type LeadSearchParams,
 } from "@/lib/lead-attribution";
+import { applyVslStructuredData } from "@/lib/site-structured-data";
 
 export const metadata: Metadata = {
   title: applyMeta.title,
@@ -23,10 +24,19 @@ export default async function ContactPage({
   const attribution = buildLeadAttribution(await searchParams, "/contact");
 
   return (
-    <ApplyLandingPage
-      attribution={attribution}
-      idempotencyKey={randomUUID()}
-      accent="orange"
-    />
+    <>
+      <script
+        type="application/ld+json"
+        // Serialised server-side from our own static config, never from user input.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(applyVslStructuredData()),
+        }}
+      />
+      <ApplyLandingPage
+        attribution={attribution}
+        idempotencyKey={randomUUID()}
+        accent="orange"
+      />
+    </>
   );
 }

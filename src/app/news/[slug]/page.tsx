@@ -9,6 +9,7 @@ import {
 } from "@/lib/services/news";
 import { renderMarkdown } from "@/lib/markdown";
 import { newsStructuredData } from "@/lib/news/structured-data";
+import { breadcrumbStructuredData } from "@/lib/site-structured-data";
 
 type Params = { slug: string };
 
@@ -56,6 +57,10 @@ export default async function NewsArticlePage({
   if (!post) notFound();
   const html = await renderMarkdown(post.body);
   const structuredData = newsStructuredData(post.body);
+  const breadcrumbs = breadcrumbStructuredData([
+    { name: "News", path: "/news" },
+    { name: post.title, path: `/news/${post.slug}` },
+  ]);
   return (
     <>
       {structuredData && (
@@ -65,6 +70,10 @@ export default async function NewsArticlePage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
       <NewsArticle post={post} html={html} />
       <FinalCta />
     </>

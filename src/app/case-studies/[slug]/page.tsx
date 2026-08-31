@@ -11,6 +11,7 @@ import {
 } from "@/lib/services/case-studies";
 import { renderMarkdown } from "@/lib/markdown";
 import { caseStudyStructuredData } from "@/lib/case-studies/structured-data";
+import { breadcrumbStructuredData } from "@/lib/site-structured-data";
 
 type Params = { slug: string };
 
@@ -68,6 +69,10 @@ export default async function CaseStudyPage({
   const html = await renderMarkdown(caseStudy.body);
   const related = await resolveRelated(slug, caseStudy.related_slugs);
   const structuredData = caseStudyStructuredData(caseStudy);
+  const breadcrumbs = breadcrumbStructuredData([
+    { name: "Case Studies", path: "/case-studies" },
+    { name: caseStudy.title, path: `/case-studies/${caseStudy.slug}` },
+  ]);
 
   return (
     <>
@@ -78,6 +83,10 @@ export default async function CaseStudyPage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
       <CaseStudyArticle caseStudy={caseStudy} html={html} related={related} />
       <FinalCta />
     </>

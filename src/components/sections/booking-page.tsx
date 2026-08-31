@@ -15,7 +15,9 @@ import {
 export function bookingMetadata(slug: BookingSlug): Metadata {
   const config = bookingPages[slug];
   return {
-    title: config.metaTitle,
+    // Absolute: the metaTitle strings already end in "| Vendingpreneurs", so
+    // the root layout's "%s | Vendingpreneurs" template would double the brand.
+    title: { absolute: config.metaTitle },
     description: config.metaDescription,
     robots: { index: false, follow: false },
     alternates: { canonical: "/contact" },

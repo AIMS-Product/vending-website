@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ContentPage } from "@/components/sections/ContentPage";
 import { getSolution, listSolutionSlugs } from "@/lib/content/solutions";
+import { breadcrumbStructuredData } from "@/lib/site-structured-data";
 
 type Params = { slug: string };
 
@@ -44,5 +45,19 @@ export default async function Page({ params }: { params: Promise<Params> }) {
   const solution = getSolution(slug);
   if (!solution) notFound();
 
-  return <ContentPage page={solution} />;
+  const breadcrumbs = breadcrumbStructuredData([
+    { name: "Solutions", path: "/solutions" },
+    { name: solution.title, path: `/solutions/${solution.slug}` },
+  ]);
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        // Serialised server-side from our own static config, never from user input.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
+      <ContentPage page={solution} />
+    </>
+  );
 }
