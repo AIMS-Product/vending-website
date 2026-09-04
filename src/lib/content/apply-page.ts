@@ -193,16 +193,16 @@ export const applyMembers = {
       alt: "Success story — Anthony Kolodziej: laid off from a 14-year real estate career with zero vending experience, he used personal 0% APR credit cards for his first machines and scaled to a sustainable multi-site operation — $102K/month across 45 locations in about a year, at roughly 10 hours a week. “I built something my kids can see me build — and get the time and freedom to actually be there for them while I do it.” Watch his story on YouTube.",
     },
     {
-      name: "Mallerie Rouch",
+      name: "Mallorie Rauch",
       image: "/apply/stories/mallerie.png",
       youtubeUrl: "https://youtu.be/io1Jkei-yFs",
-      alt: "Success story — Mallerie Rouch: working a full-time job and a mother of two, she and her husband bet on themselves and built a vending route to $4K/month across 6 locations in 8 months, at 5–6 hours a week part-time. “This is the right community to have access to people who've been insanely successful — to build this business right and avoid the mistakes people make without mentors.” Watch her story on YouTube.",
+      alt: "Success story — Mallorie Rauch: working a full-time job and a mother of two, she and her husband bet on themselves and built a vending route to $4K/month across 6 locations in 8 months, at 5–6 hours a week part-time. “This is the right community to have access to people who've been insanely successful — to build this business right and avoid the mistakes people make without mentors.” Watch her story on YouTube.",
     },
     {
-      name: "Moosa Sadi",
+      name: "Musa Sadi",
       image: "/apply/stories/moosa.png",
       youtubeUrl: "https://youtu.be/kb8ryBm6g9k",
-      alt: "Success story — Moosa Sadi: after losing his mother and younger brother and burning out of a hospitality career, he quit his job, found Mike Hoffman on YouTube, and rebuilt — 22 locations, 2 employees running his routes, a $41K single best month in about a year. “I genuinely feel freedom. At the end of the day, I do it for my mom and my brother.” Watch his story on YouTube.",
+      alt: "Success story — Musa Sadi: after losing his mother and younger brother and burning out of a hospitality career, he quit his job, found Mike Hoffman on YouTube, and rebuilt — 22 locations, 2 employees running his routes, a $41K single best month in about a year. “I genuinely feel freedom. At the end of the day, I do it for my mom and my brother.” Watch his story on YouTube.",
     },
   ] satisfies SuccessStoryCard[],
 } as const;
