@@ -11,6 +11,10 @@ import {
 import {
   applyCaseStudyFilters,
   buildCareerFacets,
+  buildIcpFacets,
+  buildLocationFacets,
+  buildObjectionFacets,
+  buildRevenueFacets,
   buildTagFacets,
   parseCaseStudyFilters,
 } from "@/lib/case-studies/index-filters";
@@ -39,10 +43,19 @@ export default async function CaseStudiesPage({
   // visitor clicks, rather than collapsing to the current selection.
   const tagFacets = buildTagFacets(caseStudies);
   const careerFacets = buildCareerFacets(caseStudies);
+  const objectionFacets = buildObjectionFacets(caseStudies);
+  const icpFacets = buildIcpFacets(caseStudies);
+  const locationFacets = buildLocationFacets(caseStudies);
+  const revenueFacets = buildRevenueFacets(caseStudies);
+  const ids = (facets: readonly { value: string }[]) =>
+    facets.map((facet) => facet.value);
   const filters = parseCaseStudyFilters(
     params,
-    tagFacets.map((facet) => facet.value),
-    careerFacets.map((facet) => facet.value),
+    ids(tagFacets),
+    ids(careerFacets),
+    ids(objectionFacets),
+    ids(icpFacets),
+    ids(locationFacets),
   );
   const visible = applyCaseStudyFilters(caseStudies, filters);
 
@@ -55,6 +68,10 @@ export default async function CaseStudiesPage({
         filters={filters}
         tagFacets={tagFacets}
         careerFacets={careerFacets}
+        objectionFacets={objectionFacets}
+        icpFacets={icpFacets}
+        locationFacets={locationFacets}
+        revenueFacets={revenueFacets}
         totalCount={caseStudies.length}
       />
       <CaseStudyQuotes />

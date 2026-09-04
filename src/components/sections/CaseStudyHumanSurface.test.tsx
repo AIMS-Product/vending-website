@@ -50,8 +50,19 @@ describe("CaseStudyCard human badges", () => {
 describe("CaseStudyIndex second filter row", () => {
   const props = {
     caseStudies: [card({ tags: ["from-healthcare"] })],
-    filters: { tag: null, career: null, revenue: null },
+    filters: {
+      tag: null,
+      career: null,
+      objection: null,
+      icp: null,
+      location: null,
+      revenue: null,
+    },
     tagFacets: [{ value: "scaling", label: "Scaling", count: 1 }],
+    objectionFacets: [],
+    icpFacets: [],
+    locationFacets: [],
+    revenueFacets: [],
     totalCount: 1,
   };
 

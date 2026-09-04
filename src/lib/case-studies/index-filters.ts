@@ -88,6 +88,193 @@ export const CAREER_TAG_GROUPS = [
 ] as const;
 
 /**
+ * Row 3: the objection a story defuses.
+ *
+ * These are not derived here — they are inherited from the Objection Library
+ * (objection-library.vercel.app), where the sales team hand-tagged every
+ * member video with the objections it answers. `scripts/merge-objection-
+ * library-tags.mjs` joins the two collections on YouTube id and writes these
+ * tags onto the story. Keep the labels identical to the library's, or the two
+ * tools drift into two vocabularies for one idea.
+ *
+ * This is the only row phrased as the visitor's question rather than the
+ * member's attribute: a prospect arrives with a specific reason they have not
+ * bought, and this is the row that maps that reason onto a person who had it.
+ *
+ * "Contract / Legal" exists in the library but currently matches no story, so
+ * it is absent here rather than rendering a chip that returns nothing. Add it
+ * back the moment a story earns it.
+ */
+export const OBJECTION_TAG_GROUPS = [
+  { id: "price", label: "Can I afford it?", tags: ["objection-price"] },
+  { id: "roi", label: "Does it actually pay?", tags: ["objection-roi"] },
+  { id: "timing", label: "Do I have the time?", tags: ["objection-timing"] },
+  {
+    id: "need-fit",
+    label: "Could someone like me do it?",
+    tags: ["objection-need-fit"],
+  },
+  {
+    id: "spouse",
+    label: "Getting my partner on board",
+    tags: ["objection-spouse"],
+  },
+  {
+    id: "status-quo",
+    label: "Leaving a stable job",
+    tags: ["objection-status-quo"],
+  },
+  {
+    id: "implementation",
+    label: "Can I actually run it?",
+    tags: ["objection-implementation"],
+  },
+  { id: "trust", label: "Is this legit?", tags: ["objection-trust"] },
+  { id: "diy", label: "Why not do it alone?", tags: ["objection-diy"] },
+] as const;
+
+export type ObjectionTagGroupId = (typeof OBJECTION_TAG_GROUPS)[number]["id"];
+
+/**
+ * Row 4: who the member was. Also inherited from the Objection Library, whose
+ * ICP list is the sales team's own segmentation — reusing it means a rep can
+ * hand a prospect the story of someone in their exact segment without a
+ * translation step.
+ *
+ * Overlaps the row-1 situation groups on purpose. Row 1 asks what shape the
+ * business took; this asks who the person was. A visitor thinks in one or the
+ * other, rarely both.
+ */
+export const ICP_TAG_GROUPS = [
+  { id: "leaving-w2", label: "Leaving a W-2", tags: ["icp-leaving-w2"] },
+  { id: "entrepreneur", label: "Entrepreneur", tags: ["icp-entrepreneur"] },
+  {
+    id: "serial-entrepreneur",
+    label: "Serial entrepreneur",
+    tags: ["icp-serial-entrepreneur"],
+  },
+  { id: "female", label: "Women in vending", tags: ["icp-female"] },
+  { id: "family-biz", label: "Family business", tags: ["icp-family-biz"] },
+  { id: "blue-collar", label: "Blue collar", tags: ["icp-blue-collar"] },
+  {
+    id: "military",
+    label: "Military & law enforcement",
+    tags: ["icp-military"],
+  },
+  { id: "investor", label: "Investor", tags: ["icp-investor"] },
+  { id: "laid-off", label: "Laid off", tags: ["icp-laid-off"] },
+  {
+    id: "stay-at-home-parent",
+    label: "Stay-at-home parent",
+    tags: ["icp-stay-at-home-parent"],
+  },
+  {
+    id: "young-professional",
+    label: "Young professional",
+    tags: ["icp-young-professional"],
+  },
+  { id: "retired", label: "Retired", tags: ["icp-retired"] },
+] as const;
+
+export type IcpTagGroupId = (typeof ICP_TAG_GROUPS)[number]["id"];
+
+/**
+ * Row 5: where the machines are.
+ *
+ * `location_types` is free text typed per story, so it arrived with 23 values
+ * for about 14 real places — "apartment"/"apartments", "gym"/"fitness center",
+ * "government facility"/"government-building". Normalising on read rather than
+ * rewriting the stored values keeps the members' own wording intact on the
+ * article page, where it reads as a person describing their route, while the
+ * filter still collapses to one chip per place.
+ *
+ * Matching is on the whole normalised value, never a substring: "office"
+ * must not swallow "dental office", which is a different kind of account.
+ */
+export const LOCATION_GROUPS = [
+  {
+    id: "apartments",
+    label: "Apartments",
+    values: ["apartment", "apartments", "condo", "residential"],
+  },
+  {
+    id: "offices",
+    label: "Offices",
+    values: ["office", "corporate office"],
+  },
+  {
+    id: "schools",
+    label: "Schools & campuses",
+    values: ["school", "college", "student housing"],
+  },
+  {
+    id: "gyms",
+    label: "Gyms",
+    values: ["gym", "fitness center"],
+  },
+  {
+    id: "industrial",
+    label: "Industrial & warehouse",
+    values: [
+      "industrial",
+      "manufacturing",
+      "warehouse",
+      "union training center",
+    ],
+  },
+  {
+    id: "government",
+    label: "Government & civic",
+    values: ["government facility", "government-building", "courthouse"],
+  },
+  {
+    id: "medical",
+    label: "Medical",
+    values: ["dental office", "medical response facility"],
+  },
+  {
+    id: "hospitality",
+    label: "Hotels",
+    values: ["hotel"],
+  },
+  {
+    id: "senior-living",
+    label: "Senior living",
+    values: ["retirement-community"],
+  },
+  {
+    id: "micro-market",
+    label: "Micro markets",
+    values: ["micro-market"],
+  },
+] as const;
+
+export type LocationGroupId = (typeof LOCATION_GROUPS)[number]["id"];
+
+/** Lowercase and collapse whitespace/hyphens so "Micro Market" meets "micro-market". */
+function normalizeLocation(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, " ");
+}
+
+const LOCATION_LOOKUP = new Map<string, string>(
+  LOCATION_GROUPS.flatMap((group) =>
+    group.values.map((value) => [normalizeLocation(value), group.id] as const),
+  ),
+);
+
+export function matchesLocationGroup(
+  locationTypes: readonly string[],
+  groupId: string,
+): boolean {
+  return locationTypes.some(
+    (value) => LOCATION_LOOKUP.get(normalizeLocation(value)) === groupId,
+  );
+}
+
+/**
  * Life-situation values. These are NOT filter chips on purpose: there are
  * eighteen of them, and a row that wide stops being a filter and starts being
  * a wall. They render as badges on the card and the article, where their job
@@ -149,6 +336,9 @@ function matchesTagGroup(
 export type CaseStudyFilters = {
   tag: string | null;
   career: string | null;
+  objection: string | null;
+  icp: string | null;
+  location: string | null;
   revenue: RevenueBandId | null;
 };
 
@@ -168,13 +358,22 @@ export function parseCaseStudyFilters(
   searchParams: Record<string, string | string[] | undefined>,
   availableGroupIds: readonly string[],
   availableCareerIds: readonly string[] = [],
+  availableObjectionIds: readonly string[] = [],
+  availableIcpIds: readonly string[] = [],
+  availableLocationIds: readonly string[] = [],
 ): CaseStudyFilters {
-  const tag = firstParam(searchParams.tag);
-  const career = firstParam(searchParams.career);
+  const pick = (
+    raw: string | null,
+    available: readonly string[],
+  ): string | null => (raw && available.includes(raw) ? raw : null);
+
   const revenue = firstParam(searchParams.revenue);
   return {
-    tag: tag && availableGroupIds.includes(tag) ? tag : null,
-    career: career && availableCareerIds.includes(career) ? career : null,
+    tag: pick(firstParam(searchParams.tag), availableGroupIds),
+    career: pick(firstParam(searchParams.career), availableCareerIds),
+    objection: pick(firstParam(searchParams.objection), availableObjectionIds),
+    icp: pick(firstParam(searchParams.icp), availableIcpIds),
+    location: pick(firstParam(searchParams.location), availableLocationIds),
     revenue: REVENUE_BANDS.some((band) => band.id === revenue)
       ? (revenue as RevenueBandId)
       : null,
@@ -208,6 +407,24 @@ export function applyCaseStudyFilters(
       return false;
     }
     if (
+      filters.objection &&
+      !matchesTagGroup(caseStudy.tags, filters.objection, OBJECTION_TAG_GROUPS)
+    ) {
+      return false;
+    }
+    if (
+      filters.icp &&
+      !matchesTagGroup(caseStudy.tags, filters.icp, ICP_TAG_GROUPS)
+    ) {
+      return false;
+    }
+    if (
+      filters.location &&
+      !matchesLocationGroup(caseStudy.location_types, filters.location)
+    ) {
+      return false;
+    }
+    if (
       filters.revenue &&
       !matchesRevenueBand(caseStudy.monthly_revenue_usd, filters.revenue)
     ) {
@@ -217,26 +434,58 @@ export function applyCaseStudyFilters(
   });
 }
 
-/** One facet per group, in declaration order. Empty groups are hidden. */
+/**
+ * One facet per group, in declaration order. Empty groups are hidden, so a
+ * vocabulary can carry a value no story has earned yet without rendering a
+ * chip that leads to an empty page.
+ */
+function buildFacets(
+  caseStudies: readonly CaseStudyCard[],
+  groups: readonly { id: string; label: string; tags: readonly string[] }[],
+): Facet[] {
+  return groups
+    .map((group) => ({
+      value: group.id,
+      label: group.label,
+      count: caseStudies.filter((caseStudy) =>
+        matchesTagGroup(caseStudy.tags, group.id, groups),
+      ).length,
+    }))
+    .filter((facet) => facet.count > 0);
+}
+
 export function buildTagFacets(caseStudies: readonly CaseStudyCard[]): Facet[] {
-  return CASE_STUDY_TAG_GROUPS.map((group) => ({
-    value: group.id,
-    label: group.label,
-    count: caseStudies.filter((caseStudy) =>
-      matchesTagGroup(caseStudy.tags, group.id),
-    ).length,
-  })).filter((facet) => facet.count > 0);
+  return buildFacets(caseStudies, CASE_STUDY_TAG_GROUPS);
 }
 
 /** One facet per prior-career group, in declaration order. Empty ones hidden. */
 export function buildCareerFacets(
   caseStudies: readonly CaseStudyCard[],
 ): Facet[] {
-  return CAREER_TAG_GROUPS.map((group) => ({
+  return buildFacets(caseStudies, CAREER_TAG_GROUPS);
+}
+
+/** One facet per objection the stories answer. */
+export function buildObjectionFacets(
+  caseStudies: readonly CaseStudyCard[],
+): Facet[] {
+  return buildFacets(caseStudies, OBJECTION_TAG_GROUPS);
+}
+
+/** One facet per ICP segment. */
+export function buildIcpFacets(caseStudies: readonly CaseStudyCard[]): Facet[] {
+  return buildFacets(caseStudies, ICP_TAG_GROUPS);
+}
+
+/** One facet per location family. Reads `location_types`, not `tags`. */
+export function buildLocationFacets(
+  caseStudies: readonly CaseStudyCard[],
+): Facet[] {
+  return LOCATION_GROUPS.map((group) => ({
     value: group.id,
     label: group.label,
     count: caseStudies.filter((caseStudy) =>
-      matchesTagGroup(caseStudy.tags, group.id, CAREER_TAG_GROUPS),
+      matchesLocationGroup(caseStudy.location_types, group.id),
     ).length,
   })).filter((facet) => facet.count > 0);
 }
@@ -265,6 +514,9 @@ export function caseStudiesHref(
   const params = new URLSearchParams();
   if (next.tag) params.set("tag", next.tag);
   if (next.career) params.set("career", next.career);
+  if (next.objection) params.set("objection", next.objection);
+  if (next.icp) params.set("icp", next.icp);
+  if (next.location) params.set("location", next.location);
   if (next.revenue) params.set("revenue", next.revenue);
   const query = params.toString();
   return query ? `/case-studies?${query}` : "/case-studies";

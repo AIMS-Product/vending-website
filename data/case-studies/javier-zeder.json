@@ -33,7 +33,10 @@
     "part-time",
     "kept-the-day-job",
     "built-solo",
-    "recent-grad"
+    "recent-grad",
+    "objection-need-fit",
+    "icp-young-professional",
+    "icp-entrepreneur"
   ],
   "review_notes": [
     "machine_count left null: the location is described as one open-market unit, but the transcript never states a distinct machine count.",

@@ -16,6 +16,10 @@ type CaseStudyIndexProps = {
   filters: CaseStudyFilters;
   tagFacets: readonly Facet[];
   careerFacets: readonly Facet[];
+  objectionFacets: readonly Facet[];
+  icpFacets: readonly Facet[];
+  locationFacets: readonly Facet[];
+  revenueFacets: readonly Facet[];
   totalCount: number;
 };
 
@@ -29,9 +33,59 @@ export function CaseStudyIndex({
   filters,
   tagFacets,
   careerFacets,
+  objectionFacets,
+  icpFacets,
+  locationFacets,
+  revenueFacets,
   totalCount,
 }: CaseStudyIndexProps) {
-  const isFiltered = Boolean(filters.tag || filters.career || filters.revenue);
+  const isFiltered = Object.values(filters).some(Boolean);
+
+  /*
+    Six axes now. Declaring them as data rather than six hand-written blocks
+    keeps the ordering decision in one readable list: the objection row leads
+    because it is the only one phrased as the visitor's own question, and a
+    prospect who has a specific reason they have not bought should meet it
+    before they are asked to categorise themselves.
+  */
+  const rows = [
+    {
+      key: "objection" as const,
+      label: "Filter stories by the doubt they answer",
+      legend: "What's holding you back",
+      facets: objectionFacets,
+    },
+    {
+      key: "tag" as const,
+      label: "Filter stories by situation",
+      legend: "Their situation",
+      facets: tagFacets,
+    },
+    {
+      key: "icp" as const,
+      label: "Filter stories by who the member is",
+      legend: "Who they are",
+      facets: icpFacets,
+    },
+    {
+      key: "career" as const,
+      label: "Filter stories by what they did before vending",
+      legend: "What they did before",
+      facets: careerFacets,
+    },
+    {
+      key: "revenue" as const,
+      label: "Filter stories by monthly revenue",
+      legend: "What they make",
+      facets: revenueFacets,
+    },
+    {
+      key: "location" as const,
+      label: "Filter stories by where their machines are",
+      legend: "Where their machines are",
+      facets: locationFacets,
+    },
+  ];
 
   return (
     <section className="border-t-2 border-[#111111] bg-[#f5fbff] px-5 py-16 lg:px-10 lg:py-20">
@@ -44,38 +98,21 @@ export function CaseStudyIndex({
         </p>
 
         <div className="space-y-6">
-          {tagFacets.length > 0 && (
-            <FacetRow
-              label="Filter stories by situation"
-              legend="Their situation"
-              facets={tagFacets}
-              activeValue={filters.tag}
-              hrefFor={(value) =>
-                caseStudiesHref(filters, {
-                  tag: value === filters.tag ? null : value,
-                })
-              }
-            />
-          )}
-
-          {/*
-          A second row rather than more chips in the first: "what kind of story
-          is this" and "what did this person do before" are different questions,
-          and a visitor looking for their own old job should not have to read
-          past six business-shape chips to find it.
-        */}
-          {careerFacets.length > 0 && (
-            <FacetRow
-              label="Filter stories by what they did before vending"
-              legend="What they did before"
-              facets={careerFacets}
-              activeValue={filters.career}
-              hrefFor={(value) =>
-                caseStudiesHref(filters, {
-                  career: value === filters.career ? null : value,
-                })
-              }
-            />
+          {rows.map((row) =>
+            row.facets.length === 0 ? null : (
+              <FacetRow
+                key={row.key}
+                label={row.label}
+                legend={row.legend}
+                facets={row.facets}
+                activeValue={filters[row.key]}
+                hrefFor={(value) =>
+                  caseStudiesHref(filters, {
+                    [row.key]: value === filters[row.key] ? null : value,
+                  })
+                }
+              />
+            ),
           )}
         </div>
 

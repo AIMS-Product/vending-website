@@ -36,7 +36,10 @@
     "from-trades",
     "already-self-employed",
     "built-solo",
-    "after-a-failed-business"
+    "after-a-failed-business",
+    "objection-price",
+    "objection-implementation",
+    "icp-blue-collar"
   ],
   "review_notes": [
     "Transcript is auto-generated; verify all dollar figures against the video before publishing.",
