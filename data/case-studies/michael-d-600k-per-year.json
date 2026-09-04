@@ -36,7 +36,12 @@
     "from-trades",
     "from-public-safety",
     "already-self-employed",
-    "with-their-kids"
+    "with-their-kids",
+    "objection-status-quo",
+    "objection-trust",
+    "icp-blue-collar",
+    "icp-entrepreneur",
+    "icp-military"
   ],
   "review_notes": []
 }

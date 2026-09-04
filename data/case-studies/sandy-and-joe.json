@@ -35,7 +35,10 @@
     "with-their-kids",
     "raising-kids",
     "burned-out",
-    "after-a-big-move"
+    "after-a-big-move",
+    "objection-need-fit",
+    "objection-timing",
+    "icp-family-biz"
   ],
   "review_notes": [
     "No steady total monthly revenue figure was given (only the $500-800 normal range for the student machine and the $6-10K band-camp spike); left monthly_revenue_usd null.",

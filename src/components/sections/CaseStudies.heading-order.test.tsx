@@ -42,9 +42,20 @@ const card: CaseStudyCard = {
 const indexHtml = renderToStaticMarkup(
   <CaseStudyIndex
     caseStudies={[card]}
-    filters={{ tag: null, career: null, revenue: null }}
-    tagFacets={[{ value: "scaling", label: "Scaling", count: 1 }]}
-    careerFacets={[{ value: "corporate", label: "Corporate", count: 1 }]}
+    filters={{
+      objection: null,
+      who: null,
+      career: null,
+      location: null,
+      revenue: null,
+    }}
+    facets={{
+      objection: [{ value: "price", label: "Can I afford it?", count: 1 }],
+      who: [],
+      career: [],
+      revenue: [],
+      location: [],
+    }}
     totalCount={1}
   />,
 );

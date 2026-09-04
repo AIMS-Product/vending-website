@@ -47,34 +47,72 @@ describe("CaseStudyCard human badges", () => {
   });
 });
 
-describe("CaseStudyIndex second filter row", () => {
+describe("CaseStudyIndex filter rows", () => {
+  const facets = {
+    objection: [{ value: "price", label: "Can I afford it?", count: 1 }],
+    who: [{ value: "women", label: "Women in vending", count: 1 }],
+    career: [{ value: "healthcare", label: "Healthcare", count: 1 }],
+    revenue: [],
+    location: [],
+  };
+  const filters = {
+    objection: null,
+    who: null,
+    career: null,
+    location: null,
+    revenue: null,
+  };
   const props = {
     caseStudies: [card({ tags: ["from-healthcare"] })],
-    filters: { tag: null, career: null, revenue: null },
-    tagFacets: [{ value: "scaling", label: "Scaling", count: 1 }],
+    filters,
+    facets,
     totalCount: 1,
   };
 
-  it("renders both rows with distinct accessible names", () => {
+  it("shows the two primary rows without a disclosure", () => {
+    const markup = renderToStaticMarkup(<CaseStudyIndex {...props} />);
+    const summaryAt = markup.indexOf("More filters");
+    expect(markup).toContain("What&#x27;s holding you back");
+    expect(markup).toContain("Who they are");
+    // Both primary rows must sit above the disclosure, not inside it.
+    expect(markup.indexOf("Who they are")).toBeLessThan(summaryAt);
+  });
+
+  it("keeps the refining rows behind the disclosure", () => {
+    const markup = renderToStaticMarkup(<CaseStudyIndex {...props} />);
+    expect(markup).toContain("?career=healthcare");
+    expect(markup.indexOf("The job they left")).toBeGreaterThan(
+      markup.indexOf("More filters"),
+    );
+    expect(markup).not.toContain('<details class="group mt-6" open');
+  });
+
+  it("opens the disclosure when one of its own filters is active", () => {
+    // Otherwise a shared ?career=healthcare link looks like it filtered
+    // nothing: the grid narrows but the active chip is hidden.
     const markup = renderToStaticMarkup(
       <CaseStudyIndex
         {...props}
-        careerFacets={[{ value: "healthcare", label: "Healthcare", count: 1 }]}
+        filters={{ ...filters, career: "healthcare" }}
       />,
     );
-    expect(markup).toContain("Their situation");
-    expect(markup).toContain("What they did before");
-    expect(markup).toContain("?career=healthcare");
+    expect(markup).toContain('open=""');
   });
 
-  it("hides the career row entirely when no story has a career tag", () => {
-    // The real failure mode before the backfill runs: Supabase still holds the
-    // old tags, every career facet is empty, and an empty labelled row would
-    // render as a stray heading over nothing.
+  it("leaves the disclosure shut when only a primary filter is active", () => {
     const markup = renderToStaticMarkup(
-      <CaseStudyIndex {...props} careerFacets={[]} />,
+      <CaseStudyIndex {...props} filters={{ ...filters, who: "women" }} />,
     );
-    expect(markup).not.toContain("What they did before");
-    expect(markup).toContain("Their situation");
+    expect(markup).not.toContain('open=""');
+  });
+
+  it("hides a row entirely when it has no facets", () => {
+    // The real failure mode before a backfill runs: every facet is empty and
+    // an empty labelled row renders as a stray heading over nothing.
+    const markup = renderToStaticMarkup(
+      <CaseStudyIndex {...props} facets={{ ...facets, career: [] }} />,
+    );
+    expect(markup).not.toContain("The job they left");
+    expect(markup).toContain("Who they are");
   });
 });

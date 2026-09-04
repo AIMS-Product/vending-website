@@ -38,7 +38,11 @@
     "from-sales",
     "stay-at-home-parent",
     "built-solo",
-    "raising-kids"
+    "raising-kids",
+    "objection-implementation",
+    "objection-spouse",
+    "icp-stay-at-home-parent",
+    "icp-female"
   ],
   "review_notes": [
     "Revenue is a stated range ($10-12K/month); per spec, monthly_revenue_usd uses the low end (10000) and the full range is shown in stats.",
