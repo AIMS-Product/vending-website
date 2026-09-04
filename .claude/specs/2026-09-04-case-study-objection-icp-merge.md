@@ -17,20 +17,45 @@ the library already knew.
 re-runnable: it never removes a tag and never writes any other column, so an
 editor's work in `/admin` survives a re-run.
 
-## The index went from 2 filter rows to 6
+## The index: 2 visible rows, not 6
 
-| Row                      | Source                                  | Chips |
-| ------------------------ | --------------------------------------- | ----- |
-| What's holding you back  | Objection Library                       | 9     |
-| Their situation          | existing                                | 6     |
-| Who they are             | Objection Library                       | 12    |
-| What they did before     | existing                                | 10    |
-| What they make           | existed in code, **was never rendered** | 4     |
-| Where their machines are | `location_types`, newly normalised      | 10    |
+A first pass rendered all six axes as open rows — 51 chips and roughly 918px
+of filter above the first story. That is a wall, not a filter. It also shipped
+the same idea twice: measured against the real stories,
+
+| Overlap      | Chips                                          | Verdict             |
+| ------------ | ---------------------------------------------- | ------------------- |
+| Jaccard 1.00 | Blue Collar / Trades & Industrial              | identical 3 stories |
+| Jaccard 1.00 | Military & Law Enforcement / Police & Military | identical 2 stories |
+| Jaccard 0.73 | Leaving a W-2 / Corporate                      | 8 of 11 shared      |
+
+So the three "people" rows collapsed into one. Each chip in `WHO_TAG_GROUPS`
+now collects every tag that means the same thing, whatever vocabulary it
+arrived in — the library's ICP names, our `from-*` career tags, and the older
+situation tags.
+
+Four chips were deleted rather than merged: `scaling` (19 of 25 stories),
+`career-change` (15), `part-time` (11) and `first-location`/`no-experience`
+(11). A chip that keeps three quarters of the set does not narrow anything.
+
+Final shape — 294px collapsed:
+
+|                       | Row                      | Chips |
+| --------------------- | ------------------------ | ----- |
+| visible               | What's holding you back  | 9     |
+| visible               | Who they are             | 12    |
+| behind "More filters" | The job they left        | 7     |
+| behind "More filters" | What they make           | 4     |
+| behind "More filters" | Where their machines are | 10    |
+
+The disclosure is a native `<details>`, so the page still ships no JavaScript
+for filtering and every chip is still a crawlable link. It opens automatically
+when one of its own filters is active, so a shared `?career=healthcare` link
+does not look like it filtered nothing.
 
 The revenue row is not new code. `buildRevenueFacets` was already written,
 tested and wired into filtering, but `page.tsx` never called it, so
-`?revenue=25k-50k` worked only if you typed it by hand. It now renders.
+`?revenue=25k-50k` worked only if you typed it by hand.
 
 `location_types` is free text and had arrived with 23 spellings for 10 real
 places (`apartment`/`apartments`, `gym`/`fitness center`, `government
@@ -41,13 +66,14 @@ not swallow `dental office`. All 23 values map; nothing falls through.
 
 ## Verification
 
-- `vitest run` — 248 files, 1985 tests, green (12 new)
+- `vitest run` — 248 files, 1987 tests, green
 - `tsc --noEmit` — clean
 - `eslint` — clean
 - `npm run build` — passes
-- Rendered against a real server: all 6 rows present, and every filter count
-  matches the database (price 7, women 3, apartments 12, `$25-50K` 4,
-  price+women 0 — the rows intersect rather than union)
+- Rendered against a real server, after a clean `.next` rebuild: 2 rows
+  visible, 3 behind the disclosure, and every count matches the database —
+  price 7, women 3, blue collar 3, military 2, leaving-W-2 11 (the union of
+  10 and 9 sharing 8), healthcare 1, price+women 0 (rows intersect, not union)
 
 ## Needs your call
 

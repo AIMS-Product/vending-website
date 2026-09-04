@@ -14,78 +14,84 @@ import {
 type CaseStudyIndexProps = {
   caseStudies: readonly CaseStudyCardData[];
   filters: CaseStudyFilters;
-  tagFacets: readonly Facet[];
-  careerFacets: readonly Facet[];
-  objectionFacets: readonly Facet[];
-  icpFacets: readonly Facet[];
-  locationFacets: readonly Facet[];
-  revenueFacets: readonly Facet[];
+  facets: Record<string, Facet[]>;
   totalCount: number;
 };
 
 /**
+ * The two rows a visitor actually needs are always visible; the three that
+ * refine rather than identify sit behind a native `<details>`.
+ *
+ * Six open rows put roughly 900px of chips above the first story. These are
+ * ordered by what a prospect arrives with: a specific doubt first, because it
+ * is the only row phrased as their own question, then who they were.
+ */
+const PRIMARY_ROWS = [
+  {
+    key: "objection",
+    label: "Filter stories by the doubt they answer",
+    legend: "What's holding you back",
+  },
+  {
+    key: "who",
+    label: "Filter stories by who the member is",
+    legend: "Who they are",
+  },
+] as const;
+
+const SECONDARY_ROWS = [
+  {
+    key: "career",
+    label: "Filter stories by the job they left",
+    legend: "The job they left",
+  },
+  {
+    key: "revenue",
+    label: "Filter stories by monthly revenue",
+    legend: "What they make",
+  },
+  {
+    key: "location",
+    label: "Filter stories by where their machines are",
+    legend: "Where their machines are",
+  },
+] as const;
+
+/**
  * Filtering is plain links over `searchParams`, not client state. Every filtered
  * view is a real, shareable, crawlable URL, and the page ships no JavaScript
- * for it.
+ * for it — including the disclosure, which is a `<details>` element.
  */
 export function CaseStudyIndex({
   caseStudies,
   filters,
-  tagFacets,
-  careerFacets,
-  objectionFacets,
-  icpFacets,
-  locationFacets,
-  revenueFacets,
+  facets,
   totalCount,
 }: CaseStudyIndexProps) {
   const isFiltered = Object.values(filters).some(Boolean);
+  const hiddenActive = SECONDARY_ROWS.some(
+    (row) => filters[row.key as keyof CaseStudyFilters],
+  );
 
-  /*
-    Six axes now. Declaring them as data rather than six hand-written blocks
-    keeps the ordering decision in one readable list: the objection row leads
-    because it is the only one phrased as the visitor's own question, and a
-    prospect who has a specific reason they have not bought should meet it
-    before they are asked to categorise themselves.
-  */
-  const rows = [
-    {
-      key: "objection" as const,
-      label: "Filter stories by the doubt they answer",
-      legend: "What's holding you back",
-      facets: objectionFacets,
-    },
-    {
-      key: "tag" as const,
-      label: "Filter stories by situation",
-      legend: "Their situation",
-      facets: tagFacets,
-    },
-    {
-      key: "icp" as const,
-      label: "Filter stories by who the member is",
-      legend: "Who they are",
-      facets: icpFacets,
-    },
-    {
-      key: "career" as const,
-      label: "Filter stories by what they did before vending",
-      legend: "What they did before",
-      facets: careerFacets,
-    },
-    {
-      key: "revenue" as const,
-      label: "Filter stories by monthly revenue",
-      legend: "What they make",
-      facets: revenueFacets,
-    },
-    {
-      key: "location" as const,
-      label: "Filter stories by where their machines are",
-      legend: "Where their machines are",
-      facets: locationFacets,
-    },
-  ];
+  const rowFor = (row: { key: string; label: string; legend: string }) => {
+    const list = facets[row.key] ?? [];
+    if (list.length === 0) return null;
+    const activeValue = filters[row.key as keyof CaseStudyFilters] ?? null;
+    return (
+      <FacetRow
+        key={row.key}
+        label={row.label}
+        legend={row.legend}
+        facets={list}
+        activeValue={activeValue}
+        hrefFor={(value) =>
+          caseStudiesHref(filters, {
+            [row.key]: value === activeValue ? null : value,
+          })
+        }
+      />
+    );
+  };
 
   return (
     <section className="border-t-2 border-[#111111] bg-[#f5fbff] px-5 py-16 lg:px-10 lg:py-20">
@@ -97,24 +103,24 @@ export function CaseStudyIndex({
           {caseStudySectionIntro}
         </p>
 
-        <div className="space-y-6">
-          {rows.map((row) =>
-            row.facets.length === 0 ? null : (
-              <FacetRow
-                key={row.key}
-                label={row.label}
-                legend={row.legend}
-                facets={row.facets}
-                activeValue={filters[row.key]}
-                hrefFor={(value) =>
-                  caseStudiesHref(filters, {
-                    [row.key]: value === filters[row.key] ? null : value,
-                  })
-                }
-              />
-            ),
-          )}
-        </div>
+        <div className="space-y-6">{PRIMARY_ROWS.map(rowFor)}</div>
+
+        {/*
+          Open when one of its own filters is active, so a shared link like
+          ?location=apartments does not look like it filtered nothing.
+        */}
+        <details className="group mt-6" open={hiddenActive}>
+          <summary className="inline-flex cursor-pointer list-none items-center gap-2 text-xs font-black tracking-[0.12em] text-[#066a99] uppercase underline decoration-2 underline-offset-4 hover:text-[#111111]">
+            More filters
+            <span
+              aria-hidden="true"
+              className="transition group-open:rotate-90"
+            >
+              &rsaquo;
+            </span>
+          </summary>
+          <div className="mt-5 space-y-6">{SECONDARY_ROWS.map(rowFor)}</div>
+        </details>
 
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <p

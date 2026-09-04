@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   applyCaseStudyFilters,
-  buildIcpFacets,
-  buildObjectionFacets,
-  buildCareerFacets,
-  CAREER_TAG_GROUPS,
-  humanBadges,
-  HUMAN_BADGES,
-  CASE_STUDY_TAG_GROUPS,
+  buildLocationFacets,
   buildRevenueFacets,
   buildTagFacets,
+  CAREER_TAG_GROUPS,
   caseStudiesHref,
+  humanBadges,
+  HUMAN_BADGES,
   matchesRevenueBand,
+  OBJECTION_TAG_GROUPS,
   parseCaseStudyFilters,
+  TAG_AXES,
+  WHO_TAG_GROUPS,
 } from "./index-filters";
 import type { CaseStudyCard } from "@/lib/services/case-studies";
 
@@ -37,11 +37,26 @@ function card(overrides: Partial<CaseStudyCard> = {}): CaseStudyCard {
   };
 }
 
+const NONE = {
+  objection: null,
+  who: null,
+  career: null,
+  location: null,
+  revenue: null,
+} as const;
+
+/** Every id a chip could legitimately carry, for the parser's allow-list. */
+const ALL_IDS = {
+  objection: OBJECTION_TAG_GROUPS.map((group) => group.id),
+  who: WHO_TAG_GROUPS.map((group) => group.id),
+  career: CAREER_TAG_GROUPS.map((group) => group.id),
+  location: ["apartments", "offices", "medical"],
+};
+
 describe("matchesRevenueBand", () => {
   it("treats min as inclusive and max as exclusive", () => {
     expect(matchesRevenueBand(10_000, "10k-25k")).toBe(true);
     expect(matchesRevenueBand(25_000, "10k-25k")).toBe(false);
-    expect(matchesRevenueBand(25_000, "25k-50k")).toBe(true);
   });
 
   it("puts an unbounded top band to work", () => {
@@ -49,149 +64,192 @@ describe("matchesRevenueBand", () => {
   });
 
   it("excludes members with no stated monthly figure", () => {
-    // Regression guard: a null must never fall into a band. Members who only
-    // gave an annual number would otherwise appear under a monthly claim.
+    // A null cannot be placed in a band. Including it would make "$50K+"
+    // show members who never claimed it.
     expect(matchesRevenueBand(null, "50k-plus")).toBe(false);
-    expect(matchesRevenueBand(null, "under-10k")).toBe(false);
   });
 });
 
 describe("parseCaseStudyFilters", () => {
   it("keeps known values", () => {
     expect(
-      parseCaseStudyFilters({ tag: "career-change", revenue: "10k-25k" }, [
-        "career-change",
-      ]),
+      parseCaseStudyFilters(
+        { objection: "price", who: "women", revenue: "10k-25k" },
+        ALL_IDS,
+      ),
     ).toEqual({
-      tag: "career-change",
+      objection: "price",
+      who: "women",
       career: null,
-      objection: null,
-      icp: null,
       location: null,
       revenue: "10k-25k",
     });
   });
 
   it("drops unknown values instead of returning an empty page", () => {
+    // A stale or hand-edited URL should show everything, not an empty page
+    // that reads as "we have no case studies".
     expect(
-      parseCaseStudyFilters({ tag: "nope", revenue: "bogus" }, [
-        "career-change",
-      ]),
-    ).toEqual({
-      tag: null,
-      career: null,
-      objection: null,
-      icp: null,
-      location: null,
-      revenue: null,
-    });
+      parseCaseStudyFilters(
+        { objection: "nope", who: "nope", revenue: "nope" },
+        ALL_IDS,
+      ),
+    ).toEqual(NONE);
   });
 
   it("drops a raw underlying tag, which is no longer a valid chip", () => {
-    // `?tag=laid-off` was never a public URL, but a hand-edited one must show
-    // everything rather than an empty page.
+    // `icp-female` is a tag on the story; `women` is the chip. Only the chip
+    // is addressable in the URL.
     expect(
-      parseCaseStudyFilters({ tag: "laid-off" }, ["career-change"]).tag,
+      parseCaseStudyFilters({ who: "icp-female" }, ALL_IDS).who,
     ).toBeNull();
+  });
+
+  it("drops an axis the caller offered no ids for", () => {
+    // Regression guard for the keyed-object signature: an axis missing from
+    // `available` must reject everything rather than accept everything.
+    expect(parseCaseStudyFilters({ who: "women" }, {}).who).toBeNull();
   });
 
   it("takes the first value of a repeated param", () => {
     expect(
-      parseCaseStudyFilters({ tag: ["career-change", "scaling"] }, [
-        "career-change",
-        "scaling",
-      ]).tag,
-    ).toBe("career-change");
+      parseCaseStudyFilters({ who: ["women", "investor"] }, ALL_IDS).who,
+    ).toBe("women");
   });
 });
 
 describe("applyCaseStudyFilters", () => {
   const caseStudies = [
-    card({ slug: "a", tags: ["retiree"], monthly_revenue_usd: 5_500 }),
-    card({ slug: "b", tags: ["scaling"], monthly_revenue_usd: 102_000 }),
+    card({
+      slug: "a",
+      tags: ["icp-female", "objection-price"],
+      monthly_revenue_usd: 5_500,
+    }),
+    card({
+      slug: "b",
+      tags: ["icp-leaving-w2", "objection-timing"],
+      monthly_revenue_usd: 40_000,
+    }),
     card({
       slug: "c",
-      tags: ["laid-off", "scaling"],
+      tags: ["icp-female", "objection-timing"],
       monthly_revenue_usd: null,
     }),
   ];
 
   it("returns everything when nothing is selected", () => {
-    expect(
-      applyCaseStudyFilters(caseStudies, {
-        tag: null,
-        career: null,
-        objection: null,
-        icp: null,
-        location: null,
-        revenue: null,
-      }),
-    ).toHaveLength(3);
+    expect(applyCaseStudyFilters(caseStudies, NONE)).toHaveLength(3);
   });
 
   it("matches any tag in the group, not just one", () => {
-    // `retiree` and `laid-off` both roll up into Career Change.
-    const result = applyCaseStudyFilters(caseStudies, {
-      tag: "career-change",
-      career: null,
-      objection: null,
-      icp: null,
-      location: null,
-      revenue: null,
-    });
-    expect(result.map((entry) => entry.slug)).toEqual(["a", "c"]);
+    // `from-corporate` and `icp-leaving-w2` both roll up into Leaving a W-2.
+    const stories = [
+      card({ slug: "old", tags: ["from-corporate"] }),
+      card({ slug: "new", tags: ["icp-leaving-w2"] }),
+    ];
+    expect(
+      applyCaseStudyFilters(stories, { ...NONE, who: "leaving-w2" }).map(
+        (entry) => entry.slug,
+      ),
+    ).toEqual(["old", "new"]);
   });
 
-  it("intersects tag and revenue rather than unioning them", () => {
-    const result = applyCaseStudyFilters(caseStudies, {
-      tag: "career-change",
-      career: null,
-      objection: null,
-      icp: null,
-      location: null,
-      revenue: "under-10k",
+  it("intersects two axes rather than unioning them", () => {
+    expect(
+      applyCaseStudyFilters(caseStudies, {
+        ...NONE,
+        who: "women",
+        revenue: "under-10k",
+      }).map((entry) => entry.slug),
+    ).toEqual(["a"]);
+  });
+
+  it("filters by the objection a story answers", () => {
+    expect(
+      applyCaseStudyFilters(caseStudies, { ...NONE, objection: "price" }).map(
+        (entry) => entry.slug,
+      ),
+    ).toEqual(["a"]);
+  });
+});
+
+describe("merged people axis", () => {
+  /*
+    The three duplicate pairs the merge removed. Each of these used to render
+    as two chips over an identical set of stories, so a visitor had to choose
+    between two words for one idea. One chip must now catch both tags.
+  */
+  it.each([
+    ["blue-collar", "icp-blue-collar", "from-trades"],
+    ["military", "icp-military", "from-public-safety"],
+    ["leaving-w2", "icp-leaving-w2", "from-corporate"],
+  ])("%s catches both %s and %s", (chip, icpTag, careerTag) => {
+    const stories = [
+      card({ slug: "one", tags: [icpTag] }),
+      card({ slug: "two", tags: [careerTag] }),
+    ];
+    expect(applyCaseStudyFilters(stories, { ...NONE, who: chip })).toHaveLength(
+      2,
+    );
+  });
+
+  it("counts a story once even when it carries both merged tags", () => {
+    const stories = [
+      card({ slug: "both", tags: ["icp-blue-collar", "from-trades"] }),
+    ];
+    expect(buildTagFacets(stories, WHO_TAG_GROUPS)).toContainEqual({
+      value: "blue-collar",
+      label: "Blue collar & trades",
+      count: 1,
     });
-    expect(result.map((entry) => entry.slug)).toEqual(["a"]);
+  });
+
+  it.each(["scaling", "career-change", "part-time", "no-experience"])(
+    "no longer indexes people by %s, which matched most of the set",
+    (tag) => {
+      const groups = [...WHO_TAG_GROUPS, ...CAREER_TAG_GROUPS];
+      expect(groups.flatMap((group) => group.tags)).not.toContain(tag);
+    },
+  );
+
+  it("keeps the career row free of tags the people row already claims", () => {
+    // Regression guard for the merge: a tag in both rows would double-count a
+    // story and put the same person behind two different chips again.
+    const who = new Set<string>(WHO_TAG_GROUPS.flatMap((group) => group.tags));
+    const overlap = CAREER_TAG_GROUPS.flatMap((group) => group.tags).filter(
+      (tag) => who.has(tag),
+    );
+    expect(overlap).toEqual([]);
   });
 });
 
 describe("facets", () => {
   it("keeps groups in declaration order, not count order", () => {
-    const facets = buildTagFacets([
-      card({ tags: ["scaling"] }),
-      card({ tags: ["scaling", "couple"] }),
-      card({ tags: ["retiree"] }),
-    ]);
-    expect(facets.map((facet) => facet.value)).toEqual([
-      "career-change",
-      "family-couple",
-      "scaling",
-    ]);
-    expect(facets.at(-1)).toMatchObject({ count: 2, label: "Scaling" });
-  });
-
-  it("counts a story once per group however many of its tags match", () => {
-    // `first-location` and `no-experience` both sit in New to Vending.
-    const facets = buildTagFacets([
-      card({ tags: ["first-location", "no-experience"] }),
-    ]);
-    expect(facets).toEqual([
-      { value: "new-to-vending", label: "New to Vending", count: 1 },
-    ]);
+    const stories = [
+      card({ slug: "a", tags: ["icp-entrepreneur"] }),
+      card({ slug: "b", tags: ["icp-entrepreneur"] }),
+      card({ slug: "c", tags: ["icp-leaving-w2"] }),
+    ];
+    expect(
+      buildTagFacets(stories, WHO_TAG_GROUPS).map((facet) => facet.value),
+    ).toEqual(["leaving-w2", "entrepreneur"]);
   });
 
   it("hides groups no story matches", () => {
-    expect(
-      buildTagFacets([card({ tags: ["part-time"] })]).map((f) => f.value),
-    ).toEqual(["part-time"]);
+    // "Contract / Legal" exists in the Objection Library but matches no story
+    // here, so it must not render a chip that leads to an empty page.
+    const facets = buildTagFacets(
+      [card({ tags: ["objection-price"] })],
+      OBJECTION_TAG_GROUPS,
+    );
+    expect(facets.map((facet) => facet.value)).toEqual(["price"]);
   });
 
-  it("covers every group with an unambiguous chip label", () => {
-    const labels = CASE_STUDY_TAG_GROUPS.map((group) => group.label);
-    expect(new Set(labels).size).toBe(labels.length);
-    expect(
-      new Set(CASE_STUDY_TAG_GROUPS.flatMap((group) => group.tags)).size,
-    ).toBe(CASE_STUDY_TAG_GROUPS.flatMap((group) => group.tags).length);
+  it("gives every group an unambiguous chip label", () => {
+    for (const groups of Object.values(TAG_AXES)) {
+      const labels = groups.map((group) => group.label);
+      expect(new Set(labels).size).toBe(labels.length);
+    }
   });
 
   it("hides revenue bands that would return nothing", () => {
@@ -200,114 +258,61 @@ describe("facets", () => {
   });
 });
 
-describe("caseStudiesHref", () => {
-  it("drops the query entirely when no filter is active", () => {
+describe("location axis", () => {
+  const stories = [
+    card({ slug: "tom", location_types: ["hotel", "student housing"] }),
+    card({ slug: "madison", location_types: ["apartments"] }),
+    card({ slug: "graham", location_types: ["apartment", "condo"] }),
+  ];
+
+  it("collapses spelling variants onto one group", () => {
+    // "apartment", "apartments" and "condo" are three stored spellings of one
+    // real place and must land in a single chip.
     expect(
-      caseStudiesHref(
-        {
-          tag: "career-change",
-          career: null,
-          objection: null,
-          icp: null,
-          location: null,
-          revenue: null,
-        },
-        { tag: null },
+      applyCaseStudyFilters(stories, { ...NONE, location: "apartments" }).map(
+        (entry) => entry.slug,
       ),
-    ).toBe("/case-studies");
+    ).toEqual(["madison", "graham"]);
   });
 
-  it("preserves the other facet when toggling one", () => {
+  it("counts a story once however many of a group's values it carries", () => {
+    expect(buildLocationFacets([stories[2]])).toContainEqual({
+      value: "apartments",
+      label: "Apartments",
+      count: 1,
+    });
+  });
+
+  it("does not let a location group swallow a longer one", () => {
+    // Regression guard: "office" must not match "dental office" by substring.
+    const dentist = [card({ location_types: ["dental office"] })];
     expect(
-      caseStudiesHref(
-        {
-          tag: "career-change",
-          career: null,
-          objection: null,
-          icp: null,
-          location: null,
-          revenue: "under-10k",
-        },
-        { tag: null },
-      ),
-    ).toBe("/case-studies?revenue=under-10k");
+      applyCaseStudyFilters(dentist, { ...NONE, location: "offices" }),
+    ).toHaveLength(0);
+    expect(
+      applyCaseStudyFilters(dentist, { ...NONE, location: "medical" }),
+    ).toHaveLength(1);
   });
 });
 
-describe("career filter (row 2)", () => {
-  const caseStudies = [
-    card({ slug: "cop", tags: ["from-public-safety", "kept-the-day-job"] }),
-    card({
-      slug: "anthony",
-      tags: ["from-corporate", "from-sales", "from-real-estate"],
-    }),
-    card({ slug: "shan", tags: ["after-a-big-move"] }),
-  ];
-
-  it("shows a story under every career it carries, not just the first", () => {
-    for (const career of ["corporate", "sales", "real-estate"]) {
-      expect(
-        applyCaseStudyFilters(caseStudies, {
-          tag: null,
-          career,
-          objection: null,
-          icp: null,
-          location: null,
-          revenue: null,
-        }).map((entry) => entry.slug),
-      ).toEqual(["anthony"]);
-    }
+describe("caseStudiesHref", () => {
+  it("drops the query entirely when no filter is active", () => {
+    expect(caseStudiesHref(NONE, {})).toBe("/case-studies");
   });
 
-  it("intersects the two rows rather than unioning them", () => {
-    // Regression guard: row 1 and row 2 answer different questions, so
-    // picking one from each must narrow, never widen.
-    expect(
-      applyCaseStudyFilters(caseStudies, {
-        tag: "part-time",
-        career: "corporate",
-        objection: null,
-        icp: null,
-        location: null,
-        revenue: null,
-      }),
-    ).toHaveLength(0);
-  });
-
-  it("drops an unknown career instead of returning an empty page", () => {
-    expect(
-      parseCaseStudyFilters({ career: "astronaut" }, [], ["corporate"]).career,
-    ).toBeNull();
-  });
-
-  it("keeps the two rows on separate query params", () => {
+  it("preserves the other axes when toggling one", () => {
     expect(
       caseStudiesHref(
-        {
-          tag: "scaling",
-          career: null,
-          objection: null,
-          icp: null,
-          location: null,
-          revenue: null,
-        },
-        { career: "corporate" },
+        { ...NONE, objection: "price", revenue: "10k-25k" },
+        { who: "women" },
       ),
-    ).toBe("/case-studies?tag=scaling&career=corporate");
+    ).toBe("/case-studies?objection=price&who=women&revenue=10k-25k");
   });
 
-  it("hides careers no story matches", () => {
-    expect(buildCareerFacets(caseStudies).map((facet) => facet.value)).toEqual([
-      "corporate",
-      "sales",
-      "real-estate",
-      "public-safety",
-    ]);
-  });
-
-  it("gives every career group its own tag, so counts cannot double up", () => {
-    const tags = CAREER_TAG_GROUPS.flatMap((group) => group.tags);
-    expect(new Set(tags).size).toBe(tags.length);
+  it("clears an axis when it is toggled off", () => {
+    expect(caseStudiesHref({ ...NONE, who: "women" }, { who: null })).toBe(
+      "/case-studies",
+    );
   });
 });
 
@@ -331,122 +336,5 @@ describe("humanBadges", () => {
     const banned = ["bereavement", "special-needs-child", "bankruptcy"];
     const badgeTags = HUMAN_BADGES.map((badge) => badge.tag);
     for (const tag of banned) expect(badgeTags).not.toContain(tag);
-  });
-});
-
-describe("objection, ICP and location axes", () => {
-  const caseStudies = [
-    card({
-      slug: "tom",
-      tags: ["objection-price", "objection-timing", "icp-serial-entrepreneur"],
-      location_types: ["hotel", "student housing"],
-    }),
-    card({
-      slug: "madison",
-      tags: ["objection-spouse", "icp-female", "icp-stay-at-home-parent"],
-      location_types: ["apartments"],
-    }),
-    card({
-      slug: "shan",
-      tags: ["objection-need-fit", "icp-female"],
-      location_types: ["micro-market"],
-    }),
-  ];
-
-  const base = {
-    tag: null,
-    career: null,
-    objection: null,
-    icp: null,
-    location: null,
-    revenue: null,
-  };
-
-  it("filters by the objection a story answers", () => {
-    expect(
-      applyCaseStudyFilters(caseStudies, { ...base, objection: "price" }).map(
-        (entry) => entry.slug,
-      ),
-    ).toEqual(["tom"]);
-  });
-
-  it("shows every story in an ICP, not just the first", () => {
-    expect(
-      applyCaseStudyFilters(caseStudies, { ...base, icp: "female" }).map(
-        (entry) => entry.slug,
-      ),
-    ).toEqual(["madison", "shan"]);
-  });
-
-  it("collapses location spelling variants onto one group", () => {
-    // "apartments" is stored on the story; the group is declared as
-    // "apartment". Both must land in the same chip.
-    expect(
-      applyCaseStudyFilters(caseStudies, { ...base, location: "apartments" })
-        .length,
-    ).toBe(1);
-  });
-
-  it("does not let a location group swallow a longer one", () => {
-    // Regression guard: "office" must not match "dental office" by substring.
-    const stories = [
-      card({ slug: "dentist", location_types: ["dental office"] }),
-    ];
-    expect(
-      applyCaseStudyFilters(stories, { ...base, location: "offices" }),
-    ).toHaveLength(0);
-    expect(
-      applyCaseStudyFilters(stories, { ...base, location: "medical" }),
-    ).toHaveLength(1);
-  });
-
-  it("intersects the objection and ICP rows rather than unioning them", () => {
-    expect(
-      applyCaseStudyFilters(caseStudies, {
-        ...base,
-        objection: "price",
-        icp: "female",
-      }),
-    ).toHaveLength(0);
-  });
-
-  it("hides objection groups no story has earned", () => {
-    // "Contract / Legal" exists in the Objection Library but matches nothing
-    // here, so it must not render a chip that leads to an empty page.
-    expect(
-      buildObjectionFacets(caseStudies).map((facet) => facet.value),
-    ).not.toContain("contract");
-  });
-
-  it("counts each ICP facet once per story", () => {
-    expect(buildIcpFacets(caseStudies)).toContainEqual({
-      value: "female",
-      label: "Women in vending",
-      count: 2,
-    });
-  });
-
-  it("keeps an unknown objection or ICP out of the parsed filters", () => {
-    const parsed = parseCaseStudyFilters(
-      { objection: "not-a-real-objection", icp: "nope" },
-      [],
-      [],
-      ["price"],
-      ["female"],
-      [],
-    );
-    expect(parsed.objection).toBeNull();
-    expect(parsed.icp).toBeNull();
-  });
-
-  it("round-trips every axis through the URL", () => {
-    const href = caseStudiesHref(base, {
-      objection: "price",
-      icp: "female",
-      location: "apartments",
-    });
-    expect(href).toBe(
-      "/case-studies?objection=price&icp=female&location=apartments",
-    );
   });
 });

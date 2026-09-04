@@ -10,13 +10,12 @@ import {
 } from "@/lib/services/case-studies";
 import {
   applyCaseStudyFilters,
-  buildCareerFacets,
-  buildIcpFacets,
   buildLocationFacets,
-  buildObjectionFacets,
   buildRevenueFacets,
   buildTagFacets,
   parseCaseStudyFilters,
+  TAG_AXES,
+  type Facet,
 } from "@/lib/case-studies/index-filters";
 
 export const revalidate = 60;
@@ -41,21 +40,22 @@ export default async function CaseStudiesPage({
 
   // Facets are built from the unfiltered set so the counts stay stable as the
   // visitor clicks, rather than collapsing to the current selection.
-  const tagFacets = buildTagFacets(caseStudies);
-  const careerFacets = buildCareerFacets(caseStudies);
-  const objectionFacets = buildObjectionFacets(caseStudies);
-  const icpFacets = buildIcpFacets(caseStudies);
-  const locationFacets = buildLocationFacets(caseStudies);
-  const revenueFacets = buildRevenueFacets(caseStudies);
-  const ids = (facets: readonly { value: string }[]) =>
-    facets.map((facet) => facet.value);
+  const facets: Record<string, Facet[]> = {
+    objection: buildTagFacets(caseStudies, TAG_AXES.objection),
+    who: buildTagFacets(caseStudies, TAG_AXES.who),
+    career: buildTagFacets(caseStudies, TAG_AXES.career),
+    revenue: buildRevenueFacets(caseStudies),
+    location: buildLocationFacets(caseStudies),
+  };
+
   const filters = parseCaseStudyFilters(
     params,
-    ids(tagFacets),
-    ids(careerFacets),
-    ids(objectionFacets),
-    ids(icpFacets),
-    ids(locationFacets),
+    Object.fromEntries(
+      Object.entries(facets).map(([axis, list]) => [
+        axis,
+        list.map((facet) => facet.value),
+      ]),
+    ),
   );
   const visible = applyCaseStudyFilters(caseStudies, filters);
 
@@ -66,12 +66,7 @@ export default async function CaseStudiesPage({
       <CaseStudyIndex
         caseStudies={visible}
         filters={filters}
-        tagFacets={tagFacets}
-        careerFacets={careerFacets}
-        objectionFacets={objectionFacets}
-        icpFacets={icpFacets}
-        locationFacets={locationFacets}
-        revenueFacets={revenueFacets}
+        facets={facets}
         totalCount={caseStudies.length}
       />
       <CaseStudyQuotes />
