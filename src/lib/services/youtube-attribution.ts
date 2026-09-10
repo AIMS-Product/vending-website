@@ -204,30 +204,34 @@ async function fetchClicks(
   client: YouTubeAttributionClient,
   sinceIso: string,
 ): Promise<Fetched<BitlyClickRow>> {
-  return degradable(async () => {
-    const { data, error } = await client
-      .from("bitly_link_clicks")
-      .select("utm_campaign,day,clicks")
-      .gte("day", sinceIso.slice(0, 10))
-      // Uses the partial (utm_campaign, day) index instead of scanning, and
-      // drops rows the rollup discards anyway -- it sums by campaign.
-      .not("utm_campaign", "is", null)
-      .limit(MAX_CLICK_ROWS);
-    if (error) return null;
-    return capped(
-      (data ?? []) as unknown as BitlyClickRow[],
-      MAX_CLICK_ROWS,
+  return degradable(() =>
+    readAllRows<BitlyClickRow>(
       "bitly_link_clicks",
-    );
-  });
+      MAX_CLICK_ROWS,
+      (from, to) =>
+        client
+          .from("bitly_link_clicks")
+          .select("utm_campaign,day,clicks")
+          .gte("day", sinceIso.slice(0, 10))
+          // Uses the partial (utm_campaign, day) index instead of scanning, and
+          // drops rows the rollup discards anyway -- it sums by campaign.
+          .not("utm_campaign", "is", null)
+          // The primary key, so pages neither overlap nor skip.
+          .order("bitly_id")
+          .order("day")
+          .range(from, to),
+    ),
+  );
 }
 
 /**
  * GA4 when it has rows for the range, the site's own visit events otherwise.
  *
  * GA4 carries history back to 2026-02-26; `lead_page_views` starts on
- * 2026-09-10. The fallback covers the window before the GA4 migration and its
- * first sync land, and `source` tells the coverage note which one it got.
+ * 2026-09-10. The fallback covers only a GA4 table that is present but empty
+ * for the range. A GA4 read that fails reports visits as unmeasured instead:
+ * on any range longer than a day the site's events would read far low, and a
+ * visit-to-lead rate built on them would read far high.
  */
 async function fetchVisits(
   client: YouTubeAttributionClient,
@@ -237,7 +241,8 @@ async function fetchVisits(
     fetchGa4PageViews(client, sinceIso),
     fetchPageViews(client, sinceIso),
   ]);
-  if (ga4.connected && ga4.rows.length > 0) return { ...ga4, source: "ga4" };
+  if (!ga4.connected) return { rows: [], connected: false, source: null };
+  if (ga4.rows.length > 0) return { ...ga4, source: "ga4" };
   return { ...site, source: site.connected ? "site" : null };
 }
 
@@ -253,24 +258,25 @@ async function fetchGa4PageViews(
   sinceIso: string,
 ): Promise<Fetched<PageViewRow>> {
   return degradable(async () => {
-    const { data, error } = await client
-      .from("ga4_page_views")
-      // Sessions, not screen_page_views: one click through to the site is one
-      // session however many pages it goes on to view.
-      .select("utm_source,utm_campaign,day,sessions")
-      .gte("day", sinceIso.slice(0, 10))
-      // GA4 writes the literal "(not set)" where lead_page_views has null.
-      .neq("utm_campaign", "(not set)")
-      .limit(MAX_PAGE_VIEW_ROWS);
-    if (error) return null;
-    const rows = capped(
-      (data ?? []) as unknown as Ga4VisitRow[],
-      MAX_PAGE_VIEW_ROWS,
+    const rows = await readAllRows<Ga4VisitRow>(
       "ga4_page_views",
+      MAX_PAGE_VIEW_ROWS,
+      (from, to) =>
+        client
+          .from("ga4_page_views")
+          // Sessions, not screen_page_views: one click through to the site is
+          // one session however many pages it goes on to view.
+          .select("utm_source,utm_campaign,day,sessions")
+          .gte("day", sinceIso.slice(0, 10))
+          // GA4 writes the literal "(not set)" where lead_page_views has null.
+          .neq("utm_campaign", "(not set)")
+          // The primary key, so pages neither overlap nor skip.
+          .order("day")
+          .order("landing_page")
+          .order("utm_campaign")
+          .order("utm_source")
+          .range(from, to),
     );
-    // ponytail: a capped GA4 read falls back to lead_page_views, which reads
-    // low. Unreachable today (a year of every channel is ~30k rows); split the
-    // read by campaign if the table ever nears the cap.
     return (
       rows?.map((row) => ({
         utm_source: row.utm_source,
@@ -286,22 +292,55 @@ async function fetchPageViews(
   client: YouTubeAttributionClient,
   sinceIso: string,
 ): Promise<Fetched<PageViewRow>> {
-  return degradable(async () => {
-    const { data, error } = await client
-      .from("lead_page_views")
-      // utm_source: the table holds every tagged channel's visits, and the
-      // rollup keeps only the YouTube ones.
-      .select("utm_source,utm_campaign,occurred_at")
-      .gte("occurred_at", sinceIso)
-      .not("utm_campaign", "is", null)
-      .limit(MAX_PAGE_VIEW_ROWS);
-    if (error) return null;
-    return capped(
-      (data ?? []) as unknown as PageViewRow[],
-      MAX_PAGE_VIEW_ROWS,
+  return degradable(() =>
+    readAllRows<PageViewRow>(
       "lead_page_views",
+      MAX_PAGE_VIEW_ROWS,
+      (from, to) =>
+        client
+          .from("lead_page_views")
+          // utm_source: the table holds every tagged channel's visits, and the
+          // rollup keeps only the YouTube ones.
+          .select("utm_source,utm_campaign,occurred_at")
+          .gte("occurred_at", sinceIso)
+          .not("utm_campaign", "is", null)
+          .order("id")
+          .range(from, to),
+    ),
+  );
+}
+
+/**
+ * PostgREST caps every response at the project's `max_rows` — 1,000, both in
+ * `supabase/config.toml` and on the hosted project — and silently ignores a
+ * larger `.limit()`. One select therefore returns the first 1,000 rows as if
+ * they were all of them. Pages until a short page comes back.
+ *
+ * ponytail: pages are sequential, so a 1-year GA4 read is ~30 round trips.
+ * Replace with a grouped-sum RPC if the analytics page ever feels slow.
+ */
+const PAGE_ROWS = 1000;
+
+async function readAllRows<T>(
+  table: string,
+  limit: number,
+  page: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: unknown; error: unknown }>,
+): Promise<T[] | null> {
+  const rows: T[] = [];
+  while (rows.length < limit) {
+    const { data, error } = await page(
+      rows.length,
+      rows.length + PAGE_ROWS - 1,
     );
-  });
+    if (error) return null;
+    const batch = (data ?? []) as T[];
+    rows.push(...batch);
+    if (batch.length < PAGE_ROWS) return rows;
+  }
+  return capped(rows, limit, table);
 }
 
 /**

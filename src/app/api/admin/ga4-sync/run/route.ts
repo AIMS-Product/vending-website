@@ -66,9 +66,22 @@ export async function GET(request: Request) {
     // Not configured is not an error: visits fall back to lead_page_views and
     // the result says connected: false.
     const result = await syncGa4PageViews(options);
+    // Both vars set but no client means the key is unreadable. That is an
+    // outage, not "not connected", and it must not look green every night
+    // while the table goes stale.
+    const brokenKey =
+      Boolean(config.GA4_SERVICE_ACCOUNT_JSON && config.GA4_PROPERTY_ID) &&
+      !result.connected;
+    const ok = result.failed === 0 && !brokenKey;
     return NextResponse.json(
-      { ok: result.failed === 0, ...result },
-      { status: result.failed === 0 ? 200 : 500 },
+      {
+        ok,
+        ...result,
+        ...(brokenKey
+          ? { message: "GA4 is configured but its key could not be read." }
+          : {}),
+      },
+      { status: ok ? 200 : 500 },
     );
   } catch (error) {
     console.error("ga4 sync runner failed", {

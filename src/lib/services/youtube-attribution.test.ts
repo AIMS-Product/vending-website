@@ -6,18 +6,20 @@ vi.mock("@/lib/supabase/admin", () => ({
   },
 }));
 
-const { getYouTubeAttribution, MAX_CLICK_ROWS, MAX_PAGE_VIEW_ROWS } =
+const { getYouTubeAttribution, MAX_PAGE_VIEW_ROWS } =
   await import("./youtube-attribution");
 
 type Call = { method: string; args: unknown[] };
 
 /**
  * A chainable PostgREST stand-in: every builder method records its call and
- * returns itself, and awaiting it yields the canned result.
+ * returns itself, and awaiting it yields the canned result. `range` slices the
+ * rows the way PostgREST does, so a paged read sees one page per request.
  */
-function builder(result: { data: unknown; error: unknown }) {
+function builder(rows: unknown[], error: unknown) {
   const calls: Call[] = [];
   const target: Record<string, unknown> = {};
+  let window: [number, number] | null = null;
   for (const method of [
     "select",
     "gte",
@@ -33,18 +35,29 @@ function builder(result: { data: unknown; error: unknown }) {
       return target;
     };
   }
+  target.range = (from: number, to: number) => {
+    calls.push({ method: "range", args: [from, to] });
+    window = [from, to];
+    return target;
+  };
   target.then = (resolve: unknown, reject: unknown) =>
-    Promise.resolve(result).then(
+    Promise.resolve({
+      data: error ? null : window ? rows.slice(window[0], window[1] + 1) : rows,
+      error,
+    }).then(
       resolve as (v: unknown) => unknown,
       reject as (e: unknown) => unknown,
     );
   return { target, calls };
 }
 
-function buildClient(rows: Record<string, unknown[]>) {
+function buildClient(rows: Record<string, unknown[]>, failing: string[]) {
   const calls: Record<string, Call[]> = {};
   const from = vi.fn((table: string) => {
-    const b = builder({ data: rows[table] ?? [], error: null });
+    const b = builder(
+      rows[table] ?? [],
+      failing.includes(table) ? { message: "boom" } : null,
+    );
     calls[table] = b.calls;
     return b.target as never;
   });
@@ -71,16 +84,37 @@ describe("getYouTubeAttribution reads", () => {
     });
   });
 
-  it("caps both unbounded reads", async () => {
+  it("pages every read that can outgrow PostgREST's 1,000-row response cap", async () => {
     const { calls } = await run({});
 
-    expect(calls.lead_page_views).toContainEqual({
-      method: "limit",
-      args: [MAX_PAGE_VIEW_ROWS],
+    for (const table of [
+      "ga4_page_views",
+      "lead_page_views",
+      "bitly_link_clicks",
+    ]) {
+      expect(calls[table]).toContainEqual({ method: "range", args: [0, 999] });
+    }
+  });
+
+  it("sums every page of GA4 rows, not just the first 1,000", async () => {
+    const rows = Array.from({ length: 2_500 }, () => ({
+      utm_source: "youtube",
+      utm_campaign: "zach",
+      day: "2026-09-01",
+      sessions: 1,
+    }));
+
+    const { result, calls } = await run({ ga4_page_views: rows });
+
+    expect(result.totals.visits).toBe(2_500);
+    // The last page, read in primary-key order so pages never overlap.
+    expect(calls.ga4_page_views).toContainEqual({
+      method: "range",
+      args: [2000, 2999],
     });
-    expect(calls.bitly_link_clicks).toContainEqual({
-      method: "limit",
-      args: [MAX_CLICK_ROWS],
+    expect(calls.ga4_page_views).toContainEqual({
+      method: "order",
+      args: ["day"],
     });
   });
 
@@ -132,10 +166,6 @@ describe("getYouTubeAttribution reads", () => {
       method: "neq",
       args: ["utm_campaign", "(not set)"],
     });
-    expect(calls.ga4_page_views).toContainEqual({
-      method: "limit",
-      args: [MAX_PAGE_VIEW_ROWS],
-    });
   });
 
   it("falls back to the site's own visits until GA4 has synced", async () => {
@@ -151,14 +181,34 @@ describe("getYouTubeAttribution reads", () => {
     expect(result.coverage.visitsSource).toBe("site");
   });
 
-  async function run(rows: Record<string, unknown[]>) {
-    const { client, calls } = buildClient({
-      lead_submissions: [],
-      youtube_videos: [],
-      bitly_link_clicks: [],
-      lead_page_views: [],
-      ...rows,
-    });
+  it("reports visits as unmeasured when the GA4 read fails, not the site's short history", async () => {
+    const view = {
+      utm_source: "youtube",
+      utm_campaign: "zach",
+      occurred_at: "2026-09-10T00:00:00.000Z",
+    };
+
+    const { result } = await run({ lead_page_views: [view] }, [
+      "ga4_page_views",
+    ]);
+
+    expect(result.totals.visits).toBeNull();
+    expect(result.coverage.visitsConnected).toBe(false);
+    expect(result.coverage.visitsSource).toBeNull();
+  });
+
+  async function run(rows: Record<string, unknown[]>, failing: string[] = []) {
+    const { client, calls } = buildClient(
+      {
+        lead_submissions: [],
+        youtube_videos: [],
+        bitly_link_clicks: [],
+        lead_page_views: [],
+        ga4_page_views: [],
+        ...rows,
+      },
+      failing,
+    );
     const result = await getYouTubeAttribution({ client, now: NOW });
     return { result, calls };
   }
