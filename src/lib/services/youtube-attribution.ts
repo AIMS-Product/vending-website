@@ -16,6 +16,7 @@ import {
   type YouTubeAttributionRollup,
   type YouTubeLeadRow,
   type YouTubeVideoRow,
+  type YouTubeVisitsSource,
 } from "@/lib/services/youtube-attribution-rollup";
 
 type YouTubeAttributionClient = Pick<SupabaseClient<Database>, "from">;
@@ -102,7 +103,7 @@ export async function getYouTubeAttribution(
     fetchLeads(client, startIso),
     fetchVideos(client),
     fetchClicks(client, startIso),
-    fetchPageViews(client, startIso),
+    fetchVisits(client, startIso),
   ]);
 
   const leadRows = leadRead.rows;
@@ -130,6 +131,7 @@ export async function getYouTubeAttribution(
       pageViews: pageViews.rows,
       clicksConnected: clicks.connected,
       visitsConnected: pageViews.connected,
+      visitsSource: pageViews.source,
       outcomesConnected: leadRead.outcomesConnected,
     }),
     range: {
@@ -216,6 +218,66 @@ async function fetchClicks(
       (data ?? []) as unknown as BitlyClickRow[],
       MAX_CLICK_ROWS,
       "bitly_link_clicks",
+    );
+  });
+}
+
+/**
+ * GA4 when it has rows for the range, the site's own visit events otherwise.
+ *
+ * GA4 carries history back to 2026-02-26; `lead_page_views` starts on
+ * 2026-09-10. The fallback covers the window before the GA4 migration and its
+ * first sync land, and `source` tells the coverage note which one it got.
+ */
+async function fetchVisits(
+  client: YouTubeAttributionClient,
+  sinceIso: string,
+): Promise<Fetched<PageViewRow> & { source: YouTubeVisitsSource | null }> {
+  const [ga4, site] = await Promise.all([
+    fetchGa4PageViews(client, sinceIso),
+    fetchPageViews(client, sinceIso),
+  ]);
+  if (ga4.connected && ga4.rows.length > 0) return { ...ga4, source: "ga4" };
+  return { ...site, source: site.connected ? "site" : null };
+}
+
+type Ga4VisitRow = {
+  utm_source: string;
+  utm_campaign: string;
+  day: string;
+  sessions: number;
+};
+
+async function fetchGa4PageViews(
+  client: YouTubeAttributionClient,
+  sinceIso: string,
+): Promise<Fetched<PageViewRow>> {
+  return degradable(async () => {
+    const { data, error } = await client
+      .from("ga4_page_views")
+      // Sessions, not screen_page_views: one click through to the site is one
+      // session however many pages it goes on to view.
+      .select("utm_source,utm_campaign,day,sessions")
+      .gte("day", sinceIso.slice(0, 10))
+      // GA4 writes the literal "(not set)" where lead_page_views has null.
+      .neq("utm_campaign", "(not set)")
+      .limit(MAX_PAGE_VIEW_ROWS);
+    if (error) return null;
+    const rows = capped(
+      (data ?? []) as unknown as Ga4VisitRow[],
+      MAX_PAGE_VIEW_ROWS,
+      "ga4_page_views",
+    );
+    // ponytail: a capped GA4 read falls back to lead_page_views, which reads
+    // low. Unreachable today (a year of every channel is ~30k rows); split the
+    // read by campaign if the table ever nears the cap.
+    return (
+      rows?.map((row) => ({
+        utm_source: row.utm_source,
+        utm_campaign: row.utm_campaign,
+        occurred_at: row.day,
+        views: row.sessions,
+      })) ?? null
     );
   });
 }

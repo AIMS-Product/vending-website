@@ -360,6 +360,57 @@ describe("landing page visits", () => {
   });
 });
 
+describe("visits from GA4 aggregates", () => {
+  it("counts a pre-aggregated row by its view count, not as one visit", () => {
+    const result = build([lead({ utm_campaign: "how-much-vending" })], {
+      pageViews: [
+        {
+          utm_source: "youtube",
+          utm_campaign: "how-much-vending",
+          occurred_at: "2026-08-10T00:00:00.000Z",
+          views: 403,
+        },
+        {
+          utm_source: "youtube",
+          utm_campaign: "how-much-vending",
+          occurred_at: "2026-08-11T00:00:00.000Z",
+          views: 166,
+        },
+        // Another channel's aggregate must stay out of the YouTube funnel.
+        {
+          utm_source: "meta",
+          utm_campaign: "how-much-vending",
+          occurred_at: "2026-08-11T00:00:00.000Z",
+          views: 5000,
+        },
+      ],
+    });
+
+    expect(result.totals.visits).toBe(569);
+    expect(result.videos[0].visits).toBe(569);
+  });
+
+  it("still treats a row with no count as a single visit", () => {
+    // lead_page_views rows are one row per visit and carry no count.
+    const result = build([lead({ utm_campaign: "a" })], {
+      pageViews: [
+        {
+          utm_source: "youtube",
+          utm_campaign: "a",
+          occurred_at: "2026-08-10T00:00:00.000Z",
+        },
+        {
+          utm_source: "youtube",
+          utm_campaign: "a",
+          occurred_at: "2026-08-11T00:00:00.000Z",
+        },
+      ],
+    });
+
+    expect(result.totals.visits).toBe(2);
+  });
+});
+
 describe("coverage", () => {
   it("counts bookings that predate the lead as returning leads", () => {
     const result = build([

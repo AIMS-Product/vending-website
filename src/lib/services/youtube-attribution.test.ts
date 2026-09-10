@@ -18,7 +18,16 @@ type Call = { method: string; args: unknown[] };
 function builder(result: { data: unknown; error: unknown }) {
   const calls: Call[] = [];
   const target: Record<string, unknown> = {};
-  for (const method of ["select", "gte", "not", "order", "limit", "eq", "or"]) {
+  for (const method of [
+    "select",
+    "gte",
+    "not",
+    "neq",
+    "order",
+    "limit",
+    "eq",
+    "or",
+  ]) {
     target[method] = (...args: unknown[]) => {
       calls.push({ method, args });
       return target;
@@ -89,6 +98,57 @@ describe("getYouTubeAttribution reads", () => {
     expect(result.coverage.visitsConnected).toBe(false);
     expect(error).toHaveBeenCalled();
     error.mockRestore();
+  });
+
+  it("reads visits from GA4 sessions when GA4 has rows", async () => {
+    const { result, calls } = await run({
+      ga4_page_views: [
+        {
+          utm_source: "youtube",
+          utm_campaign: "zach",
+          day: "2026-09-01",
+          sessions: 569,
+        },
+        // Not YouTube: the channel rule drops it.
+        {
+          utm_source: "facebook",
+          utm_campaign: "zach",
+          day: "2026-09-01",
+          sessions: 40,
+        },
+      ],
+      lead_page_views: [
+        {
+          utm_source: "youtube",
+          utm_campaign: "zach",
+          occurred_at: "2026-09-10T00:00:00.000Z",
+        },
+      ],
+    });
+
+    expect(result.totals.visits).toBe(569);
+    expect(result.coverage.visitsSource).toBe("ga4");
+    expect(calls.ga4_page_views).toContainEqual({
+      method: "neq",
+      args: ["utm_campaign", "(not set)"],
+    });
+    expect(calls.ga4_page_views).toContainEqual({
+      method: "limit",
+      args: [MAX_PAGE_VIEW_ROWS],
+    });
+  });
+
+  it("falls back to the site's own visits until GA4 has synced", async () => {
+    const view = {
+      utm_source: "youtube",
+      utm_campaign: "zach",
+      occurred_at: "2026-09-10T00:00:00.000Z",
+    };
+
+    const { result } = await run({ lead_page_views: [view, view] });
+
+    expect(result.totals.visits).toBe(2);
+    expect(result.coverage.visitsSource).toBe("site");
   });
 
   async function run(rows: Record<string, unknown[]>) {

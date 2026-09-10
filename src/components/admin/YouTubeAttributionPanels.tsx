@@ -438,6 +438,14 @@ export function YouTubeCoverageNote({
     gaps.push(
       "Landing page visits start recording once this slice's migration is applied.",
     );
+  } else if (coverage.visitsSource === "ga4") {
+    gaps.push(
+      "Visits are GA4 sessions by Pacific day, so they read lower than a views count in GA4 Explorations.",
+    );
+  } else if (coverage.visitsSource === "site") {
+    gaps.push(
+      "Visits come from the site's own tracking, which started 2026-09-10. GA4 history appears after its first sync.",
+    );
   }
   if (!coverage.outcomesConnected) {
     gaps.push(
