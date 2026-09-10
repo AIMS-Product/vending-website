@@ -23,7 +23,9 @@ export class ChatbotAdminError extends Error {
 import { fetchBookedLeadIds } from "@/lib/chatbot/analytics";
 import {
   resolveBookingCredit,
+  resolveFirstTouch,
   type BookingCredit,
+  type FirstTouch,
 } from "@/lib/chatbot/booking-credit";
 import {
   askedAboutCost,
@@ -353,6 +355,8 @@ export type AdminChatbotLinkedLead = {
   bookedBySetter: string | null;
   /** Close's "Resource Tag" -- how this person entered the system. */
   entryResourceTag: string | null;
+  /** When Close created this lead, for first-touch order. */
+  closeLeadCreatedAt: string | null;
 } | null;
 
 /** The call this chat produced, for the stamp at the foot of the transcript. */
@@ -367,8 +371,8 @@ export type AdminChatbotBooking = {
   source: "calendly" | "close";
   /**
    * Who gets BOOKING credit -- resolved, not guessed. See
-   * lib/chatbot/booking-credit.ts. Kept separate from the chatbot's entry
-   * credit, which every conversation on this page has by definition.
+   * lib/chatbot/booking-credit.ts. This is the LAST touch; first touch is
+   * `firstTouch` on the detail, and the two are never merged.
    */
   credit: BookingCredit;
 };
@@ -395,6 +399,11 @@ export type AdminChatbotConversationDetail = {
   flags: AdminChatbotFlagRow[];
   prospectProfileSummary: string | null;
   linkedLead: AdminChatbotLinkedLead;
+  /**
+   * Whether this chat was the person's first touch, or something already had
+   * them in Close. Null for an anonymous chat with no linked lead.
+   */
+  firstTouch: FirstTouch | null;
   booking: AdminChatbotBooking | null;
   handoffEmail: AdminChatbotHandoffEmail | null;
 };
@@ -475,6 +484,13 @@ export async function adminGetConversationDetail(
       conversation.prospect_profile,
     ),
     linkedLead,
+    firstTouch: linkedLead
+      ? resolveFirstTouch({
+          conversationCreatedAt: conversation.created_at,
+          closeLeadCreatedAt: linkedLead.closeLeadCreatedAt,
+          entryResourceTag: linkedLead.entryResourceTag,
+        })
+      : null,
     booking: bookingWithCredit,
     handoffEmail: conversation.handoff_emailed_at
       ? {
@@ -786,7 +802,7 @@ async function fetchFlagsFor(
 }
 
 const LINKED_LEAD_FIELDS =
-  "id, full_name, email, phone, status, close_sync_status, booked_by_setter, entry_resource_tag" as const;
+  "id, full_name, email, phone, status, close_sync_status, booked_by_setter, entry_resource_tag, close_lead_created_at" as const;
 
 /** One column set back: before 20260910200000_booking_credit.sql is applied. */
 const LINKED_LEAD_FIELDS_NO_CREDIT =
@@ -819,6 +835,7 @@ async function fetchLinkedLead(
   const credit = data as typeof data & {
     booked_by_setter?: string | null;
     entry_resource_tag?: string | null;
+    close_lead_created_at?: string | null;
   };
   return {
     id: data.id,
@@ -829,6 +846,7 @@ async function fetchLinkedLead(
     closeSyncStatus: data.close_sync_status,
     bookedBySetter: credit.booked_by_setter ?? null,
     entryResourceTag: credit.entry_resource_tag ?? null,
+    closeLeadCreatedAt: credit.close_lead_created_at ?? null,
   };
 }
 

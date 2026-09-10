@@ -1,5 +1,77 @@
 import { describe, expect, it } from "vitest";
-import { resolveBookingCredit } from "./booking-credit";
+import { resolveBookingCredit, resolveFirstTouch } from "./booking-credit";
+
+describe("resolveFirstTouch", () => {
+  const CHAT_AT = "2026-09-06T17:42:00.000Z";
+
+  it("credits the chatbot when Close only created the lead after the chat started", () => {
+    expect(
+      resolveFirstTouch({
+        conversationCreatedAt: CHAT_AT,
+        closeLeadCreatedAt: "2026-09-06T17:50:00.000Z",
+        entryResourceTag: "chatbot",
+      }),
+    ).toEqual({ kind: "chatbot", label: "Chatbot" });
+  });
+
+  it("makes the chat a middle touch when Close already had them from a webinar", () => {
+    expect(
+      resolveFirstTouch({
+        conversationCreatedAt: CHAT_AT,
+        closeLeadCreatedAt: "2026-08-28T02:01:04.000Z",
+        entryResourceTag: "internal-webinar",
+      }),
+    ).toEqual({
+      kind: "earlier",
+      label: "Internal webinar",
+      at: "2026-08-28T02:01:04.000Z",
+    });
+  });
+
+  it("keeps the chatbot first when the earlier Close record came from an earlier chat", () => {
+    expect(
+      resolveFirstTouch({
+        conversationCreatedAt: CHAT_AT,
+        closeLeadCreatedAt: "2026-08-28T22:56:45.000Z",
+        entryResourceTag: "chatbot",
+      }).kind,
+    ).toBe("chatbot");
+  });
+
+  it("orders by time, so a form filled after the chat does not take first touch", () => {
+    expect(
+      resolveFirstTouch({
+        conversationCreatedAt: CHAT_AT,
+        closeLeadCreatedAt: "2026-09-06T18:05:00.000Z",
+        entryResourceTag: "website-application",
+      }).kind,
+    ).toBe("chatbot");
+  });
+
+  it("names an untagged earlier record without inventing a source", () => {
+    expect(
+      resolveFirstTouch({
+        conversationCreatedAt: CHAT_AT,
+        closeLeadCreatedAt: "2025-12-05T21:45:26.000Z",
+        entryResourceTag: null,
+      }),
+    ).toEqual({
+      kind: "earlier",
+      label: "An earlier source",
+      at: "2025-12-05T21:45:26.000Z",
+    });
+  });
+
+  it("says not checked yet, never chatbot, before Close has been read", () => {
+    expect(
+      resolveFirstTouch({
+        conversationCreatedAt: CHAT_AT,
+        closeLeadCreatedAt: null,
+        entryResourceTag: "chatbot",
+      }),
+    ).toEqual({ kind: "unknown", label: "Not checked yet" });
+  });
+});
 
 describe("resolveBookingCredit", () => {
   it("credits the chatbot only when the chat calendar's own utm came back", () => {

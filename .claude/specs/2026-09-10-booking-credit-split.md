@@ -39,8 +39,30 @@ Booking credit precedence (`src/lib/chatbot/booking-credit.ts`):
 - Conversation detail: "Call booked" chip + credit chip + one-line note; transcript stamp says "set by X, outside the chat".
 - `/admin/chatbot` overview: `funnels.*.bookedBy` replaces the unused `bySource` buckets ("assisted" mixed setters with unknowns). Journey card: "All N came in through the chatbot. A booked in the chat, B booked by a setter after chatting (names), C booked elsewhere."
 
+## First touch (follow-up, same day)
+
+Adam: order matters for first and last touch. The first cut assumed every
+chat was the person's first touch. Live data said otherwise: 12 of 37
+chatbot leads linked to Close already existed in Close before the chat
+(webinars, Typeform, a website form, one from Dec 2025).
+
+- Migration `20260910220000_close_lead_created_at.sql` (applied by Adam in
+  the SQL editor): `lead_submissions.close_lead_created_at`, mirrored from
+  Close `date_created` by the reconciler (added to the existing `getLead`
+  `_fields`, no new API call).
+- `resolveFirstTouch` (`booking-credit.ts`): chatbot when the chat started
+  before Close created the lead, or when the earlier Close record is tagged
+  `chatbot` (an earlier chat). Otherwise first touch = that lead's Resource
+  Tag and the chat was a middle touch. No Close date yet = "Not checked yet".
+- Resource Tag is only set when our sync creates a Close lead, never on update
+  (`close/client.ts`), so it is a safe label for the earlier source.
+- Conversation page: "First touch: Internal webinar, Aug 28. The chat came
+  later, Sep 6. Last touch: Connor George booked the call."
+- `/admin/chatbot`: booked calls as a first touch x last touch grid, plus
+  setter names and earlier sources.
+
 ## Not done
 
-- Migration must be applied to prod Supabase by hand before names appear. Until then every surface degrades to "Booked elsewhere".
+- Both migrations are applied. Values fill in as the reconciler re-checks each lead (every lead at most every 6h).
 - Close `Entry Source` reads `Rep-Outbound` for Gerald. Not written back; our surfaces read `Resource Tag`.
 - Conversations list outcome chip still says "Booked" for setter-booked rows.

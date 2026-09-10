@@ -2,7 +2,11 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { resolveBookingCredit } from "@/lib/chatbot/booking-credit";
+import {
+  resolveBookingCredit,
+  resolveFirstTouch,
+  type FirstTouch,
+} from "@/lib/chatbot/booking-credit";
 import {
   askedAboutCost,
   calendarWasShown,
@@ -79,9 +83,9 @@ export type ChatbotFunnelWindow = ChatbotFunnelStageCounts & {
   bookedRateOfCapturedPct: number;
   overallBookedRatePct: number;
   /**
-   * `booked`, split by who got the person onto the calendar. BOOKING credit
-   * only: every one of these is a chatbot lead, and `booked` keeps crediting
-   * the chatbot for all of them. The three always add up to `booked`.
+   * `booked`, split by who got the person onto the calendar (last touch).
+   * Every one of these chatted with the bot; `byFirstTouch` says whether the
+   * chat was their first touch. The three counts always add up to `booked`.
    *
    * Resolved by lib/chatbot/booking-credit.ts, the same rule the conversation
    * page uses. `inChat` is only exact once `attributionSplitTrustworthy` is
@@ -99,8 +103,28 @@ export type ChatbotFunnelWindow = ChatbotFunnelStageCounts & {
     unknown: number;
     /** `setter` broken down by setter name, most bookings first. */
     setters: ChatbotRankedRow[];
+    /**
+     * The same booked calls, first touch x last touch. `chatbot`: the chat
+     * came first. `earlier`: already in Close (webinar, Typeform, a setter's
+     * Instagram lead) before they ever chatted, so the chat was a middle
+     * touch. `unknown`: not checked against Close yet. See resolveFirstTouch.
+     */
+    byFirstTouch: Record<FirstTouch["kind"], LastTouchCounts>;
+    /** `byFirstTouch.earlier` broken down by that earlier source. */
+    earlierSources: ChatbotRankedRow[];
   };
 };
+
+/** Booked calls by who got them onto the calendar. */
+export type LastTouchCounts = {
+  inChat: number;
+  setter: number;
+  unknown: number;
+};
+
+function emptyLastTouch(): LastTouchCounts {
+  return { inChat: 0, setter: 0, unknown: 0 };
+}
 
 /**
  * What happened to the visitors we did not book, and what the cost question
@@ -241,7 +265,16 @@ function emptyFunnelWindow(days: number): ChatbotFunnelWindow {
     capturedRateOfEngagedPct: 0,
     bookedRateOfCapturedPct: 0,
     overallBookedRatePct: 0,
-    bookedBy: { inChat: 0, setter: 0, unknown: 0, setters: [] },
+    bookedBy: {
+      ...emptyLastTouch(),
+      setters: [],
+      byFirstTouch: {
+        chatbot: emptyLastTouch(),
+        earlier: emptyLastTouch(),
+        unknown: emptyLastTouch(),
+      },
+      earlierSources: [],
+    },
   };
 }
 
@@ -321,7 +354,7 @@ export async function getChatbotAnalytics(
       client,
       rows.map((row) => row.lead_submission_id),
     );
-    const setterByLead = await fetchSetterNames(
+    const creditByLead = await fetchLeadCredit(
       client,
       rows
         .filter((row) => isBooked(row, bookedLeadIds))
@@ -332,7 +365,7 @@ export async function getChatbotAnalytics(
       now,
       bookedLeadIds,
       attributionSplitTrustworthy,
-      setterByLead,
+      creditByLead,
     );
   } catch (error) {
     console.warn("chatbot analytics load failed, returning empty rollup", {
@@ -459,40 +492,49 @@ export async function fetchBookedLeadIds(
 
 const LEAD_LOOKUP_CHUNK = 100;
 
+/** What the booking reconciler mirrored from Close for one lead. */
+type LeadCredit = {
+  setter: string | null;
+  resourceTag: string | null;
+  closeCreatedAt: string | null;
+};
+
 /**
- * Close's setter name per booked lead, as mirrored by the booking reconciler
- * into `lead_submissions.booked_by_setter`.
+ * Close's credit fields per booked lead, as mirrored by the booking
+ * reconciler: who booked them, their Resource Tag, and when Close created them.
  *
- * Tolerant: a failed read, or a deploy ahead of 20260910200000_booking_credit,
- * returns what it has. A lead with no name resolves to "booked outside the
- * chat", never to the chatbot, so a missing name can only undercount setters.
+ * Tolerant: a failed read, or a deploy ahead of the credit migrations, returns
+ * what it has. A lead with nothing mirrored resolves to "booked elsewhere" and
+ * first touch "not checked yet" -- never to the chatbot.
  */
-async function fetchSetterNames(
+async function fetchLeadCredit(
   client: ChatbotAnalyticsClient,
   candidateLeadIds: readonly (string | null | undefined)[],
-): Promise<ReadonlyMap<string, string>> {
+): Promise<ReadonlyMap<string, LeadCredit>> {
   const leadIds = Array.from(
     new Set(candidateLeadIds.filter((id): id is string => Boolean(id))),
   );
-  const names = new Map<string, string>();
+  const credit = new Map<string, LeadCredit>();
   for (let start = 0; start < leadIds.length; start += LEAD_LOOKUP_CHUNK) {
     const { data, error } = await client
       .from("lead_submissions")
-      .select("id, booked_by_setter")
-      .in("id", leadIds.slice(start, start + LEAD_LOOKUP_CHUNK))
-      .not("booked_by_setter", "is", null);
+      .select("id, booked_by_setter, entry_resource_tag, close_lead_created_at")
+      .in("id", leadIds.slice(start, start + LEAD_LOOKUP_CHUNK));
     if (error) {
-      console.warn("chatbot analytics: setter name lookup failed", {
+      console.warn("chatbot analytics: lead credit lookup failed", {
         error: error.message,
       });
-      return names;
+      return credit;
     }
     for (const row of data ?? []) {
-      const name = row.booked_by_setter?.trim();
-      if (name) names.set(row.id, name);
+      credit.set(row.id, {
+        setter: row.booked_by_setter?.trim() || null,
+        resourceTag: row.entry_resource_tag,
+        closeCreatedAt: row.close_lead_created_at,
+      });
     }
   }
-  return names;
+  return credit;
 }
 
 function buildAnalytics(
@@ -500,7 +542,7 @@ function buildAnalytics(
   now: Date,
   bookedLeadIds: ReadonlySet<string> = new Set(),
   attributionSplitTrustworthy = false,
-  setterByLead: ReadonlyMap<string, string> = new Map(),
+  creditByLead: ReadonlyMap<string, LeadCredit> = new Map(),
 ): ChatbotAnalytics {
   const start = new Date(now.getTime() - WINDOW_DAYS * DAY_MS);
   const priorStart = new Date(start.getTime() - WINDOW_DAYS * DAY_MS);
@@ -551,9 +593,9 @@ function buildAnalytics(
     keywordFrequency: keywordFrequency(current),
     prospectDistributions: buildProspectDistributions(current),
     funnels: {
-      d7: buildFunnelWindow(7, rows, now, bookedLeadIds, setterByLead),
-      d30: buildFunnelWindow(30, rows, now, bookedLeadIds, setterByLead),
-      d90: buildFunnelWindow(90, rows, now, bookedLeadIds, setterByLead),
+      d7: buildFunnelWindow(7, rows, now, bookedLeadIds, creditByLead),
+      d30: buildFunnelWindow(30, rows, now, bookedLeadIds, creditByLead),
+      d90: buildFunnelWindow(90, rows, now, bookedLeadIds, creditByLead),
     },
     attributionSplitTrustworthy,
     outcomes: {
@@ -722,29 +764,54 @@ function attributionSourceOf(
   return row.booked_event_uri ? "in_chat" : null;
 }
 
-/** Booked calls in `rows`, by who got them onto the calendar. */
+/**
+ * Booked calls in `rows`, by last touch, and by first touch x last touch. Same
+ * two rules the conversation page uses, so the grid and a row's note agree.
+ */
 function buildBookedBy(
   rows: ConversationRow[],
   bookedLeadIds: ReadonlySet<string>,
-  setterByLead: ReadonlyMap<string, string>,
+  creditByLead: ReadonlyMap<string, LeadCredit>,
 ): ChatbotFunnelWindow["bookedBy"] {
-  const counts = { inChat: 0, setter: 0, unknown: 0 };
+  const counts = emptyLastTouch();
+  const byFirstTouch = {
+    chatbot: emptyLastTouch(),
+    earlier: emptyLastTouch(),
+    unknown: emptyLastTouch(),
+  };
   const bySetter = new Map<string, number>();
+  const bySource = new Map<string, number>();
   for (const row of rows) {
     if (!isBooked(row, bookedLeadIds)) continue;
+    const lead = row.lead_submission_id
+      ? creditByLead.get(row.lead_submission_id)
+      : undefined;
     const credit = resolveBookingCredit({
       attributionSource: attributionSourceOf(row),
-      bookedBySetter: row.lead_submission_id
-        ? (setterByLead.get(row.lead_submission_id) ?? null)
-        : null,
+      bookedBySetter: lead?.setter ?? null,
     });
-    if (credit.kind === "in_chat") counts.inChat += 1;
-    else if (credit.kind === "setter") {
-      counts.setter += 1;
+    const first = resolveFirstTouch({
+      conversationCreatedAt: row.created_at,
+      closeLeadCreatedAt: lead?.closeCreatedAt ?? null,
+      entryResourceTag: lead?.resourceTag ?? null,
+    });
+    const last: keyof LastTouchCounts =
+      credit.kind === "in_chat" ? "inChat" : credit.kind;
+    counts[last] += 1;
+    byFirstTouch[first.kind][last] += 1;
+    if (credit.kind === "setter") {
       bySetter.set(credit.setter, (bySetter.get(credit.setter) ?? 0) + 1);
-    } else counts.unknown += 1;
+    }
+    if (first.kind === "earlier") {
+      bySource.set(first.label, (bySource.get(first.label) ?? 0) + 1);
+    }
   }
-  return { ...counts, setters: rankTop(bySetter, TOP_N) };
+  return {
+    ...counts,
+    setters: rankTop(bySetter, TOP_N),
+    byFirstTouch,
+    earlierSources: rankTop(bySource, TOP_N),
+  };
 }
 
 function buildFunnelWindow(
@@ -752,7 +819,7 @@ function buildFunnelWindow(
   rows: ConversationRow[],
   now: Date,
   bookedLeadIds: ReadonlySet<string>,
-  setterByLead: ReadonlyMap<string, string>,
+  creditByLead: ReadonlyMap<string, LeadCredit>,
 ): ChatbotFunnelWindow {
   const start = new Date(now.getTime() - days * DAY_MS);
   const windowRows = rows.filter((row) => inWindow(row.created_at, start, now));
@@ -770,7 +837,7 @@ function buildFunnelWindow(
     capturedRateOfEngagedPct: ratePct(stage.captured, stage.engaged),
     bookedRateOfCapturedPct: ratePct(stage.booked, stage.captured),
     overallBookedRatePct: ratePct(stage.booked, stage.conversations),
-    bookedBy: buildBookedBy(windowRows, bookedLeadIds, setterByLead),
+    bookedBy: buildBookedBy(windowRows, bookedLeadIds, creditByLead),
   };
 }
 

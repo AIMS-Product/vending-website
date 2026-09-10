@@ -4,9 +4,9 @@
  * Two separate credits, and the whole point of this module is that they are
  * never collapsed into one:
  *
- * - ENTRY credit is the chatbot's, for every conversation that exists. If they
- *   talked to the bot, the bot brought them in. Nothing takes that away.
- * - BOOKING credit belongs to whoever actually got them onto the calendar.
+ * - FIRST touch: whatever brought them in. The chatbot only when the chat came
+ *   before any other record of them in Close -- see resolveFirstTouch.
+ * - LAST touch (BOOKING credit): whoever actually got them onto the calendar.
  *
  * Booking credit precedence, strongest evidence first:
  *
@@ -53,4 +53,59 @@ export function resolveBookingCredit(input: BookingCreditInput): BookingCredit {
     return { kind: "setter", label: `Set by ${setter}`, setter };
   }
   return { kind: "unknown", label: "Booked elsewhere", setter: null };
+}
+
+/**
+ * Close's "Resource Tag" on a lead the site chatbot created. Mirrors
+ * CLOSE_RESOURCE_TAGS.chatbot, copied rather than imported so this module
+ * stays safe to import from client components.
+ */
+const CHATBOT_RESOURCE_TAG = "chatbot";
+
+export type FirstTouchInput = {
+  /** When this chat started. */
+  conversationCreatedAt: string;
+  /** When Close created the linked lead. Null until the reconciler has read it. */
+  closeLeadCreatedAt: string | null;
+  /** Close "Resource Tag". Set once when Close creates the lead; never overwritten. */
+  entryResourceTag: string | null;
+};
+
+export type FirstTouch =
+  | { kind: "chatbot"; label: "Chatbot" }
+  | { kind: "earlier"; label: string; at: string }
+  | { kind: "unknown"; label: "Not checked yet" };
+
+/**
+ * What touched this person first: the chat, or something that put them in
+ * Close before it.
+ *
+ * Order comes from Close's own `date_created`, which Close sets once and
+ * nothing rewrites. A Close lead that already existed when the chat started
+ * means the chat was a middle touch (a webinar signup, a Typeform applicant, a
+ * setter's Instagram lead) -- unless that earlier record was itself a chat,
+ * tagged `chatbot`, in which case the chatbot still came first.
+ */
+export function resolveFirstTouch(input: FirstTouchInput): FirstTouch {
+  if (!input.closeLeadCreatedAt) {
+    return { kind: "unknown", label: "Not checked yet" };
+  }
+  const tag = input.entryResourceTag?.trim() || null;
+  const closeCameFirst =
+    new Date(input.closeLeadCreatedAt).getTime() <
+    new Date(input.conversationCreatedAt).getTime();
+  if (!closeCameFirst || tag === CHATBOT_RESOURCE_TAG) {
+    return { kind: "chatbot", label: "Chatbot" };
+  }
+  return {
+    kind: "earlier",
+    label: tag ? humanizeTag(tag) : "An earlier source",
+    at: input.closeLeadCreatedAt,
+  };
+}
+
+/** `internal-webinar` -> `Internal webinar`. */
+function humanizeTag(tag: string): string {
+  const words = tag.replace(/[-_]+/g, " ").trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }

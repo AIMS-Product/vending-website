@@ -98,7 +98,11 @@ function buildClient(
 function buildCloseClient(
   leads: Record<
     string,
-    { status_label?: string | null; custom?: Record<string, unknown> } | null
+    {
+      status_label?: string | null;
+      custom?: Record<string, unknown>;
+      date_created?: string;
+    } | null
   >,
 ) {
   return {
@@ -146,6 +150,7 @@ describe("reconcileCloseBookings", () => {
           // Close has neither credit field on this lead, so both are cleared.
           booked_by_setter: null,
           entry_resource_tag: null,
+          close_lead_created_at: null,
         },
       },
     ]);
@@ -159,6 +164,7 @@ describe("reconcileCloseBookings", () => {
     const closeClient = buildCloseClient({
       close_gw: {
         status_label: "☎️ Call Booked",
+        date_created: "2026-09-06T17:42:00.000Z",
         custom: {
           "First Call Booked Date": "2026-09-10",
           "Reactivation - Setter Name": " Connor George ",
@@ -173,6 +179,8 @@ describe("reconcileCloseBookings", () => {
       call_booked_at: "2026-09-10",
       booked_by_setter: "Connor George",
       entry_resource_tag: "chatbot",
+      // Compared with the chat's start to order first touch.
+      close_lead_created_at: "2026-09-06T17:42:00.000Z",
     });
   });
 
@@ -217,6 +225,7 @@ describe("reconcileCloseBookings", () => {
     expect(updates[0].patch).toMatchObject({ call_booked_at: "2026-08-21" });
     expect(updates[0].patch).not.toHaveProperty("booked_by_setter");
     expect(updates[0].patch).not.toHaveProperty("entry_resource_tag");
+    expect(updates[0].patch).not.toHaveProperty("close_lead_created_at");
   });
 
   it("records a lead that never booked as null rather than skipping it", async () => {

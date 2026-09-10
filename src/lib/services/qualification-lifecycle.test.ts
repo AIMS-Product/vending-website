@@ -110,6 +110,7 @@ function makeLead(overrides: Partial<LeadRow> = {}): LeadRow {
     call_booked_at: null,
     booked_by_setter: null,
     entry_resource_tag: null,
+    close_lead_created_at: null,
     call_outcome: null,
     close_status_at: null,
     closed_won_at: null,

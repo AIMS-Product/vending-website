@@ -17,6 +17,7 @@ import type {
   ChatbotDropOffBucket,
   ChatbotFunnelWindow,
   ChatbotOutcomeWindow,
+  ChatbotRankedRow,
 } from "@/lib/chatbot/analytics";
 import type {
   AdminChatbotRange,
@@ -387,7 +388,7 @@ function JourneyCard({
           );
         })}
       </ol>
-      <BookedByNote
+      <TouchGrid
         booked={funnel.booked}
         bookedBy={funnel.bookedBy}
         exact={splitExact}
@@ -421,11 +422,12 @@ function JourneyCard({
 }
 
 /**
- * Who got the "Booked a call" people onto the calendar. The chatbot sourced
- * every one of them and keeps that credit; this line only splits the booking,
- * so a setter's follow-up call never reads as the chatbot's booking.
+ * The "Booked a call" people, first touch (rows) by last touch (columns), in
+ * that order. "Chatbot" rows chatted before any other record of them existed;
+ * "Earlier source" rows were already in Close and the chat was a middle touch.
+ * Columns say who got them onto the calendar.
  */
-function BookedByNote({
+function TouchGrid({
   booked,
   bookedBy,
   exact,
@@ -435,19 +437,67 @@ function BookedByNote({
   exact: boolean;
 }) {
   if (booked === 0) return null;
-  const names = bookedBy.setters
-    .map((row) => `${row.label} ${row.count}`)
-    .join(", ");
+  const unchecked = bookedBy.byFirstTouch.unknown;
+  const rows = [
+    { label: "Chatbot", counts: bookedBy.byFirstTouch.chatbot },
+    { label: "Earlier source", counts: bookedBy.byFirstTouch.earlier },
+    ...(unchecked.inChat + unchecked.setter + unchecked.unknown > 0
+      ? [{ label: "Not checked yet", counts: unchecked }]
+      : []),
+  ];
+  const ranked = (list: ChatbotRankedRow[]) =>
+    list.map((row) => `${row.label} ${row.count}`).join(", ");
   return (
-    <p className="text-ui-text-muted mt-3 text-xs">
-      All {booked} came in through the chatbot. {bookedBy.inChat} booked in the
-      chat{exact ? "" : " (estimated)"}, {bookedBy.setter} booked by a setter
-      after chatting{names ? ` (${names})` : ""}
-      {bookedBy.unknown
-        ? `, ${bookedBy.unknown} booked elsewhere with no setter recorded`
-        : ""}
-      .
-    </p>
+    <div className="border-ui-line mt-5 border-t pt-4">
+      <p className={adminEyebrowClass}>
+        Booked calls · first touch × last touch
+      </p>
+      <div className="mt-2 overflow-x-auto">
+        <table className="w-full text-xs tabular-nums">
+          <thead>
+            <tr className="text-ui-text-subtle">
+              <th scope="col" className="py-1.5 pr-3 text-left font-semibold">
+                First touch
+              </th>
+              <th scope="col" className="py-1.5 pr-3 text-right font-semibold">
+                Booked in chat{exact ? "" : " (est.)"}
+              </th>
+              <th scope="col" className="py-1.5 pr-3 text-right font-semibold">
+                Setter booked
+              </th>
+              <th scope="col" className="py-1.5 text-right font-semibold">
+                Booked elsewhere
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr
+                key={row.label}
+                className="border-ui-line text-ui-text border-t"
+              >
+                <th scope="row" className="py-1.5 pr-3 text-left font-medium">
+                  {row.label}
+                </th>
+                <td className="py-1.5 pr-3 text-right">{row.counts.inChat}</td>
+                <td className="py-1.5 pr-3 text-right">{row.counts.setter}</td>
+                <td className="py-1.5 text-right">{row.counts.unknown}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {bookedBy.setters.length || bookedBy.earlierSources.length ? (
+        <p className="text-ui-text-muted mt-2 text-xs">
+          {bookedBy.setters.length
+            ? `Setters: ${ranked(bookedBy.setters)}. `
+            : ""}
+          {bookedBy.earlierSources.length
+            ? `Earlier sources: ${ranked(bookedBy.earlierSources)}.`
+            : ""}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
