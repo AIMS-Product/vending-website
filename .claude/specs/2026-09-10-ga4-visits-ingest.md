@@ -76,7 +76,13 @@ it correctly at read time.
 
 ## Status (2026-09-10, second session)
 
-Steps 1-5 built. Step 6 blocked on the migration being hand-applied.
+All six steps done. Migration hand-applied by Adam; backfill run through the
+sync route and read back from the table: 16,330 rows, 196 days
+(2026-02-26 .. 2026-09-09), 142,160 views, equal to GA4's TOTAL;
+`/booking-youtube` Aug 13 - Sep 9 = 1,964 views / 1,133 sessions, matching
+the live API. The very first write to the new table failed one 1,000-row
+chunk (cause not logged at the time); the same run repeated three times
+wrote every row. The sync now logs the PostgREST code and message.
 
 - **Visits = GA4 `sessions`, not `screen_page_views`.** One click through to
   the site is one session however many pages it views. For `/booking-youtube`

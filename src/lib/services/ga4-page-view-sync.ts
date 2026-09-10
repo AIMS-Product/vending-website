@@ -110,10 +110,15 @@ export async function syncGa4PageViews(
 
     if (error) {
       // One bad chunk must not abandon the rest of a 16k-row backfill.
+      // PostgREST errors carry no secrets; without code and message a
+      // failed chunk cannot be diagnosed after the fact.
       console.error("ga4 page view upsert failed", {
         startDate,
         endDate,
         chunkRows: chunk.length,
+        firstDay: chunk[0]?.day,
+        code: error.code,
+        message: error.message,
       });
       result.failed += chunk.length;
       continue;
