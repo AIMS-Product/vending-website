@@ -753,6 +753,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      ga4_page_views: {
+        Row: {
+          day: string;
+          engaged_sessions: number;
+          key_events: number;
+          landing_page: string;
+          new_users: number;
+          screen_page_views: number;
+          sessions: number;
+          synced_at: string;
+          user_engagement_seconds: number;
+          utm_campaign: string;
+          utm_source: string;
+        };
+        Insert: {
+          day: string;
+          engaged_sessions?: number;
+          key_events?: number;
+          landing_page: string;
+          new_users?: number;
+          screen_page_views?: number;
+          sessions?: number;
+          synced_at?: string;
+          user_engagement_seconds?: number;
+          utm_campaign: string;
+          utm_source: string;
+        };
+        Update: {
+          day?: string;
+          engaged_sessions?: number;
+          key_events?: number;
+          landing_page?: string;
+          new_users?: number;
+          screen_page_views?: number;
+          sessions?: number;
+          synced_at?: string;
+          user_engagement_seconds?: number;
+          utm_campaign?: string;
+          utm_source?: string;
+        };
+        Relationships: [];
+      };
       lead_page_views: {
         Row: {
           id: number;

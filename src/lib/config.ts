@@ -46,6 +46,13 @@ const envSchema = z.object({
   // stage of the funnel reports "not connected" rather than zero.
   BITLY_ACCESS_TOKEN: optionalTrimmedOptionalEnv,
   BITLY_GROUP_GUID: optionalTrimmedOptionalEnv,
+  /**
+   * GA4 visits ingest. The whole service-account JSON key, as downloaded from
+   * Google Cloud. Absent means the visits stage falls back to
+   * `lead_page_views`, which has no history before 2026-09-10.
+   */
+  GA4_SERVICE_ACCOUNT_JSON: optionalTrimmedOptionalEnv,
+  GA4_PROPERTY_ID: optionalTrimmedOptionalEnv,
   CLOSE_API_KEY: optionalTrimmedOptionalEnv,
   CLOSE_API_BASE_URL: optionalTrimmedOptionalEnv,
   CLOSE_LEAD_STATUS_ID: optionalTrimmedOptionalEnv,
@@ -149,6 +156,8 @@ const parsed = envSchema.safeParse({
   CALENDLY_API_TOKEN: process.env.CALENDLY_API_TOKEN,
   BITLY_ACCESS_TOKEN: process.env.BITLY_ACCESS_TOKEN,
   BITLY_GROUP_GUID: process.env.BITLY_GROUP_GUID,
+  GA4_SERVICE_ACCOUNT_JSON: process.env.GA4_SERVICE_ACCOUNT_JSON,
+  GA4_PROPERTY_ID: process.env.GA4_PROPERTY_ID,
   CLOSE_API_KEY: process.env.CLOSE_API_KEY,
   CLOSE_API_BASE_URL: process.env.CLOSE_API_BASE_URL,
   CLOSE_LEAD_STATUS_ID: process.env.CLOSE_LEAD_STATUS_ID,

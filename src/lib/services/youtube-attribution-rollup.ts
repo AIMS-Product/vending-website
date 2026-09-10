@@ -52,12 +52,21 @@ export type BitlyClickRow = {
 
 export type PageViewRow = {
   /**
-   * Needed because `lead_page_views` stores every tagged channel's visits, not
-   * just YouTube's. Without it a Meta campaign's traffic lands in this funnel.
+   * Needed because both visit sources store every tagged channel, not just
+   * YouTube. Without it a Meta campaign's traffic lands in this funnel.
    */
   utm_source: string | null;
   utm_campaign: string | null;
   occurred_at: string;
+  /**
+   * Visits this row represents.
+   *
+   * `lead_page_views` is one row per visit and leaves this undefined, which
+   * counts as 1. `ga4_page_views` is a daily aggregate and carries the real
+   * count — treating one of its rows as a single visit would report 2 visits
+   * where GA4 measured 569.
+   */
+  views?: number;
 };
 
 /**
@@ -118,12 +127,20 @@ export type YouTubeCohortRow = {
   closedLaterMonth: number;
 };
 
+/**
+ * `ga4`: `ga4_page_views`, GA4 sessions by Pacific day, history from 2026-02-26.
+ * `site`: `lead_page_views`, the site's own visit event, history from 2026-09-10.
+ */
+export type YouTubeVisitsSource = "ga4" | "site";
+
 export type YouTubeCoverage = {
   registryVideos: number;
   videosWithLeads: number;
   campaignsMissingFromRegistry: string[];
   clicksConnected: boolean;
   visitsConnected: boolean;
+  /** Which table the visits stage read. Null when it is not connected. */
+  visitsSource: YouTubeVisitsSource | null;
   /** False until the migration adding closed_won_at / call_outcome is applied. */
   outcomesConnected: boolean;
   /** Leads whose booking predates the form fill — a returning lead, not a cycle. */
@@ -174,6 +191,7 @@ export function buildYouTubeAttribution({
   pageViews,
   clicksConnected,
   visitsConnected,
+  visitsSource = null,
   outcomesConnected,
 }: {
   leads: YouTubeLeadRow[];
@@ -182,6 +200,7 @@ export function buildYouTubeAttribution({
   pageViews: PageViewRow[];
   clicksConnected: boolean;
   visitsConnected: boolean;
+  visitsSource?: YouTubeVisitsSource | null;
   outcomesConnected: boolean;
 }): YouTubeAttributionRollup {
   const youtubeLeads = leads.filter(isYouTubeLead);
@@ -192,7 +211,7 @@ export function buildYouTubeAttribution({
   const clicksByCampaign = sumByCampaign(clicks, (row) => row.clicks);
   const viewsByCampaign = sumByCampaign(
     pageViews.filter((view) => isYouTubeSource(view.utm_source)),
-    () => 1,
+    (view) => view.views ?? 1,
   );
 
   const rows = [...byCampaign.entries()]
@@ -232,6 +251,7 @@ export function buildYouTubeAttribution({
         .map((row) => row.utmCampaign),
       clicksConnected,
       visitsConnected,
+      visitsSource: visitsConnected ? visitsSource : null,
       outcomesConnected,
       bookedBeforeLead: youtubeLeads.filter(bookedBeforeLead).length,
     },
