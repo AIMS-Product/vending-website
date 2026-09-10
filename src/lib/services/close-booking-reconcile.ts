@@ -433,21 +433,26 @@ function parseBookedDate(custom: Record<string, unknown> | null | undefined) {
 }
 
 /**
- * Mirrors Close's two credit fields onto the lead: who booked the call, and
- * what brought the person in.
+ * Mirrors Close's credit fields onto the lead: who booked the call, what
+ * brought the person in, and when Close first created them (first-touch order).
  *
  * Written on every pass rather than only when newly set, so a setter name
  * corrected in Close (the wrong setter credited, a lead reassigned) flows
  * through instead of being frozen at whatever the first pass saw. Both are
  * cleared when Close clears them, for the same reason.
  */
-function creditUpdate(lead: { custom?: Record<string, unknown> | null }): {
+function creditUpdate(lead: {
+  custom?: Record<string, unknown> | null;
+  date_created?: string | null;
+}): {
   booked_by_setter: string | null;
   entry_resource_tag: string | null;
+  close_lead_created_at: string | null;
 } {
   return {
     booked_by_setter: customText(lead.custom, SETTER_NAME_FIELD),
     entry_resource_tag: customText(lead.custom, RESOURCE_TAG_FIELD),
+    close_lead_created_at: lead.date_created || null,
   };
 }
 
@@ -469,7 +474,8 @@ function customText(
 }
 
 /**
- * Whether `20260910200000_booking_credit.sql` has been applied. Migrations here
+ * Whether `20260910200000_booking_credit.sql` and
+ * `20260910220000_close_lead_created_at.sql` have been applied. Migrations here
  * ship ahead of being applied by hand, and the credit columns are additive
  * polish -- losing the whole booking mirror over them would be the regression.
  */
@@ -478,7 +484,7 @@ async function creditColumnsConnected(
 ): Promise<boolean> {
   const { error } = await client
     .from("lead_submissions")
-    .select("booked_by_setter,entry_resource_tag")
+    .select("booked_by_setter,entry_resource_tag,close_lead_created_at")
     .limit(1);
   return !error;
 }

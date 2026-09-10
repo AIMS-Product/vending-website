@@ -178,6 +178,8 @@ type CloseLeadSearchResult = {
  */
 export type CloseLeadReadResult = {
   id: string;
+  /** When Close created the lead. Set once, never rewritten: first-touch order. */
+  date_created?: string | null;
   status_label?: string | null;
   custom?: Record<string, unknown> | null;
   /**
@@ -407,7 +409,7 @@ export function createCloseClient({
       try {
         return await request<CloseLeadReadResult>(
           "GET",
-          `/lead/${encodeURIComponent(leadId)}/?_fields=id,status_label,custom,opportunities`,
+          `/lead/${encodeURIComponent(leadId)}/?_fields=id,date_created,status_label,custom,opportunities`,
         );
       } catch (error) {
         if (error instanceof CloseApiError && error.status === 404) return null;

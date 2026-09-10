@@ -39,11 +39,20 @@ function fakeClient(options: {
   missingColumns?: string[];
   /** lead id -> Close "Reactivation - Setter Name", as the reconciler mirrors it. */
   setters?: Record<string, string>;
+  /** lead id -> Close Resource Tag + lead creation time, as the reconciler mirrors them. */
+  closeLeads?: Record<
+    string,
+    { resourceTag: string | null; createdAt: string }
+  >;
 }) {
   const rows = options.rows ?? [];
   const bookedLeadIds = new Set(options.bookedLeadIds ?? []);
   const missingColumns = options.missingColumns ?? [];
   const setters = options.setters ?? {};
+  const closeLeads = options.closeLeads ?? {};
+  const creditIds = [
+    ...new Set([...Object.keys(setters), ...Object.keys(closeLeads)]),
+  ];
 
   function conversationsQuery(fields: string) {
     const requested = fields.split(",").map((f) => f.trim());
@@ -68,9 +77,11 @@ function fakeClient(options: {
   function leadSubmissionsQuery(fields: string) {
     const result = fields.includes("booked_by_setter")
       ? {
-          data: Object.entries(setters).map(([id, name]) => ({
+          data: creditIds.map((id) => ({
             id,
-            booked_by_setter: name,
+            booked_by_setter: setters[id] ?? null,
+            entry_resource_tag: closeLeads[id]?.resourceTag ?? null,
+            close_lead_created_at: closeLeads[id]?.createdAt ?? null,
           })),
           error: null,
         }
@@ -172,7 +183,7 @@ describe("getChatbotAnalytics funnels", () => {
     expect(analytics.funnels.d90.conversations).toBe(3);
   });
 
-  it("splits booked calls by who booked them, while the chatbot keeps sourcing credit for all", async () => {
+  it("splits booked calls by first touch and by who booked them", async () => {
     const rows: FakeRow[] = [
       {
         id: "in-chat",
@@ -222,13 +233,18 @@ describe("getChatbotAnalytics funnels", () => {
         rows,
         bookedLeadIds: ["lead-gw", "lead-p", "lead-u"],
         setters: { "lead-gw": "Connor George", "lead-p": "Pearl Sathekge" },
+        closeLeads: {
+          // Close created Gerald a day AFTER he chatted: the chat came first.
+          "lead-gw": { resourceTag: "chatbot", createdAt: daysAgo(3) },
+          // A webinar lead Close had for a month before they ever chatted.
+          "lead-p": { resourceTag: "internal-webinar", createdAt: daysAgo(30) },
+        },
       }),
       now: () => NOW,
     });
 
     expect(analytics.attributionSplitTrustworthy).toBe(true);
     const d30 = analytics.funnels.d30;
-    // Sourcing credit: all four booked calls came from chatbot conversations.
     expect(d30.booked).toBe(4);
     expect(d30.bookedBy).toEqual({
       inChat: 1,
@@ -238,6 +254,14 @@ describe("getChatbotAnalytics funnels", () => {
         { label: "Connor George", count: 1 },
         { label: "Pearl Sathekge", count: 1 },
       ],
+      byFirstTouch: {
+        chatbot: { inChat: 0, setter: 1, unknown: 0 },
+        // The chat was a middle touch here, not the way in.
+        earlier: { inChat: 0, setter: 1, unknown: 0 },
+        // Never checked against Close: reported as such, not as the chatbot.
+        unknown: { inChat: 1, setter: 0, unknown: 1 },
+      },
+      earlierSources: [{ label: "Internal webinar", count: 1 }],
     });
   });
 

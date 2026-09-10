@@ -96,7 +96,7 @@ function MetaChips({
           </span>
         ) : null}
       </div>
-      <BookingCreditNote conversation={conversation} />
+      <TouchesNote conversation={conversation} />
       <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetaItem
           label="First seen"
@@ -165,22 +165,35 @@ function BookingCreditChip({ credit }: { credit: BookingCredit }) {
 }
 
 /**
- * The sentence that answers "so did the chatbot book this or not?" without
- * making anyone cross-reference the CRM. Only shown when the answer is no.
+ * First touch, then last touch, in the order they happened -- so nobody has
+ * to cross-reference the CRM to know whether the chat brought this person in
+ * or who booked them. Hidden for an anonymous chat, which has no lead to order.
  */
-function BookingCreditNote({
+function TouchesNote({
   conversation,
 }: {
   conversation: AdminChatbotConversationDetail;
 }) {
+  const first = conversation.firstTouch;
+  if (!first) return null;
+  const chatAt = formatDateTime(conversation.createdAt);
+  const firstText =
+    first.kind === "chatbot"
+      ? `chatbot, ${chatAt}`
+      : first.kind === "earlier"
+        ? `${first.label}, ${formatDateTime(first.at)}. The chat came later, ${chatAt}`
+        : "not checked against Close yet";
   const credit = conversation.booking?.credit;
-  if (!credit || credit.kind === "in_chat") return null;
+  const lastText = !credit
+    ? null
+    : credit.kind === "in_chat"
+      ? "booked in the chat"
+      : credit.kind === "setter"
+        ? `${credit.setter} booked the call`
+        : "booked outside the chat, no setter recorded";
   return (
     <p className="text-ui-text-muted mt-3 text-sm">
-      Chatbot captured this lead {formatDateTime(conversation.createdAt)}.
-      {credit.kind === "setter"
-        ? ` ${credit.setter} booked the call, outside the chat.`
-        : " The call was booked outside the chat, and no setter is recorded on the lead."}
+      First touch: {firstText}.{lastText ? ` Last touch: ${lastText}.` : ""}
     </p>
   );
 }
