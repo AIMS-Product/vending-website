@@ -4,6 +4,7 @@ import { VP_SESSION_COOKIE_NAME } from "@/lib/attribution-session";
 import { config } from "@/lib/config";
 import { checkPublicRateLimit, requestIp } from "@/lib/public-rate-limit";
 import { channelFromAttributionSignals } from "@/lib/paid-attribution";
+import { recordTaggedPageView } from "@/lib/services/lead-page-views";
 import { recordPopupEvent } from "@/lib/services/popups";
 
 const attributionEventSchema = z.object({
@@ -43,6 +44,22 @@ export async function POST(request: Request) {
       eventType: payload.event_type,
       popupId,
       pagePath: stringProperty(payload.properties, "page_path") || null,
+    });
+  }
+
+  // The landing view is also kept locally, because the money-page forward has
+  // no queryable readback and the per-video funnel needs a visits stage between
+  // "clicked the link" and "filled the form". Tagged views only; see the
+  // service. Best-effort, exactly like the popup counter above.
+  if (payload.event_type === "landing_viewed") {
+    await recordTaggedPageView({
+      path:
+        stringProperty(payload.properties, "landing_path") ||
+        stringProperty(payload.properties, "latest_landing_path"),
+      vpSessionId: payload.vp_session_id,
+      utmSource: stringProperty(payload.properties, "utm_source"),
+      utmCampaign: stringProperty(payload.properties, "utm_campaign"),
+      utmContent: stringProperty(payload.properties, "utm_content"),
     });
   }
 

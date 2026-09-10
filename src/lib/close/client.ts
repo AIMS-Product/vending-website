@@ -180,6 +180,21 @@ export type CloseLeadReadResult = {
   id: string;
   status_label?: string | null;
   custom?: Record<string, unknown> | null;
+  /**
+   * Won/lost deals on this lead, when the org records opportunities at all.
+   *
+   * Read optimistically: the reconciler needs a DATE for a won deal and the
+   * status label has none. Orgs that track deals only as a lead status return
+   * no opportunities, which is why every field here is optional and the caller
+   * falls back rather than assuming the shape.
+   */
+  opportunities?: Array<{
+    id?: string | null;
+    status_type?: string | null;
+    status_label?: string | null;
+    date_won?: string | null;
+    value?: number | null;
+  }> | null;
 };
 
 export type CloseCustomFieldDefinition = {
@@ -382,7 +397,8 @@ export function createCloseClient({
       );
     },
     /**
-     * Read one lead's status and custom fields. Returns `null` on 404 rather
+     * Read one lead's status, custom fields and opportunities. Returns `null`
+     * on 404 rather
      * than throwing: leads get merged and deleted in Close all the time, and a
      * lead we synced months ago going missing is normal bookkeeping, not an
      * error the reconciler should retry forever.
@@ -391,7 +407,7 @@ export function createCloseClient({
       try {
         return await request<CloseLeadReadResult>(
           "GET",
-          `/lead/${encodeURIComponent(leadId)}/?_fields=id,status_label,custom`,
+          `/lead/${encodeURIComponent(leadId)}/?_fields=id,status_label,custom,opportunities`,
         );
       } catch (error) {
         if (error instanceof CloseApiError && error.status === 404) return null;

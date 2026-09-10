@@ -54,10 +54,16 @@ type ChannelRule = { channel: string; person?: string };
  */
 const EXACT: Record<string, ChannelRule> = {
   youtube: { channel: "YouTube" },
+  // SUFFIX_CHANNEL already treats "yt" and "fb" as these platforms for
+  // person-tagged links, so a bare tag has to agree. Without these, "yt"
+  // fell through to titleCase and opened its own "Yt" channel row, splitting
+  // YouTube in two.
+  yt: { channel: "YouTube" },
   google: { channel: "Google" },
 
   meta: { channel: "Meta" },
   facebook: { channel: "Meta" },
+  fb: { channel: "Meta" },
 
   instagram: { channel: "Instagram" },
   ig: { channel: "Instagram" },

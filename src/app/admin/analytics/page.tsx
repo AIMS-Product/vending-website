@@ -14,9 +14,23 @@ import {
   type AnalyticsTabKey,
 } from "@/components/admin/AnalyticsPanels";
 import {
+  YouTubeCohortTable,
+  YouTubeCoverageNote,
+  YouTubeStageFunnel,
+  YouTubeTimeToCloseChart,
+  YouTubeVideoTable,
+  parseYouTubeVideoSort,
+  sortYouTubeVideos,
+  type YouTubeVideoSort,
+} from "@/components/admin/YouTubeAttributionPanels";
+import {
   getAdminAnalytics,
   type AdminAnalytics,
 } from "@/lib/services/admin-analytics";
+import {
+  getYouTubeAttribution,
+  type YouTubeAttribution,
+} from "@/lib/services/youtube-attribution";
 import { parseAdminAnalyticsRange } from "@/lib/services/admin-analytics-range";
 import { requireAdmin } from "@/lib/supabase/auth";
 
@@ -41,11 +55,18 @@ export default async function AdminAnalyticsPage({
   const range = parseAdminAnalyticsRange(singleParam(params.range));
   const includeInternal = singleParam(params.internal) === "1";
   const tab = parseAnalyticsTab(singleParam(params.tab));
+  const videoSort = parseYouTubeVideoSort(singleParam(params.sort));
 
-  const [{ user, role }, analytics] = await Promise.all([
+  // The YouTube tab reads a different set of tables, so it fetches its own data
+  // instead of paying for the four-tab rollup it would not use.
+  const isYouTubeTab = tab === "youtube";
+  const [{ user, role }, analytics, youtube] = await Promise.all([
     requireAdmin(),
-    getAdminAnalytics({ range, includeInternal }),
+    isYouTubeTab ? null : getAdminAnalytics({ range, includeInternal }),
+    isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
   ]);
+  const internalExcluded =
+    youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0;
 
   return (
     <AdminShell
@@ -60,7 +81,7 @@ export default async function AdminAnalyticsPage({
         <AnalyticsInternalToggle
           range={range}
           includeInternal={includeInternal}
-          excludedCount={analytics.internalExcluded}
+          excludedCount={internalExcluded}
           tab={tab}
         />
         <AnalyticsRangeTabs
@@ -76,7 +97,16 @@ export default async function AdminAnalyticsPage({
         includeInternal={includeInternal}
       />
 
-      <TabContent tab={tab} analytics={analytics} />
+      {youtube ? (
+        <YouTubeTab
+          youtube={youtube}
+          sort={videoSort}
+          range={range}
+          includeInternal={includeInternal}
+        />
+      ) : analytics ? (
+        <TabContent tab={tab} analytics={analytics} />
+      ) : null}
     </AdminShell>
   );
 }
@@ -92,6 +122,47 @@ function TabContent({
   if (tab === "pages") return <PagesTab analytics={analytics} />;
   if (tab === "quality") return <QualityTab analytics={analytics} />;
   return <OverviewTab analytics={analytics} />;
+}
+
+function YouTubeTab({
+  youtube,
+  sort,
+  range,
+  includeInternal,
+}: {
+  youtube: YouTubeAttribution;
+  sort: YouTubeVideoSort;
+  range: string;
+  includeInternal: boolean;
+}) {
+  const sortHref = (next: YouTubeVideoSort) => {
+    const params = new URLSearchParams({ range, tab: "youtube", sort: next });
+    if (includeInternal) params.set("internal", "1");
+    return `/admin/analytics?${params.toString()}`;
+  };
+
+  return (
+    <>
+      <YouTubeCoverageNote coverage={youtube.coverage} range={youtube.range} />
+
+      <div className="grid gap-5 xl:grid-cols-3">
+        <YouTubeStageFunnel stages={youtube.stages} />
+        <YouTubeTimeToCloseChart timeToClose={youtube.timeToClose} />
+        <YouTubeCohortTable
+          cohorts={youtube.cohorts}
+          outcomesConnected={youtube.coverage.outcomesConnected}
+        />
+      </div>
+
+      <div className="mt-5">
+        <YouTubeVideoTable
+          rows={sortYouTubeVideos(youtube.videos, sort)}
+          sortHref={sortHref}
+          activeSort={sort}
+        />
+      </div>
+    </>
+  );
 }
 
 function OverviewTab({ analytics }: { analytics: AdminAnalytics }) {

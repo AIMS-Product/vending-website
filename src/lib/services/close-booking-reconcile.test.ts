@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   CLOSE_LEAD_MISSING,
+  earliestWonDate,
+  outcomeFromLabel,
+  outcomeUpdate,
   reconcileCloseBookings,
 } from "./close-booking-reconcile";
 import type { CloseClient } from "@/lib/close/client";
@@ -11,7 +14,13 @@ vi.mock("@/lib/config", () => ({
   config: { CLOSE_API_KEY: "api_test", CLOSE_API_BASE_URL: undefined },
 }));
 
-type StaleLead = { id: string; close_lead_id: string | null };
+type StaleLead = {
+  id: string;
+  close_lead_id: string | null;
+  call_status?: string | null;
+  closed_won_at?: string | null;
+  closed_won_source?: string | null;
+};
 
 function buildClient(rows: StaleLead[], updateError: unknown = null) {
   const updates: Array<{ id: string; patch: Record<string, unknown> }> = [];
@@ -85,6 +94,11 @@ describe("reconcileCloseBookings", () => {
           call_booked_at: "2026-08-21",
           call_status: "☎️ Call Booked",
           call_reconciled_at: NOW.toISOString(),
+          // "Call Booked" asserts nothing about whether it was held.
+          call_outcome: null,
+          // The label differs from the row's previous (undefined) status, so
+          // this is when that status began.
+          close_status_at: NOW.toISOString(),
         },
       },
     ]);
@@ -172,5 +186,132 @@ describe("reconcileCloseBookings", () => {
     });
 
     expect(result).toMatchObject({ scanned: 2, failed: 1, updated: 1 });
+  });
+});
+
+describe("outcomeFromLabel", () => {
+  it("reads the real Close labels, emoji and all", () => {
+    expect(outcomeFromLabel("👻 No Show")).toBe("no_show");
+    expect(outcomeFromLabel("🔻 Canceled (by Lead)")).toBe("canceled");
+    expect(outcomeFromLabel("🕛 Reschedule")).toBe("rescheduled");
+    expect(outcomeFromLabel("📄 Contract Sent")).toBe("contract_sent");
+    expect(outcomeFromLabel("🏆 Closed / Won")).toBe("won");
+  });
+
+  it("claims nothing for labels that assert nothing about the call", () => {
+    expect(outcomeFromLabel("📞 Follow Up")).toBeNull();
+    expect(outcomeFromLabel("🆕 New")).toBeNull();
+    expect(outcomeFromLabel("💔 Lost")).toBeNull();
+    expect(outcomeFromLabel("🗓️ Long Term Follow Up")).toBeNull();
+    expect(outcomeFromLabel(null)).toBeNull();
+  });
+
+  it("does not match 'won' inside another word", () => {
+    expect(outcomeFromLabel("Wonky pipeline stage")).toBeNull();
+  });
+});
+
+describe("earliestWonDate", () => {
+  it("takes the first win when a lead has several opportunities", () => {
+    expect(
+      earliestWonDate([
+        { status_type: "won", date_won: "2026-09-02" },
+        { status_type: "won", date_won: "2026-08-14" },
+      ]),
+    ).toBe("2026-08-14");
+  });
+
+  it("ignores active opportunities and unusable dates", () => {
+    expect(
+      earliestWonDate([{ status_type: "active", date_won: null }]),
+    ).toBeNull();
+    expect(
+      earliestWonDate([{ status_type: "won", date_won: "soon" }]),
+    ).toBeNull();
+    // Orgs that track deals only as a lead status send no opportunities.
+    expect(earliestWonDate(undefined)).toBeNull();
+    expect(earliestWonDate(null)).toBeNull();
+  });
+
+  it("trims a timestamp down to its date", () => {
+    expect(
+      earliestWonDate([
+        { status_type: "won", date_won: "2026-08-14T11:00:00.000Z" },
+      ]),
+    ).toBe("2026-08-14");
+  });
+});
+
+describe("outcomeUpdate", () => {
+  const row = {
+    call_status: null,
+    closed_won_at: null,
+    closed_won_source: null,
+  };
+
+  it("prefers a Close opportunity date over anything inferred", () => {
+    expect(
+      outcomeUpdate(
+        row,
+        {
+          status_label: "🏆 Closed / Won",
+          opportunities: [{ status_type: "won", date_won: "2026-08-14" }],
+        },
+        NOW,
+      ),
+    ).toMatchObject({
+      call_outcome: "won",
+      closed_won_at: "2026-08-14",
+      closed_won_source: "close_opportunity",
+    });
+  });
+
+  it("falls back to today only when the lead is won and has no date at all", () => {
+    expect(
+      outcomeUpdate(row, { status_label: "🏆 Closed / Won" }, NOW),
+    ).toMatchObject({
+      call_outcome: "won",
+      closed_won_at: NOW.toISOString().slice(0, 10),
+      closed_won_source: "status_observed",
+    });
+  });
+
+  it("never downgrades a real opportunity date to an observed one", () => {
+    const dated = {
+      call_status: "🏆 Closed / Won",
+      closed_won_at: "2026-07-01",
+      closed_won_source: "close_opportunity",
+    };
+    const update = outcomeUpdate(
+      dated,
+      { status_label: "🏆 Closed / Won" },
+      NOW,
+    );
+
+    expect(update.closed_won_at).toBeUndefined();
+    expect(update.closed_won_source).toBeUndefined();
+  });
+
+  it("dates the status only when it actually changed", () => {
+    const unchanged = outcomeUpdate(
+      { ...row, call_status: "📞 Follow Up" },
+      { status_label: "📞 Follow Up" },
+      NOW,
+    );
+    expect(unchanged.close_status_at).toBeUndefined();
+
+    const changed = outcomeUpdate(
+      { ...row, call_status: "📞 Follow Up" },
+      { status_label: "👻 No Show" },
+      NOW,
+    );
+    expect(changed.close_status_at).toBe(NOW.toISOString());
+    expect(changed.call_outcome).toBe("no_show");
+  });
+
+  it("does not stamp a won date for a lead that is not won", () => {
+    const update = outcomeUpdate(row, { status_label: "💔 Lost" }, NOW);
+    expect(update.closed_won_at).toBeUndefined();
+    expect(update.call_outcome).toBeNull();
   });
 });

@@ -42,6 +42,10 @@ const envSchema = z.object({
   CRON_SECRET: optionalTrimmedOptionalEnv,
   CALENDLY_WEBHOOK_SIGNING_KEY: optionalTrimmedOptionalEnv,
   CALENDLY_API_TOKEN: optionalTrimmedOptionalEnv,
+  // Bitly click sync for the YouTube attribution tab. Absent means the clicks
+  // stage of the funnel reports "not connected" rather than zero.
+  BITLY_ACCESS_TOKEN: optionalTrimmedOptionalEnv,
+  BITLY_GROUP_GUID: optionalTrimmedOptionalEnv,
   CLOSE_API_KEY: optionalTrimmedOptionalEnv,
   CLOSE_API_BASE_URL: optionalTrimmedOptionalEnv,
   CLOSE_LEAD_STATUS_ID: optionalTrimmedOptionalEnv,
@@ -143,6 +147,8 @@ const parsed = envSchema.safeParse({
   CRON_SECRET: process.env.CRON_SECRET,
   CALENDLY_WEBHOOK_SIGNING_KEY: process.env.CALENDLY_WEBHOOK_SIGNING_KEY,
   CALENDLY_API_TOKEN: process.env.CALENDLY_API_TOKEN,
+  BITLY_ACCESS_TOKEN: process.env.BITLY_ACCESS_TOKEN,
+  BITLY_GROUP_GUID: process.env.BITLY_GROUP_GUID,
   CLOSE_API_KEY: process.env.CLOSE_API_KEY,
   CLOSE_API_BASE_URL: process.env.CLOSE_API_BASE_URL,
   CLOSE_LEAD_STATUS_ID: process.env.CLOSE_LEAD_STATUS_ID,

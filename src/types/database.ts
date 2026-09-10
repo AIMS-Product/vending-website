@@ -242,6 +242,10 @@ export type Database = {
           close_sync_status: string | null;
           close_sync_synced_at: string | null;
           call_booked_at: string | null;
+          call_outcome: string | null;
+          close_status_at: string | null;
+          closed_won_at: string | null;
+          closed_won_source: string | null;
           call_status: string | null;
           call_reconciled_at: string | null;
           created_at: string;
@@ -295,6 +299,10 @@ export type Database = {
           close_sync_status?: string | null;
           close_sync_synced_at?: string | null;
           call_booked_at?: string | null;
+          call_outcome?: string | null;
+          close_status_at?: string | null;
+          closed_won_at?: string | null;
+          closed_won_source?: string | null;
           call_status?: string | null;
           call_reconciled_at?: string | null;
           created_at?: string;
@@ -348,6 +356,10 @@ export type Database = {
           close_sync_status?: string | null;
           close_sync_synced_at?: string | null;
           call_booked_at?: string | null;
+          call_outcome?: string | null;
+          close_status_at?: string | null;
+          closed_won_at?: string | null;
+          closed_won_source?: string | null;
           call_status?: string | null;
           call_reconciled_at?: string | null;
           created_at?: string;
@@ -708,6 +720,111 @@ export type Database = {
           utm_medium?: string | null;
           utm_source?: string | null;
           utm_term?: string | null;
+        };
+        Relationships: [];
+      };
+      bitly_link_clicks: {
+        Row: {
+          bitly_id: string;
+          clicks: number;
+          day: string;
+          synced_at: string;
+          utm_campaign: string | null;
+        };
+        Insert: {
+          bitly_id: string;
+          clicks?: number;
+          day: string;
+          synced_at?: string;
+          utm_campaign?: string | null;
+        };
+        Update: {
+          bitly_id?: string;
+          clicks?: number;
+          day?: string;
+          synced_at?: string;
+          utm_campaign?: string | null;
+        };
+        Relationships: [];
+      };
+      lead_page_views: {
+        Row: {
+          id: number;
+          occurred_at: string;
+          occurred_on: string;
+          path: string;
+          utm_campaign: string | null;
+          utm_content: string | null;
+          utm_source: string | null;
+          vp_session_id: string;
+        };
+        Insert: {
+          id?: number;
+          occurred_at?: string;
+          occurred_on: string;
+          path: string;
+          utm_campaign?: string | null;
+          utm_content?: string | null;
+          utm_source?: string | null;
+          vp_session_id: string;
+        };
+        Update: {
+          id?: number;
+          occurred_at?: string;
+          occurred_on?: string;
+          path?: string;
+          utm_campaign?: string | null;
+          utm_content?: string | null;
+          utm_source?: string | null;
+          vp_session_id?: string;
+        };
+        Relationships: [];
+      };
+      youtube_videos: {
+        Row: {
+          bitly_id: string | null;
+          bitly_url: string | null;
+          clicks_synced_at: string | null;
+          created_at: string;
+          destination_path: string | null;
+          in_description: boolean;
+          published_at: string | null;
+          redirect_verified: boolean;
+          title: string;
+          updated_at: string;
+          utm_campaign: string;
+          video_id: string | null;
+          video_url: string;
+        };
+        Insert: {
+          bitly_id?: string | null;
+          bitly_url?: string | null;
+          clicks_synced_at?: string | null;
+          created_at?: string;
+          destination_path?: string | null;
+          in_description?: boolean;
+          published_at?: string | null;
+          redirect_verified?: boolean;
+          title: string;
+          updated_at?: string;
+          utm_campaign: string;
+          video_id?: string | null;
+          video_url: string;
+        };
+        Update: {
+          bitly_id?: string | null;
+          bitly_url?: string | null;
+          clicks_synced_at?: string | null;
+          created_at?: string;
+          destination_path?: string | null;
+          in_description?: boolean;
+          published_at?: string | null;
+          redirect_verified?: boolean;
+          title?: string;
+          updated_at?: string;
+          utm_campaign?: string;
+          video_id?: string | null;
+          video_url?: string;
         };
         Relationships: [];
       };

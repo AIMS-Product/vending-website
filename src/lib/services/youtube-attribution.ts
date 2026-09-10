@@ -1,0 +1,236 @@
+import "server-only";
+
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { Database } from "@/types/database";
+import { isInternalLead } from "@/lib/services/admin-analytics-internal";
+import {
+  ADMIN_ANALYTICS_RANGES,
+  DEFAULT_ADMIN_ANALYTICS_RANGE,
+  type AdminAnalyticsRangeKey,
+} from "@/lib/services/admin-analytics-range";
+import {
+  buildYouTubeAttribution,
+  type BitlyClickRow,
+  type PageViewRow,
+  type YouTubeAttributionRollup,
+  type YouTubeLeadRow,
+  type YouTubeVideoRow,
+} from "@/lib/services/youtube-attribution-rollup";
+
+type YouTubeAttributionClient = Pick<SupabaseClient<Database>, "from">;
+
+export type YouTubeAttribution = YouTubeAttributionRollup & {
+  range: {
+    key: AdminAnalyticsRangeKey;
+    label: string;
+    days: number;
+    startIso: string;
+    endIso: string;
+  };
+  includeInternal: boolean;
+  /** Internal/test leads filtered out, so the page's toggle can name the count. */
+  internalExcluded: number;
+};
+
+export class YouTubeAttributionServiceError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "YouTubeAttributionServiceError";
+  }
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const LEAD_BASE_FIELDS =
+  "id,created_at,email,full_name,utm_source,utm_campaign,utm_content,lifecycle_status,call_booked_at,metadata" as const;
+
+/**
+ * The outcome columns this slice's migration adds. Selected separately so a
+ * deploy that lands before the migration is run degrades to "outcomes not
+ * connected" instead of failing the whole lead read — the repo already carries
+ * one migration (`public_request_hits`) that shipped un-applied on purpose.
+ */
+const LEAD_OUTCOME_FIELDS =
+  "call_outcome,closed_won_at,closed_won_source" as const;
+
+/** Same ceiling and reasoning as the admin analytics lead read. */
+const MAX_LEAD_ROWS = 50_000;
+
+/**
+ * The YouTube tab's data.
+ *
+ * Three of the six funnel stages come from tables that may not exist yet
+ * (`bitly_link_clicks` and `lead_page_views` land with their own migration, and
+ * the Bitly sync needs a token). Each degrades to "not connected" rather than
+ * throwing or reporting zero, so the tab is useful from the first deploy and
+ * gets deeper as each integration is switched on.
+ *
+ * Leads are the exception: a lead read failure throws, because without leads
+ * there is nothing on the page.
+ */
+export async function getYouTubeAttribution(
+  input: {
+    range?: AdminAnalyticsRangeKey;
+    includeInternal?: boolean;
+    client?: YouTubeAttributionClient;
+    now?: Date;
+  } = {},
+): Promise<YouTubeAttribution> {
+  const client = input.client ?? createAdminClient();
+  const now = input.now ?? new Date();
+  const rangeKey = input.range ?? DEFAULT_ADMIN_ANALYTICS_RANGE;
+  const includeInternal = input.includeInternal ?? false;
+
+  const { label, days } = ADMIN_ANALYTICS_RANGES[rangeKey];
+  const end = now;
+  const start = new Date(end.getTime() - days * DAY_MS);
+  const startIso = start.toISOString();
+
+  const [leadRead, videos, clicks, pageViews] = await Promise.all([
+    fetchLeads(client, startIso),
+    fetchVideos(client),
+    fetchClicks(client, startIso),
+    fetchPageViews(client, startIso),
+  ]);
+
+  const leadRows = leadRead.rows;
+  const internalExcluded = leadRows.filter((lead) =>
+    isInternalLead(
+      lead.email,
+      (lead as { full_name?: string | null }).full_name ?? null,
+    ),
+  ).length;
+  const leads = includeInternal
+    ? leadRows
+    : leadRows.filter(
+        (lead) =>
+          !isInternalLead(
+            lead.email,
+            (lead as { full_name?: string | null }).full_name ?? null,
+          ),
+      );
+
+  return {
+    ...buildYouTubeAttribution({
+      leads,
+      videos: videos.rows,
+      clicks: clicks.rows,
+      pageViews: pageViews.rows,
+      clicksConnected: clicks.connected,
+      visitsConnected: pageViews.connected,
+      outcomesConnected: leadRead.outcomesConnected,
+    }),
+    range: {
+      key: rangeKey,
+      label,
+      days,
+      startIso,
+      endIso: end.toISOString(),
+    },
+    includeInternal,
+    internalExcluded,
+  };
+}
+
+async function fetchLeads(
+  client: YouTubeAttributionClient,
+  sinceIso: string,
+): Promise<{ rows: YouTubeLeadRow[]; outcomesConnected: boolean }> {
+  const withOutcomes = await selectLeads(
+    client,
+    sinceIso,
+    `${LEAD_BASE_FIELDS},${LEAD_OUTCOME_FIELDS}`,
+  );
+  if (withOutcomes) return { rows: withOutcomes, outcomesConnected: true };
+
+  const baseOnly = await selectLeads(client, sinceIso, LEAD_BASE_FIELDS);
+  if (baseOnly) return { rows: baseOnly, outcomesConnected: false };
+
+  throw new YouTubeAttributionServiceError(
+    "Could not load leads for YouTube attribution.",
+  );
+}
+
+async function selectLeads(
+  client: YouTubeAttributionClient,
+  sinceIso: string,
+  fields: string,
+): Promise<YouTubeLeadRow[] | null> {
+  try {
+    const { data, error } = await client
+      .from("lead_submissions")
+      .select(fields)
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: true })
+      .limit(MAX_LEAD_ROWS);
+    if (error) return null;
+    return (data ?? []) as unknown as YouTubeLeadRow[];
+  } catch {
+    return null;
+  }
+}
+
+type Fetched<T> = { rows: T[]; connected: boolean };
+
+async function fetchVideos(
+  client: YouTubeAttributionClient,
+): Promise<Fetched<YouTubeVideoRow>> {
+  return degradable(async () => {
+    const { data, error } = await client
+      .from("youtube_videos")
+      .select(
+        "utm_campaign,title,video_url,published_at,bitly_id,in_description",
+      );
+    if (error) return null;
+    return (data ?? []) as unknown as YouTubeVideoRow[];
+  });
+}
+
+async function fetchClicks(
+  client: YouTubeAttributionClient,
+  sinceIso: string,
+): Promise<Fetched<BitlyClickRow>> {
+  return degradable(async () => {
+    const { data, error } = await client
+      .from("bitly_link_clicks")
+      .select("utm_campaign,day,clicks")
+      .gte("day", sinceIso.slice(0, 10));
+    if (error) return null;
+    return (data ?? []) as unknown as BitlyClickRow[];
+  });
+}
+
+async function fetchPageViews(
+  client: YouTubeAttributionClient,
+  sinceIso: string,
+): Promise<Fetched<PageViewRow>> {
+  return degradable(async () => {
+    const { data, error } = await client
+      .from("lead_page_views")
+      .select("utm_campaign,occurred_at")
+      .gte("occurred_at", sinceIso);
+    if (error) return null;
+    return (data ?? []) as unknown as PageViewRow[];
+  });
+}
+
+/**
+ * Runs a read that is allowed to be missing.
+ *
+ * `connected: false` means the table or its data is not there yet — most often
+ * Postgres 42P01 before this slice's migration is applied. The rollup turns
+ * that into "not measured", which is the honest reading; an empty array with
+ * `connected: true` would mean "measured, and it was zero".
+ */
+async function degradable<T>(
+  read: () => Promise<T[] | null>,
+): Promise<Fetched<T>> {
+  try {
+    const rows = await read();
+    if (rows === null) return { rows: [], connected: false };
+    return { rows, connected: true };
+  } catch {
+    return { rows: [], connected: false };
+  }
+}
