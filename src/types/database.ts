@@ -242,6 +242,8 @@ export type Database = {
           close_sync_status: string | null;
           close_sync_synced_at: string | null;
           call_booked_at: string | null;
+          booked_by_setter: string | null;
+          entry_resource_tag: string | null;
           call_outcome: string | null;
           close_status_at: string | null;
           closed_won_at: string | null;
@@ -299,6 +301,8 @@ export type Database = {
           close_sync_status?: string | null;
           close_sync_synced_at?: string | null;
           call_booked_at?: string | null;
+          booked_by_setter?: string | null;
+          entry_resource_tag?: string | null;
           call_outcome?: string | null;
           close_status_at?: string | null;
           closed_won_at?: string | null;
@@ -356,6 +360,8 @@ export type Database = {
           close_sync_status?: string | null;
           close_sync_synced_at?: string | null;
           call_booked_at?: string | null;
+          booked_by_setter?: string | null;
+          entry_resource_tag?: string | null;
           call_outcome?: string | null;
           close_status_at?: string | null;
           closed_won_at?: string | null;

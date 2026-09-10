@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveBookingCredit } from "@/lib/chatbot/booking-credit";
 import {
   askedAboutCost,
   calendarWasShown,
@@ -78,22 +79,26 @@ export type ChatbotFunnelWindow = ChatbotFunnelStageCounts & {
   bookedRateOfCapturedPct: number;
   overallBookedRatePct: number;
   /**
-   * Same four counts, split by where the booking happened. Only trustworthy
-   * once `attributionSplitTrustworthy` is true — see resolveAttributionSource.
+   * `booked`, split by who got the person onto the calendar. BOOKING credit
+   * only: every one of these is a chatbot lead, and `booked` keeps crediting
+   * the chatbot for all of them. The three always add up to `booked`.
+   *
+   * Resolved by lib/chatbot/booking-credit.ts, the same rule the conversation
+   * page uses. `inChat` is only exact once `attributionSplitTrustworthy` is
+   * true; before that it leans on the Calendly event URI heuristic.
    */
-  bySource: {
-    inChat: ChatbotFunnelStageCounts;
-    assisted: ChatbotFunnelStageCounts;
+  bookedBy: {
+    /** Calendly echoed the chat calendar's own utm back: the chatbot booked it. */
+    inChat: number;
+    /** A setter called/texted and booked them after the chat. */
+    setter: number;
     /**
-     * Booked, but with no recorded attribution source.
-     *
-     * Most bookings reach us through Close's reconciler rather than the
-     * Calendly webhook (which cannot verify its signature in production), and
-     * those rows carry neither attribution_source nor booked_event_uri. Without
-     * this bucket inChat + assisted silently fails to add up to booked, and the
-     * split reads as if most calls simply did not happen.
+     * Booked outside the chat with no setter recorded in Close. Never folded
+     * into `inChat` -- that was the bug this split exists to fix.
      */
-    unrecorded: ChatbotFunnelStageCounts;
+    unknown: number;
+    /** `setter` broken down by setter name, most bookings first. */
+    setters: ChatbotRankedRow[];
   };
 };
 
@@ -152,7 +157,7 @@ export type ChatbotAnalytics = {
   };
   /**
    * The four-stage funnel (conversations -> engaged -> captured -> booked)
-   * over three windows, each also split by where the booking happened.
+   * over three windows, with booked split by who got them on the calendar.
    * Additive alongside `funnel30d`, which other surfaces (insights, digest)
    * already read and which keeps its original 3-stage shape unchanged.
    */
@@ -163,9 +168,9 @@ export type ChatbotAnalytics = {
   };
   /**
    * False until the attribution_source column has been read successfully at
-   * least once for this rollup. When false, every bySource count is a
-   * heuristic-only guess (or all zero) and the UI should say so rather than
-   * render a confident split.
+   * least once for this rollup. When false, `bookedBy.inChat` is a guess from
+   * the Calendly event URI and the UI should say so rather than render a
+   * confident split.
    */
   attributionSplitTrustworthy: boolean;
   /** Outcome breakdown for the last 7, 30 and 90 days. See ChatbotOutcomeWindow. */
@@ -236,11 +241,7 @@ function emptyFunnelWindow(days: number): ChatbotFunnelWindow {
     capturedRateOfEngagedPct: 0,
     bookedRateOfCapturedPct: 0,
     overallBookedRatePct: 0,
-    bySource: {
-      inChat: { ...emptyStage },
-      assisted: { ...emptyStage },
-      unrecorded: { ...emptyStage },
-    },
+    bookedBy: { inChat: 0, setter: 0, unknown: 0, setters: [] },
   };
 }
 
@@ -320,11 +321,18 @@ export async function getChatbotAnalytics(
       client,
       rows.map((row) => row.lead_submission_id),
     );
+    const setterByLead = await fetchSetterNames(
+      client,
+      rows
+        .filter((row) => isBooked(row, bookedLeadIds))
+        .map((row) => row.lead_submission_id),
+    );
     return buildAnalytics(
       rows,
       now,
       bookedLeadIds,
       attributionSplitTrustworthy,
+      setterByLead,
     );
   } catch (error) {
     console.warn("chatbot analytics load failed, returning empty rollup", {
@@ -451,11 +459,48 @@ export async function fetchBookedLeadIds(
 
 const LEAD_LOOKUP_CHUNK = 100;
 
+/**
+ * Close's setter name per booked lead, as mirrored by the booking reconciler
+ * into `lead_submissions.booked_by_setter`.
+ *
+ * Tolerant: a failed read, or a deploy ahead of 20260910200000_booking_credit,
+ * returns what it has. A lead with no name resolves to "booked outside the
+ * chat", never to the chatbot, so a missing name can only undercount setters.
+ */
+async function fetchSetterNames(
+  client: ChatbotAnalyticsClient,
+  candidateLeadIds: readonly (string | null | undefined)[],
+): Promise<ReadonlyMap<string, string>> {
+  const leadIds = Array.from(
+    new Set(candidateLeadIds.filter((id): id is string => Boolean(id))),
+  );
+  const names = new Map<string, string>();
+  for (let start = 0; start < leadIds.length; start += LEAD_LOOKUP_CHUNK) {
+    const { data, error } = await client
+      .from("lead_submissions")
+      .select("id, booked_by_setter")
+      .in("id", leadIds.slice(start, start + LEAD_LOOKUP_CHUNK))
+      .not("booked_by_setter", "is", null);
+    if (error) {
+      console.warn("chatbot analytics: setter name lookup failed", {
+        error: error.message,
+      });
+      return names;
+    }
+    for (const row of data ?? []) {
+      const name = row.booked_by_setter?.trim();
+      if (name) names.set(row.id, name);
+    }
+  }
+  return names;
+}
+
 function buildAnalytics(
   rows: ConversationRow[],
   now: Date,
   bookedLeadIds: ReadonlySet<string> = new Set(),
   attributionSplitTrustworthy = false,
+  setterByLead: ReadonlyMap<string, string> = new Map(),
 ): ChatbotAnalytics {
   const start = new Date(now.getTime() - WINDOW_DAYS * DAY_MS);
   const priorStart = new Date(start.getTime() - WINDOW_DAYS * DAY_MS);
@@ -506,9 +551,9 @@ function buildAnalytics(
     keywordFrequency: keywordFrequency(current),
     prospectDistributions: buildProspectDistributions(current),
     funnels: {
-      d7: buildFunnelWindow(7, rows, now, bookedLeadIds),
-      d30: buildFunnelWindow(30, rows, now, bookedLeadIds),
-      d90: buildFunnelWindow(90, rows, now, bookedLeadIds),
+      d7: buildFunnelWindow(7, rows, now, bookedLeadIds, setterByLead),
+      d30: buildFunnelWindow(30, rows, now, bookedLeadIds, setterByLead),
+      d90: buildFunnelWindow(90, rows, now, bookedLeadIds, setterByLead),
     },
     attributionSplitTrustworthy,
     outcomes: {
@@ -664,22 +709,42 @@ function buildFunnelStageCounts(
 }
 
 /**
- * Which side of the funnel a conversation's booking belongs to. The
- * attribution_source column (in_chat / email_match) wins when present; when
- * it is absent or unset on this row — pre-migration deploy, or a
- * conversation that predates the column — a booked call that still carries
- * a Calendly event URI was booked in-chat before the label existed, so it
- * counts there. Everything else can't be honestly classified and is left
- * out of the split entirely (neither bucket).
+ * The attribution stamp resolveBookingCredit reads. When the column is absent
+ * or unset on this row (pre-migration deploy, or a conversation that predates
+ * it), a booking that still carries a Calendly event URI was made in-chat
+ * before the label existed, so it counts there.
  */
-function resolveAttributionSource(
+function attributionSourceOf(
   row: ConversationRow,
-  bookedLeadIds: ReadonlySet<string>,
-): "in_chat" | "assisted" | null {
+): "in_chat" | "email_match" | null {
   if (row.attribution_source === "in_chat") return "in_chat";
-  if (row.attribution_source === "email_match") return "assisted";
-  if (isBooked(row, bookedLeadIds) && row.booked_event_uri) return "in_chat";
-  return null;
+  if (row.attribution_source === "email_match") return "email_match";
+  return row.booked_event_uri ? "in_chat" : null;
+}
+
+/** Booked calls in `rows`, by who got them onto the calendar. */
+function buildBookedBy(
+  rows: ConversationRow[],
+  bookedLeadIds: ReadonlySet<string>,
+  setterByLead: ReadonlyMap<string, string>,
+): ChatbotFunnelWindow["bookedBy"] {
+  const counts = { inChat: 0, setter: 0, unknown: 0 };
+  const bySetter = new Map<string, number>();
+  for (const row of rows) {
+    if (!isBooked(row, bookedLeadIds)) continue;
+    const credit = resolveBookingCredit({
+      attributionSource: attributionSourceOf(row),
+      bookedBySetter: row.lead_submission_id
+        ? (setterByLead.get(row.lead_submission_id) ?? null)
+        : null,
+    });
+    if (credit.kind === "in_chat") counts.inChat += 1;
+    else if (credit.kind === "setter") {
+      counts.setter += 1;
+      bySetter.set(credit.setter, (bySetter.get(credit.setter) ?? 0) + 1);
+    } else counts.unknown += 1;
+  }
+  return { ...counts, setters: rankTop(bySetter, TOP_N) };
 }
 
 function buildFunnelWindow(
@@ -687,19 +752,10 @@ function buildFunnelWindow(
   rows: ConversationRow[],
   now: Date,
   bookedLeadIds: ReadonlySet<string>,
+  setterByLead: ReadonlyMap<string, string>,
 ): ChatbotFunnelWindow {
   const start = new Date(now.getTime() - days * DAY_MS);
   const windowRows = rows.filter((row) => inWindow(row.created_at, start, now));
-
-  const inChatRows: ConversationRow[] = [];
-  const assistedRows: ConversationRow[] = [];
-  const unrecordedRows: ConversationRow[] = [];
-  for (const row of windowRows) {
-    const source = resolveAttributionSource(row, bookedLeadIds);
-    if (source === "in_chat") inChatRows.push(row);
-    else if (source === "assisted") assistedRows.push(row);
-    else if (isBooked(row, bookedLeadIds)) unrecordedRows.push(row);
-  }
 
   const stage = buildFunnelStageCounts(windowRows, bookedLeadIds);
   return {
@@ -714,11 +770,7 @@ function buildFunnelWindow(
     capturedRateOfEngagedPct: ratePct(stage.captured, stage.engaged),
     bookedRateOfCapturedPct: ratePct(stage.booked, stage.captured),
     overallBookedRatePct: ratePct(stage.booked, stage.conversations),
-    bySource: {
-      inChat: buildFunnelStageCounts(inChatRows, bookedLeadIds),
-      assisted: buildFunnelStageCounts(assistedRows, bookedLeadIds),
-      unrecorded: buildFunnelStageCounts(unrecordedRows, bookedLeadIds),
-    },
+    bookedBy: buildBookedBy(windowRows, bookedLeadIds, setterByLead),
   };
 }
 

@@ -24,13 +24,35 @@ type StaleLead = {
 
 function buildClient(
   rows: StaleLead[],
-  options: { updateError?: unknown; missingOutcomeColumns?: boolean } = {},
+  options: {
+    updateError?: unknown;
+    missingOutcomeColumns?: boolean;
+    missingCreditColumns?: boolean;
+  } = {},
 ) {
   const updates: Array<{ id: string; patch: Record<string, unknown> }> = [];
   const selected: string[] = [];
   const { updateError = null } = options;
 
   const select = vi.fn((fields: string) => {
+    // The once-per-run credit column probe: `.select(...).limit(1)`. Kept out
+    // of `selected`, which tracks the claim query's fallback tiers.
+    if (fields.includes("booked_by_setter")) {
+      return {
+        limit: vi.fn().mockResolvedValue(
+          options.missingCreditColumns
+            ? {
+                data: null,
+                error: {
+                  code: "42703",
+                  message:
+                    "column lead_submissions.booked_by_setter does not exist",
+                },
+              }
+            : { data: [], error: null },
+        ),
+      };
+    }
     selected.push(fields);
     const missing =
       options.missingOutcomeColumns === true &&
@@ -121,9 +143,80 @@ describe("reconcileCloseBookings", () => {
           // The label differs from the row's previous (undefined) status, so
           // this is when that status began.
           close_status_at: NOW.toISOString(),
+          // Close has neither credit field on this lead, so both are cleared.
+          booked_by_setter: null,
+          entry_resource_tag: null,
         },
       },
     ]);
+  });
+
+  it("mirrors who booked the call separately from what brought the lead in", async () => {
+    // Gerald Winslow: chatbot first touch, Connor George called and booked.
+    const { client, updates } = buildClient([
+      { id: "lead-gw", close_lead_id: "close_gw" },
+    ]);
+    const closeClient = buildCloseClient({
+      close_gw: {
+        status_label: "☎️ Call Booked",
+        custom: {
+          "First Call Booked Date": "2026-09-10",
+          "Reactivation - Setter Name": " Connor George ",
+          "Resource Tag": "chatbot",
+        },
+      },
+    });
+
+    await reconcileCloseBookings({ client, closeClient, now: NOW });
+
+    expect(updates[0].patch).toMatchObject({
+      call_booked_at: "2026-09-10",
+      booked_by_setter: "Connor George",
+      entry_resource_tag: "chatbot",
+    });
+  });
+
+  it("drops a non-text setter value rather than writing a stringified list", async () => {
+    const { client, updates } = buildClient([
+      { id: "lead-8", close_lead_id: "close_8" },
+    ]);
+    const closeClient = buildCloseClient({
+      close_8: {
+        status_label: "☎️ Call Booked",
+        custom: { "Reactivation - Setter Name": ["Connor George"] },
+      },
+    });
+
+    await reconcileCloseBookings({ client, closeClient, now: NOW });
+
+    expect(updates[0].patch.booked_by_setter).toBeNull();
+  });
+
+  it("keeps mirroring bookings when the credit columns are not migrated yet", async () => {
+    const { client, updates } = buildClient(
+      [{ id: "lead-9", close_lead_id: "close_9" }],
+      { missingCreditColumns: true },
+    );
+    const closeClient = buildCloseClient({
+      close_9: {
+        status_label: "☎️ Call Booked",
+        custom: {
+          "First Call Booked Date": "2026-08-21",
+          "Reactivation - Setter Name": "Connor George",
+        },
+      },
+    });
+
+    const result = await reconcileCloseBookings({
+      client,
+      closeClient,
+      now: NOW,
+    });
+
+    expect(result).toMatchObject({ scanned: 1, updated: 1, booked: 1 });
+    expect(updates[0].patch).toMatchObject({ call_booked_at: "2026-08-21" });
+    expect(updates[0].patch).not.toHaveProperty("booked_by_setter");
+    expect(updates[0].patch).not.toHaveProperty("entry_resource_tag");
   });
 
   it("records a lead that never booked as null rather than skipping it", async () => {
@@ -213,7 +306,7 @@ describe("reconcileCloseBookings", () => {
   it("keeps mirroring bookings when the outcome columns are not migrated yet", async () => {
     const { client, updates, selected } = buildClient(
       [{ id: "lead-7", close_lead_id: "close_7" }],
-      { missingOutcomeColumns: true },
+      { missingOutcomeColumns: true, missingCreditColumns: true },
     );
     const closeClient = buildCloseClient({
       close_7: {

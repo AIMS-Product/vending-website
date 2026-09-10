@@ -94,6 +94,8 @@ function makeLead(overrides: Partial<LeadRow> = {}): LeadRow {
     close_sync_last_attempted_at: "2026-06-17T09:00:00.000Z",
     close_sync_synced_at: null,
     call_booked_at: null,
+    booked_by_setter: null,
+    entry_resource_tag: null,
     call_outcome: null,
     close_status_at: null,
     closed_won_at: null,
@@ -386,6 +388,8 @@ describe("adminListLeads", () => {
         makeLead({
           id: "no-call",
           call_booked_at: null,
+          booked_by_setter: null,
+          entry_resource_tag: null,
           call_reconciled_at: "2026-08-20T12:00:00.000Z",
         }),
         // Never reconciled — genuinely unknown, so it belongs in neither

@@ -89,6 +89,8 @@ function makeLead(overrides: Partial<LeadRow> = {}): LeadRow {
     close_sync_last_attempted_at: "2026-06-01T00:00:00.000Z",
     close_sync_synced_at: "2026-06-01T00:01:00.000Z",
     call_booked_at: null,
+    booked_by_setter: null,
+    entry_resource_tag: null,
     call_outcome: null,
     close_status_at: null,
     closed_won_at: null,

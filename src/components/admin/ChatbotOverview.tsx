@@ -61,7 +61,11 @@ export function ChatbotOverview({
       <div className="grid gap-4 xl:grid-cols-12">
         <div className="grid gap-4 xl:col-span-8">
           <TrendCard analytics={analytics} />
-          <JourneyCard funnel={funnel} outcomes={outcomes} />
+          <JourneyCard
+            funnel={funnel}
+            outcomes={outcomes}
+            splitExact={analytics.attributionSplitTrustworthy}
+          />
         </div>
         <div className="grid gap-4 xl:col-span-4">
           <NeedsYouCard kpis={kpis} />
@@ -291,9 +295,11 @@ function TrendCard({ analytics }: { analytics: ChatbotAnalytics }) {
 function JourneyCard({
   funnel,
   outcomes,
+  splitExact,
 }: {
   funnel: ChatbotFunnelWindow;
   outcomes: ChatbotOutcomeWindow;
+  splitExact: boolean;
 }) {
   const total = Math.max(1, funnel.conversations);
   const stages = [
@@ -381,6 +387,11 @@ function JourneyCard({
           );
         })}
       </ol>
+      <BookedByNote
+        booked={funnel.booked}
+        bookedBy={funnel.bookedBy}
+        exact={splitExact}
+      />
 
       <div className="border-ui-line mt-5 grid gap-2 border-t pt-4 sm:grid-cols-3">
         {leaks.map((leak) => (
@@ -406,6 +417,37 @@ function JourneyCard({
         ))}
       </div>
     </section>
+  );
+}
+
+/**
+ * Who got the "Booked a call" people onto the calendar. The chatbot sourced
+ * every one of them and keeps that credit; this line only splits the booking,
+ * so a setter's follow-up call never reads as the chatbot's booking.
+ */
+function BookedByNote({
+  booked,
+  bookedBy,
+  exact,
+}: {
+  booked: number;
+  bookedBy: ChatbotFunnelWindow["bookedBy"];
+  exact: boolean;
+}) {
+  if (booked === 0) return null;
+  const names = bookedBy.setters
+    .map((row) => `${row.label} ${row.count}`)
+    .join(", ");
+  return (
+    <p className="text-ui-text-muted mt-3 text-xs">
+      All {booked} came in through the chatbot. {bookedBy.inChat} booked in the
+      chat{exact ? "" : " (estimated)"}, {bookedBy.setter} booked by a setter
+      after chatting{names ? ` (${names})` : ""}
+      {bookedBy.unknown
+        ? `, ${bookedBy.unknown} booked elsewhere with no setter recorded`
+        : ""}
+      .
+    </p>
   );
 }
 
