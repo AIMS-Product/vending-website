@@ -206,11 +206,19 @@ async function applyMatchedAttribution(
 
   const applied = await updateTolerantly(client, conversationId, update);
 
-  // On a booking, drop a confirmation card into the transcript so a visitor
-  // still sitting in the chat sees it land. Skipped when one is already there
-  // (Calendly redelivers webhooks) and skipped entirely on a cancellation --
-  // rewriting the transcript to say "cancelled" is not this system's job.
-  if (!canceled) {
+  // On a booking made FROM THE CHAT, drop a confirmation card into the
+  // transcript so a visitor still sitting in the chat sees it land. Skipped
+  // when one is already there (Calendly redelivers webhooks) and skipped
+  // entirely on a cancellation -- rewriting the transcript to say "cancelled"
+  // is not this system's job.
+  //
+  // Never appended on an `email_match`. That booking happened somewhere else,
+  // usually because a setter called and booked it, and the visitor was not in
+  // the chat to receive anything. Writing "Booked. Check your email for the
+  // calendar invite." into a transcript that ended days earlier put words in
+  // the assistant's mouth it never said, and made every setter-booked call
+  // read as if the chatbot had closed it.
+  if (!canceled && source === "in_chat") {
     const messages = toChatbotMessages(existing.messages);
     const alreadyConfirmed = messages.some(
       (message) =>

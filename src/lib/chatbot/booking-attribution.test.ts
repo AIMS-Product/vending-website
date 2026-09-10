@@ -325,6 +325,22 @@ describe("applyChatbotBookingAttribution", () => {
       expect(updates[0].call_booked_at).toEqual(expect.any(String));
     });
 
+    it("appends no confirmation card -- the visitor booked somewhere else", async () => {
+      // The transcript must not gain a line the assistant never sent. An
+      // email-matched booking is almost always a setter's call, days after
+      // the chat ended, and a "Booked. Check your email..." card there made
+      // every one of those read as a chatbot booking.
+      const { appended, client } = fakeClient({
+        emailMatches: [
+          { id: NEWEST_EMAIL_MATCH_ID, created_at: "2026-08-18T00:00:00.000Z" },
+        ],
+      });
+
+      await applyChatbotBookingAttribution(client, makeEmailOnlyEvent());
+
+      expect(appended).toHaveLength(0);
+    });
+
     it("does not match a conversation created outside the window", async () => {
       // inviteeCreatedAt anchors the booking at 2026-08-20T09:00:00Z; this
       // conversation is well over 30 days before that.

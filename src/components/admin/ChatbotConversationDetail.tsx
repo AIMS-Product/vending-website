@@ -20,6 +20,7 @@ import {
   adminSectionTitleClass,
   adminTextareaClass,
 } from "@/components/admin/AdminUi";
+import type { BookingCredit } from "@/lib/chatbot/booking-credit";
 import { CHATBOT_FLAGS, type ChatbotFlag } from "@/lib/chatbot/flags";
 import { parseChatLinks } from "@/lib/chatbot/parse-chat-links";
 import type { AdminChatbotConversationDetail } from "@/lib/services/chatbot-admin";
@@ -79,12 +80,15 @@ function MetaChips({
       <div className="flex flex-wrap items-center gap-2">
         <AdminStatusBadge status={conversation.status} />
         {conversation.booking ? (
-          <span className="bg-ui-ok-fill text-ui-ok-ink rounded-full px-2.5 py-0.5 text-xs font-medium">
-            Booked {formatDateTime(conversation.booking.bookedAt)}
-            {conversation.booking.hostName
-              ? ` with ${conversation.booking.hostName}`
-              : ""}
-          </span>
+          <>
+            <span className="bg-ui-ok-fill text-ui-ok-ink rounded-full px-2.5 py-0.5 text-xs font-medium">
+              Call booked {formatDateTime(conversation.booking.bookedAt)}
+              {conversation.booking.hostName
+                ? ` with ${conversation.booking.hostName}`
+                : ""}
+            </span>
+            <BookingCreditChip credit={conversation.booking.credit} />
+          </>
         ) : null}
         {conversation.handedOffAt ? (
           <span className="bg-ui-line text-ui-text-muted rounded-full px-2.5 py-0.5 text-xs font-medium">
@@ -92,6 +96,7 @@ function MetaChips({
           </span>
         ) : null}
       </div>
+      <BookingCreditNote conversation={conversation} />
       <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetaItem
           label="First seen"
@@ -126,6 +131,57 @@ function MetaChips({
         </p>
       ) : null}
     </section>
+  );
+}
+
+/**
+ * Booking credit, as its own chip beside the booked-call fact.
+ *
+ * Two separate claims that used to be one: the chatbot captured this person
+ * (true of every conversation on this page), and someone got them onto the
+ * calendar. Only an `in_chat` booking is the chatbot's, and it is the only one
+ * that gets the same green as the booked-call chip -- a setter's booking reads
+ * as neutral here so the page never dresses it up as a chatbot conversion.
+ */
+function BookingCreditChip({ credit }: { credit: BookingCredit }) {
+  const tone =
+    credit.kind === "in_chat"
+      ? "bg-ui-ok-fill text-ui-ok-ink"
+      : "bg-ui-line text-ui-text-muted";
+  return (
+    <>
+      <span
+        className={`${tone} rounded-full px-2.5 py-0.5 text-xs font-medium`}
+      >
+        {credit.label}
+      </span>
+      {credit.kind === "in_chat" && credit.setter ? (
+        <span className="bg-ui-line text-ui-text-muted rounded-full px-2.5 py-0.5 text-xs font-medium">
+          Setter on lead: {credit.setter}
+        </span>
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * The sentence that answers "so did the chatbot book this or not?" without
+ * making anyone cross-reference the CRM. Only shown when the answer is no.
+ */
+function BookingCreditNote({
+  conversation,
+}: {
+  conversation: AdminChatbotConversationDetail;
+}) {
+  const credit = conversation.booking?.credit;
+  if (!credit || credit.kind === "in_chat") return null;
+  return (
+    <p className="text-ui-text-muted mt-3 text-sm">
+      Chatbot captured this lead {formatDateTime(conversation.createdAt)}.
+      {credit.kind === "setter"
+        ? ` ${credit.setter} booked the call, outside the chat.`
+        : " The call was booked outside the chat, and no setter is recorded on the lead."}
+    </p>
   );
 }
 
@@ -558,6 +614,15 @@ function BookingStamp({
             ? "recorded in Close; consultant not on file"
             : "consultant not on the Calendly record"}
       </span>
+      {/* This stamp sits under the transcript, so without this it reads as
+          the chat's own booking even when a setter made it days later. */}
+      {booking.credit.kind === "setter" ? (
+        <span className="text-ui-text-muted">
+          · set by {booking.credit.setter}, outside the chat
+        </span>
+      ) : booking.credit.kind === "unknown" ? (
+        <span className="text-ui-text-muted">· booked outside the chat</span>
+      ) : null}
     </div>
   );
 }

@@ -37,10 +37,13 @@ function fakeClient(options: {
   rows?: FakeRow[];
   bookedLeadIds?: string[];
   missingColumns?: string[];
+  /** lead id -> Close "Reactivation - Setter Name", as the reconciler mirrors it. */
+  setters?: Record<string, string>;
 }) {
   const rows = options.rows ?? [];
   const bookedLeadIds = new Set(options.bookedLeadIds ?? []);
   const missingColumns = options.missingColumns ?? [];
+  const setters = options.setters ?? {};
 
   function conversationsQuery(fields: string) {
     const requested = fields.split(",").map((f) => f.trim());
@@ -62,11 +65,19 @@ function fakeClient(options: {
     return builder;
   }
 
-  function leadSubmissionsQuery() {
-    const result = {
-      data: Array.from(bookedLeadIds).map((id) => ({ id })),
-      error: null,
-    };
+  function leadSubmissionsQuery(fields: string) {
+    const result = fields.includes("booked_by_setter")
+      ? {
+          data: Object.entries(setters).map(([id, name]) => ({
+            id,
+            booked_by_setter: name,
+          })),
+          error: null,
+        }
+      : {
+          data: Array.from(bookedLeadIds).map((id) => ({ id })),
+          error: null,
+        };
     const builder = {
       in: () => builder,
       not: () => builder,
@@ -81,7 +92,7 @@ function fakeClient(options: {
         return { select: (fields: string) => conversationsQuery(fields) };
       }
       if (table === "lead_submissions") {
-        return { select: () => leadSubmissionsQuery() };
+        return { select: (fields: string) => leadSubmissionsQuery(fields) };
       }
       throw new Error(`unexpected table ${table}`);
     },
@@ -161,7 +172,7 @@ describe("getChatbotAnalytics funnels", () => {
     expect(analytics.funnels.d90.conversations).toBe(3);
   });
 
-  it("splits booked-call attribution into in-chat vs assisted when the column is present", async () => {
+  it("splits booked calls by who booked them, while the chatbot keeps sourcing credit for all", async () => {
     const rows: FakeRow[] = [
       {
         id: "in-chat",
@@ -173,11 +184,30 @@ describe("getChatbotAnalytics funnels", () => {
         attribution_source: "in_chat",
       },
       {
-        id: "assisted",
-        created_at: daysAgo(1),
+        // Gerald Winslow: chatted, did not book, Connor George called and
+        // booked him days later. The email match is the only thing that ties
+        // the booking back to this conversation.
+        id: "gerald",
+        created_at: daysAgo(4),
+        message_count: 6,
+        captured_email: "gw@example.com",
+        lead_submission_id: "lead-gw",
+        attribution_source: "email_match",
+      },
+      {
+        // Booked via Close reconciliation only, no stamp at all.
+        id: "close-only",
+        created_at: daysAgo(2),
         message_count: 4,
-        captured_email: "y@example.com",
-        lead_submission_id: "lead-y",
+        captured_email: "p@example.com",
+        lead_submission_id: "lead-p",
+      },
+      {
+        id: "no-setter",
+        created_at: daysAgo(2),
+        message_count: 4,
+        captured_email: "u@example.com",
+        lead_submission_id: "lead-u",
         attribution_source: "email_match",
       },
       {
@@ -188,18 +218,27 @@ describe("getChatbotAnalytics funnels", () => {
     ];
 
     const analytics = await getChatbotAnalytics({
-      client: fakeClient({ rows, bookedLeadIds: ["lead-y"] }),
+      client: fakeClient({
+        rows,
+        bookedLeadIds: ["lead-gw", "lead-p", "lead-u"],
+        setters: { "lead-gw": "Connor George", "lead-p": "Pearl Sathekge" },
+      }),
       now: () => NOW,
     });
 
     expect(analytics.attributionSplitTrustworthy).toBe(true);
     const d30 = analytics.funnels.d30;
-    expect(d30.bySource.inChat.booked).toBe(1);
-    expect(d30.bySource.assisted.booked).toBe(1);
-    // The unattributed, unbooked row lands in neither bucket.
-    expect(
-      d30.bySource.inChat.conversations + d30.bySource.assisted.conversations,
-    ).toBe(2);
+    // Sourcing credit: all four booked calls came from chatbot conversations.
+    expect(d30.booked).toBe(4);
+    expect(d30.bookedBy).toEqual({
+      inChat: 1,
+      setter: 2,
+      unknown: 1,
+      setters: [
+        { label: "Connor George", count: 1 },
+        { label: "Pearl Sathekge", count: 1 },
+      ],
+    });
   });
 
   it("falls back to a heuristic split and marks it untrustworthy when attribution_source is missing", async () => {
@@ -239,9 +278,9 @@ describe("getChatbotAnalytics funnels", () => {
     expect(d30.conversations).toBe(2);
     expect(d30.booked).toBe(2);
     // Legacy heuristic: a booked call with a Calendly event URI counts as
-    // in-chat even with no attribution_source column at all.
-    expect(d30.bySource.inChat.booked).toBe(1);
-    expect(d30.bySource.assisted.booked).toBe(0);
+    // in-chat even with no attribution_source column at all. The other has no
+    // URI and no setter, so it is unknown -- never the chatbot's booking.
+    expect(d30.bookedBy).toMatchObject({ inChat: 1, setter: 0, unknown: 1 });
   });
 
   it("degrades all the way to the pre-v2 shape when call_booked_at is also missing", async () => {

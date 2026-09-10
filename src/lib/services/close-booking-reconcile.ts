@@ -19,6 +19,25 @@ export const CLOSE_LEAD_MISSING = "close_lead_missing";
 const FIRST_CALL_BOOKED_FIELD = "First Call Booked Date";
 
 /**
+ * Close's lead custom field naming the setter who got this lead onto the
+ * calendar -- by call, SMS or voicemail drop, never by the chat widget.
+ *
+ * Setters and the site chatbot share one round-robin Lane 2 calendar link, so
+ * the booking URL itself carries nothing that could tell them apart. This
+ * field, which the reactivation workflow already fills in, is the only record
+ * of who did the work.
+ */
+const SETTER_NAME_FIELD = "Reactivation - Setter Name";
+
+/**
+ * Close's lead custom field for how the lead entered the system: `chatbot`,
+ * `website-application`, `lead-magnet`, `webinar`, ... Entry credit only. A
+ * lead tagged `chatbot` that a setter later booked keeps this tag AND gets a
+ * setter name; the two never overwrite each other.
+ */
+const RESOURCE_TAG_FIELD = "Resource Tag";
+
+/**
  * How many leads one run may check. The cron fires every 2 minutes, so this
  * drains a 500-lead backlog in well under an hour while leaving Close API
  * headroom for the lead sync that shares the same key and the same run.
@@ -112,6 +131,10 @@ export async function reconcileCloseBookings(
   const outcomesConnected = claimed.outcomesConnected;
   if (rows.length === 0) return empty;
 
+  // Probed once per run, not per row: a missing credit column would otherwise
+  // fail all 60 updates in the batch and the whole booking mirror with them.
+  const creditConnected = await creditColumnsConnected(client);
+
   const result: ReconcileBookingsResult = { ...empty, scanned: rows.length };
   const reconciledAt = now.toISOString();
   let cursor = 0;
@@ -129,6 +152,7 @@ export async function reconcileCloseBookings(
               call_status: lead.status_label?.trim() || null,
               call_reconciled_at: reconciledAt,
               ...(outcomesConnected ? outcomeUpdate(row, lead, now) : null),
+              ...(creditConnected ? creditUpdate(lead) : null),
             }
           : {
               // Leave call_booked_at untouched: a lead deleted in Close today
@@ -406,4 +430,55 @@ function parseBookedDate(custom: Record<string, unknown> | null | undefined) {
   if (typeof raw !== "string") return null;
   const trimmed = raw.trim();
   return /^\d{4}-\d{2}-\d{2}$/.test(trimmed) ? trimmed : null;
+}
+
+/**
+ * Mirrors Close's two credit fields onto the lead: who booked the call, and
+ * what brought the person in.
+ *
+ * Written on every pass rather than only when newly set, so a setter name
+ * corrected in Close (the wrong setter credited, a lead reassigned) flows
+ * through instead of being frozen at whatever the first pass saw. Both are
+ * cleared when Close clears them, for the same reason.
+ */
+function creditUpdate(lead: { custom?: Record<string, unknown> | null }): {
+  booked_by_setter: string | null;
+  entry_resource_tag: string | null;
+} {
+  return {
+    booked_by_setter: customText(lead.custom, SETTER_NAME_FIELD),
+    entry_resource_tag: customText(lead.custom, RESOURCE_TAG_FIELD),
+  };
+}
+
+/**
+ * One text custom field, by name. `getLead` requests `_fields=...,custom`,
+ * which Close returns keyed by field NAME rather than by `cf_` id -- same
+ * shape parseBookedDate above reads.
+ *
+ * Non-string values (a choices field that came back as a list, a number) are
+ * dropped rather than coerced: a stringified array is worse than no credit.
+ */
+function customText(
+  custom: Record<string, unknown> | null | undefined,
+  field: string,
+): string | null {
+  const raw = custom?.[field];
+  if (typeof raw !== "string") return null;
+  return raw.trim() || null;
+}
+
+/**
+ * Whether `20260910200000_booking_credit.sql` has been applied. Migrations here
+ * ship ahead of being applied by hand, and the credit columns are additive
+ * polish -- losing the whole booking mirror over them would be the regression.
+ */
+async function creditColumnsConnected(
+  client: ReconcileClient,
+): Promise<boolean> {
+  const { error } = await client
+    .from("lead_submissions")
+    .select("booked_by_setter,entry_resource_tag")
+    .limit(1);
+  return !error;
 }

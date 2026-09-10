@@ -22,6 +22,10 @@ export class ChatbotAdminError extends Error {
 
 import { fetchBookedLeadIds } from "@/lib/chatbot/analytics";
 import {
+  resolveBookingCredit,
+  type BookingCredit,
+} from "@/lib/chatbot/booking-credit";
+import {
   askedAboutCost,
   deriveConversationOutcome,
   type ChatbotConversationOutcome,
@@ -345,6 +349,10 @@ export type AdminChatbotLinkedLead = {
   phone: string | null;
   status: string;
   closeSyncStatus: string | null;
+  /** Close's "Reactivation - Setter Name", mirrored by the booking reconciler. */
+  bookedBySetter: string | null;
+  /** Close's "Resource Tag" -- how this person entered the system. */
+  entryResourceTag: string | null;
 } | null;
 
 /** The call this chat produced, for the stamp at the foot of the transcript. */
@@ -357,6 +365,12 @@ export type AdminChatbotBooking = {
   /** The consultant Calendly assigned. Null when the record never said. */
   hostName: string | null;
   source: "calendly" | "close";
+  /**
+   * Who gets BOOKING credit -- resolved, not guessed. See
+   * lib/chatbot/booking-credit.ts. Kept separate from the chatbot's entry
+   * credit, which every conversation on this page has by definition.
+   */
+  credit: BookingCredit;
 };
 
 /** Delivery receipt for the hand-off email, shown at the foot of the transcript. */
@@ -410,14 +424,27 @@ export async function adminGetConversationDetail(
     throw new ChatbotAdminError("Could not load this conversation's flags.");
   }
 
-  const [linkedLead, booking] = await Promise.all([
+  const [linkedLead, booking, attributionSource] = await Promise.all([
     fetchLinkedLead(client, conversation.lead_submission_id),
     fetchConversationBooking(client, {
       conversationId: conversation.id,
       leadSubmissionId: conversation.lead_submission_id,
       callBookedAt: conversation.call_booked_at ?? null,
     }),
+    fetchAttributionSource(client, conversation.id),
   ]);
+
+  // Resolved here rather than in the component so both the badge and anything
+  // that reads this detail later agree on one answer.
+  const bookingWithCredit: AdminChatbotBooking | null = booking
+    ? {
+        ...booking,
+        credit: resolveBookingCredit({
+          attributionSource,
+          bookedBySetter: linkedLead?.bookedBySetter ?? null,
+        }),
+      }
+    : null;
 
   return {
     id: conversation.id,
@@ -448,7 +475,7 @@ export async function adminGetConversationDetail(
       conversation.prospect_profile,
     ),
     linkedLead,
-    booking,
+    booking: bookingWithCredit,
     handoffEmail: conversation.handoff_emailed_at
       ? {
           sentAt: conversation.handoff_emailed_at,
@@ -473,7 +500,9 @@ async function fetchConversationBooking(
     leadSubmissionId: string | null | undefined;
     callBookedAt: string | null;
   },
-): Promise<AdminChatbotBooking | null> {
+  // Credit is resolved by the caller, which is the only place that has both
+  // the conversation's attribution stamp and the lead's setter name.
+): Promise<Omit<AdminChatbotBooking, "credit"> | null> {
   const match = [
     `utm_content.eq.${input.conversationId}`,
     input.leadSubmissionId
@@ -756,17 +785,41 @@ async function fetchFlagsFor(
   return byConversation;
 }
 
+const LINKED_LEAD_FIELDS =
+  "id, full_name, email, phone, status, close_sync_status, booked_by_setter, entry_resource_tag" as const;
+
+/** One column set back: before 20260910200000_booking_credit.sql is applied. */
+const LINKED_LEAD_FIELDS_NO_CREDIT =
+  "id, full_name, email, phone, status, close_sync_status" as const;
+
 async function fetchLinkedLead(
   client: ChatbotAdminClient,
   leadSubmissionId: string | null,
 ): Promise<AdminChatbotLinkedLead> {
   if (!leadSubmissionId) return null;
-  const { data, error } = await client
+
+  const full = await client
     .from("lead_submissions")
-    .select("id, full_name, email, phone, status, close_sync_status")
+    .select(LINKED_LEAD_FIELDS)
     .eq("id", leadSubmissionId)
     .maybeSingle();
+
+  // Same tolerant-fetch shape as analytics.ts: the credit columns ship ahead
+  // of the migration being applied by hand, and losing the whole linked-lead
+  // panel over two label columns would be the worse failure.
+  const { data, error } = full.error
+    ? await client
+        .from("lead_submissions")
+        .select(LINKED_LEAD_FIELDS_NO_CREDIT)
+        .eq("id", leadSubmissionId)
+        .maybeSingle()
+    : full;
+
   if (error || !data) return null;
+  const credit = data as typeof data & {
+    booked_by_setter?: string | null;
+    entry_resource_tag?: string | null;
+  };
   return {
     id: data.id,
     fullName: data.full_name,
@@ -774,7 +827,29 @@ async function fetchLinkedLead(
     phone: data.phone,
     status: data.status,
     closeSyncStatus: data.close_sync_status,
+    bookedBySetter: credit.booked_by_setter ?? null,
+    entryResourceTag: credit.entry_resource_tag ?? null,
   };
+}
+
+/**
+ * The conversation's own attribution stamp, read on its own rather than added
+ * to the detail select above -- that select throws on error, and this column
+ * ships in a hand-applied migration. Unreadable reads as null, which
+ * resolveBookingCredit treats as "unknown", never as an in-chat booking.
+ */
+async function fetchAttributionSource(
+  client: ChatbotAdminClient,
+  conversationId: string,
+): Promise<"in_chat" | "email_match" | null> {
+  const { data, error } = await client
+    .from("chatbot_conversations")
+    .select("attribution_source")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (error || !data) return null;
+  const value = data.attribution_source;
+  return value === "in_chat" || value === "email_match" ? value : null;
 }
 
 function normalizeMessages(messages: Json): AdminChatbotMessage[] {
