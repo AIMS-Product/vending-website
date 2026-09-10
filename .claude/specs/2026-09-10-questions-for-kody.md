@@ -44,10 +44,15 @@ Nothing below blocks slice 1; the ones marked BLOCKING stop a later slice.
 
 ## Close CRM — BLOCKING slice 2
 
-9. When a deal is won, does Close get an Opportunity record (with a value and a
-   won date), or is it only the lead status label `🏆 Closed / Won`?
-   This decides whether the 50 leads already marked won can be dated
-   retroactively, or whether time-to-close only starts counting from now.
+9. ~~When a deal is won, does Close get an Opportunity record (with a value and
+   a won date), or is it only the lead status label `🏆 Closed / Won`?~~
+   **ANSWERED 2026-09-10 by read-only probe — no need to ask Kody.**
+   Close DOES create Opportunities. 12 of 12 sampled won leads carry one (one
+   carries two), all 13 have `status_type: "won"`, a real `date_won` and a
+   value, and none is missing `status_type`. Time-to-close CAN be backfilled
+   retroactively. Re-run with `node scripts/probe-close-opportunities.mjs`.
+   One sampled deal was won 2026-03-13, months before lead capture began on
+   2026-07-06 — a returning lead, correctly excluded as a negative duration.
 10. Is there anything in Close that records a call was actually HELD? Today the
     only signal is the absence of `👻 No Show` / `🔻 Canceled`, so "attended" is
     a subtraction rather than something we observed. If a field or activity

@@ -51,9 +51,21 @@ type LeadRow = {
   close_lead_id: string | null;
   /** Previous label, so a status CHANGE can be dated rather than re-stamped. */
   call_status: string | null;
-  closed_won_at: string | null;
-  closed_won_source: string | null;
+  closed_won_at?: string | null;
+  closed_won_source?: string | null;
 };
+
+/** Columns that predate this slice, so this select always works. */
+const CLAIM_BASE_FIELDS = "id,close_lead_id,call_status" as const;
+
+/**
+ * Columns added by `20260910120000_youtube_attribution.sql`, which ships
+ * un-applied like `public_request_hits` before it. Selected separately so a
+ * deploy that lands ahead of the migration keeps mirroring bookings instead of
+ * erroring on every row -- `call_booked_at` / `call_status` feed the "Booked"
+ * number on four pre-existing analytics tabs.
+ */
+const CLAIM_OUTCOME_FIELDS = "closed_won_at,closed_won_source" as const;
 
 /**
  * Mirrors "did this website lead go on to book a call" from Close onto our own
@@ -95,21 +107,9 @@ export async function reconcileCloseBookings(
 
   const staleBefore = new Date(now.getTime() - RECHECK_AFTER_MS).toISOString();
 
-  // Never-checked rows sort first (`nulls first`), so a fresh deploy backfills
-  // history before it starts re-checking rows it already knows about.
-  const { data, error } = await client
-    .from("lead_submissions")
-    .select("id,close_lead_id,call_status,closed_won_at,closed_won_source")
-    .not("close_lead_id", "is", null)
-    .or(`call_reconciled_at.is.null,call_reconciled_at.lt.${staleBefore}`)
-    .order("call_reconciled_at", { ascending: true, nullsFirst: true })
-    .limit(batchSize);
-
-  if (error) {
-    throw new Error("Could not load leads for booking reconciliation.");
-  }
-
-  const rows = (data ?? []) as LeadRow[];
+  const claimed = await claimLeads(client, staleBefore, batchSize);
+  const rows = claimed.rows;
+  const outcomesConnected = claimed.outcomesConnected;
   if (rows.length === 0) return empty;
 
   const result: ReconcileBookingsResult = { ...empty, scanned: rows.length };
@@ -128,7 +128,7 @@ export async function reconcileCloseBookings(
               call_booked_at: parseBookedDate(lead.custom),
               call_status: lead.status_label?.trim() || null,
               call_reconciled_at: reconciledAt,
-              ...outcomeUpdate(row, lead, now),
+              ...(outcomesConnected ? outcomeUpdate(row, lead, now) : null),
             }
           : {
               // Leave call_booked_at untouched: a lead deleted in Close today
@@ -168,6 +168,93 @@ export async function reconcileCloseBookings(
 }
 
 /**
+ * The batch of stale leads to re-check, tried with the outcome columns first.
+ *
+ * Never-checked rows sort first (`nulls first`), so a fresh deploy backfills
+ * history before it starts re-checking rows it already knows about.
+ *
+ * `outcomesConnected: false` means the migration is not applied yet: the caller
+ * must then keep the four new columns out of the write as well, or every update
+ * 400s for the same reason the select did.
+ */
+async function claimLeads(
+  client: ReconcileClient,
+  staleBefore: string,
+  batchSize: number,
+): Promise<{ rows: LeadRow[]; outcomesConnected: boolean }> {
+  const withOutcomes = await selectLeads(
+    client,
+    staleBefore,
+    batchSize,
+    `${CLAIM_BASE_FIELDS},${CLAIM_OUTCOME_FIELDS}`,
+  );
+  if (withOutcomes) return { rows: withOutcomes, outcomesConnected: true };
+
+  const baseOnly = await selectLeads(
+    client,
+    staleBefore,
+    batchSize,
+    CLAIM_BASE_FIELDS,
+  );
+  if (baseOnly) return { rows: baseOnly, outcomesConnected: false };
+
+  throw new Error("Could not load leads for booking reconciliation.");
+}
+
+/**
+ * Returns null only for a missing-column error, so a statement timeout or a
+ * transient 503 still throws rather than silently downgrading every write.
+ */
+async function selectLeads(
+  client: ReconcileClient,
+  staleBefore: string,
+  batchSize: number,
+  fields: string,
+): Promise<LeadRow[] | null> {
+  const { data, error } = await client
+    .from("lead_submissions")
+    .select(fields)
+    .not("close_lead_id", "is", null)
+    .or(`call_reconciled_at.is.null,call_reconciled_at.lt.${staleBefore}`)
+    .order("call_reconciled_at", { ascending: true, nullsFirst: true })
+    .limit(batchSize);
+
+  if (error) {
+    if (isMissingOutcomeColumnError(error)) return null;
+    throw new Error("Could not load leads for booking reconciliation.");
+  }
+  return (data ?? []) as unknown as LeadRow[];
+}
+
+/**
+ * Requires BOTH an undefined-column signal and one of the columns this slice
+ * adds, following `chatbot/booking-attribution.ts`: a bare substring match lets
+ * any unrelated error that happens to name the column read as "not migrated".
+ */
+function isMissingOutcomeColumnError(error: unknown): boolean {
+  const { code, message } = (error ?? {}) as {
+    code?: unknown;
+    message?: unknown;
+  };
+  const text = typeof message === "string" ? message : "";
+  if (
+    !text.includes("closed_won_at") &&
+    !text.includes("closed_won_source") &&
+    !text.includes("call_outcome") &&
+    !text.includes("close_status_at")
+  ) {
+    return false;
+  }
+  return (
+    code === "42703" ||
+    code === "PGRST204" ||
+    text.includes("42703") ||
+    text.includes("does not exist") ||
+    text.includes("could not find")
+  );
+}
+
+/**
  * Close status labels that assert something specific about the call or the
  * deal, matched on the normalised label so an emoji change or a re-word does
  * not silently stop the mapping.
@@ -190,8 +277,8 @@ type CallOutcome =
 type OutcomeUpdate = {
   call_outcome: CallOutcome | null;
   close_status_at?: string;
-  closed_won_at?: string;
-  closed_won_source?: "close_opportunity" | "status_observed";
+  closed_won_at?: string | null;
+  closed_won_source?: "close_opportunity" | "status_observed" | null;
 };
 
 /**
@@ -235,6 +322,19 @@ export function outcomeUpdate(
   ) {
     update.closed_won_at = dayKey(now);
     update.closed_won_source = "status_observed";
+    return update;
+  }
+
+  // The label has moved off won and the only date we hold is one we inferred
+  // from that label. Clear it, or a corrected status leaves a permanent win on
+  // the report. A close_opportunity date is left alone -- Close asserted it.
+  if (
+    outcome !== "won" &&
+    row.closed_won_at &&
+    row.closed_won_source === "status_observed"
+  ) {
+    update.closed_won_at = null;
+    update.closed_won_source = null;
   }
 
   return update;
@@ -250,8 +350,13 @@ export function outcomeFromLabel(
 ): CallOutcome | null {
   if (!label) return null;
   // Drop emoji and punctuation so "🏆 Closed / Won" normalises to "closed won".
+  //
+  // Apostrophes are deleted rather than turned into a separator first: with a
+  // blanket replace, "Won't" became "won t" and matched /\bwon\b/, so
+  // "Lost - Won't Sign" was recorded as a won deal.
   const normalised = label
     .toLowerCase()
+    .replace(/['‘’]/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
   return (
@@ -270,11 +375,13 @@ export function earliestWonDate(
   opportunities: CloseOpportunities,
 ): string | null {
   if (!Array.isArray(opportunities)) return null;
+  // Strictly status_type === "won": Close keeps date_won on a deal that was won
+  // and later re-opened or lost, and close_opportunity is the one provenance
+  // trusted to feed median cycle time. An opportunity shape with no status_type
+  // is therefore not accepted either -- such a lead falls back to
+  // status_observed, which the duration maths already excludes.
   const dates = opportunities
-    .filter(
-      (opportunity) =>
-        opportunity?.status_type === "won" || Boolean(opportunity?.date_won),
-    )
+    .filter((opportunity) => opportunity?.status_type === "won")
     .map((opportunity) => opportunity?.date_won)
     .filter(
       (date): date is string =>

@@ -18,6 +18,21 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * forward, so a missing table (before the migration is applied) or a duplicate
  * within the same session-day is a no-op rather than a failed request.
  */
+/**
+ * Ceiling on every stored UTM.
+ *
+ * These arrive in the JSON body of the public, unauthenticated
+ * POST /api/attribution/events, whose zod schema puts no length bound on a
+ * property value. `utm_campaign` is incidentally protected by its btree index;
+ * the other two were stored with only a trim. A follow-up migration adds
+ * matching CHECK constraints so no future caller can bypass this.
+ */
+const MAX_UTM_LENGTH = 200;
+
+function cap(value: string | null | undefined): string | null {
+  return value?.trim().slice(0, MAX_UTM_LENGTH) || null;
+}
+
 export async function recordTaggedPageView({
   path,
   vpSessionId,
@@ -45,9 +60,9 @@ export async function recordTaggedPageView({
         {
           path: path.trim().slice(0, 300),
           vp_session_id: vpSessionId.trim().slice(0, 160),
-          utm_source: utmSource?.trim() || null,
-          utm_campaign: campaign,
-          utm_content: utmContent?.trim() || null,
+          utm_source: cap(utmSource),
+          utm_campaign: campaign.slice(0, MAX_UTM_LENGTH),
+          utm_content: cap(utmContent),
           occurred_on: at.toISOString().slice(0, 10),
           occurred_at: at.toISOString(),
         },

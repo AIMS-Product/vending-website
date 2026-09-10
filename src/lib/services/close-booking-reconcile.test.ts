@@ -22,14 +22,35 @@ type StaleLead = {
   closed_won_source?: string | null;
 };
 
-function buildClient(rows: StaleLead[], updateError: unknown = null) {
+function buildClient(
+  rows: StaleLead[],
+  options: { updateError?: unknown; missingOutcomeColumns?: boolean } = {},
+) {
   const updates: Array<{ id: string; patch: Record<string, unknown> }> = [];
+  const selected: string[] = [];
+  const { updateError = null } = options;
 
-  const limit = vi.fn().mockResolvedValue({ data: rows, error: null });
-  const order = vi.fn().mockReturnValue({ limit });
-  const or = vi.fn().mockReturnValue({ order });
-  const not = vi.fn().mockReturnValue({ or });
-  const select = vi.fn().mockReturnValue({ not });
+  const select = vi.fn((fields: string) => {
+    selected.push(fields);
+    const missing =
+      options.missingOutcomeColumns === true &&
+      fields.includes("closed_won_at");
+    const limit = vi.fn().mockResolvedValue(
+      missing
+        ? {
+            data: null,
+            error: {
+              code: "42703",
+              message: "column lead_submissions.closed_won_at does not exist",
+            },
+          }
+        : { data: rows, error: null },
+    );
+    const order = vi.fn().mockReturnValue({ limit });
+    const or = vi.fn().mockReturnValue({ order });
+    const not = vi.fn().mockReturnValue({ or });
+    return { not };
+  });
 
   const update = vi.fn((patch: Record<string, unknown>) => ({
     eq: vi.fn(async (_column: string, id: string) => {
@@ -48,6 +69,7 @@ function buildClient(rows: StaleLead[], updateError: unknown = null) {
   return {
     client: { from } as unknown as Pick<SupabaseClient<Database>, "from">,
     updates,
+    selected,
   };
 }
 
@@ -187,6 +209,58 @@ describe("reconcileCloseBookings", () => {
 
     expect(result).toMatchObject({ scanned: 2, failed: 1, updated: 1 });
   });
+
+  it("keeps mirroring bookings when the outcome columns are not migrated yet", async () => {
+    const { client, updates, selected } = buildClient(
+      [{ id: "lead-7", close_lead_id: "close_7" }],
+      { missingOutcomeColumns: true },
+    );
+    const closeClient = buildCloseClient({
+      close_7: {
+        status_label: "🏆 Closed / Won",
+        custom: { "First Call Booked Date": "2026-08-21" },
+      },
+    });
+
+    const result = await reconcileCloseBookings({
+      client,
+      closeClient,
+      now: NOW,
+    });
+
+    // Falls back to the base columns rather than throwing, so the pre-existing
+    // booking mirror keeps running until the migration is applied by hand.
+    expect(selected.at(-1)).not.toContain("closed_won_at");
+    expect(result).toMatchObject({ scanned: 1, updated: 1, booked: 1 });
+    // None of the four new columns may reach the write, or every update 400s.
+    expect(updates[0].patch).toEqual({
+      call_booked_at: "2026-08-21",
+      call_status: "🏆 Closed / Won",
+      call_reconciled_at: NOW.toISOString(),
+    });
+  });
+
+  it("still throws when the lead read fails for a reason other than schema", async () => {
+    const { client } = buildClient([]);
+    const limit = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: "57014", message: "canceling statement due to timeout" },
+    });
+    const order = vi.fn().mockReturnValue({ limit });
+    const or = vi.fn().mockReturnValue({ order });
+    const not = vi.fn().mockReturnValue({ or });
+    (client as unknown as { from: (table: string) => unknown }).from = vi.fn(
+      () => ({ select: vi.fn().mockReturnValue({ not }) }),
+    );
+
+    await expect(
+      reconcileCloseBookings({
+        client,
+        closeClient: buildCloseClient({}),
+        now: NOW,
+      }),
+    ).rejects.toThrow("Could not load leads for booking reconciliation.");
+  });
 });
 
 describe("outcomeFromLabel", () => {
@@ -209,6 +283,20 @@ describe("outcomeFromLabel", () => {
   it("does not match 'won' inside another word", () => {
     expect(outcomeFromLabel("Wonky pipeline stage")).toBeNull();
   });
+
+  it('does not read a label containing "Won\'t" as a win', () => {
+    // Normalising punctuation turns "Won't" into "won t", which a bare
+    // /\bwon\b/ matched -- so a lost deal was stamped as a permanent win.
+    expect(outcomeFromLabel("\U0001F494 Lost - Won't Sign")).toBeNull();
+    expect(outcomeFromLabel("Won't proceed")).toBeNull();
+    expect(outcomeFromLabel("Wont sign")).toBeNull();
+  });
+
+  it("still reads the real won labels", () => {
+    expect(outcomeFromLabel("\U0001F3C6 Closed / Won")).toBe("won");
+    expect(outcomeFromLabel("Closed Won")).toBe("won");
+    expect(outcomeFromLabel("closed-won")).toBe("won");
+  });
 });
 
 describe("earliestWonDate", () => {
@@ -216,6 +304,30 @@ describe("earliestWonDate", () => {
     expect(
       earliestWonDate([
         { status_type: "won", date_won: "2026-09-02" },
+        { status_type: "won", date_won: "2026-08-14" },
+      ]),
+    ).toBe("2026-08-14");
+  });
+
+  it("ignores a date_won carried by an opportunity that is not won", () => {
+    // Close keeps date_won on a deal that was won and later re-opened or lost.
+    expect(
+      earliestWonDate([{ status_type: "lost", date_won: "2026-08-14" }]),
+    ).toBeNull();
+    expect(
+      earliestWonDate([{ status_type: "active", date_won: "2026-08-14" }]),
+    ).toBeNull();
+    // No status_type at all is not a confirmed win either: close_opportunity is
+    // the one provenance trusted for cycle time, so this stays strict and the
+    // lead falls back to status_observed. (Open question 9 for Kody.)
+    expect(earliestWonDate([{ date_won: "2026-08-14" }])).toBeNull();
+    expect(
+      earliestWonDate([{ status_type: null, date_won: "2026-08-14" }]),
+    ).toBeNull();
+    // A won opportunity alongside a lost one still yields the won date.
+    expect(
+      earliestWonDate([
+        { status_type: "lost", date_won: "2026-07-01" },
         { status_type: "won", date_won: "2026-08-14" },
       ]),
     ).toBe("2026-08-14");
@@ -313,5 +425,37 @@ describe("outcomeUpdate", () => {
     const update = outcomeUpdate(row, { status_label: "💔 Lost" }, NOW);
     expect(update.closed_won_at).toBeUndefined();
     expect(update.call_outcome).toBeNull();
+  });
+
+  it("clears an observed won date when the label is no longer won", () => {
+    const observed = {
+      call_status: "\U0001F3C6 Closed / Won",
+      closed_won_at: "2026-08-01",
+      closed_won_source: "status_observed",
+    };
+    const update = outcomeUpdate(
+      observed,
+      { status_label: "\U0001F494 Lost" },
+      NOW,
+    );
+
+    expect(update.closed_won_at).toBeNull();
+    expect(update.closed_won_source).toBeNull();
+  });
+
+  it("leaves a real opportunity date alone when the label moves off won", () => {
+    const dated = {
+      call_status: "\U0001F3C6 Closed / Won",
+      closed_won_at: "2026-07-01",
+      closed_won_source: "close_opportunity",
+    };
+    const update = outcomeUpdate(
+      dated,
+      { status_label: "\U0001F4C4 Contract Sent" },
+      NOW,
+    );
+
+    expect(update.closed_won_at).toBeUndefined();
+    expect(update.closed_won_source).toBeUndefined();
   });
 });

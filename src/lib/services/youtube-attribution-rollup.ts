@@ -51,6 +51,11 @@ export type BitlyClickRow = {
 };
 
 export type PageViewRow = {
+  /**
+   * Needed because `lead_page_views` stores every tagged channel's visits, not
+   * just YouTube's. Without it a Meta campaign's traffic lands in this funnel.
+   */
+  utm_source: string | null;
   utm_campaign: string | null;
   occurred_at: string;
 };
@@ -154,7 +159,12 @@ const TIME_TO_CLOSE_BUCKETS: Array<{ label: string; max: number }> = [
 
 /** Every YouTube tag, including `yt` and person-tagged variants like `mike-yt`. */
 export function isYouTubeLead(lead: YouTubeLeadRow): boolean {
-  return resolveChannel(lead.utm_source).channel === YOUTUBE_CHANNEL;
+  return isYouTubeSource(lead.utm_source);
+}
+
+/** The one channel rule, shared by leads and by landing-page visits. */
+export function isYouTubeSource(utmSource: string | null): boolean {
+  return resolveChannel(utmSource).channel === YOUTUBE_CHANNEL;
 }
 
 export function buildYouTubeAttribution({
@@ -180,7 +190,10 @@ export function buildYouTubeAttribution({
     videos.map((video) => [video.utm_campaign, video]),
   );
   const clicksByCampaign = sumByCampaign(clicks, (row) => row.clicks);
-  const viewsByCampaign = sumByCampaign(pageViews, () => 1);
+  const viewsByCampaign = sumByCampaign(
+    pageViews.filter((view) => isYouTubeSource(view.utm_source)),
+    () => 1,
+  );
 
   const rows = [...byCampaign.entries()]
     .map(([campaign, campaignLeads]) =>
@@ -378,10 +391,15 @@ function buildCohorts(leads: YouTubeLeadRow[]): YouTubeCohortRow[] {
 /**
  * Trustworthy close durations in days.
  *
- * Negative durations are dropped, not clamped: 20 of 155 booked YouTube leads
- * have a Close booking date that predates the form fill, because Close already
- * held them before they filled this form. That is a returning lead, not a
- * same-day close, and averaging it in as zero would understate the real cycle.
+ * Negative durations are dropped, not clamped: 3 of 155 booked YouTube leads
+ * have a Close booking date that predates their first touch, because Close
+ * already held them before they came through this site. That is a returning
+ * lead, not a same-day close, and averaging it in as zero would understate the
+ * real cycle.
+ *
+ * Re-derived against production on 2026-09-10 after the day-key fix. The
+ * earlier figure of 20 counted 14 same-day bookings that the instant
+ * comparison made negative, plus 3 leads whose first touch predated the form.
  */
 function closeDurations(leads: YouTubeLeadRow[]): number[] {
   return leads
@@ -390,7 +408,7 @@ function closeDurations(leads: YouTubeLeadRow[]): number[] {
         lead.closed_won_at && lead.closed_won_source === "close_opportunity",
     )
     .map((lead) => daysBetween(firstTouchAt(lead), lead.closed_won_at!))
-    .filter((days) => days >= 0);
+    .filter((days): days is number => days !== null && days >= 0);
 }
 
 /** `metadata.attribution_session.first_touch_at`, falling back to row creation. */
@@ -420,7 +438,10 @@ function isClosedWon(lead: YouTubeLeadRow): boolean {
 
 function bookedBeforeLead(lead: YouTubeLeadRow): boolean {
   if (!lead.call_booked_at) return false;
-  return daysBetween(lead.created_at, lead.call_booked_at) < 0;
+  // First touch, matching the rest of the module: a lead who landed in July and
+  // submitted in August did not book "before" they arrived.
+  const days = daysBetween(firstTouchAt(lead), lead.call_booked_at);
+  return days !== null && days < 0;
 }
 
 /**
@@ -479,10 +500,26 @@ function ratePct(
   return round1((numerator / denominator) * 100);
 }
 
-function daysBetween(fromIso: string, toIso: string): number {
-  const from = new Date(fromIso).getTime();
-  const to = new Date(toIso).getTime();
-  if (!Number.isFinite(from) || !Number.isFinite(to)) return -1;
+/**
+ * Whole days between two dates, compared as day keys.
+ *
+ * `closed_won_at` and `call_booked_at` are Postgres `date` columns, so they
+ * parse as UTC midnight, while `firstTouchAt` is a real instant. Comparing the
+ * two as instants made every same-day event negative (a first touch at 18:00Z
+ * against its own day gives -0.75, which rounds to -1) and knocked a full day
+ * off every real duration. Both sides are therefore truncated to their day.
+ *
+ * Returns null for an unparseable date, so a caller cannot mistake a parse
+ * failure for a negative duration.
+ *
+ * ponytail: day keys are UTC. If Close turns out to date wins in Pacific, a
+ * win logged before 5pm PT on the last day of a month is credited to the next
+ * UTC day; switch both sides to a business-timezone day key if that matters.
+ */
+function daysBetween(fromIso: string, toIso: string): number | null {
+  const from = Date.parse(`${fromIso.slice(0, 10)}T00:00:00.000Z`);
+  const to = Date.parse(`${toIso.slice(0, 10)}T00:00:00.000Z`);
+  if (!Number.isFinite(from) || !Number.isFinite(to)) return null;
   return Math.round((to - from) / DAY_MS);
 }
 

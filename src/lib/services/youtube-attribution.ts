@@ -58,6 +58,17 @@ const LEAD_OUTCOME_FIELDS =
 const MAX_LEAD_ROWS = 50_000;
 
 /**
+ * Ceilings on the two reads that have no other bound.
+ *
+ * Both tables grow per link per day (646 links x 365 days is ~235k click rows
+ * on a 1-year range) and both are read on every admin page load. Hitting the
+ * cap reports the stage as unmeasured rather than returning a truncated total
+ * that silently reads low -- see `capped` below.
+ */
+export const MAX_CLICK_ROWS = 100_000;
+export const MAX_PAGE_VIEW_ROWS = 100_000;
+
+/**
  * The YouTube tab's data.
  *
  * Three of the six funnel stages come from tables that may not exist yet
@@ -195,9 +206,17 @@ async function fetchClicks(
     const { data, error } = await client
       .from("bitly_link_clicks")
       .select("utm_campaign,day,clicks")
-      .gte("day", sinceIso.slice(0, 10));
+      .gte("day", sinceIso.slice(0, 10))
+      // Uses the partial (utm_campaign, day) index instead of scanning, and
+      // drops rows the rollup discards anyway -- it sums by campaign.
+      .not("utm_campaign", "is", null)
+      .limit(MAX_CLICK_ROWS);
     if (error) return null;
-    return (data ?? []) as unknown as BitlyClickRow[];
+    return capped(
+      (data ?? []) as unknown as BitlyClickRow[],
+      MAX_CLICK_ROWS,
+      "bitly_link_clicks",
+    );
   });
 }
 
@@ -208,11 +227,31 @@ async function fetchPageViews(
   return degradable(async () => {
     const { data, error } = await client
       .from("lead_page_views")
-      .select("utm_campaign,occurred_at")
-      .gte("occurred_at", sinceIso);
+      // utm_source: the table holds every tagged channel's visits, and the
+      // rollup keeps only the YouTube ones.
+      .select("utm_source,utm_campaign,occurred_at")
+      .gte("occurred_at", sinceIso)
+      .not("utm_campaign", "is", null)
+      .limit(MAX_PAGE_VIEW_ROWS);
     if (error) return null;
-    return (data ?? []) as unknown as PageViewRow[];
+    return capped(
+      (data ?? []) as unknown as PageViewRow[],
+      MAX_PAGE_VIEW_ROWS,
+      "lead_page_views",
+    );
   });
+}
+
+/**
+ * A read that came back exactly at its cap was almost certainly truncated, and
+ * a truncated total reads low with no signal. Report it as unmeasured.
+ */
+function capped<T>(rows: T[], limit: number, table: string): T[] | null {
+  if (rows.length < limit) return rows;
+  console.error(
+    `[youtube-attribution] ${table} read hit its ${limit}-row cap; reporting the stage as unmeasured rather than understated.`,
+  );
+  return null;
 }
 
 /**

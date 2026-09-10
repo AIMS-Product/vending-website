@@ -133,8 +133,16 @@ describe("per-video rows", () => {
         { utm_campaign: "b", day: "2026-08-02", clicks: 99 },
       ],
       pageViews: [
-        { utm_campaign: "a", occurred_at: "2026-08-01T00:00:00.000Z" },
-        { utm_campaign: "a", occurred_at: "2026-08-02T00:00:00.000Z" },
+        {
+          utm_source: "youtube",
+          utm_campaign: "a",
+          occurred_at: "2026-08-01T00:00:00.000Z",
+        },
+        {
+          utm_source: "youtube",
+          utm_campaign: "a",
+          occurred_at: "2026-08-02T00:00:00.000Z",
+        },
       ],
     });
 
@@ -213,6 +221,51 @@ describe("time to close", () => {
     expect(result.timeToClose.medianDays).toBeNull();
   });
 
+  it("keeps a same-day close whose first touch is an afternoon instant", () => {
+    // closed_won_at is a Postgres `date`, so comparing it as an instant made an
+    // afternoon first touch land at -0.75 days and get dropped as negative.
+    const result = build([
+      lead({
+        created_at: "2026-08-01T18:00:00.000Z",
+        closed_won_at: "2026-08-01",
+        closed_won_source: "close_opportunity",
+      }),
+    ]);
+
+    expect(result.timeToClose.measured).toBe(1);
+    expect(result.timeToClose.medianDays).toBe(0);
+    expect(result.timeToClose.undated).toBe(0);
+    expect(
+      result.timeToClose.buckets.find((b) => b.label === "0-7 days")?.count,
+    ).toBe(1);
+  });
+
+  it("counts a 14-day cycle as 14 days regardless of the time of day", () => {
+    const result = build([
+      lead({
+        created_at: "2026-08-01T18:00:00.000Z",
+        closed_won_at: "2026-08-15",
+        closed_won_source: "close_opportunity",
+      }),
+    ]);
+
+    expect(result.timeToClose.avgDays).toBe(14);
+    expect(result.timeToClose.longCycleCount).toBe(1);
+  });
+
+  it("reports an unparseable won date as undated rather than as a same-day close", () => {
+    const result = build([
+      lead({
+        created_at: "2026-08-01T18:00:00.000Z",
+        closed_won_at: "not a date",
+        closed_won_source: "close_opportunity",
+      }),
+    ]);
+
+    expect(result.timeToClose.measured).toBe(0);
+    expect(result.timeToClose.undated).toBe(1);
+  });
+
   it("measures from first touch, not from the form fill", () => {
     const result = build([
       lead({
@@ -268,6 +321,45 @@ describe("firstTouchAt", () => {
   });
 });
 
+describe("landing page visits", () => {
+  it("counts only YouTube-tagged visits, not every tagged channel", () => {
+    const result = build([lead({ utm_campaign: "how-much-vending" })], {
+      pageViews: [
+        {
+          utm_source: "youtube",
+          utm_campaign: "how-much-vending",
+          occurred_at: "2026-08-10T12:00:00.000Z",
+        },
+        {
+          utm_source: "yt",
+          utm_campaign: "how-much-vending",
+          occurred_at: "2026-08-10T13:00:00.000Z",
+        },
+        // Meta, Google and Instagram traffic is tagged too and lands in the
+        // same table -- it must not inflate the YouTube funnel.
+        {
+          utm_source: "meta",
+          utm_campaign: "retargeting-aug",
+          occurred_at: "2026-08-10T12:00:00.000Z",
+        },
+        {
+          utm_source: "instagram",
+          utm_campaign: "how-much-vending",
+          occurred_at: "2026-08-10T12:00:00.000Z",
+        },
+        {
+          utm_source: null,
+          utm_campaign: "how-much-vending",
+          occurred_at: "2026-08-10T12:00:00.000Z",
+        },
+      ],
+    });
+
+    expect(result.totals.visits).toBe(2);
+    expect(result.videos[0].visits).toBe(2);
+  });
+});
+
 describe("coverage", () => {
   it("counts bookings that predate the lead as returning leads", () => {
     const result = build([
@@ -282,5 +374,48 @@ describe("coverage", () => {
     ]);
 
     expect(result.coverage.bookedBeforeLead).toBe(1);
+  });
+
+  it("does not call a same-day booking a returning lead", () => {
+    // call_booked_at is a `date`; an afternoon created_at computed as -1 day
+    // and every same-day booking was counted as "booked before they applied".
+    const result = build([
+      lead({
+        created_at: "2026-08-10T18:00:00.000Z",
+        call_booked_at: "2026-08-10",
+      }),
+      lead({
+        created_at: "2026-08-10T23:30:00.000Z",
+        call_booked_at: "2026-08-11",
+      }),
+    ]);
+
+    expect(result.coverage.bookedBeforeLead).toBe(0);
+  });
+
+  it("uses first touch, not row creation, to decide a lead is returning", () => {
+    const result = build([
+      lead({
+        created_at: "2026-08-10T00:00:00.000Z",
+        metadata: {
+          attribution_session: { first_touch_at: "2026-07-28T09:00:00.000Z" },
+        },
+        call_booked_at: "2026-08-01",
+      }),
+    ]);
+
+    // Booked after the first touch, so this is not a returning lead.
+    expect(result.coverage.bookedBeforeLead).toBe(0);
+  });
+
+  it("does not count an unparseable booking date as a returning lead", () => {
+    const result = build([
+      lead({
+        created_at: "2026-08-10T00:00:00.000Z",
+        call_booked_at: "not a date",
+      }),
+    ]);
+
+    expect(result.coverage.bookedBeforeLead).toBe(0);
   });
 });

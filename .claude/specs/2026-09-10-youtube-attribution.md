@@ -2,7 +2,10 @@
 
 Date: 2026-09-10
 Requested by: Kody Wirth (VP marketing) via Adam
-Status: in progress
+Status: BLOCKED by review — see `2026-09-10-youtube-attribution-review.md`
+(3 critical, 5 high). Commit `1f305cb` is local and unpushed. Do not deploy
+until items 1-3 of that file's fix order are done: the reconciler's select
+breaks the EXISTING booking mirror until the migration is applied by hand.
 
 ## Why
 
