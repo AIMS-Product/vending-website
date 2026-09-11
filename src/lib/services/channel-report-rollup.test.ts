@@ -39,7 +39,7 @@ describe("sumObserved", () => {
 });
 
 describe("buildChannelReport", () => {
-  it("builds the funnel from totals with each stage over the nearest observed one above", () => {
+  it("splits reach from the site funnel and pairs each share on one population", () => {
     const report = buildChannelReport(
       [
         fact({ clicks: 100, visits: 80 }),
@@ -48,20 +48,45 @@ describe("buildChannelReport", () => {
       [fact({ clicks: 50, leads: 10 })],
     );
 
-    const byKey = Object.fromEntries(
-      report.funnel.map((stage) => [stage.key, stage]),
+    const reach = Object.fromEntries(
+      report.reach.map((stage) => [stage.key, stage]),
     );
-    expect(byKey.impressions.value).toBeNull();
-    expect(byKey.clicks).toMatchObject({
+    expect(reach.impressions.value).toBeNull();
+    expect(reach.clicks).toMatchObject({
       value: 100,
       prior: 50,
       ofPreviousPct: null,
       deltaPct: 100,
     });
-    expect(byKey.visits.ofPreviousPct).toBe(80);
-    expect(byKey.leads).toMatchObject({ value: 20, ofPreviousPct: 25 });
-    expect(byKey.booked.ofPreviousPct).toBe(25);
-    expect(byKey.won.ofPreviousPct).toBe(25);
+
+    const funnel = Object.fromEntries(
+      report.funnel.map((stage) => [stage.key, stage]),
+    );
+    expect(funnel.clicks).toBeUndefined();
+    expect(funnel.visits).toMatchObject({ value: 80, ofPreviousPct: null });
+    // No row observed both visits and leads, so the share is null, not 25%.
+    expect(funnel.leads).toMatchObject({
+      value: 20,
+      ofPreviousPct: null,
+      ofPreviousLabel: "Visited",
+    });
+    expect(funnel.booked.ofPreviousPct).toBe(25);
+    expect(funnel.won.ofPreviousPct).toBe(25);
+  });
+
+  it("keeps bookings without a lead out of Book % and collapses visit-only rows", () => {
+    const report = buildChannelReport(
+      [
+        fact({ visits: 100, leads: 10, booked: 2 }),
+        fact({ visits: 50, booked: 3 }),
+        fact({ channel: "Referral", source: "example.com", visits: 7 }),
+      ],
+      [],
+    );
+    expect(report.rows.map((row) => row.label)).toEqual(["Instagram"]);
+    expect(report.rows[0].rates.bookPct).toBe(20);
+    expect(report.rows[0].directBooked).toBe(3);
+    expect(report.tail.map((row) => row.label)).toEqual(["Referral"]);
   });
 
   it("rolls rows up by channel with rates and cost per lead, ordered by leads", () => {

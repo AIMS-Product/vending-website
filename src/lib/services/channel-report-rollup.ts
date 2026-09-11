@@ -1,3 +1,4 @@
+import { resolveChannel } from "@/lib/analytics/channel";
 import type { Tables } from "@/types/database";
 
 /**
@@ -45,10 +46,36 @@ export type MetricKey = (typeof METRIC_KEYS)[number];
 
 export type Metrics = Record<MetricKey, number | null>;
 
-/** The funnel, top to bottom. Spend and revenue are context, not stages. */
-export const FUNNEL_STAGES: ReadonlyArray<{ key: MetricKey; label: string }> = [
+/**
+ * Channels whose stored label is a program, not the traffic source: a webinar
+ * row carries source meta_ads but belongs to Webinar. Every other row's
+ * channel is re-derived from its source when read, so a change to
+ * `resolveChannel` (a new referrer host, a renamed channel) applies to rows
+ * written before the change without rewriting the spine.
+ */
+const PROGRAM_CHANNELS = new Set(["Webinar"]);
+
+export function normaliseFacts(facts: ChannelFact[]): ChannelFact[] {
+  return facts.map((fact) => {
+    if (PROGRAM_CHANNELS.has(fact.channel)) return fact;
+    const channel = resolveChannel(fact.source).channel;
+    return channel === fact.channel ? fact : { ...fact, channel };
+  });
+}
+
+/**
+ * Upstream of the site: what a platform reports about its own surface. Seen
+ * is Metricool impressions, YouTube views and GHL sends; Clicked is Bitly and
+ * the platforms' own click counts. Each covers a different set of channels,
+ * so neither is a stage of the site funnel below.
+ */
+export const REACH_STAGES: ReadonlyArray<{ key: MetricKey; label: string }> = [
   { key: "impressions", label: "Seen" },
   { key: "clicks", label: "Clicked" },
+];
+
+/** The site funnel, top to bottom. Spend and revenue are context, not stages. */
+export const FUNNEL_STAGES: ReadonlyArray<{ key: MetricKey; label: string }> = [
   { key: "visits", label: "Visited" },
   { key: "leads", label: "Lead" },
   { key: "booked", label: "Booked a call" },
@@ -62,9 +89,18 @@ export type FunnelStage = {
   /** Null when no connector observed this stage in the range. */
   value: number | null;
   prior: number | null;
-  /** This stage over the nearest observed stage above it, as a percentage. */
+  /**
+   * This stage over the nearest observed stage above it, as a percentage,
+   * computed only on rows where both were observed so the two sides are one
+   * population. Null when no row carries both.
+   */
   ofPreviousPct: number | null;
+  /** The label of the stage `ofPreviousPct` is measured against. */
+  ofPreviousLabel: string | null;
   deltaPct: number | null;
+  /** Channels that reported this stage, out of channels with any data. */
+  channels: number;
+  totalChannels: number;
 };
 
 export type ChannelGroupBy = "channel" | "campaign" | "content" | "destination";
@@ -74,12 +110,20 @@ export type ChannelReportRow = {
   label: string;
   metrics: Metrics;
   prior: Metrics;
-  /** leads ÷ visits, booked ÷ leads, won ÷ booked; null where unobserved. */
+  /**
+   * leads ÷ visits, booked ÷ leads, won ÷ booked, each over the rows where
+   * both sides were observed. A webinar's 3,000 GHL registrations are not
+   * divided by the 400 GA4 visits to our own site; the Instagram bookings that
+   * came straight from a Calendly link, with no lead form, are not divided by
+   * the leads that did. Null where no row carries both.
+   */
   rates: {
     leadPct: number | null;
     bookPct: number | null;
     winPct: number | null;
   };
+  /** Bookings with no lead form behind them (direct Calendly links). */
+  directBooked: number | null;
   /** spend ÷ leads and spend ÷ booked; null where spend is unobserved or zero. */
   costPerLead: number | null;
   costPerBooked: number | null;
@@ -88,8 +132,12 @@ export type ChannelReportRow = {
 export type ChannelReport = {
   totals: Metrics;
   priorTotals: Metrics;
+  reach: FunnelStage[];
   funnel: FunnelStage[];
+  /** Rows with an outcome or spend, or something a platform reported. */
   rows: ChannelReportRow[];
+  /** Rows that only ever had visits (referrers, search engines): collapsed. */
+  tail: ChannelReportRow[];
 };
 
 /** Sum where at least one value was observed; null when none were. */
@@ -127,21 +175,65 @@ function round1(value: number) {
   return Math.round(value * 10) / 10;
 }
 
-export function buildFunnel(totals: Metrics, prior: Metrics): FunnelStage[] {
-  let previousObserved: number | null = null;
-  return FUNNEL_STAGES.map(({ key, label }) => {
+/** Sums of `a` and `b` over the facts that observed both. */
+export function pairedPct(
+  facts: ChannelFact[],
+  numerator: MetricKey,
+  denominator: MetricKey,
+): number | null {
+  const both = facts.filter(
+    (fact) => fact[numerator] != null && fact[denominator] != null,
+  );
+  if (both.length === 0) return null;
+  return pct(
+    sumObserved(both.map((fact) => fact[numerator])),
+    sumObserved(both.map((fact) => fact[denominator])),
+  );
+}
+
+function channelsObserving(facts: ChannelFact[], key: MetricKey): number {
+  return new Set(
+    facts.filter((fact) => fact[key] != null).map((fact) => fact.channel),
+  ).size;
+}
+
+export function buildStages(
+  stages: ReadonlyArray<{ key: MetricKey; label: string }>,
+  current: ChannelFact[],
+  prior: ChannelFact[],
+  options: { shares: boolean },
+): FunnelStage[] {
+  const totals = sumMetrics(current);
+  const priorTotals = sumMetrics(prior);
+  const totalChannels = new Set(current.map((fact) => fact.channel)).size;
+  let previous: { key: MetricKey; label: string } | null = null;
+  return stages.map(({ key, label }) => {
     const value = totals[key];
     const stage: FunnelStage = {
       key,
       label,
       value,
-      prior: prior[key],
-      ofPreviousPct: pct(value, previousObserved),
-      deltaPct: deltaPct(value, prior[key]),
+      prior: priorTotals[key],
+      ofPreviousPct:
+        options.shares && previous
+          ? pairedPct(current, key, previous.key)
+          : null,
+      ofPreviousLabel: options.shares && previous ? previous.label : null,
+      deltaPct: deltaPct(value, priorTotals[key]),
+      channels: channelsObserving(current, key),
+      totalChannels,
     };
-    if (value != null) previousObserved = value;
+    if (value != null) previous = { key, label };
     return stage;
   });
+}
+
+/** @deprecated kept for the funnel test; prefer buildStages. */
+export function buildFunnel(
+  current: ChannelFact[],
+  prior: ChannelFact[],
+): FunnelStage[] {
+  return buildStages(FUNNEL_STAGES, current, prior, { shares: true });
 }
 
 function rowFor(
@@ -160,10 +252,13 @@ function rowFor(
     metrics,
     prior: priorMetrics,
     rates: {
-      leadPct: pct(metrics.leads, metrics.visits),
-      bookPct: pct(metrics.booked, metrics.leads),
-      winPct: pct(metrics.won, metrics.booked),
+      leadPct: pairedPct(current, "leads", "visits"),
+      bookPct: pairedPct(current, "booked", "leads"),
+      winPct: pairedPct(current, "won", "booked"),
     },
+    directBooked: sumObserved(
+      current.filter((fact) => fact.leads == null).map((fact) => fact.booked),
+    ),
     costPerLead:
       spend != null && metrics.leads ? round1(spend / metrics.leads) : null,
     costPerBooked:
@@ -171,10 +266,20 @@ function rowFor(
   };
 }
 
+/** Only visits (and reach) observed: a referrer nobody tagged. */
+const TAIL_ONLY: ReadonlySet<MetricKey> = new Set(["visits", "reach"]);
+
+function isTail(row: ChannelReportRow): boolean {
+  return METRIC_KEYS.every(
+    (key) => row.metrics[key] == null || TAIL_ONLY.has(key),
+  );
+}
+
 /**
- * Groups facts by one dimension and orders rows by leads, then clicks, then
- * label, so the channel doing the most work is at the top and a channel with
- * nothing but impressions still appears rather than vanishing.
+ * Groups facts by one dimension and orders rows by leads, booked, visits,
+ * impressions, then label, so the channel doing the most work is at the top
+ * and a channel with nothing but impressions still appears rather than
+ * vanishing. Rows that only ever had visits go to `tail`.
  */
 export function buildChannelReport(
   current: ChannelFact[],
@@ -195,23 +300,25 @@ export function buildChannelReport(
   for (const fact of current) bucket(fact[groupBy]).current.push(fact);
   for (const fact of prior) bucket(fact[groupBy]).prior.push(fact);
 
-  const rows = [...groups.entries()]
+  const all = [...groups.entries()]
     .map(([key, facts]) => rowFor(key, key, facts.current, facts.prior))
     .filter((row) => METRIC_KEYS.some((key) => row.metrics[key] != null))
     .sort(
       (a, b) =>
         (b.metrics.leads ?? -1) - (a.metrics.leads ?? -1) ||
-        (b.metrics.clicks ?? -1) - (a.metrics.clicks ?? -1) ||
+        (b.metrics.booked ?? -1) - (a.metrics.booked ?? -1) ||
+        (b.metrics.visits ?? -1) - (a.metrics.visits ?? -1) ||
+        (b.metrics.impressions ?? -1) - (a.metrics.impressions ?? -1) ||
         a.label.localeCompare(b.label),
     );
 
-  const totals = sumMetrics(current);
-  const priorTotals = sumMetrics(prior);
   return {
-    totals,
-    priorTotals,
-    funnel: buildFunnel(totals, priorTotals),
-    rows,
+    totals: sumMetrics(current),
+    priorTotals: sumMetrics(prior),
+    reach: buildStages(REACH_STAGES, current, prior, { shares: false }),
+    funnel: buildStages(FUNNEL_STAGES, current, prior, { shares: true }),
+    rows: all.filter((row) => !isTail(row)),
+    tail: all.filter(isTail),
   };
 }
 

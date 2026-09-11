@@ -444,7 +444,7 @@ describe("getAdminAnalytics", () => {
     // not a "(none)" row that hides what the site produced.
     expect(analytics.leadsByChannel).toEqual([
       { label: "Website", count: 2, booked: 0, children: [] },
-      { label: "Google", count: 1, booked: 0, children: [] },
+      { label: "Organic search", count: 1, booked: 0, children: [] },
     ]);
   });
 

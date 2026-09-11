@@ -37,6 +37,25 @@ describe("resolveChannel", () => {
     });
   });
 
+  it("maps referrer hostnames onto channels and the rest onto Referral", () => {
+    expect(resolveChannel("l.instagram.com").channel).toBe("Instagram");
+    expect(resolveChannel("Youtube.com").channel).toBe("YouTube");
+    expect(resolveChannel("t.co").channel).toBe("X");
+    expect(resolveChannel("m.facebook.com").channel).toBe("Meta");
+    expect(resolveChannel("bing").channel).toBe("Organic search");
+    expect(resolveChannel("us.search.yahoo.com").channel).toBe(
+      "Organic search",
+    );
+    expect(resolveChannel("google").channel).toBe("Organic search");
+    expect(resolveChannel("chatgpt.com").channel).toBe("AI assistants");
+    expect(resolveChannel("mail.google.com").channel).toBe("Email");
+    expect(resolveChannel("vendhubhq.com").channel).toBe("Website");
+    expect(resolveChannel("calendly.com").channel).toBe("Website");
+    expect(resolveChannel("sidehustlenation.com").channel).toBe("Referral");
+    expect(resolveChannel("(data not available)").channel).toBe("Unknown");
+    expect(resolveChannel("ghl_form").channel).toBe("GHL forms");
+  });
+
   it("handles a person tag it has never seen before", () => {
     // A new rep's link must not open its own row and shrink the channel.
     expect(resolveChannel("sarah-ig")).toEqual({

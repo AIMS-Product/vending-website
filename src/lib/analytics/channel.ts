@@ -46,6 +46,15 @@ export const UNKNOWN_CHANNEL = "Unknown";
  */
 export const CHATBOT_CHANNEL = "Chatbot";
 
+/** Search engines, organic. `google` lands here too: it is not Google Ads. */
+export const SEARCH_CHANNEL = "Organic search";
+/** ChatGPT, Claude, Copilot, Perplexity sending people to the site. */
+export const AI_CHANNEL = "AI assistants";
+/** Any other outside site that linked to us. */
+export const REFERRAL_CHANNEL = "Referral";
+/** GHL lander form submissions; the GHL API exposes no UTMs per submission. */
+export const GHL_FORMS_CHANNEL = "GHL forms";
+
 type ChannelRule = { channel: string; person?: string };
 
 /**
@@ -61,7 +70,11 @@ const EXACT: Record<string, ChannelRule> = {
   // fell through to titleCase and opened its own "Yt" channel row, splitting
   // YouTube in two.
   yt: { channel: "YouTube" },
-  google: { channel: "Google" },
+  google: { channel: SEARCH_CHANNEL },
+  bing: { channel: SEARCH_CHANNEL },
+  yahoo: { channel: SEARCH_CHANNEL },
+  duckduckgo: { channel: SEARCH_CHANNEL },
+  ecosia: { channel: SEARCH_CHANNEL },
 
   meta: { channel: "Meta" },
   facebook: { channel: "Meta" },
@@ -102,6 +115,7 @@ const EXACT: Record<string, ChannelRule> = {
   google_ads: { channel: "Google Ads" },
   ghl_sms: { channel: "SMS" },
   ghl_email: { channel: "Email" },
+  ghl_form: { channel: GHL_FORMS_CHANNEL },
 
   // Tag used by the vendingpreneurs.ai funnel's "Apply Now" button.
   web: { channel: WEBSITE_CHANNEL },
@@ -139,6 +153,72 @@ const SUFFIX_CHANNEL: Record<string, string> = {
 /** A tag made only of punctuation carries no information (seen: "_____"). */
 const MEANINGLESS = /^[^a-z0-9]*$/;
 
+/** GA4 placeholders when the session source is unknown. */
+const GA4_PLACEHOLDER = /^\((data not available|not set|direct|none)\)$/;
+
+/**
+ * GA4 reports a session's source as the referrer hostname when no UTM was
+ * set, so `l.instagram.com`, `t.co` and `bing` arrive as sources. The suffix
+ * match lets `www.`, `l.`, `m.` and any other subdomain fall through to the
+ * registrable domain. Order matters only where a host could match twice.
+ */
+const HOST_CHANNEL: ReadonlyArray<[suffix: string, channel: string]> = [
+  // Our own properties: the visitor was already ours.
+  ["vendingpreneurs.com", WEBSITE_CHANNEL],
+  ["vendingpreneurs.ai", WEBSITE_CHANNEL],
+  ["vendhubhq.com", WEBSITE_CHANNEL],
+  ["vendhub.ai", WEBSITE_CHANNEL],
+  ["aimanagingservices.com", WEBSITE_CHANNEL],
+  ["aimanagingservices.vercel.app", WEBSITE_CHANNEL],
+  ["vercel.com", WEBSITE_CHANNEL],
+  ["calendly.com", WEBSITE_CHANNEL],
+  // Social platforms, untagged.
+  ["youtube.com", "YouTube"],
+  ["youtu.be", "YouTube"],
+  ["instagram.com", "Instagram"],
+  ["facebook.com", "Meta"],
+  ["fb.com", "Meta"],
+  ["messenger.com", "Meta"],
+  ["linkedin.com", "LinkedIn"],
+  ["lnkd.in", "LinkedIn"],
+  ["t.co", "X"],
+  ["twitter.com", "X"],
+  ["x.com", "X"],
+  ["tiktok.com", "TikTok"],
+  // Specific Google hosts before the generic search match.
+  ["gemini.google.com", AI_CHANNEL],
+  ["mail.google.com", "Email"],
+  // Search engines.
+  ["google.com", SEARCH_CHANNEL],
+  ["bing.com", SEARCH_CHANNEL],
+  ["yahoo.com", SEARCH_CHANNEL],
+  ["duckduckgo.com", SEARCH_CHANNEL],
+  ["ecosia.org", SEARCH_CHANNEL],
+  ["qwant.com", SEARCH_CHANNEL],
+  ["baidu.com", SEARCH_CHANNEL],
+  ["search.brave.com", SEARCH_CHANNEL],
+  ["nortonsafesearch.com", SEARCH_CHANNEL],
+  // AI assistants.
+  ["chatgpt.com", AI_CHANNEL],
+  ["openai.com", AI_CHANNEL],
+  ["claude.ai", AI_CHANNEL],
+  ["copilot.com", AI_CHANNEL],
+  ["copilot.microsoft.com", AI_CHANNEL],
+  ["perplexity.ai", AI_CHANNEL],
+  // Webmail: a link in an email, whoever sent it.
+  ["outlook.live.com", "Email"],
+  ["outlook.office.com", "Email"],
+  ["mail.yahoo.com", "Email"],
+];
+
+/** The channel for a referrer hostname; Referral when it is nobody we know. */
+export function channelForHost(host: string): string {
+  for (const [suffix, channel] of HOST_CHANNEL) {
+    if (host === suffix || host.endsWith(`.${suffix}`)) return channel;
+  }
+  return REFERRAL_CHANNEL;
+}
+
 /**
  * Maps a raw `utm_source` onto its canonical channel.
  *
@@ -156,7 +236,8 @@ export function resolveChannel(
       person: null,
     };
   }
-  if (MEANINGLESS.test(raw)) return { channel: UNKNOWN_CHANNEL, person: null };
+  if (MEANINGLESS.test(raw) || GA4_PLACEHOLDER.test(raw))
+    return { channel: UNKNOWN_CHANNEL, person: null };
 
   const exact = EXACT[raw];
   if (exact) return { channel: exact.channel, person: exact.person ?? null };
@@ -167,6 +248,10 @@ export function resolveChannel(
     const channel = SUFFIX_CHANNEL[platform ?? ""];
     if (channel) return { channel, person: titleCase(person ?? "") };
   }
+
+  // A hostname is a referrer GA4 passed through, not a tag anyone typed.
+  if (/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(raw))
+    return { channel: channelForHost(raw), person: null };
 
   // An unrecognised tag is still a real campaign, so surface it as itself
   // rather than burying it in Website and overstating the site.

@@ -19,6 +19,11 @@ import type {
   ChannelsTabData,
   FixLinkRow,
 } from "@/lib/services/channel-report";
+import {
+  COVERAGE_KEYS,
+  type ConfidenceReport,
+  type CheckStatus,
+} from "@/lib/services/channel-confidence";
 
 /**
  * The Channels tab: one funnel across every channel, one row per channel, and
@@ -80,11 +85,12 @@ export function ChannelsTab({
       <ChannelKpis report={report} days={data.range.days} />
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <ChannelFunnel stages={report.funnel} days={data.range.days} />
+        <ChannelFunnel report={report} days={data.range.days} />
         <div className="xl:col-span-2">
           <ChannelTable
             title={data.channel ? "By campaign" : "By channel"}
             rows={report.rows}
+            tail={report.tail}
             rowHref={
               data.channel
                 ? undefined
@@ -113,7 +119,10 @@ export function ChannelsTab({
         </div>
       )}
 
-      <div className="mt-5">
+      <div className="mt-5 grid gap-5 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <ConfidencePanel report={data.confidence} />
+        </div>
         <SyncHealthPanel rows={data.syncHealth} />
       </div>
     </>
@@ -154,44 +163,26 @@ function ChannelKpis({
 }
 
 function ChannelFunnel({
-  stages,
+  report,
   days,
 }: {
-  stages: FunnelStage[];
+  report: ChannelReport;
   days: number;
 }) {
-  const observed = stages.filter((stage) => stage.value != null);
+  const observed = report.funnel.filter((stage) => stage.value != null);
   const top = observed[0]?.value ?? null;
   return (
     <section className={adminCardClass} aria-label="Channel funnel">
-      <h2 className={adminEyebrowClass}>Across every channel</h2>
+      <h2 className={adminEyebrowClass}>On the site</h2>
       <p className="text-ui-text-subtle mt-2 text-xs">
-        Each stage as a share of the nearest observed stage above it. Deltas are
-        against the prior {days} days.
+        Each share is measured only where both stages were observed for the same
+        link, so the two sides are one population. Deltas are against the prior{" "}
+        {days} days.
       </p>
       <ol className="mt-3 space-y-2.5">
-        {stages.map((stage) => (
+        {report.funnel.map((stage) => (
           <li key={stage.key} className="flex flex-col gap-1">
-            <div className="flex items-baseline gap-2 text-[0.8125rem]">
-              <span className="text-ui-text min-w-0 flex-1 truncate">
-                {stage.label}
-              </span>
-              {stage.value == null ? (
-                <span
-                  className="text-ui-text-subtle shrink-0 text-xs"
-                  title="No connector observed this stage in the range."
-                >
-                  not observed
-                </span>
-              ) : (
-                <>
-                  <Delta current={stage.value} prior={stage.prior} />
-                  <span className="text-ui-text shrink-0 font-semibold tabular-nums">
-                    {stage.value.toLocaleString()}
-                  </span>
-                </>
-              )}
-            </div>
+            <StageLine stage={stage} />
             {stage.value != null && top ? (
               <div className="h-1.5 w-full" aria-hidden="true">
                 <div
@@ -204,13 +195,63 @@ function ChannelFunnel({
             ) : null}
             {stage.ofPreviousPct != null ? (
               <p className="text-ui-text-subtle text-xs">
-                {stage.ofPreviousPct}% of the stage above
+                {stage.ofPreviousPct}% of {stage.ofPreviousLabel?.toLowerCase()}
+              </p>
+            ) : stage.value != null && stage.ofPreviousLabel ? (
+              <p
+                className="text-ui-text-subtle text-xs"
+                title="No link key carried both stages, so there is no honest share."
+              >
+                share not measurable
               </p>
             ) : null}
           </li>
         ))}
       </ol>
+
+      <h2 className={`${adminEyebrowClass} mt-6`}>Upstream, off the site</h2>
+      <p className="text-ui-text-subtle mt-2 text-xs">
+        What the platforms report about their own surface. Each covers a
+        different set of channels, so neither is a stage of the funnel above.
+      </p>
+      <ol className="mt-3 space-y-2.5">
+        {report.reach.map((stage) => (
+          <li key={stage.key} className="flex flex-col gap-0.5">
+            <StageLine stage={stage} />
+            <p className="text-ui-text-subtle text-xs">
+              {stage.value == null
+                ? "no connector reports this yet"
+                : `reported by ${stage.channels} of ${stage.totalChannels} channels`}
+            </p>
+          </li>
+        ))}
+      </ol>
     </section>
+  );
+}
+
+function StageLine({ stage }: { stage: FunnelStage }) {
+  return (
+    <div className="flex items-baseline gap-2 text-[0.8125rem]">
+      <span className="text-ui-text min-w-0 flex-1 truncate">
+        {stage.label}
+      </span>
+      {stage.value == null ? (
+        <span
+          className="text-ui-text-subtle shrink-0 text-xs"
+          title="No connector observed this stage in the range."
+        >
+          not observed
+        </span>
+      ) : (
+        <>
+          <Delta current={stage.value} prior={stage.prior} />
+          <span className="text-ui-text shrink-0 font-semibold tabular-nums">
+            {stage.value.toLocaleString()}
+          </span>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -232,16 +273,23 @@ const COLUMNS: ReadonlyArray<{
 export function ChannelTable({
   title,
   rows,
+  tail = [],
   rowHref,
 }: {
   title: string;
   rows: ChannelReportRow[];
+  /** Rows with visits only, shown collapsed under the table. */
+  tail?: ChannelReportRow[];
   rowHref?: (row: ChannelReportRow) => string;
 }) {
   return (
     <section className={adminCardClass} aria-label={title}>
       <h2 className={adminEyebrowClass}>{title}</h2>
-      {rows.length === 0 ? (
+      <p className="text-ui-text-subtle mt-2 text-xs">
+        Sorted by leads, then bookings, then visits. Lead % and Book % are
+        measured only on links where both sides were observed.
+      </p>
+      {rows.length === 0 && tail.length === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">
           Nothing observed in this range.
         </p>
@@ -270,53 +318,237 @@ export function ChannelTable({
             </thead>
             <tbody className="divide-ui-line divide-y">
               {rows.map((row) => (
-                <tr key={row.key}>
-                  <td className="text-ui-text py-2.5 pr-3 font-medium">
-                    {rowHref ? (
-                      <Link
-                        href={rowHref(row)}
-                        className="text-ui-accent underline-offset-2 hover:underline"
-                      >
-                        {row.label}
-                      </Link>
-                    ) : (
-                      row.label
-                    )}
-                  </td>
-                  {COLUMNS.map((column) => (
-                    <td
-                      key={column.key}
-                      className="text-ui-text py-2.5 pr-3 text-right tabular-nums"
-                    >
-                      <Cell
-                        value={row.metrics[column.key]}
-                        format={column.format}
-                      />
-                      {column.key === "leads" && row.metrics.leads != null ? (
-                        <span className="ml-1 inline-block align-middle">
-                          <Delta
-                            current={row.metrics.leads}
-                            prior={row.prior.leads}
-                          />
-                        </span>
-                      ) : null}
-                    </td>
-                  ))}
-                  <td className="text-ui-text py-2.5 pr-3 text-right tabular-nums">
-                    <Cell value={row.rates.leadPct} format="percent" />
-                  </td>
-                  <td className="text-ui-text py-2.5 pr-3 text-right tabular-nums">
-                    <Cell value={row.rates.bookPct} format="percent" />
-                  </td>
-                  <td className="text-ui-text py-2.5 text-right font-semibold tabular-nums">
-                    <Cell value={row.costPerLead} format="money" />
-                  </td>
-                </tr>
+                <ChannelRow key={row.key} row={row} rowHref={rowHref} />
               ))}
             </tbody>
           </table>
+          {tail.length > 0 ? (
+            <details className="border-ui-line mt-2 border-t pt-2">
+              <summary className="text-ui-text-muted cursor-pointer text-xs select-none">
+                {tail.length} more {tail.length === 1 ? "source" : "sources"}{" "}
+                with visits only (
+                {tail
+                  .reduce((sum, row) => sum + (row.metrics.visits ?? 0), 0)
+                  .toLocaleString()}{" "}
+                visits, no leads, bookings or spend observed)
+              </summary>
+              <table className="mt-2 w-full min-w-[52rem] text-[0.8125rem]">
+                <tbody className="divide-ui-line divide-y">
+                  {tail.map((row) => (
+                    <ChannelRow key={row.key} row={row} rowHref={rowHref} />
+                  ))}
+                </tbody>
+              </table>
+            </details>
+          ) : null}
         </div>
       )}
+    </section>
+  );
+}
+
+function ChannelRow({
+  row,
+  rowHref,
+}: {
+  row: ChannelReportRow;
+  rowHref?: (row: ChannelReportRow) => string;
+}) {
+  return (
+    <tr>
+      <td className="text-ui-text py-2.5 pr-3 font-medium">
+        {rowHref ? (
+          <Link
+            href={rowHref(row)}
+            className="text-ui-accent underline-offset-2 hover:underline"
+          >
+            {row.label}
+          </Link>
+        ) : (
+          row.label
+        )}
+      </td>
+      {COLUMNS.map((column) => (
+        <td
+          key={column.key}
+          className="text-ui-text py-2.5 pr-3 text-right tabular-nums"
+        >
+          <Cell value={row.metrics[column.key]} format={column.format} />
+          {column.key === "leads" && row.metrics.leads != null ? (
+            <span className="ml-1 inline-block align-middle">
+              <Delta current={row.metrics.leads} prior={row.prior.leads} />
+            </span>
+          ) : null}
+          {column.key === "booked" && row.directBooked ? (
+            <span
+              className="text-ui-text-subtle ml-1 text-xs"
+              title="Bookings from a Calendly link with no lead form behind them. Counted as booked, never as a lead."
+            >
+              ({row.directBooked} direct)
+            </span>
+          ) : null}
+        </td>
+      ))}
+      <td className="text-ui-text py-2.5 pr-3 text-right tabular-nums">
+        <RateCell
+          value={row.rates.leadPct}
+          numerator={row.metrics.leads}
+          denominator={row.metrics.visits}
+          why="No link carried both visits and leads, so leads and visits are different populations here (leads captured off-site, say)."
+        />
+      </td>
+      <td className="text-ui-text py-2.5 pr-3 text-right tabular-nums">
+        <RateCell
+          value={row.rates.bookPct}
+          numerator={row.metrics.booked}
+          denominator={row.metrics.leads}
+          why="No link carried both leads and bookings; the bookings here came without a lead form."
+        />
+      </td>
+      <td className="text-ui-text py-2.5 text-right font-semibold tabular-nums">
+        <Cell value={row.costPerLead} format="money" />
+      </td>
+    </tr>
+  );
+}
+
+/** A rate, or why there is none although both numbers exist. */
+function RateCell({
+  value,
+  numerator,
+  denominator,
+  why,
+}: {
+  value: number | null;
+  numerator: number | null;
+  denominator: number | null;
+  why: string;
+}) {
+  if (value != null) return <>{formatValue(value, "percent")}</>;
+  if (numerator != null && denominator != null) {
+    return (
+      <span className="text-ui-text-subtle" title={why}>
+        n/a
+      </span>
+    );
+  }
+  return <Cell value={null} format="percent" />;
+}
+
+const CHECK_TONE: Record<CheckStatus, string> = {
+  ok: "active",
+  warn: "pending",
+  fail: "failed",
+  info: "idle",
+};
+
+const CHECK_LABEL: Record<CheckStatus, string> = {
+  ok: "Matches",
+  warn: "Check",
+  fail: "Off",
+  info: "Note",
+};
+
+export function ConfidencePanel({ report }: { report: ConfidenceReport }) {
+  return (
+    <section className={adminCardClass} aria-label="Data confidence">
+      <div className="flex flex-wrap items-baseline gap-3">
+        <h2 className={adminEyebrowClass}>Data confidence</h2>
+        <AdminStatusBadge
+          status={CHECK_TONE[report.status]}
+          label={
+            report.status === "ok"
+              ? "Spine matches its sources"
+              : report.status === "fail"
+                ? "Spine is off from a source"
+                : report.status === "warn"
+                  ? "Gaps to look at"
+                  : "Notes"
+          }
+        />
+      </div>
+      <p className="text-ui-text-subtle mt-2 text-xs">
+        The numbers above, checked against the tables they were built from, then
+        every channel against what its connectors should report.
+      </p>
+      <ul className="divide-ui-line mt-3 divide-y">
+        {report.checks.map((check) => (
+          <li
+            key={check.id}
+            className="flex flex-wrap items-baseline gap-3 py-2 text-[0.8125rem]"
+          >
+            <AdminStatusBadge
+              status={CHECK_TONE[check.status]}
+              label={CHECK_LABEL[check.status]}
+            />
+            <span className="text-ui-text min-w-[14rem] font-medium">
+              {check.label}
+            </span>
+            <span className="text-ui-text-muted min-w-0 flex-1 text-xs">
+              {check.detail}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <h3 className={`${adminEyebrowClass} mt-5`}>Coverage by channel</h3>
+      <p className="text-ui-text-subtle mt-2 text-xs">
+        Filled means a connector observed it in range. A hollow mark is a metric
+        the channel should report but nothing did; hover for the cause. A dash
+        is not expected for that channel.
+      </p>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full min-w-[36rem] text-[0.8125rem]">
+          <thead>
+            <tr
+              className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
+            >
+              <th className="py-2 pr-3 font-semibold">Channel</th>
+              {COVERAGE_KEYS.map((column) => (
+                <th
+                  key={column.key}
+                  className="py-2 pr-3 text-center font-semibold"
+                >
+                  {column.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-ui-line divide-y">
+            {report.coverage.map((row) => (
+              <tr key={row.channel}>
+                <td className="text-ui-text py-2 pr-3 font-medium">
+                  {row.channel}
+                </td>
+                {COVERAGE_KEYS.map((column) => {
+                  const cell = row.cells[column.key];
+                  return (
+                    <td
+                      key={column.key}
+                      className="py-2 pr-3 text-center"
+                      title={
+                        cell.observed
+                          ? "Observed in range."
+                          : cell.expected
+                            ? (cell.cause ?? "Expected, not observed.")
+                            : "Not expected for this channel."
+                      }
+                    >
+                      {cell.observed ? (
+                        <span className="bg-ui-accent inline-block h-2.5 w-2.5 rounded-full" />
+                      ) : cell.expected ? (
+                        <span className="border-ui-bad inline-block h-2.5 w-2.5 rounded-full border-2" />
+                      ) : (
+                        <span className="text-ui-text-subtle">—</span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
