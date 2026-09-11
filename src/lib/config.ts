@@ -42,6 +42,12 @@ const envSchema = z.object({
   CRON_SECRET: optionalTrimmedOptionalEnv,
   CALENDLY_WEBHOOK_SIGNING_KEY: optionalTrimmedOptionalEnv,
   CALENDLY_API_TOKEN: optionalTrimmedOptionalEnv,
+  /**
+   * Bearer secret the vp-webinars GitHub Action presents when it POSTs its
+   * snapshot to /api/admin/webinar-ingest. Same value lives in that repo's
+   * Actions secrets. Absent means the receiver answers 503 and nothing lands.
+   */
+  WEBINAR_INGEST_SECRET: optionalTrimmedOptionalEnv,
   // Bitly click sync for the YouTube attribution tab. Absent means the clicks
   // stage of the funnel reports "not connected" rather than zero.
   BITLY_ACCESS_TOKEN: optionalTrimmedOptionalEnv,
@@ -53,6 +59,29 @@ const envSchema = z.object({
    */
   GA4_SERVICE_ACCOUNT_JSON: optionalTrimmedOptionalEnv,
   GA4_PROPERTY_ID: optionalTrimmedOptionalEnv,
+  /**
+   * GoHighLevel v2 private integration token (`pit-...`) and the sub-account
+   * location id. Read-only use. Absent means the ghl-email / ghl-forms
+   * connectors record "skipped" and the Channels tab shows Not connected.
+   */
+  GHL_API_KEY: optionalTrimmedOptionalEnv,
+  GHL_LOCATION_ID: optionalTrimmedOptionalEnv,
+  /**
+   * Metricool REST API: the user token (sent as X-Mc-Auth), the account's
+   * userId and the brand's blogId. Read-only use. Absent means the
+   * metricool-posts connector records "skipped".
+   */
+  METRICOOL_API_KEY: optionalTrimmedOptionalEnv,
+  METRICOOL_USER_ID: optionalTrimmedOptionalEnv,
+  METRICOOL_BLOG_ID: optionalTrimmedOptionalEnv,
+  /**
+   * YouTube Analytics as the channel owner: a Desktop-app OAuth client and
+   * the refresh token from scripts/youtube-oauth-token.mjs. Absent means the
+   * youtube-analytics connector records "skipped".
+   */
+  GOOGLE_OAUTH_CLIENT_ID: optionalTrimmedOptionalEnv,
+  GOOGLE_OAUTH_CLIENT_SECRET: optionalTrimmedOptionalEnv,
+  YOUTUBE_REFRESH_TOKEN: optionalTrimmedOptionalEnv,
   CLOSE_API_KEY: optionalTrimmedOptionalEnv,
   CLOSE_API_BASE_URL: optionalTrimmedOptionalEnv,
   CLOSE_LEAD_STATUS_ID: optionalTrimmedOptionalEnv,
@@ -154,10 +183,19 @@ const parsed = envSchema.safeParse({
   CRON_SECRET: process.env.CRON_SECRET,
   CALENDLY_WEBHOOK_SIGNING_KEY: process.env.CALENDLY_WEBHOOK_SIGNING_KEY,
   CALENDLY_API_TOKEN: process.env.CALENDLY_API_TOKEN,
+  WEBINAR_INGEST_SECRET: process.env.WEBINAR_INGEST_SECRET,
   BITLY_ACCESS_TOKEN: process.env.BITLY_ACCESS_TOKEN,
   BITLY_GROUP_GUID: process.env.BITLY_GROUP_GUID,
   GA4_SERVICE_ACCOUNT_JSON: process.env.GA4_SERVICE_ACCOUNT_JSON,
   GA4_PROPERTY_ID: process.env.GA4_PROPERTY_ID,
+  GHL_API_KEY: process.env.GHL_API_KEY,
+  GHL_LOCATION_ID: process.env.GHL_LOCATION_ID,
+  METRICOOL_API_KEY: process.env.METRICOOL_API_KEY,
+  METRICOOL_USER_ID: process.env.METRICOOL_USER_ID,
+  METRICOOL_BLOG_ID: process.env.METRICOOL_BLOG_ID,
+  GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID,
+  GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+  YOUTUBE_REFRESH_TOKEN: process.env.YOUTUBE_REFRESH_TOKEN,
   CLOSE_API_KEY: process.env.CLOSE_API_KEY,
   CLOSE_API_BASE_URL: process.env.CLOSE_API_BASE_URL,
   CLOSE_LEAD_STATUS_ID: process.env.CLOSE_LEAD_STATUS_ID,

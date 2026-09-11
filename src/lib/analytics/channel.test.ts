@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   CHATBOT_CHANNEL,
   resolveChannel,
+  resolveDestination,
   UNKNOWN_CHANNEL,
+  UNKNOWN_DESTINATION,
   WEBSITE_CHANNEL,
 } from "./channel";
 
@@ -97,5 +99,34 @@ describe("chatbot channel", () => {
 
   it("resolves an explicitly chatbot-tagged link", () => {
     expect(resolveChannel("chatbot").channel).toBe(CHATBOT_CHANNEL);
+  });
+});
+
+describe("resolveChannel with link-standard sources", () => {
+  it("keeps paid platforms apart from their organic namesakes", () => {
+    expect(resolveChannel("meta_ads").channel).toBe("Meta Ads");
+    expect(resolveChannel("facebook").channel).toBe("Meta");
+    expect(resolveChannel("google_ads").channel).toBe("Google Ads");
+  });
+
+  it("names the GHL channels by what they are, not by the tool", () => {
+    expect(resolveChannel("ghl_sms").channel).toBe("SMS");
+    expect(resolveChannel("ghl_email").channel).toBe("Email");
+    expect(resolveChannel("referral").channel).toBe("Referral");
+  });
+});
+
+describe("resolveDestination", () => {
+  it("returns a closed-list destination case-insensitively", () => {
+    expect(resolveDestination("book-call")).toBe("book-call");
+    expect(resolveDestination(" Webinar-Register ")).toBe("webinar-register");
+  });
+
+  it("marks a legacy keyword term as unknown instead of dropping it", () => {
+    expect(resolveDestination("vending machine business")).toBe(
+      UNKNOWN_DESTINATION,
+    );
+    expect(resolveDestination("")).toBe(UNKNOWN_DESTINATION);
+    expect(resolveDestination(null)).toBe(UNKNOWN_DESTINATION);
   });
 });
