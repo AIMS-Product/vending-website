@@ -97,6 +97,65 @@ Needs a Bitly generic access token, and ideally `BITLY_GROUP_GUID` as well —
 that second one is what lets the sync fill in the 42 registry rows that carry no
 short link. No code has ever made a real call to the Bitly API.
 
+## 3b. Booking integrity check — run 2026-09-11, READ ONLY
+
+Adam asked for a backfill. **There is nothing to backfill.** This was a read
+bug, never a write bug: every booking the webhook received is in the table.
+Verified against production:
+
+- 2,007 rows, 1,749 of them `booked`, the rest `canceled`.
+- **1,749 booked rows, 1,749 distinct `invitee_uri`. Zero duplicates.**
+  (An earlier count of 108 repeated `scheduled_event_uri` values is not a
+  duplicate: `invitee_uri` is the unique key, and one scheduled event can carry
+  several invitees. Group calls, working as designed.)
+- Every row carries a `scheduled_event_uri`. None orphaned.
+
+Three real findings came out of it.
+
+### The page filters on the wrong time column
+
+`admin-analytics.ts` filters bookings on `created_at`, which the schema
+defaults to `now()` — it is **when we recorded the row**, not when the call was
+booked or held. `event_start_at` is the real axis.
+
+At 90-day grain the two nearly agree, which is why nobody noticed:
+
+| Month   | by `created_at` | by `event_start_at` |
+| ------- | --------------- | ------------------- |
+| 2026-07 | 434             | 381                 |
+| 2026-08 | 847             | 901                 |
+| 2026-09 | 468             | 466                 |
+| 2026-10 | 0               | 1                   |
+
+They diverge at 7-day and 30-day grain, because of the next finding. A Q3
+report by month should be built on `event_start_at`. Decide the axis
+deliberately before changing it — "booked in this range" and "call happens in
+this range" are different questions and the page may want both.
+
+### Twenty-two days recorded nothing
+
+No booking rows at all were written on **2026-08-04 through 08-23**, or on
+08-25 and 08-26. The monthly totals still land, so the data arrived later in
+bulk rather than being lost — but the webhook was not capturing continuously
+for three weeks and something backfilled it afterwards.
+
+**This is the actual risk to bookings.** If the webhook drops out again and
+nobody runs a backfill, those bookings really are gone. Worth finding out what
+happened in that window and whether anything alerts on it. Nothing appears to.
+
+### Only 31% of booked calls attribute to a lead
+
+544 of 1,749 booked calls carry a `lead_submission_id`. Of the remaining 1,205,
+exactly **6** can be matched to a lead by email — so 1,199 have no lead in our
+database at all.
+
+That is consistent with the page's own note (phone, Saleskick and direct
+Calendly links never touch the site) rather than evidence of broken
+attribution. But it is the ceiling on any attribution report: **roughly two
+calls in three cannot be traced to a marketing source**, and no amount of
+dashboard work changes that. Raising it is a tracking-link problem, not a code
+problem.
+
 ## 4. Smaller things noticed and not done
 
 - `admin-analytics.ts` is 609 lines and `chatbot/analytics.ts` is 1,258. Both
