@@ -66,3 +66,21 @@ chatbot leads linked to Close already existed in Close before the chat
 - Both migrations are applied. Values fill in as the reconciler re-checks each lead (every lead at most every 6h).
 - Close `Entry Source` reads `Rep-Outbound` for Gerald. Not written back; our surfaces read `Resource Tag`.
 - Conversations list outcome chip still says "Booked" for setter-booked rows.
+
+## One view of every booked chat (follow-up, same day)
+
+Adam wanted a single place to see chatbot bookings vs setter bookings, first
+touch vs last touch. The Conversations list's Booked filter is that view:
+
+- Each booked row's status chip reads "Booked in chat" (green), "Set by <name>",
+  or "Booked elsewhere" in place of a bare "Booked", on every filter.
+- Booked view adds a First touch column and five chips that always add up to
+  all booked: Chatbot end to end · Chatbot, then setter · Chatbot, booked
+  elsewhere · Earlier source, then chat · Not checked yet (`?touch=`).
+- Same two rules as the conversation page and the dashboard grid
+  (`resolveFirstTouch`, `resolveBookingCredit`); lookups reused from
+  `analytics.ts` (`fetchLeadCredit`, `attributionSourceOf`).
+- Transcript: the pre-fix "Booked. Check your email..." card is hidden on
+  `email_match` bookings (5 transcripts, Gerald's included). Hidden at render,
+  stored transcript unchanged.
+- Not included: a closer column (needs a Calendly read per row; the transcript has it).

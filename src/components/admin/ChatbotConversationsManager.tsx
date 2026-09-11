@@ -10,6 +10,8 @@ import type {
   AdminChatbotConversationListItem,
   AdminChatbotConversationsResult,
   AdminChatbotSort,
+  AdminChatbotTouch,
+  AdminChatbotTouchBucket,
   ChatbotConversationOutcome,
 } from "@/lib/services/chatbot-admin";
 
@@ -58,6 +60,18 @@ const OUTCOME_BADGES: Record<
   open: null,
 };
 
+/**
+ * The booked view's first touch x last touch cut, in the order the team reads
+ * it: the chatbot's own end-to-end bookings first. See AdminChatbotTouchBucket.
+ */
+const TOUCH_CHIPS: { value: AdminChatbotTouchBucket; label: string }[] = [
+  { value: "end_to_end", label: "Chatbot end to end" },
+  { value: "chatbot_setter", label: "Chatbot, then setter" },
+  { value: "chatbot_elsewhere", label: "Chatbot, booked elsewhere" },
+  { value: "earlier", label: "Earlier source, then chat" },
+  { value: "unchecked", label: "Not checked yet" },
+];
+
 const SORT_OPTIONS: { value: AdminChatbotSort; label: string }[] = [
   { value: "newest", label: "Newest" },
   { value: "oldest", label: "Oldest" },
@@ -70,13 +84,16 @@ export function ChatbotConversationsManager({
   sort,
   flag,
   outcome,
+  touch,
 }: {
   result: AdminChatbotConversationsResult;
   q: string;
   sort: AdminChatbotSort;
   flag: string;
   outcome: string;
+  touch: string;
 }) {
+  const bookedView = result.outcomesTrustworthy && outcome === "booked";
   return (
     <div className="grid gap-5">
       <AdminMetricStrip>
@@ -135,8 +152,20 @@ export function ChatbotConversationsManager({
       <section className={adminPanelClass}>
         <div className="border-ui-line grid gap-3 border-b p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <SearchForm q={q} sort={sort} flag={flag} outcome={outcome} />
-            <SortNav active={sort} q={q} flag={flag} outcome={outcome} />
+            <SearchForm
+              q={q}
+              sort={sort}
+              flag={flag}
+              outcome={outcome}
+              touch={touch}
+            />
+            <SortNav
+              active={sort}
+              q={q}
+              flag={flag}
+              outcome={outcome}
+              touch={touch}
+            />
           </div>
           {result.outcomesTrustworthy ? (
             <OutcomeChips
@@ -149,11 +178,21 @@ export function ChatbotConversationsManager({
               total={result.totalCount}
             />
           ) : null}
+          {bookedView ? (
+            <TouchChips
+              active={touch}
+              q={q}
+              sort={sort}
+              flag={flag}
+              counts={result.touchCounts}
+            />
+          ) : null}
           <FlagChips
             active={flag}
             q={q}
             sort={sort}
             outcome={outcome}
+            touch={touch}
             counts={result.flagCounts}
             total={result.totalCount}
           />
@@ -167,6 +206,11 @@ export function ChatbotConversationsManager({
                   <th scope="col" className="px-4 py-2">
                     Visitor
                   </th>
+                  {bookedView ? (
+                    <th scope="col" className="px-3 py-2">
+                      First touch
+                    </th>
+                  ) : null}
                   <th scope="col" className="px-3 py-2">
                     Opening message
                   </th>
@@ -187,6 +231,7 @@ export function ChatbotConversationsManager({
                     key={item.id}
                     item={item}
                     showOutcome={result.outcomesTrustworthy}
+                    showFirstTouch={bookedView}
                   />
                 ))}
               </tbody>
@@ -211,9 +256,11 @@ export function ChatbotConversationsManager({
 function ConversationRow({
   item,
   showOutcome,
+  showFirstTouch,
 }: {
   item: AdminChatbotConversationListItem;
   showOutcome: boolean;
+  showFirstTouch: boolean;
 }) {
   return (
     <tr className="hover:bg-ui-canvas">
@@ -237,6 +284,11 @@ function ConversationRow({
           </div>
         ) : null}
       </td>
+      {showFirstTouch ? (
+        <td className="px-3 py-3 text-xs">
+          <FirstTouchCell touch={item.touch} />
+        </td>
+      ) : null}
       <td
         className="text-ui-text-muted max-w-[360px] truncate px-3 py-3"
         title={item.firstUserMessage ?? undefined}
@@ -246,7 +298,9 @@ function ConversationRow({
       <td className="px-3 py-3">
         <div className="flex flex-wrap items-center gap-1.5">
           <AdminStatusBadge status={item.status} />
-          {item.callBookedAt ? (
+          {item.touch ? (
+            <LastTouchChip last={item.touch.last} />
+          ) : item.callBookedAt ? (
             <span className="rounded-ui bg-ui-ok-fill text-ui-ok-ink inline-flex items-center px-1.5 py-0.5 text-[0.6875rem] font-medium">
               Booked
             </span>
@@ -269,22 +323,67 @@ function ConversationRow({
   );
 }
 
+/**
+ * Who booked the call, in place of a bare "Booked". Green only for a booking
+ * made in the chat itself, so a setter's call never reads as the chatbot's.
+ */
+function LastTouchChip({ last }: { last: AdminChatbotTouch["last"] }) {
+  const tone =
+    last.kind === "in_chat"
+      ? "bg-ui-ok-fill text-ui-ok-ink"
+      : "bg-ui-line text-ui-text-muted";
+  return (
+    <span
+      className={`rounded-ui inline-flex items-center px-1.5 py-0.5 text-[0.6875rem] font-medium ${tone}`}
+    >
+      {last.label}
+    </span>
+  );
+}
+
+function FirstTouchCell({ touch }: { touch: AdminChatbotTouch | null }) {
+  if (!touch) return <span className="text-ui-text-subtle">—</span>;
+  const { first } = touch;
+  if (first.kind === "unknown") {
+    return <span className="text-ui-text-subtle">{first.label}</span>;
+  }
+  return (
+    <span className="text-ui-text">
+      {first.label}
+      {first.kind === "earlier" ? (
+        <span className="text-ui-text-subtle"> · {formatDay(first.at)}</span>
+      ) : null}
+    </span>
+  );
+}
+
+function formatDay(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function SearchForm({
   q,
   sort,
   flag,
   outcome,
+  touch,
 }: {
   q: string;
   sort: AdminChatbotSort;
   flag: string;
   outcome: string;
+  touch: string;
 }) {
   return (
     <form method="GET" className="flex items-center gap-2">
       <input type="hidden" name="sort" value={sort} />
       <input type="hidden" name="flag" value={flag} />
       <input type="hidden" name="outcome" value={outcome} />
+      <input type="hidden" name="touch" value={touch} />
       <input
         type="search"
         name="q"
@@ -307,11 +406,13 @@ function SortNav({
   q,
   flag,
   outcome,
+  touch,
 }: {
   active: AdminChatbotSort;
   q: string;
   flag: string;
   outcome: string;
+  touch: string;
 }) {
   return (
     <nav
@@ -321,7 +422,13 @@ function SortNav({
       {SORT_OPTIONS.map((option) => (
         <Link
           key={option.value}
-          href={conversationsHref({ q, flag, outcome, sort: option.value })}
+          href={conversationsHref({
+            q,
+            flag,
+            outcome,
+            touch,
+            sort: option.value,
+          })}
           aria-current={active === option.value ? "page" : undefined}
           className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] transition ${
             active === option.value
@@ -341,6 +448,7 @@ function FlagChips({
   q,
   sort,
   outcome,
+  touch,
   counts,
   total,
 }: {
@@ -348,6 +456,7 @@ function FlagChips({
   q: string;
   sort: AdminChatbotSort;
   outcome: string;
+  touch: string;
   counts: Record<ChatbotFlag, number>;
   total: number;
 }) {
@@ -357,7 +466,7 @@ function FlagChips({
       aria-label="Flag filters"
     >
       <Link
-        href={conversationsHref({ q, sort, flag: "all", outcome })}
+        href={conversationsHref({ q, sort, flag: "all", outcome, touch })}
         aria-current={active === "all" ? "page" : undefined}
         className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] transition ${
           active === "all"
@@ -370,7 +479,13 @@ function FlagChips({
       {CHATBOT_FLAGS.map((flagValue) => (
         <Link
           key={flagValue}
-          href={conversationsHref({ q, sort, flag: flagValue, outcome })}
+          href={conversationsHref({
+            q,
+            sort,
+            flag: flagValue,
+            outcome,
+            touch,
+          })}
           aria-current={active === flagValue ? "page" : undefined}
           className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] transition ${
             active === flagValue
@@ -390,12 +505,17 @@ function conversationsHref(params: {
   sort: AdminChatbotSort;
   flag: string;
   outcome: string;
+  /** Kept only inside the booked view; switching outcome drops it. */
+  touch?: string;
 }): string {
   const search = new URLSearchParams();
   if (params.q) search.set("q", params.q);
   if (params.sort !== "newest") search.set("sort", params.sort);
   if (params.flag !== "all") search.set("flag", params.flag);
   if (params.outcome !== "all") search.set("outcome", params.outcome);
+  if (params.outcome === "booked" && params.touch && params.touch !== "all") {
+    search.set("touch", params.touch);
+  }
   const qs = search.toString();
   return qs
     ? `/admin/chatbot/conversations?${qs}`
@@ -464,6 +584,57 @@ function OutcomeChips({
           }`}
         >
           {chip.label} {countFor(chip.value)}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+/**
+ * Every booked chat, cut by first touch x last touch. Counts always add up to
+ * "All booked", which matches the Booked chip above.
+ */
+function TouchChips({
+  active,
+  q,
+  sort,
+  flag,
+  counts,
+}: {
+  active: string;
+  q: string;
+  sort: AdminChatbotSort;
+  flag: string;
+  counts: Record<AdminChatbotTouchBucket, number>;
+}) {
+  const total = TOUCH_CHIPS.reduce((sum, chip) => sum + counts[chip.value], 0);
+  const chips = [
+    { value: "all", label: "All booked", count: total },
+    ...TOUCH_CHIPS.map((chip) => ({ ...chip, count: counts[chip.value] })),
+  ];
+  return (
+    <nav
+      className="rounded-ui border-ui-line bg-ui-canvas inline-flex flex-wrap items-center gap-0.5 border p-0.5"
+      aria-label="First and last touch filters"
+    >
+      {chips.map((chip) => (
+        <Link
+          key={chip.value}
+          href={conversationsHref({
+            q,
+            sort,
+            flag,
+            outcome: "booked",
+            touch: chip.value,
+          })}
+          aria-current={active === chip.value ? "page" : undefined}
+          className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] transition ${
+            active === chip.value
+              ? "bg-ui-surface text-ui-text shadow-ui font-medium"
+              : "text-ui-text-muted hover:text-ui-text"
+          }`}
+        >
+          {chip.label} {chip.count}
         </Link>
       ))}
     </nav>
