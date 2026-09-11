@@ -40,6 +40,8 @@ const envSchema = z.object({
   MONEY_PAGE_INGEST_URL: optionalTrimmedOptionalEnv,
   MONEY_PAGE_SECRET: optionalTrimmedOptionalEnv,
   CRON_SECRET: optionalTrimmedOptionalEnv,
+  /** Bearer key for the read-only reporting API (/api/reporting/*). */
+  REPORTING_API_KEY: optionalTrimmedOptionalEnv,
   CALENDLY_WEBHOOK_SIGNING_KEY: optionalTrimmedOptionalEnv,
   CALENDLY_API_TOKEN: optionalTrimmedOptionalEnv,
   /**
@@ -190,6 +192,7 @@ const parsed = envSchema.safeParse({
   MONEY_PAGE_INGEST_URL: process.env.MONEY_PAGE_INGEST_URL,
   MONEY_PAGE_SECRET: process.env.MONEY_PAGE_SECRET,
   CRON_SECRET: process.env.CRON_SECRET,
+  REPORTING_API_KEY: process.env.REPORTING_API_KEY,
   CALENDLY_WEBHOOK_SIGNING_KEY: process.env.CALENDLY_WEBHOOK_SIGNING_KEY,
   CALENDLY_API_TOKEN: process.env.CALENDLY_API_TOKEN,
   WEBINAR_INGEST_SECRET: process.env.WEBINAR_INGEST_SECRET,
