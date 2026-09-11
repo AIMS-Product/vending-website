@@ -117,6 +117,25 @@ describe("Bitly sync runner route", () => {
     expect(await response.json()).toMatchObject({ ok: false, failed: 2 });
   });
 
+  it("stays green when the only bad links are permanently malformed", async () => {
+    // A malformed stored id is a data problem for a person to fix, not
+    // something the next run can retry. Paging the cron every night for it
+    // trains everyone to ignore the alert.
+    mocks.syncBitlyClicks.mockResolvedValue({
+      scanned: 12,
+      updated: 11,
+      failed: 0,
+      invalid: 1,
+      daysWritten: 330,
+      linksMapped: 0,
+    });
+
+    const response = await GET(request("cron-secret-123456"));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ ok: true, invalid: 1 });
+  });
+
   it("returns 500 and leaks nothing when the sync throws", async () => {
     const logged = vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.syncBitlyClicks.mockRejectedValue(
