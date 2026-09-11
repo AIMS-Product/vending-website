@@ -359,7 +359,7 @@ function buildStages(totals: {
     {
       label: "Attended the call",
       count: totals.attended,
-      note: "booked minus no-show and cancelled",
+      note: "booked minus no-show and cancelled, wins aside",
     },
     { label: "Closed / won", count: totals.closed },
   ];
@@ -527,14 +527,22 @@ function bookedBeforeLead(lead: YouTubeLeadRow): boolean {
  * Close has no "attended" field, so this is a subtraction, not an observation:
  * the labels that positively assert the call did not happen are removed and the
  * rest are treated as held. Named as a derivation everywhere it surfaces.
+ *
+ * A win overrides the subtraction, for the same reason `hasBooked` infers the
+ * booking: the sale happened, so a call happened. Without that, a deal Close
+ * reports as won while its appointment still carries `canceled` -- the
+ * appointment was rebooked, or the label was never cleared -- counted at the
+ * bottom of the funnel and not at the stage above it, and "Closed / won"
+ * rendered over 100% of "Attended the call".
  */
 function countAttended(leads: YouTubeLeadRow[]): number {
-  return leads.filter(
-    (lead) =>
-      hasBooked(lead) &&
-      lead.call_outcome !== "no_show" &&
-      lead.call_outcome !== "canceled",
-  ).length;
+  return leads.filter(attendedCall).length;
+}
+
+function attendedCall(lead: YouTubeLeadRow): boolean {
+  if (!hasBooked(lead)) return false;
+  if (isClosedWon(lead)) return true;
+  return lead.call_outcome !== "no_show" && lead.call_outcome !== "canceled";
 }
 
 function groupByCampaign(

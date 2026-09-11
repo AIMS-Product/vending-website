@@ -513,6 +513,31 @@ describe("funnel monotonicity", () => {
     expect(totals.closed).toBe(1);
   });
 
+  /**
+   * One lead cannot expose this: the gap needs a second lead whose win carries
+   * an outcome label that the attended subtraction removes. `booked` counts it
+   * (it is won), `closed` counts it (it is won), and `attended` dropped it for
+   * being cancelled -- so the bottom stage came out larger than the one above.
+   */
+  it("keeps attended above closed when a win is labelled cancelled", () => {
+    const { totals, stages } = build([
+      lead({ call_booked_at: "2026-08-11", call_outcome: "won" }),
+      lead({
+        call_booked_at: null,
+        call_outcome: "canceled",
+        closed_won_at: "2026-08-20",
+        closed_won_source: "close_opportunity",
+      }),
+    ]);
+
+    expect(totals.booked).toBe(2);
+    expect(totals.closed).toBe(2);
+    expect(totals.attended).toBe(2);
+
+    const closedStage = stages.find((stage) => stage.label === "Closed / won");
+    expect(closedStage?.ofPreviousPct).toBe(100);
+  });
+
   it("leaves the booked count alone when outcomes are not connected", () => {
     const { totals } = build([lead({ call_booked_at: null })], {
       outcomesConnected: false,
@@ -521,7 +546,7 @@ describe("funnel monotonicity", () => {
     expect(totals.booked).toBe(0);
   });
 
-  it("still excludes a won lead whose call was a no-show from attended", () => {
+  it("still excludes a no-show that never closed from attended", () => {
     const { totals } = build([
       lead({
         call_booked_at: "2026-08-15",
