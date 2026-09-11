@@ -17,7 +17,10 @@
 --    rename applies to old days on the next backfill instead of forking them.
 -- 3. A trigger keeps a program channel once set, for the same reason as (1).
 
-create temp table channel_daily_merged as
+-- A regular table, not temp: the Supabase SQL editor runs statements on
+-- pooled connections, so a temp table does not survive to the next statement.
+drop table if exists public.channel_daily_merged;
+create table public.channel_daily_merged as
 select
   day, source, medium, campaign, content, destination,
   (array_agg(channel order by (channel = 'Webinar') desc, synced_at desc))[1] as channel,
@@ -37,7 +40,7 @@ group by day, source, medium, campaign, content, destination
 having count(*) > 1;
 
 delete from public.channel_daily d
-using channel_daily_merged m
+using public.channel_daily_merged m
 where d.day = m.day
   and d.source = m.source
   and d.medium = m.medium
@@ -51,9 +54,9 @@ insert into public.channel_daily
 select
   day, channel, source, medium, campaign, content, destination,
   spend, impressions, reach, clicks, visits, leads, booked, showed, won, revenue, synced_at
-from channel_daily_merged;
+from public.channel_daily_merged;
 
-drop table channel_daily_merged;
+drop table public.channel_daily_merged;
 
 alter table public.channel_daily drop constraint channel_daily_pkey;
 alter table public.channel_daily
