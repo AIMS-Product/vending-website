@@ -153,10 +153,12 @@ https://www.figma.com/board/iGNIgllcEBdKjVrbIm9mee unchanged.
   so the first brand listed owns a post; Instagram typed ids differ from the
   summary ids and join on the post URL; `stories/instagram` 500s and is
   skipped. `METRICOOL_BLOG_IDS` is in `.env.local` and Vercel Production.
-- Owed before the three-brand pull works in prod: apply
-  `supabase/migrations/20260911200000_metricool_posts_brand_id.sql` (the
-  session had no DB password and the keychain read for the Supabase access
-  token was denied), then `GET /api/admin/metricool-sync/run?days=400`.
+- Migration applied by Adam in the SQL editor; deploy 158a5c2 Ready; 400-day
+  backfill ran 19:32Z: `metricool-posts` 5,388 rows (2,694 posts + spine),
+  108 non-compliant links (93 are X posts). Posts by brand: VP 471 youtube +
+  430 facebook; Mike 512 ig, 534 x, 75 li, 18 tt, 0 fb (shared page deduped);
+  Anthony 405 x, 97 li, 91 ig, 51 tt, 10 fb. Spine sources `mike-ig`,
+  `anthony-x`, `mike-tt` etc. resolve to their channels.
 - Fix-these-links host filter: not decided, left as is.
 - Section 3 and 4: `BITLY_*` empty, `GOOGLE_OAUTH_*` absent in `.env.local`.
   Bitly needs a Generic Access Token (Settings → API), not an OAuth app.
