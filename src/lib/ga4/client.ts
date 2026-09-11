@@ -277,6 +277,7 @@ export function createGa4Client({
     { startDate, endDate }: { startDate: string; endDate: string },
     toRow: (raw: unknown) => T | null,
     firstMetric: (row: T) => number,
+    { verifyTotals = true } = {},
   ): Promise<T[]> => {
     const rows: T[] = [];
     let offset = 0;
@@ -299,7 +300,7 @@ export function createGa4Client({
       offset += pageSize;
     }
 
-    if (reportedTotal !== null) {
+    if (verifyTotals && reportedTotal !== null) {
       const summed = rows.reduce((sum, row) => sum + firstMetric(row), 0);
       if (summed !== reportedTotal) {
         throw new Error(
@@ -313,12 +314,18 @@ export function createGa4Client({
   return {
     fetchPageViews: (range) =>
       fetchAll(PAGE_VIEW_REPORT, range, toRow, (row) => row.screenPageViews),
+    // Five dimensions put this report over GA4's cardinality threshold, so
+    // GA4 folds rows into "(other)" and its TOTAL no longer equals the sum of
+    // the rows it returns, in either direction (seen live 2026-09-11: 99843 vs
+    // 103432 over 400 days, 18621 vs 18208 over 45). The check would refuse
+    // every read, so this report keeps the rows and accepts the fold.
     fetchChannelSessions: (range) =>
       fetchAll(
         CHANNEL_SESSION_REPORT,
         range,
         toChannelSessionRow,
         (row) => row.sessions,
+        { verifyTotals: false },
       ),
   };
 }

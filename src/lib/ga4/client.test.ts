@@ -352,7 +352,7 @@ describe("fetchChannelSessions", () => {
     expect(body.metrics.map((m) => m.name)).toEqual(["sessions"]);
   });
 
-  it("refuses a read whose sessions do not sum to GA4's total", async () => {
+  it("keeps channel session rows even when they do not sum to GA4's total", async () => {
     const { fetchImpl } = buildFetch({
       report: () => ({
         status: 200,
@@ -375,11 +375,11 @@ describe("fetchChannelSessions", () => {
       fetchImpl,
     });
 
-    await expect(
-      client.fetchChannelSessions({
-        startDate: "2026-09-01",
-        endDate: "2026-09-01",
-      }),
-    ).rejects.toThrow(/refusing a partial read/);
+    const rows = await client.fetchChannelSessions({
+      startDate: "2026-09-01",
+      endDate: "2026-09-01",
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.sessions).toBe(5);
   });
 });
