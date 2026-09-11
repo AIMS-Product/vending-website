@@ -1,6 +1,7 @@
 # Handoff: chatbot deep pass (2026-09-11)
 
 Worktree `.claude/worktrees/chatbot-dates`. Full findings: `2026-09-11-chatbot-deep-pass.md`.
+**Next session starts from `2026-09-11-chatbot-next-plan.md`** (S1 scoreboard first).
 
 ## State
 - PR #29 `fix/chatbot-dates-and-retry` -> main: date in prompt, wrong-year guard in
