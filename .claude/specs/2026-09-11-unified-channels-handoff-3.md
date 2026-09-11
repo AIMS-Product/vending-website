@@ -33,7 +33,9 @@ The user token sees three brands (from `GET /v2/settings/brands`):
 Only 6626386 is pulled today, and `brand-summary/posts` returned only
 `youtube` and `facebook` for it although Instagram and LinkedIn are connected.
 
-Do, in order:
+Adam's direction (2026-09-11): pull ALL data from all three brands, every
+connected network, with history back as far as Metricool returns (use
+`days=400`). Do, in order:
 
 - Probe with the real key (never print it): call
   `/v2/analytics/posts/instagram`, `/v2/analytics/reels/instagram`,
@@ -62,7 +64,7 @@ Do, in order:
   whose host is vendingpreneurs.com or booking.vendingpreneurs.com. One-line
   filter in `postRow` if yes.
 
-## 2. Webinar double count (done, verify)
+## 2. Webinar double count (done; delete ran 2026-09-11 evening, verify the tab)
 
 GHL forms `general-2026-webinar-registration-form` (4,027 leads/30d) and
 `webinar-intake-form` (827) are registrations already counted under channel
