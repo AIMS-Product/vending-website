@@ -10,10 +10,14 @@ import {
 } from "@/lib/services/admin-analytics-range";
 import {
   buildChannelReport,
+  buildGoingOut,
   summariseSyncRuns,
+  type BitlyClickFact,
   type ChannelFact,
   type ChannelGroupBy,
   type ChannelReport,
+  type GoingOutLink,
+  type GoingOutRow,
   type SyncHealthRow,
   type SyncRun,
 } from "@/lib/services/channel-report-rollup";
@@ -52,6 +56,8 @@ export type ChannelsTabData = {
     byDestination: ChannelReport;
   } | null;
   syncHealth: SyncHealthRow[];
+  /** Every link in the registry with its clicks in range, zero-click links included. */
+  goingOut: GoingOutRow[];
   /** False when the spine tables do not exist yet (migration not applied). */
   connected: boolean;
 };
@@ -76,9 +82,10 @@ export async function getChannelsTab(
     new Date(now.getTime() - (2 * days - 1) * DAY_MS),
   );
 
-  const [facts, runs] = await Promise.all([
+  const [facts, runs, goingOut] = await Promise.all([
     fetchFacts(client, priorStartDay, endDay),
     fetchRuns(client),
+    fetchGoingOut(client, priorStartDay, endDay, startDay),
   ]);
 
   const connected = facts !== null;
@@ -115,6 +122,7 @@ export async function getChannelsTab(
         }
       : null,
     syncHealth: summariseSyncRuns(runs, EXPECTED_CONNECTORS, now),
+    goingOut,
     connected,
   };
 }
@@ -171,6 +179,43 @@ async function fetchRuns(client: ReportClient): Promise<SyncRun[]> {
       .limit(500);
     if (error) return [];
     return (data ?? []) as SyncRun[];
+  } catch {
+    return [];
+  }
+}
+
+/** Newest links first; the registry is a log, so the cap matches /admin/links. */
+const GOING_OUT_LIMIT = 200;
+
+async function fetchGoingOut(
+  client: ReportClient,
+  priorStartDay: string,
+  endDay: string,
+  startDay: string,
+): Promise<GoingOutRow[]> {
+  try {
+    const { data: links, error } = await client
+      .from("marketing_links")
+      .select(
+        "id,url,label,utm_source,utm_medium,utm_campaign,utm_content,utm_term,bitly_id,bitly_url,created_at",
+      )
+      .order("created_at", { ascending: false })
+      .limit(GOING_OUT_LIMIT);
+    if (error || !links?.length) return [];
+    const ids = links
+      .map((link) => link.bitly_id)
+      .filter((id): id is string => Boolean(id));
+    let clicks: BitlyClickFact[] = [];
+    if (ids.length > 0) {
+      const { data } = await client
+        .from("bitly_link_clicks")
+        .select("bitly_id,day,clicks")
+        .in("bitly_id", ids)
+        .gte("day", priorStartDay)
+        .lte("day", endDay);
+      clicks = (data ?? []) as BitlyClickFact[];
+    }
+    return buildGoingOut(links as GoingOutLink[], clicks, startDay);
   } catch {
     return [];
   }

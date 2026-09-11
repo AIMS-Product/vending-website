@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   buildChannelReport,
+  buildGoingOut,
   summariseSyncRuns,
   sumObserved,
   type ChannelFact,
+  type GoingOutLink,
 } from "./channel-report-rollup";
 
 function fact(overrides: Partial<ChannelFact>): ChannelFact {
@@ -167,5 +169,43 @@ describe("summariseSyncRuns", () => {
       ["metricool", "skipped"],
     ]);
     expect(rows[4].note).toBe("METRICOOL_API_KEY is not set.");
+  });
+});
+
+describe("buildGoingOut", () => {
+  const link = (overrides: Partial<GoingOutLink>): GoingOutLink => ({
+    id: "l1",
+    url: "https://www.vendingpreneurs.com/book?utm_source=instagram",
+    label: null,
+    utm_source: "instagram",
+    utm_medium: "organic",
+    utm_campaign: "webinar-sept15",
+    utm_content: "post-1",
+    utm_term: "webinar-register",
+    bitly_id: "bit.ly/abc",
+    bitly_url: "https://bit.ly/abc",
+    created_at: "2026-09-01T00:00:00Z",
+    ...overrides,
+  });
+
+  it("keeps zero-click links, nulls links without a short link, and splits prior", () => {
+    const rows = buildGoingOut(
+      [
+        link({ id: "hot", bitly_id: "bit.ly/hot" }),
+        link({ id: "cold", bitly_id: "bit.ly/cold" }),
+        link({ id: "long", bitly_id: null, bitly_url: null }),
+      ],
+      [
+        { bitly_id: "bit.ly/hot", day: "2026-09-10", clicks: 4 },
+        { bitly_id: "bit.ly/hot", day: "2026-09-09", clicks: 1 },
+        { bitly_id: "bit.ly/hot", day: "2026-09-01", clicks: 7 },
+      ],
+      "2026-09-05",
+    );
+    expect(rows.map((row) => [row.id, row.clicks, row.priorClicks])).toEqual([
+      ["hot", 5, 7],
+      ["cold", 0, 0],
+      ["long", null, null],
+    ]);
   });
 });

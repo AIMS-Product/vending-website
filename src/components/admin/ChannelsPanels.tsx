@@ -12,6 +12,7 @@ import type {
   ChannelReport,
   ChannelReportRow,
   FunnelStage,
+  GoingOutRow,
   SyncHealthRow,
 } from "@/lib/services/channel-report-rollup";
 import type { ChannelsTabData } from "@/lib/services/channel-report";
@@ -99,6 +100,12 @@ export function ChannelsTab({
           />
         </div>
       ) : null}
+
+      {data.channel ? null : (
+        <div className="mt-5">
+          <GoingOutTable rows={data.goingOut} days={data.range.days} />
+        </div>
+      )}
 
       <div className="mt-5">
         <SyncHealthPanel rows={data.syncHealth} />
@@ -297,6 +304,101 @@ export function ChannelTable({
                   </td>
                   <td className="text-ui-text py-2.5 text-right font-semibold tabular-nums">
                     <Cell value={row.costPerLead} format="money" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function GoingOutTable({
+  rows,
+  days,
+}: {
+  rows: GoingOutRow[];
+  days: number;
+}) {
+  return (
+    <section className={adminCardClass} aria-label="Going out">
+      <h2 className={adminEyebrowClass}>Going out</h2>
+      <p className="text-ui-text-subtle mt-2 text-xs">
+        Every link built at{" "}
+        <Link
+          href="/admin/links"
+          className="text-ui-accent underline-offset-2 hover:underline"
+        >
+          /admin/links
+        </Link>
+        , with Bitly clicks in the last {days} days. A link with no short link
+        has no click count to observe.
+      </p>
+      {rows.length === 0 ? (
+        <p className="text-ui-text-subtle mt-3 text-sm">
+          No links in the registry yet.
+        </p>
+      ) : (
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[52rem] text-[0.8125rem]">
+            <thead>
+              <tr
+                className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
+              >
+                <th className="py-2 pr-3 font-semibold">Link</th>
+                <th className="py-2 pr-3 font-semibold">Source</th>
+                <th className="py-2 pr-3 font-semibold">Campaign</th>
+                <th className="py-2 pr-3 font-semibold">Content</th>
+                <th className="py-2 pr-3 font-semibold">Sends to</th>
+                <th className="py-2 text-right font-semibold">Clicks</th>
+              </tr>
+            </thead>
+            <tbody className="divide-ui-line divide-y">
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  <td className="text-ui-text max-w-[16rem] py-2.5 pr-3 font-medium">
+                    <a
+                      href={row.bitly_url ?? row.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ui-accent block truncate underline-offset-2 hover:underline"
+                      title={row.url}
+                    >
+                      {row.label ?? row.bitly_url ?? row.url}
+                    </a>
+                  </td>
+                  <td className="text-ui-text py-2.5 pr-3">
+                    {row.utm_source}
+                    <span className="text-ui-text-subtle">
+                      {" "}
+                      · {row.utm_medium}
+                    </span>
+                  </td>
+                  <td className="text-ui-text py-2.5 pr-3">
+                    {row.utm_campaign}
+                  </td>
+                  <td className="text-ui-text-muted py-2.5 pr-3">
+                    {row.utm_content}
+                  </td>
+                  <td className="text-ui-text py-2.5 pr-3">{row.utm_term}</td>
+                  <td className="text-ui-text py-2.5 text-right font-semibold tabular-nums">
+                    {row.clicks == null ? (
+                      <span
+                        className="text-ui-text-subtle font-normal"
+                        title="No short link, so Bitly has nothing to count."
+                      >
+                        no short link
+                      </span>
+                    ) : (
+                      <>
+                        <span className="mr-1 inline-block align-middle">
+                          <Delta current={row.clicks} prior={row.priorClicks} />
+                        </span>
+                        {row.clicks.toLocaleString()}
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

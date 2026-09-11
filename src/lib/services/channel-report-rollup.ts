@@ -285,3 +285,59 @@ export function summariseSyncRuns(
     };
   });
 }
+
+// ---------------------------------------------------------------------------
+// Going out: the link registry joined to Bitly clicks, so a link with zero
+// clicks still appears. A link without a short link has no click observer at
+// all, so its clicks are null ("not observed"), never zero.
+// ---------------------------------------------------------------------------
+
+export type GoingOutLink = Pick<
+  Tables<"marketing_links">,
+  | "id"
+  | "url"
+  | "label"
+  | "utm_source"
+  | "utm_medium"
+  | "utm_campaign"
+  | "utm_content"
+  | "utm_term"
+  | "bitly_id"
+  | "bitly_url"
+  | "created_at"
+>;
+
+export type BitlyClickFact = Pick<
+  Tables<"bitly_link_clicks">,
+  "bitly_id" | "day" | "clicks"
+>;
+
+export type GoingOutRow = GoingOutLink & {
+  /** Clicks in the range. Null when the link has no short link to observe. */
+  clicks: number | null;
+  priorClicks: number | null;
+};
+
+export function buildGoingOut(
+  links: GoingOutLink[],
+  clicks: BitlyClickFact[],
+  startDay: string,
+): GoingOutRow[] {
+  const current = new Map<string, number>();
+  const prior = new Map<string, number>();
+  for (const fact of clicks) {
+    const bucket = fact.day >= startDay ? current : prior;
+    bucket.set(fact.bitly_id, (bucket.get(fact.bitly_id) ?? 0) + fact.clicks);
+  }
+  return links
+    .map((link) => ({
+      ...link,
+      clicks: link.bitly_id ? (current.get(link.bitly_id) ?? 0) : null,
+      priorClicks: link.bitly_id ? (prior.get(link.bitly_id) ?? 0) : null,
+    }))
+    .sort(
+      (a, b) =>
+        (b.clicks ?? -1) - (a.clicks ?? -1) ||
+        b.created_at.localeCompare(a.created_at),
+    );
+}
