@@ -214,7 +214,15 @@ export function buildYouTubeAttribution({
   visitsSource?: YouTubeVisitsSource | null;
   outcomesConnected: boolean;
 }): YouTubeAttributionRollup {
-  const youtubeLeads = leads.filter(isYouTubeLead);
+  // Outcome columns nobody could read are cleared once, here, rather than
+  // guarded at each of the dozen places that reach for them. In production
+  // `fetchLeads` re-selects without those columns when the first read fails, so
+  // they arrive absent -- this makes that the rule instead of an accident of
+  // the fallback's select list, and keeps a win we cannot see from raising the
+  // booked count while the stages below it report "unmeasured".
+  const youtubeLeads = leads
+    .filter(isYouTubeLead)
+    .map(outcomesConnected ? identity : withoutOutcomes);
   const byCampaign = groupByCampaign(youtubeLeads);
   const videoByCampaign = new Map(
     videos.map((video) => [video.utm_campaign, video]),
@@ -507,6 +515,20 @@ function hasBooked(lead: YouTubeLeadRow): boolean {
 
 function isQualified(lead: YouTubeLeadRow): boolean {
   return lead.lifecycle_status === "qualified";
+}
+
+function identity(lead: YouTubeLeadRow): YouTubeLeadRow {
+  return lead;
+}
+
+/** A copy with the unreadable outcome columns cleared. Never mutates. */
+function withoutOutcomes(lead: YouTubeLeadRow): YouTubeLeadRow {
+  return {
+    ...lead,
+    call_outcome: null,
+    closed_won_at: null,
+    closed_won_source: null,
+  };
 }
 
 function isClosedWon(lead: YouTubeLeadRow): boolean {

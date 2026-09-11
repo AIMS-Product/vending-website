@@ -538,12 +538,30 @@ describe("funnel monotonicity", () => {
     expect(closedStage?.ofPreviousPct).toBe(100);
   });
 
+  /**
+   * The old version of this passed a lead with every outcome column null, so
+   * `hasBooked` returned false whatever the code did with `outcomesConnected` --
+   * it could not fail. Setting the columns is what makes the claim testable: a
+   * win nobody could read must not raise the booked count while the stages
+   * below it report "unmeasured".
+   */
   it("leaves the booked count alone when outcomes are not connected", () => {
-    const { totals } = build([lead({ call_booked_at: null })], {
+    const wonLead = lead({
+      call_booked_at: null,
+      call_outcome: "won",
+      closed_won_at: "2026-08-20",
+      closed_won_source: "close_opportunity",
+    });
+
+    const { totals, cohorts } = build([wonLead], {
       outcomesConnected: false,
     });
 
     expect(totals.booked).toBe(0);
+    expect(totals.attended).toBeNull();
+    expect(totals.closed).toBeNull();
+    expect(cohorts[0]?.booked).toBe(0);
+    expect(cohorts[0]?.closed).toBe(0);
   });
 
   it("still excludes a no-show that never closed from attended", () => {
