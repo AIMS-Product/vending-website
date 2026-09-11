@@ -15,38 +15,53 @@ type Call = { method: string; args: unknown[] };
  * A chainable PostgREST stand-in: every builder method records its call and
  * returns itself, and awaiting it yields the canned result. `range` slices the
  * rows the way PostgREST does, so a paged read sees one page per request.
+ *
+ * `gte` actually filters. It used to be recorded and ignored, which meant the
+ * range bound on every read was untested: deleting `.gte("day", ...)` from the
+ * clicks query left the whole suite green. Everything else is still recorded
+ * only — `not`/`order` do not change which rows a test cares about.
  */
 function builder(rows: unknown[], error: unknown, calls: Call[]) {
   const target: Record<string, unknown> = {};
   let window: [number, number] | null = null;
-  for (const method of [
-    "select",
-    "gte",
-    "not",
-    "neq",
-    "order",
-    "limit",
-    "eq",
-    "or",
-  ]) {
+  const filters: Array<(row: unknown) => boolean> = [];
+  for (const method of ["select", "not", "neq", "order", "limit", "eq", "or"]) {
     target[method] = (...args: unknown[]) => {
       calls.push({ method, args });
       return target;
     };
   }
+  target.gte = (column: string, value: string) => {
+    calls.push({ method: "gte", args: [column, value] });
+    filters.push((row) => {
+      const cell = (row as Record<string, unknown>)[column];
+      // Absent means the fixture does not model this column, so it is not the
+      // bound under test and the row stays in.
+      return cell === undefined || String(cell) >= value;
+    });
+    return target;
+  };
   target.range = (from: number, to: number) => {
     calls.push({ method: "range", args: [from, to] });
     window = [from, to];
     return target;
   };
-  target.then = (resolve: unknown, reject: unknown) =>
-    Promise.resolve({
-      data: error ? null : window ? rows.slice(window[0], window[1] + 1) : rows,
+  target.then = (resolve: unknown, reject: unknown) => {
+    const matched = rows.filter((row) =>
+      filters.every((filter) => filter(row)),
+    );
+    return Promise.resolve({
+      data: error
+        ? null
+        : window
+          ? matched.slice(window[0], window[1] + 1)
+          : matched,
       error,
     }).then(
       resolve as (v: unknown) => unknown,
       reject as (e: unknown) => unknown,
     );
+  };
   return { target };
 }
 
@@ -381,13 +396,15 @@ describe("getYouTubeAttribution clicks window", () => {
   });
 
   it("counts clicks when the range starts inside the synced window", async () => {
-    // 7d from NOW starts 2026-09-03, well inside the synced window.
+    // 7d from NOW starts 2026-09-03, well inside the synced window. Only the
+    // 09-05 row is in range: the 08-20 row is what sets the window start, and
+    // the query's own `gte("day", ...)` is what leaves it out of the total.
     const result = await run(
       { bitly_link_clicks: [click("2026-08-20"), click("2026-09-05")] },
       "7d",
     );
 
-    expect(result.totals.clicks).toBe(10);
+    expect(result.totals.clicks).toBe(5);
     expect(result.coverage.clicksConnected).toBe(true);
     expect(result.coverage.clicksWindowStart).toBe("2026-08-20");
   });

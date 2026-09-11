@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { expandAliases, splitByBitlyLink } from "./import-youtube-registry.mjs";
+import {
+  expandAliases,
+  splitByBitlyLink,
+  upsertFailureMessage,
+} from "./import-youtube-registry.mjs";
 
 const linkedRow = {
   utm_campaign: "pro-con",
@@ -82,5 +86,31 @@ describe("expandAliases still works alongside the split", () => {
     expect(linked.map((row) => row.utm_campaign)).toContain(
       "vending-machine-location",
     );
+  });
+});
+
+/**
+ * LOW: the message said "upsert failed at row ${index}", where index was the
+ * offset inside whichever group was being written. Both groups restart at 0,
+ * so a failure in the second one reported row 0 for what is registry row 604 --
+ * and the groups are not contiguous in the registry anyway, so no index there
+ * points at anything. It names the group and the campaigns instead.
+ */
+describe("upsertFailureMessage", () => {
+  it("names the group and the campaigns, not a meaningless row index", () => {
+    const message = upsertFailureMessage({
+      label: "without-bitly",
+      chunk: [{ utm_campaign: "first" }, { utm_campaign: "last" }],
+      offset: 0,
+      groupSize: 42,
+      reason: "duplicate key",
+    });
+
+    expect(message).toContain("without-bitly");
+    expect(message).toContain("first");
+    expect(message).toContain("last");
+    expect(message).toContain("42");
+    expect(message).toContain("duplicate key");
+    expect(message).not.toContain("at row 0");
   });
 });

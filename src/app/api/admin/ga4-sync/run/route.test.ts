@@ -151,6 +151,10 @@ describe("GA4 sync runner route", () => {
 
     expect(response.status).toBe(500);
     expect(JSON.stringify(body)).not.toContain("DEADBEEF");
+    // "Leaks nothing" has to include the log, which is where this one actually
+    // leaked: a GA4 auth failure's message can carry parts of the key.
+    expect(logged).toHaveBeenCalled();
+    expect(JSON.stringify(logged.mock.calls)).not.toContain("DEADBEEF");
     logged.mockRestore();
   });
 

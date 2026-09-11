@@ -60,7 +60,12 @@ export async function main(argv = process.argv.slice(2)) {
   const { linked, unlinked } = splitByBitlyLink(rows);
   let imported = 0;
 
-  for (const group of [linked, unlinked]) {
+  const groups = [
+    { label: "with-bitly", rows: linked },
+    { label: "without-bitly", rows: unlinked },
+  ];
+
+  for (const { label, rows: group } of groups) {
     for (let index = 0; index < group.length; index += UPSERT_CHUNK) {
       const chunk = group.slice(index, index + UPSERT_CHUNK);
       const { error } = await client
@@ -68,7 +73,15 @@ export async function main(argv = process.argv.slice(2)) {
         .upsert(chunk, { onConflict: "utm_campaign" });
 
       if (error) {
-        console.error(`upsert failed at row ${index}: ${error.message}`);
+        console.error(
+          upsertFailureMessage({
+            label,
+            chunk,
+            offset: index,
+            groupSize: group.length,
+            reason: error.message,
+          }),
+        );
         return 1;
       }
       imported += chunk.length;
@@ -79,6 +92,28 @@ export async function main(argv = process.argv.slice(2)) {
     `imported ${imported} rows into youtube_videos (${unlinked.length} left their Bitly columns alone).`,
   );
   return 0;
+}
+
+/**
+ * Says which upsert failed in terms somebody can act on.
+ *
+ * Not a row index: the two groups each restart at 0, so a failure in the second
+ * reported "row 0" for what is registry row 604 — and the groups are not
+ * contiguous in the registry anyway, so no offset into one points at a line of
+ * the source file. The group and the campaigns at the chunk's edges do.
+ *
+ * Exported for the test.
+ */
+export function upsertFailureMessage({
+  label,
+  chunk,
+  offset,
+  groupSize,
+  reason,
+}) {
+  const first = chunk[0]?.utm_campaign ?? "?";
+  const last = chunk[chunk.length - 1]?.utm_campaign ?? "?";
+  return `upsert failed on the ${label} group, ${chunk.length} of ${groupSize} rows starting at its offset ${offset} (${first} … ${last}): ${reason}`;
 }
 
 /**

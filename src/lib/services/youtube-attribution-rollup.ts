@@ -123,7 +123,13 @@ export type YouTubeCohortRow = {
   booked: number;
   closed: number;
   closedSameMonth: number;
-  closedLaterMonth: number;
+  /**
+   * Wins dated in any month but the cohort's own — after it, and also before
+   * it for a lead Close already held. Not "later": under a strict `>` a win
+   * dated earlier matched neither column and the row rendered "Won 1" with
+   * both sub-columns at 0.
+   */
+  closedOtherMonth: number;
 };
 
 /**
@@ -456,10 +462,9 @@ function buildCohorts(leads: YouTubeLeadRow[]): YouTubeCohortRow[] {
           (lead) => monthKey(lead.closed_won_at!) === month,
         ).length,
         // Anything not in the first-touch month, rather than strictly after it.
-        // A win dated BEFORE the cohort month is a lead Close already held, and
-        // under a strict `>` it matched neither column — the row then rendered
-        // "Won 1" with both sub-columns at 0.
-        closedLaterMonth: dated.filter(
+        // See the type: a win dated before the cohort month belongs here too,
+        // which is why this is not called "later".
+        closedOtherMonth: dated.filter(
           (lead) => monthKey(lead.closed_won_at!) !== month,
         ).length,
       };

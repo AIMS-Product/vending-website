@@ -304,7 +304,7 @@ describe("cohorts", () => {
     expect(august?.leads).toBe(1);
     expect(august?.booked).toBe(1);
     // Touched in August, closed in September — August gets the credit.
-    expect(august?.closedLaterMonth).toBe(1);
+    expect(august?.closedOtherMonth).toBe(1);
     expect(august?.closedSameMonth).toBe(0);
     expect(september?.leads).toBe(1);
   });
@@ -649,7 +649,10 @@ describe("cohort win columns", () => {
 
     const row = cohorts[0];
     expect(row?.closed).toBe(1);
-    expect((row?.closedSameMonth ?? 0) + (row?.closedLaterMonth ?? 0)).toBe(1);
+    expect((row?.closedSameMonth ?? 0) + (row?.closedOtherMonth ?? 0)).toBe(1);
+    // LOW: this win is dated BEFORE the cohort month, so the column it lands in
+    // cannot be called "later" -- it is "some other month".
+    expect(row?.closedOtherMonth).toBe(1);
   });
 });
 

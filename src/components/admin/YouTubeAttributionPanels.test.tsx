@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
+  YouTubeCohortTable,
   YouTubeCoverageNote,
   YouTubeStageFunnel,
 } from "./YouTubeAttributionPanels";
@@ -85,6 +86,34 @@ describe("YouTubeCoverageNote", () => {
     const html = note({ bookedBeforeLead: 0 });
 
     expect(html).toContain("Cycle times");
+  });
+});
+
+describe("YouTubeCohortTable", () => {
+  /**
+   * LOW: the column counts every win NOT dated in the cohort month, which
+   * includes a win dated before it -- a lead Close already held. Calling that
+   * "Won later" states the opposite of what the number contains.
+   */
+  it("does not call a win dated before the cohort month a later win", () => {
+    const html = renderToStaticMarkup(
+      <YouTubeCohortTable
+        cohorts={[
+          {
+            month: "2026-08",
+            leads: 1,
+            booked: 1,
+            closed: 1,
+            closedSameMonth: 0,
+            closedOtherMonth: 1,
+          },
+        ]}
+        outcomesConnected
+      />,
+    );
+
+    expect(html).not.toContain("Won later");
+    expect(html).toContain("Won another month");
   });
 });
 
