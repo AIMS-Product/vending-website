@@ -1020,6 +1020,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      manychat_events: {
+        Row: {
+          day: string;
+          email: string | null;
+          enriched: boolean;
+          event: string;
+          ig_username: string | null;
+          occurred_at: string;
+          phone: string | null;
+          received_at: string;
+          subscribed_at: string | null;
+          subscriber_id: string;
+          tags: Json;
+        };
+        Insert: {
+          day: string;
+          email?: string | null;
+          enriched?: boolean;
+          event: string;
+          ig_username?: string | null;
+          occurred_at: string;
+          phone?: string | null;
+          received_at?: string;
+          subscribed_at?: string | null;
+          subscriber_id: string;
+          tags?: Json;
+        };
+        Update: {
+          day?: string;
+          email?: string | null;
+          enriched?: boolean;
+          event?: string;
+          ig_username?: string | null;
+          occurred_at?: string;
+          phone?: string | null;
+          received_at?: string;
+          subscribed_at?: string | null;
+          subscriber_id?: string;
+          tags?: Json;
+        };
+        Relationships: [];
+      };
       ga4_page_views: {
         Row: {
           day: string;

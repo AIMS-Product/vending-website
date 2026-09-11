@@ -56,6 +56,16 @@ describe("resolveChannel", () => {
     expect(resolveChannel("ghl_form").channel).toBe("GHL forms");
   });
 
+  it("names the DM setter and the low-ticket funnel, and reads blanks as Website", () => {
+    expect(resolveChannel("ghl").channel).toBe("Instagram DM");
+    expect(resolveChannel("manychat").channel).toBe("Instagram DM");
+    expect(resolveChannel("ltf").channel).toBe("Low ticket funnel");
+    for (const blank of ["(not set)", "(direct)", "(none)"]) {
+      expect(resolveChannel(blank).channel).toBe(WEBSITE_CHANNEL);
+    }
+    expect(resolveChannel("(data not available)").channel).toBe("Unknown");
+  });
+
   it("handles a person tag it has never seen before", () => {
     // A new rep's link must not open its own row and shrink the channel.
     expect(resolveChannel("sarah-ig")).toEqual({

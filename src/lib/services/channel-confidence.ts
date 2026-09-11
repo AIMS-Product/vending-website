@@ -1,6 +1,8 @@
 import {
   AI_CHANNEL,
   GHL_FORMS_CHANNEL,
+  INSTAGRAM_DM_CHANNEL,
+  LOW_TICKET_CHANNEL,
   REFERRAL_CHANNEL,
   SEARCH_CHANNEL,
   UNKNOWN_CHANNEL,
@@ -53,6 +55,8 @@ const EXPECTED: Record<string, CoverageKey[]> = {
   Email: ["impressions", "clicks", "leads"],
   Newsletter: ["visits", "leads"],
   Chatbot: ["leads", "booked"],
+  [INSTAGRAM_DM_CHANNEL]: ["clicks", "visits", "leads", "booked"],
+  [LOW_TICKET_CHANNEL]: ["visits", "leads", "booked"],
   [GHL_FORMS_CHANNEL]: ["leads"],
   [WEBSITE_CHANNEL]: ["visits", "leads"],
   [SEARCH_CHANNEL]: ["visits", "leads"],
@@ -65,10 +69,10 @@ const EXPECTED: Record<string, CoverageKey[]> = {
 const METRIC_CONNECTORS: Record<CoverageKey, string[]> = {
   spend: ["webinar-ingest"],
   impressions: ["metricool-posts", "youtube-analytics", "ghl-email"],
-  clicks: ["bitly-clicks", "metricool-posts", "ghl-email"],
+  clicks: ["bitly-clicks", "metricool-posts", "ghl-email", "manychat-ingest"],
   visits: ["ga4-visits"],
-  leads: ["leads", "webinar-ingest", "ghl-forms"],
-  booked: ["leads", "webinar-ingest"],
+  leads: ["leads", "webinar-ingest", "ghl-forms", "manychat-ingest"],
+  booked: ["leads", "webinar-ingest", "manychat-ingest"],
 };
 
 export type CoverageCell = {

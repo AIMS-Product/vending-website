@@ -48,6 +48,13 @@ const envSchema = z.object({
    * Actions secrets. Absent means the receiver answers 503 and nothing lands.
    */
   WEBINAR_INGEST_SECRET: optionalTrimmedOptionalEnv,
+  /**
+   * Bearer secret ManyChat flows present when they POST a stage event to
+   * /api/admin/manychat-ingest. Absent means the receiver answers 503.
+   */
+  MANYCHAT_INGEST_SECRET: optionalTrimmedOptionalEnv,
+  /** ManyChat page API key; absent means events land without enrichment. */
+  MANYCHAT_API_KEY: optionalTrimmedOptionalEnv,
   // Bitly click sync for the YouTube attribution tab. Absent means the clicks
   // stage of the funnel reports "not connected" rather than zero.
   BITLY_ACCESS_TOKEN: optionalTrimmedOptionalEnv,
@@ -186,6 +193,8 @@ const parsed = envSchema.safeParse({
   CALENDLY_WEBHOOK_SIGNING_KEY: process.env.CALENDLY_WEBHOOK_SIGNING_KEY,
   CALENDLY_API_TOKEN: process.env.CALENDLY_API_TOKEN,
   WEBINAR_INGEST_SECRET: process.env.WEBINAR_INGEST_SECRET,
+  MANYCHAT_INGEST_SECRET: process.env.MANYCHAT_INGEST_SECRET,
+  MANYCHAT_API_KEY: process.env.MANYCHAT_API_KEY,
   BITLY_ACCESS_TOKEN: process.env.BITLY_ACCESS_TOKEN,
   BITLY_GROUP_GUID: process.env.BITLY_GROUP_GUID,
   GA4_SERVICE_ACCOUNT_JSON: process.env.GA4_SERVICE_ACCOUNT_JSON,

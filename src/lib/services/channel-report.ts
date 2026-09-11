@@ -14,6 +14,7 @@ import {
   type SourceCounts,
 } from "@/lib/services/channel-confidence";
 import { isInternalLead } from "@/lib/services/admin-analytics-internal";
+import { MANYCHAT_INGEST_CONNECTOR } from "@/lib/services/manychat-ingest";
 import {
   buildChannelReport,
   buildGoingOut,
@@ -46,6 +47,7 @@ export const EXPECTED_CONNECTORS: readonly string[] = [
   CHANNEL_CONNECTORS.bitly,
   CHANNEL_CONNECTORS.leads,
   "webinar-ingest",
+  MANYCHAT_INGEST_CONNECTOR,
   GHL_CONNECTORS.email,
   GHL_CONNECTORS.forms,
   METRICOOL_CONNECTOR,

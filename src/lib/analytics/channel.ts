@@ -54,6 +54,14 @@ export const AI_CHANNEL = "AI assistants";
 export const REFERRAL_CHANNEL = "Referral";
 /** GHL lander form submissions; the GHL API exposes no UTMs per submission. */
 export const GHL_FORMS_CHANNEL = "GHL forms";
+/**
+ * The Instagram DM setter (Pearl, on ManyChat). Stage events arrive from
+ * ManyChat flows as source `manychat`; the booking links Pearl sends are
+ * tagged `utm_source=ghl&utm_medium=pearl` (GHL hosts the booking page).
+ */
+export const INSTAGRAM_DM_CHANNEL = "Instagram DM";
+/** The paid low-ticket funnel (campaign `wescale`). Adam, 2026-09-11. */
+export const LOW_TICKET_CHANNEL = "Low ticket funnel";
 
 type ChannelRule = { channel: string; person?: string };
 
@@ -116,6 +124,9 @@ const EXACT: Record<string, ChannelRule> = {
   ghl_sms: { channel: "SMS" },
   ghl_email: { channel: "Email" },
   ghl_form: { channel: GHL_FORMS_CHANNEL },
+  ghl: { channel: INSTAGRAM_DM_CHANNEL },
+  manychat: { channel: INSTAGRAM_DM_CHANNEL },
+  ltf: { channel: LOW_TICKET_CHANNEL },
 
   // Tag used by the vendingpreneurs.ai funnel's "Apply Now" button.
   web: { channel: WEBSITE_CHANNEL },
@@ -153,8 +164,14 @@ const SUFFIX_CHANNEL: Record<string, string> = {
 /** A tag made only of punctuation carries no information (seen: "_____"). */
 const MEANINGLESS = /^[^a-z0-9]*$/;
 
-/** GA4 placeholders when the session source is unknown. */
-const GA4_PLACEHOLDER = /^\((data not available|not set|direct|none)\)$/;
+/**
+ * GA4's markers for "no UTM on this session" and the spine's own "(not set)"
+ * for a blank dimension. All mean the link carried nothing, which is what a
+ * blank means here: the visitor landed on our site untagged, so Website.
+ */
+const BLANK_MARKER = /^\((not set|direct|none)\)$/;
+/** GA4's marker when the source is genuinely unknown to it. */
+const GA4_PLACEHOLDER = /^\(data not available\)$/;
 
 /**
  * GA4 reports a session's source as the referrer hostname when no UTM was
@@ -229,7 +246,8 @@ export function resolveChannel(
   utmSource: string | null | undefined,
   options: { capturedByChatbot?: boolean } = {},
 ): ChannelAttribution {
-  const raw = utmSource?.trim().toLowerCase() ?? "";
+  const trimmed = utmSource?.trim().toLowerCase() ?? "";
+  const raw = BLANK_MARKER.test(trimmed) ? "" : trimmed;
   if (!raw) {
     return {
       channel: options.capturedByChatbot ? CHATBOT_CHANNEL : WEBSITE_CHANNEL,
