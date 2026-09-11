@@ -110,3 +110,10 @@ When continuing this work:
   `ALLOW_RELEASE_TRAIN_PUSH=1`.
 
 <!-- END:builder-release-train-rules -->
+
+# Learnings
+
+- GHL v2 workflow email stats (`/emails/locations/{loc}/campaigns/stats/workflow-campaigns/{id}`, Version `v3`) are lifetime totals with no date range. The ghl-email connector snapshots them daily into `ghl_email_stats` and writes the day-over-day difference; history starts the day after the first run. There is no per-workflow SMS stats endpoint; SMS counts would need a full `/conversations/search` pass, which is too slow for a cron.
+- Metricool's brand summary (`/v2/analytics/brand-summary/posts`) returns every network in one call, but its `metrics` map is untyped in the published OpenAPI file. `readMetric` in `src/lib/metricool/client.ts` reads tolerantly and the raw map is stored on `metricool_posts.metrics`; check the first live row before trusting reach / impressions / clicks names.
+- YouTube Analytics channel reports cannot combine `video` and `day` dimensions; per video per day is one request per day with `dimensions=video`.
+- `feat/unified-channels` was cut before PRs #23–#27 landed as squashes, so merging main into it conflicted on ~25 files. Cherry-picking the slice commits onto a fresh branch from main (`feat/unified-channels-main`) applied cleanly.

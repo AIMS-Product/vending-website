@@ -115,3 +115,40 @@ health. Still to add on the tab:
   FigJam version: https://www.figma.com/board/iGNIgllcEBdKjVrbIm9mee
   Update both as slices land. A Google Doc copy needs Adam to run `/mcp` and
   authorise Google Drive first.
+
+## Landed 2026-09-11 (later the same day)
+
+Slices 6a, 3, 4, 5 committed one per slice, then the whole stack cherry-picked
+onto `feat/unified-channels-main` (from `main`) because `main` had moved by five
+squashed PRs. PR #32. Suite 270 files / 2179 tests, tsc clean, `next build`
+passes.
+
+- 6a `Going out`: `buildGoingOut` in `channel-report-rollup.ts`; links without a
+  short link show clicks as not observed.
+- 3 GHL: `src/lib/ghl/client.ts`, `ghl-sync.ts`, connectors `ghl-email`
+  (daily snapshot in `ghl_email_stats`, day-over-day into the spine as
+  impressions = sent, clicks = clicked, campaign = workflow slug) and
+  `ghl-forms` (form submissions as leads, source `ghl_form`). SMS per workflow
+  is not exposed by the API; see AGENTS.md Learnings.
+- 4 Metricool: `src/lib/metricool/client.ts`, `metricool-sync.ts`, connector
+  `metricool-posts`, table `metricool_posts`, `Fix these links` panel on the
+  Channels tab (posts whose outbound URL fails `checkLinkStandard`). Bitly
+  half deliberately omitted: only registry links have click rows, and the
+  YouTube registry predates the standard by design.
+- 5 YouTube Analytics: `src/lib/youtube-analytics/client.ts`,
+  `youtube-analytics-sync.ts`, connector `youtube-analytics`, table
+  `youtube_video_daily`, `scripts/youtube-oauth-token.mjs` (run with
+  `node --env-file=.env.local`). Needs a Desktop-app OAuth client:
+  `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, then
+  `YOUTUBE_REFRESH_TOKEN`.
+
+Migrations still to apply to prod, in order: `20260911150000_ghl_email_stats`,
+`20260911160000_metricool_posts`, `20260911170000_youtube_video_daily`.
+
+Vercel Production is missing every connector secret except `CRON_SECRET`:
+`WEBINAR_INGEST_SECRET`, `GHL_API_KEY`, `GHL_LOCATION_ID`, `METRICOOL_API_KEY`,
+`METRICOOL_USER_ID`, `METRICOOL_BLOG_ID`, `GOOGLE_OAUTH_*`,
+`YOUTUBE_REFRESH_TOKEN`, and also `GA4_SERVICE_ACCOUNT_JSON`,
+`GA4_PROPERTY_ID`, `BITLY_ACCESS_TOKEN`, `BITLY_GROUP_GUID` (GA4 and Bitly
+syncs have been skipping in prod). A GHL key and a Metricool token were both
+pasted into chat on 2026-09-11; neither was used. Both must be rotated.
