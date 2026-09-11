@@ -798,6 +798,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      marketing_links: {
+        Row: {
+          base_url: string;
+          bitly_id: string | null;
+          bitly_url: string | null;
+          created_at: string;
+          created_by: string;
+          id: string;
+          label: string | null;
+          url: string;
+          utm_campaign: string;
+          utm_content: string;
+          utm_medium: string;
+          utm_source: string;
+          utm_term: string;
+        };
+        Insert: {
+          base_url: string;
+          bitly_id?: string | null;
+          bitly_url?: string | null;
+          created_at?: string;
+          created_by: string;
+          id?: string;
+          label?: string | null;
+          url: string;
+          utm_campaign: string;
+          utm_content: string;
+          utm_medium: string;
+          utm_source: string;
+          utm_term: string;
+        };
+        Update: {
+          base_url?: string;
+          bitly_id?: string | null;
+          bitly_url?: string | null;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          label?: string | null;
+          url?: string;
+          utm_campaign?: string;
+          utm_content?: string;
+          utm_medium?: string;
+          utm_source?: string;
+          utm_term?: string;
+        };
+        Relationships: [];
+      };
       lead_page_views: {
         Row: {
           id: number;

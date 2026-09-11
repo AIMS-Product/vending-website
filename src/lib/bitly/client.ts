@@ -46,12 +46,20 @@ export function createBitlyClient({
   baseUrl?: string;
   fetchImpl?: typeof fetch;
 }) {
-  async function request<T>(path: string): Promise<T> {
+  async function request<T>(
+    path: string,
+    init: { method?: "GET" | "POST"; body?: unknown } = {},
+  ): Promise<T> {
     const response = await fetchImpl(`${baseUrl}${path}`, {
+      method: init.method ?? "GET",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Accept: "application/json",
+        ...(init.body !== undefined
+          ? { "Content-Type": "application/json" }
+          : {}),
       },
+      ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
     });
 
     if (!response.ok) {
@@ -110,6 +118,47 @@ export function createBitlyClient({
       }
 
       return links;
+    },
+
+    /**
+     * Mint a short link for a URL the link builder just produced.
+     *
+     * The one write this client makes, and it is to our own Bitly account,
+     * never to a partner system. `group_guid` is optional on Bitly's side (it
+     * falls back to the token's default group), so a missing env var still
+     * produces a link; it just lands in the default group.
+     */
+    async createBitlink({
+      longUrl,
+      groupGuid,
+      title,
+    }: {
+      longUrl: string;
+      groupGuid?: string | null;
+      title?: string | null;
+    }): Promise<BitlyLink & { link: string }> {
+      const body = await request<{
+        id?: string | null;
+        link?: string | null;
+        long_url?: string | null;
+        title?: string | null;
+      }>("/bitlinks", {
+        method: "POST",
+        body: {
+          long_url: longUrl,
+          ...(groupGuid ? { group_guid: groupGuid } : {}),
+          ...(title ? { title } : {}),
+        },
+      });
+      if (!body.id || !body.link) {
+        throw new BitlyApiError(502, "Bitly returned no link id.");
+      }
+      return {
+        id: body.id,
+        link: body.link,
+        longUrl: body.long_url ?? longUrl,
+        title: body.title?.trim() || null,
+      };
     },
 
     /** Daily clicks for one link over the trailing `days`. */

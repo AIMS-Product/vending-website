@@ -12,6 +12,8 @@
  * analytics rollups and any future report agree on what a channel is.
  */
 
+import { LINK_DESTINATIONS, type LinkDestination } from "./link-standard";
+
 export type ChannelAttribution = {
   /** Canonical channel label, e.g. "Instagram". */
   channel: string;
@@ -91,6 +93,15 @@ const EXACT: Record<string, ChannelRule> = {
   tiktok: { channel: "TikTok" },
   podcast: { channel: "Podcast" },
   affiliate: { channel: "Affiliate" },
+  referral: { channel: "Referral" },
+
+  // Link-standard sources (docs/marketing/link-standard.md). Paid platforms are
+  // their own channels: a Meta ad and an organic Facebook post answer to
+  // different budgets, so folding meta_ads into Meta would hide the spend.
+  meta_ads: { channel: "Meta Ads" },
+  google_ads: { channel: "Google Ads" },
+  ghl_sms: { channel: "SMS" },
+  ghl_email: { channel: "Email" },
 
   // Tag used by the vendingpreneurs.ai funnel's "Apply Now" button.
   web: { channel: WEBSITE_CHANNEL },
@@ -166,4 +177,26 @@ function titleCase(value: string): string {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+/** Shown when `utm_term` exists but is not one of the closed destinations. */
+export const UNKNOWN_DESTINATION = "unknown";
+
+export type Destination = LinkDestination | typeof UNKNOWN_DESTINATION;
+
+/**
+ * Maps a raw `utm_term` onto the destination it names.
+ *
+ * `utm_term` is the destination under the link standard: it is the field that
+ * answers "where were we sending them". Anything off the closed list, including
+ * a legacy keyword term, is `unknown` and is shown as such, never dropped and
+ * never guessed from the landing page.
+ */
+export function resolveDestination(
+  utmTerm: string | null | undefined,
+): Destination {
+  const raw = utmTerm?.trim().toLowerCase() ?? "";
+  return (LINK_DESTINATIONS as readonly string[]).includes(raw)
+    ? (raw as LinkDestination)
+    : UNKNOWN_DESTINATION;
 }
