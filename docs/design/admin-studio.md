@@ -24,6 +24,14 @@ One component owns it, `AdminStatusBadge`, so a legend and a table cell can
 never drift apart. Fills stay pale; a status column must be scannable without
 becoming the loudest thing on the page.
 
+A dense numeric table may carry the same tints on the number itself rather than
+on a chip with a word in it — three graded columns times thirty rows of words
+is the loudest thing on the page, which the rule above forbids. The redundancy
+requirement still holds and is met another way: the cell carries an arrow
+(non-colour), a screen-reader sentence, and the table carries a visible legend
+naming each tint. Reuse the `--ui-ok/warn/bad` tokens; never introduce a second
+palette for it. The YouTube per-video table is the reference implementation.
+
 ## Product Standard
 
 - The UI should feel quiet, structured, and work-focused.

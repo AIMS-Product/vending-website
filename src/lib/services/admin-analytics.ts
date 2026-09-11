@@ -6,6 +6,7 @@ import { CHATBOT_LEAD_SOURCE } from "@/lib/chatbot/lead-capture";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
 import { isInternalLead } from "@/lib/services/admin-analytics-internal";
+import { readAllRows } from "@/lib/services/paged-read";
 import {
   buildAcquisitionRollup,
   buildPagesRollup,
@@ -418,28 +419,43 @@ function buildDailyTrend(
  */
 const MAX_ANALYTICS_LEAD_ROWS = 50_000;
 
+/**
+ * The same ceiling for bookings, which outgrew a single response first.
+ *
+ * Production held 2,004 rows on 2026-09-11 against a page reporting 861: the
+ * read asked for every row, oldest first, and PostgREST handed back the oldest
+ * 1,000. Every booking from the most recent eighteen days was missing.
+ */
+const MAX_ANALYTICS_BOOKING_ROWS = 50_000;
+
 async function fetchLeads(
   client: AdminAnalyticsClient,
   sinceIso: string,
 ): Promise<LeadAnalyticsRow[]> {
-  const { data, error } = await client
-    .from("lead_submissions")
-    .select(LEAD_ANALYTICS_FIELDS)
-    .gte("created_at", sinceIso)
-    .order("created_at", { ascending: true })
-    .limit(MAX_ANALYTICS_LEAD_ROWS);
+  const read = await readAllRows<LeadAnalyticsRow>(
+    MAX_ANALYTICS_LEAD_ROWS,
+    (from, to) =>
+      client
+        .from("lead_submissions")
+        .select(LEAD_ANALYTICS_FIELDS)
+        .gte("created_at", sinceIso)
+        // `created_at` alone is not unique, so a tie straddling a page
+        // boundary could repeat or skip a row. `id` makes the order total.
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, to),
+  );
 
-  if (error) {
+  if (read === null) {
     throw new AdminAnalyticsServiceError("Could not load leads for analytics.");
   }
-  const rows = (data ?? []) as LeadAnalyticsRow[];
-  if (rows.length >= MAX_ANALYTICS_LEAD_ROWS) {
+  if (read.capped) {
     console.warn("admin analytics lead read hit its row ceiling", {
       limit: MAX_ANALYTICS_LEAD_ROWS,
       since: sinceIso,
     });
   }
-  return rows;
+  return read.rows;
 }
 
 async function countLeadsAllTime(
@@ -467,18 +483,31 @@ async function fetchBookings(
   sinceIso: string,
 ): Promise<BookingsFetchResult> {
   try {
-    const { data, error } = await client
-      .from("calendly_bookings")
-      .select(BOOKING_ANALYTICS_FIELDS)
-      .gte("created_at", sinceIso)
-      .order("created_at", { ascending: true });
+    const read = await readAllRows<BookingAnalyticsRow>(
+      MAX_ANALYTICS_BOOKING_ROWS,
+      (from, to) =>
+        client
+          .from("calendly_bookings")
+          .select(BOOKING_ANALYTICS_FIELDS)
+          .gte("created_at", sinceIso)
+          // Total ordering, for the same reason as the lead read above.
+          .order("created_at", { ascending: true })
+          .order("id", { ascending: true })
+          .range(from, to),
+    );
 
-    if (error) {
+    if (read === null) {
       // Most commonly Postgres 42P01 (relation does not exist) before the
       // calendly_bookings migration + webhook are wired into an environment.
       return { rows: [], connected: false };
     }
-    return { rows: (data ?? []) as BookingAnalyticsRow[], connected: true };
+    if (read.capped) {
+      console.warn("admin analytics booking read hit its row ceiling", {
+        limit: MAX_ANALYTICS_BOOKING_ROWS,
+        since: sinceIso,
+      });
+    }
+    return { rows: read.rows, connected: true };
   } catch {
     return { rows: [], connected: false };
   }

@@ -196,14 +196,66 @@ function DeltaChip({
  * the decline from first to last legible: an explicit rank, one line of text
  * per row, and a bar with nothing behind it.
  */
+/**
+ * A label that is safe to hand to `href` as a same-site path.
+ *
+ * `startsWith("/")` is not enough on its own: `//evil.example.com` and
+ * `/\evil.example.com` are both protocol-relative URLs that browsers resolve
+ * off-site. These labels come from `source_path`, which is visitor-supplied, so
+ * the check is on the value rather than on where it came from.
+ */
+/** The label cell: a link when it is a real path and links were asked for. */
+function BreakdownLabel({
+  label,
+  linkPaths,
+}: {
+  label: string;
+  linkPaths: boolean;
+}) {
+  const href = linkPaths ? samePagePath(label) : null;
+  const className = "text-ui-text min-w-0 flex-1 truncate";
+
+  if (!href) {
+    return (
+      <span className={className} title={label}>
+        {label}
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      className={`${className} hover:text-ui-accent underline decoration-dotted underline-offset-2`}
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      // Twelve marketing pages the reader may never open. Prefetching all of
+      // them on every render of the tab buys nothing a new tab can use.
+      prefetch={false}
+      title={`Open ${label} in a new tab`}
+    >
+      {label}
+    </Link>
+  );
+}
+
+function samePagePath(label: string): string | null {
+  if (!label.startsWith("/")) return null;
+  if (label.startsWith("//") || label.startsWith("/\\")) return null;
+  return label;
+}
+
 export function AnalyticsBreakdown({
   title,
   rows,
   emptyLabel = "No data in this range.",
+  linkPaths = false,
 }: {
   title: string;
   rows: AdminAnalyticsBreakdownRow[];
   emptyLabel?: string;
+  /** Render path labels as links to the live page. Pages panel only. */
+  linkPaths?: boolean;
 }) {
   const maxCount = Math.max(1, ...rows.map((row) => row.count));
   const total = rows.reduce((sum, row) => sum + row.count, 0);
@@ -225,12 +277,7 @@ export function AnalyticsBreakdown({
                 <span className="text-ui-text-subtle w-5 shrink-0 tabular-nums">
                   {index + 1}
                 </span>
-                <span
-                  className="text-ui-text min-w-0 flex-1 truncate"
-                  title={row.label}
-                >
-                  {row.label}
-                </span>
+                <BreakdownLabel label={row.label} linkPaths={linkPaths} />
                 {typeof row.booked === "number" ? (
                   <span
                     className="shrink-0 text-xs font-semibold text-emerald-700 tabular-nums"
