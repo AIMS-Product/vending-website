@@ -177,6 +177,59 @@ polish-pass call. **Needs Adam's decision.**
 - New tests: `unlinked` vs `unknown` first touch, no-lead-vs-recovered buckets,
   the Calendly recovery path, and the closer coming from the same batched read
 
+## P2 — browser QA did NOT run, and the PR is therefore NOT merged
+
+Two independent login walls, both of which the rules say to stop at rather
+than push through:
+
+1. **Aside cannot be driven.** `Aside.app` is running (pid 804) but its daemon
+   never answers the CLI's auth challenge ("Failed to request daemon auth
+   challenge: operation aborted due to timeout"), and `aside host list` returns
+   403. Both the CLI and the `mcp__aside__*` tools fail identically. Recovering
+   it needs an interactive `aside login`.
+2. **The Vercel preview is behind Vercel SSO.** Every path 302s to
+   `vercel.com/sso-api`, the site root included:
+
+   ```
+   /                                       -> 302 vercel.com/sso-api
+   /admin/chatbot                          -> 302 vercel.com/sso-api
+   /admin/chatbot/conversations?outcome=booked -> 302 vercel.com/sso-api
+   ```
+
+The fallback would mean driving Adam's own Chrome session unattended at 22:40
+PT, which is not something to do without him asking. **So the merge gate is not
+met and PR #27 is left open for Adam.** Everything else on the gate is green.
+
+What was verified statically instead:
+
+- The chip row is `inline-flex flex-wrap`, so the sixth chip wraps rather than
+  overflowing at ~400px.
+- "All booked" is computed as the sum of `TOUCH_CHIPS`, and `no_lead` was added
+  to that list, so the chips still add up to all booked by construction —
+  confirmed against live data (six buckets, 30, equal to `outcomeCounts.booked`).
+- The table stays inside its own `overflow-x-auto`; only its `min-w` moves
+  (880px -> 1040px) and only in the booked view, so the page body still never
+  scrolls horizontally.
+- Vercel built the branch successfully, which is a real compile gate.
+
+**Still owed: a human-eye pass on `/admin/chatbot` and the Booked view at
+desktop and ~400px.**
+
+## CodeRabbit's green check is hollow
+
+The check reports success but CodeRabbit explicitly did not review:
+
+> This repository does not receive automatic reviews because it has fewer than
+> 10 stars.
+
+and, separately:
+
+> Billing warning: we have not been able to collect payment for this
+> subscription for more than 72 hours.
+
+So no automated review ran on this PR despite the green tick. Triggering one
+needs a bare `@coderabbitai full review` comment, and the billing needs Adam.
+
 ## Deliberately not done
 
 - No production rows written. Every check above is a PostgREST GET or a Close
@@ -184,3 +237,5 @@ polish-pass call. **Needs Adam's decision.**
 - The duplicate-booking count is reported, not changed (see above).
 - No inference of setters from Close activity (see above).
 - The digest email's copy is untouched, per the email/Slack rule.
+- **PR #27 is not merged.** Browser verification is part of the merge gate and
+  could not be done (see above). Left for Adam.
