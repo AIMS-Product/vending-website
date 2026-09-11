@@ -403,6 +403,7 @@ export const ANALYTICS_TABS = [
   { key: "quality", label: "Lead quality" },
   { key: "youtube", label: "YouTube" },
   { key: "channels", label: "Channels" },
+  { key: "kpi", label: "KPI" },
 ] as const;
 
 export type AnalyticsTabKey = (typeof ANALYTICS_TABS)[number]["key"];

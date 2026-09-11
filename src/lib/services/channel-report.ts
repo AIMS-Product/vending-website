@@ -34,7 +34,7 @@ import { GHL_CONNECTORS } from "@/lib/services/ghl-sync";
 import { METRICOOL_CONNECTOR } from "@/lib/services/metricool-sync";
 import { YOUTUBE_ANALYTICS_CONNECTOR } from "@/lib/services/youtube-analytics-sync";
 
-type ReportClient = Pick<SupabaseClient<Database>, "from">;
+export type ReportClient = Pick<SupabaseClient<Database>, "from">;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PAGE_SIZE = 1000;
@@ -153,7 +153,7 @@ export async function getChannelsTab(
 }
 
 /** Null (not empty) when the table is missing, so the tab can say so. */
-async function fetchFacts(
+export async function fetchFacts(
   client: ReportClient,
   startDay: string,
   endDay: string,
@@ -288,7 +288,7 @@ async function pageSum<Row>(
   return total;
 }
 
-async function fetchRuns(client: ReportClient): Promise<SyncRun[]> {
+export async function fetchRuns(client: ReportClient): Promise<SyncRun[]> {
   try {
     const { data, error } = await client
       .from("channel_sync_runs")
@@ -381,6 +381,6 @@ async function fetchGoingOut(
   }
 }
 
-function dayKey(date: Date): string {
+export function dayKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }

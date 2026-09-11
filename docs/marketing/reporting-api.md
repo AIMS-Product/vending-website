@@ -46,6 +46,36 @@ For an agent (Claude Code, Codex, a custom tool): give it the URL and the key
 as an environment variable and tell it to fetch with the bearer header. There
 is no query-string key on purpose: it would end up in logs.
 
+## KPI framework
+
+```
+GET https://www.vendingpreneurs.com/api/reporting/kpi?range=30d&format=csv
+Authorization: Bearer <REPORTING_API_KEY>
+```
+
+Same key and `range` values. `format` is `json` (default) or `csv`. The
+report is the Lead Gen KPI Framework: four sections (content and website
+funnels, webinar funnel, marketing re-engagement, Lane 2), each with the
+sheet's columns plus source of truth, owner, cadence and last verified. The
+CSV is one block per section separated by a blank line.
+
+To fill a Google Sheet, add this Apps Script and run `pullKpi` on a trigger
+(the key lives in Script Properties, never in a cell):
+
+```
+function pullKpi() {
+  const key = PropertiesService.getScriptProperties().getProperty("REPORTING_API_KEY");
+  const csv = UrlFetchApp.fetch(
+    "https://www.vendingpreneurs.com/api/reporting/kpi?range=30d&format=csv",
+    { headers: { Authorization: "Bearer " + key } },
+  ).getContentText();
+  const rows = Utilities.parseCsv(csv);
+  const sheet = SpreadsheetApp.getActive().getSheetByName("KPI");
+  sheet.clearContents();
+  sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
+}
+```
+
 ## Key
 
 `REPORTING_API_KEY` in `.env.local` and Vercel (Production and Preview).

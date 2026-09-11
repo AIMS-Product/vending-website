@@ -32,6 +32,8 @@ import {
   type YouTubeAttribution,
 } from "@/lib/services/youtube-attribution";
 import { ChannelsTab } from "@/components/admin/ChannelsPanels";
+import { KpiTab } from "@/components/admin/KpiPanels";
+import { getKpiTab } from "@/lib/services/kpi-report-data";
 import { getChannelsTab } from "@/lib/services/channel-report";
 import { parseAdminAnalyticsRange } from "@/lib/services/admin-analytics-range";
 import { requireAdmin } from "@/lib/supabase/auth";
@@ -63,16 +65,20 @@ export default async function AdminAnalyticsPage({
   // own data instead of paying for the four-tab rollup it would not use.
   const isYouTubeTab = tab === "youtube";
   const isChannelsTab = tab === "channels";
-  const [{ user, role }, analytics, youtube, channels] = await Promise.all([
-    requireAdmin(),
-    isYouTubeTab || isChannelsTab
-      ? null
-      : getAdminAnalytics({ range, includeInternal }),
-    isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
-    isChannelsTab
-      ? getChannelsTab({ range, channel: singleParam(params.channel) })
-      : null,
-  ]);
+  const isKpiTab = tab === "kpi";
+  const [{ user, role }, analytics, youtube, channels, kpi] = await Promise.all(
+    [
+      requireAdmin(),
+      isYouTubeTab || isChannelsTab || isKpiTab
+        ? null
+        : getAdminAnalytics({ range, includeInternal }),
+      isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
+      isChannelsTab
+        ? getChannelsTab({ range, channel: singleParam(params.channel) })
+        : null,
+      isKpiTab ? getKpiTab({ range }) : null,
+    ],
+  );
   const internalExcluded =
     youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0;
 
@@ -105,7 +111,9 @@ export default async function AdminAnalyticsPage({
         includeInternal={includeInternal}
       />
 
-      {channels ? (
+      {kpi ? (
+        <KpiTab data={kpi} />
+      ) : channels ? (
         <ChannelsTab
           data={channels}
           range={range}
