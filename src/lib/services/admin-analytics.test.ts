@@ -33,10 +33,21 @@ function buildClient(state: FakeState) {
   } as unknown as AdminAnalyticsClient;
 }
 
+/**
+ * PostgREST's `max_rows`, hosted and in `supabase/config.toml`.
+ *
+ * Every response is capped here and a larger `.limit()` is ignored, with no
+ * error and no signal in the payload. Modelling it is the whole point: a fake
+ * that hands back everything it is asked for is exactly why the bookings read
+ * shipped returning the oldest 1,000 of 2,004 rows.
+ */
+const POSTGREST_MAX_ROWS = 1_000;
+
 class FakeAnalyticsQuery {
   private filters: Array<(row: FakeRow) => boolean> = [];
   private isCountQuery = false;
   private rowLimit: number | null = null;
+  private rangeWindow: [number, number] | null = null;
 
   constructor(private tableState: FakeTableState) {}
 
@@ -62,6 +73,12 @@ class FakeAnalyticsQuery {
     return this;
   }
 
+  /** PostgREST ranges are inclusive on both ends. */
+  range(from: number, to: number) {
+    this.rangeWindow = [from, to];
+    return this;
+  }
+
   then(
     resolve: (value: {
       data?: FakeRow[] | null;
@@ -81,13 +98,19 @@ class FakeAnalyticsQuery {
     const all = this.tableState.rows.filter((row) =>
       this.filters.every((predicate) => predicate(row)),
     );
-    // Honour the limit the way PostgREST does, so a capped read is visible
-    // here rather than being silently ignored by the fake.
-    const matched = this.rowLimit === null ? all : all.slice(0, this.rowLimit);
+    const windowed = this.rangeWindow
+      ? all.slice(this.rangeWindow[0], this.rangeWindow[1] + 1)
+      : this.rowLimit === null
+        ? all
+        : all.slice(0, this.rowLimit);
+    // The cap applies last and to every response, which is what makes an
+    // unpaged read silently short.
+    const matched = windowed.slice(0, POSTGREST_MAX_ROWS);
 
     resolve(
       this.isCountQuery
-        ? { count: matched.length, error: null }
+        ? // `count: exact` reports the full match, not the page.
+          { count: all.length, error: null }
         : { data: matched, error: null },
     );
   }
@@ -541,5 +564,79 @@ describe("getAdminAnalytics", () => {
     await expect(
       getAdminAnalytics({ client, now: NOW, range: "90d" }),
     ).rejects.toThrow(AdminAnalyticsServiceError);
+  });
+});
+
+/**
+ * Verified against production on 2026-09-11: `calendly_bookings` held 2,004
+ * rows, 1,746 of them booked, and the Overview reported 861. The read asks for
+ * every row, sorted oldest first, so it got the oldest 1,000 -- July 20 to
+ * August 24 -- and every booking after August 24 was invisible on the tab.
+ *
+ * Leads were at 961 and rising, four days from breaking the same way.
+ */
+describe("reads that outgrow one PostgREST response", () => {
+  const HEAVY_NOW = new Date("2026-09-11T12:00:00.000Z");
+
+  function manyRows(count: number, make: (i: number) => FakeRow) {
+    return Array.from({ length: count }, (_, index) => make(index));
+  }
+
+  it("counts every booking in the range, not the first thousand", async () => {
+    const client = buildClient({
+      lead_submissions: { rows: [] },
+      calendly_bookings: {
+        rows: manyRows(1_200, (index) =>
+          makeBooking({
+            id: `booking_${index}`,
+            // Ascending, so an unpaged read keeps the oldest and drops the
+            // most recent -- the worst possible half to lose.
+            created_at: new Date(Date.UTC(2026, 7, 1, 0, index)).toISOString(),
+            scheduled_event_name:
+              index < 1_000 ? "Old calendar" : "New calendar",
+          }),
+        ),
+      },
+    });
+
+    const analytics = await getAdminAnalytics({
+      client,
+      now: HEAVY_NOW,
+      range: "90d",
+    });
+
+    expect(analytics.bookingsTotal).toBe(1_200);
+    // The calendar panel is built from the same rows, so a truncated read does
+    // not just undercount -- it hides a calendar entirely.
+    expect(analytics.bookingsByCalendar.map((row) => row.label)).toContain(
+      "New calendar",
+    );
+  });
+
+  it("counts every lead in the range, not the first thousand", async () => {
+    const client = buildClient({
+      lead_submissions: {
+        rows: manyRows(1_200, (index) =>
+          makeLead({
+            id: `lead_${index}`,
+            email: `prospect${index}@gmail.com`,
+            created_at: new Date(Date.UTC(2026, 7, 1, 0, index)).toISOString(),
+            source_path: index < 1_000 ? "/old-page" : "/new-page",
+          }),
+        ),
+      },
+      calendly_bookings: { rows: [] },
+    });
+
+    const analytics = await getAdminAnalytics({
+      client,
+      now: HEAVY_NOW,
+      range: "90d",
+    });
+
+    expect(analytics.metrics.leads.value).toBe(1_200);
+    expect(analytics.leadsBySourcePath.map((row) => row.label)).toContain(
+      "/new-page",
+    );
   });
 });
