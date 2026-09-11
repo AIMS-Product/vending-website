@@ -28,7 +28,10 @@ import { prospectProfileSchema } from "@/lib/chatbot/extract-prospect-profile";
 import { handleChatbotLeadCaptured } from "@/lib/chatbot/lead-capture";
 import { sendProfileEmailForConversation } from "@/lib/chatbot/learning/digest";
 import type { ChatbotChatMessage } from "@/lib/chatbot/openai";
-import { findPriceLeakInReplies } from "@/lib/chatbot/price-guard";
+import {
+  findPriceLeakInReplies,
+  type PriceLeak,
+} from "@/lib/chatbot/price-guard";
 import {
   shouldForceBookingCalendar,
   type ChatbotToolContext,
@@ -213,7 +216,9 @@ export async function POST(request: Request) {
 
   // Everything the turn produced, assembled during streaming and persisted by
   // after() once the response has been fully sent.
-  const sink: { messages: ChatbotMessage[] } = { messages: [] };
+  const sink: { messages: ChatbotMessage[]; priceLeak?: PriceLeak } = {
+    messages: [],
+  };
 
   const toolContext: ChatbotToolContext = {
     conversationId: conversation.id,
@@ -271,7 +276,7 @@ export async function POST(request: Request) {
     // carried. createTurnStream also guarantees at least a spoken fallback.
     const newMessages = [...historyForModel, ...sink.messages];
 
-    await flagPriceLeak(conversation.id, sink.messages, client);
+    await flagPriceLeak(conversation.id, sink, client);
 
     try {
       await persistConversationTurn(
@@ -387,8 +392,9 @@ function userTurnsSinceCalendar(
 /**
  * Layer 3 of the never-state-a-price defence: read back what the model just
  * said and flag the conversation when a currency amount turns up next to cost
- * language. See lib/chatbot/price-guard.ts for why this observes instead of
- * blocking.
+ * language. Since 2026-09-11 the turn blocks the reply itself (guardReply in
+ * turn-stream.ts) and records the leak on the sink; this still flags it,
+ * because a blocked price means the prompt failed.
  *
  * Fail-soft and deliberately never rethrown: this runs inside after(), where
  * throwing would skip persisting the visitor's turn. A missed flag costs a
@@ -396,12 +402,14 @@ function userTurnsSinceCalendar(
  */
 async function flagPriceLeak(
   conversationId: string,
-  turnMessages: readonly ChatbotMessage[],
+  sink: { messages: readonly ChatbotMessage[]; priceLeak?: PriceLeak },
   client: ReturnType<typeof createAdminClient>,
 ): Promise<void> {
-  const leak = findPriceLeakInReplies(
-    turnMessages.filter((m) => m.role === "assistant").map((m) => m.content),
-  );
+  const leak =
+    sink.priceLeak ??
+    findPriceLeakInReplies(
+      sink.messages.filter((m) => m.role === "assistant").map((m) => m.content),
+    );
   if (!leak) return;
 
   // console.error, not warn: the prompt is supposed to make this impossible,
