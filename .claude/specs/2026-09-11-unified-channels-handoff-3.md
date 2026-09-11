@@ -137,3 +137,28 @@ https://www.figma.com/board/iGNIgllcEBdKjVrbIm9mee unchanged.
 > .env.local; never ask for a key in chat. Verify each connector row on
 > /admin/analytics?tab=channels via the channel_sync_runs table (service role
 > key in .env.local) and paste the real numbers.
+
+## Status 2026-09-11, late (fresh session)
+
+- Section 2 verified against prod: 0 `ghl_form` rows left for the two webinar
+  forms; Ghl Form leads 893 over 30 days (153 rows).
+- Section 1 done in commit `feat(analytics): pull all three Metricool brands`:
+  `METRICOOL_BLOG_IDS` loop, typed per-network reach/clicks merged over the
+  brand summary, owner-prefixed sources for the person brands (`tt` added to
+  `SUFFIX_CHANNEL`), `metricool_posts.brand_id`. Suite 270 files / 2182 tests.
+  Findings from the probe: brand-summary already returns every network for
+  the person brands (1,569 and 654 posts over 400 days) but never reach or
+  clicks; Vendingpreneurs has no Instagram or LinkedIn posts in 400 days; the
+  Facebook page is shared by Vendingpreneurs and Mike (430 of 430 ids match),
+  so the first brand listed owns a post; Instagram typed ids differ from the
+  summary ids and join on the post URL; `stories/instagram` 500s and is
+  skipped. `METRICOOL_BLOG_IDS` is in `.env.local` and Vercel Production.
+- Owed before the three-brand pull works in prod: apply
+  `supabase/migrations/20260911200000_metricool_posts_brand_id.sql` (the
+  session had no DB password and the keychain read for the Supabase access
+  token was denied), then `GET /api/admin/metricool-sync/run?days=400`.
+- Fix-these-links host filter: not decided, left as is.
+- Section 3 and 4: `BITLY_*` empty, `GOOGLE_OAUTH_*` absent in `.env.local`.
+  Bitly needs a Generic Access Token (Settings → API), not an OAuth app.
+- Section 6: artifact republished (version 3). Google Doc not edited: the
+  Drive connector cannot change body text. FigJam unchanged.
