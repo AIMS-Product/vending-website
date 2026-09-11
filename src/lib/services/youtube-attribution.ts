@@ -131,6 +131,7 @@ export async function getYouTubeAttribution(
       pageViews: pageViews.rows,
       clicksConnected: clicks.connected,
       clicksWindowStart: clicks.windowStart,
+      clicksFailed: clicks.failed,
       visitsConnected: pageViews.connected,
       visitsSource: pageViews.source,
       outcomesConnected: leadRead.outcomesConnected,
@@ -210,8 +211,8 @@ function isNotConnected(error: unknown): boolean {
  * a real outage comes to read on the page as an integration nobody switched on.
  * Code and message only: these rows carry lead PII.
  */
-function noteReadError(context: string, error: unknown): void {
-  if (isNotConnected(error)) return;
+function noteReadError(context: string, error: unknown): boolean {
+  if (isNotConnected(error)) return false;
   const { code, message } = (error ?? {}) as {
     code?: unknown;
     message?: unknown;
@@ -219,6 +220,7 @@ function noteReadError(context: string, error: unknown): void {
   console.error(
     `[youtube-attribution] ${context} read failed (${String(code ?? "no code")}): ${String(message ?? error)}`,
   );
+  return true;
 }
 
 type Fetched<T> = { rows: T[]; connected: boolean };
@@ -248,22 +250,38 @@ async function fetchVideos(
  * above twelve months of visits — and the stage below it would read well over
  * 100%. Outside the synced window the stage is unmeasured, which is the honest
  * reading. One extra bounded query finds the boundary.
+ *
+ * `failed` separates "we could not read this" from "there is nothing to read".
+ * Both leave the stage unmeasured, but only the second means somebody has to go
+ * and configure a Bitly token, and the note on the page says so.
  */
 async function fetchClicks(
   client: YouTubeAttributionClient,
   sinceIso: string,
-): Promise<Fetched<BitlyClickRow> & { windowStart: string | null }> {
-  const windowStart = await earliestClickDay(client);
+): Promise<
+  Fetched<BitlyClickRow> & { windowStart: string | null; failed: boolean }
+> {
+  const probe = await earliestClickDay(client);
+  if (probe.failed) {
+    return { rows: [], connected: false, windowStart: null, failed: true };
+  }
   // No rows at all: nothing has ever synced, so "0 clicks" would be a number
   // nobody measured.
-  if (windowStart === null) {
-    return { rows: [], connected: false, windowStart: null };
+  if (probe.day === null) {
+    return { rows: [], connected: false, windowStart: null, failed: false };
   }
-  if (sinceIso.slice(0, 10) < windowStart) {
-    return { rows: [], connected: false, windowStart };
+  if (sinceIso.slice(0, 10) < probe.day) {
+    return {
+      rows: [],
+      connected: false,
+      windowStart: probe.day,
+      failed: false,
+    };
   }
   const read = await fetchClicksInWindow(client, sinceIso);
-  return { ...read, windowStart };
+  // The probe found rows, so a windowed read that still comes back unmeasured
+  // either errored or hit its row cap. Neither is a missing token.
+  return { ...read, windowStart: probe.day, failed: !read.connected };
 }
 
 /**
@@ -277,7 +295,7 @@ async function fetchClicks(
  */
 async function earliestClickDay(
   client: YouTubeAttributionClient,
-): Promise<string | null> {
+): Promise<{ day: string | null; failed: boolean }> {
   try {
     const { data, error } = await client
       .from("bitly_link_clicks")
@@ -285,14 +303,15 @@ async function earliestClickDay(
       .order("day", { ascending: true })
       .limit(1);
     if (error) {
-      noteReadError("bitly_link_clicks", error);
-      return null;
+      return { day: null, failed: noteReadError("bitly_link_clicks", error) };
     }
     const day = (data as { day?: unknown }[] | null)?.[0]?.day;
-    return typeof day === "string" ? day.slice(0, 10) : null;
+    return {
+      day: typeof day === "string" ? day.slice(0, 10) : null,
+      failed: false,
+    };
   } catch (error) {
-    noteReadError("bitly_link_clicks", error);
-    return null;
+    return { day: null, failed: noteReadError("bitly_link_clicks", error) };
   }
 }
 

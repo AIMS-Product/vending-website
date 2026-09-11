@@ -144,6 +144,14 @@ export type YouTubeCoverage = {
    * 20 August" rather than leaving a bare dash on a 1-year range.
    */
   clicksWindowStart: string | null;
+  /**
+   * True when the clicks read broke, as opposed to having nothing to read.
+   *
+   * Both leave the stage unmeasured, but only an empty table means somebody has
+   * to go and configure a Bitly token — and telling a reader to configure
+   * something already configured is worse than saying nothing.
+   */
+  clicksFailed: boolean;
   visitsConnected: boolean;
   /** Which table the visits stage read. Null when it is not connected. */
   visitsSource: YouTubeVisitsSource | null;
@@ -200,6 +208,7 @@ export function buildYouTubeAttribution({
   pageViews,
   clicksConnected,
   clicksWindowStart = null,
+  clicksFailed = false,
   visitsConnected,
   visitsSource = null,
   outcomesConnected,
@@ -210,6 +219,7 @@ export function buildYouTubeAttribution({
   pageViews: PageViewRow[];
   clicksConnected: boolean;
   clicksWindowStart?: string | null;
+  clicksFailed?: boolean;
   visitsConnected: boolean;
   visitsSource?: YouTubeVisitsSource | null;
   outcomesConnected: boolean;
@@ -279,6 +289,7 @@ export function buildYouTubeAttribution({
         .map((row) => row.utmCampaign),
       clicksConnected,
       clicksWindowStart,
+      clicksFailed,
       visitsConnected,
       visitsSource: visitsConnected ? visitsSource : null,
       outcomesConnected,

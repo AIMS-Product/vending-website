@@ -21,6 +21,7 @@ function coverage(overrides: Partial<YouTubeCoverage> = {}): YouTubeCoverage {
     campaignsMissingFromRegistry: [],
     clicksConnected: true,
     clicksWindowStart: null,
+    clicksFailed: false,
     visitsConnected: true,
     visitsSource: "ga4",
     outcomesConnected: true,
@@ -65,6 +66,19 @@ describe("YouTubeCoverageNote", () => {
     const html = note({ clicksConnected: false, clicksWindowStart: null });
 
     expect(html).toContain("Bitly token");
+  });
+
+  /**
+   * LOW: the probe that finds the synced window returns nothing both when the
+   * table is empty and when the read broke, so a statement timeout rendered as
+   * "Link clicks need a Bitly token" -- telling whoever reads the tab to go
+   * and configure something that is already configured.
+   */
+  it("does not blame a missing token for a read that failed", () => {
+    const html = note({ clicksConnected: false, clicksFailed: true });
+
+    expect(html).not.toContain("Bitly token");
+    expect(html).toContain("could not be read");
   });
 
   it("says which wins are left out of the cycle-time figures", () => {

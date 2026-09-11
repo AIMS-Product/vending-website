@@ -398,11 +398,64 @@ describe("getYouTubeAttribution clicks window", () => {
     expect(result.totals.clicks).toBeNull();
     expect(result.coverage.clicksConnected).toBe(false);
     expect(result.coverage.clicksWindowStart).toBeNull();
+    // Empty is not broken: this is the state the "needs a token" note is for.
+    expect(result.coverage.clicksFailed).toBe(false);
+  });
+
+  /**
+   * LOW: the window probe returned null for an empty table and for a failed
+   * read alike, so a statement timeout rendered as "Link clicks need a Bitly
+   * token" -- pointing at configuration when the fault was ours.
+   */
+  it("separates a failed window probe from a table nobody has synced", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await run({}, "30d", {
+      bitly_link_clicks: [{ code: "57014", message: "statement timeout" }],
+    });
+
+    expect(result.totals.clicks).toBeNull();
+    expect(result.coverage.clicksConnected).toBe(false);
+    expect(result.coverage.clicksFailed).toBe(true);
+    error.mockRestore();
+  });
+
+  it("still calls a missing clicks table not connected, not failed", async () => {
+    const result = await run({}, "30d", {
+      bitly_link_clicks: [
+        {
+          code: "42P01",
+          message: 'relation "bitly_link_clicks" does not exist',
+        },
+      ],
+    });
+
+    expect(result.coverage.clicksConnected).toBe(false);
+    expect(result.coverage.clicksFailed).toBe(false);
+  });
+
+  it("reports a failed windowed read as failed, not as a missing token", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    // The probe succeeds, the paged read that follows it does not.
+    const result = await run(
+      { bitly_link_clicks: [click("2026-08-20")] },
+      "7d",
+      {
+        bitly_link_clicks: [
+          null,
+          { code: "57014", message: "statement timeout" },
+        ],
+      },
+    );
+
+    expect(result.coverage.clicksConnected).toBe(false);
+    expect(result.coverage.clicksFailed).toBe(true);
+    error.mockRestore();
   });
 
   async function run(
     rows: Record<string, unknown[]>,
     range: "7d" | "30d" | "90d" | "1y",
+    errorQueue: Record<string, unknown[]> = {},
   ) {
     const { client } = buildClient(
       {
@@ -414,6 +467,7 @@ describe("getYouTubeAttribution clicks window", () => {
         ...rows,
       },
       [],
+      errorQueue,
     );
     return getYouTubeAttribution({ client, now: NOW, range });
   }

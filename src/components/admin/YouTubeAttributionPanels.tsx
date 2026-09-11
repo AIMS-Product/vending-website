@@ -425,6 +425,26 @@ export function YouTubeCohortTable({
  * States plainly which stages are live and which are waiting on a switch, so a
  * dash in the table is never read as a zero.
  */
+/**
+ * Why the clicks stage is unmeasured, in the reader's terms.
+ *
+ * A failed read used to render as "needs a Bitly token", because the window
+ * probe returns nothing for an empty table and for a broken read alike. That
+ * sent whoever read the tab off to configure something already configured.
+ */
+function clicksGap(
+  coverage: YouTubeCoverage,
+  range: YouTubeAttribution["range"],
+) {
+  if (coverage.clicksFailed) {
+    return "Link clicks could not be read just now, so the stage is blank. Nothing needs configuring — try the page again in a minute.";
+  }
+  if (coverage.clicksWindowStart) {
+    return `Link clicks are only synced back to ${coverage.clicksWindowStart}, so they are not shown against ${range.label.toLowerCase()}.`;
+  }
+  return "Link clicks need a Bitly token before they can be synced.";
+}
+
 export function YouTubeCoverageNote({
   coverage,
   range,
@@ -434,11 +454,7 @@ export function YouTubeCoverageNote({
 }) {
   const gaps: string[] = [];
   if (!coverage.clicksConnected) {
-    gaps.push(
-      coverage.clicksWindowStart
-        ? `Link clicks are only synced back to ${coverage.clicksWindowStart}, so they are not shown against ${range.label.toLowerCase()}.`
-        : "Link clicks need a Bitly token before they can be synced.",
-    );
+    gaps.push(clicksGap(coverage, range));
   }
   if (!coverage.visitsConnected) {
     gaps.push(
