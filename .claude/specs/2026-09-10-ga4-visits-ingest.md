@@ -109,6 +109,31 @@ wrote every row. The sync now logs the PostgREST code and message.
 - Cron `/api/admin/ga4-sync/run` at `40 10 * * *` UTC (3:40am Pacific), last 3
   days. `?days=200` backfills.
 
+## Status (2026-09-11, overnight polish pass)
+
+- **The visits read was silently capped at 1,000 rows.** PostgREST's `max_rows`
+  applies to every response and ignores a larger `.limit()`, so the GA4 read
+  returned its first page as if it were the whole table. The review caught it;
+  `eb5c91f` added `readAllRows` paging. The 30-day visits total went from 585 to
+  1,339 the moment it landed. Mocked tests could not have caught this — only a
+  live read against the real project could.
+- **The 30-day total drifts DOWN day to day, and that is correct.** It read
+  1,287 on 2026-09-11 against 1,339 the day before. The window is rolling
+  (`now - 30d`), while ingest runs at 3:40am Pacific for the last 3 days and
+  GA4 itself lags, so the oldest day falls out of the window before the newest
+  day is written. Not a regression; do not "fix" it.
+- **Paging now runs six pages at a time** (`e42ecf6`). Measured against
+  production: the 1-year range was 16 sequential 1,000-row pages at 1.32-1.44s
+  and gaining a page every couple of weeks; it is now 394-502ms. 90 days went
+  from 600-831ms to 269-331ms. Only the final batch over-reads, by at most five
+  empty pages, which is cheaper than the extra `count: "exact"` round trip it
+  would take to know the total up front.
+- **Totals verified against an independent paged read** of `ga4_page_views` on
+  all four ranges, before and after the change: 7d 233, 30d 1,287, 90d 4,139,
+  1y 8,652 sessions over 15,516 rows.
+- Any NEW read of a table that can exceed 1,000 rows must use `readAllRows` or
+  page the same way.
+
 ## Fix order
 
 1. Migration + config env vars
