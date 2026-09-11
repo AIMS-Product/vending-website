@@ -30,11 +30,21 @@ const OUTCOME_PARAMS: readonly string[] = [
   "asked_about_cost",
 ];
 
+const TOUCH_PARAMS: readonly string[] = [
+  "all",
+  "end_to_end",
+  "chatbot_setter",
+  "chatbot_elsewhere",
+  "earlier",
+  "unchecked",
+];
+
 type SearchParams = {
   q?: string | string[];
   sort?: string | string[];
   flag?: string | string[];
   outcome?: string | string[];
+  touch?: string | string[];
 };
 
 const EMPTY_RESULT: AdminChatbotConversationsResult = {
@@ -59,6 +69,13 @@ const EMPTY_RESULT: AdminChatbotConversationsResult = {
     left_no_contact: 0,
     open: 0,
   },
+  touchCounts: {
+    end_to_end: 0,
+    chatbot_setter: 0,
+    chatbot_elsewhere: 0,
+    earlier: 0,
+    unchecked: 0,
+  },
   costQuestionCount: 0,
   outcomesTrustworthy: false,
 };
@@ -81,11 +98,13 @@ export default async function AdminChatbotConversationsPage({
   // disagrees with its own controls.
   const outcomeParam = singleParam(params.outcome) ?? "all";
   const outcome = OUTCOME_PARAMS.includes(outcomeParam) ? outcomeParam : "all";
+  const touchParam = singleParam(params.touch) ?? "all";
+  const touch = TOUCH_PARAMS.includes(touchParam) ? touchParam : "all";
 
   let result = EMPTY_RESULT;
   let loadError = false;
   try {
-    result = await adminListConversations({ q, sort, flag, outcome });
+    result = await adminListConversations({ q, sort, flag, outcome, touch });
   } catch (error) {
     console.warn("chatbot conversations list failed", {
       error: error instanceof Error ? error.message : "unknown error",
@@ -102,7 +121,10 @@ export default async function AdminChatbotConversationsPage({
       userEmail={user.email}
       userRole={role}
       actions={
-        <Link href="/admin/chatbot/settings" className={adminSecondaryButtonClass}>
+        <Link
+          href="/admin/chatbot/settings"
+          className={adminSecondaryButtonClass}
+        >
           <span aria-hidden="true">
             <AdminIcon icon="settings" />
           </span>
@@ -122,6 +144,7 @@ export default async function AdminChatbotConversationsPage({
         sort={sort}
         flag={flag}
         outcome={outcome}
+        touch={touch}
       />
     </AdminShell>
   );

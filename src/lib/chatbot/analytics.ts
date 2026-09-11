@@ -493,7 +493,7 @@ export async function fetchBookedLeadIds(
 const LEAD_LOOKUP_CHUNK = 100;
 
 /** What the booking reconciler mirrored from Close for one lead. */
-type LeadCredit = {
+export type LeadCredit = {
   setter: string | null;
   resourceTag: string | null;
   closeCreatedAt: string | null;
@@ -507,7 +507,7 @@ type LeadCredit = {
  * what it has. A lead with nothing mirrored resolves to "booked elsewhere" and
  * first touch "not checked yet" -- never to the chatbot.
  */
-async function fetchLeadCredit(
+export async function fetchLeadCredit(
   client: ChatbotAnalyticsClient,
   candidateLeadIds: readonly (string | null | undefined)[],
 ): Promise<ReadonlyMap<string, LeadCredit>> {
@@ -756,8 +756,8 @@ function buildFunnelStageCounts(
  * it), a booking that still carries a Calendly event URI was made in-chat
  * before the label existed, so it counts there.
  */
-function attributionSourceOf(
-  row: ConversationRow,
+export function attributionSourceOf(
+  row: Pick<ConversationRow, "attribution_source" | "booked_event_uri">,
 ): "in_chat" | "email_match" | null {
   if (row.attribution_source === "in_chat") return "in_chat";
   if (row.attribution_source === "email_match") return "email_match";

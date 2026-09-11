@@ -31,8 +31,20 @@ function fakeClient(options: {
   bookedLeadIds?: string[];
   missingBookingColumn?: boolean;
   bookingLookupFails?: boolean;
+  /** conversation id -> attribution_source, for the booked-chat stamp lookup. */
+  stamps?: Record<string, string>;
+  /** lead id -> the credit columns the booking reconciler mirrors from Close. */
+  leadCredit?: Record<
+    string,
+    {
+      booked_by_setter?: string | null;
+      entry_resource_tag?: string | null;
+      close_lead_created_at?: string | null;
+    }
+  >;
 }) {
   const bookedLeadIds = new Set(options.bookedLeadIds ?? []);
+  const leadCredit = options.leadCredit ?? {};
 
   return {
     from(table: string) {
@@ -60,6 +72,16 @@ function fakeClient(options: {
             const builder = {
               order: () => builder,
               limit: () => builder,
+              // The booked-chat attribution stamp lookup (select/in).
+              in: (_column: string, ids: string[]) =>
+                Promise.resolve({
+                  data: ids.map((id) => ({
+                    id,
+                    attribution_source: options.stamps?.[id] ?? null,
+                    booked_event_uri: null,
+                  })),
+                  error: null,
+                }),
               then: (resolve: (value: typeof result) => unknown) =>
                 resolve(result),
             };
@@ -80,6 +102,20 @@ function fakeClient(options: {
         return {
           select: () => ({
             in: (_column: string, ids: string[]) => ({
+              // Awaited directly by the lead credit lookup (select/in).
+              then: (resolve: (value: unknown) => unknown) =>
+                resolve({
+                  data: ids
+                    .filter((id) => id in leadCredit)
+                    .map((id) => ({
+                      id,
+                      booked_by_setter: null,
+                      entry_resource_tag: null,
+                      close_lead_created_at: null,
+                      ...leadCredit[id],
+                    })),
+                  error: null,
+                }),
               not: () =>
                 Promise.resolve(
                   options.bookingLookupFails
@@ -115,6 +151,98 @@ const baseRow = {
   call_booked_at: null,
   lead_submission_id: null,
 };
+
+describe("adminListConversations first and last touch", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const daysAgo = (days: number) =>
+    new Date(NOW.getTime() - days * DAY).toISOString();
+  const CHAT_AT = daysAgo(4);
+  const rows = [
+    // Gerald: chatted first, Connor George called and booked him.
+    {
+      ...baseRow,
+      id: "gerald",
+      created_at: CHAT_AT,
+      lead_submission_id: "lead-gw",
+    },
+    // A webinar lead Close had for a month before they ever chatted.
+    {
+      ...baseRow,
+      id: "webinar",
+      created_at: CHAT_AT,
+      lead_submission_id: "lead-wb",
+    },
+    // Chatted first and booked from the chat calendar itself.
+    {
+      ...baseRow,
+      id: "in-chat",
+      created_at: CHAT_AT,
+      lead_submission_id: "lead-ic",
+    },
+  ];
+  const client = () =>
+    fakeClient({
+      rows,
+      bookedLeadIds: ["lead-gw", "lead-wb", "lead-ic"],
+      stamps: { gerald: "email_match", "in-chat": "in_chat" },
+      leadCredit: {
+        "lead-gw": {
+          booked_by_setter: "Connor George",
+          entry_resource_tag: "chatbot",
+          close_lead_created_at: daysAgo(3),
+        },
+        "lead-wb": {
+          entry_resource_tag: "internal-webinar",
+          close_lead_created_at: daysAgo(30),
+        },
+        "lead-ic": {
+          entry_resource_tag: "chatbot",
+          close_lead_created_at: daysAgo(3.9),
+        },
+      },
+    }) as never;
+
+  it("puts every booked chat in exactly one first touch x last touch bucket", async () => {
+    const result = await adminListConversations({}, { client: client() });
+    const byId = Object.fromEntries(
+      result.items.map((item) => [item.id, item.touch]),
+    );
+
+    expect(byId.gerald).toMatchObject({
+      bucket: "chatbot_setter",
+      last: { label: "Set by Connor George" },
+    });
+    expect(byId.webinar).toMatchObject({
+      bucket: "earlier",
+      first: { label: "Internal webinar" },
+    });
+    expect(byId["in-chat"]).toMatchObject({
+      bucket: "end_to_end",
+      last: { kind: "in_chat" },
+    });
+    expect(result.touchCounts).toEqual({
+      end_to_end: 1,
+      chatbot_setter: 1,
+      chatbot_elsewhere: 0,
+      earlier: 1,
+      unchecked: 0,
+    });
+  });
+
+  it("filters the booked view by bucket, and ignores the filter anywhere else", async () => {
+    const earlier = await adminListConversations(
+      { outcome: "booked", touch: "earlier" },
+      { client: client() },
+    );
+    expect(earlier.items.map((item) => item.id)).toEqual(["webinar"]);
+
+    const everyOutcome = await adminListConversations(
+      { touch: "earlier" },
+      { client: client() },
+    );
+    expect(everyOutcome.items).toHaveLength(3);
+  });
+});
 
 describe("adminListConversations outcomes", () => {
   it("counts a call reconciled onto the lead as booked, not abandoned", async () => {

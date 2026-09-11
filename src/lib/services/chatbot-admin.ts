@@ -20,7 +20,11 @@ export class ChatbotAdminError extends Error {
   }
 }
 
-import { fetchBookedLeadIds } from "@/lib/chatbot/analytics";
+import {
+  attributionSourceOf,
+  fetchBookedLeadIds,
+  fetchLeadCredit,
+} from "@/lib/chatbot/analytics";
 import {
   resolveBookingCredit,
   resolveFirstTouch,
@@ -54,7 +58,12 @@ type FlagRow = Pick<
   "id" | "conversation_id" | "flag" | "note" | "created_at"
 >;
 
-type StoredMessage = { role?: string; content?: string; ts?: string };
+type StoredMessage = {
+  role?: string;
+  content?: string;
+  ts?: string;
+  kind?: string;
+};
 
 export type AdminChatbotConversationListItem = {
   id: string;
@@ -80,6 +89,33 @@ export type AdminChatbotConversationListItem = {
   /** True when the visitor asked what it costs — the site's most common question. */
   askedAboutCost: boolean;
   flags: ChatbotFlag[];
+  /**
+   * First and last touch, for a booked chat only (null otherwise). Same rules
+   * as the conversation page and the /admin/chatbot grid.
+   */
+  touch: AdminChatbotTouch | null;
+};
+
+/**
+ * Where a booked chat lands, first touch x last touch. The five always add up
+ * to every booked chat:
+ * - end_to_end: the chat was first touch, and they booked in the chat
+ * - chatbot_setter: the chat was first touch, a setter booked them
+ * - chatbot_elsewhere: the chat was first touch, booked outside it, no setter
+ * - earlier: something had them in Close before the chat
+ * - unchecked: not checked against Close yet
+ */
+export type AdminChatbotTouchBucket =
+  | "end_to_end"
+  | "chatbot_setter"
+  | "chatbot_elsewhere"
+  | "earlier"
+  | "unchecked";
+
+export type AdminChatbotTouch = {
+  first: FirstTouch;
+  last: BookingCredit;
+  bucket: AdminChatbotTouchBucket;
 };
 
 export type AdminChatbotSort = "newest" | "oldest" | "most_messages";
@@ -90,6 +126,8 @@ export type AdminListConversationsInput = {
   flag?: string | null;
   /** One ChatbotConversationOutcome, or "all". */
   outcome?: string | null;
+  /** One AdminChatbotTouchBucket, or "all". Only applies to the booked outcome. */
+  touch?: string | null;
 };
 
 export type AdminChatbotConversationsResult = {
@@ -100,6 +138,8 @@ export type AdminChatbotConversationsResult = {
   badQualityCount: number;
   flagCounts: Record<ChatbotFlag, number>;
   outcomeCounts: Record<ChatbotConversationOutcome, number>;
+  /** Booked chats per first-touch x last-touch bucket, before search/flag filters. */
+  touchCounts: Record<AdminChatbotTouchBucket, number>;
   /** Of every conversation in the window, how many asked what it costs. */
   costQuestionCount: number;
   /**
@@ -187,6 +227,12 @@ export async function adminListConversations(
   // An incomplete booking lookup would render reconciled bookings as
   // abandoned, which is the one number this whole surface exists to get right.
   const outcomesReportable = outcomesTrustworthy && booked.complete;
+  const touches = outcomesReportable
+    ? await fetchTouches(
+        client,
+        rows.filter((row) => bookedCallAt(row, bookedLeadIds)),
+      )
+    : new Map<string, AdminChatbotTouch>();
 
   let items: AdminChatbotConversationListItem[] = rows.map((row) => ({
     id: row.id,
@@ -210,6 +256,7 @@ export async function adminListConversations(
     }),
     askedAboutCost: askedAboutCost(row.messages),
     flags: flagsByConversation.get(row.id) ?? [],
+    touch: touches.get(row.id) ?? null,
   }));
 
   const flagCounts = emptyFlagCounts();
@@ -222,9 +269,11 @@ export async function adminListConversations(
   const totalCount = items.length;
 
   const outcomeCounts = emptyOutcomeCounts();
+  const touchCounts = emptyTouchCounts();
   let costQuestionCount = 0;
   for (const item of items) {
     outcomeCounts[item.outcome] += 1;
+    if (item.touch) touchCounts[item.touch.bucket] += 1;
     if (item.askedAboutCost) costQuestionCount += 1;
   }
 
@@ -250,6 +299,13 @@ export async function adminListConversations(
     }
   }
 
+  // Only a cut of the booked view: outside it the chips are hidden, and a
+  // stray ?touch= would silently shrink a list that shows no control for it.
+  const touchFilter = outcomeFilter === "booked" ? input.touch?.trim() : null;
+  if (touchFilter && touchFilter !== "all") {
+    items = items.filter((item) => item.touch?.bucket === touchFilter);
+  }
+
   items = sortConversations(items, input.sort ?? "newest");
 
   return {
@@ -260,9 +316,106 @@ export async function adminListConversations(
     badQualityCount,
     flagCounts,
     outcomeCounts,
+    touchCounts,
     costQuestionCount,
     outcomesTrustworthy: outcomesReportable,
   };
+}
+
+function emptyTouchCounts(): Record<AdminChatbotTouchBucket, number> {
+  return {
+    end_to_end: 0,
+    chatbot_setter: 0,
+    chatbot_elsewhere: 0,
+    earlier: 0,
+    unchecked: 0,
+  };
+}
+
+function touchBucket(
+  first: FirstTouch,
+  last: BookingCredit,
+): AdminChatbotTouchBucket {
+  if (first.kind === "earlier") return "earlier";
+  if (first.kind === "unknown") return "unchecked";
+  if (last.kind === "in_chat") return "end_to_end";
+  return last.kind === "setter" ? "chatbot_setter" : "chatbot_elsewhere";
+}
+
+/**
+ * First and last touch for each booked chat, by the same rules the
+ * conversation page and the /admin/chatbot grid use, so the three agree.
+ * Anything unreadable resolves to "not checked yet" / "booked elsewhere",
+ * never to the chatbot.
+ */
+async function fetchTouches(
+  client: ChatbotAdminClient,
+  rows: ReadonlyArray<{
+    id: string;
+    created_at: string;
+    lead_submission_id?: string | null;
+  }>,
+): Promise<Map<string, AdminChatbotTouch>> {
+  const [stamps, credit] = await Promise.all([
+    fetchAttributionStamps(
+      client,
+      rows.map((row) => row.id),
+    ),
+    fetchLeadCredit(
+      client,
+      rows.map((row) => row.lead_submission_id),
+    ),
+  ]);
+  return new Map(
+    rows.map((row): [string, AdminChatbotTouch] => {
+      const lead = row.lead_submission_id
+        ? credit.get(row.lead_submission_id)
+        : undefined;
+      const stamp = stamps.get(row.id);
+      const last = resolveBookingCredit({
+        attributionSource: stamp ? attributionSourceOf(stamp) : null,
+        bookedBySetter: lead?.setter ?? null,
+      });
+      const first = resolveFirstTouch({
+        conversationCreatedAt: row.created_at,
+        closeLeadCreatedAt: lead?.closeCreatedAt ?? null,
+        entryResourceTag: lead?.resourceTag ?? null,
+      });
+      return [row.id, { first, last, bucket: touchBucket(first, last) }];
+    }),
+  );
+}
+
+type AttributionStamp = {
+  attribution_source: string | null;
+  booked_event_uri: string | null;
+};
+
+const STAMP_LOOKUP_CHUNK = 100;
+
+/**
+ * Each chat's own booking stamp. Chunked like fetchBookedLeadIds: the ids ride
+ * in the query string, and 500 UUIDs is past what proxies accept on a GET.
+ */
+async function fetchAttributionStamps(
+  client: ChatbotAdminClient,
+  ids: readonly string[],
+): Promise<Map<string, AttributionStamp>> {
+  const stamps = new Map<string, AttributionStamp>();
+  for (let start = 0; start < ids.length; start += STAMP_LOOKUP_CHUNK) {
+    const { data, error } = await client
+      .from("chatbot_conversations")
+      .select("id, attribution_source, booked_event_uri")
+      .in("id", ids.slice(start, start + STAMP_LOOKUP_CHUNK));
+    if (error) {
+      console.warn("chatbot admin: attribution stamp lookup failed", {
+        message: error.message,
+      });
+      return stamps;
+    }
+    for (const row of data ?? []) stamps.set(row.id, row);
+  }
+  return stamps;
 }
 
 /**
@@ -469,7 +622,9 @@ export async function adminGetConversationDetail(
     lastMessageAt: conversation.last_message_at,
     handedOffAt: conversation.handed_off_at,
     handoffReason: conversation.handoff_reason,
-    messages: normalizeMessages(conversation.messages),
+    messages: normalizeMessages(conversation.messages, {
+      hideBookingCard: attributionSource === "email_match",
+    }),
     flags: ((flagRows ?? []) as FlagRow[])
       .filter((row): row is FlagRow & { flag: ChatbotFlag } =>
         isChatbotFlag(row.flag),
@@ -870,18 +1025,30 @@ async function fetchAttributionSource(
   return value === "in_chat" || value === "email_match" ? value : null;
 }
 
-function normalizeMessages(messages: Json): AdminChatbotMessage[] {
+function normalizeMessages(
+  messages: Json,
+  options: { hideBookingCard?: boolean } = {},
+): AdminChatbotMessage[] {
   if (!Array.isArray(messages)) return [];
-  return messages
-    .filter(
-      (entry): entry is StoredMessage =>
-        typeof entry === "object" && entry !== null && !Array.isArray(entry),
-    )
-    .map((entry) => ({
-      role: typeof entry.role === "string" ? entry.role : "assistant",
-      content: typeof entry.content === "string" ? entry.content : "",
-      ts: typeof entry.ts === "string" ? entry.ts : null,
-    }));
+  return (
+    messages
+      .filter(
+        (entry): entry is StoredMessage =>
+          typeof entry === "object" && entry !== null && !Array.isArray(entry),
+      )
+      // Transcripts written before the email-match fix carry a "Booked. Check
+      // your email..." card on calls a setter booked days later. Hidden, not
+      // deleted: the stored transcript stays exactly as it was.
+      .filter(
+        (entry) =>
+          !(options.hideBookingCard && entry.kind === "booking_confirmed"),
+      )
+      .map((entry) => ({
+        role: typeof entry.role === "string" ? entry.role : "assistant",
+        content: typeof entry.content === "string" ? entry.content : "",
+        ts: typeof entry.ts === "string" ? entry.ts : null,
+      }))
+  );
 }
 
 function firstMessageByRole(messages: Json, role: string): string | null {
