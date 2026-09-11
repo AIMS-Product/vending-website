@@ -138,6 +138,13 @@ export type YouTubeCoverage = {
   videosWithLeads: number;
   campaignsMissingFromRegistry: string[];
   clicksConnected: boolean;
+  /**
+   * Earliest day the Bitly sync has ever written, `YYYY-MM-DD`.
+   *
+   * Null when nothing has synced. Lets the page say "clicks only go back to
+   * 20 August" rather than leaving a bare dash on a 1-year range.
+   */
+  clicksWindowStart: string | null;
   visitsConnected: boolean;
   /** Which table the visits stage read. Null when it is not connected. */
   visitsSource: YouTubeVisitsSource | null;
@@ -190,6 +197,7 @@ export function buildYouTubeAttribution({
   clicks,
   pageViews,
   clicksConnected,
+  clicksWindowStart = null,
   visitsConnected,
   visitsSource = null,
   outcomesConnected,
@@ -199,6 +207,7 @@ export function buildYouTubeAttribution({
   clicks: BitlyClickRow[];
   pageViews: PageViewRow[];
   clicksConnected: boolean;
+  clicksWindowStart?: string | null;
   visitsConnected: boolean;
   visitsSource?: YouTubeVisitsSource | null;
   outcomesConnected: boolean;
@@ -250,6 +259,7 @@ export function buildYouTubeAttribution({
         .filter((row) => !row.inRegistry)
         .map((row) => row.utmCampaign),
       clicksConnected,
+      clicksWindowStart,
       visitsConnected,
       visitsSource: visitsConnected ? visitsSource : null,
       outcomesConnected,

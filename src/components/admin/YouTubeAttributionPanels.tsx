@@ -56,7 +56,9 @@ export function YouTubeStageFunnel({ stages }: { stages: YouTubeStage[] }) {
             {index > 0 ? (
               <p className="text-ui-text-subtle text-xs">
                 {stage.ofPreviousPct === null
-                  ? "Not connected yet — no conversion rate to show."
+                  ? stage.count === null || stages[index - 1]?.count === null
+                    ? "Not measured yet — no conversion rate to show."
+                    : "Nothing to divide by — no conversion rate to show."
                   : `${stage.ofPreviousPct}% continued from the step above`}
               </p>
             ) : null}
@@ -432,7 +434,11 @@ export function YouTubeCoverageNote({
 }) {
   const gaps: string[] = [];
   if (!coverage.clicksConnected) {
-    gaps.push("Link clicks need a Bitly token before they can be synced.");
+    gaps.push(
+      coverage.clicksWindowStart
+        ? `Link clicks are only synced back to ${coverage.clicksWindowStart}, so they are not shown against ${range.label.toLowerCase()}.`
+        : "Link clicks need a Bitly token before they can be synced.",
+    );
   }
   if (!coverage.visitsConnected) {
     gaps.push(

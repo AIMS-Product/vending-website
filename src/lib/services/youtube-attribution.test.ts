@@ -219,7 +219,11 @@ describe("getYouTubeAttribution reads", () => {
       {
         lead_submissions: [],
         youtube_videos: [],
-        bitly_link_clicks: [],
+        // One click far enough back that every range starts inside the synced
+        // window, so the paged read these tests assert on actually runs.
+        bitly_link_clicks: [
+          { utm_campaign: "zach", day: "2026-01-01", clicks: 1 },
+        ],
         lead_page_views: [],
         ga4_page_views: [],
         ...rows,
@@ -326,5 +330,68 @@ describe("getYouTubeAttribution read failures", () => {
       errorQueue,
     );
     return { result: await getYouTubeAttribution({ client, now: NOW }) };
+  }
+});
+
+/**
+ * H8: the Bitly sync only ever walks back 30 days, but the stage was rendered
+ * against 90d and 1y all the same — a real-looking click count built from a
+ * short window, sitting above twelve months of visits.
+ */
+describe("getYouTubeAttribution clicks window", () => {
+  const click = (day: string) => ({
+    utm_campaign: "zach",
+    day,
+    clicks: 5,
+  });
+
+  it("reports clicks as unmeasured when the range starts before the first synced day", async () => {
+    // 30d from NOW starts 2026-08-11; the sync only reaches 2026-08-20.
+    const result = await run(
+      { bitly_link_clicks: [click("2026-08-20"), click("2026-08-21")] },
+      "30d",
+    );
+
+    expect(result.totals.clicks).toBeNull();
+    expect(result.coverage.clicksConnected).toBe(false);
+    expect(result.coverage.clicksWindowStart).toBe("2026-08-20");
+  });
+
+  it("counts clicks when the range starts inside the synced window", async () => {
+    // 7d from NOW starts 2026-09-03, well inside the synced window.
+    const result = await run(
+      { bitly_link_clicks: [click("2026-08-20"), click("2026-09-05")] },
+      "7d",
+    );
+
+    expect(result.totals.clicks).toBe(10);
+    expect(result.coverage.clicksConnected).toBe(true);
+    expect(result.coverage.clicksWindowStart).toBe("2026-08-20");
+  });
+
+  it("reports clicks as unmeasured when nothing has ever synced", async () => {
+    const result = await run({ bitly_link_clicks: [] }, "30d");
+
+    expect(result.totals.clicks).toBeNull();
+    expect(result.coverage.clicksConnected).toBe(false);
+    expect(result.coverage.clicksWindowStart).toBeNull();
+  });
+
+  async function run(
+    rows: Record<string, unknown[]>,
+    range: "7d" | "30d" | "90d" | "1y",
+  ) {
+    const { client } = buildClient(
+      {
+        lead_submissions: [],
+        youtube_videos: [],
+        bitly_link_clicks: [],
+        lead_page_views: [],
+        ga4_page_views: [],
+        ...rows,
+      },
+      [],
+    );
+    return getYouTubeAttribution({ client, now: NOW, range });
   }
 });

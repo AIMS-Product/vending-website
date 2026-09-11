@@ -130,6 +130,7 @@ export async function getYouTubeAttribution(
       clicks: clicks.rows,
       pageViews: pageViews.rows,
       clicksConnected: clicks.connected,
+      clicksWindowStart: clicks.windowStart,
       visitsConnected: pageViews.connected,
       visitsSource: pageViews.source,
       outcomesConnected: leadRead.outcomesConnected,
@@ -239,7 +240,55 @@ async function fetchVideos(
   });
 }
 
+/**
+ * Clicks for the range, or nothing at all when the range outruns the sync.
+ *
+ * `bitly-click-sync` only ever walks back `DEFAULT_DAYS` (30), so on a 90-day
+ * or 1-year range a summed click total would be one month of clicks sitting
+ * above twelve months of visits — and the stage below it would read well over
+ * 100%. Outside the synced window the stage is unmeasured, which is the honest
+ * reading. One extra bounded query finds the boundary.
+ */
 async function fetchClicks(
+  client: YouTubeAttributionClient,
+  sinceIso: string,
+): Promise<Fetched<BitlyClickRow> & { windowStart: string | null }> {
+  const windowStart = await earliestClickDay(client);
+  // No rows at all: nothing has ever synced, so "0 clicks" would be a number
+  // nobody measured.
+  if (windowStart === null) {
+    return { rows: [], connected: false, windowStart: null };
+  }
+  if (sinceIso.slice(0, 10) < windowStart) {
+    return { rows: [], connected: false, windowStart };
+  }
+  const read = await fetchClicksInWindow(client, sinceIso);
+  return { ...read, windowStart };
+}
+
+/** The first day the Bitly sync ever wrote. One row, on the primary key. */
+async function earliestClickDay(
+  client: YouTubeAttributionClient,
+): Promise<string | null> {
+  try {
+    const { data, error } = await client
+      .from("bitly_link_clicks")
+      .select("day")
+      .order("day", { ascending: true })
+      .limit(1);
+    if (error) {
+      noteReadError("bitly_link_clicks", error);
+      return null;
+    }
+    const day = (data as { day?: unknown }[] | null)?.[0]?.day;
+    return typeof day === "string" ? day.slice(0, 10) : null;
+  } catch (error) {
+    noteReadError("bitly_link_clicks", error);
+    return null;
+  }
+}
+
+async function fetchClicksInWindow(
   client: YouTubeAttributionClient,
   sinceIso: string,
 ): Promise<Fetched<BitlyClickRow>> {
