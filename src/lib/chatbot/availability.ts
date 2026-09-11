@@ -115,7 +115,12 @@ type DayBuckets = {
 export function describeAvailability(
   slots: readonly string[],
   timeZone: string,
-  options: { perBucket?: number; maxDays?: number; day?: string | null } = {},
+  options: {
+    perBucket?: number;
+    maxDays?: number;
+    day?: string | null;
+    now?: Date;
+  } = {},
 ): string {
   const perBucket = options.perBucket ?? 4;
   const maxDays = options.maxDays ?? 7;
@@ -125,7 +130,7 @@ export function describeAvailability(
   // 31st?" is answered from the full list. The capped summary below once made
   // the model deny a 2:00pm that existed because only 12:00-12:30 were shown.
   if (options.day) {
-    return describeDay(slots, tz, options.day);
+    return describeDay(slots, tz, options.day, options.now ?? new Date());
   }
 
   if (slots.length === 0) {
@@ -197,7 +202,21 @@ function describeDay(
   slots: readonly string[],
   tz: string,
   day: string,
+  now: Date,
 ): string {
+  // On 2026-09-11 the model asked for "2025-09-15" (it believed it was 2025)
+  // and read back "No open times" as "the 15th is full" while the 15th had 41
+  // open slots. A day outside the fetched window is never "no open times".
+  const window = upcomingDays(tz, now);
+  const first = window[0].iso;
+  const last = window[window.length - 1].iso;
+  if (day < first) {
+    return `${day} is in the past: today is ${first} in the visitor's time zone, so the year or month is wrong. Work the date out again from the date list in your instructions and call get_available_times with the corrected day before you answer. Do not tell the visitor anything is unavailable.`;
+  }
+  if (day > last) {
+    return `${day} is past the ${AVAILABILITY_DAYS} days this tool can see (last visible day ${last}), so you do not know whether it is open. Never say it is unavailable. Tell them to tap that date on the calendar in the chat, or offer the nearest open day you can see.`;
+  }
+
   const isoDay = new Intl.DateTimeFormat("en-CA", {
     timeZone: tz,
     year: "numeric",
@@ -218,6 +237,37 @@ function describeDay(
     return `No open times on ${day} (${tzLabel}). Do not offer a time on that day. Offer the nearest open day from the summary instead, or a callback via flag_for_team.`;
   }
   return `Every open time on ${day}, in the visitor's time zone (${tzLabel}): ${times.join(", ")}. This list is complete for that day: a time on it is bookable, a time not on it is not.`;
+}
+
+/**
+ * The visitor's next `count` calendar days, today first, as the YYYY-MM-DD the
+ * tool takes plus a short label ("Tue, Sep 15"). Built from UTC-noon dates so
+ * a DST change can never skip or repeat a day.
+ */
+export function upcomingDays(
+  timeZone: string,
+  now: Date,
+  count = AVAILABILITY_DAYS,
+): Array<{ iso: string; label: string }> {
+  const [year, month, day] = new Intl.DateTimeFormat("en-CA", {
+    timeZone: safeTimeZone(timeZone),
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .format(now)
+    .split("-")
+    .map(Number);
+  const label = new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC",
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+  return Array.from({ length: count }, (_, i) => {
+    const date = new Date(Date.UTC(year, month - 1, day + i, 12));
+    return { iso: date.toISOString().slice(0, 10), label: label.format(date) };
+  });
 }
 
 export function safeTimeZone(value: string | null | undefined): string {

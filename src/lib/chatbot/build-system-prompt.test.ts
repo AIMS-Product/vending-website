@@ -9,6 +9,30 @@ const base = {
   userTurnCount: 3,
 };
 
+describe("the prompt knows today's date", () => {
+  // Without it the model assumed 2025 and called Tuesday the 15th "Monday".
+  it("states today and a weekday-to-date list in the visitor's zone", () => {
+    const prompt = buildChatbotSystemPrompt({
+      ...base,
+      timeZone: "America/New_York",
+      now: new Date("2026-09-11T12:37:00Z"),
+    });
+    expect(prompt).toContain("TODAY: Friday, September 11, 2026");
+    expect(prompt).toContain("Fri, Sep 11 = 2026-09-11 (today)");
+    expect(prompt).toContain("Sat, Sep 12 = 2026-09-12 (tomorrow)");
+    expect(prompt).toContain("Tue, Sep 15 = 2026-09-15");
+  });
+
+  it("uses the visitor's zone, not the server's", () => {
+    const prompt = buildChatbotSystemPrompt({
+      ...base,
+      timeZone: "America/Los_Angeles",
+      now: new Date("2026-09-12T03:00:00Z"),
+    });
+    expect(prompt).toContain("TODAY: Friday, September 11, 2026");
+  });
+});
+
 describe("the prompt never feeds the model a price", () => {
   // The regression that started all of this: PROGRAM_FACTS said "$1,500-$5,000
   // a month in revenue per member", and the bot read it back to a real lead as

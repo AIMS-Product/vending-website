@@ -1,5 +1,6 @@
 import "server-only";
 
+import { safeTimeZone, upcomingDays } from "@/lib/chatbot/availability";
 import { CHATBOT_BOOKING_URL } from "@/lib/chatbot/booking";
 import { SITE_KNOWLEDGE_BLOCK } from "@/lib/chatbot/site-knowledge";
 
@@ -40,6 +41,10 @@ export type ChatbotPromptInput = {
   userTurnsSinceCalendar?: number | null;
   /** True once a Calendly webhook has confirmed a booking into this transcript. */
   hasConfirmedBooking?: boolean;
+  /** IANA zone from the visitor's browser; today's date is stated in it. */
+  timeZone?: string | null;
+  /** Injectable clock for tests. */
+  now?: Date;
 };
 
 /**
@@ -66,6 +71,7 @@ export function buildChatbotSystemPrompt(input: ChatbotPromptInput): string {
     SITE_KNOWLEDGE_BLOCK,
     knowledgeBaseSection(input.knowledgeBase),
     ctaSection(),
+    dateSection(input),
     visitorContextSection(input),
     nameSection(input.capturedName ?? null, input.personaName),
     GOAL_SECTION,
@@ -109,6 +115,32 @@ function ctaSection(): string {
     `- Book a call: ONLY through the show_booking_calendar tool. Never paste ${CHATBOT_BOOKING_URL} or /book-now into the chat; a link sends them away from this conversation and most never come back.`,
     "- 90-Day Roadmap: /resources/roadmap",
     "- Finance Templates: /resources/finance-templates",
+  ].join("\n");
+}
+
+/**
+ * The model was never told the date. On 2026-09-11 it called Tuesday the 15th
+ * "Monday" (true in 2025), asked the calendar for 2025 dates, and told a
+ * visitor every day she picked was full while the live calendar had them open.
+ * Placed after the static blocks so the cacheable prompt prefix stays intact.
+ */
+function dateSection(input: ChatbotPromptInput): string {
+  const tz = safeTimeZone(input.timeZone);
+  const now = input.now ?? new Date();
+  const today = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(now);
+  return [
+    `TODAY: ${today}, in the visitor's time zone (${tz.replace(/_/g, " ")}). This line is the only source of today's date; your own sense of the date and year is wrong. A date the visitor names ("the 15th", "Tuesday", "next week") is the next one on or after today.`,
+    "The next two weeks, with the exact YYYY-MM-DD to pass to get_available_times. Take every weekday from this list; never work one out yourself:",
+    ...upcomingDays(tz, now).map(
+      (day, i) =>
+        `${day.label} = ${day.iso}${i === 0 ? " (today)" : i === 1 ? " (tomorrow)" : ""}`,
+    ),
   ].join("\n");
 }
 
