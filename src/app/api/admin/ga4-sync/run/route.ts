@@ -84,9 +84,11 @@ export async function GET(request: Request) {
       { status: ok ? 200 : 500 },
     );
   } catch (error) {
+    // Class only, like the Bitly runner. A GA4 auth failure's message can
+    // carry parts of the service-account key, and this log is not a place for
+    // it. The sync logs its own per-chunk detail already.
     console.error("ga4 sync runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
-      message: error instanceof Error ? error.message : undefined,
     });
     return NextResponse.json(
       { ok: false, message: "GA4 sync runner failed." },

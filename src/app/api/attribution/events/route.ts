@@ -52,15 +52,25 @@ export async function POST(request: Request) {
   // "clicked the link" and "filled the form". Tagged views only; see the
   // service. Best-effort, exactly like the popup counter above.
   if (payload.event_type === "landing_viewed") {
-    await recordTaggedPageView({
-      path:
-        stringProperty(payload.properties, "landing_path") ||
-        stringProperty(payload.properties, "latest_landing_path"),
-      vpSessionId: payload.vp_session_id,
-      utmSource: stringProperty(payload.properties, "utm_source"),
-      utmCampaign: stringProperty(payload.properties, "utm_campaign"),
-      utmContent: stringProperty(payload.properties, "utm_content"),
+    // Its own budget, and the only fail-closed check on this route: this is the
+    // one branch that writes a row of ours, and a dropped analytics row costs
+    // nothing where an unmetered public write costs a table. The gate above
+    // stays fail-open so a limiter blip cannot 429 the forward or the popup
+    // counter, neither of which this refusal was meant to protect.
+    const viewAllowed = await checkPublicRateLimit("page_view", {
+      ip: requestIp(request.headers),
     });
+    if (viewAllowed) {
+      await recordTaggedPageView({
+        path:
+          stringProperty(payload.properties, "landing_path") ||
+          stringProperty(payload.properties, "latest_landing_path"),
+        vpSessionId: payload.vp_session_id,
+        utmSource: stringProperty(payload.properties, "utm_source"),
+        utmCampaign: stringProperty(payload.properties, "utm_campaign"),
+        utmContent: stringProperty(payload.properties, "utm_content"),
+      });
+    }
   }
 
   const destination = moneyPageDestination();

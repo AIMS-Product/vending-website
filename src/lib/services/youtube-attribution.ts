@@ -130,6 +130,8 @@ export async function getYouTubeAttribution(
       clicks: clicks.rows,
       pageViews: pageViews.rows,
       clicksConnected: clicks.connected,
+      clicksWindowStart: clicks.windowStart,
+      clicksFailed: clicks.failed,
       visitsConnected: pageViews.connected,
       visitsSource: pageViews.source,
       outcomesConnected: leadRead.outcomesConnected,
@@ -177,11 +179,48 @@ async function selectLeads(
       .gte("created_at", sinceIso)
       .order("created_at", { ascending: true })
       .limit(MAX_LEAD_ROWS);
-    if (error) return null;
+    if (error) {
+      noteReadError("lead_submissions", error);
+      return null;
+    }
     return (data ?? []) as unknown as YouTubeLeadRow[];
-  } catch {
+  } catch (error) {
+    noteReadError("lead_submissions", error);
     return null;
   }
+}
+
+/**
+ * The only codes that mean "this table or column is not there yet".
+ *
+ * 42P01 undefined_table, 42703 undefined_column, and PostgREST's two
+ * schema-cache misses. Anything else is a fault, not a switch left off.
+ */
+const NOT_CONNECTED_CODES = new Set(["42P01", "42703", "PGRST204", "PGRST205"]);
+
+function isNotConnected(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null | undefined)?.code;
+  return typeof code === "string" && NOT_CONNECTED_CODES.has(code);
+}
+
+/**
+ * Records a read that failed for a reason other than a missing table.
+ *
+ * The stage still reports as unmeasured — null, never zero — but a statement
+ * timeout is not "the migration has not been applied", and swallowing it is how
+ * a real outage comes to read on the page as an integration nobody switched on.
+ * Code and message only: these rows carry lead PII.
+ */
+function noteReadError(context: string, error: unknown): boolean {
+  if (isNotConnected(error)) return false;
+  const { code, message } = (error ?? {}) as {
+    code?: unknown;
+    message?: unknown;
+  };
+  console.error(
+    `[youtube-attribution] ${context} read failed (${String(code ?? "no code")}): ${String(message ?? error)}`,
+  );
+  return true;
 }
 
 type Fetched<T> = { rows: T[]; connected: boolean };
@@ -189,22 +228,98 @@ type Fetched<T> = { rows: T[]; connected: boolean };
 async function fetchVideos(
   client: YouTubeAttributionClient,
 ): Promise<Fetched<YouTubeVideoRow>> {
-  return degradable(async () => {
+  return degradable("youtube_videos", async () => {
     const { data, error } = await client
       .from("youtube_videos")
       .select(
         "utm_campaign,title,video_url,published_at,bitly_id,in_description",
       );
-    if (error) return null;
+    if (error) {
+      noteReadError("youtube_videos", error);
+      return null;
+    }
     return (data ?? []) as unknown as YouTubeVideoRow[];
   });
 }
 
+/**
+ * Clicks for the range, or nothing at all when the range outruns the sync.
+ *
+ * `bitly-click-sync` only ever walks back `DEFAULT_DAYS` (30), so on a 90-day
+ * or 1-year range a summed click total would be one month of clicks sitting
+ * above twelve months of visits — and the stage below it would read well over
+ * 100%. Outside the synced window the stage is unmeasured, which is the honest
+ * reading. One extra bounded query finds the boundary.
+ *
+ * `failed` separates "we could not read this" from "there is nothing to read".
+ * Both leave the stage unmeasured, but only the second means somebody has to go
+ * and configure a Bitly token, and the note on the page says so.
+ */
 async function fetchClicks(
   client: YouTubeAttributionClient,
   sinceIso: string,
+): Promise<
+  Fetched<BitlyClickRow> & { windowStart: string | null; failed: boolean }
+> {
+  const probe = await earliestClickDay(client);
+  if (probe.failed) {
+    return { rows: [], connected: false, windowStart: null, failed: true };
+  }
+  // No rows at all: nothing has ever synced, so "0 clicks" would be a number
+  // nobody measured.
+  if (probe.day === null) {
+    return { rows: [], connected: false, windowStart: null, failed: false };
+  }
+  if (sinceIso.slice(0, 10) < probe.day) {
+    return {
+      rows: [],
+      connected: false,
+      windowStart: probe.day,
+      failed: false,
+    };
+  }
+  const read = await fetchClicksInWindow(client, sinceIso);
+  // The probe found rows, so a windowed read that still comes back unmeasured
+  // either errored or hit its row cap. Neither is a missing token.
+  return { ...read, windowStart: probe.day, failed: !read.connected };
+}
+
+/**
+ * The first day the Bitly sync ever wrote. One row.
+ *
+ * Not the primary key: that is (bitly_id, day), so ordering on `day` alone
+ * cannot use it, and the campaign index is partial on a non-null utm_campaign
+ * so it cannot answer for the whole table either. Until
+ * `20260911120000_bitly_link_clicks_day_idx` is applied this is a sequential
+ * scan and a sort on every render -- correct, just slower.
+ */
+async function earliestClickDay(
+  client: YouTubeAttributionClient,
+): Promise<{ day: string | null; failed: boolean }> {
+  try {
+    const { data, error } = await client
+      .from("bitly_link_clicks")
+      .select("day")
+      .order("day", { ascending: true })
+      .limit(1);
+    if (error) {
+      return { day: null, failed: noteReadError("bitly_link_clicks", error) };
+    }
+    const day = (data as { day?: unknown }[] | null)?.[0]?.day;
+    return {
+      day: typeof day === "string" ? day.slice(0, 10) : null,
+      failed: false,
+    };
+  } catch (error) {
+    return { day: null, failed: noteReadError("bitly_link_clicks", error) };
+  }
+}
+
+async function fetchClicksInWindow(
+  client: YouTubeAttributionClient,
+  sinceIso: string,
 ): Promise<Fetched<BitlyClickRow>> {
-  return degradable(() =>
+  return degradable("bitly_link_clicks", () =>
     readAllRows<BitlyClickRow>(
       "bitly_link_clicks",
       MAX_CLICK_ROWS,
@@ -257,7 +372,7 @@ async function fetchGa4PageViews(
   client: YouTubeAttributionClient,
   sinceIso: string,
 ): Promise<Fetched<PageViewRow>> {
-  return degradable(async () => {
+  return degradable("ga4_page_views", async () => {
     const rows = await readAllRows<Ga4VisitRow>(
       "ga4_page_views",
       MAX_PAGE_VIEW_ROWS,
@@ -292,7 +407,7 @@ async function fetchPageViews(
   client: YouTubeAttributionClient,
   sinceIso: string,
 ): Promise<Fetched<PageViewRow>> {
-  return degradable(() =>
+  return degradable("lead_page_views", () =>
     readAllRows<PageViewRow>(
       "lead_page_views",
       MAX_PAGE_VIEW_ROWS,
@@ -316,10 +431,23 @@ async function fetchPageViews(
  * larger `.limit()`. One select therefore returns the first 1,000 rows as if
  * they were all of them. Pages until a short page comes back.
  *
- * ponytail: pages are sequential, so a 1-year GA4 read is ~30 round trips.
- * Replace with a grouped-sum RPC if the analytics page ever feels slow.
+ * Pages go out `PAGE_CONCURRENCY` at a time. Sequentially, the 1-year GA4 read
+ * was 16 round trips at ~1.4s (measured against production 2026-09-10) and
+ * growing by a page every couple of weeks; six at a time makes it three.
+ *
+ * ponytail: still reads every row. Replace with a grouped-sum RPC if the
+ * analytics page ever feels slow again.
  */
 const PAGE_ROWS = 1000;
+
+/**
+ * Pages in flight at once.
+ *
+ * The cost of guessing is bounded: only the final batch over-reads, by at most
+ * five empty pages, which is cheaper than the extra `count: "exact"` round trip
+ * it would take to know the total up front.
+ */
+const PAGE_CONCURRENCY = 6;
 
 async function readAllRows<T>(
   table: string,
@@ -330,17 +458,36 @@ async function readAllRows<T>(
   ) => PromiseLike<{ data: unknown; error: unknown }>,
 ): Promise<T[] | null> {
   const rows: T[] = [];
-  while (rows.length < limit) {
-    const { data, error } = await page(
-      rows.length,
-      rows.length + PAGE_ROWS - 1,
+  let reachedEnd = false;
+
+  while (!reachedEnd && rows.length < limit) {
+    const starts = Array.from(
+      { length: PAGE_CONCURRENCY },
+      (_, index) => rows.length + index * PAGE_ROWS,
+    ).filter((from) => from < limit);
+
+    const pages = await Promise.all(
+      starts.map((from) => page(from, from + PAGE_ROWS - 1)),
     );
-    if (error) return null;
-    const batch = (data ?? []) as T[];
-    rows.push(...batch);
-    if (batch.length < PAGE_ROWS) return rows;
+
+    // In page order, so the rows land in the order the query asked for.
+    for (const { data, error } of pages) {
+      if (error) {
+        noteReadError(table, error);
+        return null;
+      }
+      const batch = (data ?? []) as T[];
+      rows.push(...batch);
+      // A short page is the end of the table. Anything this batch read past it
+      // is empty by definition, so it is dropped rather than appended.
+      if (batch.length < PAGE_ROWS) {
+        reachedEnd = true;
+        break;
+      }
+    }
   }
-  return capped(rows, limit, table);
+
+  return reachedEnd ? rows : capped(rows, limit, table);
 }
 
 /**
@@ -358,19 +505,22 @@ function capped<T>(rows: T[], limit: number, table: string): T[] | null {
 /**
  * Runs a read that is allowed to be missing.
  *
- * `connected: false` means the table or its data is not there yet — most often
- * Postgres 42P01 before this slice's migration is applied. The rollup turns
- * that into "not measured", which is the honest reading; an empty array with
- * `connected: true` would mean "measured, and it was zero".
+ * `connected: false` means the stage could not be measured — most often
+ * Postgres 42P01 before this slice's migration is applied, but a timeout or a
+ * transient 5xx lands here too (logged by `noteReadError`, never silent). The
+ * rollup turns that into "not measured", which is the honest reading; an empty
+ * array with `connected: true` would mean "measured, and it was zero".
  */
 async function degradable<T>(
+  context: string,
   read: () => Promise<T[] | null>,
 ): Promise<Fetched<T>> {
   try {
     const rows = await read();
     if (rows === null) return { rows: [], connected: false };
     return { rows, connected: true };
-  } catch {
+  } catch (error) {
+    noteReadError(context, error);
     return { rows: [], connected: false };
   }
 }

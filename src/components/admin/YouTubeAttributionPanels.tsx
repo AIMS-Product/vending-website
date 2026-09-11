@@ -56,7 +56,9 @@ export function YouTubeStageFunnel({ stages }: { stages: YouTubeStage[] }) {
             {index > 0 ? (
               <p className="text-ui-text-subtle text-xs">
                 {stage.ofPreviousPct === null
-                  ? "Not connected yet — no conversion rate to show."
+                  ? stage.count === null || stages[index - 1]?.count === null
+                    ? "Not measured yet — no conversion rate to show."
+                    : "Nothing to divide by — no conversion rate to show."
                   : `${stage.ofPreviousPct}% continued from the step above`}
               </p>
             ) : null}
@@ -379,7 +381,9 @@ export function YouTubeCohortTable({
                     <th className="py-2 pr-3 text-right font-semibold">
                       Won same month
                     </th>
-                    <th className="py-2 text-right font-semibold">Won later</th>
+                    <th className="py-2 text-right font-semibold">
+                      Won another month
+                    </th>
                   </>
                 ) : null}
               </tr>
@@ -405,7 +409,7 @@ export function YouTubeCohortTable({
                         {row.closedSameMonth}
                       </td>
                       <td className="text-ui-text-muted py-2.5 text-right tabular-nums">
-                        {row.closedLaterMonth}
+                        {row.closedOtherMonth}
                       </td>
                     </>
                   ) : null}
@@ -423,6 +427,26 @@ export function YouTubeCohortTable({
  * States plainly which stages are live and which are waiting on a switch, so a
  * dash in the table is never read as a zero.
  */
+/**
+ * Why the clicks stage is unmeasured, in the reader's terms.
+ *
+ * A failed read used to render as "needs a Bitly token", because the window
+ * probe returns nothing for an empty table and for a broken read alike. That
+ * sent whoever read the tab off to configure something already configured.
+ */
+function clicksGap(
+  coverage: YouTubeCoverage,
+  range: YouTubeAttribution["range"],
+) {
+  if (coverage.clicksFailed) {
+    return "Link clicks could not be read just now, so the stage is blank. Nothing needs configuring — try the page again in a minute.";
+  }
+  if (coverage.clicksWindowStart) {
+    return `Link clicks are only synced back to ${coverage.clicksWindowStart}, so they are not shown against ${range.label.toLowerCase()}.`;
+  }
+  return "Link clicks need a Bitly token before they can be synced.";
+}
+
 export function YouTubeCoverageNote({
   coverage,
   range,
@@ -432,7 +456,7 @@ export function YouTubeCoverageNote({
 }) {
   const gaps: string[] = [];
   if (!coverage.clicksConnected) {
-    gaps.push("Link clicks need a Bitly token before they can be synced.");
+    gaps.push(clicksGap(coverage, range));
   }
   if (!coverage.visitsConnected) {
     gaps.push(
@@ -450,6 +474,13 @@ export function YouTubeCoverageNote({
   if (!coverage.outcomesConnected) {
     gaps.push(
       "Attended and won need the closed-won columns from this slice's migration.",
+    );
+  } else {
+    // Name the set the cycle-time figures actually drop. It is not the
+    // booked-before-lead count above: that one is built from call_booked_at,
+    // these are built from closed_won_at.
+    gaps.push(
+      "Cycle times count only wins carrying a Close opportunity date, and drop any whose win date precedes the first touch.",
     );
   }
 
@@ -486,8 +517,9 @@ export function YouTubeCoverageNote({
             <span className="text-ui-text font-semibold">
               {coverage.bookedBeforeLead}
             </span>{" "}
-            booked before they filled the form — Close already had them, so they
-            are excluded from cycle times.
+            booked a call before their first touch on this site — Close already
+            had them, so the booking is a returning lead rather than a cycle
+            that started here.
           </>
         ) : null}
       </p>

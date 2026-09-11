@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   campaignFromLongUrl,
   createBitlyClient,
+  isBitlinkId,
   type BitlyClient,
 } from "@/lib/bitly/client";
 import { config } from "@/lib/config";
@@ -35,7 +36,17 @@ export type BitlyClickSyncResult = {
   scanned: number;
   updated: number;
   daysWritten: number;
+  /** Links the next run should retry: unreachable, or a write that errored. */
   failed: number;
+  /**
+   * Links whose stored id can never be requested, counted apart from `failed`.
+   *
+   * The runner turns `failed` into a 500, and a malformed id fails identically
+   * on every run — so counting it there paged the cron nightly for a data
+   * problem no retry can fix. It is a number to read in the response and a
+   * warning in the log instead.
+   */
+  invalid: number;
   /** Links whose bitlink id was filled in from the Bitly group listing. */
   linksMapped: number;
 };
@@ -74,6 +85,7 @@ export async function syncBitlyClicks(
     updated: 0,
     daysWritten: 0,
     failed: 0,
+    invalid: 0,
     linksMapped: 0,
   };
 
@@ -105,7 +117,23 @@ export async function syncBitlyClicks(
   async function worker() {
     for (;;) {
       const row = rows[cursor++];
-      if (!row?.bitly_id) return;
+      // Only an exhausted queue ends this worker. A row with no id is one row
+      // to skip -- returning on it abandoned the rest of this worker's share.
+      if (!row) return;
+      if (!row.bitly_id) continue;
+
+      // Refused before the request, and not retried: an id this shape can
+      // never become valid, so it is stamped like a link with no clicks and
+      // leaves the front of the claim queue rather than blocking it every run.
+      if (!isBitlinkId(row.bitly_id)) {
+        result.invalid += 1;
+        console.warn("bitly click sync: stored bitlink id is unusable", {
+          campaign: row.utm_campaign,
+          bitlyId: row.bitly_id,
+        });
+        await stamp(row.utm_campaign);
+        continue;
+      }
 
       try {
         const series = await bitly.dailyClicks(row.bitly_id, { days });
@@ -130,18 +158,28 @@ export async function syncBitlyClicks(
 
         // Stamped even when the series was empty, so a link with genuinely no
         // clicks does not sit at the front of the queue forever.
-        await client
-          .from("youtube_videos")
-          .update({ clicks_synced_at: syncedAt })
-          .eq("utm_campaign", row.utm_campaign);
+        await stamp(row.utm_campaign);
 
         result.updated += 1;
-      } catch {
+      } catch (error) {
         // One unreachable link must not abort the batch. The row keeps its old
-        // clicks_synced_at and is retried on the next run.
+        // clicks_synced_at and is retried on the next run -- but it is logged,
+        // because a link failing silently every run is how the clicks table
+        // could sit empty with nobody noticing. No token in the message.
         result.failed += 1;
+        console.warn("bitly click sync: link failed, will retry next run", {
+          campaign: row.utm_campaign,
+          error: error instanceof Error ? error.message : "unknown error",
+        });
       }
     }
+  }
+
+  async function stamp(campaign: string) {
+    await client
+      .from("youtube_videos")
+      .update({ clicks_synced_at: syncedAt })
+      .eq("utm_campaign", campaign);
   }
 
   await Promise.all(

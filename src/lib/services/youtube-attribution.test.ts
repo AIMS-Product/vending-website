@@ -15,50 +15,81 @@ type Call = { method: string; args: unknown[] };
  * A chainable PostgREST stand-in: every builder method records its call and
  * returns itself, and awaiting it yields the canned result. `range` slices the
  * rows the way PostgREST does, so a paged read sees one page per request.
+ *
+ * `gte` actually filters. It used to be recorded and ignored, which meant the
+ * range bound on every read was untested: deleting `.gte("day", ...)` from the
+ * clicks query left the whole suite green. Everything else is still recorded
+ * only — `not`/`order` do not change which rows a test cares about.
  */
-function builder(rows: unknown[], error: unknown) {
-  const calls: Call[] = [];
+function builder(rows: unknown[], error: unknown, calls: Call[]) {
   const target: Record<string, unknown> = {};
   let window: [number, number] | null = null;
-  for (const method of [
-    "select",
-    "gte",
-    "not",
-    "neq",
-    "order",
-    "limit",
-    "eq",
-    "or",
-  ]) {
+  const filters: Array<(row: unknown) => boolean> = [];
+  for (const method of ["select", "not", "neq", "order", "limit", "eq", "or"]) {
     target[method] = (...args: unknown[]) => {
       calls.push({ method, args });
       return target;
     };
   }
+  target.gte = (column: string, value: string) => {
+    calls.push({ method: "gte", args: [column, value] });
+    filters.push((row) => {
+      const cell = (row as Record<string, unknown>)[column];
+      // Absent means the fixture does not model this column, so it is not the
+      // bound under test and the row stays in.
+      return cell === undefined || String(cell) >= value;
+    });
+    return target;
+  };
   target.range = (from: number, to: number) => {
     calls.push({ method: "range", args: [from, to] });
     window = [from, to];
     return target;
   };
-  target.then = (resolve: unknown, reject: unknown) =>
-    Promise.resolve({
-      data: error ? null : window ? rows.slice(window[0], window[1] + 1) : rows,
+  target.then = (resolve: unknown, reject: unknown) => {
+    const matched = rows.filter((row) =>
+      filters.every((filter) => filter(row)),
+    );
+    return Promise.resolve({
+      data: error
+        ? null
+        : window
+          ? matched.slice(window[0], window[1] + 1)
+          : matched,
       error,
     }).then(
       resolve as (v: unknown) => unknown,
       reject as (e: unknown) => unknown,
     );
-  return { target, calls };
+  };
+  return { target };
 }
 
-function buildClient(rows: Record<string, unknown[]>, failing: string[]) {
+function buildClient(
+  rows: Record<string, unknown[]>,
+  failing: string[],
+  /**
+   * Errors to hand back per `from(table)` call, in order. Lets a test fail the
+   * first `lead_submissions` select (the one carrying the outcome columns) and
+   * let the second through, which is how the two-shot degrade really behaves.
+   */
+  errorQueue: Record<string, unknown[]> = {},
+) {
   const calls: Record<string, Call[]> = {};
+  const seen: Record<string, number> = {};
   const from = vi.fn((table: string) => {
+    const attempt = seen[table] ?? 0;
+    seen[table] = attempt + 1;
+    const queued = errorQueue[table]?.[attempt];
+    // One shared bucket per table: a paged read builds a fresh query object per
+    // page, and pages now go out in parallel, so per-builder arrays would only
+    // ever hold whichever page was created last.
+    const bucket = (calls[table] ??= []);
     const b = builder(
       rows[table] ?? [],
-      failing.includes(table) ? { message: "boom" } : null,
+      queued ?? (failing.includes(table) ? { message: "boom" } : null),
+      bucket,
     );
-    calls[table] = b.calls;
     return b.target as never;
   });
   return { client: { from } as never, calls };
@@ -115,6 +146,26 @@ describe("getYouTubeAttribution reads", () => {
     expect(calls.ga4_page_views).toContainEqual({
       method: "order",
       args: ["day"],
+    });
+  });
+
+  it("loses no rows across a parallel batch boundary", async () => {
+    // 7,001 rows is two batches of six pages plus one: the count only comes out
+    // right if the second batch starts where the first left off and the short
+    // page ends the read.
+    const rows = Array.from({ length: 7_001 }, () => ({
+      utm_source: "youtube",
+      utm_campaign: "zach",
+      day: "2026-09-01",
+      sessions: 1,
+    }));
+
+    const { result, calls } = await run({ ga4_page_views: rows });
+
+    expect(result.totals.visits).toBe(7_001);
+    expect(calls.ga4_page_views).toContainEqual({
+      method: "range",
+      args: [7000, 7999],
     });
   });
 
@@ -197,8 +248,114 @@ describe("getYouTubeAttribution reads", () => {
     expect(result.coverage.visitsSource).toBeNull();
   });
 
-  async function run(rows: Record<string, unknown[]>, failing: string[] = []) {
+  async function run(
+    rows: Record<string, unknown[]>,
+    failing: string[] = [],
+    errorQueue: Record<string, unknown[]> = {},
+  ) {
     const { client, calls } = buildClient(
+      {
+        lead_submissions: [],
+        youtube_videos: [],
+        // One click far enough back that every range starts inside the synced
+        // window, so the paged read these tests assert on actually runs.
+        bitly_link_clicks: [
+          { utm_campaign: "zach", day: "2026-01-01", clicks: 1 },
+        ],
+        lead_page_views: [],
+        ga4_page_views: [],
+        ...rows,
+      },
+      failing,
+      errorQueue,
+    );
+    const result = await getYouTubeAttribution({ client, now: NOW });
+    return { result, calls };
+  }
+});
+
+/**
+ * H7: a stage that could not be read is unmeasured either way, but "the
+ * migration has not been applied" and "the database timed out" are different
+ * facts. Only the schema codes mean the former, and the latter must not pass
+ * silently.
+ */
+describe("getYouTubeAttribution read failures", () => {
+  const SCHEMA_ERROR = { code: "PGRST205", message: "table not found" };
+  const TIMEOUT = {
+    code: "57014",
+    message: "canceling statement due to statement timeout",
+  };
+
+  it("treats a missing table as not connected without logging it as a fault", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = await run({}, [], { ga4_page_views: [SCHEMA_ERROR] });
+
+    expect(result.coverage.visitsConnected).toBe(false);
+    expect(result.totals.visits).toBeNull();
+    expect(logged).not.toHaveBeenCalled();
+    logged.mockRestore();
+  });
+
+  it("logs a transient read failure instead of calling it not connected in silence", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = await run({}, [], { ga4_page_views: [TIMEOUT] });
+
+    // Still unmeasured: null, never a fabricated zero.
+    expect(result.totals.visits).toBeNull();
+    expect(logged).toHaveBeenCalledTimes(1);
+    const message = String(logged.mock.calls[0]?.[0]);
+    expect(message).toContain("57014");
+    expect(message).toContain("ga4_page_views");
+    logged.mockRestore();
+  });
+
+  it("logs a transient failure on the outcome columns rather than blaming the migration", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const lead = {
+      id: "l1",
+      created_at: "2026-09-05T00:00:00.000Z",
+      email: "viewer@realprospect.com",
+      utm_source: "youtube",
+      utm_campaign: "zach",
+      utm_content: null,
+      lifecycle_status: "new",
+      call_booked_at: null,
+      metadata: null,
+    };
+
+    // First lead_submissions select (with the outcome columns) times out; the
+    // base-column retry succeeds.
+    const { result } = await run({ lead_submissions: [lead] }, [], {
+      lead_submissions: [TIMEOUT],
+    });
+
+    expect(result.totals.leads).toBe(1);
+    expect(result.coverage.outcomesConnected).toBe(false);
+    expect(logged).toHaveBeenCalledTimes(1);
+    expect(String(logged.mock.calls[0]?.[0])).toContain("57014");
+    logged.mockRestore();
+  });
+
+  it("does not log when the outcome columns are simply absent", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await run({}, [], {
+      lead_submissions: [{ code: "42703", message: "no column" }],
+    });
+
+    expect(logged).not.toHaveBeenCalled();
+    logged.mockRestore();
+  });
+
+  async function run(
+    rows: Record<string, unknown[]>,
+    failing: string[] = [],
+    errorQueue: Record<string, unknown[]> = {},
+  ) {
+    const { client } = buildClient(
       {
         lead_submissions: [],
         youtube_videos: [],
@@ -208,8 +365,127 @@ describe("getYouTubeAttribution reads", () => {
         ...rows,
       },
       failing,
+      errorQueue,
     );
-    const result = await getYouTubeAttribution({ client, now: NOW });
-    return { result, calls };
+    return { result: await getYouTubeAttribution({ client, now: NOW }) };
+  }
+});
+
+/**
+ * H8: the Bitly sync only ever walks back 30 days, but the stage was rendered
+ * against 90d and 1y all the same — a real-looking click count built from a
+ * short window, sitting above twelve months of visits.
+ */
+describe("getYouTubeAttribution clicks window", () => {
+  const click = (day: string) => ({
+    utm_campaign: "zach",
+    day,
+    clicks: 5,
+  });
+
+  it("reports clicks as unmeasured when the range starts before the first synced day", async () => {
+    // 30d from NOW starts 2026-08-11; the sync only reaches 2026-08-20.
+    const result = await run(
+      { bitly_link_clicks: [click("2026-08-20"), click("2026-08-21")] },
+      "30d",
+    );
+
+    expect(result.totals.clicks).toBeNull();
+    expect(result.coverage.clicksConnected).toBe(false);
+    expect(result.coverage.clicksWindowStart).toBe("2026-08-20");
+  });
+
+  it("counts clicks when the range starts inside the synced window", async () => {
+    // 7d from NOW starts 2026-09-03, well inside the synced window. Only the
+    // 09-05 row is in range: the 08-20 row is what sets the window start, and
+    // the query's own `gte("day", ...)` is what leaves it out of the total.
+    const result = await run(
+      { bitly_link_clicks: [click("2026-08-20"), click("2026-09-05")] },
+      "7d",
+    );
+
+    expect(result.totals.clicks).toBe(5);
+    expect(result.coverage.clicksConnected).toBe(true);
+    expect(result.coverage.clicksWindowStart).toBe("2026-08-20");
+  });
+
+  it("reports clicks as unmeasured when nothing has ever synced", async () => {
+    const result = await run({ bitly_link_clicks: [] }, "30d");
+
+    expect(result.totals.clicks).toBeNull();
+    expect(result.coverage.clicksConnected).toBe(false);
+    expect(result.coverage.clicksWindowStart).toBeNull();
+    // Empty is not broken: this is the state the "needs a token" note is for.
+    expect(result.coverage.clicksFailed).toBe(false);
+  });
+
+  /**
+   * LOW: the window probe returned null for an empty table and for a failed
+   * read alike, so a statement timeout rendered as "Link clicks need a Bitly
+   * token" -- pointing at configuration when the fault was ours.
+   */
+  it("separates a failed window probe from a table nobody has synced", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await run({}, "30d", {
+      bitly_link_clicks: [{ code: "57014", message: "statement timeout" }],
+    });
+
+    expect(result.totals.clicks).toBeNull();
+    expect(result.coverage.clicksConnected).toBe(false);
+    expect(result.coverage.clicksFailed).toBe(true);
+    error.mockRestore();
+  });
+
+  it("still calls a missing clicks table not connected, not failed", async () => {
+    const result = await run({}, "30d", {
+      bitly_link_clicks: [
+        {
+          code: "42P01",
+          message: 'relation "bitly_link_clicks" does not exist',
+        },
+      ],
+    });
+
+    expect(result.coverage.clicksConnected).toBe(false);
+    expect(result.coverage.clicksFailed).toBe(false);
+  });
+
+  it("reports a failed windowed read as failed, not as a missing token", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    // The probe succeeds, the paged read that follows it does not.
+    const result = await run(
+      { bitly_link_clicks: [click("2026-08-20")] },
+      "7d",
+      {
+        bitly_link_clicks: [
+          null,
+          { code: "57014", message: "statement timeout" },
+        ],
+      },
+    );
+
+    expect(result.coverage.clicksConnected).toBe(false);
+    expect(result.coverage.clicksFailed).toBe(true);
+    error.mockRestore();
+  });
+
+  async function run(
+    rows: Record<string, unknown[]>,
+    range: "7d" | "30d" | "90d" | "1y",
+    errorQueue: Record<string, unknown[]> = {},
+  ) {
+    const { client } = buildClient(
+      {
+        lead_submissions: [],
+        youtube_videos: [],
+        bitly_link_clicks: [],
+        lead_page_views: [],
+        ga4_page_views: [],
+        ...rows,
+      },
+      [],
+      errorQueue,
+    );
+    return getYouTubeAttribution({ client, now: NOW, range });
   }
 });

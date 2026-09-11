@@ -1,0 +1,147 @@
+import { describe, expect, it } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+import {
+  YouTubeCohortTable,
+  YouTubeCoverageNote,
+  YouTubeStageFunnel,
+} from "./YouTubeAttributionPanels";
+import type { YouTubeCoverage } from "@/lib/services/youtube-attribution-rollup";
+
+const RANGE = {
+  key: "90d" as const,
+  label: "Last 90 days",
+  days: 90,
+  startIso: "2026-06-12T00:00:00.000Z",
+  endIso: "2026-09-10T00:00:00.000Z",
+};
+
+function coverage(overrides: Partial<YouTubeCoverage> = {}): YouTubeCoverage {
+  return {
+    registryVideos: 42,
+    videosWithLeads: 12,
+    campaignsMissingFromRegistry: [],
+    clicksConnected: true,
+    clicksWindowStart: null,
+    clicksFailed: false,
+    visitsConnected: true,
+    visitsSource: "ga4",
+    outcomesConnected: true,
+    bookedBeforeLead: 0,
+    ...overrides,
+  };
+}
+
+function note(overrides: Partial<YouTubeCoverage> = {}) {
+  return renderToStaticMarkup(
+    <YouTubeCoverageNote coverage={coverage(overrides)} range={RANGE} />,
+  );
+}
+
+describe("YouTubeCoverageNote", () => {
+  /**
+   * M12: the note credited the bookedBeforeLead count with an exclusion that
+   * closeDurations does not make. Those two counts are built from different
+   * columns — call_booked_at against closed_won_at — so the sentence stated a
+   * rule the numbers do not follow.
+   */
+  it("describes what a booked-before-lead row actually is", () => {
+    const html = note({ bookedBeforeLead: 3 });
+
+    expect(html).toContain("3");
+    expect(html).toContain("first touch");
+    // The false claim: these rows are not the set closeDurations drops.
+    expect(html).not.toContain("excluded from cycle times");
+  });
+
+  it("names the clicks boundary when the range outruns the synced window", () => {
+    const html = note({
+      clicksConnected: false,
+      clicksWindowStart: "2026-08-20",
+    });
+
+    expect(html).toContain("2026-08-20");
+    expect(html).not.toContain("need a Bitly token");
+  });
+
+  it("still blames the missing token when nothing has ever synced", () => {
+    const html = note({ clicksConnected: false, clicksWindowStart: null });
+
+    expect(html).toContain("Bitly token");
+  });
+
+  /**
+   * LOW: the probe that finds the synced window returns nothing both when the
+   * table is empty and when the read broke, so a statement timeout rendered as
+   * "Link clicks need a Bitly token" -- telling whoever reads the tab to go
+   * and configure something that is already configured.
+   */
+  it("does not blame a missing token for a read that failed", () => {
+    const html = note({ clicksConnected: false, clicksFailed: true });
+
+    expect(html).not.toContain("Bitly token");
+    expect(html).toContain("could not be read");
+  });
+
+  it("says which wins are left out of the cycle-time figures", () => {
+    const html = note({ bookedBeforeLead: 0 });
+
+    expect(html).toContain("Cycle times");
+  });
+});
+
+describe("YouTubeCohortTable", () => {
+  /**
+   * LOW: the column counts every win NOT dated in the cohort month, which
+   * includes a win dated before it -- a lead Close already held. Calling that
+   * "Won later" states the opposite of what the number contains.
+   */
+  it("does not call a win dated before the cohort month a later win", () => {
+    const html = renderToStaticMarkup(
+      <YouTubeCohortTable
+        cohorts={[
+          {
+            month: "2026-08",
+            leads: 1,
+            booked: 1,
+            closed: 1,
+            closedSameMonth: 0,
+            closedOtherMonth: 1,
+          },
+        ]}
+        outcomesConnected
+      />,
+    );
+
+    expect(html).not.toContain("Won later");
+    expect(html).toContain("Won another month");
+  });
+});
+
+describe("YouTubeStageFunnel", () => {
+  it("does not call a measured zero denominator 'not connected'", () => {
+    const html = renderToStaticMarkup(
+      <YouTubeStageFunnel
+        stages={[
+          { label: "Link clicks", count: 0, ofPreviousPct: null },
+          { label: "Landing page visits", count: 233, ofPreviousPct: null },
+        ]}
+      />,
+    );
+
+    expect(html).not.toContain("Not connected yet");
+    expect(html).toContain("Nothing to divide by");
+  });
+
+  it("still says not measured when a stage could not be read", () => {
+    const html = renderToStaticMarkup(
+      <YouTubeStageFunnel
+        stages={[
+          { label: "Link clicks", count: null, ofPreviousPct: null },
+          { label: "Landing page visits", count: 233, ofPreviousPct: null },
+        ]}
+      />,
+    );
+
+    expect(html).toContain("Not measured yet");
+  });
+});

@@ -75,15 +75,15 @@ describe("unmeasured stages", () => {
     expect(video?.clicks).toBeNull();
     expect(video?.visits).toBeNull();
     expect(video?.closed).toBeNull();
-    expect(video?.clickToLeadPct).toBeNull();
     expect(video?.visitToLeadPct).toBeNull();
   });
 
   it("distinguishes a connected zero from an unmeasured stage", () => {
     const connected = build([lead()], { clicksConnected: true });
+    // Measured across every link: nobody clicked.
     expect(connected.totals.clicks).toBe(0);
-    // Zero clicks with a lead is real data, but it is not a rate.
-    expect(connected.videos[0]?.clickToLeadPct).toBeNull();
+    // This video is not in the registry, so whether IT was clicked is unknown.
+    expect(connected.videos[0]?.clicks).toBeNull();
   });
 });
 
@@ -304,7 +304,7 @@ describe("cohorts", () => {
     expect(august?.leads).toBe(1);
     expect(august?.booked).toBe(1);
     // Touched in August, closed in September — August gets the credit.
-    expect(august?.closedLaterMonth).toBe(1);
+    expect(august?.closedOtherMonth).toBe(1);
     expect(august?.closedSameMonth).toBe(0);
     expect(september?.leads).toBe(1);
   });
@@ -468,5 +468,198 @@ describe("coverage", () => {
     ]);
 
     expect(result.coverage.bookedBeforeLead).toBe(0);
+  });
+});
+
+/**
+ * M9: a deal Close reports as won with no booked date used to count at the
+ * bottom of the funnel and at neither stage above it, so the page rendered
+ * "200% continued from the step above".
+ */
+describe("funnel monotonicity", () => {
+  const wonWithoutBookedDate = lead({
+    call_booked_at: null,
+    call_outcome: "won",
+    closed_won_at: "2026-08-20",
+    closed_won_source: "close_opportunity",
+  });
+
+  it("never reports a stage larger than the one above it", () => {
+    // Clicks and visits off: this is about the stages built from lead rows.
+    const { stages } = build([wonWithoutBookedDate], {
+      clicksConnected: false,
+      visitsConnected: false,
+    });
+
+    const counts = stages.map((stage) => stage.count);
+    for (let i = 1; i < counts.length; i += 1) {
+      const above = counts[i - 1];
+      const here = counts[i];
+      if (above === null || here === null) continue;
+      expect(here).toBeLessThanOrEqual(above);
+    }
+    for (const stage of stages) {
+      expect(stage.ofPreviousPct === null || stage.ofPreviousPct <= 100).toBe(
+        true,
+      );
+    }
+  });
+
+  it("counts a won lead as booked and attended, because the sale implies the call", () => {
+    const { totals } = build([wonWithoutBookedDate]);
+
+    expect(totals.booked).toBe(1);
+    expect(totals.attended).toBe(1);
+    expect(totals.closed).toBe(1);
+  });
+
+  /**
+   * One lead cannot expose this: the gap needs a second lead whose win carries
+   * an outcome label that the attended subtraction removes. `booked` counts it
+   * (it is won), `closed` counts it (it is won), and `attended` dropped it for
+   * being cancelled -- so the bottom stage came out larger than the one above.
+   */
+  it("keeps attended above closed when a win is labelled cancelled", () => {
+    const { totals, stages } = build([
+      lead({ call_booked_at: "2026-08-11", call_outcome: "won" }),
+      lead({
+        call_booked_at: null,
+        call_outcome: "canceled",
+        closed_won_at: "2026-08-20",
+        closed_won_source: "close_opportunity",
+      }),
+    ]);
+
+    expect(totals.booked).toBe(2);
+    expect(totals.closed).toBe(2);
+    expect(totals.attended).toBe(2);
+
+    const closedStage = stages.find((stage) => stage.label === "Closed / won");
+    expect(closedStage?.ofPreviousPct).toBe(100);
+  });
+
+  /**
+   * The old version of this passed a lead with every outcome column null, so
+   * `hasBooked` returned false whatever the code did with `outcomesConnected` --
+   * it could not fail. Setting the columns is what makes the claim testable: a
+   * win nobody could read must not raise the booked count while the stages
+   * below it report "unmeasured".
+   */
+  it("leaves the booked count alone when outcomes are not connected", () => {
+    const wonLead = lead({
+      call_booked_at: null,
+      call_outcome: "won",
+      closed_won_at: "2026-08-20",
+      closed_won_source: "close_opportunity",
+    });
+
+    const { totals, cohorts } = build([wonLead], {
+      outcomesConnected: false,
+    });
+
+    expect(totals.booked).toBe(0);
+    expect(totals.attended).toBeNull();
+    expect(totals.closed).toBeNull();
+    expect(cohorts[0]?.booked).toBe(0);
+    expect(cohorts[0]?.closed).toBe(0);
+  });
+
+  it("still excludes a no-show that never closed from attended", () => {
+    const { totals } = build([
+      lead({
+        call_booked_at: "2026-08-15",
+        call_outcome: "no_show",
+        closed_won_at: null,
+      }),
+    ]);
+
+    expect(totals.booked).toBe(1);
+    expect(totals.attended).toBe(0);
+  });
+});
+
+/**
+ * M10: `clicksConnected` is global, so once a Bitly token exists every registry
+ * row with no `bitly_id` showed a hard 0 next to real leads — the exact
+ * "0 clicks, 4 leads" reading the null-not-zero rule exists to prevent.
+ */
+describe("per-video clicks", () => {
+  const video = (overrides: { bitly_id: string | null }) => ({
+    utm_campaign: "how-much-vending",
+    title: "How much vending",
+    video_url: null,
+    published_at: null,
+    in_description: true,
+    ...overrides,
+  });
+
+  it("reports clicks as unknown for a video with no Bitly link", () => {
+    const { videos } = build([lead()], { videos: [video({ bitly_id: null })] });
+
+    expect(videos[0]?.clicks).toBeNull();
+  });
+
+  it("reports a real zero for a linked video nobody clicked", () => {
+    const { videos } = build([lead()], {
+      videos: [video({ bitly_id: "vp.co/abc" })],
+    });
+
+    expect(videos[0]?.clicks).toBe(0);
+  });
+
+  it("reports the summed clicks when the campaign has them", () => {
+    const { videos } = build([lead()], {
+      videos: [video({ bitly_id: "vp.co/abc" })],
+      clicks: [
+        { utm_campaign: "how-much-vending", day: "2026-08-10", clicks: 4 },
+      ],
+    });
+
+    expect(videos[0]?.clicks).toBe(4);
+  });
+
+  it("reports clicks a campaign outside the registry did record", () => {
+    const { videos } = build([lead({ utm_campaign: "off-registry" })], {
+      videos: [],
+      clicks: [{ utm_campaign: "off-registry", day: "2026-08-10", clicks: 2 }],
+    });
+
+    expect(videos[0]?.clicks).toBe(2);
+  });
+});
+
+/**
+ * M11: a win dated before the first-touch month matched neither `=== month`
+ * nor `> month`, so the row rendered "Won 1" with both sub-columns at 0.
+ */
+describe("cohort win columns", () => {
+  it("puts every dated win in a column", () => {
+    const { cohorts } = build([
+      lead({
+        created_at: "2026-08-10T12:00:00.000Z",
+        metadata: {
+          attribution_session: { first_touch_at: "2026-08-01T12:00:00.000Z" },
+        },
+        call_booked_at: "2026-08-11",
+        // Close already had this lead: the win predates the first touch here.
+        closed_won_at: "2026-07-20",
+        closed_won_source: "close_opportunity",
+      }),
+    ]);
+
+    const row = cohorts[0];
+    expect(row?.closed).toBe(1);
+    expect((row?.closedSameMonth ?? 0) + (row?.closedOtherMonth ?? 0)).toBe(1);
+    // LOW: this win is dated BEFORE the cohort month, so the column it lands in
+    // cannot be called "later" -- it is "some other month".
+    expect(row?.closedOtherMonth).toBe(1);
+  });
+});
+
+describe("coverage wording inputs", () => {
+  it("keeps the untagged bucket out of the missing-from-registry list", () => {
+    const { coverage } = build([lead({ utm_campaign: null })]);
+
+    expect(coverage.campaignsMissingFromRegistry).not.toContain("(untagged)");
   });
 });

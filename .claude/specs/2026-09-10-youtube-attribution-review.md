@@ -13,6 +13,59 @@ return). Suite 253 files / 2055 tests green, typecheck clean, build clean.
 Still open, in this file and NOT done: H7, H8, M9-M13, every LOW item, the
 rate-limiter decision, and the live Bitly `{bitlink}` encoding check.
 
+## Status 2026-09-11 — everything above is now closed on `fix/youtube-attribution-polish`
+
+Overnight polish pass. Branch pushed as a draft PR; not merged. Suite 260 files
+/ 2,162 tests green, typecheck clean.
+
+| Item                                             | State                  | Where                                                                                                                                                                                                                         |
+| ------------------------------------------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| H7 any error reads as "not connected"            | done                   | `9ebbdb1` — only 42P01, 42703, PGRST204, PGRST205 mean not connected; everything else is logged with code and message and still reported as unmeasured                                                                        |
+| H8 clicks window vs range                        | done                   | `119a7ae` — one bounded `order("day").limit(1)` finds the first synced day; an earlier range start reports clicks as unmeasured and the coverage note names the boundary                                                      |
+| M9 funnel not monotonic                          | done, decision taken   | `3ea040d` — a won lead counts as booked. See "Decisions taken" below                                                                                                                                                          |
+| M10 per-video clicks 0 not null                  | done                   | `f570e93` — a zero is only honest for a link that is actually synced                                                                                                                                                          |
+| M11 cohort win in neither column                 | done                   | `f570e93` — the later column is everything that is not the cohort month                                                                                                                                                       |
+| M12 coverage note names the wrong set            | done                   | `f7e49e4` — plus the first test file for these panels                                                                                                                                                                         |
+| M13 re-import wipes Bitly ids                    | done                   | `f8fc562` — `splitByBitlyLink`; the 605 rows that carry a link still seed it                                                                                                                                                  |
+| LOW `daysBetween` returns -1                     | already fixed          | shipped with the day-key work; two tests cover it (`youtube-attribution-rollup.test.ts` "unparseable won date", "unparseable booking date")                                                                                   |
+| LOW `(untagged)` in campaignsMissingFromRegistry | done                   | `f570e93`                                                                                                                                                                                                                     |
+| LOW unused `clickToLeadPct`                      | done, deleted          | `dab027c`                                                                                                                                                                                                                     |
+| LOW `bitly-click-sync.ts:108` null-id row        | done                   | `dab027c` — only an exhausted queue ends a worker                                                                                                                                                                             |
+| LOW `CRON_SECRET` min length                     | **SKIPPED ON PURPOSE** | Production's value cannot be read from here. If it is shorter than a new minimum, config parsing fails and the whole site goes down. Adam's call, with the value in front of him                                              |
+| Rate-limiter decision                            | done                   | `07bbaa0` — `attribution_event` fails closed, lead paths stay open, pinned by a test                                                                                                                                          |
+| Bitly `{bitlink}` encoding                       | done                   | `e3ddb58` — Bitly's own example is `/v4/bitlinks/bit.ly/12a4b6c/clicks`, an unencoded slash. Validated against `^[a-z0-9.-]{1,80}/[A-Za-z0-9_-]{1,80}$` first. **Still needs one live call once `BITLY_ACCESS_TOKEN` exists** |
+
+### Decisions taken
+
+- **M9: a won lead counts as booked and attended.** A sale cannot happen
+  without a call, and excluding a real win from the closed stage would
+  understate the revenue this page exists to attribute. The cost: "Booked a
+  call" here reads very slightly higher than the same figure on the other
+  analytics tabs, which count `call_booked_at` alone. No production number
+  moved — there are no won-without-booked-date YouTube leads today, so this is
+  a guard rather than a change.
+- **The Bitly runner now returns 500 when links fail**, matching the GA4
+  runner. It returned 200 with `ok: true`, which is how `bitly_link_clicks`
+  could sit at zero rows with nobody noticing.
+
+### Browser QA, all four ranges (first time this tab has been driven)
+
+Production data, read-only, through `next dev`. Before and after screenshots in
+`.claude/specs/2026-09-11-polish-screens/`.
+
+| Range | Visits | Leads | Booked | Won | Load     |
+| ----- | ------ | ----- | ------ | --- | -------- |
+| 7d    | 233    | 27    | 16     | 1   | 1.4-3.1s |
+| 30d   | 1,287  | 153   | 111    | 12  | 1.4-2.2s |
+| 90d   | 4,139  | 230   | 155    | 17  | 1.5-1.8s |
+| 1y    | 8,652  | 230   | 155    | 17  | 1.6-2.3s |
+
+No console errors on any range. No percentage over 100% on any range. The
+coverage note reads "GA4 sessions by Pacific day" as expected. The one thing
+the QA found: **"Link clicks" rendered a hard `0`** on every range, because
+`bitly_link_clicks` exists but is empty and `clicksConnected` was therefore
+true. It renders `—` now.
+
 Two decisions taken while fixing:
 
 - **C3 is strictly `status_type === "won"` — now CONFIRMED CORRECT, not a
@@ -33,6 +86,14 @@ memory corrected.
 
 `20260910130000_lead_page_view_utm_caps.sql` is new and also unapplied — apply
 it together with `20260910120000_youtube_attribution.sql`.
+
+Production schema state, probed read-only 2026-09-10 after the push:
+`youtube_videos`, `bitly_link_clicks` and `lead_page_views` all return
+PGRST205 (absent) and the four new `lead_submissions` columns return 42703.
+Neither migration has run. Apply them in filename order and ONLY these two --
+do not use `supabase db push`, which applies everything the remote migration
+history does not already know about, and this project applies migrations by
+hand so that history cannot be trusted to match.
 
 Two review passes (code + security) ran against the commit. Findings below were
 spot-checked by hand against the files. Nothing here has been fixed.
@@ -270,9 +331,15 @@ unlimited.
 
 That is pre-existing and deliberate — dropping a real lead costs more than
 letting one through — but this commit attaches a database write to it (M15).
-Either apply the `public_request_hits` migration, which fixes the limiter for
-every public endpoint rather than just this one, or pass `failClosed: true` for
-the page-view branch only, since a dropped analytics row costs nothing.
+
+**CORRECTION 2026-09-10: the premise above is wrong.** `public_request_hits`
+DOES exist in production (probed read-only: HTTP 200, while the three new
+tables return PGRST205). The migration's "not applied" header comment is
+stale, so the limiter has its backing table and public endpoints are NOT
+unlimited. What remains true is only the fail-open default in
+`public-rate-limit.ts:134-142`. The open decision shrinks to: pass
+`failClosed: true` for the page-view branch, since a dropped analytics row
+costs nothing. No migration needed for it.
 
 ## Test quality
 

@@ -126,9 +126,7 @@ export function createBitlyClient({
           date?: string | null;
           clicks?: number | null;
         }> | null;
-      }>(
-        `/bitlinks/${encodeURIComponent(bitlinkId)}/clicks?${params.toString()}`,
-      );
+      }>(`/bitlinks/${bitlinkPath(bitlinkId)}/clicks?${params.toString()}`);
 
       return (body.link_clicks ?? []).flatMap((entry) => {
         const date = normalizeDay(entry?.date);
@@ -140,6 +138,61 @@ export function createBitlyClient({
 }
 
 export type BitlyClient = ReturnType<typeof createBitlyClient>;
+
+/**
+ * A Bitlink id is "the domain and hash" — Bitly's own example request is
+ * `/v4/bitlinks/bit.ly/12a4b6c/clicks`, with a literal slash. Percent-encoding
+ * that slash addresses a different resource and 404s, so the value cannot
+ * simply be wrapped in `encodeURIComponent`.
+ *
+ * It is validated instead, then encoded per segment — which is a no-op for
+ * every character the pattern allows, and exists so nothing that slipped past
+ * the pattern could still steer the path. These ids come from our own
+ * `youtube_videos` rows, so anything off-pattern is a data problem rather than
+ * a request to service, and it is refused before the fetch.
+ *
+ * The two halves are checked separately, because one permissive character class
+ * over the whole thing let `..` through as a domain: `"../users"` has exactly
+ * one slash, so it read as "domain/hash" and the path folded to
+ * `/v4/users/clicks` — a different endpoint, reached carrying our bearer token.
+ * The domain half now has to look like a hostname, so every label starts and
+ * ends on an alphanumeric and no label can be empty or a dot.
+ */
+const BITLINK_DOMAIN =
+  /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/;
+const BITLINK_HASH = /^[A-Za-z0-9_-]{1,80}$/;
+const MAX_DOMAIN_LENGTH = 80;
+
+/**
+ * Whether a stored id is safe to put in a request path.
+ *
+ * Exported so the click sync can tell a permanently malformed row from a link
+ * that is merely unreachable today, and stop retrying the first kind forever.
+ */
+export function isBitlinkId(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const parts = value.split("/");
+  if (parts.length !== 2) return false;
+  const [domain, hash] = parts as [string, string];
+  return (
+    domain.length <= MAX_DOMAIN_LENGTH &&
+    BITLINK_DOMAIN.test(domain) &&
+    BITLINK_HASH.test(hash)
+  );
+}
+
+export function bitlinkPath(bitlinkId: string): string {
+  if (!isBitlinkId(bitlinkId)) {
+    throw new BitlyApiError(
+      400,
+      `Refusing to request a bitlink that is not "domain/hash": ${JSON.stringify(bitlinkId)}`,
+    );
+  }
+  return bitlinkId
+    .split("/")
+    .map((part) => encodeURIComponent(part))
+    .join("/");
+}
 
 /** Bitly returns an ISO timestamp; the clicks table is keyed by calendar day. */
 function normalizeDay(value: string | null | undefined): string | null {

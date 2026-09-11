@@ -19,6 +19,11 @@ const LIMITS = {
   lead_submit: { windowMs: 10 * 60 * 1000, max: 8 },
   qualification_intake: { windowMs: 10 * 60 * 1000, max: 12 },
   attribution_event: { windowMs: 60 * 1000, max: 60 },
+  // The tagged landing-view write inside the attribution event, budgeted
+  // separately from the gate above so its fail-closed rule reaches that one
+  // write and nothing else. Same generous per-minute allowance: it is only
+  // ever spent on the branch that inserts a row.
+  page_view: { windowMs: 60 * 1000, max: 60 },
   // Site chatbot (see .claude/specs/2026-08-20-site-chatbot.md §API): a chat
   // turn is cheap to throttle generously (60/min covers real typing speed
   // many times over); the capture-card/pre-chat-form submit reuses the same
@@ -45,6 +50,38 @@ const LIMITS = {
 } as const;
 
 export type PublicRateLimitAction = keyof typeof LIMITS;
+
+/**
+ * Actions that refuse the request when the limiter itself cannot run.
+ *
+ * The default everywhere else is fail-OPEN, and deliberately so: losing a real
+ * lead to a database blip costs more than letting one extra through. Page views
+ * invert that trade entirely — a dropped analytics row costs nothing, while an
+ * unmetered public write costs a table — so the gate lives here rather than in
+ * each caller, and applies to every caller of the action.
+ *
+ * `page_view` and not `attribution_event`: the event gate is checked before the
+ * money-page forward and the popup counter, so fail-closing the action turns a
+ * limiter blip into a 429 on the whole route. Only the landing-view write is
+ * ours to drop.
+ */
+const FAIL_CLOSED_ACTIONS = new Set<PublicRateLimitAction>(["page_view"]);
+
+/**
+ * The codes that mean the hits table or one of its columns is not there yet.
+ *
+ * Its migration is applied by hand, so "not deployed" is a state every caller
+ * has to survive — including the fail-closed ones. A page view refused on every
+ * request until somebody runs a migration is an outage, not a safety measure,
+ * so these fail OPEN whatever the action asks for. A timeout or an unreachable
+ * database is a real fault, and there a fail-closed action still refuses.
+ */
+const SCHEMA_MISSING_CODES = new Set([
+  "42P01",
+  "42703",
+  "PGRST204",
+  "PGRST205",
+]);
 
 /** Deliberately vague: a throttled attacker learns nothing about the limits. */
 export const TOO_MANY_REQUESTS_MESSAGE =
@@ -80,11 +117,13 @@ export type PublicRateLimitDeps = {
  * Counts recent attempts sharing this request's IP *or* its email, so varying
  * one of the two does not buy a fresh budget.
  *
- * Fails OPEN: if the table is missing or the database is unreachable this
- * returns `true` and the caller behaves exactly as it did before the limiter
- * existed. Losing lead capture to a limiter outage would cost far more than
- * the flood it prevents — and the migration that creates the table is applied
- * by hand, so "table missing" is a real state this must survive.
+ * Fails OPEN for every action except those in `FAIL_CLOSED_ACTIONS`: if the
+ * database is unreachable this returns `true` and the caller behaves exactly as
+ * it did before the limiter existed. Losing lead capture to a limiter outage
+ * would cost far more than the flood it prevents. A fail-closed action returns
+ * `false` instead — but still fails open on the schema codes, because the
+ * migration that creates the table is applied by hand and "table missing" is a
+ * real state this must survive.
  *
  * ponytail: check-then-insert, so a simultaneous burst can land a few requests
  * over the limit. Sized for spam, not for a strict quota — move the count and
@@ -119,7 +158,9 @@ export async function checkPublicRateLimit(
       .eq("action", action)
       .gte("occurred_at", since)
       .or(subjectFilter(ip, emailHash));
-    if (error) throw new Error(error.message);
+    // The PostgREST error object carries the `code` the schema rule reads, so
+    // it is passed on as it is rather than reduced to a message.
+    if (error) return allowAfterFailure(action, error, deps);
 
     if ((count ?? 0) >= max) return false;
 
@@ -129,20 +170,42 @@ export async function checkPublicRateLimit(
       email_hash: emailHash,
       occurred_at: now.toISOString(),
     });
-    if (inserted.error) throw new Error(inserted.error.message);
+    if (inserted.error) return allowAfterFailure(action, inserted.error, deps);
   } catch (error) {
-    const failClosed = deps.failClosed ?? false;
-    console.warn(
-      `public rate limit check failed ${failClosed ? "closed" : "open"}`,
-      {
-        action,
-        error: error instanceof Error ? error.message : "unknown error",
-      },
-    );
-    return !failClosed;
+    return allowAfterFailure(action, error, deps);
   }
 
   return true;
+}
+
+/**
+ * The one place the failure mode is decided, so the count read, the insert and
+ * a thrown exception cannot drift apart on it.
+ */
+function allowAfterFailure(
+  action: PublicRateLimitAction,
+  error: unknown,
+  deps: PublicRateLimitDeps,
+): boolean {
+  const failClosed =
+    (deps.failClosed ?? FAIL_CLOSED_ACTIONS.has(action)) &&
+    !isSchemaMissing(error);
+  console.warn(
+    `public rate limit check failed ${failClosed ? "closed" : "open"}`,
+    { action, error: errorMessage(error) },
+  );
+  return !failClosed;
+}
+
+function isSchemaMissing(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null | undefined)?.code;
+  return typeof code === "string" && SCHEMA_MISSING_CODES.has(code);
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  const message = (error as { message?: unknown } | null | undefined)?.message;
+  return typeof message === "string" ? message : "unknown error";
 }
 
 /** Drop hit rows past the retention window. Best-effort; never throws. */

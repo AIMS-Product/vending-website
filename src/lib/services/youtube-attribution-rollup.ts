@@ -87,7 +87,6 @@ export type YouTubeVideoFunnelRow = {
   /** Null until the Close outcome columns exist; see `outcomesConnected`. */
   attended: number | null;
   closed: number | null;
-  clickToLeadPct: number | null;
   visitToLeadPct: number | null;
   leadToBookedPct: number | null;
   bookedToClosedPct: number | null;
@@ -124,7 +123,13 @@ export type YouTubeCohortRow = {
   booked: number;
   closed: number;
   closedSameMonth: number;
-  closedLaterMonth: number;
+  /**
+   * Wins dated in any month but the cohort's own — after it, and also before
+   * it for a lead Close already held. Not "later": under a strict `>` a win
+   * dated earlier matched neither column and the row rendered "Won 1" with
+   * both sub-columns at 0.
+   */
+  closedOtherMonth: number;
 };
 
 /**
@@ -138,6 +143,21 @@ export type YouTubeCoverage = {
   videosWithLeads: number;
   campaignsMissingFromRegistry: string[];
   clicksConnected: boolean;
+  /**
+   * Earliest day the Bitly sync has ever written, `YYYY-MM-DD`.
+   *
+   * Null when nothing has synced. Lets the page say "clicks only go back to
+   * 20 August" rather than leaving a bare dash on a 1-year range.
+   */
+  clicksWindowStart: string | null;
+  /**
+   * True when the clicks read broke, as opposed to having nothing to read.
+   *
+   * Both leave the stage unmeasured, but only an empty table means somebody has
+   * to go and configure a Bitly token — and telling a reader to configure
+   * something already configured is worse than saying nothing.
+   */
+  clicksFailed: boolean;
   visitsConnected: boolean;
   /** Which table the visits stage read. Null when it is not connected. */
   visitsSource: YouTubeVisitsSource | null;
@@ -166,6 +186,9 @@ export type YouTubeAttributionRollup = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Stand-in campaign for a YouTube lead that carried no `utm_campaign`. */
+const UNTAGGED_CAMPAIGN = "(untagged)";
+
 const TIME_TO_CLOSE_BUCKETS: Array<{ label: string; max: number }> = [
   { label: "0-7 days", max: 7 },
   { label: "8-14 days", max: 14 },
@@ -190,6 +213,8 @@ export function buildYouTubeAttribution({
   clicks,
   pageViews,
   clicksConnected,
+  clicksWindowStart = null,
+  clicksFailed = false,
   visitsConnected,
   visitsSource = null,
   outcomesConnected,
@@ -199,11 +224,21 @@ export function buildYouTubeAttribution({
   clicks: BitlyClickRow[];
   pageViews: PageViewRow[];
   clicksConnected: boolean;
+  clicksWindowStart?: string | null;
+  clicksFailed?: boolean;
   visitsConnected: boolean;
   visitsSource?: YouTubeVisitsSource | null;
   outcomesConnected: boolean;
 }): YouTubeAttributionRollup {
-  const youtubeLeads = leads.filter(isYouTubeLead);
+  // Outcome columns nobody could read are cleared once, here, rather than
+  // guarded at each of the dozen places that reach for them. In production
+  // `fetchLeads` re-selects without those columns when the first read fails, so
+  // they arrive absent -- this makes that the rule instead of an accident of
+  // the fallback's select list, and keeps a win we cannot see from raising the
+  // booked count while the stages below it report "unmeasured".
+  const youtubeLeads = leads
+    .filter(isYouTubeLead)
+    .map(outcomesConnected ? identity : withoutOutcomes);
   const byCampaign = groupByCampaign(youtubeLeads);
   const videoByCampaign = new Map(
     videos.map((video) => [video.utm_campaign, video]),
@@ -220,7 +255,12 @@ export function buildYouTubeAttribution({
         campaign,
         leads: campaignLeads,
         video: videoByCampaign.get(campaign),
-        clicks: clicksConnected ? (clicksByCampaign.get(campaign) ?? 0) : null,
+        clicks: clicksConnected
+          ? videoClicks(
+              clicksByCampaign.get(campaign),
+              videoByCampaign.get(campaign),
+            )
+          : null,
         visits: visitsConnected ? (viewsByCampaign.get(campaign) ?? 0) : null,
         outcomesConnected,
       }),
@@ -246,16 +286,38 @@ export function buildYouTubeAttribution({
     coverage: {
       registryVideos: videos.length,
       videosWithLeads: rows.length,
+      // UNTAGGED_CAMPAIGN is this module's own placeholder for a lead with no
+      // campaign at all, not a slug somebody forgot to add to the registry.
       campaignsMissingFromRegistry: rows
-        .filter((row) => !row.inRegistry)
+        .filter(
+          (row) => !row.inRegistry && row.utmCampaign !== UNTAGGED_CAMPAIGN,
+        )
         .map((row) => row.utmCampaign),
       clicksConnected,
+      clicksWindowStart,
+      clicksFailed,
       visitsConnected,
       visitsSource: visitsConnected ? visitsSource : null,
       outcomesConnected,
       bookedBeforeLead: youtubeLeads.filter(bookedBeforeLead).length,
     },
   };
+}
+
+/**
+ * One video's clicks, or null when nobody could have counted them.
+ *
+ * `clicksConnected` is global, so once a Bitly token exists every registry row
+ * with no `bitly_id` would otherwise show a hard 0 beside real leads — the
+ * "0 clicks, 4 leads" reading the null-not-zero rule exists to prevent. A zero
+ * is only honest for a link that is actually being synced.
+ */
+function videoClicks(
+  summed: number | undefined,
+  video: YouTubeVideoRow | undefined,
+): number | null {
+  if (summed !== undefined) return summed;
+  return video?.bitly_id ? 0 : null;
 }
 
 function buildVideoRow({
@@ -292,7 +354,6 @@ function buildVideoRow({
     booked,
     attended: outcomesConnected ? countAttended(leads) : null,
     closed,
-    clickToLeadPct: ratePct(leads.length, clicks),
     visitToLeadPct: ratePct(leads.length, visits),
     leadToBookedPct: ratePct(booked, leads.length),
     bookedToClosedPct: ratePct(closed, booked),
@@ -323,7 +384,7 @@ function buildStages(totals: {
     {
       label: "Attended the call",
       count: totals.attended,
-      note: "booked minus no-show and cancelled",
+      note: "booked minus no-show and cancelled, wins aside",
     },
     { label: "Closed / won", count: totals.closed },
   ];
@@ -400,8 +461,11 @@ function buildCohorts(leads: YouTubeLeadRow[]): YouTubeCohortRow[] {
         closedSameMonth: dated.filter(
           (lead) => monthKey(lead.closed_won_at!) === month,
         ).length,
-        closedLaterMonth: dated.filter(
-          (lead) => monthKey(lead.closed_won_at!) > month,
+        // Anything not in the first-touch month, rather than strictly after it.
+        // See the type: a win dated before the cohort month belongs here too,
+        // which is why this is not called "later".
+        closedOtherMonth: dated.filter(
+          (lead) => monthKey(lead.closed_won_at!) !== month,
         ).length,
       };
     })
@@ -444,12 +508,43 @@ export function firstTouchAt(lead: YouTubeLeadRow): string {
   return lead.created_at;
 }
 
+/**
+ * Booked, or won — the funnel has to be monotonic.
+ *
+ * Close reports some deals as won with no `call_booked_at` behind them: the
+ * booking mirror missed the appointment, or the deal was written up from a call
+ * booked outside this site. Counting those only at the bottom of the funnel
+ * rendered "200% continued from the step above", which is visibly broken.
+ *
+ * The call is inferred rather than dropped because a sale cannot happen without
+ * one, and excluding a real win from the closed stage would understate the
+ * revenue this page exists to attribute. That makes "Booked a call" here read
+ * very slightly higher than the same figure on the other analytics tabs, which
+ * count `call_booked_at` alone.
+ *
+ * Costs nothing when outcomes are not connected: both columns are absent, so
+ * `isClosedWon` is false and this is `call_booked_at` exactly as before.
+ */
 function hasBooked(lead: YouTubeLeadRow): boolean {
-  return Boolean(lead.call_booked_at);
+  return Boolean(lead.call_booked_at) || isClosedWon(lead);
 }
 
 function isQualified(lead: YouTubeLeadRow): boolean {
   return lead.lifecycle_status === "qualified";
+}
+
+function identity(lead: YouTubeLeadRow): YouTubeLeadRow {
+  return lead;
+}
+
+/** A copy with the unreadable outcome columns cleared. Never mutates. */
+function withoutOutcomes(lead: YouTubeLeadRow): YouTubeLeadRow {
+  return {
+    ...lead,
+    call_outcome: null,
+    closed_won_at: null,
+    closed_won_source: null,
+  };
 }
 
 function isClosedWon(lead: YouTubeLeadRow): boolean {
@@ -470,14 +565,22 @@ function bookedBeforeLead(lead: YouTubeLeadRow): boolean {
  * Close has no "attended" field, so this is a subtraction, not an observation:
  * the labels that positively assert the call did not happen are removed and the
  * rest are treated as held. Named as a derivation everywhere it surfaces.
+ *
+ * A win overrides the subtraction, for the same reason `hasBooked` infers the
+ * booking: the sale happened, so a call happened. Without that, a deal Close
+ * reports as won while its appointment still carries `canceled` -- the
+ * appointment was rebooked, or the label was never cleared -- counted at the
+ * bottom of the funnel and not at the stage above it, and "Closed / won"
+ * rendered over 100% of "Attended the call".
  */
 function countAttended(leads: YouTubeLeadRow[]): number {
-  return leads.filter(
-    (lead) =>
-      hasBooked(lead) &&
-      lead.call_outcome !== "no_show" &&
-      lead.call_outcome !== "canceled",
-  ).length;
+  return leads.filter(attendedCall).length;
+}
+
+function attendedCall(lead: YouTubeLeadRow): boolean {
+  if (!hasBooked(lead)) return false;
+  if (isClosedWon(lead)) return true;
+  return lead.call_outcome !== "no_show" && lead.call_outcome !== "canceled";
 }
 
 function groupByCampaign(
@@ -485,7 +588,7 @@ function groupByCampaign(
 ): Map<string, YouTubeLeadRow[]> {
   const groups = new Map<string, YouTubeLeadRow[]>();
   for (const lead of leads) {
-    const campaign = lead.utm_campaign?.trim() || "(untagged)";
+    const campaign = lead.utm_campaign?.trim() || UNTAGGED_CAMPAIGN;
     groups.set(campaign, [...(groups.get(campaign) ?? []), lead]);
   }
   return groups;

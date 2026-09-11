@@ -115,6 +115,45 @@ function buildBitlyClient({
 }
 
 describe("syncBitlyClicks", () => {
+  /**
+   * LOW: `if (!row?.bitly_id) return;` conflated "the queue is empty" with
+   * "this row has no id", so one null-id row in a claimed batch abandoned the
+   * rest of that worker's share.
+   */
+  it("skips a claimed row with no id and keeps syncing the rest", async () => {
+    // One null row per worker at the head of the batch: every worker used to
+    // return on its first read and the linked rows behind them were never
+    // touched. claimBatch filters null ids today, so this is the guard that
+    // keeps a future change to that filter from silently dropping a batch.
+    const unlinked = Array.from({ length: 4 }, (_, index) => ({
+      utm_campaign: `no-id-${index}`,
+      bitly_id: null,
+    }));
+    const linked = Array.from({ length: 8 }, (_, index) => ({
+      utm_campaign: `video-${index}`,
+      bitly_id: `bit.ly/${index}`,
+    }));
+    const { client, recorded } = buildClient({
+      claimable: [...unlinked, ...linked],
+    });
+    const bitlyClient = buildBitlyClient({
+      clicks: Object.fromEntries(
+        linked.map((row) => [
+          row.bitly_id,
+          [{ date: "2026-09-09", clicks: 4 }],
+        ]),
+      ),
+    });
+
+    const result = await syncBitlyClicks({ client, bitlyClient, now: NOW });
+
+    expect(result.updated).toBe(8);
+    expect(result.daysWritten).toBe(8);
+    expect(new Set(recorded.clickUpserts.map((row) => row.bitly_id)).size).toBe(
+      8,
+    );
+  });
+
   it("writes a day per click entry and stamps the link as synced", async () => {
     const { client, recorded } = buildClient({
       claimable: [{ utm_campaign: "how-much-vending", bitly_id: "bit.ly/a" }],
@@ -199,6 +238,63 @@ describe("syncBitlyClicks", () => {
 
     expect(result).toMatchObject({ scanned: 2, updated: 1, failed: 1 });
     expect(recorded.videoUpdates.map((row) => row.campaign)).toEqual(["good"]);
+  });
+
+  /**
+   * MEDIUM: bitlinkPath refuses an off-pattern id, the worker caught it as a
+   * failure, and the route turned any failure into a 500. A row whose stored id
+   * can never be valid therefore failed every run forever -- the cron paged
+   * nightly and the row kept its old clicks_synced_at, so it stayed at the
+   * front of the claim queue and crowded out links that do work.
+   */
+  it("counts a permanently malformed id apart from a failure, and moves it on", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { client, recorded } = buildClient({
+      claimable: [
+        { utm_campaign: "broken", bitly_id: "../users" },
+        { utm_campaign: "fine", bitly_id: "bit.ly/works" },
+      ],
+    });
+    const bitlyClient = buildBitlyClient({
+      clicks: { "bit.ly/works": [{ date: "2026-09-09", clicks: 3 }] },
+    });
+
+    const result = await syncBitlyClicks({
+      client,
+      bitlyClient,
+      now: NOW,
+    });
+
+    expect(result).toMatchObject({ scanned: 2, updated: 1, invalid: 1 });
+    // The whole point: the cron reads green, because there is nothing to retry.
+    expect(result.failed).toBe(0);
+    // Never sent. An id we refuse is refused before the request, not after.
+    expect(bitlyClient.dailyClicks).not.toHaveBeenCalledWith(
+      "../users",
+      expect.anything(),
+    );
+    // Stamped, so it rotates to the back of the queue instead of blocking it.
+    expect(recorded.videoUpdates).toContainEqual({
+      campaign: "broken",
+      patch: { clicks_synced_at: NOW.toISOString() },
+    });
+    expect(warn).toHaveBeenCalled();
+    expect(JSON.stringify(warn.mock.calls)).toContain("broken");
+    warn.mockRestore();
+  });
+
+  it("logs a link it could not reach instead of swallowing it", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { client } = buildClient({
+      claimable: [{ utm_campaign: "unreachable", bitly_id: "bit.ly/down" }],
+    });
+    const bitlyClient = buildBitlyClient({ failOn: ["bit.ly/down"] });
+
+    const result = await syncBitlyClicks({ client, bitlyClient, now: NOW });
+
+    expect(result).toMatchObject({ failed: 1, invalid: 0, updated: 0 });
+    expect(JSON.stringify(warn.mock.calls)).toContain("unreachable");
+    warn.mockRestore();
   });
 
   it("does not stamp a link whose click write failed", async () => {
