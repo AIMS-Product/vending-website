@@ -74,6 +74,14 @@ const envSchema = z.object({
   METRICOOL_API_KEY: optionalTrimmedOptionalEnv,
   METRICOOL_USER_ID: optionalTrimmedOptionalEnv,
   METRICOOL_BLOG_ID: optionalTrimmedOptionalEnv,
+  /**
+   * YouTube Analytics as the channel owner: a Desktop-app OAuth client and
+   * the refresh token from scripts/youtube-oauth-token.mjs. Absent means the
+   * youtube-analytics connector records "skipped".
+   */
+  GOOGLE_OAUTH_CLIENT_ID: optionalTrimmedOptionalEnv,
+  GOOGLE_OAUTH_CLIENT_SECRET: optionalTrimmedOptionalEnv,
+  YOUTUBE_REFRESH_TOKEN: optionalTrimmedOptionalEnv,
   CLOSE_API_KEY: optionalTrimmedOptionalEnv,
   CLOSE_API_BASE_URL: optionalTrimmedOptionalEnv,
   CLOSE_LEAD_STATUS_ID: optionalTrimmedOptionalEnv,
@@ -185,6 +193,9 @@ const parsed = envSchema.safeParse({
   METRICOOL_API_KEY: process.env.METRICOOL_API_KEY,
   METRICOOL_USER_ID: process.env.METRICOOL_USER_ID,
   METRICOOL_BLOG_ID: process.env.METRICOOL_BLOG_ID,
+  GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID,
+  GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+  YOUTUBE_REFRESH_TOKEN: process.env.YOUTUBE_REFRESH_TOKEN,
   CLOSE_API_KEY: process.env.CLOSE_API_KEY,
   CLOSE_API_BASE_URL: process.env.CLOSE_API_BASE_URL,
   CLOSE_LEAD_STATUS_ID: process.env.CLOSE_LEAD_STATUS_ID,

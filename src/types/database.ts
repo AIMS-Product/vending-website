@@ -1143,6 +1143,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      youtube_video_daily: {
+        Row: {
+          card_clicks: number | null;
+          card_impressions: number | null;
+          day: string;
+          impressions: number | null;
+          synced_at: string;
+          video_id: string;
+          views: number | null;
+        };
+        Insert: {
+          card_clicks?: number | null;
+          card_impressions?: number | null;
+          day: string;
+          impressions?: number | null;
+          synced_at?: string;
+          video_id: string;
+          views?: number | null;
+        };
+        Update: {
+          card_clicks?: number | null;
+          card_impressions?: number | null;
+          day?: string;
+          impressions?: number | null;
+          synced_at?: string;
+          video_id?: string;
+          views?: number | null;
+        };
+        Relationships: [];
+      };
       youtube_videos: {
         Row: {
           bitly_id: string | null;

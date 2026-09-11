@@ -24,6 +24,7 @@ import {
 import { CHANNEL_CONNECTORS } from "@/lib/services/channel-sync";
 import { GHL_CONNECTORS } from "@/lib/services/ghl-sync";
 import { METRICOOL_CONNECTOR } from "@/lib/services/metricool-sync";
+import { YOUTUBE_ANALYTICS_CONNECTOR } from "@/lib/services/youtube-analytics-sync";
 
 type ReportClient = Pick<SupabaseClient<Database>, "from">;
 
@@ -41,6 +42,7 @@ export const EXPECTED_CONNECTORS: readonly string[] = [
   GHL_CONNECTORS.email,
   GHL_CONNECTORS.forms,
   METRICOOL_CONNECTOR,
+  YOUTUBE_ANALYTICS_CONNECTOR,
 ];
 
 export type ChannelsTabData = {
