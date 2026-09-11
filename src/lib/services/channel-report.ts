@@ -22,6 +22,7 @@ import {
   type SyncRun,
 } from "@/lib/services/channel-report-rollup";
 import { CHANNEL_CONNECTORS } from "@/lib/services/channel-sync";
+import { GHL_CONNECTORS } from "@/lib/services/ghl-sync";
 
 type ReportClient = Pick<SupabaseClient<Database>, "from">;
 
@@ -36,6 +37,8 @@ export const EXPECTED_CONNECTORS: readonly string[] = [
   CHANNEL_CONNECTORS.bitly,
   CHANNEL_CONNECTORS.leads,
   "webinar-ingest",
+  GHL_CONNECTORS.email,
+  GHL_CONNECTORS.forms,
 ];
 
 export type ChannelsTabData = {

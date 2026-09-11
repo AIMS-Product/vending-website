@@ -1,0 +1,166 @@
+import { describe, expect, it, vi } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
+import type { GhlClient } from "@/lib/ghl/client";
+
+vi.mock("@/lib/config", () => ({ config: {} }));
+
+import { emailDeltaRows, syncGhl } from "./ghl-sync";
+
+function buildClient(priorSnapshots: unknown[] = []) {
+  const upserts: Record<string, Array<Record<string, unknown>>> = {};
+  const runs: Array<Record<string, unknown>> = [];
+  const from = vi.fn((name: string) => {
+    if (name === "channel_sync_runs") {
+      return {
+        insert: vi.fn(
+          async (row: Record<string, unknown>) => (
+            runs.push(row),
+            { error: null }
+          ),
+        ),
+      };
+    }
+    const builder: Record<string, unknown> = {
+      upsert: vi.fn(async (rows: Array<Record<string, unknown>>) => {
+        (upserts[name] ??= []).push(...rows);
+        return { error: null };
+      }),
+    };
+    for (const method of ["select", "lt", "order", "limit"]) {
+      builder[method] = vi.fn(() => builder);
+    }
+    builder.then = (resolve: (value: unknown) => unknown) =>
+      Promise.resolve({ data: priorSnapshots, error: null }).then(resolve);
+    return builder;
+  });
+  return {
+    client: { from } as unknown as Pick<SupabaseClient<Database>, "from">,
+    upserts,
+    runs,
+  };
+}
+
+const ghl: GhlClient = {
+  listWorkflows: async () => [
+    { id: "w1", name: "Webinar Follow Up", status: "published" },
+  ],
+  fetchWorkflowEmailStats: async () => ({
+    sent: 120,
+    delivered: 118,
+    opened: 50,
+    clicked: 12,
+    replied: 3,
+  }),
+  listForms: async () => [{ id: "f1", name: "Sept Webinar Registration" }],
+  fetchFormSubmissions: async () => [
+    { id: "s1", formId: "f1", createdAt: "2026-09-10T15:00:00.000Z" },
+    { id: "s2", formId: "f1", createdAt: "2026-09-10T16:00:00.000Z" },
+    { id: "s3", formId: "unknown-form", createdAt: "2026-09-11T01:00:00.000Z" },
+  ],
+};
+
+const now = new Date("2026-09-11T11:20:00.000Z");
+
+describe("emailDeltaRows", () => {
+  const snap = (day: string, sent: number, clicked: number) => ({
+    snapshot_day: day,
+    workflow_id: "w1",
+    workflow_name: "Webinar Follow Up",
+    sent,
+    delivered: 0,
+    opened: 0,
+    clicked,
+    replied: 0,
+  });
+
+  it("diffs against the newest earlier snapshot and skips a workflow with none", () => {
+    const rows = emailDeltaRows(
+      [
+        snap("2026-09-11", 120, 12),
+        { ...snap("2026-09-11", 5, 0), workflow_id: "new" },
+      ],
+      [snap("2026-09-09", 90, 10), snap("2026-09-10", 100, 15)],
+      "2026-09-10",
+    );
+    expect(rows).toEqual([
+      {
+        day: "2026-09-10",
+        source: "ghl_email",
+        medium: "email",
+        campaign: "webinar-follow-up",
+        content: null,
+        term: null,
+        impressions: 20,
+        // 12 < 15: GHL corrected the total, so clicks is unobserved, not -3.
+        clicks: null,
+      },
+    ]);
+  });
+});
+
+describe("syncGhl", () => {
+  it("records both connectors as skipped without a client", async () => {
+    const { client, runs } = buildClient();
+    const result = await syncGhl({ client, ghl: null, now });
+    expect(result.connectors.map((run) => run.error)).toEqual([
+      expect.stringMatching(/^skipped:/),
+      expect.stringMatching(/^skipped:/),
+    ]);
+    expect(runs).toHaveLength(2);
+  });
+
+  it("stores today's snapshot, writes email deltas and form leads onto the spine", async () => {
+    const { client, upserts } = buildClient([
+      {
+        snapshot_day: "2026-09-10",
+        workflow_id: "w1",
+        workflow_name: "Webinar Follow Up",
+        sent: 100,
+        delivered: 99,
+        opened: 40,
+        clicked: 10,
+        replied: 3,
+      },
+    ]);
+    const result = await syncGhl({ client, ghl, now });
+    expect(result.connectors.map((run) => [run.connector, run.error])).toEqual([
+      ["ghl-email", null],
+      ["ghl-forms", null],
+    ]);
+    expect(upserts.ghl_email_stats).toEqual([
+      expect.objectContaining({
+        snapshot_day: "2026-09-11",
+        workflow_id: "w1",
+        sent: 120,
+      }),
+    ]);
+    const spine = upserts.channel_daily!;
+    expect(spine).toContainEqual(
+      expect.objectContaining({
+        day: "2026-09-10",
+        channel: "Email",
+        source: "ghl_email",
+        campaign: "webinar-follow-up",
+        impressions: 20,
+        clicks: 2,
+      }),
+    );
+    // Two submissions on the same form and day merge into one row of leads = 2.
+    expect(spine).toContainEqual(
+      expect.objectContaining({
+        day: "2026-09-10",
+        source: "ghl_form",
+        campaign: "sept-webinar-registration",
+        leads: 2,
+      }),
+    );
+    expect(spine).toContainEqual(
+      expect.objectContaining({
+        day: "2026-09-11",
+        campaign: "unknown-form",
+        leads: 1,
+      }),
+    );
+  });
+});

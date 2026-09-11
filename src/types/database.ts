@@ -918,6 +918,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      ghl_email_stats: {
+        Row: {
+          clicked: number;
+          delivered: number;
+          opened: number;
+          replied: number;
+          sent: number;
+          snapshot_day: string;
+          synced_at: string;
+          workflow_id: string;
+          workflow_name: string;
+        };
+        Insert: {
+          clicked?: number;
+          delivered?: number;
+          opened?: number;
+          replied?: number;
+          sent?: number;
+          snapshot_day: string;
+          synced_at?: string;
+          workflow_id: string;
+          workflow_name: string;
+        };
+        Update: {
+          clicked?: number;
+          delivered?: number;
+          opened?: number;
+          replied?: number;
+          sent?: number;
+          snapshot_day?: string;
+          synced_at?: string;
+          workflow_id?: string;
+          workflow_name?: string;
+        };
+        Relationships: [];
+      };
       ga4_page_views: {
         Row: {
           day: string;

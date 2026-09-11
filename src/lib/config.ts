@@ -59,6 +59,13 @@ const envSchema = z.object({
    */
   GA4_SERVICE_ACCOUNT_JSON: optionalTrimmedOptionalEnv,
   GA4_PROPERTY_ID: optionalTrimmedOptionalEnv,
+  /**
+   * GoHighLevel v2 private integration token (`pit-...`) and the sub-account
+   * location id. Read-only use. Absent means the ghl-email / ghl-forms
+   * connectors record "skipped" and the Channels tab shows Not connected.
+   */
+  GHL_API_KEY: optionalTrimmedOptionalEnv,
+  GHL_LOCATION_ID: optionalTrimmedOptionalEnv,
   CLOSE_API_KEY: optionalTrimmedOptionalEnv,
   CLOSE_API_BASE_URL: optionalTrimmedOptionalEnv,
   CLOSE_LEAD_STATUS_ID: optionalTrimmedOptionalEnv,
@@ -165,6 +172,8 @@ const parsed = envSchema.safeParse({
   BITLY_GROUP_GUID: process.env.BITLY_GROUP_GUID,
   GA4_SERVICE_ACCOUNT_JSON: process.env.GA4_SERVICE_ACCOUNT_JSON,
   GA4_PROPERTY_ID: process.env.GA4_PROPERTY_ID,
+  GHL_API_KEY: process.env.GHL_API_KEY,
+  GHL_LOCATION_ID: process.env.GHL_LOCATION_ID,
   CLOSE_API_KEY: process.env.CLOSE_API_KEY,
   CLOSE_API_BASE_URL: process.env.CLOSE_API_BASE_URL,
   CLOSE_LEAD_STATUS_ID: process.env.CLOSE_LEAD_STATUS_ID,
