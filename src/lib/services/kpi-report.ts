@@ -37,8 +37,9 @@ export type KpiSection = {
   basis: string;
   columns: KpiColumn[];
   rows: KpiRow[];
-  /** Rows with nothing beyond visits or reach, left out to keep the table clean. */
+  /** Rows left out to keep the table clean; `hiddenNote` says what they were. */
   hidden: number;
+  hiddenNote: string;
 };
 
 export type KpiReport = { sections: KpiSection[] };
@@ -110,10 +111,13 @@ const PATH_LABEL: Record<string, string> = {
   "webinar-register": "Webinar registration",
   content: "Content",
   none: "No CTA",
-  unknown: "Untracked path",
+  unknown: "CTA path not tagged (no utm_term)",
 };
 
 const RE_ENGAGEMENT_CHANNELS = new Set(["Email", "SMS", "Newsletter"]);
+
+/** Bookings with no setter on them: the prospect booked from a link themselves. */
+const SELF_BOOKED = "No setter (self-booked)";
 
 const FUNNEL_COLUMNS: KpiColumn[] = [
   { key: "reach", label: "Views / reach", format: "number" },
@@ -239,6 +243,8 @@ function buildFunnelSection(input: KpiInput): KpiSection {
     columns: FUNNEL_COLUMNS,
     rows,
     hidden,
+    hiddenNote:
+      "with visits or reach only: no leads, bookings, wins or spend observed",
   };
 }
 
@@ -247,17 +253,17 @@ function funnelValues(facts: ChannelFact[]): Record<string, number | null> {
   const booked = sumObserved(facts.map((fact) => fact.booked));
   return {
     reach: sumObserved(facts.map((fact) => fact.reach ?? fact.impressions)),
-    ctr: pairedPct(facts, "clicks", "impressions"),
+    ctr: rate(pairedPct(facts, "clicks", "impressions")),
     visits: sumObserved(facts.map((fact) => fact.visits)),
-    optIn: pairedPct(facts, "leads", "visits"),
+    optIn: rate(pairedPct(facts, "leads", "visits")),
     leads: sumObserved(facts.map((fact) => fact.leads)),
-    leadToBook: pairedPct(facts, "booked", "leads"),
+    leadToBook: rate(pairedPct(facts, "booked", "leads")),
     booked,
-    showRate: pairedPct(facts, "showed", "booked"),
+    showRate: rate(pairedPct(facts, "showed", "booked")),
     showed: sumObserved(facts.map((fact) => fact.showed)),
-    closeRate: pairedPct(facts, "won", "showed"),
+    closeRate: rate(pairedPct(facts, "won", "showed")),
     won: sumObserved(facts.map((fact) => fact.won)),
-    leadToClose: pairedPct(facts, "won", "leads"),
+    leadToClose: rate(pairedPct(facts, "won", "leads")),
     revenue: sumObserved(facts.map((fact) => fact.revenue)),
     spend,
     costPerBooked: ratio(spend, booked),
@@ -302,6 +308,7 @@ function buildWebinarSection(input: KpiInput): KpiSection {
     columns: WEBINAR_COLUMNS,
     rows,
     hidden: 0,
+    hiddenNote: "",
   };
 }
 
@@ -318,15 +325,15 @@ function webinarValues(
   const spend = sum("spend");
   return {
     registrations,
-    attendanceRate: pct(attendees, registrations),
+    attendanceRate: rate(pct(attendees, registrations)),
     attendees,
-    regToBook: pct(booked, registrations),
+    regToBook: rate(pct(booked, registrations)),
     booked,
-    showRate: pct(showed, booked),
+    showRate: rate(pct(showed, booked)),
     showed,
-    closeRate: pct(won, showed),
+    closeRate: rate(pct(won, showed)),
     won,
-    regToClose: pct(won, registrations),
+    regToClose: rate(pct(won, registrations)),
     revenue: sum("revenue"),
     spend,
     costPerBooked: ratio(spend, booked),
@@ -372,11 +379,11 @@ function buildReEngagementSection(input: KpiInput): KpiSection {
       detail: "GHL email workflow",
       values: {
         sent,
-        deliveryRate: pct(delivered, sent),
+        deliveryRate: rate(pct(delivered, sent)),
         delivered,
         opened: diff("opened"),
         clicked: diff("clicked"),
-        replyRate: pct(replied, delivered),
+        replyRate: rate(pct(replied, delivered)),
         replied,
         leads: null,
         leadToBook: null,
@@ -409,9 +416,9 @@ function buildReEngagementSection(input: KpiInput): KpiSection {
         replyRate: null,
         replied: null,
         leads: sumObserved(facts.map((fact) => fact.leads)),
-        leadToBook: pairedPct(facts, "booked", "leads"),
+        leadToBook: rate(pairedPct(facts, "booked", "leads")),
         booked: sumObserved(facts.map((fact) => fact.booked)),
-        showRate: pairedPct(facts, "showed", "booked"),
+        showRate: rate(pairedPct(facts, "showed", "booked")),
         showed: sumObserved(facts.map((fact) => fact.showed)),
         won: sumObserved(facts.map((fact) => fact.won)),
       },
@@ -428,6 +435,8 @@ function buildReEngagementSection(input: KpiInput): KpiSection {
     columns: RE_ENGAGEMENT_COLUMNS,
     rows,
     hidden,
+    hiddenNote:
+      "workflows with no sends observed in range (GHL totals need two snapshots to difference; history starts the day after the first sync)",
   };
 }
 
@@ -439,7 +448,7 @@ function buildReEngagementSection(input: KpiInput): KpiSection {
 function buildLane2Section(input: KpiInput): KpiSection {
   const bySetter = new Map<string, SetterBookingRow[]>();
   for (const booking of input.setterBookings) {
-    const setter = booking.booked_by_setter?.trim() || "Unassigned";
+    const setter = booking.booked_by_setter?.trim() || SELF_BOOKED;
     bySetter.set(setter, [...(bySetter.get(setter) ?? []), booking]);
   }
   const owner = ownerFor("Lane 2");
@@ -460,9 +469,9 @@ function buildLane2Section(input: KpiInput): KpiSection {
         leads: null,
         clicks: null,
         booked,
-        showRate: pct(showed, booked),
+        showRate: rate(pct(showed, booked)),
         showed,
-        closeRate: pct(won, showed),
+        closeRate: rate(pct(won, showed)),
         won,
       },
       sourceOfTruth:
@@ -492,9 +501,9 @@ function buildLane2Section(input: KpiInput): KpiSection {
         leads: sumObserved(dm.map((fact) => fact.leads)),
         clicks: sumObserved(dm.map((fact) => fact.clicks)),
         booked: sumObserved(dm.map((fact) => fact.booked)),
-        showRate: pairedPct(dm, "showed", "booked"),
+        showRate: rate(pairedPct(dm, "showed", "booked")),
         showed: sumObserved(dm.map((fact) => fact.showed)),
-        closeRate: pairedPct(dm, "won", "showed"),
+        closeRate: rate(pairedPct(dm, "won", "showed")),
         won: sumObserved(dm.map((fact) => fact.won)),
       },
       sourceOfTruth: "manychat-ingest",
@@ -511,6 +520,7 @@ function buildLane2Section(input: KpiInput): KpiSection {
     columns: LANE2_COLUMNS,
     rows,
     hidden: 0,
+    hiddenNote: "",
   };
 }
 
@@ -554,6 +564,15 @@ function byOutcome(a: KpiRow, b: KpiRow): number {
     if (diff !== 0) return diff;
   }
   return a.label.localeCompare(b.label);
+}
+
+/**
+ * A rate above 100% means the two sides were not one population (leads keyed
+ * by a Google Ads campaign id while GA4 keys by campaign name, say). Showing
+ * "120%" would be a lie, so it is not observed.
+ */
+function rate(value: number | null): number | null {
+  return value != null && value > 100 ? null : value;
 }
 
 function ratio(numerator: number | null, denominator: number | null) {

@@ -31,6 +31,7 @@ const report = {
         },
       ],
       hidden: 0,
+      hiddenNote: "",
     },
   ],
 };

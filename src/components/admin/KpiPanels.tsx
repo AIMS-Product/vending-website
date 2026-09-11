@@ -26,7 +26,8 @@ export function KpiTab({ data }: { data: KpiTabData }) {
       <p className="text-ui-text-subtle text-xs">
         {data.range.label} ({data.range.startDay} to {data.range.endDay}). A
         dash means not observed, never zero. Rates are measured only where both
-        sides were observed on the same rows.
+        sides were observed on the same rows; a rate that came out above 100% is
+        shown as not observed because its two sides were not one population.
       </p>
       {data.report.sections.map((section) => (
         <KpiSectionTable key={section.key} section={section} />
@@ -80,8 +81,8 @@ function KpiSectionTable({ section }: { section: KpiSection }) {
       )}
       {section.hidden > 0 ? (
         <p className="text-ui-text-subtle mt-2 text-xs">
-          {section.hidden} more {section.hidden === 1 ? "row" : "rows"} with no
-          leads, bookings, wins or spend observed.
+          {section.hidden} more {section.hidden === 1 ? "row" : "rows"}{" "}
+          {section.hiddenNote}.
         </p>
       ) : null}
     </section>

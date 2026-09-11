@@ -157,6 +157,7 @@ describe("buildKpiReport", () => {
   it("rows are channel x CTA path with paired rates and cohort basis", () => {
     const yt = funnels!.rows.find((row) => row.key === "YouTube|book-call")!;
     expect(yt.detail).toBe("Direct booking");
+    expect(funnels!.hiddenNote).toContain("visits or reach only");
     expect(yt.values).toMatchObject({
       visits: 1500,
       leads: 200,
@@ -225,7 +226,7 @@ describe("buildKpiReport", () => {
       won: 1,
       closeRate: 100,
     });
-    expect(unassigned!.label).toBe("Unassigned");
+    expect(unassigned!.label).toBe("No setter (self-booked)");
     expect(dm!.values).toMatchObject({
       leads: 40,
       clicks: 20,
@@ -233,6 +234,16 @@ describe("buildKpiReport", () => {
       won: 2,
     });
     expect(dm!.lastVerified).toBeNull();
+  });
+
+  it("refuses a rate above 100% instead of printing it", () => {
+    const skewed = buildKpiReport({
+      ...input,
+      facts: [fact({ visits: 10, leads: 25, booked: 2 })],
+    });
+    const yt = skewed.sections[0]!.rows[0]!;
+    expect(yt.values.optIn).toBeNull();
+    expect(yt.values.leadToBook).toBe(8);
   });
 });
 
