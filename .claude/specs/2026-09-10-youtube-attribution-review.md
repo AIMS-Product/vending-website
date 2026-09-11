@@ -34,6 +34,14 @@ memory corrected.
 `20260910130000_lead_page_view_utm_caps.sql` is new and also unapplied — apply
 it together with `20260910120000_youtube_attribution.sql`.
 
+Production schema state, probed read-only 2026-09-10 after the push:
+`youtube_videos`, `bitly_link_clicks` and `lead_page_views` all return
+PGRST205 (absent) and the four new `lead_submissions` columns return 42703.
+Neither migration has run. Apply them in filename order and ONLY these two --
+do not use `supabase db push`, which applies everything the remote migration
+history does not already know about, and this project applies migrations by
+hand so that history cannot be trusted to match.
+
 Two review passes (code + security) ran against the commit. Findings below were
 spot-checked by hand against the files. Nothing here has been fixed.
 
@@ -270,9 +278,15 @@ unlimited.
 
 That is pre-existing and deliberate — dropping a real lead costs more than
 letting one through — but this commit attaches a database write to it (M15).
-Either apply the `public_request_hits` migration, which fixes the limiter for
-every public endpoint rather than just this one, or pass `failClosed: true` for
-the page-view branch only, since a dropped analytics row costs nothing.
+
+**CORRECTION 2026-09-10: the premise above is wrong.** `public_request_hits`
+DOES exist in production (probed read-only: HTTP 200, while the three new
+tables return PGRST205). The migration's "not applied" header comment is
+stale, so the limiter has its backing table and public endpoints are NOT
+unlimited. What remains true is only the fail-open default in
+`public-rate-limit.ts:134-142`. The open decision shrinks to: pass
+`failClosed: true` for the page-view branch, since a dropped analytics row
+costs nothing. No migration needed for it.
 
 ## Test quality
 
