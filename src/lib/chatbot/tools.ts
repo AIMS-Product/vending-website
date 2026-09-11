@@ -106,6 +106,13 @@ const BOOKING_INTENT_PATTERNS: readonly RegExp[] = [
   /\b(talk|speak|chat|hop\s*on|jump\s*on)\s+(to|with|on)\s+(someone|somebody|a\s+(real\s+)?(person|human|rep|advisor))\b/i,
   /\b(available|availability|open)\s+(times?|slots?)\b/i,
   /\bwhen\s+can\s+(i|we)\s+(talk|speak|meet)\b/i,
+  // Missed in real chats, Aug 27-Sep 2: "I would like to take a call
+  // tomorrow", "I'm looking to enroll", "how to start". None got a calendar.
+  /\b(take|do)\s+(a|the)\s+call\b/i,
+  /\b(enroll|enrol|sign\s+(me\s+)?up)\b/i,
+  /\bhow\s+(do|can)\s+i\s+(start|get\s+started|begin|join)\b/i,
+  /^\s*how\s+to\s+(start|get\s+started|begin|join)\b/i,
+  /\b(first|next)\s+steps?\b/i,
 ];
 
 /**
@@ -173,6 +180,9 @@ const EARNINGS_OR_EFFORT_WORD =
 const EXPLICIT_COST_WORD =
   /\b(cost|costs|pricing|prices?|priced|fee|fees|deposit|financ\w*|afford|affordable|invest|investment|upfront|up\s*front|budget|capital|payment\s+plan)\b/i;
 
+/** Money someone NEEDS is a cost; money someone makes is not. */
+const STARTUP_MONEY = /\bmoney\b[^.?!]*\b(need|needed|required)\b/i;
+
 /**
  * True when the visitor is asking what anything costs, in any phrasing. The
  * prompt's PRICING rule owns what the bot SAYS; this owns whether the calendar
@@ -184,6 +194,9 @@ export function hasCostIntent(message: string): boolean {
   }
   // An explicit money word settles it, whatever else the sentence contains.
   if (EXPLICIT_COST_WORD.test(message)) return true;
+  // "How much money is needed to get started?" (99b10128) was vetoed as an
+  // earnings question because "money is" looks like "how much money is made".
+  if (STARTUP_MONEY.test(message)) return true;
   // Otherwise the only trigger can be the bare "how much", and an earnings or
   // workload word ANYWHERE in the message means it is not a cost question.
   // Requiring the word right after "how much" failed open on every phrasing
@@ -412,9 +425,8 @@ async function showBookingCalendar(
 
   // Open whichever Lane 1 calendar actually has a slot, so the visitor never
   // meets a wall of greyed-out days. Cached for 60s; fails soft to primary.
-  const { calendar } = await resolveBookingCalendar({
-    timeZone: safeTimeZone(context.timeZone),
-  });
+  const timeZone = safeTimeZone(context.timeZone);
+  const { calendar, slots } = await resolveBookingCalendar({ timeZone });
 
   const url = chatbotBookingUrl({
     conversationId: context.conversationId,
@@ -440,8 +452,10 @@ async function showBookingCalendar(
   }
 
   return {
-    result:
-      "A live booking calendar is now open in the chat, right below your reply. In one short sentence, tell them they can pick a time right here without leaving. Do not paste a booking link.",
+    // The open times ride along with the calendar. The prompt told the model
+    // to call get_available_times and name a slot; across 12 calendar opens
+    // (Aug 27-Sep 2) it named a real time zero times.
+    result: `A live booking calendar is now open in the chat, right below your reply. Do not paste a booking link. In one or two short sentences, name one or two real times from the list below that fit what they told you ("Tuesday has 10:00 and 10:30 open, grab whichever suits"), so they are not left to hunt.\n${describeAvailability(slots, timeZone)}`,
     message: {
       role: "assistant",
       content: "Opened the booking calendar in the chat.",
