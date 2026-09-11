@@ -4,6 +4,7 @@ import { POST } from "./route";
 const mocks = vi.hoisted(() => ({
   checkPublicRateLimit: vi.fn(),
   recordPopupEvent: vi.fn(),
+  recordTaggedPageView: vi.fn(),
   config: {
     MONEY_PAGE_INGEST_URL: "https://money-page.test/api/ingest/vendingpreneurs",
     MONEY_PAGE_SECRET: "shared-secret",
@@ -19,6 +20,10 @@ vi.mock("@/lib/config", () => ({
 
 vi.mock("@/lib/services/popups", () => ({
   recordPopupEvent: mocks.recordPopupEvent,
+}));
+
+vi.mock("@/lib/services/lead-page-views", () => ({
+  recordTaggedPageView: mocks.recordTaggedPageView,
 }));
 
 vi.mock("@/lib/public-rate-limit", async () => {
@@ -47,9 +52,14 @@ const payload = {
 describe("attribution event route", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    // Reset, not just re-stub: the call list is what the budget-scoping tests
+    // below assert on, and a hoisted vi.fn keeps it across tests otherwise.
+    mocks.checkPublicRateLimit.mockReset();
     mocks.checkPublicRateLimit.mockResolvedValue(true);
     mocks.recordPopupEvent.mockReset();
     mocks.recordPopupEvent.mockResolvedValue(true);
+    mocks.recordTaggedPageView.mockReset();
+    mocks.recordTaggedPageView.mockResolvedValue(true);
     mocks.config.MONEY_PAGE_INGEST_URL =
       "https://money-page.test/api/ingest/vendingpreneurs";
     mocks.config.MONEY_PAGE_SECRET = "shared-secret";
@@ -162,6 +172,58 @@ describe("attribution event route", () => {
 
     expect(response.status).toBe(429);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The fail-closed rule belongs to the landing-view write, which is the only
+   * thing on this route that writes a row of ours. Scoping it to the whole
+   * action instead 429s the money-page forward and the popup counter too --
+   * both of which run before the write and neither of which is the thing a
+   * refusal was meant to protect.
+   */
+  it("counts the landing-view write on its own budget, not the event gate's", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("{}", { status: 200 }),
+    );
+
+    await POST(eventRequest());
+
+    const actions = mocks.checkPublicRateLimit.mock.calls.map(
+      (call) => call[0] as string,
+    );
+    expect(actions).toEqual(["attribution_event", "page_view"]);
+  });
+
+  it("still forwards the event when only the page-view budget refuses", async () => {
+    mocks.checkPublicRateLimit.mockImplementation(
+      async (action: string) => action !== "page_view",
+    );
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response("{}", { status: 200 }));
+
+    const response = await POST(eventRequest());
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(mocks.recordTaggedPageView).not.toHaveBeenCalled();
+  });
+
+  it("does not spend the page-view budget on an event that writes no view", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("{}", { status: 200 }),
+    );
+
+    await POST(
+      eventRequest({
+        body: { ...payload, event_type: "popup_shown" },
+      }),
+    );
+
+    const actions = mocks.checkPublicRateLimit.mock.calls.map(
+      (call) => call[0] as string,
+    );
+    expect(actions).toEqual(["attribution_event"]);
   });
 });
 

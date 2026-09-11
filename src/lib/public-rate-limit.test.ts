@@ -258,6 +258,24 @@ describe("failure mode", () => {
     },
   } as unknown as RateLimitClient;
 
+  /** A client whose count read comes back with one PostgREST error code. */
+  const schemaMissing = (code: string) =>
+    ({
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            gte: () => ({
+              or: () =>
+                Promise.resolve({
+                  count: null,
+                  error: { code, message: `read failed (${code})` },
+                }),
+            }),
+          }),
+        }),
+      }),
+    }) as unknown as RateLimitClient;
+
   it("fails open by default, so an outage never blocks a real lead", async () => {
     const allowed = await checkPublicRateLimit(
       "lead_submit",
@@ -277,9 +295,64 @@ describe("failure mode", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     const allowed = await checkPublicRateLimit(
+      "page_view",
+      { ip: "203.0.113.9" },
+      { client: exploding, now },
+    );
+
+    expect(allowed).toBe(false);
+    warn.mockRestore();
+  });
+
+  /**
+   * The event gate guards a forward to the money page and a popup counter, not
+   * a write of our own, and it is checked before either runs. Fail-closing it
+   * turns a limiter blip into a 429 on every attribution event — which is the
+   * opposite trade from the page-view write it was meant to cover.
+   */
+  it("keeps the whole attribution event open, because the gate guards a forward", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const allowed = await checkPublicRateLimit(
       "attribution_event",
       { ip: "203.0.113.9" },
       { client: exploding, now },
+    );
+
+    expect(allowed).toBe(true);
+    warn.mockRestore();
+  });
+
+  /**
+   * The hits table's migration is applied by hand, so "not deployed yet" is a
+   * real state every caller has to survive. A fail-closed action that refuses
+   * every page view until someone runs a migration is an outage, not a safety
+   * measure -- so the four schema codes fail OPEN whatever the action asks for,
+   * while a timeout or an unreachable database still refuses.
+   */
+  it.each(["42P01", "42703", "PGRST204", "PGRST205"])(
+    "fails open on %s, because a missing table is not an outage to refuse",
+    async (code) => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const allowed = await checkPublicRateLimit(
+        "page_view",
+        { ip: "203.0.113.9" },
+        { client: schemaMissing(code), now },
+      );
+
+      expect(allowed).toBe(true);
+      warn.mockRestore();
+    },
+  );
+
+  it("still refuses a page view when the limiter times out", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const allowed = await checkPublicRateLimit(
+      "page_view",
+      { ip: "203.0.113.9" },
+      { client: schemaMissing("57014"), now },
     );
 
     expect(allowed).toBe(false);
@@ -304,7 +377,7 @@ describe("failure mode", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     const allowed = await checkPublicRateLimit(
-      "attribution_event",
+      "page_view",
       { ip: "203.0.113.9" },
       { client: exploding, now, failClosed: false },
     );
