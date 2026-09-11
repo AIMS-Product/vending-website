@@ -16,8 +16,7 @@ type Call = { method: string; args: unknown[] };
  * returns itself, and awaiting it yields the canned result. `range` slices the
  * rows the way PostgREST does, so a paged read sees one page per request.
  */
-function builder(rows: unknown[], error: unknown) {
-  const calls: Call[] = [];
+function builder(rows: unknown[], error: unknown, calls: Call[]) {
   const target: Record<string, unknown> = {};
   let window: [number, number] | null = null;
   for (const method of [
@@ -48,7 +47,7 @@ function builder(rows: unknown[], error: unknown) {
       resolve as (v: unknown) => unknown,
       reject as (e: unknown) => unknown,
     );
-  return { target, calls };
+  return { target };
 }
 
 function buildClient(
@@ -67,11 +66,15 @@ function buildClient(
     const attempt = seen[table] ?? 0;
     seen[table] = attempt + 1;
     const queued = errorQueue[table]?.[attempt];
+    // One shared bucket per table: a paged read builds a fresh query object per
+    // page, and pages now go out in parallel, so per-builder arrays would only
+    // ever hold whichever page was created last.
+    const bucket = (calls[table] ??= []);
     const b = builder(
       rows[table] ?? [],
       queued ?? (failing.includes(table) ? { message: "boom" } : null),
+      bucket,
     );
-    calls[table] = b.calls;
     return b.target as never;
   });
   return { client: { from } as never, calls };
@@ -128,6 +131,26 @@ describe("getYouTubeAttribution reads", () => {
     expect(calls.ga4_page_views).toContainEqual({
       method: "order",
       args: ["day"],
+    });
+  });
+
+  it("loses no rows across a parallel batch boundary", async () => {
+    // 7,001 rows is two batches of six pages plus one: the count only comes out
+    // right if the second batch starts where the first left off and the short
+    // page ends the read.
+    const rows = Array.from({ length: 7_001 }, () => ({
+      utm_source: "youtube",
+      utm_campaign: "zach",
+      day: "2026-09-01",
+      sessions: 1,
+    }));
+
+    const { result, calls } = await run({ ga4_page_views: rows });
+
+    expect(result.totals.visits).toBe(7_001);
+    expect(calls.ga4_page_views).toContainEqual({
+      method: "range",
+      args: [7000, 7999],
     });
   });
 

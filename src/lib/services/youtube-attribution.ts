@@ -404,10 +404,23 @@ async function fetchPageViews(
  * larger `.limit()`. One select therefore returns the first 1,000 rows as if
  * they were all of them. Pages until a short page comes back.
  *
- * ponytail: pages are sequential, so a 1-year GA4 read is ~30 round trips.
- * Replace with a grouped-sum RPC if the analytics page ever feels slow.
+ * Pages go out `PAGE_CONCURRENCY` at a time. Sequentially, the 1-year GA4 read
+ * was 16 round trips at ~1.4s (measured against production 2026-09-10) and
+ * growing by a page every couple of weeks; six at a time makes it three.
+ *
+ * ponytail: still reads every row. Replace with a grouped-sum RPC if the
+ * analytics page ever feels slow again.
  */
 const PAGE_ROWS = 1000;
+
+/**
+ * Pages in flight at once.
+ *
+ * The cost of guessing is bounded: only the final batch over-reads, by at most
+ * five empty pages, which is cheaper than the extra `count: "exact"` round trip
+ * it would take to know the total up front.
+ */
+const PAGE_CONCURRENCY = 6;
 
 async function readAllRows<T>(
   table: string,
@@ -418,20 +431,36 @@ async function readAllRows<T>(
   ) => PromiseLike<{ data: unknown; error: unknown }>,
 ): Promise<T[] | null> {
   const rows: T[] = [];
-  while (rows.length < limit) {
-    const { data, error } = await page(
-      rows.length,
-      rows.length + PAGE_ROWS - 1,
+  let reachedEnd = false;
+
+  while (!reachedEnd && rows.length < limit) {
+    const starts = Array.from(
+      { length: PAGE_CONCURRENCY },
+      (_, index) => rows.length + index * PAGE_ROWS,
+    ).filter((from) => from < limit);
+
+    const pages = await Promise.all(
+      starts.map((from) => page(from, from + PAGE_ROWS - 1)),
     );
-    if (error) {
-      noteReadError(table, error);
-      return null;
+
+    // In page order, so the rows land in the order the query asked for.
+    for (const { data, error } of pages) {
+      if (error) {
+        noteReadError(table, error);
+        return null;
+      }
+      const batch = (data ?? []) as T[];
+      rows.push(...batch);
+      // A short page is the end of the table. Anything this batch read past it
+      // is empty by definition, so it is dropped rather than appended.
+      if (batch.length < PAGE_ROWS) {
+        reachedEnd = true;
+        break;
+      }
     }
-    const batch = (data ?? []) as T[];
-    rows.push(...batch);
-    if (batch.length < PAGE_ROWS) return rows;
   }
-  return capped(rows, limit, table);
+
+  return reachedEnd ? rows : capped(rows, limit, table);
 }
 
 /**
