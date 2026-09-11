@@ -22,33 +22,50 @@ function buildFetch(
 
 describe("createMetricoolClient", () => {
   it("authenticates with X-Mc-Auth plus userId and blogId and normalises posts", async () => {
-    const { fetchImpl, calls } = buildFetch(() => ({
-      status: 200,
-      body: {
-        data: [
-          {
-            id: "p1",
-            network: "INSTAGRAM",
-            text: "New video https://www.vendingpreneurs.com/book?utm_source=instagram",
-            link: "https://www.instagram.com/p/abc/",
-            publicationDate: {
-              dateTime: "2026-09-10T09:00:00",
-              timezone: "America/Los_Angeles",
-            },
-            metrics: { reach: 1200, impressions: { value: 1500 } },
+    const summaryBody = {
+      data: [
+        {
+          id: "p1",
+          network: "INSTAGRAM",
+          text: "New video https://www.vendingpreneurs.com/book?utm_source=instagram",
+          link: "https://www.instagram.com/p/abc/",
+          publicationDate: {
+            dateTime: "2026-09-10T09:00:00",
+            timezone: "America/Los_Angeles",
           },
-          { id: "broken", network: "facebook" },
-        ],
-        page: { next: null },
-      },
+          metrics: { IMPRESSIONS: 1500 },
+        },
+        { id: "broken", network: "facebook" },
+      ],
+      page: { next: null },
+    };
+    // Instagram typed ids differ from the summary ids; the URL joins them.
+    const typedBody = {
+      data: [
+        {
+          postId: "media-1",
+          url: "https://instagram.com/p/abc",
+          reach: 1200,
+          clicks: 40,
+          blogId: 99,
+        },
+      ],
+    };
+    const { fetchImpl, calls } = buildFetch((url) => ({
+      status: 200,
+      body: url.includes("brand-summary")
+        ? summaryBody
+        : url.includes("posts/instagram")
+          ? typedBody
+          : { data: [] },
     }));
     const client = createMetricoolClient({
       apiKey: "tok",
       userId: "u1",
-      blogId: "b1",
       fetchImpl,
     });
     const posts = await client.fetchPosts({
+      blogId: "b1",
       from: "2026-09-01",
       to: "2026-09-11",
     });
@@ -59,9 +76,13 @@ describe("createMetricoolClient", () => {
         text: "New video https://www.vendingpreneurs.com/book?utm_source=instagram",
         permalink: "https://www.instagram.com/p/abc/",
         publishedAt: "2026-09-10T16:00:00.000Z",
-        metrics: { reach: 1200, impressions: { value: 1500 } },
+        metrics: { IMPRESSIONS: 1500, reach: 1200, clicks: 40 },
       },
     ]);
+    // One summary call plus the two Instagram typed endpoints.
+    expect(
+      calls.map((call) => new URL(call.url).pathname.split("/analytics/")[1]),
+    ).toEqual(["brand-summary/posts", "posts/instagram", "reels/instagram"]);
     const url = new URL(calls[0]!.url);
     expect(url.pathname).toBe("/api/v2/analytics/brand-summary/posts");
     expect(url.searchParams.get("userId")).toBe("u1");
@@ -70,35 +91,58 @@ describe("createMetricoolClient", () => {
     expect(calls[0]!.headers["X-Mc-Auth"]).toBe("tok");
   });
 
-  it("follows a full-URL page.next and stops on anything else", async () => {
-    const { fetchImpl, calls } = buildFetch((url) =>
-      url.includes("cursor=2")
-        ? {
-            status: 200,
-            body: { data: [post("p2")], page: { next: "opaque-token" } },
-          }
-        : {
-            status: 200,
-            body: {
-              data: [post("p1")],
-              page: {
-                next: "https://app.metricool.com/api/v2/analytics/brand-summary/posts?cursor=2",
-              },
-            },
-          },
+  it("treats a 403 from a typed endpoint as not connected", async () => {
+    const { fetchImpl } = buildFetch((url) =>
+      url.includes("brand-summary")
+        ? { status: 200, body: { data: [post("p1")] } }
+        : { status: 403, body: { title: "Forbidden" } },
     );
     const client = createMetricoolClient({
       apiKey: "tok",
       userId: "u1",
-      blogId: "b1",
       fetchImpl,
     });
     const posts = await client.fetchPosts({
+      blogId: "b1",
+      from: "2026-09-01",
+      to: "2026-09-11",
+    });
+    expect(posts.map((row) => row.id)).toEqual(["p1"]);
+  });
+
+  it("follows a full-URL page.next and stops on anything else", async () => {
+    const { fetchImpl, calls } = buildFetch((url) =>
+      !url.includes("brand-summary")
+        ? { status: 200, body: { data: [] } }
+        : url.includes("cursor=2")
+          ? {
+              status: 200,
+              body: { data: [post("p2")], page: { next: "opaque-token" } },
+            }
+          : {
+              status: 200,
+              body: {
+                data: [post("p1")],
+                page: {
+                  next: "https://app.metricool.com/api/v2/analytics/brand-summary/posts?cursor=2",
+                },
+              },
+            },
+    );
+    const client = createMetricoolClient({
+      apiKey: "tok",
+      userId: "u1",
+      fetchImpl,
+    });
+    const posts = await client.fetchPosts({
+      blogId: "b1",
       from: "2026-09-01",
       to: "2026-09-11",
     });
     expect(posts.map((row) => row.id)).toEqual(["p1", "p2"]);
-    expect(calls).toHaveLength(2);
+    expect(calls.filter((c) => c.url.includes("brand-summary"))).toHaveLength(
+      2,
+    );
   });
 });
 

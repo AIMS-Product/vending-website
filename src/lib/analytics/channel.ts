@@ -117,7 +117,7 @@ const EXACT: Record<string, ChannelRule> = {
  * and quietly shrinking the channel.
  */
 const PERSON_PATTERN =
-  /^([a-z]+)[-_](ig|instagram|x|twitter|li|linkedin|yt|youtube|fb|facebook|newsletter|email)$/;
+  /^([a-z]+)[-_](ig|instagram|x|twitter|li|linkedin|yt|youtube|fb|facebook|tt|tiktok|newsletter|email)$/;
 
 const SUFFIX_CHANNEL: Record<string, string> = {
   ig: "Instagram",
@@ -130,6 +130,8 @@ const SUFFIX_CHANNEL: Record<string, string> = {
   youtube: "YouTube",
   fb: "Meta",
   facebook: "Meta",
+  tt: "TikTok",
+  tiktok: "TikTok",
   newsletter: "Newsletter",
   email: "Newsletter",
 };

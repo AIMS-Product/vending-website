@@ -31,6 +31,10 @@ describe("resolveChannel", () => {
       person: "Anthony",
     });
     expect(resolveChannel("mike-x")).toEqual({ channel: "X", person: "Mike" });
+    expect(resolveChannel("mike-tt")).toEqual({
+      channel: "TikTok",
+      person: "Mike",
+    });
   });
 
   it("handles a person tag it has never seen before", () => {

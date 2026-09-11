@@ -35,17 +35,58 @@ const WINDOW_DAYS = 30;
 /** Metricool network names → link-standard sources. Others pass through. */
 const NETWORK_SOURCE: Record<string, string> = { twitter: "x" };
 
-/** Metric names Metricool has used for the three numbers the spine stores. */
+/**
+ * Person brands keep their owner: a post from Mike's Metricool brand lands as
+ * `mike-ig`, which `resolveChannel` reads as Instagram + Mike, the same shape
+ * as the team's tagged links. The Vendingpreneurs brand writes plain network
+ * sources. Blog ids from `GET /v2/settings/brands`, 2026-09-11.
+ */
+const BRAND_OWNER: Record<string, string> = {
+  "6633336": "mike",
+  "6633345": "anthony",
+};
+
+/** Network → the suffix `SUFFIX_CHANNEL` in channel.ts understands. */
+const NETWORK_SUFFIX: Record<string, string> = {
+  instagram: "ig",
+  facebook: "fb",
+  linkedin: "li",
+  tiktok: "tt",
+  twitter: "x",
+  youtube: "yt",
+};
+
+/**
+ * Metric names Metricool has used for the three numbers the spine stores,
+ * across the brand summary (uppercase) and the typed per-network endpoints.
+ * Link clicks come before post clicks: the spine counts clicks to our site.
+ */
 const METRIC_NAMES = {
-  reach: ["reach", "reachTotal"],
+  reach: [
+    "reach",
+    "reachTotal",
+    "impressionsUnique",
+    "uniqueImpressions",
+    "postImpressionsUnique",
+  ],
   impressions: [
     "impressions",
     "impressionsTotal",
+    "totalImpressions",
     "views",
     "viewCount",
     "videoViewsTotal",
+    "blueReelsPlayCount",
   ],
-  clicks: ["clicks", "linkClicks", "postClicks", "postClicksPaid"],
+  clicks: [
+    "linkclicks",
+    "linkClicks",
+    "totalLinkClicks",
+    "organicLinkClicks",
+    "clicks",
+    "postClicks",
+    "postClicksPaid",
+  ],
 };
 
 export type MetricoolSyncResult = {
@@ -58,6 +99,8 @@ export async function syncMetricool(
     client?: SyncClient;
     /** Explicit null means "not configured"; undefined builds from config. */
     metricool?: MetricoolClient | null;
+    /** Brands to pull, in order; the first brand to report a post owns it. */
+    blogIds?: string[];
     now?: Date;
     days?: number;
   } = {},
@@ -66,6 +109,7 @@ export async function syncMetricool(
   const client = deps.client ?? createAdminClient();
   const metricool =
     deps.metricool === undefined ? metricoolFromConfig() : deps.metricool;
+  const blogIds = deps.blogIds ?? blogIdsFromConfig();
   const endDate = dayKey(now);
   const startDate = dayKey(addDays(now, -(deps.days ?? WINDOW_DAYS)));
 
@@ -73,18 +117,29 @@ export async function syncMetricool(
     client,
     METRICOOL_CONNECTOR,
     async () => {
-      if (!metricool) {
+      if (!metricool || blogIds.length === 0) {
         return skipped(
-          "METRICOOL_API_KEY / METRICOOL_USER_ID / METRICOOL_BLOG_ID are not configured.",
+          "METRICOOL_API_KEY / METRICOOL_USER_ID / METRICOOL_BLOG_IDS are not configured.",
         );
       }
-      const posts = await metricool.fetchPosts({
-        from: startDate,
-        to: endDate,
-      });
-      if (posts.length === 0) return { rowsWritten: 0 };
+      // The Vendingpreneurs and Mike brands share one Facebook page, so the
+      // same post comes back under both blog ids. First brand listed wins.
+      const seen = new Set<string>();
+      const rows: MetricoolPostRow[] = [];
+      for (const blogId of blogIds) {
+        const posts = await metricool.fetchPosts({
+          blogId,
+          from: startDate,
+          to: endDate,
+        });
+        for (const post of posts) {
+          if (seen.has(post.id)) continue;
+          seen.add(post.id);
+          rows.push(postRow(post, now, blogId));
+        }
+      }
+      if (rows.length === 0) return { rowsWritten: 0 };
 
-      const rows = posts.map((post) => postRow(post, now));
       const { error } = await client
         .from("metricool_posts")
         .upsert(rows, { onConflict: "post_id" });
@@ -114,12 +169,17 @@ export async function syncMetricool(
 export type MetricoolPostRow = TablesInsert<"metricool_posts">;
 
 /** One stored row per post: link found, UTMs parsed, standard checked. */
-export function postRow(post: MetricoolPost, now: Date): MetricoolPostRow {
+export function postRow(
+  post: MetricoolPost,
+  now: Date,
+  brandId: string | null = null,
+): MetricoolPostRow {
   const link = firstOutboundUrl(post.text, post.permalink);
   const utms = link ? parseLinkUtms(link) : null;
   const check = link ? checkLinkStandard(link) : null;
   return {
     post_id: post.id,
+    brand_id: brandId,
     network: post.network,
     published_at: post.publishedAt,
     permalink: post.permalink,
@@ -142,13 +202,14 @@ export function postRow(post: MetricoolPost, now: Date): MetricoolPostRow {
 
 /**
  * The spine row for a post, credited to its publication day. A post with no
- * standard UTMs still lands: source from the network, medium organic, content
- * = the post id, campaign and destination "(not set)" / unknown.
+ * standard UTMs still lands: source from the network (owner-prefixed for a
+ * person brand), medium organic, content = the post id, campaign and
+ * destination "(not set)" / unknown.
  */
 export function channelRow(row: MetricoolPostRow): ChannelDailyRow {
   return {
     day: String(row.published_at).slice(0, 10),
-    source: row.utm_source ?? NETWORK_SOURCE[row.network] ?? row.network,
+    source: row.utm_source ?? networkSource(row.network, row.brand_id ?? null),
     medium: row.utm_medium ?? "organic",
     campaign: row.utm_campaign ?? null,
     content: row.utm_content ?? row.post_id,
@@ -157,6 +218,13 @@ export function channelRow(row: MetricoolPostRow): ChannelDailyRow {
     impressions: row.impressions ?? null,
     clicks: row.clicks ?? null,
   };
+}
+
+export function networkSource(network: string, brandId: string | null): string {
+  const owner = brandId ? BRAND_OWNER[brandId] : undefined;
+  const suffix = NETWORK_SUFFIX[network];
+  if (owner && suffix) return `${owner}-${suffix}`;
+  return NETWORK_SOURCE[network] ?? network;
 }
 
 const URL_PATTERN = /https?:\/\/[^\s<>()"']+/g;
@@ -187,14 +255,21 @@ function hostOf(url: string | null): string | null {
 }
 
 function metricoolFromConfig(): MetricoolClient | null {
-  const { METRICOOL_API_KEY, METRICOOL_USER_ID, METRICOOL_BLOG_ID } = config;
-  if (!METRICOOL_API_KEY || !METRICOOL_USER_ID || !METRICOOL_BLOG_ID)
-    return null;
+  const { METRICOOL_API_KEY, METRICOOL_USER_ID } = config;
+  if (!METRICOOL_API_KEY || !METRICOOL_USER_ID) return null;
   return createMetricoolClient({
     apiKey: METRICOOL_API_KEY,
     userId: METRICOOL_USER_ID,
-    blogId: METRICOOL_BLOG_ID,
   });
+}
+
+/** `METRICOOL_BLOG_IDS` comma list, else the single `METRICOOL_BLOG_ID`. */
+function blogIdsFromConfig(): string[] {
+  const list = (config.METRICOOL_BLOG_IDS ?? config.METRICOOL_BLOG_ID ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return [...new Set(list)];
 }
 
 function addDays(date: Date, delta: number): Date {

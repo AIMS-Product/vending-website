@@ -956,6 +956,7 @@ export type Database = {
       };
       metricool_posts: {
         Row: {
+          brand_id: string | null;
           clicks: number | null;
           impressions: number | null;
           link: string | null;
@@ -976,6 +977,7 @@ export type Database = {
           utm_term: string | null;
         };
         Insert: {
+          brand_id?: string | null;
           clicks?: number | null;
           impressions?: number | null;
           link?: string | null;
@@ -996,6 +998,7 @@ export type Database = {
           utm_term?: string | null;
         };
         Update: {
+          brand_id?: string | null;
           clicks?: number | null;
           impressions?: number | null;
           link?: string | null;

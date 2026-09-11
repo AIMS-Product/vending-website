@@ -68,12 +68,14 @@ const envSchema = z.object({
   GHL_LOCATION_ID: optionalTrimmedOptionalEnv,
   /**
    * Metricool REST API: the user token (sent as X-Mc-Auth), the account's
-   * userId and the brand's blogId. Read-only use. Absent means the
-   * metricool-posts connector records "skipped".
+   * userId and the brands' blogIds (comma list; the single BLOG_ID is the
+   * fallback). Read-only use. Absent means the metricool-posts connector
+   * records "skipped".
    */
   METRICOOL_API_KEY: optionalTrimmedOptionalEnv,
   METRICOOL_USER_ID: optionalTrimmedOptionalEnv,
   METRICOOL_BLOG_ID: optionalTrimmedOptionalEnv,
+  METRICOOL_BLOG_IDS: optionalTrimmedOptionalEnv,
   /**
    * YouTube Analytics as the channel owner: a Desktop-app OAuth client and
    * the refresh token from scripts/youtube-oauth-token.mjs. Absent means the
@@ -193,6 +195,7 @@ const parsed = envSchema.safeParse({
   METRICOOL_API_KEY: process.env.METRICOOL_API_KEY,
   METRICOOL_USER_ID: process.env.METRICOOL_USER_ID,
   METRICOOL_BLOG_ID: process.env.METRICOOL_BLOG_ID,
+  METRICOOL_BLOG_IDS: process.env.METRICOOL_BLOG_IDS,
   GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID,
   GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
   YOUTUBE_REFRESH_TOKEN: process.env.YOUTUBE_REFRESH_TOKEN,

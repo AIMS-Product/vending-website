@@ -9,7 +9,8 @@ import "server-only";
  * `userId` and `blogId` on every request. The brand summary endpoint returns
  * every post across every connected network for a date range; its `metrics`
  * is an untyped map in the spec, so the reader below is tolerant and the raw
- * map is stored alongside.
+ * map is stored alongside. The typed per-network endpoints add reach and
+ * clicks, which the summary never reports.
  */
 
 const BASE_URL = "https://app.metricool.com/api";
@@ -17,8 +18,29 @@ const USER_AGENT =
   "vendingpreneurs-admin/1.0 (+https://www.vendingpreneurs.com)";
 const RETRIES = 3;
 const TRANSIENT_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
-/** Follow `page.next` at most this many times; a month of posts is one page. */
+/** Follow `page.next` at most this many times; 400 days of posts is one page. */
 const MAX_PAGES = 20;
+
+/**
+ * Typed per-network endpoints, probed 2026-09-11. The brand summary reports
+ * only IMPRESSIONS / INTERACTIONS / ENGAGEMENT; reach and clicks live here.
+ * Instagram ids differ between the two shapes (graph id vs media id), so the
+ * post URL is the fallback join key. No endpoint exists for YouTube. Stories
+ * are skipped: the Instagram one 500s and none carries a link.
+ */
+const TYPED_ENDPOINTS: Record<string, Array<{ path: string; id: string }>> = {
+  instagram: [
+    { path: "posts/instagram", id: "postId" },
+    { path: "reels/instagram", id: "reelId" },
+  ],
+  facebook: [
+    { path: "posts/facebook", id: "postId" },
+    { path: "reels/facebook", id: "reelId" },
+  ],
+  linkedin: [{ path: "posts/linkedin", id: "postId" }],
+  twitter: [{ path: "posts/twitter", id: "tweetId" }],
+  tiktok: [{ path: "posts/tiktok", id: "videoId" }],
+};
 
 export type MetricoolPost = {
   id: string;
@@ -28,12 +50,20 @@ export type MetricoolPost = {
   permalink: string | null;
   /** ISO timestamp with offset, from publicationDate.dateTime + timezone. */
   publishedAt: string;
+  /** Brand-summary metrics with the typed per-network numbers merged over. */
   metrics: Record<string, unknown>;
 };
 
 export type MetricoolClient = {
-  /** Posts published in [from, to], dates as YYYY-MM-DD, interpreted in UTC. */
-  fetchPosts(range: { from: string; to: string }): Promise<MetricoolPost[]>;
+  /**
+   * Posts a brand published in [from, to], dates as YYYY-MM-DD, interpreted in
+   * UTC, with typed per-network metrics merged in where the network has them.
+   */
+  fetchPosts(range: {
+    blogId: string;
+    from: string;
+    to: string;
+  }): Promise<MetricoolPost[]>;
 };
 
 export class MetricoolApiError extends Error {
@@ -55,10 +85,11 @@ type RawPost = {
   metrics?: Record<string, unknown>;
 };
 
+type TypedRow = Record<string, unknown>;
+
 export function createMetricoolClient(options: {
   apiKey: string;
   userId: string;
-  blogId: string;
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
 }): MetricoolClient {
@@ -90,46 +121,131 @@ export function createMetricoolClient(options: {
     throw lastError;
   }
 
-  return {
-    async fetchPosts({ from, to }) {
-      const params = new URLSearchParams({
-        userId: options.userId,
-        blogId: options.blogId,
-        from: `${from}T00:00:00`,
-        to: `${to}T23:59:59`,
-        timezone: "UTC",
-      });
-      let url = `${BASE_URL}/v2/analytics/brand-summary/posts?${params.toString()}`;
-      const posts: MetricoolPost[] = [];
-      for (let page = 0; page < MAX_PAGES; page += 1) {
-        const body = await get<{
-          data?: RawPost[];
-          page?: { next?: string | null };
-        }>(url);
-        for (const raw of body.data ?? []) {
-          if (!raw.id || !raw.network || !raw.publicationDate?.dateTime)
-            continue;
-          posts.push({
-            id: raw.id,
-            network: raw.network.toLowerCase(),
-            text: raw.text ?? "",
-            permalink: raw.link ?? null,
-            publishedAt: toIso(
-              raw.publicationDate.dateTime,
-              raw.publicationDate.timezone,
-            ),
-            metrics: raw.metrics ?? {},
-          });
-        }
-        const next = body.page?.next;
-        // The spec types `next` as a string and says nothing more. A full URL
-        // is followed; anything else ends the walk rather than guessing.
-        if (!next || !/^https?:\/\//.test(next)) break;
-        url = next;
+  function analyticsUrl(
+    path: string,
+    range: { blogId: string; from: string; to: string },
+  ): string {
+    const params = new URLSearchParams({
+      userId: options.userId,
+      blogId: range.blogId,
+      from: `${range.from}T00:00:00`,
+      to: `${range.to}T23:59:59`,
+      timezone: "UTC",
+    });
+    return `${BASE_URL}/v2/analytics/${path}?${params.toString()}`;
+  }
+
+  async function fetchBrandSummary(range: {
+    blogId: string;
+    from: string;
+    to: string;
+  }): Promise<MetricoolPost[]> {
+    let url = analyticsUrl("brand-summary/posts", range);
+    const posts: MetricoolPost[] = [];
+    for (let page = 0; page < MAX_PAGES; page += 1) {
+      const body = await get<{
+        data?: RawPost[];
+        page?: { next?: string | null };
+      }>(url);
+      for (const raw of body.data ?? []) {
+        if (!raw.id || !raw.network || !raw.publicationDate?.dateTime) continue;
+        posts.push({
+          id: raw.id,
+          network: raw.network.toLowerCase(),
+          text: raw.text ?? "",
+          permalink: raw.link ?? null,
+          publishedAt: toIso(
+            raw.publicationDate.dateTime,
+            raw.publicationDate.timezone,
+          ),
+          metrics: raw.metrics ?? {},
+        });
       }
-      return posts;
+      const next = body.page?.next;
+      // The spec types `next` as a string and says nothing more. A full URL
+      // is followed; anything else ends the walk rather than guessing.
+      if (!next || !/^https?:\/\//.test(next)) break;
+      url = next;
+    }
+    return posts;
+  }
+
+  /**
+   * Typed rows for one network keyed by id and by normalised URL. A network
+   * the brand has not connected answers 403; that is not an error here.
+   */
+  async function fetchTypedMetrics(
+    network: string,
+    range: { blogId: string; from: string; to: string },
+  ): Promise<Map<string, TypedRow>> {
+    const byKey = new Map<string, TypedRow>();
+    for (const endpoint of TYPED_ENDPOINTS[network] ?? []) {
+      let rows: TypedRow[] = [];
+      try {
+        const body = await get<{ data?: TypedRow[] }>(
+          analyticsUrl(endpoint.path, range),
+        );
+        rows = body.data ?? [];
+      } catch (error) {
+        if (error instanceof MetricoolApiError && error.status === 403)
+          continue;
+        console.error("metricool typed endpoint failed", {
+          path: endpoint.path,
+          status: error instanceof MetricoolApiError ? error.status : null,
+        });
+        continue;
+      }
+      for (const row of rows) {
+        const id = row[endpoint.id];
+        if (id != null) byKey.set(String(id), row);
+        const url = urlKey(row.url ?? row.shareUrl ?? row.link);
+        if (url) byKey.set(url, row);
+      }
+    }
+    return byKey;
+  }
+
+  return {
+    async fetchPosts(range) {
+      const posts = await fetchBrandSummary(range);
+      const networks = new Set(posts.map((post) => post.network));
+      const typed = new Map<string, Map<string, TypedRow>>();
+      for (const network of networks) {
+        if (TYPED_ENDPOINTS[network])
+          typed.set(network, await fetchTypedMetrics(network, range));
+      }
+      return posts.map((post) => {
+        const rows = typed.get(post.network);
+        const row =
+          rows?.get(post.id) ?? rows?.get(urlKey(post.permalink) ?? "");
+        return row
+          ? { ...post, metrics: mergeMetrics(post.metrics, row) }
+          : post;
+      });
     },
   };
+}
+
+/** Typed numbers win over the brand summary, whose Facebook values are null. */
+function mergeMetrics(
+  summary: Record<string, unknown>,
+  typed: TypedRow,
+): Record<string, unknown> {
+  const numbers = Object.fromEntries(
+    Object.entries(typed).filter(
+      ([key, value]) => typeof value === "number" && key !== "blogId",
+    ),
+  );
+  return { ...summary, ...numbers };
+}
+
+/** Scheme, www and trailing slash removed, so both shapes of a post URL meet. */
+function urlKey(url: unknown): string | null {
+  if (typeof url !== "string" || !url) return null;
+  return url
+    .replace(/^https?:\/\/(www\.)?/, "")
+    .replace(/\?.*$/, "")
+    .replace(/\/$/, "");
 }
 
 /**
