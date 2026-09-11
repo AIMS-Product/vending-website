@@ -204,6 +204,7 @@ function OverviewTab({ analytics }: { analytics: AdminAnalytics }) {
         <AnalyticsBreakdown
           title="Leads by page"
           rows={analytics.leadsBySourcePath}
+          linkPaths
         />
         <AnalyticsBreakdown
           title="Leads by channel"
@@ -272,12 +273,14 @@ function PagesTab({ analytics }: { analytics: AdminAnalytics }) {
         <AnalyticsBreakdown
           title="Landing page (first page seen)"
           rows={pages.byLandingPage}
+          linkPaths
         />
       </div>
       <div className="mt-5 grid gap-5 xl:grid-cols-2">
         <AnalyticsBreakdown
           title="Form page (where they submitted)"
           rows={pages.bySubmitPage}
+          linkPaths
         />
         <AnalyticsBreakdown
           title="Referring site"
