@@ -454,8 +454,25 @@ export function firstTouchAt(lead: YouTubeLeadRow): string {
   return lead.created_at;
 }
 
+/**
+ * Booked, or won — the funnel has to be monotonic.
+ *
+ * Close reports some deals as won with no `call_booked_at` behind them: the
+ * booking mirror missed the appointment, or the deal was written up from a call
+ * booked outside this site. Counting those only at the bottom of the funnel
+ * rendered "200% continued from the step above", which is visibly broken.
+ *
+ * The call is inferred rather than dropped because a sale cannot happen without
+ * one, and excluding a real win from the closed stage would understate the
+ * revenue this page exists to attribute. That makes "Booked a call" here read
+ * very slightly higher than the same figure on the other analytics tabs, which
+ * count `call_booked_at` alone.
+ *
+ * Costs nothing when outcomes are not connected: both columns are absent, so
+ * `isClosedWon` is false and this is `call_booked_at` exactly as before.
+ */
 function hasBooked(lead: YouTubeLeadRow): boolean {
-  return Boolean(lead.call_booked_at);
+  return Boolean(lead.call_booked_at) || isClosedWon(lead);
 }
 
 function isQualified(lead: YouTubeLeadRow): boolean {

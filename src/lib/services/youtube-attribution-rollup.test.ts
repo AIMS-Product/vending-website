@@ -470,3 +470,67 @@ describe("coverage", () => {
     expect(result.coverage.bookedBeforeLead).toBe(0);
   });
 });
+
+/**
+ * M9: a deal Close reports as won with no booked date used to count at the
+ * bottom of the funnel and at neither stage above it, so the page rendered
+ * "200% continued from the step above".
+ */
+describe("funnel monotonicity", () => {
+  const wonWithoutBookedDate = lead({
+    call_booked_at: null,
+    call_outcome: "won",
+    closed_won_at: "2026-08-20",
+    closed_won_source: "close_opportunity",
+  });
+
+  it("never reports a stage larger than the one above it", () => {
+    // Clicks and visits off: this is about the stages built from lead rows.
+    const { stages } = build([wonWithoutBookedDate], {
+      clicksConnected: false,
+      visitsConnected: false,
+    });
+
+    const counts = stages.map((stage) => stage.count);
+    for (let i = 1; i < counts.length; i += 1) {
+      const above = counts[i - 1];
+      const here = counts[i];
+      if (above === null || here === null) continue;
+      expect(here).toBeLessThanOrEqual(above);
+    }
+    for (const stage of stages) {
+      expect(stage.ofPreviousPct === null || stage.ofPreviousPct <= 100).toBe(
+        true,
+      );
+    }
+  });
+
+  it("counts a won lead as booked and attended, because the sale implies the call", () => {
+    const { totals } = build([wonWithoutBookedDate]);
+
+    expect(totals.booked).toBe(1);
+    expect(totals.attended).toBe(1);
+    expect(totals.closed).toBe(1);
+  });
+
+  it("leaves the booked count alone when outcomes are not connected", () => {
+    const { totals } = build([lead({ call_booked_at: null })], {
+      outcomesConnected: false,
+    });
+
+    expect(totals.booked).toBe(0);
+  });
+
+  it("still excludes a won lead whose call was a no-show from attended", () => {
+    const { totals } = build([
+      lead({
+        call_booked_at: "2026-08-15",
+        call_outcome: "no_show",
+        closed_won_at: null,
+      }),
+    ]);
+
+    expect(totals.booked).toBe(1);
+    expect(totals.attended).toBe(0);
+  });
+});
