@@ -9,7 +9,8 @@
  *
  * Re-runnable. Matching is by `utm_campaign`. Click-sync bookkeeping
  * (`clicks_synced_at`) is never touched, so a re-import does not send the Bitly
- * sync back to the start of its queue.
+ * sync back to the start of its queue, and a row whose link was discovered
+ * after the last import keeps it — see `splitByBitlyLink`.
  *
  *   node scripts/import-youtube-registry.mjs            # dry-run
  *   node scripts/import-youtube-registry.mjs --write
@@ -56,23 +57,61 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const client = createSupabaseClient();
+  const { linked, unlinked } = splitByBitlyLink(rows);
   let imported = 0;
 
-  for (let index = 0; index < rows.length; index += UPSERT_CHUNK) {
-    const chunk = rows.slice(index, index + UPSERT_CHUNK);
-    const { error } = await client
-      .from("youtube_videos")
-      .upsert(chunk, { onConflict: "utm_campaign" });
+  for (const group of [linked, unlinked]) {
+    for (let index = 0; index < group.length; index += UPSERT_CHUNK) {
+      const chunk = group.slice(index, index + UPSERT_CHUNK);
+      const { error } = await client
+        .from("youtube_videos")
+        .upsert(chunk, { onConflict: "utm_campaign" });
 
-    if (error) {
-      console.error(`upsert failed at row ${index}: ${error.message}`);
-      return 1;
+      if (error) {
+        console.error(`upsert failed at row ${index}: ${error.message}`);
+        return 1;
+      }
+      imported += chunk.length;
     }
-    imported += chunk.length;
   }
 
-  console.log(`imported ${imported} rows into youtube_videos.`);
+  console.log(
+    `imported ${imported} rows into youtube_videos (${unlinked.length} left their Bitly columns alone).`,
+  );
   return 0;
+}
+
+/**
+ * Splits the registry into rows that carry a Bitly link and rows that do not.
+ *
+ * The rows with `bitly_id: null` must not send that null: `map-missing-links`
+ * fills them in by discovery, and an upsert carrying an explicit null resets
+ * them — after which `claimBatch` never claims a null-id row again and those
+ * links silently stop syncing. The 604 rows that DO carry a link still seed it,
+ * so a first import is unaffected.
+ *
+ * Two payloads rather than one with the columns dropped per row: PostgREST
+ * requires every object in a bulk upsert to carry the same keys.
+ *
+ * Returns new objects; the caller's rows are never mutated.
+ */
+export function splitByBitlyLink(rows) {
+  const linked = [];
+  const unlinked = [];
+
+  for (const row of rows) {
+    if (row.bitly_id) {
+      linked.push(row);
+      continue;
+    }
+    // A copy, then drop the two columns: the caller's row is left as it was.
+    const withoutLink = { ...row };
+    delete withoutLink.bitly_id;
+    delete withoutLink.bitly_url;
+    unlinked.push(withoutLink);
+  }
+
+  return { linked, unlinked };
 }
 
 async function readRegistry() {
