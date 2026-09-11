@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Database } from "@/types/database";
+import type { Database, Tables } from "@/types/database";
 import {
   ADMIN_ANALYTICS_RANGES,
   DEFAULT_ADMIN_ANALYTICS_RANGE,
@@ -23,6 +23,7 @@ import {
 } from "@/lib/services/channel-report-rollup";
 import { CHANNEL_CONNECTORS } from "@/lib/services/channel-sync";
 import { GHL_CONNECTORS } from "@/lib/services/ghl-sync";
+import { METRICOOL_CONNECTOR } from "@/lib/services/metricool-sync";
 
 type ReportClient = Pick<SupabaseClient<Database>, "from">;
 
@@ -39,6 +40,7 @@ export const EXPECTED_CONNECTORS: readonly string[] = [
   "webinar-ingest",
   GHL_CONNECTORS.email,
   GHL_CONNECTORS.forms,
+  METRICOOL_CONNECTOR,
 ];
 
 export type ChannelsTabData = {
@@ -61,6 +63,8 @@ export type ChannelsTabData = {
   syncHealth: SyncHealthRow[];
   /** Every link in the registry with its clicks in range, zero-click links included. */
   goingOut: GoingOutRow[];
+  /** Posts published in range whose outbound link fails the standard. */
+  fixLinks: FixLinkRow[];
   /** False when the spine tables do not exist yet (migration not applied). */
   connected: boolean;
 };
@@ -85,10 +89,11 @@ export async function getChannelsTab(
     new Date(now.getTime() - (2 * days - 1) * DAY_MS),
   );
 
-  const [facts, runs, goingOut] = await Promise.all([
+  const [facts, runs, goingOut, fixLinks] = await Promise.all([
     fetchFacts(client, priorStartDay, endDay),
     fetchRuns(client),
     fetchGoingOut(client, priorStartDay, endDay, startDay),
+    fetchFixLinks(client, startDay),
   ]);
 
   const connected = facts !== null;
@@ -126,6 +131,7 @@ export async function getChannelsTab(
       : null,
     syncHealth: summariseSyncRuns(runs, EXPECTED_CONNECTORS, now),
     goingOut,
+    fixLinks,
     connected,
   };
 }
@@ -182,6 +188,46 @@ async function fetchRuns(client: ReportClient): Promise<SyncRun[]> {
       .limit(500);
     if (error) return [];
     return (data ?? []) as SyncRun[];
+  } catch {
+    return [];
+  }
+}
+
+export type FixLinkRow = Pick<
+  Tables<"metricool_posts">,
+  | "post_id"
+  | "network"
+  | "published_at"
+  | "permalink"
+  | "link"
+  | "text_excerpt"
+  | "link_problems"
+>;
+
+/** Enough for a month of daily posting across five networks. */
+const FIX_LINKS_LIMIT = 200;
+
+/**
+ * Bitly clicks are deliberately absent here: bitly_link_clicks only holds
+ * registry links, and the YouTube registry predates the standard by design, so
+ * checking those would list 600 links nobody is going to edit.
+ */
+async function fetchFixLinks(
+  client: ReportClient,
+  startDay: string,
+): Promise<FixLinkRow[]> {
+  try {
+    const { data, error } = await client
+      .from("metricool_posts")
+      .select(
+        "post_id,network,published_at,permalink,link,text_excerpt,link_problems",
+      )
+      .eq("link_compliant", false)
+      .gte("published_at", `${startDay}T00:00:00.000Z`)
+      .order("published_at", { ascending: false })
+      .limit(FIX_LINKS_LIMIT);
+    if (error) return [];
+    return (data ?? []) as FixLinkRow[];
   } catch {
     return [];
   }

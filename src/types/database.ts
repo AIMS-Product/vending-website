@@ -954,6 +954,69 @@ export type Database = {
         };
         Relationships: [];
       };
+      metricool_posts: {
+        Row: {
+          clicks: number | null;
+          impressions: number | null;
+          link: string | null;
+          link_compliant: boolean | null;
+          link_problems: string[];
+          metrics: Json;
+          network: string;
+          permalink: string | null;
+          post_id: string;
+          published_at: string;
+          reach: number | null;
+          synced_at: string;
+          text_excerpt: string | null;
+          utm_campaign: string | null;
+          utm_content: string | null;
+          utm_medium: string | null;
+          utm_source: string | null;
+          utm_term: string | null;
+        };
+        Insert: {
+          clicks?: number | null;
+          impressions?: number | null;
+          link?: string | null;
+          link_compliant?: boolean | null;
+          link_problems?: string[];
+          metrics?: Json;
+          network: string;
+          permalink?: string | null;
+          post_id: string;
+          published_at: string;
+          reach?: number | null;
+          synced_at?: string;
+          text_excerpt?: string | null;
+          utm_campaign?: string | null;
+          utm_content?: string | null;
+          utm_medium?: string | null;
+          utm_source?: string | null;
+          utm_term?: string | null;
+        };
+        Update: {
+          clicks?: number | null;
+          impressions?: number | null;
+          link?: string | null;
+          link_compliant?: boolean | null;
+          link_problems?: string[];
+          metrics?: Json;
+          network?: string;
+          permalink?: string | null;
+          post_id?: string;
+          published_at?: string;
+          reach?: number | null;
+          synced_at?: string;
+          text_excerpt?: string | null;
+          utm_campaign?: string | null;
+          utm_content?: string | null;
+          utm_medium?: string | null;
+          utm_source?: string | null;
+          utm_term?: string | null;
+        };
+        Relationships: [];
+      };
       ga4_page_views: {
         Row: {
           day: string;

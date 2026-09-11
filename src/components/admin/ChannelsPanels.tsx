@@ -15,7 +15,10 @@ import type {
   GoingOutRow,
   SyncHealthRow,
 } from "@/lib/services/channel-report-rollup";
-import type { ChannelsTabData } from "@/lib/services/channel-report";
+import type {
+  ChannelsTabData,
+  FixLinkRow,
+} from "@/lib/services/channel-report";
 
 /**
  * The Channels tab: one funnel across every channel, one row per channel, and
@@ -102,8 +105,11 @@ export function ChannelsTab({
       ) : null}
 
       {data.channel ? null : (
-        <div className="mt-5">
-          <GoingOutTable rows={data.goingOut} days={data.range.days} />
+        <div className="mt-5 grid gap-5 xl:grid-cols-3">
+          <div className="xl:col-span-2">
+            <GoingOutTable rows={data.goingOut} days={data.range.days} />
+          </div>
+          <FixLinksPanel rows={data.fixLinks} days={data.range.days} />
         </div>
       )}
 
@@ -405,6 +411,67 @@ export function GoingOutTable({
             </tbody>
           </table>
         </div>
+      )}
+    </section>
+  );
+}
+
+export function FixLinksPanel({
+  rows,
+  days,
+}: {
+  rows: FixLinkRow[];
+  days: number;
+}) {
+  return (
+    <section className={adminCardClass} aria-label="Fix these links">
+      <h2 className={adminEyebrowClass}>Fix these links</h2>
+      <p className="text-ui-text-subtle mt-2 text-xs">
+        Posts from the last {days} days whose link is missing the standard.
+        Rebuild the link at /admin/links and edit the post.
+      </p>
+      {rows.length === 0 ? (
+        <p className="text-ui-text-subtle mt-3 text-sm">
+          Every posted link in this range carries the standard.
+        </p>
+      ) : (
+        <ul className="divide-ui-line mt-3 divide-y">
+          {rows.map((row) => (
+            <li key={row.post_id} className="py-2.5 text-[0.8125rem]">
+              <div className="flex items-baseline gap-2">
+                <span className="text-ui-text font-medium capitalize">
+                  {row.network}
+                </span>
+                <span className="text-ui-text-subtle text-xs">
+                  {String(row.published_at).slice(0, 10)}
+                </span>
+                {row.permalink ? (
+                  <a
+                    href={row.permalink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-ui-accent ml-auto text-xs underline-offset-2 hover:underline"
+                  >
+                    Open post
+                  </a>
+                ) : null}
+              </div>
+              {row.link ? (
+                <p
+                  className="text-ui-text-muted mt-0.5 truncate text-xs"
+                  title={row.link}
+                >
+                  {row.link}
+                </p>
+              ) : null}
+              <ul className="text-ui-text-muted mt-1 list-disc pl-4 text-xs">
+                {row.link_problems.map((problem) => (
+                  <li key={problem}>{problem}</li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );

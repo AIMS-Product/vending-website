@@ -48,6 +48,10 @@
     {
       "path": "/api/admin/ghl-sync/run",
       "schedule": "20 11 * * *"
+    },
+    {
+      "path": "/api/admin/metricool-sync/run",
+      "schedule": "30 11 * * *"
     }
   ]
 }

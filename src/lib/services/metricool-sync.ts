@@ -1,0 +1,206 @@
+import "server-only";
+
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  checkLinkStandard,
+  parseLinkUtms,
+} from "@/lib/analytics/link-standard";
+import { config } from "@/lib/config";
+import {
+  createMetricoolClient,
+  readMetric,
+  type MetricoolClient,
+  type MetricoolPost,
+} from "@/lib/metricool/client";
+import {
+  recordSyncRun,
+  upsertChannelDaily,
+  type ChannelDailyRow,
+  type SyncRunOutcome,
+} from "@/lib/services/channel-daily";
+import { skipped } from "@/lib/services/channel-sync";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { Database, TablesInsert } from "@/types/database";
+
+type SyncClient = Pick<SupabaseClient<Database>, "from">;
+
+export const METRICOOL_CONNECTOR = "metricool-posts";
+
+/**
+ * Post metrics are lifetime totals that keep growing after publication, so the
+ * run re-reads a month of posts and upserts them in place. `days` widens it.
+ */
+const WINDOW_DAYS = 30;
+
+/** Metricool network names → link-standard sources. Others pass through. */
+const NETWORK_SOURCE: Record<string, string> = { twitter: "x" };
+
+/** Metric names Metricool has used for the three numbers the spine stores. */
+const METRIC_NAMES = {
+  reach: ["reach", "reachTotal"],
+  impressions: [
+    "impressions",
+    "impressionsTotal",
+    "views",
+    "viewCount",
+    "videoViewsTotal",
+  ],
+  clicks: ["clicks", "linkClicks", "postClicks", "postClicksPaid"],
+};
+
+export type MetricoolSyncResult = {
+  endDate: string;
+  connector: SyncRunOutcome;
+};
+
+export async function syncMetricool(
+  deps: {
+    client?: SyncClient;
+    /** Explicit null means "not configured"; undefined builds from config. */
+    metricool?: MetricoolClient | null;
+    now?: Date;
+    days?: number;
+  } = {},
+): Promise<MetricoolSyncResult> {
+  const now = deps.now ?? new Date();
+  const client = deps.client ?? createAdminClient();
+  const metricool =
+    deps.metricool === undefined ? metricoolFromConfig() : deps.metricool;
+  const endDate = dayKey(now);
+  const startDate = dayKey(addDays(now, -(deps.days ?? WINDOW_DAYS)));
+
+  const connector = await recordSyncRun(
+    client,
+    METRICOOL_CONNECTOR,
+    async () => {
+      if (!metricool) {
+        return skipped(
+          "METRICOOL_API_KEY / METRICOOL_USER_ID / METRICOOL_BLOG_ID are not configured.",
+        );
+      }
+      const posts = await metricool.fetchPosts({
+        from: startDate,
+        to: endDate,
+      });
+      if (posts.length === 0) return { rowsWritten: 0 };
+
+      const rows = posts.map((post) => postRow(post, now));
+      const { error } = await client
+        .from("metricool_posts")
+        .upsert(rows, { onConflict: "post_id" });
+      if (error)
+        throw new Error(`metricool_posts upsert failed: ${error.message}`);
+
+      const result = await upsertChannelDaily(client, rows.map(channelRow), {
+        now,
+      });
+      const nonCompliant = rows.filter(
+        (row) => row.link_compliant === false,
+      ).length;
+      return {
+        rowsWritten: rows.length + result.written,
+        error:
+          result.failed > 0
+            ? `${result.failed} channel_daily rows failed to write; see the server log.`
+            : nonCompliant > 0
+              ? `${nonCompliant} posts link somewhere without the standard UTMs.`
+              : null,
+      };
+    },
+  );
+  return { endDate, connector };
+}
+
+export type MetricoolPostRow = TablesInsert<"metricool_posts">;
+
+/** One stored row per post: link found, UTMs parsed, standard checked. */
+export function postRow(post: MetricoolPost, now: Date): MetricoolPostRow {
+  const link = firstOutboundUrl(post.text, post.permalink);
+  const utms = link ? parseLinkUtms(link) : null;
+  const check = link ? checkLinkStandard(link) : null;
+  return {
+    post_id: post.id,
+    network: post.network,
+    published_at: post.publishedAt,
+    permalink: post.permalink,
+    link,
+    text_excerpt: post.text.slice(0, 280) || null,
+    reach: readMetric(post.metrics, METRIC_NAMES.reach),
+    impressions: readMetric(post.metrics, METRIC_NAMES.impressions),
+    clicks: readMetric(post.metrics, METRIC_NAMES.clicks),
+    utm_source: utms?.source ?? null,
+    utm_medium: utms?.medium ?? null,
+    utm_campaign: utms?.campaign ?? null,
+    utm_content: utms?.content ?? null,
+    utm_term: utms?.term ?? null,
+    link_compliant: check ? check.compliant : null,
+    link_problems: check?.problems ?? [],
+    metrics: post.metrics as MetricoolPostRow["metrics"],
+    synced_at: now.toISOString(),
+  };
+}
+
+/**
+ * The spine row for a post, credited to its publication day. A post with no
+ * standard UTMs still lands: source from the network, medium organic, content
+ * = the post id, campaign and destination "(not set)" / unknown.
+ */
+export function channelRow(row: MetricoolPostRow): ChannelDailyRow {
+  return {
+    day: String(row.published_at).slice(0, 10),
+    source: row.utm_source ?? NETWORK_SOURCE[row.network] ?? row.network,
+    medium: row.utm_medium ?? "organic",
+    campaign: row.utm_campaign ?? null,
+    content: row.utm_content ?? row.post_id,
+    term: row.utm_term ?? null,
+    reach: row.reach ?? null,
+    impressions: row.impressions ?? null,
+    clicks: row.clicks ?? null,
+  };
+}
+
+const URL_PATTERN = /https?:\/\/[^\s<>()"']+/g;
+
+/** The first URL in the post text that is not the post itself. */
+export function firstOutboundUrl(
+  text: string,
+  permalink: string | null,
+): string | null {
+  const permalinkHost = hostOf(permalink);
+  for (const match of text.match(URL_PATTERN) ?? []) {
+    const candidate = match.replace(/[.,;:!?]+$/, "");
+    const host = hostOf(candidate);
+    if (!host) continue;
+    if (permalinkHost && host === permalinkHost) continue;
+    return candidate;
+  }
+  return null;
+}
+
+function hostOf(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function metricoolFromConfig(): MetricoolClient | null {
+  const { METRICOOL_API_KEY, METRICOOL_USER_ID, METRICOOL_BLOG_ID } = config;
+  if (!METRICOOL_API_KEY || !METRICOOL_USER_ID || !METRICOOL_BLOG_ID)
+    return null;
+  return createMetricoolClient({
+    apiKey: METRICOOL_API_KEY,
+    userId: METRICOOL_USER_ID,
+    blogId: METRICOOL_BLOG_ID,
+  });
+}
+
+function addDays(date: Date, delta: number): Date {
+  return new Date(date.getTime() + delta * 24 * 60 * 60 * 1000);
+}
+
+function dayKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}

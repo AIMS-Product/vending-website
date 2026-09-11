@@ -66,6 +66,14 @@ const envSchema = z.object({
    */
   GHL_API_KEY: optionalTrimmedOptionalEnv,
   GHL_LOCATION_ID: optionalTrimmedOptionalEnv,
+  /**
+   * Metricool REST API: the user token (sent as X-Mc-Auth), the account's
+   * userId and the brand's blogId. Read-only use. Absent means the
+   * metricool-posts connector records "skipped".
+   */
+  METRICOOL_API_KEY: optionalTrimmedOptionalEnv,
+  METRICOOL_USER_ID: optionalTrimmedOptionalEnv,
+  METRICOOL_BLOG_ID: optionalTrimmedOptionalEnv,
   CLOSE_API_KEY: optionalTrimmedOptionalEnv,
   CLOSE_API_BASE_URL: optionalTrimmedOptionalEnv,
   CLOSE_LEAD_STATUS_ID: optionalTrimmedOptionalEnv,
@@ -174,6 +182,9 @@ const parsed = envSchema.safeParse({
   GA4_PROPERTY_ID: process.env.GA4_PROPERTY_ID,
   GHL_API_KEY: process.env.GHL_API_KEY,
   GHL_LOCATION_ID: process.env.GHL_LOCATION_ID,
+  METRICOOL_API_KEY: process.env.METRICOOL_API_KEY,
+  METRICOOL_USER_ID: process.env.METRICOOL_USER_ID,
+  METRICOOL_BLOG_ID: process.env.METRICOOL_BLOG_ID,
   CLOSE_API_KEY: process.env.CLOSE_API_KEY,
   CLOSE_API_BASE_URL: process.env.CLOSE_API_BASE_URL,
   CLOSE_LEAD_STATUS_ID: process.env.CLOSE_LEAD_STATUS_ID,
