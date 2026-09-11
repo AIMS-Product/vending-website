@@ -172,6 +172,9 @@ export function emailDeltaRows(
   return rows;
 }
 
+/** Forms whose submissions are webinar registrations, not new leads. */
+export const WEBINAR_FORM_PATTERN = /webinar/i;
+
 /** GHL lander form submissions as leads, by form, by the day they arrived. */
 async function syncForms(
   client: SyncClient,
@@ -186,15 +189,24 @@ async function syncForms(
     ghl.fetchFormSubmissions({ startAt, endAt }),
   ]);
   const nameById = new Map(forms.map((form) => [form.id, form.name]));
-  const rows: ChannelDailyRow[] = submissions.map((submission) => ({
-    day: submission.createdAt.slice(0, 10),
-    source: "ghl_form",
-    medium: "form",
-    campaign: slug(nameById.get(submission.formId) ?? "") || submission.formId,
-    content: null,
-    term: null,
-    leads: 1,
-  }));
+  // Webinar registration forms are already counted as registrations by the
+  // vp-webinars push (channel Webinar). Counting the same people again here
+  // as ghl_form leads doubled the funnel, so those forms are skipped.
+  const rows: ChannelDailyRow[] = submissions
+    .filter(
+      (submission) =>
+        !WEBINAR_FORM_PATTERN.test(nameById.get(submission.formId) ?? ""),
+    )
+    .map((submission) => ({
+      day: submission.createdAt.slice(0, 10),
+      source: "ghl_form",
+      medium: "form",
+      campaign:
+        slug(nameById.get(submission.formId) ?? "") || submission.formId,
+      content: null,
+      term: null,
+      leads: 1,
+    }));
   const result = await upsertChannelDaily(client, rows, { now });
   return {
     rowsWritten: result.written,

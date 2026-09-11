@@ -52,11 +52,16 @@ const ghl: GhlClient = {
     clicked: 12,
     replied: 3,
   }),
-  listForms: async () => [{ id: "f1", name: "Sept Webinar Registration" }],
+  listForms: async () => [
+    { id: "f1", name: "90 Day Checklist" },
+    { id: "f2", name: "General 2026 Webinar Registration Form" },
+  ],
   fetchFormSubmissions: async () => [
     { id: "s1", formId: "f1", createdAt: "2026-09-10T15:00:00.000Z" },
     { id: "s2", formId: "f1", createdAt: "2026-09-10T16:00:00.000Z" },
     { id: "s3", formId: "unknown-form", createdAt: "2026-09-11T01:00:00.000Z" },
+    // A webinar registration is already a Webinar-channel registration.
+    { id: "s4", formId: "f2", createdAt: "2026-09-10T17:00:00.000Z" },
   ],
 };
 
@@ -151,7 +156,7 @@ describe("syncGhl", () => {
       expect.objectContaining({
         day: "2026-09-10",
         source: "ghl_form",
-        campaign: "sept-webinar-registration",
+        campaign: "90-day-checklist",
         leads: 2,
       }),
     );
