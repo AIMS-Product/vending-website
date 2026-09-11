@@ -266,7 +266,15 @@ async function fetchClicks(
   return { ...read, windowStart };
 }
 
-/** The first day the Bitly sync ever wrote. One row, on the primary key. */
+/**
+ * The first day the Bitly sync ever wrote. One row.
+ *
+ * Not the primary key: that is (bitly_id, day), so ordering on `day` alone
+ * cannot use it, and the campaign index is partial on a non-null utm_campaign
+ * so it cannot answer for the whole table either. Until
+ * `20260911120000_bitly_link_clicks_day_idx` is applied this is a sequential
+ * scan and a sort on every render -- correct, just slower.
+ */
 async function earliestClickDay(
   client: YouTubeAttributionClient,
 ): Promise<string | null> {
