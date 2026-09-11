@@ -126,6 +126,22 @@ describe("bitlink validation", () => {
     "https://bit.ly/abc",
     `bit.ly/${"a".repeat(81)}`,
     "",
+    // Traversal in the DOMAIN half, which the multi-slash entries above never
+    // reached: "../users" is one slash, so it looked like "domain/hash" and
+    // folded to /v4/users/clicks -- a different endpoint entirely, reached with
+    // our own bearer token on it.
+    "../users",
+    "..%2fusers",
+    "../abc",
+    "a.././abc",
+    // A domain has to look like a hostname. Every one of these is a label that
+    // is empty, or starts or ends on punctuation.
+    ".bit.ly/abc",
+    "bit..ly/abc",
+    "bit.ly./abc",
+    "-bit.ly/abc",
+    "bit.ly-/abc",
+    `${"b".repeat(81)}.ly/abc`,
   ];
 
   it.each(rejected)("refuses %j without calling Bitly", async (bitlinkId) => {

@@ -150,11 +150,39 @@ export type BitlyClient = ReturnType<typeof createBitlyClient>;
  * the pattern could still steer the path. These ids come from our own
  * `youtube_videos` rows, so anything off-pattern is a data problem rather than
  * a request to service, and it is refused before the fetch.
+ *
+ * The two halves are checked separately, because one permissive character class
+ * over the whole thing let `..` through as a domain: `"../users"` has exactly
+ * one slash, so it read as "domain/hash" and the path folded to
+ * `/v4/users/clicks` — a different endpoint, reached carrying our bearer token.
+ * The domain half now has to look like a hostname, so every label starts and
+ * ends on an alphanumeric and no label can be empty or a dot.
  */
-const BITLINK_PATTERN = /^[a-z0-9.-]{1,80}\/[A-Za-z0-9_-]{1,80}$/;
+const BITLINK_DOMAIN =
+  /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/;
+const BITLINK_HASH = /^[A-Za-z0-9_-]{1,80}$/;
+const MAX_DOMAIN_LENGTH = 80;
+
+/**
+ * Whether a stored id is safe to put in a request path.
+ *
+ * Exported so the click sync can tell a permanently malformed row from a link
+ * that is merely unreachable today, and stop retrying the first kind forever.
+ */
+export function isBitlinkId(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const parts = value.split("/");
+  if (parts.length !== 2) return false;
+  const [domain, hash] = parts as [string, string];
+  return (
+    domain.length <= MAX_DOMAIN_LENGTH &&
+    BITLINK_DOMAIN.test(domain) &&
+    BITLINK_HASH.test(hash)
+  );
+}
 
 export function bitlinkPath(bitlinkId: string): string {
-  if (!BITLINK_PATTERN.test(bitlinkId)) {
+  if (!isBitlinkId(bitlinkId)) {
     throw new BitlyApiError(
       400,
       `Refusing to request a bitlink that is not "domain/hash": ${JSON.stringify(bitlinkId)}`,
