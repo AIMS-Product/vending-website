@@ -89,6 +89,19 @@ describe("channelDailyKey", () => {
     });
   });
 
+  it("files a paid medium under the platform's ad channel", () => {
+    expect(
+      channelDailyKey({
+        day: "2026-09-01",
+        source: "google",
+        medium: "cpc",
+        campaign: "23805931083",
+        content: null,
+        term: null,
+      }),
+    ).toMatchObject({ channel: "Google Ads", source: "google", medium: "cpc" });
+  });
+
   it("lets a program (webinar) own rows whose traffic source is an ad platform", () => {
     expect(
       channelDailyKey({
@@ -128,7 +141,7 @@ describe("upsertChannelDaily", () => {
 
     expect(result).toEqual({ written: 2, failed: 0 });
     expect(upserts[0].options).toEqual({
-      onConflict: "day,channel,source,medium,campaign,content,destination",
+      onConflict: "day,source,medium,campaign,content,destination",
     });
     expect(upserts[0].rows).toEqual([
       {

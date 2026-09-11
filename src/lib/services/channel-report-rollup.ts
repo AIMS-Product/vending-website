@@ -58,7 +58,9 @@ const PROGRAM_CHANNELS = new Set(["Webinar"]);
 export function normaliseFacts(facts: ChannelFact[]): ChannelFact[] {
   return facts.map((fact) => {
     if (PROGRAM_CHANNELS.has(fact.channel)) return fact;
-    const channel = resolveChannel(fact.source).channel;
+    const channel = resolveChannel(fact.source, {
+      medium: fact.medium,
+    }).channel;
     return channel === fact.channel ? fact : { ...fact, channel };
   });
 }

@@ -47,7 +47,7 @@ describe("buildConfidence", () => {
     expect(byId.leads).toMatchObject({ status: "ok" });
     expect(byId.leads.detail).toContain("Spine 10 vs lead_submissions 10");
     expect(byId.booked.detail).toContain(
-      "Spine 3 vs calendly_bookings (booked) 4",
+      "Spine 3 vs calendly_bookings (booked, linked or tagged) 4",
     );
     expect(byId.webinar).toMatchObject({ status: "info" });
     expect(byId.placeholder).toMatchObject({ status: "ok" });

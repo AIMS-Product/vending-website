@@ -142,6 +142,28 @@ describe("resolveChannel with link-standard sources", () => {
     expect(resolveChannel("google_ads").channel).toBe("Google Ads");
   });
 
+  it("reads a paid medium as the platform's ad channel", () => {
+    expect(resolveChannel("google", { medium: "cpc" }).channel).toBe(
+      "Google Ads",
+    );
+    expect(resolveChannel("google", { medium: "organic" }).channel).toBe(
+      "Organic search",
+    );
+    expect(resolveChannel("google", { medium: null }).channel).toBe(
+      "Organic search",
+    );
+    expect(resolveChannel("meta", { medium: "paid" }).channel).toBe("Meta Ads");
+    expect(resolveChannel("meta", { medium: "social-paid" }).channel).toBe(
+      "Meta Ads",
+    );
+    expect(resolveChannel("instagram", { medium: "setter" }).channel).toBe(
+      "Instagram",
+    );
+    expect(resolveChannel("youtube", { medium: "cpc" }).channel).toBe(
+      "YouTube",
+    );
+  });
+
   it("names the GHL channels by what they are, not by the tool", () => {
     expect(resolveChannel("ghl_sms").channel).toBe("SMS");
     expect(resolveChannel("ghl_email").channel).toBe("Email");

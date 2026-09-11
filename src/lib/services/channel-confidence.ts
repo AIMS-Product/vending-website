@@ -279,10 +279,10 @@ function buildChecks(
     // that stopped writing bookings.
     reconcile(
       "booked",
-      "Bookings match Calendly",
+      "Bookings match Calendly (lead-linked or tagged)",
       sum(siteBooked, "booked"),
       sources.calendlyBookings,
-      "calendly_bookings (booked)",
+      "calendly_bookings (booked, linked or tagged)",
       10,
     ),
   ];

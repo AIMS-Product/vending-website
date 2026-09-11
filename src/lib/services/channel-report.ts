@@ -247,6 +247,10 @@ async function fetchSourceCounts(
             .from("calendly_bookings")
             .select("created_at")
             .eq("status", "booked")
+            // Only bookings the leads connector can see: linked to a lead, or
+            // on a tagged link. Untagged bookings with no lead (next-steps,
+            // onboarding, rescheduled calls) are not funnel bookings.
+            .or("lead_submission_id.not.is.null,utm_source.not.is.null")
             .gte("created_at", startIso)
             .lt("created_at", endExclusive)
             .order("created_at")

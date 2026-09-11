@@ -562,6 +562,7 @@ function buildChannelRollup(
   for (const lead of leads) {
     const { channel, person } = resolveChannel(lead.utm_source, {
       capturedByChatbot: isChatbotLead(lead),
+      medium: lead.utm_medium,
     });
     const group = groups.get(channel) ?? {
       count: 0,

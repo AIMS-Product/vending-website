@@ -31,6 +31,23 @@ export type ChannelAttribution = {
  */
 export const WEBSITE_CHANNEL = "Website";
 
+/**
+ * Mediums that mark a paid placement. A `google` source with medium `cpc`
+ * (and a numeric Google Ads campaign id) is Google Ads, not Organic search;
+ * `meta` with `paid` is Meta Ads. Seen in production 2026-09-11: 273 leads
+ * over 30 days tagged google/cpc sat under Organic search.
+ */
+const PAID_MEDIUM =
+  /^(cpc|ppc|paid|paid[-_ ]?(search|social)|social[-_ ]?paid|display|pmax)$/;
+const PAID_CHANNEL: Record<string, string> = {
+  google: "Google Ads",
+  meta: "Meta Ads",
+  facebook: "Meta Ads",
+  fb: "Meta Ads",
+  instagram: "Meta Ads",
+  ig: "Meta Ads",
+};
+
 /** Shown when a tag exists but means nothing (e.g. a link built with "_____"). */
 export const UNKNOWN_CHANNEL = "Unknown";
 
@@ -244,7 +261,11 @@ export function channelForHost(host: string): string {
  */
 export function resolveChannel(
   utmSource: string | null | undefined,
-  options: { capturedByChatbot?: boolean } = {},
+  options: {
+    capturedByChatbot?: boolean;
+    /** Raw `utm_medium`; a paid medium moves google / meta to their ad channels. */
+    medium?: string | null;
+  } = {},
 ): ChannelAttribution {
   const trimmed = utmSource?.trim().toLowerCase() ?? "";
   const raw = BLANK_MARKER.test(trimmed) ? "" : trimmed;
@@ -256,6 +277,10 @@ export function resolveChannel(
   }
   if (MEANINGLESS.test(raw) || GA4_PLACEHOLDER.test(raw))
     return { channel: UNKNOWN_CHANNEL, person: null };
+
+  const paid = PAID_CHANNEL[raw];
+  if (paid && PAID_MEDIUM.test(options.medium?.trim().toLowerCase() ?? ""))
+    return { channel: paid, person: null };
 
   const exact = EXACT[raw];
   if (exact) return { channel: exact.channel, person: exact.person ?? null };

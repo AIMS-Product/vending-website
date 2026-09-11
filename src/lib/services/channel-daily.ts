@@ -71,7 +71,13 @@ export type ChannelMetricKey = (typeof CHANNEL_METRIC_KEYS)[number];
 /** Rows per upsert statement. */
 const CHUNK_SIZE = 500;
 
-const ON_CONFLICT = "day,channel,source,medium,campaign,content,destination";
+/**
+ * `channel` is derived from source, so it is not part of the key: with it in
+ * the key a renamed channel forked every old row (see migration
+ * 20260912000000). Each upsert rewrites channel, so a rename reaches old days
+ * on the next backfill.
+ */
+const ON_CONFLICT = "day,source,medium,campaign,content,destination";
 
 function dimension(value: string | null | undefined, lower: boolean): string {
   const trimmed = value?.trim() ?? "";
@@ -84,7 +90,9 @@ export function channelDailyKey(dimensions: ChannelDailyDimensions) {
   const source = dimension(dimensions.source, true);
   return {
     day: dimensions.day,
-    channel: resolveChannel(dimensions.channel ?? dimensions.source).channel,
+    channel: resolveChannel(dimensions.channel ?? dimensions.source, {
+      medium: dimensions.channel ? null : dimensions.medium,
+    }).channel,
     source,
     medium: dimension(dimensions.medium, true),
     campaign: dimension(dimensions.campaign, false),
