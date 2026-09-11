@@ -756,6 +756,96 @@ export type Database = {
         };
         Relationships: [];
       };
+      channel_daily: {
+        Row: {
+          booked: number | null;
+          clicks: number | null;
+          impressions: number | null;
+          leads: number | null;
+          reach: number | null;
+          revenue: number | null;
+          showed: number | null;
+          spend: number | null;
+          visits: number | null;
+          won: number | null;
+          campaign: string;
+          channel: string;
+          content: string;
+          day: string;
+          destination: string;
+          medium: string;
+          source: string;
+          synced_at: string;
+        };
+        Insert: {
+          booked?: number | null;
+          clicks?: number | null;
+          impressions?: number | null;
+          leads?: number | null;
+          reach?: number | null;
+          revenue?: number | null;
+          showed?: number | null;
+          spend?: number | null;
+          visits?: number | null;
+          won?: number | null;
+          campaign: string;
+          channel: string;
+          content: string;
+          day: string;
+          destination: string;
+          medium: string;
+          source: string;
+          synced_at?: string;
+        };
+        Update: {
+          booked?: number | null;
+          clicks?: number | null;
+          impressions?: number | null;
+          leads?: number | null;
+          reach?: number | null;
+          revenue?: number | null;
+          showed?: number | null;
+          spend?: number | null;
+          visits?: number | null;
+          won?: number | null;
+          campaign?: string;
+          channel?: string;
+          content?: string;
+          day?: string;
+          destination?: string;
+          medium?: string;
+          source?: string;
+          synced_at?: string;
+        };
+        Relationships: [];
+      };
+      channel_sync_runs: {
+        Row: {
+          connector: string;
+          error: string | null;
+          finished_at: string | null;
+          id: number;
+          rows_written: number;
+          started_at: string;
+        };
+        Insert: {
+          connector: string;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: number;
+          rows_written?: number;
+          started_at?: string;
+        };
+        Update: {
+          connector?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: number;
+          rows_written?: number;
+          started_at?: string;
+        };
+        Relationships: [];
+      };
       ga4_page_views: {
         Row: {
           day: string;
@@ -803,6 +893,7 @@ export type Database = {
           base_url: string;
           bitly_id: string | null;
           bitly_url: string | null;
+          clicks_synced_at: string | null;
           created_at: string;
           created_by: string;
           id: string;
@@ -818,6 +909,7 @@ export type Database = {
           base_url: string;
           bitly_id?: string | null;
           bitly_url?: string | null;
+          clicks_synced_at?: string | null;
           created_at?: string;
           created_by: string;
           id?: string;
@@ -833,6 +925,7 @@ export type Database = {
           base_url?: string;
           bitly_id?: string | null;
           bitly_url?: string | null;
+          clicks_synced_at?: string | null;
           created_at?: string;
           created_by?: string;
           id?: string;

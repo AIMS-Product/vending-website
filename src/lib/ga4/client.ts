@@ -49,21 +49,52 @@ export type Ga4PageViewRow = {
   userEngagementSeconds: number;
 };
 
-const DIMENSIONS = [
-  "date",
-  "landingPage",
-  "sessionCampaignName",
-  "sessionSource",
-] as const;
+type ReportSpec = {
+  dimensions: readonly string[];
+  metrics: readonly string[];
+};
 
-const METRICS = [
-  "screenPageViews",
-  "sessions",
-  "engagedSessions",
-  "newUsers",
-  "keyEvents",
-  "userEngagementDuration",
-] as const;
+const PAGE_VIEW_REPORT: ReportSpec = {
+  dimensions: ["date", "landingPage", "sessionCampaignName", "sessionSource"],
+  metrics: [
+    "screenPageViews",
+    "sessions",
+    "engagedSessions",
+    "newUsers",
+    "keyEvents",
+    "userEngagementDuration",
+  ],
+};
+
+/**
+ * Sessions keyed on the five UTMs of the link standard, for `channel_daily`.
+ *
+ * `sessionManualAdContent` and `sessionManualTerm` are GA4's names for
+ * utm_content and utm_term. Landing page is deliberately absent: the spine is
+ * keyed on the link, not the page it landed on.
+ */
+const CHANNEL_SESSION_REPORT: ReportSpec = {
+  dimensions: [
+    "date",
+    "sessionSource",
+    "sessionMedium",
+    "sessionCampaignName",
+    "sessionManualAdContent",
+    "sessionManualTerm",
+  ],
+  metrics: ["sessions"],
+};
+
+/** One day of sessions for one link key. Blank dimensions arrive as "(not set)". */
+export type Ga4ChannelSessionRow = {
+  day: string;
+  source: string;
+  medium: string;
+  campaign: string;
+  content: string;
+  term: string;
+  sessions: number;
+};
 
 /**
  * Reads a service-account key, returning null for anything unusable rather
@@ -116,6 +147,10 @@ export type Ga4Client = {
     startDate: string;
     endDate: string;
   }): Promise<Ga4PageViewRow[]>;
+  fetchChannelSessions(range: {
+    startDate: string;
+    endDate: string;
+  }): Promise<Ga4ChannelSessionRow[]>;
 };
 
 export function createGa4Client({
@@ -193,6 +228,7 @@ export function createGa4Client({
   };
 
   const runReport = async (
+    report: ReportSpec,
     startDate: string,
     endDate: string,
     offset: number,
@@ -208,11 +244,11 @@ export function createGa4Client({
         },
         body: JSON.stringify({
           dateRanges: [{ startDate, endDate }],
-          dimensions: DIMENSIONS.map((name) => ({ name })),
-          metrics: METRICS.map((name) => ({ name })),
+          dimensions: report.dimensions.map((name) => ({ name })),
+          metrics: report.metrics.map((name) => ({ name })),
           // GA4 promises no row order, and offset paging over an unordered
           // result can repeat one page's rows and skip another's.
-          orderBys: DIMENSIONS.map((dimensionName) => ({
+          orderBys: report.dimensions.map((dimensionName) => ({
             dimension: { dimensionName },
           })),
           metricAggregations: ["TOTAL"],
@@ -231,47 +267,64 @@ export function createGa4Client({
     return JSON.parse(text);
   };
 
+  /**
+   * Every page of a report. A read that dropped or repeated rows would be
+   * stored as history and read low forever, so the first metric's sum is
+   * checked against GA4's own TOTAL and a mismatch is refused.
+   */
+  const fetchAll = async <T>(
+    report: ReportSpec,
+    { startDate, endDate }: { startDate: string; endDate: string },
+    toRow: (raw: unknown) => T | null,
+    firstMetric: (row: T) => number,
+  ): Promise<T[]> => {
+    const rows: T[] = [];
+    let offset = 0;
+    let reportedTotal: number | null = null;
+
+    for (;;) {
+      const payload = (await runReport(report, startDate, endDate, offset)) as {
+        rows?: unknown;
+        totals?: unknown;
+      };
+      reportedTotal ??= totalOfFirstMetric(payload.totals);
+      const page = Array.isArray(payload.rows) ? payload.rows : [];
+      for (const raw of page) {
+        const row = toRow(raw);
+        if (row) rows.push(row);
+      }
+      // A short page is the last page. GA4 returns no cursor, so the row
+      // count against the requested limit is the only end signal.
+      if (page.length < pageSize) break;
+      offset += pageSize;
+    }
+
+    if (reportedTotal !== null) {
+      const summed = rows.reduce((sum, row) => sum + firstMetric(row), 0);
+      if (summed !== reportedTotal) {
+        throw new Error(
+          `GA4 rows sum to ${summed} but the report totals ${reportedTotal}; refusing a partial read.`,
+        );
+      }
+    }
+    return rows;
+  };
+
   return {
-    async fetchPageViews({ startDate, endDate }) {
-      const rows: Ga4PageViewRow[] = [];
-      let offset = 0;
-      let reportedViews: number | null = null;
-
-      for (;;) {
-        const payload = (await runReport(startDate, endDate, offset)) as {
-          rows?: unknown;
-          totals?: unknown;
-        };
-        reportedViews ??= totalViews(payload.totals);
-        const page = Array.isArray(payload.rows) ? payload.rows : [];
-        for (const raw of page) {
-          const row = toRow(raw);
-          if (row) rows.push(row);
-        }
-        // A short page is the last page. GA4 returns no cursor, so the row
-        // count against the requested limit is the only end signal.
-        if (page.length < pageSize) break;
-        offset += pageSize;
-      }
-
-      // A read that dropped or repeated rows would be stored as history and
-      // read low forever. GA4's own total is the check; refuse a mismatch.
-      if (reportedViews !== null) {
-        const summed = rows.reduce((sum, row) => sum + row.screenPageViews, 0);
-        if (summed !== reportedViews) {
-          throw new Error(
-            `GA4 rows sum to ${summed} views but the report totals ${reportedViews}; refusing a partial read.`,
-          );
-        }
-      }
-
-      return rows;
-    },
+    fetchPageViews: (range) =>
+      fetchAll(PAGE_VIEW_REPORT, range, toRow, (row) => row.screenPageViews),
+    fetchChannelSessions: (range) =>
+      fetchAll(
+        CHANNEL_SESSION_REPORT,
+        range,
+        toChannelSessionRow,
+        (row) => row.sessions,
+      ),
   };
 }
 
-/** The report's own screenPageViews total, or null when it sent none. */
-function totalViews(totals: unknown): number | null {
+/** The report's own total for its first metric, or null when it sent none. */
+function totalOfFirstMetric(totals: unknown): number | null {
   if (!Array.isArray(totals)) return null;
   const value = (totals[0] as { metricValues?: Array<{ value?: unknown }> })
     ?.metricValues?.[0]?.value;
@@ -290,6 +343,48 @@ function apiMessage(text: string): string {
     // Fall through to the truncated raw body.
   }
   return text.slice(0, 300);
+}
+
+/** Dimension and metric readers shared by every row mapper. */
+function cells(raw: unknown): {
+  dimension: (index: number) => string;
+  metric: (index: number) => number;
+} | null {
+  if (!raw || typeof raw !== "object") return null;
+  const { dimensionValues, metricValues } = raw as {
+    dimensionValues?: unknown;
+    metricValues?: unknown;
+  };
+  if (!Array.isArray(dimensionValues) || !Array.isArray(metricValues)) {
+    return null;
+  }
+  return {
+    dimension: (index: number) => {
+      const value = (dimensionValues[index] as { value?: unknown })?.value;
+      return typeof value === "string" ? value : "";
+    },
+    metric: (index: number) => {
+      const value = (metricValues[index] as { value?: unknown })?.value;
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    },
+  };
+}
+
+function toChannelSessionRow(raw: unknown): Ga4ChannelSessionRow | null {
+  const row = cells(raw);
+  if (!row) return null;
+  const day = isoDay(row.dimension(0));
+  if (!day) return null;
+  return {
+    day,
+    source: row.dimension(1),
+    medium: row.dimension(2),
+    campaign: row.dimension(3),
+    content: row.dimension(4),
+    term: row.dimension(5),
+    sessions: row.metric(0),
+  };
 }
 
 function toRow(raw: unknown): Ga4PageViewRow | null {

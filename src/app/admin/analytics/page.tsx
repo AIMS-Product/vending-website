@@ -31,6 +31,8 @@ import {
   getYouTubeAttribution,
   type YouTubeAttribution,
 } from "@/lib/services/youtube-attribution";
+import { ChannelsTab } from "@/components/admin/ChannelsPanels";
+import { getChannelsTab } from "@/lib/services/channel-report";
 import { parseAdminAnalyticsRange } from "@/lib/services/admin-analytics-range";
 import { requireAdmin } from "@/lib/supabase/auth";
 
@@ -57,13 +59,19 @@ export default async function AdminAnalyticsPage({
   const tab = parseAnalyticsTab(singleParam(params.tab));
   const videoSort = parseYouTubeVideoSort(singleParam(params.sort));
 
-  // The YouTube tab reads a different set of tables, so it fetches its own data
-  // instead of paying for the four-tab rollup it would not use.
+  // The YouTube and Channels tabs read different tables, so each fetches its
+  // own data instead of paying for the four-tab rollup it would not use.
   const isYouTubeTab = tab === "youtube";
-  const [{ user, role }, analytics, youtube] = await Promise.all([
+  const isChannelsTab = tab === "channels";
+  const [{ user, role }, analytics, youtube, channels] = await Promise.all([
     requireAdmin(),
-    isYouTubeTab ? null : getAdminAnalytics({ range, includeInternal }),
+    isYouTubeTab || isChannelsTab
+      ? null
+      : getAdminAnalytics({ range, includeInternal }),
     isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
+    isChannelsTab
+      ? getChannelsTab({ range, channel: singleParam(params.channel) })
+      : null,
   ]);
   const internalExcluded =
     youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0;
@@ -97,7 +105,13 @@ export default async function AdminAnalyticsPage({
         includeInternal={includeInternal}
       />
 
-      {youtube ? (
+      {channels ? (
+        <ChannelsTab
+          data={channels}
+          range={range}
+          includeInternal={includeInternal}
+        />
+      ) : youtube ? (
         <YouTubeTab
           youtube={youtube}
           sort={videoSort}

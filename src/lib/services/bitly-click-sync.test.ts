@@ -73,6 +73,19 @@ function buildClient({
     if (table === "youtube_videos") {
       return { select: videoSelect, update: videoUpdate };
     }
+    if (table === "marketing_links") {
+      // claimMarketingLinks: .select().not().order().limit(); no builder links
+      // in these scenarios, so the claim is served by the video registry.
+      return {
+        select: vi.fn(() => ({
+          not: vi.fn(() => ({
+            order: vi.fn(() => ({
+              limit: vi.fn(async () => ({ data: [], error: null })),
+            })),
+          })),
+        })),
+      };
+    }
     if (table === "bitly_link_clicks") {
       return {
         upsert: vi.fn(

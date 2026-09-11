@@ -45,6 +45,15 @@ type VideoRow = {
   bitly_id: string | null;
 };
 
+/** A link to pull clicks for, and which table's clicks_synced_at to stamp. */
+type ClaimedLink = {
+  table: "youtube_videos" | "marketing_links";
+  /** youtube_videos: utm_campaign. marketing_links: id. */
+  key: string;
+  utm_campaign: string;
+  bitly_id: string;
+};
+
 /**
  * Pulls daily click counts for the tracked YouTube short links.
  *
@@ -105,7 +114,7 @@ export async function syncBitlyClicks(
   async function worker() {
     for (;;) {
       const row = rows[cursor++];
-      if (!row?.bitly_id) return;
+      if (!row) return;
 
       try {
         const series = await bitly.dailyClicks(row.bitly_id, { days });
@@ -113,7 +122,7 @@ export async function syncBitlyClicks(
         if (series.length > 0) {
           const { error } = await client.from("bitly_link_clicks").upsert(
             series.map((entry) => ({
-              bitly_id: row.bitly_id as string,
+              bitly_id: row.bitly_id,
               day: entry.date,
               clicks: entry.clicks,
               utm_campaign: row.utm_campaign,
@@ -130,10 +139,17 @@ export async function syncBitlyClicks(
 
         // Stamped even when the series was empty, so a link with genuinely no
         // clicks does not sit at the front of the queue forever.
-        await client
-          .from("youtube_videos")
-          .update({ clicks_synced_at: syncedAt })
-          .eq("utm_campaign", row.utm_campaign);
+        if (row.table === "youtube_videos") {
+          await client
+            .from("youtube_videos")
+            .update({ clicks_synced_at: syncedAt })
+            .eq("utm_campaign", row.key);
+        } else {
+          await client
+            .from("marketing_links")
+            .update({ clicks_synced_at: syncedAt })
+            .eq("id", row.key);
+        }
 
         result.updated += 1;
       } catch {
@@ -202,18 +218,84 @@ async function mapMissingLinks(
   return mapped;
 }
 
-/** Never-synced links first, then the stalest. Mirrors the Close reconciler. */
+/**
+ * Never-synced links first, then the stalest. Mirrors the Close reconciler.
+ *
+ * Two registries feed this: the YouTube video registry and the links built at
+ * /admin/links. The batch is split evenly so a burst of new builder links
+ * cannot starve the videos, or the other way round.
+ */
 async function claimBatch(
   client: SyncClient,
   batchSize: number,
-): Promise<VideoRow[]> {
+): Promise<ClaimedLink[]> {
+  const half = Math.ceil(batchSize / 2);
+  const [videos, links] = await Promise.all([
+    claimVideos(client, half),
+    claimMarketingLinks(client, half),
+  ]);
+  return [...videos, ...links];
+}
+
+async function claimVideos(
+  client: SyncClient,
+  limit: number,
+): Promise<ClaimedLink[]> {
   const { data, error } = await client
     .from("youtube_videos")
     .select("utm_campaign,bitly_id")
     .not("bitly_id", "is", null)
     .order("clicks_synced_at", { ascending: true, nullsFirst: true })
-    .limit(batchSize);
+    .limit(limit);
 
   if (error) return [];
-  return (data ?? []) as VideoRow[];
+  return ((data ?? []) as VideoRow[]).flatMap((row) =>
+    row.bitly_id
+      ? [
+          {
+            table: "youtube_videos" as const,
+            key: row.utm_campaign,
+            utm_campaign: row.utm_campaign,
+            bitly_id: row.bitly_id,
+          },
+        ]
+      : [],
+  );
+}
+
+async function claimMarketingLinks(
+  client: SyncClient,
+  limit: number,
+): Promise<ClaimedLink[]> {
+  try {
+    const { data, error } = await client
+      .from("marketing_links")
+      .select("id,utm_campaign,bitly_id")
+      .not("bitly_id", "is", null)
+      .order("clicks_synced_at", { ascending: true, nullsFirst: true })
+      .limit(limit);
+    if (error) return [];
+    return (
+      (data ?? []) as Array<{
+        id: string;
+        utm_campaign: string;
+        bitly_id: string | null;
+      }>
+    ).flatMap((row) =>
+      row.bitly_id
+        ? [
+            {
+              table: "marketing_links" as const,
+              key: row.id,
+              utm_campaign: row.utm_campaign,
+              bitly_id: row.bitly_id,
+            },
+          ]
+        : [],
+    );
+  } catch {
+    // The table lands with its own migration; until then the sync serves the
+    // video registry alone rather than failing outright.
+    return [];
+  }
 }

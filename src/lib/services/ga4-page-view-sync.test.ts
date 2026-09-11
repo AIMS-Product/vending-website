@@ -59,6 +59,7 @@ function buildGa4(rows: Ga4PageViewRow[]): {
         ranges.push(range);
         return rows;
       }),
+      fetchChannelSessions: vi.fn(async () => []),
     },
   };
 }

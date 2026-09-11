@@ -291,3 +291,95 @@ describe("createGa4Client", () => {
     expect(message).not.toContain("test-token");
   });
 });
+
+describe("fetchChannelSessions", () => {
+  it("asks for the five link-standard dimensions and maps a row onto them", async () => {
+    const { fetchImpl, calls } = buildFetch({
+      report: () => ({
+        status: 200,
+        body: {
+          rows: [
+            {
+              dimensionValues: [
+                { value: "20260901" },
+                { value: "instagram" },
+                { value: "organic" },
+                { value: "webinar-sept15" },
+                { value: "reel-0911" },
+                { value: "webinar-register" },
+              ],
+              metricValues: [{ value: "41" }],
+            },
+          ],
+          totals: [{ metricValues: [{ value: "41" }] }],
+        },
+      }),
+    });
+    const client = createGa4Client({
+      serviceAccountJson: SERVICE_ACCOUNT,
+      propertyId: "123",
+      fetchImpl,
+    });
+
+    const rows = await client.fetchChannelSessions({
+      startDate: "2026-09-01",
+      endDate: "2026-09-01",
+    });
+
+    expect(rows).toEqual([
+      {
+        day: "2026-09-01",
+        source: "instagram",
+        medium: "organic",
+        campaign: "webinar-sept15",
+        content: "reel-0911",
+        term: "webinar-register",
+        sessions: 41,
+      },
+    ]);
+    const body = calls[1].body as {
+      dimensions: Array<{ name: string }>;
+      metrics: Array<{ name: string }>;
+    };
+    expect(body.dimensions.map((d) => d.name)).toEqual([
+      "date",
+      "sessionSource",
+      "sessionMedium",
+      "sessionCampaignName",
+      "sessionManualAdContent",
+      "sessionManualTerm",
+    ]);
+    expect(body.metrics.map((m) => m.name)).toEqual(["sessions"]);
+  });
+
+  it("refuses a read whose sessions do not sum to GA4's total", async () => {
+    const { fetchImpl } = buildFetch({
+      report: () => ({
+        status: 200,
+        body: {
+          rows: [
+            {
+              dimensionValues: Array.from({ length: 6 }, (_, i) => ({
+                value: i === 0 ? "20260901" : "x",
+              })),
+              metricValues: [{ value: "5" }],
+            },
+          ],
+          totals: [{ metricValues: [{ value: "9" }] }],
+        },
+      }),
+    });
+    const client = createGa4Client({
+      serviceAccountJson: SERVICE_ACCOUNT,
+      propertyId: "123",
+      fetchImpl,
+    });
+
+    await expect(
+      client.fetchChannelSessions({
+        startDate: "2026-09-01",
+        endDate: "2026-09-01",
+      }),
+    ).rejects.toThrow(/refusing a partial read/);
+  });
+});
