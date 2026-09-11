@@ -200,6 +200,7 @@ export async function POST(request: Request) {
     hasConfirmedBooking: priorMessages.some(
       (m) => m.kind === "booking_confirmed",
     ),
+    timeZone: timeZone ?? null,
   };
 
   const modelMessages: ChatbotChatMessage[] = [
