@@ -534,3 +534,87 @@ describe("funnel monotonicity", () => {
     expect(totals.attended).toBe(0);
   });
 });
+
+/**
+ * M10: `clicksConnected` is global, so once a Bitly token exists every registry
+ * row with no `bitly_id` showed a hard 0 next to real leads — the exact
+ * "0 clicks, 4 leads" reading the null-not-zero rule exists to prevent.
+ */
+describe("per-video clicks", () => {
+  const video = (overrides: { bitly_id: string | null }) => ({
+    utm_campaign: "how-much-vending",
+    title: "How much vending",
+    video_url: null,
+    published_at: null,
+    in_description: true,
+    ...overrides,
+  });
+
+  it("reports clicks as unknown for a video with no Bitly link", () => {
+    const { videos } = build([lead()], { videos: [video({ bitly_id: null })] });
+
+    expect(videos[0]?.clicks).toBeNull();
+    expect(videos[0]?.clickToLeadPct ?? null).toBeNull();
+  });
+
+  it("reports a real zero for a linked video nobody clicked", () => {
+    const { videos } = build([lead()], {
+      videos: [video({ bitly_id: "vp.co/abc" })],
+    });
+
+    expect(videos[0]?.clicks).toBe(0);
+  });
+
+  it("reports the summed clicks when the campaign has them", () => {
+    const { videos } = build([lead()], {
+      videos: [video({ bitly_id: "vp.co/abc" })],
+      clicks: [
+        { utm_campaign: "how-much-vending", day: "2026-08-10", clicks: 4 },
+      ],
+    });
+
+    expect(videos[0]?.clicks).toBe(4);
+  });
+
+  it("reports clicks a campaign outside the registry did record", () => {
+    const { videos } = build([lead({ utm_campaign: "off-registry" })], {
+      videos: [],
+      clicks: [{ utm_campaign: "off-registry", day: "2026-08-10", clicks: 2 }],
+    });
+
+    expect(videos[0]?.clicks).toBe(2);
+  });
+});
+
+/**
+ * M11: a win dated before the first-touch month matched neither `=== month`
+ * nor `> month`, so the row rendered "Won 1" with both sub-columns at 0.
+ */
+describe("cohort win columns", () => {
+  it("puts every dated win in a column", () => {
+    const { cohorts } = build([
+      lead({
+        created_at: "2026-08-10T12:00:00.000Z",
+        metadata: {
+          attribution_session: { first_touch_at: "2026-08-01T12:00:00.000Z" },
+        },
+        call_booked_at: "2026-08-11",
+        // Close already had this lead: the win predates the first touch here.
+        closed_won_at: "2026-07-20",
+        closed_won_source: "close_opportunity",
+      }),
+    ]);
+
+    const row = cohorts[0];
+    expect(row?.closed).toBe(1);
+    expect((row?.closedSameMonth ?? 0) + (row?.closedLaterMonth ?? 0)).toBe(1);
+  });
+});
+
+describe("coverage wording inputs", () => {
+  it("keeps the untagged bucket out of the missing-from-registry list", () => {
+    const { coverage } = build([lead({ utm_campaign: null })]);
+
+    expect(coverage.campaignsMissingFromRegistry).not.toContain("(untagged)");
+  });
+});
