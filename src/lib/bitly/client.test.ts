@@ -57,7 +57,10 @@ describe("dailyClicks", () => {
     ]);
     const [url] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock
       .calls[0] as [string];
-    expect(url).toContain("/bitlinks/bit.ly%2Fabc/clicks");
+    // Bitly's {bitlink} path parameter is "the domain and hash" with a literal
+    // slash -- its own example is /v4/bitlinks/bit.ly/12a4b6c/clicks. An
+    // encoded slash addresses a different resource and 404s.
+    expect(url).toContain("/bitlinks/bit.ly/abc/clicks");
     expect(url).toContain("unit=day");
     expect(url).toContain("units=2");
   });
@@ -101,6 +104,52 @@ describe("dailyClicks", () => {
 
     await expect(client(fetchImpl).dailyClicks("bit.ly/abc")).rejects.toThrow(
       BitlyApiError,
+    );
+  });
+});
+
+describe("bitlink validation", () => {
+  /**
+   * These ids come from our own database, so anything off-pattern is a data
+   * problem rather than a request to service. Rejecting before the fetch keeps
+   * a stored value from steering the request path.
+   */
+  const rejected = [
+    "../../users/me",
+    "bit.ly/abc/../../x",
+    "bit.ly/abc?unit=month",
+    "bit.ly//abc",
+    "bit.ly",
+    "/abc",
+    "BIT.LY/abc",
+    "bit.ly/a b",
+    "https://bit.ly/abc",
+    `bit.ly/${"a".repeat(81)}`,
+    "",
+  ];
+
+  it.each(rejected)("refuses %j without calling Bitly", async (bitlinkId) => {
+    const fetchImpl = vi.fn() as unknown as typeof fetch;
+
+    await expect(client(fetchImpl).dailyClicks(bitlinkId)).rejects.toThrow(
+      /bitlink/i,
+    );
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("accepts the shape our registry actually stores", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ link_clicks: [] }),
+    ) as unknown as typeof fetch;
+
+    await client(fetchImpl).dailyClicks(
+      "booking.vendingpreneurs.com/yt-desc-link-1-pro-con",
+    );
+
+    const [url] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock
+      .calls[0] as [string];
+    expect(url).toContain(
+      "/bitlinks/booking.vendingpreneurs.com/yt-desc-link-1-pro-con/clicks",
     );
   });
 });
