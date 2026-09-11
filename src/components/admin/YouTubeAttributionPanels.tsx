@@ -1,4 +1,9 @@
 import {
+  gradeRates,
+  MIN_GRADED_SAMPLE,
+  type RateGrade,
+} from "@/lib/services/youtube-rate-grade";
+import {
   AdminBar,
   adminCardClass,
   adminEyebrowClass,
@@ -82,6 +87,19 @@ export function YouTubeVideoTable({
   sortHref: (sort: YouTubeVideoSort) => string;
   activeSort: YouTubeVideoSort;
 }) {
+  // Each rate is judged against the median of the OTHER videos in this range,
+  // not an invented benchmark, and each against its own denominator -- a
+  // lead-to-booked rate is only as trustworthy as the lead count under it.
+  const visitToLeadGrades = gradeRates(
+    rows.map((row) => ({ value: row.visitToLeadPct, sample: row.visits })),
+  );
+  const leadToBookedGrades = gradeRates(
+    rows.map((row) => ({ value: row.leadToBookedPct, sample: row.leads })),
+  );
+  const bookedToClosedGrades = gradeRates(
+    rows.map((row) => ({ value: row.bookedToClosedPct, sample: row.booked })),
+  );
+
   return (
     <section className={adminCardClass} aria-label="Per-video funnel">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -90,6 +108,7 @@ export function YouTubeVideoTable({
           {rows.length} video{rows.length === 1 ? "" : "s"} in this range
         </p>
       </div>
+      <RateGradeLegend />
       {rows.length === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">
           No YouTube leads in this range.
@@ -123,7 +142,7 @@ export function YouTubeVideoTable({
               </tr>
             </thead>
             <tbody className="divide-ui-line divide-y">
-              {rows.map((row) => (
+              {rows.map((row, index) => (
                 <tr key={row.utmCampaign}>
                   <td className="py-2.5 pr-3">
                     <span
@@ -156,9 +175,18 @@ export function YouTubeVideoTable({
                   <Num value={row.booked} />
                   <Num value={row.attended} />
                   <Num value={row.closed} />
-                  <Pct value={row.visitToLeadPct} />
-                  <Pct value={row.leadToBookedPct} />
-                  <Pct value={row.bookedToClosedPct} />
+                  <Pct
+                    value={row.visitToLeadPct}
+                    grade={visitToLeadGrades[index] ?? null}
+                  />
+                  <Pct
+                    value={row.leadToBookedPct}
+                    grade={leadToBookedGrades[index] ?? null}
+                  />
+                  <Pct
+                    value={row.bookedToClosedPct}
+                    grade={bookedToClosedGrades[index] ?? null}
+                  />
                   <td className="text-ui-text-muted py-2.5 pr-3 text-right tabular-nums">
                     {row.avgDaysToClose === null
                       ? "—"
@@ -182,10 +210,81 @@ function Num({ value }: { value: number | null }) {
   );
 }
 
-function Pct({ value }: { value: number | null }) {
+/**
+ * What the tints mean, in words, next to the table they describe.
+ *
+ * Without this a reader has to guess whether green means "good for this
+ * channel" or "good against some benchmark" -- and they are different claims.
+ */
+function RateGradeLegend() {
   return (
-    <td className="text-ui-text py-2.5 pr-3 text-right font-semibold tabular-nums">
-      {pct(value)}
+    <p className="text-ui-text-subtle mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+      <span>Rate columns compare each video to the median of the others:</span>
+      {(["good", "ok", "poor"] as const).map((grade) => (
+        <span
+          key={grade}
+          className={`rounded-ui inline-flex items-center gap-1 px-1.5 py-0.5 ${RATE_GRADE_CHIP[grade]}`}
+        >
+          <span aria-hidden="true">{RATE_GRADE_MARK[grade]}</span>
+          {RATE_GRADE_LEGEND_WORD[grade]}
+        </span>
+      ))}
+      <span>
+        Rates built on fewer than {MIN_GRADED_SAMPLE} are shown but not graded.
+      </span>
+    </p>
+  );
+}
+
+const RATE_GRADE_LEGEND_WORD: Record<"good" | "ok" | "poor", string> = {
+  good: "Above median",
+  ok: "Around median",
+  poor: "Below median",
+};
+
+/* Pale fill, deep ink of the same hue -- the admin status chip's own tokens,
+   so a rate cell and a status column cannot drift apart. The arrow is the
+   redundant channel: the grade never rests on colour alone, and the word rides
+   along for a screen reader. See docs/design/admin-studio.md. */
+const RATE_GRADE_CHIP: Record<"good" | "ok" | "poor", string> = {
+  good: "bg-ui-ok-fill text-ui-ok-ink",
+  // Amber, not grey: Adam asked for red/yellow/green, and the pale warn fill is
+  // the amber the admin already uses. Swap this one line for ui-idle-* if a
+  // table that is half yellow reads as half broken.
+  ok: "bg-ui-warn-fill text-ui-warn-ink",
+  poor: "bg-ui-bad-fill text-ui-bad-ink",
+};
+
+const RATE_GRADE_MARK: Record<"good" | "ok" | "poor", string> = {
+  good: "\u25b2",
+  ok: "\u2013",
+  poor: "\u25bc",
+};
+
+const RATE_GRADE_WORD: Record<"good" | "ok" | "poor", string> = {
+  good: "above the median for this range",
+  ok: "around the median for this range",
+  poor: "below the median for this range",
+};
+
+function Pct({ value, grade }: { value: number | null; grade?: RateGrade }) {
+  if (!grade) {
+    return (
+      <td className="text-ui-text py-2.5 pr-3 text-right font-semibold tabular-nums">
+        {pct(value)}
+      </td>
+    );
+  }
+
+  return (
+    <td className="py-2.5 pr-3 text-right">
+      <span
+        className={`rounded-ui inline-flex w-fit items-center gap-1 px-2 py-0.5 font-semibold tabular-nums ${RATE_GRADE_CHIP[grade]}`}
+      >
+        <span aria-hidden="true">{RATE_GRADE_MARK[grade]}</span>
+        {pct(value)}
+        <span className="sr-only"> — {RATE_GRADE_WORD[grade]}</span>
+      </span>
     </td>
   );
 }
