@@ -65,8 +65,11 @@ export async function GET(request: Request) {
   try {
     const result = await syncGhl(options);
     // A skipped connector (not configured) is fine; a failed one is not.
+    // A note with rows written (first snapshot stored, N posts off-standard)
+    // is information, not a failure. Skipped is fine too.
     const failed = result.connectors.filter(
-      (run) => run.error && !run.error.startsWith("skipped:"),
+      (run) =>
+        run.error && !run.error.startsWith("skipped:") && run.rowsWritten === 0,
     );
     return NextResponse.json(
       { ok: failed.length === 0, ...result },
