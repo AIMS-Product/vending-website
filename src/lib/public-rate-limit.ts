@@ -46,6 +46,19 @@ const LIMITS = {
 
 export type PublicRateLimitAction = keyof typeof LIMITS;
 
+/**
+ * Actions that refuse the request when the limiter itself cannot run.
+ *
+ * The default everywhere else is fail-OPEN, and deliberately so: losing a real
+ * lead to a database blip costs more than letting one extra through. Page views
+ * invert that trade entirely — a dropped analytics row costs nothing, while an
+ * unmetered public write costs a table — so the gate lives here rather than in
+ * each caller, and applies to every caller of the action.
+ */
+const FAIL_CLOSED_ACTIONS = new Set<PublicRateLimitAction>([
+  "attribution_event",
+]);
+
 /** Deliberately vague: a throttled attacker learns nothing about the limits. */
 export const TOO_MANY_REQUESTS_MESSAGE =
   "Too many submissions from this connection. Wait a few minutes and try again.";
@@ -131,7 +144,7 @@ export async function checkPublicRateLimit(
     });
     if (inserted.error) throw new Error(inserted.error.message);
   } catch (error) {
-    const failClosed = deps.failClosed ?? false;
+    const failClosed = deps.failClosed ?? FAIL_CLOSED_ACTIONS.has(action);
     console.warn(
       `public rate limit check failed ${failClosed ? "closed" : "open"}`,
       {

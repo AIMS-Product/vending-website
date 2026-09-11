@@ -268,6 +268,51 @@ describe("failure mode", () => {
     expect(allowed).toBe(true);
   });
 
+  /**
+   * A dropped analytics row costs nothing; an unmetered public write costs a
+   * table. The lead paths keep the opposite default — losing a real lead is the
+   * expensive failure there.
+   */
+  it("fails closed for page views, because a lost analytics row costs nothing", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const allowed = await checkPublicRateLimit(
+      "attribution_event",
+      { ip: "203.0.113.9" },
+      { client: exploding, now },
+    );
+
+    expect(allowed).toBe(false);
+    warn.mockRestore();
+  });
+
+  it("still lets a lead through when the limiter itself is down", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    for (const action of ["lead_submit", "qualification_intake"] as const) {
+      const allowed = await checkPublicRateLimit(
+        action,
+        { ip: "203.0.113.9", email: "jane@realprospect.com" },
+        { client: exploding, now },
+      );
+      expect(allowed).toBe(true);
+    }
+    warn.mockRestore();
+  });
+
+  it("lets an explicit failClosed:false override the page-view default", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const allowed = await checkPublicRateLimit(
+      "attribution_event",
+      { ip: "203.0.113.9" },
+      { client: exploding, now, failClosed: false },
+    );
+
+    expect(allowed).toBe(true);
+    warn.mockRestore();
+  });
+
   it("fails closed when asked, so an outage cannot uncap outbound mail", async () => {
     // chatbot_resource_email is the only action that mails a member of the
     // public. An unmetered success there is worse than a false rejection.
