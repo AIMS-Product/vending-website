@@ -87,9 +87,10 @@ Ranked by bookings plausibly lost.
    45 minutes (a visitor booked "10 to 10:45"). Which is true?
 2. The primary calendar had only 3 open days (Sep 14-16) in the next 30 on
    Sep 11. Can availability be widened?
-3. Can Mia say anything about cost (a starting point, "plans from X", what
-   financing covers)? Cost-forced calendars on a first message booked 1 of 16
-   in two ranges.
+3. ANSWERED (Adam, Sep 11): price is never answered directly, in chat, text
+   or email. It only comes on the call. A consultant may text to set up the
+   call, never to send a number. (Cost-forced calendars on a first message
+   booked 1 of 16 in two ranges, so the pushback wording still matters.)
 4. Who works `flag_for_team` callbacks, and how fast?
 
 ## What works (keep)

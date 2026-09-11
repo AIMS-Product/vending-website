@@ -184,6 +184,14 @@ describe("the visitor's name", () => {
     expect(prompt).toContain("never say pricing is private");
   });
 
+  // Adam, 2026-09-11: price is never answered directly, by any channel. A
+  // consultant may text to set up the call, never to send a number.
+  it("never offers the price by text, email or chat", () => {
+    const prompt = buildChatbotSystemPrompt(base);
+    expect(prompt).toContain("it only ever comes on the call");
+    expect(prompt).not.toMatch(/text(s)? them the (real )?(number|details)/);
+  });
+
   it("uses a known first name naturally and never asks again", () => {
     const prompt = buildChatbotSystemPrompt({
       ...base,
