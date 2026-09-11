@@ -156,12 +156,32 @@ describe("the pricing rule does not gag earnings answers", () => {
 });
 
 describe("the visitor's name", () => {
-  it("asks for the first name early when none is known", () => {
+  // Changed 2026-09-11 on purpose: the old "first or second reply, folded
+  // into a real question" produced a stacked "Who do I have the pleasure..."
+  // in ~75 chats. The name is now its own question, once, after they share.
+  it("asks for the name once, alone, and never in the first reply", () => {
     const prompt = buildChatbotSystemPrompt(base);
     expect(prompt).toContain("You do not know their name yet");
-    expect(prompt).toContain("first or second reply");
-    expect(prompt).toContain("Who do I have the pleasure of speaking with?");
-    expect(prompt).toContain('Never "what should I call you"');
+    expect(prompt).toContain("Never ask for it in your first reply");
+    expect(prompt).toContain("make it the ONLY question in that message");
+    expect(prompt).toContain("I'm Mia, by the way. Who am I chatting with?");
+    expect(prompt).toContain('Never "Who do I have the pleasure"');
+    expect(prompt).not.toContain("first or second reply");
+  });
+
+  it("caps reply length and bans the stock phrases from the transcripts", () => {
+    const prompt = buildChatbotSystemPrompt(base);
+    expect(prompt).toContain("under 45 words per reply, under 35 in your first reply");
+    expect(prompt).toContain('never use them: "Who do I have the pleasure"');
+    expect(prompt).not.toContain('("funny enough,');
+  });
+
+  it("forbids promising a human follow-up or a held slot without a hand-off", () => {
+    const prompt = buildChatbotSystemPrompt(base);
+    expect(prompt).toContain("unless you called flag_for_team in this same turn");
+    expect(prompt).toContain("never offer to hold one");
+    expect(prompt).toContain('"I already booked / I have a call on Tuesday."');
+    expect(prompt).toContain("never say pricing is private");
   });
 
   it("uses a known first name naturally and never asks again", () => {
