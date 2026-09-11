@@ -75,15 +75,15 @@ describe("unmeasured stages", () => {
     expect(video?.clicks).toBeNull();
     expect(video?.visits).toBeNull();
     expect(video?.closed).toBeNull();
-    expect(video?.clickToLeadPct).toBeNull();
     expect(video?.visitToLeadPct).toBeNull();
   });
 
   it("distinguishes a connected zero from an unmeasured stage", () => {
     const connected = build([lead()], { clicksConnected: true });
+    // Measured across every link: nobody clicked.
     expect(connected.totals.clicks).toBe(0);
-    // Zero clicks with a lead is real data, but it is not a rate.
-    expect(connected.videos[0]?.clickToLeadPct).toBeNull();
+    // This video is not in the registry, so whether IT was clicked is unknown.
+    expect(connected.videos[0]?.clicks).toBeNull();
   });
 });
 
@@ -554,7 +554,6 @@ describe("per-video clicks", () => {
     const { videos } = build([lead()], { videos: [video({ bitly_id: null })] });
 
     expect(videos[0]?.clicks).toBeNull();
-    expect(videos[0]?.clickToLeadPct ?? null).toBeNull();
   });
 
   it("reports a real zero for a linked video nobody clicked", () => {

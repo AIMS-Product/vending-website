@@ -115,6 +115,45 @@ function buildBitlyClient({
 }
 
 describe("syncBitlyClicks", () => {
+  /**
+   * LOW: `if (!row?.bitly_id) return;` conflated "the queue is empty" with
+   * "this row has no id", so one null-id row in a claimed batch abandoned the
+   * rest of that worker's share.
+   */
+  it("skips a claimed row with no id and keeps syncing the rest", async () => {
+    // One null row per worker at the head of the batch: every worker used to
+    // return on its first read and the linked rows behind them were never
+    // touched. claimBatch filters null ids today, so this is the guard that
+    // keeps a future change to that filter from silently dropping a batch.
+    const unlinked = Array.from({ length: 4 }, (_, index) => ({
+      utm_campaign: `no-id-${index}`,
+      bitly_id: null,
+    }));
+    const linked = Array.from({ length: 8 }, (_, index) => ({
+      utm_campaign: `video-${index}`,
+      bitly_id: `bit.ly/${index}`,
+    }));
+    const { client, recorded } = buildClient({
+      claimable: [...unlinked, ...linked],
+    });
+    const bitlyClient = buildBitlyClient({
+      clicks: Object.fromEntries(
+        linked.map((row) => [
+          row.bitly_id,
+          [{ date: "2026-09-09", clicks: 4 }],
+        ]),
+      ),
+    });
+
+    const result = await syncBitlyClicks({ client, bitlyClient, now: NOW });
+
+    expect(result.updated).toBe(8);
+    expect(result.daysWritten).toBe(8);
+    expect(new Set(recorded.clickUpserts.map((row) => row.bitly_id)).size).toBe(
+      8,
+    );
+  });
+
   it("writes a day per click entry and stamps the link as synced", async () => {
     const { client, recorded } = buildClient({
       claimable: [{ utm_campaign: "how-much-vending", bitly_id: "bit.ly/a" }],

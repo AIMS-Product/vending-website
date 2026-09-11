@@ -105,7 +105,10 @@ export async function syncBitlyClicks(
   async function worker() {
     for (;;) {
       const row = rows[cursor++];
-      if (!row?.bitly_id) return;
+      // Only an exhausted queue ends this worker. A row with no id is one row
+      // to skip -- returning on it abandoned the rest of this worker's share.
+      if (!row) return;
+      if (!row.bitly_id) continue;
 
       try {
         const series = await bitly.dailyClicks(row.bitly_id, { days });

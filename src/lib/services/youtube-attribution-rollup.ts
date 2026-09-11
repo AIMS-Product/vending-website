@@ -87,7 +87,6 @@ export type YouTubeVideoFunnelRow = {
   /** Null until the Close outcome columns exist; see `outcomesConnected`. */
   attended: number | null;
   closed: number | null;
-  clickToLeadPct: number | null;
   visitToLeadPct: number | null;
   leadToBookedPct: number | null;
   bookedToClosedPct: number | null;
@@ -330,7 +329,6 @@ function buildVideoRow({
     booked,
     attended: outcomesConnected ? countAttended(leads) : null,
     closed,
-    clickToLeadPct: ratePct(leads.length, clicks),
     visitToLeadPct: ratePct(leads.length, visits),
     leadToBookedPct: ratePct(booked, leads.length),
     bookedToClosedPct: ratePct(closed, booked),
