@@ -457,6 +457,13 @@ export function YouTubeCoverageNote({
     gaps.push(
       "Attended and won need the closed-won columns from this slice's migration.",
     );
+  } else {
+    // Name the set the cycle-time figures actually drop. It is not the
+    // booked-before-lead count above: that one is built from call_booked_at,
+    // these are built from closed_won_at.
+    gaps.push(
+      "Cycle times count only wins carrying a Close opportunity date, and drop any whose win date precedes the first touch.",
+    );
   }
 
   return (
@@ -492,8 +499,9 @@ export function YouTubeCoverageNote({
             <span className="text-ui-text font-semibold">
               {coverage.bookedBeforeLead}
             </span>{" "}
-            booked before they filled the form — Close already had them, so they
-            are excluded from cycle times.
+            booked a call before their first touch on this site — Close already
+            had them, so the booking is a returning lead rather than a cycle
+            that started here.
           </>
         ) : null}
       </p>
