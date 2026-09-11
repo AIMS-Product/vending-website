@@ -107,7 +107,9 @@ export type ChatbotFunnelWindow = ChatbotFunnelStageCounts & {
      * The same booked calls, first touch x last touch. `chatbot`: the chat
      * came first. `earlier`: already in Close (webinar, Typeform, a setter's
      * Instagram lead) before they ever chatted, so the chat was a middle
-     * touch. `unknown`: not checked against Close yet. See resolveFirstTouch.
+     * touch. `unlinked`: no lead behind the chat at all, so there is nothing
+     * to check. `unknown`: a lead exists but Close's date is not mirrored onto
+     * it yet. See resolveFirstTouch.
      */
     byFirstTouch: Record<FirstTouch["kind"], LastTouchCounts>;
     /** `byFirstTouch.earlier` broken down by that earlier source. */
@@ -271,6 +273,7 @@ function emptyFunnelWindow(days: number): ChatbotFunnelWindow {
       byFirstTouch: {
         chatbot: emptyLastTouch(),
         earlier: emptyLastTouch(),
+        unlinked: emptyLastTouch(),
         unknown: emptyLastTouch(),
       },
       earlierSources: [],
@@ -354,11 +357,14 @@ export async function getChatbotAnalytics(
       client,
       rows.map((row) => row.lead_submission_id),
     );
+    const bookedRows = rows.filter((row) => isBooked(row, bookedLeadIds));
+    const leadIdByConversation = await fetchLeadIdsByBookedEvent(
+      client,
+      bookedRows,
+    );
     const creditByLead = await fetchLeadCredit(
       client,
-      rows
-        .filter((row) => isBooked(row, bookedLeadIds))
-        .map((row) => row.lead_submission_id),
+      bookedRows.map((row) => effectiveLeadId(row, leadIdByConversation)),
     );
     return buildAnalytics(
       rows,
@@ -366,6 +372,7 @@ export async function getChatbotAnalytics(
       bookedLeadIds,
       attributionSplitTrustworthy,
       creditByLead,
+      leadIdByConversation,
     );
   } catch (error) {
     console.warn("chatbot analytics load failed, returning empty rollup", {
@@ -537,12 +544,91 @@ export async function fetchLeadCredit(
   return credit;
 }
 
+/**
+ * Lead ids for booked chats that carry none of their own, recovered from the
+ * Calendly booking the chat produced.
+ *
+ * A visitor who books straight from the in-chat calendar without ever giving
+ * the bot their details leaves `chatbot_conversations.lead_submission_id`
+ * null: applyChatbotBookingAttribution stamps the booking onto the
+ * conversation but never the lead, while recordCalendlyBooking separately
+ * links the `calendly_bookings` row to a lead by invitee email. The booking
+ * is the join between them, and `booked_event_uri` matches it exactly --
+ * better than utm_content, which an email_match booking never carries.
+ *
+ * Read-only recovery on purpose: it fixes rows already written as well as new
+ * ones, where stamping the column at booking time would only ever fix new
+ * ones. Anything unreadable returns nothing, which leaves the chat resolving
+ * to "No lead linked" rather than to a guess.
+ */
+export async function fetchLeadIdsByBookedEvent(
+  client: ChatbotAnalyticsClient,
+  rows: ReadonlyArray<{
+    id: string;
+    lead_submission_id?: string | null;
+    booked_event_uri?: string | null;
+  }>,
+): Promise<ReadonlyMap<string, string>> {
+  const byEventUri = new Map<string, string[]>();
+  for (const row of rows) {
+    if (row.lead_submission_id || !row.booked_event_uri) continue;
+    const ids = byEventUri.get(row.booked_event_uri);
+    if (ids) ids.push(row.id);
+    else byEventUri.set(row.booked_event_uri, [row.id]);
+  }
+
+  const leadIdByConversation = new Map<string, string>();
+  const uris = Array.from(byEventUri.keys());
+  // Wrapped, not just error-checked: this is the rollup's only read of
+  // calendly_bookings, and a table that is absent or unreadable in an
+  // environment must cost the first-touch labels, not the whole dashboard.
+  try {
+    for (let start = 0; start < uris.length; start += LEAD_LOOKUP_CHUNK) {
+      const { data, error } = await client
+        .from("calendly_bookings")
+        .select("scheduled_event_uri, lead_submission_id")
+        .in("scheduled_event_uri", uris.slice(start, start + LEAD_LOOKUP_CHUNK))
+        .not("lead_submission_id", "is", null);
+      if (error) {
+        console.warn("chatbot analytics: booked-event lead lookup failed", {
+          error: error.message,
+        });
+        return leadIdByConversation;
+      }
+      for (const row of data ?? []) {
+        if (!row.scheduled_event_uri || !row.lead_submission_id) continue;
+        for (const conversationId of byEventUri.get(row.scheduled_event_uri) ??
+          []) {
+          leadIdByConversation.set(conversationId, row.lead_submission_id);
+        }
+      }
+    }
+  } catch (error) {
+    console.warn("chatbot analytics: booked-event lead lookup threw", {
+      error: error instanceof Error ? error.message : "unknown error",
+    });
+  }
+  return leadIdByConversation;
+}
+
+/**
+ * The lead a booked chat resolves to: its own, or the one recovered from its
+ * Calendly booking. Null when there is no lead anywhere.
+ */
+export function effectiveLeadId(
+  row: { id: string; lead_submission_id?: string | null },
+  leadIdByConversation: ReadonlyMap<string, string>,
+): string | null {
+  return row.lead_submission_id ?? leadIdByConversation.get(row.id) ?? null;
+}
+
 function buildAnalytics(
   rows: ConversationRow[],
   now: Date,
   bookedLeadIds: ReadonlySet<string> = new Set(),
   attributionSplitTrustworthy = false,
   creditByLead: ReadonlyMap<string, LeadCredit> = new Map(),
+  leadIdByConversation: ReadonlyMap<string, string> = new Map(),
 ): ChatbotAnalytics {
   const start = new Date(now.getTime() - WINDOW_DAYS * DAY_MS);
   const priorStart = new Date(start.getTime() - WINDOW_DAYS * DAY_MS);
@@ -593,9 +679,30 @@ function buildAnalytics(
     keywordFrequency: keywordFrequency(current),
     prospectDistributions: buildProspectDistributions(current),
     funnels: {
-      d7: buildFunnelWindow(7, rows, now, bookedLeadIds, creditByLead),
-      d30: buildFunnelWindow(30, rows, now, bookedLeadIds, creditByLead),
-      d90: buildFunnelWindow(90, rows, now, bookedLeadIds, creditByLead),
+      d7: buildFunnelWindow(
+        7,
+        rows,
+        now,
+        bookedLeadIds,
+        creditByLead,
+        leadIdByConversation,
+      ),
+      d30: buildFunnelWindow(
+        30,
+        rows,
+        now,
+        bookedLeadIds,
+        creditByLead,
+        leadIdByConversation,
+      ),
+      d90: buildFunnelWindow(
+        90,
+        rows,
+        now,
+        bookedLeadIds,
+        creditByLead,
+        leadIdByConversation,
+      ),
     },
     attributionSplitTrustworthy,
     outcomes: {
@@ -772,26 +879,28 @@ function buildBookedBy(
   rows: ConversationRow[],
   bookedLeadIds: ReadonlySet<string>,
   creditByLead: ReadonlyMap<string, LeadCredit>,
+  leadIdByConversation: ReadonlyMap<string, string>,
 ): ChatbotFunnelWindow["bookedBy"] {
   const counts = emptyLastTouch();
   const byFirstTouch = {
     chatbot: emptyLastTouch(),
     earlier: emptyLastTouch(),
+    unlinked: emptyLastTouch(),
     unknown: emptyLastTouch(),
   };
   const bySetter = new Map<string, number>();
   const bySource = new Map<string, number>();
   for (const row of rows) {
     if (!isBooked(row, bookedLeadIds)) continue;
-    const lead = row.lead_submission_id
-      ? creditByLead.get(row.lead_submission_id)
-      : undefined;
+    const leadId = effectiveLeadId(row, leadIdByConversation);
+    const lead = leadId ? creditByLead.get(leadId) : undefined;
     const credit = resolveBookingCredit({
       attributionSource: attributionSourceOf(row),
       bookedBySetter: lead?.setter ?? null,
     });
     const first = resolveFirstTouch({
       conversationCreatedAt: row.created_at,
+      leadLinked: Boolean(leadId),
       closeLeadCreatedAt: lead?.closeCreatedAt ?? null,
       entryResourceTag: lead?.resourceTag ?? null,
     });
@@ -820,6 +929,7 @@ function buildFunnelWindow(
   now: Date,
   bookedLeadIds: ReadonlySet<string>,
   creditByLead: ReadonlyMap<string, LeadCredit>,
+  leadIdByConversation: ReadonlyMap<string, string>,
 ): ChatbotFunnelWindow {
   const start = new Date(now.getTime() - days * DAY_MS);
   const windowRows = rows.filter((row) => inWindow(row.created_at, start, now));
@@ -837,7 +947,12 @@ function buildFunnelWindow(
     capturedRateOfEngagedPct: ratePct(stage.captured, stage.engaged),
     bookedRateOfCapturedPct: ratePct(stage.booked, stage.captured),
     overallBookedRatePct: ratePct(stage.booked, stage.conversations),
-    bookedBy: buildBookedBy(windowRows, bookedLeadIds, creditByLead),
+    bookedBy: buildBookedBy(
+      windowRows,
+      bookedLeadIds,
+      creditByLead,
+      leadIdByConversation,
+    ),
   };
 }
 

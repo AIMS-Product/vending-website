@@ -18,6 +18,7 @@ import type {
   ChatbotFunnelWindow,
   ChatbotOutcomeWindow,
   ChatbotRankedRow,
+  LastTouchCounts,
 } from "@/lib/chatbot/analytics";
 import type {
   AdminChatbotRange,
@@ -437,11 +438,17 @@ function TouchGrid({
   exact: boolean;
 }) {
   if (booked === 0) return null;
+  // Both shown only when non-zero, and never merged: "No lead linked" is a
+  // final answer, "Not checked yet" is a pending one.
+  const any = (counts: LastTouchCounts) =>
+    counts.inChat + counts.setter + counts.unknown > 0;
+  const unlinked = bookedBy.byFirstTouch.unlinked;
   const unchecked = bookedBy.byFirstTouch.unknown;
   const rows = [
     { label: "Chatbot", counts: bookedBy.byFirstTouch.chatbot },
     { label: "Earlier source", counts: bookedBy.byFirstTouch.earlier },
-    ...(unchecked.inChat + unchecked.setter + unchecked.unknown > 0
+    ...(any(unlinked) ? [{ label: "No lead linked", counts: unlinked }] : []),
+    ...(any(unchecked)
       ? [{ label: "Not checked yet", counts: unchecked }]
       : []),
   ];

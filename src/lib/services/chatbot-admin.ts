@@ -23,7 +23,9 @@ export class ChatbotAdminError extends Error {
 import {
   attributionSourceOf,
   fetchBookedLeadIds,
+  effectiveLeadId,
   fetchLeadCredit,
+  fetchLeadIdsByBookedEvent,
 } from "@/lib/chatbot/analytics";
 import {
   resolveBookingCredit,
@@ -40,11 +42,7 @@ import {
 export type { ChatbotConversationOutcome };
 export { CHATBOT_FLAGS, isChatbotFlag } from "@/lib/chatbot/flags";
 export type { ChatbotFlag } from "@/lib/chatbot/flags";
-import {
-  CHATBOT_FLAGS,
-  isChatbotFlag,
-  type ChatbotFlag,
-} from "@/lib/chatbot/flags";
+import { isChatbotFlag, type ChatbotFlag } from "@/lib/chatbot/flags";
 
 // ponytail: the whole list/detail surface caps at the most recent N rows and
 // filters/sorts in memory rather than pushing search into SQL. Fine at
@@ -110,6 +108,7 @@ export type AdminChatbotTouchBucket =
   | "chatbot_setter"
   | "chatbot_elsewhere"
   | "earlier"
+  | "no_lead"
   | "unchecked";
 
 export type AdminChatbotTouch = {
@@ -328,6 +327,7 @@ function emptyTouchCounts(): Record<AdminChatbotTouchBucket, number> {
     chatbot_setter: 0,
     chatbot_elsewhere: 0,
     earlier: 0,
+    no_lead: 0,
     unchecked: 0,
   };
 }
@@ -337,6 +337,7 @@ function touchBucket(
   last: BookingCredit,
 ): AdminChatbotTouchBucket {
   if (first.kind === "earlier") return "earlier";
+  if (first.kind === "unlinked") return "no_lead";
   if (first.kind === "unknown") return "unchecked";
   if (last.kind === "in_chat") return "end_to_end";
   return last.kind === "setter" ? "chatbot_setter" : "chatbot_elsewhere";
@@ -356,21 +357,28 @@ async function fetchTouches(
     lead_submission_id?: string | null;
   }>,
 ): Promise<Map<string, AdminChatbotTouch>> {
-  const [stamps, credit] = await Promise.all([
-    fetchAttributionStamps(
-      client,
-      rows.map((row) => row.id),
-    ),
-    fetchLeadCredit(
-      client,
-      rows.map((row) => row.lead_submission_id),
-    ),
-  ]);
+  const stamps = await fetchAttributionStamps(
+    client,
+    rows.map((row) => row.id),
+  );
+  // The stamps carry booked_event_uri, which is what recovers a lead for a
+  // chat that never captured one -- so this runs after them, not alongside.
+  const withStamps = rows.map((row) => ({
+    ...row,
+    booked_event_uri: stamps.get(row.id)?.booked_event_uri ?? null,
+  }));
+  const leadIdByConversation = await fetchLeadIdsByBookedEvent(
+    client,
+    withStamps,
+  );
+  const credit = await fetchLeadCredit(
+    client,
+    withStamps.map((row) => effectiveLeadId(row, leadIdByConversation)),
+  );
   return new Map(
-    rows.map((row): [string, AdminChatbotTouch] => {
-      const lead = row.lead_submission_id
-        ? credit.get(row.lead_submission_id)
-        : undefined;
+    withStamps.map((row): [string, AdminChatbotTouch] => {
+      const leadId = effectiveLeadId(row, leadIdByConversation);
+      const lead = leadId ? credit.get(leadId) : undefined;
       const stamp = stamps.get(row.id);
       const last = resolveBookingCredit({
         attributionSource: stamp ? attributionSourceOf(stamp) : null,
@@ -378,6 +386,7 @@ async function fetchTouches(
       });
       const first = resolveFirstTouch({
         conversationCreatedAt: row.created_at,
+        leadLinked: Boolean(leadId),
         closeLeadCreatedAt: lead?.closeCreatedAt ?? null,
         entryResourceTag: lead?.resourceTag ?? null,
       });
@@ -570,7 +579,7 @@ export async function adminGetConversationDetail(
   const { data: conversation, error } = await client
     .from("chatbot_conversations")
     .select(
-      "id, session_id, status, page_url, user_agent, captured_name, captured_email, captured_phone, messages, message_count, created_at, last_message_at, handed_off_at, handoff_reason, handoff_emailed_at, handoff_emailed_to, handoff_email_error, prospect_profile, lead_submission_id, call_booked_at",
+      "id, session_id, status, page_url, user_agent, captured_name, captured_email, captured_phone, messages, message_count, created_at, last_message_at, handed_off_at, handoff_reason, handoff_emailed_at, handoff_emailed_to, handoff_email_error, prospect_profile, lead_submission_id, call_booked_at, booked_event_uri",
     )
     .eq("id", conversationId)
     .maybeSingle();
@@ -586,11 +595,25 @@ export async function adminGetConversationDetail(
     throw new ChatbotAdminError("Could not load this conversation's flags.");
   }
 
+  // A chat that booked from its own calendar without ever giving the bot
+  // contact details carries no lead_submission_id; its Calendly booking does.
+  // Recovered first so the linked-lead panel, the first-touch line and the
+  // credit chip all read the same lead the Booked list resolves.
+  const leadIdByConversation = await fetchLeadIdsByBookedEvent(client, [
+    {
+      id: conversation.id,
+      lead_submission_id: conversation.lead_submission_id,
+      booked_event_uri: conversation.booked_event_uri ?? null,
+    },
+  ]);
+  const leadId = effectiveLeadId(conversation, leadIdByConversation);
+
   const [linkedLead, booking, attributionSource] = await Promise.all([
-    fetchLinkedLead(client, conversation.lead_submission_id),
+    fetchLinkedLead(client, leadId),
     fetchConversationBooking(client, {
       conversationId: conversation.id,
-      leadSubmissionId: conversation.lead_submission_id,
+      leadSubmissionId: leadId,
+      bookedEventUri: conversation.booked_event_uri ?? null,
       callBookedAt: conversation.call_booked_at ?? null,
     }),
     fetchAttributionSource(client, conversation.id),
@@ -639,13 +662,12 @@ export async function adminGetConversationDetail(
       conversation.prospect_profile,
     ),
     linkedLead,
-    firstTouch: linkedLead
-      ? resolveFirstTouch({
-          conversationCreatedAt: conversation.created_at,
-          closeLeadCreatedAt: linkedLead.closeLeadCreatedAt,
-          entryResourceTag: linkedLead.entryResourceTag,
-        })
-      : null,
+    firstTouch: resolveFirstTouch({
+      conversationCreatedAt: conversation.created_at,
+      leadLinked: Boolean(linkedLead),
+      closeLeadCreatedAt: linkedLead?.closeLeadCreatedAt ?? null,
+      entryResourceTag: linkedLead?.entryResourceTag ?? null,
+    }),
     booking: bookingWithCredit,
     handoffEmail: conversation.handoff_emailed_at
       ? {
@@ -669,6 +691,8 @@ async function fetchConversationBooking(
   input: {
     conversationId: string;
     leadSubmissionId: string | null | undefined;
+    /** The chat's own Calendly event, the one join key an email_match booking still has. */
+    bookedEventUri: string | null;
     callBookedAt: string | null;
   },
   // Credit is resolved by the caller, which is the only place that has both
@@ -678,6 +702,12 @@ async function fetchConversationBooking(
     `utm_content.eq.${input.conversationId}`,
     input.leadSubmissionId
       ? `lead_submission_id.eq.${input.leadSubmissionId}`
+      : null,
+    // An email_match booking carries no utm_content, and the chat that
+    // produced it may have no lead of its own -- the event uri is then the
+    // only thing tying the two together.
+    input.bookedEventUri
+      ? `scheduled_event_uri.eq.${input.bookedEventUri}`
       : null,
   ]
     .filter(Boolean)

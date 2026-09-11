@@ -69,6 +69,7 @@ const TOUCH_CHIPS: { value: AdminChatbotTouchBucket; label: string }[] = [
   { value: "chatbot_setter", label: "Chatbot, then setter" },
   { value: "chatbot_elsewhere", label: "Chatbot, booked elsewhere" },
   { value: "earlier", label: "Earlier source, then chat" },
+  { value: "no_lead", label: "No lead linked" },
   { value: "unchecked", label: "Not checked yet" },
 ];
 
@@ -344,7 +345,7 @@ function LastTouchChip({ last }: { last: AdminChatbotTouch["last"] }) {
 function FirstTouchCell({ touch }: { touch: AdminChatbotTouch | null }) {
   if (!touch) return <span className="text-ui-text-subtle">—</span>;
   const { first } = touch;
-  if (first.kind === "unknown") {
+  if (first.kind === "unknown" || first.kind === "unlinked") {
     return <span className="text-ui-text-subtle">{first.label}</span>;
   }
   return (

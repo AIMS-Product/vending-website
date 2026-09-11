@@ -36,6 +36,7 @@ const TOUCH_PARAMS: readonly string[] = [
   "chatbot_setter",
   "chatbot_elsewhere",
   "earlier",
+  "no_lead",
   "unchecked",
 ];
 
@@ -74,6 +75,7 @@ const EMPTY_RESULT: AdminChatbotConversationsResult = {
     chatbot_setter: 0,
     chatbot_elsewhere: 0,
     earlier: 0,
+    no_lead: 0,
     unchecked: 0,
   },
   costQuestionCount: 0,

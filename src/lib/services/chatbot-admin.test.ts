@@ -42,6 +42,10 @@ function fakeClient(options: {
       close_lead_created_at?: string | null;
     }
   >;
+  /** conversation id -> the Calendly event its booking stamp points at. */
+  eventUris?: Record<string, string>;
+  /** Calendly event uri -> the lead that booking is linked to. */
+  bookingLeads?: Record<string, string>;
 }) {
   const bookedLeadIds = new Set(options.bookedLeadIds ?? []);
   const leadCredit = options.leadCredit ?? {};
@@ -78,7 +82,7 @@ function fakeClient(options: {
                   data: ids.map((id) => ({
                     id,
                     attribution_source: options.stamps?.[id] ?? null,
-                    booked_event_uri: null,
+                    booked_event_uri: options.eventUris?.[id] ?? null,
                   })),
                   error: null,
                 }),
@@ -129,6 +133,31 @@ function fakeClient(options: {
                 ),
             }),
           }),
+        };
+      }
+
+      if (table === "calendly_bookings") {
+        return {
+          select: () => {
+            let uris: string[] = [];
+            const builder = {
+              in: (_column: string, values: string[]) => {
+                uris = values;
+                return builder;
+              },
+              not: () =>
+                Promise.resolve({
+                  data: uris
+                    .filter((uri) => options.bookingLeads?.[uri])
+                    .map((uri) => ({
+                      scheduled_event_uri: uri,
+                      lead_submission_id: options.bookingLeads?.[uri],
+                    })),
+                  error: null,
+                }),
+            };
+            return builder;
+          },
         };
       }
 
@@ -225,8 +254,68 @@ describe("adminListConversations first and last touch", () => {
       chatbot_setter: 1,
       chatbot_elsewhere: 0,
       earlier: 1,
+      no_lead: 0,
       unchecked: 0,
     });
+  });
+
+  it("separates a chat with no lead from one recovered through its booking", async () => {
+    // Both chats booked from the in-chat calendar without ever capturing a
+    // lead. One's Calendly booking is linked to a lead (recoverable, and Close
+    // says a webinar brought them in first); the other's is not (nothing to
+    // recover, so say so rather than promising a pending check).
+    const result = await adminListConversations(
+      {},
+      {
+        client: fakeClient({
+          rows: [
+            // Booked on the conversation itself, which is exactly how these
+            // rows look: a booking stamp and no lead of their own.
+            {
+              ...baseRow,
+              id: "recovered",
+              created_at: CHAT_AT,
+              call_booked_at: daysAgo(1),
+            },
+            {
+              ...baseRow,
+              id: "orphan",
+              created_at: CHAT_AT,
+              call_booked_at: daysAgo(1),
+            },
+          ],
+          bookedLeadIds: ["lead-rec"],
+          stamps: { recovered: "in_chat", orphan: "in_chat" },
+          eventUris: {
+            recovered: "https://api.calendly.com/scheduled_events/7",
+            orphan: "https://api.calendly.com/scheduled_events/8",
+          },
+          bookingLeads: {
+            "https://api.calendly.com/scheduled_events/7": "lead-rec",
+          },
+          leadCredit: {
+            "lead-rec": {
+              entry_resource_tag: "internal-webinar",
+              close_lead_created_at: daysAgo(30),
+            },
+          },
+        }) as never,
+      },
+    );
+
+    const byId = Object.fromEntries(
+      result.items.map((item) => [item.id, item.touch]),
+    );
+    expect(byId.recovered).toMatchObject({
+      bucket: "earlier",
+      first: { label: "Internal webinar" },
+    });
+    expect(byId.orphan).toMatchObject({
+      bucket: "no_lead",
+      first: { kind: "unlinked", label: "No lead linked" },
+    });
+    expect(result.touchCounts.no_lead).toBe(1);
+    expect(result.touchCounts.unchecked).toBe(0);
   });
 
   it("filters the booked view by bucket, and ignores the filter anywhere else", async () => {
