@@ -182,9 +182,13 @@ function KpiCards({
     },
     {
       icon: "check",
+      // The headline counts every chat that ended on the calendar, which is
+      // not the same as the chatbot booking them -- a setter booking someone
+      // who chatted lands here too. The caption carries the chatbot's own
+      // number so the card cannot be read as sole credit.
       label: `Calls booked · ${range}d`,
       value: funnel.booked,
-      caption: `${funnel.bookedRateOfCapturedPct}% of captured booked`,
+      caption: `${funnel.bookedBy.inChat} booked in the chat${analytics.attributionSplitTrustworthy ? "" : " (est.)"} · ${funnel.bookedRateOfCapturedPct}% of captured booked`,
       metric: thirty ? analytics.callsBooked30d : undefined,
       spark: thirty ? trend.map((r) => r.booked) : undefined,
       tone: "ok",

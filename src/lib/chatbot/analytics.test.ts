@@ -101,15 +101,9 @@ function fakeClient(options: {
   }
 
   function calendlyBookingsQuery() {
-    let uris: string[] = [];
-    const builder = {
-      in: (_column: string, values: string[]) => {
-        uris = values;
-        return builder;
-      },
-      not: () => builder,
-      then: (resolve: (value: unknown) => unknown) =>
-        resolve({
+    return {
+      in: (_column: string, uris: string[]) =>
+        Promise.resolve({
           data: uris
             .filter((uri) => bookingLeads[uri])
             .map((uri) => ({
@@ -119,7 +113,6 @@ function fakeClient(options: {
           error: null,
         }),
     };
-    return builder;
   }
 
   const client = {

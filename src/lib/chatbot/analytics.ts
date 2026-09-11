@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hostNameFromPayload } from "@/lib/chatbot/calendly-host";
 import {
   resolveBookingCredit,
   resolveFirstTouch,
@@ -358,13 +359,10 @@ export async function getChatbotAnalytics(
       rows.map((row) => row.lead_submission_id),
     );
     const bookedRows = rows.filter((row) => isBooked(row, bookedLeadIds));
-    const leadIdByConversation = await fetchLeadIdsByBookedEvent(
-      client,
-      bookedRows,
-    );
+    const bookedEventLinks = await fetchBookedEventLinks(client, bookedRows);
     const creditByLead = await fetchLeadCredit(
       client,
-      bookedRows.map((row) => effectiveLeadId(row, leadIdByConversation)),
+      bookedRows.map((row) => effectiveLeadId(row, bookedEventLinks)),
     );
     return buildAnalytics(
       rows,
@@ -372,7 +370,7 @@ export async function getChatbotAnalytics(
       bookedLeadIds,
       attributionSplitTrustworthy,
       creditByLead,
-      leadIdByConversation,
+      bookedEventLinks,
     );
   } catch (error) {
     console.warn("chatbot analytics load failed, returning empty rollup", {
@@ -545,81 +543,98 @@ export async function fetchLeadCredit(
 }
 
 /**
- * Lead ids for booked chats that carry none of their own, recovered from the
- * Calendly booking the chat produced.
+ * What the Calendly booking behind each booked chat knows: the lead it is
+ * linked to, and (when asked) who Calendly assigned the call to.
  *
- * A visitor who books straight from the in-chat calendar without ever giving
- * the bot their details leaves `chatbot_conversations.lead_submission_id`
- * null: applyChatbotBookingAttribution stamps the booking onto the
- * conversation but never the lead, while recordCalendlyBooking separately
- * links the `calendly_bookings` row to a lead by invitee email. The booking
- * is the join between them, and `booked_event_uri` matches it exactly --
- * better than utm_content, which an email_match booking never carries.
+ * A visitor who books straight from the in-chat calendar without giving the
+ * bot their details leaves `chatbot_conversations.lead_submission_id` null:
+ * applyChatbotBookingAttribution stamps the booking onto the conversation but
+ * never the lead, while recordCalendlyBooking separately links the
+ * `calendly_bookings` row to a lead by invitee email. The booking is the join
+ * between them, and `booked_event_uri` matches it exactly -- better than
+ * utm_content, which an email_match booking never carries.
  *
  * Read-only recovery on purpose: it fixes rows already written as well as new
  * ones, where stamping the column at booking time would only ever fix new
  * ones. Anything unreadable returns nothing, which leaves the chat resolving
  * to "No lead linked" rather than to a guess.
+ *
+ * ponytail: `includeHost` pulls whole `raw_payload` blobs (~2.4KB each) to
+ * read one name out of them, because that is the only place the host is
+ * stored. Fine while a window holds tens of booked chats; the upgrade is a
+ * host_name column on calendly_bookings written by recordCalendlyBooking.
  */
-export async function fetchLeadIdsByBookedEvent(
+export type BookedEventLink = {
+  leadId: string | null;
+  hostName: string | null;
+};
+
+export async function fetchBookedEventLinks(
   client: ChatbotAnalyticsClient,
-  rows: ReadonlyArray<{
-    id: string;
-    lead_submission_id?: string | null;
-    booked_event_uri?: string | null;
-  }>,
-): Promise<ReadonlyMap<string, string>> {
+  rows: ReadonlyArray<{ id: string; booked_event_uri?: string | null }>,
+  options: { includeHost?: boolean } = {},
+): Promise<ReadonlyMap<string, BookedEventLink>> {
   const byEventUri = new Map<string, string[]>();
   for (const row of rows) {
-    if (row.lead_submission_id || !row.booked_event_uri) continue;
+    if (!row.booked_event_uri) continue;
     const ids = byEventUri.get(row.booked_event_uri);
     if (ids) ids.push(row.id);
     else byEventUri.set(row.booked_event_uri, [row.id]);
   }
 
-  const leadIdByConversation = new Map<string, string>();
+  const links = new Map<string, BookedEventLink>();
   const uris = Array.from(byEventUri.keys());
   // Wrapped, not just error-checked: this is the rollup's only read of
   // calendly_bookings, and a table that is absent or unreadable in an
   // environment must cost the first-touch labels, not the whole dashboard.
   try {
     for (let start = 0; start < uris.length; start += LEAD_LOOKUP_CHUNK) {
-      const { data, error } = await client
-        .from("calendly_bookings")
-        .select("scheduled_event_uri, lead_submission_id")
-        .in("scheduled_event_uri", uris.slice(start, start + LEAD_LOOKUP_CHUNK))
-        .not("lead_submission_id", "is", null);
+      const chunk = uris.slice(start, start + LEAD_LOOKUP_CHUNK);
+      const { data, error } = options.includeHost
+        ? await client
+            .from("calendly_bookings")
+            .select("scheduled_event_uri, lead_submission_id, raw_payload")
+            .in("scheduled_event_uri", chunk)
+        : await client
+            .from("calendly_bookings")
+            .select("scheduled_event_uri, lead_submission_id")
+            .in("scheduled_event_uri", chunk);
       if (error) {
-        console.warn("chatbot analytics: booked-event lead lookup failed", {
+        console.warn("chatbot analytics: booked-event lookup failed", {
           error: error.message,
         });
-        return leadIdByConversation;
+        return links;
       }
       for (const row of data ?? []) {
-        if (!row.scheduled_event_uri || !row.lead_submission_id) continue;
+        if (!row.scheduled_event_uri) continue;
+        const link: BookedEventLink = {
+          leadId: row.lead_submission_id ?? null,
+          hostName:
+            "raw_payload" in row ? hostNameFromPayload(row.raw_payload) : null,
+        };
         for (const conversationId of byEventUri.get(row.scheduled_event_uri) ??
           []) {
-          leadIdByConversation.set(conversationId, row.lead_submission_id);
+          links.set(conversationId, link);
         }
       }
     }
   } catch (error) {
-    console.warn("chatbot analytics: booked-event lead lookup threw", {
+    console.warn("chatbot analytics: booked-event lookup threw", {
       error: error instanceof Error ? error.message : "unknown error",
     });
   }
-  return leadIdByConversation;
+  return links;
 }
 
 /**
- * The lead a booked chat resolves to: its own, or the one recovered from its
- * Calendly booking. Null when there is no lead anywhere.
+ * The lead a booked chat resolves to: its own, or the one on the Calendly
+ * booking it produced. Null when there is no lead anywhere.
  */
 export function effectiveLeadId(
   row: { id: string; lead_submission_id?: string | null },
-  leadIdByConversation: ReadonlyMap<string, string>,
+  links: ReadonlyMap<string, BookedEventLink>,
 ): string | null {
-  return row.lead_submission_id ?? leadIdByConversation.get(row.id) ?? null;
+  return row.lead_submission_id ?? links.get(row.id)?.leadId ?? null;
 }
 
 function buildAnalytics(
@@ -628,7 +643,7 @@ function buildAnalytics(
   bookedLeadIds: ReadonlySet<string> = new Set(),
   attributionSplitTrustworthy = false,
   creditByLead: ReadonlyMap<string, LeadCredit> = new Map(),
-  leadIdByConversation: ReadonlyMap<string, string> = new Map(),
+  bookedEventLinks: ReadonlyMap<string, BookedEventLink> = new Map(),
 ): ChatbotAnalytics {
   const start = new Date(now.getTime() - WINDOW_DAYS * DAY_MS);
   const priorStart = new Date(start.getTime() - WINDOW_DAYS * DAY_MS);
@@ -685,7 +700,7 @@ function buildAnalytics(
         now,
         bookedLeadIds,
         creditByLead,
-        leadIdByConversation,
+        bookedEventLinks,
       ),
       d30: buildFunnelWindow(
         30,
@@ -693,7 +708,7 @@ function buildAnalytics(
         now,
         bookedLeadIds,
         creditByLead,
-        leadIdByConversation,
+        bookedEventLinks,
       ),
       d90: buildFunnelWindow(
         90,
@@ -701,7 +716,7 @@ function buildAnalytics(
         now,
         bookedLeadIds,
         creditByLead,
-        leadIdByConversation,
+        bookedEventLinks,
       ),
     },
     attributionSplitTrustworthy,
@@ -879,7 +894,7 @@ function buildBookedBy(
   rows: ConversationRow[],
   bookedLeadIds: ReadonlySet<string>,
   creditByLead: ReadonlyMap<string, LeadCredit>,
-  leadIdByConversation: ReadonlyMap<string, string>,
+  bookedEventLinks: ReadonlyMap<string, BookedEventLink>,
 ): ChatbotFunnelWindow["bookedBy"] {
   const counts = emptyLastTouch();
   const byFirstTouch = {
@@ -892,7 +907,7 @@ function buildBookedBy(
   const bySource = new Map<string, number>();
   for (const row of rows) {
     if (!isBooked(row, bookedLeadIds)) continue;
-    const leadId = effectiveLeadId(row, leadIdByConversation);
+    const leadId = effectiveLeadId(row, bookedEventLinks);
     const lead = leadId ? creditByLead.get(leadId) : undefined;
     const credit = resolveBookingCredit({
       attributionSource: attributionSourceOf(row),
@@ -929,7 +944,7 @@ function buildFunnelWindow(
   now: Date,
   bookedLeadIds: ReadonlySet<string>,
   creditByLead: ReadonlyMap<string, LeadCredit>,
-  leadIdByConversation: ReadonlyMap<string, string>,
+  bookedEventLinks: ReadonlyMap<string, BookedEventLink>,
 ): ChatbotFunnelWindow {
   const start = new Date(now.getTime() - days * DAY_MS);
   const windowRows = rows.filter((row) => inWindow(row.created_at, start, now));
@@ -951,7 +966,7 @@ function buildFunnelWindow(
       windowRows,
       bookedLeadIds,
       creditByLead,
-      leadIdByConversation,
+      bookedEventLinks,
     ),
   };
 }

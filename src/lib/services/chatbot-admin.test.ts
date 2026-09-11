@@ -46,6 +46,8 @@ function fakeClient(options: {
   eventUris?: Record<string, string>;
   /** Calendly event uri -> the lead that booking is linked to. */
   bookingLeads?: Record<string, string>;
+  /** Calendly event uri -> the host Calendly assigned, as raw_payload carries it. */
+  bookingHosts?: Record<string, string>;
 }) {
   const bookedLeadIds = new Set(options.bookedLeadIds ?? []);
   const leadCredit = options.leadCredit ?? {};
@@ -138,26 +140,35 @@ function fakeClient(options: {
 
       if (table === "calendly_bookings") {
         return {
-          select: () => {
-            let uris: string[] = [];
-            const builder = {
-              in: (_column: string, values: string[]) => {
-                uris = values;
-                return builder;
-              },
-              not: () =>
-                Promise.resolve({
-                  data: uris
-                    .filter((uri) => options.bookingLeads?.[uri])
-                    .map((uri) => ({
-                      scheduled_event_uri: uri,
-                      lead_submission_id: options.bookingLeads?.[uri],
-                    })),
-                  error: null,
-                }),
-            };
-            return builder;
-          },
+          select: (fields: string) => ({
+            in: (_column: string, uris: string[]) =>
+              Promise.resolve({
+                data: uris
+                  .filter(
+                    (uri) =>
+                      options.bookingLeads?.[uri] ||
+                      options.bookingHosts?.[uri],
+                  )
+                  .map((uri) => ({
+                    scheduled_event_uri: uri,
+                    lead_submission_id: options.bookingLeads?.[uri] ?? null,
+                    ...(fields.includes("raw_payload")
+                      ? {
+                          raw_payload: options.bookingHosts?.[uri]
+                            ? {
+                                scheduled_event: {
+                                  event_memberships: [
+                                    { user_name: options.bookingHosts[uri] },
+                                  ],
+                                },
+                              }
+                            : null,
+                        }
+                      : {}),
+                  })),
+                error: null,
+              }),
+          }),
         };
       }
 
@@ -293,6 +304,10 @@ describe("adminListConversations first and last touch", () => {
           bookingLeads: {
             "https://api.calendly.com/scheduled_events/7": "lead-rec",
           },
+          bookingHosts: {
+            "https://api.calendly.com/scheduled_events/7": "Robin Perkins",
+            "https://api.calendly.com/scheduled_events/8": "Eric",
+          },
           leadCredit: {
             "lead-rec": {
               entry_resource_tag: "internal-webinar",
@@ -316,6 +331,10 @@ describe("adminListConversations first and last touch", () => {
     });
     expect(result.touchCounts.no_lead).toBe(1);
     expect(result.touchCounts.unchecked).toBe(0);
+    // Same one batched read carries the closer, including for the chat that
+    // resolves to no lead at all.
+    expect(byId.recovered?.closer).toBe("Robin Perkins");
+    expect(byId.orphan?.closer).toBe("Eric");
   });
 
   it("filters the booked view by bucket, and ignores the filter anywhere else", async () => {

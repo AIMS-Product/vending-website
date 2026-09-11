@@ -25,7 +25,7 @@ import {
   fetchBookedLeadIds,
   effectiveLeadId,
   fetchLeadCredit,
-  fetchLeadIdsByBookedEvent,
+  fetchBookedEventLinks,
 } from "@/lib/chatbot/analytics";
 import {
   resolveBookingCredit,
@@ -40,8 +40,10 @@ import {
 } from "@/lib/chatbot/outcomes";
 
 export type { ChatbotConversationOutcome };
+export { hostNameFromPayload } from "@/lib/chatbot/calendly-host";
 export { CHATBOT_FLAGS, isChatbotFlag } from "@/lib/chatbot/flags";
 export type { ChatbotFlag } from "@/lib/chatbot/flags";
+import { hostNameFromPayload } from "@/lib/chatbot/calendly-host";
 import { isChatbotFlag, type ChatbotFlag } from "@/lib/chatbot/flags";
 
 // ponytail: the whole list/detail surface caps at the most recent N rows and
@@ -112,6 +114,8 @@ export type AdminChatbotTouchBucket =
   | "unchecked";
 
 export type AdminChatbotTouch = {
+  /** Who Calendly assigned the call to. Null when the booking never said. */
+  closer: string | null;
   first: FirstTouch;
   last: BookingCredit;
   bucket: AdminChatbotTouchBucket;
@@ -367,17 +371,18 @@ async function fetchTouches(
     ...row,
     booked_event_uri: stamps.get(row.id)?.booked_event_uri ?? null,
   }));
-  const leadIdByConversation = await fetchLeadIdsByBookedEvent(
-    client,
-    withStamps,
-  );
+  // One batched read of calendly_bookings serves both needs: the lead a chat
+  // that captured none still resolves to, and the closer Calendly assigned.
+  const links = await fetchBookedEventLinks(client, withStamps, {
+    includeHost: true,
+  });
   const credit = await fetchLeadCredit(
     client,
-    withStamps.map((row) => effectiveLeadId(row, leadIdByConversation)),
+    withStamps.map((row) => effectiveLeadId(row, links)),
   );
   return new Map(
     withStamps.map((row): [string, AdminChatbotTouch] => {
-      const leadId = effectiveLeadId(row, leadIdByConversation);
+      const leadId = effectiveLeadId(row, links);
       const lead = leadId ? credit.get(leadId) : undefined;
       const stamp = stamps.get(row.id);
       const last = resolveBookingCredit({
@@ -390,7 +395,15 @@ async function fetchTouches(
         closeLeadCreatedAt: lead?.closeCreatedAt ?? null,
         entryResourceTag: lead?.resourceTag ?? null,
       });
-      return [row.id, { first, last, bucket: touchBucket(first, last) }];
+      return [
+        row.id,
+        {
+          first,
+          last,
+          bucket: touchBucket(first, last),
+          closer: links.get(row.id)?.hostName ?? null,
+        },
+      ];
     }),
   );
 }
@@ -599,14 +612,13 @@ export async function adminGetConversationDetail(
   // contact details carries no lead_submission_id; its Calendly booking does.
   // Recovered first so the linked-lead panel, the first-touch line and the
   // credit chip all read the same lead the Booked list resolves.
-  const leadIdByConversation = await fetchLeadIdsByBookedEvent(client, [
+  const bookedEventLinks = await fetchBookedEventLinks(client, [
     {
       id: conversation.id,
-      lead_submission_id: conversation.lead_submission_id,
       booked_event_uri: conversation.booked_event_uri ?? null,
     },
   ]);
-  const leadId = effectiveLeadId(conversation, leadIdByConversation);
+  const leadId = effectiveLeadId(conversation, bookedEventLinks);
 
   const [linkedLead, booking, attributionSource] = await Promise.all([
     fetchLinkedLead(client, leadId),
@@ -746,29 +758,6 @@ async function fetchConversationBooking(
     };
   }
   return null;
-}
-
-/**
- * Who Calendly assigned. Webhook payloads carry it at
- * `scheduled_event.event_memberships[].user_name`; the embed route stores the
- * scheduled event under the same key. Anything else is null, never a guess.
- */
-export function hostNameFromPayload(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") return null;
-  const record = payload as Record<string, unknown>;
-  const event = (record.scheduled_event ??
-    (record.payload as Record<string, unknown> | undefined)
-      ?.scheduled_event) as Record<string, unknown> | undefined;
-  const memberships = event?.event_memberships;
-  if (!Array.isArray(memberships)) return null;
-  const names = memberships
-    .map((m) =>
-      m && typeof m === "object"
-        ? (m as { user_name?: unknown }).user_name
-        : null,
-    )
-    .filter((n): n is string => typeof n === "string" && n.trim().length > 0);
-  return names.length ? names.join(", ") : null;
 }
 
 export type AdminToggleFlagInput = {
