@@ -44,12 +44,15 @@ function fakeClient(options: {
     string,
     { resourceTag: string | null; createdAt: string }
   >;
+  /** Calendly event uri -> the lead that booking is linked to, as recordCalendlyBooking wrote it. */
+  bookingLeads?: Record<string, string>;
 }) {
   const rows = options.rows ?? [];
   const bookedLeadIds = new Set(options.bookedLeadIds ?? []);
   const missingColumns = options.missingColumns ?? [];
   const setters = options.setters ?? {};
   const closeLeads = options.closeLeads ?? {};
+  const bookingLeads = options.bookingLeads ?? {};
   const creditIds = [
     ...new Set([...Object.keys(setters), ...Object.keys(closeLeads)]),
   ];
@@ -97,6 +100,21 @@ function fakeClient(options: {
     return builder;
   }
 
+  function calendlyBookingsQuery() {
+    return {
+      in: (_column: string, uris: string[]) =>
+        Promise.resolve({
+          data: uris
+            .filter((uri) => bookingLeads[uri])
+            .map((uri) => ({
+              scheduled_event_uri: uri,
+              lead_submission_id: bookingLeads[uri],
+            })),
+          error: null,
+        }),
+    };
+  }
+
   const client = {
     from(table: string) {
       if (table === "chatbot_conversations") {
@@ -104,6 +122,9 @@ function fakeClient(options: {
       }
       if (table === "lead_submissions") {
         return { select: (fields: string) => leadSubmissionsQuery(fields) };
+      }
+      if (table === "calendly_bookings") {
+        return { select: () => calendlyBookingsQuery() };
       }
       throw new Error(`unexpected table ${table}`);
     },
@@ -258,10 +279,54 @@ describe("getChatbotAnalytics funnels", () => {
         chatbot: { inChat: 0, setter: 1, unknown: 0 },
         // The chat was a middle touch here, not the way in.
         earlier: { inChat: 0, setter: 1, unknown: 0 },
-        // Never checked against Close: reported as such, not as the chatbot.
-        unknown: { inChat: 1, setter: 0, unknown: 1 },
+        // Booked from the chat calendar but never captured a lead, so there
+        // is nothing to check -- distinct from "not checked yet" below.
+        unlinked: { inChat: 1, setter: 0, unknown: 0 },
+        // Has a lead, but Close's date is not mirrored onto it yet: reported
+        // as such, not as the chatbot.
+        unknown: { inChat: 0, setter: 0, unknown: 1 },
       },
       earlierSources: [{ label: "Internal webinar", count: 1 }],
+    });
+  });
+
+  it("recovers first touch through the Calendly booking when the chat captured no lead", async () => {
+    // A visitor who books straight from the in-chat calendar without giving
+    // the bot their details leaves lead_submission_id null on the
+    // conversation; only the calendly_bookings row carries the lead. Without
+    // the recovery this booking reported as "No lead linked" forever, even
+    // though Close knew the person came from a webinar first.
+    const analytics = await getChatbotAnalytics({
+      client: fakeClient({
+        rows: [
+          {
+            id: "booked-no-lead",
+            created_at: daysAgo(1),
+            message_count: 4,
+            call_booked_at: "2026-08-23T00:00:00.000Z",
+            booked_event_uri: "https://api.calendly.com/scheduled_events/9",
+            attribution_source: "in_chat",
+          },
+        ],
+        bookingLeads: {
+          "https://api.calendly.com/scheduled_events/9": "lead-recovered",
+        },
+        closeLeads: {
+          "lead-recovered": {
+            resourceTag: "internal-webinar",
+            createdAt: daysAgo(30),
+          },
+        },
+      }),
+      now: () => NOW,
+    });
+
+    const { byFirstTouch } = analytics.funnels.d30.bookedBy;
+    expect(byFirstTouch.earlier).toEqual({ inChat: 1, setter: 0, unknown: 0 });
+    expect(byFirstTouch.unlinked).toEqual({
+      inChat: 0,
+      setter: 0,
+      unknown: 0,
     });
   });
 

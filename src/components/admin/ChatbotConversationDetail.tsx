@@ -182,7 +182,9 @@ function TouchesNote({
       ? `chatbot, ${chatAt}`
       : first.kind === "earlier"
         ? `${first.label}, ${formatDateTime(first.at)}. The chat came later, ${chatAt}`
-        : "not checked against Close yet";
+        : first.kind === "unlinked"
+          ? "unknown — this chat has no lead record behind it"
+          : "not checked against Close yet";
   const credit = conversation.booking?.credit;
   const lastText = !credit
     ? null

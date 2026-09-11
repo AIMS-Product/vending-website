@@ -8,6 +8,7 @@ describe("resolveFirstTouch", () => {
     expect(
       resolveFirstTouch({
         conversationCreatedAt: CHAT_AT,
+        leadLinked: true,
         closeLeadCreatedAt: "2026-09-06T17:50:00.000Z",
         entryResourceTag: "chatbot",
       }),
@@ -18,6 +19,7 @@ describe("resolveFirstTouch", () => {
     expect(
       resolveFirstTouch({
         conversationCreatedAt: CHAT_AT,
+        leadLinked: true,
         closeLeadCreatedAt: "2026-08-28T02:01:04.000Z",
         entryResourceTag: "internal-webinar",
       }),
@@ -32,6 +34,7 @@ describe("resolveFirstTouch", () => {
     expect(
       resolveFirstTouch({
         conversationCreatedAt: CHAT_AT,
+        leadLinked: true,
         closeLeadCreatedAt: "2026-08-28T22:56:45.000Z",
         entryResourceTag: "chatbot",
       }).kind,
@@ -42,6 +45,7 @@ describe("resolveFirstTouch", () => {
     expect(
       resolveFirstTouch({
         conversationCreatedAt: CHAT_AT,
+        leadLinked: true,
         closeLeadCreatedAt: "2026-09-06T18:05:00.000Z",
         entryResourceTag: "website-application",
       }).kind,
@@ -52,6 +56,7 @@ describe("resolveFirstTouch", () => {
     expect(
       resolveFirstTouch({
         conversationCreatedAt: CHAT_AT,
+        leadLinked: true,
         closeLeadCreatedAt: "2025-12-05T21:45:26.000Z",
         entryResourceTag: null,
       }),
@@ -66,10 +71,36 @@ describe("resolveFirstTouch", () => {
     expect(
       resolveFirstTouch({
         conversationCreatedAt: CHAT_AT,
+        leadLinked: true,
         closeLeadCreatedAt: null,
         entryResourceTag: "chatbot",
       }),
     ).toEqual({ kind: "unknown", label: "Not checked yet" });
+  });
+
+  it("separates a chat with no lead at all from one still waiting on Close", () => {
+    // Both used to render as "Not checked yet", which promised an answer that
+    // could never arrive: with no lead there is nothing for the reconciler to
+    // read. The Booked view counted these as pending forever.
+    expect(
+      resolveFirstTouch({
+        conversationCreatedAt: CHAT_AT,
+        leadLinked: false,
+        closeLeadCreatedAt: null,
+        entryResourceTag: null,
+      }),
+    ).toEqual({ kind: "unlinked", label: "No lead linked" });
+  });
+
+  it("never credits the chatbot off a stale date when no lead is linked", () => {
+    expect(
+      resolveFirstTouch({
+        conversationCreatedAt: CHAT_AT,
+        leadLinked: false,
+        closeLeadCreatedAt: "2026-09-06T17:50:00.000Z",
+        entryResourceTag: "chatbot",
+      }).kind,
+    ).toBe("unlinked");
   });
 });
 

@@ -69,6 +69,7 @@ const TOUCH_CHIPS: { value: AdminChatbotTouchBucket; label: string }[] = [
   { value: "chatbot_setter", label: "Chatbot, then setter" },
   { value: "chatbot_elsewhere", label: "Chatbot, booked elsewhere" },
   { value: "earlier", label: "Earlier source, then chat" },
+  { value: "no_lead", label: "No lead linked" },
   { value: "unchecked", label: "Not checked yet" },
 ];
 
@@ -107,7 +108,10 @@ export function ChatbotConversationsManager({
             <AdminMetricPanel
               label="Booked"
               value={result.outcomeCounts.booked}
-              caption="calls on the calendar"
+              // Every chat that ended on the calendar, however it got there.
+              // The caption names the chatbot's own share so the headline is
+              // never read as the chatbot's booking count.
+              caption={`${result.touchCounts.end_to_end} chatbot end to end`}
             />
             <AdminMetricPanel
               label="Saw calendar, no booking"
@@ -200,16 +204,23 @@ export function ChatbotConversationsManager({
 
         {result.items.length ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[880px] text-left text-sm">
+            <table
+              className={`w-full text-left text-sm ${bookedView ? "min-w-[1040px]" : "min-w-[880px]"}`}
+            >
               <thead className="border-ui-line bg-ui-canvas text-ui-text-subtle border-b text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
                 <tr>
                   <th scope="col" className="px-4 py-2">
                     Visitor
                   </th>
                   {bookedView ? (
-                    <th scope="col" className="px-3 py-2">
-                      First touch
-                    </th>
+                    <>
+                      <th scope="col" className="px-3 py-2">
+                        First touch
+                      </th>
+                      <th scope="col" className="px-3 py-2">
+                        Closer
+                      </th>
+                    </>
                   ) : null}
                   <th scope="col" className="px-3 py-2">
                     Opening message
@@ -285,9 +296,16 @@ function ConversationRow({
         ) : null}
       </td>
       {showFirstTouch ? (
-        <td className="px-3 py-3 text-xs">
-          <FirstTouchCell touch={item.touch} />
-        </td>
+        <>
+          <td className="px-3 py-3 text-xs">
+            <FirstTouchCell touch={item.touch} />
+          </td>
+          <td className="text-ui-text-muted px-3 py-3 text-xs">
+            {item.touch?.closer ?? (
+              <span className="text-ui-text-subtle">—</span>
+            )}
+          </td>
+        </>
       ) : null}
       <td
         className="text-ui-text-muted max-w-[360px] truncate px-3 py-3"
@@ -344,7 +362,7 @@ function LastTouchChip({ last }: { last: AdminChatbotTouch["last"] }) {
 function FirstTouchCell({ touch }: { touch: AdminChatbotTouch | null }) {
   if (!touch) return <span className="text-ui-text-subtle">—</span>;
   const { first } = touch;
-  if (first.kind === "unknown") {
+  if (first.kind === "unknown" || first.kind === "unlinked") {
     return <span className="text-ui-text-subtle">{first.label}</span>;
   }
   return (

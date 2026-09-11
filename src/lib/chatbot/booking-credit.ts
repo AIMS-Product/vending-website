@@ -65,6 +65,13 @@ const CHATBOT_RESOURCE_TAG = "chatbot";
 export type FirstTouchInput = {
   /** When this chat started. */
   conversationCreatedAt: string;
+  /**
+   * Whether this chat resolves to a lead at all -- its own
+   * `lead_submission_id`, or the one on the Calendly booking it produced.
+   * False means there is no lead anywhere to read a first touch from, which
+   * is a permanent answer, not a pending one.
+   */
+  leadLinked: boolean;
   /** When Close created the linked lead. Null until the reconciler has read it. */
   closeLeadCreatedAt: string | null;
   /** Close "Resource Tag". Set once when Close creates the lead; never overwritten. */
@@ -74,11 +81,17 @@ export type FirstTouchInput = {
 export type FirstTouch =
   | { kind: "chatbot"; label: "Chatbot" }
   | { kind: "earlier"; label: string; at: string }
+  | { kind: "unlinked"; label: "No lead linked" }
   | { kind: "unknown"; label: "Not checked yet" };
 
 /**
  * What touched this person first: the chat, or something that put them in
  * Close before it.
+ *
+ * Two different kinds of "we don't know", never merged: `unlinked` (no lead
+ * exists for this chat, so there is nothing to check and nothing pending) and
+ * `unknown` (a lead exists, but the reconciler has not read Close's date onto
+ * it yet, so an answer is coming).
  *
  * Order comes from Close's own `date_created`, which Close sets once and
  * nothing rewrites. A Close lead that already existed when the chat started
@@ -87,6 +100,13 @@ export type FirstTouch =
  * tagged `chatbot`, in which case the chatbot still came first.
  */
 export function resolveFirstTouch(input: FirstTouchInput): FirstTouch {
+  // Separated from "Not checked yet" deliberately. Both used to render as
+  // "Not checked yet", which promised an answer that was never coming: a chat
+  // with no lead behind it has nothing for the reconciler to check, so it sat
+  // there looking pending forever.
+  if (!input.leadLinked) {
+    return { kind: "unlinked", label: "No lead linked" };
+  }
   if (!input.closeLeadCreatedAt) {
     return { kind: "unknown", label: "Not checked yet" };
   }

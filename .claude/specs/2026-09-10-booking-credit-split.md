@@ -84,3 +84,42 @@ touch vs last touch. The Conversations list's Booked filter is that view:
   `email_match` bookings (5 transcripts, Gerald's included). Hidden at render,
   stored transcript unchanged.
 - Not included: a closer column (needs a Calendly read per row; the transcript has it).
+
+## Polish pass (2026-09-11, `feat/booking-attribution-polish`)
+
+Backfill confirmed: 914 of 935 Close-linked leads carry
+`close_lead_created_at`. Gerald Winslow verified end to end — setter "Connor
+George", tag "chatbot", Close lead created 2 minutes *after* his chat started,
+so chatbot first touch and setter last touch, exactly as the rule intends.
+
+The "Not checked yet" bucket turned out to be a lie: all 8 of its rows had no
+`lead_submission_id` at all, so nothing was ever going to check them.
+`applyChatbotBookingAttribution` stamps the booking onto the conversation but
+never the lead, while `recordCalendlyBooking` links the Calendly row to a lead
+by email — so for a visitor who books from the in-chat calendar without giving
+the bot their details, the booking and the lead live on different rows with
+nothing joining them.
+
+`fetchBookedEventLinks` joins them read-only on `booked_event_uri` ->
+`calendly_bookings.scheduled_event_uri` (matched 8 of 8, where `utm_content`
+misses every `email_match` booking). 5 of the 8 recover a lead; the other 3
+now read "No lead linked", a sixth bucket kept separate from "Not checked yet"
+because one is a final answer and the other is a pending one.
+
+Buckets, all-time, before -> after: end to end 5 -> 6, then setter 4 -> 4,
+booked elsewhere 3 -> 3, earlier source 10 -> 14, no lead — -> 3, not checked
+8 -> 0. Still sums to 30.
+
+The 12-of-37 first-touch finding is now 19 of 39: yesterday's number was taken
+mid-backfill, this is the first complete one.
+
+Also: a Closer column on the Booked view (17 of 30, from the same batched
+read), and the "Calls booked" / "Booked" captions now name the chatbot's own
+share so neither headline reads as sole credit.
+
+Open for Adam — one booked call can count twice. 30 booked conversations
+resolve to 28 distinct leads: Ashley Valenzuela and Nora Gollihar each started
+a second chat minutes later that did the booking, and `isBooked` counts both
+the lead-holding row and the booking-holding row. Predates this work; fixing it
+moves the headline number, so it is his call. Full detail in
+`2026-09-11-booking-attribution-polish-report.md`.
