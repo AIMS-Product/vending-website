@@ -846,6 +846,78 @@ export type Database = {
         };
         Relationships: [];
       };
+      webinar_events: {
+        Row: {
+          attendees: number | null;
+          attendees_at_offer: number | null;
+          booked_night_of: number | null;
+          booked_within_7d: number | null;
+          booking_maturing: boolean;
+          date: string;
+          format: string;
+          label: string;
+          length_min: number | null;
+          notes: string | null;
+          peak_attendees: number | null;
+          pitch_start_min: number | null;
+          pulled_at: Json;
+          received_at: string;
+          registrations: number | null;
+          registrations_ad_attributed: number | null;
+          revenue: number | null;
+          revenue_maturing: boolean;
+          showed: number | null;
+          spend: number | null;
+          won: number | null;
+        };
+        Insert: {
+          attendees?: number | null;
+          attendees_at_offer?: number | null;
+          booked_night_of?: number | null;
+          booked_within_7d?: number | null;
+          booking_maturing: boolean;
+          date: string;
+          format: string;
+          label: string;
+          length_min?: number | null;
+          notes?: string | null;
+          peak_attendees?: number | null;
+          pitch_start_min?: number | null;
+          pulled_at?: Json;
+          received_at?: string;
+          registrations?: number | null;
+          registrations_ad_attributed?: number | null;
+          revenue?: number | null;
+          revenue_maturing: boolean;
+          showed?: number | null;
+          spend?: number | null;
+          won?: number | null;
+        };
+        Update: {
+          attendees?: number | null;
+          attendees_at_offer?: number | null;
+          booked_night_of?: number | null;
+          booked_within_7d?: number | null;
+          booking_maturing?: boolean;
+          date?: string;
+          format?: string;
+          label?: string;
+          length_min?: number | null;
+          notes?: string | null;
+          peak_attendees?: number | null;
+          pitch_start_min?: number | null;
+          pulled_at?: Json;
+          received_at?: string;
+          registrations?: number | null;
+          registrations_ad_attributed?: number | null;
+          revenue?: number | null;
+          revenue_maturing?: boolean;
+          showed?: number | null;
+          spend?: number | null;
+          won?: number | null;
+        };
+        Relationships: [];
+      };
       ga4_page_views: {
         Row: {
           day: string;

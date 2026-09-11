@@ -42,6 +42,12 @@ const envSchema = z.object({
   CRON_SECRET: optionalTrimmedOptionalEnv,
   CALENDLY_WEBHOOK_SIGNING_KEY: optionalTrimmedOptionalEnv,
   CALENDLY_API_TOKEN: optionalTrimmedOptionalEnv,
+  /**
+   * Bearer secret the vp-webinars GitHub Action presents when it POSTs its
+   * snapshot to /api/admin/webinar-ingest. Same value lives in that repo's
+   * Actions secrets. Absent means the receiver answers 503 and nothing lands.
+   */
+  WEBINAR_INGEST_SECRET: optionalTrimmedOptionalEnv,
   // Bitly click sync for the YouTube attribution tab. Absent means the clicks
   // stage of the funnel reports "not connected" rather than zero.
   BITLY_ACCESS_TOKEN: optionalTrimmedOptionalEnv,
@@ -154,6 +160,7 @@ const parsed = envSchema.safeParse({
   CRON_SECRET: process.env.CRON_SECRET,
   CALENDLY_WEBHOOK_SIGNING_KEY: process.env.CALENDLY_WEBHOOK_SIGNING_KEY,
   CALENDLY_API_TOKEN: process.env.CALENDLY_API_TOKEN,
+  WEBINAR_INGEST_SECRET: process.env.WEBINAR_INGEST_SECRET,
   BITLY_ACCESS_TOKEN: process.env.BITLY_ACCESS_TOKEN,
   BITLY_GROUP_GUID: process.env.BITLY_GROUP_GUID,
   GA4_SERVICE_ACCOUNT_JSON: process.env.GA4_SERVICE_ACCOUNT_JSON,
