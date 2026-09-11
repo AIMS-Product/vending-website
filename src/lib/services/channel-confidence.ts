@@ -106,6 +106,8 @@ export type SourceCounts = {
   webinarRegistrations: number | null;
   /** Sum of ga4_page_views.sessions for days in the range. */
   ga4Sessions: number | null;
+  /** calendly_bookings with status booked, created in the range. */
+  calendlyBookings: number | null;
 };
 
 export type ConfidenceReport = {
@@ -188,6 +190,9 @@ const STATUS_TEXT: Record<SyncHealthRow["status"], string> = {
   never: "never ran",
 };
 
+/** A tag made only of punctuation, e.g. "_____" left in a template. */
+const PLACEHOLDER_TAG = /^[^a-z0-9]+$/i;
+
 /** Percent difference of spine against source; null when either is missing. */
 function drift(spine: number | null, source: number | null): number | null {
   if (spine == null || source == null || source === 0) return null;
@@ -238,6 +243,12 @@ function buildChecks(
   const formLeads = facts.filter(
     (fact) => fact.channel !== "Webinar" && fact.channel !== GHL_FORMS_CHANNEL,
   );
+  // Bookings the leads connector wrote: everything except the two programs
+  // that report their own bookings (webinar-ingest, manychat-ingest).
+  const siteBooked = facts.filter(
+    (fact) =>
+      fact.channel !== "Webinar" && fact.channel !== INSTAGRAM_DM_CHANNEL,
+  );
   const checks: ConfidenceCheck[] = [
     reconcile(
       "leads",
@@ -263,7 +274,31 @@ function buildChecks(
       "ga4_page_views sessions",
       5,
     ),
+    // Cohort basis differs (a lead's booking is credited to the lead's day),
+    // so a wider tolerance than the lead check; it still catches a connector
+    // that stopped writing bookings.
+    reconcile(
+      "booked",
+      "Bookings match Calendly",
+      sum(siteBooked, "booked"),
+      sources.calendlyBookings,
+      "calendly_bookings (booked)",
+      10,
+    ),
   ];
+
+  const placeholder = facts.filter((fact) => PLACEHOLDER_TAG.test(fact.source));
+  const placeholderBooked = sum(placeholder, "booked") ?? 0;
+  const placeholderLeads = sum(placeholder, "leads") ?? 0;
+  checks.push({
+    id: "placeholder",
+    label: "Links whose tags were never filled in",
+    status: placeholderBooked + placeholderLeads > 0 ? "warn" : "ok",
+    detail:
+      placeholder.length === 0
+        ? "None in range."
+        : `${fmt(placeholderBooked)} bookings and ${fmt(placeholderLeads)} leads came from links tagged "${placeholder[0].source}": a template whose UTM blanks were never filled. Find the link and retag it; until then they sit under Unknown.`,
+  });
 
   const missing = coverage.filter((row) => row.gaps > 0);
   checks.push({

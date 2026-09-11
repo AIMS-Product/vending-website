@@ -268,6 +268,44 @@ describe("syncChannelDaily", () => {
     expect(upserts[0]).not.toHaveProperty("revenue");
   });
 
+  it("credits an untagged chatbot-captured lead to Chatbot, not Website", async () => {
+    const base = {
+      created_at: "2026-09-10T15:00:00.000Z",
+      email: "buyer@gmail.com",
+      full_name: "Buyer",
+      utm_source: null,
+      utm_medium: null,
+      utm_campaign: null,
+      utm_content: null,
+      utm_term: null,
+      call_booked_at: "2026-09-12",
+      call_outcome: null,
+      closed_won_at: null,
+    };
+    const { client, upserts } = buildClient({
+      leads: [
+        { ...base, metadata: { source: "chatbot", conversationId: "c1" } },
+        { ...base, metadata: null },
+        // A tagged lead keeps its campaign even when the chatbot captured it.
+        { ...base, utm_source: "youtube", metadata: { source: "chatbot" } },
+      ],
+    });
+
+    await syncChannelDaily({
+      client,
+      ga4Client: null,
+      bitlyClient: null,
+      now: NOW,
+    });
+
+    const byChannel = Object.fromEntries(
+      upserts.map((row) => [row.channel, row]),
+    );
+    expect(byChannel.Chatbot).toMatchObject({ leads: 1, booked: 1 });
+    expect(byChannel.Website).toMatchObject({ leads: 1 });
+    expect(byChannel.YouTube).toMatchObject({ leads: 1 });
+  });
+
   it("counts a tagged Calendly booking with no lead form as booked, leads unobserved", async () => {
     const { client, upserts } = buildClient({
       bookings: [

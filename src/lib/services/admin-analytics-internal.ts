@@ -55,3 +55,16 @@ export function isInternalLead(
   const normalizedName = fullName?.trim() ?? "";
   return normalizedName ? INTERNAL_NAME_PATTERN.test(normalizedName) : false;
 }
+
+/**
+ * Chatbot-captured leads are tagged on `metadata.source` ("chatbot", the
+ * CHATBOT_LEAD_SOURCE written by lib/chatbot/lead-capture), not on utm_source,
+ * which stays the visitor's real campaign. Shared by the dashboard rollup and
+ * the channel spine so a chatbot lead is Chatbot in both or neither.
+ */
+export function isChatbotCapture(metadata: unknown): boolean {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return false;
+  }
+  return (metadata as Record<string, unknown>).source === "chatbot";
+}

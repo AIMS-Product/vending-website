@@ -205,7 +205,7 @@ async function fetchSourceCounts(
 ): Promise<SourceCounts> {
   const startIso = `${startDay}T00:00:00.000Z`;
   const endExclusive = `${dayKey(new Date(new Date(`${endDay}T00:00:00.000Z`).getTime() + DAY_MS))}T00:00:00.000Z`;
-  const [leadSubmissions, webinarRegistrations, ga4Sessions] =
+  const [leadSubmissions, webinarRegistrations, ga4Sessions, calendlyBookings] =
     await Promise.all([
       pageSum(
         (from, to) =>
@@ -241,8 +241,25 @@ async function fetchSourceCounts(
             .range(from, to),
         (row: { sessions: number }) => row.sessions,
       ),
+      pageSum(
+        (from, to) =>
+          client
+            .from("calendly_bookings")
+            .select("created_at")
+            .eq("status", "booked")
+            .gte("created_at", startIso)
+            .lt("created_at", endExclusive)
+            .order("created_at")
+            .range(from, to),
+        () => 1,
+      ),
     ]);
-  return { leadSubmissions, webinarRegistrations, ga4Sessions };
+  return {
+    leadSubmissions,
+    webinarRegistrations,
+    ga4Sessions,
+    calendlyBookings,
+  };
 }
 
 async function pageSum<Row>(

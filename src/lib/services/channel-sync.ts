@@ -5,7 +5,10 @@ import { parseLinkUtms } from "@/lib/analytics/link-standard";
 import { createBitlyClient, type BitlyClient } from "@/lib/bitly/client";
 import { config } from "@/lib/config";
 import { createGa4Client, type Ga4Client } from "@/lib/ga4/client";
-import { isInternalLead } from "@/lib/services/admin-analytics-internal";
+import {
+  isChatbotCapture,
+  isInternalLead,
+} from "@/lib/services/admin-analytics-internal";
 import {
   recordSyncRun,
   upsertChannelDaily,
@@ -249,6 +252,7 @@ type LeadRow = {
   call_booked_at: string | null;
   call_outcome: string | null;
   closed_won_at: string | null;
+  metadata: unknown;
 };
 
 type BookingRow = {
@@ -280,7 +284,7 @@ async function syncLeads(
     client
       .from("lead_submissions")
       .select(
-        "created_at,email,full_name,utm_source,utm_medium,utm_campaign,utm_content,utm_term,call_booked_at,call_outcome,closed_won_at",
+        "created_at,email,full_name,utm_source,utm_medium,utm_campaign,utm_content,utm_term,call_booked_at,call_outcome,closed_won_at,metadata",
       )
       .gte("created_at", startIso)
       .lt("created_at", endIso)
@@ -299,10 +303,15 @@ async function syncLeads(
           ? 1
           : 0;
       const won = lead.closed_won_at || lead.call_outcome === "won" ? 1 : 0;
+      // A lead the site chatbot captured mid-conversation with no campaign
+      // tag is the chatbot's lead, not the site's. Written as the source so
+      // the read-time re-labelling reaches the same answer.
+      const chatbot =
+        !lead.utm_source?.trim() && isChatbotCapture(lead.metadata);
       return {
         day: lead.created_at.slice(0, 10),
-        source: lead.utm_source,
-        medium: lead.utm_medium,
+        source: chatbot ? "chatbot" : lead.utm_source,
+        medium: chatbot ? "chat" : lead.utm_medium,
         campaign: lead.utm_campaign,
         content: lead.utm_content,
         term: lead.utm_term,

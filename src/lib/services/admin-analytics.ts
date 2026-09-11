@@ -2,10 +2,12 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveChannel } from "@/lib/analytics/channel";
-import { CHATBOT_LEAD_SOURCE } from "@/lib/chatbot/lead-capture";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
-import { isInternalLead } from "@/lib/services/admin-analytics-internal";
+import {
+  isChatbotCapture,
+  isInternalLead,
+} from "@/lib/services/admin-analytics-internal";
 import {
   buildAcquisitionRollup,
   buildPagesRollup,
@@ -543,11 +545,7 @@ function topNWithBookings(
  * and not on utm_source (which stays the visitor's real campaign).
  */
 function isChatbotLead(lead: LeadAnalyticsRow): boolean {
-  const metadata = lead.metadata;
-  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
-    return false;
-  }
-  return (metadata as Record<string, unknown>).source === CHATBOT_LEAD_SOURCE;
+  return isChatbotCapture(lead.metadata);
 }
 
 function buildChannelRollup(
