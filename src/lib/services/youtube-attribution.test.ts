@@ -51,12 +51,25 @@ function builder(rows: unknown[], error: unknown) {
   return { target, calls };
 }
 
-function buildClient(rows: Record<string, unknown[]>, failing: string[]) {
+function buildClient(
+  rows: Record<string, unknown[]>,
+  failing: string[],
+  /**
+   * Errors to hand back per `from(table)` call, in order. Lets a test fail the
+   * first `lead_submissions` select (the one carrying the outcome columns) and
+   * let the second through, which is how the two-shot degrade really behaves.
+   */
+  errorQueue: Record<string, unknown[]> = {},
+) {
   const calls: Record<string, Call[]> = {};
+  const seen: Record<string, number> = {};
   const from = vi.fn((table: string) => {
+    const attempt = seen[table] ?? 0;
+    seen[table] = attempt + 1;
+    const queued = errorQueue[table]?.[attempt];
     const b = builder(
       rows[table] ?? [],
-      failing.includes(table) ? { message: "boom" } : null,
+      queued ?? (failing.includes(table) ? { message: "boom" } : null),
     );
     calls[table] = b.calls;
     return b.target as never;
@@ -197,7 +210,11 @@ describe("getYouTubeAttribution reads", () => {
     expect(result.coverage.visitsSource).toBeNull();
   });
 
-  async function run(rows: Record<string, unknown[]>, failing: string[] = []) {
+  async function run(
+    rows: Record<string, unknown[]>,
+    failing: string[] = [],
+    errorQueue: Record<string, unknown[]> = {},
+  ) {
     const { client, calls } = buildClient(
       {
         lead_submissions: [],
@@ -208,8 +225,106 @@ describe("getYouTubeAttribution reads", () => {
         ...rows,
       },
       failing,
+      errorQueue,
     );
     const result = await getYouTubeAttribution({ client, now: NOW });
     return { result, calls };
+  }
+});
+
+/**
+ * H7: a stage that could not be read is unmeasured either way, but "the
+ * migration has not been applied" and "the database timed out" are different
+ * facts. Only the schema codes mean the former, and the latter must not pass
+ * silently.
+ */
+describe("getYouTubeAttribution read failures", () => {
+  const SCHEMA_ERROR = { code: "PGRST205", message: "table not found" };
+  const TIMEOUT = {
+    code: "57014",
+    message: "canceling statement due to statement timeout",
+  };
+
+  it("treats a missing table as not connected without logging it as a fault", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = await run({}, [], { ga4_page_views: [SCHEMA_ERROR] });
+
+    expect(result.coverage.visitsConnected).toBe(false);
+    expect(result.totals.visits).toBeNull();
+    expect(logged).not.toHaveBeenCalled();
+    logged.mockRestore();
+  });
+
+  it("logs a transient read failure instead of calling it not connected in silence", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = await run({}, [], { ga4_page_views: [TIMEOUT] });
+
+    // Still unmeasured: null, never a fabricated zero.
+    expect(result.totals.visits).toBeNull();
+    expect(logged).toHaveBeenCalledTimes(1);
+    const message = String(logged.mock.calls[0]?.[0]);
+    expect(message).toContain("57014");
+    expect(message).toContain("ga4_page_views");
+    logged.mockRestore();
+  });
+
+  it("logs a transient failure on the outcome columns rather than blaming the migration", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const lead = {
+      id: "l1",
+      created_at: "2026-09-05T00:00:00.000Z",
+      email: "viewer@realprospect.com",
+      utm_source: "youtube",
+      utm_campaign: "zach",
+      utm_content: null,
+      lifecycle_status: "new",
+      call_booked_at: null,
+      metadata: null,
+    };
+
+    // First lead_submissions select (with the outcome columns) times out; the
+    // base-column retry succeeds.
+    const { result } = await run({ lead_submissions: [lead] }, [], {
+      lead_submissions: [TIMEOUT],
+    });
+
+    expect(result.totals.leads).toBe(1);
+    expect(result.coverage.outcomesConnected).toBe(false);
+    expect(logged).toHaveBeenCalledTimes(1);
+    expect(String(logged.mock.calls[0]?.[0])).toContain("57014");
+    logged.mockRestore();
+  });
+
+  it("does not log when the outcome columns are simply absent", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await run({}, [], {
+      lead_submissions: [{ code: "42703", message: "no column" }],
+    });
+
+    expect(logged).not.toHaveBeenCalled();
+    logged.mockRestore();
+  });
+
+  async function run(
+    rows: Record<string, unknown[]>,
+    failing: string[] = [],
+    errorQueue: Record<string, unknown[]> = {},
+  ) {
+    const { client } = buildClient(
+      {
+        lead_submissions: [],
+        youtube_videos: [],
+        bitly_link_clicks: [],
+        lead_page_views: [],
+        ga4_page_views: [],
+        ...rows,
+      },
+      failing,
+      errorQueue,
+    );
+    return { result: await getYouTubeAttribution({ client, now: NOW }) };
   }
 });
