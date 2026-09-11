@@ -47,12 +47,12 @@ function KpiSectionTable({ section }: { section: KpiSection }) {
         </p>
       ) : (
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[72rem] text-[0.8125rem]">
+          <table className="w-full min-w-[96rem] text-[0.8125rem]">
             <thead>
               <tr
                 className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
               >
-                <th className="py-2 pr-3 font-semibold">Row</th>
+                <th className="py-2 pr-4 font-semibold">Row</th>
                 {section.columns.map((column) => (
                   <th
                     key={column.key}
@@ -61,10 +61,12 @@ function KpiSectionTable({ section }: { section: KpiSection }) {
                     {column.label}
                   </th>
                 ))}
-                <th className="py-2 pr-3 font-semibold">Source of truth</th>
-                <th className="py-2 pr-3 font-semibold">Owner</th>
-                <th className="py-2 pr-3 font-semibold">Cadence</th>
-                <th className="py-2 font-semibold">Last verified</th>
+                <th className="py-2 pr-3 font-semibold whitespace-nowrap">
+                  Owner · cadence
+                </th>
+                <th className="py-2 font-semibold whitespace-nowrap">
+                  Last verified
+                </th>
               </tr>
             </thead>
             <tbody className="divide-ui-line divide-y">
@@ -92,25 +94,35 @@ function KpiSectionTable({ section }: { section: KpiSection }) {
 function KpiTableRow({ row, columns }: { row: KpiRow; columns: KpiColumn[] }) {
   return (
     <tr>
-      <td className="py-2 pr-3">
-        <div className="text-ui-text font-medium">{row.label}</div>
-        {row.detail ? (
-          <div className="text-ui-text-subtle text-xs">{row.detail}</div>
-        ) : null}
+      <td className="min-w-[14rem] py-2.5 pr-4 align-top">
+        <div className="text-ui-text font-medium whitespace-nowrap">
+          {row.label}
+          {row.detail ? (
+            <span className="text-ui-text-muted font-normal">
+              {" "}
+              · {row.detail}
+            </span>
+          ) : null}
+        </div>
+        <div
+          className="text-ui-text-subtle text-xs whitespace-nowrap"
+          title="Source of truth"
+        >
+          {row.sourceOfTruth}
+        </div>
       </td>
       {columns.map((column) => (
-        <td key={column.key} className="py-2 pr-3 text-right tabular-nums">
+        <td
+          key={column.key}
+          className="py-2.5 pr-3 text-right align-top whitespace-nowrap tabular-nums"
+        >
           <Cell value={row.values[column.key] ?? null} format={column.format} />
         </td>
       ))}
-      <td className="text-ui-text-muted py-2 pr-3 text-xs">
-        {row.sourceOfTruth}
+      <td className="text-ui-text-muted py-2.5 pr-3 align-top text-xs whitespace-nowrap">
+        {row.owner ?? "—"} · {row.cadence}
       </td>
-      <td className="text-ui-text-muted py-2 pr-3 text-xs">
-        {row.owner ?? "—"}
-      </td>
-      <td className="text-ui-text-muted py-2 pr-3 text-xs">{row.cadence}</td>
-      <td className="text-ui-text-muted py-2 text-xs whitespace-nowrap">
+      <td className="text-ui-text-muted py-2.5 align-top text-xs whitespace-nowrap">
         {row.lastVerified ? (
           <span title={row.lastVerified}>{row.lastVerified.slice(0, 10)}</span>
         ) : (

@@ -157,6 +157,9 @@ describe("buildKpiReport", () => {
   it("rows are channel x CTA path with paired rates and cohort basis", () => {
     const yt = funnels!.rows.find((row) => row.key === "YouTube|book-call")!;
     expect(yt.detail).toBe("Direct booking");
+    expect(
+      funnels!.rows.find((row) => row.key === "Website|unknown"),
+    ).toBeUndefined();
     expect(funnels!.hiddenNote).toContain("visits or reach only");
     expect(yt.values).toMatchObject({
       visits: 1500,
@@ -252,9 +255,7 @@ describe("kpiReportToCsv", () => {
     const csv = kpiReportToCsv(buildKpiReport(input));
     const blocks = csv.trim().split("\n\n");
     expect(blocks).toHaveLength(4);
-    expect(blocks[0]!.split("\n")[0]).toMatch(
-      /^Section,Row,Detail,Views \/ reach,CTR,/,
-    );
+    expect(blocks[0]!.split("\n")[0]).toMatch(/^Section,Row,Detail,Reach,CTR,/);
     const yt = blocks[0]!
       .split("\n")
       .find((line) => line.startsWith("Content and website funnels,YouTube"))!;

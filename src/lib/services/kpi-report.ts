@@ -111,7 +111,7 @@ const PATH_LABEL: Record<string, string> = {
   "webinar-register": "Webinar registration",
   content: "Content",
   none: "No CTA",
-  unknown: "CTA path not tagged (no utm_term)",
+  unknown: "",
 };
 
 const RE_ENGAGEMENT_CHANNELS = new Set(["Email", "SMS", "Newsletter"]);
@@ -120,63 +120,63 @@ const RE_ENGAGEMENT_CHANNELS = new Set(["Email", "SMS", "Newsletter"]);
 const SELF_BOOKED = "No setter (self-booked)";
 
 const FUNNEL_COLUMNS: KpiColumn[] = [
-  { key: "reach", label: "Views / reach", format: "number" },
+  { key: "reach", label: "Reach", format: "number" },
   { key: "ctr", label: "CTR", format: "percent" },
-  { key: "visits", label: "Landing page visits", format: "number" },
-  { key: "optIn", label: "Opt-in %", format: "percent" },
+  { key: "visits", label: "LP visits", format: "number" },
+  { key: "optIn", label: "Opt-in", format: "percent" },
   { key: "leads", label: "Leads", format: "number" },
-  { key: "leadToBook", label: "Lead to book %", format: "percent" },
-  { key: "booked", label: "First booked calls", format: "number" },
+  { key: "leadToBook", label: "Lead → book", format: "percent" },
+  { key: "booked", label: "Booked", format: "number" },
   { key: "showRate", label: "Show rate", format: "percent" },
-  { key: "showed", label: "Calls shown", format: "number" },
+  { key: "showed", label: "Shown", format: "number" },
   { key: "closeRate", label: "Close rate", format: "percent" },
-  { key: "won", label: "Closed won", format: "number" },
-  { key: "leadToClose", label: "Lead to close %", format: "percent" },
+  { key: "won", label: "Won", format: "number" },
+  { key: "leadToClose", label: "Lead → close", format: "percent" },
   { key: "revenue", label: "Revenue", format: "money" },
   { key: "spend", label: "Spend", format: "money" },
-  { key: "costPerBooked", label: "Cost / booked call", format: "money" },
+  { key: "costPerBooked", label: "Cost / booked", format: "money" },
 ];
 
 const WEBINAR_COLUMNS: KpiColumn[] = [
   { key: "registrations", label: "Registrations", format: "number" },
-  { key: "attendanceRate", label: "Attendance %", format: "percent" },
+  { key: "attendanceRate", label: "Attendance", format: "percent" },
   { key: "attendees", label: "Attendees", format: "number" },
-  { key: "regToBook", label: "Registration to book %", format: "percent" },
-  { key: "booked", label: "First booked calls", format: "number" },
+  { key: "regToBook", label: "Reg → book", format: "percent" },
+  { key: "booked", label: "Booked", format: "number" },
   { key: "showRate", label: "Show rate", format: "percent" },
-  { key: "showed", label: "Calls shown", format: "number" },
+  { key: "showed", label: "Shown", format: "number" },
   { key: "closeRate", label: "Close rate", format: "percent" },
-  { key: "won", label: "Closed won", format: "number" },
-  { key: "regToClose", label: "Registration to close %", format: "percent" },
+  { key: "won", label: "Won", format: "number" },
+  { key: "regToClose", label: "Reg → close", format: "percent" },
   { key: "revenue", label: "Revenue", format: "money" },
   { key: "spend", label: "Spend", format: "money" },
-  { key: "costPerBooked", label: "Cost / booked call", format: "money" },
+  { key: "costPerBooked", label: "Cost / booked", format: "money" },
 ];
 
 const RE_ENGAGEMENT_COLUMNS: KpiColumn[] = [
   { key: "sent", label: "Sent", format: "number" },
-  { key: "deliveryRate", label: "Delivery %", format: "percent" },
+  { key: "deliveryRate", label: "Delivered %", format: "percent" },
   { key: "delivered", label: "Delivered", format: "number" },
   { key: "opened", label: "Opened", format: "number" },
   { key: "clicked", label: "Clicked", format: "number" },
-  { key: "replyRate", label: "Reply %", format: "percent" },
+  { key: "replyRate", label: "Reply rate", format: "percent" },
   { key: "replied", label: "Replies", format: "number" },
   { key: "leads", label: "Leads", format: "number" },
-  { key: "leadToBook", label: "Lead to book %", format: "percent" },
-  { key: "booked", label: "First booked calls", format: "number" },
+  { key: "leadToBook", label: "Lead → book", format: "percent" },
+  { key: "booked", label: "Booked", format: "number" },
   { key: "showRate", label: "Show rate", format: "percent" },
-  { key: "showed", label: "Calls shown", format: "number" },
-  { key: "won", label: "Closed won", format: "number" },
+  { key: "showed", label: "Shown", format: "number" },
+  { key: "won", label: "Won", format: "number" },
 ];
 
 const LANE2_COLUMNS: KpiColumn[] = [
   { key: "leads", label: "New conversations", format: "number" },
   { key: "clicks", label: "Booking links sent", format: "number" },
-  { key: "booked", label: "First booked calls", format: "number" },
+  { key: "booked", label: "Booked", format: "number" },
   { key: "showRate", label: "Show rate", format: "percent" },
-  { key: "showed", label: "Calls shown", format: "number" },
+  { key: "showed", label: "Shown", format: "number" },
   { key: "closeRate", label: "Close rate", format: "percent" },
-  { key: "won", label: "Closed won", format: "number" },
+  { key: "won", label: "Won", format: "number" },
 ];
 
 /** Which connector observes each spine metric, for "source of truth". */
@@ -227,7 +227,7 @@ function buildFunnelSection(input: KpiInput): KpiSection {
     rows.push({
       key: id,
       label: channel,
-      detail: PATH_LABEL[destination] ?? destination,
+      detail: (PATH_LABEL[destination] ?? destination) || null,
       values,
       ...provenance(facts, input.lastRun),
       ...ownerFor(channel),
@@ -239,7 +239,7 @@ function buildFunnelSection(input: KpiInput): KpiSection {
     key: "funnels",
     title: "Content and website funnels",
     basis:
-      "Booked, shown and won are credited to the day the lead arrived, so every rate is over one cohort. Row = channel x CTA path (utm_term).",
+      "Booked, shown and won are credited to the day the lead arrived, so every rate is over one cohort. A row splits by CTA path (utm_term) once its links carry one; a row with no path is a channel whose links are not tagged yet.",
     columns: FUNNEL_COLUMNS,
     rows,
     hidden,
