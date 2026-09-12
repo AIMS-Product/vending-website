@@ -29,6 +29,7 @@ function table(rows: unknown[]) {
     "not",
     "order",
     "range",
+    "limit",
   ]) {
     builder[method] = vi.fn(chain);
   }
@@ -292,6 +293,7 @@ describe("syncChannelDaily", () => {
           call_booked_at: "2026-09-12",
           call_outcome: "won",
           closed_won_at: "2026-09-20",
+          closed_won_value: 5997,
         }),
         lead({ email: "qa@example.com" }),
       ],
@@ -312,9 +314,11 @@ describe("syncChannelDaily", () => {
         booked: 3,
         showed: 2,
         won: 1,
+        // One won lead carries a deal value; the three that did not win
+        // contribute null, which does not drag the sum down to zero.
+        revenue: 5997,
       }),
     ]);
-    expect(upserts[0]).not.toHaveProperty("revenue");
   });
 
   it("credits an untagged chatbot-captured lead to Chatbot, not Website", async () => {

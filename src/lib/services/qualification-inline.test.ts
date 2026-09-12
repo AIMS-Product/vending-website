@@ -146,6 +146,7 @@ function makeLead(overrides: Partial<LeadRow> = {}): LeadRow {
     close_status_at: null,
     closed_won_at: null,
     closed_won_source: null,
+    closed_won_value: null,
     call_status: null,
     call_reconciled_at: null,
     close_sync_last_error: null,

@@ -6,6 +6,7 @@ import {
   outcomeFromLabel,
   outcomeUpdate,
   reconcileCloseBookings,
+  wonValue,
 } from "./close-booking-reconcile";
 import type { CloseClient } from "@/lib/close/client";
 import type { Database } from "@/types/database";
@@ -28,6 +29,7 @@ function buildClient(
     updateError?: unknown;
     missingOutcomeColumns?: boolean;
     missingCreditColumns?: boolean;
+    missingValueColumn?: boolean;
   } = {},
 ) {
   const updates: Array<{ id: string; patch: Record<string, unknown> }> = [];
@@ -47,6 +49,23 @@ function buildClient(
                   code: "42703",
                   message:
                     "column lead_submissions.booked_by_setter does not exist",
+                },
+              }
+            : { data: [], error: null },
+        ),
+      };
+    }
+    // The once-per-run deal-value probe, same shape as the credit one.
+    if (fields === "closed_won_value") {
+      return {
+        limit: vi.fn().mockResolvedValue(
+          options.missingValueColumn
+            ? {
+                data: null,
+                error: {
+                  code: "42703",
+                  message:
+                    "column lead_submissions.closed_won_value does not exist",
                 },
               }
             : { data: [], error: null },
@@ -151,6 +170,8 @@ describe("reconcileCloseBookings", () => {
           booked_by_setter: null,
           entry_resource_tag: null,
           close_lead_created_at: null,
+          // No won opportunity on this lead, so no value is observed.
+          closed_won_value: null,
         },
       },
     ]);
@@ -315,7 +336,11 @@ describe("reconcileCloseBookings", () => {
   it("keeps mirroring bookings when the outcome columns are not migrated yet", async () => {
     const { client, updates, selected } = buildClient(
       [{ id: "lead-7", close_lead_id: "close_7" }],
-      { missingOutcomeColumns: true, missingCreditColumns: true },
+      {
+        missingOutcomeColumns: true,
+        missingCreditColumns: true,
+        missingValueColumn: true,
+      },
     );
     const closeClient = buildCloseClient({
       close_7: {
@@ -334,7 +359,8 @@ describe("reconcileCloseBookings", () => {
     // booking mirror keeps running until the migration is applied by hand.
     expect(selected.at(-1)).not.toContain("closed_won_at");
     expect(result).toMatchObject({ scanned: 1, updated: 1, booked: 1 });
-    // None of the four new columns may reach the write, or every update 400s.
+    // None of the columns a later migration adds may reach the write, or
+    // every update 400s for the same reason the select did.
     expect(updates[0].patch).toEqual({
       call_booked_at: "2026-08-21",
       call_status: "🏆 Closed / Won",
@@ -401,6 +427,33 @@ describe("outcomeFromLabel", () => {
   });
 });
 
+describe("wonValue", () => {
+  it("sums won opportunities and converts Close's cents to dollars", () => {
+    expect(
+      wonValue([
+        { status_type: "won", date_won: "2026-08-01", value: 599700 },
+        { status_type: "won", date_won: "2026-09-01", value: 689700 },
+      ]),
+    ).toBe(12894);
+  });
+
+  it("ignores opportunities that are not won", () => {
+    expect(
+      wonValue([
+        { status_type: "lost", value: 999900 },
+        { status_type: "active", value: 500000 },
+      ]),
+    ).toBeNull();
+  });
+
+  it("is null, not zero, when a won deal carries no value", () => {
+    expect(
+      wonValue([{ status_type: "won", date_won: "2026-08-01" }]),
+    ).toBeNull();
+    expect(wonValue(null)).toBeNull();
+  });
+});
+
 describe("earliestWonDate", () => {
   it("takes the first win when a lead has several opportunities", () => {
     expect(
@@ -461,6 +514,7 @@ describe("outcomeUpdate", () => {
     call_status: null,
     closed_won_at: null,
     closed_won_source: null,
+    closed_won_value: null,
   };
 
   it("prefers a Close opportunity date over anything inferred", () => {

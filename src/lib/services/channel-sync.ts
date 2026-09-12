@@ -301,6 +301,8 @@ type LeadRow = {
   call_booked_at: string | null;
   call_outcome: string | null;
   closed_won_at: string | null;
+  /** Added by 20260912120000; absent until that migration runs. */
+  closed_won_value?: number | null;
   metadata: unknown;
 };
 
@@ -318,7 +320,7 @@ type BookingRow = {
  * the lead arrived, so a channel row's booked ÷ leads is a real rate over one
  * population. "showed" is a derivation, not an observation: booked minus the
  * outcomes that assert the call did not happen (matching the YouTube tab).
- * Revenue is not written; no table here holds a deal value yet.
+ * Revenue is the lead's won Close deal value, mirrored by the reconciler.
  */
 async function syncLeads(
   client: SyncClient,
@@ -329,12 +331,21 @@ async function syncLeads(
   const startIso = `${startDate}T00:00:00.000Z`;
   const endIso = `${dayKey(addDays(new Date(`${endDate}T00:00:00.000Z`), 1))}T00:00:00.000Z`;
 
+  const base =
+    "created_at,email,full_name,utm_source,utm_medium,utm_campaign,utm_content,utm_term,call_booked_at,call_outcome,closed_won_at,metadata";
+  // Probed once, not guessed: the deal-value column ships ahead of being
+  // applied by hand, and selecting a column that is not there yet would fail
+  // the whole leads connector rather than the one column.
+  const { error: valueError } = await client
+    .from("lead_submissions")
+    .select("closed_won_value")
+    .limit(1);
+  const revenueConnected = !valueError;
+
   const leads = await pageAll<LeadRow>((from, to) =>
     client
       .from("lead_submissions")
-      .select(
-        "created_at,email,full_name,utm_source,utm_medium,utm_campaign,utm_content,utm_term,call_booked_at,call_outcome,closed_won_at,metadata",
-      )
+      .select(revenueConnected ? `${base},closed_won_value` : base)
       .gte("created_at", startIso)
       .lt("created_at", endIso)
       .order("created_at")
@@ -368,6 +379,10 @@ async function syncLeads(
         booked,
         showed,
         won,
+        // Credited to the lead's cohort day like booked / showed / won, so a
+        // channel's revenue sits over the same population as its leads. Null
+        // for a lead that has not won: not observed, not zero.
+        revenue: lead.closed_won_value ?? null,
       };
     });
 
@@ -399,6 +414,9 @@ async function syncLeads(
     booked: 1,
     showed: null,
     won: null,
+    // Same shape as the lead rows above: PostgREST rejects an upsert batch
+    // whose objects do not all carry the same keys.
+    revenue: null,
   }));
 
   return written(

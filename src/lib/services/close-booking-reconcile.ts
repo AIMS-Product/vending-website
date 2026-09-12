@@ -133,7 +133,11 @@ export async function reconcileCloseBookings(
 
   // Probed once per run, not per row: a missing credit column would otherwise
   // fail all 60 updates in the batch and the whole booking mirror with them.
-  const creditConnected = await creditColumnsConnected(client);
+  const creditConnected = await columnsConnected(
+    client,
+    "booked_by_setter,entry_resource_tag,close_lead_created_at",
+  );
+  const valueConnected = await columnsConnected(client, "closed_won_value");
 
   const result: ReconcileBookingsResult = { ...empty, scanned: rows.length };
   const reconciledAt = now.toISOString();
@@ -153,6 +157,13 @@ export async function reconcileCloseBookings(
               call_reconciled_at: reconciledAt,
               ...(outcomesConnected ? outcomeUpdate(row, lead, now) : null),
               ...(creditConnected ? creditUpdate(lead) : null),
+              // Written on every pass, outside outcomeUpdate's branching: a
+              // deal re-valued in Close, or a win reversed, has to reach the
+              // report, and wonValue already returns null for a lead with no
+              // won opportunity.
+              ...(valueConnected
+                ? { closed_won_value: wonValue(lead.opportunities) }
+                : null),
             }
           : {
               // Leave call_booked_at untouched: a lead deleted in Close today
@@ -365,7 +376,12 @@ export function outcomeUpdate(
 }
 
 type CloseOpportunities =
-  | Array<{ status_type?: string | null; date_won?: string | null }>
+  | Array<{
+      status_type?: string | null;
+      date_won?: string | null;
+      /** Close returns this in cents; see wonValue. */
+      value?: number | null;
+    }>
   | null
   | undefined;
 
@@ -414,6 +430,32 @@ export function earliestWonDate(
     .map((date) => date.trim().slice(0, 10))
     .sort();
   return dates[0] ?? null;
+}
+
+/**
+ * What this lead's won deals are worth, in dollars.
+ *
+ * Close returns `value` as an integer number of CENTS (checked against live
+ * data 2026-09-11: an opportunity formatted "$5,997" comes back as 599700), so
+ * it is divided here and every reader downstream sees dollars.
+ *
+ * Summed across won opportunities rather than taking the first, the way
+ * `earliestWonDate` does: a lead that bought twice is worth both deals, while
+ * the date the lead became a customer is still the first one. A won
+ * opportunity with no numeric value contributes nothing, and a lead with no
+ * won opportunity at all is null -- not observed, never zero.
+ */
+export function wonValue(opportunities: CloseOpportunities): number | null {
+  if (!Array.isArray(opportunities)) return null;
+  const values = opportunities
+    .filter((opportunity) => opportunity?.status_type === "won")
+    .map((opportunity) => opportunity?.value)
+    .filter(
+      (value): value is number =>
+        typeof value === "number" && Number.isFinite(value),
+    );
+  if (values.length === 0) return null;
+  return values.reduce((sum, value) => sum + value, 0) / 100;
 }
 
 function dayKey(date: Date): string {
@@ -479,12 +521,13 @@ function customText(
  * ship ahead of being applied by hand, and the credit columns are additive
  * polish -- losing the whole booking mirror over them would be the regression.
  */
-async function creditColumnsConnected(
+async function columnsConnected(
   client: ReconcileClient,
+  fields: string,
 ): Promise<boolean> {
   const { error } = await client
     .from("lead_submissions")
-    .select("booked_by_setter,entry_resource_tag,close_lead_created_at")
+    .select(fields)
     .limit(1);
   return !error;
 }

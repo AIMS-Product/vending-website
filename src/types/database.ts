@@ -249,6 +249,7 @@ export type Database = {
           close_status_at: string | null;
           closed_won_at: string | null;
           closed_won_source: string | null;
+          closed_won_value: number | null;
           call_status: string | null;
           call_reconciled_at: string | null;
           created_at: string;
@@ -309,6 +310,7 @@ export type Database = {
           close_status_at?: string | null;
           closed_won_at?: string | null;
           closed_won_source?: string | null;
+          closed_won_value?: number | null;
           call_status?: string | null;
           call_reconciled_at?: string | null;
           created_at?: string;
@@ -369,6 +371,7 @@ export type Database = {
           close_status_at?: string | null;
           closed_won_at?: string | null;
           closed_won_source?: string | null;
+          closed_won_value?: number | null;
           call_status?: string | null;
           call_reconciled_at?: string | null;
           created_at?: string;
