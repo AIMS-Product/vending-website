@@ -171,13 +171,13 @@ describe("buildKpiReport", () => {
     expect(funnels!.hiddenNote).toContain("visits or reach only");
     expect(yt.values).toMatchObject({
       visits: 1500,
-      // Only the first day observed a thank-you visit, so Conv % is 120 / 1000
-      // while the visits column still shows both days.
+      // Both rates are over every visit the channel had, including the
+      // second day, which converted nobody: 120 / 1500 and 200 / 1500. A
+      // visit-day with no lead row is zero leads, not a gap.
       thankYouVisits: 120,
-      thankYouConv: 12,
+      thankYouConv: 8,
       leads: 200,
-      // 200 / 1000: the second day observed visits but not leads, so it is out.
-      optIn: 20,
+      optIn: 13.3,
       leadToBook: 40,
       booked: 80,
       showRate: 50,
@@ -271,7 +271,7 @@ describe("kpiReportToCsv", () => {
     const yt = blocks[0]!
       .split("\n")
       .find((line) => line.startsWith("Content and website funnels,YouTube"))!;
-    expect(yt).toContain(",1500,120,12,20,200,40,80,50,");
+    expect(yt).toContain(",1500,120,8,13.3,200,40,80,50,");
     expect(yt).toContain(",,,,ga4-visits + leads,Ayman,Weekly,");
   });
 });

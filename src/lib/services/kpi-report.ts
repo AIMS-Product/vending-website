@@ -2,6 +2,7 @@ import { INSTAGRAM_DM_CHANNEL } from "@/lib/analytics/channel";
 import type { Tables } from "@/types/database";
 import {
   type ChannelFact,
+  ofVisitsPct,
   pairedPct,
   pct,
   sumObserved,
@@ -258,8 +259,8 @@ function funnelValues(facts: ChannelFact[]): Record<string, number | null> {
     ctr: rate(pairedPct(facts, "clicks", "impressions")),
     visits: sumObserved(facts.map((fact) => fact.visits)),
     thankYouVisits: sumObserved(facts.map((fact) => fact.thankyou_visits)),
-    thankYouConv: rate(pairedPct(facts, "thankyou_visits", "visits")),
-    optIn: rate(pairedPct(facts, "leads", "visits")),
+    thankYouConv: rate(ofVisitsPct(facts, "thankyou_visits")),
+    optIn: rate(ofVisitsPct(facts, "leads")),
     leads: sumObserved(facts.map((fact) => fact.leads)),
     leadToBook: rate(pairedPct(facts, "booked", "leads")),
     booked,

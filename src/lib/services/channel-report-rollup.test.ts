@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildChannelReport,
   buildGoingOut,
+  ofVisitsPct,
   summariseSyncRuns,
   sumObserved,
   type ChannelFact,
@@ -233,5 +234,42 @@ describe("buildGoingOut", () => {
       ["cold", 0, 0],
       ["long", null, null],
     ]);
+  });
+});
+
+describe("ofVisitsPct", () => {
+  it("counts a visit-day that converted nobody, instead of averaging over converting days only", () => {
+    const facts = [
+      fact({ visits: 1000, leads: 200 }),
+      fact({ day: "2026-09-02", visits: 500, leads: null }),
+    ];
+    // The bug this replaced: dropping the second row gave 200 / 1000 = 20%,
+    // which is how the KPI tab came to show YouTube at 35.3% against a true
+    // 11.7% on 2026-09-11.
+    expect(ofVisitsPct(facts, "leads")).toBe(13.3);
+  });
+
+  it("is null when visits and leads never share a row", () => {
+    // The chatbot: leads are captured mid-conversation, with no landing
+    // session on the same link and day. There is no rate to state.
+    expect(
+      ofVisitsPct(
+        [
+          fact({ visits: 17, leads: null }),
+          fact({ day: "2026-09-02", visits: null, leads: 40 }),
+        ],
+        "leads",
+      ),
+    ).toBeNull();
+  });
+
+  it("is zero when the channel had visits and no leads anywhere", () => {
+    expect(ofVisitsPct([fact({ visits: 1217, leads: null })], "leads")).toBe(0);
+  });
+
+  it("is null when nothing observed visits", () => {
+    expect(
+      ofVisitsPct([fact({ visits: null, leads: 75 })], "leads"),
+    ).toBeNull();
   });
 });

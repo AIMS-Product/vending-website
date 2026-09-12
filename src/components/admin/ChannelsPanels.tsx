@@ -286,8 +286,9 @@ export function ChannelTable({
     <section className={adminCardClass} aria-label={title}>
       <h2 className={adminEyebrowClass}>{title}</h2>
       <p className="text-ui-text-subtle mt-2 text-xs">
-        Sorted by leads, then bookings, then visits. Lead % and Book % are
-        measured only on links where both sides were observed.
+        Sorted by leads, then bookings, then visits. Lead % is over every visit
+        in the range; Book % is measured only on links where both sides were
+        observed.
       </p>
       {rows.length === 0 && tail.length === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">

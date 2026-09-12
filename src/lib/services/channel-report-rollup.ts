@@ -195,6 +195,41 @@ export function pairedPct(
   );
 }
 
+/**
+ * A rate whose denominator is visits: opt-in, and thank-you conversion.
+ *
+ * `pairedPct` cannot be used here, and using it was wrong. A spine row only
+ * carries `leads` if a lead was actually submitted on that link that day, so
+ * "both observed" silently drops every visit-day that converted nobody and
+ * averages only over the days that did. Measured on 30 days of production
+ * (2026-09-11) it inflated opt-in on every channel: YouTube 35.3% against a
+ * true 11.7%, LinkedIn 77.8% against 17.5%, Trustpilot 100% against 14.3%.
+ *
+ * So the denominator is every visit the group observed, and a visit-day with
+ * no lead row counts as the zero leads it was. GA4 reports every session, and
+ * the leads connector writes a row per lead, so absence on a visits row is an
+ * observation of zero rather than a gap.
+ *
+ * Null, not zero, when the two sides never meet: a channel with visits and
+ * leads that share no row (the chatbot, whose leads arrive mid-conversation
+ * with no landing session) has no rate to state. A channel that observed
+ * visits and no leads anywhere did convert nobody, and says 0.
+ */
+export function ofVisitsPct(
+  facts: ChannelFact[],
+  numerator: MetricKey,
+): number | null {
+  const visited = facts.filter((fact) => fact.visits != null);
+  if (visited.length === 0) return null;
+  const observedAnywhere = facts.some((fact) => fact[numerator] != null);
+  const overlaps = visited.some((fact) => fact[numerator] != null);
+  if (observedAnywhere && !overlaps) return null;
+  return pct(
+    visited.reduce((sum, fact) => sum + (fact[numerator] ?? 0), 0),
+    sumObserved(visited.map((fact) => fact.visits)),
+  );
+}
+
 function channelsObserving(facts: ChannelFact[], key: MetricKey): number {
   return new Set(
     facts.filter((fact) => fact[key] != null).map((fact) => fact.channel),
@@ -220,7 +255,12 @@ export function buildStages(
       prior: priorTotals[key],
       ofPreviousPct:
         options.shares && previous
-          ? pairedPct(current, key, previous.key)
+          ? // Same reason as ofVisitsPct's doc comment: a visit-day that
+            // converted nobody carries no lead row, and dropping it averaged
+            // the funnel's first step over converting days only.
+            previous.key === "visits"
+            ? ofVisitsPct(current, key)
+            : pairedPct(current, key, previous.key)
           : null,
       ofPreviousLabel: options.shares && previous ? previous.label : null,
       deltaPct: deltaPct(value, priorTotals[key]),
@@ -256,7 +296,7 @@ function rowFor(
     metrics,
     prior: priorMetrics,
     rates: {
-      leadPct: pairedPct(current, "leads", "visits"),
+      leadPct: ofVisitsPct(current, "leads"),
       bookPct: pairedPct(current, "booked", "leads"),
       winPct: pairedPct(current, "won", "booked"),
     },

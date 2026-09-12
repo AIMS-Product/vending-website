@@ -25,9 +25,11 @@ export function KpiTab({ data }: { data: KpiTabData }) {
     <div className="space-y-5">
       <p className="text-ui-text-subtle text-xs">
         {data.range.label} ({data.range.startDay} to {data.range.endDay}). A
-        dash means not observed, never zero. Rates are measured only where both
-        sides were observed on the same rows; a rate that came out above 100% is
-        shown as not observed because its two sides were not one population.
+        dash means not observed, never zero. Opt-in and Conv % are over every
+        visit in the range, counting a visit-day that converted nobody. Rates
+        further down the funnel are measured only where both sides were observed
+        on the same rows; a rate that came out above 100% is shown as not
+        observed because its two sides were not one population.
       </p>
       {data.report.sections.map((section) => (
         <KpiSectionTable key={section.key} section={section} />
