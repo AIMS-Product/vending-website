@@ -85,10 +85,11 @@ function buildClient(data: {
 
 const NOW = new Date("2026-09-11T12:00:00.000Z");
 
-const ga4 = (rows: unknown[]) =>
+const ga4 = (rows: unknown[], thankYou: unknown[] = []) =>
   ({
     fetchPageViews: vi.fn(),
     fetchChannelSessions: vi.fn(async () => rows),
+    fetchThankYouSessions: vi.fn(async () => thankYou),
   }) as unknown as Ga4Client;
 
 const bitly = (links: Array<{ id: string; longUrl: string }>) =>

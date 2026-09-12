@@ -22,6 +22,7 @@ export type ChannelFact = Pick<
   | "reach"
   | "clicks"
   | "visits"
+  | "thankyou_visits"
   | "leads"
   | "booked"
   | "showed"
@@ -35,6 +36,7 @@ export const METRIC_KEYS = [
   "reach",
   "clicks",
   "visits",
+  "thankyou_visits",
   "leads",
   "booked",
   "showed",

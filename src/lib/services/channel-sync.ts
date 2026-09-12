@@ -113,17 +113,36 @@ async function syncGa4Visits(
   now: Date,
 ) {
   if (!ga4) return skipped("GA4 service account is not configured.");
-  const sessions = await ga4.fetchChannelSessions({ startDate, endDate });
-  const rows: ChannelDailyRow[] = sessions.map((row) => ({
+  const range = { startDate, endDate };
+  const key = (row: Ga4ChannelSessionRow) => ({
     day: row.day,
     source: ga4Value(row.source),
     medium: ga4Value(row.medium),
     campaign: ga4Campaign(row),
     content: ga4Value(row.content),
     term: ga4Value(row.term),
-    visits: row.sessions,
-  }));
-  return written(await upsertChannelDaily(client, rows, { now }));
+  });
+
+  const sessions = await ga4.fetchChannelSessions(range);
+  const visits = await upsertChannelDaily(
+    client,
+    sessions.map((row) => ({ ...key(row), visits: row.sessions })),
+    { now },
+  );
+
+  // A second report, and a second upsert: a batch must carry one shape, and
+  // the two reports do not return the same set of link keys.
+  const thankYou = await ga4.fetchThankYouSessions(range);
+  const confirmations = await upsertChannelDaily(
+    client,
+    thankYou.map((row) => ({ ...key(row), thankyou_visits: row.sessions })),
+    { now },
+  );
+
+  return written({
+    written: visits.written + confirmations.written,
+    failed: visits.failed + confirmations.failed,
+  });
 }
 
 /**

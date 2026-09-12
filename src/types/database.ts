@@ -766,6 +766,7 @@ export type Database = {
           revenue: number | null;
           showed: number | null;
           spend: number | null;
+          thankyou_visits: number | null;
           visits: number | null;
           won: number | null;
           campaign: string;
@@ -786,6 +787,7 @@ export type Database = {
           revenue?: number | null;
           showed?: number | null;
           spend?: number | null;
+          thankyou_visits?: number | null;
           visits?: number | null;
           won?: number | null;
           campaign: string;
@@ -806,6 +808,7 @@ export type Database = {
           revenue?: number | null;
           showed?: number | null;
           spend?: number | null;
+          thankyou_visits?: number | null;
           visits?: number | null;
           won?: number | null;
           campaign?: string;

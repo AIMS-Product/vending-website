@@ -52,6 +52,8 @@ export type Ga4PageViewRow = {
 type ReportSpec = {
   dimensions: readonly string[];
   metrics: readonly string[];
+  /** GA4 `FilterExpression`, passed through verbatim. */
+  dimensionFilter?: Record<string, unknown>;
 };
 
 const PAGE_VIEW_REPORT: ReportSpec = {
@@ -90,6 +92,38 @@ const CHANNEL_SESSION_REPORT: ReportSpec = {
     "sessionCampaignId",
   ],
   metrics: ["sessions"],
+};
+
+/**
+ * Every page that confirms a conversion on our own site.
+ *
+ * The four that exist: `/thank-you` and `/thank-you-for-applying`, the two
+ * `/resources/*-thank-you` lead-magnet pages, and `/your-call-is-booked`
+ * (a page-builder page, so it is not in the route tree). Matched by shape
+ * rather than listed, so a new thank-you page counts without a code change.
+ *
+ * RE2, and GA4 matches the whole value.
+ */
+const CONFIRMATION_PATH =
+  "^(/(thank-you|your-call-is-booked|booked).*|/.*-thank-you)$";
+
+/**
+ * Sessions that reached a confirmation page, keyed on the same link
+ * dimensions as CHANNEL_SESSION_REPORT.
+ *
+ * Filtered rather than grouped by path: the spine counts converting sessions
+ * per link, and which of the four pages they landed on is not a dimension the
+ * report has anywhere to put.
+ */
+const THANK_YOU_REPORT: ReportSpec = {
+  dimensions: CHANNEL_SESSION_REPORT.dimensions,
+  metrics: ["sessions"],
+  dimensionFilter: {
+    filter: {
+      fieldName: "pagePath",
+      stringFilter: { matchType: "FULL_REGEXP", value: CONFIRMATION_PATH },
+    },
+  },
 };
 
 /** One day of sessions for one link key. Blank dimensions arrive as "(not set)". */
@@ -157,6 +191,11 @@ export type Ga4Client = {
     endDate: string;
   }): Promise<Ga4PageViewRow[]>;
   fetchChannelSessions(range: {
+    startDate: string;
+    endDate: string;
+  }): Promise<Ga4ChannelSessionRow[]>;
+  /** Sessions that reached a thank-you / call-booked page. Same row shape. */
+  fetchThankYouSessions(range: {
     startDate: string;
     endDate: string;
   }): Promise<Ga4ChannelSessionRow[]>;
@@ -255,6 +294,9 @@ export function createGa4Client({
           dateRanges: [{ startDate, endDate }],
           dimensions: report.dimensions.map((name) => ({ name })),
           metrics: report.metrics.map((name) => ({ name })),
+          ...(report.dimensionFilter
+            ? { dimensionFilter: report.dimensionFilter }
+            : null),
           // GA4 promises no row order, and offset paging over an unordered
           // result can repeat one page's rows and skip another's.
           orderBys: report.dimensions.map((dimensionName) => ({
@@ -331,6 +373,15 @@ export function createGa4Client({
     fetchChannelSessions: (range) =>
       fetchAll(
         CHANNEL_SESSION_REPORT,
+        range,
+        toChannelSessionRow,
+        (row) => row.sessions,
+        { verifyTotals: false },
+      ),
+    // Same dimensions, same fold, so the same reason to skip the total check.
+    fetchThankYouSessions: (range) =>
+      fetchAll(
+        THANK_YOU_REPORT,
         range,
         toChannelSessionRow,
         (row) => row.sessions,

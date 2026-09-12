@@ -43,6 +43,7 @@ export type ChannelDailyMetrics = Partial<
     | "reach"
     | "clicks"
     | "visits"
+    | "thankyou_visits"
     | "leads"
     | "booked"
     | "showed"
@@ -59,6 +60,7 @@ export const CHANNEL_METRIC_KEYS = [
   "reach",
   "clicks",
   "visits",
+  "thankyou_visits",
   "leads",
   "booked",
   "showed",

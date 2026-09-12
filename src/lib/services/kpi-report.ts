@@ -123,6 +123,8 @@ const FUNNEL_COLUMNS: KpiColumn[] = [
   { key: "reach", label: "Reach", format: "number" },
   { key: "ctr", label: "CTR", format: "percent" },
   { key: "visits", label: "LP visits", format: "number" },
+  { key: "thankYouVisits", label: "Thank-you visits", format: "number" },
+  { key: "thankYouConv", label: "Conv %", format: "percent" },
   { key: "optIn", label: "Opt-in", format: "percent" },
   { key: "leads", label: "Leads", format: "number" },
   { key: "leadToBook", label: "Lead → book", format: "percent" },
@@ -183,7 +185,7 @@ const LANE2_COLUMNS: KpiColumn[] = [
 const METRIC_CONNECTOR: Array<
   [keys: ReadonlyArray<keyof ChannelFact>, connector: string]
 > = [
-  [["visits"], "ga4-visits"],
+  [["visits", "thankyou_visits"], "ga4-visits"],
   [["leads", "booked", "showed", "won"], "leads"],
   [["impressions", "reach"], "metricool-posts"],
   [["clicks"], "bitly-clicks"],
@@ -239,7 +241,7 @@ function buildFunnelSection(input: KpiInput): KpiSection {
     key: "funnels",
     title: "Content and website funnels",
     basis:
-      "Booked, shown and won are credited to the day the lead arrived, so every rate is over one cohort. A row splits by CTA path (utm_term) once its links carry one; a row with no path is a channel whose links are not tagged yet.",
+      "Booked, shown and won are credited to the day the lead arrived, so every rate is over one cohort. A row splits by CTA path (utm_term) once its links carry one; a row with no path is a channel whose links are not tagged yet. Thank-you visits count sessions that reached one of our own confirmation pages, so a channel that converts on a GHL form or straight into Calendly shows none.",
     columns: FUNNEL_COLUMNS,
     rows,
     hidden,
@@ -255,6 +257,8 @@ function funnelValues(facts: ChannelFact[]): Record<string, number | null> {
     reach: sumObserved(facts.map((fact) => fact.reach ?? fact.impressions)),
     ctr: rate(pairedPct(facts, "clicks", "impressions")),
     visits: sumObserved(facts.map((fact) => fact.visits)),
+    thankYouVisits: sumObserved(facts.map((fact) => fact.thankyou_visits)),
+    thankYouConv: rate(pairedPct(facts, "thankyou_visits", "visits")),
     optIn: rate(pairedPct(facts, "leads", "visits")),
     leads: sumObserved(facts.map((fact) => fact.leads)),
     leadToBook: rate(pairedPct(facts, "booked", "leads")),

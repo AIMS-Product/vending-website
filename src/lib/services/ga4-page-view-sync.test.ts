@@ -60,6 +60,7 @@ function buildGa4(rows: Ga4PageViewRow[]): {
         return rows;
       }),
       fetchChannelSessions: vi.fn(async () => []),
+      fetchThankYouSessions: vi.fn(async () => []),
     },
   };
 }

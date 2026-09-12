@@ -22,6 +22,7 @@ function fact(overrides: Partial<ChannelFact>): ChannelFact {
     reach: null,
     clicks: null,
     visits: null,
+    thankyou_visits: null,
     leads: null,
     booked: null,
     showed: null,
