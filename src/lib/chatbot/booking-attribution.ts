@@ -1,7 +1,10 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { CHATBOT_BOOKING_UTM_SOURCE } from "@/lib/chatbot/booking";
+import {
+  CHATBOT_BOOKING_UTM_SOURCE,
+  isChatbotCalendarEventType,
+} from "@/lib/chatbot/booking";
 import {
   toChatbotMessages,
   type ChatbotMessage,
@@ -19,8 +22,10 @@ import type { Database, Json } from "@/types/database";
  *    and Calendly echoes both back on the invitee webhook.
  * 2. `email_match` -- inferred fallback, for a visitor who chatted, left, and
  *    booked later through /book-now or an emailed link with no utm on it.
- *    Matched on `captured_email` within a trailing window. Weaker evidence,
- *    so it can never overwrite or clear an `in_chat` stamp.
+ *    Matched on `captured_email` within a trailing window, and ONLY on a
+ *    calendar the chat can actually book into (isChatbotCalendarEventType) --
+ *    a setter's or closer's own calendar is never the chat's booking. Weaker
+ *    evidence, so it can never overwrite or clear an `in_chat` stamp.
  *
  * This is the only place either match is made, which is what lets
  * /admin/chatbot say a booked call came from a specific conversation.
@@ -95,6 +100,19 @@ export async function applyChatbotBookingAttribution(
   const utmConversationId = matchedConversationId(event);
   if (utmConversationId) {
     return applyMatchedAttribution(client, event, utmConversationId, "in_chat");
+  }
+
+  // A booking on a calendar the chat cannot book into is not the chat's, no
+  // matter whose email is on it. Setters and closers work leads the chatbot
+  // also talked to and book them onto their OWN calendars (Momentum - Next
+  // Steps, Onboarding Call, Follow-Up); matching on email alone stamped those
+  // onto the chat, which put a chatbot booking note on the Close lead at the
+  // exact moment a setter booked the call and read as the bot taking their
+  // credit. Every email match on record at the time this shipped (6 of 6) was
+  // one of those. The chat keeps its entry credit through the engagement note
+  // either way -- this only governs who booked the call.
+  if (!isChatbotCalendarEventType(event.eventTypeUri)) {
+    return { matched: false };
   }
 
   const emailConversationId = await findEmailMatchedConversationId(

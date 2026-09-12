@@ -120,8 +120,13 @@ describe("stampChatbotBookingOnCloseLead", () => {
 
     const [payload] = (closeClient.createNote as ReturnType<typeof vi.fn>).mock
       .calls[0];
+    // The lead disclaimer is the point: this note lands on the Close lead the
+    // moment a setter books, and it must not read as the bot taking credit.
     expect(payload.note_html).toContain(
-      "chatted with the site chatbot first, then booked their call later through a different link",
+      "NOT a chatbot booking — the chatbot did not book this call",
+    );
+    expect(payload.note_html).toContain(
+      "chatted with the site chatbot earlier and booked later through a different link",
     );
     expect(payload.note_html).not.toContain(
       "booked their call directly from the calendar inside the site chatbot",

@@ -127,3 +127,24 @@ export function chatbotBookingUrl(
 
   return url.toString();
 }
+
+/**
+ * Is this Calendly event type one the chat itself can book into?
+ *
+ * Setters and closers run their own calendars (Momentum - Next Steps,
+ * Onboarding Call, Follow-Up, Discovery Call - Next Steps) that the chat never
+ * links to from anywhere: not the in-chat calendar, not the follow-up email,
+ * not the site's booking pages. A booking on one of those is somebody's phone
+ * call, so the email fallback in booking-attribution.ts must not claim it for
+ * the chatbot -- see the comment there.
+ *
+ * Unknown (null) is NOT a chatbot calendar. The whole point is to only claim a
+ * booking on positive evidence.
+ */
+export function isChatbotCalendarEventType(
+  eventTypeUri: string | null | undefined,
+): boolean {
+  const uri = eventTypeUri?.trim();
+  if (!uri) return false;
+  return CHATBOT_CALENDARS.some((calendar) => calendar.eventTypeUri === uri);
+}

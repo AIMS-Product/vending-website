@@ -17,6 +17,7 @@ const scheduledEventSchema = z
   .object({
     uri: z.string().nullish(),
     name: z.string().nullish(),
+    event_type: z.string().nullish(),
     start_time: z.string().nullish(),
     end_time: z.string().nullish(),
   })
@@ -62,6 +63,12 @@ export type CalendlyWebhookEvent = {
   utmContent: string | null;
   scheduledEventUri: string | null;
   scheduledEventName: string | null;
+  /**
+   * Which calendar was booked. The event NAME is display text anyone can edit;
+   * this URI is the stable identity, and it is how attribution tells a chat
+   * calendar apart from a setter's or closer's own calendar.
+   */
+  eventTypeUri: string | null;
   eventStartAt: string | null;
   eventEndAt: string | null;
   /**
@@ -175,6 +182,7 @@ export function parseCalendlyEvent(
     utmContent: tracking?.utm_content ?? null,
     scheduledEventUri: scheduledEvent?.uri ?? null,
     scheduledEventName: scheduledEvent?.name ?? null,
+    eventTypeUri: scheduledEvent?.event_type ?? null,
     eventStartAt: scheduledEvent?.start_time ?? null,
     eventEndAt: scheduledEvent?.end_time ?? null,
     inviteeCreatedAt: invitee.created_at ?? null,

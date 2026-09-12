@@ -136,6 +136,7 @@ describe("parseCalendlyEvent", () => {
         scheduled_event: {
           uri: "https://api.calendly.com/scheduled_events/abc",
           name: "Discovery Call",
+          event_type: "https://api.calendly.com/event_types/ee8dd996",
           start_time: "2026-08-01T15:00:00.000000Z",
           end_time: "2026-08-01T15:30:00.000000Z",
         },
@@ -161,6 +162,7 @@ describe("parseCalendlyEvent", () => {
       utmContent: "hero",
       scheduledEventUri: "https://api.calendly.com/scheduled_events/abc",
       scheduledEventName: "Discovery Call",
+      eventTypeUri: "https://api.calendly.com/event_types/ee8dd996",
       eventStartAt: "2026-08-01T15:00:00.000000Z",
       eventEndAt: "2026-08-01T15:30:00.000000Z",
       rawPayload: payload,
@@ -198,6 +200,7 @@ describe("parseCalendlyEvent", () => {
       utmContent: null,
       scheduledEventUri: null,
       scheduledEventName: null,
+      eventTypeUri: null,
       eventStartAt: null,
       eventEndAt: null,
       rawPayload: payload,
