@@ -24,8 +24,10 @@ const ROADMAP_URL =
   "https://drive.google.com/uc?export=download&id=1iORHjmg_UzU3tr5EKcEBp8XIQ-8qoNSm";
 
 // Setter / quick-discovery call — lower-intent leads (not-right-time secondary
-// + good-potential primary).
-const SETTER_CALENDLY_URL =
+// + good-potential primary). One round robin over every setter, which is also
+// the link they send leads themselves (see the setter links on /admin/bookings:
+// the calendar cannot say which setter sent it, the tag on the link can).
+export const SETTER_CALENDLY_URL =
   process.env.NEXT_PUBLIC_SETTER_CALENDLY_URL ??
   "https://calendly.com/d/cvsd-wxt-cvb/vendingpreneurs-quick-discovery";
 
