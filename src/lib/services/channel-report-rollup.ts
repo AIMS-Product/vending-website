@@ -216,17 +216,36 @@ export function pairedPct(
  * session; organic search, which no lead was ever tagged with; thank-you
  * visits before that connector has ever run -- and never states a 0% that
  * only means nobody has measured yet.
+ *
+ * Null too when the visit rows cover less than half of what the channel
+ * actually counted. That is the signature of a key mismatch rather than a
+ * measurement: the two connectors are writing the same traffic under
+ * different keys, so dividing one by the other understates by however much
+ * they disagree. Google Ads on 2026-09-11 is the worked example -- GA4 keyed
+ * visits on the campaign NAME while the links carried the numeric id, so only
+ * 12 of its 128 leads (9%) shared a row with any visit and the rate came out
+ * 0.2% against a true 2.3%. A tenfold error that reads like a real number is
+ * worse than a dash, and it stays wrong until the backfill re-keys the rows.
+ * Healthy channels sit far above the bar (Website 99%, YouTube 91%,
+ * LinkedIn 88%, Instagram 81%), so this only ever fires on breakage.
  */
+const MIN_COVERAGE = 0.5;
+
 export function ofVisitsPct(
   facts: ChannelFact[],
   numerator: MetricKey,
 ): number | null {
   const visited = facts.filter((fact) => fact.visits != null);
   if (!visited.some((fact) => fact[numerator] != null)) return null;
-  return pct(
-    visited.reduce((sum, fact) => sum + (fact[numerator] ?? 0), 0),
-    sumObserved(visited.map((fact) => fact.visits)),
+
+  const covered = visited.reduce(
+    (sum, fact) => sum + (fact[numerator] ?? 0),
+    0,
   );
+  const observed = facts.reduce((sum, fact) => sum + (fact[numerator] ?? 0), 0);
+  if (observed > 0 && covered < observed * MIN_COVERAGE) return null;
+
+  return pct(covered, sumObserved(visited.map((fact) => fact.visits)));
 }
 
 function channelsObserving(facts: ChannelFact[], key: MetricKey): number {

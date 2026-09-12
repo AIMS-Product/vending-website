@@ -272,6 +272,37 @@ describe("ofVisitsPct", () => {
     ).toBeNull();
   });
 
+  it("refuses the rate when the visit rows cover under half the leads", () => {
+    // Google Ads before the campaign-id backfill: GA4 keyed visits on the
+    // campaign name, the links carried the numeric id, so 116 of 128 leads
+    // never shared a row with a visit. 12 / 5495 = 0.2% against a true 2.3%.
+    const facts = [
+      fact({ channel: "Google Ads", campaign: "VP | Brand", visits: 5443 }),
+      fact({
+        channel: "Google Ads",
+        campaign: "23805931083",
+        visits: 52,
+        leads: 12,
+      }),
+      fact({
+        channel: "Google Ads",
+        campaign: "23805931083",
+        day: "2026-09-02",
+        leads: 116,
+      }),
+    ];
+    expect(ofVisitsPct(facts, "leads")).toBeNull();
+  });
+
+  it("states the rate once most of the leads are covered", () => {
+    // YouTube: 140 of 154 leads land on a row that also saw visits.
+    const facts = [
+      fact({ visits: 1320, leads: 140 }),
+      fact({ day: "2026-09-02", leads: 14 }),
+    ];
+    expect(ofVisitsPct(facts, "leads")).toBe(10.6);
+  });
+
   it("is null when nothing observed visits", () => {
     expect(
       ofVisitsPct([fact({ visits: null, leads: 75 })], "leads"),
