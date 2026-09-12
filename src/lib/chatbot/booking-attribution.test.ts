@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { applyChatbotBookingAttribution } from "./booking-attribution";
+import { CHATBOT_CALENDARS } from "./booking";
 import type { CalendlyWebhookEvent } from "@/lib/services/calendly-webhook";
 import type { Database, Json } from "@/types/database";
 
@@ -10,6 +11,9 @@ const CONVERSATION_ID = "11111111-2222-4333-8444-555555555555";
 const EVENT_EMAIL = "dana@example.com";
 const NEWEST_EMAIL_MATCH_ID = "22222222-3333-4444-8555-666666666666";
 const OLDER_EMAIL_MATCH_ID = "33333333-4444-4555-8666-777777777777";
+/** A setter's own calendar: real, live, and never bookable from the chat. */
+const SETTER_EVENT_TYPE_URI =
+  "https://api.calendly.com/event_types/ee8dd996-a128-476b-8bf3-d36d66b61c76";
 
 /**
  * Records the column update and any RPC-appended message, and serves one
@@ -151,6 +155,9 @@ function makeEvent(
     utmContent: CONVERSATION_ID,
     scheduledEventUri: "https://api.calendly.com/scheduled_events/x",
     scheduledEventName: "Quick discovery",
+    // A calendar the chat itself books into. The email fallback only claims
+    // bookings on these; SETTER_EVENT_TYPE_URI below is the other case.
+    eventTypeUri: CHATBOT_CALENDARS[0].eventTypeUri,
     eventStartAt: "2026-09-01T15:00:00.000Z",
     eventEndAt: "2026-09-01T15:15:00.000Z",
     rawPayload: {},
@@ -553,5 +560,88 @@ describe("email-match hardening", () => {
       matched: true,
       attributionSource: "email_match",
     });
+  });
+});
+
+describe("a setter's own calendar is never a chatbot booking", () => {
+  it("ignores an email match on a calendar the chat cannot book", async () => {
+    // The live case: B chatted Sep 11 and did not book. Connor George called
+    // her and booked "Vendingpreneurs Momentum - Next Steps" the next day. On
+    // email alone that stamped her chat as the booking and put a chatbot note
+    // on the Close lead the moment the setter did the work.
+    const { client, updates, ilikeCalls } = fakeClient({
+      emailMatches: [
+        { id: NEWEST_EMAIL_MATCH_ID, created_at: "2026-08-18T00:00:00.000Z" },
+      ],
+    });
+
+    const result = await applyChatbotBookingAttribution(
+      client,
+      makeEmailOnlyEvent({
+        eventTypeUri: SETTER_EVENT_TYPE_URI,
+        scheduledEventName: "Vendingpreneurs Momentum - Next Steps",
+      }),
+    );
+
+    expect(result).toEqual({ matched: false });
+    expect(updates).toHaveLength(0);
+    // Bails before the lookup, so a setter's booking costs no query either.
+    expect(ilikeCalls).toHaveLength(0);
+  });
+
+  it("ignores an email match when the calendar is unknown", async () => {
+    // No positive evidence is not the same as evidence. Older payloads and any
+    // event Calendly sends without an event_type land here.
+    const { client, updates } = fakeClient({
+      emailMatches: [
+        { id: NEWEST_EMAIL_MATCH_ID, created_at: "2026-08-18T00:00:00.000Z" },
+      ],
+    });
+
+    const result = await applyChatbotBookingAttribution(
+      client,
+      makeEmailOnlyEvent({ eventTypeUri: null }),
+    );
+
+    expect(result).toEqual({ matched: false });
+    expect(updates).toHaveLength(0);
+  });
+
+  it("still credits the chat on a calendar the chat does book", async () => {
+    const { client, updates } = fakeClient({
+      emailMatches: [
+        { id: NEWEST_EMAIL_MATCH_ID, created_at: "2026-08-18T00:00:00.000Z" },
+      ],
+    });
+
+    const result = await applyChatbotBookingAttribution(
+      client,
+      makeEmailOnlyEvent({
+        eventTypeUri: CHATBOT_CALENDARS[2].eventTypeUri,
+      }),
+    );
+
+    expect(result).toMatchObject({
+      matched: true,
+      attributionSource: "email_match",
+    });
+    expect(updates).toHaveLength(1);
+  });
+
+  it("does not gate an exact in-chat utm match on the calendar", async () => {
+    // utm_content is proof the chat's own calendar was used. If the chat ever
+    // links a new calendar, that booking must still be credited.
+    const { client, updates } = fakeClient();
+
+    const result = await applyChatbotBookingAttribution(
+      client,
+      makeEvent({ eventTypeUri: SETTER_EVENT_TYPE_URI }),
+    );
+
+    expect(result).toMatchObject({
+      matched: true,
+      attributionSource: "in_chat",
+    });
+    expect(updates).toHaveLength(1);
   });
 });

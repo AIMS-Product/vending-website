@@ -47,6 +47,8 @@ export type CalendlyInvitee = {
 export type CalendlyScheduledEvent = {
   uri: string;
   name: string | null;
+  /** The event type (calendar) this was booked on — stable identity, unlike `name`. */
+  event_type?: string | null;
   start_time: string | null;
   end_time: string | null;
   status: string;

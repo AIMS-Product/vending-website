@@ -94,6 +94,7 @@ export async function POST(request: Request) {
       utmContent: invitee.tracking?.utm_content ?? null,
       scheduledEventUri: invitee.event ?? null,
       scheduledEventName: scheduled?.name ?? null,
+      eventTypeUri: scheduled?.event_type ?? null,
       eventStartAt: scheduled?.start_time ?? null,
       eventEndAt: scheduled?.end_time ?? null,
       inviteeCreatedAt: invitee.created_at ?? null,

@@ -18,6 +18,7 @@ const createdEvent: CalendlyWebhookEvent = {
   utmContent: "hero",
   scheduledEventUri: "https://api.calendly.com/scheduled_events/abc",
   scheduledEventName: "Discovery Call",
+  eventTypeUri: "https://api.calendly.com/event_types/abc",
   eventStartAt: "2026-08-01T15:00:00.000000Z",
   eventEndAt: "2026-08-01T15:30:00.000000Z",
   rawPayload: { event: "invitee.created" },

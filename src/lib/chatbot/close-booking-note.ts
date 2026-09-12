@@ -60,7 +60,11 @@ function noteHtml(
   const lines = [
     input.attributionSource === "in_chat"
       ? "This lead booked their call directly from the calendar inside the site chatbot."
-      : "This lead chatted with the site chatbot first, then booked their call later through a different link (matched by email).",
+      : // Leads with the disclaimer on purpose. This note appears on the lead the
+        // moment a setter books the call, and a rep skimming it saw the word
+        // "chatbot" and read it as the bot claiming their booking. The chat is
+        // context for the call, not credit for it.
+        "NOT a chatbot booking — the chatbot did not book this call. Whoever set the call gets the credit; the chat below is background for it. (This lead chatted with the site chatbot earlier and booked later through a different link, matched by email.)",
     input.scheduledEventName
       ? `Event: ${escapeHtml(input.scheduledEventName)}`
       : null,

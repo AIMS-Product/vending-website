@@ -123,6 +123,7 @@ function toWebhookEvent(
     utmContent: tracking?.utm_content ?? null,
     scheduledEventUri: event.uri,
     scheduledEventName: event.name ?? null,
+    eventTypeUri: event.event_type ?? null,
     eventStartAt: event.start_time ?? null,
     eventEndAt: event.end_time ?? null,
     // Calendly's own record of when they booked. Without it every backfilled
