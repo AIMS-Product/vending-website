@@ -31,6 +31,7 @@ const CALL_CREDIT_FIELDS = [
   "canceled_at",
   "utm_source",
   "utm_medium",
+  "utm_content",
   "booked_at:raw_payload->payload->>created_at",
   "scheduled_by:raw_payload->payload->>invitee_scheduled_by",
   "hosts:raw_payload->payload->scheduled_event->event_memberships",
@@ -45,6 +46,7 @@ type RawRow = {
   canceled_at: string | null;
   utm_source: string | null;
   utm_medium: string | null;
+  utm_content: string | null;
   booked_at: string | null;
   scheduled_by: string | null;
   hosts: unknown;
@@ -136,6 +138,7 @@ export async function buildCallCreditReport(
           scheduledByUri: row.scheduled_by,
           utmSource: row.utm_source,
           utmMedium: row.utm_medium,
+          utmContent: row.utm_content,
         },
         directory,
       ),

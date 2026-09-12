@@ -48,6 +48,37 @@ describe("resolveCallCredit", () => {
     expect(credit.who).toBe("Calendly user 6d68f528");
   });
 
+  it("credits a setter whose own tagged link was used", () => {
+    // The other half of the fix: a setter who texts a link gets the same named
+    // credit as one who books the call inside Calendly.
+    const credit = resolveCallCredit(
+      {
+        scheduledByUri: null,
+        utmSource: "setter",
+        utmMedium: "text",
+        utmContent: "connor-george",
+      },
+      directory,
+    );
+
+    expect(credit.kind).toBe("rep");
+    expect(credit.who).toBe("Connor George");
+  });
+
+  it("refuses to invent a person from an unreadable setter tag", () => {
+    const credit = resolveCallCredit(
+      {
+        scheduledByUri: null,
+        utmSource: "setter",
+        utmMedium: "text",
+        utmContent: "a1b2c3d4-0000-4000-8000",
+      },
+      directory,
+    );
+
+    expect(credit.kind).toBe("untagged");
+  });
+
   it("credits the chatbot only on its own tag", () => {
     expect(
       resolveCallCredit(

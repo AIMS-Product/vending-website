@@ -40,6 +40,8 @@ export type CallCreditInput = {
   scheduledByUri: string | null;
   utmSource: string | null;
   utmMedium: string | null;
+  /** Carries the setter's slug on a `utm_source=setter` link. */
+  utmContent?: string | null;
 };
 
 /** Calendly user URI -> what we know about that person. */
@@ -47,6 +49,17 @@ export type CalendlyDirectory = Map<string, { name: string; email?: string }>;
 
 /** The utm the chat's own calendar link carries (lib/chatbot/booking.ts). */
 const CHATBOT_UTM_SOURCE = "chatbot";
+
+/**
+ * The utm a setter's own booking link carries:
+ * `?utm_source=setter&utm_content=connor-george`.
+ *
+ * This is how a setter who TEXTS a link gets the same named credit as one who
+ * books the call themselves in Calendly. Without it, a lead self-booking off a
+ * link a setter sent is indistinguishable from any other untagged booking, and
+ * that pile is most of the disputes.
+ */
+const SETTER_UTM_SOURCE = "setter";
 
 export function resolveCallCredit(
   input: CallCreditInput,
@@ -64,6 +77,29 @@ export function resolveCallCredit(
   }
 
   const source = input.utmSource?.trim() || null;
+  const taggedSetter =
+    source?.toLowerCase() === SETTER_UTM_SOURCE
+      ? nameFromTag(input.utmContent)
+      : null;
+  if (source?.toLowerCase() === SETTER_UTM_SOURCE) {
+    // A setter link whose tag does not read as a name is worth nothing: naming
+    // the person is the entire job. Fall through to "no tag" and say why,
+    // rather than crediting a channel literally called "Setter".
+    return taggedSetter
+      ? {
+          kind: "rep",
+          who: taggedSetter,
+          evidence: "Booked from this person's own tagged booking link.",
+          repUri: null,
+        }
+      : {
+          kind: "untagged",
+          who: "No tag",
+          evidence:
+            "Booked from a setter link, but its tag does not name anyone, so there is nothing to credit.",
+          repUri: null,
+        };
+  }
   if (source && source.toLowerCase() === CHATBOT_UTM_SOURCE) {
     return {
       kind: "chatbot",
@@ -101,6 +137,21 @@ export function resolveCallCredit(
  */
 function unknownRepLabel(uri: string): string {
   return `Calendly user ${uri.split("/").pop()?.slice(0, 8) ?? "unknown"}`;
+}
+
+/**
+ * `connor-george` -> `Connor George`. Returns null for anything that is not a
+ * plausible name tag, so a stray or machine-generated utm_content cannot invent
+ * a person: an unreadable tag falls through to the untagged answer.
+ */
+function nameFromTag(tag: string | null | undefined): string | null {
+  const cleaned = tag?.trim().toLowerCase() ?? "";
+  if (!/^[a-z][a-z-]{1,40}$/.test(cleaned)) return null;
+  return cleaned
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 /** `internal-webinar` -> `Internal webinar`, `youtube` -> `Youtube`. */
