@@ -53,6 +53,36 @@ counting either as zero would be the same mistake inverted. Confirmation that
 the scoping is right: lead -> book did not move at all (YouTube 72.1%,
 Website 63.3%, Instagram 81%).
 
+## Two more fixes, found by asking "what is wrong RIGHT NOW"
+
+5. **The opt-in fix briefly made Google Ads worse** (5239f4b). Turning the
+   paired rate into a visits-based one changed Google Ads from an honest dash
+   to a confident **0.2%** against a true 2.3% -- because until the backfill
+   runs, only 12 of its 128 leads (9%) share a row with any visit. A tenfold
+   error that reads like a measurement is worse than a dash. `ofVisitsPct` now
+   returns null when the visit rows cover under half of what the channel
+   counted: the signature of a key mismatch rather than a measurement. Healthy
+   channels are nowhere near the bar (Website 99%, YouTube 91%, LinkedIn 88%,
+   Instagram 81%), and it clears itself after the backfill.
+6. **The Reach column was part reach, part impressions** (95d78d6).
+   `reach ?? impressions` summed reach from the rows that had it and
+   impressions from the rows that did not, under one label. And summing reach
+   across posts counts the same follower once per post they saw -- 44 Instagram
+   posts summed to 1,242,166. Now impressions only, labelled Impressions, the
+   same additive-metrics rule that keeps bounce rate out of the GA4 client.
+   The Channels tab was already correct; only the KPI tab mixed them.
+
+## Verified against live APIs, not assumed
+
+- Both GA4 report shapes were run exactly as the code builds them:
+  the 7-dimension channel report returns 200 (1,634 rows; sum 11,455 vs GA4
+  TOTAL 11,253, the expected "(other)" fold, which is why verifyTotals is off)
+  and the thank-you report returns 200 with 93 rows / 109 sessions, its sum
+  matching GA4's TOTAL exactly. Neither had ever been executed before.
+- Close opportunity `value` is in cents, checked against live opportunities.
+- The GHL webinar-form exclusion catches all four registration forms, checked
+  against the live form list.
+
 ## Adam does, before any of this reads correctly
 
 1. **Run the migration.** One `do $$` block covering all three, in the Supabase
@@ -133,6 +163,21 @@ column with its own stated basis.
 6. Show-rate inflation from future-dated calls is real but negligible: 13 of
    348 booked calls have not happened yet, moving show rate 76.6% -> 77.0%.
    Not worth code.
+7. **X impressions are real but vanity.** 529 posts over 30 days reporting
+   11,403,999 impressions, 47 clicks, 0 leads. That is what X's API says and it
+   is honestly labelled, but X counts any timeline view, so it dwarfs every
+   other number on the Channels tab while meaning the least. Worth a word to
+   anyone senior reading the tab before they anchor on it.
+
+## What is still NOT verified
+
+- The migrations have not run. Everything downstream -- Google Ads opt-in,
+  thank-you visits, revenue -- is currently a dash on the page, which is
+  honest, but the numbers this spec projects for them are projections from
+  source data, not readings off the tab.
+- No full `?days=400` connector run has happened against prod with the new
+  code. The GA4 queries are verified and the suite is green; the end-to-end
+  backfill is not.
 
 ## Verified healthy
 
