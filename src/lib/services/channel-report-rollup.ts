@@ -210,20 +210,19 @@ export function pairedPct(
  * the leads connector writes a row per lead, so absence on a visits row is an
  * observation of zero rather than a gap.
  *
- * Null, not zero, when the two sides never meet: a channel with visits and
- * leads that share no row (the chatbot, whose leads arrive mid-conversation
- * with no landing session) has no rate to state. A channel that observed
- * visits and no leads anywhere did convert nobody, and says 0.
+ * Null, not zero, unless the numerator was observed on at least one row that
+ * also carried visits. So the rate is a dash wherever its own column is a
+ * dash -- the chatbot, whose leads arrive mid-conversation with no landing
+ * session; organic search, which no lead was ever tagged with; thank-you
+ * visits before that connector has ever run -- and never states a 0% that
+ * only means nobody has measured yet.
  */
 export function ofVisitsPct(
   facts: ChannelFact[],
   numerator: MetricKey,
 ): number | null {
   const visited = facts.filter((fact) => fact.visits != null);
-  if (visited.length === 0) return null;
-  const observedAnywhere = facts.some((fact) => fact[numerator] != null);
-  const overlaps = visited.some((fact) => fact[numerator] != null);
-  if (observedAnywhere && !overlaps) return null;
+  if (!visited.some((fact) => fact[numerator] != null)) return null;
   return pct(
     visited.reduce((sum, fact) => sum + (fact[numerator] ?? 0), 0),
     sumObserved(visited.map((fact) => fact.visits)),

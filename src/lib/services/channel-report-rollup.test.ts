@@ -263,8 +263,13 @@ describe("ofVisitsPct", () => {
     ).toBeNull();
   });
 
-  it("is zero when the channel had visits and no leads anywhere", () => {
-    expect(ofVisitsPct([fact({ visits: 1217, leads: null })], "leads")).toBe(0);
+  it("is null, not zero, when the numerator was never observed", () => {
+    // Organic search: visits and no lead ever tagged with it. And every
+    // metric before its connector has run for the first time -- a 0% there
+    // would only mean nobody has measured yet.
+    expect(
+      ofVisitsPct([fact({ visits: 1217, leads: null })], "leads"),
+    ).toBeNull();
   });
 
   it("is null when nothing observed visits", () => {
