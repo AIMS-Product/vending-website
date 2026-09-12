@@ -293,7 +293,7 @@ describe("createGa4Client", () => {
 });
 
 describe("fetchChannelSessions", () => {
-  it("asks for the five link-standard dimensions and maps a row onto them", async () => {
+  it("asks for the link-standard dimensions plus the Ads campaign id and maps a row onto them", async () => {
     const { fetchImpl, calls } = buildFetch({
       report: () => ({
         status: 200,
@@ -307,6 +307,7 @@ describe("fetchChannelSessions", () => {
                 { value: "webinar-sept15" },
                 { value: "reel-0911" },
                 { value: "webinar-register" },
+                { value: "(not set)" },
               ],
               metricValues: [{ value: "41" }],
             },
@@ -334,6 +335,7 @@ describe("fetchChannelSessions", () => {
         campaign: "webinar-sept15",
         content: "reel-0911",
         term: "webinar-register",
+        campaignId: "(not set)",
         sessions: 41,
       },
     ]);
@@ -348,6 +350,7 @@ describe("fetchChannelSessions", () => {
       "sessionCampaignName",
       "sessionManualAdContent",
       "sessionManualTerm",
+      "sessionCampaignId",
     ]);
     expect(body.metrics.map((m) => m.name)).toEqual(["sessions"]);
   });
@@ -359,7 +362,7 @@ describe("fetchChannelSessions", () => {
         body: {
           rows: [
             {
-              dimensionValues: Array.from({ length: 6 }, (_, i) => ({
+              dimensionValues: Array.from({ length: 7 }, (_, i) => ({
                 value: i === 0 ? "20260901" : "x",
               })),
               metricValues: [{ value: "5" }],

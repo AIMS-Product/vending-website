@@ -160,6 +160,54 @@ describe("syncChannelDaily", () => {
     expect(upserts[0]).not.toHaveProperty("leads");
   });
 
+  it("keys paid Google visits on the Ads campaign id, so they meet their leads", async () => {
+    const { client, upserts } = buildClient({});
+
+    await syncChannelDaily({
+      client,
+      ga4Client: ga4([
+        {
+          day: "2026-09-10",
+          source: "google",
+          medium: "cpc",
+          campaign: "VP - Search - Brand",
+          content: "(not set)",
+          term: "(not set)",
+          campaignId: "23805931083",
+          sessions: 120,
+        },
+        // Organic google: the name is what its links carry, id is filler.
+        {
+          day: "2026-09-10",
+          source: "google",
+          medium: "organic",
+          campaign: "(not set)",
+          content: "(not set)",
+          term: "(not set)",
+          campaignId: "0",
+          sessions: 9,
+        },
+      ]),
+      bitlyClient: null,
+      now: NOW,
+    });
+
+    expect(upserts).toEqual([
+      expect.objectContaining({
+        channel: "Google Ads",
+        medium: "cpc",
+        campaign: "23805931083",
+        visits: 120,
+      }),
+      expect.objectContaining({
+        channel: "Organic search",
+        medium: "organic",
+        campaign: "(not set)",
+        visits: 9,
+      }),
+    ]);
+  });
+
   it("keys Bitly clicks by the UTMs on the short link's long URL", async () => {
     const { client, upserts, runs } = buildClient({
       clicks: [

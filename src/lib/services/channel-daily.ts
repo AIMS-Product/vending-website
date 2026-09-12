@@ -152,7 +152,10 @@ function mergeByKey(rows: ChannelDailyRow[]): StoredRow[] {
   const byKey = new Map<string, StoredRow>();
   for (const row of rows) {
     const key = channelDailyKey(row);
-    const id = Object.values(key).join("|");
+    // NUL, not "|": Google Ads campaign names carry pipes ("VP | W2 |
+    // Consideration"), so a pipe join let one key's campaign plus content
+    // collide with another's campaign alone and silently sum two links.
+    const id = Object.values(key).join("\u0000");
     const existing = byKey.get(id);
     const metrics = pickMetrics(row);
     if (!existing) {

@@ -1,10 +1,15 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isPaidMedium } from "@/lib/analytics/channel";
 import { parseLinkUtms } from "@/lib/analytics/link-standard";
 import { createBitlyClient, type BitlyClient } from "@/lib/bitly/client";
 import { config } from "@/lib/config";
-import { createGa4Client, type Ga4Client } from "@/lib/ga4/client";
+import {
+  createGa4Client,
+  type Ga4ChannelSessionRow,
+  type Ga4Client,
+} from "@/lib/ga4/client";
 import {
   isChatbotCapture,
   isInternalLead,
@@ -113,12 +118,37 @@ async function syncGa4Visits(
     day: row.day,
     source: ga4Value(row.source),
     medium: ga4Value(row.medium),
-    campaign: ga4Value(row.campaign),
+    campaign: ga4Campaign(row),
     content: ga4Value(row.content),
     term: ga4Value(row.term),
     visits: row.sessions,
   }));
   return written(await upsertChannelDaily(client, rows, { now }));
+}
+
+/**
+ * The campaign value that matches what the link carried.
+ *
+ * Google Ads auto-tagging gives GA4 the campaign NAME, but the tracking
+ * template writes `utm_campaign=<numeric campaign id>`, so a paid Google row's
+ * visits sat under "VP - Search - Brand" while its leads sat under
+ * "23805931083" and every paired rate for Google Ads came out null (seen on
+ * the KPI tab 2026-09-11: 5,254 visits and 122 leads, opt-in a dash). For paid
+ * Google traffic the id is what the link standard sees, so it wins; every
+ * other row keeps the name, which is what its links carry.
+ */
+function ga4Campaign(row: Ga4ChannelSessionRow): string {
+  const source = ga4Value(row.source).toLowerCase();
+  const campaignId = ga4Value(row.campaignId);
+  if (
+    source === "google" &&
+    isPaidMedium(ga4Value(row.medium)) &&
+    // "0" is GA4's filler for a session with no Ads campaign behind it.
+    /^[1-9]\d*$/.test(campaignId)
+  ) {
+    return campaignId;
+  }
+  return ga4Value(row.campaign);
 }
 
 /**

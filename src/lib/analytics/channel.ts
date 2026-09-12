@@ -39,6 +39,16 @@ export const WEBSITE_CHANNEL = "Website";
  */
 const PAID_MEDIUM =
   /^(cpc|ppc|paid|paid[-_ ]?(search|social)|social[-_ ]?paid|display|pmax)$/;
+
+/**
+ * Whether a `utm_medium` marks a paid placement. Exported because the GA4
+ * connector needs the same test: Google Ads reports a campaign NAME to GA4 and
+ * a campaign ID on the link, so the two only meet on the spine if both sides
+ * agree on which rows are paid.
+ */
+export function isPaidMedium(medium: string | null | undefined): boolean {
+  return PAID_MEDIUM.test(medium?.trim().toLowerCase() ?? "");
+}
 const PAID_CHANNEL: Record<string, string> = {
   google: "Google Ads",
   meta: "Meta Ads",
@@ -279,7 +289,7 @@ export function resolveChannel(
     return { channel: UNKNOWN_CHANNEL, person: null };
 
   const paid = PAID_CHANNEL[raw];
-  if (paid && PAID_MEDIUM.test(options.medium?.trim().toLowerCase() ?? ""))
+  if (paid && isPaidMedium(options.medium))
     return { channel: paid, person: null };
 
   const exact = EXACT[raw];

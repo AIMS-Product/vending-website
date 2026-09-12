@@ -81,6 +81,13 @@ const CHANNEL_SESSION_REPORT: ReportSpec = {
     "sessionCampaignName",
     "sessionManualAdContent",
     "sessionManualTerm",
+    // Google Ads reports the campaign NAME to GA4, while the link it builds
+    // carries `utm_campaign=<numeric id>`, so a paid row's visits and its
+    // leads never shared a spine key. The id is what the link standard sees,
+    // so it is fetched alongside the name and the connector keys on it for
+    // paid Google traffic. Appended, not inserted: the row mapper reads
+    // dimensions by index.
+    "sessionCampaignId",
   ],
   metrics: ["sessions"],
 };
@@ -93,6 +100,8 @@ export type Ga4ChannelSessionRow = {
   campaign: string;
   content: string;
   term: string;
+  /** Google Ads campaign id, when this row is Google Ads traffic. */
+  campaignId: string;
   sessions: number;
 };
 
@@ -390,6 +399,7 @@ function toChannelSessionRow(raw: unknown): Ga4ChannelSessionRow | null {
     campaign: row.dimension(3),
     content: row.dimension(4),
     term: row.dimension(5),
+    campaignId: row.dimension(6),
     sessions: row.metric(0),
   };
 }
