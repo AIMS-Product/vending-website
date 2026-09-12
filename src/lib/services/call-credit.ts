@@ -12,7 +12,8 @@
  * 2. `chatbot` — the booking link carried the chat's own utm.
  * 3. `channel` — the booking link carried some other tag (youtube, a webinar,
  *    a paid campaign). The lead booked themselves off that link.
- * 4. `untagged` — an untagged link, self-served. Most often a rep who texted a
+ * 4. Close's setter field, when a human filled it in.
+ * 5. `untagged` — an untagged link, self-served. Most often a rep who texted a
  *    raw Calendly link instead of booking it themselves. Nothing on the
  *    booking says who sent it, so this says exactly that rather than guessing.
  *
@@ -42,6 +43,8 @@ export type CallCreditInput = {
   utmMedium: string | null;
   /** Carries the setter's slug on a `utm_source=setter` link. */
   utmContent?: string | null;
+  /** Close's "Reactivation - Setter Name", mirrored onto the lead. */
+  closeSetter?: string | null;
 };
 
 /** Calendly user URI -> what we know about that person. */
@@ -117,6 +120,19 @@ export function resolveCallCredit(
       evidence: medium
         ? `Self-booked from a link tagged ${source} / ${medium}.`
         : `Self-booked from a link tagged ${source}.`,
+      repUri: null,
+    };
+  }
+
+  // Last, and last on purpose: a tag on the link is direct evidence of how the
+  // booking was made, while Close's setter field is a note a human typed
+  // afterwards. It still beats knowing nothing.
+  const closeSetter = input.closeSetter?.trim();
+  if (closeSetter) {
+    return {
+      kind: "rep",
+      who: closeSetter,
+      evidence: "Recorded in Close as the setter who booked this call.",
       repUri: null,
     };
   }
@@ -251,6 +267,10 @@ export type CallCreditRow = {
   credit: CallCredit;
   /** The chat this person had before the call, when there was one. */
   chat: ChatTouch | null;
+  /** The lead row this booking belongs to, when one matched. */
+  leadSubmissionId: string | null;
+  /** Close's setter name on that lead, kept for reporting that needs it raw. */
+  closeSetter: string | null;
 };
 
 export type CallCreditPerson = {

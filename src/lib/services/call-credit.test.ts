@@ -104,6 +104,33 @@ describe("resolveCallCredit", () => {
     expect(credit.who).toBe("Internal webinar");
   });
 
+  it("falls back to Close's setter field, but only last", () => {
+    // A tag on the link says how the booking was actually made; the Close field
+    // is a note typed afterwards. It still beats knowing nothing.
+    const viaClose = resolveCallCredit(
+      {
+        scheduledByUri: null,
+        utmSource: null,
+        utmMedium: null,
+        closeSetter: "Pearl Sathekge",
+      },
+      directory,
+    );
+    expect(viaClose.kind).toBe("rep");
+    expect(viaClose.who).toBe("Pearl Sathekge");
+
+    const taggedLinkWins = resolveCallCredit(
+      {
+        scheduledByUri: null,
+        utmSource: "youtube",
+        utmMedium: "video",
+        closeSetter: "Pearl Sathekge",
+      },
+      directory,
+    );
+    expect(taggedLinkWins.kind).toBe("channel");
+  });
+
   it("says nothing is known rather than guessing on an untagged link", () => {
     const credit = resolveCallCredit(
       { scheduledByUri: null, utmSource: null, utmMedium: null },
@@ -170,6 +197,8 @@ function row(
     bookedAt: "2026-09-12T14:22:18.000Z",
     canceled: false,
     chat: null,
+    leadSubmissionId: null,
+    closeSetter: null,
     credit: resolveCallCredit(
       { scheduledByUri, utmSource, utmMedium: null },
       directory,

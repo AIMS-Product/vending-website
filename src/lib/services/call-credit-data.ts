@@ -36,6 +36,8 @@ const CALL_CREDIT_FIELDS = [
   "utm_source",
   "utm_medium",
   "utm_content",
+  "lead_submission_id",
+  "lead:lead_submissions(booked_by_setter)",
   "booked_at:raw_payload->payload->>created_at",
   "scheduled_by:raw_payload->payload->>invitee_scheduled_by",
   "hosts:raw_payload->payload->scheduled_event->event_memberships",
@@ -51,6 +53,8 @@ type RawRow = {
   utm_source: string | null;
   utm_medium: string | null;
   utm_content: string | null;
+  lead_submission_id: string | null;
+  lead: { booked_by_setter: string | null } | null;
   booked_at: string | null;
   scheduled_by: string | null;
   hosts: unknown;
@@ -79,13 +83,23 @@ export type CallCreditReport = {
  * this ever needs to page.
  */
 export async function buildCallCreditReport(
-  options: { days?: number; limit?: number } = {},
+  options: {
+    days?: number;
+    limit?: number;
+    /** Explicit booked-at window, for callers reporting on a fixed range. */
+    window?: { startIso: string; endIso: string };
+  } = {},
   deps: { client?: CallCreditClient } = {},
 ): Promise<CallCreditReport> {
   const days = options.days ?? 30;
-  const limit = options.limit ?? 2000;
-  const now = Date.now();
-  const bookedSince = new Date(now - days * 86_400_000);
+  const limit = options.limit ?? 5000;
+  const now = options.window ? Date.parse(options.window.endIso) : Date.now();
+  const bookedSince = options.window
+    ? new Date(options.window.startIso)
+    : new Date(now - days * 86_400_000);
+  const bookedUntilMs = options.window
+    ? Date.parse(options.window.endIso)
+    : now;
   // A call booked inside the window can sit anywhere from "yesterday" to
   // months out, and a call set long ago can happen inside it. Widen the SQL
   // window on the call date, then cut precisely on booked-at below.
@@ -128,7 +142,11 @@ export async function buildCallCreditReport(
         : row.event_start_at
           ? Date.parse(row.event_start_at)
           : NaN;
-      return Number.isFinite(stamp) && stamp >= bookedSince.getTime();
+      return (
+        Number.isFinite(stamp) &&
+        stamp >= bookedSince.getTime() &&
+        stamp < bookedUntilMs
+      );
     })
     .map((row) => ({
       id: row.id,
@@ -144,9 +162,12 @@ export async function buildCallCreditReport(
           utmSource: row.utm_source,
           utmMedium: row.utm_medium,
           utmContent: row.utm_content,
+          closeSetter: row.lead?.booked_by_setter ?? null,
         },
         directory,
       ),
+      leadSubmissionId: row.lead_submission_id,
+      closeSetter: row.lead?.booked_by_setter ?? null,
       chat: resolveChatTouch(
         {
           inviteeEmail: row.invitee_email,

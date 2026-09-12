@@ -117,7 +117,7 @@ const PATH_LABEL: Record<string, string> = {
 
 const RE_ENGAGEMENT_CHANNELS = new Set(["Email", "SMS", "Newsletter"]);
 
-/** Bookings with no setter on them: the prospect booked from a link themselves. */
+/** Bookings nothing names a setter for: the prospect booked from a link themselves. */
 const SELF_BOOKED = "No setter (self-booked)";
 
 const FUNNEL_COLUMNS: KpiColumn[] = [
@@ -516,7 +516,7 @@ function buildLane2Section(input: KpiInput): KpiSection {
         won,
       },
       sourceOfTruth:
-        "lead_submissions (booked_by_setter, call_outcome, closed_won_at)",
+        "calendly_bookings (invitee_scheduled_by, setter link tag) + lead_submissions (outcome)",
       lastVerified: input.lastRun.leads ?? null,
       ...owner,
     };
@@ -559,7 +559,7 @@ function buildLane2Section(input: KpiInput): KpiSection {
     key: "lane2",
     title: "Lane 2",
     basis:
-      "Setter rows count calls by the date they were booked, not by lead cohort. Outcome known is the share of those bookings with any outcome recorded in Close; show rate counts the rest as shown, so the further Outcome known sits below 100% the more of the show rate is assumption. Instagram DM counts ManyChat stage events.",
+      "Setter rows count every Calendly booking by the date it was booked, not by lead cohort, and name whoever set it: the rep Calendly recorded as booking it, their own tagged link, then Close's setter field. Outcome known is the share of those bookings with an outcome recorded in Close — a booking with no lead behind it can have none, so this sits low and show rate, which counts the rest as shown, is that much more assumption. Instagram DM counts ManyChat stage events.",
     columns: LANE2_COLUMNS,
     rows,
     hidden: 0,

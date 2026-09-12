@@ -1,5 +1,6 @@
 import "server-only";
 
+import { buildCallCreditReport } from "@/lib/services/call-credit-data";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import {
@@ -128,39 +129,76 @@ async function fetchEmailSnapshots(
   }
 }
 
-type BookedLead = SetterBookingRow & {
-  email: string;
-  full_name: string;
-};
-
+/**
+ * Who set each call in the range, from the same evidence the bookings ledger
+ * uses: Calendly's own record of the rep who booked it, then a setter's tagged
+ * link. Close's "Reactivation - Setter Name" is the last resort, not the first.
+ *
+ * This used to read `booked_by_setter` alone, which only a human remembering to
+ * fill a Close field ever populates — so nearly every call a setter booked
+ * landed under "No setter (self-booked)" and the setter rows understated real
+ * work by an order of magnitude. Two pages disagreeing about the same setter's
+ * number is how the credit argument restarts.
+ */
 async function fetchSetterBookings(
   client: ReportClient,
   startIso: string,
   endIso: string,
 ): Promise<SetterBookingRow[]> {
-  const rows: BookedLead[] = [];
+  const report = await buildCallCreditReport(
+    { window: { startIso, endIso } },
+    { client },
+  );
+  if (report.rows.length === 0) return [];
+
+  const leadIds = report.rows
+    .map((row) => row.leadSubmissionId)
+    .filter((id): id is string => Boolean(id));
+  const outcomes = await fetchLeadOutcomes(client, leadIds);
+
+  return report.rows
+    .filter((row) => !isInternalLead(row.inviteeEmail, row.inviteeName))
+    .map((row) => {
+      const outcome = row.leadSubmissionId
+        ? outcomes.get(row.leadSubmissionId)
+        : undefined;
+      return {
+        booked_by_setter:
+          row.credit.kind === "rep" ? row.credit.who : row.closeSetter,
+        call_outcome: outcome?.call_outcome ?? null,
+        closed_won_at: outcome?.closed_won_at ?? null,
+      };
+    });
+}
+
+type LeadOutcome = {
+  call_outcome: string | null;
+  closed_won_at: string | null;
+};
+
+/** Outcomes for the leads behind these bookings, in pages Postgres will accept. */
+async function fetchLeadOutcomes(
+  client: ReportClient,
+  leadIds: string[],
+): Promise<Map<string, LeadOutcome>> {
+  const outcomes = new Map<string, LeadOutcome>();
+  const unique = [...new Set(leadIds)];
   try {
-    for (let from = 0; from < 20_000; from += 1000) {
+    for (let i = 0; i < unique.length; i += 200) {
       const { data, error } = await client
         .from("lead_submissions")
-        .select("booked_by_setter,call_outcome,closed_won_at,email,full_name")
-        .gte("call_booked_at", startIso)
-        .lt("call_booked_at", endIso)
-        .order("call_booked_at")
-        .range(from, from + 999);
-      if (error) return [];
-      const batch = (data ?? []) as BookedLead[];
-      rows.push(...batch);
-      if (batch.length < 1000) break;
+        .select("id,call_outcome,closed_won_at")
+        .in("id", unique.slice(i, i + 200));
+      if (error) return outcomes;
+      for (const lead of data ?? []) {
+        outcomes.set(lead.id, {
+          call_outcome: lead.call_outcome,
+          closed_won_at: lead.closed_won_at,
+        });
+      }
     }
   } catch {
-    return [];
+    return outcomes;
   }
-  return rows
-    .filter((lead) => !isInternalLead(lead.email, lead.full_name))
-    .map(({ booked_by_setter, call_outcome, closed_won_at }) => ({
-      booked_by_setter,
-      call_outcome,
-      closed_won_at,
-    }));
+  return outcomes;
 }
