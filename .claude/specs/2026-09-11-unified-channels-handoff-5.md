@@ -211,3 +211,69 @@ which is unreadable once downscaled enough to fit in context).
   has no `DATABASE_URL`. Migrations are SQL-editor only, by hand.
 - `vercel env pull` DOES return `CLOSE_API_KEY` for this project, which is how
   the cents question got settled. Do not paste it anywhere.
+
+---
+
+## CEO-readiness pass (2026-09-11, commit 8d52ad9)
+
+Asked the question the other way round: not "is any number wrong" but "would a
+CEO reading this cold trust it and follow it". Four gaps, all fixed and live.
+
+**1. There was no total.** Every channel was a row and nothing on the tab said
+what the business did. Added an "All channels" row to the funnel section, rates
+recomputed over the pooled facts rather than averaged across rows. Live, 30d:
+
+|              |                 |
+| ------------ | --------------- |
+| Leads        | 1,307           |
+| Lead → book  | 65.5%           |
+| Booked       | 378             |
+| Show rate    | 76% (see below) |
+| Shown        | 247             |
+| Close rate   | 12.1%           |
+| Won          | 30              |
+| Lead → close | 6%              |
+
+Leads, booked, won and revenue add up down the column. Visits and impressions
+are larger than the visible rows sum to, because the total covers the hidden
+visit-only rows too; `hiddenNote` already says how many.
+
+**2. Show rate was presented as a measurement. It is an upper bound.** A booked
+call counts as shown unless its Close outcome says no-show or cancelled, so a
+call nobody logged an outcome for counts as shown. Measured against prod:
+
+- 364 calls booked in the last 30 days
+- 136 have any outcome recorded (37.4%)
+- 215 are past-dated with no outcome at all, and every one counts as shown
+
+Every surface that shows the metric now says so: the funnel section basis, the
+Lane 2 basis, the Channels tab funnel note, and the YouTube tab's step note.
+Lane 2 gained an **Outcome known** column that measures it directly -- team
+total reads 335 booked, 75.8% show rate, **39.4% outcome known**. A reader can
+now see that three fifths of that rate is assumption without being told.
+
+This is still the open decision from the previous pass. Nothing was changed
+about how `showed` is derived, because narrowing it to known outcomes moves the
+YouTube tab too and that is Adam's call. Disclosure was the honest move that
+did not require the decision.
+
+**3. Staleness was invisible.** Each row carries "Last verified", but it sits
+past 18 other columns -- a page whose connectors stopped running last week read
+exactly like a fresh one. The oldest connector run behind anything on the page
+is now stated at the top, in red past 36 hours. Reads "Up to date as of
+2026-09-11" right now.
+
+**4. The row label scrolled away.** At 18 columns, Leads, Won and Revenue sit
+off-screen on a laptop, and once you scroll to them the channel name is gone.
+The label column is sticky now.
+
+### Still true, still worth saying out loud to a CEO
+
+- The migrations have not run, so thank-you visits, revenue and Google Ads
+  opt-in are dashes. Honest, but incomplete.
+- **X reports 11,403,999 impressions, 47 clicks, 0 leads over 529 posts.** It
+  dominates the new total's impressions (13,552,156) and its CTR (0.4%). Real
+  platform data, correctly labelled, and close to meaningless -- X counts a
+  timeline scroll. The per-channel rows below the total tell the true story.
+- Revenue will read ~$296K (cohort basis) while Close says $503K (cash basis).
+  Both are right. See [[vending-website-revenue-basis-trap]].
