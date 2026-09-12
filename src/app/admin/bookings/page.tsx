@@ -9,11 +9,12 @@ import {
   adminSectionTitleClass,
 } from "@/components/admin/AdminUi";
 import { buildCallCreditReport } from "@/lib/services/call-credit-data";
-import type {
-  CallCreditKind,
-  CallCreditRow,
-  CallCreditSummary,
-  RepRole,
+import {
+  summarizeCallCredits,
+  type CallCreditKind,
+  type CallCreditRow,
+  type CallCreditSummary,
+  type RepRole,
 } from "@/lib/services/call-credit";
 import { requireAdmin } from "@/lib/supabase/auth";
 
@@ -48,12 +49,18 @@ export default async function AdminBookingsPage({
   const params = await searchParams;
   const rangeKey = singleParam(params.range) ?? "30";
   const range = RANGES.find((entry) => entry.key === rangeKey) ?? RANGES[1];
+  // The chatbot's own view of this page: every booked call where the bot had
+  // spoken to the person first, still credited to whoever set the call.
+  const chatOnly = singleParam(params.chat) === "1";
 
   const [{ user, role }, report] = await Promise.all([
     requireAdmin(),
     buildCallCreditReport({ days: range.days }),
   ]);
-  const { summary } = report;
+  const rows = chatOnly
+    ? report.rows.filter((row) => row.chat !== null)
+    : report.rows;
+  const summary = chatOnly ? summarizeCallCredits(rows) : report.summary;
 
   return (
     <AdminShell
@@ -68,7 +75,7 @@ export default async function AdminBookingsPage({
         {RANGES.map((entry) => (
           <Link
             key={entry.key}
-            href={`/admin/bookings?range=${entry.key}`}
+            href={`/admin/bookings?range=${entry.key}${chatOnly ? "&chat=1" : ""}`}
             aria-current={entry.key === range.key ? "page" : undefined}
             className={`rounded-ui border px-3 py-1.5 text-sm ${
               entry.key === range.key
@@ -79,6 +86,37 @@ export default async function AdminBookingsPage({
             {entry.label}
           </Link>
         ))}
+      </nav>
+
+      <nav className="mb-4 flex flex-wrap gap-2" aria-label="Which calls">
+        {[
+          {
+            key: "all",
+            label: "All booked calls",
+            href: `/admin/bookings?range=${range.key}`,
+          },
+          {
+            key: "chat",
+            label: "Chatted with the bot first",
+            href: `/admin/bookings?range=${range.key}&chat=1`,
+          },
+        ].map((entry) => {
+          const isActive = entry.key === (chatOnly ? "chat" : "all");
+          return (
+            <Link
+              key={entry.key}
+              href={entry.href}
+              aria-current={isActive ? "page" : undefined}
+              className={`rounded-ui border px-3 py-1.5 text-sm ${
+                isActive
+                  ? "border-ui-accent bg-ui-accent text-white"
+                  : "border-ui-line-strong bg-ui-surface text-ui-text-muted hover:bg-ui-canvas"
+              }`}
+            >
+              {entry.label}
+            </Link>
+          );
+        })}
       </nav>
 
       {report.connected ? null : (
@@ -111,11 +149,16 @@ export default async function AdminBookingsPage({
           value={summary.byKind.untagged}
           caption="Nothing on the booking says who sent the link"
         />
+        <AdminMetricPanel
+          label="Chatted first"
+          value={summary.chatTouched}
+          caption={`${summary.byKind.chatbot} of them booked in the chat itself`}
+        />
       </AdminMetricStrip>
 
       <PeoplePanel summary={summary} />
       <UntaggedNote summary={summary} />
-      <CallsPanel rows={report.rows} days={range.days} />
+      <CallsPanel rows={rows} days={range.days} chatOnly={chatOnly} />
     </AdminShell>
   );
 }
@@ -205,12 +248,24 @@ function UntaggedNote({ summary }: { summary: CallCreditSummary }) {
   );
 }
 
-function CallsPanel({ rows, days }: { rows: CallCreditRow[]; days: number }) {
+function CallsPanel({
+  rows,
+  days,
+  chatOnly,
+}: {
+  rows: CallCreditRow[];
+  days: number;
+  chatOnly: boolean;
+}) {
   const shown = rows.slice(0, 100);
 
   return (
     <section className={`${adminPanelClass} p-4`}>
-      <h2 className={adminSectionTitleClass}>Every call, with its evidence</h2>
+      <h2 className={adminSectionTitleClass}>
+        {chatOnly
+          ? "Every call the bot touched, and who set it"
+          : "Every call, with its evidence"}
+      </h2>
       <p className="text-ui-text-muted mt-1 mb-3 text-xs">
         Booked in the last {days} days, newest first
         {rows.length > shown.length
@@ -225,7 +280,8 @@ function CallsPanel({ rows, days }: { rows: CallCreditRow[]; days: number }) {
               <th className="py-1.5 font-medium">Booked</th>
               <th className="py-1.5 font-medium">Lead</th>
               <th className="py-1.5 font-medium">Calendar</th>
-              <th className="py-1.5 font-medium">Set by</th>
+              <th className="py-1.5 font-medium">Set by (last touch)</th>
+              <th className="py-1.5 font-medium">Chat (earlier touch)</th>
               <th className="py-1.5 font-medium">Evidence</th>
             </tr>
           </thead>
@@ -249,6 +305,20 @@ function CallsPanel({ rows, days }: { rows: CallCreditRow[]; days: number }) {
                   <span className="text-ui-text-muted block text-xs font-normal">
                     {KIND_LABEL[row.credit.kind]}
                   </span>
+                </td>
+                <td className="py-2 text-xs">
+                  {row.chat ? (
+                    <Link
+                      href={`/admin/chatbot/conversations/${row.chat.conversationId}`}
+                      className="text-ui-accent hover:underline"
+                    >
+                      {row.chat.bookedInChat
+                        ? "Booked in this chat"
+                        : `Chatted ${formatDay(row.chat.chattedAt)}`}
+                    </Link>
+                  ) : (
+                    <span className="text-ui-text-muted">No chat</span>
+                  )}
                 </td>
                 <td className="text-ui-text-muted py-2 text-xs">
                   {row.credit.evidence}

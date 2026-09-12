@@ -99,6 +99,15 @@ export default async function AdminChatbotPage({
             Conversations
           </Link>
           <Link
+            href="/admin/bookings?chat=1"
+            className={adminSecondaryButtonClass}
+          >
+            <span aria-hidden="true">
+              <AdminIcon icon="target" />
+            </span>
+            Booked calls
+          </Link>
+          <Link
             href="/admin/chatbot/insights"
             className={adminSecondaryButtonClass}
           >

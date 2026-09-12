@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCalendlyDirectory,
+  buildChatIndex,
+  resolveChatTouch,
   repRole,
   resolveCallCredit,
   summarizeCallCredits,
@@ -149,6 +151,7 @@ describe("summarizeCallCredits", () => {
       calls: 2,
     });
     expect(summary.unclassified).toEqual(["Calendly user robin"]);
+    expect(summary.chatTouched).toBe(0);
   });
 });
 
@@ -166,9 +169,66 @@ function row(
     startAt: "2026-09-16T21:00:00.000Z",
     bookedAt: "2026-09-12T14:22:18.000Z",
     canceled: false,
+    chat: null,
     credit: resolveCallCredit(
       { scheduledByUri, utmSource, utmMedium: null },
       directory,
     ),
   };
 }
+
+describe("resolveChatTouch", () => {
+  const index = buildChatIndex([
+    {
+      id: "68ead512",
+      capturedEmail: "Mindfulobserveruc@gmail.com",
+      createdAt: "2026-09-11T12:37:29.000Z",
+    },
+    {
+      id: "later-chat",
+      capturedEmail: "mindfulobserveruc@gmail.com",
+      createdAt: "2026-09-20T09:00:00.000Z",
+    },
+  ]);
+
+  it("finds the chat that came before the booking, whatever the casing", () => {
+    const touch = resolveChatTouch(
+      {
+        inviteeEmail: "mindfulobserveruc@gmail.com",
+        bookedAt: "2026-09-12T14:22:18.000Z",
+        utmContent: null,
+      },
+      index,
+    );
+
+    expect(touch?.conversationId).toBe("68ead512");
+    // The setter booked it; the chat is an earlier touch, not the booking.
+    expect(touch?.bookedInChat).toBe(false);
+  });
+
+  it("ignores a chat that only happened after the call was booked", () => {
+    const touch = resolveChatTouch(
+      {
+        inviteeEmail: "mindfulobserveruc@gmail.com",
+        bookedAt: "2026-09-01T00:00:00.000Z",
+        utmContent: null,
+      },
+      index,
+    );
+
+    expect(touch).toBeNull();
+  });
+
+  it("marks the chat as the booker when the booking carries its tag", () => {
+    const touch = resolveChatTouch(
+      {
+        inviteeEmail: "mindfulobserveruc@gmail.com",
+        bookedAt: "2026-09-12T14:22:18.000Z",
+        utmContent: "68ead512",
+      },
+      index,
+    );
+
+    expect(touch?.bookedInChat).toBe(true);
+  });
+});

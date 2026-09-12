@@ -249,6 +249,8 @@ export type CallCreditRow = {
   bookedAt: string | null;
   canceled: boolean;
   credit: CallCredit;
+  /** The chat this person had before the call, when there was one. */
+  chat: ChatTouch | null;
 };
 
 export type CallCreditPerson = {
@@ -263,6 +265,8 @@ export type CallCreditSummary = {
   people: CallCreditPerson[];
   /** Reps booking calls who are in neither roster list. */
   unclassified: string[];
+  /** Calls where the person had chatted with the bot beforehand. */
+  chatTouched: number;
 };
 
 export function summarizeCallCredits(rows: CallCreditRow[]): CallCreditSummary {
@@ -300,5 +304,78 @@ export function summarizeCallCredits(rows: CallCreditRow[]): CallCreditSummary {
     unclassified: sorted
       .filter((person) => person.role === "unclassified")
       .map((person) => person.who),
+    chatTouched: rows.filter((row) => row.chat !== null).length,
+  };
+}
+
+/**
+ * A chat this person had before the call was booked.
+ *
+ * Separate from the credit on purpose: the chat is an earlier touch, and
+ * showing it next to the last touch is what keeps "the bot talked to them" and
+ * "somebody set the call" from being argued as the same claim.
+ */
+export type ChatTouch = {
+  conversationId: string;
+  chattedAt: string;
+  /** The booking carried this conversation's own tag, so the chat booked it. */
+  bookedInChat: boolean;
+};
+
+export type ChatConversationRow = {
+  id: string;
+  capturedEmail: string | null;
+  createdAt: string;
+};
+
+/** Lowercased email -> that person's chats, newest first. */
+export type ChatIndex = Map<string, ChatConversationRow[]>;
+
+export function buildChatIndex(rows: ChatConversationRow[]): ChatIndex {
+  const index: ChatIndex = new Map();
+  for (const row of rows) {
+    const email = row.capturedEmail?.trim().toLowerCase();
+    if (!email) continue;
+    const existing = index.get(email);
+    if (existing) existing.push(row);
+    else index.set(email, [row]);
+  }
+  for (const list of index.values()) {
+    list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+  return index;
+}
+
+/**
+ * The chat that came before this booking, if there was one.
+ *
+ * Matched on the address the visitor gave the bot, and only chats that STARTED
+ * before the call was booked: a chat that happened afterwards is a different
+ * conversation, not the touch that led to the call.
+ */
+export function resolveChatTouch(
+  booking: {
+    inviteeEmail: string | null;
+    bookedAt: string | null;
+    utmContent?: string | null;
+  },
+  index: ChatIndex,
+): ChatTouch | null {
+  const email = booking.inviteeEmail?.trim().toLowerCase();
+  if (!email) return null;
+  const candidates = index.get(email);
+  if (!candidates?.length) return null;
+
+  const bookedAtMs = booking.bookedAt ? Date.parse(booking.bookedAt) : NaN;
+  const match = candidates.find((conversation) => {
+    if (!Number.isFinite(bookedAtMs)) return true;
+    return Date.parse(conversation.createdAt) <= bookedAtMs;
+  });
+  if (!match) return null;
+
+  return {
+    conversationId: match.id,
+    chattedAt: match.createdAt,
+    bookedInChat: booking.utmContent?.trim() === match.id,
   };
 }

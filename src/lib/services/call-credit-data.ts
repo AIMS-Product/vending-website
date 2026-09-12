@@ -3,8 +3,12 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   buildCalendlyDirectory,
+  buildChatIndex,
   resolveCallCredit,
+  resolveChatTouch,
   summarizeCallCredits,
+  type ChatConversationRow,
+  type ChatIndex,
   type CallCreditRow,
   type CallCreditSummary,
 } from "@/lib/services/call-credit";
@@ -112,6 +116,7 @@ export async function buildCallCreditReport(
   }
 
   const directory = buildCalendlyDirectory(data);
+  const chats = await fetchChatIndex(client);
 
   const rows: CallCreditRow[] = data
     .filter((row) => {
@@ -142,6 +147,14 @@ export async function buildCallCreditReport(
         },
         directory,
       ),
+      chat: resolveChatTouch(
+        {
+          inviteeEmail: row.invitee_email,
+          bookedAt: row.booked_at,
+          utmContent: row.utm_content,
+        },
+        chats,
+      ),
     }))
     .sort((a, b) => (b.bookedAt ?? "").localeCompare(a.bookedAt ?? ""));
 
@@ -151,6 +164,32 @@ export async function buildCallCreditReport(
     connected: true,
     since: bookedSince.toISOString(),
   };
+}
+
+/**
+ * Every chat that ever left an address, indexed by it.
+ *
+ * The whole table is a few hundred rows, so this is one read rather than a
+ * lookup per booking. ponytail: page it if the chat ever outgrows a single
+ * request.
+ */
+async function fetchChatIndex(client: CallCreditClient): Promise<ChatIndex> {
+  try {
+    const { data, error } = await client
+      .from("chatbot_conversations")
+      .select("id,captured_email,created_at")
+      .not("captured_email", "is", null)
+      .limit(5000);
+    if (error) return new Map();
+    const rows: ChatConversationRow[] = (data ?? []).map((row) => ({
+      id: row.id,
+      capturedEmail: row.captured_email,
+      createdAt: row.created_at,
+    }));
+    return buildChatIndex(rows);
+  } catch {
+    return new Map();
+  }
 }
 
 function emptyReport(since: string, connected: boolean): CallCreditReport {
