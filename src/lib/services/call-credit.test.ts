@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  SETTER_NAMES,
+  setterBookingUrl,
+  setterTag,
   buildCalendlyDirectory,
   buildChatIndex,
   resolveChatTouch,
@@ -259,5 +262,39 @@ describe("resolveChatTouch", () => {
     );
 
     expect(touch?.bookedInChat).toBe(true);
+  });
+});
+
+describe("setter booking links", () => {
+  it("round-trips every setter's tag back to their own name", () => {
+    // If a tag does not read back as the name, the link credits nobody, which
+    // is worse than no link at all: the setter thinks they are covered.
+    for (const name of SETTER_NAMES) {
+      const url = new URL(
+        setterBookingUrl("https://calendly.com/d/abc/x", name),
+      );
+      expect(url.searchParams.get("utm_source")).toBe("setter");
+      const credit = resolveCallCredit(
+        {
+          scheduledByUri: null,
+          utmSource: url.searchParams.get("utm_source"),
+          utmMedium: url.searchParams.get("utm_medium"),
+          utmContent: url.searchParams.get("utm_content"),
+        },
+        directory,
+      );
+      expect(credit.kind).toBe("rep");
+      expect(credit.who).toBe(name);
+      expect(repRole(credit.who)).toBe("setter");
+    }
+  });
+
+  it("keeps the calendar's own query params", () => {
+    const url = setterBookingUrl(
+      "https://calendly.com/d/abc/x?hide_gdpr_banner=1",
+      "Connor George",
+    );
+    expect(url).toContain("hide_gdpr_banner=1");
+    expect(url).toContain("utm_content=connor-george");
   });
 });

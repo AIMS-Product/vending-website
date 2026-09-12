@@ -227,22 +227,28 @@ const NOT_SETTERS = new Set([
   "stephen olivas",
 ]);
 
+/** The people who set calls, as their name reads in Calendly and Close. */
+export const SETTER_NAMES = [
+  "Ariella",
+  "August Young",
+  "Beatrice Braescu Cojocaru",
+  "Cassie Caraballo",
+  "Charlie Ingram",
+  "Connor George",
+  "Jessica Zatkin",
+  "Josh Stoffel",
+  "Kelly Schrader",
+  "Melia King",
+  "Naria Torres",
+  "Pearl Sathekge",
+  "Spencer Reynolds",
+  "Vince Bartolini",
+] as const;
+
 const SETTERS = new Set([
-  "ariella",
-  "august young",
-  "beatrice braescu cojocaru",
-  "cassie caraballo",
-  "charlie ingram",
-  "connor george",
-  "jessica zatkin",
-  "josh stoffel",
-  "kelly schrader",
-  "melia king",
-  "naria torres",
+  ...SETTER_NAMES.map((name) => name.toLowerCase()),
+  // Calendly shows her first name only; Close carries the full one.
   "pearl",
-  "pearl sathekge",
-  "spencer reynolds",
-  "vince bartolini",
 ]);
 
 export type RepRole = "setter" | "not_setter" | "unclassified";
@@ -398,4 +404,25 @@ export function resolveChatTouch(
     chattedAt: match.createdAt,
     bookedInChat: booking.utmContent?.trim() === match.id,
   };
+}
+
+/**
+ * A setter's own booking link.
+ *
+ * The whole point is that the tag survives the round trip: Calendly echoes
+ * utm_source and utm_content back on the booking webhook, `resolveCallCredit`
+ * reads them, and the call lands under the setter's name the same as one they
+ * booked by hand. `setterTag` and `nameFromTag` are inverses — the test holds
+ * them to it, because a tag that does not read back as a name credits nobody.
+ */
+export function setterTag(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, "-");
+}
+
+export function setterBookingUrl(calendarUrl: string, name: string): string {
+  const url = new URL(calendarUrl);
+  url.searchParams.set("utm_source", "setter");
+  url.searchParams.set("utm_medium", "text");
+  url.searchParams.set("utm_content", setterTag(name));
+  return url.toString();
 }

@@ -29,9 +29,9 @@ export type BookingPageConfig = {
 // Lane 1 booking calendars (from the sheet). t5 pages send the top tier of
 // social leads to the top-closer calendar; b5 pages send everyone else to the
 // general Lane 1 calendar.
-const LANE_1_TOP_CALENDLY =
+export const LANE_1_TOP_CALENDLY =
   "https://calendly.com/d/cvr6-cfd-zgd/vendingpreneurs-consultation-call";
-const LANE_1_GENERAL_CALENDLY =
+export const LANE_1_GENERAL_CALENDLY =
   "https://calendly.com/d/cxfn-hh2-h8g/vendingpreneurs-consultation";
 
 const bookingMetaDescription =

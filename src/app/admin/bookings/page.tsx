@@ -8,8 +8,14 @@ import {
   adminPanelClass,
   adminSectionTitleClass,
 } from "@/components/admin/AdminUi";
+import {
+  LANE_1_GENERAL_CALENDLY,
+  LANE_1_TOP_CALENDLY,
+} from "@/lib/content/booking-pages";
 import { buildCallCreditReport } from "@/lib/services/call-credit-data";
 import {
+  SETTER_NAMES,
+  setterBookingUrl,
   summarizeCallCredits,
   type CallCreditKind,
   type CallCreditRow,
@@ -158,6 +164,7 @@ export default async function AdminBookingsPage({
 
       <PeoplePanel summary={summary} />
       <UntaggedNote summary={summary} />
+      <SetterLinksPanel />
       <CallsPanel rows={rows} days={range.days} chatOnly={chatOnly} />
     </AdminShell>
   );
@@ -245,6 +252,59 @@ function UntaggedNote({ summary }: { summary: CallCreditSummary }) {
         ) : null}
       </ul>
     </section>
+  );
+}
+
+/**
+ * Each setter's own booking link, ready to hand out.
+ *
+ * This is the fix for the untagged pile above: a setter who texts one of these
+ * gets the same named credit as one who books the call inside Calendly, because
+ * Calendly echoes the tag back on the booking. Any Calendly link works — these
+ * two are the Lane 1 calendars the site itself sends people to.
+ */
+function SetterLinksPanel() {
+  return (
+    <details className={`${adminPanelClass} mb-4 p-4`}>
+      <summary className={`${adminSectionTitleClass} cursor-pointer`}>
+        Each setter&apos;s own booking link
+      </summary>
+      <p className="text-ui-text-muted mt-2 mb-3 text-xs">
+        Hand these out and a call booked off one lands under that setter&apos;s
+        name, the same as a call they booked themselves. Any other Calendly link
+        works too — add{" "}
+        <code>
+          utm_source=setter&amp;utm_medium=text&amp;utm_content=their-tag
+        </code>{" "}
+        to it.
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[40rem] text-sm">
+          <thead>
+            <tr className="text-ui-text-muted text-left text-xs">
+              <th className="py-1.5 font-medium">Setter</th>
+              <th className="py-1.5 font-medium">Top-closer calendar</th>
+              <th className="py-1.5 font-medium">General Lane 1 calendar</th>
+            </tr>
+          </thead>
+          <tbody className="divide-ui-line divide-y">
+            {SETTER_NAMES.map((name) => (
+              <tr key={name}>
+                <td className="text-ui-text py-2 font-medium whitespace-nowrap">
+                  {name}
+                </td>
+                <td className="text-ui-text-muted py-2 text-xs break-all">
+                  {setterBookingUrl(LANE_1_TOP_CALENDLY, name)}
+                </td>
+                <td className="text-ui-text-muted py-2 text-xs break-all">
+                  {setterBookingUrl(LANE_1_GENERAL_CALENDLY, name)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
   );
 }
 
