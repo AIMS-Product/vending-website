@@ -3,6 +3,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createCloseClient, type CloseClient } from "@/lib/close/client";
 import { config } from "@/lib/config";
+import { resolveSetterTouch, type SetterTouch } from "@/lib/close/setter-touch";
+import { repRole } from "@/lib/services/call-credit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -138,6 +140,10 @@ export async function reconcileCloseBookings(
     "booked_by_setter,entry_resource_tag,close_lead_created_at",
   );
   const valueConnected = await columnsConnected(client, "closed_won_value");
+  const touchConnected = await columnsConnected(
+    client,
+    "setter_touch_name,setter_touch_at",
+  );
 
   const result: ReconcileBookingsResult = { ...empty, scanned: rows.length };
   const reconciledAt = now.toISOString();
@@ -150,13 +156,36 @@ export async function reconcileCloseBookings(
 
       try {
         const lead = await closeClient.getLead(row.close_lead_id);
+        const bookedAt = lead ? parseBookedDate(lead.custom) : null;
+        // Only for bookings nothing else can account for, and only once the
+        // lead actually has a booking: one extra Close read per lead per pass,
+        // skipped entirely when a human already named the setter or when the
+        // lead never booked.
+        const touch =
+          touchConnected && lead && bookedAt && !statedSetter(lead.custom)
+            ? await fetchSetterTouch(
+                client,
+                closeClient,
+                row.id,
+                row.close_lead_id,
+              )
+            : null;
         const update = lead
           ? {
-              call_booked_at: parseBookedDate(lead.custom),
+              call_booked_at: bookedAt,
               call_status: lead.status_label?.trim() || null,
               call_reconciled_at: reconciledAt,
               ...(outcomesConnected ? outcomeUpdate(row, lead, now) : null),
               ...(creditConnected ? creditUpdate(lead) : null),
+              // Cleared when nothing qualifies, so a touch that stops applying
+              // (the booking moved, the roster changed) does not linger as
+              // credit nobody can defend.
+              ...(touchConnected
+                ? {
+                    setter_touch_name: touch?.name ?? null,
+                    setter_touch_at: touch?.at ?? null,
+                  }
+                : null),
               // Written on every pass, outside outcomeUpdate's branching: a
               // deal re-valued in Close, or a win reversed, has to reach the
               // report, and wonValue already returns null for a lead with no
@@ -530,4 +559,56 @@ async function columnsConnected(
     .select(fields)
     .limit(1);
   return !error;
+}
+
+/** The setter a human typed into Close, if any. Its presence skips the inference. */
+function statedSetter(custom: Record<string, unknown> | null | undefined) {
+  return Boolean(customText(custom, SETTER_NAME_FIELD));
+}
+
+/**
+ * The last setter to call or text this lead before they booked.
+ *
+ * Timed against Calendly's own booking timestamp, never Close's booked DATE:
+ * that field carries no time, so every call made later on the booking day
+ * would read as happening after it and the real setter would be skipped.
+ *
+ * Fail-soft on purpose: this is the weakest signal on the page, and an
+ * unreachable activity list must never cost the booking mirror its pass.
+ */
+async function fetchSetterTouch(
+  client: ReconcileClient,
+  closeClient: CloseClient,
+  leadSubmissionId: string,
+  closeLeadId: string,
+): Promise<SetterTouch | null> {
+  try {
+    const bookedAt = await fetchBookingTime(client, leadSubmissionId);
+    if (!bookedAt) return null;
+    const { data } = await closeClient.listLeadActivities(closeLeadId);
+    return resolveSetterTouch(
+      data ?? [],
+      bookedAt,
+      (name) => repRole(name) === "setter",
+    );
+  } catch {
+    return null;
+  }
+}
+
+/** When Calendly says this lead's call was booked, to the second. */
+async function fetchBookingTime(
+  client: ReconcileClient,
+  leadSubmissionId: string,
+): Promise<string | null> {
+  const { data, error } = await client
+    .from("calendly_bookings")
+    .select("booked_at:raw_payload->payload->>created_at")
+    .eq("lead_submission_id", leadSubmissionId)
+    .eq("event_kind", "invitee.created")
+    .order("event_start_at", { ascending: false })
+    .limit(1);
+  if (error) return null;
+  const row = (data ?? [])[0] as { booked_at?: string | null } | undefined;
+  return row?.booked_at ?? null;
 }

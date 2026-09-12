@@ -134,6 +134,40 @@ describe("resolveCallCredit", () => {
     expect(taggedLinkWins.kind).toBe("channel");
   });
 
+  it("falls back to the setter who called them before they booked, last of all", () => {
+    const credit = resolveCallCredit(
+      {
+        scheduledByUri: null,
+        utmSource: null,
+        utmMedium: null,
+        setterTouch: { name: "Connor George", minutesBefore: 120 },
+      },
+      directory,
+    );
+
+    expect(credit.kind).toBe("rep");
+    expect(credit.who).toBe("Connor George");
+    // The gap and the caveat both ride along: this is the one inferred answer
+    // on the page and it has to read like one.
+    expect(credit.evidence).toContain("2h before they booked");
+    expect(credit.evidence).toContain("not a record of the booking");
+  });
+
+  it("prefers what Close states over what its activity implies", () => {
+    const credit = resolveCallCredit(
+      {
+        scheduledByUri: null,
+        utmSource: null,
+        utmMedium: null,
+        closeSetter: "Pearl Sathekge",
+        setterTouch: { name: "Connor George", minutesBefore: 120 },
+      },
+      directory,
+    );
+
+    expect(credit.who).toBe("Pearl Sathekge");
+  });
+
   it("says nothing is known rather than guessing on an untagged link", () => {
     const credit = resolveCallCredit(
       { scheduledByUri: null, utmSource: null, utmMedium: null },

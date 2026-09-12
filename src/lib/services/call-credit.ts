@@ -13,7 +13,9 @@
  * 3. `channel` — the booking link carried some other tag (youtube, a webinar,
  *    a paid campaign). The lead booked themselves off that link.
  * 4. Close's setter field, when a human filled it in.
- * 5. `untagged` — an untagged link, self-served. Most often a rep who texted a
+ * 5. The last setter to call or text them before they booked — inferred from
+ *    Close activity, shown with the gap, never stated as a record.
+ * 6. `untagged` — an untagged link, self-served. Most often a rep who texted a
  *    raw Calendly link instead of booking it themselves. Nothing on the
  *    booking says who sent it, so this says exactly that rather than guessing.
  *
@@ -22,6 +24,8 @@
  * (the same names appear as both setters and closers, so a call or SMS before
  * a booking cannot tell them apart).
  */
+
+import { describeTouchGap } from "@/lib/close/setter-touch";
 
 /** Kinds ordered by strength of evidence, strongest first. */
 export type CallCreditKind = "rep" | "chatbot" | "channel" | "untagged";
@@ -45,6 +49,8 @@ export type CallCreditInput = {
   utmContent?: string | null;
   /** Close's "Reactivation - Setter Name", mirrored onto the lead. */
   closeSetter?: string | null;
+  /** The setter whose call or SMS in Close came last before the booking. */
+  setterTouch?: { name: string; minutesBefore: number } | null;
 };
 
 /** Calendly user URI -> what we know about that person. */
@@ -133,6 +139,20 @@ export function resolveCallCredit(
       kind: "rep",
       who: closeSetter,
       evidence: "Recorded in Close as the setter who booked this call.",
+      repUri: null,
+    };
+  }
+
+  // Weakest, and the only inferred answer on the page: the lead booked
+  // themselves off a link nothing tagged, and this setter is the last one who
+  // called or texted them before they did. Shown with the gap so it reads as
+  // the argument it is, not as a record.
+  const touch = input.setterTouch;
+  if (touch?.name) {
+    return {
+      kind: "rep",
+      who: touch.name,
+      evidence: `Called or texted them ${describeTouchGap(touch.minutesBefore)} (from Close activity, not a record of the booking).`,
       repUri: null,
     };
   }

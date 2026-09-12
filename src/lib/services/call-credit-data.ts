@@ -26,6 +26,16 @@ type CallCreditClient = Pick<SupabaseClient<Database>, "from">;
  * paths rather than whole `raw_payload` rows keeps a 90-day page off ~10MB of
  * JSON.
  */
+/**
+ * The lead join, with the inferred setter touch. Requested first and retried
+ * without on error: `20260912130000_setter_touch.sql` ships ahead of being
+ * applied by hand, and an unknown column inside an embedded select 400s the
+ * WHOLE query — which would empty the page rather than drop one column.
+ */
+const LEAD_JOIN_WITH_TOUCH =
+  "lead:lead_submissions(booked_by_setter,setter_touch_name,setter_touch_at)";
+const LEAD_JOIN_BASE = "lead:lead_submissions(booked_by_setter)";
+
 const CALL_CREDIT_FIELDS = [
   "id",
   "invitee_name",
@@ -37,11 +47,12 @@ const CALL_CREDIT_FIELDS = [
   "utm_medium",
   "utm_content",
   "lead_submission_id",
-  "lead:lead_submissions(booked_by_setter)",
   "booked_at:raw_payload->payload->>created_at",
   "scheduled_by:raw_payload->payload->>invitee_scheduled_by",
   "hosts:raw_payload->payload->scheduled_event->event_memberships",
 ].join(",");
+
+const fieldsWith = (leadJoin: string) => `${CALL_CREDIT_FIELDS},${leadJoin}`;
 
 type RawRow = {
   id: string;
@@ -54,7 +65,11 @@ type RawRow = {
   utm_medium: string | null;
   utm_content: string | null;
   lead_submission_id: string | null;
-  lead: { booked_by_setter: string | null } | null;
+  lead: {
+    booked_by_setter: string | null;
+    setter_touch_name?: string | null;
+    setter_touch_at?: string | null;
+  } | null;
   booked_at: string | null;
   scheduled_by: string | null;
   hosts: unknown;
@@ -111,16 +126,19 @@ export async function buildCallCreditReport(
   const client = deps.client ?? createAdminClient();
 
   let data: RawRow[] = [];
-  try {
-    const result = await client
+  const read = (leadJoin: string) =>
+    client
       .from("calendly_bookings")
-      .select(CALL_CREDIT_FIELDS)
+      .select(fieldsWith(leadJoin))
       .eq("event_kind", "invitee.created")
       .gte("event_start_at", callWindowStart)
       .lte("event_start_at", callWindowEnd)
       .order("event_start_at", { ascending: false })
       .limit(limit);
 
+  try {
+    let result = await read(LEAD_JOIN_WITH_TOUCH);
+    if (result.error) result = await read(LEAD_JOIN_BASE);
     if (result.error) {
       return emptyReport(bookedSince.toISOString(), false);
     }
@@ -163,6 +181,7 @@ export async function buildCallCreditReport(
           utmMedium: row.utm_medium,
           utmContent: row.utm_content,
           closeSetter: row.lead?.booked_by_setter ?? null,
+          setterTouch: setterTouchOf(row),
         },
         directory,
       ),
@@ -211,6 +230,22 @@ async function fetchChatIndex(client: CallCreditClient): Promise<ChatIndex> {
   } catch {
     return new Map();
   }
+}
+
+/**
+ * The stored inference, turned back into the gap the evidence line reads out.
+ * Null whenever the migration is unapplied or the touch is missing its time.
+ */
+function setterTouchOf(
+  row: RawRow,
+): { name: string; minutesBefore: number } | null {
+  const name = row.lead?.setter_touch_name?.trim();
+  const at = row.lead?.setter_touch_at;
+  const bookedAt = row.booked_at;
+  if (!name || !at || !bookedAt) return null;
+  const gapMs = Date.parse(bookedAt) - Date.parse(at);
+  if (!Number.isFinite(gapMs) || gapMs < 0) return null;
+  return { name, minutesBefore: Math.round(gapMs / 60_000) };
 }
 
 function emptyReport(since: string, connected: boolean): CallCreditReport {

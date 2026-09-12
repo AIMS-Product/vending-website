@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { CloseActivity } from "@/lib/close/setter-touch";
+
 export type CloseCustomFieldConfig = {
   qualificationStatusFieldId?: string;
   vpSessionIdFieldId?: string;
@@ -458,6 +460,20 @@ export function createCloseClient({
       return request<{ data?: CloseNoteResult[] }>(
         "GET",
         `/activity/note/?lead_id=${encodeURIComponent(leadId)}&_limit=50`,
+      );
+    },
+    /**
+     * Recent activity on one lead, newest first, every type mixed.
+     *
+     * Read-only, and used for one thing: finding the call or SMS a setter made
+     * before the lead booked themselves (see close/setter-touch.ts). Close
+     * returns `_type`, `user_name` and `date_created` on every activity type,
+     * which is all that needs.
+     */
+    listLeadActivities(leadId: string, limit = 50) {
+      return request<{ data?: CloseActivity[] }>(
+        "GET",
+        `/activity/?lead_id=${encodeURIComponent(leadId)}&_limit=${limit}`,
       );
     },
     /**

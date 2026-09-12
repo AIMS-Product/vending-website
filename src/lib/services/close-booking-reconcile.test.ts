@@ -30,6 +30,9 @@ function buildClient(
     missingOutcomeColumns?: boolean;
     missingCreditColumns?: boolean;
     missingValueColumn?: boolean;
+    missingTouchColumns?: boolean;
+    /** Calendly's booking timestamp for the lead, when it has one. */
+    bookedAt?: string;
   } = {},
 ) {
   const updates: Array<{ id: string; patch: Record<string, unknown> }> = [];
@@ -49,6 +52,23 @@ function buildClient(
                   code: "42703",
                   message:
                     "column lead_submissions.booked_by_setter does not exist",
+                },
+              }
+            : { data: [], error: null },
+        ),
+      };
+    }
+    // The once-per-run setter-touch probe, same shape as the credit one.
+    if (fields.includes("setter_touch_name")) {
+      return {
+        limit: vi.fn().mockResolvedValue(
+          options.missingTouchColumns
+            ? {
+                data: null,
+                error: {
+                  code: "42703",
+                  message:
+                    "column lead_submissions.setter_touch_name does not exist",
                 },
               }
             : { data: [], error: null },
@@ -100,7 +120,23 @@ function buildClient(
     }),
   }));
 
+  // When the lead booked, to the second. The inference times a setter's call
+  // against this rather than Close's date-only field.
+  const bookingSelect = vi.fn(() => ({
+    eq: () => ({
+      eq: () => ({
+        order: () => ({
+          limit: async () => ({
+            data: options.bookedAt ? [{ booked_at: options.bookedAt }] : [],
+            error: null,
+          }),
+        }),
+      }),
+    }),
+  }));
+
   const from = vi.fn((table: string) => {
+    if (table === "calendly_bookings") return { select: bookingSelect };
     if (table !== "lead_submissions") {
       throw new Error(`Unexpected table: ${table}`);
     }
@@ -121,6 +157,8 @@ function buildCloseClient(
       status_label?: string | null;
       custom?: Record<string, unknown>;
       date_created?: string;
+      /** Calls and SMS the setter-touch inference reads. */
+      activities?: Array<Record<string, unknown>>;
     } | null
   >,
 ) {
@@ -130,6 +168,9 @@ function buildCloseClient(
       const lead = leads[id];
       return lead === null ? null : { id, ...lead };
     }),
+    listLeadActivities: vi.fn(async (id: string) => ({
+      data: leads[id]?.activities ?? [],
+    })),
   } as unknown as CloseClient;
 }
 
@@ -172,9 +213,78 @@ describe("reconcileCloseBookings", () => {
           close_lead_created_at: null,
           // No won opportunity on this lead, so no value is observed.
           closed_won_value: null,
+          // Nobody called or texted this lead before it booked.
+          setter_touch_name: null,
+          setter_touch_at: null,
         },
       },
     ]);
+  });
+
+  it("credits the last setter who called before a lead booked itself", async () => {
+    // The 289 untagged bookings: a setter texts a raw Calendly link, the lead
+    // books it, and nothing on the booking says who sent it. Close's activity
+    // does.
+    const { client, updates } = buildClient(
+      [{ id: "lead-1", close_lead_id: "close_1" }],
+      { bookedAt: "2026-08-19T15:00:00.000Z" },
+    );
+    const closeClient = buildCloseClient({
+      close_1: {
+        status_label: "☎️ Call Booked",
+        custom: { "First Call Booked Date": "2026-08-19" },
+        activities: [
+          {
+            _type: "Call",
+            user_name: "Connor George",
+            date_created: "2026-08-19T13:00:00.000Z",
+          },
+          // A closer on the same lead must not take the credit.
+          {
+            _type: "Call",
+            user_name: "Robin Perkins",
+            date_created: "2026-08-19T14:30:00.000Z",
+          },
+        ],
+      },
+    });
+
+    await reconcileCloseBookings({ client, closeClient, now: NOW });
+
+    expect(updates[0].patch).toMatchObject({
+      setter_touch_name: "Connor George",
+      setter_touch_at: "2026-08-19T13:00:00.000Z",
+    });
+  });
+
+  it("does not infer a setter when Close already states one", async () => {
+    const { client, updates } = buildClient(
+      [{ id: "lead-1", close_lead_id: "close_1" }],
+      { bookedAt: "2026-08-19T15:00:00.000Z" },
+    );
+    const closeClient = buildCloseClient({
+      close_1: {
+        custom: {
+          "First Call Booked Date": "2026-08-19",
+          "Reactivation - Setter Name": "Pearl Sathekge",
+        },
+        activities: [
+          {
+            _type: "Call",
+            user_name: "Connor George",
+            date_created: "2026-08-19T13:00:00.000Z",
+          },
+        ],
+      },
+    });
+
+    await reconcileCloseBookings({ client, closeClient, now: NOW });
+
+    expect(updates[0].patch).toMatchObject({
+      booked_by_setter: "Pearl Sathekge",
+      setter_touch_name: null,
+    });
+    expect(closeClient.listLeadActivities).not.toHaveBeenCalled();
   });
 
   it("mirrors who booked the call separately from what brought the lead in", async () => {
@@ -340,6 +450,7 @@ describe("reconcileCloseBookings", () => {
         missingOutcomeColumns: true,
         missingCreditColumns: true,
         missingValueColumn: true,
+        missingTouchColumns: true,
       },
     );
     const closeClient = buildCloseClient({
