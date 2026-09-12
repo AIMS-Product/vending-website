@@ -168,7 +168,7 @@ describe("buildKpiReport", () => {
     expect(
       funnels!.rows.find((row) => row.key === "Website|unknown"),
     ).toBeUndefined();
-    expect(funnels!.hiddenNote).toContain("visits or reach only");
+    expect(funnels!.hiddenNote).toContain("visits or impressions only");
     expect(yt.values).toMatchObject({
       visits: 1500,
       // Both rates are over every visit the channel had, including the
@@ -267,7 +267,9 @@ describe("kpiReportToCsv", () => {
     const csv = kpiReportToCsv(buildKpiReport(input));
     const blocks = csv.trim().split("\n\n");
     expect(blocks).toHaveLength(4);
-    expect(blocks[0]!.split("\n")[0]).toMatch(/^Section,Row,Detail,Reach,CTR,/);
+    expect(blocks[0]!.split("\n")[0]).toMatch(
+      /^Section,Row,Detail,Impressions,CTR,/,
+    );
     const yt = blocks[0]!
       .split("\n")
       .find((line) => line.startsWith("Content and website funnels,YouTube"))!;

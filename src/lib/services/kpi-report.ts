@@ -121,7 +121,7 @@ const RE_ENGAGEMENT_CHANNELS = new Set(["Email", "SMS", "Newsletter"]);
 const SELF_BOOKED = "No setter (self-booked)";
 
 const FUNNEL_COLUMNS: KpiColumn[] = [
-  { key: "reach", label: "Reach", format: "number" },
+  { key: "impressions", label: "Impressions", format: "number" },
   { key: "ctr", label: "CTR", format: "percent" },
   { key: "visits", label: "LP visits", format: "number" },
   { key: "thankYouVisits", label: "Thank-you visits", format: "number" },
@@ -247,7 +247,7 @@ function buildFunnelSection(input: KpiInput): KpiSection {
     rows,
     hidden,
     hiddenNote:
-      "with visits or reach only: no leads, bookings, wins or spend observed",
+      "with visits or impressions only: no leads, bookings, wins or spend observed",
   };
 }
 
@@ -255,7 +255,14 @@ function funnelValues(facts: ChannelFact[]): Record<string, number | null> {
   const spend = sumObserved(facts.map((fact) => fact.spend));
   const booked = sumObserved(facts.map((fact) => fact.booked));
   return {
-    reach: sumObserved(facts.map((fact) => fact.reach ?? fact.impressions)),
+    // Impressions, never reach. Reach is unique people per post, so adding it
+    // up counts the same follower once per post they saw -- 44 Instagram posts
+    // summed to 1,242,166 "reach" on 2026-09-11, far past anything the account
+    // could actually reach. The old `reach ?? impressions` was worse still:
+    // it mixed the two, summing reach from the 44 rows that had it and
+    // impressions from the 97 that did not. Impressions are additive, which is
+    // the same rule that keeps bounce rate out of the GA4 client.
+    impressions: sumObserved(facts.map((fact) => fact.impressions)),
     ctr: rate(pairedPct(facts, "clicks", "impressions")),
     visits: sumObserved(facts.map((fact) => fact.visits)),
     thankYouVisits: sumObserved(facts.map((fact) => fact.thankyou_visits)),
@@ -564,7 +571,7 @@ function hasOutcome(values: Record<string, number | null>): boolean {
 }
 
 function byOutcome(a: KpiRow, b: KpiRow): number {
-  for (const key of ["leads", "booked", "visits", "reach"]) {
+  for (const key of ["leads", "booked", "visits", "impressions"]) {
     const diff = (b.values[key] ?? 0) - (a.values[key] ?? 0);
     if (diff !== 0) return diff;
   }
