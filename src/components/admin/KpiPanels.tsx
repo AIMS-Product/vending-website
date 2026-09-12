@@ -3,6 +3,7 @@ import type { KpiTabData } from "@/lib/services/kpi-report-data";
 import type {
   KpiColumn,
   KpiFormat,
+  KpiReport,
   KpiRow,
   KpiSection,
 } from "@/lib/services/kpi-report";
@@ -23,6 +24,7 @@ export function KpiTab({ data }: { data: KpiTabData }) {
   }
   return (
     <div className="space-y-5">
+      <Freshness report={data.report} endDay={data.range.endDay} />
       <p className="text-ui-text-subtle text-xs">
         {data.range.label} ({data.range.startDay} to {data.range.endDay}). A
         dash means not observed, never zero. Opt-in and Conv % are over every
@@ -35,6 +37,37 @@ export function KpiTab({ data }: { data: KpiTabData }) {
         <KpiSectionTable key={section.key} section={section} />
       ))}
     </div>
+  );
+}
+
+/**
+ * How old the numbers are, said once at the top. Every row already carries a
+ * "Last verified", but that column sits past 18 others -- nobody scrolls to
+ * it, so a page whose connectors stopped running last week reads exactly like
+ * a fresh one. This is the oldest run behind anything on the page.
+ */
+function Freshness({ report, endDay }: { report: KpiReport; endDay: string }) {
+  const rows = report.sections.flatMap((section) => section.rows);
+  const verified = rows
+    .map((row) => row.lastVerified)
+    .filter((value): value is string => value != null)
+    .sort();
+  const oldest = verified[0]?.slice(0, 10);
+  if (!oldest) return null;
+
+  // Measured against the range's own end day, not the clock: a component that
+  // reads Date.now() is impure, and the server already stamped today here.
+  const cutoff = new Date(`${endDay}T00:00:00.000Z`);
+  cutoff.setUTCDate(cutoff.getUTCDate() - 1);
+  const stale = oldest < cutoff.toISOString().slice(0, 10);
+  return (
+    <p
+      className={`text-xs ${stale ? "text-ui-bad font-medium" : "text-ui-text-subtle"}`}
+    >
+      {stale
+        ? `Stale: the oldest connector behind this page last ran ${oldest}. Numbers below have not moved since.`
+        : `Up to date as of ${oldest} \u2014 the oldest connector run behind anything on this page.`}
+    </p>
   );
 }
 
@@ -54,7 +87,13 @@ function KpiSectionTable({ section }: { section: KpiSection }) {
               <tr
                 className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
               >
-                <th className="py-2 pr-4 font-semibold">Row</th>
+                {/* The row label stays put while the table scrolls: at 18
+                    columns the numbers that matter (Leads, Won, Revenue) sit
+                    off-screen, and a number you cannot name a channel for is
+                    worse than no number. */}
+                <th className="bg-ui-surface border-ui-line sticky left-0 z-10 border-r py-2 pr-4 pl-0 font-semibold">
+                  Row
+                </th>
                 {section.columns.map((column) => (
                   <th
                     key={column.key}
@@ -96,7 +135,7 @@ function KpiSectionTable({ section }: { section: KpiSection }) {
 function KpiTableRow({ row, columns }: { row: KpiRow; columns: KpiColumn[] }) {
   return (
     <tr>
-      <td className="min-w-[14rem] py-2.5 pr-4 align-top">
+      <td className="bg-ui-surface border-ui-line sticky left-0 z-10 min-w-[14rem] border-r py-2.5 pr-4 pl-0 align-top">
         <div className="text-ui-text font-medium whitespace-nowrap">
           {row.label}
           {row.detail ? (

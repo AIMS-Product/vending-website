@@ -177,7 +177,9 @@ function ChannelFunnel({
       <p className="text-ui-text-subtle mt-2 text-xs">
         Each share is measured only where both stages were observed for the same
         link, so the two sides are one population. Deltas are against the prior{" "}
-        {days} days.
+        {days} days. Showed is an upper bound: a booked call counts as shown
+        unless its Close outcome says no-show or cancelled, so a call nobody
+        logged an outcome for counts as shown.
       </p>
       <ol className="mt-3 space-y-2.5">
         {report.funnel.map((stage) => (

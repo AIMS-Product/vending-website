@@ -323,7 +323,7 @@ function buildStages(totals: {
     {
       label: "Attended the call",
       count: totals.attended,
-      note: "booked minus no-show and cancelled",
+      note: "booked minus no-show and cancelled, so a call with no outcome logged counts as attended",
     },
     { label: "Closed / won", count: totals.closed },
   ];

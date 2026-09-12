@@ -197,7 +197,26 @@ describe("buildKpiReport", () => {
   it("hides visit-only rows and keeps webinar, DM and email out of section 1", () => {
     expect(funnels!.hidden).toBe(1);
     const channels = funnels!.rows.map((row) => row.label);
-    expect(channels).toEqual(["YouTube", "Instagram"]);
+    expect(channels).toEqual(["All channels", "YouTube", "Instagram"]);
+  });
+
+  it("totals every channel, the hidden visit-only row included", () => {
+    const all = funnels!.rows[0]!;
+    expect(all.label).toBe("All channels");
+    expect(all.detail).toBe("every row below, plus 1 with no outcome");
+    // Leads add up down the column; visits are larger than the two visible
+    // rows sum to, because the hidden visit-only row is real traffic.
+    const visible = funnels!.rows.slice(1);
+    const sum = (key: string) =>
+      visible.reduce((total, row) => total + (row.values[key] ?? 0), 0);
+    expect(all.values.leads).toBe(sum("leads"));
+    expect(all.values.booked).toBe(sum("booked"));
+    expect(all.values.won).toBe(sum("won"));
+    expect(all.values.visits).toBeGreaterThan(sum("visits"));
+    // A pooled rate, not an average of the rows' rates.
+    expect(all.values.leadToBook).toBe(
+      Math.round((all.values.booked! / all.values.leads!) * 1000) / 10,
+    );
   });
 
   it("totals webinars and keeps unobserved attendees null in the total", () => {

@@ -177,6 +177,7 @@ const LANE2_COLUMNS: KpiColumn[] = [
   { key: "clicks", label: "Booking links sent", format: "number" },
   { key: "booked", label: "Booked", format: "number" },
   { key: "showRate", label: "Show rate", format: "percent" },
+  { key: "outcomeKnown", label: "Outcome known", format: "percent" },
   { key: "showed", label: "Shown", format: "number" },
   { key: "closeRate", label: "Close rate", format: "percent" },
   { key: "won", label: "Won", format: "number" },
@@ -219,9 +220,11 @@ function buildFunnelSection(input: KpiInput): KpiSection {
   }
 
   const rows: KpiRow[] = [];
+  const sectionFacts: ChannelFact[] = [];
   let hidden = 0;
   for (const [id, facts] of groups) {
     const [channel, destination] = id.split("|") as [string, string];
+    sectionFacts.push(...facts);
     const values = funnelValues(facts);
     if (!hasOutcome(values)) {
       hidden += 1;
@@ -238,11 +241,31 @@ function buildFunnelSection(input: KpiInput): KpiSection {
   }
   rows.sort(byOutcome);
 
+  // The total the sheet has no row for. Rates are recomputed over the pooled
+  // facts rather than averaged across rows, so "All channels" opt-in is one
+  // number over one population. It covers the hidden rows too: leads, booked,
+  // won and revenue still add up down the column, but visits and impressions
+  // are larger than the visible rows sum to, which is what `hiddenNote` says.
+  if (rows.length > 1) {
+    rows.unshift({
+      key: "funnels|all",
+      label: "All channels",
+      detail:
+        hidden > 0
+          ? `every row below, plus ${hidden} with no outcome`
+          : "every row below",
+      values: funnelValues(sectionFacts),
+      ...provenance(sectionFacts, input.lastRun),
+      owner: null,
+      cadence: "Weekly",
+    });
+  }
+
   return {
     key: "funnels",
     title: "Content and website funnels",
     basis:
-      "Booked, shown and won are credited to the day the lead arrived, so every rate is over one cohort. A row splits by CTA path (utm_term) once its links carry one; a row with no path is a channel whose links are not tagged yet. Thank-you visits count sessions that reached one of our own confirmation pages, so a channel that converts on a GHL form or straight into Calendly shows none.",
+      "Booked, shown and won are credited to the day the lead arrived, so every rate is over one cohort. A row splits by CTA path (utm_term) once its links carry one; a row with no path is a channel whose links are not tagged yet. Thank-you visits count sessions that reached one of our own confirmation pages, so a channel that converts on a GHL form or straight into Calendly shows none. Show rate is an upper bound, not a measurement: a booked call counts as shown unless its Close outcome says no-show or cancelled, so a call nobody logged an outcome for counts as shown. Lane 2 below shows what share of bookings have an outcome at all.",
     columns: FUNNEL_COLUMNS,
     rows,
     hidden,
@@ -473,6 +496,11 @@ function buildLane2Section(input: KpiInput): KpiSection {
     const won = bookings.filter(
       (b) => Boolean(b.closed_won_at) || b.call_outcome === "won",
     ).length;
+    // What share of these calls anybody actually logged an outcome for. Show
+    // rate counts an unlogged call as shown, so this is the reader's warning
+    // about how much of the show rate above it is a measurement: at 37% the
+    // other 63% are assumed, not observed.
+    const known = bookings.filter((b) => Boolean(b.call_outcome)).length;
     return {
       key: `setter|${label}`,
       label,
@@ -482,6 +510,7 @@ function buildLane2Section(input: KpiInput): KpiSection {
         clicks: null,
         booked,
         showRate: rate(pct(showed, booked)),
+        outcomeKnown: rate(pct(known, booked)),
         showed,
         closeRate: rate(pct(won, showed)),
         won,
@@ -514,6 +543,8 @@ function buildLane2Section(input: KpiInput): KpiSection {
         clicks: sumObserved(dm.map((fact) => fact.clicks)),
         booked: sumObserved(dm.map((fact) => fact.booked)),
         showRate: rate(pairedPct(dm, "showed", "booked")),
+        // The spine carries no per-call outcome for DM stage events.
+        outcomeKnown: null,
         showed: sumObserved(dm.map((fact) => fact.showed)),
         closeRate: rate(pairedPct(dm, "won", "showed")),
         won: sumObserved(dm.map((fact) => fact.won)),
@@ -528,7 +559,7 @@ function buildLane2Section(input: KpiInput): KpiSection {
     key: "lane2",
     title: "Lane 2",
     basis:
-      "Setter rows count calls by the date they were booked, not by lead cohort. Instagram DM counts ManyChat stage events.",
+      "Setter rows count calls by the date they were booked, not by lead cohort. Outcome known is the share of those bookings with any outcome recorded in Close; show rate counts the rest as shown, so the further Outcome known sits below 100% the more of the show rate is assumption. Instagram DM counts ManyChat stage events.",
     columns: LANE2_COLUMNS,
     rows,
     hidden: 0,
