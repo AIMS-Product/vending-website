@@ -508,6 +508,16 @@ function TouchGrid({
             : ""}
         </p>
       ) : null}
+      {/* This grid can only ever hold calls the chat booked. A call a setter
+          booked for someone the bot had spoken to is the setter's, and lives
+          where it is credited to them. */}
+      <p className="text-ui-text-muted mt-2 text-xs">
+        Calls a setter booked for someone who chatted are not counted here.{" "}
+        <Link href="/admin/bookings?chat=1" className="underline">
+          Booked calls
+        </Link>{" "}
+        shows those, credited to whoever set them.
+      </p>
     </div>
   );
 }
