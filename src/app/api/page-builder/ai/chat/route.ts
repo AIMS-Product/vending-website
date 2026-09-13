@@ -4,7 +4,7 @@ import {
   PageBuilderAiGenerationError,
   generateOpenAiPageBuilderChatResponse,
 } from "@/lib/services/openai-page-builder-chat";
-import { getAuthorizedAdmin } from "@/lib/supabase/auth";
+import { canEditAdmin, getAuthorizedAdmin } from "@/lib/supabase/auth";
 
 const WINDOW_MS = 60 * 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 30;
@@ -14,6 +14,14 @@ export async function POST(request: Request) {
   const admin = await getAuthorizedAdmin();
   if (!admin) {
     return Response.json({ message: "Unauthorized." }, { status: 401 });
+  }
+
+  // Read-only viewers resolve to a real app_users row, so the null check
+  // above admits them. This endpoint writes page-builder content, so it
+  // needs the edit check as well — a route gated on "is there a row" is
+  // exactly how a read-only role turns into an editor.
+  if (!canEditAdmin(admin.role)) {
+    return Response.json({ message: "Forbidden." }, { status: 403 });
   }
 
   if (!checkRateLimit(admin.user.id)) {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminViewerLink } from "@/components/admin/AdminViewerLink";
 import {
   AdminDeltaChip,
   AdminMetricPanel,
@@ -45,10 +46,12 @@ export function channelsHref(
 }
 
 export function ChannelsTab({
+  canEdit,
   data,
   range,
   includeInternal,
 }: {
+  canEdit: boolean;
   data: ChannelsTabData;
   range: AdminAnalyticsRangeKey;
   includeInternal: boolean;
@@ -113,7 +116,11 @@ export function ChannelsTab({
       {data.channel ? null : (
         <div className="mt-5 grid gap-5 xl:grid-cols-3">
           <div className="xl:col-span-2">
-            <GoingOutTable rows={data.goingOut} days={data.range.days} />
+            <GoingOutTable
+              canEdit={canEdit}
+              rows={data.goingOut}
+              days={data.range.days}
+            />
           </div>
           <FixLinksPanel rows={data.fixLinks} days={data.range.days} />
         </div>
@@ -558,9 +565,11 @@ export function ConfidencePanel({ report }: { report: ConfidenceReport }) {
 }
 
 export function GoingOutTable({
+  canEdit,
   rows,
   days,
 }: {
+  canEdit: boolean;
   rows: GoingOutRow[];
   days: number;
 }) {
@@ -569,12 +578,13 @@ export function GoingOutTable({
       <h2 className={adminEyebrowClass}>Going out</h2>
       <p className="text-ui-text-subtle mt-2 text-xs">
         Every link built at{" "}
-        <Link
+        <AdminViewerLink
+          canEdit={canEdit}
           href="/admin/links"
           className="text-ui-accent underline-offset-2 hover:underline"
         >
           /admin/links
-        </Link>
+        </AdminViewerLink>
         , with Bitly clicks in the last {days} days. A link with no short link
         has no click count to observe.
       </p>

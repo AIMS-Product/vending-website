@@ -172,8 +172,59 @@ describe("settings user actions", () => {
     expect(result).toEqual({
       status: "error",
       message:
-        "The admin-role migration is pending. Apply migration 20260601100000 before assigning super admin access.",
+        "The role migration is pending. Apply migration 20260913120000 in the Supabase SQL editor before assigning the viewer role.",
     });
+  });
+
+  it("invites a read-only viewer", async () => {
+    const result = await inviteUser(
+      { status: "idle" },
+      formData({ email: "Reporting@Example.com", role: "viewer" }),
+    );
+
+    expect(result).toEqual({ status: "saved", message: "User invited." });
+    expect(mocks.inviteAppUser).toHaveBeenCalledWith(
+      { email: "reporting@example.com", role: "viewer" },
+      actor,
+      { origin: "https://vending-website.vercel.app" },
+    );
+  });
+
+  it("demotes an admin to viewer", async () => {
+    // clearAllMocks resets calls, not implementations, and the stale-constraint
+    // case above left this mock rejecting.
+    mocks.changeAppUserRole.mockResolvedValue(undefined);
+
+    const result = await changeUserRole(
+      { status: "idle" },
+      formData({ email: "admin@example.com", role: "viewer" }),
+    );
+
+    expect(result).toEqual({ status: "saved", message: "User role updated." });
+    expect(mocks.changeAppUserRole).toHaveBeenCalledWith(
+      { email: "admin@example.com", role: "viewer" },
+      actor,
+    );
+  });
+
+  it("refuses a viewer who posts straight at a user-management action", async () => {
+    // The Settings screen is unreachable for a viewer, so the only way here
+    // is a crafted POST. requireSuperAdmin throws rather than redirecting so
+    // this catch can answer it instead of swallowing a navigation.
+    mocks.requireSuperAdmin.mockRejectedValue(
+      new mocks.AdminAuthorizationError(),
+    );
+
+    const result = await changeUserRole(
+      { status: "idle" },
+      formData({ email: "admin@example.com", role: "super_admin" }),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Only super admins can manage users.",
+    });
+    expect(mocks.changeAppUserRole).not.toHaveBeenCalled();
   });
 
   it("does not expose unexpected service errors to the client", async () => {

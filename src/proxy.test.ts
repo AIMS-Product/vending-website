@@ -90,6 +90,45 @@ describe("proxy admin auth gate", () => {
     );
   });
 
+  it.each([
+    ["viewer", true],
+    ["admin", true],
+    ["super_admin", true],
+    ["editor", false],
+    [null, false],
+  ])("admits role %s at the outer gate: %s", async (role, admitted) => {
+    // The outer gate answers "is this person on the allowlist at all".
+    // Viewers are admitted here and separated from admins by requireAdmin
+    // inside each page — keeping a second copy of the four-page allowlist in
+    // this matcher would give us two lists to keep in step.
+    mocks.updateSession.mockResolvedValue({
+      response: NextResponse.next(),
+      user: { id: "u-1" },
+      supabase: { from: mocks.from },
+    });
+    mocks.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi
+            .fn()
+            .mockResolvedValue({ data: role ? { role } : null, error: null }),
+        }),
+      }),
+    });
+
+    const response = await proxy(request("/admin/analytics"));
+
+    if (admitted) {
+      expect(response.status).toBe(200);
+      expect(response.headers.get("location")).toBeNull();
+    } else {
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe(
+        "https://vending-website.vercel.app/admin/login",
+      );
+    }
+  });
+
   it("returns 404 for legacy blog author paths", async () => {
     const response = await proxy(request("/blog/author/Mike%20Hoffman"));
 

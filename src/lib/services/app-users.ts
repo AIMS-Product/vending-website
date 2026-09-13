@@ -55,12 +55,30 @@ export function isMissingAppUserEventsTableError(error: unknown) {
   );
 }
 
+/**
+ * The role column is plain text with a CHECK constraint, and the migration
+ * that widens it is applied by hand in the Supabase SQL editor. Until it
+ * runs, writing a role the constraint does not know about fails at the
+ * database rather than in code — the audit-log columns carry their own copy
+ * of the same list, so all four constraint names count.
+ *
+ * Detected so the Settings screen can say "apply the migration" instead of
+ * "could not update user role", which sends whoever hit it looking in the
+ * wrong place.
+ */
+const ROLE_CHECK_CONSTRAINTS = [
+  "app_user_emails_role_check",
+  "app_users_role_check",
+  "app_user_events_old_role_check",
+  "app_user_events_new_role_check",
+];
+
 export function isStaleAdminRoleConstraintError(error: unknown) {
+  if (!(error instanceof AppUserServiceError)) return false;
+  const message = error.message;
   return (
-    error instanceof AppUserServiceError &&
-    error.message.includes("violates check constraint") &&
-    (error.message.includes("app_user_emails_role_check") ||
-      error.message.includes("app_users_role_check"))
+    message.includes("violates check constraint") &&
+    ROLE_CHECK_CONSTRAINTS.some((name) => message.includes(name))
   );
 }
 
@@ -113,17 +131,15 @@ export async function adminListAppUserEvents(deps: ServiceDeps = {}) {
 
   if (error) throw new AppUserServiceError(error.message);
 
-  return (data ?? []).map(
-    (row): AppUserEvent => ({
-      id: row.id,
-      eventType: row.event_type,
-      actorEmail: row.actor_email,
-      targetEmail: row.target_email,
-      oldRole: row.old_role ? requireAppUserRole(row.old_role) : null,
-      newRole: row.new_role ? requireAppUserRole(row.new_role) : null,
-      createdAt: row.created_at,
-    }),
-  );
+  return (data ?? []).map((row): AppUserEvent => ({
+    id: row.id,
+    eventType: row.event_type,
+    actorEmail: row.actor_email,
+    targetEmail: row.target_email,
+    oldRole: row.old_role ? requireAppUserRole(row.old_role) : null,
+    newRole: row.new_role ? requireAppUserRole(row.new_role) : null,
+    createdAt: row.created_at,
+  }));
 }
 
 export async function inviteAppUser(
@@ -319,7 +335,9 @@ function normalizeEmail(value: string) {
 }
 
 function requireAppUserRole(value: string): AppUserRole {
-  if (value === "admin" || value === "super_admin") return value;
+  if (value === "viewer" || value === "admin" || value === "super_admin") {
+    return value;
+  }
   throw new AppUserServiceError("Invalid app user role.");
 }
 

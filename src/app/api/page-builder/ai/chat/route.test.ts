@@ -4,9 +4,14 @@ import { getAuthorizedAdmin } from "@/lib/supabase/auth";
 import { generateOpenAiPageBuilderChatResponse } from "@/lib/services/openai-page-builder-chat";
 import type { PageBuilderAiChatRequest } from "@/lib/page-builder/ai-chat";
 
-vi.mock("@/lib/supabase/auth", () => ({
-  getAuthorizedAdmin: vi.fn(),
-}));
+vi.mock("@/lib/supabase/auth", async () => {
+  // canEditAdmin stays real: mocking the predicate under test would let a
+  // viewer pass this route's gate in the test and nowhere else.
+  const actual = await vi.importActual<typeof import("@/lib/supabase/auth")>(
+    "@/lib/supabase/auth",
+  );
+  return { ...actual, getAuthorizedAdmin: vi.fn() };
+});
 
 vi.mock("@/lib/services/openai-page-builder-chat", async () => {
   const actual = await vi.importActual<
@@ -50,6 +55,7 @@ describe("page builder AI chat route", () => {
     vi.clearAllMocks();
     mockGetAuthorizedAdmin.mockResolvedValue({
       user: { id: "admin_1" },
+      role: "admin",
     } as Awaited<ReturnType<typeof getAuthorizedAdmin>>);
     mockGenerateOpenAiPageBuilderChatResponse.mockResolvedValue({
       message: "Drafted the page.",
@@ -64,6 +70,22 @@ describe("page builder AI chat route", () => {
 
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ message: "Unauthorized." });
+    expect(mockGenerateOpenAiPageBuilderChatResponse).not.toHaveBeenCalled();
+  });
+
+  it("refuses a read-only viewer even though they are on the allowlist", async () => {
+    // The regression this locks: the route gated on "getAuthorizedAdmin
+    // returned something", and a viewer returns something. Without the role
+    // check a read-only account could drive the page-builder model.
+    mockGetAuthorizedAdmin.mockResolvedValue({
+      user: { id: "viewer_1", email: "viewer@example.com" },
+      role: "viewer",
+    } as Awaited<ReturnType<typeof getAuthorizedAdmin>>);
+
+    const response = await POST(jsonRequest(validRequest));
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ message: "Forbidden." });
     expect(mockGenerateOpenAiPageBuilderChatResponse).not.toHaveBeenCalled();
   });
 

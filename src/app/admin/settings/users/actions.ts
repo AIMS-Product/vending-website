@@ -33,7 +33,7 @@ const emailSchema = z.preprocess(
   z.email("Enter a valid email address."),
 );
 
-const roleSchema = z.enum(["admin", "super_admin"], {
+const roleSchema = z.enum(["viewer", "admin", "super_admin"], {
   error: "Choose a valid role.",
 });
 
@@ -151,7 +151,7 @@ function actionError(
     return {
       status: "error",
       message:
-        "The admin-role migration is pending. Apply migration 20260601100000 before assigning super admin access.",
+        "The role migration is pending. Apply migration 20260913120000 in the Supabase SQL editor before assigning the viewer role.",
     };
   }
 

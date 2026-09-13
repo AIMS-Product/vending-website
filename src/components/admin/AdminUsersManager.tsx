@@ -56,6 +56,7 @@ export function AdminUsersManager({
     (user) => user.role === "super_admin",
   ).length;
   const adminCount = users.filter((user) => user.role === "admin").length;
+  const viewerCount = users.filter((user) => user.role === "viewer").length;
 
   return (
     <div className="grid gap-5">
@@ -87,6 +88,13 @@ export function AdminUsersManager({
           label="Admins"
           value={adminCount}
           caption="CMS access"
+        />
+        <AdminMetricPanel
+          icon="search"
+          tone="blue"
+          label="Viewers"
+          value={viewerCount}
+          caption="reporting only"
         />
       </AdminMetricStrip>
 
@@ -343,6 +351,7 @@ function InviteUserForm({ disabled }: { disabled: boolean }) {
           aria-label="User role"
           className={inviteControlClass}
         >
+          <option value="viewer">Viewer (read-only)</option>
           <option value="admin">Admin</option>
           <option value="super_admin">Super admin</option>
         </select>
@@ -379,6 +388,7 @@ function RoleForm({
       aria-label={`Role for ${email}`}
       className="border-ui-line text-ui-text-muted focus:border-ui-accent focus:ring-ui-accent/15 h-8 rounded-md border bg-white px-2 text-sm font-medium shadow-sm focus:ring-2 focus:outline-none"
     >
+      <option value="viewer">Viewer (read-only)</option>
       <option value="admin">Admin</option>
       <option value="super_admin">Super admin</option>
     </select>
@@ -628,7 +638,8 @@ function ActionMessage({
 }
 
 function roleLabel(role: AppUserRole) {
-  return role === "super_admin" ? "Super admin" : "Admin";
+  if (role === "super_admin") return "Super admin";
+  return role === "viewer" ? "Viewer (read-only)" : "Admin";
 }
 
 function eventLabel(eventType: string) {

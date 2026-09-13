@@ -36,7 +36,7 @@ import { KpiTab } from "@/components/admin/KpiPanels";
 import { getKpiTab } from "@/lib/services/kpi-report-data";
 import { getChannelsTab } from "@/lib/services/channel-report";
 import { parseAdminAnalyticsRange } from "@/lib/services/admin-analytics-range";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Analytics",
@@ -68,7 +68,7 @@ export default async function AdminAnalyticsPage({
   const isKpiTab = tab === "kpi";
   const [{ user, role }, analytics, youtube, channels, kpi] = await Promise.all(
     [
-      requireAdmin(),
+      requireReadAccess(),
       isYouTubeTab || isChannelsTab || isKpiTab
         ? null
         : getAdminAnalytics({ range, includeInternal }),
@@ -115,6 +115,7 @@ export default async function AdminAnalyticsPage({
         <KpiTab data={kpi} />
       ) : channels ? (
         <ChannelsTab
+          canEdit={canEditAdmin(role)}
           data={channels}
           range={range}
           includeInternal={includeInternal}

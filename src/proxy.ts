@@ -327,17 +327,24 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(ADMIN_LOGIN_PATH, request.url));
   }
 
-  // Enforce the same predicate as the inner requireAdmin layer: row
-  // existence alone would silently stop filtering if a non-admin role is
-  // ever added to app_users.
+  // Enforce an explicit role allowlist: row existence alone would silently
+  // stop filtering if an unrecognised role is ever added to app_users.
   const { data: row } = await supabase
     .from("app_users")
     .select("user_id, role")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const isAdminRole = row?.role === "admin" || row?.role === "super_admin";
-  if (!isAdminRole) {
+  // `viewer` is admitted here on purpose. This layer answers "is this person
+  // on the allowlist at all"; which /admin pages each role may open is
+  // decided by requireAdmin/requireReadAccess inside the pages themselves.
+  // Duplicating the four-page viewer allowlist into this matcher would give
+  // us two lists to keep in step, and the one that drifts fails open.
+  const hasAdminRole =
+    row?.role === "viewer" ||
+    row?.role === "admin" ||
+    row?.role === "super_admin";
+  if (!hasAdminRole) {
     return NextResponse.redirect(new URL(ADMIN_LOGIN_PATH, request.url));
   }
 

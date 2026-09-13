@@ -16,6 +16,7 @@ import {
 } from "@/components/admin/AdminUi";
 import { cn } from "@/lib/utils";
 import type { RoutePrefix } from "@/lib/services/route-prefixes";
+import type { AdminRole } from "@/lib/supabase/auth";
 
 const initialState: RouteSettingsActionState = { status: "idle" };
 
@@ -31,7 +32,7 @@ export function AdminRoutePrefixesManager({
   currentUserRole,
 }: {
   prefixes: RoutePrefix[];
-  currentUserRole: "admin" | "super_admin";
+  currentUserRole: AdminRole;
 }) {
   const canManage = currentUserRole === "super_admin";
 

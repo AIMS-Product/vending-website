@@ -2,11 +2,35 @@ import { afterEach, describe, it, expect, vi } from "vitest";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import {
   AdminAuthorizationError,
+  canEditAdmin,
   getAuthorizedAdmin,
+  requireAdmin,
+  requireReadAccess,
   requireSuperAdmin,
 } from "./auth";
 import { getDevAdminContext, isDevAdminAuthBypassEnabled } from "./dev-auth";
 import type { Database } from "@/types/database";
+
+// Next's real redirect() throws to abort the render. The mock has to throw
+// too: if it merely recorded the call, requireAdmin would carry on and RETURN
+// the viewer's context, and a test asserting "redirect was called" would pass
+// against a gate that fails open.
+const mocks = vi.hoisted(() => ({
+  redirect: vi.fn((path: string) => {
+    throw new Error(`NEXT_REDIRECT:${path}`);
+  }),
+}));
+
+vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
+
+function rowFor(role: string, id = "u-1", email = "person@example.com") {
+  return {
+    user_id: id,
+    email,
+    role,
+    added_at: new Date().toISOString(),
+  };
+}
 
 type AppUserRow = Database["public"]["Tables"]["app_users"]["Row"];
 
@@ -214,5 +238,123 @@ describe("requireSuperAdmin", () => {
       },
       role: "super_admin",
     });
+  });
+});
+
+describe("canEditAdmin", () => {
+  it("admits admins and super admins and refuses viewers", () => {
+    expect(canEditAdmin("admin")).toBe(true);
+    expect(canEditAdmin("super_admin")).toBe(true);
+    expect(canEditAdmin("viewer")).toBe(false);
+  });
+});
+
+describe("viewer role", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    mocks.redirect.mockClear();
+  });
+
+  function clientsFor(role: string) {
+    return {
+      serverClient: buildServerClient({
+        id: "u-viewer",
+        email: "viewer@example.com",
+      }),
+      adminClient: buildAdminClient(
+        rowFor(role, "u-viewer", "viewer@example.com"),
+      ),
+    };
+  }
+
+  it("resolves a viewer to a real context so read-only pages can render", async () => {
+    const ctx = await getAuthorizedAdmin(clientsFor("viewer"));
+
+    expect(ctx).toEqual({
+      user: { id: "u-viewer", email: "viewer@example.com" },
+      role: "viewer",
+    });
+  });
+
+  it("still refuses a role that is not on the allowlist", async () => {
+    // The role column is plain text. A typo or a hand-edited row must not
+    // become admin access by default.
+    const ctx = await getAuthorizedAdmin(clientsFor("editor"));
+
+    expect(ctx).toBeNull();
+  });
+
+  it("lets a viewer through requireReadAccess", async () => {
+    const ctx = await requireReadAccess(clientsFor("viewer"));
+
+    expect(ctx.role).toBe("viewer");
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("bounces a viewer out of requireAdmin, which gates every denied page", async () => {
+    // requireAdmin is the gate on /admin/leads, /admin/chatbot and every
+    // other editing surface and Server Action, so this one assertion is the
+    // deny for all of them. It must THROW, not return.
+    await expect(requireAdmin(clientsFor("viewer"))).rejects.toThrow(
+      "NEXT_REDIRECT:/admin",
+    );
+    expect(mocks.redirect).toHaveBeenCalledWith("/admin");
+  });
+
+  it("refuses a viewer at requireSuperAdmin with a catchable error", async () => {
+    // Server Actions wrap this in try/catch and turn it into a message. A
+    // redirect thrown here would be swallowed as a generic failure instead.
+    await expect(
+      requireSuperAdmin(clientsFor("viewer")),
+    ).rejects.toBeInstanceOf(AdminAuthorizationError);
+  });
+
+  it("sends a signed-out visitor to the login page, not to /admin", async () => {
+    await expect(
+      requireAdmin({
+        serverClient: buildServerClient(null),
+        adminClient: buildAdminClient(null),
+      }),
+    ).rejects.toThrow("NEXT_REDIRECT:/admin/login");
+  });
+});
+
+describe("existing roles are unchanged by the viewer slice", () => {
+  afterEach(() => {
+    mocks.redirect.mockClear();
+  });
+
+  it.each(["admin", "super_admin"])(
+    "keeps full access for %s",
+    async (role) => {
+      const opts = {
+        serverClient: buildServerClient({
+          id: `u-${role}`,
+          email: `${role}@example.com`,
+        }),
+        adminClient: buildAdminClient(
+          rowFor(role, `u-${role}`, `${role}@example.com`),
+        ),
+      };
+
+      const ctx = await requireAdmin(opts);
+
+      expect(ctx.role).toBe(role);
+      expect(mocks.redirect).not.toHaveBeenCalled();
+    },
+  );
+
+  it("still refuses a plain admin at requireSuperAdmin", async () => {
+    await expect(
+      requireSuperAdmin({
+        serverClient: buildServerClient({
+          id: "u-admin",
+          email: "admin@example.com",
+        }),
+        adminClient: buildAdminClient(
+          rowFor("admin", "u-admin", "admin@example.com"),
+        ),
+      }),
+    ).rejects.toBeInstanceOf(AdminAuthorizationError);
   });
 });

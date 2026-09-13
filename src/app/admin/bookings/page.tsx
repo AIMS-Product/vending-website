@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminViewerLink } from "@/components/admin/AdminViewerLink";
 import {
   AdminBar,
   AdminMetricPanel,
@@ -19,7 +20,7 @@ import {
   type CallCreditSummary,
   type RepRole,
 } from "@/lib/services/call-credit";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Who set this call",
@@ -57,9 +58,10 @@ export default async function AdminBookingsPage({
   const chatOnly = singleParam(params.chat) === "1";
 
   const [{ user, role }, report] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     buildCallCreditReport({ days: range.days }),
   ]);
+  const canEdit = canEditAdmin(role);
   const rows = chatOnly
     ? report.rows.filter((row) => row.chat !== null)
     : report.rows;
@@ -162,7 +164,12 @@ export default async function AdminBookingsPage({
       <PeoplePanel summary={summary} />
       <UntaggedNote summary={summary} />
       <SetterLinksPanel />
-      <CallsPanel rows={rows} days={range.days} chatOnly={chatOnly} />
+      <CallsPanel
+        canEdit={canEdit}
+        rows={rows}
+        days={range.days}
+        chatOnly={chatOnly}
+      />
     </AdminShell>
   );
 }
@@ -305,10 +312,12 @@ function SetterLinksPanel() {
 }
 
 function CallsPanel({
+  canEdit,
   rows,
   days,
   chatOnly,
 }: {
+  canEdit: boolean;
   rows: CallCreditRow[];
   days: number;
   chatOnly: boolean;
@@ -364,14 +373,18 @@ function CallsPanel({
                 </td>
                 <td className="py-2 text-xs">
                   {row.chat ? (
-                    <Link
+                    // The transcript itself is denied to viewers — people
+                    // discuss their finances in these — so the fact that a
+                    // chat happened stays, and the way into it does not.
+                    <AdminViewerLink
+                      canEdit={canEdit}
                       href={`/admin/chatbot/conversations/${row.chat.conversationId}`}
                       className="text-ui-accent hover:underline"
                     >
                       {row.chat.bookedInChat
                         ? "Booked in this chat"
                         : `Chatted ${formatDay(row.chat.chattedAt)}`}
-                    </Link>
+                    </AdminViewerLink>
                   ) : (
                     <span className="text-ui-text-muted">No chat</span>
                   )}

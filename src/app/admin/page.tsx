@@ -16,7 +16,7 @@ import {
   rankChannelMoves,
   rateWithSample,
 } from "@/lib/services/overview-highlights";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Admin overview",
@@ -38,13 +38,14 @@ export default async function AdminOverviewPage({
   const range = parseAdminAnalyticsRange(singleParam(params.range));
 
   const [{ user, role }, channels, overview] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     getChannelsTab({ range }),
     getAdminOverview(),
   ]);
 
   const { report } = channels;
   const moves = rankChannelMoves(report.rows);
+  const canEdit = canEditAdmin(role);
 
   // The funnel's own booked share, which is measured only on links carrying
   // both stages. Taken only when the stage above it really is Lead: when no
@@ -79,6 +80,7 @@ export default async function AdminOverviewPage({
       {channels.connected ? (
         <>
           <OverviewHeadline
+            canEdit={canEdit}
             leads={report.totals.leads}
             booked={report.totals.booked}
             won={report.totals.won}
@@ -95,12 +97,14 @@ export default async function AdminOverviewPage({
           <div className="grid gap-5 xl:grid-cols-3">
             <div className="xl:col-span-2">
               <ChannelLeaderboard
+                canEdit={canEdit}
                 rows={report.rows}
                 tailCount={report.tail.length}
                 range={range}
               />
             </div>
             <PerformanceRead
+              canEdit={canEdit}
               moves={moves}
               days={channels.range.days}
               range={range}
@@ -119,6 +123,7 @@ export default async function AdminOverviewPage({
 
       <div className="mt-5">
         <NeedsAttention
+          canEdit={canEdit}
           overview={overview}
           syncHealth={channels.syncHealth}
           range={range}
@@ -126,7 +131,7 @@ export default async function AdminOverviewPage({
       </div>
 
       <div className="mt-5">
-        <StudioStrip overview={overview} range={range} />
+        <StudioStrip canEdit={canEdit} overview={overview} range={range} />
       </div>
     </AdminShell>
   );

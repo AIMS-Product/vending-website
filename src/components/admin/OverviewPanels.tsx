@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { AdminViewerLink } from "@/components/admin/AdminViewerLink";
+import { isViewerReadableHref } from "@/lib/admin/viewer-access";
 import {
   AdminBar,
   AdminDeltaChip,
@@ -42,19 +44,25 @@ const OWN_PAGE: ReadonlyArray<[RegExp, string]> = [
   [/chatbot|chat\b/i, "/admin/chatbot"],
 ];
 
-export function drillHref(channel: string, range: string) {
+export function drillHref(channel: string, range: string, canEdit = true) {
   const own = OWN_PAGE.find(([pattern]) => pattern.test(channel));
-  return own ? own[1] : channelHref(channel, range);
+  // A viewer cannot open /admin/chatbot, so send them to the channels table
+  // instead — a real drill-down they are allowed to read, rather than a row
+  // that bounces them back to the overview.
+  if (own && (canEdit || isViewerReadableHref(own[1]))) return own[1];
+  return channelHref(channel, range);
 }
 
 /** One headline number, clickable through to the screen that owns it. */
 function OverviewMetric({
+  canEdit,
   href,
   label,
   value,
   caption,
   delta,
 }: {
+  canEdit: boolean;
   href: string;
   label: string;
   value: number | null;
@@ -62,18 +70,23 @@ function OverviewMetric({
   delta?: React.ReactNode;
 }) {
   return (
-    <Link href={href} className="hover:bg-ui-canvas block transition">
+    <AdminViewerLink
+      canEdit={canEdit}
+      href={href}
+      className="hover:bg-ui-canvas block transition"
+    >
       <AdminMetricPanel
         label={label}
         value={value == null ? "—" : value.toLocaleString()}
         caption={value == null ? "not observed" : caption}
         delta={delta}
       />
-    </Link>
+    </AdminViewerLink>
   );
 }
 
 export function OverviewHeadline({
+  canEdit,
   leads,
   booked,
   won,
@@ -82,6 +95,7 @@ export function OverviewHeadline({
   days,
   range,
 }: {
+  canEdit: boolean;
   leads: number | null;
   booked: number | null;
   won: number | null;
@@ -95,6 +109,7 @@ export function OverviewHeadline({
   return (
     <AdminMetricStrip>
       <OverviewMetric
+        canEdit={canEdit}
         href="/admin/leads"
         label="Leads"
         value={leads}
@@ -102,6 +117,7 @@ export function OverviewHeadline({
         delta={<Delta current={leads} prior={prior.leads} />}
       />
       <OverviewMetric
+        canEdit={canEdit}
         href="/admin/bookings"
         label="Calls booked"
         value={booked}
@@ -109,6 +125,7 @@ export function OverviewHeadline({
         delta={<Delta current={booked} prior={prior.booked} />}
       />
       <OverviewMetric
+        canEdit={canEdit}
         href={`/admin/analytics?range=${range}&tab=kpi`}
         label="Won"
         value={won}
@@ -142,10 +159,12 @@ const LEADERBOARD_LIMIT = 10;
  * stopped reporting is news.
  */
 export function ChannelLeaderboard({
+  canEdit,
   rows,
   tailCount,
   range,
 }: {
+  canEdit: boolean;
   rows: readonly ChannelReportRow[];
   tailCount: number;
   range: string;
@@ -178,7 +197,13 @@ export function ChannelLeaderboard({
       ) : (
         <ul className="divide-ui-line mt-2 divide-y">
           {shown.map((row) => (
-            <ChannelRow key={row.key} row={row} max={max} range={range} />
+            <ChannelRow
+              key={row.key}
+              canEdit={canEdit}
+              row={row}
+              max={max}
+              range={range}
+            />
           ))}
         </ul>
       )}
@@ -204,10 +229,12 @@ export function ChannelLeaderboard({
 }
 
 function ChannelRow({
+  canEdit,
   row,
   max,
   range,
 }: {
+  canEdit: boolean;
   row: ChannelReportRow;
   max: number;
   range: string;
@@ -219,7 +246,7 @@ function ChannelRow({
   return (
     <li>
       <Link
-        href={drillHref(row.key, range)}
+        href={drillHref(row.key, range, canEdit)}
         className="hover:bg-ui-canvas -mx-2 block rounded-[6px] px-2 py-2.5 transition"
       >
         <div className="flex items-center gap-2.5">
@@ -270,10 +297,12 @@ function ChannelRow({
  * and silent about any channel too small to carry a verdict.
  */
 export function PerformanceRead({
+  canEdit,
   moves,
   days,
   range,
 }: {
+  canEdit: boolean;
   moves: ChannelMoves;
   days: number;
   range: string;
@@ -288,6 +317,7 @@ export function PerformanceRead({
       <MoveList
         title="Gaining"
         tone="up"
+        canEdit={canEdit}
         moves={moves.gaining}
         empty="No channel gained enough leads to call it out."
         range={range}
@@ -295,6 +325,7 @@ export function PerformanceRead({
       <MoveList
         title="Slipping"
         tone="down"
+        canEdit={canEdit}
         moves={moves.slipping}
         empty="No channel lost enough leads to call it out."
         range={range}
@@ -312,12 +343,14 @@ export function PerformanceRead({
 }
 
 function MoveList({
+  canEdit,
   title,
   tone,
   moves,
   empty,
   range,
 }: {
+  canEdit: boolean;
   title: string;
   tone: "up" | "down";
   moves: ChannelMove[];
@@ -334,7 +367,7 @@ function MoveList({
           {moves.map((move) => (
             <li key={move.key}>
               <Link
-                href={drillHref(move.key, range)}
+                href={drillHref(move.key, range, canEdit)}
                 className="hover:bg-ui-canvas -mx-2 flex items-center gap-2.5 rounded-[6px] px-2 py-1.5 transition"
               >
                 <ChannelLogo label={move.label} />
@@ -369,10 +402,12 @@ export type AttentionItem = {
  * clear" and the business numbers started below the fold.
  */
 export function NeedsAttention({
+  canEdit,
   overview,
   syncHealth,
   range,
 }: {
+  canEdit: boolean;
   overview: AdminOverview;
   syncHealth: readonly SyncHealthRow[];
   range: string;
@@ -390,7 +425,11 @@ export function NeedsAttention({
         <ul className="grid gap-2 sm:grid-cols-2">
           {items.map((item) => (
             <li key={item.key}>
-              <Link
+              {/* Still shown to a viewer: "leads stuck on a failed sync" is a
+                  number the reporting audience needs even when the screen that
+                  fixes it is not theirs to open. */}
+              <AdminViewerLink
+                canEdit={canEdit}
                 href={item.href}
                 className={`rounded-ui flex items-center justify-between gap-4 px-4 py-3 text-sm shadow-sm transition ${
                   item.tone === "red"
@@ -400,7 +439,7 @@ export function NeedsAttention({
               >
                 <span className="font-medium">{item.label}</span>
                 <span className="font-semibold tabular-nums">{item.count}</span>
-              </Link>
+              </AdminViewerLink>
             </li>
           ))}
         </ul>
@@ -473,13 +512,15 @@ function buildAttentionItems(
  * what the business runs on.
  */
 export function StudioStrip({
+  canEdit,
   overview,
   range,
 }: {
+  canEdit: boolean;
   overview: AdminOverview;
   range: string;
 }) {
-  const links: ReadonlyArray<[string, string]> = [
+  const allLinks: ReadonlyArray<[string, string]> = [
     ["Pages", "/admin/pages"],
     ["Posts", "/admin/news"],
     ["Forms", "/admin/forms"],
@@ -493,6 +534,12 @@ export function StudioStrip({
     ["New page", "/admin/pages/new"],
     ["New post", "/admin/news/new"],
   ];
+
+  // Unlike the metric tiles, these carry no number of their own — a label
+  // with nothing behind it is just clutter, so a viewer gets the short list.
+  const links = canEdit
+    ? allLinks
+    : allLinks.filter(([, href]) => isViewerReadableHref(href));
 
   return (
     <section className={adminCardClass} aria-label="Content and shortcuts">

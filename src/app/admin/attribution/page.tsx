@@ -12,7 +12,7 @@ import {
   type AttributionFieldRow,
   type AttributionOverview,
 } from "@/lib/services/attribution-overview";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Attribution health",
@@ -42,7 +42,7 @@ const FIELD_STATUS_TONE: Record<AttributionFieldRow["status"], string> = {
 
 export default async function AdminAttributionPage() {
   const [{ user, role }, overview] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     buildAttributionOverview(),
   ]);
 

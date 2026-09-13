@@ -5,6 +5,7 @@ import { createPortal, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { signOut } from "@/app/admin/actions";
+import { isViewerReadableHref } from "@/lib/admin/viewer-access";
 import {
   AdminIcon,
   adminEyebrowClass,
@@ -181,6 +182,18 @@ const accountSections: AdminNavSection[] = [
 
 const sections = [...contentSections, ...accountSections];
 
+/**
+ * A read-only viewer sees only the sections their gate lets them open. The
+ * allowlist lives in one place (lib/admin/viewer-access) so the nav cannot
+ * drift from what the pages actually permit, and a section added later is
+ * hidden from viewers until someone adds it there deliberately.
+ */
+function visibleSections(sectionList: AdminNavSection[], canEdit: boolean) {
+  return canEdit
+    ? sectionList
+    : sectionList.filter((section) => isViewerReadableHref(section.href));
+}
+
 type AdminShellProps = {
   activeSection: AdminSection;
   eyebrow?: string;
@@ -207,6 +220,9 @@ export function AdminShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const activeLabel = getAdminActiveLabel(activeSection);
   const roleLabel = userRole ? formatAdminRole(userRole) : null;
+  // Absent role means a caller that predates the viewer role; treat it as a
+  // full admin so the nav does not silently shrink for everyone.
+  const canEdit = userRole !== "viewer";
 
   return (
     <div
@@ -217,6 +233,7 @@ export function AdminShell({
         <AdminMobileNav
           activeLabel={activeLabel}
           activeSection={activeSection}
+          canEdit={canEdit}
         />
       )}
       <div
@@ -231,6 +248,7 @@ export function AdminShell({
         {!immersive && (
           <AdminDesktopSidebar
             activeSection={activeSection}
+            canEdit={canEdit}
             collapsed={sidebarCollapsed}
             onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
             roleLabel={roleLabel}
@@ -264,9 +282,11 @@ function getAdminActiveLabel(activeSection: AdminSection) {
 function AdminMobileNav({
   activeLabel,
   activeSection,
+  canEdit,
 }: {
   activeLabel: string;
   activeSection: AdminSection;
+  canEdit: boolean;
 }) {
   return (
     <div className="border-ui-line bg-ui-surface sticky top-0 z-50 border-b px-4 py-2.5 xl:hidden">
@@ -286,13 +306,13 @@ function AdminMobileNav({
           <AdminMobileNavList
             activeSection={activeSection}
             ariaLabel="Admin sections"
-            sections={contentSections}
+            sections={visibleSections(contentSections, canEdit)}
           />
           <AdminMobileNavList
             activeSection={activeSection}
             ariaLabel="Account sections"
             className="border-ui-line border-t pt-4"
-            sections={accountSections}
+            sections={visibleSections(accountSections, canEdit)}
           />
           <form action={signOut}>
             <button
@@ -337,12 +357,14 @@ function AdminMobileNavList({
 
 function AdminDesktopSidebar({
   activeSection,
+  canEdit,
   collapsed,
   onToggleCollapsed,
   roleLabel,
   userEmail,
 }: {
   activeSection: AdminSection;
+  canEdit: boolean;
   collapsed: boolean;
   onToggleCollapsed: () => void;
   roleLabel: string | null;
@@ -386,10 +408,11 @@ function AdminDesktopSidebar({
           ariaLabel="Admin sections"
           collapsed={collapsed}
           label="Content"
-          sections={contentSections}
+          sections={visibleSections(contentSections, canEdit)}
         />
         <AdminAccountBlock
           activeSection={activeSection}
+          canEdit={canEdit}
           collapsed={collapsed}
           roleLabel={roleLabel}
           userEmail={userEmail}
@@ -517,11 +540,13 @@ function AdminDesktopNavItem({
 
 function AdminAccountBlock({
   activeSection,
+  canEdit,
   collapsed,
   roleLabel,
   userEmail,
 }: {
   activeSection: AdminSection;
+  canEdit: boolean;
   collapsed: boolean;
   roleLabel: string | null;
   userEmail?: string | null;
@@ -532,7 +557,7 @@ function AdminAccountBlock({
         aria-label="Account settings"
         className={clsx("mb-3 grid gap-0.5", collapsed && "mb-4")}
       >
-        {accountSections.map((section) => (
+        {visibleSections(accountSections, canEdit).map((section) => (
           <AdminDesktopNavItem
             key={section.id}
             collapsed={collapsed}

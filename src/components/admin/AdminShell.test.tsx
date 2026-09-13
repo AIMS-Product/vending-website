@@ -8,12 +8,14 @@ vi.mock("@/app/admin/actions", () => ({
 
 function renderShell(
   activeSection: Parameters<typeof AdminShell>[0]["activeSection"],
+  userRole?: string,
 ) {
   return renderToStaticMarkup(
     <AdminShell
       activeSection={activeSection}
       title="Studio"
       userEmail="admin@example.com"
+      userRole={userRole}
     >
       content
     </AdminShell>,
@@ -135,5 +137,69 @@ describe("AdminShell navigation", () => {
     expect(html).toContain("Media library");
     expect(html).toContain('href="/admin/settings/users"');
     expect(html).toContain("Settings");
+  });
+});
+
+describe("AdminShell navigation for a read-only viewer", () => {
+  // Hiding a link is not access control — requireAdmin() on each page is.
+  // These assertions only prove the nav agrees with the gate, so a viewer is
+  // not handed a sidebar of links that all bounce them back to /admin.
+  const denied = [
+    "/admin/leads",
+    "/admin/chatbot",
+    "/admin/pages",
+    "/admin/news",
+    "/admin/case-studies",
+    "/admin/forms",
+    "/admin/popups",
+    "/admin/links",
+    "/admin/media",
+    "/admin/libraries",
+    "/admin/settings/users",
+    "/admin/settings/routes",
+  ];
+
+  it("renders only the four reporting sections", () => {
+    const html = renderShell("overview", "viewer");
+
+    expect(html).toContain('href="/admin"');
+    expect(html).toContain('href="/admin/analytics"');
+    expect(html).toContain('href="/admin/bookings"');
+    expect(html).toContain('href="/admin/attribution"');
+
+    denied.forEach((href) => {
+      expect(html).not.toContain(`href="${href}"`);
+    });
+  });
+
+  it("keeps sign out reachable for a viewer", () => {
+    // A viewer who cannot sign out is stuck in a session they can only end
+    // by clearing cookies by hand.
+    const html = renderShell("overview", "viewer");
+
+    expect(html).toContain("Sign out");
+  });
+
+  it("labels the role as Viewer", () => {
+    const html = renderShell("overview", "viewer");
+
+    expect(html).toContain("Viewer");
+  });
+
+  it.each(["admin", "super_admin"])("renders the full nav for %s", (role) => {
+    const html = renderShell("overview", role);
+
+    denied.forEach((href) => {
+      expect(html).toContain(`href="${href}"`);
+    });
+  });
+
+  it("renders the full nav when no role is supplied", () => {
+    // Callers that predate the viewer role must not silently lose their nav.
+    const html = renderShell("overview");
+
+    denied.forEach((href) => {
+      expect(html).toContain(`href="${href}"`);
+    });
   });
 });

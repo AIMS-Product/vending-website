@@ -35,6 +35,7 @@ describe("ChannelLeaderboard", () => {
   it("marks each channel with its brand colour and links into its detail", () => {
     const html = renderToStaticMarkup(
       <ChannelLeaderboard
+        canEdit
         rows={[row("YouTube", { leads: 40, booked: 6 }, 15)]}
         tailCount={0}
         range="30d"
@@ -51,6 +52,7 @@ describe("ChannelLeaderboard", () => {
   it("sends a channel with its own admin page there instead", () => {
     const html = renderToStaticMarkup(
       <ChannelLeaderboard
+        canEdit
         rows={[row("Chatbot", { leads: 12 })]}
         tailCount={0}
         range="30d"
@@ -63,6 +65,7 @@ describe("ChannelLeaderboard", () => {
   it("shows a dash for a channel no connector reported leads for", () => {
     const html = renderToStaticMarkup(
       <ChannelLeaderboard
+        canEdit
         rows={[row("Trustpilot", { visits: 80 })]}
         tailCount={0}
         range="30d"
@@ -76,6 +79,7 @@ describe("ChannelLeaderboard", () => {
   it("holds back a booking rate that only two leads sit behind", () => {
     const html = renderToStaticMarkup(
       <ChannelLeaderboard
+        canEdit
         rows={[row("LinkedIn", { leads: 2, booked: 2 }, 100)]}
         tailCount={0}
         range="30d"

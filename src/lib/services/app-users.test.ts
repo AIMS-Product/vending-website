@@ -225,9 +225,40 @@ describe("app user service", () => {
         ),
       ),
     ).toBe(true);
+    // The audit table repeats the same role list in its own two constraints.
+    // Widening only app_users would let the role change land and the record
+    // of who changed it fail, so these names have to be recognised too.
+    expect(
+      isStaleAdminRoleConstraintError(
+        new AppUserServiceError(
+          'new row for relation "app_user_events" violates check constraint "app_user_events_new_role_check"',
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      isStaleAdminRoleConstraintError(
+        new AppUserServiceError(
+          'new row for relation "app_user_events" violates check constraint "app_user_events_old_role_check"',
+        ),
+      ),
+    ).toBe(true);
     expect(
       isStaleAdminRoleConstraintError(new AppUserServiceError("Other error")),
     ).toBe(false);
+  });
+
+  it("invites a viewer and records the role on the audit event", async () => {
+    const fake = buildClient();
+
+    await inviteAppUser(
+      { email: "reporting@example.com", role: "viewer" },
+      actor,
+      { client: fake.client, origin: "https://www.vendingpreneurs.com" },
+    );
+
+    expect(fake.state.appUsers[0]?.role).toBe("viewer");
+    expect(fake.state.appUserEmails[0]?.role).toBe("viewer");
+    expect(fake.state.events.at(-1)?.new_role).toBe("viewer");
   });
 
   it("creates a new auth user, grants access, sends setup, and logs the invite", async () => {
