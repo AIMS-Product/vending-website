@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import {
   AdminBar,
   AdminDeltaChip,
@@ -204,10 +205,13 @@ function DeltaChip({
 export function AnalyticsBreakdown({
   title,
   rows,
+  logos = false,
   emptyLabel = "No data in this range.",
 }: {
   title: string;
   rows: AdminAnalyticsBreakdownRow[];
+  /** True when the rows are channels or sources and so carry a mark. */
+  logos?: boolean;
   emptyLabel?: string;
 }) {
   const maxCount = Math.max(1, ...rows.map((row) => row.count));
@@ -230,6 +234,11 @@ export function AnalyticsBreakdown({
                 <span className="text-ui-text-subtle w-5 shrink-0 tabular-nums">
                   {index + 1}
                 </span>
+                {logos ? (
+                  <span className="shrink-0 self-center">
+                    <ChannelLogo label={row.label} />
+                  </span>
+                ) : null}
                 <span
                   className="text-ui-text min-w-0 flex-1 truncate"
                   title={row.label}

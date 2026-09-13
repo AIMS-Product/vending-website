@@ -79,6 +79,13 @@ const OWNED: Record<string, string> = {
   podcast:
     "M12 2a3.5 3.5 0 0 1 3.5 3.5v6a3.5 3.5 0 0 1-7 0v-6A3.5 3.5 0 0 1 12 2Zm-6 9h2a4 4 0 0 0 8 0h2a6 6 0 0 1-5 5.9V19h3v2H8v-2h3v-2.1A6 6 0 0 1 6 11Z",
   all: "M4 13h6v7H4v-7Zm0-9h6v7H4V4Zm10 0h6v16h-6V4Z",
+  // A webinar is a screen with someone presenting on it.
+  webinar:
+    "M3 4h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-7v2h3v2H7v-2h3v-2H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm1 2v9h16V6H4Zm8 1.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM8.5 14a3.5 3.5 0 0 1 7 0h-7Z",
+  // A VSL is a video: a play button.
+  vsl: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-2 6 6 4-6 4V8Z",
+  // A low-ticket or internal funnel is drawn as one.
+  funnel: "M3 4h18l-7 8v6l-4 2v-8L3 4Z",
 };
 
 /**
@@ -92,8 +99,11 @@ const OWNED_MATCHERS: Array<[RegExp, string]> = [
   [/^lane 2|setter|reactivation scraper|sales reactivation/, "phone"],
   [/side hustle|podcast|\bshn\b/, "podcast"],
   [/chatbot|chat\b/, "chatbot"],
+  [/webinar/, "webinar"],
+  [/\bvsl\b|video sales/, "vsl"],
+  [/low ticket|\bltf\b|funnel/, "funnel"],
   [/form|ghl|typeform/, "form"],
-  [/email|newsletter|webinar/, "email"],
+  [/email|newsletter/, "email"],
   [/website|organic|direct|seo|landing/, "website"],
 ];
 

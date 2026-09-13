@@ -75,6 +75,20 @@ describe("ChannelLogo", () => {
     }
   });
 
+  it("draws webinars, VSLs and funnels as first-party glyphs", () => {
+    for (const label of [
+      "Webinar",
+      "Vsl",
+      "General VSL",
+      "Low ticket funnel",
+      "Internal Ltf",
+    ]) {
+      expect(brandFor(label), label).toBeNull();
+      expect(render(label), label).toContain("<svg");
+      expect(render(label), label).not.toContain("rounded-full");
+    }
+  });
+
   it("gives a podcast a microphone, not a brand", () => {
     expect(brandFor("Side Hustle Nation")).toBeNull();
     expect(render("Side Hustle Nation")).toContain("<svg");

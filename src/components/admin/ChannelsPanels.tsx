@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AdminViewerLink } from "@/components/admin/AdminViewerLink";
+import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import {
   AdminDeltaChip,
   AdminMetricPanel,
@@ -81,27 +82,28 @@ export function ChannelsTab({
             All channels
           </Link>
           <span className="text-ui-text-subtle"> / </span>
-          <span className="text-ui-text font-semibold">{data.channel}</span>
+          <span className="text-ui-text inline-flex items-center gap-2 align-middle font-semibold">
+            <ChannelLogo label={data.channel} />
+            {data.channel}
+          </span>
         </p>
       ) : null}
 
       <ChannelKpis report={report} days={data.range.days} />
 
-      <div className="grid gap-5 xl:grid-cols-3">
-        <ChannelFunnel report={report} days={data.range.days} />
-        <div className="xl:col-span-2">
-          <ChannelTable
-            title={data.channel ? "By campaign" : "By channel"}
-            rows={report.rows}
-            tail={report.tail}
-            rowHref={
-              data.channel
-                ? undefined
-                : (row) => channelsHref(range, includeInternal, row.key)
-            }
-          />
-        </div>
-      </div>
+      <FunnelStrip report={report} days={data.range.days} />
+
+      <ChannelTable
+        title={data.channel ? "By campaign" : "By channel"}
+        rows={report.rows}
+        tail={report.tail}
+        logos={!data.channel}
+        rowHref={
+          data.channel
+            ? undefined
+            : (row) => channelsHref(range, includeInternal, row.key)
+        }
+      />
 
       {data.drill ? (
         <div className="mt-5 grid gap-5 xl:grid-cols-2">
@@ -169,97 +171,98 @@ function ChannelKpis({
   );
 }
 
-function ChannelFunnel({
+/**
+ * The funnel as one row of cells under the KPIs, not a column beside the
+ * table. Five stages on the site, then what the platforms report upstream,
+ * separated because Seen and Clicked cover different channels and are not a
+ * stage of the funnel to their left. The table below gets the full width.
+ */
+function FunnelStrip({
   report,
   days,
 }: {
   report: ChannelReport;
   days: number;
 }) {
-  const observed = report.funnel.filter((stage) => stage.value != null);
-  const top = observed[0]?.value ?? null;
   return (
-    <section className={adminCardClass} aria-label="Channel funnel">
-      <h2 className={adminEyebrowClass}>On the site</h2>
-      <p className="text-ui-text-subtle mt-2 text-xs">
+    <section className={`${adminCardClass} mb-5`} aria-label="Channel funnel">
+      <div className="divide-ui-line grid gap-y-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 xl:divide-x">
+        {report.funnel.map((stage) => (
+          <StageCell
+            key={stage.key}
+            stage={stage}
+            caption={
+              stage.ofPreviousPct != null
+                ? `${stage.ofPreviousPct}% of ${stage.ofPreviousLabel?.toLowerCase()}`
+                : stage.value != null && stage.ofPreviousLabel
+                  ? "share not measurable"
+                  : "on the site"
+            }
+            captionTitle={
+              stage.ofPreviousPct == null &&
+              stage.value != null &&
+              stage.ofPreviousLabel
+                ? "No link key carried both stages, so there is no honest share."
+                : undefined
+            }
+          />
+        ))}
+        {report.reach.map((stage) => (
+          <StageCell
+            key={stage.key}
+            stage={stage}
+            upstream
+            caption={
+              stage.value == null
+                ? "no connector reports this yet"
+                : `${stage.channels} of ${stage.totalChannels} channels report it`
+            }
+          />
+        ))}
+      </div>
+      <p className="text-ui-text-subtle mt-3 text-xs">
         Each share is measured only where both stages were observed for the same
         link, so the two sides are one population. Deltas are against the prior{" "}
         {days} days. Showed is an upper bound: a booked call counts as shown
-        unless its Close outcome says no-show or cancelled, so a call nobody
-        logged an outcome for counts as shown.
+        unless its Close outcome says no-show or cancelled. Seen and Clicked are
+        what the platforms report about their own surface, upstream of the site.
       </p>
-      <ol className="mt-3 space-y-2.5">
-        {report.funnel.map((stage) => (
-          <li key={stage.key} className="flex flex-col gap-1">
-            <StageLine stage={stage} />
-            {stage.value != null && top ? (
-              <div className="h-1.5 w-full" aria-hidden="true">
-                <div
-                  className="bg-ui-accent h-1.5 rounded-r-[3px]"
-                  style={{
-                    width: `max(2px, ${Math.min(100, (stage.value / top) * 100)}%)`,
-                  }}
-                />
-              </div>
-            ) : null}
-            {stage.ofPreviousPct != null ? (
-              <p className="text-ui-text-subtle text-xs">
-                {stage.ofPreviousPct}% of {stage.ofPreviousLabel?.toLowerCase()}
-              </p>
-            ) : stage.value != null && stage.ofPreviousLabel ? (
-              <p
-                className="text-ui-text-subtle text-xs"
-                title="No link key carried both stages, so there is no honest share."
-              >
-                share not measurable
-              </p>
-            ) : null}
-          </li>
-        ))}
-      </ol>
-
-      <h2 className={`${adminEyebrowClass} mt-6`}>Upstream, off the site</h2>
-      <p className="text-ui-text-subtle mt-2 text-xs">
-        What the platforms report about their own surface. Each covers a
-        different set of channels, so neither is a stage of the funnel above.
-      </p>
-      <ol className="mt-3 space-y-2.5">
-        {report.reach.map((stage) => (
-          <li key={stage.key} className="flex flex-col gap-0.5">
-            <StageLine stage={stage} />
-            <p className="text-ui-text-subtle text-xs">
-              {stage.value == null
-                ? "no connector reports this yet"
-                : `reported by ${stage.channels} of ${stage.totalChannels} channels`}
-            </p>
-          </li>
-        ))}
-      </ol>
     </section>
   );
 }
 
-function StageLine({ stage }: { stage: FunnelStage }) {
+function StageCell({
+  stage,
+  caption,
+  captionTitle,
+  upstream = false,
+}: {
+  stage: FunnelStage;
+  caption: string;
+  captionTitle?: string;
+  upstream?: boolean;
+}) {
   return (
-    <div className="flex items-baseline gap-2 text-[0.8125rem]">
-      <span className="text-ui-text min-w-0 flex-1 truncate">
-        {stage.label}
-      </span>
+    <div className="px-4 first:pl-0">
+      <p className={adminEyebrowClass}>
+        {upstream ? `${stage.label} upstream` : stage.label}
+      </p>
       {stage.value == null ? (
-        <span
-          className="text-ui-text-subtle shrink-0 text-xs"
+        <p
+          className="text-ui-text-subtle mt-2 text-xl leading-none font-semibold"
           title="No connector observed this stage in the range."
         >
-          not observed
-        </span>
+          &mdash;
+        </p>
       ) : (
-        <>
+        <p className="text-ui-text mt-2 flex flex-wrap items-baseline gap-2 text-xl leading-none font-semibold tracking-[-0.02em] tabular-nums">
+          {stage.value.toLocaleString()}
           <Delta current={stage.value} prior={stage.prior} />
-          <span className="text-ui-text shrink-0 font-semibold tabular-nums">
-            {stage.value.toLocaleString()}
-          </span>
-        </>
+        </p>
       )}
+      <p className="text-ui-text-subtle mt-1.5 text-xs" title={captionTitle}>
+        {stage.value == null ? "not observed" : caption}
+      </p>
     </div>
   );
 }
@@ -283,12 +286,15 @@ export function ChannelTable({
   title,
   rows,
   tail = [],
+  logos = false,
   rowHref,
 }: {
   title: string;
   rows: ChannelReportRow[];
   /** Rows with visits only, shown collapsed under the table. */
   tail?: ChannelReportRow[];
+  /** True when every row is a channel and so has a mark. Campaign rows do not. */
+  logos?: boolean;
   rowHref?: (row: ChannelReportRow) => string;
 }) {
   return (
@@ -329,7 +335,12 @@ export function ChannelTable({
             </thead>
             <tbody className="divide-ui-line divide-y">
               {rows.map((row) => (
-                <ChannelRow key={row.key} row={row} rowHref={rowHref} />
+                <ChannelRow
+                  key={row.key}
+                  row={row}
+                  logos={logos}
+                  rowHref={rowHref}
+                />
               ))}
             </tbody>
           </table>
@@ -346,7 +357,12 @@ export function ChannelTable({
               <table className="mt-2 w-full min-w-[52rem] text-[0.8125rem]">
                 <tbody className="divide-ui-line divide-y">
                   {tail.map((row) => (
-                    <ChannelRow key={row.key} row={row} rowHref={rowHref} />
+                    <ChannelRow
+                      key={row.key}
+                      row={row}
+                      logos={logos}
+                      rowHref={rowHref}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -360,24 +376,29 @@ export function ChannelTable({
 
 function ChannelRow({
   row,
+  logos,
   rowHref,
 }: {
   row: ChannelReportRow;
+  logos: boolean;
   rowHref?: (row: ChannelReportRow) => string;
 }) {
   return (
     <tr>
-      <td className="text-ui-text py-2.5 pr-3 font-medium">
-        {rowHref ? (
-          <Link
-            href={rowHref(row)}
-            className="text-ui-accent underline-offset-2 hover:underline"
-          >
-            {row.label}
-          </Link>
-        ) : (
-          row.label
-        )}
+      <td className="text-ui-text py-2.5 pr-3 font-medium whitespace-nowrap">
+        <span className="inline-flex items-center gap-2">
+          {logos ? <ChannelLogo label={row.label} /> : null}
+          {rowHref ? (
+            <Link
+              href={rowHref(row)}
+              className="text-ui-accent underline-offset-2 hover:underline"
+            >
+              {row.label}
+            </Link>
+          ) : (
+            row.label
+          )}
+        </span>
       </td>
       {COLUMNS.map((column) => (
         <td
@@ -528,8 +549,11 @@ export function ConfidencePanel({ report }: { report: ConfidenceReport }) {
           <tbody className="divide-ui-line divide-y">
             {report.coverage.map((row) => (
               <tr key={row.channel}>
-                <td className="text-ui-text py-2 pr-3 font-medium">
-                  {row.channel}
+                <td className="text-ui-text py-2 pr-3 font-medium whitespace-nowrap">
+                  <span className="inline-flex items-center gap-2">
+                    <ChannelLogo label={row.channel} />
+                    {row.channel}
+                  </span>
                 </td>
                 {COVERAGE_KEYS.map((column) => {
                   const cell = row.cells[column.key];
@@ -752,7 +776,8 @@ export function SyncHealthPanel({ rows }: { rows: SyncHealthRow[] }) {
             key={row.connector}
             className="flex flex-wrap items-center gap-3 py-2 text-[0.8125rem]"
           >
-            <span className="text-ui-text min-w-[9rem] font-medium">
+            <span className="text-ui-text inline-flex min-w-[10rem] items-center gap-2 font-medium">
+              <ChannelLogo label={row.connector} />
               {row.connector}
             </span>
             <AdminStatusBadge

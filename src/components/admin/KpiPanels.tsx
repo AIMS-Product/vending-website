@@ -44,6 +44,14 @@ export function KpiTab({ data }: { data: KpiTabData }) {
   );
 }
 
+/** Connectors that run when a platform posts to us, not on the cron. */
+const EVENT_DRIVEN = new Set(["manychat-ingest"]);
+
+function isEventDriven(sourceOfTruth: string): boolean {
+  const connectors = sourceOfTruth.split(" + ");
+  return connectors.every((connector) => EVENT_DRIVEN.has(connector));
+}
+
 /**
  * How old the numbers are, said once at the top. Every row already carries a
  * "Last verified", but that column sits past 18 others -- nobody scrolls to
@@ -53,6 +61,9 @@ export function KpiTab({ data }: { data: KpiTabData }) {
 function Freshness({ report, endDay }: { report: KpiReport; endDay: string }) {
   const rows = report.sections.flatMap((section) => section.rows);
   const verified = rows
+    // A webhook connector's "last run" is the last event it received. A quiet
+    // Instagram DM week is not a stale page, so it does not set the date here.
+    .filter((row) => !isEventDriven(row.sourceOfTruth))
     .map((row) => row.lastVerified)
     .filter((value): value is string => value != null)
     .sort();

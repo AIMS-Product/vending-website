@@ -230,6 +230,7 @@ function OverviewTab({ analytics }: { analytics: AdminAnalytics }) {
         />
         <AnalyticsBreakdown
           title="Leads by channel"
+          logos
           rows={analytics.leadsByChannel}
         />
         <AnalyticsBreakdown
@@ -255,9 +256,14 @@ function AcquisitionTab({ analytics }: { analytics: AdminAnalytics }) {
   return (
     <>
       <div className="grid gap-5 xl:grid-cols-3">
-        <AnalyticsBreakdown title="Channel" rows={acquisition.channelMix} />
+        <AnalyticsBreakdown
+          title="Channel"
+          rows={acquisition.channelMix}
+          logos
+        />
         <AnalyticsBreakdown
           title="Source (utm_source)"
+          logos
           rows={acquisition.bySource}
         />
         <AnalyticsBreakdown
