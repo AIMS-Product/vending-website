@@ -15,6 +15,7 @@
 const VIEWER_READABLE_PATHS: ReadonlySet<string> = new Set([
   "/admin",
   "/admin/analytics",
+  "/admin/goals",
   "/admin/bookings",
   "/admin/attribution",
 ]);

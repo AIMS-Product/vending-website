@@ -23,6 +23,7 @@ type AdminSection =
   | "popups"
   | "chatbot"
   | "analytics"
+  | "goals"
   | "bookings"
   | "links"
   | "media"
@@ -125,6 +126,13 @@ const contentSections: AdminNavSection[] = [
     href: "/admin/analytics",
     description: "Reporting & conversion",
     icon: "search",
+  },
+  {
+    id: "goals",
+    label: "Goals",
+    href: "/admin/goals",
+    description: "Targets, pace and actuals",
+    icon: "target",
   },
   {
     id: "bookings",

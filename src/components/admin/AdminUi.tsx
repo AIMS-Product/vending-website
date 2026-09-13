@@ -177,7 +177,11 @@ export function AdminDeltaChip({
   );
 }
 
-function AdminStatusDot({ tone }: { tone: "ok" | "warn" | "bad" | "idle" }) {
+export function AdminStatusDot({
+  tone,
+}: {
+  tone: "ok" | "warn" | "bad" | "idle";
+}) {
   const fill =
     tone === "ok"
       ? "bg-ui-ok"
@@ -208,15 +212,21 @@ const STATUS_CHIP_CLASS: Record<"ok" | "warn" | "bad" | "idle", string> = {
 export function AdminStatusBadge({
   status,
   label,
+  tone,
 }: {
   status: string;
   /** Override the visible text without changing the stored status value. */
   label?: string;
+  /**
+   * Override the colour when the status is a judgement the caller already
+   * made ("ahead", "behind") rather than a stored workflow state.
+   */
+  tone?: "ok" | "warn" | "bad" | "idle";
 }) {
   return (
     <span
       className={`rounded-ui inline-flex w-fit items-center px-2 py-0.5 text-[0.8125rem] font-medium whitespace-nowrap ${
-        STATUS_CHIP_CLASS[adminStatusTone(status)]
+        STATUS_CHIP_CLASS[tone ?? adminStatusTone(status)]
       }`}
     >
       {label ?? formatAdminStatus(status)}
