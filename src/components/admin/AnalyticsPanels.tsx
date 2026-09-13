@@ -25,12 +25,15 @@ import {
 /** Segmented range switcher. Plain links so the page stays a Server Component. */
 export function AnalyticsRangeTabs({
   active,
-  includeInternal,
-  tab,
+  includeInternal = false,
+  tab = "overview",
+  hrefFor,
 }: {
   active: AdminAnalyticsRangeKey;
-  includeInternal: boolean;
-  tab: string;
+  includeInternal?: boolean;
+  tab?: string;
+  /** Set by a page that is not /admin/analytics and keeps its own URL shape. */
+  hrefFor?: (key: AdminAnalyticsRangeKey) => string;
 }) {
   return (
     <div
@@ -43,7 +46,9 @@ export function AnalyticsRangeTabs({
         return (
           <Link
             key={key}
-            href={analyticsHref(key, includeInternal, tab)}
+            href={
+              hrefFor ? hrefFor(key) : analyticsHref(key, includeInternal, tab)
+            }
             aria-current={isActive ? "page" : undefined}
             // Selection is a soft fill. A filled dark segment would be a second
             // filled control competing with the page's primary button.
