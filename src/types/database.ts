@@ -924,6 +924,63 @@ export type Database = {
         };
         Relationships: [];
       };
+      close_lead_funnel: {
+        Row: {
+          call_disposition: string | null;
+          display_name: string | null;
+          email: string | null;
+          first_call_show_up: string | null;
+          first_sales_call_booked_date: string | null;
+          funnel: string | null;
+          lead_created_at: string | null;
+          lead_id: string;
+          lead_source: string | null;
+          lead_updated_at: string | null;
+          marketing_source_type: string | null;
+          qualified: string | null;
+          sales_team_lane: string | null;
+          setter_name: string | null;
+          status_label: string | null;
+          synced_at: string;
+        };
+        Insert: {
+          call_disposition?: string | null;
+          display_name?: string | null;
+          email?: string | null;
+          first_call_show_up?: string | null;
+          first_sales_call_booked_date?: string | null;
+          funnel?: string | null;
+          lead_created_at?: string | null;
+          lead_id: string;
+          lead_source?: string | null;
+          lead_updated_at?: string | null;
+          marketing_source_type?: string | null;
+          qualified?: string | null;
+          sales_team_lane?: string | null;
+          setter_name?: string | null;
+          status_label?: string | null;
+          synced_at?: string;
+        };
+        Update: {
+          call_disposition?: string | null;
+          display_name?: string | null;
+          email?: string | null;
+          first_call_show_up?: string | null;
+          first_sales_call_booked_date?: string | null;
+          funnel?: string | null;
+          lead_created_at?: string | null;
+          lead_id?: string;
+          lead_source?: string | null;
+          lead_updated_at?: string | null;
+          marketing_source_type?: string | null;
+          qualified?: string | null;
+          sales_team_lane?: string | null;
+          setter_name?: string | null;
+          status_label?: string | null;
+          synced_at?: string;
+        };
+        Relationships: [];
+      };
       ghl_email_stats: {
         Row: {
           clicked: number;

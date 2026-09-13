@@ -446,6 +446,19 @@ export function createCloseClient({
         `/custom_field/${scope}/?_limit=200`,
       );
     },
+    /**
+     * Close's Advanced Filtering endpoint, one page at a time.
+     *
+     * Read-only. The caller builds the structured query and walks `cursor`
+     * until it comes back null; each page is a fresh POST because cursors
+     * expire after thirty seconds.
+     */
+    searchLeads(body: Record<string, unknown>) {
+      return request<{
+        data?: Array<Record<string, unknown>>;
+        cursor?: string | null;
+      }>("POST", "/data/search/", body);
+    },
     createNote(payload: CloseNotePayload) {
       return request<{ id: string }>("POST", "/activity/note/", payload);
     },
