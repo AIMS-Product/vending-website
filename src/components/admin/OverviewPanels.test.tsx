@@ -32,7 +32,7 @@ function row(
 }
 
 describe("ChannelLeaderboard", () => {
-  it("marks each channel with its brand colour and links into its detail", () => {
+  it("marks each channel with its brand artwork and links into its detail", () => {
     const html = renderToStaticMarkup(
       <ChannelLeaderboard
         canEdit
@@ -42,8 +42,8 @@ describe("ChannelLeaderboard", () => {
       />,
     );
 
-    expect(html).toContain('fill="#FF0000"');
-    expect(html).toContain('aria-label="YouTube"');
+    expect(html).toContain('src="/admin/brands/youtube.svg"');
+    expect(html).toContain('alt="YouTube"');
     expect(html).toContain("tab=channels&amp;channel=YouTube");
     expect(html).toContain("6 booked");
     expect(html).toContain("15% of leads");

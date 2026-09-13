@@ -2,70 +2,61 @@
  * The mark for one reporting row, so a channel is found by shape and colour
  * instead of by reading eighteen rows of similar text.
  *
- * Brand colour is the whole point here and is the one place this admin uses it:
- * scanning for YouTube's red is faster than reading "YouTube", which is what a
- * table this wide needs. Anything we own (the site, the chatbot, a form) gets a
- * neutral glyph so first-party rows stay visually distinct from paid channels.
+ * Brand marks are the real vendor artwork, served from `public/admin/brands`
+ * (official assets where the vendor publishes one, otherwise the maintained
+ * gilbarbara/logos and Simple Icons sets). Brand colour is the whole point here
+ * and is the one place this admin uses it: scanning for YouTube's red is
+ * faster than reading "YouTube". Anything we own (the site, the chatbot, a
+ * form) gets a neutral glyph so first-party rows stay visually distinct from
+ * the platforms we buy or earn traffic from.
  *
- * Matched on the row label the report already produces, lowercased, longest key
- * first — "meta ads" must not resolve as "meta". An unknown label gets a
- * neutral dot rather than nothing, so every row still lines up.
+ * Matched on the row label the report already produces, lowercased, longest
+ * key first: "meta ads" must not resolve as "meta", "google ads" not as
+ * "google". An unknown label gets a neutral dot rather than nothing, so every
+ * row still lines up.
  */
 
-type Mark = { color: string; path: string; label: string };
+import Image from "next/image";
 
-// Single-path marks, drawn on a 24x24 grid.
-const MARKS: Record<string, Mark> = {
-  youtube: {
-    color: "#FF0000",
-    label: "YouTube",
-    path: "M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.3 3.6-6.3 3.6Z",
-  },
-  instagram: {
-    color: "#E4405F",
-    label: "Instagram",
-    path: "M12 2.2c3.2 0 3.6 0 4.9.07 3.3.15 4.8 1.7 5 5 .06 1.3.07 1.7.07 4.9s0 3.6-.07 4.9c-.15 3.3-1.7 4.8-5 5-1.3.06-1.7.07-4.9.07s-3.6 0-4.9-.07c-3.3-.15-4.8-1.7-5-5C2.05 15.6 2 15.2 2 12s0-3.6.07-4.9c.15-3.3 1.7-4.8 5-5C8.4 2.05 8.8 2.2 12 2.2Zm0 3.6a6.2 6.2 0 1 0 0 12.4 6.2 6.2 0 0 0 0-12.4Zm0 10.2a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm6.4-10.4a1.44 1.44 0 1 0 0 2.88 1.44 1.44 0 0 0 0-2.88Z",
-  },
-  linkedin: {
-    color: "#0A66C2",
-    label: "LinkedIn",
-    path: "M20.4 20.4h-3.6v-5.6c0-1.3 0-3-1.9-3s-2.1 1.4-2.1 2.9v5.7H9.3V9.1h3.4v1.5h.05a3.8 3.8 0 0 1 3.4-1.9c3.6 0 4.3 2.4 4.3 5.5v6.2ZM5.3 7.5a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2Zm1.8 12.9H3.5V9.1h3.6v11.3ZM22.2 0H1.8A1.77 1.77 0 0 0 0 1.75v20.5A1.77 1.77 0 0 0 1.8 24h20.4a1.77 1.77 0 0 0 1.8-1.75V1.75A1.77 1.77 0 0 0 22.2 0Z",
-  },
-  meta: {
-    color: "#0866FF",
-    label: "Meta",
-    path: "M6.9 4.5C3.6 4.5 1.4 7.9 1.4 12c0 4.2 2.1 7.5 5.3 7.5 2.3 0 3.8-1.5 5.8-4.8l1.4-2.4c.5-.9.9-1.5 1.3-2.1.6.9 1.1 1.8 1.6 2.7l1 1.8c1.6 2.8 3 4.8 5.2 4.8 2.6 0 4-2.6 4-7.2 0-4.4-2.2-7.6-5.2-7.6-1.9 0-3.4 1.3-5.1 4l-.9 1.5c-.8-1.3-1.5-2.4-2.2-3.2-1.4-1.7-2.8-2.5-4.6-2.5Zm.5 2.6c1 0 1.9.6 2.9 1.9.5.6 1 1.4 1.6 2.4l-.9 1.4c-1.6 2.6-2.4 3.3-3.4 3.3-1.3 0-2.5-1.8-2.5-4.5 0-2.7 1.1-4.5 2.3-4.5Zm9.6 0c1.2 0 2.3 1.9 2.3 4.9 0 2.5-.6 3.9-1.8 3.9-1 0-1.8-.8-3.2-3.2l-1-1.7c1.6-2.6 2.6-3.9 3.7-3.9Z",
-  },
-  "meta ads": {
-    color: "#0866FF",
-    label: "Meta Ads",
-    path: "M6.9 4.5C3.6 4.5 1.4 7.9 1.4 12c0 4.2 2.1 7.5 5.3 7.5 2.3 0 3.8-1.5 5.8-4.8l1.4-2.4c.5-.9.9-1.5 1.3-2.1.6.9 1.1 1.8 1.6 2.7l1 1.8c1.6 2.8 3 4.8 5.2 4.8 2.6 0 4-2.6 4-7.2 0-4.4-2.2-7.6-5.2-7.6-1.9 0-3.4 1.3-5.1 4l-.9 1.5c-.8-1.3-1.5-2.4-2.2-3.2-1.4-1.7-2.8-2.5-4.6-2.5Zm.5 2.6c1 0 1.9.6 2.9 1.9.5.6 1 1.4 1.6 2.4l-.9 1.4c-1.6 2.6-2.4 3.3-3.4 3.3-1.3 0-2.5-1.8-2.5-4.5 0-2.7 1.1-4.5 2.3-4.5Zm9.6 0c1.2 0 2.3 1.9 2.3 4.9 0 2.5-.6 3.9-1.8 3.9-1 0-1.8-.8-3.2-3.2l-1-1.7c1.6-2.6 2.6-3.9 3.7-3.9Z",
-  },
-  "google ads": {
-    color: "#4285F4",
-    label: "Google Ads",
-    path: "M12 10.2v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.6h3.3c1.9-1.8 3-4.4 3-7.5 0-.7-.06-1.4-.2-2.1H12Zm-7.3 4.3-.7.6-2.6 2A12 12 0 0 0 12 24c3.2 0 6-1.1 8-2.9l-3.3-2.6a7.2 7.2 0 0 1-10.7-3.8Zm-3.3-7A11.9 11.9 0 0 0 0 12c0 1.9.5 3.7 1.3 5.3l3.4-2.6a7.1 7.1 0 0 1 0-4.6L1.4 7.5Zm10.6-2.9c1.8 0 3.4.6 4.6 1.8l2.9-2.9A12 12 0 0 0 1.4 7.5l3.3 2.6A7.2 7.2 0 0 1 12 4.6Z",
-  },
-  google: {
-    color: "#4285F4",
-    label: "Google",
-    path: "M12 10.2v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.6h3.3c1.9-1.8 3-4.4 3-7.5 0-.7-.06-1.4-.2-2.1H12Zm-7.3 4.3-.7.6-2.6 2A12 12 0 0 0 12 24c3.2 0 6-1.1 8-2.9l-3.3-2.6a7.2 7.2 0 0 1-10.7-3.8Zm-3.3-7A11.9 11.9 0 0 0 0 12c0 1.9.5 3.7 1.3 5.3l3.4-2.6a7.1 7.1 0 0 1 0-4.6L1.4 7.5Zm10.6-2.9c1.8 0 3.4.6 4.6 1.8l2.9-2.9A12 12 0 0 0 1.4 7.5l3.3 2.6A7.2 7.2 0 0 1 12 4.6Z",
-  },
-  tiktok: {
-    color: "#111111",
-    label: "TikTok",
-    path: "M16.6 0h-3.3v13.4a3 3 0 1 1-3-3c.2 0 .3 0 .5.04V7.1a6.4 6.4 0 1 0 5.8 6.3V6.6a7.6 7.6 0 0 0 4.4 1.4V4.7a4.4 4.4 0 0 1-4.4-4.7Z",
-  },
-  trustpilot: {
-    color: "#00B67A",
-    label: "Trustpilot",
-    path: "M12 1.6 15 9h7.7l-6.3 4.6 2.4 7.4-6.8-4.6-6.8 4.6 2.4-7.4L1.3 9H9L12 1.6Z",
-  },
-  braze: {
-    color: "#FF7759",
-    label: "Braze",
-    path: "M12 2c1.9 3.4 3.4 5.2 5.6 6.8C20 10.6 21 12 21 14.3A7 7 0 0 1 12 21a7 7 0 0 1-9-6.7c0-2.3 1-3.7 3.4-5.5C8.6 7.2 10.1 5.4 12 2Zm0 5.6c-1.1 1.7-2.1 2.8-3.5 3.9-1.5 1.1-2 1.8-2 2.8a5 5 0 0 0 11 0c0-1-.5-1.7-2-2.8-1.4-1.1-2.4-2.2-3.5-3.9Z",
-  },
+type Brand = { file: string; label: string };
+
+/** Label fragment -> brand file. Files live in public/admin/brands. */
+const BRANDS: Record<string, Brand> = {
+  youtube: { file: "youtube", label: "YouTube" },
+  instagram: { file: "instagram", label: "Instagram" },
+  linkedin: { file: "linkedin", label: "LinkedIn" },
+  "meta ads": { file: "meta", label: "Meta Ads" },
+  meta: { file: "meta", label: "Meta" },
+  facebook: { file: "facebook", label: "Facebook" },
+  "google ads": { file: "google-ads", label: "Google Ads" },
+  "google analytics": { file: "google-analytics", label: "Google Analytics" },
+  ga4: { file: "google-analytics", label: "Google Analytics" },
+  google: { file: "google", label: "Google" },
+  tiktok: { file: "tiktok", label: "TikTok" },
+  trustpilot: { file: "trustpilot", label: "Trustpilot" },
+  braze: { file: "braze", label: "Braze" },
+  close: { file: "close", label: "Close" },
+  activecampaign: { file: "activecampaign", label: "ActiveCampaign" },
+  "active campaign": { file: "activecampaign", label: "ActiveCampaign" },
+  typeform: { file: "typeform", label: "Typeform" },
+  zoom: { file: "zoom", label: "Zoom" },
+  slack: { file: "slack", label: "Slack" },
+  calendly: { file: "calendly", label: "Calendly" },
+  bitly: { file: "bitly", label: "Bitly" },
+  hubspot: { file: "hubspot", label: "HubSpot" },
+  metricool: { file: "metricool", label: "Metricool" },
+  kit: { file: "kit", label: "Kit" },
+};
+
+/**
+ * Labels that are a whole brand name and nothing else. "x" cannot be a
+ * substring key (it is in "Xxxxx" and "Instagram DM" alike), so it matches
+ * only when the label is exactly the brand.
+ */
+const EXACT_BRANDS: Record<string, Brand> = {
+  x: { file: "x", label: "X" },
+  "x-twitter": { file: "x", label: "X" },
+  twitter: { file: "x", label: "X" },
 };
 
 /** Anything we own. Neutral on purpose: these are not brands. */
@@ -77,6 +68,8 @@ const OWNED: Record<string, string> = {
   form: "M6 2h8l6 6v14H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm7 2v5h5l-5-5Zm-4 9h8v2H9v-2Zm0 4h8v2H9v-2Z",
   email:
     "M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm1.6 2L12 12.3 19.4 7H4.6Z",
+  phone:
+    "M6.6 3h3l1.6 4-2 1.3a10 10 0 0 0 6.5 6.5l1.3-2 4 1.6v3a2 2 0 0 1-2 2A16 16 0 0 1 4.6 5a2 2 0 0 1 2-2Z",
   all: "M4 13h6v7H4v-7Zm0-9h6v7H4V4Zm10 0h6v16h-6V4Z",
 };
 
@@ -84,29 +77,49 @@ const OWNED: Record<string, string> = {
  * Longest key first so a more specific label wins: "meta ads" before "meta",
  * "google ads" before "google".
  */
-const BRAND_KEYS = Object.keys(MARKS).sort((a, b) => b.length - a.length);
+const BRAND_KEYS = Object.keys(BRANDS).sort((a, b) => b.length - a.length);
 
 const OWNED_MATCHERS: Array<[RegExp, string]> = [
   [/^all channels/, "all"],
+  [/^lane 2|setter|reactivation scraper|sales reactivation/, "phone"],
   [/chatbot|chat\b/, "chatbot"],
   [/form|ghl|typeform/, "form"],
-  [/email|braze|newsletter|webinar/, "email"],
+  [/email|newsletter|webinar/, "email"],
   [/website|organic|direct|seo|landing/, "website"],
 ];
+
+/** The brand file for a label, or null when the label is not a brand we hold. */
+export function brandFor(label: string): Brand | null {
+  const key = label.trim().toLowerCase();
+  const exact = EXACT_BRANDS[key];
+  if (exact) return exact;
+  const brand = BRAND_KEYS.find((name) => key.includes(name));
+  return brand ? BRANDS[brand]! : null;
+}
 
 export function ChannelLogo({ label }: { label: string }) {
   const key = label.trim().toLowerCase();
 
-  const brand = BRAND_KEYS.find((name) => key.includes(name));
+  const brand = brandFor(label);
   if (brand) {
-    const mark = MARKS[brand];
-    return <Glyph path={mark.path} color={mark.color} title={mark.label} />;
+    return (
+      // Vendor artwork served as the file it is: `unoptimized` so the SVG's
+      // own colours and gradients are never re-encoded.
+      <Image
+        src={`/admin/brands/${brand.file}.svg`}
+        alt={brand.label}
+        width={16}
+        height={16}
+        unoptimized
+        className="size-4 shrink-0 object-contain"
+      />
+    );
   }
 
   const owned = OWNED_MATCHERS.find(([pattern]) => pattern.test(key));
   if (owned) {
     return (
-      <Glyph path={OWNED[owned[1]]} color="currentColor" title={label} muted />
+      <Glyph path={OWNED[owned[1]]!} color="currentColor" title={label} muted />
     );
   }
 
