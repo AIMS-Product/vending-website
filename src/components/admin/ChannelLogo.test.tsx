@@ -63,11 +63,20 @@ describe("ChannelLogo", () => {
       "Metricool",
       "Kit",
       "X",
+      "HighLevel",
+      "GHL forms",
+      "ManyChat",
     ];
     for (const label of labels) {
       const brand = brandFor(label);
       expect(brand, label).not.toBeNull();
-      expect(existsSync(join(dir, `${brand!.file}.svg`)), label).toBe(true);
+      const file = `${brand!.file}.${brand!.ext ?? "svg"}`;
+      expect(existsSync(join(dir, file)), label).toBe(true);
     }
+  });
+
+  it("gives a podcast a microphone, not a brand", () => {
+    expect(brandFor("Side Hustle Nation")).toBeNull();
+    expect(render("Side Hustle Nation")).toContain("<svg");
   });
 });

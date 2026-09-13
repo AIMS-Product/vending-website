@@ -18,7 +18,7 @@
 
 import Image from "next/image";
 
-type Brand = { file: string; label: string };
+type Brand = { file: string; label: string; ext?: "svg" | "png" };
 
 /** Label fragment -> brand file. Files live in public/admin/brands. */
 const BRANDS: Record<string, Brand> = {
@@ -46,6 +46,11 @@ const BRANDS: Record<string, Brand> = {
   hubspot: { file: "hubspot", label: "HubSpot" },
   metricool: { file: "metricool", label: "Metricool" },
   kit: { file: "kit", label: "Kit" },
+  highlevel: { file: "highlevel", label: "HighLevel" },
+  gohighlevel: { file: "highlevel", label: "HighLevel" },
+  ghl: { file: "highlevel", label: "HighLevel" },
+  // ManyChat publishes no vector mark; this is their own 48px favicon.
+  manychat: { file: "manychat", label: "ManyChat", ext: "png" },
 };
 
 /**
@@ -70,6 +75,9 @@ const OWNED: Record<string, string> = {
     "M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm1.6 2L12 12.3 19.4 7H4.6Z",
   phone:
     "M6.6 3h3l1.6 4-2 1.3a10 10 0 0 0 6.5 6.5l1.3-2 4 1.6v3a2 2 0 0 1-2 2A16 16 0 0 1 4.6 5a2 2 0 0 1 2-2Z",
+  // A podcast: Side Hustle Nation is a show, not a platform with a mark.
+  podcast:
+    "M12 2a3.5 3.5 0 0 1 3.5 3.5v6a3.5 3.5 0 0 1-7 0v-6A3.5 3.5 0 0 1 12 2Zm-6 9h2a4 4 0 0 0 8 0h2a6 6 0 0 1-5 5.9V19h3v2H8v-2h3v-2.1A6 6 0 0 1 6 11Z",
   all: "M4 13h6v7H4v-7Zm0-9h6v7H4V4Zm10 0h6v16h-6V4Z",
 };
 
@@ -82,6 +90,7 @@ const BRAND_KEYS = Object.keys(BRANDS).sort((a, b) => b.length - a.length);
 const OWNED_MATCHERS: Array<[RegExp, string]> = [
   [/^all channels/, "all"],
   [/^lane 2|setter|reactivation scraper|sales reactivation/, "phone"],
+  [/side hustle|podcast|\bshn\b/, "podcast"],
   [/chatbot|chat\b/, "chatbot"],
   [/form|ghl|typeform/, "form"],
   [/email|newsletter|webinar/, "email"],
@@ -106,7 +115,7 @@ export function ChannelLogo({ label }: { label: string }) {
       // Vendor artwork served as the file it is: `unoptimized` so the SVG's
       // own colours and gradients are never re-encoded.
       <Image
-        src={`/admin/brands/${brand.file}.svg`}
+        src={`/admin/brands/${brand.file}.${brand.ext ?? "svg"}`}
         alt={brand.label}
         width={16}
         height={16}
