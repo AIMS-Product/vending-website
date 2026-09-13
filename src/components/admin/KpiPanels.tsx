@@ -1,4 +1,5 @@
 import { adminCardClass, adminEyebrowClass } from "@/components/admin/AdminUi";
+import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import type { KpiTabData } from "@/lib/services/kpi-report-data";
 import type {
   KpiColumn,
@@ -27,11 +28,14 @@ export function KpiTab({ data }: { data: KpiTabData }) {
       <Freshness report={data.report} endDay={data.range.endDay} />
       <p className="text-ui-text-subtle text-xs">
         {data.range.label} ({data.range.startDay} to {data.range.endDay}). A
-        dash means not observed, never zero. Opt-in and Conv % are over every
-        visit in the range, counting a visit-day that converted nobody. Rates
-        further down the funnel are measured only where both sides were observed
-        on the same rows; a rate that came out above 100% is shown as not
-        observed because its two sides were not one population.
+        dash means not observed, never zero.{" "}
+        <Method>
+          Opt-in and Conv % are over every visit in the range, counting a
+          visit-day that converted nobody. Rates further down the funnel are
+          measured only where both sides were observed on the same rows; a rate
+          that came out above 100% is shown as not observed because its two
+          sides were not one population.
+        </Method>
       </p>
       {data.report.sections.map((section) => (
         <KpiSectionTable key={section.key} section={section} />
@@ -71,18 +75,52 @@ function Freshness({ report, endDay }: { report: KpiReport; endDay: string }) {
   );
 }
 
+/**
+ * Long methodology, folded away. Every word of it earns its place when a
+ * number is being challenged and none of it does on the way past, and a
+ * paragraph nobody reads above a table nobody trusts is the worst of both.
+ */
+function Method({ children }: { children: React.ReactNode }) {
+  return (
+    <details className="inline">
+      <summary className="text-ui-text-muted hover:text-ui-text cursor-pointer list-none underline decoration-dotted underline-offset-2">
+        How this is measured
+      </summary>
+      <span className="mt-1 block">{children}</span>
+    </details>
+  );
+}
+
+/**
+ * Columns where every row in this section is null.
+ *
+ * Three columns of nothing but dashes (Revenue, Spend, Cost/booked before the
+ * money connectors landed) pushed the columns that DO have numbers off-screen,
+ * and a reader who has to scroll past empty space to reach a figure trusts it
+ * less. A column comes back on its own the day one row observes a value.
+ */
+function observedColumns(section: KpiSection): KpiColumn[] {
+  return section.columns.filter((column) =>
+    section.rows.some((row) => row.values[column.key] != null),
+  );
+}
+
 function KpiSectionTable({ section }: { section: KpiSection }) {
+  const columns = observedColumns(section);
+  const emptied = section.columns.length - columns.length;
   return (
     <section className={adminCardClass} aria-label={section.title}>
       <h2 className={adminEyebrowClass}>{section.title}</h2>
-      <p className="text-ui-text-subtle mt-2 text-xs">{section.basis}</p>
+      <p className="text-ui-text-subtle mt-1 text-xs">
+        <Method>{section.basis}</Method>
+      </p>
       {section.rows.length === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">
           Nothing observed in this range.
         </p>
       ) : (
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[96rem] text-[0.8125rem]">
+          <table className="w-full min-w-[64rem] text-[0.8125rem]">
             <thead>
               <tr
                 className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
@@ -94,7 +132,7 @@ function KpiSectionTable({ section }: { section: KpiSection }) {
                 <th className="bg-ui-surface border-ui-line sticky left-0 z-10 border-r py-2 pr-4 pl-0 font-semibold">
                   Row
                 </th>
-                {section.columns.map((column) => (
+                {columns.map((column) => (
                   <th
                     key={column.key}
                     className="py-2 pr-3 text-right font-semibold whitespace-nowrap"
@@ -102,26 +140,25 @@ function KpiSectionTable({ section }: { section: KpiSection }) {
                     {column.label}
                   </th>
                 ))}
-                <th className="py-2 pr-3 font-semibold whitespace-nowrap">
-                  Owner · cadence
-                </th>
-                <th className="py-2 font-semibold whitespace-nowrap">
-                  Last verified
-                </th>
+                <th className="py-2 font-semibold whitespace-nowrap">Owner</th>
               </tr>
             </thead>
             <tbody className="divide-ui-line divide-y">
               {section.rows.map((row) => (
-                <KpiTableRow
-                  key={row.key}
-                  row={row}
-                  columns={section.columns}
-                />
+                <KpiTableRow key={row.key} row={row} columns={columns} />
               ))}
             </tbody>
           </table>
         </div>
       )}
+      {emptied > 0 ? (
+        <p className="text-ui-text-subtle mt-2 text-xs">
+          {emptied} {emptied === 1 ? "column is" : "columns are"} hidden because
+          nothing in this range was observed for {emptied === 1 ? "it" : "them"}
+          . {emptied === 1 ? "It comes" : "They come"} back as soon as a
+          connector reports a value.
+        </p>
+      ) : null}
       {section.hidden > 0 ? (
         <p className="text-ui-text-subtle mt-2 text-xs">
           {section.hidden} more {section.hidden === 1 ? "row" : "rows"}{" "}
@@ -135,39 +172,43 @@ function KpiSectionTable({ section }: { section: KpiSection }) {
 function KpiTableRow({ row, columns }: { row: KpiRow; columns: KpiColumn[] }) {
   return (
     <tr>
-      <td className="bg-ui-surface border-ui-line sticky left-0 z-10 min-w-[14rem] border-r py-2.5 pr-4 pl-0 align-top">
-        <div className="text-ui-text font-medium whitespace-nowrap">
-          {row.label}
+      {/* The plumbing that used to sit under every row -- which connectors
+          feed it, when they last ran -- is on hover now. It is worth keeping
+          and was never worth a second line of grey text on all eighteen
+          rows. */}
+      <td
+        className="bg-ui-surface border-ui-line sticky left-0 z-10 min-w-[13rem] border-r py-2.5 pr-4 pl-0 align-middle"
+        title={`Source: ${row.sourceOfTruth}${row.lastVerified ? ` · last verified ${row.lastVerified.slice(0, 10)}` : " · no connector has run"}`}
+      >
+        <div className="flex items-center gap-2">
+          <ChannelLogo label={row.label} />
+          <span className="text-ui-text font-medium whitespace-nowrap">
+            {row.label}
+          </span>
           {row.detail ? (
-            <span className="text-ui-text-muted font-normal">
-              {" "}
-              · {row.detail}
+            <span className="text-ui-text-subtle text-xs whitespace-nowrap">
+              {row.detail}
             </span>
           ) : null}
-        </div>
-        <div
-          className="text-ui-text-subtle text-xs whitespace-nowrap"
-          title="Source of truth"
-        >
-          {row.sourceOfTruth}
         </div>
       </td>
       {columns.map((column) => (
         <td
           key={column.key}
-          className="py-2.5 pr-3 text-right align-top whitespace-nowrap tabular-nums"
+          className="py-2.5 pr-3 text-right align-middle whitespace-nowrap tabular-nums"
         >
           <Cell value={row.values[column.key] ?? null} format={column.format} />
         </td>
       ))}
-      <td className="text-ui-text-muted py-2.5 pr-3 align-top text-xs whitespace-nowrap">
-        {row.owner ?? "—"} · {row.cadence}
-      </td>
-      <td className="text-ui-text-muted py-2.5 align-top text-xs whitespace-nowrap">
-        {row.lastVerified ? (
-          <span title={row.lastVerified}>{row.lastVerified.slice(0, 10)}</span>
+      <td className="text-ui-text-muted py-2.5 align-middle text-xs whitespace-nowrap">
+        {row.owner ? (
+          <span title={`Reviewed ${row.cadence.toLowerCase()}`}>
+            {row.owner}
+          </span>
         ) : (
-          <span title="A connector behind this row has not run">—</span>
+          <span className="text-ui-text-subtle" title="No owner assigned">
+            —
+          </span>
         )}
       </td>
     </tr>
