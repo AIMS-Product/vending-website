@@ -12,7 +12,7 @@ import {
   BookedDefinitions,
   BookedForward,
   BookedMappingReview,
-  BookedPaceHeadline,
+  BookedPaceStrip,
 } from "@/components/admin/BookedPacePanels";
 import { getBookedPace } from "@/lib/services/booked-metrics-data";
 import {
@@ -62,45 +62,42 @@ export default async function AdminGoalsPage({
       activeSection="goals"
       eyebrow="Reporting"
       title="Channel goals"
-      description="Two goals on two different bases, kept apart on purpose. Daily pace counts new calls on the day they were booked. The monthly plan counts Close first sales calls on the day they are scheduled for. They are not two views of one number and no arithmetic runs between them."
+      description="Two goals on two bases. Daily pace counts new calls the day they were booked; the monthly plan counts Close first calls the day they are scheduled for. No arithmetic runs between them."
       userEmail={user.email}
       userRole={role}
     >
       <section className="mb-8" aria-labelledby="daily-pace">
-        <h2
-          id="daily-pace"
-          className="text-ui-text mb-1 text-base font-semibold"
-        >
-          Daily pace — new calls booked
-        </h2>
-        <p className="text-ui-text-muted mb-3 max-w-prose text-[0.8125rem]">
-          Counts a call on the day someone booked it, which is what marketing
-          did that day. Lane 2 outbound is excluded so it cannot flatter the
-          number.
-        </p>
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="daily-pace" className="text-ui-text text-base font-semibold">
+            Daily pace — new calls booked
+          </h2>
+          <p className="text-ui-text-subtle text-xs">
+            Booked-on basis, Lane 2 excluded, Eastern day.
+          </p>
+        </div>
         {pace.connected ? null : (
           <p className={`${adminPanelClass} mb-4 p-4 text-sm`}>
             The booking tables could not be read in this environment, so every
             number below reads as not observed rather than zero.
           </p>
         )}
+        <BookedPaceStrip pace={pace} />
         <div className="grid gap-4">
-          <BookedPaceHeadline pace={pace} />
-          <BookedMappingReview pace={pace} />
+          <BookedDefinitions pace={pace} />
           <BookedAttribution pace={pace} />
           <BookedForward pace={pace} />
-          <BookedDefinitions pace={pace} />
+          <BookedMappingReview pace={pace} />
         </div>
       </section>
 
-      <h2 className="text-ui-text mb-1 text-base font-semibold">
-        Monthly plan — Close first sales calls
-      </h2>
-      <p className="text-ui-text-muted mb-3 max-w-prose text-[0.8125rem]">
-        A different count: first call per lead, deduplicated, dated by the day
-        the call is scheduled for. This is the basis the 800-a-month plan was
-        written and baselined on.
-      </p>
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-ui-text text-base font-semibold">
+          Monthly plan — Close first sales calls
+        </h2>
+        <p className="text-ui-text-subtle text-xs">
+          Lands-on basis, first call per lead, deduplicated.
+        </p>
+      </div>
 
       <nav className="mb-4 flex flex-wrap gap-2" aria-label="Period">
         {PERIODS.map((entry) => (

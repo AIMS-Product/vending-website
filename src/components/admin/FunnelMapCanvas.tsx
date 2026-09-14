@@ -187,17 +187,13 @@ export function FunnelMapCanvas({
             );
           })}
 
-          {/* Connector bus: each row drops into its own lane, both lanes ride
-              one riser down into the spine. */}
-          {CONVERSION_PINS.map((pin) => (
-            <ConversionPill
-              key={pin.id}
-              x={pin.x}
-              y={pin.y}
-              label={pin.label}
-              conversion={conversions[pin.id]}
-            />
-          ))}
+          {/* Conversion pills are NOT drawn here. ConversionPill renders an
+              absolutely positioned <div>, and a div inside <svg> without a
+              <foreignObject> is not laid out in SVG coordinate space — it
+              escapes to the nearest positioned ancestor and floats loose to the
+              left of the spine. A copy was left here by the vertical relayout,
+              so every rate drew twice. The pills belong in the HTML layer
+              below, after </svg>. */}
 
           {CONNECTORS.map((entry, index) => {
             const box = connectorRect(index);
