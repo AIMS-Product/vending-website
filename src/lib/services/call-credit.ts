@@ -197,6 +197,45 @@ function humanizeSource(source: string): string {
 }
 
 /**
+ * Reps who book calls for others but have never hosted one, so no booking
+ * payload carries their name. Resolved once through Calendly's users API
+ * (2026-09-14, `/api/admin/calendly-backfill/run?users=`). Four more scheduling
+ * ids answered 403: they sit in another Calendly organization and stay as ids.
+ */
+const KNOWN_CALENDLY_USERS: ReadonlyArray<
+  [string, { name: string; email?: string }]
+> = [
+  [
+    "https://api.calendly.com/users/6d68f528-ae85-4839-8744-2b2a2143a235",
+    { name: "August Young", email: "august@modern-amenities.com" },
+  ],
+  [
+    "https://api.calendly.com/users/b45484dd-3d04-4f2f-8c9d-ee603b503752",
+    { name: "Naria Torres", email: "naria@modern-amenities.com" },
+  ],
+  [
+    "https://api.calendly.com/users/b3f10a66-4ad7-4a55-bb9c-522b1b00f51c",
+    { name: "Jessica Zatkin", email: "jessica@modern-amenities.com" },
+  ],
+  [
+    "https://api.calendly.com/users/01f8b310-d3dc-4bcb-84b2-f63effca4759",
+    { name: "Cassie Caraballo", email: "cassie@modern-amenities.com" },
+  ],
+  [
+    "https://api.calendly.com/users/abaed0e6-5190-4f44-9c56-185fdbb04f30",
+    { name: "Spencer Reynolds", email: "spencer@modern-amenities.com" },
+  ],
+  [
+    "https://api.calendly.com/users/fc6d02f1-6f4e-4d00-a43d-16667fe49966",
+    { name: "Pearl Sathekge", email: "pearl@modern-amenities.com" },
+  ],
+  [
+    "https://api.calendly.com/users/c8118911-6a06-4f3f-8a8c-3d3c397012f6",
+    { name: "Stephen Olivas", email: "stephen@modern-amenities.com" },
+  ],
+];
+
+/**
  * Builds the Calendly user directory from the hosts already named on the
  * bookings themselves (`event_memberships`), so naming a rep costs no API call.
  *
@@ -207,7 +246,7 @@ function humanizeSource(source: string): string {
 export function buildCalendlyDirectory(
   rows: Array<{ hosts?: unknown }>,
 ): CalendlyDirectory {
-  const directory: CalendlyDirectory = new Map();
+  const directory: CalendlyDirectory = new Map(KNOWN_CALENDLY_USERS);
   for (const row of rows) {
     if (!Array.isArray(row.hosts)) continue;
     for (const host of row.hosts) {

@@ -53,6 +53,20 @@ describe("resolveCallCredit", () => {
     expect(credit.who).toBe("Calendly user 6d68f528");
   });
 
+  it("names a rep who only ever books for others from the seeded directory", () => {
+    const credit = resolveCallCredit(
+      {
+        scheduledByUri:
+          "https://api.calendly.com/users/6d68f528-ae85-4839-8744-2b2a2143a235",
+        utmSource: null,
+        utmMedium: null,
+      },
+      buildCalendlyDirectory([]),
+    );
+    expect(credit.kind).toBe("rep");
+    expect(credit.who).toBe("August Young");
+  });
+
   it("credits a setter whose own tagged link was used", () => {
     // The other half of the fix: a setter who texts a link gets the same named
     // credit as one who books the call inside Calendly.
