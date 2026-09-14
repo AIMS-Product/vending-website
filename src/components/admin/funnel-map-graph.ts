@@ -50,24 +50,26 @@ export type MapEdge = {
   labelAt?: Point;
 };
 
-export const CANVAS = { width: 1400, height: 1290 } as const;
+export const CANVAS = { width: 1040, height: 2240 } as const;
 
-const SOURCE_X = 16;
-const SOURCE_W = 260;
-const SOURCE_H = 104;
-const SOURCE_TOP = 56;
-const SOURCE_STEP = 116;
+/** Everything on the spine is centred on this line, top to bottom. */
+const MID = 520;
 
-/** The vertical trunk every outbound surface joins before the link. */
-export const SOURCE_BUS_X = 306;
+const SOURCE_W = 240;
+const SOURCE_H = 96;
 
-/** Column 1, top to bottom. Order is the order they matter in. */
+/** The horizontal trunk every outbound surface drops into before the link. */
+export const SOURCE_BUS_Y = 306;
+
+/** Column 1 became row 1: order is still the order they matter in. */
 const SOURCES: Array<{
   id: string;
   title: string;
   body: string;
   logos: string[];
   channels: string[];
+  x: number;
+  y: number;
 }> = [
   {
     id: "webinars",
@@ -75,6 +77,8 @@ const SOURCES: Array<{
     body: "Ads and posts drive registration",
     logos: ["webinar"],
     channels: ["Webinar"],
+    x: 16,
+    y: 60,
   },
   {
     id: "youtube",
@@ -82,6 +86,8 @@ const SOURCES: Array<{
     body: "Link in the description and pinned comment",
     logos: ["youtube"],
     channels: ["YouTube"],
+    x: 272,
+    y: 60,
   },
   {
     id: "social",
@@ -89,6 +95,8 @@ const SOURCES: Array<{
     body: "Brand and personal accounts, via Metricool",
     logos: ["instagram", "tiktok", "x", "linkedin"],
     channels: ["Instagram", "TikTok", "X", "LinkedIn", "Meta"],
+    x: 528,
+    y: 60,
   },
   {
     id: "ads",
@@ -96,6 +104,8 @@ const SOURCES: Array<{
     body: "Spend lands on the row that spent it",
     logos: ["meta ads", "google ads"],
     channels: ["Meta Ads", "Google Ads"],
+    x: 784,
+    y: 60,
   },
   {
     id: "email",
@@ -103,6 +113,8 @@ const SOURCES: Array<{
     body: "GoHighLevel workflows, plus the newsletter",
     logos: ["ghl"],
     channels: ["Email", "SMS", "Newsletter"],
+    x: 144,
+    y: 172,
   },
   {
     id: "funnels",
@@ -110,6 +122,8 @@ const SOURCES: Array<{
     body: "Their own opt-in pages, hosted in GHL",
     logos: ["vsl"],
     channels: ["VSL", "Low ticket funnel"],
+    x: 400,
+    y: 172,
   },
   {
     id: "dm",
@@ -117,6 +131,8 @@ const SOURCES: Array<{
     body: "Pearl answers in ManyChat and sends the link",
     logos: ["manychat"],
     channels: ["Instagram DM"],
+    x: 656,
+    y: 172,
   },
 ];
 
@@ -124,10 +140,8 @@ const SOURCES: Array<{
 const BUS_SOURCES = SOURCES.filter((source) => source.id !== "dm");
 
 export const NODES: MapNode[] = [
-  ...SOURCES.map((source, index) => ({
+  ...SOURCES.map((source) => ({
     ...source,
-    x: SOURCE_X,
-    y: SOURCE_TOP + index * SOURCE_STEP,
     w: SOURCE_W,
     h: SOURCE_H,
     tone: "source" as const,
@@ -135,19 +149,19 @@ export const NODES: MapNode[] = [
 
   {
     id: "link",
-    x: 340,
-    y: 252,
+    x: MID - 108,
+    y: 340,
     w: 216,
-    h: 220,
+    h: 200,
     title: "The tagged link",
     tone: "hub",
   },
 
   {
     id: "page",
-    x: 600,
-    y: 246,
-    w: 216,
+    x: MID - 160,
+    y: 640,
+    w: 320,
     h: 92,
     title: "Landing / SEO page",
     body: "GA4 records the session against the link's tags",
@@ -157,8 +171,8 @@ export const NODES: MapNode[] = [
   },
   {
     id: "chatbot",
-    x: 600,
-    y: 362,
+    x: 292,
+    y: 866,
     w: 216,
     h: 92,
     title: "AI chatbot setter",
@@ -168,8 +182,8 @@ export const NODES: MapNode[] = [
   },
   {
     id: "form",
-    x: 600,
-    y: 478,
+    x: 532,
+    y: 866,
     w: 216,
     h: 92,
     title: "Lead form",
@@ -180,9 +194,9 @@ export const NODES: MapNode[] = [
 
   {
     id: "lead",
-    x: 880,
-    y: 246,
-    w: 212,
+    x: MID - 160,
+    y: 1068,
+    w: 320,
     h: 92,
     title: "lead_submissions",
     body: "UTMs, paid click ids and session, kept with the lead",
@@ -190,10 +204,21 @@ export const NODES: MapNode[] = [
     stage: "leads",
   },
   {
+    id: "close",
+    x: 752,
+    y: 1068,
+    w: 216,
+    h: 92,
+    title: "Close CRM",
+    body: "The lead, with its origin on custom fields",
+    logos: ["close"],
+    tone: "external",
+  },
+  {
     id: "calendly",
-    x: 880,
-    y: 478,
-    w: 212,
+    x: MID - 160,
+    y: 1294,
+    w: 320,
     h: 92,
     title: "Calendly booking",
     body: "A DM or chatbot link can book with no form behind it",
@@ -202,33 +227,21 @@ export const NODES: MapNode[] = [
     stage: "booked",
   },
   {
-    id: "close",
-    x: 1160,
-    y: 246,
-    w: 204,
-    h: 92,
-    title: "Close CRM",
-    body: "The lead, with its origin on custom fields",
-    logos: ["close"],
-    tone: "external",
-  },
-  {
     id: "outcome",
-    x: 1160,
-    y: 478,
-    w: 204,
+    x: MID - 160,
+    y: 1520,
+    w: 320,
     h: 92,
     title: "Showed, won, revenue",
     body: "What the closer marked after the call",
     logos: ["close"],
     tone: "external",
   },
-
   {
     id: "members",
-    x: 1160,
-    y: 640,
-    w: 204,
+    x: MID - 160,
+    y: 1684,
+    w: 320,
     h: 96,
     title: "They become members",
     body: "Onboarded into Mighty Networks and VendHub. Not measured on this page.",
@@ -237,8 +250,8 @@ export const NODES: MapNode[] = [
 
   {
     id: "spine",
-    x: 810,
-    y: 1160,
+    x: 16,
+    y: 2104,
     w: 300,
     h: 88,
     title: "channel_daily",
@@ -247,9 +260,9 @@ export const NODES: MapNode[] = [
   },
   {
     id: "dashboard",
-    x: 1160,
-    y: 1160,
-    w: 220,
+    x: 360,
+    y: 2104,
+    w: 240,
     h: 88,
     title: "This dashboard",
     body: "Channels, KPI and this map",
@@ -257,17 +270,55 @@ export const NODES: MapNode[] = [
   },
 ];
 
+/**
+ * The dashed regions. Data rather than markup so the layout test can hold them
+ * to the same no-overlap rule as everything else.
+ */
+export const GROUP_BOXES: Array<{
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  label: string;
+}> = [
+  {
+    id: "going-out",
+    x: 8,
+    y: 36,
+    w: 1024,
+    h: 244,
+    label: "Going out — every surface we publish to",
+  },
+  {
+    id: "site",
+    x: 276,
+    y: 600,
+    w: 488,
+    h: 382,
+    label: "vendingpreneurs.com",
+  },
+  {
+    id: "connectors",
+    x: 8,
+    y: 1856,
+    w: 914,
+    h: 216,
+    label: "Connectors — each platform reports on its own surface, once a day",
+  },
+];
+
 /** Connector boxes, two rows, all feeding the spine through one riser. */
 export const CONNECTOR_BAND = {
   x: 16,
-  y: 904,
+  y: 1888,
   width: 140,
   height: 76,
   gap: 10,
   perRow: 6,
   rowGap: 28,
-  /** Clear of the widest row, so the trunk crosses no box on its way down. */
-  riserX: 960,
+  /** Inside the spine box below, so the trunk drops straight into it. */
+  riserX: 166,
 } as const;
 
 export const CONNECTORS: Array<{
@@ -293,36 +344,52 @@ export const CONNECTORS: Array<{
 ];
 
 export const EDGES: MapEdge[] = [
-  { from: "link", to: "page", via: [{ x: 578, y: 362 }] },
+  { from: "link", to: "page", fromSide: "bottom", toSide: "top" },
 
-  { from: "page", to: "chatbot", fromSide: "bottom", toSide: "top" },
-  { from: "chatbot", to: "form", fromSide: "bottom", toSide: "top" },
+  // The page splits: the chatbot can book the call itself, the form scores
+  // first. Both land on the lead, so both lanes come back together below.
+  {
+    from: "page",
+    to: "chatbot",
+    fromSide: "bottom",
+    toSide: "top",
+    fromOffset: -80,
+  },
+  {
+    from: "page",
+    to: "form",
+    fromSide: "bottom",
+    toSide: "top",
+    fromOffset: 80,
+  },
 
-  // The form submits upward and the chatbot books downward. Separate lanes
-  // keep each one straight; they meet once, which is the shape of the flow.
   {
     from: "form",
     to: "lead",
-    via: [{ x: 836, y: 524 }],
-    toOffset: 14,
+    fromSide: "bottom",
+    toSide: "top",
+    toOffset: 60,
     label: "submits",
-    labelAt: { x: 836, y: 448 },
+    labelAt: { x: 664, y: 1020 },
   },
   {
     from: "chatbot",
     to: "calendly",
-    via: [{ x: 852, y: 408 }],
+    fromSide: "left",
+    toSide: "left",
+    via: [{ x: 232, y: 1340 }],
     label: "books in chat",
-    labelAt: { x: 866, y: 442 },
+    labelAt: { x: 214, y: 1120 },
   },
   // Pearl sends a calendar link, so this one never reaches the site at all.
   {
     from: "dm",
     to: "calendly",
-    toSide: "bottom",
-    via: [{ x: 940, y: 804 }],
+    fromSide: "right",
+    toSide: "right",
+    via: [{ x: 1004, y: 1340 }],
     label: "books direct",
-    labelAt: { x: 620, y: 794 },
+    labelAt: { x: 966, y: 700 },
   },
 
   { from: "lead", to: "calendly", fromSide: "bottom", toSide: "top" },
@@ -330,25 +397,27 @@ export const EDGES: MapEdge[] = [
     from: "lead",
     to: "close",
     label: "every 2 min",
-    labelAt: { x: 1126, y: 284 },
+    labelAt: { x: 716, y: 1048 },
   },
-  { from: "calendly", to: "outcome" },
-  { from: "close", to: "outcome", fromSide: "bottom", toSide: "top" },
+  { from: "calendly", to: "outcome", fromSide: "bottom", toSide: "top" },
+  {
+    from: "close",
+    to: "outcome",
+    fromSide: "bottom",
+    toSide: "right",
+    via: [{ x: 860, y: 1566 }],
+  },
 
-  // The return leg goes over the top on the outside, where it crosses nothing.
+  // The return leg runs down the far right, where it crosses nothing.
   {
     from: "outcome",
     to: "lead",
     kind: "back",
-    fromSide: "right",
-    toSide: "top",
-    via: [
-      { x: 1382, y: 524 },
-      { x: 1382, y: 196 },
-      { x: 986, y: 196 },
-    ],
+    fromSide: "left",
+    toSide: "left",
+    via: [{ x: 168, y: 1114 }],
     label: "reconciled back onto the lead",
-    labelAt: { x: 1172, y: 188 },
+    labelAt: { x: 168, y: 1400 },
   },
 
   {
@@ -358,10 +427,73 @@ export const EDGES: MapEdge[] = [
     toSide: "top",
     kind: "back",
     label: "handed off",
-    labelAt: { x: 1330, y: 612 },
+    labelAt: { x: 604, y: 1652 },
   },
 
   { from: "spine", to: "dashboard" },
+];
+
+/**
+ * The pill's real drawn size, exported so the placement test measures the box
+ * that actually renders. The first version of this test assumed a size the
+ * component did not have, the text wrapped to four lines, and three pills
+ * overlapped boxes on screen while the suite stayed green.
+ *
+ * Every line inside the pill truncates rather than wraps, so this height is
+ * fixed no matter how long the numbers get.
+ */
+export const PILL_W = 116;
+export const PILL_H = 54;
+
+export type MetricStage = "visits" | "leads" | "booked" | "showed" | "won";
+
+/**
+ * Where a conversion pill sits on the spine.
+ *
+ * Vertical is what makes these fit. Left to right, the gaps between spine
+ * boxes were 68px and a readable pill is 116 wide, so every one of them landed
+ * on top of a box. Top to bottom the gap is the full width of the column, and
+ * the pill sits in clear air on the line the people are travelling down.
+ *
+ * `from` and `to` name the stages the pill divides, not the boxes it sits
+ * between: a visit becomes a lead by way of the form, and the ratio is still
+ * visits to leads.
+ */
+export type ConversionPin = {
+  id: string;
+  from: MetricStage;
+  to: MetricStage;
+  x: number;
+  y: number;
+  /** Printed under the percentage. */
+  label: string;
+};
+
+export const CONVERSION_PINS: ConversionPin[] = [
+  {
+    id: "visits-leads",
+    from: "visits",
+    to: "leads",
+    x: MID,
+    y: 764,
+    label: "of visits",
+  },
+  {
+    id: "leads-booked",
+    from: "leads",
+    to: "booked",
+    x: MID,
+    y: 1186,
+    label: "of leads",
+  },
+  {
+    id: "booked-showed",
+    from: "booked",
+    to: "showed",
+    x: MID,
+    y: 1412,
+    label: "of booked",
+  },
 ];
 
 export function nodeById(id: string): MapNode {
@@ -383,11 +515,11 @@ export function anchor(node: MapNode, side: Side, offset = 0): Point {
   }
 }
 
-/** Where each source's stub meets the bus, top to bottom. */
-export function busStops(): Array<{ id: string; y: number }> {
+/** Where each source's stub meets the bus, left to right. */
+export function busStops(): Array<{ id: string; x: number }> {
   return BUS_SOURCES.map((source) => {
     const node = nodeById(source.id);
-    return { id: source.id, y: node.y + node.h / 2 };
+    return { id: source.id, x: node.x + node.w / 2 };
   });
 }
 
@@ -485,46 +617,3 @@ function towards(from: Point, to: Point, by: number): Point {
  * (a visit becomes a lead by way of the form) and the ratio is still
  * visits to leads.
  */
-export type ConversionPin = {
-  id: string;
-  from: MetricStage;
-  to: MetricStage;
-  x: number;
-  y: number;
-  /** Printed under the percentage. */
-  label: string;
-};
-
-export type MetricStage = "visits" | "leads" | "booked" | "showed" | "won";
-
-export const CONVERSION_PINS: ConversionPin[] = [
-  // In the gap between the landing page and lead_submissions. The traffic
-  // actually travels page -> form -> lead; this is still visits to leads.
-  {
-    id: "visits-leads",
-    from: "visits",
-    to: "leads",
-    x: 848,
-    y: 192,
-    label: "of visits",
-  },
-  // On the lead -> calendly riser.
-  {
-    id: "leads-booked",
-    from: "leads",
-    to: "booked",
-    x: 986,
-    y: 404,
-    label: "of leads",
-  },
-  // Above the outcome box: the calendly -> outcome run is only 68px of clear
-  // space and the pill is 84 wide, so it sits over the box it feeds instead.
-  {
-    id: "booked-showed",
-    from: "booked",
-    to: "showed",
-    x: 1126,
-    y: 424,
-    label: "of booked",
-  },
-];

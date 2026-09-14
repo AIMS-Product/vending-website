@@ -84,14 +84,47 @@ export function FunnelMapTab({
   // One pill per spine step: the share that survived, and the people who did
   // not. Both sides come from `actuals`, so a step whose stages are read from
   // different sources is still one population on each side of the divide.
-  const conversions: Record<string, Conversion | undefined> = {};
-  for (const pin of CONVERSION_PINS) {
+  const measured = CONVERSION_PINS.map((pin) => {
     const above = actuals[pin.from];
     const below = actuals[pin.to];
-    conversions[pin.id] =
-      above == null || below == null || above <= 0
-        ? { pct: null, lost: null }
-        : { pct: (below / above) * 100, lost: above - below };
+    const observed = above != null && below != null && above > 0;
+    return {
+      id: pin.id,
+      pct: observed ? (below! / above!) * 100 : null,
+      lost: observed ? above! - below! : null,
+    };
+  });
+
+  // Red on the step that loses the most people, green on the one that keeps
+  // the highest share. Ranked against each other rather than against a made-up
+  // benchmark: there is no honest fixed number for a good conversion rate, and
+  // a colour that means nothing is worse than no colour.
+  const observed = measured.filter((entry) => entry.pct != null);
+  const worst = observed.reduce<(typeof observed)[number] | null>(
+    (found, entry) => (!found || entry.lost! > found.lost! ? entry : found),
+    null,
+  );
+  const best = observed.reduce<(typeof observed)[number] | null>(
+    (found, entry) => (!found || entry.pct! > found.pct! ? entry : found),
+    null,
+  );
+
+  const conversions: Record<string, Conversion | undefined> = {};
+  for (const entry of measured) {
+    conversions[entry.id] = {
+      pct: entry.pct,
+      lost: entry.lost,
+      tone:
+        // Only colour when there is something to compare against: one lonely
+        // measured step is neither the best nor the worst of anything.
+        observed.length < 2
+          ? "neutral"
+          : entry.id === worst?.id
+            ? "bad"
+            : entry.id === best?.id
+              ? "good"
+              : "neutral",
+    };
   }
 
   const hrefs: Record<string, string | undefined> = {

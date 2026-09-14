@@ -12,7 +12,10 @@ import {
   CONVERSION_PINS,
   EDGES,
   NODES,
-  SOURCE_BUS_X,
+  PILL_H,
+  PILL_W,
+  GROUP_BOXES,
+  SOURCE_BUS_Y,
   type MapNode,
   type Side,
 } from "@/components/admin/funnel-map-graph";
@@ -40,6 +43,13 @@ export type Conversion = {
   /** Null when either stage was unobserved: a blind spot, not a zero. */
   pct: number | null;
   lost: number | null;
+  /**
+   * Green on the step that keeps the most, red on the one that loses the most
+   * people. Relative to this funnel and this range, never to an invented
+   * industry benchmark -- there is no honest fixed threshold for "a good
+   * conversion rate", so the colour ranks the steps against each other.
+   */
+  tone: "good" | "bad" | "neutral";
 };
 
 export function FunnelMapCanvas({
@@ -60,9 +70,9 @@ export function FunnelMapCanvas({
   const link = nodeById("link");
   const spine = nodeById("spine");
 
-  const busTop = Math.min(...stops.map((stop) => stop.y));
-  const busBottom = Math.max(...stops.map((stop) => stop.y));
-  const linkEntry = link.y + link.h / 2;
+  const busLeft = Math.min(...stops.map((stop) => stop.x));
+  const busRight = Math.max(...stops.map((stop) => stop.x));
+  const linkEntry = link.x + link.w / 2;
 
   const rowLanes = connectorRowLanes();
   const riserTop = Math.min(...rowLanes);
@@ -94,56 +104,45 @@ export function FunnelMapCanvas({
             </marker>
           </defs>
 
-          <GroupBox
-            x={8}
-            y={32}
-            width={284}
-            height={832}
-            label="Going out — every surface we publish to"
-          />
-          <GroupBox
-            x={584}
-            y={212}
-            width={248}
-            height={374}
-            label="vendingpreneurs.com"
-          />
-          <GroupBox
-            x={8}
-            y={872}
-            width={932}
-            height={248}
-            label="Connectors — each platform reports on its own surface, once a day"
-          />
+          {GROUP_BOXES.map((group) => (
+            <GroupBox
+              key={group.id}
+              x={group.x}
+              y={group.y}
+              width={group.w}
+              height={group.h}
+              label={group.label}
+            />
+          ))}
 
-          {/* Source bus: six stubs, one trunk, one arrow into the link. */}
+          {/* Source bus: six stubs drop into one trunk, one arrow into the link. */}
           {stops.map((stop) => {
             const node = nodeById(stop.id);
             return (
               <line
                 key={stop.id}
-                x1={node.x + node.w}
-                y1={stop.y}
-                x2={SOURCE_BUS_X}
-                y2={stop.y}
+                x1={stop.x}
+                y1={node.y + node.h}
+                x2={stop.x}
+                y2={SOURCE_BUS_Y}
                 stroke="currentColor"
                 strokeWidth={1.5}
               />
             );
           })}
           <line
-            x1={SOURCE_BUS_X}
-            y1={busTop}
-            x2={SOURCE_BUS_X}
-            y2={busBottom}
+            x1={busLeft}
+            y1={SOURCE_BUS_Y}
+            x2={busRight}
+            y2={SOURCE_BUS_Y}
             stroke="currentColor"
             strokeWidth={1.5}
           />
           <line
-            x1={SOURCE_BUS_X}
-            y1={linkEntry}
-            x2={link.x}
-            y2={linkEntry}
+            x1={linkEntry}
+            y1={SOURCE_BUS_Y}
+            x2={linkEntry}
+            y2={link.y}
             stroke="currentColor"
             strokeWidth={1.5}
             markerEnd="url(#funnel-arrow)"
@@ -151,8 +150,8 @@ export function FunnelMapCanvas({
           {stops.map((stop) => (
             <circle
               key={`dot-${stop.id}`}
-              cx={SOURCE_BUS_X}
-              cy={stop.y}
+              cx={stop.x}
+              cy={SOURCE_BUS_Y}
               r={2.5}
               fill="currentColor"
             />
@@ -488,17 +487,34 @@ function ConversionPill({
 }) {
   const pct = conversion?.pct ?? null;
   const lost = conversion?.lost ?? null;
+  const tone = conversion?.tone ?? "neutral";
+  const toneClass =
+    tone === "good"
+      ? "border-ui-ok/50 bg-ui-ok-fill"
+      : tone === "bad"
+        ? "border-ui-bad/50 bg-ui-bad-fill"
+        : "border-ui-line bg-ui-surface";
+  const textClass =
+    tone === "good"
+      ? "text-ui-ok"
+      : tone === "bad"
+        ? "text-ui-bad"
+        : "text-ui-text";
   return (
     <div
-      className="border-ui-line bg-ui-surface rounded-ui absolute border px-1.5 py-1 text-center shadow-sm"
-      style={{ left: x - 42, top: y, width: 84 }}
+      className={`rounded-ui absolute border px-2 py-1 text-center shadow-sm ${toneClass}`}
+      style={{ left: x - PILL_W / 2, top: y, width: PILL_W, height: PILL_H }}
     >
-      <p className="text-ui-text text-[0.75rem] leading-4 font-semibold tabular-nums">
+      <p
+        className={`truncate text-[0.8125rem] leading-4 font-semibold tabular-nums ${textClass}`}
+      >
         {pct == null ? "—" : `${Math.round(pct * 10) / 10}%`}
       </p>
-      <p className="text-ui-text-muted text-[0.5625rem] leading-3">{label}</p>
+      <p className="text-ui-text-muted truncate text-[0.5625rem] leading-3">
+        {label}
+      </p>
       {lost != null && lost > 0 ? (
-        <p className="text-ui-warn text-[0.5625rem] leading-3 tabular-nums">
+        <p className="text-ui-text-muted truncate text-[0.5625rem] leading-3 tabular-nums">
           {Math.round(lost).toLocaleString()} lost
         </p>
       ) : null}
