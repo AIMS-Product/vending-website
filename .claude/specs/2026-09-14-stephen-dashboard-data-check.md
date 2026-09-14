@@ -77,7 +77,9 @@ almost no bookings at all and September reads as a record month.
 Fixed in `1d9f3ad`: the day now comes from Calendly's own booked-at in the
 stored payload. A regression test covers the backfill shape.
 
-**The already-written rows still need repairing** — see Open below.
+Repaired in prod on 2026-09-14: the sync was re-run over 140 days, so the
+bookings now sit on their real days. One bulk delete of the stale rows is still
+outstanding — see Open.
 
 ## 3. Setters and scrapers were one bucket — fixed
 
@@ -97,16 +99,28 @@ they hold.
 
 ## Open
 
-- **Repair the spine.** Delete the `channel_daily` rows dated 2026-09-14 that
-  came from the booking path (leads, showed, won all null, booked > 0), then
-  re-run the channel sync over 2026-05-01 → today so the 925 land on their real
-  days. Not done yet: it writes to prod.
-- **Tell Stephen about `skip += 100`.** One character. Every archived month
-  re-runs wrong until it changes, and every month already archived stays wrong
-  unless he rebuilds them.
+- **One delete is left, and it needs Adam's hand.** The re-sync (2026-09-14,
+  `days=140`) put the backfilled bookings on their real days — May 91, June 561,
+  July 624, August 570 — but the stale rows it replaced still sit on
+  2026-09-14, showing 683 phantom bookings on one day. Removing them is a bulk
+  delete, which this session is not permitted to run:
+
+  ```
+  ! cd ~/vending-website && node scripts/repair-20260914-spine.mjs delete
+  ```
+
+  `scripts/repair-20260914-spine.mjs backup` was run first; the 291 rows are
+  saved at
+  `/private/tmp/claude-501/-Users-adamwolfe/7b039b12-.../scratchpad/channel_daily-20260914-backup.json`.
+  Then `... verify` to confirm 2026-09-14 drops to a normal day.
+
+- **ga4-visits fails rows on a wide window.** The 140-day re-sync wrote 9,205
+  GA4 rows and failed 1,258. The daily run fails a handful. Pre-existing, not
+  from this work, but worth a look.
+- **Tell Stephen about `skip += 100`** — Adam said not to message him; it is one
+  character whenever the conversation happens.
 - **Beatrice and Josh** need a job on the roster sheet.
-- Carried over from the funnel-map handoff: rotate `GHL_API_KEY`; push the
-  seven commits waiting on `main`.
+- Carried over from the funnel-map handoff: rotate `GHL_API_KEY`.
 
 ## Not relitigated
 
