@@ -502,7 +502,7 @@ function ConversionPill({
         : "text-ui-text";
   return (
     <div
-      className={`rounded-ui absolute border px-2 py-1 text-center shadow-sm ${toneClass}`}
+      className={`rounded-ui absolute overflow-hidden border px-2 py-1 text-center shadow-sm ${toneClass}`}
       style={{ left: x - PILL_W / 2, top: y, width: PILL_W, height: PILL_H }}
     >
       <p
@@ -512,12 +512,10 @@ function ConversionPill({
       </p>
       <p className="text-ui-text-muted truncate text-[0.5625rem] leading-3">
         {label}
+        {lost != null && lost > 0
+          ? ` · ${Math.round(lost).toLocaleString()} lost`
+          : ""}
       </p>
-      {lost != null && lost > 0 ? (
-        <p className="text-ui-text-muted truncate text-[0.5625rem] leading-3 tabular-nums">
-          {Math.round(lost).toLocaleString()} lost
-        </p>
-      ) : null}
     </div>
   );
 }

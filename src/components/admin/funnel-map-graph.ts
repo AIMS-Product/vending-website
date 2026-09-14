@@ -439,11 +439,13 @@ export const EDGES: MapEdge[] = [
  * component did not have, the text wrapped to four lines, and three pills
  * overlapped boxes on screen while the suite stayed green.
  *
- * Every line inside the pill truncates rather than wraps, so this height is
- * fixed no matter how long the numbers get.
+ * Two lines, each truncating rather than wrapping, and the box clips whatever
+ * is left. The three-line version spilled its last line out of the bottom of
+ * the pill and onto the box below it, so the number that mattered most -- the
+ * people lost -- was the one sitting in mid-air.
  */
-export const PILL_W = 116;
-export const PILL_H = 54;
+export const PILL_W = 176;
+export const PILL_H = 44;
 
 export type MetricStage = "visits" | "leads" | "booked" | "showed" | "won";
 
