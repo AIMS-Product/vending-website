@@ -308,6 +308,8 @@ type LeadRow = {
 
 type BookingRow = {
   created_at: string;
+  /** Calendly's own "this call was booked at", from the stored payload. */
+  booked_at: string | null;
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
@@ -393,7 +395,7 @@ async function syncLeads(
     client
       .from("calendly_bookings")
       .select(
-        "created_at,utm_source,utm_medium,utm_campaign,utm_content,utm_term",
+        "created_at,booked_at:raw_payload->payload->>created_at,utm_source,utm_medium,utm_campaign,utm_content,utm_term",
       )
       .eq("status", "booked")
       .is("lead_submission_id", null)
@@ -403,8 +405,12 @@ async function syncLeads(
       .order("created_at")
       .range(from, to),
   );
+  // The day Calendly says the call was booked, not the day this mirror row was
+  // written. A backfill inserts months of history in one afternoon; bucketing
+  // on the row's own created_at piles all of it onto the import date and every
+  // month-to-date number downstream is wrong.
   const bookingRows: ChannelDailyRow[] = bookings.map((booking) => ({
-    day: booking.created_at.slice(0, 10),
+    day: (booking.booked_at ?? booking.created_at).slice(0, 10),
     source: booking.utm_source,
     medium: booking.utm_medium,
     campaign: booking.utm_campaign,

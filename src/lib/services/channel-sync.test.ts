@@ -392,4 +392,34 @@ describe("syncChannelDaily", () => {
       }),
     ]);
   });
+
+  it("dates a backfilled booking by Calendly's booked-at, not the import day", async () => {
+    // A backfill wrote months of Calendly history in one afternoon. Bucketing
+    // on the mirror row's own created_at piles all of it onto the import date
+    // and every month-to-date number downstream is wrong.
+    const { client, upserts } = buildClient({
+      bookings: [
+        {
+          created_at: "2026-09-14T19:05:00.000Z",
+          booked_at: "2026-06-24T15:12:00.000Z",
+          utm_source: "linkedin",
+          utm_medium: "organic",
+          utm_campaign: "bio",
+          utm_content: "profile",
+          utm_term: "book-call",
+        },
+      ],
+    });
+
+    await syncChannelDaily({
+      client,
+      ga4Client: null,
+      bitlyClient: null,
+      now: NOW,
+    });
+
+    expect(upserts).toEqual([
+      expect.objectContaining({ day: "2026-06-24", booked: 1 }),
+    ]);
+  });
 });
