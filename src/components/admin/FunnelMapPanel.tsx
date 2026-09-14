@@ -1,29 +1,29 @@
 import Link from "next/link";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import {
-  AdminStatusBadge,
   adminCardClass,
   adminEyebrowClass,
   adminLinkClass,
   adminSectionTitleClass,
 } from "@/components/admin/AdminUi";
 import { channelsHref } from "@/components/admin/ChannelsPanels";
+import { FunnelMapDiagram } from "@/components/admin/FunnelMapDiagram";
+import { NODES } from "@/components/admin/funnel-map-graph";
 import type { AdminAnalyticsRangeKey } from "@/lib/services/admin-analytics-range";
 import type { FunnelMapData, GhlSummary } from "@/lib/services/funnel-map";
 import type {
   ChannelReport,
   ChannelReportRow,
-  SyncHealthRow,
 } from "@/lib/services/channel-report-rollup";
 
 /**
  * The Funnel map tab: one picture of how a stranger becomes a booked call,
  * for people who will never read the Channels table.
  *
- * The shape of the flow is written here by hand because it is a decision, not
- * a measurement. Every number inside it comes from `getFunnelMap`, which reads
- * the same rollup the Channels tab reads, so the map cannot drift from the
- * table. A metric nobody observed renders "—", never a zero.
+ * The shape of the flow is written by hand in `funnel-map-graph` because it is
+ * a decision, not a measurement. Every number in it comes from `getFunnelMap`,
+ * which reads the same rollup the Channels tab reads, so the map cannot drift
+ * from the table. A metric nobody observed renders "—", never a zero.
  */
 
 export function funnelMapHref(
@@ -34,49 +34,6 @@ export function funnelMapHref(
   if (includeInternal) params.set("internal", "1");
   return `/admin/analytics?${params.toString()}`;
 }
-
-/** The channels that feed each box, by their label on the Channels tab. */
-const GOING_OUT: ReadonlyArray<{
-  title: string;
-  note: string;
-  channels: string[];
-}> = [
-  {
-    title: "Webinars",
-    note: "Meta ads and organic posts drive registration; GoHighLevel hosts the form and the reminder sequence.",
-    channels: ["Webinar"],
-  },
-  {
-    title: "YouTube",
-    note: "Long-form video with the link in the description and pinned comment.",
-    channels: ["YouTube"],
-  },
-  {
-    title: "Organic social",
-    note: "Posts from the brand and from Mike and Anthony personally, scheduled in Metricool.",
-    channels: ["Instagram", "X", "LinkedIn", "TikTok", "Meta"],
-  },
-  {
-    title: "Paid ads",
-    note: "Meta and Google buy the click. Spend lands on the row that spent it, so cost per lead is real.",
-    channels: ["Meta Ads", "Google Ads"],
-  },
-  {
-    title: "Email and SMS",
-    note: "GoHighLevel workflows to everyone already in the list. Newsletter sends sit here too.",
-    channels: ["Email", "SMS", "Newsletter"],
-  },
-  {
-    title: "DM setter",
-    note: "Pearl answers Instagram DMs in ManyChat and sends the booking link.",
-    channels: ["Instagram DM"],
-  },
-  {
-    title: "Funnels",
-    note: "The video sales letter and the low-ticket funnel, each with its own opt-in.",
-    channels: ["VSL", "Low ticket funnel"],
-  },
-];
 
 export function FunnelMapTab({
   data,
@@ -100,135 +57,49 @@ export function FunnelMapTab({
   }
 
   const report = channels.report;
-  const stage = (key: string) =>
+  const stageValue = (key: string) =>
     report.funnel.find((entry) => entry.key === key)?.value ?? null;
 
+  // One line of live text per box. Source boxes carry their channels' totals;
+  // the spine boxes carry the funnel stage they hold.
+  const metrics: Record<string, string | undefined> = {};
+  for (const node of NODES) {
+    if (node.channels) {
+      metrics[node.id] = sourceSummary(report, node.channels);
+    } else if (node.stage) {
+      metrics[node.id] =
+        `${formatNumber(stageValue(node.stage))} ${STAGE_WORD[node.stage]}`;
+    }
+  }
+  metrics.close = `${formatNumber(stageValue("leads"))} leads pushed`;
+  metrics.outcome = `${formatNumber(stageValue("showed"))} showed · ${formatNumber(stageValue("won"))} won`;
+
+  const hrefs: Record<string, string | undefined> = {
+    link: "/admin/links",
+    dashboard: channelsHref(range, includeInternal),
+  };
+  for (const node of NODES) {
+    if (node.channels?.length === 1) {
+      hrefs[node.id] = channelsHref(range, includeInternal, node.channels[0]);
+    }
+  }
+
   return (
-    <div className="space-y-6">
-      <p className="text-ui-text-muted max-w-3xl text-sm leading-6">
-        How a stranger becomes a booked call, end to end. Every number is{" "}
-        {channels.range.label.toLowerCase()}, read from the same tables the
-        Channels tab reads, so the two can never disagree. A dash means nobody
-        measured it, not zero.
-      </p>
-
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-stretch">
-        <Stage
-          eyebrow="1. Going out"
-          title="Where we show up"
-          caption="Seven surfaces. Each one has to carry a tagged link or the person arrives anonymous."
-        >
-          <div className="space-y-1.5">
-            {GOING_OUT.map((box) => (
-              <SourceBox
-                key={box.title}
-                box={box}
-                report={report}
-                range={range}
-                includeInternal={includeInternal}
-              />
-            ))}
-          </div>
-        </Stage>
-
-        <Arrow />
-
-        <Stage
-          eyebrow="2. The link"
-          title="One tagging standard"
-          caption="The link is the whole attribution system. Untagged link, unattributable lead."
-        >
-          <dl className="border-ui-line bg-ui-canvas rounded-ui space-y-1.5 border p-3 text-[0.8125rem]">
-            {[
-              ["utm_source", "who sent them (youtube, mike-ig, meta_ads)"],
-              ["utm_medium", "how (organic, paid, email, dm)"],
-              ["utm_campaign", "the push it belongs to"],
-              ["utm_content", "which post or creative"],
-              ["utm_term", "the destination — never inferred"],
-            ].map(([key, meaning]) => (
-              <div key={key}>
-                <dt className="text-ui-text font-mono text-xs">{key}</dt>
-                <dd className="text-ui-text-muted">{meaning}</dd>
-              </div>
-            ))}
-          </dl>
-          <p className="text-ui-text-subtle mt-2 text-xs leading-5">
-            Built and stored in{" "}
-            <Link href="/admin/links" className={adminLinkClass}>
-              Links
-            </Link>
-            , optionally shortened through Bitly so clicks are counted before
-            the visit.
-          </p>
-        </Stage>
-
-        <Arrow />
-
-        <Stage
-          eyebrow="3. On the site"
-          title="vendingpreneurs.com"
-          caption="A landing or SEO page, the AI chatbot as a setter, then the form."
-          metric={{ label: "Visited", value: stage("visits") }}
-        >
-          <Node title="Landing / SEO page / popup">
-            GA4 records the session against the link&apos;s tags.
-          </Node>
-          <Node title="AI chatbot setter">
-            Answers questions and can book the call itself; its bookings are
-            tagged to the Chatbot channel.
-          </Node>
-          <Node title="Lead form and qualification">
-            The scoring questions that decide who gets a call.
-          </Node>
-        </Stage>
-
-        <Arrow />
-
-        <Stage
-          eyebrow="4. Captured"
-          title="Lead, with its origin"
-          caption="The submission stores the UTMs, the paid click ids and the session, so the origin survives."
-          metric={{ label: "Lead", value: stage("leads") }}
-        >
-          <Node title="lead_submissions">
-            The system of record for a lead and where it came from.
-          </Node>
-          <Node title="Close CRM, every 2 minutes">
-            Pushed as a lead with the origin written to custom fields, so the
-            closer sees it on the call.
-          </Node>
-        </Stage>
-
-        <Arrow />
-
-        <Stage
-          eyebrow="5. The call"
-          title="Booked, showed, won"
-          caption="Calendly books it, Close decides what happened, and the outcome is written back onto the lead."
-          metric={{ label: "Booked", value: stage("booked") }}
-        >
-          <Node title="Calendly booking">
-            Some bookings never had a lead form — a DM link straight to the
-            calendar. Those are counted as direct.
-          </Node>
-          <Node title="Outcome from Close">
-            Showed, no-show, cancelled, won, and the deal value.
-          </Node>
-          <Node title="Reconciled back">
-            The outcome returns to the lead, which is what makes a
-            channel&apos;s win rate possible.
-          </Node>
-          <div className="text-ui-text-subtle mt-2 flex gap-4 text-xs">
-            <span>Showed {formatNumber(stage("showed"))}</span>
-            <span>Won {formatNumber(stage("won"))}</span>
-          </div>
-        </Stage>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <p className="text-ui-text-muted max-w-3xl text-sm leading-6">
+          How a stranger becomes a booked call, end to end. Every number is{" "}
+          {channels.range.label.toLowerCase()}, read from the same tables the
+          Channels tab reads, so the two can never disagree. A dash means nobody
+          measured it, not zero.
+        </p>
+        <Legend />
       </div>
 
-      <ConnectorBand
+      <FunnelMapDiagram
+        metrics={metrics}
         runs={channels.syncHealth}
-        range={range}
-        includeInternal={includeInternal}
+        hrefs={hrefs}
       />
 
       <GhlSection ghl={ghl} rangeLabel={channels.range.label} />
@@ -236,213 +107,56 @@ export function FunnelMapTab({
   );
 }
 
-function Stage({
-  eyebrow,
-  title,
-  caption,
-  metric,
-  children,
-}: {
-  eyebrow: string;
-  title: string;
-  caption: string;
-  metric?: { label: string; value: number | null };
-  children: React.ReactNode;
-}) {
-  return (
-    <section className={`${adminCardClass} flex-1 lg:min-w-0`}>
-      <p className={adminEyebrowClass}>{eyebrow}</p>
-      <h3 className={`${adminSectionTitleClass} mt-1`}>{title}</h3>
-      {metric ? (
-        <p className="text-ui-text mt-2 text-[1.375rem] leading-7 font-semibold tracking-[-0.01em]">
-          {formatNumber(metric.value)}{" "}
-          <span className="text-ui-text-subtle text-xs font-medium">
-            {metric.label}
-          </span>
-        </p>
-      ) : null}
-      <p className="text-ui-text-muted mt-2 mb-3 text-xs leading-5">
-        {caption}
-      </p>
-      {children}
-    </section>
-  );
-}
+const STAGE_WORD: Record<string, string> = {
+  visits: "visits",
+  leads: "leads",
+  booked: "booked",
+};
 
-function Node({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function Legend() {
   return (
-    <div className="border-ui-line bg-ui-canvas rounded-ui mb-1.5 border p-2.5">
-      <p className="text-ui-text text-[0.8125rem] font-medium">{title}</p>
-      <p className="text-ui-text-muted mt-0.5 text-xs leading-5">{children}</p>
+    <div className="text-ui-text-subtle flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+      <span className="flex items-center gap-1.5">
+        <span className="bg-ui-ok size-1.5 rounded-full" /> collecting
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="bg-ui-warn size-1.5 rounded-full" /> stale
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="bg-ui-bad size-1.5 rounded-full" /> failing
+      </span>
+      <span className="flex items-center gap-1.5">
+        <svg viewBox="0 0 24 6" className="w-6" aria-hidden>
+          <path
+            d="M0 3 H24"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeDasharray="5 4"
+          />
+        </svg>
+        written back
+      </span>
     </div>
   );
 }
 
-function SourceBox({
-  box,
-  report,
-  range,
-  includeInternal,
-}: {
-  box: (typeof GOING_OUT)[number];
-  report: ChannelReport;
-  range: AdminAnalyticsRangeKey;
-  includeInternal: boolean;
-}) {
-  const rows = box.channels
+/** "3,774 leads · 332 booked · 1,005,504 seen", skipping what was not seen. */
+function sourceSummary(report: ChannelReport, channels: string[]): string {
+  const rows = channels
     .map((label) => findRow(report, label))
     .filter((row): row is ChannelReportRow => row !== null);
   const leads = sumObserved(rows.map((row) => row.metrics.leads));
   const booked = sumObserved(rows.map((row) => row.metrics.booked));
-  const sent = sumObserved(rows.map((row) => row.metrics.impressions));
-  // A surface can reach people without ever being credited a lead — GHL email
-  // is the whole reason this tab exists — so reach is shown alongside, never
-  // instead of, the funnel. A box with neither reads as one dash, not two.
-  const summary =
+  const seen = sumObserved(rows.map((row) => row.metrics.impressions));
+  return (
     [
       leads != null || booked != null
         ? `${formatNumber(leads)} leads · ${formatNumber(booked)} booked`
         : null,
-      sent != null ? `${formatNumber(sent)} seen` : null,
+      seen != null ? `${formatCompact(seen)} seen` : null,
     ]
       .filter(Boolean)
-      .join(" · ") || "—";
-
-  return (
-    <details className="border-ui-line bg-ui-canvas rounded-ui group border p-2.5">
-      <summary className="flex cursor-pointer items-center justify-between gap-2">
-        <span className="text-ui-text text-[0.8125rem] font-medium">
-          {box.title}
-        </span>
-        <span className="text-ui-text-muted shrink-0 text-xs tabular-nums">
-          {summary}
-        </span>
-      </summary>
-      <p className="text-ui-text-muted mt-1.5 text-xs leading-5">{box.note}</p>
-      <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {box.channels.map((label) => {
-          const row = findRow(report, label);
-          return (
-            <Link
-              key={label}
-              href={channelsHref(range, includeInternal, label)}
-              className="border-ui-line-strong bg-ui-surface rounded-ui text-ui-text-muted hover:text-ui-text inline-flex items-center gap-1.5 border px-1.5 py-0.5 text-xs"
-            >
-              <ChannelLogo label={label} />
-              {label}
-              <span className="text-ui-text-subtle tabular-nums">
-                {formatNumber(row?.metrics.leads ?? null)}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </details>
-  );
-}
-
-/** Points right when the stages sit side by side, down when they stack. */
-function Arrow() {
-  return (
-    <div
-      aria-hidden
-      className="text-ui-text-subtle flex items-center justify-center lg:w-4"
-    >
-      <svg viewBox="0 0 16 16" className="size-4 rotate-90 lg:rotate-0">
-        <path
-          d="M2 8h11M9 4l4 4-4 4"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  );
-}
-
-/** What the connector names mean to someone who does not work on the code. */
-const CONNECTOR_LABELS: Record<string, string> = {
-  "ga4-visits": "GA4 — visits by link",
-  leads: "Our own lead forms",
-  "ghl-email": "GoHighLevel — email workflows",
-  "ghl-forms": "GoHighLevel — lander forms",
-  "bitly-clicks": "Bitly — short link clicks",
-  "metricool-posts": "Metricool — posts and reach",
-  "metricool-ads": "Metricool — ad spend",
-  "youtube-analytics": "YouTube Analytics",
-  "webinar-ingest": "vp-webinars — registrations",
-  "manychat-ingest": "ManyChat — DM setter stages",
-  "close-lead-funnel": "Close CRM — call outcomes",
-};
-
-function ConnectorBand({
-  runs,
-  range,
-  includeInternal,
-}: {
-  runs: SyncHealthRow[];
-  range: AdminAnalyticsRangeKey;
-  includeInternal: boolean;
-}) {
-  return (
-    <section className={adminCardClass}>
-      <p className={adminEyebrowClass}>6. Reconciled back</p>
-      <h3 className={`${adminSectionTitleClass} mt-1`}>
-        Every platform reports on its own surface, once a day
-      </h3>
-      <p className="text-ui-text-muted mt-2 mb-3 max-w-3xl text-xs leading-5">
-        Each connector writes one row per day per link into{" "}
-        <code className="text-ui-text">channel_daily</code>, the single table
-        this dashboard reads. A connector that fails leaves its stage unobserved
-        rather than writing a zero, which is why a dash here matters.
-      </p>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {runs.map((run) => (
-          <div
-            key={run.connector}
-            className="border-ui-line bg-ui-canvas rounded-ui border p-2.5"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-ui-text text-[0.8125rem] font-medium">
-                {CONNECTOR_LABELS[run.connector] ?? run.connector}
-              </p>
-              <AdminStatusBadge
-                status={run.status}
-                tone={toneFor(run.status)}
-              />
-            </div>
-            <p className="text-ui-text-subtle mt-1 text-xs tabular-nums">
-              {run.finishedAt
-                ? `${formatNumber(run.rowsWritten)} rows · ${formatWhen(run.finishedAt)}`
-                : "never run"}
-            </p>
-            {run.note ? (
-              <p className="text-ui-text-muted mt-1 text-xs leading-5">
-                {run.note}
-              </p>
-            ) : null}
-          </div>
-        ))}
-      </div>
-      <p className="text-ui-text-subtle mt-3 text-xs">
-        Numbers land on the{" "}
-        <Link
-          href={channelsHref(range, includeInternal)}
-          className={adminLinkClass}
-        >
-          Channels tab
-        </Link>
-        .
-      </p>
-    </section>
+      .join(" · ") || "—"
   );
 }
 
@@ -596,8 +310,11 @@ function GhlSection({
       <p className="text-ui-text-muted border-ui-line mt-4 border-t pt-3 text-xs leading-5">
         The gap worth knowing about: links inside GHL emails carry no UTMs, so a
         workflow that sends thousands of emails can only ever report sends and
-        clicks here. Until those links are tagged to the standard above, email
-        cannot be credited with a single lead.
+        clicks here. Until those links are tagged to the standard in{" "}
+        <Link href="/admin/links" className={adminLinkClass}>
+          Links
+        </Link>
+        , email cannot be credited with a single lead.
       </p>
     </section>
   );
@@ -626,18 +343,12 @@ function formatNumber(value: number | null): string {
   return value == null ? "—" : value.toLocaleString();
 }
 
-function formatWhen(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-function toneFor(status: string): "ok" | "warn" | "bad" | "idle" {
-  if (status === "ok") return "ok";
-  if (status === "failed") return "bad";
-  if (status === "stale") return "warn";
-  return "idle";
+/**
+ * Reach runs to eight digits and would wrap a box on its own. Rounded is the
+ * honest form for it: nobody acts on the last three impressions.
+ */
+function formatCompact(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 10_000) return `${Math.round(value / 1_000)}k`;
+  return value.toLocaleString();
 }
