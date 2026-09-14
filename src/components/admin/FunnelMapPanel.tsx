@@ -8,6 +8,8 @@ import {
 } from "@/components/admin/AdminUi";
 import { channelsHref } from "@/components/admin/ChannelsPanels";
 import { FunnelJourney } from "@/components/admin/FunnelMapDiagram";
+import { FunnelMapCanvas } from "@/components/admin/FunnelMapCanvas";
+import { NODES } from "@/components/admin/funnel-map-graph";
 import type { AdminAnalyticsRangeKey } from "@/lib/services/admin-analytics-range";
 import type { FunnelMapData, GhlSummary } from "@/lib/services/funnel-map";
 import type {
@@ -56,6 +58,32 @@ export function FunnelMapTab({
   }
 
   const report = channels.report;
+  const stageValue = (key: string) =>
+    report.funnel.find((entry) => entry.key === key)?.value ?? null;
+
+  // One line of live text per box on the map. Source boxes carry their
+  // channels' totals; the spine boxes carry the stage they hold.
+  const metrics: Record<string, string | undefined> = {};
+  for (const node of NODES) {
+    if (node.channels) {
+      metrics[node.id] = sourceSummary(report, node.channels);
+    } else if (node.stage) {
+      metrics[node.id] =
+        `${formatNumber(stageValue(node.stage))} ${node.stage === "visits" ? "visits" : node.stage}`;
+    }
+  }
+  metrics.close = `${formatNumber(stageValue("leads"))} leads pushed`;
+  metrics.outcome = `${formatNumber(stageValue("showed"))} showed · ${formatNumber(stageValue("won"))} won`;
+
+  const hrefs: Record<string, string | undefined> = {
+    link: "/admin/links",
+    dashboard: channelsHref(range, includeInternal),
+  };
+  for (const node of NODES) {
+    if (node.channels?.length === 1) {
+      hrefs[node.id] = channelsHref(range, includeInternal, node.channels[0]);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -65,6 +93,12 @@ export function FunnelMapTab({
         Channels tab reads, so the two can never disagree. A dash means nobody
         measured it, not zero.
       </p>
+
+      <FunnelMapCanvas
+        metrics={metrics}
+        runs={channels.syncHealth}
+        hrefs={hrefs}
+      />
 
       <FunnelJourney
         report={report}
