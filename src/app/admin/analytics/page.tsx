@@ -32,9 +32,11 @@ import {
   type YouTubeAttribution,
 } from "@/lib/services/youtube-attribution";
 import { ChannelsTab } from "@/components/admin/ChannelsPanels";
+import { FunnelMapTab } from "@/components/admin/FunnelMapPanel";
 import { KpiTab } from "@/components/admin/KpiPanels";
 import { getKpiTab } from "@/lib/services/kpi-report-data";
 import { getChannelsTab } from "@/lib/services/channel-report";
+import { getFunnelMap } from "@/lib/services/funnel-map";
 import { parseAdminAnalyticsRange } from "@/lib/services/admin-analytics-range";
 import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
 
@@ -66,10 +68,11 @@ export default async function AdminAnalyticsPage({
   const isYouTubeTab = tab === "youtube";
   const isChannelsTab = tab === "channels";
   const isKpiTab = tab === "kpi";
-  const [{ user, role }, analytics, youtube, channels, kpi] = await Promise.all(
-    [
+  const isMapTab = tab === "map";
+  const [{ user, role }, analytics, youtube, channels, kpi, map] =
+    await Promise.all([
       requireReadAccess(),
-      isYouTubeTab || isChannelsTab || isKpiTab
+      isYouTubeTab || isChannelsTab || isKpiTab || isMapTab
         ? null
         : getAdminAnalytics({ range, includeInternal }),
       isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
@@ -77,8 +80,8 @@ export default async function AdminAnalyticsPage({
         ? getChannelsTab({ range, channel: singleParam(params.channel) })
         : null,
       isKpiTab ? getKpiTab({ range }) : null,
-    ],
-  );
+      isMapTab ? getFunnelMap({ range }) : null,
+    ]);
   const internalExcluded =
     youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0;
 
@@ -111,7 +114,13 @@ export default async function AdminAnalyticsPage({
         includeInternal={includeInternal}
       />
 
-      {kpi ? (
+      {map ? (
+        <FunnelMapTab
+          data={map}
+          range={range}
+          includeInternal={includeInternal}
+        />
+      ) : kpi ? (
         <KpiTab data={kpi} />
       ) : channels ? (
         <ChannelsTab
