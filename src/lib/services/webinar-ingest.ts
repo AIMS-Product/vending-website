@@ -185,7 +185,16 @@ async function write(
     content: a.content,
     term: a.destination,
     leads: a.leads,
-    booked: a.booked,
+    // Booked is deliberately NOT taken from the sheet. A webinar's bookings
+    // reach the spine already, through the tagged Calendly links the webinar
+    // sends people to, and Calendly is the system of record for a booking.
+    // Writing the sheet's count as well counted every webinar booking twice:
+    // on 2026-09-08 the spine read 74 where Calendly and webinar_events both
+    // say ~34. Written as an explicit null so the sender's next full-history
+    // send clears the doubled rows through the normal path.
+    // The sheet's own booked numbers keep their home on `webinar_events`,
+    // which is where webinar booking and show rates belong.
+    booked: null,
     showed: a.showed,
     won: a.won,
   }));

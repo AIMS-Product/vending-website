@@ -142,7 +142,11 @@ describe("ingestWebinarSnapshot", () => {
       content: "warm",
       destination: "webinar-register",
       leads: 263,
-      booked: 9,
+      // Calendly owns booked on the spine. The sheet's count reaches the spine
+      // through the webinar's tagged Calendly links already, so taking it here
+      // too counted every webinar booking twice. Explicit null, not omitted,
+      // so the sender's next full-history send clears the doubled rows.
+      booked: null,
       showed: null,
     });
     // Spend lives on webinar_events; metricool-ads owns it on the spine.
