@@ -14,6 +14,7 @@ import {
   type CallCredit,
   type RepRole,
 } from "@/lib/services/call-credit";
+import { classifyEventType } from "@/lib/services/calendly-event-class";
 import { GOAL_CHANNELS } from "@/lib/services/channel-targets";
 import {
   pct,
@@ -114,16 +115,17 @@ function emailKey(email: string | null | undefined): string | null {
 }
 
 /**
- * The calendars a first sales call lands on. Onboarding, Next Steps,
- * Follow-Up, Momentum, Connect and Rescheduled calendars hold second and later
- * calls, and generic "30 Minute Meeting" slots are not sales calls at all.
+ * The calendars a first sales call lands on, from the reviewed mapping in
+ * `calendly-event-types.json`.
+ *
+ * This was a regex, and it was one of three in this repo doing the same job and
+ * disagreeing by up to 202 bookings. It read "no pattern matched" as "new sales
+ * call", so every other brand booking on our Calendly — VendHub, Acquisition
+ * Ace, AI Operator Collective — counted as one. The mapping fails closed
+ * instead: an unclassified calendar is not a first call.
  */
 export function isFirstCallCalendar(name: string | null | undefined): boolean {
-  const key = name?.trim().toLowerCase() ?? "";
-  if (!key) return false;
-  return !/onboard|next step|follow|resched|momentum|connect|minute meeting/.test(
-    key,
-  );
+  return classifyEventType(null, name ?? null).class === "new";
 }
 
 // ---------------------------------------------------------------------------

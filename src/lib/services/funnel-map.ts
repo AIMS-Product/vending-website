@@ -134,7 +134,7 @@ export async function getFunnelMap(
       revenuePerWin: null,
     },
     actualsBasis: cohort
-      ? `Visits and leads from the channel spine. Booked, showed and won from Close, counted as a cohort: everyone whose first sales call was booked in this range, with their later outcome joined back to the day they booked. ${MATURITY_RULE}`
+      ? `Visits and leads from the channel spine. Booked, showed and won from Close, counted as a cohort: everyone whose first sales call is SCHEDULED FOR a day in this range, with their later outcome joined back to that day. That date is when the call is scheduled for, not when it was booked. ${MATURITY_RULE}`
       : "Visits and leads from the channel spine. The Close mirror is not connected, so booked, showed and won are unavailable rather than zero.",
   };
 }

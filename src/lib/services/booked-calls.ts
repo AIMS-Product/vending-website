@@ -21,9 +21,15 @@
  * come through, purely so the number is not mistaken for the whole team.
  */
 
-/** Event names that are not a first strategy call, read off the live taxonomy. */
-const LATER_STAGE =
-  /next steps|onboarding|follow|resched|route planning|one-off|30 minute|45 minute|new meeting/i;
+// The regex that used to live here classified event names by pattern. It
+// disagreed with the two other regexes doing the same job elsewhere in this
+// repo by up to 202 bookings, and it counted `VendHub Consultation Call`,
+// `Acquisition Ace Strategy Call` and a VendScout demo as Vendingpreneurs first
+// calls. Classification is now the reviewed mapping in
+// `calendly-event-types.json`, which fails closed on anything nobody has
+// classified. See `calendly-event-class.ts`.
+
+import { classifyEventType } from "@/lib/services/calendly-event-class";
 
 /** Close funnels owned by the reactivation team, not by marketing. */
 const REACTIVATION_FUNNELS = new Set([
@@ -62,8 +68,19 @@ export type BookedCallsReport = {
   notInCloseYet: number;
 };
 
-export function isFirstCall(eventName: string | null): boolean {
-  return !LATER_STAGE.test(eventName ?? "");
+/**
+ * Whether a booking is a first sales call, from the reviewed mapping.
+ *
+ * Unreviewed event types are NOT first calls. That is deliberate: the old regex
+ * treated "no pattern matched" as "must be a new call", which is how generic
+ * `30 Minute Meeting` slots and other brands' calendars ended up in this count.
+ * Failing closed under-reports visibly instead of over-reporting invisibly.
+ */
+export function isFirstCall(
+  eventName: string | null,
+  eventTypeUri: string | null = null,
+): boolean {
+  return classifyEventType(eventTypeUri, eventName).class === "new";
 }
 
 /** The Monday of the week containing `day`, as YYYY-MM-DD. */

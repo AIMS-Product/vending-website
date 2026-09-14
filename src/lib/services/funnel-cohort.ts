@@ -40,7 +40,7 @@ export type DayWindow = { start: string; end: string };
 export const SHOW_GRACE_DAYS = 1;
 export const CLOSE_MATURITY_DAYS = 30;
 
-export const MATURITY_RULE = `A booked call enters the show rate ${SHOW_GRACE_DAYS} day after its booked date, and the close rate ${CLOSE_MATURITY_DAYS} days after. Both intervals are provisional and need Dom or Adam to confirm them.`;
+export const MATURITY_RULE = `A booked call enters the show rate ${SHOW_GRACE_DAYS} day after the date it is SCHEDULED FOR, and the close rate ${CLOSE_MATURITY_DAYS} days after. Both intervals are provisional and need Dom or Adam to confirm them.`;
 
 export type CohortStatus = "immature" | "partial" | "mature";
 
@@ -75,8 +75,8 @@ export type Cohort = {
   /**
    * Always null. The mirror carries no deal value, so a cohort revenue figure
    * would have to come from `channel_daily`, which dates revenue by the day it
-   * landed rather than the day the call was booked -- the exact mismatch this
-   * module exists to remove. Unavailable is the honest answer until Close's
+   * landed rather than the day the call is scheduled for -- the exact mismatch
+   * this module exists to remove. Unavailable is the honest answer until Close's
    * opportunity value is mirrored too.
    */
   revenue: null;

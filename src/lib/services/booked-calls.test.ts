@@ -6,6 +6,7 @@ import {
   weekStartOf,
   type BookingRow,
 } from "@/lib/services/booked-calls";
+import { mappingReviewState } from "@/lib/services/calendly-event-class";
 
 function booking(over: Partial<BookingRow> = {}): BookingRow {
   return {
@@ -35,10 +36,34 @@ describe("isFirstCall", () => {
       "Vendingpreneurs Follow-Up",
       "30 Minute Meeting",
       "New Meeting",
-      "Route Planning Call",
+      // Neither of these was caught by the regex this replaced: both are other
+      // brands booking on our Calendly, counted as Vendingpreneurs first calls.
+      "VendHub Consultation Call",
+      "Acquisition Ace Strategy Call",
     ]) {
       expect(isFirstCall(name)).toBe(false);
     }
+  });
+
+  it("treats an unclassified calendar as not a first call", () => {
+    expect(isFirstCall("Some Calendar Nobody Has Reviewed")).toBe(false);
+  });
+
+  it("leaves Route Planning Call flagged for a human rather than assumed", () => {
+    // The two regexes this module replaced disagreed on this name: the one in
+    // this file called it a later-stage call, the one in team-report.ts called
+    // it a first call. 32 bookings ride on the answer and nobody has given one,
+    // so the mapping carries it as a draft with a CONFIRM note. This test holds
+    // that open question visible instead of letting either old guess win by
+    // default — update it when Stephen or Jess rules.
+    const entry = mappingReviewState().needsDecision.find(
+      (row) => row.name === "Route Planning Call",
+    );
+    expect(
+      entry,
+      "Route Planning Call should stay flagged until reviewed",
+    ).toBeDefined();
+    expect(entry?.reviewedBy).toBeNull();
   });
 });
 

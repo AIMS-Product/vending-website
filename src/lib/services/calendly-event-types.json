@@ -1,0 +1,591 @@
+{
+  "$schema": "./calendly-event-types.schema.md",
+  "generatedFrom": "production calendly_bookings, 2026-09-14",
+  "generatedRows": 4016,
+  "classes": [
+    "new",
+    "follow_up",
+    "reschedule",
+    "onboarding",
+    "internal",
+    "other_brand"
+  ],
+  "entries": [
+    {
+      "name": "Vendingpreneurs Consultation Call",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 448,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/5603d7cc-ca99-4192-a11e-a55b186ce61d"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Consultation",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 345,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/3acb4582-147a-4652-ad6b-5effe4a1b755"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Onboarding Call",
+      "class": "onboarding",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Post-sale. Not a sales call at all.",
+      "observed": 309,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/92587b98-bb4a-4980-a3ab-01759972c547"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Rescheduled Call",
+      "class": "reschedule",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "A moved call, not new demand. If the original was a first call it is arguably still marketing's, but we cannot tell from the event alone.",
+      "observed": 300,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/001e368b-716a-4bfc-ad27-3d394107eb4b",
+        "https://api.calendly.com/event_types/008d543b-8b93-49c1-948b-a86f125a4a35",
+        "https://api.calendly.com/event_types/03ce4734-2fcb-402d-8eb7-f30d6319e15b",
+        "https://api.calendly.com/event_types/17c20f77-9dad-41df-addf-3d9f567be54e",
+        "https://api.calendly.com/event_types/1bc3b2ae-5f17-4ed9-bdab-cc6d0de6bc06",
+        "https://api.calendly.com/event_types/278e4a10-da3e-4902-816e-4a6eaef32446",
+        "https://api.calendly.com/event_types/374e2e97-b928-46b1-96f7-c7dbc22a5a8d",
+        "https://api.calendly.com/event_types/448f9de5-8fce-42ae-a2e2-3b50afefe910",
+        "https://api.calendly.com/event_types/4610e7cf-10eb-49ae-bbe8-b28c24b90ca1",
+        "https://api.calendly.com/event_types/56d23e48-f13d-43e5-84a3-d6bf616ae933",
+        "https://api.calendly.com/event_types/5a15fe9b-d3dd-4185-9e61-939d00097f34",
+        "https://api.calendly.com/event_types/705e6acd-2a0f-4405-b4db-093295ee0dac",
+        "https://api.calendly.com/event_types/87230c59-8edc-470f-8134-2df182fa96c2",
+        "https://api.calendly.com/event_types/9a2732f3-06a2-430a-99ba-896b34293e0b",
+        "https://api.calendly.com/event_types/9aeda7b9-37a2-4dad-8591-72cd51e60942",
+        "https://api.calendly.com/event_types/b3e0976c-2258-4460-86d4-337dadf2d030",
+        "https://api.calendly.com/event_types/d58cda8f-ad0d-47bb-9163-beef1af4abd2",
+        "https://api.calendly.com/event_types/f21eba22-f7b6-4a97-bec1-b2749071690b"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Quick Discovery",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 285,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/362f65f5-2fe4-408c-91c5-e424edf3b1d3"
+      ]
+    },
+    {
+      "name": "Vending Accelerator Call",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 279,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/f1a11c05-d0c0-41b7-aaec-b60bf5d96f39"
+      ]
+    },
+    {
+      "name": "Vending Route Advisory Call",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "CONFIRM: \"Advisory\" could be a paid/post-sale call rather than a first sales call. 265 bookings ride on this.",
+      "observed": 265,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/d995961b-408a-450c-8a53-06f7ce669053"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Next Steps Call",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 243,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/bee355cd-8997-4bd7-b955-e7f39ce0e1dd",
+        "https://api.calendly.com/event_types/ec745169-8bd3-46de-93d4-1802fb524c78"
+      ]
+    },
+    {
+      "name": "Vendingpreneur Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 228,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/4d509762-5ff6-46fe-aa8f-abc6637de9b1"
+      ]
+    },
+    {
+      "name": "30 Minute Meeting",
+      "class": "internal",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Calendly's default calendar. 144 bookings; the spec's regex counted every one as a new sales call.",
+      "observed": 144,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/097921f4-82b1-49bd-ad91-74135aff317a",
+        "https://api.calendly.com/event_types/1dd22cdc-1972-4741-be12-072d59da3d9e",
+        "https://api.calendly.com/event_types/712ec118-9948-4714-b1a4-6b5855b7a047",
+        "https://api.calendly.com/event_types/a7b04ffc-a2fa-4e4a-a879-1fdf83d94319",
+        "https://api.calendly.com/event_types/eee5ddd6-a9ad-4870-9625-3f353fd51112",
+        "https://api.calendly.com/event_types/f6b52602-3747-4754-bbd9-016f534634ee"
+      ]
+    },
+    {
+      "name": "New Vendingpreneur Strategy Call",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 140,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/028f5c64-b9fb-4691-9932-3247095a411c",
+        "https://api.calendly.com/event_types/0471d04a-d097-477f-b7a2-9fcb79d76ff8",
+        "https://api.calendly.com/event_types/0bd5c581-9d04-4a9a-81ea-f0baaf44bc4f",
+        "https://api.calendly.com/event_types/2183f0bc-cdfb-4381-b450-e50810c1b534",
+        "https://api.calendly.com/event_types/489ed125-94ed-4e32-af9e-ed2695c2d3b5",
+        "https://api.calendly.com/event_types/4d82f0ea-39fa-4167-b929-7ad20304cb84",
+        "https://api.calendly.com/event_types/506f5fbc-d6c4-4632-91c0-589002cd7bcc",
+        "https://api.calendly.com/event_types/52e3f41d-b74e-43af-963a-3cef033f30a2",
+        "https://api.calendly.com/event_types/6b69969d-c19b-4fa8-a95f-6ac019bb6f4e",
+        "https://api.calendly.com/event_types/6fbeb69f-179d-4a85-961b-427f092aa7a3",
+        "https://api.calendly.com/event_types/76feea07-c670-4146-a5d0-71c9c6f0418b",
+        "https://api.calendly.com/event_types/8b37f9fc-6662-4a29-b8d9-7bbd48d3b085",
+        "https://api.calendly.com/event_types/c6dcaad0-d5d1-41a3-abcb-8370d8053915",
+        "https://api.calendly.com/event_types/d0362c50-1e8b-4230-952b-225fb339b4b9",
+        "https://api.calendly.com/event_types/d79d10d6-7ef7-4aa7-b845-953ea719da97",
+        "https://api.calendly.com/event_types/f1748c62-210b-40e3-bdb0-cb1dbecfa258",
+        "https://api.calendly.com/event_types/f7e44b48-440b-48ce-9c77-a514c8b86190"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs - Next Steps Call",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 137,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/06afca7d-1d7b-497e-9ee7-6a25c9cc2a46",
+        "https://api.calendly.com/event_types/3a7c5ce4-d934-4dfb-a091-da40468541fc"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Call - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 128,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/77cc8b1a-509b-4927-a34b-68d6e27998f9"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Follow-Up",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 121,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/22d62846-d52d-4e00-b68f-cddde229c4ec",
+        "https://api.calendly.com/event_types/25343240-fed0-40b3-beed-c1e539a3b553",
+        "https://api.calendly.com/event_types/377b1cd2-4741-4532-89f1-91b3aab0e3e4",
+        "https://api.calendly.com/event_types/398ca0b9-4f3a-4bae-8e39-d13813142317",
+        "https://api.calendly.com/event_types/477807a5-8dfe-482f-8586-1b779d8f88e2",
+        "https://api.calendly.com/event_types/62d73bd7-036b-43b4-a861-023aa3c0b1db",
+        "https://api.calendly.com/event_types/7040ec0b-de37-4314-8db8-e920ca5b7694",
+        "https://api.calendly.com/event_types/78fcfb56-3a6f-46f6-a94a-89ec435e3c25",
+        "https://api.calendly.com/event_types/7a55ba4e-c207-4ab6-90f8-3db7331635ba",
+        "https://api.calendly.com/event_types/960ca660-26ab-42a3-8ee7-4cc37293a6c3",
+        "https://api.calendly.com/event_types/b843beec-9599-4a45-9088-ea57442fc15f",
+        "https://api.calendly.com/event_types/c04f3250-0705-4c37-8a99-74d8aec70334",
+        "https://api.calendly.com/event_types/c931aebc-496a-48fd-a1d4-299cb5e5b27a",
+        "https://api.calendly.com/event_types/dbb13cfe-8c95-4d72-9ef3-74acb56f3b2d",
+        "https://api.calendly.com/event_types/de38724e-13ca-464e-a317-eae1d591a082",
+        "https://api.calendly.com/event_types/e03d6540-1b0b-4f0c-8293-6834de7f5292",
+        "https://api.calendly.com/event_types/f7aa3758-9433-45a0-b18e-ba49e1ba3b2c"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Momentum - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 72,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/ee8dd996-a128-476b-8bf3-d36d66b61c76"
+      ]
+    },
+    {
+      "name": "Vending Discovery Call - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "CONFIRM: spec asks whether this is a first call with a bad name. 64 bookings.",
+      "observed": 64,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/21b16701-c53d-4357-853d-237ef2b7349f"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Strategy Session",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 51,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/a460e21b-e964-4fcb-a72b-9a86573cb46e"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Next Steps Session",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 46,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/a1697cf6-715e-4afe-9b93-1bf882068be6",
+        "https://api.calendly.com/event_types/d2c37677-124b-4a61-bcbd-643955ab9523"
+      ]
+    },
+    {
+      "name": "Vendingprenuers Consultation",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Misspelling of \"Vendingpreneurs Consultation\"; same Calendly event type.",
+      "observed": 42,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/3acb4582-147a-4652-ad6b-5effe4a1b755"
+      ]
+    },
+    {
+      "name": "Vending Route Discovery",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 40,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/7b77db7c-ae53-4784-8767-60d7cfd560ed"
+      ]
+    },
+    {
+      "name": "Vending Quick Discovery",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 34,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/d71f51ee-9c0f-4616-b69f-a8f98d8016ff"
+      ]
+    },
+    {
+      "name": "Vending Consult Call",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 34,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/56a1f6dc-2095-4b22-8ad2-b258da957e80"
+      ]
+    },
+    {
+      "name": "Route Planning Call",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "CONFIRM: flagged as doubtful in the spec. booked-calls.ts currently treats it as NOT a first call; team-report.ts treats it as one.",
+      "observed": 32,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/a62dc0fb-ed5a-4e9a-b7a5-84213db829a1"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Consultation Session",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 32,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/383ccf42-79a7-4f58-964a-e4e309b0905a"
+      ]
+    },
+    {
+      "name": "VendHub Consultation Call",
+      "class": "other_brand",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "VendHub, not Vendingpreneurs.",
+      "observed": 29,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/212d24f6-9ebb-4af4-a010-d0da23b272b4"
+      ]
+    },
+    {
+      "name": "Vendingpreneur Follow-up (30 mins)",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 27,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/180fc5ef-73c0-4421-9785-868b97b1f697"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Connect - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 21,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/a51bcf0b-7dd5-479f-860a-60f5e00bddd0"
+      ]
+    },
+    {
+      "name": "Vending Opportunity - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 18,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/5c77941b-521f-45b8-8e98-fcf02f95d4bf"
+      ]
+    },
+    {
+      "name": "Vendingpreneur Follow-up",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 17,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/5e780aed-83e2-4ce5-b488-60dba9cb7902"
+      ]
+    },
+    {
+      "name": "New Meeting",
+      "class": "internal",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 13,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/27a2d682-39d4-4ae4-81ec-3fcb7719951a",
+        "https://api.calendly.com/event_types/c7722eda-d49b-4878-a7ee-8b1c8da29d1c"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Pathway - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 10,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/59fda1bf-d664-4c01-981e-c0843744666d"
+      ]
+    },
+    {
+      "name": "Vending Discovery - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 8,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/1c6cadb7-358d-4a5d-bd68-93105f29e6de"
+      ]
+    },
+    {
+      "name": "AI Operator Collective Consult Call",
+      "class": "other_brand",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 8,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/8d1285a4-a8fb-4a5e-8d0d-8d10f2f1c80d"
+      ]
+    },
+    {
+      "name": "45 Minute Meeting",
+      "class": "internal",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 7,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/a7b04ffc-a2fa-4e4a-a879-1fdf83d94319"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Discovery - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 6,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/12293c42-94c0-4ced-9ce5-7f991e346694"
+      ]
+    },
+    {
+      "name": "One-off meeting",
+      "class": "internal",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 6,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/2bc2ce8a-4b40-40f4-8318-bb1637df3dfe",
+        "https://api.calendly.com/event_types/65983160-a018-49d1-a4f6-98ee14b27c54",
+        "https://api.calendly.com/event_types/915b9324-1166-4c76-8d05-7f0b409ea4e2",
+        "https://api.calendly.com/event_types/95b0372f-84a6-4da8-9b64-d35d3f1f7107",
+        "https://api.calendly.com/event_types/a2eed823-6788-48ae-9964-128a44587d10",
+        "https://api.calendly.com/event_types/c8fd00d6-6d42-4323-bf56-72479b99f52a"
+      ]
+    },
+    {
+      "name": "Acquisition Ace Strategy Call",
+      "class": "other_brand",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 5,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/4f5f0575-32d9-4250-8c35-a0e51d8a3c5d"
+      ]
+    },
+    {
+      "name": "Vendhub Consultation Call",
+      "class": "other_brand",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "VendHub, not Vendingpreneurs.",
+      "observed": 5,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/0e325696-ae40-4fed-82e7-e06a78f9fb68"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs - Strategy Call (o)",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 3,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/f1d9435c-0af6-41c4-bb3f-c25cc7aa9ed9"
+      ]
+    },
+    {
+      "name": "VendHub Next Steps Call",
+      "class": "other_brand",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 2,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/7930e158-ab99-48c1-ad13-7e7e1ee1f32d",
+        "https://api.calendly.com/event_types/912766d5-54e2-4cdf-9ca7-9eb466d9791e"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 2,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/cfc2d03c-27ec-4cac-a9f7-2d407c26e29f"
+      ]
+    },
+    {
+      "name": "Vending Route Consultation",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "CONFIRM: only 2 bookings, name is ambiguous against \"Vending Route Advisory Call\".",
+      "observed": 2,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/5ef1290f-4c90-4ec2-a247-54cefbd7c190"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Discovery Call",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 1,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/af04b672-6e6a-4e05-8fe4-834842ca99f1"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs - Luis Galarza Reschedule",
+      "class": "reschedule",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 1,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/9002c072-2759-45d2-8808-810f96e8641a"
+      ]
+    },
+    {
+      "name": "60 Minute Meeting",
+      "class": "internal",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 1,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/712ec118-9948-4714-b1a4-6b5855b7a047"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs - Luis Galarza",
+      "class": "new",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "CONFIRM: a personal calendar. New call or internal?",
+      "observed": 1,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/be47ca1c-df5b-41c4-90bb-c348b9fda334"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Elevate - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 1,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/f7d1a5cf-1406-46e5-a3aa-c5533fefcc5e"
+      ]
+    },
+    {
+      "name": "Kickoff Call",
+      "class": "onboarding",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "CONFIRM: assumed post-sale kickoff.",
+      "observed": 1,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/d3983475-fd5e-4b7f-ac5b-31f86274a282"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Launch - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 1,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/31d7363e-c138-477e-b2a7-00631c799dcd"
+      ]
+    },
+    {
+      "name": "VendHub | VendScout Demo",
+      "class": "other_brand",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "observed": 1,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/f6b52602-3747-4754-bbd9-016f534634ee"
+      ]
+    }
+  ]
+}
