@@ -419,13 +419,15 @@ export function BookedMappingReview({ pace }: { pace: BookedPace }) {
               ))}
             </tbody>
           </table>
-          {hidden > 0 ? (
-            <p className="text-ui-text-muted border-ui-line border-t px-4 py-2.5 text-xs">
-              {hidden} more {hidden === 1 ? "calendar needs" : "calendars need"}{" "}
-              a ruling, covering {hiddenBookings.toLocaleString()} bookings.
-              Full list in calendly-event-types.json.
-            </p>
-          ) : null}
+          <p className="text-ui-text-muted border-ui-line border-t px-4 py-2.5 text-xs">
+            {hidden > 0
+              ? `${hidden} more ${hidden === 1 ? "calendar needs" : "calendars need"} a ruling, covering ${hiddenBookings.toLocaleString()} bookings. `
+              : ""}
+            The &ldquo;Next Steps&rdquo; family is the big one: 987 bookings,
+            95.7% Reactivation Scrapers, behaving like Lane 2 first calls rather
+            than follow-ups. Evidence in
+            .claude/specs/2026-09-14-calendly-event-type-review.md.
+          </p>
         </div>
       ) : null}
     </section>
