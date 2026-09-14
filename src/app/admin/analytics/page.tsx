@@ -32,10 +32,12 @@ import {
   type YouTubeAttribution,
 } from "@/lib/services/youtube-attribution";
 import { ChannelsTab } from "@/components/admin/ChannelsPanels";
+import { BookedCallsPanel } from "@/components/admin/BookedCallsPanel";
 import { FunnelMapTab } from "@/components/admin/FunnelMapPanel";
 import { KpiTab } from "@/components/admin/KpiPanels";
 import { getKpiTab } from "@/lib/services/kpi-report-data";
 import { getChannelsTab } from "@/lib/services/channel-report";
+import { getBookedCalls } from "@/lib/services/booked-calls-data";
 import { getFunnelMap } from "@/lib/services/funnel-map";
 import { parseAdminAnalyticsRange } from "@/lib/services/admin-analytics-range";
 import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
@@ -69,10 +71,11 @@ export default async function AdminAnalyticsPage({
   const isChannelsTab = tab === "channels";
   const isKpiTab = tab === "kpi";
   const isMapTab = tab === "map";
-  const [{ user, role }, analytics, youtube, channels, kpi, map] =
+  const isBookedTab = tab === "booked";
+  const [{ user, role }, analytics, youtube, channels, kpi, map, booked] =
     await Promise.all([
       requireReadAccess(),
-      isYouTubeTab || isChannelsTab || isKpiTab || isMapTab
+      isYouTubeTab || isChannelsTab || isKpiTab || isMapTab || isBookedTab
         ? null
         : getAdminAnalytics({ range, includeInternal }),
       isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
@@ -81,6 +84,7 @@ export default async function AdminAnalyticsPage({
         : null,
       isKpiTab ? getKpiTab({ range }) : null,
       isMapTab ? getFunnelMap({ range }) : null,
+      isBookedTab ? getBookedCalls() : null,
     ]);
   const internalExcluded =
     youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0;
@@ -114,7 +118,9 @@ export default async function AdminAnalyticsPage({
         includeInternal={includeInternal}
       />
 
-      {map ? (
+      {booked ? (
+        <BookedCallsPanel report={booked} />
+      ) : map ? (
         <FunnelMapTab
           data={map}
           range={range}
