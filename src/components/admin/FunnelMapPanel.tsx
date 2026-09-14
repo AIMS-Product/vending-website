@@ -8,9 +8,11 @@ import {
 } from "@/components/admin/AdminUi";
 import { channelsHref } from "@/components/admin/ChannelsPanels";
 import { FunnelJourney } from "@/components/admin/FunnelMapDiagram";
-import { FunnelMapCanvas } from "@/components/admin/FunnelMapCanvas";
-import { FunnelRail } from "@/components/admin/FunnelRail";
-import { NODES } from "@/components/admin/funnel-map-graph";
+import {
+  FunnelMapCanvas,
+  type Conversion,
+} from "@/components/admin/FunnelMapCanvas";
+import { CONVERSION_PINS, NODES } from "@/components/admin/funnel-map-graph";
 import type { AdminAnalyticsRangeKey } from "@/lib/services/admin-analytics-range";
 import type { FunnelMapData, GhlSummary } from "@/lib/services/funnel-map";
 import type { Cohort } from "@/lib/services/funnel-cohort";
@@ -79,6 +81,19 @@ export function FunnelMapTab({
   // not change meaning between the picture and the strip.
   metrics.outcome = `${formatNumber(actuals.showed)} showed · ${formatNumber(actuals.won)} won`;
 
+  // One pill per spine step: the share that survived, and the people who did
+  // not. Both sides come from `actuals`, so a step whose stages are read from
+  // different sources is still one population on each side of the divide.
+  const conversions: Record<string, Conversion | undefined> = {};
+  for (const pin of CONVERSION_PINS) {
+    const above = actuals[pin.from];
+    const below = actuals[pin.to];
+    conversions[pin.id] =
+      above == null || below == null || above <= 0
+        ? { pct: null, lost: null }
+        : { pct: (below / above) * 100, lost: above - below };
+  }
+
   const hrefs: Record<string, string | undefined> = {
     link: "/admin/links",
     dashboard: channelsHref(range, includeInternal),
@@ -100,17 +115,15 @@ export function FunnelMapTab({
 
       <FunnelMapCanvas
         metrics={metrics}
+        conversions={conversions}
         runs={channels.syncHealth}
         hrefs={hrefs}
       />
 
-      <FunnelRail
-        actuals={actuals}
-        rangeLabel={channels.range.label}
-        basis={actualsBasis}
-      />
-
-      {cohort ? <CohortNote cohort={cohort} /> : null}
+      <div className="text-ui-text-muted max-w-4xl space-y-2 text-xs leading-5">
+        <p>{actualsBasis}</p>
+        {cohort ? <CohortNote cohort={cohort} /> : null}
+      </div>
 
       <FunnelJourney
         report={report}
@@ -138,7 +151,7 @@ function CohortNote({ cohort }: { cohort: Cohort }) {
   const { coverage, pendingShow, showUnlogged, booked } = cohort;
   if (!booked) return null;
   return (
-    <p className="text-ui-text-muted text-xs leading-5">
+    <p>
       Of {booked.toLocaleString()} calls booked in this range,{" "}
       {coverage.showUp.known.toLocaleString()} are old enough to judge and carry
       an answer

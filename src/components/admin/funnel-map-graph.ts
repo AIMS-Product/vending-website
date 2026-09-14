@@ -470,3 +470,61 @@ function towards(from: Point, to: Point, by: number): Point {
     y: from.y + ((to.y - from.y) * by) / total,
   };
 }
+
+/**
+ * Where a conversion pill sits on the spine.
+ *
+ * The pill is the point of the map: a box says how many, a pill says what
+ * share of the step above got here and how many did not. They are placed by
+ * hand, on the gap the spine edge crosses, for the same reason the edges are
+ * routed by hand -- a solver would put them where there is room, not where
+ * they mean something.
+ *
+ * `from` and `to` name the stages the pill divides, not the boxes it sits
+ * between, because the path between two spine boxes can run through others
+ * (a visit becomes a lead by way of the form) and the ratio is still
+ * visits to leads.
+ */
+export type ConversionPin = {
+  id: string;
+  from: MetricStage;
+  to: MetricStage;
+  x: number;
+  y: number;
+  /** Printed under the percentage. */
+  label: string;
+};
+
+export type MetricStage = "visits" | "leads" | "booked" | "showed" | "won";
+
+export const CONVERSION_PINS: ConversionPin[] = [
+  // In the gap between the landing page and lead_submissions. The traffic
+  // actually travels page -> form -> lead; this is still visits to leads.
+  {
+    id: "visits-leads",
+    from: "visits",
+    to: "leads",
+    x: 848,
+    y: 192,
+    label: "of visits",
+  },
+  // On the lead -> calendly riser.
+  {
+    id: "leads-booked",
+    from: "leads",
+    to: "booked",
+    x: 986,
+    y: 404,
+    label: "of leads",
+  },
+  // Above the outcome box: the calendly -> outcome run is only 68px of clear
+  // space and the pill is 84 wide, so it sits over the box it feeds instead.
+  {
+    id: "booked-showed",
+    from: "booked",
+    to: "showed",
+    x: 1126,
+    y: 424,
+    label: "of booked",
+  },
+];

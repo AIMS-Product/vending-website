@@ -9,6 +9,7 @@ import {
   CANVAS,
   CONNECTOR_BAND,
   CONNECTORS,
+  CONVERSION_PINS,
   EDGES,
   NODES,
   SOURCE_BUS_X,
@@ -35,13 +36,22 @@ const TONE_CLASS: Record<MapNode["tone"], string> = {
   external: "border-ui-line bg-ui-canvas",
 };
 
+export type Conversion = {
+  /** Null when either stage was unobserved: a blind spot, not a zero. */
+  pct: number | null;
+  lost: number | null;
+};
+
 export function FunnelMapCanvas({
   metrics,
+  conversions,
   runs,
   hrefs,
 }: {
   /** Live text to print inside a box, by node id. */
   metrics: Record<string, string | undefined>;
+  /** The share that survived each spine step, by pin id. */
+  conversions: Record<string, Conversion | undefined>;
   runs: SyncHealthRow[];
   hrefs: Record<string, string | undefined>;
 }) {
@@ -180,6 +190,16 @@ export function FunnelMapCanvas({
 
           {/* Connector bus: each row drops into its own lane, both lanes ride
               one riser down into the spine. */}
+          {CONVERSION_PINS.map((pin) => (
+            <ConversionPill
+              key={pin.id}
+              x={pin.x}
+              y={pin.y}
+              label={pin.label}
+              conversion={conversions[pin.id]}
+            />
+          ))}
+
           {CONNECTORS.map((entry, index) => {
             const box = connectorRect(index);
             const lane = rowLanes[Math.floor(index / CONNECTOR_BAND.perRow)]!;
@@ -230,6 +250,16 @@ export function FunnelMapCanvas({
             node={node}
             metric={metrics[node.id]}
             href={hrefs[node.id]}
+          />
+        ))}
+
+        {CONVERSION_PINS.map((pin) => (
+          <ConversionPill
+            key={pin.id}
+            x={pin.x}
+            y={pin.y}
+            label={pin.label}
+            conversion={conversions[pin.id]}
           />
         ))}
 
@@ -434,5 +464,44 @@ function StatusDot({ status }: { status: string }) {
       className={`ml-auto size-1.5 shrink-0 rounded-full ${tone}`}
       title={status}
     />
+  );
+}
+
+/**
+ * The share of a step that survived, and the people who did not.
+ *
+ * Sits on the spine rather than inside a box because it belongs to the gap
+ * between two stages, not to either one of them. A step nobody measured shows
+ * a dash: an unmeasured step is a blind spot, and printing 0% would be the map
+ * claiming it watched everyone leave.
+ */
+function ConversionPill({
+  x,
+  y,
+  label,
+  conversion,
+}: {
+  x: number;
+  y: number;
+  label: string;
+  conversion?: Conversion;
+}) {
+  const pct = conversion?.pct ?? null;
+  const lost = conversion?.lost ?? null;
+  return (
+    <div
+      className="border-ui-line bg-ui-surface rounded-ui absolute border px-1.5 py-1 text-center shadow-sm"
+      style={{ left: x - 42, top: y, width: 84 }}
+    >
+      <p className="text-ui-text text-[0.75rem] leading-4 font-semibold tabular-nums">
+        {pct == null ? "—" : `${Math.round(pct * 10) / 10}%`}
+      </p>
+      <p className="text-ui-text-muted text-[0.5625rem] leading-3">{label}</p>
+      {lost != null && lost > 0 ? (
+        <p className="text-ui-warn text-[0.5625rem] leading-3 tabular-nums">
+          {Math.round(lost).toLocaleString()} lost
+        </p>
+      ) : null}
+    </div>
   );
 }
