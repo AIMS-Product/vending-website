@@ -168,4 +168,53 @@ describe("syncGhl", () => {
       }),
     );
   });
+
+  it("routes a known form to the channel that handed it out", async () => {
+    const { client, upserts } = buildClient();
+    const day = "2026-09-10T15:00:00.000Z";
+    const routed: GhlClient = {
+      ...ghl,
+      listForms: async () => [
+        {
+          id: "74fUmvjrsYdkdhUZRwBn",
+          name: "90 Day Checklist - MH - Info Form",
+        },
+        {
+          id: "lWsjML1EFRINeZtzs9ZC",
+          name: "90 Day Checklist - AK - Info Form",
+        },
+        {
+          id: "B45aIM2IgjOh3FD8RYrl",
+          name: "PAID: VP Internal Team: 90 Days Lead Magnet Form",
+        },
+        { id: "uzY5o2A3dIjg6JvkDKPe", name: "VSL" },
+        { id: "LZ4wWLGozv6Gt813E3XM", name: "Waitlist Form" },
+        { id: "7K87uNNVmBmzjuQOtUdh", name: "Course Access Form" },
+        { id: "mOvuOW3y5tn9hNuti3Si", name: "Form 20" },
+      ],
+      fetchFormSubmissions: async () => [
+        { id: "a", formId: "74fUmvjrsYdkdhUZRwBn", createdAt: day },
+        { id: "b", formId: "lWsjML1EFRINeZtzs9ZC", createdAt: day },
+        { id: "c", formId: "B45aIM2IgjOh3FD8RYrl", createdAt: day },
+        { id: "d", formId: "uzY5o2A3dIjg6JvkDKPe", createdAt: day },
+        { id: "e", formId: "LZ4wWLGozv6Gt813E3XM", createdAt: day },
+        { id: "f", formId: "7K87uNNVmBmzjuQOtUdh", createdAt: day },
+        { id: "g", formId: "mOvuOW3y5tn9hNuti3Si", createdAt: day },
+      ],
+    };
+    await syncGhl({ client, ghl: routed, now });
+    const leads = upserts
+      .channel_daily!.filter((row) => row.leads != null)
+      .map((row) => [row.channel, row.source, row.medium, row.content]);
+    expect(leads).toEqual([
+      ["Instagram", "mike-ig", "lead-magnet", "90-day-checklist"],
+      ["Instagram", "anthony-ig", "lead-magnet", "90-day-checklist"],
+      ["Meta Ads", "meta_ads", "paid", "90-days-lead-magnet"],
+      ["VSL", "vsl", "form", "vsl"],
+      ["Webinar", "ghl_form", "waitlist", "waitlist"],
+      // Form 20 is not in the map, so it stays a GHL forms lead. Course
+      // Access is a member unlocking the course, not a lead: nothing written.
+      ["GHL forms", "ghl_form", "form", "(not set)"],
+    ]);
+  });
 });

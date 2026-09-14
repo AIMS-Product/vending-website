@@ -175,6 +175,80 @@ export function emailDeltaRows(
 /** Forms whose submissions are webinar registrations, not new leads. */
 export const WEBINAR_FORM_PATTERN = /webinar/i;
 
+type FormRoute = {
+  source: string;
+  medium: string;
+  content: string;
+  /** A program channel the row belongs to regardless of its source. */
+  channel?: string;
+};
+
+/**
+ * Where each GHL form's submissions came from, by form id (names get edited;
+ * ids do not). The MH and AK forms are the lead magnets Mike Hoffmann and
+ * Anthony Kolodziej hand out on Instagram (confirmed by Adam, 2026-09-13).
+ * The paid magnet is a Meta ad. A form not listed here stays a "GHL forms"
+ * lead so a new form shows up instead of vanishing. Webinar registration
+ * forms are skipped before this map applies; see WEBINAR_FORM_PATTERN.
+ */
+export const FORM_ROUTES: Record<string, FormRoute | "exclude"> = {
+  // Mike's Instagram lead magnets.
+  vig6vobsefRB3DHZZzo8: {
+    source: "mike-ig",
+    medium: "lead-magnet",
+    content: "route-builder",
+  },
+  "74fUmvjrsYdkdhUZRwBn": {
+    source: "mike-ig",
+    medium: "lead-magnet",
+    content: "90-day-checklist",
+  },
+  BKYECxtf3IVcpVhhZSzc: {
+    source: "mike-ig",
+    medium: "lead-magnet",
+    content: "financial-templates",
+  },
+  // Anthony's Instagram lead magnets.
+  lWsjML1EFRINeZtzs9ZC: {
+    source: "anthony-ig",
+    medium: "lead-magnet",
+    content: "90-day-checklist",
+  },
+  "5yq7Ako7Fa2OKl9b53Er": {
+    source: "anthony-ig",
+    medium: "lead-magnet",
+    content: "financial-templates",
+  },
+  // The 90 Days lead magnet bought with Meta ads.
+  B45aIM2IgjOh3FD8RYrl: {
+    source: "meta_ads",
+    medium: "paid",
+    content: "90-days-lead-magnet",
+  },
+  // The video sales letter funnel's opt-ins.
+  uzY5o2A3dIjg6JvkDKPe: { source: "vsl", medium: "form", content: "vsl" },
+  "7mfqxsL7RDAPJw7GZNoq": {
+    source: "vsl",
+    medium: "form",
+    content: "general-vsl",
+  },
+  // The webinar waitlist is a Webinar-program lead, not a registration.
+  LZ4wWLGozv6Gt813E3XM: {
+    source: "ghl_form",
+    medium: "waitlist",
+    content: "waitlist",
+    channel: "Webinar",
+  },
+  // The site's lead-scoring hand-off to a booking page.
+  "0vrICJhXXOmSC9aGHj3P": {
+    source: "website",
+    medium: "form",
+    content: "lead-scoring",
+  },
+  // Existing members unlocking the course are not leads.
+  "7K87uNNVmBmzjuQOtUdh": "exclude",
+};
+
 /** GHL lander form submissions as leads, by form, by the day they arrived. */
 async function syncForms(
   client: SyncClient,
@@ -195,18 +269,24 @@ async function syncForms(
   const rows: ChannelDailyRow[] = submissions
     .filter(
       (submission) =>
-        !WEBINAR_FORM_PATTERN.test(nameById.get(submission.formId) ?? ""),
+        !WEBINAR_FORM_PATTERN.test(nameById.get(submission.formId) ?? "") &&
+        FORM_ROUTES[submission.formId] !== "exclude",
     )
-    .map((submission) => ({
-      day: submission.createdAt.slice(0, 10),
-      source: "ghl_form",
-      medium: "form",
-      campaign:
-        slug(nameById.get(submission.formId) ?? "") || submission.formId,
-      content: null,
-      term: null,
-      leads: 1,
-    }));
+    .map((submission) => {
+      const route = FORM_ROUTES[submission.formId];
+      const routed = route && route !== "exclude" ? route : null;
+      return {
+        day: submission.createdAt.slice(0, 10),
+        source: routed?.source ?? "ghl_form",
+        medium: routed?.medium ?? "form",
+        campaign:
+          slug(nameById.get(submission.formId) ?? "") || submission.formId,
+        content: routed?.content ?? null,
+        term: null,
+        channel: routed?.channel ?? null,
+        leads: 1,
+      };
+    });
   const result = await upsertChannelDaily(client, rows, { now });
   return {
     rowsWritten: result.written,

@@ -154,6 +154,9 @@ const EXACT: Record<string, ChannelRule> = {
   ghl: { channel: INSTAGRAM_DM_CHANNEL },
   manychat: { channel: INSTAGRAM_DM_CHANNEL },
   ltf: { channel: LOW_TICKET_CHANNEL },
+  // The video sales letter funnel: its GHL opt-in forms and any link tagged
+  // for it. Without this, "vsl" title-cased into its own "Vsl" row.
+  vsl: { channel: "VSL" },
 
   // Tag used by the vendingpreneurs.ai funnel's "Apply Now" button.
   web: { channel: WEBSITE_CHANNEL },
