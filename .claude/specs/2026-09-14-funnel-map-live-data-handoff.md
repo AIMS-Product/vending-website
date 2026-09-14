@@ -85,11 +85,37 @@ Reactivation Scrapers 7, Instagram 6, Internal Webinar 4, Website 2,
 Google Ads 2, YouTube 2, LinkedIn 1. Lane 1 22 / Lane 2 2.
 Forward: 9/15 = 21, 9/16 = 12, 9/17 = 8.
 
-**There is no trustworthy "booking created today" in this repo.**
-`calendly_bookings.created_at` is our row-insert time (1,899 "created" today
-from a backfill). `channel_daily.booked` is too spiky (2 today, 87 on 9/08).
-Do not build a daily marketing-output number on either without fixing the
-source first.
+### RESOLVED: "booked today" does have a source
+
+`calendly_bookings.raw_payload -> payload.created_at` is **Calendly's own
+booking timestamp** — when the invitee actually scheduled. Use it, not the
+`created_at` column, which is our row-insert time (it showed 1,899 "created"
+today from a backfill).
+
+Two different numbers, both real, do not conflate them:
+
+- **calls on a day's calendar** — `close_lead_funnel.first_sales_call_booked_date`.
+  Today 24. Answers "who are the closers talking to today".
+- **calls booked on a day** — Calendly `payload.created_at`. Today 34, landing
+  9/14:2, 9/15:13, 9/16:7, 9/17:5, 9/18:3, 9/19:1, 9/24:1, 10/02:1, 10/06:1.
+  Answers "what did marketing produce today". This is the pace number.
+
+Recent booked-on volume: 9/08 90, 9/09 48, 9/10 45, 9/11 44, 9/12 26,
+9/13 11, 9/14 34.
+
+`channel_daily.booked` is dated by this same Calendly timestamp and broadly
+agrees (9/08: 87 vs 90). It reads low intraday only because the connector has
+not re-synced — stale, not wrong. For a live "booked today" figure either
+trigger the sync or read `calendly_bookings` directly.
+
+**Attribution on booked-on is weak: 26 of today's 34 carry no `utm_source`**
+(google 3, youtube 2, chatbot 1, 2 junk). So volume is trustworthy, channel
+split is not. That is a Calendly UTM capture gap, not a reporting bug — worth
+fixing before the Goals page shows booked-by-channel per day.
+
+Coincidence to avoid: the capacity dashboard's "Total Meetings Booked 34" for
+today is 24 new + 7 follow-ups + 3 reschedules **scheduled today**. It is not
+the same 34.
 
 ## 4. What is missing — the actual work
 
@@ -164,10 +190,11 @@ Source boxes show "N leads · N booked" but no rates. The team's question is
    open-slot and per-day-goal (42) data must come from somewhere. Not in this
    database. Candidates: Stephen's `call-capacity-dashboard` repo, SteelTrap
    Lakebase, Calendly availability API.
-3. **"Booked today" definition.** Calls scheduled for today (24, reproducible),
-   or bookings created today (no trustworthy source). The dashboard's 34 adds
-   7 follow-ups and 3 reschedules; our mirror is first-calls-only by design and
-   cannot produce 34.
+3. **"Booked today" — RESOLVED, see §3.** Both numbers exist and mean
+   different things. Decide which belongs on the Goals page (probably
+   booked-on, for pace) and label it so nobody reads it as the other. The
+   dashboard's 34 adds follow-ups and reschedules; our mirror is
+   first-calls-only by design and cannot produce that.
 4. **Revenue basis** — observed won value, a planning AOV, or both labelled
    separately (Jess's spec §14 q4).
 
