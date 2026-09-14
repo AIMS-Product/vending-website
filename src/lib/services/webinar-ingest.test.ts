@@ -141,11 +141,12 @@ describe("ingestWebinarSnapshot", () => {
       campaign: "webinar-2026-09-01",
       content: "warm",
       destination: "webinar-register",
-      spend: 1636,
       leads: 263,
       booked: 9,
       showed: null,
     });
+    // Spend lives on webinar_events; metricool-ads owns it on the spine.
+    expect(spine[0]).not.toHaveProperty("spend");
     expect(spine[1]).toMatchObject({
       channel: "Webinar",
       source: "unattributed",

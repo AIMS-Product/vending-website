@@ -32,7 +32,10 @@ import {
 import { CHANNEL_CONNECTORS } from "@/lib/services/channel-sync";
 import { CLOSE_LEAD_FUNNEL_CONNECTOR } from "@/lib/services/close-lead-funnel-sync";
 import { GHL_CONNECTORS } from "@/lib/services/ghl-sync";
-import { METRICOOL_CONNECTOR } from "@/lib/services/metricool-sync";
+import {
+  METRICOOL_ADS_CONNECTOR,
+  METRICOOL_CONNECTOR,
+} from "@/lib/services/metricool-sync";
 import { YOUTUBE_ANALYTICS_CONNECTOR } from "@/lib/services/youtube-analytics-sync";
 
 export type ReportClient = Pick<SupabaseClient<Database>, "from">;
@@ -52,6 +55,7 @@ export const EXPECTED_CONNECTORS: readonly string[] = [
   GHL_CONNECTORS.email,
   GHL_CONNECTORS.forms,
   METRICOOL_CONNECTOR,
+  METRICOOL_ADS_CONNECTOR,
   YOUTUBE_ANALYTICS_CONNECTOR,
   CLOSE_LEAD_FUNNEL_CONNECTOR,
 ];

@@ -191,7 +191,7 @@ const METRIC_CONNECTOR: Array<
   [["leads", "booked", "showed", "won"], "leads"],
   [["impressions", "reach"], "metricool-posts"],
   [["clicks"], "bitly-clicks"],
-  [["spend"], "webinar-ingest"],
+  [["spend"], "metricool-ads"],
 ];
 
 export function buildKpiReport(input: KpiInput): KpiReport {

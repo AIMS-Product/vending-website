@@ -67,9 +67,20 @@ const EXPECTED: Record<string, CoverageKey[]> = {
 
 /** Which connectors can fill each metric, for naming the cause of a gap. */
 const METRIC_CONNECTORS: Record<CoverageKey, string[]> = {
-  spend: ["webinar-ingest"],
-  impressions: ["metricool-posts", "youtube-analytics", "ghl-email"],
-  clicks: ["bitly-clicks", "metricool-posts", "ghl-email", "manychat-ingest"],
+  spend: ["metricool-ads"],
+  impressions: [
+    "metricool-posts",
+    "metricool-ads",
+    "youtube-analytics",
+    "ghl-email",
+  ],
+  clicks: [
+    "bitly-clicks",
+    "metricool-posts",
+    "metricool-ads",
+    "ghl-email",
+    "manychat-ingest",
+  ],
   visits: ["ga4-visits"],
   leads: ["leads", "webinar-ingest", "ghl-forms", "manychat-ingest"],
   booked: ["leads", "webinar-ingest", "manychat-ingest"],

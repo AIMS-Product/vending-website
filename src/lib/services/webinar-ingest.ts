@@ -167,6 +167,8 @@ async function write(
 
   // Already in spine shape; channelDailyKey still normalises and resolves
   // "webinar" to the Webinar channel and webinar-register to its destination.
+  // Spend stays on webinar_events: the spine's spend is owned by metricool-ads,
+  // per campaign per day, and the sheet's per-webinar lump would double it.
   const rows: ChannelDailyRow[] = payload.audiences.map((a) => ({
     day: a.day,
     channel: a.channel,
@@ -175,7 +177,6 @@ async function write(
     campaign: a.campaign,
     content: a.content,
     term: a.destination,
-    spend: a.spend,
     leads: a.leads,
     booked: a.booked,
     showed: a.showed,

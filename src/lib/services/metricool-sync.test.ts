@@ -1,11 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import type { MetricoolClient, MetricoolPost } from "@/lib/metricool/client";
+import type {
+  MetricoolCampaign,
+  MetricoolClient,
+  MetricoolPost,
+} from "@/lib/metricool/client";
 
 vi.mock("@/lib/config", () => ({ config: {} }));
 
 import {
+  adRow,
   channelRow,
   firstOutboundUrl,
   networkSource,
@@ -120,6 +125,60 @@ describe("postRow + channelRow", () => {
   });
 });
 
+const noAds = async () => [];
+
+const webinarCampaign: MetricoolCampaign = {
+  id: "120245678748410338",
+  name: "LL - VP Masterclass Webinar | Leads | ABO - Sep 15 - 7:30 CT",
+  spend: 2435.2,
+  impressions: 66632,
+  reach: 50000,
+  clicks: 2809,
+};
+
+const googleCampaign: MetricoolCampaign = {
+  id: "23805931083",
+  name: "VP | W2 | Consideration",
+  spend: 285.71,
+  impressions: 1116,
+  reach: null,
+  clicks: 120,
+};
+
+describe("adRow", () => {
+  it("keys Google by campaign id under google / cpc so spend meets the leads", () => {
+    expect(adRow("googleads", googleCampaign, "2026-08-20")).toEqual({
+      day: "2026-08-20",
+      channel: null,
+      source: "google",
+      medium: "cpc",
+      campaign: "23805931083",
+      content: "VP | W2 | Consideration",
+      term: null,
+      spend: 285.71,
+      impressions: 1116,
+      reach: null,
+      clicks: 120,
+    });
+  });
+
+  it("sends a Meta campaign named for the webinar to the Webinar program", () => {
+    expect(adRow("facebookads", webinarCampaign, "2026-08-20")).toMatchObject({
+      channel: "Webinar",
+      source: "meta_ads",
+      medium: "paid",
+      campaign: "120245678748410338",
+    });
+    expect(
+      adRow(
+        "facebookads",
+        { ...webinarCampaign, name: "RT | Book Calls/Leads | ABO | US" },
+        "2026-08-20",
+      ).channel,
+    ).toBeNull();
+  });
+});
+
 describe("syncMetricool", () => {
   function buildClient() {
     const upserts: Record<string, Array<Record<string, unknown>>> = {};
@@ -154,7 +213,7 @@ describe("syncMetricool", () => {
     expect(result.connector.error).toMatch(/^skipped:/);
     const noBrands = await syncMetricool({
       client,
-      metricool: { fetchPosts: async () => [tagged] },
+      metricool: { fetchPosts: async () => [tagged], fetchCampaigns: noAds },
       blogIds: [],
       now,
     });
@@ -168,7 +227,7 @@ describe("syncMetricool", () => {
     );
     await syncMetricool({
       client,
-      metricool: { fetchPosts },
+      metricool: { fetchPosts, fetchCampaigns: noAds },
       blogIds: ["6626386", "6633336"],
       now,
     });
@@ -190,6 +249,7 @@ describe("syncMetricool", () => {
     const { client, upserts } = buildClient();
     const metricool: MetricoolClient = {
       fetchPosts: async () => [tagged, untagged, noLink],
+      fetchCampaigns: noAds,
     };
     const result = await syncMetricool({
       client,
@@ -210,5 +270,64 @@ describe("syncMetricool", () => {
         clicks: 40,
       }),
     );
+  });
+
+  it("writes one spine row per campaign per day from the first brand only", async () => {
+    const { client, upserts, runs } = buildClient();
+    const fetchCampaigns = vi.fn(
+      async ({
+        network,
+        from,
+      }: {
+        blogId: string;
+        network: string;
+        from: string;
+      }) =>
+        network === "googleads"
+          ? [googleCampaign]
+          : from === "2026-09-11"
+            ? [webinarCampaign]
+            : [],
+    );
+    const result = await syncMetricool({
+      client,
+      metricool: { fetchPosts: async () => [], fetchCampaigns },
+      blogIds: ["6626386", "6633336"],
+      now,
+      days: 1,
+    });
+    expect(result.ads).toMatchObject({
+      connector: "metricool-ads",
+      rowsWritten: 3,
+      error: null,
+    });
+    // Two days (yesterday and today) times two networks, one brand.
+    expect(fetchCampaigns).toHaveBeenCalledTimes(4);
+    expect(
+      new Set(fetchCampaigns.mock.calls.map(([arg]) => arg.blogId)),
+    ).toEqual(new Set(["6626386"]));
+    expect(upserts.channel_daily).toContainEqual(
+      expect.objectContaining({
+        day: "2026-09-11",
+        channel: "Google Ads",
+        source: "google",
+        medium: "cpc",
+        campaign: "23805931083",
+        spend: 285.71,
+      }),
+    );
+    expect(upserts.channel_daily).toContainEqual(
+      expect.objectContaining({
+        day: "2026-09-11",
+        channel: "Webinar",
+        source: "meta_ads",
+        campaign: "120245678748410338",
+        spend: 2435.2,
+      }),
+    );
+    expect(runs.map((run) => run.connector)).toEqual([
+      "metricool-posts",
+      "metricool-ads",
+    ]);
   });
 });

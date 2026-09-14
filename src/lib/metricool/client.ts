@@ -54,6 +54,19 @@ export type MetricoolPost = {
   metrics: Record<string, unknown>;
 };
 
+/** One ad campaign's totals for a date range, either network. */
+export type MetricoolCampaign = {
+  /** The platform's own campaign id: what a tagged link carries as utm_campaign. */
+  id: string;
+  name: string;
+  spend: number | null;
+  impressions: number | null;
+  reach: number | null;
+  clicks: number | null;
+};
+
+export type AdNetwork = "googleads" | "facebookads";
+
 export type MetricoolClient = {
   /**
    * Posts a brand published in [from, to], dates as YYYY-MM-DD, interpreted in
@@ -64,6 +77,17 @@ export type MetricoolClient = {
     from: string;
     to: string;
   }): Promise<MetricoolPost[]>;
+  /**
+   * Campaign totals for [from, to] on one ad network. Metricool aggregates
+   * over the range, so a single day is asked for as from = to = that day.
+   * A network the brand has not connected answers 403 and yields no rows.
+   */
+  fetchCampaigns(range: {
+    blogId: string;
+    network: AdNetwork;
+    from: string;
+    to: string;
+  }): Promise<MetricoolCampaign[]>;
 };
 
 export class MetricoolApiError extends Error {
@@ -205,7 +229,43 @@ export function createMetricoolClient(options: {
     return byKey;
   }
 
+  type RawCampaign = {
+    id?: string | number;
+    providerId?: string | number;
+    name?: string;
+    spent?: number | null;
+    impressions?: number | null;
+    reach?: number | null;
+    clicks?: number | null;
+  };
+
   return {
+    async fetchCampaigns(range) {
+      let body: { data?: RawCampaign[] };
+      try {
+        body = await get<{ data?: RawCampaign[] }>(
+          analyticsUrl(`campaigns/${range.network}`, range),
+        );
+      } catch (error) {
+        if (error instanceof MetricoolApiError && error.status === 403)
+          return [];
+        throw error;
+      }
+      return (body.data ?? []).flatMap((raw) => {
+        const id = raw.providerId ?? raw.id;
+        if (id == null || !raw.name) return [];
+        return [
+          {
+            id: String(id),
+            name: raw.name,
+            spend: number(raw.spent),
+            impressions: number(raw.impressions),
+            reach: number(raw.reach),
+            clicks: number(raw.clicks),
+          },
+        ];
+      });
+    },
     async fetchPosts(range) {
       const posts = await fetchBrandSummary(range);
       const networks = new Set(posts.map((post) => post.network));
@@ -224,6 +284,10 @@ export function createMetricoolClient(options: {
       });
     },
   };
+}
+
+function number(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 /** Typed numbers win over the brand summary, whose Facebook values are null. */

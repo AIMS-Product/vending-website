@@ -64,9 +64,10 @@ export async function GET(request: Request) {
   try {
     const result = await syncMetricool(options);
     // A skipped connector (not configured) is fine; a failed one is not.
-    const run = result.connector;
-    const failed = Boolean(
-      run.error && !run.error.startsWith("skipped:") && run.rowsWritten === 0,
+    const failed = [result.connector, result.ads].some((run) =>
+      Boolean(
+        run.error && !run.error.startsWith("skipped:") && run.rowsWritten === 0,
+      ),
     );
     return NextResponse.json(
       { ok: !failed, ...result },

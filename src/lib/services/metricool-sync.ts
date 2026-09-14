@@ -9,6 +9,8 @@ import { config } from "@/lib/config";
 import {
   createMetricoolClient,
   readMetric,
+  type AdNetwork,
+  type MetricoolCampaign,
   type MetricoolClient,
   type MetricoolPost,
 } from "@/lib/metricool/client";
@@ -25,6 +27,14 @@ import type { Database, TablesInsert } from "@/types/database";
 type SyncClient = Pick<SupabaseClient<Database>, "from">;
 
 export const METRICOOL_CONNECTOR = "metricool-posts";
+export const METRICOOL_ADS_CONNECTOR = "metricool-ads";
+
+/**
+ * Ad platforms restate the last day or two as late conversions and spend
+ * settle, so every run rewrites a short trailing window. `days` widens it.
+ */
+const ADS_WINDOW_DAYS = 3;
+const AD_NETWORKS: readonly AdNetwork[] = ["googleads", "facebookads"];
 
 /**
  * Post metrics are lifetime totals that keep growing after publication, so the
@@ -92,6 +102,7 @@ const METRIC_NAMES = {
 export type MetricoolSyncResult = {
   endDate: string;
   connector: SyncRunOutcome;
+  ads: SyncRunOutcome;
 };
 
 export async function syncMetricool(
@@ -163,7 +174,72 @@ export async function syncMetricool(
       };
     },
   );
-  return { endDate, connector };
+  const ads = await recordSyncRun(client, METRICOOL_ADS_CONNECTOR, async () => {
+    if (!metricool || blogIds.length === 0) {
+      return skipped(
+        "METRICOOL_API_KEY / METRICOOL_USER_ID / METRICOOL_BLOG_IDS are not configured.",
+      );
+    }
+    // Only the first brand: the person brands connect the same ad accounts,
+    // so reading them too would count every dollar twice.
+    const adsBlogId = blogIds[0]!;
+    const rows: ChannelDailyRow[] = [];
+    const adsStart = dayKey(addDays(now, -(deps.days ?? ADS_WINDOW_DAYS)));
+    for (
+      let day = adsStart;
+      day <= endDate;
+      day = dayKey(addDays(new Date(`${day}T00:00:00.000Z`), 1))
+    ) {
+      for (const network of AD_NETWORKS) {
+        const campaigns = await metricool.fetchCampaigns({
+          blogId: adsBlogId,
+          network,
+          from: day,
+          to: day,
+        });
+        for (const campaign of campaigns)
+          rows.push(adRow(network, campaign, day));
+      }
+    }
+    if (rows.length === 0) return { rowsWritten: 0 };
+    const result = await upsertChannelDaily(client, rows, { now });
+    return {
+      rowsWritten: result.written,
+      error:
+        result.failed > 0
+          ? `${result.failed} channel_daily rows failed to write; see the server log.`
+          : null,
+    };
+  });
+  return { endDate, connector, ads };
+}
+
+/**
+ * One campaign's day on the spine. Keyed by the platform's campaign id, which
+ * is what a Google Ads link carries as utm_campaign, so spend lands on the
+ * same row as the leads it bought; the human name rides in `content` because
+ * the webinar campaign is renamed every week. A Meta campaign named for the
+ * webinar belongs to the Webinar program, not to Meta Ads.
+ */
+export function adRow(
+  network: AdNetwork,
+  campaign: MetricoolCampaign,
+  day: string,
+): ChannelDailyRow {
+  const google = network === "googleads";
+  return {
+    day,
+    channel: !google && /webinar/i.test(campaign.name) ? "Webinar" : null,
+    source: google ? "google" : "meta_ads",
+    medium: google ? "cpc" : "paid",
+    campaign: campaign.id,
+    content: campaign.name,
+    term: null,
+    spend: campaign.spend,
+    impressions: campaign.impressions,
+    reach: campaign.reach,
+    clicks: campaign.clicks,
+  };
 }
 
 export type MetricoolPostRow = TablesInsert<"metricool_posts">;
