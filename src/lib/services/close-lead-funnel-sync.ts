@@ -189,7 +189,14 @@ export async function syncCloseLeadFunnel(
       const fieldIds = resolveFieldIds(definitions.data ?? []);
       const syncedAt = now.toISOString();
 
-      const rows: CloseLeadFunnelRow[] = [];
+      // Keyed, not pushed: the crawl is a cursor walk over a live set sorted
+      // newest-change-first, so a lead updated mid-run shifts across a page
+      // boundary and is read twice. Two rows with one `lead_id` in a single
+      // upsert is what Postgres rejects with "ON CONFLICT DO UPDATE command
+      // cannot affect row a second time", which failed the whole run and wrote
+      // nothing. First seen wins: in a newest-first walk that is the fresher
+      // copy of the lead.
+      const byLeadId = new Map<string, CloseLeadFunnelRow>();
       let cursor: string | null = null;
       for (let page = 0; page < MAX_PAGES; page += 1) {
         const result = await close.searchLeads(
@@ -197,11 +204,12 @@ export async function syncCloseLeadFunnel(
         );
         for (const lead of result.data ?? []) {
           const row = mapLead(lead, fieldIds, syncedAt);
-          if (row) rows.push(row);
+          if (row && !byLeadId.has(row.lead_id)) byLeadId.set(row.lead_id, row);
         }
         cursor = result.cursor ?? null;
         if (!cursor || (result.data ?? []).length === 0) break;
       }
+      const rows = [...byLeadId.values()];
 
       let written = 0;
       for (let from = 0; from < rows.length; from += UPSERT_BATCH) {

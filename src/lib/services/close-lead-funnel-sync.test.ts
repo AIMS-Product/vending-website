@@ -137,6 +137,44 @@ describe("syncCloseLeadFunnel", () => {
     expect(runs).toHaveLength(1);
   });
 
+  it("upserts a lead once when the cursor walk reads it twice", async () => {
+    // A lead updated mid-crawl shifts page in the newest-first sort and comes
+    // back on a page we have already read. Before the dedupe this put two rows
+    // with one lead_id into a single upsert and Postgres failed the whole run.
+    const pages = [
+      {
+        data: [
+          { id: "lead_a", "custom.cf_funnel": "YouTube" },
+          { id: "lead_b", "custom.cf_funnel": "Website" },
+        ],
+        cursor: "p2",
+      },
+      {
+        data: [{ id: "lead_a", "custom.cf_funnel": "Instagram" }],
+        cursor: null,
+      },
+    ];
+    let call = 0;
+    const close = {
+      listCustomFields: async () => ({ data: definitions }),
+      searchLeads: async () => pages[call++]!,
+    };
+    const { client, upserts } = fakeSupabase();
+    const outcome = await syncCloseLeadFunnel({
+      client: client as never,
+      close,
+    });
+    expect(outcome.error).toBeNull();
+    expect(outcome.rowsWritten).toBe(2);
+    const written = upserts.flat() as Array<{
+      lead_id: string;
+      funnel: string | null;
+    }>;
+    expect(written.map((row) => row.lead_id)).toEqual(["lead_a", "lead_b"]);
+    // First seen wins: the newest-first walk saw YouTube before Instagram.
+    expect(written[0]!.funnel).toBe("YouTube");
+  });
+
   it("records a skipped run when Close is not configured", async () => {
     const { client, runs } = fakeSupabase();
     const outcome = await syncCloseLeadFunnel({
