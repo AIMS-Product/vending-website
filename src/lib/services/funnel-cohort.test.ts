@@ -109,6 +109,26 @@ describe("buildCohort", () => {
     expect(cohort.rates.closePct).toBeNull();
   });
 
+  it("still counts a win the cohort is too young to rate", () => {
+    // Every booking inside the close window at once: the rate has to wait,
+    // but the wins are observed facts and printing 0 of them would be a lie.
+    const cohort = buildCohort(
+      [
+        row({
+          first_sales_call_booked_date: "2026-09-12",
+          status_label: "Closed / Won",
+        }),
+        row({ first_sales_call_booked_date: "2026-09-12" }),
+      ],
+      WINDOW,
+      NOW,
+    );
+    expect(cohort.closeable).toBe(0);
+    expect(cohort.rates.closePct).toBeNull();
+    expect(cohort.won).toBe(1);
+    expect(cohort.wonOfCloseable).toBe(0);
+  });
+
   it("scopes to one funnel without touching the others", () => {
     const cohort = buildCohort(
       [row(), row({ funnel: "Website" }), row({ funnel: null })],

@@ -60,7 +60,18 @@ export type Cohort = {
   showUnlogged: number;
   /** Held calls old enough to have closed. The close-rate denominator. */
   closeable: number;
+  /**
+   * Wins observed in this cohort so far, at any maturity.
+   *
+   * Counted over the whole cohort rather than over `closeable`, because a win
+   * is a fact whether or not the cohort is old enough to rate. Tying this to
+   * maturity printed "0 won" for every range shorter than the close window --
+   * the exact turning-missing-into-zero this module exists to prevent. The
+   * rate below is what waits for maturity; the count does not.
+   */
   won: number;
+  /** Wins among the mature ones only. The close-rate numerator. */
+  wonOfCloseable: number;
   /**
    * Always null. The mirror carries no deal value, so a cohort revenue figure
    * would have to come from `channel_daily`, which dates revenue by the day it
@@ -107,12 +118,13 @@ export function buildCohort(
   // entirely, and the coverage figure below is what says how much was dropped.
   const showable = held.length + noShow.length;
 
+  const isWon = (row: CohortRow) =>
+    outcomeFromLabel(row.status_label) === "won";
   const closeable = held.filter(
     (row) => (row.first_sales_call_booked_date ?? "") <= closeCutoff,
   );
-  const won = closeable.filter(
-    (row) => outcomeFromLabel(row.status_label) === "won",
-  );
+  const won = mine.filter(isWon);
+  const wonOfCloseable = closeable.filter(isWon);
 
   return {
     window,
@@ -125,10 +137,11 @@ export function buildCohort(
     showUnlogged: mature.length - showable,
     closeable: closeable.length,
     won: won.length,
+    wonOfCloseable: wonOfCloseable.length,
     revenue: null,
     rates: {
       showPct: ratio(held.length, showable),
-      closePct: ratio(won.length, closeable.length),
+      closePct: ratio(wonOfCloseable.length, closeable.length),
     },
     coverage: {
       showUp: coverage(showable, mine.length),
